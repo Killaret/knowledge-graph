@@ -1,0 +1,23 @@
+﻿# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+
+# Dependencies
+node_modules/
+backend/vendor/
+
+# Build outputs
+backend/server
+frontend/build/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
