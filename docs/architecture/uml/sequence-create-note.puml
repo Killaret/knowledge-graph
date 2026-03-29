@@ -1,0 +1,79 @@
+@startuml
+skinparam linetype ortho
+title Sequence — Создание заметки (синхронно + асинхронно)
+
+actor "Пользователь" as User
+participant "Frontend" as FE
+participant "API Handler" as API
+participant "Command Bus" as CmdBus
+participant "CreateNoteHandler" as Handler
+participant "Note Repository" as Repo
+participant "Event Bus" as EventBus
+participant "Asynq Queue" as Queue
+participant "NLP Client" as NLP
+participant "Link Worker" as Worker
+
+' === СИНХРОННАЯ ЧАСТЬ ===
+User -> FE : заполняет форму
+FE -> API : POST /notes
+activate API
+
+API -> CmdBus : Dispatch(CreateNoteCommand)
+activate CmdBus
+CmdBus -> Handler : Execute(command)
+activate Handler
+
+Handler -> Handler : валидация (Value Objects)
+
+Handler -> Repo : Save(note)
+activate Repo
+Repo --> Handler : ok
+deactivate Repo
+
+Handler -> EventBus : Publish(NoteCreatedEvent)
+activate EventBus
+EventBus --> Handler : ok
+deactivate EventBus
+
+' Асинхронные вызовы (не блокируют ответ)
+Handler ->> Queue : Enqueue(ExtractLinksTask, noteID)
+activate Queue
+Queue --> Handler : taskID
+deactivate Queue
+
+Handler ->> Queue : Enqueue(RecalculateEmbeddingTask, noteID)
+Queue --> Handler : taskID
+
+Handler --> CmdBus : nil (успех)
+deactivate Handler
+CmdBus --> API : nil
+deactivate CmdBus
+API --> FE : 201 Created
+deactivate API
+FE --> User : отобразить заметку
+
+' === АСИНХРОННАЯ ФОНОВАЯ ОБРАБОТКА ===
+
+Queue ->> Worker : ExtractLinksTask
+activate Worker
+Worker -> Worker : парсинг [[...]] из content
+Worker -> Repo : FindByTitle / Create links (синхронно)
+activate Repo
+Repo --> Worker : ok
+deactivate Repo
+Worker --> Queue : done
+deactivate Worker
+
+Queue ->> Worker : RecalculateEmbeddingTask
+activate Worker
+Worker -> NLP : POST /embed (синхронно)
+activate NLP
+NLP --> Worker : embedding
+deactivate NLP
+Worker -> Repo : SaveEmbedding(noteID, embedding) (синхронно)
+activate Repo
+Repo --> Worker : ok
+deactivate Repo
+Worker --> Queue : done
+deactivate Worker
+@enduml

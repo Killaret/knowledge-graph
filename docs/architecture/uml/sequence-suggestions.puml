@@ -1,0 +1,90 @@
+@startuml
+skinparam linetype ortho
+title Sequence — Получение рекомендаций (синхронно, с кэшем)
+
+actor "Пользователь" as User
+participant "Frontend" as FE
+participant "API Handler" as API
+participant "Query Bus" as QryBus
+participant "GetSuggestionsHandler" as Handler
+participant "Redis Cache" as Cache
+participant "Graph Service" as Graph
+participant "Link Repository" as LinkRepo
+participant "Note Repository" as NoteRepo
+participant "Embedding Repository" as EmbRepo
+
+User -> FE : открывает заметку / нажимает "Показать похожие"
+FE -> API : GET /notes/{id}/suggestions?limit=10
+activate API
+
+API -> QryBus : Ask(GetSuggestionsQuery)
+activate QryBus
+QryBus -> Handler : Execute(query)
+activate Handler
+
+' 1. Проверка кэша
+Handler -> Cache : GET suggestions:{noteID}:{limit}
+activate Cache
+alt Кэш попадание
+    Cache --> Handler : cached suggestions (JSON)
+    Handler --> QryBus : suggestions
+    QryBus --> API : suggestions
+    API --> FE : 200 OK (из кэша)
+    FE --> User : отобразить рекомендации
+    note right: Конец (ранний выход)
+else Кэш промах
+    Cache --> Handler : nil
+    deactivate Cache
+
+    ' 2. Получение данных заметки
+    Handler -> NoteRepo : FindByID(noteID)
+    activate NoteRepo
+    NoteRepo --> Handler : note (с метаданными)
+    deactivate NoteRepo
+
+    ' 3. Поиск кандидатов (Level 1)
+    Handler -> EmbRepo : FindSimilar(note.embedding, limit=50)
+    activate EmbRepo
+    EmbRepo --> Handler : []similarNoteIDs + scores
+    deactivate EmbRepo
+
+    Handler -> LinkRepo : FindExplicitLinks(noteID)
+    activate LinkRepo
+    LinkRepo --> Handler : []explicitTargetIDs
+    deactivate LinkRepo
+
+    ' 4. Вычисление прямых весов direct(A,B)
+    Handler -> Handler : combine candidates, compute direct weights
+    note right: α=0.5, β=0.2, γ=0.3
+
+    ' 5. BFS распространение весов (глубина 3)
+    Handler -> Graph : PropagateWeights(startNote, depth=3, decay=0.5, candidates)
+    activate Graph
+    loop для каждого уровня (1..3)
+        Graph -> LinkRepo : GetNeighbors(nodeIDs)
+        activate LinkRepo
+        LinkRepo --> Graph : links with weights
+        deactivate LinkRepo
+        Graph -> Graph : accumulate scores with decay
+    end
+    Graph --> Handler : map[noteID]score
+    deactivate Graph
+
+    ' 6. Сортировка и ограничение
+    Handler -> Handler : sort by score, top 10
+
+    ' 7. Сохранение в кэш
+    Handler -> Cache : SET suggestions:{noteID}:{limit} = results, TTL=300
+    activate Cache
+    Cache --> Handler : ok
+    deactivate Cache
+
+    Handler --> QryBus : results
+    deactivate Handler
+    QryBus --> API : results
+    deactivate QryBus
+    API --> FE : 200 OK (результаты)
+    deactivate API
+    FE --> User : отобразить рекомендации
+end
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+skinparam linetype ortho
+skinparam nodeStyle rectangle
+
+title Диаграмма развёртывания — Knowledge Graph (локально)
+
+node "ПК Разработчика" {
+    artifact "Docker Engine" as Docker
+    
+    node "Контейнер: frontend" {
+        component "Svelte 5\n(Nginx)" as Frontend
+    }
+    
+    node "Контейнер: backend" {
+        component "Go + Gin\n(бэкенд)" as Backend
+        component "Asynq Worker" as Worker
+    }
+    
+    node "Контейнер: postgres" {
+        database "PostgreSQL 16\n+ pgvector" as PostgresDB
+    }
+    
+    node "Контейнер: redis" {
+        database "Redis 7\n(очереди + кэш)" as RedisDB
+    }
+    
+    node "Контейнер: nlp" {
+        component "Python + FastAPI\n(sentence-transformers)" as NLP
+    }
+}
+
+actor "Пользователь" as User
+
+User --> Frontend : HTTP (3000)
+Frontend --> Backend : HTTP (8080) /api
+Backend --> PostgresDB : SQL (5432)
+Backend --> RedisDB : TCP (6379)
+Worker --> RedisDB : TCP (6379)
+Backend --> NLP : HTTP (5000)
+Worker --> NLP : HTTP (5000)
+@enduml

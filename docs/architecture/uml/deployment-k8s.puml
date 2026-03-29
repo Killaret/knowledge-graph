@@ -1,0 +1,53 @@
+@startuml
+skinparam linetype ortho
+skinparam nodeStyle rectangle
+
+title Диаграмма развёртывания — Knowledge Graph (Kubernetes)
+
+node "Облачный кластер (Cloud.ru / Yandex Cloud)" {
+    node "Node 1" {
+        artifact "kubelet" as Kubelet
+        node "Pod: frontend" {
+            component "Svelte 5\n(Nginx)" as Frontend
+        }
+        node "Pod: backend-1" {
+            component "Go бэкенд" as Backend1
+        }
+        node "Pod: nlp-1" {
+            component "Python NLP" as NLP1
+        }
+    }
+    
+    node "Node 2" {
+        node "Pod: backend-2" {
+            component "Go бэкенд" as Backend2
+        }
+        node "Pod: nlp-2" {
+            component "Python NLP" as NLP2
+        }
+        node "Pod: worker" {
+            component "Asynq Worker" as Worker
+        }
+    }
+    
+    node "Managed Services" {
+        database "PostgreSQL Cluster\n(мастер + реплика)" as PostgresCluster
+        database "Redis Cluster\n(очереди + кэш)" as RedisCluster
+    }
+    
+    node "Ingress Controller" as Ingress
+}
+
+actor "Пользователь" as User
+User --> Ingress : HTTPS
+Ingress --> Frontend : HTTP
+Frontend --> Backend1 : HTTP (api)
+Frontend --> Backend2 : HTTP (api)
+Backend1 --> PostgresCluster : SQL
+Backend2 --> PostgresCluster : SQL
+Backend1 --> RedisCluster : TCP
+Backend2 --> RedisCluster : TCP
+Worker --> RedisCluster : TCP
+Backend1 --> NLP1 : HTTP
+Backend2 --> NLP2 : HTTP
+@enduml

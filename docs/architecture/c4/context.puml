@@ -1,0 +1,20 @@
+@startuml
+title Контекстная диаграмма — Knowledge Graph
+
+actor "Пользователь" as User
+
+rectangle "Knowledge Graph" {
+    component "Frontend\n(Svelte 5)" as Frontend
+    component "Backend\n(Go + Gin)" as Backend
+}
+
+database "PostgreSQL\n+ pgvector" as DB
+database "Redis\n(очереди + кэш)" as Redis
+component "NLP Service\n(Python + FastAPI)" as NLP
+
+User --> Frontend : "Просмотр и редактирование\nзаметок, графа"
+Frontend --> Backend : "REST API"
+Backend --> DB : "SQL"
+Backend --> Redis : "asynq / кэш"
+Backend --> NLP : "HTTP (эмбеддинги)"
+@enduml

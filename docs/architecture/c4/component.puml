@@ -1,0 +1,64 @@
+@startuml
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+
+title Компонентная диаграмма — Backend (Go)
+
+package "Interface Layer" {
+    [HTTP Handlers] as API
+}
+
+package "Application Layer" {
+    [Command Bus] as CmdBus
+    [Query Bus] as QryBus
+    [Command Handlers] as CmdH
+    [Query Handlers] as QryH
+    [Event Bus] as EvtBus
+}
+
+package "Domain Layer" {
+    [Note & Link Aggregates] as Agg
+    [Graph Service] as Graph
+    [Specifications] as Spec
+}
+
+package "Infrastructure Layer" {
+    [PostgreSQL Repos] as DB
+    [Redis Cache] as Cache
+    [Asynq Worker] as Worker
+    [NLP Client] as NLP
+}
+
+' === Вертикальные связи ===
+API --> CmdBus : dispatch
+API --> QryBus : ask
+
+CmdBus --> CmdH : execute
+QryBus --> QryH : execute
+
+CmdH --> Agg : use
+CmdH --> EvtBus : publish
+CmdH --> DB : save
+CmdH --> NLP : call
+CmdH --> Worker : enqueue
+
+QryH --> Graph : use
+QryH --> Spec : use
+QryH --> DB : find
+QryH --> Cache : get/set
+
+EvtBus --> Worker : schedule
+
+' === Внутри Domain ===
+Graph --> Agg
+Spec --> Agg
+
+' === Реализации (пунктир) ===
+DB ..> Agg : implements
+Worker ..> CmdH : processes
+NLP ..> CmdH : called
+Cache ..> QryH : caches
+
+@enduml

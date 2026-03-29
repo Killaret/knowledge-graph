@@ -1,0 +1,32 @@
+@startuml
+title Диаграмма контейнеров — Knowledge Graph
+
+actor "Пользователь" as User
+
+package "Локальная среда (Docker Compose)" {
+    
+    component "Frontend\n(Svelte 5)" as Frontend
+    component "Backend\n(Go + Gin)" as Backend
+    database "PostgreSQL 16\n+ pgvector" as DB
+    database "Redis 7\n(очереди + кэш)" as Redis
+    component "NLP Service\n(Python + FastAPI)" as NLP
+}
+
+User --> Frontend : "HTTPS / WebSocket"
+Frontend --> Backend : "REST API"
+Backend --> DB : "SQL"
+Backend --> Redis : "TCP (asynq / кэш)"
+Backend --> NLP : "HTTP (эмбеддинги)"
+
+note right of Backend
+    - Содержит DDD слои
+    - CQRS (команды/запросы)
+    - Очередь задач (asynq)
+end note
+
+note right of Redis
+    - Хранение задач
+    - Кэш рекомендаций
+    - Сессии (позже)
+end note
+@enduml

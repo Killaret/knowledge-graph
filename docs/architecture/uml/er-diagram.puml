@@ -1,0 +1,121 @@
+@startuml
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+title ER-диаграмма — Knowledge Graph (PostgreSQL)
+
+' === Таблица notes ===
+entity "notes" as notes {
+    * id : UUID <<PK>>
+    --
+    * title : TEXT
+    content : TEXT
+    metadata : JSONB
+    created_at : TIMESTAMPTZ
+    updated_at : TIMESTAMPTZ
+}
+
+' === Таблица links ===
+entity "links" as links {
+    * id : UUID <<PK>>
+    --
+    source_id : UUID <<FK>>
+    target_id : UUID <<FK>>
+    link_type : TEXT
+    weight : FLOAT
+    metadata : JSONB
+    created_at : TIMESTAMPTZ
+}
+
+' === Таблица note_keywords ===
+entity "note_keywords" as note_keywords {
+    * note_id : UUID <<FK,PK>>
+    * keyword : TEXT <<PK>>
+    --
+    weight : FLOAT
+}
+
+' === Таблица note_embeddings ===
+entity "note_embeddings" as note_embeddings {
+    * note_id : UUID <<FK,PK>>
+    --
+    embedding : vector(384)
+    updated_at : TIMESTAMPTZ
+}
+
+' === Таблица note_tags ===
+entity "note_tags" as note_tags {
+    * note_id : UUID <<FK,PK>>
+    * tag : TEXT <<PK>>
+}
+
+' === Таблица users ===
+entity "users" as users {
+    * id : UUID <<PK>>
+    --
+    login : TEXT <<UK>>
+    password_hash : TEXT
+    role : TEXT
+    created_at : TIMESTAMPTZ
+}
+
+' === НОВОЕ: Лайки на заметки (не рекомендации) ===
+entity "note_likes" as note_likes {
+    * user_id : UUID <<FK,PK>>
+    * note_id : UUID <<FK,PK>>
+    --
+    like_type :boolean (like)
+    created_at : TIMESTAMPTZ
+}
+
+' === НОВОЕ: Обратная связь по рекомендациям ===
+entity "suggestion_feedback" as suggestion_feedback {
+    * user_id : UUID <<FK,PK>>
+    * source_note_id : UUID <<FK,PK>>
+    * suggested_note_id : UUID <<FK,PK>>
+    --
+    feedback_type : TEXT   -- 'like' или 'dislike'
+    created_at : TIMESTAMPTZ
+}
+
+' === НОВОЕ: Расшаривание заметок ===
+entity "share_links" as share_links {
+    * id : UUID <<PK>>
+    --
+    note_id : UUID <<FK>>
+    shared_by_user_id : UUID <<FK>>
+    share_token : TEXT <<UK>>
+    expires_at : TIMESTAMPTZ
+    created_at : TIMESTAMPTZ
+}
+
+' === Связи ===
+notes ||--o{ links : "source"
+notes ||--o{ links : "target"
+notes ||--o{ note_keywords : ""
+notes ||--o| note_embeddings : ""
+notes ||--o{ note_tags : ""
+notes ||--o{ note_likes : ""
+notes ||--o{ share_links : ""
+notes ||--o{ suggestion_feedback : "source_note"
+notes ||--o{ suggestion_feedback : "suggested_note"
+
+users ||--o{ note_likes : ""
+users ||--o{ suggestion_feedback : ""
+users ||--o{ share_links : "shared_by"
+
+' === Индексы ===
+note right of links : "CREATE INDEX idx_links_source ON links(source_id);\nCREATE INDEX idx_links_target ON links(target_id);\nCREATE UNIQUE INDEX idx_links_unique ON links(source_id, target_id, link_type);"
+
+note right of note_embeddings : "CREATE INDEX idx_embeddings_vector ON note_embeddings USING ivfflat (embedding vector_cosine_ops);"
+
+note right of note_tags : "CREATE INDEX idx_note_tags_tag ON note_tags(tag);"
+
+note right of users : "CREATE UNIQUE INDEX idx_users_login ON users(login);"
+
+note right of note_likes : "CREATE INDEX idx_note_likes_note ON note_likes(note_id);"
+
+note right of suggestion_feedback : "CREATE INDEX idx_feedback_source ON suggestion_feedback(source_note_id);"
+
+note right of share_links : "CREATE UNIQUE INDEX idx_share_token ON share_links(share_token);"
+
+@enduml

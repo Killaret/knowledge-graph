@@ -1,0 +1,176 @@
+@startuml
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+
+title Диаграмма классов — Domain Layer
+
+' === Value Objects ===
+class Title {
+    - value: string
+    + NewTitle(string) Title
+    + Value() string
+}
+
+class Content {
+    - value: string
+    + NewContent(string) Content
+    + Value() string
+    + ExtractLinks() []LinkReference
+}
+
+class LinkType <<enum>> {
+    reference
+    dependency
+    related
+    custom
+}
+
+class Weight {
+    - value: float64
+    + NewWeight(float64) Weight
+    + Value() float64
+}
+
+' === Aggregates ===
+class Note {
+    - id: UUID
+    - title: Title
+    - content: Content
+    - metadata: map[string]interface{}
+    - createdAt: time.Time
+    - updatedAt: time.Time
+    + NewNote(Title, Content, map) *Note
+    + UpdateContent(Content)
+    + AddLink(targetID UUID, linkType LinkType)
+    + RemoveLink(linkID UUID)
+}
+
+class Link {
+    - id: UUID
+    - sourceNoteID: UUID
+    - targetNoteID: UUID
+    - linkType: LinkType
+    - weight: Weight
+    - createdAt: time.Time
+    + NewLink(source, target, LinkType) *Link
+    + RecalculateWeight(WeightCalculator)
+}
+
+' === Domain Services ===
+class GraphTraversalService {
+    + GetSuggestions(noteID UUID, depth int, decay float64) []Suggestion
+    + FindPaths(from, to UUID, maxDepth int) [][]UUID
+}
+
+class WeightCalculator {
+    + CalculateDirectWeight(noteA, noteB Note, alpha, beta, gamma float64) float64
+    + PropagateWeight(startNote Note, decay float64, maxDepth int) map[UUID]float64
+}
+
+' === Repository Interfaces (defined in Domain) ===
+interface NoteRepository {
+    + Save(ctx, note) error
+    + FindByID(ctx, id) (*Note, error)
+    + Delete(ctx, id) error
+    + FindBySpecification(ctx, spec, limit, offset) ([]*Note, error)
+}
+
+interface LinkRepository {
+    + Save(ctx, link) error
+    + FindBySource(ctx, sourceID) ([]*Link, error)
+    + FindByTarget(ctx, targetID) ([]*Link, error)
+    + DeleteBySource(ctx, sourceID) error
+    + Delete(ctx, id) error
+}
+
+' === Specifications ===
+interface Specification {
+    + IsSatisfiedBy(entity) bool
+    + ToSQL() (string, []interface{})
+}
+
+class AndSpecification {
+    - left: Specification
+    - right: Specification
+    + IsSatisfiedBy(entity) bool
+    + ToSQL() (string, []interface{})
+}
+
+class OrSpecification {
+    - left: Specification
+    - right: Specification
+    + IsSatisfiedBy(entity) bool
+    + ToSQL() (string, []interface{})
+}
+
+class HasTagSpecification {
+    - tag: string
+    + IsSatisfiedBy(note) bool
+    + ToSQL() (string, []interface{})
+}
+
+class CreatedAfterSpecification {
+    - date: time.Time
+    + IsSatisfiedBy(note) bool
+    + ToSQL() (string, []interface{})
+}
+
+' === Domain Events ===
+class DomainEvent <<abstract>> {
+    + OccurredAt: time.Time
+}
+
+class NoteCreated {
+    - noteID: UUID
+}
+
+class NoteUpdated {
+    - noteID: UUID
+}
+
+class NoteDeleted {
+    - noteID: UUID
+}
+
+class LinkAdded {
+    - linkID: UUID
+    - sourceID: UUID
+    - targetID: UUID
+}
+
+class EmbeddingRecalculated {
+    - noteID: UUID
+}
+
+' === Relationships ===
+Note *-- Title
+Note *-- Content
+Note *-- Weight : "has (via links)"
+Link *-- LinkType
+Link *-- Weight
+
+Note "1" -- "0..*" Link : source
+Note "1" -- "0..*" Link : target
+
+GraphTraversalService ..> Note : uses
+GraphTraversalService ..> Link : uses
+WeightCalculator ..> Note : uses
+
+NoteRepository ..> Note : manages
+LinkRepository ..> Link : manages
+
+Specification <|.. AndSpecification
+Specification <|.. OrSpecification
+Specification <|.. HasTagSpecification
+Specification <|.. CreatedAfterSpecification
+
+Note ..> Specification : uses
+
+DomainEvent <|-- NoteCreated
+DomainEvent <|-- NoteUpdated
+DomainEvent <|-- NoteDeleted
+DomainEvent <|-- LinkAdded
+DomainEvent <|-- EmbeddingRecalculated
+
+@enduml
