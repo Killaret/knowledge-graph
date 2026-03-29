@@ -2,22 +2,30 @@
 .vscode/
 .idea/
 
-# Environment
-.env
-.env.local
-
-# Dependencies
-node_modules/
+# Go
+backend/server
+backend/*.exe
+backend/*.exe~
+backend/*.dll
+backend/*.so
+backend/*.dylib
+backend/*.test
+backend/*.out
 backend/vendor/
 
-# Build outputs
-backend/server
-frontend/build/
-frontend/dist/
+# Environment files
+.env
+*.env
+.env.local
+
+# Docker
+*.log
+*.pid
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Temp files
+tmp/
+temp/
