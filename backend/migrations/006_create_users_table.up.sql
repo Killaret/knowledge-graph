@@ -1,9 +1,7 @@
-CREATE TABLE note_likes (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    like_type TEXT NOT NULL CHECK (like_type IN ('like', 'dislike')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (user_id, note_id)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    login TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE INDEX idx_note_likes_note ON note_likes(note_id);

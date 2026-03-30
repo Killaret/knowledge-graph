@@ -7,8 +7,8 @@ import (
 	"github.com/pgvector/pgvector-go"
 )
 
-// Note — модель заметки
-type Note struct {
+// NoteModel — модель заметки
+type NoteModel struct {
 	ID        uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title     string                 `gorm:"not null"`
 	Content   string                 `gorm:"type:text"`
@@ -17,12 +17,12 @@ type Note struct {
 	UpdatedAt time.Time
 }
 
-func (Note) TableName() string {
+func (NoteModel) TableName() string {
 	return "notes"
 }
 
-// Link — связь между заметками
-type Link struct {
+// LinkModel — связь между заметками
+type LinkModel struct {
 	ID           uuid.UUID              `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	SourceNoteID uuid.UUID              `gorm:"type:uuid;not null;index"`
 	TargetNoteID uuid.UUID              `gorm:"type:uuid;not null;index"`
@@ -31,55 +31,54 @@ type Link struct {
 	Metadata     map[string]interface{} `gorm:"type:jsonb"`
 	CreatedAt    time.Time
 
-	// Внешние ключи (GORM будет автоматически использовать)
-	SourceNote Note `gorm:"foreignKey:SourceNoteID"`
-	TargetNote Note `gorm:"foreignKey:TargetNoteID"`
+	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID"`
+	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID"`
 }
 
-func (Link) TableName() string {
+func (LinkModel) TableName() string {
 	return "links"
 }
 
-// NoteKeyword — ключевые слова заметки (ядро идеи)
-type NoteKeyword struct {
+// NoteKeywordModel — ключевые слова заметки (ядро идеи)
+type NoteKeywordModel struct {
 	NoteID  uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Keyword string    `gorm:"primaryKey"`
 	Weight  float64
 
-	Note Note `gorm:"foreignKey:NoteID"`
+	Note NoteModel `gorm:"foreignKey:NoteID"`
 }
 
-func (NoteKeyword) TableName() string {
+func (NoteKeywordModel) TableName() string {
 	return "note_keywords"
 }
 
-// NoteEmbedding — векторное представление заметки
-type NoteEmbedding struct {
+// NoteEmbeddingModel — векторное представление заметки
+type NoteEmbeddingModel struct {
 	NoteID    uuid.UUID       `gorm:"type:uuid;primaryKey"`
 	Embedding pgvector.Vector `gorm:"type:vector(384)"`
 	UpdatedAt time.Time
 
-	Note Note `gorm:"foreignKey:NoteID"`
+	Note NoteModel `gorm:"foreignKey:NoteID"`
 }
 
-func (NoteEmbedding) TableName() string {
+func (NoteEmbeddingModel) TableName() string {
 	return "note_embeddings"
 }
 
-// NoteTag — теги заметки
-type NoteTag struct {
+// NoteTagModel — теги заметки
+type NoteTagModel struct {
 	NoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Tag    string    `gorm:"primaryKey"`
 
-	Note Note `gorm:"foreignKey:NoteID"`
+	Note NoteModel `gorm:"foreignKey:NoteID"`
 }
 
-func (NoteTag) TableName() string {
+func (NoteTagModel) TableName() string {
 	return "note_tags"
 }
 
-// User — пользователь (IAM)
-type User struct {
+// UserModel — пользователь (IAM)
+type UserModel struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Login        string    `gorm:"uniqueIndex;not null"`
 	PasswordHash string    `gorm:"not null"`
@@ -87,44 +86,44 @@ type User struct {
 	CreatedAt    time.Time
 }
 
-func (User) TableName() string {
+func (UserModel) TableName() string {
 	return "users"
 }
 
-// NoteLike — лайк/дизлайк на заметку
-type NoteLike struct {
+// NoteLikeModel — лайк/дизлайк на заметку
+type NoteLikeModel struct {
 	UserID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	NoteID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	LikeType  string    `gorm:"not null"` // 'like' или 'dislike'
 	CreatedAt time.Time
 
-	User User `gorm:"foreignKey:UserID"`
-	Note Note `gorm:"foreignKey:NoteID"`
+	User UserModel `gorm:"foreignKey:UserID"`
+	Note NoteModel `gorm:"foreignKey:NoteID"`
 }
 
-func (NoteLike) TableName() string {
+func (NoteLikeModel) TableName() string {
 	return "note_likes"
 }
 
-// SuggestionFeedback — обратная связь по рекомендации
-type SuggestionFeedback struct {
+// SuggestionFeedbackModel — обратная связь по рекомендации
+type SuggestionFeedbackModel struct {
 	UserID          uuid.UUID `gorm:"type:uuid;primaryKey"`
 	SourceNoteID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	SuggestedNoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
 	FeedbackType    string    `gorm:"not null"` // 'like' или 'dislike'
 	CreatedAt       time.Time
 
-	User          User `gorm:"foreignKey:UserID"`
-	SourceNote    Note `gorm:"foreignKey:SourceNoteID"`
-	SuggestedNote Note `gorm:"foreignKey:SuggestedNoteID"`
+	User          UserModel `gorm:"foreignKey:UserID"`
+	SourceNote    NoteModel `gorm:"foreignKey:SourceNoteID"`
+	SuggestedNote NoteModel `gorm:"foreignKey:SuggestedNoteID"`
 }
 
-func (SuggestionFeedback) TableName() string {
+func (SuggestionFeedbackModel) TableName() string {
 	return "suggestion_feedback"
 }
 
-// ShareLink — расшаривание заметки
-type ShareLink struct {
+// ShareLinkModel — расшаривание заметки
+type ShareLinkModel struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	NoteID         uuid.UUID `gorm:"type:uuid;not null;index"`
 	SharedByUserID uuid.UUID `gorm:"type:uuid;not null"`
@@ -132,10 +131,10 @@ type ShareLink struct {
 	ExpiresAt      *time.Time
 	CreatedAt      time.Time
 
-	Note     Note `gorm:"foreignKey:NoteID"`
-	SharedBy User `gorm:"foreignKey:SharedByUserID"`
+	Note     NoteModel `gorm:"foreignKey:NoteID"`
+	SharedBy UserModel `gorm:"foreignKey:SharedByUserID"`
 }
 
-func (ShareLink) TableName() string {
+func (ShareLinkModel) TableName() string {
 	return "share_links"
 }
