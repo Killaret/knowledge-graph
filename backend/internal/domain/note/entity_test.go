@@ -10,7 +10,7 @@ import (
 func TestNewNote(t *testing.T) {
 	title, _ := NewTitle("Test")
 	content, _ := NewContent("Content")
-	metadata, _ := NewMetadata(nil)
+	metadata, _ := NewMetadata(map[string]interface{}{})
 
 	note := NewNote(title, content, metadata)
 
@@ -31,7 +31,7 @@ func TestNewNote(t *testing.T) {
 func TestNoteUpdateTitle(t *testing.T) {
 	title, _ := NewTitle("Old")
 	content, _ := NewContent("Content")
-	metadata, _ := NewMetadata(nil)
+	metadata, _ := NewMetadata(map[string]interface{}{})
 	note := NewNote(title, content, metadata)
 
 	newTitle, _ := NewTitle("New")
