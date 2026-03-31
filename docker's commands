@@ -1,0 +1,36 @@
+docker ps	Показать работающие контейнеры
+docker ps -a	Показать все контейнеры (включая остановленные)
+docker-compose ps	Показать статус сервисов из docker-compose.yml
+docker-compose up -d	Запустить все сервисы в фоне
+docker-compose down	Остановить и удалить контейнеры (тома сохраняются)
+docker-compose down -v	Остановить, удалить контейнеры и удалить тома (данные теряются!)
+docker-compose stop	Остановить контейнеры (не удалять)
+docker-compose start	Запустить ранее остановленные контейнеры
+docker-compose restart	Перезапустить все сервисы
+docker-compose logs	Логи всех сервисов (-f – следить в реальном времени)
+docker-compose logs <service>	Логи конкретного сервиса (например, backend, postgres, redis)
+docker-compose exec <service> <command>	Выполнить команду внутри контейнера (например, docker-compose exec postgres psql -U kb_user -d knowledge_base)
+docker-compose build	Пересобрать образы (если изменился Dockerfile)
+docker-compose build --no-cache	Пересобрать без кэша
+docker logs <container>	Показать логи конкретного контейнера (можно использовать docker-compose logs)
+docker exec -it <container> sh	Зайти в контейнер (например, docker exec -it kg-backend sh)
+docker volume ls	Список томов
+docker volume prune	Удалить неиспользуемые тома
+
+Запустить всё
+cd D:\knowledge-graph
+docker-compose up -d
+
+Проверить, что всё работает
+docker-compose ps
+
+Посмотреть логи бэкенда
+docker-compose logs -f backend
+
+Создать тестовую БД
+docker-compose exec postgres psql -U kb_user -d postgres -c "CREATE DATABASE knowledge_base_test;"
+
+Остановить проект
+docker-compose down
+
+
