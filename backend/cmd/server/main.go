@@ -4,8 +4,10 @@ import (
 	"log"
 	"os"
 
+	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/notehandler"
 
@@ -27,7 +29,21 @@ func main() {
 	noteRepo := postgres.NewNoteRepository(db.DB)
 	linkRepo := postgres.NewLinkRepository(db.DB)
 
-	noteHandler := notehandler.New(noteRepo)
+	// Инициализация очереди (asynq)
+	redisAddr := os.Getenv("REDIS_URL")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	var taskQueue common.TaskQueue
+	asynqClient, err := queue.NewAsynqClient(redisAddr)
+	if err != nil {
+		log.Printf("WARNING: failed to create asynq client: %v", err)
+	} else {
+		taskQueue = asynqClient
+		defer asynqClient.Close()
+	}
+
+	noteHandler := notehandler.New(noteRepo, taskQueue)
 	linkHandler := linkhandler.New(linkRepo, noteRepo)
 
 	r := gin.Default()

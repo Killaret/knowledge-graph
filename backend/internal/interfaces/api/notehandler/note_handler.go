@@ -1,6 +1,7 @@
 package notehandler
 
 import (
+	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/gin-gonic/gin"
@@ -8,11 +9,12 @@ import (
 )
 
 type Handler struct {
-	repo note.Repository
+	repo      note.Repository
+	taskQueue common.TaskQueue
 }
 
-func New(repo note.Repository) *Handler {
-	return &Handler{repo: repo}
+func New(repo note.Repository, taskQueue common.TaskQueue) *Handler {
+	return &Handler{repo: repo, taskQueue: taskQueue}
 }
 
 type createNoteRequest struct {
@@ -49,6 +51,13 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		c.JSON(500, gin.H{"error": "failed to save note"})
 		return
+	}
+
+	// Ставим задачи в очередь
+	if h.taskQueue != nil {
+		noteID := newNote.ID().String()
+		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
+		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
 	}
 
 	c.JSON(201, gin.H{
@@ -91,6 +100,9 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
+	// Флаг, изменился ли текст (чтобы ставить задачи)
+	textChanged := false
+
 	if req.Title != "" {
 		title, err := note.NewTitle(req.Title)
 		if err != nil {
@@ -101,6 +113,7 @@ func (h *Handler) Update(c *gin.Context) {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+		textChanged = true
 	}
 	if req.Content != "" {
 		content, err := note.NewContent(req.Content)
@@ -112,6 +125,7 @@ func (h *Handler) Update(c *gin.Context) {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+		textChanged = true
 	}
 	if req.Metadata != nil {
 		metadata, err := note.NewMetadata(req.Metadata)
@@ -123,11 +137,19 @@ func (h *Handler) Update(c *gin.Context) {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+		// изменение метаданных не влияет на текст, можно не ставить задачи
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
 		c.JSON(500, gin.H{"error": "failed to update note"})
 		return
+	}
+
+	// Если текст изменился, ставим задачи заново
+	if textChanged && h.taskQueue != nil {
+		noteID := existing.ID().String()
+		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
+		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
 	}
 
 	c.JSON(200, gin.H{

@@ -15,7 +15,7 @@ import (
 func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := newMockNoteRepo()
-	handler := New(repo)
+	handler := New(repo, nil)
 	r := gin.Default()
 	r.POST("/notes", handler.Create)
 	r.GET("/notes/:id", handler.Get)
