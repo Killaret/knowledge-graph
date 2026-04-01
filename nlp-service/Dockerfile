@@ -7,7 +7,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Устанавливаем torch (CPU‑версия, легче)
+RUN pip install --no-cache-dir --default-timeout=100 --retries=5 \
+    torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
+
+# Устанавливаем остальные зависимости
+RUN pip install --no-cache-dir --default-timeout=100 --retries=5 -r requirements.txt
 
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 

@@ -47,7 +47,7 @@ go test -cover ./... -coverprofile=coverage.out
 Create `.env` in project root (or use `.env` in backend/):
 ```
 DATABASE_URL=postgresql://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-REDIS_URL=redis://localhost:6379
+REDIS_URL=localhost:6379
 SERVER_PORT=8080
 ```
 

@@ -16,18 +16,10 @@
       interval: 10s
       timeout: 5s
       retries: 5
-  nlp:
-    build: ./nlp-service
-    container_name: kg-nlp
-    ports:
-      - "5000:5000"
-    environment:
-      - MODEL_NAME=all-MiniLM-L6-v2
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3 
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   redis:
     image: redis:7-alpine
@@ -40,6 +32,19 @@
       timeout: 5s
       retries: 5
 
+  nlp:
+    build: ./nlp-service
+    container_name: kg-nlp
+    ports:
+      - "5000:5000"
+    environment:
+      - MODEL_NAME=all-MiniLM-L6-v2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   backend:
     build: ./backend
     container_name: kg-backend
@@ -48,10 +53,35 @@
     environment:
       DATABASE_URL: postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
       REDIS_URL: redis://redis:6379
+      NLP_SERVICE_URL: http://nlp:5000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      nlp:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  worker:
+    build: ./backend
+    container_name: kg-worker
+    command: ["go", "run", "cmd/worker/main.go"]
+    environment:
+      DATABASE_URL: postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      NLP_SERVICE_URL: http://nlp:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nlp:
         condition: service_healthy
     volumes:
       - ./backend:/app
