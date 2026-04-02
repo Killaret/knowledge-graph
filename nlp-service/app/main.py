@@ -6,7 +6,7 @@ from .nlp_utils import extract_keywords, embedding_model
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="NLP Service for Knowledge Graph")   # <-- важно: переменная должна называться app
+app = FastAPI(title="NLP Service for Knowledge Graph")
 
 @app.get("/health")
 async def health():

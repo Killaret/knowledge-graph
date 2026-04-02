@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
@@ -60,11 +61,18 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 		return w.keywordRepo.DeleteAll(ctx, noteID)
 	}
 
-	topN := p.TopN
-	if topN <= 0 {
-		topN = 10
+	wordCount := len(strings.Fields(text))
+	topN := 5
+	if wordCount > 0 {
+		dynamic := wordCount / 100
+		if dynamic < 5 {
+			topN = 5
+		} else if dynamic > 20 {
+			topN = 20
+		} else {
+			topN = dynamic
+		}
 	}
-
 	keywords, err := w.nlpClient.ExtractKeywords(ctx, text, topN)
 	if err != nil {
 		return fmt.Errorf("failed to extract keywords: %w", err)
