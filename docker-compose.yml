@@ -45,13 +45,13 @@
       - postgres
       - redis
       # - nlp
-    volumes:
-      - ./backend:/app
+    # volumes:
+    #   - ./backend:/app
 
   worker:
     build: ./backend
     container_name: kg-worker
-    command: ["go", "run", "cmd/worker/main.go"]
+    command: ["./worker"]
     environment:
       DATABASE_URL: postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
       REDIS_URL: redis://redis:6379
@@ -60,8 +60,8 @@
       - postgres
       - redis
       # - nlp
-    volumes:
-      - ./backend:/app
+    # volumes:
+    #   - ./backend:/app
 
 volumes:
   postgres_data:
