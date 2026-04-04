@@ -12,27 +12,27 @@ echo.
 cd /d D:\knowledge-graph
 
 :: Создаём папку для кэша, если её нет
-if not exist "huggingface_cache" mkdir huggingface_cache
+:: if not exist "huggingface_cache" mkdir huggingface_cache
 
 :: Копируем локальную модель из пользовательского кэша (если есть)
-if exist "%USERPROFILE%\.cache\huggingface\models--sentence-transformers--all-MiniLM-L6-v2" (
-    echo [0] Copying cached model from local Hugging Face cache...
-    xcopy /E /I /Y "%USERPROFILE%\.cache\huggingface\models--sentence-transformers--all-MiniLM-L6-v2" "huggingface_cache\models--sentence-transformers--all-MiniLM-L6-v2"
-) else (
-    echo [0] No local cache found. Model will be downloaded during first start.
-)
+:: if exist "%USERPROFILE%\.cache\huggingface\models--sentence-transformers--all-MiniLM-L6-v2" (
+    :: echo [0] Copying cached model from local Hugging Face cache...
+   ::  xcopy /E /I /Y "%USERPROFILE%\.cache\huggingface\models--sentence-transformers--all-MiniLM-L6-v2" "huggingface_cache\models--sentence-transformers--all-MiniLM-L6-v2"
+:: ) else (
+   ::  echo [0] No local cache found. Model will be downloaded during first start.
+:: )
 
-echo [1] Stopping old containers...
-docker-compose down
-echo.
+:: echo [1] Stopping old containers...
+:: docker-compose down
+:: echo.
 
-echo [2] Building and starting services...
-docker-compose build
-docker-compose up -d
-echo.
+:: echo [2] Building and starting services...
+:: docker-compose build
+:: docker-compose up -d
+:: echo.
 
-echo [3] Waiting for services to initialize (600 seconds)...
-timeout /t 600 /nobreak
+:: echo [3] Waiting for services to initialize (60 seconds)...
+:: timeout /t 60 /nobreak
 
 :: Ожидание готовности NLP
 echo [3a] Checking NLP service status...
