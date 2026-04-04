@@ -1,9 +1,12 @@
 ﻿# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Go
 backend/server
+backend/worker
 backend/*.exe
 backend/*.exe~
 backend/*.dll
@@ -12,15 +15,41 @@ backend/*.dylib
 backend/*.test
 backend/*.out
 backend/vendor/
+backend/coverage.out
+
+# Python (nlp-service)
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+venv311/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Docker
+*.pid
+docker-compose.override.yml
+huggingface_cache/ # кэш модели (большой, не нужен в репозитории)
+*.onnx
+*.bin
+*.safetensors
+*.pth       
+.dockerignore
 
 # Environment files
 .env
 *.env
 .env.local
+.env.*.local
 
-# Docker
+# Logs
 *.log
-*.pid
+logs/
 
 # OS
 .DS_Store
@@ -29,3 +58,6 @@ Thumbs.db
 # Temp files
 tmp/
 temp/
+*.tmp
+*.bak
+*~

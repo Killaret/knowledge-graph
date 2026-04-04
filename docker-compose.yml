@@ -6,10 +6,14 @@
       POSTGRES_USER: kb_user
       POSTGRES_PASSWORD: kb_password
       POSTGRES_DB: knowledge_base
-    # Проброс порта убран (конфликт с локальным PostgreSQL)
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kb_user -d knowledge_base"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -20,17 +24,27 @@
     container_name: kg-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # nlp:
-  #   build: ./nlp-service
-  #   container_name: kg-nlp
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     - MODEL_NAME=all-MiniLM-L6-v2
-  #   volumes:
-  #     - ./huggingface_cache:/root/.cache/huggingface
-  #   restart: always
+  nlp:
+    build: ./nlp-service
+    container_name: kg-nlp
+    ports:
+      - "5000:5000"
+    environment:
+      - MODEL_NAME=all-MiniLM-L6-v2
+      - HF_ENDPOINT=https://hf-mirror.com
+    # Том убран – модель будет внутри образа
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
 
   backend:
     build: ./backend
@@ -39,14 +53,14 @@
       - "8080:8080"
     environment:
       DATABASE_URL: postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
-      REDIS_URL: redis://redis:6379
-      NLP_SERVICE_URL: http://host.docker.internal:5000
+      REDIS_URL: redis:6379
+      NLP_SERVICE_URL: http://nlp:5000
     depends_on:
-      - postgres
-      - redis
-      # - nlp
-    # volumes:
-    #   - ./backend:/app
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
 
   worker:
     build: ./backend
@@ -54,14 +68,14 @@
     command: ["./worker"]
     environment:
       DATABASE_URL: postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
-      REDIS_URL: redis://redis:6379
-      NLP_SERVICE_URL: http://host.docker.internal:5000
+      REDIS_URL: redis:6379
+      NLP_SERVICE_URL: http://nlp:5000
     depends_on:
-      - postgres
-      - redis
-      # - nlp
-    # volumes:
-    #   - ./backend:/app
+      postgres:
+        condition: service_healthy # тут ещё зависмость от nlp сервиса добавить потом 
+      redis:
+        condition: service_healthy
+    restart: on-failure
 
 volumes:
   postgres_data:

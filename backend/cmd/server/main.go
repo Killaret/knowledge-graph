@@ -34,11 +34,14 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
+	log.Printf("Redis address for asynq: %s", redisAddr)
+
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
 	if err != nil {
 		log.Printf("WARNING: failed to create asynq client: %v", err)
 	} else {
+		log.Printf("Asynq client created successfully")
 		taskQueue = asynqClient
 		defer asynqClient.Close()
 	}

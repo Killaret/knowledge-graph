@@ -37,6 +37,7 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
+	log.Println("Starting worker, connecting to Redis at", redisAddr)
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
 	defer redisClient.Close()
 

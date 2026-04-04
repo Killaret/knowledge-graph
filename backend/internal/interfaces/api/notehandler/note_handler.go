@@ -3,6 +3,7 @@ package notehandler
 import (
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/domain/note"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -54,10 +55,18 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	// Ставим задачи в очередь
+	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
 	if h.taskQueue != nil {
 		noteID := newNote.ID().String()
-		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
-		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		log.Printf("Enqueuing tasks for note %s", noteID)
+		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
+			log.Printf("Failed to enqueue extract keywords: %v", err)
+		}
+		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+	} else {
+		log.Println("taskQueue is nil, tasks not enqueued")
 	}
 
 	c.JSON(201, gin.H{
