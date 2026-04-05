@@ -4,18 +4,26 @@ import (
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/domain/note"
 	"log"
+	"strconv"
+
+	graphQueries "knowledge-graph/internal/application/queries/graph"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	repo      note.Repository
-	taskQueue common.TaskQueue
+	repo               note.Repository
+	taskQueue          common.TaskQueue
+	suggestionsHandler *graphQueries.GetSuggestionsHandler
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue) *Handler {
-	return &Handler{repo: repo, taskQueue: taskQueue}
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler) *Handler {
+	return &Handler{
+		repo:               repo,
+		taskQueue:          taskQueue,
+		suggestionsHandler: suggestionsHandler,
+	}
 }
 
 type createNoteRequest struct {
@@ -222,4 +230,39 @@ func (h *Handler) Get(c *gin.Context) {
 		"created_at": n.CreatedAt(),
 		"updated_at": n.UpdatedAt(),
 	})
+}
+
+// GetSuggestions возвращает рекомендации для заметки
+func (h *Handler) GetSuggestions(c *gin.Context) {
+	// Парсим ID из URL
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid id"})
+		return
+	}
+
+	// Парсим параметр limit (по умолчанию 10)
+	limit := 10
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	// Формируем запрос
+	query := graphQueries.GetSuggestionsQuery{
+		NoteID: id,
+		Limit:  limit,
+	}
+
+	// Вызываем обработчик
+	suggestions, err := h.suggestionsHandler.Handle(c.Request.Context(), query)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to get suggestions"})
+		return
+	}
+
+	// Отдаём JSON
+	c.JSON(200, suggestions)
 }

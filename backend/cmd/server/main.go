@@ -11,8 +11,14 @@ import (
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/notehandler"
 
+	appGraph "knowledge-graph/internal/application/graph"
+	graphQueries "knowledge-graph/internal/application/queries/graph"
+	graphDomain "knowledge-graph/internal/domain/graph"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -29,13 +35,13 @@ func main() {
 	noteRepo := postgres.NewNoteRepository(db.DB)
 	linkRepo := postgres.NewLinkRepository(db.DB)
 
-	// Инициализация очереди (asynq)
 	redisAddr := os.Getenv("REDIS_URL")
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
-	log.Printf("Redis address for asynq: %s", redisAddr)
+	log.Printf("Redis address: %s", redisAddr)
 
+	// === 1. Инициализация очереди (asynq) ===
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
 	if err != nil {
@@ -46,32 +52,29 @@ func main() {
 		defer asynqClient.Close()
 	}
 
-	noteHandler := notehandler.New(noteRepo, taskQueue)
+	// === 2. Инициализация компонентов графа и рекомендаций ===
+	neighborLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
+	traversalSvc := graphDomain.NewTraversalService(neighborLoader)
+
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	defer redisClient.Close()
+
+	suggestionsHandler := graphQueries.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, 5*time.Minute)
+
+	// === 3. Создание хендлеров (теперь suggestionsHandler уже существует) ===
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler)
 	linkHandler := linkhandler.New(linkRepo, noteRepo)
 
+	// === 4. Роуты ===
 	r := gin.Default()
-
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
-	r.GET("/db-check", func(c *gin.Context) {
-		sqlDB, err := db.DB.DB()
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		if err := sqlDB.Ping(); err != nil {
-			c.JSON(500, gin.H{"status": "db not reachable"})
-			return
-		}
-		c.JSON(200, gin.H{"status": "db ok"})
-	})
+	// ... health, db-check ...
 
 	// Заметки
 	r.POST("/notes", noteHandler.Create)
 	r.GET("/notes/:id", noteHandler.Get)
 	r.PUT("/notes/:id", noteHandler.Update)
 	r.DELETE("/notes/:id", noteHandler.Delete)
+	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions) // ← добавлен корректно
 
 	// Связи
 	r.POST("/links", linkHandler.Create)

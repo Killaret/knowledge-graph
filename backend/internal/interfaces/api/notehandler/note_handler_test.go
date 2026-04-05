@@ -2,6 +2,7 @@ package notehandler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,15 +13,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// setupNoteRouter создаёт тестовый роутер с мок-репозиторием
 func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := newMockNoteRepo()
-	handler := New(repo, nil)
+	// Для тестов taskQueue и suggestionsHandler не нужны, передаём nil
+	handler := New(repo, nil, nil)
 	r := gin.Default()
 	r.POST("/notes", handler.Create)
 	r.GET("/notes/:id", handler.Get)
 	r.PUT("/notes/:id", handler.Update)
 	r.DELETE("/notes/:id", handler.Delete)
+	r.GET("/notes/:id/suggestions", handler.GetSuggestions) // если хотите тестировать и рекомендации
 	return r, repo
 }
 
@@ -51,7 +55,8 @@ func TestGetNote(t *testing.T) {
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
 	n := note.NewNote(title, content, metadata)
-	_ = repo.Save(nil, n)
+	ctx := context.Background()
+	_ = repo.Save(ctx, n)
 
 	req := httptest.NewRequest("GET", "/notes/"+n.ID().String(), nil)
 	w := httptest.NewRecorder()
@@ -68,14 +73,13 @@ func TestGetNote(t *testing.T) {
 
 func TestUpdateNote(t *testing.T) {
 	r, repo := setupNoteRouter()
-	// Создаём
+	ctx := context.Background()
 	title, _ := note.NewTitle("Original")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
 	n := note.NewNote(title, content, metadata)
-	_ = repo.Save(nil, n)
+	_ = repo.Save(ctx, n)
 
-	// Обновляем
 	updateBody := `{"title":"Updated"}`
 	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(updateBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -93,11 +97,12 @@ func TestUpdateNote(t *testing.T) {
 
 func TestDeleteNote(t *testing.T) {
 	r, repo := setupNoteRouter()
+	ctx := context.Background()
 	title, _ := note.NewTitle("ToDelete")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
 	n := note.NewNote(title, content, metadata)
-	_ = repo.Save(nil, n)
+	_ = repo.Save(ctx, n)
 
 	req := httptest.NewRequest("DELETE", "/notes/"+n.ID().String(), nil)
 	w := httptest.NewRecorder()
@@ -105,8 +110,7 @@ func TestDeleteNote(t *testing.T) {
 	if w.Code != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", w.Code)
 	}
-	// Проверяем, что заметка удалена
-	found, _ := repo.FindByID(nil, n.ID())
+	found, _ := repo.FindByID(ctx, n.ID())
 	if found != nil {
 		t.Error("note still exists after delete")
 	}
