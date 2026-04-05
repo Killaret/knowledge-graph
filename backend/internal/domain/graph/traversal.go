@@ -80,7 +80,10 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 				continue
 			}
 			// Вычисляем новый вес: текущий * вес ребра * затухание на глубине
-			newWeight := current.weight * edge.Weight * decay
+			newWeight := current.weight * edge.Weight
+			if current.depth > 0 {
+				newWeight *= decay
+			}
 			if _, ok := scores[edge.To]; !ok {
 				scores[edge.To] = newWeight
 			} else {
