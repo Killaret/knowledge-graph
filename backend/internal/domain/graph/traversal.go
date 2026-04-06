@@ -7,40 +7,42 @@ import (
 	"github.com/google/uuid"
 )
 
-// Node представляет заметку в графе (минимальная информация для расчётов)
 type Node struct {
 	ID uuid.UUID
 }
 
-// Edge представляет связь между заметками
 type Edge struct {
 	From   uuid.UUID
 	To     uuid.UUID
 	Weight float64
 }
 
-// NeighborLoader — интерфейс для загрузки соседей узла (реализуется в Application/Infrastructure)
 type NeighborLoader interface {
 	GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]Edge, error)
 }
 
-// TraversalService выполняет BFS-обход графа с распространением весов
 type TraversalService struct {
 	loader NeighborLoader
+	depth  int
+	decay  float64
 }
 
-func NewTraversalService(loader NeighborLoader) *TraversalService {
-	return &TraversalService{loader: loader}
+func NewTraversalService(loader NeighborLoader, depth int, decay float64) *TraversalService {
+	return &TraversalService{
+		loader: loader,
+		depth:  depth,
+		decay:  decay,
+	}
 }
 
-// SuggestionResult содержит результат рекомендации
 type SuggestionResult struct {
 	NodeID uuid.UUID
 	Score  float64
 }
 
-// GetSuggestions возвращает топ N заметок, релевантных для заданной, на основе BFS глубиной depth с затуханием decay
-func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, depth int, decay float64, topN int) ([]SuggestionResult, error) {
+func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]SuggestionResult, error) {
+	depth := s.depth
+	decay := s.decay
 	if depth < 1 {
 		depth = 1
 	}
@@ -48,16 +50,12 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 		decay = 0.5
 	}
 
-	// scores хранит накопленный вес для каждого узла
 	scores := make(map[uuid.UUID]float64)
-
-	// BFS очередь: хранит (nodeID, cumulativeWeight, currentDepth)
 	type bfsItem struct {
 		nodeID uuid.UUID
 		weight float64
 		depth  int
 	}
-
 	queue := []bfsItem{{nodeID: startID, weight: 1.0, depth: 0}}
 	visited := map[uuid.UUID]bool{startID: true}
 
@@ -75,11 +73,9 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 		}
 
 		for _, edge := range neighbors {
-			// Не возвращаемся к стартовой ноде
 			if edge.To == startID {
 				continue
 			}
-			// Вычисляем новый вес: текущий * вес ребра * затухание на глубине
 			newWeight := current.weight * edge.Weight
 			if current.depth > 0 {
 				newWeight *= decay
@@ -89,7 +85,6 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 			} else {
 				scores[edge.To] += newWeight
 			}
-			// Добавляем в очередь, если не посещали ранее (чтобы избежать циклов)
 			if !visited[edge.To] {
 				visited[edge.To] = true
 				queue = append(queue, bfsItem{
@@ -101,7 +96,6 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 		}
 	}
 
-	// Преобразуем в срез и сортируем по убыванию веса
 	results := make([]SuggestionResult, 0, len(scores))
 	for id, score := range scores {
 		results = append(results, SuggestionResult{NodeID: id, Score: score})

@@ -59,7 +59,7 @@ func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestions
 	}
 
 	// 2. Получаем рекомендации через доменный сервис (глубина 3, затухание 0.5, берём с запасом)
-	suggestions, err := h.traversalSvc.GetSuggestions(ctx, query.NoteID, 3, 0.5, query.Limit*2)
+	suggestions, err := h.traversalSvc.GetSuggestions(ctx, query.NoteID, query.Limit*2)
 	if err != nil {
 		return nil, err
 	}

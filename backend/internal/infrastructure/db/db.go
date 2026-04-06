@@ -4,9 +4,10 @@ import (
 	"log"
 	"os"
 
+	"knowledge-graph/internal/infrastructure/db/postgres"
+
 	pgdriver "gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"knowledge-graph/internal/infrastructure/db/postgres"
 )
 
 var DB *gorm.DB
