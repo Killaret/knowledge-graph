@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"knowledge-graph/internal/domain/link"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -22,13 +24,19 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 	var existing LinkModel
 	err := r.db.WithContext(ctx).Where("id = ?", l.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		model := toGormLink(l)
+		model, err := toGormLink(l)
+		if err != nil {
+			return err
+		}
 		return r.db.WithContext(ctx).Create(&model).Error
 	}
 	if err != nil {
 		return err
 	}
-	model := toGormLink(l)
+	model, err := toGormLink(l)
+	if err != nil {
+		return err
+	}
 	return r.db.WithContext(ctx).Model(&existing).Updates(model).Error
 }
 
@@ -70,20 +78,24 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
-// Преобразование домен → GORM
-func toGormLink(l *link.Link) LinkModel {
+// toGormLink преобразует доменную связь в GORM-модель
+func toGormLink(l *link.Link) (LinkModel, error) {
+	metadataJSON, err := json.Marshal(l.Metadata().Value())
+	if err != nil {
+		return LinkModel{}, err
+	}
 	return LinkModel{
 		ID:           l.ID(),
 		SourceNoteID: l.SourceNoteID(),
 		TargetNoteID: l.TargetNoteID(),
 		LinkType:     l.LinkType().String(),
 		Weight:       l.Weight().Value(),
-		Metadata:     l.Metadata().Value(),
+		Metadata:     datatypes.JSON(metadataJSON),
 		CreatedAt:    l.CreatedAt(),
-	}
+	}, nil
 }
 
-// Преобразование GORM → домен (один)
+// toDomainLink преобразует GORM-модель в доменную связь
 func toDomainLink(m *LinkModel) (*link.Link, error) {
 	linkType, err := link.NewLinkType(m.LinkType)
 	if err != nil {
@@ -93,20 +105,25 @@ func toDomainLink(m *LinkModel) (*link.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	metadata, err := link.NewMetadata(m.Metadata)
+	var metadataMap map[string]interface{}
+	if len(m.Metadata) > 0 {
+		if err := json.Unmarshal(m.Metadata, &metadataMap); err != nil {
+			return nil, err
+		}
+	}
+	metadata, err := link.NewMetadata(metadataMap)
 	if err != nil {
 		return nil, err
 	}
 	return link.ReconstructLink(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, m.CreatedAt), nil
 }
 
-// Преобразование GORM → домен (список)
+// toDomainLinks преобразует список GORM-моделей в список доменных связей
 func toDomainLinks(models []LinkModel) []*link.Link {
 	result := make([]*link.Link, 0, len(models))
 	for _, m := range models {
 		l, err := toDomainLink(&m)
 		if err != nil {
-			// Логируем, но продолжаем (пропускаем битые записи)
 			continue
 		}
 		result = append(result, l)

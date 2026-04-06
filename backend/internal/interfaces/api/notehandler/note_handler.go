@@ -266,3 +266,26 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 	// Отдаём JSON
 	c.JSON(200, suggestions)
 }
+
+// List возвращает список всех заметок
+func (h *Handler) List(c *gin.Context) {
+	// Получаем все заметки из репозитория (нужно добавить метод List в Repository)
+	notes, err := h.repo.List(c.Request.Context())
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to fetch notes"})
+		return
+	}
+
+	result := make([]gin.H, 0, len(notes))
+	for _, n := range notes {
+		result = append(result, gin.H{
+			"id":         n.ID(),
+			"title":      n.Title().String(),
+			"content":    n.Content().String(),
+			"metadata":   n.Metadata().Value(),
+			"created_at": n.CreatedAt(),
+			"updated_at": n.UpdatedAt(),
+		})
+	}
+	c.JSON(200, result)
+}

@@ -63,7 +63,6 @@
       redis:
         condition: service_healthy
     restart: on-failure
-
   worker:
     build: ./backend
     container_name: kg-worker

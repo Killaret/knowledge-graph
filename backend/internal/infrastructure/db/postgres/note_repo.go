@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -22,15 +24,19 @@ func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 	var existing NoteModel
 	err := r.db.WithContext(ctx).Where("id = ?", n.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Создание
-		model := toGormNote(n)
+		model, err := toGormNote(n)
+		if err != nil {
+			return err
+		}
 		return r.db.WithContext(ctx).Create(&model).Error
 	}
 	if err != nil {
 		return err
 	}
-	// Обновление
-	model := toGormNote(n)
+	model, err := toGormNote(n)
+	if err != nil {
+		return err
+	}
 	return r.db.WithContext(ctx).Model(&existing).Updates(model).Error
 }
 
@@ -50,19 +56,33 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
 }
 
-// Преобразование домен → GORM
-func toGormNote(n *note.Note) NoteModel {
+// List возвращает все заметки
+func (r *NoteRepository) List(ctx context.Context) ([]*note.Note, error) {
+	var models []NoteModel
+	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainNotes(models), nil
+}
+
+// toGormNote преобразует доменную заметку в GORM-модель
+func toGormNote(n *note.Note) (NoteModel, error) {
+	metadataJSON, err := json.Marshal(n.Metadata().Value())
+	if err != nil {
+		return NoteModel{}, err
+	}
 	return NoteModel{
 		ID:        n.ID(),
 		Title:     n.Title().String(),
 		Content:   n.Content().String(),
-		Metadata:  n.Metadata().Value(),
+		Metadata:  datatypes.JSON(metadataJSON),
 		CreatedAt: n.CreatedAt(),
 		UpdatedAt: n.UpdatedAt(),
-	}
+	}, nil
 }
 
-// Преобразование GORM → домен
+// toDomainNote преобразует GORM-модель в доменную заметку
 func toDomainNote(m *NoteModel) (*note.Note, error) {
 	title, err := note.NewTitle(m.Title)
 	if err != nil {
@@ -72,9 +92,29 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	metadata, err := note.NewMetadata(m.Metadata)
+	var metadataMap map[string]interface{}
+	if len(m.Metadata) > 0 {
+		if err := json.Unmarshal(m.Metadata, &metadataMap); err != nil {
+			return nil, err
+		}
+	}
+	metadata, err := note.NewMetadata(metadataMap)
 	if err != nil {
 		return nil, err
 	}
 	return note.ReconstructNote(m.ID, title, content, metadata, m.CreatedAt, m.UpdatedAt), nil
+}
+
+// toDomainNotes преобразует список GORM-моделей в список доменных сущностей
+func toDomainNotes(models []NoteModel) []*note.Note {
+	result := make([]*note.Note, 0, len(models))
+	for _, m := range models {
+		n, err := toDomainNote(&m)
+		if err != nil {
+			// Логируем ошибку, но продолжаем (пропускаем битые записи)
+			continue
+		}
+		result = append(result, n)
+	}
+	return result
 }

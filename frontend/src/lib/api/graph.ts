@@ -1,0 +1,28 @@
+// API-клиент для получения данных графа (узлы и связи)
+import ky from 'ky';
+
+const api = ky.create({ prefixUrl: '/api' });
+
+// Узел графа – заметка (звезда)
+export interface GraphNode {
+  id: string;
+  title: string;
+}
+
+// Ребро графа – связь между заметками
+export interface GraphLink {
+  source: string;   // ID исходной заметки
+  target: string;   // ID целевой заметки
+  weight: number;    // вес связи (толщина линии)
+}
+
+// Данные графа: список узлов и рёбер
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+// Запросить граф для заметки (возвращает все прямые связи и связанные заметки)
+export async function getGraphData(noteId: string): Promise<GraphData> {
+  return api.get(`notes/${noteId}/graph`).json();
+}

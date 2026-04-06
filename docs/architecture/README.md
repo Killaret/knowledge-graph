@@ -15,14 +15,15 @@
    - [Контейнеры (Level 2)](./c4/container.puml)
    - [Компоненты (Level 3)](./c4/component.puml)
 4. [UML Диаграммы](#uml-диаграммы)
-   - [Диаграмма развёртывания](./uml/deployment.puml)
+   - [Диаграмма развёртывания (локально)](./uml/deployment-local.puml)
+   - [Диаграмма развёртывания (Kubernetes)](./uml/deployment-k8s.puml)
    - [Диаграмма классов (Domain)](./uml/class-domain.puml)
    - [ER-диаграмма (модель данных)](./uml/er-diagram.puml)
    - [Sequence: создание заметки](./uml/sequence-create-note.puml)
    - [Sequence: рекомендации](./uml/sequence-suggestions.puml)
-   - [Диаграмма состояний заметки](./uml/state-note.puml) (опционально)
 5. [Архитектурные решения (ADR)](./adr.md)
 6. [ATAM анализ](./atam.md)
+7. [Конфигурация системы](../CONFIGURATION.md)
 
 ---
 
@@ -35,7 +36,7 @@
 - CQRS (команды и запросы)
 - Асинхронная обработка через очереди (asynq + Redis)
 - Эмбеддинги через pgvector
-- Рекомендации на основе BFS графа (глубина 3, затухание 0.5)
+- Рекомендации на основе BFS графа (глубина 3, затухание 0.5) **и семантического сходства эмбеддингов** с настраиваемыми весами.
 
 ---
 
@@ -68,13 +69,12 @@
 
 | Диаграмма | Описание | Файл |
 |-----------|----------|------|
-| **Deployment** | Физическое развёртывание (Docker Compose / K8s) | [`uml/deployment.puml`](./uml/deployment.puml) |
+| **Deployment (local)** | Локальное развёртывание (Docker Compose) | [`uml/deployment-local.puml`](./uml/deployment-local.puml) |
+| **Deployment (k8s)** | Развёртывание в Kubernetes | [`uml/deployment-k8s.puml`](./uml/deployment-k8s.puml) |
 | **Class Diagram** | Domain модель (Note, Link, Value Objects) | [`uml/class-domain.puml`](./uml/class-domain.puml) |
 | **ER Diagram** | Таблицы PostgreSQL и связи | [`uml/er-diagram.puml`](./uml/er-diagram.puml) |
 | **Sequence (create)** | Создание заметки: синхронно + асинхронно | [`uml/sequence-create-note.puml`](./uml/sequence-create-note.puml) |
 | **Sequence (suggestions)** | Получение рекомендаций (BFS + кэш) | [`uml/sequence-suggestions.puml`](./uml/sequence-suggestions.puml) |
-| **State (note)** | Жизненный цикл заметки | [`uml/state-note.puml`](./uml/state-note.puml) |
-
 ---
 
 ## 5. Архитектурные решения (ADR)
@@ -95,6 +95,7 @@
 11. Specifications в Domain слое
 12. In-memory Bus (без middleware)
 13. Эмбеддинги хранятся отдельно
+14. Комбинирование явных связей и семантического сходства в рекомендациях (α, β)
 
 ---
 
@@ -104,7 +105,14 @@
 
 ---
 
-## 7. Как работать с документацией
+## 7. Конфигурация системы
+
+Все настраиваемые параметры описаны в отдельном документе:  
+👉 [**CONFIGURATION.md**](../CONFIGURATION.md)
+
+---
+
+## 8. Как работать с документацией
 
 1. Установите расширение **PlantUML** в VSCode
 2. Откройте любой `.puml` файл → нажмите `Alt + D` для предпросмотра
@@ -113,7 +121,7 @@
 
 ---
 
-## 8. Ссылки
+## 9. Ссылки
 
 - [PlantUML Language Guide](https://plantuml.com/guide)
 - [C4 Model](https://c4model.com/)
