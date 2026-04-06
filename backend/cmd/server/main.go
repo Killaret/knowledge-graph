@@ -14,6 +14,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue"
+	"knowledge-graph/internal/interfaces/api/graphhandler"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/notehandler"
 )
@@ -70,6 +71,7 @@ func main() {
 	// Хендлеры
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler)
 	linkHandler := linkhandler.New(linkRepo, noteRepo)
+	graphHandler := graphhandler.New(noteRepo, linkRepo)
 
 	// Роуты
 	r := gin.Default()
@@ -92,12 +94,15 @@ func main() {
 	r.PUT("/notes/:id", noteHandler.Update)
 	r.DELETE("/notes/:id", noteHandler.Delete)
 	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
+	r.GET("/notes", noteHandler.List)
 
 	r.POST("/links", linkHandler.Create)
 	r.GET("/links/:id", linkHandler.Get)
 	r.GET("/notes/:id/links", linkHandler.GetByNote)
 	r.DELETE("/links/:id", linkHandler.Delete)
 	r.DELETE("/notes/:id/links", linkHandler.DeleteByNote)
+
+	r.GET("/notes/:id/graph", graphHandler.GetGraph)
 
 	r.Run(":" + cfg.ServerPort)
 }

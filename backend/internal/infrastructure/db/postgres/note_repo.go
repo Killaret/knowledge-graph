@@ -56,6 +56,16 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
 }
 
+// List возвращает все заметки
+func (r *NoteRepository) List(ctx context.Context) ([]*note.Note, error) {
+	var models []NoteModel
+	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainNotes(models), nil
+}
+
 // toGormNote преобразует доменную заметку в GORM-модель
 func toGormNote(n *note.Note) (NoteModel, error) {
 	metadataJSON, err := json.Marshal(n.Metadata().Value())
@@ -93,4 +103,18 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 		return nil, err
 	}
 	return note.ReconstructNote(m.ID, title, content, metadata, m.CreatedAt, m.UpdatedAt), nil
+}
+
+// toDomainNotes преобразует список GORM-моделей в список доменных сущностей
+func toDomainNotes(models []NoteModel) []*note.Note {
+	result := make([]*note.Note, 0, len(models))
+	for _, m := range models {
+		n, err := toDomainNote(&m)
+		if err != nil {
+			// Логируем ошибку, но продолжаем (пропускаем битые записи)
+			continue
+		}
+		result = append(result, n)
+	}
+	return result
 }
