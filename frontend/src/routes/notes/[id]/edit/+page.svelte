@@ -12,10 +12,15 @@
   let error = $state('');
   let loading = $state(true);
 
-  const id = $page.params.id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error('Missing route parameter: id');
+    return id;
+  }
 
   onMount(async () => {
     try {
+      const id = getRouteId();
       note = await getNote(id);
       title = note.title;
       content = note.content;
@@ -28,6 +33,7 @@
 
 async function handleSubmit(event: Event) {
     event.preventDefault();
+    const id = getRouteId();
     if (!title.trim()) {
         error = 'Title is required';
         return;

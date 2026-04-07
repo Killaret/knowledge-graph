@@ -10,10 +10,15 @@
   let loading = $state(true);
   let error = $state('');
 
-  const id = $page.params.id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error('Missing route parameter: id');
+    return id;
+  }
 
   onMount(async () => {
     try {
+      const id = getRouteId();
       note = await getNote(id);
       suggestions = await getSuggestions(id, 5);
     } catch (e) {
@@ -25,6 +30,7 @@
 
   async function handleDelete() {
     if (!confirm('Delete this note?')) return;
+    const id = getRouteId();
     await deleteNote(id);
     goto('/');
   }

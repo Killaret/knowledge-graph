@@ -7,6 +7,7 @@ const api = ky.create({ prefixUrl: '/api' });
 export interface GraphNode {
   id: string;
   title: string;
+  type: string;
 }
 
 // Ребро графа – связь между заметками
