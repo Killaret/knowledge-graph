@@ -1,7 +1,7 @@
 # 📚 Документация Knowledge Graph
 Навигация
 
-- [Вернуться к основной документации](docs\architecture\README.md)
+- [Вернуться к основной документации] - docs/architecture/README.md
 - [Вернуться к корневому README](../../README.md)
 
 ## Архитектура
