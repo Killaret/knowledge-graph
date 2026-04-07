@@ -9,20 +9,20 @@
 ## 📚 Оглавление
 
 1. [Введение](#1-введение)
-2. [Глоссарий](./glossary.md)
+2. [Глоссарий](glossary.md)
 3. [C4 Model](#c4-model)
-   - [Контекст (Level 1)](./c4/context.puml)
-   - [Контейнеры (Level 2)](./c4/container.puml)
-   - [Компоненты (Level 3)](./c4/component.puml)
+   - [Контекст (Level 1)](c4/context.puml)
+   - [Контейнеры (Level 2)](c4/container.puml)
+   - [Компоненты (Level 3)](c4/component.puml)
 4. [UML Диаграммы](#uml-диаграммы)
-   - [Диаграмма развёртывания (локально)](./uml/deployment-local.puml)
-   - [Диаграмма развёртывания (Kubernetes)](./uml/deployment-k8s.puml)
-   - [Диаграмма классов (Domain)](./uml/class-domain.puml)
-   - [ER-диаграмма (модель данных)](./uml/er-diagram.puml)
-   - [Sequence: создание заметки](./uml/sequence-create-note.puml)
-   - [Sequence: рекомендации](./uml/sequence-suggestions.puml)
-5. [Архитектурные решения (ADR)](./adr.md)
-6. [ATAM анализ](./atam.md)
+   - [Диаграмма развёртывания (локально)](uml/deployment-local.puml)
+   - [Диаграмма развёртывания (Kubernetes)](uml/deployment-k8s.puml)
+   - [Диаграмма классов (Domain)](uml/class-domain.puml)
+   - [ER-диаграмма (модель данных)](uml/er-diagram.puml)
+   - [Sequence: создание заметки](uml/sequence-create-note.puml)
+   - [Sequence: рекомендации](uml/sequence-suggestions.puml)
+5. [Архитектурные решения (ADR)](adr.md)
+6. [ATAM анализ](atam.md)
 7. [Конфигурация системы](../CONFIGURATION.md)
 
 ---
@@ -59,9 +59,9 @@
 
 | Уровень | Описание | Файл |
 |---------|----------|------|
-| **Level 1: Context** | Система и внешние пользователи | [`c4/context.puml`](./c4/context.puml) |
-| **Level 2: Containers** | Приложения: backend, frontend, БД, Redis, NLP | [`c4/container.puml`](./c4/container.puml) |
-| **Level 3: Components** | DDD слои внутри backend | [`c4/component.puml`](./c4/component.puml) |
+| **Level 1: Context** | Система и внешние пользователи | [`c4/context.puml`](c4/context.puml) |
+| **Level 2: Containers** | Приложения: backend, frontend, БД, Redis, NLP | [`c4/container.puml`](c4/container.puml) |
+| **Level 3: Components** | DDD слои внутри backend | [`c4/component.puml`](c4/component.puml) |
 
 ---
 
@@ -69,17 +69,17 @@
 
 | Диаграмма | Описание | Файл |
 |-----------|----------|------|
-| **Deployment (local)** | Локальное развёртывание (Docker Compose) | [`uml/deployment-local.puml`](./uml/deployment-local.puml) |
-| **Deployment (k8s)** | Развёртывание в Kubernetes | [`uml/deployment-k8s.puml`](./uml/deployment-k8s.puml) |
-| **Class Diagram** | Domain модель (Note, Link, Value Objects) | [`uml/class-domain.puml`](./uml/class-domain.puml) |
-| **ER Diagram** | Таблицы PostgreSQL и связи | [`uml/er-diagram.puml`](./uml/er-diagram.puml) |
-| **Sequence (create)** | Создание заметки: синхронно + асинхронно | [`uml/sequence-create-note.puml`](./uml/sequence-create-note.puml) |
-| **Sequence (suggestions)** | Получение рекомендаций (BFS + кэш) | [`uml/sequence-suggestions.puml`](./uml/sequence-suggestions.puml) |
+| **Deployment (local)** | Локальное развёртывание (Docker Compose) | [`uml/deployment-local.puml`](uml/deployment-local.puml) |
+| **Deployment (k8s)** | Развёртывание в Kubernetes | [`uml/deployment-k8s.puml`](uml/deployment-k8s.puml) |
+| **Class Diagram** | Domain модель (Note, Link, Value Objects) | [`uml/class-domain.puml`](uml/class-domain.puml) |
+| **ER Diagram** | Таблицы PostgreSQL и связи | [`uml/er-diagram.puml`](uml/er-diagram.puml) |
+| **Sequence (create)** | Создание заметки: синхронно + асинхронно | [`uml/sequence-create-note.puml`](uml/sequence-create-note.puml) |
+| **Sequence (suggestions)** | Получение рекомендаций (BFS + кэш) | [`uml/sequence-suggestions.puml`](uml/sequence-suggestions.puml) |
 ---
 
 ## 5. Архитектурные решения (ADR)
 
-Список принятых решений с обоснованием — в файле [`adr.md`](./adr.md).
+Список принятых решений с обоснованием — в файле [`adr.md`](adr.md).
 
 **Краткий список:**
 1. DDD с чёткими слоями
@@ -101,7 +101,7 @@
 
 ## 6. ATAM анализ
 
-Анализ ключевых сценариев (создание заметки, рекомендации, удаление заметки) — в файле [`atam.md`](./atam.md).
+Анализ ключевых сценариев (создание заметки, рекомендации, удаление заметки) — в файле [`atam.md`](atam.md).
 
 ---
 
@@ -127,5 +127,5 @@
 - [C4 Model](https://c4model.com/)
 - [pgvector documentation](https://github.com/pgvector/pgvector)
 - [Asynq](https://github.com/hibiken/asynq)
-- [Локальное развёртывание (Docker Compose)](./uml/deployment-local.puml)
-- [Развёртывание в Kubernetes](./uml/deployment-k8s.puml)
+- [Локальное развёртывание (Docker Compose)](uml/deployment-local.puml)
+- [Развёртывание в Kubernetes](uml/deployment-k8s.puml)
