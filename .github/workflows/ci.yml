@@ -283,15 +283,19 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
 
-    - name: Start services
+    - name: Start NLP service first
       run: |
-        docker compose -f docker-compose.yml up -d
-        sleep 1800
+        docker compose -f docker-compose.yml up nlp -d --no-deps
+        echo "NLP starting, waiting for model download (up to 30 min)..."
 
-    - name: Wait for services to be ready
+    - name: Wait for NLP to be ready
       run: |
-        timeout 1800 bash -c 'until curl -f http://localhost:8080/health; do sleep 10; done'
-        timeout 1800 bash -c 'until curl -f http://localhost:5000/health; do sleep 10; done'
+        timeout 1800 bash -c 'until curl -f http://localhost:5000/health 2>/dev/null; do echo "Waiting for NLP..."; sleep 30; done'
+        echo "NLP is ready!"
+
+    - name: Start other services
+      run: |
+        docker compose -f docker-compose.yml up backend worker postgres redis -d
 
     - name: Run integration tests
       run: |
