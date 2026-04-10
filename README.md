@@ -13,3 +13,4 @@
 - [Настройка окружения](CONFIGURATION.md)
 - [UX Guidelines](UX_GUIDELINES.md)
 - [Frontend Style Guide](FRONTEND_STYLE_GUIDE.md)
+# CI/CD Test
