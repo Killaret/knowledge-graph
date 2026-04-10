@@ -122,9 +122,58 @@ jobs:
     name: Frontend Tests
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: knowledgegraph
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.26.1'
+
+    - name: Build and start backend
+      working-directory: ./backend
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_DB: knowledgegraph
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        SERVER_PORT: 8080
+      run: |
+        go mod download
+        go build -o bin/app ./cmd/server/main.go
+        ./bin/app &
+        sleep 5
+        # Verify backend is running
+        timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -244,7 +293,7 @@ jobs:
     - name: Run integration tests
       run: |
         cd frontend
-        npx playwright test --project=chromium
+        npx playwright test --config=playwright.config.ts --project=chromium
 
     - name: Stop services
       if: always()
