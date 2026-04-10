@@ -6,3 +6,4 @@ python-dotenv==1.0.0
 yake==0.4.8
 nltk==3.8.1
 huggingface-hub==0.19.4
+httpx==0.25.2
