@@ -30,9 +30,11 @@ export default [
 	},
 	{
 		files: ['**/*.svelte'],
-		...pluginSvelte.configs['flat/typescript'],
 		languageOptions: {
 			parser: pluginSvelte.parser,
+			parserOptions: {
+				parser: tseslint.parser
+			},
 			globals: {
 				...globals.browser,
 				...globals.node
