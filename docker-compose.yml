@@ -64,7 +64,7 @@
       redis:
         condition: service_healthy
       nlp:
-        condition: service_healthy
+        condition: service_started
     restart: on-failure
   worker:
     build: ./backend
@@ -80,7 +80,7 @@
       redis:
         condition: service_healthy
       nlp:
-        condition: service_healthy
+        condition: service_started
     restart: on-failure
 
 volumes:
