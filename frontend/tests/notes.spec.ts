@@ -36,24 +36,28 @@ test.describe('Knowledge Graph Frontend', () => {
 
   test('should delete a note', async ({ page, request }) => {
     // Create a note via API first
+    const timestamp = Date.now();
     const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Delete Test ' + Date.now(), content: 'Test content for deletion' }
+      data: { title: 'Delete Test ' + timestamp, content: 'Test content for deletion' }
     });
     const noteId = (await note.json()).id;
+    const noteTitle = 'Delete Test ' + timestamp;
     
     // Go to home page to see the note in the list
     await page.goto('http://localhost:5173/');
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('.note-card', { timeout: 5000 });
+    await expect(page.locator('text=' + noteTitle)).toBeVisible();
     
-    // Find and delete the specific note via API
+    // Delete the note via API
     await request.delete(`http://localhost:8080/notes/${noteId}`);
     
-    // Reload the page to see the changes
+    // Wait and reload to see the changes
+    await page.waitForTimeout(1000);
     await page.goto('http://localhost:5173/');
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Check that the specific note is no longer present
-    await expect(page.locator(`.note-card:has(h3:has-text("${(await note.json()).title}"))`)).not.toBeVisible();
+    await expect(page.locator('text=' + noteTitle)).not.toBeVisible();
   });
 
   test('should open graph for a note with links', async ({ page, request }) => {
