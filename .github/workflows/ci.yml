@@ -299,9 +299,20 @@ jobs:
         docker compose -f docker-compose.yml up nlp -d --no-deps
         echo "NLP starting, waiting for model download (up to 30 min)..."
 
-    - name: Wait for NLP to be ready
+    - name: Wait for model download to complete
       run: |
-        timeout 1800 bash -c 'until curl -f http://localhost:5000/health 2>/dev/null; do echo "Waiting for NLP..."; sleep 30; done'
+        timeout 1800 bash -c '
+          until docker logs kg-nlp 2>&1 | grep -q "Embedding model loaded"; do
+            echo "Waiting for model download..."
+            docker logs kg-nlp 2>&1 | tail -5 || true
+            sleep 30
+          done
+        '
+        echo "Model loaded!"
+
+    - name: Wait for NLP health endpoint
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5000/health 2>/dev/null; do echo "Waiting for health..."; sleep 5; done'
         echo "NLP is ready!"
 
     - name: Start other services
