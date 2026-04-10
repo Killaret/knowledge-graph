@@ -6,7 +6,7 @@ import globals from 'globals';
 export default [
 	js.configs.recommended,
 	...tseslint.configs.recommended,
-	...pluginSvelte.configs['flat/typescript'],
+	pluginSvelte.configs['flat/typescript'],
 	{
 		ignores: ['build/', '.svelte-kit/', 'dist/']
 	},
