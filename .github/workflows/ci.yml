@@ -282,18 +282,46 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
+      with:
+        driver-opts: network=host
+
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-nlp-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-nlp-
 
     - name: Build and start all services
       run: |
-        docker compose -f docker-compose.yml build nlp
+        docker buildx build \
+          --cache-from type=local,src=/tmp/.buildx-cache \
+          --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+          --load \
+          -f nlp-service/Dockerfile \
+          -t knowledge-graph-nlp \
+          ./nlp-service
         docker compose -f docker-compose.yml up -d
         echo "Services starting..."
 
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
     - name: Wait for NLP to be ready
       run: |
-        echo "Waiting for NLP service (model loading may take 5-10 min)..."
-        timeout 600 bash -c 'until curl -f http://localhost:5000/health 2>/dev/null; do echo "Waiting for NLP..."; sleep 10; done'
-        echo "NLP ready!"
+        echo "Waiting for NLP service (model download ~900MB, may take 15-20 min)..."
+        timeout 1200 bash -c '
+          while ! curl -f http://localhost:5000/health 2>/dev/null; do
+            echo "=== NLP Logs (last 10 lines) ==="
+            docker logs --tail 10 kg-nlp 2>&1 || echo "Container not ready yet"
+            echo "================================"
+            sleep 30
+          done
+        '
+        echo "NLP is ready!"
 
     - name: Wait for backend to be ready
       run: |
