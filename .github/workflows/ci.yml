@@ -283,6 +283,17 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
 
+    - name: Cache NLP model
+      uses: actions/cache@v4
+      with:
+        path: huggingface_cache
+        key: nlp-model-${{ runner.os }}-all-MiniLM-L6-V2
+        restore-keys: |
+          nlp-model-${{ runner.os }}-
+
+    - name: Ensure cache directory exists
+      run: mkdir -p huggingface_cache
+
     - name: Start NLP service first
       run: |
         docker compose -f docker-compose.yml up nlp -d --no-deps
