@@ -156,6 +156,13 @@ jobs:
       with:
         go-version: '1.26.1'
 
+    - name: Setup pgvector extension
+      run: |
+        # Install pgvector extension in PostgreSQL
+        docker exec $(docker ps -q -f ancestor=postgres:15) bash -c "apt-get update && apt-get install -y postgresql-15-pgvector || (apt-get install -y make gcc postgresql-server-dev-15 && cd /tmp && git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git && cd pgvector && make && make install)"
+        # Create extension in the database
+        docker exec $(docker ps -q -f ancestor=postgres:15) psql -U postgres -d knowledgegraph -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
     - name: Build and start backend
       working-directory: ./backend
       env:
