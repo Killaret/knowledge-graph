@@ -39,7 +39,11 @@ func main() {
 	}
 	log.Println("Starting worker, connecting to Redis at", redisAddr)
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing redis client: %v", err)
+		}
+	}()
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
 	nlpURL := os.Getenv("NLP_SERVICE_URL")
