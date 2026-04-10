@@ -64,4 +64,57 @@ test.describe('Knowledge Graph Frontend', () => {
     const canvas = page.locator('canvas');
     await expect(canvas).toBeVisible();
   });
+
+  test('should show back button on note detail page', async ({ page }) => {
+    // Create a note first
+    await page.click('a:has-text("+ New Note")');
+    await page.fill('input[placeholder="Title"]', 'Back Button Test');
+    await page.fill('textarea', 'Testing back button functionality');
+    await page.click('button:has-text("Create")');
+    await expect(page).toHaveURL(/\/notes\/[a-f0-9-]+/);
+
+    // Check that back button is visible
+    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    
+    // Test back button functionality
+    await page.click('button:has-text("Back")');
+    await expect(page).toHaveURL('http://localhost:5173/');
+  });
+
+  test('should show back button on graph page', async ({ page, request }) => {
+    // Create a note first
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Graph Back Test', content: 'Testing back button on graph' }
+    });
+    const noteId = (await note.json()).id;
+
+    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    
+    // Check that back button is visible
+    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    
+    // Test back button functionality
+    await page.click('button:has-text("Back")');
+    await expect(page).toHaveURL('http://localhost:5173/');
+  });
+
+  test('should use browser back when history exists', async ({ page }) => {
+    // Navigate through multiple pages to create history
+    await page.goto('http://localhost:5173');
+    await page.click('a:has-text("+ New Note")');
+    await page.fill('input[placeholder="Title"]', 'History Test');
+    await page.fill('textarea', 'Testing browser back functionality');
+    await page.click('button:has-text("Create")');
+    
+    // Navigate to another page to create history
+    await page.goto('http://localhost:5173');
+    
+    // Go back to note page
+    await page.goBack();
+    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    
+    // Click back button - should use browser history
+    await page.click('button:has-text("Back")');
+    await expect(page).toHaveURL('http://localhost:5173/');
+  });
 });

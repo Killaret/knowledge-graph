@@ -4,6 +4,7 @@
   import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
   import type { Note, Suggestion } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import BackButton from '$lib/components/BackButton.svelte';
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
@@ -42,6 +43,7 @@
   <p class="error">{error}</p>
 {:else if note}
   <div class="note-container">
+    <BackButton href="/" />
     <h1>{note.title}</h1>
     <div class="meta">Created: {new Date(note.created_at).toLocaleString()}</div>
     <div class="content">{note.content}</div>

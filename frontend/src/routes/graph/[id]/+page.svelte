@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import { getGraphData } from '$lib/api/graph';
+  import BackButton from '$lib/components/BackButton.svelte';
 
   let nodes: Array<{ id: string; title: string; type: string }> = $state([]);
   let links: Array<{ source: string; target: string; weight: number }> = $state([]);
@@ -30,6 +31,7 @@
   });
 </script>
 
+<BackButton href="/" />
 <h1>Созвездие заметок</h1>
 
 {#if loading}

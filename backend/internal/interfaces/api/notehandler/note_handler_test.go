@@ -115,3 +115,144 @@ func TestDeleteNote(t *testing.T) {
 		t.Error("note still exists after delete")
 	}
 }
+
+func TestGetAllNotes(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	// Create multiple notes
+	title1, _ := note.NewTitle("Note1")
+	content1, _ := note.NewContent("Content1")
+	metadata1, _ := note.NewMetadata(nil)
+	n1 := note.NewNote(title1, content1, metadata1)
+	_ = repo.Save(ctx, n1)
+
+	title2, _ := note.NewTitle("Note2")
+	content2, _ := note.NewContent("Content2")
+	metadata2, _ := note.NewMetadata(nil)
+	n2 := note.NewNote(title2, content2, metadata2)
+	_ = repo.Save(ctx, n2)
+
+	notes, err := repo.FindAll(ctx)
+	if err != nil {
+		t.Errorf("FindAll failed: %v", err)
+	}
+	if len(notes) != 2 {
+		t.Errorf("expected 2 notes, got %d", len(notes))
+	}
+}
+
+func TestSearchNotes(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("SearchTest")
+	content, _ := note.NewContent("This is a searchable content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, metadata)
+	_ = repo.Save(ctx, n)
+
+	// Test search by title
+	results, err := repo.Search(ctx, "Search")
+	if err != nil {
+		t.Errorf("Search failed: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result, got %d", len(results))
+	}
+
+	// Test search by content
+	results, err = repo.Search(ctx, "searchable")
+	if err != nil {
+		t.Errorf("Search failed: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result, got %d", len(results))
+	}
+
+	// Test search with no results
+	results, err = repo.Search(ctx, "nonexistent")
+	if err != nil {
+		t.Errorf("Search failed: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestFindByKeywords(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("KeywordTest")
+	content, _ := note.NewContent("This contains keywords like test and example")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, metadata)
+	_ = repo.Save(ctx, n)
+
+	keywords := []string{"test", "example"}
+	results, err := repo.FindByKeywords(ctx, keywords)
+	if err != nil {
+		t.Errorf("FindByKeywords failed: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result, got %d", len(results))
+	}
+
+	// Test with no matching keywords
+	keywords = []string{"nonexistent"}
+	results, err = repo.FindByKeywords(ctx, keywords)
+	if err != nil {
+		t.Errorf("FindByKeywords failed: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestUpdateNote(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("Original")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, metadata)
+	_ = repo.Save(ctx, n)
+
+	// Update note
+	newTitle, _ := note.NewTitle("Updated")
+	err := n.UpdateTitle(newTitle)
+	if err != nil {
+		t.Errorf("UpdateTitle failed: %v", err)
+	}
+
+	err = repo.Update(ctx, n)
+	if err != nil {
+		t.Errorf("Update failed: %v", err)
+	}
+
+	// Verify update
+	updated, err := repo.FindByID(ctx, n.ID())
+	if err != nil {
+		t.Errorf("FindByID failed: %v", err)
+	}
+	if updated.Title().String() != "Updated" {
+		t.Errorf("title not updated, expected 'Updated', got '%s'", updated.Title().String())
+	}
+}
+
+func TestUpdateNonExistentNote(t *testing.T) {
+	repo := newMockNoteRepo()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("NonExistent")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, metadata)
+
+	err := repo.Update(ctx, n)
+	if err == nil {
+		t.Error("expected error when updating non-existent note")
+	}
+}
