@@ -285,7 +285,7 @@ jobs:
 
     - name: Start services
       run: |
-        docker-compose -f docker-compose.yml up -d
+        docker compose -f docker-compose.yml up -d
         sleep 30
 
     - name: Wait for services to be ready
@@ -300,7 +300,7 @@ jobs:
 
     - name: Stop services
       if: always()
-      run: docker-compose down
+      run: docker compose down
 
   security-scan:
     name: Security Scan
