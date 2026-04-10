@@ -84,7 +84,13 @@ class TestEmbeddingModel:
         
         assert isinstance(embedding, type(embedding_model.encode("test")))
         assert len(embedding) > 0
-        assert all(isinstance(x, (int, float)) for x in embedding)
+        # Handle numpy array conversion
+        import numpy as np
+        if hasattr(embedding, 'tolist'):
+            embedding_list = embedding.tolist()
+        else:
+            embedding_list = list(embedding)
+        assert all(isinstance(x, (int, float, np.floating)) for x in embedding_list)
 
     def test_embedding_empty_text(self):
         """Test embedding generation with empty text"""

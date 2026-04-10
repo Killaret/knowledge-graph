@@ -6,11 +6,21 @@ import globals from 'globals';
 export default [
 	js.configs.recommended,
 	...tseslint.configs.recommended,
-	...(pluginSvelte.configs['flat/typescript'] || []),
 	{
 		ignores: ['build/', '.svelte-kit/', 'dist/']
 	},
 	{
+		files: ['**/*.js'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+				...globals.node
+			}
+		}
+	},
+	{
+		files: ['**/*.ts'],
+		...tseslint.configs.recommended,
 		languageOptions: {
 			globals: {
 				...globals.browser,
@@ -20,9 +30,12 @@ export default [
 	},
 	{
 		files: ['**/*.svelte'],
+		...pluginSvelte.configs['flat/typescript'],
 		languageOptions: {
-			parserOptions: {
-				parser: tseslint.parser
+			parser: pluginSvelte.parser,
+			globals: {
+				...globals.browser,
+				...globals.node
 			}
 		}
 	},
