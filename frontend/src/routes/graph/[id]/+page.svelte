@@ -3,16 +3,22 @@
   import { page } from '$app/stores';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import { getGraphData } from '$lib/api/graph';
+  import BackButton from '$lib/components/BackButton.svelte';
 
-  let nodes: Array<{ id: string; title: string }> = $state([]);
+  let nodes: Array<{ id: string; title: string; type: string }> = $state([]);
   let links: Array<{ source: string; target: string; weight: number }> = $state([]);
   let loading = $state(true);
   let error = $state('');
 
-  const id = $page.params.id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error('Missing route parameter: id');
+    return id;
+  }
 
   onMount(async () => {
     try {
+      const id = getRouteId();
       const data = await getGraphData(id);
       nodes = data.nodes;
       links = data.links;
@@ -25,6 +31,7 @@
   });
 </script>
 
+<BackButton href="/" />
 <h1>Созвездие заметок</h1>
 
 {#if loading}

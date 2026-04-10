@@ -43,3 +43,72 @@ func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	delete(m.notes, id)
 	return nil
 }
+
+func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	
+	notes := make([]*note.Note, 0, len(m.notes))
+	for _, n := range m.notes {
+		notes = append(notes, n)
+	}
+	return notes, nil
+}
+
+func (m *mockNoteRepo) Search(ctx context.Context, query string) ([]*note.Note, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	
+	var results []*note.Note
+	for _, n := range m.notes {
+		if contains(n.Title().String(), query) || contains(n.Content().String(), query) {
+			results = append(results, n)
+		}
+	}
+	return results, nil
+}
+
+func (m *mockNoteRepo) FindByKeywords(ctx context.Context, keywords []string) ([]*note.Note, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	
+	var results []*note.Note
+	for _, n := range m.notes {
+		for _, keyword := range keywords {
+			if contains(n.Title().String(), keyword) || contains(n.Content().String(), keyword) {
+				results = append(results, n)
+				break
+			}
+		}
+	}
+	return results, nil
+}
+
+func (m *mockNoteRepo) Update(ctx context.Context, n *note.Note) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	if _, exists := m.notes[n.ID()]; !exists {
+		return note.ErrNoteNotFound
+	}
+	
+	m.notes[n.ID()] = n
+	return nil
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || 
+		(len(s) > len(substr) && 
+			(s[:len(substr)] == substr || 
+			 s[len(s)-len(substr):] == substr || 
+			 findSubstring(s, substr))))
+}
+
+func findSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
