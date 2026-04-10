@@ -286,12 +286,12 @@ jobs:
     - name: Start services
       run: |
         docker compose -f docker-compose.yml up -d
-        sleep 60
+        sleep 300
 
     - name: Wait for services to be ready
       run: |
-        timeout 120 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
-        timeout 120 bash -c 'until curl -f http://localhost:5000/health; do sleep 2; done'
+        timeout 300 bash -c 'until curl -f http://localhost:8080/health; do sleep 5; done'
+        timeout 300 bash -c 'until curl -f http://localhost:5000/health; do sleep 5; done'
 
     - name: Run integration tests
       run: |
