@@ -57,13 +57,40 @@ jobs:
       working-directory: ./backend
       run: |
         go mod download
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+        go install github.com/gordonklaus/ineffassign@latest
+        go install github.com/kisielk/errcheck@latest
+        go install honnef.co/go/tools/cmd/staticcheck@latest
 
-    - name: Run linter
+    - name: Run alternative linters
       working-directory: ./backend
       run: |
-        echo "Skipping golangci-lint due to Go version compatibility issues"
-        # golangci-lint run --timeout=5m
+        echo "Running alternative linters for Go 1.26.1 compatibility"
+        
+        # Check formatting
+        echo "Checking go fmt..."
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Code is not formatted properly:"
+          gofmt -s -l .
+          exit 1
+        fi
+        
+        # Run go vet
+        echo "Running go vet..."
+        go vet ./...
+        
+        # Run ineffassign
+        echo "Running ineffassign..."
+        ineffassign ./...
+        
+        # Run errcheck
+        echo "Running errcheck..."
+        errcheck ./...
+        
+        # Run staticcheck
+        echo "Running staticcheck..."
+        staticcheck ./...
+        
+        echo "All linters passed!"
 
     - name: Run unit tests
       working-directory: ./backend
