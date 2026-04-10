@@ -315,28 +315,50 @@ jobs:
         echo "Waiting for NLP service (model download ~900MB, may take 15-20 min)..."
         MAX_WAIT=1200
         ELAPSED=0
+        RESTART_COUNT=0
         while [ $ELAPSED -lt $MAX_WAIT ]; do
           # Check if NLP is healthy
           if curl -f http://localhost:5000/health 2>/dev/null; then
-            echo "NLP is ready!"
+            echo "✅ NLP is ready!"
             exit 0
+          fi
+          
+          # Check if model loaded successfully (from logs)
+          if docker logs kg-nlp 2>&1 | grep -q "Embedding model loaded"; then
+            echo "✅ Model loaded, waiting for health endpoint..."
+            sleep 5
+            continue
           fi
           
           # Check if container crashed
           STATUS=$(docker inspect -f '{{.State.Status}}' kg-nlp 2>/dev/null || echo "unknown")
           if [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ]; then
-            echo "NLP container crashed! Restarting..."
-            docker logs kg-nlp 2>&1 | tail -20
-            docker compose -f docker-compose.yml restart nlp
-            sleep 10
+            echo "⚠️ NLP container crashed!"
+            echo "=== Last 30 lines of logs ==="
+            docker logs kg-nlp 2>&1 | tail -30
+            echo "==========================="
+            
+            # Check if it's a model download error
+            if docker logs kg-nlp 2>&1 | grep -q "OSError\|FileNotFoundError\|corrupted"; then
+              echo "🗑️ Clearing potentially corrupted model cache..."
+              docker compose -f docker-compose.yml down nlp
+              rm -rf huggingface_cache/*
+              RESTART_COUNT=$((RESTART_COUNT + 1))
+              echo "🔄 Restarting NLP (attempt $RESTART_COUNT)..."
+              docker compose -f docker-compose.yml up nlp -d
+            else
+              echo "🔄 Restarting NLP..."
+              docker compose -f docker-compose.yml restart nlp
+            fi
+            sleep 15
           fi
           
-          echo "=== NLP Status: $STATUS | Elapsed: ${ELAPSED}s ==="
-          docker logs --tail 5 kg-nlp 2>&1 || true
+          echo "⏳ NLP Status: $STATUS | Elapsed: ${ELAPSED}s | Checking logs..."
+          docker logs --tail 3 kg-nlp 2>&1 || true
           sleep 30
           ELAPSED=$((ELAPSED + 30))
         done
-        echo "Timeout waiting for NLP"
+        echo "❌ Timeout waiting for NLP after 20 minutes"
         exit 1
 
     - name: Wait for backend to be ready
