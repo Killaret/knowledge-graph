@@ -26,7 +26,7 @@
       await deleteNote(id);
       // Reload notes from server to ensure consistency
       notes = await getNotes();
-    } catch (e) {
+    } catch {
       alert('Delete failed');
     }
   }

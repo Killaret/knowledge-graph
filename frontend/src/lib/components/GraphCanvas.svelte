@@ -263,5 +263,6 @@
   onmousemove={handlePanMove}
   onmouseup={handlePanEnd}
   onclick={handleClick}
+  onwheel={handleZoom}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>

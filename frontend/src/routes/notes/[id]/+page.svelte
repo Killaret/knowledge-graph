@@ -22,7 +22,7 @@
       const id = getRouteId();
       note = await getNote(id);
       suggestions = await getSuggestions(id, 5);
-    } catch (e) {
+    } catch {
       error = 'Note not found';
     } finally {
       loading = false;

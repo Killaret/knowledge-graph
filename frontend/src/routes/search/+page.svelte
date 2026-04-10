@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { searchNotes, type Note } from '$lib/api/notes';
   import SearchBar from '$lib/components/SearchBar.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
-  import { onMount } from 'svelte';
 
   let notes = $state<Note[]>([]);
   let loading = $state(false);
