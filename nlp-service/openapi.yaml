@@ -1,0 +1,186 @@
+openapi: 3.1.0
+info:
+  title: NLP Service API
+  version: 1.0.0
+  description: |
+    Natural Language Processing service for Knowledge Graph.
+    Provides keyword extraction and text embedding generation using ML models.
+
+servers:
+  - url: http://localhost:5000
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the NLP service is running and models are loaded
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  /extract_keywords:
+    post:
+      summary: Extract keywords from text
+      description: Extracts keywords from the given text using YAKE algorithm with Russian and English stopwords
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractKeywordsRequest'
+      responses:
+        '200':
+          description: Keywords extracted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractKeywordsResponse'
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /embed:
+    post:
+      summary: Generate text embedding
+      description: Generates vector embeddings for the given text using SentenceTransformer model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbedRequest'
+      responses:
+        '200':
+          description: Embedding generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbedResponse'
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ExtractKeywordsRequest:
+      type: object
+      description: Request for keyword extraction
+      properties:
+        text:
+          type: string
+          description: Text to extract keywords from
+          minLength: 0
+          maxLength: 10000
+          example: "Machine learning is a subset of artificial intelligence"
+        top_n:
+          type: integer
+          description: Number of keywords to return
+          minimum: 1
+          maximum: 50
+          default: 10
+          example: 5
+      required:
+        - text
+
+    ExtractKeywordsResponse:
+      type: object
+      description: Response containing extracted keywords
+      properties:
+        keywords:
+          type: array
+          description: List of extracted keywords with weights
+          items:
+            $ref: '#/components/schemas/Keyword'
+      required:
+        - keywords
+
+    Keyword:
+      type: object
+      description: Keyword with its weight/importance score
+      properties:
+        keyword:
+          type: string
+          description: The extracted keyword
+          example: "machine learning"
+        weight:
+          type: number
+          format: float
+          description: Weight score (0.0 to 1.0, higher is more important)
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.85
+      required:
+        - keyword
+        - weight
+
+    EmbedRequest:
+      type: object
+      description: Request for text embedding
+      properties:
+        text:
+          type: string
+          description: Text to generate embedding for
+          minLength: 0
+          maxLength: 10000
+          example: "This is a test sentence for embedding generation."
+      required:
+        - text
+
+    EmbedResponse:
+      type: object
+      description: Response containing text embedding vector
+      properties:
+        embedding:
+          type: array
+          description: Vector representation of the text
+          items:
+            type: number
+            format: float
+          minItems: 1
+          maxItems: 1000
+          example: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+      required:
+        - embedding
+
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        detail:
+          type: string
+          description: Error description
+          example: "Failed to process request"
+      required:
+        - detail
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: NLP
+    description: Natural Language Processing endpoints
