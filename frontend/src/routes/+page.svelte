@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { Note } from '$lib/api/notes';
   import { getNotes, deleteNote } from '$lib/api/notes';
+  import SearchBar from '$lib/components/SearchBar.svelte';
 
   // Реактивные переменные (Svelte 5 runes)
   let notes: Note[] = $state([]);
@@ -23,7 +24,8 @@
     if (!confirm('Delete this note?')) return;
     try {
       await deleteNote(id);
-      notes = notes.filter(n => n.id !== id);
+      // Reload notes from server to ensure consistency
+      notes = await getNotes();
     } catch (e) {
       alert('Delete failed');
     }
@@ -31,6 +33,8 @@
 </script>
 
 <h1>My Notes</h1>
+
+<SearchBar placeholder="Search through your notes..." />
 
 {#if loading}
   <p>Loading...</p>

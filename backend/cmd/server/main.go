@@ -95,6 +95,7 @@ func main() {
 	r.DELETE("/notes/:id", noteHandler.Delete)
 	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
 	r.GET("/notes", noteHandler.List)
+	r.GET("/notes/search", noteHandler.Search)
 
 	r.POST("/links", linkHandler.Create)
 	r.GET("/links/:id", linkHandler.Get)

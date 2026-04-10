@@ -66,6 +66,48 @@ func (r *NoteRepository) List(ctx context.Context) ([]*note.Note, error) {
 	return toDomainNotes(models), nil
 }
 
+// Search performs multilingual full-text search on notes (Russian + English)
+func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+	var models []NoteModel
+	var total int64
+
+	db := r.db.WithContext(ctx).Model(&NoteModel{})
+
+	if query != "" {
+		// Multilingual search: search in both Russian and English
+		// Russian search with stemming
+		// English search with simple configuration (no stemming)
+		db = db.Where(`
+			search_vector @@ plainto_tsquery('russian', ?) OR 
+			search_vector @@ plainto_tsquery('simple', ?)
+		`, query, query)
+
+		// Ranking: combine both Russian and English rankings
+		// Use COALESCE to handle null rankings and give preference to matches
+		db = db.Order(`
+			COALESCE(ts_rank(search_vector, plainto_tsquery('russian', '" + query + "')), 0) +
+			COALESCE(ts_rank(search_vector, plainto_tsquery('simple', '" + query + "')), 0) 
+			DESC
+		`)
+	} else {
+		// If query is empty, return all notes ordered by creation date
+		db = db.Order("created_at DESC")
+	}
+
+	// Count total matching records first
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get the paginated results
+	err := db.Limit(limit).Offset(offset).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainNotes(models), total, nil
+}
+
 // toGormNote преобразует доменную заметку в GORM-модель
 func toGormNote(n *note.Note) (NoteModel, error) {
 	metadataJSON, err := json.Marshal(n.Metadata().Value())
