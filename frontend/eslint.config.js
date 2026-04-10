@@ -10,17 +10,6 @@ export default [
 		ignores: ['build/', '.svelte-kit/', 'dist/']
 	},
 	{
-		files: ['**/*.js'],
-		languageOptions: {
-			globals: {
-				...globals.browser,
-				...globals.node
-			}
-		}
-	},
-	{
-		files: ['**/*.ts'],
-		...tseslint.configs.recommended,
 		languageOptions: {
 			globals: {
 				...globals.browser,
