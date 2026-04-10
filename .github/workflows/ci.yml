@@ -310,18 +310,34 @@ jobs:
         rm -rf /tmp/.buildx-cache
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-    - name: Wait for NLP to be ready
+    - name: Wait for NLP to be ready (with retry)
       run: |
         echo "Waiting for NLP service (model download ~900MB, may take 15-20 min)..."
-        timeout 1200 bash -c '
-          while ! curl -f http://localhost:5000/health 2>/dev/null; do
-            echo "=== NLP Logs (last 10 lines) ==="
-            docker logs --tail 10 kg-nlp 2>&1 || echo "Container not ready yet"
-            echo "================================"
-            sleep 30
-          done
-        '
-        echo "NLP is ready!"
+        MAX_WAIT=1200
+        ELAPSED=0
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          # Check if NLP is healthy
+          if curl -f http://localhost:5000/health 2>/dev/null; then
+            echo "NLP is ready!"
+            exit 0
+          fi
+          
+          # Check if container crashed
+          STATUS=$(docker inspect -f '{{.State.Status}}' kg-nlp 2>/dev/null || echo "unknown")
+          if [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ]; then
+            echo "NLP container crashed! Restarting..."
+            docker logs kg-nlp 2>&1 | tail -20
+            docker compose -f docker-compose.yml restart nlp
+            sleep 10
+          fi
+          
+          echo "=== NLP Status: $STATUS | Elapsed: ${ELAPSED}s ==="
+          docker logs --tail 5 kg-nlp 2>&1 || true
+          sleep 30
+          ELAPSED=$((ELAPSED + 30))
+        done
+        echo "Timeout waiting for NLP"
+        exit 1
 
     - name: Wait for backend to be ready
       run: |
