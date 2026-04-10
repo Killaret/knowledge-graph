@@ -159,21 +159,17 @@ jobs:
     - name: Build and start backend
       working-directory: ./backend
       env:
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
-        POSTGRES_DB: knowledgegraph
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/knowledgegraph?sslmode=disable
+        REDIS_URL: localhost:6379
         SERVER_PORT: 8080
+        NLP_SERVICE_URL: http://localhost:5000
       run: |
         go mod download
         go build -o bin/app ./cmd/server/main.go
         ./bin/app &
-        sleep 5
+        sleep 10
         # Verify backend is running
-        timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
+        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
