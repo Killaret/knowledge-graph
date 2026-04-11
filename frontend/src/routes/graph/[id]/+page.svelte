@@ -1,14 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import SmartGraph from '$lib/components/SmartGraph.svelte';
+  import { goto } from '$app/navigation';
+  import Graph3D from '$lib/components/Graph3D.svelte';
   import { getGraphData } from '$lib/api/graph';
   import BackButton from '$lib/components/BackButton.svelte';
+  import GraphNotePopup from '$lib/components/GraphNotePopup.svelte';
+  import EmptyState from '$lib/components/EmptyState.svelte';
 
-  let nodes: Array<{ id: string; title: string; type: string }> = $state([]);
-  let links: Array<{ source: string; target: string; weight: number }> = $state([]);
+  let graphData = $state<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
   let loading = $state(true);
   let error = $state('');
+
+  // Note popup state
+  let selectedNote = $state<any>(null);
+  let popupPosition = $state({ x: 0, y: 0 });
+  let isPopupOpen = $state(false);
 
   function getRouteId(): string {
     const id = $page.params.id;
@@ -20,8 +27,7 @@
     try {
       const id = getRouteId();
       const data = await getGraphData(id);
-      nodes = data.nodes;
-      links = data.links;
+      graphData = { nodes: data.nodes, links: data.links };
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
@@ -49,8 +55,39 @@
     </div>
   {:else}
     <div class="graph-container">
-      <SmartGraph {nodes} {links} />
+      {#if graphData.nodes.length <= 1}
+        <EmptyState
+          icon="⭐"
+          title="Это одинокая звезда"
+          message="Создайте связи, чтобы увидеть созвездие"
+          actionText="Создать связь"
+          onAction={() => goto('/notes/new')}
+        />
+      {:else}
+        <Graph3D 
+          data={graphData} 
+          onNodeClick={(node, event) => {
+            selectedNote = node;
+            popupPosition = { x: event.clientX, y: event.clientY };
+            isPopupOpen = true;
+          }}
+        />
+      {/if}
     </div>
+    
+    <GraphNotePopup
+      note={selectedNote}
+      isOpen={isPopupOpen}
+      position={popupPosition}
+      onClose={() => isPopupOpen = false}
+      onDelete={(id) => {
+        // Remove node from graph data
+        graphData = {
+          ...graphData,
+          nodes: graphData.nodes.filter(n => n.id !== id)
+        };
+      }}
+    />
   {/if}
 </div>
 

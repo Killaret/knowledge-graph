@@ -1,17 +1,59 @@
 // Utility to detect device capabilities and optimize 3D rendering accordingly
+// This module caches results to avoid repeated WebGL context creation
 
 export interface DeviceCapabilities {
+  /** Whether the device is a mobile device */
   isMobile: boolean;
+  /** Whether the device should use low-power mode */
   isLowPower: boolean;
+  /** GPU performance tier */
   gpuTier: 'high' | 'medium' | 'low';
+  /** Maximum recommended nodes for this device */
   maxNodes: number;
+  /** Number of stars in background */
   starCount: number;
+  /** Whether to enable particle effects */
   enableParticles: boolean;
+  /** Whether to enable glow effects */
   enableGlow: boolean;
+  /** Recommended pixel ratio for performance */
   pixelRatio: number;
 }
 
+/** Cached capabilities to avoid repeated detection */
+let cachedCapabilities: DeviceCapabilities | null = null;
+
+/** Tier configuration with documented reasoning */
+const TIER_CONFIG = {
+  low: {
+    maxNodes: 30,
+    starCount: 100,
+    enableParticles: false,
+    enableGlow: false,
+    reason: 'Mobile devices, integrated GPUs, or battery saving'
+  },
+  medium: {
+    maxNodes: 50,
+    starCount: 500,
+    enableParticles: true,
+    enableGlow: true,
+    reason: 'Modern integrated GPUs (Intel Xe, Apple M1+)'
+  },
+  high: {
+    maxNodes: 100,
+    starCount: 1000,
+    enableParticles: true,
+    enableGlow: true,
+    reason: 'Discrete GPUs (NVIDIA, AMD)'
+  }
+} as const;
+
 export function detectDeviceCapabilities(): DeviceCapabilities {
+  // Return cached result if available
+  if (cachedCapabilities) {
+    return cachedCapabilities;
+  }
+
   if (typeof window === 'undefined') {
     // SSR fallback - return conservative settings
     return {
@@ -61,7 +103,10 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
       if (isSoftwareRenderer) {
         gpuTier = 'low';
       } else if (renderer.toLowerCase().includes('intel')) {
-        gpuTier = 'low';
+        // Check for modern Intel GPUs (Xe, Arc)
+        const modernIntel = ['intel(r) uhd graphics 7', 'intel(r) iris', 'intel(r) xe', 'intel(r) arc'];
+        const isModernIntel = modernIntel.some(g => renderer.toLowerCase().includes(g.toLowerCase()));
+        gpuTier = isModernIntel ? 'medium' : 'low';
       } else if (isMobile) {
         gpuTier = 'medium';
       } else {
@@ -76,47 +121,30 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     }
   }
 
-  // Determine if low power mode
+  // Determine tier config and low power mode
+  const tierConfig = TIER_CONFIG[gpuTier];
   const isLowPower = isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === 'low';
 
-  // Set optimization parameters based on capabilities
-  if (isLowPower || gpuTier === 'low') {
-    return {
-      isMobile,
-      isLowPower: true,
-      gpuTier,
-      maxNodes: 30,
-      starCount: 100,
-      enableParticles: false,
-      enableGlow: false,
-      pixelRatio: Math.min(window.devicePixelRatio, 1)
-    };
-  }
-
-  if (gpuTier === 'medium' || isMobile) {
-    return {
-      isMobile,
-      isLowPower: isMobile,
-      gpuTier,
-      maxNodes: 50,
-      starCount: 500,
-      enableParticles: true,
-      enableGlow: true,
-      pixelRatio: Math.min(window.devicePixelRatio, 1.5)
-    };
-  }
-
-  // High-end desktop
-  return {
-    isMobile: false,
-    isLowPower: false,
-    gpuTier: 'high',
-    maxNodes: 100,
-    starCount: 1000,
-    enableParticles: true,
-    enableGlow: true,
-    pixelRatio: Math.min(window.devicePixelRatio, 2)
+  // Build result
+  const result: DeviceCapabilities = {
+    isMobile,
+    isLowPower,
+    gpuTier,
+    maxNodes: tierConfig.maxNodes,
+    starCount: tierConfig.starCount,
+    enableParticles: tierConfig.enableParticles,
+    enableGlow: tierConfig.enableGlow,
+    pixelRatio: Math.min(window.devicePixelRatio, gpuTier === 'high' ? 2 : gpuTier === 'medium' ? 1.5 : 1)
   };
+
+  // Cache and return
+  cachedCapabilities = result;
+  return result;
+}
+
+/** Clear the cached capabilities (useful for testing) */
+export function clearDeviceCapabilitiesCache(): void {
+  cachedCapabilities = null;
 }
 
 export function shouldUse3D(capabilities: DeviceCapabilities): boolean {

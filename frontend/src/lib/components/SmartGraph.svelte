@@ -24,8 +24,9 @@
     links: GraphLink[];
   }>();
 
-  let use3D = $state(true);
+  let use3D = $state(false); // Start with false to avoid flash
   let isLoading = $state(true);
+  let loadError = $state<string | null>(null);
   let Graph3DComponent: any = $state(null);
 
   onMount(async () => {
@@ -40,17 +41,7 @@
     // Check if we should use 3D
     const shouldRender3D = shouldUse3D(deviceCaps);
     
-    // Also check for WebGL support
-    let webglSupported = false;
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      webglSupported = !!gl;
-    } catch (e) {
-      webglSupported = false;
-    }
-
-    use3D = shouldRender3D && webglSupported;
+    use3D = shouldRender3D;
 
     // Dynamically import 3D component if needed
     if (use3D) {
@@ -59,6 +50,7 @@
         Graph3DComponent = module.default;
       } catch (e) {
         console.warn('Failed to load 3D graph component, falling back to 2D:', e);
+        loadError = 'Failed to load 3D visualization';
         use3D = false;
       }
     }
@@ -74,7 +66,7 @@
   </div>
 {:else if use3D && Graph3DComponent}
   <div class="graph-wrapper graph-3d">
-    <Graph3DComponent {nodes} {links} />
+    <Graph3DComponent data={{ nodes, links }} />
     <div class="performance-hint">3D Mode</div>
   </div>
 {:else}

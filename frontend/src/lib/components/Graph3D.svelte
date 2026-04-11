@@ -1,9 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import { detectDeviceCapabilities, shouldUse3D, type DeviceCapabilities } from '$lib/utils/deviceCapabilities';
+  import * as THREE from 'three';
+  import ThreeForceGraph from 'three-forcegraph';
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+  // Types
   interface GraphNode {
     id: string;
     title: string;
@@ -16,31 +19,60 @@
     weight: number;
   }
 
-  let { 
-    nodes = [] as GraphNode[],
-    links = [] as GraphLink[]
-  } = $props<{
+  interface GraphData {
     nodes: GraphNode[];
     links: GraphLink[];
-  }>();
+  }
 
+  interface ForceGraphNode extends GraphNode {
+    __threeObj?: THREE.Group;
+  }
+
+  // Props
+  let { 
+    data,
+    onNodeClick
+  }: { 
+    data: GraphData;
+    onNodeClick?: (node: GraphNode, event: MouseEvent) => void;
+  } = $props();
+
+  // DOM refs
   let containerRef: HTMLDivElement;
-  let renderer: any;
-  let scene: any;
-  let camera: any;
-  let controls: any;
-  let graphInstance: any;
-  let animationId: number;
-  let resizeObserver: ResizeObserver;
-  let THREE: typeof import('three');
-  let ThreeForceGraph: typeof import('three-forcegraph').default;
-  let OrbitControls: any;
-  
-  // Device capabilities for optimization
-  let deviceCaps: DeviceCapabilities;
-  let isWebGLSupported = true;
 
-  const typeColors: Record<string, string> = {
+  // Three.js refs (initialized in onMount)
+  let renderer: THREE.WebGLRenderer | null = $state(null);
+  let scene: THREE.Scene | null = $state(null);
+  let camera: THREE.PerspectiveCamera | null = $state(null);
+  let controls: OrbitControls | null = $state(null);
+  let graphInstance: ThreeForceGraph | null = $state(null);
+  let animationId: number = $state(0);
+  let resizeObserver: ResizeObserver | null = $state(null);
+  let glowTextures: THREE.CanvasTexture[] = [];
+
+  // WebGL support check
+  function isWebGLSupported(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      return !!(
+        window.WebGLRenderingContext &&
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Constants
+  const CONFIG = {
+    STAR_COUNT: 1000,
+    CAMERA_Z: 200,
+    NODE_REL_SIZE: 6,
+    LABEL_MAX_LENGTH: 20,
+    RESIZE_THROTTLE_MS: 100
+  } as const;
+
+  const TYPE_COLORS: Record<string, string> = {
     star: '#ffaa00',
     planet: '#44aaff',
     comet: '#aaffdd',
@@ -49,7 +81,7 @@
   };
 
   function getColorByType(type: string): string {
-    return typeColors[type] || typeColors.default;
+    return TYPE_COLORS[type] || TYPE_COLORS.default;
   }
 
   function generateGlowTexture(color: string): THREE.CanvasTexture {
@@ -67,109 +99,117 @@
     ctx.fillRect(0, 0, 64, 64);
 
     const texture = new THREE.CanvasTexture(canvas);
+    glowTextures.push(texture);
     return texture;
   }
 
-  onMount(async () => {
-    if (!containerRef || !browser) return;
+  function disposeTextures(): void {
+    glowTextures.forEach(texture => texture.dispose());
+    glowTextures = [];
+  }
 
-    // Detect device capabilities for optimization
-    deviceCaps = detectDeviceCapabilities();
+  // Throttled resize handler
+  function createThrottledResizeHandler(
+    camera: THREE.PerspectiveCamera,
+    renderer: THREE.WebGLRenderer
+  ): ResizeObserverCallback {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
-    // Check WebGL support
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) {
-        isWebGLSupported = false;
-        return;
-      }
-    } catch (e) {
-      isWebGLSupported = false;
+    return (entries) => {
+      if (timeoutId) return;
+      
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        const entry = entries[0];
+        const { width, height } = entry.contentRect;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      }, CONFIG.RESIZE_THROTTLE_MS);
+    };
+  }
+
+  // Reactive data update
+  $effect(() => {
+    const currentData = data;
+    const currentGraph = graphInstance;
+    
+    if (currentGraph && currentData?.nodes && currentData?.links) {
+      untrack(() => {
+        currentGraph.graphData({
+          nodes: currentData.nodes.map(n => ({ ...n })),
+          links: currentData.links.map(l => ({ ...l }))
+        });
+      });
+    }
+  });
+
+  onMount(() => {
+    if (!containerRef || !browser || !isWebGLSupported()) {
       return;
     }
 
-    // Dynamic imports for SSR compatibility
-    THREE = await import('three');
-    const forceGraphModule = await import('three-forcegraph');
-    ThreeForceGraph = forceGraphModule.default;
-    const controlsModule = await import('three/examples/jsm/controls/OrbitControls.js');
-    OrbitControls = controlsModule.OrbitControls;
-
-    // Get container dimensions
     const rect = containerRef.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
 
-    // Initialize renderer with optimizations
-    renderer = new THREE.WebGLRenderer({ 
-      antialias: deviceCaps.gpuTier !== 'low', // Disable antialiasing on low-end
-      alpha: true,
-      powerPreference: deviceCaps.isLowPower ? 'low-power' : 'high-performance'
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(deviceCaps.pixelRatio); // Use optimized pixel ratio
-    containerRef.appendChild(renderer.domElement);
+    // Renderer
+    const newRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    newRenderer.setSize(width, height);
+    newRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    containerRef.appendChild(newRenderer.domElement);
+    renderer = newRenderer;
 
-    // Initialize scene
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a1a3a);
+    // Scene
+    const newScene = new THREE.Scene();
+    newScene.background = new THREE.Color(0x0a1a3a);
+    scene = newScene;
 
-    // Add starfield background (optimized count based on device)
+    // Starfield
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = deviceCaps.starCount; // Use optimized star count
-    const starPositions = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount * 3; i += 3) {
+    const starPositions = new Float32Array(CONFIG.STAR_COUNT * 3);
+    for (let i = 0; i < CONFIG.STAR_COUNT * 3; i += 3) {
       starPositions[i] = (Math.random() - 0.5) * 2000;
       starPositions[i + 1] = (Math.random() - 0.5) * 2000;
       starPositions[i + 2] = (Math.random() - 0.5) * 2000;
     }
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    const starMaterial = new THREE.PointsMaterial({ 
-      color: 0xffffff, 
-      size: deviceCaps.isLowPower ? 1 : 2, // Smaller stars on low-end
-      transparent: true, 
-      opacity: deviceCaps.isLowPower ? 0.4 : 0.6 
+    const starMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 2,
+      transparent: true,
+      opacity: 0.6
     });
     const stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
+    newScene.add(stars);
 
-    // Initialize camera
-    camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
-    camera.position.z = 200;
+    // Camera
+    const newCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
+    newCamera.position.z = CONFIG.CAMERA_Z;
+    camera = newCamera;
 
-    // Initialize controls
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enablePan = true;
-    controls.enableZoom = true;
-    controls.enableRotate = true;
-    controls.minDistance = 50;
-    controls.maxDistance = 500;
+    // Controls
+    const newControls = new OrbitControls(newCamera, newRenderer.domElement);
+    newControls.enablePan = true;
+    newControls.enableZoom = true;
+    newControls.enableRotate = true;
+    controls = newControls;
 
-    // Add lights (simplified for low-end devices)
-    const ambientLight = new THREE.AmbientLight(0x404040, deviceCaps.isLowPower ? 2.0 : 1.5);
-    scene.add(ambientLight);
+    // Lights
+    newScene.add(new THREE.AmbientLight(0x404040, 1.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(100, 100, 100);
+    newScene.add(dirLight);
 
-    if (!deviceCaps.isLowPower) {
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(100, 100, 100);
-      scene.add(directionalLight);
-
-      const pointLight = new THREE.PointLight(0x4488ff, 1, 500);
-      pointLight.position.set(0, 0, 100);
-      scene.add(pointLight);
-    }
-
-    // Create force graph
-    graphInstance = new ThreeForceGraph<GraphNode, GraphLink>()
-      .nodeRelSize(6)
-      .nodeColor((node) => getColorByType((node as GraphNode).type))
-      .nodeThreeObject((node) => {
-        const n = node as GraphNode;
+    // Graph
+    const newGraph = new ThreeForceGraph()
+      .nodeRelSize(CONFIG.NODE_REL_SIZE)
+      .nodeColor((node: ForceGraphNode) => getColorByType(node.type))
+      .nodeThreeObject((node: ForceGraphNode) => {
         const color = getColorByType(node.type);
         const group = new THREE.Group();
 
-        // Main node sprite
+        // Glow sprite
         const spriteMaterial = new THREE.SpriteMaterial({
           map: generateGlowTexture(color),
           blending: THREE.AdditiveBlending,
@@ -187,19 +227,20 @@
         canvas.height = 64;
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
         ctx.shadowBlur = 4;
-        let title = n.title;
-        if (title.length > 20) title = title.slice(0, 18) + '...';
+        
+        let title = node.title;
+        if (title.length > CONFIG.LABEL_MAX_LENGTH) {
+          title = title.slice(0, CONFIG.LABEL_MAX_LENGTH - 2) + '...';
+        }
         ctx.fillText(title, 128, 32);
 
         const labelTexture = new THREE.CanvasTexture(canvas);
-        const labelMaterial = new THREE.SpriteMaterial({ 
-          map: labelTexture, 
-          transparent: true,
-          depthWrite: false
+        const labelMaterial = new THREE.SpriteMaterial({
+          map: labelTexture,
+          transparent: true
         });
         const labelSprite = new THREE.Sprite(labelMaterial);
         labelSprite.scale.set(40, 10, 1);
@@ -209,96 +250,87 @@
         return group;
       })
       .linkColor(() => 'rgba(100, 150, 200, 0.4)')
-      .linkWidth((link) => Math.max(0.5, (link as GraphLink).weight * 2))
-      .linkDirectionalParticles(deviceCaps.enableParticles ? 2 : 0) // Disable particles on low-end
-      .linkDirectionalParticleWidth(deviceCaps.enableParticles ? 1.5 : 0)
+      .linkWidth((link: GraphLink) => Math.max(0.5, link.weight * 2))
+      .linkDirectionalParticles(2)
+      .linkDirectionalParticleWidth(1.5)
       .linkDirectionalParticleSpeed(0.01)
       .linkDirectionalParticleColor(() => 'rgba(150, 200, 255, 0.8)');
-    
-    // Add click handler via DOM events
+
+    graphInstance = newGraph;
+
+    // Set initial data
+    if (data?.nodes?.length && data?.links) {
+      newGraph.graphData({
+        nodes: data.nodes.map(n => ({ ...n })),
+        links: data.links.map(l => ({ ...l }))
+      });
+      newScene.add(newGraph);
+    }
+
+    // Click handler
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    
+
     const handleClick = (event: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
+      const rect = newRenderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(graphInstance.children, true);
-      
+
+      raycaster.setFromCamera(mouse, newCamera);
+      const intersects = raycaster.intersectObjects(newGraph.children, true);
+
       if (intersects.length > 0) {
-        // Find the node data from the intersected object
         let obj: THREE.Object3D | null = intersects[0].object;
         while (obj) {
-          const nodeData = (obj as any).__data;
-          if (nodeData && nodeData.id) {
-            goto(`/notes/${nodeData.id}`);
+          const nodeData = (obj as ForceGraphNode).__data;
+          if (nodeData?.id) {
+            if (onNodeClick) {
+              onNodeClick(nodeData as GraphNode, event);
+            } else {
+              goto(`/notes/${nodeData.id}`);
+            }
             break;
           }
           obj = obj.parent;
         }
       }
     };
-    
-    const handleMouseMove = (event: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(graphInstance.children, true);
-      
-      containerRef.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
-    };
-    
-    renderer.domElement.addEventListener('click', handleClick);
-    renderer.domElement.addEventListener('mousemove', handleMouseMove);
 
-    // Set data
-    const graphData = {
-      nodes: nodes.map(n => ({ ...n })),
-      links: links.map(l => ({ ...l }))
-    };
-    graphInstance.graphData(graphData);
+    newRenderer.domElement.addEventListener('click', handleClick);
 
-    scene.add(graphInstance);
+    // Resize with throttle
+    const resizeHandler = createThrottledResizeHandler(newCamera, newRenderer);
+    const newResizeObserver = new ResizeObserver(resizeHandler);
+    newResizeObserver.observe(containerRef);
+    resizeObserver = newResizeObserver;
 
-    // Handle resize
-    resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      const { width: newWidth, height: newHeight } = entry.contentRect;
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    });
-    resizeObserver.observe(containerRef);
-
-    // Animation loop
+    // Animation
     const animate = () => {
       animationId = requestAnimationFrame(animate);
-      graphInstance.tickFrame();
-      controls.update();
-      renderer.render(scene, camera);
+      newGraph.tickFrame();
+      newControls.update();
+      newRenderer.render(newScene, newCamera);
     };
     animate();
 
+    // Cleanup
     return () => {
-      renderer.domElement.removeEventListener('click', handleClick);
-      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+      newRenderer.domElement.removeEventListener('click', handleClick);
       cancelAnimationFrame(animationId);
-      resizeObserver.disconnect();
-      controls.dispose();
-      renderer.dispose();
-      if (containerRef && renderer.domElement.parentNode === containerRef) {
-        containerRef.removeChild(renderer.domElement);
+      newResizeObserver.disconnect();
+      newControls.dispose();
+      disposeTextures();
+      newRenderer.dispose();
+      
+      if (newRenderer.domElement.parentNode === containerRef) {
+        containerRef.removeChild(newRenderer.domElement);
       }
     };
   });
 </script>
 
-<div class="graph-3d-container" bind:this={containerRef}>
-  {#if nodes.length === 0}
+<div class="graph-3d-container" bind:this={containerRef} data-testid="graph-canvas">
+  {#if !data?.nodes?.length}
     <div class="empty-state">No nodes to display</div>
   {/if}
 </div>

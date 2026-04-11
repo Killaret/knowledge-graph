@@ -3,6 +3,7 @@
   import type { Note } from '$lib/api/notes';
   import { getNotes, deleteNote } from '$lib/api/notes';
   import SearchBar from '$lib/components/SearchBar.svelte';
+  import FloatingActionButton from '$lib/components/FloatingActionButton.svelte';
 
   // Реактивные переменные (Svelte 5 runes)
   let notes: Note[] = $state([]);
@@ -55,8 +56,9 @@
       </div>
     {/each}
   </div>
-  <a href="/notes/new" class="new-note">+ New Note</a>
 {/if}
+
+<FloatingActionButton />
 
 <style>
   .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
@@ -64,6 +66,5 @@
   .note-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
   .note-card a { text-decoration: none; color: inherit; }
   .actions { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
-  .new-note { display: inline-block; background: #3b82f6; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; }
   .error { color: red; }
 </style>
