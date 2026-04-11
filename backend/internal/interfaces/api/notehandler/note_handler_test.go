@@ -69,9 +69,8 @@ func TestCreateNote(t *testing.T) {
 	var resp map[string]interface{}
 
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-
-		t.Fatalf("failed to parse response: %v", err)
-
+		t.Errorf("Failed to unmarshal response: %v", err)
+		return
 	}
 
 	if resp["title"] != "Test Note" {
@@ -114,7 +113,10 @@ func TestGetNote(t *testing.T) {
 
 	var resp map[string]interface{}
 
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Errorf("Failed to unmarshal response: %v", err)
+		return
+	}
 
 	if resp["title"] != "GetTest" {
 
@@ -158,7 +160,10 @@ func TestUpdateNote(t *testing.T) {
 
 	var resp map[string]interface{}
 
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Errorf("Failed to unmarshal response: %v", err)
+		return
+	}
 
 	if resp["title"] != "Updated" {
 

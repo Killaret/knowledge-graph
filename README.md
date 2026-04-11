@@ -4,6 +4,7 @@
 
 ## 📁 Основные разделы
 
+<<<<<<< HEAD
 ### 🏗️ Архитектура
 - [Архитектура системы (C4, UML, компоненты)](docs/architecture/README.md)
 - [Архитектурные решения (ADR)](docs/architecture/adr.md)
@@ -39,3 +40,10 @@
 
 ---
 📄 Последнее обновление: 2026-04-08
+=======
+## Руководства
+- [Настройка окружения](CONFIGURATION.md)
+- [UX Guidelines](UX_GUIDELINES.md)
+- [Frontend Style Guide](FRONTEND_STYLE_GUIDE.md)
+# CI/CD Test
+>>>>>>> windsurf

@@ -32,10 +32,10 @@
 </script>
 
 <BackButton href="/" />
-<h1>Созвездие заметок</h1>
+<h1>Note Graph</h1>
 
 {#if loading}
-  <p>Загрузка графа...</p>
+  <p>Loading graph...</p>
 {:else if error}
   <p class="error">{error}</p>
 {:else}

@@ -48,7 +48,11 @@ func main() {
 	} else {
 		log.Printf("Asynq client created successfully")
 		taskQueue = asynqClient
-		defer asynqClient.Close()
+		defer func() {
+			if err := asynqClient.Close(); err != nil {
+				log.Printf("Error closing asynq client: %v", err)
+			}
+		}()
 	}
 
 	// Загрузчики графа
@@ -62,9 +66,13 @@ func main() {
 
 	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay)
 
-	// Кэш
+	// Redis
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing redis client: %v", err)
+		}
+	}()
 
 	suggestionsHandler := graphQueries.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
 
@@ -95,6 +103,7 @@ func main() {
 	r.DELETE("/notes/:id", noteHandler.Delete)
 	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
 	r.GET("/notes", noteHandler.List)
+	r.GET("/notes/search", noteHandler.Search)
 
 	r.POST("/links", linkHandler.Create)
 	r.GET("/links/:id", linkHandler.Get)
@@ -104,5 +113,7 @@ func main() {
 
 	r.GET("/notes/:id/graph", graphHandler.GetGraph)
 
-	r.Run(":" + cfg.ServerPort)
+	if err := r.Run(":" + cfg.ServerPort); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

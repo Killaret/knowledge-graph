@@ -24,7 +24,7 @@
       note = await getNote(id);
       title = note.title;
       content = note.content;
-    } catch (e) {
+    } catch {
       error = 'Note not found';
     } finally {
       loading = false;
@@ -43,7 +43,7 @@ async function handleSubmit(event: Event) {
     try {
         await updateNote(id, { title, content });
         goto(`/notes/${id}`);
-    } catch (e) {
+    } catch {
         error = 'Failed to update note';
     } finally {
         saving = false;

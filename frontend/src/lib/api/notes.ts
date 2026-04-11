@@ -50,3 +50,26 @@ export async function deleteNote(id: string): Promise<void> {
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
   return api.get(`notes/${id}/suggestions`, { searchParams: { limit } }).json();
 }
+
+// Search response type
+export interface SearchResponse {
+  data: Note[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+}
+
+// Search notes with full-text search
+export async function searchNotes(
+  query: string,
+  page = 1,
+  size = 20
+): Promise<SearchResponse> {
+  const searchParams = new URLSearchParams({
+    q: query,
+    page: page.toString(),
+    size: size.toString(),
+  });
+  return api.get(`notes/search?${searchParams}`).json();
+}
