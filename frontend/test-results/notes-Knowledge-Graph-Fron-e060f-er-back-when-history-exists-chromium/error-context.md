@@ -6,22 +6,42 @@
 
 # Test info
 
-- Name: notes.spec.ts >> Knowledge Graph Frontend >> should open graph for a note with links
-- Location: tests\notes.spec.ts:63:3
+- Name: notes.spec.ts >> Knowledge Graph Frontend >> should use browser back when history exists
+- Location: tests\notes.spec.ts:135:3
 
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Test timeout of 30000ms exceeded.
+```
 
-Locator: locator('canvas')
-Expected: visible
-Timeout: 5000ms
-Error: element(s) not found
-
+```
+Error: page.click: Test timeout of 30000ms exceeded.
 Call log:
-  - Expect "toBeVisible" with timeout 5000ms
-  - waiting for locator('canvas')
+  - waiting for locator('button:has-text("Back")')
+    - locator resolved to <button aria-label="Go back" class="back-button s-BYOBscIiO5Lg">Back</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    49 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
 
 ```
 
@@ -30,8 +50,39 @@ Call log:
 ```yaml
 - generic [active] [ref=e1]:
   - generic [ref=e2]:
-    - heading "500" [level=1] [ref=e3]
-    - paragraph [ref=e4]: Internal Error
+    - generic [ref=e3]:
+      - button "Go back" [ref=e4] [cursor=pointer]: « Back
+      - heading "History Test" [level=1] [ref=e5]
+      - generic [ref=e6]: "Created: 4/11/2026, 10:25:40 PM"
+      - generic [ref=e7]: Testing browser back functionality
+      - generic [ref=e8]:
+        - link "Edit" [ref=e9] [cursor=pointer]:
+          - /url: /notes/9e607952-b1d7-43c6-b58e-7cd645a4fa58/edit
+        - button "Delete" [ref=e10]
+        - link "✨ Show constellation" [ref=e11] [cursor=pointer]:
+          - /url: /graph/9e607952-b1d7-43c6-b58e-7cd645a4fa58
+      - heading "Similar notes" [level=2] [ref=e12]
+      - list [ref=e13]:
+        - listitem [ref=e14]:
+          - link "Navigation Test 1775935531059" [ref=e15] [cursor=pointer]:
+            - /url: /notes/6d606e3c-ee70-4c25-831c-506144fb4793
+          - text: "score: 0.074"
+        - listitem [ref=e16]:
+          - link "Playwright Test" [ref=e17] [cursor=pointer]:
+            - /url: /notes/7a03e4a4-d770-4b65-98a7-a573c86ec0f4
+          - text: "score: 0.074"
+        - listitem [ref=e18]:
+          - link "FAB Created Note" [ref=e19] [cursor=pointer]:
+            - /url: /notes/3ff24dc3-be4c-4555-9ccc-d9125f59c1fe
+          - text: "score: 0.068"
+        - listitem [ref=e20]:
+          - link "Edited" [ref=e21] [cursor=pointer]:
+            - /url: /notes/e43f559b-5ab8-4182-9088-149fd191e98f
+          - text: "score: 0.023"
+        - listitem [ref=e22]:
+          - link "Graph Node B" [ref=e23] [cursor=pointer]:
+            - /url: /notes/28f87863-7207-46fa-bb13-111b60ff330c
+          - text: "score: 0.000"
     - generic:
       - generic: Ctrl+N
       - text: — новая заметка
@@ -39,79 +90,23 @@ Call log:
       - text: — поиск
       - generic: Esc
       - text: — закрыть
-  - generic [ref=e8]:
-    - generic [ref=e9]: window is not defined
-    - generic [ref=e10]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
-    - generic [ref=e11]:
+  - generic [ref=e27]:
+    - generic [ref=e28]: window is not defined
+    - generic [ref=e29]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
+    - generic [ref=e30]:
       - text: Click outside, press Esc key, or fix the code to dismiss.
       - text: You can also disable this overlay by setting
-      - code [ref=e12]: server.hmr.overlay
+      - code [ref=e31]: server.hmr.overlay
       - text: to
-      - code [ref=e13]: "false"
+      - code [ref=e32]: "false"
       - text: in
-      - code [ref=e14]: vite.config.ts
+      - code [ref=e33]: vite.config.ts
       - text: .
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | test.describe('Knowledge Graph Frontend', () => {
-  4   |   test.beforeEach(async ({ page }) => {
-  5   |     await page.goto('http://localhost:5173');
-  6   |     await page.waitForLoadState('networkidle');
-  7   |   });
-  8   | 
-  9   |   test('should create a new note', async ({ page }) => {
-  10  |     await page.click('[data-testid="fab-new-note"]');
-  11  |     await page.fill('input[placeholder="Title"]', 'Playwright Test');
-  12  |     await page.fill('textarea', 'Automated content');
-  13  |     await page.click('button:has-text("Create")');
-  14  |     // Wait for navigation to complete with explicit timeout
-  15  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
-  16  |     await expect(page.locator('h1')).toHaveText('Playwright Test');
-  17  |   });
-  18  | 
-  19  |   test('should edit a note', async ({ page }) => {
-  20  |     // Сначала создадим заметку через API или UI
-  21  |     await page.click('[data-testid="fab-new-note"]');
-  22  |     await page.fill('input[placeholder="Title"]', 'To Edit');
-  23  |     await page.fill('textarea', 'Original');
-  24  |     await page.click('button:has-text("Create")');
-  25  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
-  26  |     // Wait additional time for page to fully load
-  27  |     await page.waitForTimeout(1000);
-  28  | 
-  29  |     await page.click('a:has-text("Edit")');
-  30  |     await page.fill('input[placeholder="Title"]', 'Edited');
-  31  |     await page.fill('textarea', 'New content');
-  32  |     await page.click('button:has-text("Update")');
-  33  |     await expect(page.locator('h1')).toHaveText('Edited');
-  34  |     await expect(page.locator('.content')).toHaveText('New content');
-  35  |   });
-  36  | 
-  37  |   test('should delete a note', async ({ page, request }) => {
-  38  |     // Create a note via API first
-  39  |     const timestamp = Date.now();
-  40  |     const note = await request.post('http://localhost:8080/notes', {
-  41  |       data: { title: 'Delete Test ' + timestamp, content: 'Test content for deletion' }
-  42  |     });
-  43  |     const noteId = (await note.json()).id;
-  44  |     const noteTitle = 'Delete Test ' + timestamp;
-  45  |     
-  46  |     // Go to home page to see the note in the list
-  47  |     await page.goto('http://localhost:5173/');
-  48  |     await page.waitForSelector('.note-card', { timeout: 5000 });
-  49  |     await expect(page.locator('text=' + noteTitle)).toBeVisible();
-  50  |     
-  51  |     // Delete the note via API
-  52  |     await request.delete(`http://localhost:8080/notes/${noteId}`);
-  53  |     
-  54  |     // Wait and reload to see the changes
-  55  |     await page.waitForTimeout(1000);
-  56  |     await page.goto('http://localhost:5173/');
   57  |     await page.waitForLoadState('networkidle');
   58  |     
   59  |     // Check that the specific note is no longer present
@@ -133,8 +128,7 @@ Call log:
   75  |     });
   76  | 
   77  |     await page.goto(`http://localhost:5173/graph/${id1}`);
-> 78  |     await expect(page.locator('canvas')).toBeVisible();
-      |                                          ^ Error: expect(locator).toBeVisible() failed
+  78  |     await expect(page.locator('canvas')).toBeVisible();
   79  |     // Ждём, пока d3-force немного стабилизируется
   80  |     await page.waitForTimeout(1000);
   81  |     // Проверяем, что canvas не пустой (можно по цвету пикселя, но сложно)
@@ -213,7 +207,8 @@ Call log:
   154 |     await expect(page.locator('button:has-text("Back")')).toBeVisible();
   155 |     
   156 |     // Click back button - should use browser history to go home
-  157 |     await page.click('button:has-text("Back")');
+> 157 |     await page.click('button:has-text("Back")');
+      |                ^ Error: page.click: Test timeout of 30000ms exceeded.
   158 |     await page.waitForTimeout(2000);
   159 |     // Check if we're back on home page
   160 |     await expect(page.locator('h1')).toHaveText('My Notes');

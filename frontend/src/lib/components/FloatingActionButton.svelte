@@ -11,6 +11,7 @@
 
 <button
   class="fab"
+  data-testid="fab-new-note"
   onclick={handleClick}
   onmouseenter={() => isHovered = true}
   onmouseleave={() => isHovered = false}

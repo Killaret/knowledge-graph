@@ -6,22 +6,42 @@
 
 # Test info
 
-- Name: notes.spec.ts >> Knowledge Graph Frontend >> should open graph for a note with links
-- Location: tests\notes.spec.ts:63:3
+- Name: notes.spec.ts >> Knowledge Graph Frontend >> should show back button on note detail page
+- Location: tests\notes.spec.ts:86:3
 
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Test timeout of 30000ms exceeded.
+```
 
-Locator: locator('canvas')
-Expected: visible
-Timeout: 5000ms
-Error: element(s) not found
-
+```
+Error: page.click: Test timeout of 30000ms exceeded.
 Call log:
-  - Expect "toBeVisible" with timeout 5000ms
-  - waiting for locator('canvas')
+  - waiting for locator('button:has-text("Back")')
+    - locator resolved to <button aria-label="Go back" class="back-button s-BYOBscIiO5Lg">Back</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    51 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <vite-error-overlay></vite-error-overlay> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
 
 ```
 
@@ -30,8 +50,17 @@ Call log:
 ```yaml
 - generic [active] [ref=e1]:
   - generic [ref=e2]:
-    - heading "500" [level=1] [ref=e3]
-    - paragraph [ref=e4]: Internal Error
+    - generic [ref=e3]:
+      - button "Go back" [ref=e4] [cursor=pointer]: « Back
+      - heading "Back Button Test" [level=1] [ref=e5]
+      - generic [ref=e6]: "Created: 4/11/2026, 10:25:42 PM"
+      - generic [ref=e7]: Testing back button functionality
+      - generic [ref=e8]:
+        - link "Edit" [ref=e9] [cursor=pointer]:
+          - /url: /notes/e9d966ee-47a0-4a31-84be-88fdf3901e0d/edit
+        - button "Delete" [ref=e10]
+        - link "✨ Show constellation" [ref=e11] [cursor=pointer]:
+          - /url: /graph/e9d966ee-47a0-4a31-84be-88fdf3901e0d
     - generic:
       - generic: Ctrl+N
       - text: — новая заметка
@@ -39,17 +68,17 @@ Call log:
       - text: — поиск
       - generic: Esc
       - text: — закрыть
-  - generic [ref=e8]:
-    - generic [ref=e9]: window is not defined
-    - generic [ref=e10]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
-    - generic [ref=e11]:
+  - generic [ref=e15]:
+    - generic [ref=e16]: window is not defined
+    - generic [ref=e17]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
+    - generic [ref=e18]:
       - text: Click outside, press Esc key, or fix the code to dismiss.
       - text: You can also disable this overlay by setting
-      - code [ref=e12]: server.hmr.overlay
+      - code [ref=e19]: server.hmr.overlay
       - text: to
-      - code [ref=e13]: "false"
+      - code [ref=e20]: "false"
       - text: in
-      - code [ref=e14]: vite.config.ts
+      - code [ref=e21]: vite.config.ts
       - text: .
 ```
 
@@ -133,8 +162,7 @@ Call log:
   75  |     });
   76  | 
   77  |     await page.goto(`http://localhost:5173/graph/${id1}`);
-> 78  |     await expect(page.locator('canvas')).toBeVisible();
-      |                                          ^ Error: expect(locator).toBeVisible() failed
+  78  |     await expect(page.locator('canvas')).toBeVisible();
   79  |     // Ждём, пока d3-force немного стабилизируется
   80  |     await page.waitForTimeout(1000);
   81  |     // Проверяем, что canvas не пустой (можно по цвету пикселя, но сложно)
@@ -157,7 +185,8 @@ Call log:
   98  |     await expect(page.locator('button:has-text("Back")')).toBeVisible();
   99  |     
   100 |     // Test back button functionality - should go back to home page
-  101 |     await page.click('button:has-text("Back")');
+> 101 |     await page.click('button:has-text("Back")');
+      |                ^ Error: page.click: Test timeout of 30000ms exceeded.
   102 |     await expect(page).toHaveURL('http://localhost:5173/');
   103 |   });
   104 | 

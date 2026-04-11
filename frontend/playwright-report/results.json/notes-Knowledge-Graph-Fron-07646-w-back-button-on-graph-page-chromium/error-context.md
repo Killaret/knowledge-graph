@@ -6,80 +6,43 @@
 
 # Test info
 
-- Name: notes.spec.ts >> Knowledge Graph Frontend >> should open graph for a note with links
-- Location: tests\notes.spec.ts:63:3
+- Name: notes.spec.ts >> Knowledge Graph Frontend >> should show back button on graph page
+- Location: tests\notes.spec.ts:105:3
 
 # Error details
 
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: locator('canvas')
+Locator: locator('button:has-text("Back")')
 Expected: visible
 Timeout: 5000ms
 Error: element(s) not found
 
 Call log:
   - Expect "toBeVisible" with timeout 5000ms
-  - waiting for locator('canvas')
+  - waiting for locator('button:has-text("Back")')
 
 ```
 
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - heading "500" [level=1] [ref=e3]
-    - paragraph [ref=e4]: Internal Error
-    - generic:
-      - generic: Ctrl+N
-      - text: — новая заметка
-      - generic: Ctrl+F
-      - text: — поиск
-      - generic: Esc
-      - text: — закрыть
-  - generic [ref=e8]:
-    - generic [ref=e9]: window is not defined
-    - generic [ref=e10]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
-    - generic [ref=e11]:
-      - text: Click outside, press Esc key, or fix the code to dismiss.
-      - text: You can also disable this overlay by setting
-      - code [ref=e12]: server.hmr.overlay
-      - text: to
-      - code [ref=e13]: "false"
-      - text: in
-      - code [ref=e14]: vite.config.ts
-      - text: .
+- generic [ref=e2]:
+  - heading "500" [level=1] [ref=e3]
+  - paragraph [ref=e4]: Internal Error
+  - generic:
+    - generic: Ctrl+N
+    - text: — новая заметка
+    - generic: Ctrl+F
+    - text: — поиск
+    - generic: Esc
+    - text: — закрыть
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | test.describe('Knowledge Graph Frontend', () => {
-  4   |   test.beforeEach(async ({ page }) => {
-  5   |     await page.goto('http://localhost:5173');
-  6   |     await page.waitForLoadState('networkidle');
-  7   |   });
-  8   | 
-  9   |   test('should create a new note', async ({ page }) => {
-  10  |     await page.click('[data-testid="fab-new-note"]');
-  11  |     await page.fill('input[placeholder="Title"]', 'Playwright Test');
-  12  |     await page.fill('textarea', 'Automated content');
-  13  |     await page.click('button:has-text("Create")');
-  14  |     // Wait for navigation to complete with explicit timeout
-  15  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
-  16  |     await expect(page.locator('h1')).toHaveText('Playwright Test');
-  17  |   });
-  18  | 
-  19  |   test('should edit a note', async ({ page }) => {
-  20  |     // Сначала создадим заметку через API или UI
-  21  |     await page.click('[data-testid="fab-new-note"]');
-  22  |     await page.fill('input[placeholder="Title"]', 'To Edit');
-  23  |     await page.fill('textarea', 'Original');
-  24  |     await page.click('button:has-text("Create")');
   25  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
   26  |     // Wait additional time for page to fully load
   27  |     await page.waitForTimeout(1000);
@@ -133,8 +96,7 @@ Call log:
   75  |     });
   76  | 
   77  |     await page.goto(`http://localhost:5173/graph/${id1}`);
-> 78  |     await expect(page.locator('canvas')).toBeVisible();
-      |                                          ^ Error: expect(locator).toBeVisible() failed
+  78  |     await expect(page.locator('canvas')).toBeVisible();
   79  |     // Ждём, пока d3-force немного стабилизируется
   80  |     await page.waitForTimeout(1000);
   81  |     // Проверяем, что canvas не пустой (можно по цвету пикселя, но сложно)
@@ -181,7 +143,8 @@ Call log:
   122 |     await page.waitForTimeout(1000);
   123 |     
   124 |     // Check that back button is visible
-  125 |     await expect(page.locator('button:has-text("Back")')).toBeVisible();
+> 125 |     await expect(page.locator('button:has-text("Back")')).toBeVisible();
+      |                                                           ^ Error: expect(locator).toBeVisible() failed
   126 |     
   127 |     // Test back button functionality - should go back to note page using browser history
   128 |     await page.click('button:has-text("Back")');

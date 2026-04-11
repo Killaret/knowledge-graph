@@ -22,11 +22,7 @@ Timeout:  5000ms
 Call log:
   - Expect "toHaveText" with timeout 5000ms
   - waiting for locator('h1')
-    6 × locator resolved to <h1>500</h1>
-      - unexpected value "500"
-    - waiting for" http://localhost:5173/graph/1e887863-a427-4c9f-b5ff-8211e73fd24d" navigation to finish...
-    - navigated to "http://localhost:5173/graph/1e887863-a427-4c9f-b5ff-8211e73fd24d"
-    2 × locator resolved to <h1>500</h1>
+    9 × locator resolved to <h1>500</h1>
       - unexpected value "500"
 
 ```
@@ -34,16 +30,22 @@ Call log:
 # Page snapshot
 
 ```yaml
-- generic [ref=e2]:
-  - heading "500" [level=1] [ref=e3]
-  - paragraph [ref=e4]: Internal Error
-  - generic:
-    - generic: Ctrl+N
-    - text: — новая заметка
-    - generic: Ctrl+F
-    - text: — поиск
-    - generic: Esc
-    - text: — закрыть
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "500" [level=1] [ref=e3]
+    - paragraph [ref=e4]: Internal Error
+  - generic [ref=e7]:
+    - generic [ref=e8]: window is not defined
+    - generic [ref=e9]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
+    - generic [ref=e10]:
+      - text: Click outside, press Esc key, or fix the code to dismiss.
+      - text: You can also disable this overlay by setting
+      - code [ref=e11]: server.hmr.overlay
+      - text: to
+      - code [ref=e12]: "false"
+      - text: in
+      - code [ref=e13]: vite.config.ts
+      - text: .
 ```
 
 # Test source

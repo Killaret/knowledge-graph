@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Knowledge Graph Frontend', () => {
   test.beforeEach(async ({ page }) => {
-    // Очистка БД через API (опционально)
     await page.goto('http://localhost:5173');
+    await page.waitForLoadState('networkidle');
   });
 
   test('should create a new note', async ({ page }) => {
-    await page.click('a:has-text("+ New Note")');
+    await page.click('[data-testid="fab-new-note"]');
     await page.fill('input[placeholder="Title"]', 'Playwright Test');
     await page.fill('textarea', 'Automated content');
     await page.click('button:has-text("Create")');
@@ -18,7 +18,7 @@ test.describe('Knowledge Graph Frontend', () => {
 
   test('should edit a note', async ({ page }) => {
     // Сначала создадим заметку через API или UI
-    await page.click('a:has-text("+ New Note")');
+    await page.click('[data-testid="fab-new-note"]');
     await page.fill('input[placeholder="Title"]', 'To Edit');
     await page.fill('textarea', 'Original');
     await page.click('button:has-text("Create")');
