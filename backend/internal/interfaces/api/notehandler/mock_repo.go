@@ -116,14 +116,27 @@ func contains(s, substr string) bool {
 				findSubstring(s, substr))))
 }
 
-func (m *mockNoteRepo) List(ctx context.Context) ([]*note.Note, error) {
+func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var result []*note.Note
+
+	var allNotes []*note.Note
 	for _, n := range m.notes {
-		result = append(result, n)
+		allNotes = append(allNotes, n)
 	}
-	return result, nil
+
+	total := int64(len(allNotes))
+
+	if offset >= len(allNotes) {
+		return []*note.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(allNotes) {
+		end = len(allNotes)
+	}
+
+	return allNotes[offset:end], total, nil
 }
 
 func findSubstring(s, substr string) bool {

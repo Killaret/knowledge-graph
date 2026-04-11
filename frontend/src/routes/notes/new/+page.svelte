@@ -32,8 +32,8 @@
 {/if}
 
 <form onsubmit={handleSubmit}>
-  <input type="text" placeholder="Title" bind:value={title} required />
-  <textarea placeholder="Content (supports [[wiki links]])" bind:value={content} rows="15"></textarea>
+  <input type="text" name="title" placeholder="Title" bind:value={title} required />
+  <textarea name="content" placeholder="Content (supports [[wiki links]])" bind:value={content} rows="15"></textarea>
   <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create'}</button>
 </form>
 

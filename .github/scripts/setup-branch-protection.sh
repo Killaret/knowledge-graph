@@ -31,11 +31,14 @@ gh api repos/$REPO/branches/main/protection --method PUT \
     "require_signed_commits": false
   }'
 
-# 2. Protect windsurf branch - only Killaret
+# 2. Protect windsurf branch - only Killaret + status checks
 echo "Setting up protection for windsurf branch..."
 gh api repos/$REPO/branches/windsurf/protection --method PUT \
   --input - <<< '{
-    "required_status_checks": null,
+    "required_status_checks": {
+      "strict": true,
+      "contexts": ["Backend Tests", "Frontend Tests", "NLP Service Tests", "Integration Tests", "Security Scan"]
+    },
     "enforce_admins": false,
     "required_pull_request_reviews": null,
     "restrictions": {
@@ -43,14 +46,18 @@ gh api repos/$REPO/branches/windsurf/protection --method PUT \
       "teams": []
     },
     "allow_force_pushes": false,
-    "allow_deletions": false
+    "allow_deletions": false,
+    "required_conversation_resolution": false
   }'
 
-# 3. Protect sourceTextHandler branch - only alximac
+# 3. Protect sourceTextHandler branch - only alximac + status checks
 echo "Setting up protection for sourceTextHandler branch..."
 gh api repos/$REPO/branches/sourceTextHandler/protection --method PUT \
   --input - <<< '{
-    "required_status_checks": null,
+    "required_status_checks": {
+      "strict": true,
+      "contexts": ["Backend Tests", "Frontend Tests", "NLP Service Tests", "Integration Tests", "Security Scan"]
+    },
     "enforce_admins": false,
     "required_pull_request_reviews": null,
     "restrictions": {
@@ -58,12 +65,13 @@ gh api repos/$REPO/branches/sourceTextHandler/protection --method PUT \
       "teams": []
     },
     "allow_force_pushes": false,
-    "allow_deletions": false
+    "allow_deletions": false,
+    "required_conversation_resolution": false
   }'
 
 echo "Branch protection setup complete!"
 echo ""
 echo "Summary:"
 echo "- main: Only Killaret, requires PR + 1 review + status checks"
-echo "- windsurf: Only Killaret"
-echo "- sourceTextHandler: Only alximac"
+echo "- windsurf: Only Killaret + status checks"
+echo "- sourceTextHandler: Only alximac + status checks"

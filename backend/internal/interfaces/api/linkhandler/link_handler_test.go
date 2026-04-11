@@ -35,12 +35,24 @@ func (m *mockNoteRepoForLink) FindByID(ctx context.Context, id uuid.UUID) (*note
 	return n, nil
 }
 func (m *mockNoteRepoForLink) Delete(ctx context.Context, id uuid.UUID) error { return nil }
-func (m *mockNoteRepoForLink) List(ctx context.Context) ([]*note.Note, error) {
-	var notes []*note.Note
+func (m *mockNoteRepoForLink) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	var allNotes []*note.Note
 	for _, n := range m.notes {
-		notes = append(notes, n)
+		allNotes = append(allNotes, n)
 	}
-	return notes, nil
+
+	total := int64(len(allNotes))
+
+	if offset >= len(allNotes) {
+		return []*note.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(allNotes) {
+		end = len(allNotes)
+	}
+
+	return allNotes[offset:end], total, nil
 }
 func (m *mockNoteRepoForLink) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
 	var results []*note.Note

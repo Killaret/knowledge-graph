@@ -31,10 +31,13 @@ $mainProtection = @{
 
 $mainProtection | gh api repos/$REPO/branches/main/protection --method PUT --input -
 
-# 2. Protect windsurf branch - only Killaret
+# 2. Protect windsurf branch - only Killaret + status checks
 Write-Host "Setting up protection for windsurf branch..." -ForegroundColor Yellow
 $windsurfProtection = @{
-    required_status_checks = $null
+    required_status_checks = @{
+        strict = $true
+        contexts = @("Backend Tests", "Frontend Tests", "NLP Service Tests", "Integration Tests", "Security Scan")
+    }
     enforce_admins = $false
     required_pull_request_reviews = $null
     restrictions = @{
@@ -43,14 +46,18 @@ $windsurfProtection = @{
     }
     allow_force_pushes = $false
     allow_deletions = $false
+    required_conversation_resolution = $false
 } | ConvertTo-Json -Depth 10
 
 $windsurfProtection | gh api repos/$REPO/branches/windsurf/protection --method PUT --input -
 
-# 3. Protect sourceTextHandler branch - only alximac
+# 3. Protect sourceTextHandler branch - only alximac + status checks
 Write-Host "Setting up protection for sourceTextHandler branch..." -ForegroundColor Yellow
 $sourceProtection = @{
-    required_status_checks = $null
+    required_status_checks = @{
+        strict = $true
+        contexts = @("Backend Tests", "Frontend Tests", "NLP Service Tests", "Integration Tests", "Security Scan")
+    }
     enforce_admins = $false
     required_pull_request_reviews = $null
     restrictions = @{
@@ -59,6 +66,7 @@ $sourceProtection = @{
     }
     allow_force_pushes = $false
     allow_deletions = $false
+    required_conversation_resolution = $false
 } | ConvertTo-Json -Depth 10
 
 $sourceProtection | gh api repos/$REPO/branches/sourceTextHandler/protection --method PUT --input -
@@ -66,5 +74,5 @@ $sourceProtection | gh api repos/$REPO/branches/sourceTextHandler/protection --m
 Write-Host "`nBranch protection setup complete!" -ForegroundColor Green
 Write-Host "`nSummary:" -ForegroundColor Cyan
 Write-Host "- main: Only Killaret, requires PR + 1 review + status checks" -ForegroundColor White
-Write-Host "- windsurf: Only Killaret" -ForegroundColor White
-Write-Host "- sourceTextHandler: Only alximac" -ForegroundColor White
+Write-Host "- windsurf: Only Killaret + status checks" -ForegroundColor White
+Write-Host "- sourceTextHandler: Only alximac + status checks" -ForegroundColor White

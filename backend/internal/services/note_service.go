@@ -58,9 +58,15 @@ func (s *NoteService) Search(ctx context.Context, query string, page, pageSize i
 	}, nil
 }
 
-// List returns all notes (keeping existing functionality)
-func (s *NoteService) List(ctx context.Context) ([]*note.Note, error) {
-	return s.repo.List(ctx)
+// List returns notes with pagination
+func (s *NoteService) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.repo.List(ctx, limit, offset)
 }
 
 // FindByID returns a note by ID (keeping existing functionality)

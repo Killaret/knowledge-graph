@@ -56,11 +56,13 @@ Or use Git Bash to run the shell script.
 
 ### windsurf branch
 - ✅ Only `Killaret` can push
+- ✅ Status checks must pass (Backend/Frontend/NLP/Integration/Security tests)
 - ❌ Force pushes disabled
 - ❌ Deletions disabled
 
 ### sourceTextHandler branch
 - ✅ Only `alximac` can push
+- ✅ Status checks must pass (Backend/Frontend/NLP/Integration/Security tests)
 - ❌ Force pushes disabled
 - ❌ Deletions disabled
 

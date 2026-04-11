@@ -322,25 +322,30 @@ func (h *Handler) Search(c *gin.Context) {
 	})
 }
 
-// List возвращает список всех заметок
+// List возвращает список заметок с пагинацией
 func (h *Handler) List(c *gin.Context) {
-	// Получаем все заметки из репозитория (нужно добавить метод List в Repository)
-	notes, err := h.repo.List(c.Request.Context())
+	// Получаем параметры пагинации из query
+	limitStr := c.DefaultQuery("limit", "20")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	// Получаем заметки из репозитория
+	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch notes"})
 		return
 	}
 
-	result := make([]gin.H, 0, len(notes))
-	for _, n := range notes {
-		result = append(result, gin.H{
-			"id":         n.ID(),
-			"title":      n.Title().String(),
-			"content":    n.Content().String(),
-			"metadata":   n.Metadata().Value(),
-			"created_at": n.CreatedAt(),
-			"updated_at": n.UpdatedAt(),
-		})
-	}
-	c.JSON(200, result)
+	c.JSON(200, gin.H{
+		"notes":  notes,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+	})
 }

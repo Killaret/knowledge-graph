@@ -56,14 +56,25 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
 }
 
-// List возвращает все заметки
-func (r *NoteRepository) List(ctx context.Context) ([]*note.Note, error) {
+// List возвращает заметки с пагинацией
+func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
-	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
-	if err != nil {
-		return nil, err
+	var total int64
+
+	db := r.db.WithContext(ctx).Model(&NoteModel{})
+
+	// Count total
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
-	return toDomainNotes(models), nil
+
+	// Get paginated results
+	err := db.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainNotes(models), total, nil
 }
 
 // Search performs multilingual full-text search on notes (Russian + English)

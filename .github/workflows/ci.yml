@@ -113,12 +113,9 @@ jobs:
         flags: backend
         name: backend-coverage
 
-    - name: Validate OpenAPI specification
+    - name: Check OpenAPI file exists
       working-directory: ./backend
-      run: |
-        # Simple YAML syntax validation (swagger-validator has 404 issues)
-        cat openAPI.yaml | head -50
-        echo "OpenAPI file exists and readable"
+      run: ls -la openAPI.yaml
 
     - name: Build backend
       working-directory: ./backend
@@ -405,35 +402,26 @@ jobs:
   api-docs:
     name: API Documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
 
-    - name: Copy API Docs
+    - name: Copy API Specs
       run: |
-        mkdir -p backend-docs nlp-docs
-        cp ./backend/openAPI.yaml ./backend-docs/
-        cp ./nlp-service/openapi.yaml ./nlp-docs/
-
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./
-        publish_branch: gh-pages
-        keep_files: true
-        destination_dir: api-docs
+        mkdir -p _site/api-docs
+        cp ./backend/openAPI.yaml _site/api-docs/
+        cp ./nlp-service/openapi.yaml _site/api-docs/
 
     - name: Upload API docs as artifacts
       uses: actions/upload-artifact@v5
       if: always()
       with:
         name: api-documentation
-        path: |
-          ./backend-docs/
-          ./nlp-docs/
+        path: ./_site/api-docs/
         retention-days: 30
 
   security-scan:
