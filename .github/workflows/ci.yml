@@ -512,3 +512,4 @@ jobs:
         tags: |
           ${{ secrets.DOCKER_USERNAME }}/knowledge-graph-nlp:latest
           ${{ secrets.DOCKER_USERNAME }}/knowledge-graph-nlp:${{ github.sha }}
+
