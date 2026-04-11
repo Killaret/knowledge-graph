@@ -6,50 +6,40 @@
 
 # Test info
 
-- Name: graph-3d.spec.ts >> 3D Graph Visualization >> should handle back button navigation from graph page
-- Location: tests\graph-3d.spec.ts:84:3
+- Name: graph-3d.spec.ts >> 3D Graph Visualization >> should show graph container with correct styling
+- Location: tests\graph-3d.spec.ts:58:3
 
 # Error details
 
 ```
-Test timeout of 30000ms exceeded.
-```
+Error: expect(locator).toBeVisible() failed
 
-```
-Error: page.click: Test timeout of 30000ms exceeded.
+Locator: locator('.graph-page')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
 Call log:
-  - waiting for locator('.back-button')
-    - waiting for" http://localhost:5173/graph/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839" navigation to finish...
-    - navigated to "http://localhost:5173/graph/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839"
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('.graph-page')
+    - waiting for" http://localhost:5173/graph/8b4640e3-df64-4ba9-8c50-472b820d86cb" navigation to finish...
+    - navigated to "http://localhost:5173/graph/8b4640e3-df64-4ba9-8c50-472b820d86cb"
 
 ```
 
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - heading "500" [level=1] [ref=e3]
-    - paragraph [ref=e4]: Internal Error
-    - generic:
-      - generic: Ctrl+N
-      - text: — новая заметка
-      - generic: Ctrl+F
-      - text: — поиск
-      - generic: Esc
-      - text: — закрыть
-  - generic [ref=e8]:
-    - generic [ref=e9]: window is not defined
-    - generic [ref=e10]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
-    - generic [ref=e11]:
-      - text: Click outside, press Esc key, or fix the code to dismiss.
-      - text: You can also disable this overlay by setting
-      - code [ref=e12]: server.hmr.overlay
-      - text: to
-      - code [ref=e13]: "false"
-      - text: in
-      - code [ref=e14]: vite.config.ts
-      - text: .
+- generic [ref=e2]:
+  - heading "500" [level=1] [ref=e3]
+  - paragraph [ref=e4]: Internal Error
+  - generic:
+    - generic: Ctrl+N
+    - text: — новая заметка
+    - generic: Ctrl+F
+    - text: — поиск
+    - generic: Esc
+    - text: — закрыть
 ```
 
 # Test source
@@ -127,7 +117,8 @@ Call log:
   70  |     await page.waitForLoadState('networkidle');
   71  |     
   72  |     // Verify graph container has correct structure
-  73  |     await expect(page.locator('.graph-page')).toBeVisible();
+> 73  |     await expect(page.locator('.graph-page')).toBeVisible();
+      |                                               ^ Error: expect(locator).toBeVisible() failed
   74  |     await expect(page.locator('.graph-header')).toBeVisible();
   75  |     await expect(page.locator('.graph-header h1')).toHaveText('Knowledge Constellation');
   76  |     await expect(page.locator('.hint')).toBeVisible();
@@ -153,8 +144,7 @@ Call log:
   96  |     await page.waitForLoadState('networkidle');
   97  |     
   98  |     // Click back button
-> 99  |     await page.click('.back-button');
-      |                ^ Error: page.click: Test timeout of 30000ms exceeded.
+  99  |     await page.click('.back-button');
   100 |     
   101 |     // Should navigate back to home
   102 |     await page.waitForURL(/\/$/);
@@ -229,5 +219,4 @@ Call log:
   171 |     expect(isEmptyVisible || isErrorVisible).toBe(true);
   172 |   });
   173 | });
-  174 | 
 ```

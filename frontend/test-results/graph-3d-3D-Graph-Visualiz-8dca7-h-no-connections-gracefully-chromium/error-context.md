@@ -6,100 +6,49 @@
 
 # Test info
 
-- Name: graph-3d.spec.ts >> 3D Graph Visualization >> should handle back button navigation from graph page
-- Location: tests\graph-3d.spec.ts:84:3
+- Name: graph-3d.spec.ts >> 3D Graph Visualization >> should handle graph page with no connections gracefully
+- Location: tests\graph-3d.spec.ts:131:3
 
 # Error details
 
 ```
-Test timeout of 30000ms exceeded.
-```
+Error: expect(locator).toHaveText(expected) failed
 
-```
-Error: page.click: Test timeout of 30000ms exceeded.
+Locator:  locator('h1')
+Expected: "Knowledge Constellation"
+Received: "500"
+Timeout:  5000ms
+
 Call log:
-  - waiting for locator('.back-button')
-    - waiting for" http://localhost:5173/graph/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839" navigation to finish...
-    - navigated to "http://localhost:5173/graph/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839"
+  - Expect "toHaveText" with timeout 5000ms
+  - waiting for locator('h1')
+    6 × locator resolved to <h1>500</h1>
+      - unexpected value "500"
+    - waiting for" http://localhost:5173/graph/1e887863-a427-4c9f-b5ff-8211e73fd24d" navigation to finish...
+    - navigated to "http://localhost:5173/graph/1e887863-a427-4c9f-b5ff-8211e73fd24d"
+    2 × locator resolved to <h1>500</h1>
+      - unexpected value "500"
 
 ```
 
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - heading "500" [level=1] [ref=e3]
-    - paragraph [ref=e4]: Internal Error
-    - generic:
-      - generic: Ctrl+N
-      - text: — новая заметка
-      - generic: Ctrl+F
-      - text: — поиск
-      - generic: Esc
-      - text: — закрыть
-  - generic [ref=e8]:
-    - generic [ref=e9]: window is not defined
-    - generic [ref=e10]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
-    - generic [ref=e11]:
-      - text: Click outside, press Esc key, or fix the code to dismiss.
-      - text: You can also disable this overlay by setting
-      - code [ref=e12]: server.hmr.overlay
-      - text: to
-      - code [ref=e13]: "false"
-      - text: in
-      - code [ref=e14]: vite.config.ts
-      - text: .
+- generic [ref=e2]:
+  - heading "500" [level=1] [ref=e3]
+  - paragraph [ref=e4]: Internal Error
+  - generic:
+    - generic: Ctrl+N
+    - text: — новая заметка
+    - generic: Ctrl+F
+    - text: — поиск
+    - generic: Esc
+    - text: — закрыть
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | /**
-  4   |  * Tests for 3D Graph Visualization
-  5   |  * These tests verify that the graph page renders correctly
-  6   |  * with either 2D or 3D canvas
-  7   |  */
-  8   | 
-  9   | // Store created note IDs for cleanup
-  10  | const createdNoteIds: string[] = [];
-  11  | 
-  12  | test.afterEach(async ({ request }) => {
-  13  |   // Cleanup all created notes
-  14  |   for (const noteId of createdNoteIds) {
-  15  |     try {
-  16  |       await request.delete(`http://localhost:8080/notes/${noteId}`);
-  17  |     } catch (e) {
-  18  |       // Ignore cleanup errors
-  19  |     }
-  20  |   }
-  21  |   createdNoteIds.length = 0;
-  22  | });
-  23  | 
-  24  | test.describe('3D Graph Visualization', () => {
-  25  |   
-  26  |   test('should render graph page with canvas visible', async ({ page, request }) => {
-  27  |     // Create a note via API
-  28  |     const timestamp = Date.now();
-  29  |     const note = await request.post('http://localhost:8080/notes', {
-  30  |       data: { title: 'Graph Test ' + timestamp, content: 'Test content' }
-  31  |     });
-  32  |     const noteData = await note.json();
-  33  |     const noteId = noteData.id;
-  34  |     createdNoteIds.push(noteId);
-  35  |     
-  36  |     // Navigate to graph page
-  37  |     await page.goto(`http://localhost:5173/graph/${noteId}`);
-  38  |     await page.waitForLoadState('networkidle');
-  39  |     
-  40  |     // Verify page title
-  41  |     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
-  42  |     
-  43  |     // Verify canvas or graph container is visible
-  44  |     const canvas = page.locator('canvas');
-  45  |     const graphContainer = page.locator('.graph-container');
   46  |     await expect(canvas.or(graphContainer)).toBeVisible({ timeout: 10000 });
   47  |     
   48  |     // Verify WebGL is available (if canvas exists)
@@ -153,8 +102,7 @@ Call log:
   96  |     await page.waitForLoadState('networkidle');
   97  |     
   98  |     // Click back button
-> 99  |     await page.click('.back-button');
-      |                ^ Error: page.click: Test timeout of 30000ms exceeded.
+  99  |     await page.click('.back-button');
   100 |     
   101 |     // Should navigate back to home
   102 |     await page.waitForURL(/\/$/);
@@ -201,7 +149,8 @@ Call log:
   143 |     await page.waitForLoadState('networkidle');
   144 |     
   145 |     // Page should render without errors even with no connections
-  146 |     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
+> 146 |     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
+      |                                      ^ Error: expect(locator).toHaveText(expected) failed
   147 |     await expect(page.locator('.graph-container')).toBeVisible();
   148 |     
   149 |     // Should show canvas (single node)

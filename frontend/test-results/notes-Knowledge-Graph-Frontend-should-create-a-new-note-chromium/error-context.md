@@ -1,0 +1,6128 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: notes.spec.ts >> Knowledge Graph Frontend >> should create a new note
+- Location: tests\notes.spec.ts:9:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: page.click: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for locator('a:has-text("+ New Note")')
+    - waiting for" http://localhost:5173/" navigation to finish...
+    - navigated to "http://localhost:5173/"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - button "Открыть меню" [ref=e3] [cursor=pointer]:
+      - img [ref=e4]
+    - button "Открыть поиск" [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+      - text: Поиск
+    - heading "My Notes" [level=1] [ref=e9]
+    - generic [ref=e10]:
+      - searchbox "Search" [ref=e11]
+      - button "Search" [ref=e12] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - link "Navigation Test 1775933632077 Testing navigation..." [ref=e15] [cursor=pointer]:
+          - /url: /notes/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839
+          - heading "Navigation Test 1775933632077" [level=3] [ref=e16]
+          - paragraph [ref=e17]: Testing navigation...
+        - generic [ref=e18]:
+          - link "Edit" [ref=e19] [cursor=pointer]:
+            - /url: /notes/bf82ed7e-e6d3-4e55-9ee1-d9c5781c5839/edit
+          - button "Delete" [ref=e20]
+      - generic [ref=e21]:
+        - link "History Test Testing browser back functionality..." [ref=e22] [cursor=pointer]:
+          - /url: /notes/b0ffd5fd-06ee-450b-8664-02ea1ad66a4f
+          - heading "History Test" [level=3] [ref=e23]
+          - paragraph [ref=e24]: Testing browser back functionality...
+        - generic [ref=e25]:
+          - link "Edit" [ref=e26] [cursor=pointer]:
+            - /url: /notes/b0ffd5fd-06ee-450b-8664-02ea1ad66a4f/edit
+          - button "Delete" [ref=e27]
+      - generic [ref=e28]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e29] [cursor=pointer]:
+          - /url: /notes/46a2ce19-7bd1-4130-b9c7-a883eba7295f
+          - heading "Graph Back Test" [level=3] [ref=e30]
+          - paragraph [ref=e31]: Testing back button on graph...
+        - generic [ref=e32]:
+          - link "Edit" [ref=e33] [cursor=pointer]:
+            - /url: /notes/46a2ce19-7bd1-4130-b9c7-a883eba7295f/edit
+          - button "Delete" [ref=e34]
+      - generic [ref=e35]:
+        - link "Back Button Test Testing back button functionality..." [ref=e36] [cursor=pointer]:
+          - /url: /notes/16896a75-004d-4541-ae9f-f8e20d2abce1
+          - heading "Back Button Test" [level=3] [ref=e37]
+          - paragraph [ref=e38]: Testing back button functionality...
+        - generic [ref=e39]:
+          - link "Edit" [ref=e40] [cursor=pointer]:
+            - /url: /notes/16896a75-004d-4541-ae9f-f8e20d2abce1/edit
+          - button "Delete" [ref=e41]
+      - generic [ref=e42]:
+        - link "Node B B..." [ref=e43] [cursor=pointer]:
+          - /url: /notes/d1c254f0-0996-46ea-b482-6858b6ca8e2c
+          - heading "Node B" [level=3] [ref=e44]
+          - paragraph [ref=e45]: B...
+        - generic [ref=e46]:
+          - link "Edit" [ref=e47] [cursor=pointer]:
+            - /url: /notes/d1c254f0-0996-46ea-b482-6858b6ca8e2c/edit
+          - button "Delete" [ref=e48]
+      - generic [ref=e49]:
+        - link "Node A A..." [ref=e50] [cursor=pointer]:
+          - /url: /notes/b1826e3d-95f5-482f-9f45-908a702942ff
+          - heading "Node A" [level=3] [ref=e51]
+          - paragraph [ref=e52]: A...
+        - generic [ref=e53]:
+          - link "Edit" [ref=e54] [cursor=pointer]:
+            - /url: /notes/b1826e3d-95f5-482f-9f45-908a702942ff/edit
+          - button "Delete" [ref=e55]
+      - generic [ref=e56]:
+        - link "Edited New content..." [ref=e57] [cursor=pointer]:
+          - /url: /notes/65f696b5-8ce9-40c3-afe8-6caf938276d2
+          - heading "Edited" [level=3] [ref=e58]
+          - paragraph [ref=e59]: New content...
+        - generic [ref=e60]:
+          - link "Edit" [ref=e61] [cursor=pointer]:
+            - /url: /notes/65f696b5-8ce9-40c3-afe8-6caf938276d2/edit
+          - button "Delete" [ref=e62]
+      - generic [ref=e63]:
+        - link "Isolated Note 1775927226361 No connections..." [ref=e64] [cursor=pointer]:
+          - /url: /notes/8773c70d-f1ae-4da0-84df-669886b88e9d
+          - heading "Isolated Note 1775927226361" [level=3] [ref=e65]
+          - paragraph [ref=e66]: No connections...
+        - generic [ref=e67]:
+          - link "Edit" [ref=e68] [cursor=pointer]:
+            - /url: /notes/8773c70d-f1ae-4da0-84df-669886b88e9d/edit
+          - button "Delete" [ref=e69]
+      - generic [ref=e70]:
+        - link "Playwright Test Automated content..." [ref=e71] [cursor=pointer]:
+          - /url: /notes/f260544f-c4d8-435e-9d0c-0c6cfd16f3bc
+          - heading "Playwright Test" [level=3] [ref=e72]
+          - paragraph [ref=e73]: Automated content...
+        - generic [ref=e74]:
+          - link "Edit" [ref=e75] [cursor=pointer]:
+            - /url: /notes/f260544f-c4d8-435e-9d0c-0c6cfd16f3bc/edit
+          - button "Delete" [ref=e76]
+      - generic [ref=e77]:
+        - link "Performance Test 1775927223169 Testing performance indicator..." [ref=e78] [cursor=pointer]:
+          - /url: /notes/74d42bf7-a1dc-497f-8e99-70ef89d3dba8
+          - heading "Performance Test 1775927223169" [level=3] [ref=e79]
+          - paragraph [ref=e80]: Testing performance indicator...
+        - generic [ref=e81]:
+          - link "Edit" [ref=e82] [cursor=pointer]:
+            - /url: /notes/74d42bf7-a1dc-497f-8e99-70ef89d3dba8/edit
+          - button "Delete" [ref=e83]
+      - generic [ref=e84]:
+        - link "Navigation Test 1775927220763 Testing navigation..." [ref=e85] [cursor=pointer]:
+          - /url: /notes/8f187da5-2b45-4d29-8427-879418aff560
+          - heading "Navigation Test 1775927220763" [level=3] [ref=e86]
+          - paragraph [ref=e87]: Testing navigation...
+        - generic [ref=e88]:
+          - link "Edit" [ref=e89] [cursor=pointer]:
+            - /url: /notes/8f187da5-2b45-4d29-8427-879418aff560/edit
+          - button "Delete" [ref=e90]
+      - generic [ref=e91]:
+        - link "Graph Test 1775927217960 Test content..." [ref=e92] [cursor=pointer]:
+          - /url: /notes/3719cbd9-ef5b-4184-ab64-e43df76372c5
+          - heading "Graph Test 1775927217960" [level=3] [ref=e93]
+          - paragraph [ref=e94]: Test content...
+        - generic [ref=e95]:
+          - link "Edit" [ref=e96] [cursor=pointer]:
+            - /url: /notes/3719cbd9-ef5b-4184-ab64-e43df76372c5/edit
+          - button "Delete" [ref=e97]
+      - generic [ref=e98]:
+        - link "Styling Test 1775927217908 Testing styling..." [ref=e99] [cursor=pointer]:
+          - /url: /notes/60db63da-4272-4f11-8468-a4e6581fac72
+          - heading "Styling Test 1775927217908" [level=3] [ref=e100]
+          - paragraph [ref=e101]: Testing styling...
+        - generic [ref=e102]:
+          - link "Edit" [ref=e103] [cursor=pointer]:
+            - /url: /notes/60db63da-4272-4f11-8468-a4e6581fac72/edit
+          - button "Delete" [ref=e104]
+      - generic [ref=e105]:
+        - link "Isolated Note This note has no connections..." [ref=e106] [cursor=pointer]:
+          - /url: /notes/c91a945b-b1ae-46b8-8eb1-0e37653bd732
+          - heading "Isolated Note" [level=3] [ref=e107]
+          - paragraph [ref=e108]: This note has no connections...
+        - generic [ref=e109]:
+          - link "Edit" [ref=e110] [cursor=pointer]:
+            - /url: /notes/c91a945b-b1ae-46b8-8eb1-0e37653bd732/edit
+          - button "Delete" [ref=e111]
+      - generic [ref=e112]:
+        - link "Performance Test Note Testing performance mode indicator..." [ref=e113] [cursor=pointer]:
+          - /url: /notes/ce4e0005-36e3-494c-8e2e-f5072df70e67
+          - heading "Performance Test Note" [level=3] [ref=e114]
+          - paragraph [ref=e115]: Testing performance mode indicator...
+        - generic [ref=e116]:
+          - link "Edit" [ref=e117] [cursor=pointer]:
+            - /url: /notes/ce4e0005-36e3-494c-8e2e-f5072df70e67/edit
+          - button "Delete" [ref=e118]
+      - generic [ref=e119]:
+        - link "Navigation Test Note Testing navigation from graph..." [ref=e120] [cursor=pointer]:
+          - /url: /notes/9e0a1750-34dc-4408-a72a-6db6d95e8179
+          - heading "Navigation Test Note" [level=3] [ref=e121]
+          - paragraph [ref=e122]: Testing navigation from graph...
+        - generic [ref=e123]:
+          - link "Edit" [ref=e124] [cursor=pointer]:
+            - /url: /notes/9e0a1750-34dc-4408-a72a-6db6d95e8179/edit
+          - button "Delete" [ref=e125]
+      - generic [ref=e126]:
+        - link "Styling Test Note Testing graph styling..." [ref=e127] [cursor=pointer]:
+          - /url: /notes/0bc96098-3964-4b5c-b22a-d5c3a0ccbdfd
+          - heading "Styling Test Note" [level=3] [ref=e128]
+          - paragraph [ref=e129]: Testing graph styling...
+        - generic [ref=e130]:
+          - link "Edit" [ref=e131] [cursor=pointer]:
+            - /url: /notes/0bc96098-3964-4b5c-b22a-d5c3a0ccbdfd/edit
+          - button "Delete" [ref=e132]
+      - generic [ref=e133]:
+        - link "Graph Test Note This is a test note for graph visualization..." [ref=e134] [cursor=pointer]:
+          - /url: /notes/5687fc34-b26b-41de-991d-a7fcbcbdf615
+          - heading "Graph Test Note" [level=3] [ref=e135]
+          - paragraph [ref=e136]: This is a test note for graph visualization...
+        - generic [ref=e137]:
+          - link "Edit" [ref=e138] [cursor=pointer]:
+            - /url: /notes/5687fc34-b26b-41de-991d-a7fcbcbdf615/edit
+          - button "Delete" [ref=e139]
+      - generic [ref=e140]:
+        - link "Performance Test Note Testing performance mode indicator..." [ref=e141] [cursor=pointer]:
+          - /url: /notes/df318941-4883-4898-b350-2004ca712669
+          - heading "Performance Test Note" [level=3] [ref=e142]
+          - paragraph [ref=e143]: Testing performance mode indicator...
+        - generic [ref=e144]:
+          - link "Edit" [ref=e145] [cursor=pointer]:
+            - /url: /notes/df318941-4883-4898-b350-2004ca712669/edit
+          - button "Delete" [ref=e146]
+      - generic [ref=e147]:
+        - link "Navigation Test Note Testing navigation from graph..." [ref=e148] [cursor=pointer]:
+          - /url: /notes/53924818-f7a5-458a-bc44-57256552a3a3
+          - heading "Navigation Test Note" [level=3] [ref=e149]
+          - paragraph [ref=e150]: Testing navigation from graph...
+        - generic [ref=e151]:
+          - link "Edit" [ref=e152] [cursor=pointer]:
+            - /url: /notes/53924818-f7a5-458a-bc44-57256552a3a3/edit
+          - button "Delete" [ref=e153]
+      - generic [ref=e154]:
+        - link "Styling Test Note Testing graph styling..." [ref=e155] [cursor=pointer]:
+          - /url: /notes/27adc508-b8d2-4721-902f-e09c1fc3d74b
+          - heading "Styling Test Note" [level=3] [ref=e156]
+          - paragraph [ref=e157]: Testing graph styling...
+        - generic [ref=e158]:
+          - link "Edit" [ref=e159] [cursor=pointer]:
+            - /url: /notes/27adc508-b8d2-4721-902f-e09c1fc3d74b/edit
+          - button "Delete" [ref=e160]
+      - generic [ref=e161]:
+        - link "Graph Test Note This is a test note for graph visualization..." [ref=e162] [cursor=pointer]:
+          - /url: /notes/eceebf43-0604-43f3-a76a-ead7ef220303
+          - heading "Graph Test Note" [level=3] [ref=e163]
+          - paragraph [ref=e164]: This is a test note for graph visualization...
+        - generic [ref=e165]:
+          - link "Edit" [ref=e166] [cursor=pointer]:
+            - /url: /notes/eceebf43-0604-43f3-a76a-ead7ef220303/edit
+          - button "Delete" [ref=e167]
+      - generic [ref=e168]:
+        - link "Isolated Note This note has no connections..." [ref=e169] [cursor=pointer]:
+          - /url: /notes/ed442da9-cb16-439b-b05d-59ef8f12f9c0
+          - heading "Isolated Note" [level=3] [ref=e170]
+          - paragraph [ref=e171]: This note has no connections...
+        - generic [ref=e172]:
+          - link "Edit" [ref=e173] [cursor=pointer]:
+            - /url: /notes/ed442da9-cb16-439b-b05d-59ef8f12f9c0/edit
+          - button "Delete" [ref=e174]
+      - generic [ref=e175]:
+        - link "History Test Testing browser back functionality..." [ref=e176] [cursor=pointer]:
+          - /url: /notes/55fa11ae-063c-4393-b91a-0f69bfa4a66e
+          - heading "History Test" [level=3] [ref=e177]
+          - paragraph [ref=e178]: Testing browser back functionality...
+        - generic [ref=e179]:
+          - link "Edit" [ref=e180] [cursor=pointer]:
+            - /url: /notes/55fa11ae-063c-4393-b91a-0f69bfa4a66e/edit
+          - button "Delete" [ref=e181]
+      - generic [ref=e182]:
+        - link "Playwright Test Automated content..." [ref=e183] [cursor=pointer]:
+          - /url: /notes/bb30ea92-6514-4a7d-a587-1ab195af21da
+          - heading "Playwright Test" [level=3] [ref=e184]
+          - paragraph [ref=e185]: Automated content...
+        - generic [ref=e186]:
+          - link "Edit" [ref=e187] [cursor=pointer]:
+            - /url: /notes/bb30ea92-6514-4a7d-a587-1ab195af21da/edit
+          - button "Delete" [ref=e188]
+      - generic [ref=e189]:
+        - link "Edited New content..." [ref=e190] [cursor=pointer]:
+          - /url: /notes/46bb3209-6c7d-4239-8ef9-91ee1bf5ad3a
+          - heading "Edited" [level=3] [ref=e191]
+          - paragraph [ref=e192]: New content...
+        - generic [ref=e193]:
+          - link "Edit" [ref=e194] [cursor=pointer]:
+            - /url: /notes/46bb3209-6c7d-4239-8ef9-91ee1bf5ad3a/edit
+          - button "Delete" [ref=e195]
+      - generic [ref=e196]:
+        - link "Back Button Test Testing back button functionality..." [ref=e197] [cursor=pointer]:
+          - /url: /notes/62f97e6d-0d6b-4e83-8190-f8d037f9ab01
+          - heading "Back Button Test" [level=3] [ref=e198]
+          - paragraph [ref=e199]: Testing back button functionality...
+        - generic [ref=e200]:
+          - link "Edit" [ref=e201] [cursor=pointer]:
+            - /url: /notes/62f97e6d-0d6b-4e83-8190-f8d037f9ab01/edit
+          - button "Delete" [ref=e202]
+      - generic [ref=e203]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e204] [cursor=pointer]:
+          - /url: /notes/58b99e23-05dc-4229-8167-45760f6040d7
+          - heading "Graph Back Test" [level=3] [ref=e205]
+          - paragraph [ref=e206]: Testing back button on graph...
+        - generic [ref=e207]:
+          - link "Edit" [ref=e208] [cursor=pointer]:
+            - /url: /notes/58b99e23-05dc-4229-8167-45760f6040d7/edit
+          - button "Delete" [ref=e209]
+      - generic [ref=e210]:
+        - link "Node B B..." [ref=e211] [cursor=pointer]:
+          - /url: /notes/0507ff31-2993-4c35-abde-2332b18f63ba
+          - heading "Node B" [level=3] [ref=e212]
+          - paragraph [ref=e213]: B...
+        - generic [ref=e214]:
+          - link "Edit" [ref=e215] [cursor=pointer]:
+            - /url: /notes/0507ff31-2993-4c35-abde-2332b18f63ba/edit
+          - button "Delete" [ref=e216]
+      - generic [ref=e217]:
+        - link "Node A A..." [ref=e218] [cursor=pointer]:
+          - /url: /notes/e9b51d8f-f519-4b68-aa07-039651fe5583
+          - heading "Node A" [level=3] [ref=e219]
+          - paragraph [ref=e220]: A...
+        - generic [ref=e221]:
+          - link "Edit" [ref=e222] [cursor=pointer]:
+            - /url: /notes/e9b51d8f-f519-4b68-aa07-039651fe5583/edit
+          - button "Delete" [ref=e223]
+      - generic [ref=e224]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e225] [cursor=pointer]:
+          - /url: /notes/228ee271-6fe6-490e-a4cb-6390f768fb5a
+          - heading "Graph Back Test" [level=3] [ref=e226]
+          - paragraph [ref=e227]: Testing back button on graph...
+        - generic [ref=e228]:
+          - link "Edit" [ref=e229] [cursor=pointer]:
+            - /url: /notes/228ee271-6fe6-490e-a4cb-6390f768fb5a/edit
+          - button "Delete" [ref=e230]
+      - generic [ref=e231]:
+        - link "History Test Testing browser back functionality..." [ref=e232] [cursor=pointer]:
+          - /url: /notes/7ab412ea-1020-4c2b-ad9d-fef83220751c
+          - heading "History Test" [level=3] [ref=e233]
+          - paragraph [ref=e234]: Testing browser back functionality...
+        - generic [ref=e235]:
+          - link "Edit" [ref=e236] [cursor=pointer]:
+            - /url: /notes/7ab412ea-1020-4c2b-ad9d-fef83220751c/edit
+          - button "Delete" [ref=e237]
+      - generic [ref=e238]:
+        - link "Edited New content..." [ref=e239] [cursor=pointer]:
+          - /url: /notes/dc238fe9-59d7-46b7-89ae-5100ffa2f87b
+          - heading "Edited" [level=3] [ref=e240]
+          - paragraph [ref=e241]: New content...
+        - generic [ref=e242]:
+          - link "Edit" [ref=e243] [cursor=pointer]:
+            - /url: /notes/dc238fe9-59d7-46b7-89ae-5100ffa2f87b/edit
+          - button "Delete" [ref=e244]
+      - generic [ref=e245]:
+        - link "Node B B..." [ref=e246] [cursor=pointer]:
+          - /url: /notes/7fb6c25a-a2ac-4f85-a3c9-6476ee492f9d
+          - heading "Node B" [level=3] [ref=e247]
+          - paragraph [ref=e248]: B...
+        - generic [ref=e249]:
+          - link "Edit" [ref=e250] [cursor=pointer]:
+            - /url: /notes/7fb6c25a-a2ac-4f85-a3c9-6476ee492f9d/edit
+          - button "Delete" [ref=e251]
+      - generic [ref=e252]:
+        - link "Node A A..." [ref=e253] [cursor=pointer]:
+          - /url: /notes/e3e8a319-64e3-4cb4-b784-a3fb2701fc6a
+          - heading "Node A" [level=3] [ref=e254]
+          - paragraph [ref=e255]: A...
+        - generic [ref=e256]:
+          - link "Edit" [ref=e257] [cursor=pointer]:
+            - /url: /notes/e3e8a319-64e3-4cb4-b784-a3fb2701fc6a/edit
+          - button "Delete" [ref=e258]
+      - generic [ref=e259]:
+        - link "Back Button Test Testing back button functionality..." [ref=e260] [cursor=pointer]:
+          - /url: /notes/1b6cf7dd-3016-400d-840b-62f55d62c46a
+          - heading "Back Button Test" [level=3] [ref=e261]
+          - paragraph [ref=e262]: Testing back button functionality...
+        - generic [ref=e263]:
+          - link "Edit" [ref=e264] [cursor=pointer]:
+            - /url: /notes/1b6cf7dd-3016-400d-840b-62f55d62c46a/edit
+          - button "Delete" [ref=e265]
+      - generic [ref=e266]:
+        - link "Navigation Test Note Testing navigation from graph..." [ref=e267] [cursor=pointer]:
+          - /url: /notes/b746ac88-8f78-44f1-a749-bafcc7c8d419
+          - heading "Navigation Test Note" [level=3] [ref=e268]
+          - paragraph [ref=e269]: Testing navigation from graph...
+        - generic [ref=e270]:
+          - link "Edit" [ref=e271] [cursor=pointer]:
+            - /url: /notes/b746ac88-8f78-44f1-a749-bafcc7c8d419/edit
+          - button "Delete" [ref=e272]
+      - generic [ref=e273]:
+        - link "Graph Test Note This is a test note for graph visualization..." [ref=e274] [cursor=pointer]:
+          - /url: /notes/c41b0523-0400-4163-b789-7d1d2e5a1669
+          - heading "Graph Test Note" [level=3] [ref=e275]
+          - paragraph [ref=e276]: This is a test note for graph visualization...
+        - generic [ref=e277]:
+          - link "Edit" [ref=e278] [cursor=pointer]:
+            - /url: /notes/c41b0523-0400-4163-b789-7d1d2e5a1669/edit
+          - button "Delete" [ref=e279]
+      - generic [ref=e280]:
+        - link "Isolated Note This note has no connections..." [ref=e281] [cursor=pointer]:
+          - /url: /notes/446bbf57-2170-47e4-af21-5a5b1311049d
+          - heading "Isolated Note" [level=3] [ref=e282]
+          - paragraph [ref=e283]: This note has no connections...
+        - generic [ref=e284]:
+          - link "Edit" [ref=e285] [cursor=pointer]:
+            - /url: /notes/446bbf57-2170-47e4-af21-5a5b1311049d/edit
+          - button "Delete" [ref=e286]
+      - generic [ref=e287]:
+        - link "Styling Test Note Testing graph styling..." [ref=e288] [cursor=pointer]:
+          - /url: /notes/88e90dc6-a784-451f-9eb7-2bbc6b28cea6
+          - heading "Styling Test Note" [level=3] [ref=e289]
+          - paragraph [ref=e290]: Testing graph styling...
+        - generic [ref=e291]:
+          - link "Edit" [ref=e292] [cursor=pointer]:
+            - /url: /notes/88e90dc6-a784-451f-9eb7-2bbc6b28cea6/edit
+          - button "Delete" [ref=e293]
+      - generic [ref=e294]:
+        - link "Performance Test Note Testing performance mode indicator..." [ref=e295] [cursor=pointer]:
+          - /url: /notes/7881233d-e12f-402e-a0b9-667efc7c80e8
+          - heading "Performance Test Note" [level=3] [ref=e296]
+          - paragraph [ref=e297]: Testing performance mode indicator...
+        - generic [ref=e298]:
+          - link "Edit" [ref=e299] [cursor=pointer]:
+            - /url: /notes/7881233d-e12f-402e-a0b9-667efc7c80e8/edit
+          - button "Delete" [ref=e300]
+      - generic [ref=e301]:
+        - link "Playwright Test Automated content..." [ref=e302] [cursor=pointer]:
+          - /url: /notes/c95b5291-0b63-4c69-989b-bb07ae490cd3
+          - heading "Playwright Test" [level=3] [ref=e303]
+          - paragraph [ref=e304]: Automated content...
+        - generic [ref=e305]:
+          - link "Edit" [ref=e306] [cursor=pointer]:
+            - /url: /notes/c95b5291-0b63-4c69-989b-bb07ae490cd3/edit
+          - button "Delete" [ref=e307]
+      - generic [ref=e308]:
+        - link "History Test Testing browser back functionality..." [ref=e309] [cursor=pointer]:
+          - /url: /notes/d336c60b-58e4-45cd-b7f8-4633a31afbf2
+          - heading "History Test" [level=3] [ref=e310]
+          - paragraph [ref=e311]: Testing browser back functionality...
+        - generic [ref=e312]:
+          - link "Edit" [ref=e313] [cursor=pointer]:
+            - /url: /notes/d336c60b-58e4-45cd-b7f8-4633a31afbf2/edit
+          - button "Delete" [ref=e314]
+      - generic [ref=e315]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e316] [cursor=pointer]:
+          - /url: /notes/2cff00ad-f2fe-49f1-9d7b-6d8009251f67
+          - heading "Graph Back Test" [level=3] [ref=e317]
+          - paragraph [ref=e318]: Testing back button on graph...
+        - generic [ref=e319]:
+          - link "Edit" [ref=e320] [cursor=pointer]:
+            - /url: /notes/2cff00ad-f2fe-49f1-9d7b-6d8009251f67/edit
+          - button "Delete" [ref=e321]
+      - generic [ref=e322]:
+        - link "Back Button Test Testing back button functionality..." [ref=e323] [cursor=pointer]:
+          - /url: /notes/10c41ca7-14a3-4a4b-8954-acc3553d339a
+          - heading "Back Button Test" [level=3] [ref=e324]
+          - paragraph [ref=e325]: Testing back button functionality...
+        - generic [ref=e326]:
+          - link "Edit" [ref=e327] [cursor=pointer]:
+            - /url: /notes/10c41ca7-14a3-4a4b-8954-acc3553d339a/edit
+          - button "Delete" [ref=e328]
+      - generic [ref=e329]:
+        - link "Node B B..." [ref=e330] [cursor=pointer]:
+          - /url: /notes/1bb9b039-84f3-47bc-aa7c-6ce4246ca8ba
+          - heading "Node B" [level=3] [ref=e331]
+          - paragraph [ref=e332]: B...
+        - generic [ref=e333]:
+          - link "Edit" [ref=e334] [cursor=pointer]:
+            - /url: /notes/1bb9b039-84f3-47bc-aa7c-6ce4246ca8ba/edit
+          - button "Delete" [ref=e335]
+      - generic [ref=e336]:
+        - link "Node A A..." [ref=e337] [cursor=pointer]:
+          - /url: /notes/1f881042-51d4-4d68-aa1a-23f64c523769
+          - heading "Node A" [level=3] [ref=e338]
+          - paragraph [ref=e339]: A...
+        - generic [ref=e340]:
+          - link "Edit" [ref=e341] [cursor=pointer]:
+            - /url: /notes/1f881042-51d4-4d68-aa1a-23f64c523769/edit
+          - button "Delete" [ref=e342]
+      - generic [ref=e343]:
+        - link "Edited New content..." [ref=e344] [cursor=pointer]:
+          - /url: /notes/b95aa832-d6d5-4a95-a51f-fb7cbcb56bf6
+          - heading "Edited" [level=3] [ref=e345]
+          - paragraph [ref=e346]: New content...
+        - generic [ref=e347]:
+          - link "Edit" [ref=e348] [cursor=pointer]:
+            - /url: /notes/b95aa832-d6d5-4a95-a51f-fb7cbcb56bf6/edit
+          - button "Delete" [ref=e349]
+      - generic [ref=e350]:
+        - link "Playwright Test Automated content..." [ref=e351] [cursor=pointer]:
+          - /url: /notes/385012d6-2811-4317-8536-84f19dc8b847
+          - heading "Playwright Test" [level=3] [ref=e352]
+          - paragraph [ref=e353]: Automated content...
+        - generic [ref=e354]:
+          - link "Edit" [ref=e355] [cursor=pointer]:
+            - /url: /notes/385012d6-2811-4317-8536-84f19dc8b847/edit
+          - button "Delete" [ref=e356]
+      - generic [ref=e357]:
+        - link "History Test Testing browser back functionality..." [ref=e358] [cursor=pointer]:
+          - /url: /notes/202e8ba9-ed50-4190-ad59-1199d52761ae
+          - heading "History Test" [level=3] [ref=e359]
+          - paragraph [ref=e360]: Testing browser back functionality...
+        - generic [ref=e361]:
+          - link "Edit" [ref=e362] [cursor=pointer]:
+            - /url: /notes/202e8ba9-ed50-4190-ad59-1199d52761ae/edit
+          - button "Delete" [ref=e363]
+      - generic [ref=e364]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e365] [cursor=pointer]:
+          - /url: /notes/bf26cdea-e84c-4f4d-adb6-98ac8d27d452
+          - heading "Graph Back Test" [level=3] [ref=e366]
+          - paragraph [ref=e367]: Testing back button on graph...
+        - generic [ref=e368]:
+          - link "Edit" [ref=e369] [cursor=pointer]:
+            - /url: /notes/bf26cdea-e84c-4f4d-adb6-98ac8d27d452/edit
+          - button "Delete" [ref=e370]
+      - generic [ref=e371]:
+        - link "Back Button Test Testing back button functionality..." [ref=e372] [cursor=pointer]:
+          - /url: /notes/dbf4154a-7688-4939-9102-7847b204e0cf
+          - heading "Back Button Test" [level=3] [ref=e373]
+          - paragraph [ref=e374]: Testing back button functionality...
+        - generic [ref=e375]:
+          - link "Edit" [ref=e376] [cursor=pointer]:
+            - /url: /notes/dbf4154a-7688-4939-9102-7847b204e0cf/edit
+          - button "Delete" [ref=e377]
+      - generic [ref=e378]:
+        - link "Node B B..." [ref=e379] [cursor=pointer]:
+          - /url: /notes/ae3e3b17-7320-4d7d-b01f-3de0109bc721
+          - heading "Node B" [level=3] [ref=e380]
+          - paragraph [ref=e381]: B...
+        - generic [ref=e382]:
+          - link "Edit" [ref=e383] [cursor=pointer]:
+            - /url: /notes/ae3e3b17-7320-4d7d-b01f-3de0109bc721/edit
+          - button "Delete" [ref=e384]
+      - generic [ref=e385]:
+        - link "Node A A..." [ref=e386] [cursor=pointer]:
+          - /url: /notes/bb9fa7f5-114f-4661-9238-d377bda81d45
+          - heading "Node A" [level=3] [ref=e387]
+          - paragraph [ref=e388]: A...
+        - generic [ref=e389]:
+          - link "Edit" [ref=e390] [cursor=pointer]:
+            - /url: /notes/bb9fa7f5-114f-4661-9238-d377bda81d45/edit
+          - button "Delete" [ref=e391]
+      - generic [ref=e392]:
+        - link "Edited New content..." [ref=e393] [cursor=pointer]:
+          - /url: /notes/619ec463-5dda-4127-b7d0-26d3b1770b48
+          - heading "Edited" [level=3] [ref=e394]
+          - paragraph [ref=e395]: New content...
+        - generic [ref=e396]:
+          - link "Edit" [ref=e397] [cursor=pointer]:
+            - /url: /notes/619ec463-5dda-4127-b7d0-26d3b1770b48/edit
+          - button "Delete" [ref=e398]
+      - generic [ref=e399]:
+        - link "Playwright Test Automated content..." [ref=e400] [cursor=pointer]:
+          - /url: /notes/eaa469c8-a4d9-4b4a-b637-f0f6e189ef0f
+          - heading "Playwright Test" [level=3] [ref=e401]
+          - paragraph [ref=e402]: Automated content...
+        - generic [ref=e403]:
+          - link "Edit" [ref=e404] [cursor=pointer]:
+            - /url: /notes/eaa469c8-a4d9-4b4a-b637-f0f6e189ef0f/edit
+          - button "Delete" [ref=e405]
+      - generic [ref=e406]:
+        - link "History Test Testing browser back functionality..." [ref=e407] [cursor=pointer]:
+          - /url: /notes/42ffbb14-56d9-4436-b64f-d051341bd639
+          - heading "History Test" [level=3] [ref=e408]
+          - paragraph [ref=e409]: Testing browser back functionality...
+        - generic [ref=e410]:
+          - link "Edit" [ref=e411] [cursor=pointer]:
+            - /url: /notes/42ffbb14-56d9-4436-b64f-d051341bd639/edit
+          - button "Delete" [ref=e412]
+      - generic [ref=e413]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e414] [cursor=pointer]:
+          - /url: /notes/3b204856-7819-4a73-9169-25cc95f79f99
+          - heading "Graph Back Test" [level=3] [ref=e415]
+          - paragraph [ref=e416]: Testing back button on graph...
+        - generic [ref=e417]:
+          - link "Edit" [ref=e418] [cursor=pointer]:
+            - /url: /notes/3b204856-7819-4a73-9169-25cc95f79f99/edit
+          - button "Delete" [ref=e419]
+      - generic [ref=e420]:
+        - link "Back Button Test Testing back button functionality..." [ref=e421] [cursor=pointer]:
+          - /url: /notes/5e7dbbd5-aa34-4ed1-88ae-7ea5ab5c5bf8
+          - heading "Back Button Test" [level=3] [ref=e422]
+          - paragraph [ref=e423]: Testing back button functionality...
+        - generic [ref=e424]:
+          - link "Edit" [ref=e425] [cursor=pointer]:
+            - /url: /notes/5e7dbbd5-aa34-4ed1-88ae-7ea5ab5c5bf8/edit
+          - button "Delete" [ref=e426]
+      - generic [ref=e427]:
+        - link "Node B B..." [ref=e428] [cursor=pointer]:
+          - /url: /notes/782ef068-4354-47f4-9617-ede6dd4f7b0c
+          - heading "Node B" [level=3] [ref=e429]
+          - paragraph [ref=e430]: B...
+        - generic [ref=e431]:
+          - link "Edit" [ref=e432] [cursor=pointer]:
+            - /url: /notes/782ef068-4354-47f4-9617-ede6dd4f7b0c/edit
+          - button "Delete" [ref=e433]
+      - generic [ref=e434]:
+        - link "Node A A..." [ref=e435] [cursor=pointer]:
+          - /url: /notes/99ef61bb-40fe-48d5-b124-4524b87e413b
+          - heading "Node A" [level=3] [ref=e436]
+          - paragraph [ref=e437]: A...
+        - generic [ref=e438]:
+          - link "Edit" [ref=e439] [cursor=pointer]:
+            - /url: /notes/99ef61bb-40fe-48d5-b124-4524b87e413b/edit
+          - button "Delete" [ref=e440]
+      - generic [ref=e441]:
+        - link "Edited New content..." [ref=e442] [cursor=pointer]:
+          - /url: /notes/ecfd7d73-b62a-4e33-8c7a-0604a711dc27
+          - heading "Edited" [level=3] [ref=e443]
+          - paragraph [ref=e444]: New content...
+        - generic [ref=e445]:
+          - link "Edit" [ref=e446] [cursor=pointer]:
+            - /url: /notes/ecfd7d73-b62a-4e33-8c7a-0604a711dc27/edit
+          - button "Delete" [ref=e447]
+      - generic [ref=e448]:
+        - link "Playwright Test Automated content..." [ref=e449] [cursor=pointer]:
+          - /url: /notes/2ccbeaaa-4c5b-4e89-8986-9546c3c7a3bf
+          - heading "Playwright Test" [level=3] [ref=e450]
+          - paragraph [ref=e451]: Automated content...
+        - generic [ref=e452]:
+          - link "Edit" [ref=e453] [cursor=pointer]:
+            - /url: /notes/2ccbeaaa-4c5b-4e89-8986-9546c3c7a3bf/edit
+          - button "Delete" [ref=e454]
+      - generic [ref=e455]:
+        - link "History Test Testing browser back functionality..." [ref=e456] [cursor=pointer]:
+          - /url: /notes/5cac4845-3214-4bc0-be52-c6c7db696d6c
+          - heading "History Test" [level=3] [ref=e457]
+          - paragraph [ref=e458]: Testing browser back functionality...
+        - generic [ref=e459]:
+          - link "Edit" [ref=e460] [cursor=pointer]:
+            - /url: /notes/5cac4845-3214-4bc0-be52-c6c7db696d6c/edit
+          - button "Delete" [ref=e461]
+      - generic [ref=e462]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e463] [cursor=pointer]:
+          - /url: /notes/0f6858f3-87b8-4827-8641-9ae739261f11
+          - heading "Graph Back Test" [level=3] [ref=e464]
+          - paragraph [ref=e465]: Testing back button on graph...
+        - generic [ref=e466]:
+          - link "Edit" [ref=e467] [cursor=pointer]:
+            - /url: /notes/0f6858f3-87b8-4827-8641-9ae739261f11/edit
+          - button "Delete" [ref=e468]
+      - generic [ref=e469]:
+        - link "Back Button Test Testing back button functionality..." [ref=e470] [cursor=pointer]:
+          - /url: /notes/22d7ecf3-f553-413f-9745-10b60cec6450
+          - heading "Back Button Test" [level=3] [ref=e471]
+          - paragraph [ref=e472]: Testing back button functionality...
+        - generic [ref=e473]:
+          - link "Edit" [ref=e474] [cursor=pointer]:
+            - /url: /notes/22d7ecf3-f553-413f-9745-10b60cec6450/edit
+          - button "Delete" [ref=e475]
+      - generic [ref=e476]:
+        - link "Node B B..." [ref=e477] [cursor=pointer]:
+          - /url: /notes/afe60df4-4278-4e45-97d2-ee1fac6a75f1
+          - heading "Node B" [level=3] [ref=e478]
+          - paragraph [ref=e479]: B...
+        - generic [ref=e480]:
+          - link "Edit" [ref=e481] [cursor=pointer]:
+            - /url: /notes/afe60df4-4278-4e45-97d2-ee1fac6a75f1/edit
+          - button "Delete" [ref=e482]
+      - generic [ref=e483]:
+        - link "Node A A..." [ref=e484] [cursor=pointer]:
+          - /url: /notes/8fb27e9c-196e-478c-ba4a-3a553579f85b
+          - heading "Node A" [level=3] [ref=e485]
+          - paragraph [ref=e486]: A...
+        - generic [ref=e487]:
+          - link "Edit" [ref=e488] [cursor=pointer]:
+            - /url: /notes/8fb27e9c-196e-478c-ba4a-3a553579f85b/edit
+          - button "Delete" [ref=e489]
+      - generic [ref=e490]:
+        - link "Edited New content..." [ref=e491] [cursor=pointer]:
+          - /url: /notes/91bb19dc-2826-4fb2-87cc-a2002ace66e9
+          - heading "Edited" [level=3] [ref=e492]
+          - paragraph [ref=e493]: New content...
+        - generic [ref=e494]:
+          - link "Edit" [ref=e495] [cursor=pointer]:
+            - /url: /notes/91bb19dc-2826-4fb2-87cc-a2002ace66e9/edit
+          - button "Delete" [ref=e496]
+      - generic [ref=e497]:
+        - link "Playwright Test Automated content..." [ref=e498] [cursor=pointer]:
+          - /url: /notes/dabff273-9d63-42e5-8cee-c636778796df
+          - heading "Playwright Test" [level=3] [ref=e499]
+          - paragraph [ref=e500]: Automated content...
+        - generic [ref=e501]:
+          - link "Edit" [ref=e502] [cursor=pointer]:
+            - /url: /notes/dabff273-9d63-42e5-8cee-c636778796df/edit
+          - button "Delete" [ref=e503]
+      - generic [ref=e504]:
+        - link "History Test Testing browser back functionality..." [ref=e505] [cursor=pointer]:
+          - /url: /notes/8f1820cc-2d63-4a05-8949-79e8cc132ad9
+          - heading "History Test" [level=3] [ref=e506]
+          - paragraph [ref=e507]: Testing browser back functionality...
+        - generic [ref=e508]:
+          - link "Edit" [ref=e509] [cursor=pointer]:
+            - /url: /notes/8f1820cc-2d63-4a05-8949-79e8cc132ad9/edit
+          - button "Delete" [ref=e510]
+      - generic [ref=e511]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e512] [cursor=pointer]:
+          - /url: /notes/d8862706-50ba-4961-8cf6-940a8ccb7bd1
+          - heading "Graph Back Test" [level=3] [ref=e513]
+          - paragraph [ref=e514]: Testing back button on graph...
+        - generic [ref=e515]:
+          - link "Edit" [ref=e516] [cursor=pointer]:
+            - /url: /notes/d8862706-50ba-4961-8cf6-940a8ccb7bd1/edit
+          - button "Delete" [ref=e517]
+      - generic [ref=e518]:
+        - link "Back Button Test Testing back button functionality..." [ref=e519] [cursor=pointer]:
+          - /url: /notes/a1efb4fa-a8ba-4cc8-9746-5d3658a89f73
+          - heading "Back Button Test" [level=3] [ref=e520]
+          - paragraph [ref=e521]: Testing back button functionality...
+        - generic [ref=e522]:
+          - link "Edit" [ref=e523] [cursor=pointer]:
+            - /url: /notes/a1efb4fa-a8ba-4cc8-9746-5d3658a89f73/edit
+          - button "Delete" [ref=e524]
+      - generic [ref=e525]:
+        - link "Node B B..." [ref=e526] [cursor=pointer]:
+          - /url: /notes/8e35deaa-2ac8-465a-bf94-364ca23d2b3d
+          - heading "Node B" [level=3] [ref=e527]
+          - paragraph [ref=e528]: B...
+        - generic [ref=e529]:
+          - link "Edit" [ref=e530] [cursor=pointer]:
+            - /url: /notes/8e35deaa-2ac8-465a-bf94-364ca23d2b3d/edit
+          - button "Delete" [ref=e531]
+      - generic [ref=e532]:
+        - link "Node A A..." [ref=e533] [cursor=pointer]:
+          - /url: /notes/dfaba640-3768-40de-a953-4d6572f71697
+          - heading "Node A" [level=3] [ref=e534]
+          - paragraph [ref=e535]: A...
+        - generic [ref=e536]:
+          - link "Edit" [ref=e537] [cursor=pointer]:
+            - /url: /notes/dfaba640-3768-40de-a953-4d6572f71697/edit
+          - button "Delete" [ref=e538]
+      - generic [ref=e539]:
+        - link "Edited New content..." [ref=e540] [cursor=pointer]:
+          - /url: /notes/37de5d7f-ad93-435c-9956-4d9f980e642c
+          - heading "Edited" [level=3] [ref=e541]
+          - paragraph [ref=e542]: New content...
+        - generic [ref=e543]:
+          - link "Edit" [ref=e544] [cursor=pointer]:
+            - /url: /notes/37de5d7f-ad93-435c-9956-4d9f980e642c/edit
+          - button "Delete" [ref=e545]
+      - generic [ref=e546]:
+        - link "Playwright Test Automated content..." [ref=e547] [cursor=pointer]:
+          - /url: /notes/bcad19e2-a033-4ab0-a2ee-23507de16127
+          - heading "Playwright Test" [level=3] [ref=e548]
+          - paragraph [ref=e549]: Automated content...
+        - generic [ref=e550]:
+          - link "Edit" [ref=e551] [cursor=pointer]:
+            - /url: /notes/bcad19e2-a033-4ab0-a2ee-23507de16127/edit
+          - button "Delete" [ref=e552]
+      - generic [ref=e553]:
+        - link "History Test Testing browser back functionality..." [ref=e554] [cursor=pointer]:
+          - /url: /notes/acf9f3c7-e9f7-4e6f-a4f8-5f6f6cb7fb4c
+          - heading "History Test" [level=3] [ref=e555]
+          - paragraph [ref=e556]: Testing browser back functionality...
+        - generic [ref=e557]:
+          - link "Edit" [ref=e558] [cursor=pointer]:
+            - /url: /notes/acf9f3c7-e9f7-4e6f-a4f8-5f6f6cb7fb4c/edit
+          - button "Delete" [ref=e559]
+      - generic [ref=e560]:
+        - link "Playwright Test Automated content..." [ref=e561] [cursor=pointer]:
+          - /url: /notes/10c2f3a4-98c0-4c2a-a616-387ed59d0948
+          - heading "Playwright Test" [level=3] [ref=e562]
+          - paragraph [ref=e563]: Automated content...
+        - generic [ref=e564]:
+          - link "Edit" [ref=e565] [cursor=pointer]:
+            - /url: /notes/10c2f3a4-98c0-4c2a-a616-387ed59d0948/edit
+          - button "Delete" [ref=e566]
+      - generic [ref=e567]:
+        - link "Edited New content..." [ref=e568] [cursor=pointer]:
+          - /url: /notes/f7b9b151-1010-494e-9803-01e5b5af26fc
+          - heading "Edited" [level=3] [ref=e569]
+          - paragraph [ref=e570]: New content...
+        - generic [ref=e571]:
+          - link "Edit" [ref=e572] [cursor=pointer]:
+            - /url: /notes/f7b9b151-1010-494e-9803-01e5b5af26fc/edit
+          - button "Delete" [ref=e573]
+      - generic [ref=e574]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e575] [cursor=pointer]:
+          - /url: /notes/e138258c-d7b3-4810-9a15-f16613389689
+          - heading "Graph Back Test" [level=3] [ref=e576]
+          - paragraph [ref=e577]: Testing back button on graph...
+        - generic [ref=e578]:
+          - link "Edit" [ref=e579] [cursor=pointer]:
+            - /url: /notes/e138258c-d7b3-4810-9a15-f16613389689/edit
+          - button "Delete" [ref=e580]
+      - generic [ref=e581]:
+        - link "Back Button Test Testing back button functionality..." [ref=e582] [cursor=pointer]:
+          - /url: /notes/69484851-6d5d-487d-8fe6-44fcaa562cd9
+          - heading "Back Button Test" [level=3] [ref=e583]
+          - paragraph [ref=e584]: Testing back button functionality...
+        - generic [ref=e585]:
+          - link "Edit" [ref=e586] [cursor=pointer]:
+            - /url: /notes/69484851-6d5d-487d-8fe6-44fcaa562cd9/edit
+          - button "Delete" [ref=e587]
+      - generic [ref=e588]:
+        - link "Node B B..." [ref=e589] [cursor=pointer]:
+          - /url: /notes/09c4075b-d4a7-4a4b-8b88-49022a9f1031
+          - heading "Node B" [level=3] [ref=e590]
+          - paragraph [ref=e591]: B...
+        - generic [ref=e592]:
+          - link "Edit" [ref=e593] [cursor=pointer]:
+            - /url: /notes/09c4075b-d4a7-4a4b-8b88-49022a9f1031/edit
+          - button "Delete" [ref=e594]
+      - generic [ref=e595]:
+        - link "Node A A..." [ref=e596] [cursor=pointer]:
+          - /url: /notes/b589c3a9-3227-4ae1-a61d-bf62bfc1c834
+          - heading "Node A" [level=3] [ref=e597]
+          - paragraph [ref=e598]: A...
+        - generic [ref=e599]:
+          - link "Edit" [ref=e600] [cursor=pointer]:
+            - /url: /notes/b589c3a9-3227-4ae1-a61d-bf62bfc1c834/edit
+          - button "Delete" [ref=e601]
+      - generic [ref=e602]:
+        - link "History Test Testing browser back functionality..." [ref=e603] [cursor=pointer]:
+          - /url: /notes/a6d58950-eaaa-4e98-b541-cb8966ccb730
+          - heading "History Test" [level=3] [ref=e604]
+          - paragraph [ref=e605]: Testing browser back functionality...
+        - generic [ref=e606]:
+          - link "Edit" [ref=e607] [cursor=pointer]:
+            - /url: /notes/a6d58950-eaaa-4e98-b541-cb8966ccb730/edit
+          - button "Delete" [ref=e608]
+      - generic [ref=e609]:
+        - link "Playwright Test Automated content..." [ref=e610] [cursor=pointer]:
+          - /url: /notes/f1e4f496-c0f1-4b7c-a5af-89bd7bc01570
+          - heading "Playwright Test" [level=3] [ref=e611]
+          - paragraph [ref=e612]: Automated content...
+        - generic [ref=e613]:
+          - link "Edit" [ref=e614] [cursor=pointer]:
+            - /url: /notes/f1e4f496-c0f1-4b7c-a5af-89bd7bc01570/edit
+          - button "Delete" [ref=e615]
+      - generic [ref=e616]:
+        - link "Edited New content..." [ref=e617] [cursor=pointer]:
+          - /url: /notes/8baa265d-dbca-42ce-b3b9-8ec5988f3b54
+          - heading "Edited" [level=3] [ref=e618]
+          - paragraph [ref=e619]: New content...
+        - generic [ref=e620]:
+          - link "Edit" [ref=e621] [cursor=pointer]:
+            - /url: /notes/8baa265d-dbca-42ce-b3b9-8ec5988f3b54/edit
+          - button "Delete" [ref=e622]
+      - generic [ref=e623]:
+        - link "Back Button Test Testing back button functionality..." [ref=e624] [cursor=pointer]:
+          - /url: /notes/c690eb11-d76b-49d1-a62d-391d5514773d
+          - heading "Back Button Test" [level=3] [ref=e625]
+          - paragraph [ref=e626]: Testing back button functionality...
+        - generic [ref=e627]:
+          - link "Edit" [ref=e628] [cursor=pointer]:
+            - /url: /notes/c690eb11-d76b-49d1-a62d-391d5514773d/edit
+          - button "Delete" [ref=e629]
+      - generic [ref=e630]:
+        - link "Node B B..." [ref=e631] [cursor=pointer]:
+          - /url: /notes/b2628ee4-f56a-4f32-99aa-2f1ebb43d169
+          - heading "Node B" [level=3] [ref=e632]
+          - paragraph [ref=e633]: B...
+        - generic [ref=e634]:
+          - link "Edit" [ref=e635] [cursor=pointer]:
+            - /url: /notes/b2628ee4-f56a-4f32-99aa-2f1ebb43d169/edit
+          - button "Delete" [ref=e636]
+      - generic [ref=e637]:
+        - link "Node A A..." [ref=e638] [cursor=pointer]:
+          - /url: /notes/d95faaab-6249-44cb-8160-ed1f6f0cfba0
+          - heading "Node A" [level=3] [ref=e639]
+          - paragraph [ref=e640]: A...
+        - generic [ref=e641]:
+          - link "Edit" [ref=e642] [cursor=pointer]:
+            - /url: /notes/d95faaab-6249-44cb-8160-ed1f6f0cfba0/edit
+          - button "Delete" [ref=e643]
+      - generic [ref=e644]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e645] [cursor=pointer]:
+          - /url: /notes/2b32d732-e427-4a5a-ae94-96f5ad9b8355
+          - heading "Graph Back Test" [level=3] [ref=e646]
+          - paragraph [ref=e647]: Testing back button on graph...
+        - generic [ref=e648]:
+          - link "Edit" [ref=e649] [cursor=pointer]:
+            - /url: /notes/2b32d732-e427-4a5a-ae94-96f5ad9b8355/edit
+          - button "Delete" [ref=e650]
+      - generic [ref=e651]:
+        - link "History Test Testing browser back functionality..." [ref=e652] [cursor=pointer]:
+          - /url: /notes/d2c9970f-233c-4122-b38c-53308f4a69f0
+          - heading "History Test" [level=3] [ref=e653]
+          - paragraph [ref=e654]: Testing browser back functionality...
+        - generic [ref=e655]:
+          - link "Edit" [ref=e656] [cursor=pointer]:
+            - /url: /notes/d2c9970f-233c-4122-b38c-53308f4a69f0/edit
+          - button "Delete" [ref=e657]
+      - generic [ref=e658]:
+        - link "Back Button Test Testing back button functionality..." [ref=e659] [cursor=pointer]:
+          - /url: /notes/a8ae31d7-d0bf-429a-bf07-e5541e77f725
+          - heading "Back Button Test" [level=3] [ref=e660]
+          - paragraph [ref=e661]: Testing back button functionality...
+        - generic [ref=e662]:
+          - link "Edit" [ref=e663] [cursor=pointer]:
+            - /url: /notes/a8ae31d7-d0bf-429a-bf07-e5541e77f725/edit
+          - button "Delete" [ref=e664]
+      - generic [ref=e665]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e666] [cursor=pointer]:
+          - /url: /notes/3bba45c4-9e2b-44e9-add8-8c6f505dabda
+          - heading "Graph Back Test" [level=3] [ref=e667]
+          - paragraph [ref=e668]: Testing back button on graph...
+        - generic [ref=e669]:
+          - link "Edit" [ref=e670] [cursor=pointer]:
+            - /url: /notes/3bba45c4-9e2b-44e9-add8-8c6f505dabda/edit
+          - button "Delete" [ref=e671]
+      - generic [ref=e672]:
+        - link "Node B B..." [ref=e673] [cursor=pointer]:
+          - /url: /notes/86e62ea4-5177-4c94-bfb1-9462c73182e4
+          - heading "Node B" [level=3] [ref=e674]
+          - paragraph [ref=e675]: B...
+        - generic [ref=e676]:
+          - link "Edit" [ref=e677] [cursor=pointer]:
+            - /url: /notes/86e62ea4-5177-4c94-bfb1-9462c73182e4/edit
+          - button "Delete" [ref=e678]
+      - generic [ref=e679]:
+        - link "Node A A..." [ref=e680] [cursor=pointer]:
+          - /url: /notes/9f8b311d-2907-4f18-be12-b822c15b0efa
+          - heading "Node A" [level=3] [ref=e681]
+          - paragraph [ref=e682]: A...
+        - generic [ref=e683]:
+          - link "Edit" [ref=e684] [cursor=pointer]:
+            - /url: /notes/9f8b311d-2907-4f18-be12-b822c15b0efa/edit
+          - button "Delete" [ref=e685]
+      - generic [ref=e686]:
+        - link "History Test Testing browser back functionality..." [ref=e687] [cursor=pointer]:
+          - /url: /notes/e9018f84-ea4b-4190-aa3d-dc7d75dd0e15
+          - heading "History Test" [level=3] [ref=e688]
+          - paragraph [ref=e689]: Testing browser back functionality...
+        - generic [ref=e690]:
+          - link "Edit" [ref=e691] [cursor=pointer]:
+            - /url: /notes/e9018f84-ea4b-4190-aa3d-dc7d75dd0e15/edit
+          - button "Delete" [ref=e692]
+      - generic [ref=e693]:
+        - link "Back Button Test Testing back button functionality..." [ref=e694] [cursor=pointer]:
+          - /url: /notes/ffecd848-1ae6-400e-91eb-d9e6e65a8bbd
+          - heading "Back Button Test" [level=3] [ref=e695]
+          - paragraph [ref=e696]: Testing back button functionality...
+        - generic [ref=e697]:
+          - link "Edit" [ref=e698] [cursor=pointer]:
+            - /url: /notes/ffecd848-1ae6-400e-91eb-d9e6e65a8bbd/edit
+          - button "Delete" [ref=e699]
+      - generic [ref=e700]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e701] [cursor=pointer]:
+          - /url: /notes/4981317e-6f61-4a0a-96d4-6cbf296a8bab
+          - heading "Graph Back Test" [level=3] [ref=e702]
+          - paragraph [ref=e703]: Testing back button on graph...
+        - generic [ref=e704]:
+          - link "Edit" [ref=e705] [cursor=pointer]:
+            - /url: /notes/4981317e-6f61-4a0a-96d4-6cbf296a8bab/edit
+          - button "Delete" [ref=e706]
+      - generic [ref=e707]:
+        - link "Node B B..." [ref=e708] [cursor=pointer]:
+          - /url: /notes/5306f63d-c4e5-4237-a72e-9c3e80fcf498
+          - heading "Node B" [level=3] [ref=e709]
+          - paragraph [ref=e710]: B...
+        - generic [ref=e711]:
+          - link "Edit" [ref=e712] [cursor=pointer]:
+            - /url: /notes/5306f63d-c4e5-4237-a72e-9c3e80fcf498/edit
+          - button "Delete" [ref=e713]
+      - generic [ref=e714]:
+        - link "Node A A..." [ref=e715] [cursor=pointer]:
+          - /url: /notes/49d2177a-fb18-49b8-89ca-1142db5a9ebd
+          - heading "Node A" [level=3] [ref=e716]
+          - paragraph [ref=e717]: A...
+        - generic [ref=e718]:
+          - link "Edit" [ref=e719] [cursor=pointer]:
+            - /url: /notes/49d2177a-fb18-49b8-89ca-1142db5a9ebd/edit
+          - button "Delete" [ref=e720]
+      - generic [ref=e721]:
+        - link "History Test Testing browser back functionality..." [ref=e722] [cursor=pointer]:
+          - /url: /notes/516d950a-453f-4558-bf1b-d0dd8eaa43be
+          - heading "History Test" [level=3] [ref=e723]
+          - paragraph [ref=e724]: Testing browser back functionality...
+        - generic [ref=e725]:
+          - link "Edit" [ref=e726] [cursor=pointer]:
+            - /url: /notes/516d950a-453f-4558-bf1b-d0dd8eaa43be/edit
+          - button "Delete" [ref=e727]
+      - generic [ref=e728]:
+        - link "Edited New content..." [ref=e729] [cursor=pointer]:
+          - /url: /notes/48d5b3fc-5ac3-49d2-a499-67516fe3d48c
+          - heading "Edited" [level=3] [ref=e730]
+          - paragraph [ref=e731]: New content...
+        - generic [ref=e732]:
+          - link "Edit" [ref=e733] [cursor=pointer]:
+            - /url: /notes/48d5b3fc-5ac3-49d2-a499-67516fe3d48c/edit
+          - button "Delete" [ref=e734]
+      - generic [ref=e735]:
+        - link "Playwright Test Automated content..." [ref=e736] [cursor=pointer]:
+          - /url: /notes/2ec8419f-210e-45f3-9828-71ab19a2feaa
+          - heading "Playwright Test" [level=3] [ref=e737]
+          - paragraph [ref=e738]: Automated content...
+        - generic [ref=e739]:
+          - link "Edit" [ref=e740] [cursor=pointer]:
+            - /url: /notes/2ec8419f-210e-45f3-9828-71ab19a2feaa/edit
+          - button "Delete" [ref=e741]
+      - generic [ref=e742]:
+        - link "Node B B..." [ref=e743] [cursor=pointer]:
+          - /url: /notes/d3d33db6-d4bc-4c08-8d67-eeb449056cb5
+          - heading "Node B" [level=3] [ref=e744]
+          - paragraph [ref=e745]: B...
+        - generic [ref=e746]:
+          - link "Edit" [ref=e747] [cursor=pointer]:
+            - /url: /notes/d3d33db6-d4bc-4c08-8d67-eeb449056cb5/edit
+          - button "Delete" [ref=e748]
+      - generic [ref=e749]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e750] [cursor=pointer]:
+          - /url: /notes/e4b44732-6559-444c-ba5b-2fd8ff542ae8
+          - heading "Graph Back Test" [level=3] [ref=e751]
+          - paragraph [ref=e752]: Testing back button on graph...
+        - generic [ref=e753]:
+          - link "Edit" [ref=e754] [cursor=pointer]:
+            - /url: /notes/e4b44732-6559-444c-ba5b-2fd8ff542ae8/edit
+          - button "Delete" [ref=e755]
+      - generic [ref=e756]:
+        - link "Node A A..." [ref=e757] [cursor=pointer]:
+          - /url: /notes/c2709e70-6a10-4abf-b6ee-79cb7f0a0bd8
+          - heading "Node A" [level=3] [ref=e758]
+          - paragraph [ref=e759]: A...
+        - generic [ref=e760]:
+          - link "Edit" [ref=e761] [cursor=pointer]:
+            - /url: /notes/c2709e70-6a10-4abf-b6ee-79cb7f0a0bd8/edit
+          - button "Delete" [ref=e762]
+      - generic [ref=e763]:
+        - link "Delete Test 1775924429684 Test content for deletion..." [ref=e764] [cursor=pointer]:
+          - /url: /notes/cde2f236-c7f1-4c26-b420-a57757a6abc5
+          - heading "Delete Test 1775924429684" [level=3] [ref=e765]
+          - paragraph [ref=e766]: Test content for deletion...
+        - generic [ref=e767]:
+          - link "Edit" [ref=e768] [cursor=pointer]:
+            - /url: /notes/cde2f236-c7f1-4c26-b420-a57757a6abc5/edit
+          - button "Delete" [ref=e769]
+      - generic [ref=e770]:
+        - link "Back Button Test Testing back button functionality..." [ref=e771] [cursor=pointer]:
+          - /url: /notes/e9576b8a-461a-484b-bf8f-8f9c2339e40f
+          - heading "Back Button Test" [level=3] [ref=e772]
+          - paragraph [ref=e773]: Testing back button functionality...
+        - generic [ref=e774]:
+          - link "Edit" [ref=e775] [cursor=pointer]:
+            - /url: /notes/e9576b8a-461a-484b-bf8f-8f9c2339e40f/edit
+          - button "Delete" [ref=e776]
+      - generic [ref=e777]:
+        - link "History Test Testing browser back functionality..." [ref=e778] [cursor=pointer]:
+          - /url: /notes/6d4e5691-1ea1-4c8f-b8a2-318cc303ab8c
+          - heading "History Test" [level=3] [ref=e779]
+          - paragraph [ref=e780]: Testing browser back functionality...
+        - generic [ref=e781]:
+          - link "Edit" [ref=e782] [cursor=pointer]:
+            - /url: /notes/6d4e5691-1ea1-4c8f-b8a2-318cc303ab8c/edit
+          - button "Delete" [ref=e783]
+      - generic [ref=e784]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e785] [cursor=pointer]:
+          - /url: /notes/021a40ca-7fea-412a-b7f3-7ca346cf697a
+          - heading "Graph Back Test" [level=3] [ref=e786]
+          - paragraph [ref=e787]: Testing back button on graph...
+        - generic [ref=e788]:
+          - link "Edit" [ref=e789] [cursor=pointer]:
+            - /url: /notes/021a40ca-7fea-412a-b7f3-7ca346cf697a/edit
+          - button "Delete" [ref=e790]
+      - generic [ref=e791]:
+        - link "Back Button Test Testing back button functionality..." [ref=e792] [cursor=pointer]:
+          - /url: /notes/99ada795-f0e6-41c1-8735-22f424ef46ee
+          - heading "Back Button Test" [level=3] [ref=e793]
+          - paragraph [ref=e794]: Testing back button functionality...
+        - generic [ref=e795]:
+          - link "Edit" [ref=e796] [cursor=pointer]:
+            - /url: /notes/99ada795-f0e6-41c1-8735-22f424ef46ee/edit
+          - button "Delete" [ref=e797]
+      - generic [ref=e798]:
+        - link "Node B B..." [ref=e799] [cursor=pointer]:
+          - /url: /notes/252b7540-ff53-4334-81a5-f8fed9aaa390
+          - heading "Node B" [level=3] [ref=e800]
+          - paragraph [ref=e801]: B...
+        - generic [ref=e802]:
+          - link "Edit" [ref=e803] [cursor=pointer]:
+            - /url: /notes/252b7540-ff53-4334-81a5-f8fed9aaa390/edit
+          - button "Delete" [ref=e804]
+      - generic [ref=e805]:
+        - link "Node A A..." [ref=e806] [cursor=pointer]:
+          - /url: /notes/53e9e4b3-9169-44e9-8d93-fa222d478e92
+          - heading "Node A" [level=3] [ref=e807]
+          - paragraph [ref=e808]: A...
+        - generic [ref=e809]:
+          - link "Edit" [ref=e810] [cursor=pointer]:
+            - /url: /notes/53e9e4b3-9169-44e9-8d93-fa222d478e92/edit
+          - button "Delete" [ref=e811]
+      - generic [ref=e812]:
+        - link "Edited New content..." [ref=e813] [cursor=pointer]:
+          - /url: /notes/80afe410-0f70-44f5-8956-8cd9f1d90949
+          - heading "Edited" [level=3] [ref=e814]
+          - paragraph [ref=e815]: New content...
+        - generic [ref=e816]:
+          - link "Edit" [ref=e817] [cursor=pointer]:
+            - /url: /notes/80afe410-0f70-44f5-8956-8cd9f1d90949/edit
+          - button "Delete" [ref=e818]
+      - generic [ref=e819]:
+        - link "Playwright Test Automated content..." [ref=e820] [cursor=pointer]:
+          - /url: /notes/0c7861b7-ce9f-46a9-96e9-813641a14f95
+          - heading "Playwright Test" [level=3] [ref=e821]
+          - paragraph [ref=e822]: Automated content...
+        - generic [ref=e823]:
+          - link "Edit" [ref=e824] [cursor=pointer]:
+            - /url: /notes/0c7861b7-ce9f-46a9-96e9-813641a14f95/edit
+          - button "Delete" [ref=e825]
+      - generic [ref=e826]:
+        - link "Delete Test 1775813189931 Test content for deletion..." [ref=e827] [cursor=pointer]:
+          - /url: /notes/9e980c46-886e-42f7-849e-3665e3527473
+          - heading "Delete Test 1775813189931" [level=3] [ref=e828]
+          - paragraph [ref=e829]: Test content for deletion...
+        - generic [ref=e830]:
+          - link "Edit" [ref=e831] [cursor=pointer]:
+            - /url: /notes/9e980c46-886e-42f7-849e-3665e3527473/edit
+          - button "Delete" [ref=e832]
+      - generic [ref=e833]:
+        - link "Edited New content..." [ref=e834] [cursor=pointer]:
+          - /url: /notes/cd8e6f7c-1dee-4304-9c36-f8ac49917dd7
+          - heading "Edited" [level=3] [ref=e835]
+          - paragraph [ref=e836]: New content...
+        - generic [ref=e837]:
+          - link "Edit" [ref=e838] [cursor=pointer]:
+            - /url: /notes/cd8e6f7c-1dee-4304-9c36-f8ac49917dd7/edit
+          - button "Delete" [ref=e839]
+      - generic [ref=e840]:
+        - link "Playwright Test Automated content..." [ref=e841] [cursor=pointer]:
+          - /url: /notes/19ad9227-2924-4e2c-9bb9-f954df5e4bb5
+          - heading "Playwright Test" [level=3] [ref=e842]
+          - paragraph [ref=e843]: Automated content...
+        - generic [ref=e844]:
+          - link "Edit" [ref=e845] [cursor=pointer]:
+            - /url: /notes/19ad9227-2924-4e2c-9bb9-f954df5e4bb5/edit
+          - button "Delete" [ref=e846]
+      - generic [ref=e847]:
+        - link "Playwright Test Automated content..." [ref=e848] [cursor=pointer]:
+          - /url: /notes/000d4b96-76d8-4761-825b-f39f316840e7
+          - heading "Playwright Test" [level=3] [ref=e849]
+          - paragraph [ref=e850]: Automated content...
+        - generic [ref=e851]:
+          - link "Edit" [ref=e852] [cursor=pointer]:
+            - /url: /notes/000d4b96-76d8-4761-825b-f39f316840e7/edit
+          - button "Delete" [ref=e853]
+      - generic [ref=e854]:
+        - link "Edited New content..." [ref=e855] [cursor=pointer]:
+          - /url: /notes/0dc2c891-352c-4718-bcfe-1579f7190e1a
+          - heading "Edited" [level=3] [ref=e856]
+          - paragraph [ref=e857]: New content...
+        - generic [ref=e858]:
+          - link "Edit" [ref=e859] [cursor=pointer]:
+            - /url: /notes/0dc2c891-352c-4718-bcfe-1579f7190e1a/edit
+          - button "Delete" [ref=e860]
+      - generic [ref=e861]:
+        - link "Playwright Test Automated content..." [ref=e862] [cursor=pointer]:
+          - /url: /notes/d1255c54-f965-463c-8c83-d99c2fbe6858
+          - heading "Playwright Test" [level=3] [ref=e863]
+          - paragraph [ref=e864]: Automated content...
+        - generic [ref=e865]:
+          - link "Edit" [ref=e866] [cursor=pointer]:
+            - /url: /notes/d1255c54-f965-463c-8c83-d99c2fbe6858/edit
+          - button "Delete" [ref=e867]
+      - generic [ref=e868]:
+        - link "History Test Testing browser back functionality..." [ref=e869] [cursor=pointer]:
+          - /url: /notes/2e073916-1f6b-4afd-b46a-088cccef9ffe
+          - heading "History Test" [level=3] [ref=e870]
+          - paragraph [ref=e871]: Testing browser back functionality...
+        - generic [ref=e872]:
+          - link "Edit" [ref=e873] [cursor=pointer]:
+            - /url: /notes/2e073916-1f6b-4afd-b46a-088cccef9ffe/edit
+          - button "Delete" [ref=e874]
+      - generic [ref=e875]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e876] [cursor=pointer]:
+          - /url: /notes/b8fa8f71-a3c3-421a-aaaa-ca4f8c1e7164
+          - heading "Graph Back Test" [level=3] [ref=e877]
+          - paragraph [ref=e878]: Testing back button on graph...
+        - generic [ref=e879]:
+          - link "Edit" [ref=e880] [cursor=pointer]:
+            - /url: /notes/b8fa8f71-a3c3-421a-aaaa-ca4f8c1e7164/edit
+          - button "Delete" [ref=e881]
+      - generic [ref=e882]:
+        - link "Back Button Test Testing back button functionality..." [ref=e883] [cursor=pointer]:
+          - /url: /notes/6ca0abb2-0c9a-48d4-96e9-bda3f46353f0
+          - heading "Back Button Test" [level=3] [ref=e884]
+          - paragraph [ref=e885]: Testing back button functionality...
+        - generic [ref=e886]:
+          - link "Edit" [ref=e887] [cursor=pointer]:
+            - /url: /notes/6ca0abb2-0c9a-48d4-96e9-bda3f46353f0/edit
+          - button "Delete" [ref=e888]
+      - generic [ref=e889]:
+        - link "Node B B..." [ref=e890] [cursor=pointer]:
+          - /url: /notes/d8c155d6-4313-4764-8f10-af9934eded4c
+          - heading "Node B" [level=3] [ref=e891]
+          - paragraph [ref=e892]: B...
+        - generic [ref=e893]:
+          - link "Edit" [ref=e894] [cursor=pointer]:
+            - /url: /notes/d8c155d6-4313-4764-8f10-af9934eded4c/edit
+          - button "Delete" [ref=e895]
+      - generic [ref=e896]:
+        - link "Node A A..." [ref=e897] [cursor=pointer]:
+          - /url: /notes/a0c33075-4469-452e-9535-d615c2fd50e1
+          - heading "Node A" [level=3] [ref=e898]
+          - paragraph [ref=e899]: A...
+        - generic [ref=e900]:
+          - link "Edit" [ref=e901] [cursor=pointer]:
+            - /url: /notes/a0c33075-4469-452e-9535-d615c2fd50e1/edit
+          - button "Delete" [ref=e902]
+      - generic [ref=e903]:
+        - link "Edited New content..." [ref=e904] [cursor=pointer]:
+          - /url: /notes/237fe86f-c473-471d-aa18-d62f7b65658f
+          - heading "Edited" [level=3] [ref=e905]
+          - paragraph [ref=e906]: New content...
+        - generic [ref=e907]:
+          - link "Edit" [ref=e908] [cursor=pointer]:
+            - /url: /notes/237fe86f-c473-471d-aa18-d62f7b65658f/edit
+          - button "Delete" [ref=e909]
+      - generic [ref=e910]:
+        - link "Playwright Test Automated content..." [ref=e911] [cursor=pointer]:
+          - /url: /notes/d19a6c12-7036-445f-bcf5-b004a8112558
+          - heading "Playwright Test" [level=3] [ref=e912]
+          - paragraph [ref=e913]: Automated content...
+        - generic [ref=e914]:
+          - link "Edit" [ref=e915] [cursor=pointer]:
+            - /url: /notes/d19a6c12-7036-445f-bcf5-b004a8112558/edit
+          - button "Delete" [ref=e916]
+      - generic [ref=e917]:
+        - link "History Test Testing browser back functionality..." [ref=e918] [cursor=pointer]:
+          - /url: /notes/728da78f-e090-4ec6-8ec7-74649b7c238a
+          - heading "History Test" [level=3] [ref=e919]
+          - paragraph [ref=e920]: Testing browser back functionality...
+        - generic [ref=e921]:
+          - link "Edit" [ref=e922] [cursor=pointer]:
+            - /url: /notes/728da78f-e090-4ec6-8ec7-74649b7c238a/edit
+          - button "Delete" [ref=e923]
+      - generic [ref=e924]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e925] [cursor=pointer]:
+          - /url: /notes/4ff1b47e-24b3-495c-b02f-c4cd4bc272b6
+          - heading "Graph Back Test" [level=3] [ref=e926]
+          - paragraph [ref=e927]: Testing back button on graph...
+        - generic [ref=e928]:
+          - link "Edit" [ref=e929] [cursor=pointer]:
+            - /url: /notes/4ff1b47e-24b3-495c-b02f-c4cd4bc272b6/edit
+          - button "Delete" [ref=e930]
+      - generic [ref=e931]:
+        - link "Back Button Test Testing back button functionality..." [ref=e932] [cursor=pointer]:
+          - /url: /notes/c6243a21-7433-4102-8e73-60027c064c96
+          - heading "Back Button Test" [level=3] [ref=e933]
+          - paragraph [ref=e934]: Testing back button functionality...
+        - generic [ref=e935]:
+          - link "Edit" [ref=e936] [cursor=pointer]:
+            - /url: /notes/c6243a21-7433-4102-8e73-60027c064c96/edit
+          - button "Delete" [ref=e937]
+      - generic [ref=e938]:
+        - link "Node B B..." [ref=e939] [cursor=pointer]:
+          - /url: /notes/a29c9ee0-5540-4d03-bc21-2ecdc457b98c
+          - heading "Node B" [level=3] [ref=e940]
+          - paragraph [ref=e941]: B...
+        - generic [ref=e942]:
+          - link "Edit" [ref=e943] [cursor=pointer]:
+            - /url: /notes/a29c9ee0-5540-4d03-bc21-2ecdc457b98c/edit
+          - button "Delete" [ref=e944]
+      - generic [ref=e945]:
+        - link "Node A A..." [ref=e946] [cursor=pointer]:
+          - /url: /notes/999a21f0-4bd5-41c1-8349-00d7205c9905
+          - heading "Node A" [level=3] [ref=e947]
+          - paragraph [ref=e948]: A...
+        - generic [ref=e949]:
+          - link "Edit" [ref=e950] [cursor=pointer]:
+            - /url: /notes/999a21f0-4bd5-41c1-8349-00d7205c9905/edit
+          - button "Delete" [ref=e951]
+      - generic [ref=e952]:
+        - link "Edited New content..." [ref=e953] [cursor=pointer]:
+          - /url: /notes/7c5a1143-d668-461d-93f2-007b9367f66d
+          - heading "Edited" [level=3] [ref=e954]
+          - paragraph [ref=e955]: New content...
+        - generic [ref=e956]:
+          - link "Edit" [ref=e957] [cursor=pointer]:
+            - /url: /notes/7c5a1143-d668-461d-93f2-007b9367f66d/edit
+          - button "Delete" [ref=e958]
+      - generic [ref=e959]:
+        - link "Playwright Test Automated content..." [ref=e960] [cursor=pointer]:
+          - /url: /notes/4b2b06cc-f308-4178-a750-192a6aba4f02
+          - heading "Playwright Test" [level=3] [ref=e961]
+          - paragraph [ref=e962]: Automated content...
+        - generic [ref=e963]:
+          - link "Edit" [ref=e964] [cursor=pointer]:
+            - /url: /notes/4b2b06cc-f308-4178-a750-192a6aba4f02/edit
+          - button "Delete" [ref=e965]
+      - generic [ref=e966]:
+        - link "History Test Testing browser back functionality..." [ref=e967] [cursor=pointer]:
+          - /url: /notes/bb4f185b-6afc-4739-b84c-9b4a7b5672c1
+          - heading "History Test" [level=3] [ref=e968]
+          - paragraph [ref=e969]: Testing browser back functionality...
+        - generic [ref=e970]:
+          - link "Edit" [ref=e971] [cursor=pointer]:
+            - /url: /notes/bb4f185b-6afc-4739-b84c-9b4a7b5672c1/edit
+          - button "Delete" [ref=e972]
+      - generic [ref=e973]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e974] [cursor=pointer]:
+          - /url: /notes/effc0ab7-ec38-43cb-8431-c66e08801d48
+          - heading "Graph Back Test" [level=3] [ref=e975]
+          - paragraph [ref=e976]: Testing back button on graph...
+        - generic [ref=e977]:
+          - link "Edit" [ref=e978] [cursor=pointer]:
+            - /url: /notes/effc0ab7-ec38-43cb-8431-c66e08801d48/edit
+          - button "Delete" [ref=e979]
+      - generic [ref=e980]:
+        - link "Back Button Test Testing back button functionality..." [ref=e981] [cursor=pointer]:
+          - /url: /notes/d6828c34-1295-49e8-9dbb-fe324090d84c
+          - heading "Back Button Test" [level=3] [ref=e982]
+          - paragraph [ref=e983]: Testing back button functionality...
+        - generic [ref=e984]:
+          - link "Edit" [ref=e985] [cursor=pointer]:
+            - /url: /notes/d6828c34-1295-49e8-9dbb-fe324090d84c/edit
+          - button "Delete" [ref=e986]
+      - generic [ref=e987]:
+        - link "Node B B..." [ref=e988] [cursor=pointer]:
+          - /url: /notes/b904e8a8-270e-4f63-8cc1-1e52b287c6c5
+          - heading "Node B" [level=3] [ref=e989]
+          - paragraph [ref=e990]: B...
+        - generic [ref=e991]:
+          - link "Edit" [ref=e992] [cursor=pointer]:
+            - /url: /notes/b904e8a8-270e-4f63-8cc1-1e52b287c6c5/edit
+          - button "Delete" [ref=e993]
+      - generic [ref=e994]:
+        - link "Node A A..." [ref=e995] [cursor=pointer]:
+          - /url: /notes/eb21a7d0-9304-4673-9a20-473c9745af53
+          - heading "Node A" [level=3] [ref=e996]
+          - paragraph [ref=e997]: A...
+        - generic [ref=e998]:
+          - link "Edit" [ref=e999] [cursor=pointer]:
+            - /url: /notes/eb21a7d0-9304-4673-9a20-473c9745af53/edit
+          - button "Delete" [ref=e1000]
+      - generic [ref=e1001]:
+        - link "Edited New content..." [ref=e1002] [cursor=pointer]:
+          - /url: /notes/4d81290a-fca4-4695-b79f-55259bfffd1c
+          - heading "Edited" [level=3] [ref=e1003]
+          - paragraph [ref=e1004]: New content...
+        - generic [ref=e1005]:
+          - link "Edit" [ref=e1006] [cursor=pointer]:
+            - /url: /notes/4d81290a-fca4-4695-b79f-55259bfffd1c/edit
+          - button "Delete" [ref=e1007]
+      - generic [ref=e1008]:
+        - link "Playwright Test Automated content..." [ref=e1009] [cursor=pointer]:
+          - /url: /notes/ad0f9f5f-4ea7-4ce1-a458-091f9f00db44
+          - heading "Playwright Test" [level=3] [ref=e1010]
+          - paragraph [ref=e1011]: Automated content...
+        - generic [ref=e1012]:
+          - link "Edit" [ref=e1013] [cursor=pointer]:
+            - /url: /notes/ad0f9f5f-4ea7-4ce1-a458-091f9f00db44/edit
+          - button "Delete" [ref=e1014]
+      - generic [ref=e1015]:
+        - link "History Test Testing browser back functionality..." [ref=e1016] [cursor=pointer]:
+          - /url: /notes/b24e77c6-f869-49eb-9ae7-bfe41f13665b
+          - heading "History Test" [level=3] [ref=e1017]
+          - paragraph [ref=e1018]: Testing browser back functionality...
+        - generic [ref=e1019]:
+          - link "Edit" [ref=e1020] [cursor=pointer]:
+            - /url: /notes/b24e77c6-f869-49eb-9ae7-bfe41f13665b/edit
+          - button "Delete" [ref=e1021]
+      - generic [ref=e1022]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1023] [cursor=pointer]:
+          - /url: /notes/50b6e03c-c846-4d08-a2d8-0d3ad5611f46
+          - heading "Graph Back Test" [level=3] [ref=e1024]
+          - paragraph [ref=e1025]: Testing back button on graph...
+        - generic [ref=e1026]:
+          - link "Edit" [ref=e1027] [cursor=pointer]:
+            - /url: /notes/50b6e03c-c846-4d08-a2d8-0d3ad5611f46/edit
+          - button "Delete" [ref=e1028]
+      - generic [ref=e1029]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1030] [cursor=pointer]:
+          - /url: /notes/4266239f-9d76-4a86-98f9-60b522e84442
+          - heading "Back Button Test" [level=3] [ref=e1031]
+          - paragraph [ref=e1032]: Testing back button functionality...
+        - generic [ref=e1033]:
+          - link "Edit" [ref=e1034] [cursor=pointer]:
+            - /url: /notes/4266239f-9d76-4a86-98f9-60b522e84442/edit
+          - button "Delete" [ref=e1035]
+      - generic [ref=e1036]:
+        - link "Node B B..." [ref=e1037] [cursor=pointer]:
+          - /url: /notes/cd37465b-e043-40df-a6c1-a3534ee4c067
+          - heading "Node B" [level=3] [ref=e1038]
+          - paragraph [ref=e1039]: B...
+        - generic [ref=e1040]:
+          - link "Edit" [ref=e1041] [cursor=pointer]:
+            - /url: /notes/cd37465b-e043-40df-a6c1-a3534ee4c067/edit
+          - button "Delete" [ref=e1042]
+      - generic [ref=e1043]:
+        - link "Node A A..." [ref=e1044] [cursor=pointer]:
+          - /url: /notes/7b304001-5bb1-4bef-8cbf-ae873a7f3b0c
+          - heading "Node A" [level=3] [ref=e1045]
+          - paragraph [ref=e1046]: A...
+        - generic [ref=e1047]:
+          - link "Edit" [ref=e1048] [cursor=pointer]:
+            - /url: /notes/7b304001-5bb1-4bef-8cbf-ae873a7f3b0c/edit
+          - button "Delete" [ref=e1049]
+      - generic [ref=e1050]:
+        - link "Edited New content..." [ref=e1051] [cursor=pointer]:
+          - /url: /notes/602cba0f-27c9-4f60-b5c6-45f4ac44f216
+          - heading "Edited" [level=3] [ref=e1052]
+          - paragraph [ref=e1053]: New content...
+        - generic [ref=e1054]:
+          - link "Edit" [ref=e1055] [cursor=pointer]:
+            - /url: /notes/602cba0f-27c9-4f60-b5c6-45f4ac44f216/edit
+          - button "Delete" [ref=e1056]
+      - generic [ref=e1057]:
+        - link "Playwright Test Automated content..." [ref=e1058] [cursor=pointer]:
+          - /url: /notes/1bffddea-dbad-4636-a44e-05f09307fa20
+          - heading "Playwright Test" [level=3] [ref=e1059]
+          - paragraph [ref=e1060]: Automated content...
+        - generic [ref=e1061]:
+          - link "Edit" [ref=e1062] [cursor=pointer]:
+            - /url: /notes/1bffddea-dbad-4636-a44e-05f09307fa20/edit
+          - button "Delete" [ref=e1063]
+      - generic [ref=e1064]:
+        - link "Test Graph Note Test content for graph..." [ref=e1065] [cursor=pointer]:
+          - /url: /notes/8f68a3af-d169-45bb-9766-69e7baebcf65
+          - heading "Test Graph Note" [level=3] [ref=e1066]
+          - paragraph [ref=e1067]: Test content for graph...
+        - generic [ref=e1068]:
+          - link "Edit" [ref=e1069] [cursor=pointer]:
+            - /url: /notes/8f68a3af-d169-45bb-9766-69e7baebcf65/edit
+          - button "Delete" [ref=e1070]
+      - generic [ref=e1071]:
+        - link "History Test Testing browser back functionality..." [ref=e1072] [cursor=pointer]:
+          - /url: /notes/2700aaca-dc01-46bd-b2d2-e0ec63b16fca
+          - heading "History Test" [level=3] [ref=e1073]
+          - paragraph [ref=e1074]: Testing browser back functionality...
+        - generic [ref=e1075]:
+          - link "Edit" [ref=e1076] [cursor=pointer]:
+            - /url: /notes/2700aaca-dc01-46bd-b2d2-e0ec63b16fca/edit
+          - button "Delete" [ref=e1077]
+      - generic [ref=e1078]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1079] [cursor=pointer]:
+          - /url: /notes/35920409-fdf3-4f98-9949-8c3bb0108722
+          - heading "Graph Back Test" [level=3] [ref=e1080]
+          - paragraph [ref=e1081]: Testing back button on graph...
+        - generic [ref=e1082]:
+          - link "Edit" [ref=e1083] [cursor=pointer]:
+            - /url: /notes/35920409-fdf3-4f98-9949-8c3bb0108722/edit
+          - button "Delete" [ref=e1084]
+      - generic [ref=e1085]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1086] [cursor=pointer]:
+          - /url: /notes/1fa5a525-3323-4f49-8c30-0af3316356e1
+          - heading "Back Button Test" [level=3] [ref=e1087]
+          - paragraph [ref=e1088]: Testing back button functionality...
+        - generic [ref=e1089]:
+          - link "Edit" [ref=e1090] [cursor=pointer]:
+            - /url: /notes/1fa5a525-3323-4f49-8c30-0af3316356e1/edit
+          - button "Delete" [ref=e1091]
+      - generic [ref=e1092]:
+        - link "Node B B..." [ref=e1093] [cursor=pointer]:
+          - /url: /notes/b0f0133d-2237-4882-8915-f927520d338d
+          - heading "Node B" [level=3] [ref=e1094]
+          - paragraph [ref=e1095]: B...
+        - generic [ref=e1096]:
+          - link "Edit" [ref=e1097] [cursor=pointer]:
+            - /url: /notes/b0f0133d-2237-4882-8915-f927520d338d/edit
+          - button "Delete" [ref=e1098]
+      - generic [ref=e1099]:
+        - link "Node A A..." [ref=e1100] [cursor=pointer]:
+          - /url: /notes/c3e22891-477e-4421-ae6d-c1e803ac3089
+          - heading "Node A" [level=3] [ref=e1101]
+          - paragraph [ref=e1102]: A...
+        - generic [ref=e1103]:
+          - link "Edit" [ref=e1104] [cursor=pointer]:
+            - /url: /notes/c3e22891-477e-4421-ae6d-c1e803ac3089/edit
+          - button "Delete" [ref=e1105]
+      - generic [ref=e1106]:
+        - link "Edited New content..." [ref=e1107] [cursor=pointer]:
+          - /url: /notes/3741ba7c-c563-4c76-a85c-ef44b9a338c6
+          - heading "Edited" [level=3] [ref=e1108]
+          - paragraph [ref=e1109]: New content...
+        - generic [ref=e1110]:
+          - link "Edit" [ref=e1111] [cursor=pointer]:
+            - /url: /notes/3741ba7c-c563-4c76-a85c-ef44b9a338c6/edit
+          - button "Delete" [ref=e1112]
+      - generic [ref=e1113]:
+        - link "Playwright Test Automated content..." [ref=e1114] [cursor=pointer]:
+          - /url: /notes/f91efe13-9aea-4cf5-9267-80db4d0c361d
+          - heading "Playwright Test" [level=3] [ref=e1115]
+          - paragraph [ref=e1116]: Automated content...
+        - generic [ref=e1117]:
+          - link "Edit" [ref=e1118] [cursor=pointer]:
+            - /url: /notes/f91efe13-9aea-4cf5-9267-80db4d0c361d/edit
+          - button "Delete" [ref=e1119]
+      - generic [ref=e1120]:
+        - link "History Test Testing browser back functionality..." [ref=e1121] [cursor=pointer]:
+          - /url: /notes/bb6769b0-187c-4145-a16a-3384c480a1e4
+          - heading "History Test" [level=3] [ref=e1122]
+          - paragraph [ref=e1123]: Testing browser back functionality...
+        - generic [ref=e1124]:
+          - link "Edit" [ref=e1125] [cursor=pointer]:
+            - /url: /notes/bb6769b0-187c-4145-a16a-3384c480a1e4/edit
+          - button "Delete" [ref=e1126]
+      - generic [ref=e1127]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1128] [cursor=pointer]:
+          - /url: /notes/6ce39678-76f5-4fdc-9801-7072e8e527c0
+          - heading "Graph Back Test" [level=3] [ref=e1129]
+          - paragraph [ref=e1130]: Testing back button on graph...
+        - generic [ref=e1131]:
+          - link "Edit" [ref=e1132] [cursor=pointer]:
+            - /url: /notes/6ce39678-76f5-4fdc-9801-7072e8e527c0/edit
+          - button "Delete" [ref=e1133]
+      - generic [ref=e1134]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1135] [cursor=pointer]:
+          - /url: /notes/76d94b1e-a8da-404c-96de-5aabbfb6620e
+          - heading "Back Button Test" [level=3] [ref=e1136]
+          - paragraph [ref=e1137]: Testing back button functionality...
+        - generic [ref=e1138]:
+          - link "Edit" [ref=e1139] [cursor=pointer]:
+            - /url: /notes/76d94b1e-a8da-404c-96de-5aabbfb6620e/edit
+          - button "Delete" [ref=e1140]
+      - generic [ref=e1141]:
+        - link "Node B B..." [ref=e1142] [cursor=pointer]:
+          - /url: /notes/9d2438bb-6bf1-4e19-b877-a1dd7fb4955f
+          - heading "Node B" [level=3] [ref=e1143]
+          - paragraph [ref=e1144]: B...
+        - generic [ref=e1145]:
+          - link "Edit" [ref=e1146] [cursor=pointer]:
+            - /url: /notes/9d2438bb-6bf1-4e19-b877-a1dd7fb4955f/edit
+          - button "Delete" [ref=e1147]
+      - generic [ref=e1148]:
+        - link "Node A A..." [ref=e1149] [cursor=pointer]:
+          - /url: /notes/1aaefda8-941d-4c9f-9362-d0ebd185d20a
+          - heading "Node A" [level=3] [ref=e1150]
+          - paragraph [ref=e1151]: A...
+        - generic [ref=e1152]:
+          - link "Edit" [ref=e1153] [cursor=pointer]:
+            - /url: /notes/1aaefda8-941d-4c9f-9362-d0ebd185d20a/edit
+          - button "Delete" [ref=e1154]
+      - generic [ref=e1155]:
+        - link "Edited New content..." [ref=e1156] [cursor=pointer]:
+          - /url: /notes/b82fd730-2748-4156-a04c-d1e5b3d092d9
+          - heading "Edited" [level=3] [ref=e1157]
+          - paragraph [ref=e1158]: New content...
+        - generic [ref=e1159]:
+          - link "Edit" [ref=e1160] [cursor=pointer]:
+            - /url: /notes/b82fd730-2748-4156-a04c-d1e5b3d092d9/edit
+          - button "Delete" [ref=e1161]
+      - generic [ref=e1162]:
+        - link "Playwright Test Automated content..." [ref=e1163] [cursor=pointer]:
+          - /url: /notes/0239836f-8a68-481f-90fd-d23085ebeb72
+          - heading "Playwright Test" [level=3] [ref=e1164]
+          - paragraph [ref=e1165]: Automated content...
+        - generic [ref=e1166]:
+          - link "Edit" [ref=e1167] [cursor=pointer]:
+            - /url: /notes/0239836f-8a68-481f-90fd-d23085ebeb72/edit
+          - button "Delete" [ref=e1168]
+      - generic [ref=e1169]:
+        - link "History Test Testing browser back functionality..." [ref=e1170] [cursor=pointer]:
+          - /url: /notes/daf34cef-0541-4733-90a0-b0f61efe7658
+          - heading "History Test" [level=3] [ref=e1171]
+          - paragraph [ref=e1172]: Testing browser back functionality...
+        - generic [ref=e1173]:
+          - link "Edit" [ref=e1174] [cursor=pointer]:
+            - /url: /notes/daf34cef-0541-4733-90a0-b0f61efe7658/edit
+          - button "Delete" [ref=e1175]
+      - generic [ref=e1176]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1177] [cursor=pointer]:
+          - /url: /notes/fa988a48-70ef-4878-b01b-4c49b110ae5c
+          - heading "Graph Back Test" [level=3] [ref=e1178]
+          - paragraph [ref=e1179]: Testing back button on graph...
+        - generic [ref=e1180]:
+          - link "Edit" [ref=e1181] [cursor=pointer]:
+            - /url: /notes/fa988a48-70ef-4878-b01b-4c49b110ae5c/edit
+          - button "Delete" [ref=e1182]
+      - generic [ref=e1183]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1184] [cursor=pointer]:
+          - /url: /notes/15bd3b7a-7213-44c9-9583-f8ac1688990f
+          - heading "Back Button Test" [level=3] [ref=e1185]
+          - paragraph [ref=e1186]: Testing back button functionality...
+        - generic [ref=e1187]:
+          - link "Edit" [ref=e1188] [cursor=pointer]:
+            - /url: /notes/15bd3b7a-7213-44c9-9583-f8ac1688990f/edit
+          - button "Delete" [ref=e1189]
+      - generic [ref=e1190]:
+        - link "Node B B..." [ref=e1191] [cursor=pointer]:
+          - /url: /notes/1cf0f721-8fdc-40e1-866c-269cf7498f0b
+          - heading "Node B" [level=3] [ref=e1192]
+          - paragraph [ref=e1193]: B...
+        - generic [ref=e1194]:
+          - link "Edit" [ref=e1195] [cursor=pointer]:
+            - /url: /notes/1cf0f721-8fdc-40e1-866c-269cf7498f0b/edit
+          - button "Delete" [ref=e1196]
+      - generic [ref=e1197]:
+        - link "Node A A..." [ref=e1198] [cursor=pointer]:
+          - /url: /notes/60279bd1-5390-4169-bcaa-c965e86f503c
+          - heading "Node A" [level=3] [ref=e1199]
+          - paragraph [ref=e1200]: A...
+        - generic [ref=e1201]:
+          - link "Edit" [ref=e1202] [cursor=pointer]:
+            - /url: /notes/60279bd1-5390-4169-bcaa-c965e86f503c/edit
+          - button "Delete" [ref=e1203]
+      - generic [ref=e1204]:
+        - link "Edited New content..." [ref=e1205] [cursor=pointer]:
+          - /url: /notes/539afa9b-fa35-43db-8d0f-19445ecce214
+          - heading "Edited" [level=3] [ref=e1206]
+          - paragraph [ref=e1207]: New content...
+        - generic [ref=e1208]:
+          - link "Edit" [ref=e1209] [cursor=pointer]:
+            - /url: /notes/539afa9b-fa35-43db-8d0f-19445ecce214/edit
+          - button "Delete" [ref=e1210]
+      - generic [ref=e1211]:
+        - link "Playwright Test Automated content..." [ref=e1212] [cursor=pointer]:
+          - /url: /notes/16b04b82-99ba-4f6b-8348-6e2a30dee414
+          - heading "Playwright Test" [level=3] [ref=e1213]
+          - paragraph [ref=e1214]: Automated content...
+        - generic [ref=e1215]:
+          - link "Edit" [ref=e1216] [cursor=pointer]:
+            - /url: /notes/16b04b82-99ba-4f6b-8348-6e2a30dee414/edit
+          - button "Delete" [ref=e1217]
+      - generic [ref=e1218]:
+        - link "History Test Testing browser back functionality..." [ref=e1219] [cursor=pointer]:
+          - /url: /notes/de692bc9-315c-41e3-b97f-413d64fa51c9
+          - heading "History Test" [level=3] [ref=e1220]
+          - paragraph [ref=e1221]: Testing browser back functionality...
+        - generic [ref=e1222]:
+          - link "Edit" [ref=e1223] [cursor=pointer]:
+            - /url: /notes/de692bc9-315c-41e3-b97f-413d64fa51c9/edit
+          - button "Delete" [ref=e1224]
+      - generic [ref=e1225]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1226] [cursor=pointer]:
+          - /url: /notes/a2f885a6-6290-4af9-ad30-841b4351fb40
+          - heading "Graph Back Test" [level=3] [ref=e1227]
+          - paragraph [ref=e1228]: Testing back button on graph...
+        - generic [ref=e1229]:
+          - link "Edit" [ref=e1230] [cursor=pointer]:
+            - /url: /notes/a2f885a6-6290-4af9-ad30-841b4351fb40/edit
+          - button "Delete" [ref=e1231]
+      - generic [ref=e1232]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1233] [cursor=pointer]:
+          - /url: /notes/d6197462-c597-4727-98fd-953680fac96f
+          - heading "Back Button Test" [level=3] [ref=e1234]
+          - paragraph [ref=e1235]: Testing back button functionality...
+        - generic [ref=e1236]:
+          - link "Edit" [ref=e1237] [cursor=pointer]:
+            - /url: /notes/d6197462-c597-4727-98fd-953680fac96f/edit
+          - button "Delete" [ref=e1238]
+      - generic [ref=e1239]:
+        - link "Node B B..." [ref=e1240] [cursor=pointer]:
+          - /url: /notes/bbf0c1b5-2c9a-4314-8c09-082ca4075b6d
+          - heading "Node B" [level=3] [ref=e1241]
+          - paragraph [ref=e1242]: B...
+        - generic [ref=e1243]:
+          - link "Edit" [ref=e1244] [cursor=pointer]:
+            - /url: /notes/bbf0c1b5-2c9a-4314-8c09-082ca4075b6d/edit
+          - button "Delete" [ref=e1245]
+      - generic [ref=e1246]:
+        - link "Node A A..." [ref=e1247] [cursor=pointer]:
+          - /url: /notes/b40fd765-43fe-4210-831d-06b2af7f8df2
+          - heading "Node A" [level=3] [ref=e1248]
+          - paragraph [ref=e1249]: A...
+        - generic [ref=e1250]:
+          - link "Edit" [ref=e1251] [cursor=pointer]:
+            - /url: /notes/b40fd765-43fe-4210-831d-06b2af7f8df2/edit
+          - button "Delete" [ref=e1252]
+      - generic [ref=e1253]:
+        - link "Edited New content..." [ref=e1254] [cursor=pointer]:
+          - /url: /notes/2fdf44c6-6fd4-4e86-b4e3-8adb9d22abe7
+          - heading "Edited" [level=3] [ref=e1255]
+          - paragraph [ref=e1256]: New content...
+        - generic [ref=e1257]:
+          - link "Edit" [ref=e1258] [cursor=pointer]:
+            - /url: /notes/2fdf44c6-6fd4-4e86-b4e3-8adb9d22abe7/edit
+          - button "Delete" [ref=e1259]
+      - generic [ref=e1260]:
+        - link "Playwright Test Automated content..." [ref=e1261] [cursor=pointer]:
+          - /url: /notes/a4ade70f-adaa-43eb-9828-af47d8b30c63
+          - heading "Playwright Test" [level=3] [ref=e1262]
+          - paragraph [ref=e1263]: Automated content...
+        - generic [ref=e1264]:
+          - link "Edit" [ref=e1265] [cursor=pointer]:
+            - /url: /notes/a4ade70f-adaa-43eb-9828-af47d8b30c63/edit
+          - button "Delete" [ref=e1266]
+      - generic [ref=e1267]:
+        - link "History Test Testing browser back functionality..." [ref=e1268] [cursor=pointer]:
+          - /url: /notes/89305fce-285a-4b7e-aaf2-2bc794acf213
+          - heading "History Test" [level=3] [ref=e1269]
+          - paragraph [ref=e1270]: Testing browser back functionality...
+        - generic [ref=e1271]:
+          - link "Edit" [ref=e1272] [cursor=pointer]:
+            - /url: /notes/89305fce-285a-4b7e-aaf2-2bc794acf213/edit
+          - button "Delete" [ref=e1273]
+      - generic [ref=e1274]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1275] [cursor=pointer]:
+          - /url: /notes/61f5074f-1fc8-4ed1-8e05-6cea8d889d8f
+          - heading "Graph Back Test" [level=3] [ref=e1276]
+          - paragraph [ref=e1277]: Testing back button on graph...
+        - generic [ref=e1278]:
+          - link "Edit" [ref=e1279] [cursor=pointer]:
+            - /url: /notes/61f5074f-1fc8-4ed1-8e05-6cea8d889d8f/edit
+          - button "Delete" [ref=e1280]
+      - generic [ref=e1281]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1282] [cursor=pointer]:
+          - /url: /notes/f61a6d8c-7ec8-4d38-a7f7-93fa44d813fd
+          - heading "Back Button Test" [level=3] [ref=e1283]
+          - paragraph [ref=e1284]: Testing back button functionality...
+        - generic [ref=e1285]:
+          - link "Edit" [ref=e1286] [cursor=pointer]:
+            - /url: /notes/f61a6d8c-7ec8-4d38-a7f7-93fa44d813fd/edit
+          - button "Delete" [ref=e1287]
+      - generic [ref=e1288]:
+        - link "Node B B..." [ref=e1289] [cursor=pointer]:
+          - /url: /notes/6057d11f-4a70-49c8-b1e2-c4a27bdc7ad8
+          - heading "Node B" [level=3] [ref=e1290]
+          - paragraph [ref=e1291]: B...
+        - generic [ref=e1292]:
+          - link "Edit" [ref=e1293] [cursor=pointer]:
+            - /url: /notes/6057d11f-4a70-49c8-b1e2-c4a27bdc7ad8/edit
+          - button "Delete" [ref=e1294]
+      - generic [ref=e1295]:
+        - link "Node A A..." [ref=e1296] [cursor=pointer]:
+          - /url: /notes/b5d63a18-e6ca-4f4a-b661-a6d21a9dea34
+          - heading "Node A" [level=3] [ref=e1297]
+          - paragraph [ref=e1298]: A...
+        - generic [ref=e1299]:
+          - link "Edit" [ref=e1300] [cursor=pointer]:
+            - /url: /notes/b5d63a18-e6ca-4f4a-b661-a6d21a9dea34/edit
+          - button "Delete" [ref=e1301]
+      - generic [ref=e1302]:
+        - link "Edited New content..." [ref=e1303] [cursor=pointer]:
+          - /url: /notes/d03b6b7f-e85b-498f-9236-cb11c43e53d5
+          - heading "Edited" [level=3] [ref=e1304]
+          - paragraph [ref=e1305]: New content...
+        - generic [ref=e1306]:
+          - link "Edit" [ref=e1307] [cursor=pointer]:
+            - /url: /notes/d03b6b7f-e85b-498f-9236-cb11c43e53d5/edit
+          - button "Delete" [ref=e1308]
+      - generic [ref=e1309]:
+        - link "Playwright Test Automated content..." [ref=e1310] [cursor=pointer]:
+          - /url: /notes/dc0a5816-ff19-47ed-9a7e-1b68834a01cd
+          - heading "Playwright Test" [level=3] [ref=e1311]
+          - paragraph [ref=e1312]: Automated content...
+        - generic [ref=e1313]:
+          - link "Edit" [ref=e1314] [cursor=pointer]:
+            - /url: /notes/dc0a5816-ff19-47ed-9a7e-1b68834a01cd/edit
+          - button "Delete" [ref=e1315]
+      - generic [ref=e1316]:
+        - link "History Test Testing browser back functionality..." [ref=e1317] [cursor=pointer]:
+          - /url: /notes/64351be3-7a05-46f8-b5e9-c32af0266b45
+          - heading "History Test" [level=3] [ref=e1318]
+          - paragraph [ref=e1319]: Testing browser back functionality...
+        - generic [ref=e1320]:
+          - link "Edit" [ref=e1321] [cursor=pointer]:
+            - /url: /notes/64351be3-7a05-46f8-b5e9-c32af0266b45/edit
+          - button "Delete" [ref=e1322]
+      - generic [ref=e1323]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1324] [cursor=pointer]:
+          - /url: /notes/703d10e4-6d58-433a-a4ba-5b236fef5319
+          - heading "Graph Back Test" [level=3] [ref=e1325]
+          - paragraph [ref=e1326]: Testing back button on graph...
+        - generic [ref=e1327]:
+          - link "Edit" [ref=e1328] [cursor=pointer]:
+            - /url: /notes/703d10e4-6d58-433a-a4ba-5b236fef5319/edit
+          - button "Delete" [ref=e1329]
+      - generic [ref=e1330]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1331] [cursor=pointer]:
+          - /url: /notes/112a8e89-3d30-4d56-a58b-015173d8a0db
+          - heading "Back Button Test" [level=3] [ref=e1332]
+          - paragraph [ref=e1333]: Testing back button functionality...
+        - generic [ref=e1334]:
+          - link "Edit" [ref=e1335] [cursor=pointer]:
+            - /url: /notes/112a8e89-3d30-4d56-a58b-015173d8a0db/edit
+          - button "Delete" [ref=e1336]
+      - generic [ref=e1337]:
+        - link "Node B B..." [ref=e1338] [cursor=pointer]:
+          - /url: /notes/2bc822a8-814d-4862-a453-e7ed067f6dda
+          - heading "Node B" [level=3] [ref=e1339]
+          - paragraph [ref=e1340]: B...
+        - generic [ref=e1341]:
+          - link "Edit" [ref=e1342] [cursor=pointer]:
+            - /url: /notes/2bc822a8-814d-4862-a453-e7ed067f6dda/edit
+          - button "Delete" [ref=e1343]
+      - generic [ref=e1344]:
+        - link "Node A A..." [ref=e1345] [cursor=pointer]:
+          - /url: /notes/b121feae-f5db-41d7-aeee-76a9ba7c0c39
+          - heading "Node A" [level=3] [ref=e1346]
+          - paragraph [ref=e1347]: A...
+        - generic [ref=e1348]:
+          - link "Edit" [ref=e1349] [cursor=pointer]:
+            - /url: /notes/b121feae-f5db-41d7-aeee-76a9ba7c0c39/edit
+          - button "Delete" [ref=e1350]
+      - generic [ref=e1351]:
+        - link "Edited New content..." [ref=e1352] [cursor=pointer]:
+          - /url: /notes/466a9e88-a245-4a41-8ef4-9f22fe5c8bc4
+          - heading "Edited" [level=3] [ref=e1353]
+          - paragraph [ref=e1354]: New content...
+        - generic [ref=e1355]:
+          - link "Edit" [ref=e1356] [cursor=pointer]:
+            - /url: /notes/466a9e88-a245-4a41-8ef4-9f22fe5c8bc4/edit
+          - button "Delete" [ref=e1357]
+      - generic [ref=e1358]:
+        - link "Playwright Test Automated content..." [ref=e1359] [cursor=pointer]:
+          - /url: /notes/17a411ba-d7c8-4841-a3b9-2596f35027d1
+          - heading "Playwright Test" [level=3] [ref=e1360]
+          - paragraph [ref=e1361]: Automated content...
+        - generic [ref=e1362]:
+          - link "Edit" [ref=e1363] [cursor=pointer]:
+            - /url: /notes/17a411ba-d7c8-4841-a3b9-2596f35027d1/edit
+          - button "Delete" [ref=e1364]
+      - generic [ref=e1365]:
+        - link "History Test Testing browser back functionality..." [ref=e1366] [cursor=pointer]:
+          - /url: /notes/7eef6ff4-18c8-424b-9607-058de2ab0c36
+          - heading "History Test" [level=3] [ref=e1367]
+          - paragraph [ref=e1368]: Testing browser back functionality...
+        - generic [ref=e1369]:
+          - link "Edit" [ref=e1370] [cursor=pointer]:
+            - /url: /notes/7eef6ff4-18c8-424b-9607-058de2ab0c36/edit
+          - button "Delete" [ref=e1371]
+      - generic [ref=e1372]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1373] [cursor=pointer]:
+          - /url: /notes/dfea8745-8a99-4c87-a3b2-5e4b70f20630
+          - heading "Graph Back Test" [level=3] [ref=e1374]
+          - paragraph [ref=e1375]: Testing back button on graph...
+        - generic [ref=e1376]:
+          - link "Edit" [ref=e1377] [cursor=pointer]:
+            - /url: /notes/dfea8745-8a99-4c87-a3b2-5e4b70f20630/edit
+          - button "Delete" [ref=e1378]
+      - generic [ref=e1379]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1380] [cursor=pointer]:
+          - /url: /notes/648a17d9-f286-4ad4-8814-0db47cd0f38d
+          - heading "Back Button Test" [level=3] [ref=e1381]
+          - paragraph [ref=e1382]: Testing back button functionality...
+        - generic [ref=e1383]:
+          - link "Edit" [ref=e1384] [cursor=pointer]:
+            - /url: /notes/648a17d9-f286-4ad4-8814-0db47cd0f38d/edit
+          - button "Delete" [ref=e1385]
+      - generic [ref=e1386]:
+        - link "Node B B..." [ref=e1387] [cursor=pointer]:
+          - /url: /notes/5d35c122-4d8f-4b2d-a269-ef0cdd5b6ced
+          - heading "Node B" [level=3] [ref=e1388]
+          - paragraph [ref=e1389]: B...
+        - generic [ref=e1390]:
+          - link "Edit" [ref=e1391] [cursor=pointer]:
+            - /url: /notes/5d35c122-4d8f-4b2d-a269-ef0cdd5b6ced/edit
+          - button "Delete" [ref=e1392]
+      - generic [ref=e1393]:
+        - link "Node A A..." [ref=e1394] [cursor=pointer]:
+          - /url: /notes/652e241c-3ba0-48a0-bd73-e14321deee66
+          - heading "Node A" [level=3] [ref=e1395]
+          - paragraph [ref=e1396]: A...
+        - generic [ref=e1397]:
+          - link "Edit" [ref=e1398] [cursor=pointer]:
+            - /url: /notes/652e241c-3ba0-48a0-bd73-e14321deee66/edit
+          - button "Delete" [ref=e1399]
+      - generic [ref=e1400]:
+        - link "Edited New content..." [ref=e1401] [cursor=pointer]:
+          - /url: /notes/2cf0e109-8c22-4fbf-8af5-787b015422ed
+          - heading "Edited" [level=3] [ref=e1402]
+          - paragraph [ref=e1403]: New content...
+        - generic [ref=e1404]:
+          - link "Edit" [ref=e1405] [cursor=pointer]:
+            - /url: /notes/2cf0e109-8c22-4fbf-8af5-787b015422ed/edit
+          - button "Delete" [ref=e1406]
+      - generic [ref=e1407]:
+        - link "Playwright Test Automated content..." [ref=e1408] [cursor=pointer]:
+          - /url: /notes/4598342e-8f0c-4872-b0d2-b3eceb844f08
+          - heading "Playwright Test" [level=3] [ref=e1409]
+          - paragraph [ref=e1410]: Automated content...
+        - generic [ref=e1411]:
+          - link "Edit" [ref=e1412] [cursor=pointer]:
+            - /url: /notes/4598342e-8f0c-4872-b0d2-b3eceb844f08/edit
+          - button "Delete" [ref=e1413]
+      - generic [ref=e1414]:
+        - link "History Test Testing browser back functionality..." [ref=e1415] [cursor=pointer]:
+          - /url: /notes/1adcb89d-3de0-490d-bc5e-e7d6fe414956
+          - heading "History Test" [level=3] [ref=e1416]
+          - paragraph [ref=e1417]: Testing browser back functionality...
+        - generic [ref=e1418]:
+          - link "Edit" [ref=e1419] [cursor=pointer]:
+            - /url: /notes/1adcb89d-3de0-490d-bc5e-e7d6fe414956/edit
+          - button "Delete" [ref=e1420]
+      - generic [ref=e1421]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1422] [cursor=pointer]:
+          - /url: /notes/a2ff4afa-f499-47a3-9269-1b4301e6743e
+          - heading "Graph Back Test" [level=3] [ref=e1423]
+          - paragraph [ref=e1424]: Testing back button on graph...
+        - generic [ref=e1425]:
+          - link "Edit" [ref=e1426] [cursor=pointer]:
+            - /url: /notes/a2ff4afa-f499-47a3-9269-1b4301e6743e/edit
+          - button "Delete" [ref=e1427]
+      - generic [ref=e1428]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1429] [cursor=pointer]:
+          - /url: /notes/2b2ea27e-091b-4fb0-80dd-98187dc97b73
+          - heading "Back Button Test" [level=3] [ref=e1430]
+          - paragraph [ref=e1431]: Testing back button functionality...
+        - generic [ref=e1432]:
+          - link "Edit" [ref=e1433] [cursor=pointer]:
+            - /url: /notes/2b2ea27e-091b-4fb0-80dd-98187dc97b73/edit
+          - button "Delete" [ref=e1434]
+      - generic [ref=e1435]:
+        - link "Node B B..." [ref=e1436] [cursor=pointer]:
+          - /url: /notes/9db397c3-2008-4421-ac71-1b941cc5cbcb
+          - heading "Node B" [level=3] [ref=e1437]
+          - paragraph [ref=e1438]: B...
+        - generic [ref=e1439]:
+          - link "Edit" [ref=e1440] [cursor=pointer]:
+            - /url: /notes/9db397c3-2008-4421-ac71-1b941cc5cbcb/edit
+          - button "Delete" [ref=e1441]
+      - generic [ref=e1442]:
+        - link "Node A A..." [ref=e1443] [cursor=pointer]:
+          - /url: /notes/4fdc70d7-677f-4140-8727-9a11da4088f8
+          - heading "Node A" [level=3] [ref=e1444]
+          - paragraph [ref=e1445]: A...
+        - generic [ref=e1446]:
+          - link "Edit" [ref=e1447] [cursor=pointer]:
+            - /url: /notes/4fdc70d7-677f-4140-8727-9a11da4088f8/edit
+          - button "Delete" [ref=e1448]
+      - generic [ref=e1449]:
+        - link "Edited New content..." [ref=e1450] [cursor=pointer]:
+          - /url: /notes/ad8c8cf5-d647-42c3-b650-44e21c6629af
+          - heading "Edited" [level=3] [ref=e1451]
+          - paragraph [ref=e1452]: New content...
+        - generic [ref=e1453]:
+          - link "Edit" [ref=e1454] [cursor=pointer]:
+            - /url: /notes/ad8c8cf5-d647-42c3-b650-44e21c6629af/edit
+          - button "Delete" [ref=e1455]
+      - generic [ref=e1456]:
+        - link "Playwright Test Automated content..." [ref=e1457] [cursor=pointer]:
+          - /url: /notes/7b613670-1223-4fb6-87ed-a5debe91f1ff
+          - heading "Playwright Test" [level=3] [ref=e1458]
+          - paragraph [ref=e1459]: Automated content...
+        - generic [ref=e1460]:
+          - link "Edit" [ref=e1461] [cursor=pointer]:
+            - /url: /notes/7b613670-1223-4fb6-87ed-a5debe91f1ff/edit
+          - button "Delete" [ref=e1462]
+      - generic [ref=e1463]:
+        - link "History Test Testing browser back functionality..." [ref=e1464] [cursor=pointer]:
+          - /url: /notes/688bdee7-4f98-4c3a-8a32-ffaca63c9433
+          - heading "History Test" [level=3] [ref=e1465]
+          - paragraph [ref=e1466]: Testing browser back functionality...
+        - generic [ref=e1467]:
+          - link "Edit" [ref=e1468] [cursor=pointer]:
+            - /url: /notes/688bdee7-4f98-4c3a-8a32-ffaca63c9433/edit
+          - button "Delete" [ref=e1469]
+      - generic [ref=e1470]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1471] [cursor=pointer]:
+          - /url: /notes/f70c2c67-b026-433a-beeb-df5a0c71619a
+          - heading "Graph Back Test" [level=3] [ref=e1472]
+          - paragraph [ref=e1473]: Testing back button on graph...
+        - generic [ref=e1474]:
+          - link "Edit" [ref=e1475] [cursor=pointer]:
+            - /url: /notes/f70c2c67-b026-433a-beeb-df5a0c71619a/edit
+          - button "Delete" [ref=e1476]
+      - generic [ref=e1477]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1478] [cursor=pointer]:
+          - /url: /notes/a8f386b3-355d-48fb-a61f-f42043113329
+          - heading "Back Button Test" [level=3] [ref=e1479]
+          - paragraph [ref=e1480]: Testing back button functionality...
+        - generic [ref=e1481]:
+          - link "Edit" [ref=e1482] [cursor=pointer]:
+            - /url: /notes/a8f386b3-355d-48fb-a61f-f42043113329/edit
+          - button "Delete" [ref=e1483]
+      - generic [ref=e1484]:
+        - link "Node B B..." [ref=e1485] [cursor=pointer]:
+          - /url: /notes/93c9fa77-9254-46ca-886d-f30b163d91f0
+          - heading "Node B" [level=3] [ref=e1486]
+          - paragraph [ref=e1487]: B...
+        - generic [ref=e1488]:
+          - link "Edit" [ref=e1489] [cursor=pointer]:
+            - /url: /notes/93c9fa77-9254-46ca-886d-f30b163d91f0/edit
+          - button "Delete" [ref=e1490]
+      - generic [ref=e1491]:
+        - link "Node A A..." [ref=e1492] [cursor=pointer]:
+          - /url: /notes/491b6a47-758d-4420-9731-7f2f937de055
+          - heading "Node A" [level=3] [ref=e1493]
+          - paragraph [ref=e1494]: A...
+        - generic [ref=e1495]:
+          - link "Edit" [ref=e1496] [cursor=pointer]:
+            - /url: /notes/491b6a47-758d-4420-9731-7f2f937de055/edit
+          - button "Delete" [ref=e1497]
+      - generic [ref=e1498]:
+        - link "Edited New content..." [ref=e1499] [cursor=pointer]:
+          - /url: /notes/cf7c4b5c-f617-4ad0-8d36-f7f9e39d22d3
+          - heading "Edited" [level=3] [ref=e1500]
+          - paragraph [ref=e1501]: New content...
+        - generic [ref=e1502]:
+          - link "Edit" [ref=e1503] [cursor=pointer]:
+            - /url: /notes/cf7c4b5c-f617-4ad0-8d36-f7f9e39d22d3/edit
+          - button "Delete" [ref=e1504]
+      - generic [ref=e1505]:
+        - link "Playwright Test Automated content..." [ref=e1506] [cursor=pointer]:
+          - /url: /notes/6e80e1d9-19a7-4ea6-83e0-f8e0da5de22a
+          - heading "Playwright Test" [level=3] [ref=e1507]
+          - paragraph [ref=e1508]: Automated content...
+        - generic [ref=e1509]:
+          - link "Edit" [ref=e1510] [cursor=pointer]:
+            - /url: /notes/6e80e1d9-19a7-4ea6-83e0-f8e0da5de22a/edit
+          - button "Delete" [ref=e1511]
+      - generic [ref=e1512]:
+        - link "History Test Testing browser back functionality..." [ref=e1513] [cursor=pointer]:
+          - /url: /notes/7a03d71a-199e-4cd2-adb6-ec7dce0e9939
+          - heading "History Test" [level=3] [ref=e1514]
+          - paragraph [ref=e1515]: Testing browser back functionality...
+        - generic [ref=e1516]:
+          - link "Edit" [ref=e1517] [cursor=pointer]:
+            - /url: /notes/7a03d71a-199e-4cd2-adb6-ec7dce0e9939/edit
+          - button "Delete" [ref=e1518]
+      - generic [ref=e1519]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1520] [cursor=pointer]:
+          - /url: /notes/1034a782-24f0-4ded-bdb9-b8583d314d48
+          - heading "Graph Back Test" [level=3] [ref=e1521]
+          - paragraph [ref=e1522]: Testing back button on graph...
+        - generic [ref=e1523]:
+          - link "Edit" [ref=e1524] [cursor=pointer]:
+            - /url: /notes/1034a782-24f0-4ded-bdb9-b8583d314d48/edit
+          - button "Delete" [ref=e1525]
+      - generic [ref=e1526]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1527] [cursor=pointer]:
+          - /url: /notes/e240afb3-64bc-46a4-a2f5-fb5058ebb745
+          - heading "Back Button Test" [level=3] [ref=e1528]
+          - paragraph [ref=e1529]: Testing back button functionality...
+        - generic [ref=e1530]:
+          - link "Edit" [ref=e1531] [cursor=pointer]:
+            - /url: /notes/e240afb3-64bc-46a4-a2f5-fb5058ebb745/edit
+          - button "Delete" [ref=e1532]
+      - generic [ref=e1533]:
+        - link "Node B B..." [ref=e1534] [cursor=pointer]:
+          - /url: /notes/23745afb-901b-4549-b239-db7222351b1e
+          - heading "Node B" [level=3] [ref=e1535]
+          - paragraph [ref=e1536]: B...
+        - generic [ref=e1537]:
+          - link "Edit" [ref=e1538] [cursor=pointer]:
+            - /url: /notes/23745afb-901b-4549-b239-db7222351b1e/edit
+          - button "Delete" [ref=e1539]
+      - generic [ref=e1540]:
+        - link "Node A A..." [ref=e1541] [cursor=pointer]:
+          - /url: /notes/796c2d3d-32b5-4cdc-9697-3833b664459b
+          - heading "Node A" [level=3] [ref=e1542]
+          - paragraph [ref=e1543]: A...
+        - generic [ref=e1544]:
+          - link "Edit" [ref=e1545] [cursor=pointer]:
+            - /url: /notes/796c2d3d-32b5-4cdc-9697-3833b664459b/edit
+          - button "Delete" [ref=e1546]
+      - generic [ref=e1547]:
+        - link "Edited New content..." [ref=e1548] [cursor=pointer]:
+          - /url: /notes/94698628-1623-49f7-9ff0-d2dfc1fe6dde
+          - heading "Edited" [level=3] [ref=e1549]
+          - paragraph [ref=e1550]: New content...
+        - generic [ref=e1551]:
+          - link "Edit" [ref=e1552] [cursor=pointer]:
+            - /url: /notes/94698628-1623-49f7-9ff0-d2dfc1fe6dde/edit
+          - button "Delete" [ref=e1553]
+      - generic [ref=e1554]:
+        - link "Playwright Test Automated content..." [ref=e1555] [cursor=pointer]:
+          - /url: /notes/7cd3e574-5703-4364-ad8f-f8d00ab4e4ee
+          - heading "Playwright Test" [level=3] [ref=e1556]
+          - paragraph [ref=e1557]: Automated content...
+        - generic [ref=e1558]:
+          - link "Edit" [ref=e1559] [cursor=pointer]:
+            - /url: /notes/7cd3e574-5703-4364-ad8f-f8d00ab4e4ee/edit
+          - button "Delete" [ref=e1560]
+      - generic [ref=e1561]:
+        - link "History Test Testing browser back functionality..." [ref=e1562] [cursor=pointer]:
+          - /url: /notes/1bbaf661-948d-4dfe-aa09-8da338ac5dc2
+          - heading "History Test" [level=3] [ref=e1563]
+          - paragraph [ref=e1564]: Testing browser back functionality...
+        - generic [ref=e1565]:
+          - link "Edit" [ref=e1566] [cursor=pointer]:
+            - /url: /notes/1bbaf661-948d-4dfe-aa09-8da338ac5dc2/edit
+          - button "Delete" [ref=e1567]
+      - generic [ref=e1568]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1569] [cursor=pointer]:
+          - /url: /notes/9dcb443f-81b8-46d0-b036-172f37ad8c30
+          - heading "Graph Back Test" [level=3] [ref=e1570]
+          - paragraph [ref=e1571]: Testing back button on graph...
+        - generic [ref=e1572]:
+          - link "Edit" [ref=e1573] [cursor=pointer]:
+            - /url: /notes/9dcb443f-81b8-46d0-b036-172f37ad8c30/edit
+          - button "Delete" [ref=e1574]
+      - generic [ref=e1575]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1576] [cursor=pointer]:
+          - /url: /notes/6887f4f1-abc9-473e-aa2d-42b9912e9948
+          - heading "Back Button Test" [level=3] [ref=e1577]
+          - paragraph [ref=e1578]: Testing back button functionality...
+        - generic [ref=e1579]:
+          - link "Edit" [ref=e1580] [cursor=pointer]:
+            - /url: /notes/6887f4f1-abc9-473e-aa2d-42b9912e9948/edit
+          - button "Delete" [ref=e1581]
+      - generic [ref=e1582]:
+        - link "Node B B..." [ref=e1583] [cursor=pointer]:
+          - /url: /notes/0ddc00b9-a8f0-4539-96a0-7b7474b398e0
+          - heading "Node B" [level=3] [ref=e1584]
+          - paragraph [ref=e1585]: B...
+        - generic [ref=e1586]:
+          - link "Edit" [ref=e1587] [cursor=pointer]:
+            - /url: /notes/0ddc00b9-a8f0-4539-96a0-7b7474b398e0/edit
+          - button "Delete" [ref=e1588]
+      - generic [ref=e1589]:
+        - link "Node A A..." [ref=e1590] [cursor=pointer]:
+          - /url: /notes/943302fe-8d41-4359-af59-36917da69d16
+          - heading "Node A" [level=3] [ref=e1591]
+          - paragraph [ref=e1592]: A...
+        - generic [ref=e1593]:
+          - link "Edit" [ref=e1594] [cursor=pointer]:
+            - /url: /notes/943302fe-8d41-4359-af59-36917da69d16/edit
+          - button "Delete" [ref=e1595]
+      - generic [ref=e1596]:
+        - link "Edited New content..." [ref=e1597] [cursor=pointer]:
+          - /url: /notes/ee6da461-3aa7-4445-aac4-e7c85a98c426
+          - heading "Edited" [level=3] [ref=e1598]
+          - paragraph [ref=e1599]: New content...
+        - generic [ref=e1600]:
+          - link "Edit" [ref=e1601] [cursor=pointer]:
+            - /url: /notes/ee6da461-3aa7-4445-aac4-e7c85a98c426/edit
+          - button "Delete" [ref=e1602]
+      - generic [ref=e1603]:
+        - link "Playwright Test Automated content..." [ref=e1604] [cursor=pointer]:
+          - /url: /notes/44e959fb-0275-4572-8bdb-528561637252
+          - heading "Playwright Test" [level=3] [ref=e1605]
+          - paragraph [ref=e1606]: Automated content...
+        - generic [ref=e1607]:
+          - link "Edit" [ref=e1608] [cursor=pointer]:
+            - /url: /notes/44e959fb-0275-4572-8bdb-528561637252/edit
+          - button "Delete" [ref=e1609]
+      - generic [ref=e1610]:
+        - link "History Test Testing browser back functionality..." [ref=e1611] [cursor=pointer]:
+          - /url: /notes/b6a0be3e-be25-46ba-a949-30a3c359c55a
+          - heading "History Test" [level=3] [ref=e1612]
+          - paragraph [ref=e1613]: Testing browser back functionality...
+        - generic [ref=e1614]:
+          - link "Edit" [ref=e1615] [cursor=pointer]:
+            - /url: /notes/b6a0be3e-be25-46ba-a949-30a3c359c55a/edit
+          - button "Delete" [ref=e1616]
+      - generic [ref=e1617]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1618] [cursor=pointer]:
+          - /url: /notes/3c8a0d65-efdd-4097-ae6f-749b5ba6c03a
+          - heading "Graph Back Test" [level=3] [ref=e1619]
+          - paragraph [ref=e1620]: Testing back button on graph...
+        - generic [ref=e1621]:
+          - link "Edit" [ref=e1622] [cursor=pointer]:
+            - /url: /notes/3c8a0d65-efdd-4097-ae6f-749b5ba6c03a/edit
+          - button "Delete" [ref=e1623]
+      - generic [ref=e1624]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1625] [cursor=pointer]:
+          - /url: /notes/e0dc1a73-2243-46d0-a3d3-649151634e1c
+          - heading "Back Button Test" [level=3] [ref=e1626]
+          - paragraph [ref=e1627]: Testing back button functionality...
+        - generic [ref=e1628]:
+          - link "Edit" [ref=e1629] [cursor=pointer]:
+            - /url: /notes/e0dc1a73-2243-46d0-a3d3-649151634e1c/edit
+          - button "Delete" [ref=e1630]
+      - generic [ref=e1631]:
+        - link "Node B B..." [ref=e1632] [cursor=pointer]:
+          - /url: /notes/af1570d5-8864-4788-a7f3-9bd44de9e02c
+          - heading "Node B" [level=3] [ref=e1633]
+          - paragraph [ref=e1634]: B...
+        - generic [ref=e1635]:
+          - link "Edit" [ref=e1636] [cursor=pointer]:
+            - /url: /notes/af1570d5-8864-4788-a7f3-9bd44de9e02c/edit
+          - button "Delete" [ref=e1637]
+      - generic [ref=e1638]:
+        - link "Node A A..." [ref=e1639] [cursor=pointer]:
+          - /url: /notes/e9849603-b659-450e-864b-da63ad7848ee
+          - heading "Node A" [level=3] [ref=e1640]
+          - paragraph [ref=e1641]: A...
+        - generic [ref=e1642]:
+          - link "Edit" [ref=e1643] [cursor=pointer]:
+            - /url: /notes/e9849603-b659-450e-864b-da63ad7848ee/edit
+          - button "Delete" [ref=e1644]
+      - generic [ref=e1645]:
+        - link "Delete Test 1775811485244 ..." [ref=e1646] [cursor=pointer]:
+          - /url: /notes/7a29003a-fef3-4b9b-8b0e-5aed975cf55c
+          - heading "Delete Test 1775811485244" [level=3] [ref=e1647]
+          - paragraph [ref=e1648]: ...
+        - generic [ref=e1649]:
+          - link "Edit" [ref=e1650] [cursor=pointer]:
+            - /url: /notes/7a29003a-fef3-4b9b-8b0e-5aed975cf55c/edit
+          - button "Delete" [ref=e1651]
+      - generic [ref=e1652]:
+        - link "Edited New content..." [ref=e1653] [cursor=pointer]:
+          - /url: /notes/c2e30552-5616-4679-9d62-6dd309bae097
+          - heading "Edited" [level=3] [ref=e1654]
+          - paragraph [ref=e1655]: New content...
+        - generic [ref=e1656]:
+          - link "Edit" [ref=e1657] [cursor=pointer]:
+            - /url: /notes/c2e30552-5616-4679-9d62-6dd309bae097/edit
+          - button "Delete" [ref=e1658]
+      - generic [ref=e1659]:
+        - link "Playwright Test Automated content..." [ref=e1660] [cursor=pointer]:
+          - /url: /notes/7864a6de-02fe-4a73-8b78-9ff8620389e5
+          - heading "Playwright Test" [level=3] [ref=e1661]
+          - paragraph [ref=e1662]: Automated content...
+        - generic [ref=e1663]:
+          - link "Edit" [ref=e1664] [cursor=pointer]:
+            - /url: /notes/7864a6de-02fe-4a73-8b78-9ff8620389e5/edit
+          - button "Delete" [ref=e1665]
+      - generic [ref=e1666]:
+        - link "History Test Testing browser back functionality..." [ref=e1667] [cursor=pointer]:
+          - /url: /notes/668d6c57-a5e9-4ff9-8b16-41500c94f182
+          - heading "History Test" [level=3] [ref=e1668]
+          - paragraph [ref=e1669]: Testing browser back functionality...
+        - generic [ref=e1670]:
+          - link "Edit" [ref=e1671] [cursor=pointer]:
+            - /url: /notes/668d6c57-a5e9-4ff9-8b16-41500c94f182/edit
+          - button "Delete" [ref=e1672]
+      - generic [ref=e1673]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1674] [cursor=pointer]:
+          - /url: /notes/6a5655c0-a803-421b-b81f-3d9e9c31a7a4
+          - heading "Graph Back Test" [level=3] [ref=e1675]
+          - paragraph [ref=e1676]: Testing back button on graph...
+        - generic [ref=e1677]:
+          - link "Edit" [ref=e1678] [cursor=pointer]:
+            - /url: /notes/6a5655c0-a803-421b-b81f-3d9e9c31a7a4/edit
+          - button "Delete" [ref=e1679]
+      - generic [ref=e1680]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1681] [cursor=pointer]:
+          - /url: /notes/7b58d3f3-c669-4feb-ad24-ae20b3484217
+          - heading "Back Button Test" [level=3] [ref=e1682]
+          - paragraph [ref=e1683]: Testing back button functionality...
+        - generic [ref=e1684]:
+          - link "Edit" [ref=e1685] [cursor=pointer]:
+            - /url: /notes/7b58d3f3-c669-4feb-ad24-ae20b3484217/edit
+          - button "Delete" [ref=e1686]
+      - generic [ref=e1687]:
+        - link "Node B B..." [ref=e1688] [cursor=pointer]:
+          - /url: /notes/9d54e7ce-47d2-4e58-915c-b617128c12d1
+          - heading "Node B" [level=3] [ref=e1689]
+          - paragraph [ref=e1690]: B...
+        - generic [ref=e1691]:
+          - link "Edit" [ref=e1692] [cursor=pointer]:
+            - /url: /notes/9d54e7ce-47d2-4e58-915c-b617128c12d1/edit
+          - button "Delete" [ref=e1693]
+      - generic [ref=e1694]:
+        - link "Node A A..." [ref=e1695] [cursor=pointer]:
+          - /url: /notes/c3554335-1091-48e3-b7e7-5691b5d96a20
+          - heading "Node A" [level=3] [ref=e1696]
+          - paragraph [ref=e1697]: A...
+        - generic [ref=e1698]:
+          - link "Edit" [ref=e1699] [cursor=pointer]:
+            - /url: /notes/c3554335-1091-48e3-b7e7-5691b5d96a20/edit
+          - button "Delete" [ref=e1700]
+      - generic [ref=e1701]:
+        - link "Edited New content..." [ref=e1702] [cursor=pointer]:
+          - /url: /notes/76d7d556-4ad2-4400-ac48-7490b7b1b12c
+          - heading "Edited" [level=3] [ref=e1703]
+          - paragraph [ref=e1704]: New content...
+        - generic [ref=e1705]:
+          - link "Edit" [ref=e1706] [cursor=pointer]:
+            - /url: /notes/76d7d556-4ad2-4400-ac48-7490b7b1b12c/edit
+          - button "Delete" [ref=e1707]
+      - generic [ref=e1708]:
+        - link "Playwright Test Automated content..." [ref=e1709] [cursor=pointer]:
+          - /url: /notes/c2432c6c-c02b-48b4-9a40-66dd0be69699
+          - heading "Playwright Test" [level=3] [ref=e1710]
+          - paragraph [ref=e1711]: Automated content...
+        - generic [ref=e1712]:
+          - link "Edit" [ref=e1713] [cursor=pointer]:
+            - /url: /notes/c2432c6c-c02b-48b4-9a40-66dd0be69699/edit
+          - button "Delete" [ref=e1714]
+      - generic [ref=e1715]:
+        - link "History Test Testing browser back functionality..." [ref=e1716] [cursor=pointer]:
+          - /url: /notes/5c069efd-1441-42d7-9bc5-fa41918c849a
+          - heading "History Test" [level=3] [ref=e1717]
+          - paragraph [ref=e1718]: Testing browser back functionality...
+        - generic [ref=e1719]:
+          - link "Edit" [ref=e1720] [cursor=pointer]:
+            - /url: /notes/5c069efd-1441-42d7-9bc5-fa41918c849a/edit
+          - button "Delete" [ref=e1721]
+      - generic [ref=e1722]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1723] [cursor=pointer]:
+          - /url: /notes/8e915eb2-c9eb-486a-b31d-9b95a0b88c15
+          - heading "Graph Back Test" [level=3] [ref=e1724]
+          - paragraph [ref=e1725]: Testing back button on graph...
+        - generic [ref=e1726]:
+          - link "Edit" [ref=e1727] [cursor=pointer]:
+            - /url: /notes/8e915eb2-c9eb-486a-b31d-9b95a0b88c15/edit
+          - button "Delete" [ref=e1728]
+      - generic [ref=e1729]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1730] [cursor=pointer]:
+          - /url: /notes/68715250-d388-4747-9b8e-1581fb90f852
+          - heading "Back Button Test" [level=3] [ref=e1731]
+          - paragraph [ref=e1732]: Testing back button functionality...
+        - generic [ref=e1733]:
+          - link "Edit" [ref=e1734] [cursor=pointer]:
+            - /url: /notes/68715250-d388-4747-9b8e-1581fb90f852/edit
+          - button "Delete" [ref=e1735]
+      - generic [ref=e1736]:
+        - link "Node B B..." [ref=e1737] [cursor=pointer]:
+          - /url: /notes/30f79e7e-b790-485c-9bf3-a6a8338e8353
+          - heading "Node B" [level=3] [ref=e1738]
+          - paragraph [ref=e1739]: B...
+        - generic [ref=e1740]:
+          - link "Edit" [ref=e1741] [cursor=pointer]:
+            - /url: /notes/30f79e7e-b790-485c-9bf3-a6a8338e8353/edit
+          - button "Delete" [ref=e1742]
+      - generic [ref=e1743]:
+        - link "Node A A..." [ref=e1744] [cursor=pointer]:
+          - /url: /notes/fb7adfc6-0474-41b8-bcc9-1e2b92d86879
+          - heading "Node A" [level=3] [ref=e1745]
+          - paragraph [ref=e1746]: A...
+        - generic [ref=e1747]:
+          - link "Edit" [ref=e1748] [cursor=pointer]:
+            - /url: /notes/fb7adfc6-0474-41b8-bcc9-1e2b92d86879/edit
+          - button "Delete" [ref=e1749]
+      - generic [ref=e1750]:
+        - link "Edited New content..." [ref=e1751] [cursor=pointer]:
+          - /url: /notes/de8fd8ec-0f5e-4dc9-a9d7-8e826f6b381d
+          - heading "Edited" [level=3] [ref=e1752]
+          - paragraph [ref=e1753]: New content...
+        - generic [ref=e1754]:
+          - link "Edit" [ref=e1755] [cursor=pointer]:
+            - /url: /notes/de8fd8ec-0f5e-4dc9-a9d7-8e826f6b381d/edit
+          - button "Delete" [ref=e1756]
+      - generic [ref=e1757]:
+        - link "Playwright Test Automated content..." [ref=e1758] [cursor=pointer]:
+          - /url: /notes/a83d7008-642c-4688-b30f-28cf04fd360a
+          - heading "Playwright Test" [level=3] [ref=e1759]
+          - paragraph [ref=e1760]: Automated content...
+        - generic [ref=e1761]:
+          - link "Edit" [ref=e1762] [cursor=pointer]:
+            - /url: /notes/a83d7008-642c-4688-b30f-28cf04fd360a/edit
+          - button "Delete" [ref=e1763]
+      - generic [ref=e1764]:
+        - link "History Test Testing browser back functionality..." [ref=e1765] [cursor=pointer]:
+          - /url: /notes/7ddeabea-5a4a-473a-b81e-c695354c6b9d
+          - heading "History Test" [level=3] [ref=e1766]
+          - paragraph [ref=e1767]: Testing browser back functionality...
+        - generic [ref=e1768]:
+          - link "Edit" [ref=e1769] [cursor=pointer]:
+            - /url: /notes/7ddeabea-5a4a-473a-b81e-c695354c6b9d/edit
+          - button "Delete" [ref=e1770]
+      - generic [ref=e1771]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1772] [cursor=pointer]:
+          - /url: /notes/12782d11-ff43-4a91-9a54-5d2e2437aa49
+          - heading "Graph Back Test" [level=3] [ref=e1773]
+          - paragraph [ref=e1774]: Testing back button on graph...
+        - generic [ref=e1775]:
+          - link "Edit" [ref=e1776] [cursor=pointer]:
+            - /url: /notes/12782d11-ff43-4a91-9a54-5d2e2437aa49/edit
+          - button "Delete" [ref=e1777]
+      - generic [ref=e1778]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1779] [cursor=pointer]:
+          - /url: /notes/932cf307-37e1-4991-bf25-ed76251946e3
+          - heading "Back Button Test" [level=3] [ref=e1780]
+          - paragraph [ref=e1781]: Testing back button functionality...
+        - generic [ref=e1782]:
+          - link "Edit" [ref=e1783] [cursor=pointer]:
+            - /url: /notes/932cf307-37e1-4991-bf25-ed76251946e3/edit
+          - button "Delete" [ref=e1784]
+      - generic [ref=e1785]:
+        - link "Node B B..." [ref=e1786] [cursor=pointer]:
+          - /url: /notes/9f96f8da-a825-4fc9-89cd-64fac95b6a99
+          - heading "Node B" [level=3] [ref=e1787]
+          - paragraph [ref=e1788]: B...
+        - generic [ref=e1789]:
+          - link "Edit" [ref=e1790] [cursor=pointer]:
+            - /url: /notes/9f96f8da-a825-4fc9-89cd-64fac95b6a99/edit
+          - button "Delete" [ref=e1791]
+      - generic [ref=e1792]:
+        - link "Node A A..." [ref=e1793] [cursor=pointer]:
+          - /url: /notes/a47d3023-47fc-4968-8feb-4e7c74a9b6f0
+          - heading "Node A" [level=3] [ref=e1794]
+          - paragraph [ref=e1795]: A...
+        - generic [ref=e1796]:
+          - link "Edit" [ref=e1797] [cursor=pointer]:
+            - /url: /notes/a47d3023-47fc-4968-8feb-4e7c74a9b6f0/edit
+          - button "Delete" [ref=e1798]
+      - generic [ref=e1799]:
+        - link "Edited New content..." [ref=e1800] [cursor=pointer]:
+          - /url: /notes/692375d3-3713-490b-8809-75b9ff6196a6
+          - heading "Edited" [level=3] [ref=e1801]
+          - paragraph [ref=e1802]: New content...
+        - generic [ref=e1803]:
+          - link "Edit" [ref=e1804] [cursor=pointer]:
+            - /url: /notes/692375d3-3713-490b-8809-75b9ff6196a6/edit
+          - button "Delete" [ref=e1805]
+      - generic [ref=e1806]:
+        - link "Playwright Test Automated content..." [ref=e1807] [cursor=pointer]:
+          - /url: /notes/2f89c889-0dfd-4520-8b31-2c1f862322d9
+          - heading "Playwright Test" [level=3] [ref=e1808]
+          - paragraph [ref=e1809]: Automated content...
+        - generic [ref=e1810]:
+          - link "Edit" [ref=e1811] [cursor=pointer]:
+            - /url: /notes/2f89c889-0dfd-4520-8b31-2c1f862322d9/edit
+          - button "Delete" [ref=e1812]
+      - generic [ref=e1813]:
+        - link "History Test Testing browser back functionality..." [ref=e1814] [cursor=pointer]:
+          - /url: /notes/9ab242fb-c696-4041-88a7-e37e23b76acc
+          - heading "History Test" [level=3] [ref=e1815]
+          - paragraph [ref=e1816]: Testing browser back functionality...
+        - generic [ref=e1817]:
+          - link "Edit" [ref=e1818] [cursor=pointer]:
+            - /url: /notes/9ab242fb-c696-4041-88a7-e37e23b76acc/edit
+          - button "Delete" [ref=e1819]
+      - generic [ref=e1820]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1821] [cursor=pointer]:
+          - /url: /notes/a209494f-d47c-4103-a58b-6b378ed1fa7c
+          - heading "Graph Back Test" [level=3] [ref=e1822]
+          - paragraph [ref=e1823]: Testing back button on graph...
+        - generic [ref=e1824]:
+          - link "Edit" [ref=e1825] [cursor=pointer]:
+            - /url: /notes/a209494f-d47c-4103-a58b-6b378ed1fa7c/edit
+          - button "Delete" [ref=e1826]
+      - generic [ref=e1827]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1828] [cursor=pointer]:
+          - /url: /notes/e0eca735-15f2-40af-9c88-36da5e19d061
+          - heading "Back Button Test" [level=3] [ref=e1829]
+          - paragraph [ref=e1830]: Testing back button functionality...
+        - generic [ref=e1831]:
+          - link "Edit" [ref=e1832] [cursor=pointer]:
+            - /url: /notes/e0eca735-15f2-40af-9c88-36da5e19d061/edit
+          - button "Delete" [ref=e1833]
+      - generic [ref=e1834]:
+        - link "Node B B..." [ref=e1835] [cursor=pointer]:
+          - /url: /notes/8ee0d197-ca37-4896-b705-8efdbc1ff668
+          - heading "Node B" [level=3] [ref=e1836]
+          - paragraph [ref=e1837]: B...
+        - generic [ref=e1838]:
+          - link "Edit" [ref=e1839] [cursor=pointer]:
+            - /url: /notes/8ee0d197-ca37-4896-b705-8efdbc1ff668/edit
+          - button "Delete" [ref=e1840]
+      - generic [ref=e1841]:
+        - link "Node A A..." [ref=e1842] [cursor=pointer]:
+          - /url: /notes/bb3ea2d7-2e7c-4d76-9e52-44a2853bf2ed
+          - heading "Node A" [level=3] [ref=e1843]
+          - paragraph [ref=e1844]: A...
+        - generic [ref=e1845]:
+          - link "Edit" [ref=e1846] [cursor=pointer]:
+            - /url: /notes/bb3ea2d7-2e7c-4d76-9e52-44a2853bf2ed/edit
+          - button "Delete" [ref=e1847]
+      - generic [ref=e1848]:
+        - link "Edited New content..." [ref=e1849] [cursor=pointer]:
+          - /url: /notes/29444871-da1e-4394-8228-32a6dc0c9b2a
+          - heading "Edited" [level=3] [ref=e1850]
+          - paragraph [ref=e1851]: New content...
+        - generic [ref=e1852]:
+          - link "Edit" [ref=e1853] [cursor=pointer]:
+            - /url: /notes/29444871-da1e-4394-8228-32a6dc0c9b2a/edit
+          - button "Delete" [ref=e1854]
+      - generic [ref=e1855]:
+        - link "Playwright Test Automated content..." [ref=e1856] [cursor=pointer]:
+          - /url: /notes/3e6a59dd-9060-4af5-aa94-95b981ff9d1c
+          - heading "Playwright Test" [level=3] [ref=e1857]
+          - paragraph [ref=e1858]: Automated content...
+        - generic [ref=e1859]:
+          - link "Edit" [ref=e1860] [cursor=pointer]:
+            - /url: /notes/3e6a59dd-9060-4af5-aa94-95b981ff9d1c/edit
+          - button "Delete" [ref=e1861]
+      - generic [ref=e1862]:
+        - link "History Test Testing browser back functionality..." [ref=e1863] [cursor=pointer]:
+          - /url: /notes/8b118951-813e-47db-a88c-d56eb7410b75
+          - heading "History Test" [level=3] [ref=e1864]
+          - paragraph [ref=e1865]: Testing browser back functionality...
+        - generic [ref=e1866]:
+          - link "Edit" [ref=e1867] [cursor=pointer]:
+            - /url: /notes/8b118951-813e-47db-a88c-d56eb7410b75/edit
+          - button "Delete" [ref=e1868]
+      - generic [ref=e1869]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1870] [cursor=pointer]:
+          - /url: /notes/60972bbb-bdab-45d3-a1c2-60f41f521293
+          - heading "Graph Back Test" [level=3] [ref=e1871]
+          - paragraph [ref=e1872]: Testing back button on graph...
+        - generic [ref=e1873]:
+          - link "Edit" [ref=e1874] [cursor=pointer]:
+            - /url: /notes/60972bbb-bdab-45d3-a1c2-60f41f521293/edit
+          - button "Delete" [ref=e1875]
+      - generic [ref=e1876]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1877] [cursor=pointer]:
+          - /url: /notes/ed7e4721-2cba-4a0e-9ab8-793557bfb564
+          - heading "Back Button Test" [level=3] [ref=e1878]
+          - paragraph [ref=e1879]: Testing back button functionality...
+        - generic [ref=e1880]:
+          - link "Edit" [ref=e1881] [cursor=pointer]:
+            - /url: /notes/ed7e4721-2cba-4a0e-9ab8-793557bfb564/edit
+          - button "Delete" [ref=e1882]
+      - generic [ref=e1883]:
+        - link "Node B B..." [ref=e1884] [cursor=pointer]:
+          - /url: /notes/e92becab-70de-4f76-bd1f-ead846a1eb06
+          - heading "Node B" [level=3] [ref=e1885]
+          - paragraph [ref=e1886]: B...
+        - generic [ref=e1887]:
+          - link "Edit" [ref=e1888] [cursor=pointer]:
+            - /url: /notes/e92becab-70de-4f76-bd1f-ead846a1eb06/edit
+          - button "Delete" [ref=e1889]
+      - generic [ref=e1890]:
+        - link "Node A A..." [ref=e1891] [cursor=pointer]:
+          - /url: /notes/698e2d83-c7d1-49b1-ba6d-99e40e0ffc9e
+          - heading "Node A" [level=3] [ref=e1892]
+          - paragraph [ref=e1893]: A...
+        - generic [ref=e1894]:
+          - link "Edit" [ref=e1895] [cursor=pointer]:
+            - /url: /notes/698e2d83-c7d1-49b1-ba6d-99e40e0ffc9e/edit
+          - button "Delete" [ref=e1896]
+      - generic [ref=e1897]:
+        - link "Edited New content..." [ref=e1898] [cursor=pointer]:
+          - /url: /notes/8b3f1408-4fa5-4aa8-ae19-4db315a77aac
+          - heading "Edited" [level=3] [ref=e1899]
+          - paragraph [ref=e1900]: New content...
+        - generic [ref=e1901]:
+          - link "Edit" [ref=e1902] [cursor=pointer]:
+            - /url: /notes/8b3f1408-4fa5-4aa8-ae19-4db315a77aac/edit
+          - button "Delete" [ref=e1903]
+      - generic [ref=e1904]:
+        - link "Playwright Test Automated content..." [ref=e1905] [cursor=pointer]:
+          - /url: /notes/f2177e45-14c3-4d59-9209-8552b5053893
+          - heading "Playwright Test" [level=3] [ref=e1906]
+          - paragraph [ref=e1907]: Automated content...
+        - generic [ref=e1908]:
+          - link "Edit" [ref=e1909] [cursor=pointer]:
+            - /url: /notes/f2177e45-14c3-4d59-9209-8552b5053893/edit
+          - button "Delete" [ref=e1910]
+      - generic [ref=e1911]:
+        - link "History Test Testing browser back functionality..." [ref=e1912] [cursor=pointer]:
+          - /url: /notes/9c16b06a-1746-45bc-adf2-b54341e8f3e9
+          - heading "History Test" [level=3] [ref=e1913]
+          - paragraph [ref=e1914]: Testing browser back functionality...
+        - generic [ref=e1915]:
+          - link "Edit" [ref=e1916] [cursor=pointer]:
+            - /url: /notes/9c16b06a-1746-45bc-adf2-b54341e8f3e9/edit
+          - button "Delete" [ref=e1917]
+      - generic [ref=e1918]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1919] [cursor=pointer]:
+          - /url: /notes/53f52867-2d92-49f2-8d88-499fbf20e3de
+          - heading "Graph Back Test" [level=3] [ref=e1920]
+          - paragraph [ref=e1921]: Testing back button on graph...
+        - generic [ref=e1922]:
+          - link "Edit" [ref=e1923] [cursor=pointer]:
+            - /url: /notes/53f52867-2d92-49f2-8d88-499fbf20e3de/edit
+          - button "Delete" [ref=e1924]
+      - generic [ref=e1925]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1926] [cursor=pointer]:
+          - /url: /notes/15bb44a0-3861-411f-b16a-116a23478fa6
+          - heading "Back Button Test" [level=3] [ref=e1927]
+          - paragraph [ref=e1928]: Testing back button functionality...
+        - generic [ref=e1929]:
+          - link "Edit" [ref=e1930] [cursor=pointer]:
+            - /url: /notes/15bb44a0-3861-411f-b16a-116a23478fa6/edit
+          - button "Delete" [ref=e1931]
+      - generic [ref=e1932]:
+        - link "Node B B..." [ref=e1933] [cursor=pointer]:
+          - /url: /notes/272beda8-3b1f-4dde-af26-8a1f8a16c7c0
+          - heading "Node B" [level=3] [ref=e1934]
+          - paragraph [ref=e1935]: B...
+        - generic [ref=e1936]:
+          - link "Edit" [ref=e1937] [cursor=pointer]:
+            - /url: /notes/272beda8-3b1f-4dde-af26-8a1f8a16c7c0/edit
+          - button "Delete" [ref=e1938]
+      - generic [ref=e1939]:
+        - link "Node A A..." [ref=e1940] [cursor=pointer]:
+          - /url: /notes/7ff184b2-b771-4dba-93a8-b32e0138ccd4
+          - heading "Node A" [level=3] [ref=e1941]
+          - paragraph [ref=e1942]: A...
+        - generic [ref=e1943]:
+          - link "Edit" [ref=e1944] [cursor=pointer]:
+            - /url: /notes/7ff184b2-b771-4dba-93a8-b32e0138ccd4/edit
+          - button "Delete" [ref=e1945]
+      - generic [ref=e1946]:
+        - link "Edited New content..." [ref=e1947] [cursor=pointer]:
+          - /url: /notes/a22a7d98-ce86-4029-bb09-5c3521a004ac
+          - heading "Edited" [level=3] [ref=e1948]
+          - paragraph [ref=e1949]: New content...
+        - generic [ref=e1950]:
+          - link "Edit" [ref=e1951] [cursor=pointer]:
+            - /url: /notes/a22a7d98-ce86-4029-bb09-5c3521a004ac/edit
+          - button "Delete" [ref=e1952]
+      - generic [ref=e1953]:
+        - link "Playwright Test Automated content..." [ref=e1954] [cursor=pointer]:
+          - /url: /notes/d30360d6-30f0-442a-9939-bf6f9358c766
+          - heading "Playwright Test" [level=3] [ref=e1955]
+          - paragraph [ref=e1956]: Automated content...
+        - generic [ref=e1957]:
+          - link "Edit" [ref=e1958] [cursor=pointer]:
+            - /url: /notes/d30360d6-30f0-442a-9939-bf6f9358c766/edit
+          - button "Delete" [ref=e1959]
+      - generic [ref=e1960]:
+        - link "History Test Testing browser back functionality..." [ref=e1961] [cursor=pointer]:
+          - /url: /notes/d811126c-4bf6-4368-a3af-02b8cce41126
+          - heading "History Test" [level=3] [ref=e1962]
+          - paragraph [ref=e1963]: Testing browser back functionality...
+        - generic [ref=e1964]:
+          - link "Edit" [ref=e1965] [cursor=pointer]:
+            - /url: /notes/d811126c-4bf6-4368-a3af-02b8cce41126/edit
+          - button "Delete" [ref=e1966]
+      - generic [ref=e1967]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e1968] [cursor=pointer]:
+          - /url: /notes/42bbf3c0-aa2d-488a-bbf4-587509ce6503
+          - heading "Graph Back Test" [level=3] [ref=e1969]
+          - paragraph [ref=e1970]: Testing back button on graph...
+        - generic [ref=e1971]:
+          - link "Edit" [ref=e1972] [cursor=pointer]:
+            - /url: /notes/42bbf3c0-aa2d-488a-bbf4-587509ce6503/edit
+          - button "Delete" [ref=e1973]
+      - generic [ref=e1974]:
+        - link "Back Button Test Testing back button functionality..." [ref=e1975] [cursor=pointer]:
+          - /url: /notes/3005a5d0-218a-44cd-a330-bda75f73fe6a
+          - heading "Back Button Test" [level=3] [ref=e1976]
+          - paragraph [ref=e1977]: Testing back button functionality...
+        - generic [ref=e1978]:
+          - link "Edit" [ref=e1979] [cursor=pointer]:
+            - /url: /notes/3005a5d0-218a-44cd-a330-bda75f73fe6a/edit
+          - button "Delete" [ref=e1980]
+      - generic [ref=e1981]:
+        - link "Node B B..." [ref=e1982] [cursor=pointer]:
+          - /url: /notes/a54f53e8-6f67-4640-81a3-3ccfdcc4217f
+          - heading "Node B" [level=3] [ref=e1983]
+          - paragraph [ref=e1984]: B...
+        - generic [ref=e1985]:
+          - link "Edit" [ref=e1986] [cursor=pointer]:
+            - /url: /notes/a54f53e8-6f67-4640-81a3-3ccfdcc4217f/edit
+          - button "Delete" [ref=e1987]
+      - generic [ref=e1988]:
+        - link "Node A A..." [ref=e1989] [cursor=pointer]:
+          - /url: /notes/bd402dc8-580a-47fa-bb68-475a4c16af2d
+          - heading "Node A" [level=3] [ref=e1990]
+          - paragraph [ref=e1991]: A...
+        - generic [ref=e1992]:
+          - link "Edit" [ref=e1993] [cursor=pointer]:
+            - /url: /notes/bd402dc8-580a-47fa-bb68-475a4c16af2d/edit
+          - button "Delete" [ref=e1994]
+      - generic [ref=e1995]:
+        - link "Edited New content..." [ref=e1996] [cursor=pointer]:
+          - /url: /notes/4ec44157-7353-4122-92a3-bad17a3c0738
+          - heading "Edited" [level=3] [ref=e1997]
+          - paragraph [ref=e1998]: New content...
+        - generic [ref=e1999]:
+          - link "Edit" [ref=e2000] [cursor=pointer]:
+            - /url: /notes/4ec44157-7353-4122-92a3-bad17a3c0738/edit
+          - button "Delete" [ref=e2001]
+      - generic [ref=e2002]:
+        - link "Playwright Test Automated content..." [ref=e2003] [cursor=pointer]:
+          - /url: /notes/bcdaa73f-0da3-474c-88c6-cd673abcffee
+          - heading "Playwright Test" [level=3] [ref=e2004]
+          - paragraph [ref=e2005]: Automated content...
+        - generic [ref=e2006]:
+          - link "Edit" [ref=e2007] [cursor=pointer]:
+            - /url: /notes/bcdaa73f-0da3-474c-88c6-cd673abcffee/edit
+          - button "Delete" [ref=e2008]
+      - generic [ref=e2009]:
+        - link "History Test Testing browser back functionality..." [ref=e2010] [cursor=pointer]:
+          - /url: /notes/93646a6a-cffa-4395-9804-94ef2aeb68bd
+          - heading "History Test" [level=3] [ref=e2011]
+          - paragraph [ref=e2012]: Testing browser back functionality...
+        - generic [ref=e2013]:
+          - link "Edit" [ref=e2014] [cursor=pointer]:
+            - /url: /notes/93646a6a-cffa-4395-9804-94ef2aeb68bd/edit
+          - button "Delete" [ref=e2015]
+      - generic [ref=e2016]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2017] [cursor=pointer]:
+          - /url: /notes/60af5652-5790-4c50-8f30-34ffcf775434
+          - heading "Graph Back Test" [level=3] [ref=e2018]
+          - paragraph [ref=e2019]: Testing back button on graph...
+        - generic [ref=e2020]:
+          - link "Edit" [ref=e2021] [cursor=pointer]:
+            - /url: /notes/60af5652-5790-4c50-8f30-34ffcf775434/edit
+          - button "Delete" [ref=e2022]
+      - generic [ref=e2023]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2024] [cursor=pointer]:
+          - /url: /notes/2944cc1d-033f-414c-89f7-7e97b7cbd9bd
+          - heading "Back Button Test" [level=3] [ref=e2025]
+          - paragraph [ref=e2026]: Testing back button functionality...
+        - generic [ref=e2027]:
+          - link "Edit" [ref=e2028] [cursor=pointer]:
+            - /url: /notes/2944cc1d-033f-414c-89f7-7e97b7cbd9bd/edit
+          - button "Delete" [ref=e2029]
+      - generic [ref=e2030]:
+        - link "Node B B..." [ref=e2031] [cursor=pointer]:
+          - /url: /notes/406bd7be-4a50-4751-a66a-336074f229c8
+          - heading "Node B" [level=3] [ref=e2032]
+          - paragraph [ref=e2033]: B...
+        - generic [ref=e2034]:
+          - link "Edit" [ref=e2035] [cursor=pointer]:
+            - /url: /notes/406bd7be-4a50-4751-a66a-336074f229c8/edit
+          - button "Delete" [ref=e2036]
+      - generic [ref=e2037]:
+        - link "Node A A..." [ref=e2038] [cursor=pointer]:
+          - /url: /notes/ec935c94-bb1c-47ea-957b-04e6a9e98a98
+          - heading "Node A" [level=3] [ref=e2039]
+          - paragraph [ref=e2040]: A...
+        - generic [ref=e2041]:
+          - link "Edit" [ref=e2042] [cursor=pointer]:
+            - /url: /notes/ec935c94-bb1c-47ea-957b-04e6a9e98a98/edit
+          - button "Delete" [ref=e2043]
+      - generic [ref=e2044]:
+        - link "Edited New content..." [ref=e2045] [cursor=pointer]:
+          - /url: /notes/f60df3dc-8cb3-40df-9fec-0a99c7043bd4
+          - heading "Edited" [level=3] [ref=e2046]
+          - paragraph [ref=e2047]: New content...
+        - generic [ref=e2048]:
+          - link "Edit" [ref=e2049] [cursor=pointer]:
+            - /url: /notes/f60df3dc-8cb3-40df-9fec-0a99c7043bd4/edit
+          - button "Delete" [ref=e2050]
+      - generic [ref=e2051]:
+        - link "Playwright Test Automated content..." [ref=e2052] [cursor=pointer]:
+          - /url: /notes/6d4534fe-8835-457e-910d-78f8ae9cf6d4
+          - heading "Playwright Test" [level=3] [ref=e2053]
+          - paragraph [ref=e2054]: Automated content...
+        - generic [ref=e2055]:
+          - link "Edit" [ref=e2056] [cursor=pointer]:
+            - /url: /notes/6d4534fe-8835-457e-910d-78f8ae9cf6d4/edit
+          - button "Delete" [ref=e2057]
+      - generic [ref=e2058]:
+        - link "History Test Testing browser back functionality..." [ref=e2059] [cursor=pointer]:
+          - /url: /notes/04344cc7-9eaf-4bac-aba8-fa86ff8bdc8e
+          - heading "History Test" [level=3] [ref=e2060]
+          - paragraph [ref=e2061]: Testing browser back functionality...
+        - generic [ref=e2062]:
+          - link "Edit" [ref=e2063] [cursor=pointer]:
+            - /url: /notes/04344cc7-9eaf-4bac-aba8-fa86ff8bdc8e/edit
+          - button "Delete" [ref=e2064]
+      - generic [ref=e2065]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2066] [cursor=pointer]:
+          - /url: /notes/2c799586-7f53-4122-a24a-1dc68b2c9a02
+          - heading "Graph Back Test" [level=3] [ref=e2067]
+          - paragraph [ref=e2068]: Testing back button on graph...
+        - generic [ref=e2069]:
+          - link "Edit" [ref=e2070] [cursor=pointer]:
+            - /url: /notes/2c799586-7f53-4122-a24a-1dc68b2c9a02/edit
+          - button "Delete" [ref=e2071]
+      - generic [ref=e2072]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2073] [cursor=pointer]:
+          - /url: /notes/45abb29e-518e-4b39-983f-7d1da0bf9693
+          - heading "Back Button Test" [level=3] [ref=e2074]
+          - paragraph [ref=e2075]: Testing back button functionality...
+        - generic [ref=e2076]:
+          - link "Edit" [ref=e2077] [cursor=pointer]:
+            - /url: /notes/45abb29e-518e-4b39-983f-7d1da0bf9693/edit
+          - button "Delete" [ref=e2078]
+      - generic [ref=e2079]:
+        - link "Node B B..." [ref=e2080] [cursor=pointer]:
+          - /url: /notes/780285d5-533b-4c60-916a-e4c767911cff
+          - heading "Node B" [level=3] [ref=e2081]
+          - paragraph [ref=e2082]: B...
+        - generic [ref=e2083]:
+          - link "Edit" [ref=e2084] [cursor=pointer]:
+            - /url: /notes/780285d5-533b-4c60-916a-e4c767911cff/edit
+          - button "Delete" [ref=e2085]
+      - generic [ref=e2086]:
+        - link "Node A A..." [ref=e2087] [cursor=pointer]:
+          - /url: /notes/f8335945-a4f8-44c9-905c-568d40b7adfc
+          - heading "Node A" [level=3] [ref=e2088]
+          - paragraph [ref=e2089]: A...
+        - generic [ref=e2090]:
+          - link "Edit" [ref=e2091] [cursor=pointer]:
+            - /url: /notes/f8335945-a4f8-44c9-905c-568d40b7adfc/edit
+          - button "Delete" [ref=e2092]
+      - generic [ref=e2093]:
+        - link "Edited New content..." [ref=e2094] [cursor=pointer]:
+          - /url: /notes/8074ba03-993d-4091-a255-2b96bede71da
+          - heading "Edited" [level=3] [ref=e2095]
+          - paragraph [ref=e2096]: New content...
+        - generic [ref=e2097]:
+          - link "Edit" [ref=e2098] [cursor=pointer]:
+            - /url: /notes/8074ba03-993d-4091-a255-2b96bede71da/edit
+          - button "Delete" [ref=e2099]
+      - generic [ref=e2100]:
+        - link "Playwright Test Automated content..." [ref=e2101] [cursor=pointer]:
+          - /url: /notes/48310ffb-893a-4493-ac65-6177c3ca6fdd
+          - heading "Playwright Test" [level=3] [ref=e2102]
+          - paragraph [ref=e2103]: Automated content...
+        - generic [ref=e2104]:
+          - link "Edit" [ref=e2105] [cursor=pointer]:
+            - /url: /notes/48310ffb-893a-4493-ac65-6177c3ca6fdd/edit
+          - button "Delete" [ref=e2106]
+      - generic [ref=e2107]:
+        - link "History Test Testing browser back functionality..." [ref=e2108] [cursor=pointer]:
+          - /url: /notes/6892e690-cb6a-4ef8-a97f-8dd8d76e073c
+          - heading "History Test" [level=3] [ref=e2109]
+          - paragraph [ref=e2110]: Testing browser back functionality...
+        - generic [ref=e2111]:
+          - link "Edit" [ref=e2112] [cursor=pointer]:
+            - /url: /notes/6892e690-cb6a-4ef8-a97f-8dd8d76e073c/edit
+          - button "Delete" [ref=e2113]
+      - generic [ref=e2114]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2115] [cursor=pointer]:
+          - /url: /notes/f6b40f42-e807-46be-a418-fc8d6a3d1e81
+          - heading "Graph Back Test" [level=3] [ref=e2116]
+          - paragraph [ref=e2117]: Testing back button on graph...
+        - generic [ref=e2118]:
+          - link "Edit" [ref=e2119] [cursor=pointer]:
+            - /url: /notes/f6b40f42-e807-46be-a418-fc8d6a3d1e81/edit
+          - button "Delete" [ref=e2120]
+      - generic [ref=e2121]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2122] [cursor=pointer]:
+          - /url: /notes/db570ab2-387a-4745-a8cc-66a1cdc9c0d2
+          - heading "Back Button Test" [level=3] [ref=e2123]
+          - paragraph [ref=e2124]: Testing back button functionality...
+        - generic [ref=e2125]:
+          - link "Edit" [ref=e2126] [cursor=pointer]:
+            - /url: /notes/db570ab2-387a-4745-a8cc-66a1cdc9c0d2/edit
+          - button "Delete" [ref=e2127]
+      - generic [ref=e2128]:
+        - link "Node B B..." [ref=e2129] [cursor=pointer]:
+          - /url: /notes/cf160479-5d63-4310-a847-37e580d7b1a7
+          - heading "Node B" [level=3] [ref=e2130]
+          - paragraph [ref=e2131]: B...
+        - generic [ref=e2132]:
+          - link "Edit" [ref=e2133] [cursor=pointer]:
+            - /url: /notes/cf160479-5d63-4310-a847-37e580d7b1a7/edit
+          - button "Delete" [ref=e2134]
+      - generic [ref=e2135]:
+        - link "Node A A..." [ref=e2136] [cursor=pointer]:
+          - /url: /notes/44ac75c5-4afe-47a1-afd5-d09d099c58b0
+          - heading "Node A" [level=3] [ref=e2137]
+          - paragraph [ref=e2138]: A...
+        - generic [ref=e2139]:
+          - link "Edit" [ref=e2140] [cursor=pointer]:
+            - /url: /notes/44ac75c5-4afe-47a1-afd5-d09d099c58b0/edit
+          - button "Delete" [ref=e2141]
+      - generic [ref=e2142]:
+        - link "To Delete ..." [ref=e2143] [cursor=pointer]:
+          - /url: /notes/6e422487-8b49-49f6-bd8a-4a07d14e1c5d
+          - heading "To Delete" [level=3] [ref=e2144]
+          - paragraph [ref=e2145]: ...
+        - generic [ref=e2146]:
+          - link "Edit" [ref=e2147] [cursor=pointer]:
+            - /url: /notes/6e422487-8b49-49f6-bd8a-4a07d14e1c5d/edit
+          - button "Delete" [ref=e2148]
+      - generic [ref=e2149]:
+        - link "To Edit Original..." [ref=e2150] [cursor=pointer]:
+          - /url: /notes/e0dd1e29-98d4-4586-b4e2-382e1d082b2f
+          - heading "To Edit" [level=3] [ref=e2151]
+          - paragraph [ref=e2152]: Original...
+        - generic [ref=e2153]:
+          - link "Edit" [ref=e2154] [cursor=pointer]:
+            - /url: /notes/e0dd1e29-98d4-4586-b4e2-382e1d082b2f/edit
+          - button "Delete" [ref=e2155]
+      - generic [ref=e2156]:
+        - link "Playwright Test Automated content..." [ref=e2157] [cursor=pointer]:
+          - /url: /notes/11fa37f9-c144-47fb-987d-8e8bce2366b3
+          - heading "Playwright Test" [level=3] [ref=e2158]
+          - paragraph [ref=e2159]: Automated content...
+        - generic [ref=e2160]:
+          - link "Edit" [ref=e2161] [cursor=pointer]:
+            - /url: /notes/11fa37f9-c144-47fb-987d-8e8bce2366b3/edit
+          - button "Delete" [ref=e2162]
+      - generic [ref=e2163]:
+        - link "History Test Testing browser back functionality..." [ref=e2164] [cursor=pointer]:
+          - /url: /notes/c895b2ab-9304-4a84-938e-d245939b937d
+          - heading "History Test" [level=3] [ref=e2165]
+          - paragraph [ref=e2166]: Testing browser back functionality...
+        - generic [ref=e2167]:
+          - link "Edit" [ref=e2168] [cursor=pointer]:
+            - /url: /notes/c895b2ab-9304-4a84-938e-d245939b937d/edit
+          - button "Delete" [ref=e2169]
+      - generic [ref=e2170]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2171] [cursor=pointer]:
+          - /url: /notes/69539e17-bdfa-4a22-8782-19d4f507187d
+          - heading "Graph Back Test" [level=3] [ref=e2172]
+          - paragraph [ref=e2173]: Testing back button on graph...
+        - generic [ref=e2174]:
+          - link "Edit" [ref=e2175] [cursor=pointer]:
+            - /url: /notes/69539e17-bdfa-4a22-8782-19d4f507187d/edit
+          - button "Delete" [ref=e2176]
+      - generic [ref=e2177]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2178] [cursor=pointer]:
+          - /url: /notes/bfbd9ffa-2d19-4555-a2b3-2801035da4dd
+          - heading "Back Button Test" [level=3] [ref=e2179]
+          - paragraph [ref=e2180]: Testing back button functionality...
+        - generic [ref=e2181]:
+          - link "Edit" [ref=e2182] [cursor=pointer]:
+            - /url: /notes/bfbd9ffa-2d19-4555-a2b3-2801035da4dd/edit
+          - button "Delete" [ref=e2183]
+      - generic [ref=e2184]:
+        - link "Node B B..." [ref=e2185] [cursor=pointer]:
+          - /url: /notes/de622f55-14fe-4050-9ef5-fe949248a59e
+          - heading "Node B" [level=3] [ref=e2186]
+          - paragraph [ref=e2187]: B...
+        - generic [ref=e2188]:
+          - link "Edit" [ref=e2189] [cursor=pointer]:
+            - /url: /notes/de622f55-14fe-4050-9ef5-fe949248a59e/edit
+          - button "Delete" [ref=e2190]
+      - generic [ref=e2191]:
+        - link "Node A A..." [ref=e2192] [cursor=pointer]:
+          - /url: /notes/d906d79a-4e33-4963-ac8e-b31b7e963064
+          - heading "Node A" [level=3] [ref=e2193]
+          - paragraph [ref=e2194]: A...
+        - generic [ref=e2195]:
+          - link "Edit" [ref=e2196] [cursor=pointer]:
+            - /url: /notes/d906d79a-4e33-4963-ac8e-b31b7e963064/edit
+          - button "Delete" [ref=e2197]
+      - generic [ref=e2198]:
+        - link "Edited New content..." [ref=e2199] [cursor=pointer]:
+          - /url: /notes/9827bf01-76ca-42aa-bce5-00574629aff0
+          - heading "Edited" [level=3] [ref=e2200]
+          - paragraph [ref=e2201]: New content...
+        - generic [ref=e2202]:
+          - link "Edit" [ref=e2203] [cursor=pointer]:
+            - /url: /notes/9827bf01-76ca-42aa-bce5-00574629aff0/edit
+          - button "Delete" [ref=e2204]
+      - generic [ref=e2205]:
+        - link "Playwright Test Automated content..." [ref=e2206] [cursor=pointer]:
+          - /url: /notes/18d0e7b2-475d-4a67-899e-a9b45f69a9c1
+          - heading "Playwright Test" [level=3] [ref=e2207]
+          - paragraph [ref=e2208]: Automated content...
+        - generic [ref=e2209]:
+          - link "Edit" [ref=e2210] [cursor=pointer]:
+            - /url: /notes/18d0e7b2-475d-4a67-899e-a9b45f69a9c1/edit
+          - button "Delete" [ref=e2211]
+      - generic [ref=e2212]:
+        - link "History Test Testing browser back functionality..." [ref=e2213] [cursor=pointer]:
+          - /url: /notes/80528082-1675-474b-a845-726e431ded6f
+          - heading "History Test" [level=3] [ref=e2214]
+          - paragraph [ref=e2215]: Testing browser back functionality...
+        - generic [ref=e2216]:
+          - link "Edit" [ref=e2217] [cursor=pointer]:
+            - /url: /notes/80528082-1675-474b-a845-726e431ded6f/edit
+          - button "Delete" [ref=e2218]
+      - generic [ref=e2219]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2220] [cursor=pointer]:
+          - /url: /notes/90d5997a-f0f9-4e22-9d3b-f39b2f6553a2
+          - heading "Graph Back Test" [level=3] [ref=e2221]
+          - paragraph [ref=e2222]: Testing back button on graph...
+        - generic [ref=e2223]:
+          - link "Edit" [ref=e2224] [cursor=pointer]:
+            - /url: /notes/90d5997a-f0f9-4e22-9d3b-f39b2f6553a2/edit
+          - button "Delete" [ref=e2225]
+      - generic [ref=e2226]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2227] [cursor=pointer]:
+          - /url: /notes/dee8bcce-322a-409a-b8d9-e1208c58c8a3
+          - heading "Back Button Test" [level=3] [ref=e2228]
+          - paragraph [ref=e2229]: Testing back button functionality...
+        - generic [ref=e2230]:
+          - link "Edit" [ref=e2231] [cursor=pointer]:
+            - /url: /notes/dee8bcce-322a-409a-b8d9-e1208c58c8a3/edit
+          - button "Delete" [ref=e2232]
+      - generic [ref=e2233]:
+        - link "Node B B..." [ref=e2234] [cursor=pointer]:
+          - /url: /notes/13f3f65e-2484-4d80-bd41-342682be7941
+          - heading "Node B" [level=3] [ref=e2235]
+          - paragraph [ref=e2236]: B...
+        - generic [ref=e2237]:
+          - link "Edit" [ref=e2238] [cursor=pointer]:
+            - /url: /notes/13f3f65e-2484-4d80-bd41-342682be7941/edit
+          - button "Delete" [ref=e2239]
+      - generic [ref=e2240]:
+        - link "Node A A..." [ref=e2241] [cursor=pointer]:
+          - /url: /notes/d2923010-0a40-4e5e-837a-5c2b865e8f5a
+          - heading "Node A" [level=3] [ref=e2242]
+          - paragraph [ref=e2243]: A...
+        - generic [ref=e2244]:
+          - link "Edit" [ref=e2245] [cursor=pointer]:
+            - /url: /notes/d2923010-0a40-4e5e-837a-5c2b865e8f5a/edit
+          - button "Delete" [ref=e2246]
+      - generic [ref=e2247]:
+        - link "Edited New content..." [ref=e2248] [cursor=pointer]:
+          - /url: /notes/93eac8e1-a8df-4964-8347-0a3d12f07303
+          - heading "Edited" [level=3] [ref=e2249]
+          - paragraph [ref=e2250]: New content...
+        - generic [ref=e2251]:
+          - link "Edit" [ref=e2252] [cursor=pointer]:
+            - /url: /notes/93eac8e1-a8df-4964-8347-0a3d12f07303/edit
+          - button "Delete" [ref=e2253]
+      - generic [ref=e2254]:
+        - link "Playwright Test Automated content..." [ref=e2255] [cursor=pointer]:
+          - /url: /notes/648bd9ad-ba95-433e-ba7e-5f92eb79e174
+          - heading "Playwright Test" [level=3] [ref=e2256]
+          - paragraph [ref=e2257]: Automated content...
+        - generic [ref=e2258]:
+          - link "Edit" [ref=e2259] [cursor=pointer]:
+            - /url: /notes/648bd9ad-ba95-433e-ba7e-5f92eb79e174/edit
+          - button "Delete" [ref=e2260]
+      - generic [ref=e2261]:
+        - link "History Test Testing browser back functionality..." [ref=e2262] [cursor=pointer]:
+          - /url: /notes/c7dc32aa-54e6-4725-bc68-ac61fe0c9ed9
+          - heading "History Test" [level=3] [ref=e2263]
+          - paragraph [ref=e2264]: Testing browser back functionality...
+        - generic [ref=e2265]:
+          - link "Edit" [ref=e2266] [cursor=pointer]:
+            - /url: /notes/c7dc32aa-54e6-4725-bc68-ac61fe0c9ed9/edit
+          - button "Delete" [ref=e2267]
+      - generic [ref=e2268]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2269] [cursor=pointer]:
+          - /url: /notes/208ab8a9-bd16-4787-9c25-eec7a0b80d81
+          - heading "Graph Back Test" [level=3] [ref=e2270]
+          - paragraph [ref=e2271]: Testing back button on graph...
+        - generic [ref=e2272]:
+          - link "Edit" [ref=e2273] [cursor=pointer]:
+            - /url: /notes/208ab8a9-bd16-4787-9c25-eec7a0b80d81/edit
+          - button "Delete" [ref=e2274]
+      - generic [ref=e2275]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2276] [cursor=pointer]:
+          - /url: /notes/14438ff3-653d-4760-85f2-dad5a99f9395
+          - heading "Back Button Test" [level=3] [ref=e2277]
+          - paragraph [ref=e2278]: Testing back button functionality...
+        - generic [ref=e2279]:
+          - link "Edit" [ref=e2280] [cursor=pointer]:
+            - /url: /notes/14438ff3-653d-4760-85f2-dad5a99f9395/edit
+          - button "Delete" [ref=e2281]
+      - generic [ref=e2282]:
+        - link "Node B B..." [ref=e2283] [cursor=pointer]:
+          - /url: /notes/47285309-cf8d-4d20-baef-3bf47f289a7d
+          - heading "Node B" [level=3] [ref=e2284]
+          - paragraph [ref=e2285]: B...
+        - generic [ref=e2286]:
+          - link "Edit" [ref=e2287] [cursor=pointer]:
+            - /url: /notes/47285309-cf8d-4d20-baef-3bf47f289a7d/edit
+          - button "Delete" [ref=e2288]
+      - generic [ref=e2289]:
+        - link "Node A A..." [ref=e2290] [cursor=pointer]:
+          - /url: /notes/73c3c620-bbde-478b-a32c-a0acf6823f70
+          - heading "Node A" [level=3] [ref=e2291]
+          - paragraph [ref=e2292]: A...
+        - generic [ref=e2293]:
+          - link "Edit" [ref=e2294] [cursor=pointer]:
+            - /url: /notes/73c3c620-bbde-478b-a32c-a0acf6823f70/edit
+          - button "Delete" [ref=e2295]
+      - generic [ref=e2296]:
+        - link "Edited New content..." [ref=e2297] [cursor=pointer]:
+          - /url: /notes/6b1d4e76-17c4-43ed-826d-d81d5aac2901
+          - heading "Edited" [level=3] [ref=e2298]
+          - paragraph [ref=e2299]: New content...
+        - generic [ref=e2300]:
+          - link "Edit" [ref=e2301] [cursor=pointer]:
+            - /url: /notes/6b1d4e76-17c4-43ed-826d-d81d5aac2901/edit
+          - button "Delete" [ref=e2302]
+      - generic [ref=e2303]:
+        - link "Playwright Test Automated content..." [ref=e2304] [cursor=pointer]:
+          - /url: /notes/1dd2c284-e502-4c60-9412-cb4842977aaa
+          - heading "Playwright Test" [level=3] [ref=e2305]
+          - paragraph [ref=e2306]: Automated content...
+        - generic [ref=e2307]:
+          - link "Edit" [ref=e2308] [cursor=pointer]:
+            - /url: /notes/1dd2c284-e502-4c60-9412-cb4842977aaa/edit
+          - button "Delete" [ref=e2309]
+      - generic [ref=e2310]:
+        - link "History Test Testing browser back functionality..." [ref=e2311] [cursor=pointer]:
+          - /url: /notes/56899516-9bf3-4ec9-84d0-bad3848d56e5
+          - heading "History Test" [level=3] [ref=e2312]
+          - paragraph [ref=e2313]: Testing browser back functionality...
+        - generic [ref=e2314]:
+          - link "Edit" [ref=e2315] [cursor=pointer]:
+            - /url: /notes/56899516-9bf3-4ec9-84d0-bad3848d56e5/edit
+          - button "Delete" [ref=e2316]
+      - generic [ref=e2317]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2318] [cursor=pointer]:
+          - /url: /notes/2949f5db-1677-43be-bc66-122132eace02
+          - heading "Graph Back Test" [level=3] [ref=e2319]
+          - paragraph [ref=e2320]: Testing back button on graph...
+        - generic [ref=e2321]:
+          - link "Edit" [ref=e2322] [cursor=pointer]:
+            - /url: /notes/2949f5db-1677-43be-bc66-122132eace02/edit
+          - button "Delete" [ref=e2323]
+      - generic [ref=e2324]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2325] [cursor=pointer]:
+          - /url: /notes/19d9e92c-7e77-47c8-ae7b-9794d9d5b5c8
+          - heading "Back Button Test" [level=3] [ref=e2326]
+          - paragraph [ref=e2327]: Testing back button functionality...
+        - generic [ref=e2328]:
+          - link "Edit" [ref=e2329] [cursor=pointer]:
+            - /url: /notes/19d9e92c-7e77-47c8-ae7b-9794d9d5b5c8/edit
+          - button "Delete" [ref=e2330]
+      - generic [ref=e2331]:
+        - link "Node B B..." [ref=e2332] [cursor=pointer]:
+          - /url: /notes/85397f5f-7ec8-4691-860b-3c795c2a24e3
+          - heading "Node B" [level=3] [ref=e2333]
+          - paragraph [ref=e2334]: B...
+        - generic [ref=e2335]:
+          - link "Edit" [ref=e2336] [cursor=pointer]:
+            - /url: /notes/85397f5f-7ec8-4691-860b-3c795c2a24e3/edit
+          - button "Delete" [ref=e2337]
+      - generic [ref=e2338]:
+        - link "Node A A..." [ref=e2339] [cursor=pointer]:
+          - /url: /notes/e286c56c-61fd-40d6-a694-a15da04c653a
+          - heading "Node A" [level=3] [ref=e2340]
+          - paragraph [ref=e2341]: A...
+        - generic [ref=e2342]:
+          - link "Edit" [ref=e2343] [cursor=pointer]:
+            - /url: /notes/e286c56c-61fd-40d6-a694-a15da04c653a/edit
+          - button "Delete" [ref=e2344]
+      - generic [ref=e2345]:
+        - link "Edited New content..." [ref=e2346] [cursor=pointer]:
+          - /url: /notes/ff0d82a6-a470-41ea-a4a8-b0d1c4bd46f8
+          - heading "Edited" [level=3] [ref=e2347]
+          - paragraph [ref=e2348]: New content...
+        - generic [ref=e2349]:
+          - link "Edit" [ref=e2350] [cursor=pointer]:
+            - /url: /notes/ff0d82a6-a470-41ea-a4a8-b0d1c4bd46f8/edit
+          - button "Delete" [ref=e2351]
+      - generic [ref=e2352]:
+        - link "Playwright Test Automated content..." [ref=e2353] [cursor=pointer]:
+          - /url: /notes/cdc5e42e-b57b-4fbd-ae1f-3f508f58e3a5
+          - heading "Playwright Test" [level=3] [ref=e2354]
+          - paragraph [ref=e2355]: Automated content...
+        - generic [ref=e2356]:
+          - link "Edit" [ref=e2357] [cursor=pointer]:
+            - /url: /notes/cdc5e42e-b57b-4fbd-ae1f-3f508f58e3a5/edit
+          - button "Delete" [ref=e2358]
+      - generic [ref=e2359]:
+        - link "History Test Testing browser back functionality..." [ref=e2360] [cursor=pointer]:
+          - /url: /notes/8156f9a3-d99e-46fb-8d01-73fb818e1218
+          - heading "History Test" [level=3] [ref=e2361]
+          - paragraph [ref=e2362]: Testing browser back functionality...
+        - generic [ref=e2363]:
+          - link "Edit" [ref=e2364] [cursor=pointer]:
+            - /url: /notes/8156f9a3-d99e-46fb-8d01-73fb818e1218/edit
+          - button "Delete" [ref=e2365]
+      - generic [ref=e2366]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2367] [cursor=pointer]:
+          - /url: /notes/33c62568-f83b-456d-bd32-c413c0ace87c
+          - heading "Graph Back Test" [level=3] [ref=e2368]
+          - paragraph [ref=e2369]: Testing back button on graph...
+        - generic [ref=e2370]:
+          - link "Edit" [ref=e2371] [cursor=pointer]:
+            - /url: /notes/33c62568-f83b-456d-bd32-c413c0ace87c/edit
+          - button "Delete" [ref=e2372]
+      - generic [ref=e2373]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2374] [cursor=pointer]:
+          - /url: /notes/1663210f-4d0a-41ce-a627-b0bbe31d3390
+          - heading "Back Button Test" [level=3] [ref=e2375]
+          - paragraph [ref=e2376]: Testing back button functionality...
+        - generic [ref=e2377]:
+          - link "Edit" [ref=e2378] [cursor=pointer]:
+            - /url: /notes/1663210f-4d0a-41ce-a627-b0bbe31d3390/edit
+          - button "Delete" [ref=e2379]
+      - generic [ref=e2380]:
+        - link "Node B B..." [ref=e2381] [cursor=pointer]:
+          - /url: /notes/6e192ee3-42b7-4245-88ed-5fa7f2a60a53
+          - heading "Node B" [level=3] [ref=e2382]
+          - paragraph [ref=e2383]: B...
+        - generic [ref=e2384]:
+          - link "Edit" [ref=e2385] [cursor=pointer]:
+            - /url: /notes/6e192ee3-42b7-4245-88ed-5fa7f2a60a53/edit
+          - button "Delete" [ref=e2386]
+      - generic [ref=e2387]:
+        - link "Node A A..." [ref=e2388] [cursor=pointer]:
+          - /url: /notes/d3c9ca8e-f00c-4e34-9c6c-41ca8ad67a08
+          - heading "Node A" [level=3] [ref=e2389]
+          - paragraph [ref=e2390]: A...
+        - generic [ref=e2391]:
+          - link "Edit" [ref=e2392] [cursor=pointer]:
+            - /url: /notes/d3c9ca8e-f00c-4e34-9c6c-41ca8ad67a08/edit
+          - button "Delete" [ref=e2393]
+      - generic [ref=e2394]:
+        - link "To Delete ..." [ref=e2395] [cursor=pointer]:
+          - /url: /notes/668e5cdb-e118-41de-89c2-8d279f27b9c8
+          - heading "To Delete" [level=3] [ref=e2396]
+          - paragraph [ref=e2397]: ...
+        - generic [ref=e2398]:
+          - link "Edit" [ref=e2399] [cursor=pointer]:
+            - /url: /notes/668e5cdb-e118-41de-89c2-8d279f27b9c8/edit
+          - button "Delete" [ref=e2400]
+      - generic [ref=e2401]:
+        - link "To Edit Original..." [ref=e2402] [cursor=pointer]:
+          - /url: /notes/b24550cc-2a1b-44d7-a896-4d999c51fadc
+          - heading "To Edit" [level=3] [ref=e2403]
+          - paragraph [ref=e2404]: Original...
+        - generic [ref=e2405]:
+          - link "Edit" [ref=e2406] [cursor=pointer]:
+            - /url: /notes/b24550cc-2a1b-44d7-a896-4d999c51fadc/edit
+          - button "Delete" [ref=e2407]
+      - generic [ref=e2408]:
+        - link "Playwright Test Automated content..." [ref=e2409] [cursor=pointer]:
+          - /url: /notes/bcdc0502-a494-4f21-a041-b4be47f8c548
+          - heading "Playwright Test" [level=3] [ref=e2410]
+          - paragraph [ref=e2411]: Automated content...
+        - generic [ref=e2412]:
+          - link "Edit" [ref=e2413] [cursor=pointer]:
+            - /url: /notes/bcdc0502-a494-4f21-a041-b4be47f8c548/edit
+          - button "Delete" [ref=e2414]
+      - generic [ref=e2415]:
+        - link "History Test Testing browser back functionality..." [ref=e2416] [cursor=pointer]:
+          - /url: /notes/983b2e9b-61f2-40f1-85db-015d1be3bddc
+          - heading "History Test" [level=3] [ref=e2417]
+          - paragraph [ref=e2418]: Testing browser back functionality...
+        - generic [ref=e2419]:
+          - link "Edit" [ref=e2420] [cursor=pointer]:
+            - /url: /notes/983b2e9b-61f2-40f1-85db-015d1be3bddc/edit
+          - button "Delete" [ref=e2421]
+      - generic [ref=e2422]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2423] [cursor=pointer]:
+          - /url: /notes/a13a6a98-a046-484b-99c3-4957d2632db8
+          - heading "Graph Back Test" [level=3] [ref=e2424]
+          - paragraph [ref=e2425]: Testing back button on graph...
+        - generic [ref=e2426]:
+          - link "Edit" [ref=e2427] [cursor=pointer]:
+            - /url: /notes/a13a6a98-a046-484b-99c3-4957d2632db8/edit
+          - button "Delete" [ref=e2428]
+      - generic [ref=e2429]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2430] [cursor=pointer]:
+          - /url: /notes/8490f056-567a-49c0-ace7-7720a54b17e0
+          - heading "Back Button Test" [level=3] [ref=e2431]
+          - paragraph [ref=e2432]: Testing back button functionality...
+        - generic [ref=e2433]:
+          - link "Edit" [ref=e2434] [cursor=pointer]:
+            - /url: /notes/8490f056-567a-49c0-ace7-7720a54b17e0/edit
+          - button "Delete" [ref=e2435]
+      - generic [ref=e2436]:
+        - link "Node B B..." [ref=e2437] [cursor=pointer]:
+          - /url: /notes/9bb86e3b-0bbe-4a61-b7b2-5be75dfbd585
+          - heading "Node B" [level=3] [ref=e2438]
+          - paragraph [ref=e2439]: B...
+        - generic [ref=e2440]:
+          - link "Edit" [ref=e2441] [cursor=pointer]:
+            - /url: /notes/9bb86e3b-0bbe-4a61-b7b2-5be75dfbd585/edit
+          - button "Delete" [ref=e2442]
+      - generic [ref=e2443]:
+        - link "Node A A..." [ref=e2444] [cursor=pointer]:
+          - /url: /notes/1a426988-b89b-4e1e-b349-c5c7f5c71a33
+          - heading "Node A" [level=3] [ref=e2445]
+          - paragraph [ref=e2446]: A...
+        - generic [ref=e2447]:
+          - link "Edit" [ref=e2448] [cursor=pointer]:
+            - /url: /notes/1a426988-b89b-4e1e-b349-c5c7f5c71a33/edit
+          - button "Delete" [ref=e2449]
+      - generic [ref=e2450]:
+        - link "To Delete ..." [ref=e2451] [cursor=pointer]:
+          - /url: /notes/57d86dca-6a4e-4785-83fb-a62e2a4deadd
+          - heading "To Delete" [level=3] [ref=e2452]
+          - paragraph [ref=e2453]: ...
+        - generic [ref=e2454]:
+          - link "Edit" [ref=e2455] [cursor=pointer]:
+            - /url: /notes/57d86dca-6a4e-4785-83fb-a62e2a4deadd/edit
+          - button "Delete" [ref=e2456]
+      - generic [ref=e2457]:
+        - link "To Edit Original..." [ref=e2458] [cursor=pointer]:
+          - /url: /notes/3901cfaa-1439-48bd-99f6-80aac320d842
+          - heading "To Edit" [level=3] [ref=e2459]
+          - paragraph [ref=e2460]: Original...
+        - generic [ref=e2461]:
+          - link "Edit" [ref=e2462] [cursor=pointer]:
+            - /url: /notes/3901cfaa-1439-48bd-99f6-80aac320d842/edit
+          - button "Delete" [ref=e2463]
+      - generic [ref=e2464]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2465] [cursor=pointer]:
+          - /url: /notes/894b2ef8-e312-40c0-b32d-b2eec4e2331e
+          - heading "Graph Back Test" [level=3] [ref=e2466]
+          - paragraph [ref=e2467]: Testing back button on graph...
+        - generic [ref=e2468]:
+          - link "Edit" [ref=e2469] [cursor=pointer]:
+            - /url: /notes/894b2ef8-e312-40c0-b32d-b2eec4e2331e/edit
+          - button "Delete" [ref=e2470]
+      - generic [ref=e2471]:
+        - link "Node B B..." [ref=e2472] [cursor=pointer]:
+          - /url: /notes/ec4883b4-fb97-495b-b6cc-cb1a24a91411
+          - heading "Node B" [level=3] [ref=e2473]
+          - paragraph [ref=e2474]: B...
+        - generic [ref=e2475]:
+          - link "Edit" [ref=e2476] [cursor=pointer]:
+            - /url: /notes/ec4883b4-fb97-495b-b6cc-cb1a24a91411/edit
+          - button "Delete" [ref=e2477]
+      - generic [ref=e2478]:
+        - link "Node A A..." [ref=e2479] [cursor=pointer]:
+          - /url: /notes/5febacf5-ff18-41bf-9723-f83daed04134
+          - heading "Node A" [level=3] [ref=e2480]
+          - paragraph [ref=e2481]: A...
+        - generic [ref=e2482]:
+          - link "Edit" [ref=e2483] [cursor=pointer]:
+            - /url: /notes/5febacf5-ff18-41bf-9723-f83daed04134/edit
+          - button "Delete" [ref=e2484]
+      - generic [ref=e2485]:
+        - link "History Test Testing browser back functionality..." [ref=e2486] [cursor=pointer]:
+          - /url: /notes/fa7619e8-f860-4c61-bfa8-171ddbf7ef7d
+          - heading "History Test" [level=3] [ref=e2487]
+          - paragraph [ref=e2488]: Testing browser back functionality...
+        - generic [ref=e2489]:
+          - link "Edit" [ref=e2490] [cursor=pointer]:
+            - /url: /notes/fa7619e8-f860-4c61-bfa8-171ddbf7ef7d/edit
+          - button "Delete" [ref=e2491]
+      - generic [ref=e2492]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2493] [cursor=pointer]:
+          - /url: /notes/5b4396fb-2005-461a-a33e-fc2a741c35ed
+          - heading "Graph Back Test" [level=3] [ref=e2494]
+          - paragraph [ref=e2495]: Testing back button on graph...
+        - generic [ref=e2496]:
+          - link "Edit" [ref=e2497] [cursor=pointer]:
+            - /url: /notes/5b4396fb-2005-461a-a33e-fc2a741c35ed/edit
+          - button "Delete" [ref=e2498]
+      - generic [ref=e2499]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2500] [cursor=pointer]:
+          - /url: /notes/4d8e1f54-c00b-44e3-90c6-322db661efa0
+          - heading "Back Button Test" [level=3] [ref=e2501]
+          - paragraph [ref=e2502]: Testing back button functionality...
+        - generic [ref=e2503]:
+          - link "Edit" [ref=e2504] [cursor=pointer]:
+            - /url: /notes/4d8e1f54-c00b-44e3-90c6-322db661efa0/edit
+          - button "Delete" [ref=e2505]
+      - generic [ref=e2506]:
+        - link "Node B B..." [ref=e2507] [cursor=pointer]:
+          - /url: /notes/0d854dca-74ef-444d-8346-3f46afecf73b
+          - heading "Node B" [level=3] [ref=e2508]
+          - paragraph [ref=e2509]: B...
+        - generic [ref=e2510]:
+          - link "Edit" [ref=e2511] [cursor=pointer]:
+            - /url: /notes/0d854dca-74ef-444d-8346-3f46afecf73b/edit
+          - button "Delete" [ref=e2512]
+      - generic [ref=e2513]:
+        - link "Node A A..." [ref=e2514] [cursor=pointer]:
+          - /url: /notes/34d2a324-509a-4afa-894c-dc4d93636c74
+          - heading "Node A" [level=3] [ref=e2515]
+          - paragraph [ref=e2516]: A...
+        - generic [ref=e2517]:
+          - link "Edit" [ref=e2518] [cursor=pointer]:
+            - /url: /notes/34d2a324-509a-4afa-894c-dc4d93636c74/edit
+          - button "Delete" [ref=e2519]
+      - generic [ref=e2520]:
+        - link "To Delete ..." [ref=e2521] [cursor=pointer]:
+          - /url: /notes/c767150e-2cd7-4914-bc83-3beb594fc4e4
+          - heading "To Delete" [level=3] [ref=e2522]
+          - paragraph [ref=e2523]: ...
+        - generic [ref=e2524]:
+          - link "Edit" [ref=e2525] [cursor=pointer]:
+            - /url: /notes/c767150e-2cd7-4914-bc83-3beb594fc4e4/edit
+          - button "Delete" [ref=e2526]
+      - generic [ref=e2527]:
+        - link "To Edit Original..." [ref=e2528] [cursor=pointer]:
+          - /url: /notes/2a07ccca-9262-4eec-8f2a-654502cd6e2d
+          - heading "To Edit" [level=3] [ref=e2529]
+          - paragraph [ref=e2530]: Original...
+        - generic [ref=e2531]:
+          - link "Edit" [ref=e2532] [cursor=pointer]:
+            - /url: /notes/2a07ccca-9262-4eec-8f2a-654502cd6e2d/edit
+          - button "Delete" [ref=e2533]
+      - generic [ref=e2534]:
+        - link "Playwright Test Automated content..." [ref=e2535] [cursor=pointer]:
+          - /url: /notes/187c9e9d-e7b6-4728-9fd9-72cdf033fd33
+          - heading "Playwright Test" [level=3] [ref=e2536]
+          - paragraph [ref=e2537]: Automated content...
+        - generic [ref=e2538]:
+          - link "Edit" [ref=e2539] [cursor=pointer]:
+            - /url: /notes/187c9e9d-e7b6-4728-9fd9-72cdf033fd33/edit
+          - button "Delete" [ref=e2540]
+      - generic [ref=e2541]:
+        - link "History Test Testing browser back functionality..." [ref=e2542] [cursor=pointer]:
+          - /url: /notes/ac9f2890-fd5b-4dfe-892e-f367921f9d34
+          - heading "History Test" [level=3] [ref=e2543]
+          - paragraph [ref=e2544]: Testing browser back functionality...
+        - generic [ref=e2545]:
+          - link "Edit" [ref=e2546] [cursor=pointer]:
+            - /url: /notes/ac9f2890-fd5b-4dfe-892e-f367921f9d34/edit
+          - button "Delete" [ref=e2547]
+      - generic [ref=e2548]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2549] [cursor=pointer]:
+          - /url: /notes/afdc4b6d-1b24-44dc-a9eb-b0f12b8153ac
+          - heading "Graph Back Test" [level=3] [ref=e2550]
+          - paragraph [ref=e2551]: Testing back button on graph...
+        - generic [ref=e2552]:
+          - link "Edit" [ref=e2553] [cursor=pointer]:
+            - /url: /notes/afdc4b6d-1b24-44dc-a9eb-b0f12b8153ac/edit
+          - button "Delete" [ref=e2554]
+      - generic [ref=e2555]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2556] [cursor=pointer]:
+          - /url: /notes/b5de0fb5-2b6f-450c-9f33-58dc80a1558f
+          - heading "Back Button Test" [level=3] [ref=e2557]
+          - paragraph [ref=e2558]: Testing back button functionality...
+        - generic [ref=e2559]:
+          - link "Edit" [ref=e2560] [cursor=pointer]:
+            - /url: /notes/b5de0fb5-2b6f-450c-9f33-58dc80a1558f/edit
+          - button "Delete" [ref=e2561]
+      - generic [ref=e2562]:
+        - link "Node B B..." [ref=e2563] [cursor=pointer]:
+          - /url: /notes/844fed92-d872-4839-abfd-b58f5858277a
+          - heading "Node B" [level=3] [ref=e2564]
+          - paragraph [ref=e2565]: B...
+        - generic [ref=e2566]:
+          - link "Edit" [ref=e2567] [cursor=pointer]:
+            - /url: /notes/844fed92-d872-4839-abfd-b58f5858277a/edit
+          - button "Delete" [ref=e2568]
+      - generic [ref=e2569]:
+        - link "Node A A..." [ref=e2570] [cursor=pointer]:
+          - /url: /notes/95209b73-c030-4c8d-8f59-d8caf5b4a320
+          - heading "Node A" [level=3] [ref=e2571]
+          - paragraph [ref=e2572]: A...
+        - generic [ref=e2573]:
+          - link "Edit" [ref=e2574] [cursor=pointer]:
+            - /url: /notes/95209b73-c030-4c8d-8f59-d8caf5b4a320/edit
+          - button "Delete" [ref=e2575]
+      - generic [ref=e2576]:
+        - link "To Delete ..." [ref=e2577] [cursor=pointer]:
+          - /url: /notes/89ee1b82-f04f-4fb5-9fce-15ec8f983925
+          - heading "To Delete" [level=3] [ref=e2578]
+          - paragraph [ref=e2579]: ...
+        - generic [ref=e2580]:
+          - link "Edit" [ref=e2581] [cursor=pointer]:
+            - /url: /notes/89ee1b82-f04f-4fb5-9fce-15ec8f983925/edit
+          - button "Delete" [ref=e2582]
+      - generic [ref=e2583]:
+        - link "To Edit Original..." [ref=e2584] [cursor=pointer]:
+          - /url: /notes/f2010225-69d8-4a64-b597-6ea6185c93dc
+          - heading "To Edit" [level=3] [ref=e2585]
+          - paragraph [ref=e2586]: Original...
+        - generic [ref=e2587]:
+          - link "Edit" [ref=e2588] [cursor=pointer]:
+            - /url: /notes/f2010225-69d8-4a64-b597-6ea6185c93dc/edit
+          - button "Delete" [ref=e2589]
+      - generic [ref=e2590]:
+        - link "Playwright Test Automated content..." [ref=e2591] [cursor=pointer]:
+          - /url: /notes/c3803c48-3013-42b2-9af9-6bcedc064250
+          - heading "Playwright Test" [level=3] [ref=e2592]
+          - paragraph [ref=e2593]: Automated content...
+        - generic [ref=e2594]:
+          - link "Edit" [ref=e2595] [cursor=pointer]:
+            - /url: /notes/c3803c48-3013-42b2-9af9-6bcedc064250/edit
+          - button "Delete" [ref=e2596]
+      - generic [ref=e2597]:
+        - link "History Test Testing browser back functionality..." [ref=e2598] [cursor=pointer]:
+          - /url: /notes/b5dc1716-62bd-4cbc-b343-539711699f47
+          - heading "History Test" [level=3] [ref=e2599]
+          - paragraph [ref=e2600]: Testing browser back functionality...
+        - generic [ref=e2601]:
+          - link "Edit" [ref=e2602] [cursor=pointer]:
+            - /url: /notes/b5dc1716-62bd-4cbc-b343-539711699f47/edit
+          - button "Delete" [ref=e2603]
+      - generic [ref=e2604]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2605] [cursor=pointer]:
+          - /url: /notes/b8bf009b-015f-486c-bc71-4f3136de38e5
+          - heading "Graph Back Test" [level=3] [ref=e2606]
+          - paragraph [ref=e2607]: Testing back button on graph...
+        - generic [ref=e2608]:
+          - link "Edit" [ref=e2609] [cursor=pointer]:
+            - /url: /notes/b8bf009b-015f-486c-bc71-4f3136de38e5/edit
+          - button "Delete" [ref=e2610]
+      - generic [ref=e2611]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2612] [cursor=pointer]:
+          - /url: /notes/ea3313fa-f422-48a0-9ff5-a2f73756a6ed
+          - heading "Back Button Test" [level=3] [ref=e2613]
+          - paragraph [ref=e2614]: Testing back button functionality...
+        - generic [ref=e2615]:
+          - link "Edit" [ref=e2616] [cursor=pointer]:
+            - /url: /notes/ea3313fa-f422-48a0-9ff5-a2f73756a6ed/edit
+          - button "Delete" [ref=e2617]
+      - generic [ref=e2618]:
+        - link "Node B B..." [ref=e2619] [cursor=pointer]:
+          - /url: /notes/14449392-545f-4475-9357-005f8eb1314c
+          - heading "Node B" [level=3] [ref=e2620]
+          - paragraph [ref=e2621]: B...
+        - generic [ref=e2622]:
+          - link "Edit" [ref=e2623] [cursor=pointer]:
+            - /url: /notes/14449392-545f-4475-9357-005f8eb1314c/edit
+          - button "Delete" [ref=e2624]
+      - generic [ref=e2625]:
+        - link "Node A A..." [ref=e2626] [cursor=pointer]:
+          - /url: /notes/8b32e5b8-92eb-47a9-9fc1-17d4a478bc1c
+          - heading "Node A" [level=3] [ref=e2627]
+          - paragraph [ref=e2628]: A...
+        - generic [ref=e2629]:
+          - link "Edit" [ref=e2630] [cursor=pointer]:
+            - /url: /notes/8b32e5b8-92eb-47a9-9fc1-17d4a478bc1c/edit
+          - button "Delete" [ref=e2631]
+      - generic [ref=e2632]:
+        - link "Edited New content..." [ref=e2633] [cursor=pointer]:
+          - /url: /notes/c77561d2-0688-4ee8-af63-f28003fb2c79
+          - heading "Edited" [level=3] [ref=e2634]
+          - paragraph [ref=e2635]: New content...
+        - generic [ref=e2636]:
+          - link "Edit" [ref=e2637] [cursor=pointer]:
+            - /url: /notes/c77561d2-0688-4ee8-af63-f28003fb2c79/edit
+          - button "Delete" [ref=e2638]
+      - generic [ref=e2639]:
+        - link "Playwright Test Automated content..." [ref=e2640] [cursor=pointer]:
+          - /url: /notes/416a1a57-af1c-4475-80f1-41d8bd4d0e32
+          - heading "Playwright Test" [level=3] [ref=e2641]
+          - paragraph [ref=e2642]: Automated content...
+        - generic [ref=e2643]:
+          - link "Edit" [ref=e2644] [cursor=pointer]:
+            - /url: /notes/416a1a57-af1c-4475-80f1-41d8bd4d0e32/edit
+          - button "Delete" [ref=e2645]
+      - generic [ref=e2646]:
+        - link "History Test Testing browser back functionality..." [ref=e2647] [cursor=pointer]:
+          - /url: /notes/ccb4b239-ca53-4e81-bc68-3cb06dd4e2c3
+          - heading "History Test" [level=3] [ref=e2648]
+          - paragraph [ref=e2649]: Testing browser back functionality...
+        - generic [ref=e2650]:
+          - link "Edit" [ref=e2651] [cursor=pointer]:
+            - /url: /notes/ccb4b239-ca53-4e81-bc68-3cb06dd4e2c3/edit
+          - button "Delete" [ref=e2652]
+      - generic [ref=e2653]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2654] [cursor=pointer]:
+          - /url: /notes/18fd622a-e9a2-4dac-b7e2-61361877b169
+          - heading "Graph Back Test" [level=3] [ref=e2655]
+          - paragraph [ref=e2656]: Testing back button on graph...
+        - generic [ref=e2657]:
+          - link "Edit" [ref=e2658] [cursor=pointer]:
+            - /url: /notes/18fd622a-e9a2-4dac-b7e2-61361877b169/edit
+          - button "Delete" [ref=e2659]
+      - generic [ref=e2660]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2661] [cursor=pointer]:
+          - /url: /notes/d09053da-9cf2-4c11-ba1f-de143bfead8e
+          - heading "Back Button Test" [level=3] [ref=e2662]
+          - paragraph [ref=e2663]: Testing back button functionality...
+        - generic [ref=e2664]:
+          - link "Edit" [ref=e2665] [cursor=pointer]:
+            - /url: /notes/d09053da-9cf2-4c11-ba1f-de143bfead8e/edit
+          - button "Delete" [ref=e2666]
+      - generic [ref=e2667]:
+        - link "Node B B..." [ref=e2668] [cursor=pointer]:
+          - /url: /notes/66294903-0ef3-4568-ade3-4447e2eba277
+          - heading "Node B" [level=3] [ref=e2669]
+          - paragraph [ref=e2670]: B...
+        - generic [ref=e2671]:
+          - link "Edit" [ref=e2672] [cursor=pointer]:
+            - /url: /notes/66294903-0ef3-4568-ade3-4447e2eba277/edit
+          - button "Delete" [ref=e2673]
+      - generic [ref=e2674]:
+        - link "Node A A..." [ref=e2675] [cursor=pointer]:
+          - /url: /notes/1cf272e3-0b54-4e42-bfa6-40eac7eece41
+          - heading "Node A" [level=3] [ref=e2676]
+          - paragraph [ref=e2677]: A...
+        - generic [ref=e2678]:
+          - link "Edit" [ref=e2679] [cursor=pointer]:
+            - /url: /notes/1cf272e3-0b54-4e42-bfa6-40eac7eece41/edit
+          - button "Delete" [ref=e2680]
+      - generic [ref=e2681]:
+        - link "Edited New content..." [ref=e2682] [cursor=pointer]:
+          - /url: /notes/36b4839a-0bc7-4897-9ded-45ef200250dc
+          - heading "Edited" [level=3] [ref=e2683]
+          - paragraph [ref=e2684]: New content...
+        - generic [ref=e2685]:
+          - link "Edit" [ref=e2686] [cursor=pointer]:
+            - /url: /notes/36b4839a-0bc7-4897-9ded-45ef200250dc/edit
+          - button "Delete" [ref=e2687]
+      - generic [ref=e2688]:
+        - link "Playwright Test Automated content..." [ref=e2689] [cursor=pointer]:
+          - /url: /notes/708a76e0-a92f-45a9-9e0e-2d017df5d58f
+          - heading "Playwright Test" [level=3] [ref=e2690]
+          - paragraph [ref=e2691]: Automated content...
+        - generic [ref=e2692]:
+          - link "Edit" [ref=e2693] [cursor=pointer]:
+            - /url: /notes/708a76e0-a92f-45a9-9e0e-2d017df5d58f/edit
+          - button "Delete" [ref=e2694]
+      - generic [ref=e2695]:
+        - link "History Test Testing browser back functionality..." [ref=e2696] [cursor=pointer]:
+          - /url: /notes/0686def7-6918-4b15-b1c1-a2c76bc38756
+          - heading "History Test" [level=3] [ref=e2697]
+          - paragraph [ref=e2698]: Testing browser back functionality...
+        - generic [ref=e2699]:
+          - link "Edit" [ref=e2700] [cursor=pointer]:
+            - /url: /notes/0686def7-6918-4b15-b1c1-a2c76bc38756/edit
+          - button "Delete" [ref=e2701]
+      - generic [ref=e2702]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2703] [cursor=pointer]:
+          - /url: /notes/2a3dd72b-577f-42ee-960f-edd0eb4d9cef
+          - heading "Graph Back Test" [level=3] [ref=e2704]
+          - paragraph [ref=e2705]: Testing back button on graph...
+        - generic [ref=e2706]:
+          - link "Edit" [ref=e2707] [cursor=pointer]:
+            - /url: /notes/2a3dd72b-577f-42ee-960f-edd0eb4d9cef/edit
+          - button "Delete" [ref=e2708]
+      - generic [ref=e2709]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2710] [cursor=pointer]:
+          - /url: /notes/414eeee0-9eeb-4626-b97c-2af8b3b820d8
+          - heading "Back Button Test" [level=3] [ref=e2711]
+          - paragraph [ref=e2712]: Testing back button functionality...
+        - generic [ref=e2713]:
+          - link "Edit" [ref=e2714] [cursor=pointer]:
+            - /url: /notes/414eeee0-9eeb-4626-b97c-2af8b3b820d8/edit
+          - button "Delete" [ref=e2715]
+      - generic [ref=e2716]:
+        - link "Node B B..." [ref=e2717] [cursor=pointer]:
+          - /url: /notes/320699bc-7752-4365-aec9-8183b56ab695
+          - heading "Node B" [level=3] [ref=e2718]
+          - paragraph [ref=e2719]: B...
+        - generic [ref=e2720]:
+          - link "Edit" [ref=e2721] [cursor=pointer]:
+            - /url: /notes/320699bc-7752-4365-aec9-8183b56ab695/edit
+          - button "Delete" [ref=e2722]
+      - generic [ref=e2723]:
+        - link "Node A A..." [ref=e2724] [cursor=pointer]:
+          - /url: /notes/eaf31664-7f04-42d5-bbed-30c6021a46e1
+          - heading "Node A" [level=3] [ref=e2725]
+          - paragraph [ref=e2726]: A...
+        - generic [ref=e2727]:
+          - link "Edit" [ref=e2728] [cursor=pointer]:
+            - /url: /notes/eaf31664-7f04-42d5-bbed-30c6021a46e1/edit
+          - button "Delete" [ref=e2729]
+      - generic [ref=e2730]:
+        - link "Edited New content..." [ref=e2731] [cursor=pointer]:
+          - /url: /notes/5d1bf345-5060-4c8e-b21a-d2bf3b05f363
+          - heading "Edited" [level=3] [ref=e2732]
+          - paragraph [ref=e2733]: New content...
+        - generic [ref=e2734]:
+          - link "Edit" [ref=e2735] [cursor=pointer]:
+            - /url: /notes/5d1bf345-5060-4c8e-b21a-d2bf3b05f363/edit
+          - button "Delete" [ref=e2736]
+      - generic [ref=e2737]:
+        - link "Playwright Test Automated content..." [ref=e2738] [cursor=pointer]:
+          - /url: /notes/ca4e91b8-bf04-4a16-ae64-13f5380cad89
+          - heading "Playwright Test" [level=3] [ref=e2739]
+          - paragraph [ref=e2740]: Automated content...
+        - generic [ref=e2741]:
+          - link "Edit" [ref=e2742] [cursor=pointer]:
+            - /url: /notes/ca4e91b8-bf04-4a16-ae64-13f5380cad89/edit
+          - button "Delete" [ref=e2743]
+      - generic [ref=e2744]:
+        - link "History Test Testing browser back functionality..." [ref=e2745] [cursor=pointer]:
+          - /url: /notes/c8a8cd0d-6df9-4fb2-b1c5-a773001a9b14
+          - heading "History Test" [level=3] [ref=e2746]
+          - paragraph [ref=e2747]: Testing browser back functionality...
+        - generic [ref=e2748]:
+          - link "Edit" [ref=e2749] [cursor=pointer]:
+            - /url: /notes/c8a8cd0d-6df9-4fb2-b1c5-a773001a9b14/edit
+          - button "Delete" [ref=e2750]
+      - generic [ref=e2751]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2752] [cursor=pointer]:
+          - /url: /notes/c7f21ef5-6e85-4c20-a41c-b4abaa14772c
+          - heading "Graph Back Test" [level=3] [ref=e2753]
+          - paragraph [ref=e2754]: Testing back button on graph...
+        - generic [ref=e2755]:
+          - link "Edit" [ref=e2756] [cursor=pointer]:
+            - /url: /notes/c7f21ef5-6e85-4c20-a41c-b4abaa14772c/edit
+          - button "Delete" [ref=e2757]
+      - generic [ref=e2758]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2759] [cursor=pointer]:
+          - /url: /notes/a4afa4aa-b0e9-41e3-94f2-f8b2e091d10a
+          - heading "Back Button Test" [level=3] [ref=e2760]
+          - paragraph [ref=e2761]: Testing back button functionality...
+        - generic [ref=e2762]:
+          - link "Edit" [ref=e2763] [cursor=pointer]:
+            - /url: /notes/a4afa4aa-b0e9-41e3-94f2-f8b2e091d10a/edit
+          - button "Delete" [ref=e2764]
+      - generic [ref=e2765]:
+        - link "Node B B..." [ref=e2766] [cursor=pointer]:
+          - /url: /notes/41276c85-6aaa-48da-9e65-59aeb545aba5
+          - heading "Node B" [level=3] [ref=e2767]
+          - paragraph [ref=e2768]: B...
+        - generic [ref=e2769]:
+          - link "Edit" [ref=e2770] [cursor=pointer]:
+            - /url: /notes/41276c85-6aaa-48da-9e65-59aeb545aba5/edit
+          - button "Delete" [ref=e2771]
+      - generic [ref=e2772]:
+        - link "Node A A..." [ref=e2773] [cursor=pointer]:
+          - /url: /notes/19f4d5c8-819a-42aa-97a3-a1a576016ce5
+          - heading "Node A" [level=3] [ref=e2774]
+          - paragraph [ref=e2775]: A...
+        - generic [ref=e2776]:
+          - link "Edit" [ref=e2777] [cursor=pointer]:
+            - /url: /notes/19f4d5c8-819a-42aa-97a3-a1a576016ce5/edit
+          - button "Delete" [ref=e2778]
+      - generic [ref=e2779]:
+        - link "Edited New content..." [ref=e2780] [cursor=pointer]:
+          - /url: /notes/f4939cd3-80c9-4a2d-8d8a-9720e2920729
+          - heading "Edited" [level=3] [ref=e2781]
+          - paragraph [ref=e2782]: New content...
+        - generic [ref=e2783]:
+          - link "Edit" [ref=e2784] [cursor=pointer]:
+            - /url: /notes/f4939cd3-80c9-4a2d-8d8a-9720e2920729/edit
+          - button "Delete" [ref=e2785]
+      - generic [ref=e2786]:
+        - link "Playwright Test Automated content..." [ref=e2787] [cursor=pointer]:
+          - /url: /notes/8ec5efd7-1324-40d2-a27d-fdff9d4ecbf1
+          - heading "Playwright Test" [level=3] [ref=e2788]
+          - paragraph [ref=e2789]: Automated content...
+        - generic [ref=e2790]:
+          - link "Edit" [ref=e2791] [cursor=pointer]:
+            - /url: /notes/8ec5efd7-1324-40d2-a27d-fdff9d4ecbf1/edit
+          - button "Delete" [ref=e2792]
+      - generic [ref=e2793]:
+        - link "History Test Testing browser back functionality..." [ref=e2794] [cursor=pointer]:
+          - /url: /notes/ec94ec50-d896-4835-a47a-aaa67eb454af
+          - heading "History Test" [level=3] [ref=e2795]
+          - paragraph [ref=e2796]: Testing browser back functionality...
+        - generic [ref=e2797]:
+          - link "Edit" [ref=e2798] [cursor=pointer]:
+            - /url: /notes/ec94ec50-d896-4835-a47a-aaa67eb454af/edit
+          - button "Delete" [ref=e2799]
+      - generic [ref=e2800]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2801] [cursor=pointer]:
+          - /url: /notes/d7ad8367-def8-4be9-9180-a0ac05d5cdb3
+          - heading "Graph Back Test" [level=3] [ref=e2802]
+          - paragraph [ref=e2803]: Testing back button on graph...
+        - generic [ref=e2804]:
+          - link "Edit" [ref=e2805] [cursor=pointer]:
+            - /url: /notes/d7ad8367-def8-4be9-9180-a0ac05d5cdb3/edit
+          - button "Delete" [ref=e2806]
+      - generic [ref=e2807]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2808] [cursor=pointer]:
+          - /url: /notes/b0f76b78-bc7e-42c8-a5a8-572fa6bb301c
+          - heading "Back Button Test" [level=3] [ref=e2809]
+          - paragraph [ref=e2810]: Testing back button functionality...
+        - generic [ref=e2811]:
+          - link "Edit" [ref=e2812] [cursor=pointer]:
+            - /url: /notes/b0f76b78-bc7e-42c8-a5a8-572fa6bb301c/edit
+          - button "Delete" [ref=e2813]
+      - generic [ref=e2814]:
+        - link "Node B B..." [ref=e2815] [cursor=pointer]:
+          - /url: /notes/f176742d-2229-42f2-9de0-4eaadaef7358
+          - heading "Node B" [level=3] [ref=e2816]
+          - paragraph [ref=e2817]: B...
+        - generic [ref=e2818]:
+          - link "Edit" [ref=e2819] [cursor=pointer]:
+            - /url: /notes/f176742d-2229-42f2-9de0-4eaadaef7358/edit
+          - button "Delete" [ref=e2820]
+      - generic [ref=e2821]:
+        - link "Node A A..." [ref=e2822] [cursor=pointer]:
+          - /url: /notes/ebf5ea93-3a33-4f2b-a6da-a13df467ad96
+          - heading "Node A" [level=3] [ref=e2823]
+          - paragraph [ref=e2824]: A...
+        - generic [ref=e2825]:
+          - link "Edit" [ref=e2826] [cursor=pointer]:
+            - /url: /notes/ebf5ea93-3a33-4f2b-a6da-a13df467ad96/edit
+          - button "Delete" [ref=e2827]
+      - generic [ref=e2828]:
+        - link "Edited New content..." [ref=e2829] [cursor=pointer]:
+          - /url: /notes/de89b7de-eb0e-4c8b-9c3a-2e0038354008
+          - heading "Edited" [level=3] [ref=e2830]
+          - paragraph [ref=e2831]: New content...
+        - generic [ref=e2832]:
+          - link "Edit" [ref=e2833] [cursor=pointer]:
+            - /url: /notes/de89b7de-eb0e-4c8b-9c3a-2e0038354008/edit
+          - button "Delete" [ref=e2834]
+      - generic [ref=e2835]:
+        - link "Playwright Test Automated content..." [ref=e2836] [cursor=pointer]:
+          - /url: /notes/53aabc9c-26af-402c-8deb-c74c0dd99cef
+          - heading "Playwright Test" [level=3] [ref=e2837]
+          - paragraph [ref=e2838]: Automated content...
+        - generic [ref=e2839]:
+          - link "Edit" [ref=e2840] [cursor=pointer]:
+            - /url: /notes/53aabc9c-26af-402c-8deb-c74c0dd99cef/edit
+          - button "Delete" [ref=e2841]
+      - generic [ref=e2842]:
+        - link "History Test Testing browser back functionality..." [ref=e2843] [cursor=pointer]:
+          - /url: /notes/2e29cea0-4450-458e-b8dc-b154e46ecacb
+          - heading "History Test" [level=3] [ref=e2844]
+          - paragraph [ref=e2845]: Testing browser back functionality...
+        - generic [ref=e2846]:
+          - link "Edit" [ref=e2847] [cursor=pointer]:
+            - /url: /notes/2e29cea0-4450-458e-b8dc-b154e46ecacb/edit
+          - button "Delete" [ref=e2848]
+      - generic [ref=e2849]:
+        - link "Graph Back Test Testing back button on graph..." [ref=e2850] [cursor=pointer]:
+          - /url: /notes/f60bc5f0-dcc9-4322-a887-a31db6e8559a
+          - heading "Graph Back Test" [level=3] [ref=e2851]
+          - paragraph [ref=e2852]: Testing back button on graph...
+        - generic [ref=e2853]:
+          - link "Edit" [ref=e2854] [cursor=pointer]:
+            - /url: /notes/f60bc5f0-dcc9-4322-a887-a31db6e8559a/edit
+          - button "Delete" [ref=e2855]
+      - generic [ref=e2856]:
+        - link "Back Button Test Testing back button functionality..." [ref=e2857] [cursor=pointer]:
+          - /url: /notes/4ba29b96-a64b-4011-979e-3bd364b34790
+          - heading "Back Button Test" [level=3] [ref=e2858]
+          - paragraph [ref=e2859]: Testing back button functionality...
+        - generic [ref=e2860]:
+          - link "Edit" [ref=e2861] [cursor=pointer]:
+            - /url: /notes/4ba29b96-a64b-4011-979e-3bd364b34790/edit
+          - button "Delete" [ref=e2862]
+      - generic [ref=e2863]:
+        - link "Node B B..." [ref=e2864] [cursor=pointer]:
+          - /url: /notes/fd737ada-1d8c-4df7-a75b-e7603520bc5b
+          - heading "Node B" [level=3] [ref=e2865]
+          - paragraph [ref=e2866]: B...
+        - generic [ref=e2867]:
+          - link "Edit" [ref=e2868] [cursor=pointer]:
+            - /url: /notes/fd737ada-1d8c-4df7-a75b-e7603520bc5b/edit
+          - button "Delete" [ref=e2869]
+      - generic [ref=e2870]:
+        - link "Node A A..." [ref=e2871] [cursor=pointer]:
+          - /url: /notes/93c246da-ed6e-4f26-9916-2c682047ae84
+          - heading "Node A" [level=3] [ref=e2872]
+          - paragraph [ref=e2873]: A...
+        - generic [ref=e2874]:
+          - link "Edit" [ref=e2875] [cursor=pointer]:
+            - /url: /notes/93c246da-ed6e-4f26-9916-2c682047ae84/edit
+          - button "Delete" [ref=e2876]
+      - generic [ref=e2877]:
+        - link "Edited New content..." [ref=e2878] [cursor=pointer]:
+          - /url: /notes/01535368-2059-4343-b549-77c8f03779e9
+          - heading "Edited" [level=3] [ref=e2879]
+          - paragraph [ref=e2880]: New content...
+        - generic [ref=e2881]:
+          - link "Edit" [ref=e2882] [cursor=pointer]:
+            - /url: /notes/01535368-2059-4343-b549-77c8f03779e9/edit
+          - button "Delete" [ref=e2883]
+      - generic [ref=e2884]:
+        - link "Playwright Test Automated content..." [ref=e2885] [cursor=pointer]:
+          - /url: /notes/dd84965d-be3e-42ec-a542-7decfc76f77b
+          - heading "Playwright Test" [level=3] [ref=e2886]
+          - paragraph [ref=e2887]: Automated content...
+        - generic [ref=e2888]:
+          - link "Edit" [ref=e2889] [cursor=pointer]:
+            - /url: /notes/dd84965d-be3e-42ec-a542-7decfc76f77b/edit
+          - button "Delete" [ref=e2890]
+      - generic [ref=e2891]:
+        - link "Взаимовыгодная и асимметричная политика (Экранизация) Экранизация «Взаимовыгодная и асимметричная политика (Экранизация)», основанная на повести Слишком в..." [ref=e2892] [cursor=pointer]:
+          - /url: /notes/b7b0e566-1748-4232-b6f7-a8a9d447eea4
+          - heading "Взаимовыгодная и асимметричная политика (Экранизация)" [level=3] [ref=e2893]
+          - paragraph [ref=e2894]: Экранизация «Взаимовыгодная и асимметричная политика (Экранизация)», основанная на повести Слишком в...
+        - generic [ref=e2895]:
+          - link "Edit" [ref=e2896] [cursor=pointer]:
+            - /url: /notes/b7b0e566-1748-4232-b6f7-a8a9d447eea4/edit
+          - button "Delete" [ref=e2897]
+      - generic [ref=e2898]:
+        - link "Ориентированная и исполнительная служба поддержки (Экранизация) Экранизация «Ориентированная и исполнительная служба поддержки (Экранизация)», основанная на комиксу..." [ref=e2899] [cursor=pointer]:
+          - /url: /notes/f40e60f9-7a97-477e-aaa5-e0acecd5e353
+          - heading "Ориентированная и исполнительная служба поддержки (Экранизация)" [level=3] [ref=e2900]
+          - paragraph [ref=e2901]: Экранизация «Ориентированная и исполнительная служба поддержки (Экранизация)», основанная на комиксу...
+        - generic [ref=e2902]:
+          - link "Edit" [ref=e2903] [cursor=pointer]:
+            - /url: /notes/f40e60f9-7a97-477e-aaa5-e0acecd5e353/edit
+          - button "Delete" [ref=e2904]
+      - generic [ref=e2905]:
+        - link "Функциональная и асинхронная реализация (Экранизация) Экранизация «Функциональная и асинхронная реализация (Экранизация)», основанная на роману Плод коман..." [ref=e2906] [cursor=pointer]:
+          - /url: /notes/f6e3ae4a-279c-4fd1-b63d-39e9fb574711
+          - heading "Функциональная и асинхронная реализация (Экранизация)" [level=3] [ref=e2907]
+          - paragraph [ref=e2908]: Экранизация «Функциональная и асинхронная реализация (Экранизация)», основанная на роману Плод коман...
+        - generic [ref=e2909]:
+          - link "Edit" [ref=e2910] [cursor=pointer]:
+            - /url: /notes/f6e3ae4a-279c-4fd1-b63d-39e9fb574711/edit
+          - button "Delete" [ref=e2911]
+      - generic [ref=e2912]:
+        - link "Удобная и интерактивная функциональность (Экранизация) Экранизация «Удобная и интерактивная функциональность (Экранизация)», основанная на манге Мусор лило..." [ref=e2913] [cursor=pointer]:
+          - /url: /notes/49d6ff3a-26bb-415a-a5dd-1693ea4fe75d
+          - heading "Удобная и интерактивная функциональность (Экранизация)" [level=3] [ref=e2914]
+          - paragraph [ref=e2915]: Экранизация «Удобная и интерактивная функциональность (Экранизация)», основанная на манге Мусор лило...
+        - generic [ref=e2916]:
+          - link "Edit" [ref=e2917] [cursor=pointer]:
+            - /url: /notes/49d6ff3a-26bb-415a-a5dd-1693ea4fe75d/edit
+          - button "Delete" [ref=e2918]
+      - generic [ref=e2919]:
+        - link "Уменьшенное и глобальное межплатформенное программное обеспечение (Экранизация) Экранизация «Уменьшенное и глобальное межплатформенное программное обеспечение (Экранизация)», основ..." [ref=e2920] [cursor=pointer]:
+          - /url: /notes/fd42e959-df95-4a37-a0c2-5b4db1d6f834
+          - heading "Уменьшенное и глобальное межплатформенное программное обеспечение (Экранизация)" [level=3] [ref=e2921]
+          - paragraph [ref=e2922]: Экранизация «Уменьшенное и глобальное межплатформенное программное обеспечение (Экранизация)», основ...
+        - generic [ref=e2923]:
+          - link "Edit" [ref=e2924] [cursor=pointer]:
+            - /url: /notes/fd42e959-df95-4a37-a0c2-5b4db1d6f834/edit
+          - button "Delete" [ref=e2925]
+      - generic [ref=e2926]:
+        - link "Интуитивная и энергонезависимая установка (Экранизация) Экранизация «Интуитивная и энергонезависимая установка (Экранизация)», основанная на роману Крыса пр..." [ref=e2927] [cursor=pointer]:
+          - /url: /notes/a0735eaf-cce6-44ab-a4b7-551e20f7ecfb
+          - heading "Интуитивная и энергонезависимая установка (Экранизация)" [level=3] [ref=e2928]
+          - paragraph [ref=e2929]: Экранизация «Интуитивная и энергонезависимая установка (Экранизация)», основанная на роману Крыса пр...
+        - generic [ref=e2930]:
+          - link "Edit" [ref=e2931] [cursor=pointer]:
+            - /url: /notes/a0735eaf-cce6-44ab-a4b7-551e20f7ecfb/edit
+          - button "Delete" [ref=e2932]
+      - generic [ref=e2933]:
+        - link "Уменьшенное и энергонезависимое использование (Экранизация) Экранизация «Уменьшенное и энергонезависимое использование (Экранизация)», основанная на манге Сверк..." [ref=e2934] [cursor=pointer]:
+          - /url: /notes/4a41bd86-32a9-4cd9-9b8b-ebfad4843aa1
+          - heading "Уменьшенное и энергонезависимое использование (Экранизация)" [level=3] [ref=e2935]
+          - paragraph [ref=e2936]: Экранизация «Уменьшенное и энергонезависимое использование (Экранизация)», основанная на манге Сверк...
+        - generic [ref=e2937]:
+          - link "Edit" [ref=e2938] [cursor=pointer]:
+            - /url: /notes/4a41bd86-32a9-4cd9-9b8b-ebfad4843aa1/edit
+          - button "Delete" [ref=e2939]
+      - generic [ref=e2940]:
+        - link "Интуитивное и исполнительное решение (Экранизация) Экранизация «Интуитивное и исполнительное решение (Экранизация)», основанная на повести Некоторый по..." [ref=e2941] [cursor=pointer]:
+          - /url: /notes/0616b6bd-d038-4511-bacb-4eb0159617f1
+          - heading "Интуитивное и исполнительное решение (Экранизация)" [level=3] [ref=e2942]
+          - paragraph [ref=e2943]: Экранизация «Интуитивное и исполнительное решение (Экранизация)», основанная на повести Некоторый по...
+        - generic [ref=e2944]:
+          - link "Edit" [ref=e2945] [cursor=pointer]:
+            - /url: /notes/0616b6bd-d038-4511-bacb-4eb0159617f1/edit
+          - button "Delete" [ref=e2946]
+      - generic [ref=e2947]:
+        - link "Интуитивная и ультрасовременная сеть Интранет (Экранизация) Экранизация «Интуитивная и ультрасовременная сеть Интранет (Экранизация)», основанная на повести Тер..." [ref=e2948] [cursor=pointer]:
+          - /url: /notes/c7e4ad6a-b400-48ae-954c-483df2a8b9bd
+          - heading "Интуитивная и ультрасовременная сеть Интранет (Экранизация)" [level=3] [ref=e2949]
+          - paragraph [ref=e2950]: Экранизация «Интуитивная и ультрасовременная сеть Интранет (Экранизация)», основанная на повести Тер...
+        - generic [ref=e2951]:
+          - link "Edit" [ref=e2952] [cursor=pointer]:
+            - /url: /notes/c7e4ad6a-b400-48ae-954c-483df2a8b9bd/edit
+          - button "Delete" [ref=e2953]
+      - generic [ref=e2954]:
+        - link "Ориентированный и статический массив (Экранизация) Экранизация «Ориентированный и статический массив (Экранизация)», основанная на комиксу Песня инстру..." [ref=e2955] [cursor=pointer]:
+          - /url: /notes/14bfddac-b1ef-43d8-acfb-55990d0dc267
+          - heading "Ориентированный и статический массив (Экранизация)" [level=3] [ref=e2956]
+          - paragraph [ref=e2957]: Экранизация «Ориентированный и статический массив (Экранизация)», основанная на комиксу Песня инстру...
+        - generic [ref=e2958]:
+          - link "Edit" [ref=e2959] [cursor=pointer]:
+            - /url: /notes/14bfddac-b1ef-43d8-acfb-55990d0dc267/edit
+          - button "Delete" [ref=e2960]
+      - generic [ref=e2961]:
+        - link "Организованный и целостный проект (Экранизация) Экранизация «Организованный и целостный проект (Экранизация)», основанная на комиксу Услать рабочий ..." [ref=e2962] [cursor=pointer]:
+          - /url: /notes/f48c2dd0-415e-4f20-83f5-dcbadde2e640
+          - heading "Организованный и целостный проект (Экранизация)" [level=3] [ref=e2963]
+          - paragraph [ref=e2964]: Экранизация «Организованный и целостный проект (Экранизация)», основанная на комиксу Услать рабочий ...
+        - generic [ref=e2965]:
+          - link "Edit" [ref=e2966] [cursor=pointer]:
+            - /url: /notes/f48c2dd0-415e-4f20-83f5-dcbadde2e640/edit
+          - button "Delete" [ref=e2967]
+      - generic [ref=e2968]:
+        - link "Автоматизированное и аналитическое групповое программное обеспечение (Экранизация) Экранизация «Автоматизированное и аналитическое групповое программное обеспечение (Экранизация)», ос..." [ref=e2969] [cursor=pointer]:
+          - /url: /notes/fb32f41b-1194-43ac-9e19-0117ab622784
+          - heading "Автоматизированное и аналитическое групповое программное обеспечение (Экранизация)" [level=3] [ref=e2970]
+          - paragraph [ref=e2971]: Экранизация «Автоматизированное и аналитическое групповое программное обеспечение (Экранизация)», ос...
+        - generic [ref=e2972]:
+          - link "Edit" [ref=e2973] [cursor=pointer]:
+            - /url: /notes/fb32f41b-1194-43ac-9e19-0117ab622784/edit
+          - button "Delete" [ref=e2974]
+      - generic [ref=e2975]:
+        - link "Полный и раздвоенный доступ (Экранизация) Экранизация «Полный и раздвоенный доступ (Экранизация)», основанная на повести Совещание идея жидкий..." [ref=e2976] [cursor=pointer]:
+          - /url: /notes/a962ff50-c058-4212-afbd-33870081c359
+          - heading "Полный и раздвоенный доступ (Экранизация)" [level=3] [ref=e2977]
+          - paragraph [ref=e2978]: Экранизация «Полный и раздвоенный доступ (Экранизация)», основанная на повести Совещание идея жидкий...
+        - generic [ref=e2979]:
+          - link "Edit" [ref=e2980] [cursor=pointer]:
+            - /url: /notes/a962ff50-c058-4212-afbd-33870081c359/edit
+          - button "Delete" [ref=e2981]
+      - generic [ref=e2982]:
+        - link "Полное и экоцентричное приложение (Экранизация) Экранизация «Полное и экоцентричное приложение (Экранизация)», основанная на роману Экзамен слишком,..." [ref=e2983] [cursor=pointer]:
+          - /url: /notes/59f4d7c4-2267-4a00-bace-eee8a026d653
+          - heading "Полное и экоцентричное приложение (Экранизация)" [level=3] [ref=e2984]
+          - paragraph [ref=e2985]: Экранизация «Полное и экоцентричное приложение (Экранизация)», основанная на роману Экзамен слишком,...
+        - generic [ref=e2986]:
+          - link "Edit" [ref=e2987] [cursor=pointer]:
+            - /url: /notes/59f4d7c4-2267-4a00-bace-eee8a026d653/edit
+          - button "Delete" [ref=e2988]
+      - generic [ref=e2989]:
+        - link "Безопасная и связная кодировка (Экранизация) Экранизация «Безопасная и связная кодировка (Экранизация)», основанная на роману Спичка прежде голов..." [ref=e2990] [cursor=pointer]:
+          - /url: /notes/9a602899-57f2-43fe-8cec-adb383ed2271
+          - heading "Безопасная и связная кодировка (Экранизация)" [level=3] [ref=e2991]
+          - paragraph [ref=e2992]: Экранизация «Безопасная и связная кодировка (Экранизация)», основанная на роману Спичка прежде голов...
+        - generic [ref=e2993]:
+          - link "Edit" [ref=e2994] [cursor=pointer]:
+            - /url: /notes/9a602899-57f2-43fe-8cec-adb383ed2271/edit
+          - button "Delete" [ref=e2995]
+      - generic [ref=e2996]:
+        - link "Глубокий и контекстуальный портал (Экранизация) Экранизация «Глубокий и контекстуальный портал (Экранизация)», основанная на роману Тюрьма теория за..." [ref=e2997] [cursor=pointer]:
+          - /url: /notes/48f8056d-e46b-4755-b6e2-9526cef3ef35
+          - heading "Глубокий и контекстуальный портал (Экранизация)" [level=3] [ref=e2998]
+          - paragraph [ref=e2999]: Экранизация «Глубокий и контекстуальный портал (Экранизация)», основанная на роману Тюрьма теория за...
+        - generic [ref=e3000]:
+          - link "Edit" [ref=e3001] [cursor=pointer]:
+            - /url: /notes/48f8056d-e46b-4755-b6e2-9526cef3ef35/edit
+          - button "Delete" [ref=e3002]
+      - generic [ref=e3003]:
+        - link "Открытая и контекстуальная производительность (Экранизация) Экранизация «Открытая и контекстуальная производительность (Экранизация)», основанная на манге Штаб ..." [ref=e3004] [cursor=pointer]:
+          - /url: /notes/44f2d9e8-5969-4367-b143-da4012a3bf25
+          - heading "Открытая и контекстуальная производительность (Экранизация)" [level=3] [ref=e3005]
+          - paragraph [ref=e3006]: Экранизация «Открытая и контекстуальная производительность (Экранизация)», основанная на манге Штаб ...
+        - generic [ref=e3007]:
+          - link "Edit" [ref=e3008] [cursor=pointer]:
+            - /url: /notes/44f2d9e8-5969-4367-b143-da4012a3bf25/edit
+          - button "Delete" [ref=e3009]
+      - generic [ref=e3010]:
+        - link "Реализованная и динамичная функция (Экранизация) Экранизация «Реализованная и динамичная функция (Экранизация)», основанная на роману Шлем салон девк..." [ref=e3011] [cursor=pointer]:
+          - /url: /notes/9946601c-6a76-4126-8a9f-f1518733eca2
+          - heading "Реализованная и динамичная функция (Экранизация)" [level=3] [ref=e3012]
+          - paragraph [ref=e3013]: Экранизация «Реализованная и динамичная функция (Экранизация)», основанная на роману Шлем салон девк...
+        - generic [ref=e3014]:
+          - link "Edit" [ref=e3015] [cursor=pointer]:
+            - /url: /notes/9946601c-6a76-4126-8a9f-f1518733eca2/edit
+          - button "Delete" [ref=e3016]
+      - generic [ref=e3017]:
+        - link "Делегируемый и действенный графический интерфейс (Экранизация) Экранизация «Делегируемый и действенный графический интерфейс (Экранизация)», основанная на манге Ко..." [ref=e3018] [cursor=pointer]:
+          - /url: /notes/026e6790-d0b1-40a4-bf6f-f812221fc8bd
+          - heading "Делегируемый и действенный графический интерфейс (Экранизация)" [level=3] [ref=e3019]
+          - paragraph [ref=e3020]: Экранизация «Делегируемый и действенный графический интерфейс (Экранизация)», основанная на манге Ко...
+        - generic [ref=e3021]:
+          - link "Edit" [ref=e3022] [cursor=pointer]:
+            - /url: /notes/026e6790-d0b1-40a4-bf6f-f812221fc8bd/edit
+          - button "Delete" [ref=e3023]
+      - generic [ref=e3024]:
+        - link "Клиент-ориентированная и контекстуальная служба поддержки (Экранизация) Экранизация «Клиент-ориентированная и контекстуальная служба поддержки (Экранизация)», основанная на..." [ref=e3025] [cursor=pointer]:
+          - /url: /notes/4ef0b144-828e-4f3f-9f0b-3a4bc1624dce
+          - heading "Клиент-ориентированная и контекстуальная служба поддержки (Экранизация)" [level=3] [ref=e3026]
+          - paragraph [ref=e3027]: Экранизация «Клиент-ориентированная и контекстуальная служба поддержки (Экранизация)», основанная на...
+        - generic [ref=e3028]:
+          - link "Edit" [ref=e3029] [cursor=pointer]:
+            - /url: /notes/4ef0b144-828e-4f3f-9f0b-3a4bc1624dce/edit
+          - button "Delete" [ref=e3030]
+      - generic [ref=e3031]:
+        - link "Централизованный и заметный протокол (Экранизация) Экранизация «Централизованный и заметный протокол (Экранизация)», основанная на повести Возможно пок..." [ref=e3032] [cursor=pointer]:
+          - /url: /notes/671f6755-130a-4a95-9742-00bd1e74f1d4
+          - heading "Централизованный и заметный протокол (Экранизация)" [level=3] [ref=e3033]
+          - paragraph [ref=e3034]: Экранизация «Централизованный и заметный протокол (Экранизация)», основанная на повести Возможно пок...
+        - generic [ref=e3035]:
+          - link "Edit" [ref=e3036] [cursor=pointer]:
+            - /url: /notes/671f6755-130a-4a95-9742-00bd1e74f1d4/edit
+          - button "Delete" [ref=e3037]
+      - generic [ref=e3038]:
+        - link "Увеличенное и аналитическое межплатформенное программное обеспечение (Экранизация) Экранизация «Увеличенное и аналитическое межплатформенное программное обеспечение (Экранизация)», ос..." [ref=e3039] [cursor=pointer]:
+          - /url: /notes/89b9676b-b34b-47a7-a495-15b8ed078faa
+          - heading "Увеличенное и аналитическое межплатформенное программное обеспечение (Экранизация)" [level=3] [ref=e3040]
+          - paragraph [ref=e3041]: Экранизация «Увеличенное и аналитическое межплатформенное программное обеспечение (Экранизация)», ос...
+        - generic [ref=e3042]:
+          - link "Edit" [ref=e3043] [cursor=pointer]:
+            - /url: /notes/89b9676b-b34b-47a7-a495-15b8ed078faa/edit
+          - button "Delete" [ref=e3044]
+      - generic [ref=e3045]:
+        - link "Автономный и динамичный портал (Экранизация) Экранизация «Автономный и динамичный портал (Экранизация)», основанная на манге Спорт заработать раз..." [ref=e3046] [cursor=pointer]:
+          - /url: /notes/d91b7902-6ba5-4298-98de-bc5f70baacce
+          - heading "Автономный и динамичный портал (Экранизация)" [level=3] [ref=e3047]
+          - paragraph [ref=e3048]: Экранизация «Автономный и динамичный портал (Экранизация)», основанная на манге Спорт заработать раз...
+        - generic [ref=e3049]:
+          - link "Edit" [ref=e3050] [cursor=pointer]:
+            - /url: /notes/d91b7902-6ba5-4298-98de-bc5f70baacce/edit
+          - button "Delete" [ref=e3051]
+      - generic [ref=e3052]:
+        - link "Оцифрованное и экоцентричное хранилище данных (Экранизация) Экранизация «Оцифрованное и экоцентричное хранилище данных (Экранизация)», основанная на повести Сом..." [ref=e3053] [cursor=pointer]:
+          - /url: /notes/93ff79ff-1bd6-409d-90a2-0d3460ba4bfe
+          - heading "Оцифрованное и экоцентричное хранилище данных (Экранизация)" [level=3] [ref=e3054]
+          - paragraph [ref=e3055]: Экранизация «Оцифрованное и экоцентричное хранилище данных (Экранизация)», основанная на повести Сом...
+        - generic [ref=e3056]:
+          - link "Edit" [ref=e3057] [cursor=pointer]:
+            - /url: /notes/93ff79ff-1bd6-409d-90a2-0d3460ba4bfe/edit
+          - button "Delete" [ref=e3058]
+      - generic [ref=e3059]:
+        - link "Элегантное и веб-ориентированное межплатформенное программное обеспечение (Экранизация) Экранизация «Элегантное и веб-ориентированное межплатформенное программное обеспечение (Экранизация)..." [ref=e3060] [cursor=pointer]:
+          - /url: /notes/523a5947-7dbf-431b-bc0e-15141b1595b3
+          - heading "Элегантное и веб-ориентированное межплатформенное программное обеспечение (Экранизация)" [level=3] [ref=e3061]
+          - paragraph [ref=e3062]: Экранизация «Элегантное и веб-ориентированное межплатформенное программное обеспечение (Экранизация)...
+        - generic [ref=e3063]:
+          - link "Edit" [ref=e3064] [cursor=pointer]:
+            - /url: /notes/523a5947-7dbf-431b-bc0e-15141b1595b3/edit
+          - button "Delete" [ref=e3065]
+      - generic [ref=e3066]:
+        - link "Продвинутая и ультрасовременная база знаний (Экранизация) Экранизация «Продвинутая и ультрасовременная база знаний (Экранизация)», основанная на манге Князь з..." [ref=e3067] [cursor=pointer]:
+          - /url: /notes/871e988e-671b-4c7b-8ce3-1b20aac809b4
+          - heading "Продвинутая и ультрасовременная база знаний (Экранизация)" [level=3] [ref=e3068]
+          - paragraph [ref=e3069]: Экранизация «Продвинутая и ультрасовременная база знаний (Экранизация)», основанная на манге Князь з...
+        - generic [ref=e3070]:
+          - link "Edit" [ref=e3071] [cursor=pointer]:
+            - /url: /notes/871e988e-671b-4c7b-8ce3-1b20aac809b4/edit
+          - button "Delete" [ref=e3072]
+      - generic [ref=e3073]:
+        - link "Новое и единообразное шифрование (Экранизация) Экранизация «Новое и единообразное шифрование (Экранизация)», основанная на повести Выкинуть мгновен..." [ref=e3074] [cursor=pointer]:
+          - /url: /notes/215467cc-cd7e-4052-8385-819925cffb61
+          - heading "Новое и единообразное шифрование (Экранизация)" [level=3] [ref=e3075]
+          - paragraph [ref=e3076]: Экранизация «Новое и единообразное шифрование (Экранизация)», основанная на повести Выкинуть мгновен...
+        - generic [ref=e3077]:
+          - link "Edit" [ref=e3078] [cursor=pointer]:
+            - /url: /notes/215467cc-cd7e-4052-8385-819925cffb61/edit
+          - button "Delete" [ref=e3079]
+      - generic [ref=e3080]:
+        - link "Переключаемая и объектно-ориентированная конгломерация (Экранизация) Экранизация «Переключаемая и объектно-ориентированная конгломерация (Экранизация)», основанная на по..." [ref=e3081] [cursor=pointer]:
+          - /url: /notes/be5290d7-7f76-46a4-b0ea-bc14686fae89
+          - heading "Переключаемая и объектно-ориентированная конгломерация (Экранизация)" [level=3] [ref=e3082]
+          - paragraph [ref=e3083]: Экранизация «Переключаемая и объектно-ориентированная конгломерация (Экранизация)», основанная на по...
+        - generic [ref=e3084]:
+          - link "Edit" [ref=e3085] [cursor=pointer]:
+            - /url: /notes/be5290d7-7f76-46a4-b0ea-bc14686fae89/edit
+          - button "Delete" [ref=e3086]
+      - generic [ref=e3087]:
+        - link "Распределённое и гибридное интернет-решение (Экранизация) Экранизация «Распределённое и гибридное интернет-решение (Экранизация)», основанная на роману Прияте..." [ref=e3088] [cursor=pointer]:
+          - /url: /notes/e3086cca-cd67-48ef-871d-4b7f6400a5fd
+          - heading "Распределённое и гибридное интернет-решение (Экранизация)" [level=3] [ref=e3089]
+          - paragraph [ref=e3090]: Экранизация «Распределённое и гибридное интернет-решение (Экранизация)», основанная на роману Прияте...
+        - generic [ref=e3091]:
+          - link "Edit" [ref=e3092] [cursor=pointer]:
+            - /url: /notes/e3086cca-cd67-48ef-871d-4b7f6400a5fd/edit
+          - button "Delete" [ref=e3093]
+      - generic [ref=e3094]:
+        - link "Эксклюзивное и инструктивное сотрудничество (Экранизация) Экранизация «Эксклюзивное и инструктивное сотрудничество (Экранизация)», основанная на комиксу Нажат..." [ref=e3095] [cursor=pointer]:
+          - /url: /notes/3fbb5ebe-6b46-4394-aef5-4d26586b1265
+          - heading "Эксклюзивное и инструктивное сотрудничество (Экранизация)" [level=3] [ref=e3096]
+          - paragraph [ref=e3097]: Экранизация «Эксклюзивное и инструктивное сотрудничество (Экранизация)», основанная на комиксу Нажат...
+        - generic [ref=e3098]:
+          - link "Edit" [ref=e3099] [cursor=pointer]:
+            - /url: /notes/3fbb5ebe-6b46-4394-aef5-4d26586b1265/edit
+          - button "Delete" [ref=e3100]
+      - generic [ref=e3101]:
+        - link "Многослойный и единообразный успех (Экранизация) Экранизация «Многослойный и единообразный успех (Экранизация)», основанная на комиксу Бровь дурацкий..." [ref=e3102] [cursor=pointer]:
+          - /url: /notes/b44d6135-41b8-4168-83b6-e84fe8f5a640
+          - heading "Многослойный и единообразный успех (Экранизация)" [level=3] [ref=e3103]
+          - paragraph [ref=e3104]: Экранизация «Многослойный и единообразный успех (Экранизация)», основанная на комиксу Бровь дурацкий...
+        - generic [ref=e3105]:
+          - link "Edit" [ref=e3106] [cursor=pointer]:
+            - /url: /notes/b44d6135-41b8-4168-83b6-e84fe8f5a640/edit
+          - button "Delete" [ref=e3107]
+      - generic [ref=e3108]:
+        - link "Перспективное и круглосуточное управление бюджетом (Экранизация) Экранизация «Перспективное и круглосуточное управление бюджетом (Экранизация)», основанная на комикс..." [ref=e3109] [cursor=pointer]:
+          - /url: /notes/c7731526-e386-421f-98d5-49d8dd6116f6
+          - heading "Перспективное и круглосуточное управление бюджетом (Экранизация)" [level=3] [ref=e3110]
+          - paragraph [ref=e3111]: Экранизация «Перспективное и круглосуточное управление бюджетом (Экранизация)», основанная на комикс...
+        - generic [ref=e3112]:
+          - link "Edit" [ref=e3113] [cursor=pointer]:
+            - /url: /notes/c7731526-e386-421f-98d5-49d8dd6116f6/edit
+          - button "Delete" [ref=e3114]
+      - generic [ref=e3115]:
+        - link "Децентрализованный и вторичный модератор (Экранизация) Экранизация «Децентрализованный и вторичный модератор (Экранизация)», основанная на роману Головка р..." [ref=e3116] [cursor=pointer]:
+          - /url: /notes/a1135972-7dc1-4dfc-aae7-8393ff5618cb
+          - heading "Децентрализованный и вторичный модератор (Экранизация)" [level=3] [ref=e3117]
+          - paragraph [ref=e3118]: Экранизация «Децентрализованный и вторичный модератор (Экранизация)», основанная на роману Головка р...
+        - generic [ref=e3119]:
+          - link "Edit" [ref=e3120] [cursor=pointer]:
+            - /url: /notes/a1135972-7dc1-4dfc-aae7-8393ff5618cb/edit
+          - button "Delete" [ref=e3121]
+      - generic [ref=e3122]:
+        - link "Новый и переходный портал (Экранизация) Экранизация «Новый и переходный портал (Экранизация)», основанная на роману Сходить столетие аж, выз..." [ref=e3123] [cursor=pointer]:
+          - /url: /notes/6a8663ef-8b24-463d-8393-f47299bbe8ad
+          - heading "Новый и переходный портал (Экранизация)" [level=3] [ref=e3124]
+          - paragraph [ref=e3125]: Экранизация «Новый и переходный портал (Экранизация)», основанная на роману Сходить столетие аж, выз...
+        - generic [ref=e3126]:
+          - link "Edit" [ref=e3127] [cursor=pointer]:
+            - /url: /notes/6a8663ef-8b24-463d-8393-f47299bbe8ad/edit
+          - button "Delete" [ref=e3128]
+      - generic [ref=e3129]:
+        - link "Устойчивая и составная защищенная линия (Экранизация) Экранизация «Устойчивая и составная защищенная линия (Экранизация)», основанная на манге Термин миг ..." [ref=e3130] [cursor=pointer]:
+          - /url: /notes/e6e36b0f-5b80-49be-895c-ff51242b00ec
+          - heading "Устойчивая и составная защищенная линия (Экранизация)" [level=3] [ref=e3131]
+          - paragraph [ref=e3132]: Экранизация «Устойчивая и составная защищенная линия (Экранизация)», основанная на манге Термин миг ...
+        - generic [ref=e3133]:
+          - link "Edit" [ref=e3134] [cursor=pointer]:
+            - /url: /notes/e6e36b0f-5b80-49be-895c-ff51242b00ec/edit
+          - button "Delete" [ref=e3135]
+      - generic [ref=e3136]:
+        - link "Улучшенное и действенное совершенствование процесса (Экранизация) Экранизация «Улучшенное и действенное совершенствование процесса (Экранизация)», основанная на манге..." [ref=e3137] [cursor=pointer]:
+          - /url: /notes/1bcefe13-ba14-4443-9892-0b0d48587b90
+          - heading "Улучшенное и действенное совершенствование процесса (Экранизация)" [level=3] [ref=e3138]
+          - paragraph [ref=e3139]: Экранизация «Улучшенное и действенное совершенствование процесса (Экранизация)», основанная на манге...
+        - generic [ref=e3140]:
+          - link "Edit" [ref=e3141] [cursor=pointer]:
+            - /url: /notes/1bcefe13-ba14-4443-9892-0b0d48587b90/edit
+          - button "Delete" [ref=e3142]
+      - generic [ref=e3143]:
+        - link "Инверсное и контекстуальное отношение (Экранизация) Экранизация «Инверсное и контекстуальное отношение (Экранизация)», основанная на манге Невозможно ви..." [ref=e3144] [cursor=pointer]:
+          - /url: /notes/7de3a070-e321-48a8-ae93-72992127e4b6
+          - heading "Инверсное и контекстуальное отношение (Экранизация)" [level=3] [ref=e3145]
+          - paragraph [ref=e3146]: Экранизация «Инверсное и контекстуальное отношение (Экранизация)», основанная на манге Невозможно ви...
+        - generic [ref=e3147]:
+          - link "Edit" [ref=e3148] [cursor=pointer]:
+            - /url: /notes/7de3a070-e321-48a8-ae93-72992127e4b6/edit
+          - button "Delete" [ref=e3149]
+      - generic [ref=e3150]:
+        - link "Межгрупповая и действенная политика (Экранизация) Экранизация «Межгрупповая и действенная политика (Экранизация)», основанная на манге Дьявол сохранят..." [ref=e3151] [cursor=pointer]:
+          - /url: /notes/3deeb4b3-b25c-4e44-912d-e9e7eecafd8d
+          - heading "Межгрупповая и действенная политика (Экранизация)" [level=3] [ref=e3152]
+          - paragraph [ref=e3153]: Экранизация «Межгрупповая и действенная политика (Экранизация)», основанная на манге Дьявол сохранят...
+        - generic [ref=e3154]:
+          - link "Edit" [ref=e3155] [cursor=pointer]:
+            - /url: /notes/3deeb4b3-b25c-4e44-912d-e9e7eecafd8d/edit
+          - button "Delete" [ref=e3156]
+      - generic [ref=e3157]:
+        - link "Многоканальная и двунаправленная структура (Экранизация) Экранизация «Многоканальная и двунаправленная структура (Экранизация)», основанная на комиксу Банда ..." [ref=e3158] [cursor=pointer]:
+          - /url: /notes/e16c207f-574f-4727-b5ff-7531be4bf444
+          - heading "Многоканальная и двунаправленная структура (Экранизация)" [level=3] [ref=e3159]
+          - paragraph [ref=e3160]: Экранизация «Многоканальная и двунаправленная структура (Экранизация)», основанная на комиксу Банда ...
+        - generic [ref=e3161]:
+          - link "Edit" [ref=e3162] [cursor=pointer]:
+            - /url: /notes/e16c207f-574f-4727-b5ff-7531be4bf444/edit
+          - button "Delete" [ref=e3163]
+      - generic [ref=e3164]:
+        - link "Прочная и логистическая суперструктура (Экранизация) Экранизация «Прочная и логистическая суперструктура (Экранизация)», основанная на повести Функция по..." [ref=e3165] [cursor=pointer]:
+          - /url: /notes/b96a7a07-67a3-4183-b9a1-bc00aee509de
+          - heading "Прочная и логистическая суперструктура (Экранизация)" [level=3] [ref=e3166]
+          - paragraph [ref=e3167]: Экранизация «Прочная и логистическая суперструктура (Экранизация)», основанная на повести Функция по...
+        - generic [ref=e3168]:
+          - link "Edit" [ref=e3169] [cursor=pointer]:
+            - /url: /notes/b96a7a07-67a3-4183-b9a1-bc00aee509de/edit
+          - button "Delete" [ref=e3170]
+      - generic [ref=e3171]:
+        - link "Многослойная и интерактивная способность (Экранизация) Экранизация «Многослойная и интерактивная способность (Экранизация)», основанная на манге Пробовать ..." [ref=e3172] [cursor=pointer]:
+          - /url: /notes/74449d52-6fe5-4df6-98fb-60501345fba7
+          - heading "Многослойная и интерактивная способность (Экранизация)" [level=3] [ref=e3173]
+          - paragraph [ref=e3174]: Экранизация «Многослойная и интерактивная способность (Экранизация)», основанная на манге Пробовать ...
+        - generic [ref=e3175]:
+          - link "Edit" [ref=e3176] [cursor=pointer]:
+            - /url: /notes/74449d52-6fe5-4df6-98fb-60501345fba7/edit
+          - button "Delete" [ref=e3177]
+      - generic [ref=e3178]:
+        - link "Уменьшенное и пошаговое взаимодействие (Экранизация) Экранизация «Уменьшенное и пошаговое взаимодействие (Экранизация)», основанная на повести Банда заде..." [ref=e3179] [cursor=pointer]:
+          - /url: /notes/ee8f1890-604f-4744-ac94-eab1b77e654b
+          - heading "Уменьшенное и пошаговое взаимодействие (Экранизация)" [level=3] [ref=e3180]
+          - paragraph [ref=e3181]: Экранизация «Уменьшенное и пошаговое взаимодействие (Экранизация)», основанная на повести Банда заде...
+        - generic [ref=e3182]:
+          - link "Edit" [ref=e3183] [cursor=pointer]:
+            - /url: /notes/ee8f1890-604f-4744-ac94-eab1b77e654b/edit
+          - button "Delete" [ref=e3184]
+      - generic [ref=e3185]:
+        - link "Эргономичный и нейтральный эталон (Экранизация) Экранизация «Эргономичный и нейтральный эталон (Экранизация)», основанная на комиксу Процесс горький..." [ref=e3186] [cursor=pointer]:
+          - /url: /notes/fa1d85ac-82d7-40bb-8bd9-354f2ab61136
+          - heading "Эргономичный и нейтральный эталон (Экранизация)" [level=3] [ref=e3187]
+          - paragraph [ref=e3188]: Экранизация «Эргономичный и нейтральный эталон (Экранизация)», основанная на комиксу Процесс горький...
+        - generic [ref=e3189]:
+          - link "Edit" [ref=e3190] [cursor=pointer]:
+            - /url: /notes/fa1d85ac-82d7-40bb-8bd9-354f2ab61136/edit
+          - button "Delete" [ref=e3191]
+      - generic [ref=e3192]:
+        - link "Сетевой и мобильный успех (Экранизация) Экранизация «Сетевой и мобильный успех (Экранизация)», основанная на роману Набор очередной, вызывае..." [ref=e3193] [cursor=pointer]:
+          - /url: /notes/ccea3cf0-6b2e-4ba7-baa8-cf9234ab1718
+          - heading "Сетевой и мобильный успех (Экранизация)" [level=3] [ref=e3194]
+          - paragraph [ref=e3195]: Экранизация «Сетевой и мобильный успех (Экранизация)», основанная на роману Набор очередной, вызывае...
+        - generic [ref=e3196]:
+          - link "Edit" [ref=e3197] [cursor=pointer]:
+            - /url: /notes/ccea3cf0-6b2e-4ba7-baa8-cf9234ab1718/edit
+          - button "Delete" [ref=e3198]
+      - generic [ref=e3199]:
+        - link "Стратегическая и объектно-ориентированная сеть Экстранет (Экранизация) Экранизация «Стратегическая и объектно-ориентированная сеть Экстранет (Экранизация)», основанная на ..." [ref=e3200] [cursor=pointer]:
+          - /url: /notes/3347da24-b8a7-419e-8b47-ef21d5ce1750
+          - heading "Стратегическая и объектно-ориентированная сеть Экстранет (Экранизация)" [level=3] [ref=e3201]
+          - paragraph [ref=e3202]: Экранизация «Стратегическая и объектно-ориентированная сеть Экстранет (Экранизация)», основанная на ...
+        - generic [ref=e3203]:
+          - link "Edit" [ref=e3204] [cursor=pointer]:
+            - /url: /notes/3347da24-b8a7-419e-8b47-ef21d5ce1750/edit
+          - button "Delete" [ref=e3205]
+      - generic [ref=e3206]:
+        - link "Стратегическое и действенное управление бюджетом (Экранизация) Экранизация «Стратегическое и действенное управление бюджетом (Экранизация)», основанная на повести ..." [ref=e3207] [cursor=pointer]:
+          - /url: /notes/0b1f30d4-5758-42af-b444-fd07584c24eb
+          - heading "Стратегическое и действенное управление бюджетом (Экранизация)" [level=3] [ref=e3208]
+          - paragraph [ref=e3209]: Экранизация «Стратегическое и действенное управление бюджетом (Экранизация)», основанная на повести ...
+        - generic [ref=e3210]:
+          - link "Edit" [ref=e3211] [cursor=pointer]:
+            - /url: /notes/0b1f30d4-5758-42af-b444-fd07584c24eb/edit
+          - button "Delete" [ref=e3212]
+      - generic [ref=e3213]:
+        - link "Элегантная и высокоуровневая политика (Экранизация) Экранизация «Элегантная и высокоуровневая политика (Экранизация)», основанная на комиксу Житель поря..." [ref=e3214] [cursor=pointer]:
+          - /url: /notes/e39178f8-9da4-428e-bfa8-a68dbd9a7727
+          - heading "Элегантная и высокоуровневая политика (Экранизация)" [level=3] [ref=e3215]
+          - paragraph [ref=e3216]: Экранизация «Элегантная и высокоуровневая политика (Экранизация)», основанная на комиксу Житель поря...
+        - generic [ref=e3217]:
+          - link "Edit" [ref=e3218] [cursor=pointer]:
+            - /url: /notes/e39178f8-9da4-428e-bfa8-a68dbd9a7727/edit
+          - button "Delete" [ref=e3219]
+      - generic [ref=e3220]:
+        - link "Сетевая и целостная координация (Экранизация) Экранизация «Сетевая и целостная координация (Экранизация)», основанная на манге Палец кпсс носок, в..." [ref=e3221] [cursor=pointer]:
+          - /url: /notes/e233f982-d34b-4bb2-9cb0-b58f60471dc1
+          - heading "Сетевая и целостная координация (Экранизация)" [level=3] [ref=e3222]
+          - paragraph [ref=e3223]: Экранизация «Сетевая и целостная координация (Экранизация)», основанная на манге Палец кпсс носок, в...
+        - generic [ref=e3224]:
+          - link "Edit" [ref=e3225] [cursor=pointer]:
+            - /url: /notes/e233f982-d34b-4bb2-9cb0-b58f60471dc1/edit
+          - button "Delete" [ref=e3226]
+      - generic [ref=e3227]:
+        - link "Межгрупповая и методичная реализация (Экранизация) Экранизация «Межгрупповая и методичная реализация (Экранизация)», основанная на повести Коммунизм до..." [ref=e3228] [cursor=pointer]:
+          - /url: /notes/6fa78c6e-0706-468e-aaba-208e7c069eb0
+          - heading "Межгрупповая и методичная реализация (Экранизация)" [level=3] [ref=e3229]
+          - paragraph [ref=e3230]: Экранизация «Межгрупповая и методичная реализация (Экранизация)», основанная на повести Коммунизм до...
+        - generic [ref=e3231]:
+          - link "Edit" [ref=e3232] [cursor=pointer]:
+            - /url: /notes/6fa78c6e-0706-468e-aaba-208e7c069eb0/edit
+          - button "Delete" [ref=e3233]
+      - generic [ref=e3234]:
+        - link "Многогранное и итернациональное ядро (Экранизация) Экранизация «Многогранное и итернациональное ядро (Экранизация)», основанная на манге Встать сохраня..." [ref=e3235] [cursor=pointer]:
+          - /url: /notes/1f0c892f-9ae4-46af-8870-c6b5553b96cd
+          - heading "Многогранное и итернациональное ядро (Экранизация)" [level=3] [ref=e3236]
+          - paragraph [ref=e3237]: Экранизация «Многогранное и итернациональное ядро (Экранизация)», основанная на манге Встать сохраня...
+        - generic [ref=e3238]:
+          - link "Edit" [ref=e3239] [cursor=pointer]:
+            - /url: /notes/1f0c892f-9ae4-46af-8870-c6b5553b96cd/edit
+          - button "Delete" [ref=e3240]
+      - generic [ref=e3241]:
+        - link "Даль no Соответствие Манга «Даль no Соответствие» авторства Лариса Владиславовна Ефремова — это захватывающая история, де..." [ref=e3242] [cursor=pointer]:
+          - /url: /notes/455f959b-e0b3-40b8-9c49-583810c48313
+          - heading "Даль no Соответствие" [level=3] [ref=e3243]
+          - paragraph [ref=e3244]: Манга «Даль no Соответствие» авторства Лариса Владиславовна Ефремова — это захватывающая история, де...
+        - generic [ref=e3245]:
+          - link "Edit" [ref=e3246] [cursor=pointer]:
+            - /url: /notes/455f959b-e0b3-40b8-9c49-583810c48313/edit
+          - button "Delete" [ref=e3247]
+      - generic [ref=e3248]:
+        - link "Выразить no Парень Манга «Выразить no Парень» авторства Колобова Ольга Юльевна — это захватывающая история, действие ко..." [ref=e3249] [cursor=pointer]:
+          - /url: /notes/37109299-2b33-44e1-9b94-633f22caeebb
+          - heading "Выразить no Парень" [level=3] [ref=e3250]
+          - paragraph [ref=e3251]: Манга «Выразить no Парень» авторства Колобова Ольга Юльевна — это захватывающая история, действие ко...
+        - generic [ref=e3252]:
+          - link "Edit" [ref=e3253] [cursor=pointer]:
+            - /url: /notes/37109299-2b33-44e1-9b94-633f22caeebb/edit
+          - button "Delete" [ref=e3254]
+      - generic [ref=e3255]:
+        - link "Фонарик no Набор Манга «Фонарик no Набор» авторства Максимов Антип Георгиевич — это захватывающая история, действие к..." [ref=e3256] [cursor=pointer]:
+          - /url: /notes/1ad4d76c-b4f5-4ad1-96c0-04edece34b9e
+          - heading "Фонарик no Набор" [level=3] [ref=e3257]
+          - paragraph [ref=e3258]: Манга «Фонарик no Набор» авторства Максимов Антип Георгиевич — это захватывающая история, действие к...
+        - generic [ref=e3259]:
+          - link "Edit" [ref=e3260] [cursor=pointer]:
+            - /url: /notes/1ad4d76c-b4f5-4ad1-96c0-04edece34b9e/edit
+          - button "Delete" [ref=e3261]
+      - generic [ref=e3262]:
+        - link "Бак no Провинция Манга «Бак no Провинция» авторства Лидия Тимуровна Ларионова — это захватывающая история, действие к..." [ref=e3263] [cursor=pointer]:
+          - /url: /notes/344817f5-8ada-4aee-932e-288b48930e84
+          - heading "Бак no Провинция" [level=3] [ref=e3264]
+          - paragraph [ref=e3265]: Манга «Бак no Провинция» авторства Лидия Тимуровна Ларионова — это захватывающая история, действие к...
+        - generic [ref=e3266]:
+          - link "Edit" [ref=e3267] [cursor=pointer]:
+            - /url: /notes/344817f5-8ada-4aee-932e-288b48930e84/edit
+          - button "Delete" [ref=e3268]
+      - generic [ref=e3269]:
+        - link "Недостаток no Уронить Манга «Недостаток no Уронить» авторства Тит Александрович Рожков — это захватывающая история, действ..." [ref=e3270] [cursor=pointer]:
+          - /url: /notes/1dcef572-c2f1-42a7-9f83-b312b7271b7e
+          - heading "Недостаток no Уронить" [level=3] [ref=e3271]
+          - paragraph [ref=e3272]: Манга «Недостаток no Уронить» авторства Тит Александрович Рожков — это захватывающая история, действ...
+        - generic [ref=e3273]:
+          - link "Edit" [ref=e3274] [cursor=pointer]:
+            - /url: /notes/1dcef572-c2f1-42a7-9f83-b312b7271b7e/edit
+          - button "Delete" [ref=e3275]
+      - generic [ref=e3276]:
+        - link "Результат no Применяться Манга «Результат no Применяться» авторства Януарий Арсеньевич Родионов — это захватывающая история, ..." [ref=e3277] [cursor=pointer]:
+          - /url: /notes/e93bea33-7313-4a76-be87-7f06ee2cbb07
+          - heading "Результат no Применяться" [level=3] [ref=e3278]
+          - paragraph [ref=e3279]: Манга «Результат no Применяться» авторства Януарий Арсеньевич Родионов — это захватывающая история, ...
+        - generic [ref=e3280]:
+          - link "Edit" [ref=e3281] [cursor=pointer]:
+            - /url: /notes/e93bea33-7313-4a76-be87-7f06ee2cbb07/edit
+          - button "Delete" [ref=e3282]
+      - generic [ref=e3283]:
+        - link "Жить no Плавно Манга «Жить no Плавно» авторства г-жа Кудряшова Лукия Харитоновна — это захватывающая история, дейст..." [ref=e3284] [cursor=pointer]:
+          - /url: /notes/7ca85ad7-eab7-4450-9c1c-6edee645c451
+          - heading "Жить no Плавно" [level=3] [ref=e3285]
+          - paragraph [ref=e3286]: Манга «Жить no Плавно» авторства г-жа Кудряшова Лукия Харитоновна — это захватывающая история, дейст...
+        - generic [ref=e3287]:
+          - link "Edit" [ref=e3288] [cursor=pointer]:
+            - /url: /notes/7ca85ad7-eab7-4450-9c1c-6edee645c451/edit
+          - button "Delete" [ref=e3289]
+      - generic [ref=e3290]:
+        - link "Назначить no Прежний Манга «Назначить no Прежний» авторства Эрнст Елисеевич Беляков — это захватывающая история, действие..." [ref=e3291] [cursor=pointer]:
+          - /url: /notes/04036d69-b053-493b-adfc-d02d686f8de5
+          - heading "Назначить no Прежний" [level=3] [ref=e3292]
+          - paragraph [ref=e3293]: Манга «Назначить no Прежний» авторства Эрнст Елисеевич Беляков — это захватывающая история, действие...
+        - generic [ref=e3294]:
+          - link "Edit" [ref=e3295] [cursor=pointer]:
+            - /url: /notes/04036d69-b053-493b-adfc-d02d686f8de5/edit
+          - button "Delete" [ref=e3296]
+      - generic [ref=e3297]:
+        - link "Командующий no Проход Манга «Командующий no Проход» авторства Ангелина Яковлевна Козлова — это захватывающая история, дейс..." [ref=e3298] [cursor=pointer]:
+          - /url: /notes/2373639b-fd77-4c8f-b683-43a340e9afd6
+          - heading "Командующий no Проход" [level=3] [ref=e3299]
+          - paragraph [ref=e3300]: Манга «Командующий no Проход» авторства Ангелина Яковлевна Козлова — это захватывающая история, дейс...
+        - generic [ref=e3301]:
+          - link "Edit" [ref=e3302] [cursor=pointer]:
+            - /url: /notes/2373639b-fd77-4c8f-b683-43a340e9afd6/edit
+          - button "Delete" [ref=e3303]
+      - generic [ref=e3304]:
+        - link "Похороны no Выражаться Манга «Похороны no Выражаться» авторства Евфросиния Аркадьевна Большакова — это захватывающая истори..." [ref=e3305] [cursor=pointer]:
+          - /url: /notes/671cb15e-4578-4ee9-9ac8-5bb68a612bf0
+          - heading "Похороны no Выражаться" [level=3] [ref=e3306]
+          - paragraph [ref=e3307]: Манга «Похороны no Выражаться» авторства Евфросиния Аркадьевна Большакова — это захватывающая истори...
+        - generic [ref=e3308]:
+          - link "Edit" [ref=e3309] [cursor=pointer]:
+            - /url: /notes/671cb15e-4578-4ee9-9ac8-5bb68a612bf0/edit
+          - button "Delete" [ref=e3310]
+      - generic [ref=e3311]:
+        - link "Результат no Прежний Манга «Результат no Прежний» авторства Егорова Нина Эдуардовна — это захватывающая история, действие..." [ref=e3312] [cursor=pointer]:
+          - /url: /notes/84c397d4-ceb6-4c83-a378-4e01a6a62365
+          - heading "Результат no Прежний" [level=3] [ref=e3313]
+          - paragraph [ref=e3314]: Манга «Результат no Прежний» авторства Егорова Нина Эдуардовна — это захватывающая история, действие...
+        - generic [ref=e3315]:
+          - link "Edit" [ref=e3316] [cursor=pointer]:
+            - /url: /notes/84c397d4-ceb6-4c83-a378-4e01a6a62365/edit
+          - button "Delete" [ref=e3317]
+      - generic [ref=e3318]:
+        - link "Растеряться no Коммунизм Манга «Растеряться no Коммунизм» авторства Олимпиада Викторовна Казакова — это захватывающая история..." [ref=e3319] [cursor=pointer]:
+          - /url: /notes/d3606479-72c5-4948-9cd5-ee2ec3e88864
+          - heading "Растеряться no Коммунизм" [level=3] [ref=e3320]
+          - paragraph [ref=e3321]: Манга «Растеряться no Коммунизм» авторства Олимпиада Викторовна Казакова — это захватывающая история...
+        - generic [ref=e3322]:
+          - link "Edit" [ref=e3323] [cursor=pointer]:
+            - /url: /notes/d3606479-72c5-4948-9cd5-ee2ec3e88864/edit
+          - button "Delete" [ref=e3324]
+      - generic [ref=e3325]:
+        - link "Домашний no Задержать Манга «Домашний no Задержать» авторства Костина Кира Макаровна — это захватывающая история, действие..." [ref=e3326] [cursor=pointer]:
+          - /url: /notes/10b68d6f-9e39-4597-9257-b0cbf78f287a
+          - heading "Домашний no Задержать" [level=3] [ref=e3327]
+          - paragraph [ref=e3328]: Манга «Домашний no Задержать» авторства Костина Кира Макаровна — это захватывающая история, действие...
+        - generic [ref=e3329]:
+          - link "Edit" [ref=e3330] [cursor=pointer]:
+            - /url: /notes/10b68d6f-9e39-4597-9257-b0cbf78f287a/edit
+          - button "Delete" [ref=e3331]
+      - generic [ref=e3332]:
+        - link "Войти no Дальний Манга «Войти no Дальний» авторства Терентьев Федосий Иосифович — это захватывающая история, действие..." [ref=e3333] [cursor=pointer]:
+          - /url: /notes/861a2dc3-5e8a-45d8-b0d0-c711836ff5a4
+          - heading "Войти no Дальний" [level=3] [ref=e3334]
+          - paragraph [ref=e3335]: Манга «Войти no Дальний» авторства Терентьев Федосий Иосифович — это захватывающая история, действие...
+        - generic [ref=e3336]:
+          - link "Edit" [ref=e3337] [cursor=pointer]:
+            - /url: /notes/861a2dc3-5e8a-45d8-b0d0-c711836ff5a4/edit
+          - button "Delete" [ref=e3338]
+      - generic [ref=e3339]:
+        - link "Коробка no Болото Манга «Коробка no Болото» авторства Анна Робертовна Федосеева — это захватывающая история, действие ..." [ref=e3340] [cursor=pointer]:
+          - /url: /notes/ca7e69e3-265c-4144-bfc2-d8cbcc9ff38e
+          - heading "Коробка no Болото" [level=3] [ref=e3341]
+          - paragraph [ref=e3342]: Манга «Коробка no Болото» авторства Анна Робертовна Федосеева — это захватывающая история, действие ...
+        - generic [ref=e3343]:
+          - link "Edit" [ref=e3344] [cursor=pointer]:
+            - /url: /notes/ca7e69e3-265c-4144-bfc2-d8cbcc9ff38e/edit
+          - button "Delete" [ref=e3345]
+      - generic [ref=e3346]:
+        - link "Низкий no Пасть Манга «Низкий no Пасть» авторства Октябрина Никифоровна Николаева — это захватывающая история, дейст..." [ref=e3347] [cursor=pointer]:
+          - /url: /notes/7684a831-76b1-4ba2-a9aa-0ee69a825faf
+          - heading "Низкий no Пасть" [level=3] [ref=e3348]
+          - paragraph [ref=e3349]: Манга «Низкий no Пасть» авторства Октябрина Никифоровна Николаева — это захватывающая история, дейст...
+        - generic [ref=e3350]:
+          - link "Edit" [ref=e3351] [cursor=pointer]:
+            - /url: /notes/7684a831-76b1-4ba2-a9aa-0ee69a825faf/edit
+          - button "Delete" [ref=e3352]
+      - generic [ref=e3353]:
+        - link "Мелькнуть no Мелочь Манга «Мелькнуть no Мелочь» авторства Сергеева Фёкла Харитоновна — это захватывающая история, действ..." [ref=e3354] [cursor=pointer]:
+          - /url: /notes/8bec54a7-87f8-490e-8577-0e2f45df5b45
+          - heading "Мелькнуть no Мелочь" [level=3] [ref=e3355]
+          - paragraph [ref=e3356]: Манга «Мелькнуть no Мелочь» авторства Сергеева Фёкла Харитоновна — это захватывающая история, действ...
+        - generic [ref=e3357]:
+          - link "Edit" [ref=e3358] [cursor=pointer]:
+            - /url: /notes/8bec54a7-87f8-490e-8577-0e2f45df5b45/edit
+          - button "Delete" [ref=e3359]
+      - generic [ref=e3360]:
+        - link "Потом no Лиловый Манга «Потом no Лиловый» авторства Большакова Полина Харитоновна — это захватывающая история, действ..." [ref=e3361] [cursor=pointer]:
+          - /url: /notes/488501e7-dca6-4495-812a-77a84802e001
+          - heading "Потом no Лиловый" [level=3] [ref=e3362]
+          - paragraph [ref=e3363]: Манга «Потом no Лиловый» авторства Большакова Полина Харитоновна — это захватывающая история, действ...
+        - generic [ref=e3364]:
+          - link "Edit" [ref=e3365] [cursor=pointer]:
+            - /url: /notes/488501e7-dca6-4495-812a-77a84802e001/edit
+          - button "Delete" [ref=e3366]
+      - generic [ref=e3367]:
+        - link "Болото no Потрясти Манга «Болото no Потрясти» авторства Копылов Харитон Зиновьевич — это захватывающая история, действи..." [ref=e3368] [cursor=pointer]:
+          - /url: /notes/c7cc1753-aec6-4b17-80ec-12ebab3cbda6
+          - heading "Болото no Потрясти" [level=3] [ref=e3369]
+          - paragraph [ref=e3370]: Манга «Болото no Потрясти» авторства Копылов Харитон Зиновьевич — это захватывающая история, действи...
+        - generic [ref=e3371]:
+          - link "Edit" [ref=e3372] [cursor=pointer]:
+            - /url: /notes/c7cc1753-aec6-4b17-80ec-12ebab3cbda6/edit
+          - button "Delete" [ref=e3373]
+      - generic [ref=e3374]:
+        - link "Налево no Невозможно Манга «Налево no Невозможно» авторства Игнатова Фаина Робертовна — это захватывающая история, действ..." [ref=e3375] [cursor=pointer]:
+          - /url: /notes/efeae184-e90d-49b0-a80f-0dcc1b5196ff
+          - heading "Налево no Невозможно" [level=3] [ref=e3376]
+          - paragraph [ref=e3377]: Манга «Налево no Невозможно» авторства Игнатова Фаина Робертовна — это захватывающая история, действ...
+        - generic [ref=e3378]:
+          - link "Edit" [ref=e3379] [cursor=pointer]:
+            - /url: /notes/efeae184-e90d-49b0-a80f-0dcc1b5196ff/edit
+          - button "Delete" [ref=e3380]
+      - generic [ref=e3381]:
+        - link "Инвалид no Запустить Манга «Инвалид no Запустить» авторства Максимильян Аверьянович Пестов — это захватывающая история, д..." [ref=e3382] [cursor=pointer]:
+          - /url: /notes/0200633c-df90-4542-b32e-0abb20e5e2c8
+          - heading "Инвалид no Запустить" [level=3] [ref=e3383]
+          - paragraph [ref=e3384]: Манга «Инвалид no Запустить» авторства Максимильян Аверьянович Пестов — это захватывающая история, д...
+        - generic [ref=e3385]:
+          - link "Edit" [ref=e3386] [cursor=pointer]:
+            - /url: /notes/0200633c-df90-4542-b32e-0abb20e5e2c8/edit
+          - button "Delete" [ref=e3387]
+      - generic [ref=e3388]:
+        - link "Пламя no Отметить Манга «Пламя no Отметить» авторства Блохин Вацлав Всеволодович — это захватывающая история, действие..." [ref=e3389] [cursor=pointer]:
+          - /url: /notes/b17e7eec-1aef-40b8-a0ca-67fd6fdff8bf
+          - heading "Пламя no Отметить" [level=3] [ref=e3390]
+          - paragraph [ref=e3391]: Манга «Пламя no Отметить» авторства Блохин Вацлав Всеволодович — это захватывающая история, действие...
+        - generic [ref=e3392]:
+          - link "Edit" [ref=e3393] [cursor=pointer]:
+            - /url: /notes/b17e7eec-1aef-40b8-a0ca-67fd6fdff8bf/edit
+          - button "Delete" [ref=e3394]
+      - generic [ref=e3395]:
+        - link "Недостаток no Налево Манга «Недостаток no Налево» авторства Поликарп Игнатович Григорьев — это захватывающая история, дей..." [ref=e3396] [cursor=pointer]:
+          - /url: /notes/f9edcca3-b667-4ee1-9b5e-0be3d4c8bbed
+          - heading "Недостаток no Налево" [level=3] [ref=e3397]
+          - paragraph [ref=e3398]: Манга «Недостаток no Налево» авторства Поликарп Игнатович Григорьев — это захватывающая история, дей...
+        - generic [ref=e3399]:
+          - link "Edit" [ref=e3400] [cursor=pointer]:
+            - /url: /notes/f9edcca3-b667-4ee1-9b5e-0be3d4c8bbed/edit
+          - button "Delete" [ref=e3401]
+      - generic [ref=e3402]:
+        - link "Запустить no Лиловый Манга «Запустить no Лиловый» авторства Якушев Пантелеймон Демидович — это захватывающая история, дей..." [ref=e3403] [cursor=pointer]:
+          - /url: /notes/503259c9-b0c9-4e19-ba0b-aa6d58de93ec
+          - heading "Запустить no Лиловый" [level=3] [ref=e3404]
+          - paragraph [ref=e3405]: Манга «Запустить no Лиловый» авторства Якушев Пантелеймон Демидович — это захватывающая история, дей...
+        - generic [ref=e3406]:
+          - link "Edit" [ref=e3407] [cursor=pointer]:
+            - /url: /notes/503259c9-b0c9-4e19-ba0b-aa6d58de93ec/edit
+          - button "Delete" [ref=e3408]
+      - generic [ref=e3409]:
+        - link "Запеть no Желание Манга «Запеть no Желание» авторства Козлов Самсон Зиновьевич — это захватывающая история, действие к..." [ref=e3410] [cursor=pointer]:
+          - /url: /notes/e71baeb7-4e0c-46a3-ad40-e749b028540a
+          - heading "Запеть no Желание" [level=3] [ref=e3411]
+          - paragraph [ref=e3412]: Манга «Запеть no Желание» авторства Козлов Самсон Зиновьевич — это захватывающая история, действие к...
+        - generic [ref=e3413]:
+          - link "Edit" [ref=e3414] [cursor=pointer]:
+            - /url: /notes/e71baeb7-4e0c-46a3-ad40-e749b028540a/edit
+          - button "Delete" [ref=e3415]
+      - generic [ref=e3416]:
+        - link "Жидкий no Июнь Манга «Жидкий no Июнь» авторства Наина Эльдаровна Смирнова — это захватывающая история, действие кот..." [ref=e3417] [cursor=pointer]:
+          - /url: /notes/7ed59ad4-8913-4453-ac90-5e5b5dd914fa
+          - heading "Жидкий no Июнь" [level=3] [ref=e3418]
+          - paragraph [ref=e3419]: Манга «Жидкий no Июнь» авторства Наина Эльдаровна Смирнова — это захватывающая история, действие кот...
+        - generic [ref=e3420]:
+          - link "Edit" [ref=e3421] [cursor=pointer]:
+            - /url: /notes/7ed59ad4-8913-4453-ac90-5e5b5dd914fa/edit
+          - button "Delete" [ref=e3422]
+      - generic [ref=e3423]:
+        - link "Выбирать no Опасность Манга «Выбирать no Опасность» авторства Майя Феликсовна Беляева — это захватывающая история, действи..." [ref=e3424] [cursor=pointer]:
+          - /url: /notes/d92e9bfd-cc88-4de6-872c-3a4d8790305d
+          - heading "Выбирать no Опасность" [level=3] [ref=e3425]
+          - paragraph [ref=e3426]: Манга «Выбирать no Опасность» авторства Майя Феликсовна Беляева — это захватывающая история, действи...
+        - generic [ref=e3427]:
+          - link "Edit" [ref=e3428] [cursor=pointer]:
+            - /url: /notes/d92e9bfd-cc88-4de6-872c-3a4d8790305d/edit
+          - button "Delete" [ref=e3429]
+      - generic [ref=e3430]:
+        - link "Сходить no Господь Манга «Сходить no Господь» авторства Матвеев Захар Гаврилович — это захватывающая история, действие ..." [ref=e3431] [cursor=pointer]:
+          - /url: /notes/885b3482-5c01-45c0-b077-9a96f2e8f45a
+          - heading "Сходить no Господь" [level=3] [ref=e3432]
+          - paragraph [ref=e3433]: Манга «Сходить no Господь» авторства Матвеев Захар Гаврилович — это захватывающая история, действие ...
+        - generic [ref=e3434]:
+          - link "Edit" [ref=e3435] [cursor=pointer]:
+            - /url: /notes/885b3482-5c01-45c0-b077-9a96f2e8f45a/edit
+          - button "Delete" [ref=e3436]
+      - generic [ref=e3437]:
+        - link "Набор no Рай Манга «Набор no Рай» авторства Филиппова Ксения Львовна — это захватывающая история, действие которо..." [ref=e3438] [cursor=pointer]:
+          - /url: /notes/65bb6b2a-537a-4ef7-b240-44ff44d4ffea
+          - heading "Набор no Рай" [level=3] [ref=e3439]
+          - paragraph [ref=e3440]: Манга «Набор no Рай» авторства Филиппова Ксения Львовна — это захватывающая история, действие которо...
+        - generic [ref=e3441]:
+          - link "Edit" [ref=e3442] [cursor=pointer]:
+            - /url: /notes/65bb6b2a-537a-4ef7-b240-44ff44d4ffea/edit
+          - button "Delete" [ref=e3443]
+      - generic [ref=e3444]:
+        - link "Дьявол no Куча Манга «Дьявол no Куча» авторства Фокина Фёкла Степановна — это захватывающая история, действие котор..." [ref=e3445] [cursor=pointer]:
+          - /url: /notes/f0bf990b-b8a9-42a8-af46-033e7041b4c3
+          - heading "Дьявол no Куча" [level=3] [ref=e3446]
+          - paragraph [ref=e3447]: Манга «Дьявол no Куча» авторства Фокина Фёкла Степановна — это захватывающая история, действие котор...
+        - generic [ref=e3448]:
+          - link "Edit" [ref=e3449] [cursor=pointer]:
+            - /url: /notes/f0bf990b-b8a9-42a8-af46-033e7041b4c3/edit
+          - button "Delete" [ref=e3450]
+      - generic [ref=e3451]:
+        - link "Трясти no Головной Манга «Трясти no Головной» авторства Евсеев Анисим Феликсович — это захватывающая история, действие ..." [ref=e3452] [cursor=pointer]:
+          - /url: /notes/1322a95b-e259-4828-9137-5285eb5b2cf6
+          - heading "Трясти no Головной" [level=3] [ref=e3453]
+          - paragraph [ref=e3454]: Манга «Трясти no Головной» авторства Евсеев Анисим Феликсович — это захватывающая история, действие ...
+        - generic [ref=e3455]:
+          - link "Edit" [ref=e3456] [cursor=pointer]:
+            - /url: /notes/1322a95b-e259-4828-9137-5285eb5b2cf6/edit
+          - button "Delete" [ref=e3457]
+      - generic [ref=e3458]:
+        - link "Металл no Бетонный Манга «Металл no Бетонный» авторства Гурьева Алина Сергеевна — это захватывающая история, действие к..." [ref=e3459] [cursor=pointer]:
+          - /url: /notes/fc016f37-a4ee-4723-8d8d-977210dbfa87
+          - heading "Металл no Бетонный" [level=3] [ref=e3460]
+          - paragraph [ref=e3461]: Манга «Металл no Бетонный» авторства Гурьева Алина Сергеевна — это захватывающая история, действие к...
+        - generic [ref=e3462]:
+          - link "Edit" [ref=e3463] [cursor=pointer]:
+            - /url: /notes/fc016f37-a4ee-4723-8d8d-977210dbfa87/edit
+          - button "Delete" [ref=e3464]
+      - generic [ref=e3465]:
+        - link "Металл no Привлекать Манга «Металл no Привлекать» авторства Никонова Лариса Руслановна — это захватывающая история, дейст..." [ref=e3466] [cursor=pointer]:
+          - /url: /notes/1b3a8098-fddf-478f-b170-d19d37f854e5
+          - heading "Металл no Привлекать" [level=3] [ref=e3467]
+          - paragraph [ref=e3468]: Манга «Металл no Привлекать» авторства Никонова Лариса Руслановна — это захватывающая история, дейст...
+        - generic [ref=e3469]:
+          - link "Edit" [ref=e3470] [cursor=pointer]:
+            - /url: /notes/1b3a8098-fddf-478f-b170-d19d37f854e5/edit
+          - button "Delete" [ref=e3471]
+      - generic [ref=e3472]:
+        - link "Что no Юный Манга «Что no Юный» авторства Лазарев Афанасий Борисович — это захватывающая история, действие котор..." [ref=e3473] [cursor=pointer]:
+          - /url: /notes/7f81f458-f91f-486d-aaa3-07335b56a666
+          - heading "Что no Юный" [level=3] [ref=e3474]
+          - paragraph [ref=e3475]: Манга «Что no Юный» авторства Лазарев Афанасий Борисович — это захватывающая история, действие котор...
+        - generic [ref=e3476]:
+          - link "Edit" [ref=e3477] [cursor=pointer]:
+            - /url: /notes/7f81f458-f91f-486d-aaa3-07335b56a666/edit
+          - button "Delete" [ref=e3478]
+      - generic [ref=e3479]:
+        - link "Мягкий no Жестокий Манга «Мягкий no Жестокий» авторства Егор Давыдович Большаков — это захватывающая история, действие ..." [ref=e3480] [cursor=pointer]:
+          - /url: /notes/3b472b98-f432-4272-8328-af7900b207c6
+          - heading "Мягкий no Жестокий" [level=3] [ref=e3481]
+          - paragraph [ref=e3482]: Манга «Мягкий no Жестокий» авторства Егор Давыдович Большаков — это захватывающая история, действие ...
+        - generic [ref=e3483]:
+          - link "Edit" [ref=e3484] [cursor=pointer]:
+            - /url: /notes/3b472b98-f432-4272-8328-af7900b207c6/edit
+          - button "Delete" [ref=e3485]
+      - generic [ref=e3486]:
+        - link "Пробовать Подземный Kai Аниме-сериал «Пробовать Подземный Kai» студии Kyoto Animation стал настоящим хитом сезона. История п..." [ref=e3487] [cursor=pointer]:
+          - /url: /notes/b7d69f6d-fa7f-4df5-8b85-144e340958d1
+          - heading "Пробовать Подземный Kai" [level=3] [ref=e3488]
+          - paragraph [ref=e3489]: Аниме-сериал «Пробовать Подземный Kai» студии Kyoto Animation стал настоящим хитом сезона. История п...
+        - generic [ref=e3490]:
+          - link "Edit" [ref=e3491] [cursor=pointer]:
+            - /url: /notes/b7d69f6d-fa7f-4df5-8b85-144e340958d1/edit
+          - button "Delete" [ref=e3492]
+      - generic [ref=e3493]:
+        - link "Изучить no Приятель Манга «Изучить no Приятель» авторства Марина Максимовна Вишнякова — это захватывающая история, дейст..." [ref=e3494] [cursor=pointer]:
+          - /url: /notes/974ac390-2933-47d4-85cb-2023b0116b81
+          - heading "Изучить no Приятель" [level=3] [ref=e3495]
+          - paragraph [ref=e3496]: Манга «Изучить no Приятель» авторства Марина Максимовна Вишнякова — это захватывающая история, дейст...
+        - generic [ref=e3497]:
+          - link "Edit" [ref=e3498] [cursor=pointer]:
+            - /url: /notes/974ac390-2933-47d4-85cb-2023b0116b81/edit
+          - button "Delete" [ref=e3499]
+      - generic [ref=e3500]:
+        - 'link "Хотеть Функция: Хроники Аниме-сериал «Хотеть Функция: Хроники» студии MAPPA стал настоящим хитом сезона. История повествует ..." [ref=e3501] [cursor=pointer]':
+          - /url: /notes/435ff826-c755-460a-b4d3-102d1b0dd0f6
+          - 'heading "Хотеть Функция: Хроники" [level=3] [ref=e3502]'
+          - paragraph [ref=e3503]: "Аниме-сериал «Хотеть Функция: Хроники» студии MAPPA стал настоящим хитом сезона. История повествует ..."
+        - generic [ref=e3504]:
+          - link "Edit" [ref=e3505] [cursor=pointer]:
+            - /url: /notes/435ff826-c755-460a-b4d3-102d1b0dd0f6/edit
+          - button "Delete" [ref=e3506]
+      - generic [ref=e3507]:
+        - link "Единый no Госпожа Манга «Единый no Госпожа» авторства Ильина Валентина Викторовна — это захватывающая история, действи..." [ref=e3508] [cursor=pointer]:
+          - /url: /notes/5eca7cd1-bc5d-4eb7-b1e4-5932b9bb5942
+          - heading "Единый no Госпожа" [level=3] [ref=e3509]
+          - paragraph [ref=e3510]: Манга «Единый no Госпожа» авторства Ильина Валентина Викторовна — это захватывающая история, действи...
+        - generic [ref=e3511]:
+          - link "Edit" [ref=e3512] [cursor=pointer]:
+            - /url: /notes/5eca7cd1-bc5d-4eb7-b1e4-5932b9bb5942/edit
+          - button "Delete" [ref=e3513]
+      - generic [ref=e3514]:
+        - link "Находить Бригада~ Аниме-сериал «Находить Бригада~» студии Madhouse стал настоящим хитом сезона. История повествует о Р..." [ref=e3515] [cursor=pointer]:
+          - /url: /notes/d8241897-9e71-4289-8b24-4591442966b5
+          - heading "Находить Бригада~" [level=3] [ref=e3516]
+          - paragraph [ref=e3517]: Аниме-сериал «Находить Бригада~» студии Madhouse стал настоящим хитом сезона. История повествует о Р...
+        - generic [ref=e3518]:
+          - link "Edit" [ref=e3519] [cursor=pointer]:
+            - /url: /notes/d8241897-9e71-4289-8b24-4591442966b5/edit
+          - button "Delete" [ref=e3520]
+      - generic [ref=e3521]:
+        - link "Применяться no Оставить Манга «Применяться no Оставить» авторства Мамонтова Наталья Вадимовна — это захватывающая история, д..." [ref=e3522] [cursor=pointer]:
+          - /url: /notes/09f43353-e634-4fab-a37a-7e86df5ba4ba
+          - heading "Применяться no Оставить" [level=3] [ref=e3523]
+          - paragraph [ref=e3524]: Манга «Применяться no Оставить» авторства Мамонтова Наталья Вадимовна — это захватывающая история, д...
+        - generic [ref=e3525]:
+          - link "Edit" [ref=e3526] [cursor=pointer]:
+            - /url: /notes/09f43353-e634-4fab-a37a-7e86df5ba4ba/edit
+          - button "Delete" [ref=e3527]
+      - generic [ref=e3528]:
+        - link "Смертельный Дыхание Kai Аниме-сериал «Смертельный Дыхание Kai» студии MAPPA стал настоящим хитом сезона. История повествует ..." [ref=e3529] [cursor=pointer]:
+          - /url: /notes/a12ec99e-1e26-4078-aa27-b6807b0c1e60
+          - heading "Смертельный Дыхание Kai" [level=3] [ref=e3530]
+          - paragraph [ref=e3531]: Аниме-сериал «Смертельный Дыхание Kai» студии MAPPA стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3532]:
+          - link "Edit" [ref=e3533] [cursor=pointer]:
+            - /url: /notes/a12ec99e-1e26-4078-aa27-b6807b0c1e60/edit
+          - button "Delete" [ref=e3534]
+      - generic [ref=e3535]:
+        - link "Ярко no Слишком Манга «Ярко no Слишком» авторства Данилов Афиноген Гаврилович — это захватывающая история, действие ..." [ref=e3536] [cursor=pointer]:
+          - /url: /notes/649a82ba-a20e-4aa5-8390-39c673b90759
+          - heading "Ярко no Слишком" [level=3] [ref=e3537]
+          - paragraph [ref=e3538]: Манга «Ярко no Слишком» авторства Данилов Афиноген Гаврилович — это захватывающая история, действие ...
+        - generic [ref=e3539]:
+          - link "Edit" [ref=e3540] [cursor=pointer]:
+            - /url: /notes/649a82ba-a20e-4aa5-8390-39c673b90759/edit
+          - button "Delete" [ref=e3541]
+      - generic [ref=e3542]:
+        - 'link "Единый Расстройство: Хроники Аниме-сериал «Единый Расстройство: Хроники» студии Bones стал настоящим хитом сезона. История повест..." [ref=e3543] [cursor=pointer]':
+          - /url: /notes/003afc89-147f-412e-bc11-47cd3cb104f7
+          - 'heading "Единый Расстройство: Хроники" [level=3] [ref=e3544]'
+          - paragraph [ref=e3545]: "Аниме-сериал «Единый Расстройство: Хроники» студии Bones стал настоящим хитом сезона. История повест..."
+        - generic [ref=e3546]:
+          - link "Edit" [ref=e3547] [cursor=pointer]:
+            - /url: /notes/003afc89-147f-412e-bc11-47cd3cb104f7/edit
+          - button "Delete" [ref=e3548]
+      - generic [ref=e3549]:
+        - link "Тысяча no Цвет Манга «Тысяча no Цвет» авторства Исаева Лора Игоревна — это захватывающая история, действие которой ..." [ref=e3550] [cursor=pointer]:
+          - /url: /notes/7b86f15e-6294-44f7-bbdf-b3ed687bd9ab
+          - heading "Тысяча no Цвет" [level=3] [ref=e3551]
+          - paragraph [ref=e3552]: Манга «Тысяча no Цвет» авторства Исаева Лора Игоревна — это захватывающая история, действие которой ...
+        - generic [ref=e3553]:
+          - link "Edit" [ref=e3554] [cursor=pointer]:
+            - /url: /notes/7b86f15e-6294-44f7-bbdf-b3ed687bd9ab/edit
+          - button "Delete" [ref=e3555]
+      - generic [ref=e3556]:
+        - link "Равнодушный Монета Zero Аниме-сериал «Равнодушный Монета Zero» студии Bones стал настоящим хитом сезона. История повествует ..." [ref=e3557] [cursor=pointer]:
+          - /url: /notes/7963161e-e8f6-4f01-b15b-715944b47c73
+          - heading "Равнодушный Монета Zero" [level=3] [ref=e3558]
+          - paragraph [ref=e3559]: Аниме-сериал «Равнодушный Монета Zero» студии Bones стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3560]:
+          - link "Edit" [ref=e3561] [cursor=pointer]:
+            - /url: /notes/7963161e-e8f6-4f01-b15b-715944b47c73/edit
+          - button "Delete" [ref=e3562]
+      - generic [ref=e3563]:
+        - link "Вздрагивать no За Манга «Вздрагивать no За» авторства Харитонова Октябрина Аркадьевна — это захватывающая история, дей..." [ref=e3564] [cursor=pointer]:
+          - /url: /notes/477d7440-7566-4b8a-bed5-a69c78695eef
+          - heading "Вздрагивать no За" [level=3] [ref=e3565]
+          - paragraph [ref=e3566]: Манга «Вздрагивать no За» авторства Харитонова Октябрина Аркадьевна — это захватывающая история, дей...
+        - generic [ref=e3567]:
+          - link "Edit" [ref=e3568] [cursor=pointer]:
+            - /url: /notes/477d7440-7566-4b8a-bed5-a69c78695eef/edit
+          - button "Delete" [ref=e3569]
+      - generic [ref=e3570]:
+        - 'link "Точно Жидкий: Перерождение Аниме-сериал «Точно Жидкий: Перерождение» студии Ufotable стал настоящим хитом сезона. История повес..." [ref=e3571] [cursor=pointer]':
+          - /url: /notes/1dd702ad-a7d7-42e8-b2b3-f7a64a4b4d50
+          - 'heading "Точно Жидкий: Перерождение" [level=3] [ref=e3572]'
+          - paragraph [ref=e3573]: "Аниме-сериал «Точно Жидкий: Перерождение» студии Ufotable стал настоящим хитом сезона. История повес..."
+        - generic [ref=e3574]:
+          - link "Edit" [ref=e3575] [cursor=pointer]:
+            - /url: /notes/1dd702ad-a7d7-42e8-b2b3-f7a64a4b4d50/edit
+          - button "Delete" [ref=e3576]
+      - generic [ref=e3577]:
+        - link "Командир Редактор!! Аниме-сериал «Командир Редактор!!» студии Madhouse стал настоящим хитом сезона. История повествует о..." [ref=e3578] [cursor=pointer]:
+          - /url: /notes/cad75f25-e17e-4d75-b2ab-aec069f70c19
+          - heading "Командир Редактор!!" [level=3] [ref=e3579]
+          - paragraph [ref=e3580]: Аниме-сериал «Командир Редактор!!» студии Madhouse стал настоящим хитом сезона. История повествует о...
+        - generic [ref=e3581]:
+          - link "Edit" [ref=e3582] [cursor=pointer]:
+            - /url: /notes/cad75f25-e17e-4d75-b2ab-aec069f70c19/edit
+          - button "Delete" [ref=e3583]
+      - generic [ref=e3584]:
+        - link "Головной no Набор Манга «Головной no Набор» авторства Кира Михайловна Брагина — это захватывающая история, действие ко..." [ref=e3585] [cursor=pointer]:
+          - /url: /notes/cbe7af00-994b-4635-91c1-dd8cd22d4158
+          - heading "Головной no Набор" [level=3] [ref=e3586]
+          - paragraph [ref=e3587]: Манга «Головной no Набор» авторства Кира Михайловна Брагина — это захватывающая история, действие ко...
+        - generic [ref=e3588]:
+          - link "Edit" [ref=e3589] [cursor=pointer]:
+            - /url: /notes/cbe7af00-994b-4635-91c1-dd8cd22d4158/edit
+          - button "Delete" [ref=e3590]
+      - generic [ref=e3591]:
+        - 'link "Аж Сынок: Хроники Аниме-сериал «Аж Сынок: Хроники» студии MAPPA стал настоящим хитом сезона. История повествует о Буро..." [ref=e3592] [cursor=pointer]':
+          - /url: /notes/34dfe575-a6c5-449a-a8e7-f32f553be455
+          - 'heading "Аж Сынок: Хроники" [level=3] [ref=e3593]'
+          - paragraph [ref=e3594]: "Аниме-сериал «Аж Сынок: Хроники» студии MAPPA стал настоящим хитом сезона. История повествует о Буро..."
+        - generic [ref=e3595]:
+          - link "Edit" [ref=e3596] [cursor=pointer]:
+            - /url: /notes/34dfe575-a6c5-449a-a8e7-f32f553be455/edit
+          - button "Delete" [ref=e3597]
+      - generic [ref=e3598]:
+        - link "Ответить no Домашний Манга «Ответить no Домашний» авторства Анжелика Артемовна Белякова — это захватывающая история, дейс..." [ref=e3599] [cursor=pointer]:
+          - /url: /notes/8aa76de9-0d21-4c67-91cd-e103a1a90b80
+          - heading "Ответить no Домашний" [level=3] [ref=e3600]
+          - paragraph [ref=e3601]: Манга «Ответить no Домашний» авторства Анжелика Артемовна Белякова — это захватывающая история, дейс...
+        - generic [ref=e3602]:
+          - link "Edit" [ref=e3603] [cursor=pointer]:
+            - /url: /notes/8aa76de9-0d21-4c67-91cd-e103a1a90b80/edit
+          - button "Delete" [ref=e3604]
+      - generic [ref=e3605]:
+        - 'link "Магазин Рота: Хроники Аниме-сериал «Магазин Рота: Хроники» студии Madhouse стал настоящим хитом сезона. История повествует..." [ref=e3606] [cursor=pointer]':
+          - /url: /notes/14115055-caf8-4cad-ba82-85057bba3fa5
+          - 'heading "Магазин Рота: Хроники" [level=3] [ref=e3607]'
+          - paragraph [ref=e3608]: "Аниме-сериал «Магазин Рота: Хроники» студии Madhouse стал настоящим хитом сезона. История повествует..."
+        - generic [ref=e3609]:
+          - link "Edit" [ref=e3610] [cursor=pointer]:
+            - /url: /notes/14115055-caf8-4cad-ba82-85057bba3fa5/edit
+          - button "Delete" [ref=e3611]
+      - generic [ref=e3612]:
+        - link "Порт no Покидать Манга «Порт no Покидать» авторства Эмилия Афанасьевна Большакова — это захватывающая история, действ..." [ref=e3613] [cursor=pointer]:
+          - /url: /notes/b9c8c3d0-8d23-44a6-a90b-9e5da07ef160
+          - heading "Порт no Покидать" [level=3] [ref=e3614]
+          - paragraph [ref=e3615]: Манга «Порт no Покидать» авторства Эмилия Афанасьевна Большакова — это захватывающая история, действ...
+        - generic [ref=e3616]:
+          - link "Edit" [ref=e3617] [cursor=pointer]:
+            - /url: /notes/b9c8c3d0-8d23-44a6-a90b-9e5da07ef160/edit
+          - button "Delete" [ref=e3618]
+      - generic [ref=e3619]:
+        - link "Деньги Голубчик~ Аниме-сериал «Деньги Голубчик~» студии Bones стал настоящим хитом сезона. История повествует о Ситни..." [ref=e3620] [cursor=pointer]:
+          - /url: /notes/a988e999-33d3-4564-97ec-6a267f248bd6
+          - heading "Деньги Голубчик~" [level=3] [ref=e3621]
+          - paragraph [ref=e3622]: Аниме-сериал «Деньги Голубчик~» студии Bones стал настоящим хитом сезона. История повествует о Ситни...
+        - generic [ref=e3623]:
+          - link "Edit" [ref=e3624] [cursor=pointer]:
+            - /url: /notes/a988e999-33d3-4564-97ec-6a267f248bd6/edit
+          - button "Delete" [ref=e3625]
+      - generic [ref=e3626]:
+        - link "Невыносимый no Тысяча Манга «Невыносимый no Тысяча» авторства Тит Еремеевич Фролов — это захватывающая история, действие к..." [ref=e3627] [cursor=pointer]:
+          - /url: /notes/ff4aca92-dc53-45d1-a3cf-65f4a0f761ba
+          - heading "Невыносимый no Тысяча" [level=3] [ref=e3628]
+          - paragraph [ref=e3629]: Манга «Невыносимый no Тысяча» авторства Тит Еремеевич Фролов — это захватывающая история, действие к...
+        - generic [ref=e3630]:
+          - link "Edit" [ref=e3631] [cursor=pointer]:
+            - /url: /notes/ff4aca92-dc53-45d1-a3cf-65f4a0f761ba/edit
+          - button "Delete" [ref=e3632]
+      - generic [ref=e3633]:
+        - link "Поздравлять Поймать~ Аниме-сериал «Поздравлять Поймать~» студии Ufotable стал настоящим хитом сезона. История повествует ..." [ref=e3634] [cursor=pointer]:
+          - /url: /notes/0094d4f7-8660-4cd2-96b4-dd40bc34e2ac
+          - heading "Поздравлять Поймать~" [level=3] [ref=e3635]
+          - paragraph [ref=e3636]: Аниме-сериал «Поздравлять Поймать~» студии Ufotable стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3637]:
+          - link "Edit" [ref=e3638] [cursor=pointer]:
+            - /url: /notes/0094d4f7-8660-4cd2-96b4-dd40bc34e2ac/edit
+          - button "Delete" [ref=e3639]
+      - generic [ref=e3640]:
+        - link "Механический no Забирать Манга «Механический no Забирать» авторства Шаров Герасим Денисович — это захватывающая история, дейс..." [ref=e3641] [cursor=pointer]:
+          - /url: /notes/a95b31f4-56ac-436a-977b-53576403ccc9
+          - heading "Механический no Забирать" [level=3] [ref=e3642]
+          - paragraph [ref=e3643]: Манга «Механический no Забирать» авторства Шаров Герасим Денисович — это захватывающая история, дейс...
+        - generic [ref=e3644]:
+          - link "Edit" [ref=e3645] [cursor=pointer]:
+            - /url: /notes/a95b31f4-56ac-436a-977b-53576403ccc9/edit
+          - button "Delete" [ref=e3646]
+      - generic [ref=e3647]:
+        - 'link "Хлеб Ведь: Хроники Аниме-сериал «Хлеб Ведь: Хроники» студии Ufotable стал настоящим хитом сезона. История повествует о ..." [ref=e3648] [cursor=pointer]':
+          - /url: /notes/1d874f58-f4e9-4637-9b4a-5e1b82e4e0c5
+          - 'heading "Хлеб Ведь: Хроники" [level=3] [ref=e3649]'
+          - paragraph [ref=e3650]: "Аниме-сериал «Хлеб Ведь: Хроники» студии Ufotable стал настоящим хитом сезона. История повествует о ..."
+        - generic [ref=e3651]:
+          - link "Edit" [ref=e3652] [cursor=pointer]:
+            - /url: /notes/1d874f58-f4e9-4637-9b4a-5e1b82e4e0c5/edit
+          - button "Delete" [ref=e3653]
+      - generic [ref=e3654]:
+        - link "Призыв no Посвятить Манга «Призыв no Посвятить» авторства Марина Борисовна Котова — это захватывающая история, действие ..." [ref=e3655] [cursor=pointer]:
+          - /url: /notes/1beea472-3a1b-43ae-9088-60b1b6bf43ba
+          - heading "Призыв no Посвятить" [level=3] [ref=e3656]
+          - paragraph [ref=e3657]: Манга «Призыв no Посвятить» авторства Марина Борисовна Котова — это захватывающая история, действие ...
+        - generic [ref=e3658]:
+          - link "Edit" [ref=e3659] [cursor=pointer]:
+            - /url: /notes/1beea472-3a1b-43ae-9088-60b1b6bf43ba/edit
+          - button "Delete" [ref=e3660]
+      - generic [ref=e3661]:
+        - link "Сомнительный Какой Zero Аниме-сериал «Сомнительный Какой Zero» студии Bones стал настоящим хитом сезона. История повествует ..." [ref=e3662] [cursor=pointer]:
+          - /url: /notes/a61ab5d4-d040-4b1b-99c5-ba029a0692b6
+          - heading "Сомнительный Какой Zero" [level=3] [ref=e3663]
+          - paragraph [ref=e3664]: Аниме-сериал «Сомнительный Какой Zero» студии Bones стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3665]:
+          - link "Edit" [ref=e3666] [cursor=pointer]:
+            - /url: /notes/a61ab5d4-d040-4b1b-99c5-ba029a0692b6/edit
+          - button "Delete" [ref=e3667]
+      - generic [ref=e3668]:
+        - 'link "Иной Мера: Хроники Аниме-сериал «Иной Мера: Хроники» студии Bones стал настоящим хитом сезона. История повествует о Пон..." [ref=e3669] [cursor=pointer]':
+          - /url: /notes/ab16f372-2fe5-4d68-8e6f-0fa21a4d389c
+          - 'heading "Иной Мера: Хроники" [level=3] [ref=e3670]'
+          - paragraph [ref=e3671]: "Аниме-сериал «Иной Мера: Хроники» студии Bones стал настоящим хитом сезона. История повествует о Пон..."
+        - generic [ref=e3672]:
+          - link "Edit" [ref=e3673] [cursor=pointer]:
+            - /url: /notes/ab16f372-2fe5-4d68-8e6f-0fa21a4d389c/edit
+          - button "Delete" [ref=e3674]
+      - generic [ref=e3675]:
+        - link "Дурацкий no Возмутиться Манга «Дурацкий no Возмутиться» авторства Кондратий Игнатьевич Матвеев — это захватывающая история, ..." [ref=e3676] [cursor=pointer]:
+          - /url: /notes/9807affe-1cad-462a-a9c7-ba09670bb061
+          - heading "Дурацкий no Возмутиться" [level=3] [ref=e3677]
+          - paragraph [ref=e3678]: Манга «Дурацкий no Возмутиться» авторства Кондратий Игнатьевич Матвеев — это захватывающая история, ...
+        - generic [ref=e3679]:
+          - link "Edit" [ref=e3680] [cursor=pointer]:
+            - /url: /notes/9807affe-1cad-462a-a9c7-ba09670bb061/edit
+          - button "Delete" [ref=e3681]
+      - generic [ref=e3682]:
+        - link "Шлем no Проход Манга «Шлем no Проход» авторства Игнатий Марсович Одинцов — это захватывающая история, действие кото..." [ref=e3683] [cursor=pointer]:
+          - /url: /notes/a7e37bcf-3a75-420a-82a6-d9f110d8c2dd
+          - heading "Шлем no Проход" [level=3] [ref=e3684]
+          - paragraph [ref=e3685]: Манга «Шлем no Проход» авторства Игнатий Марсович Одинцов — это захватывающая история, действие кото...
+        - generic [ref=e3686]:
+          - link "Edit" [ref=e3687] [cursor=pointer]:
+            - /url: /notes/a7e37bcf-3a75-420a-82a6-d9f110d8c2dd/edit
+          - button "Delete" [ref=e3688]
+      - generic [ref=e3689]:
+        - link "Палата Парень Kai Аниме-сериал «Палата Парень Kai» студии Kyoto Animation стал настоящим хитом сезона. История повеств..." [ref=e3690] [cursor=pointer]:
+          - /url: /notes/f2547763-bbb9-4ad8-97a7-25981814d9a3
+          - heading "Палата Парень Kai" [level=3] [ref=e3691]
+          - paragraph [ref=e3692]: Аниме-сериал «Палата Парень Kai» студии Kyoto Animation стал настоящим хитом сезона. История повеств...
+        - generic [ref=e3693]:
+          - link "Edit" [ref=e3694] [cursor=pointer]:
+            - /url: /notes/f2547763-bbb9-4ad8-97a7-25981814d9a3/edit
+          - button "Delete" [ref=e3695]
+      - generic [ref=e3696]:
+        - link "Провинция no Какой Манга «Провинция no Какой» авторства Аким Ярославович Костин — это захватывающая история, действие к..." [ref=e3697] [cursor=pointer]:
+          - /url: /notes/b61fa560-4d5a-44fd-bd78-e61f732e7255
+          - heading "Провинция no Какой" [level=3] [ref=e3698]
+          - paragraph [ref=e3699]: Манга «Провинция no Какой» авторства Аким Ярославович Костин — это захватывающая история, действие к...
+        - generic [ref=e3700]:
+          - link "Edit" [ref=e3701] [cursor=pointer]:
+            - /url: /notes/b61fa560-4d5a-44fd-bd78-e61f732e7255/edit
+          - button "Delete" [ref=e3702]
+      - generic [ref=e3703]:
+        - 'link "Девка Передо: Хроники Аниме-сериал «Девка Передо: Хроники» студии Bones стал настоящим хитом сезона. История повествует о ..." [ref=e3704] [cursor=pointer]':
+          - /url: /notes/859de541-c0ea-4ffb-be00-10058b1e1d74
+          - 'heading "Девка Передо: Хроники" [level=3] [ref=e3705]'
+          - paragraph [ref=e3706]: "Аниме-сериал «Девка Передо: Хроники» студии Bones стал настоящим хитом сезона. История повествует о ..."
+        - generic [ref=e3707]:
+          - link "Edit" [ref=e3708] [cursor=pointer]:
+            - /url: /notes/859de541-c0ea-4ffb-be00-10058b1e1d74/edit
+          - button "Delete" [ref=e3709]
+      - generic [ref=e3710]:
+        - link "Фонарик Пастух Kai Аниме-сериал «Фонарик Пастух Kai» студии Kyoto Animation стал настоящим хитом сезона. История повест..." [ref=e3711] [cursor=pointer]:
+          - /url: /notes/6aca3ce8-5ead-4147-962b-7cf384ac28c2
+          - heading "Фонарик Пастух Kai" [level=3] [ref=e3712]
+          - paragraph [ref=e3713]: Аниме-сериал «Фонарик Пастух Kai» студии Kyoto Animation стал настоящим хитом сезона. История повест...
+        - generic [ref=e3714]:
+          - link "Edit" [ref=e3715] [cursor=pointer]:
+            - /url: /notes/6aca3ce8-5ead-4147-962b-7cf384ac28c2/edit
+          - button "Delete" [ref=e3716]
+      - generic [ref=e3717]:
+        - 'link "Изредка Написать: Перерождение Аниме-сериал «Изредка Написать: Перерождение» студии MAPPA стал настоящим хитом сезона. История пове..." [ref=e3718] [cursor=pointer]':
+          - /url: /notes/31dbfc0c-7e85-4650-b881-abf299741afc
+          - 'heading "Изредка Написать: Перерождение" [level=3] [ref=e3719]'
+          - paragraph [ref=e3720]: "Аниме-сериал «Изредка Написать: Перерождение» студии MAPPA стал настоящим хитом сезона. История пове..."
+        - generic [ref=e3721]:
+          - link "Edit" [ref=e3722] [cursor=pointer]:
+            - /url: /notes/31dbfc0c-7e85-4650-b881-abf299741afc/edit
+          - button "Delete" [ref=e3723]
+      - generic [ref=e3724]:
+        - link "Выдержать Невозможно Kai Аниме-сериал «Выдержать Невозможно Kai» студии MAPPA стал настоящим хитом сезона. История повествует..." [ref=e3725] [cursor=pointer]:
+          - /url: /notes/c9e2c5a8-e716-4f16-9bbc-b9f27049be2e
+          - heading "Выдержать Невозможно Kai" [level=3] [ref=e3726]
+          - paragraph [ref=e3727]: Аниме-сериал «Выдержать Невозможно Kai» студии MAPPA стал настоящим хитом сезона. История повествует...
+        - generic [ref=e3728]:
+          - link "Edit" [ref=e3729] [cursor=pointer]:
+            - /url: /notes/c9e2c5a8-e716-4f16-9bbc-b9f27049be2e/edit
+          - button "Delete" [ref=e3730]
+      - generic [ref=e3731]:
+        - link "Ложиться Медицина!! Аниме-сериал «Ложиться Медицина!!» студии Ufotable стал настоящим хитом сезона. История повествует о..." [ref=e3732] [cursor=pointer]:
+          - /url: /notes/437916b5-9b14-49d9-90a4-c15ac2ce09fd
+          - heading "Ложиться Медицина!!" [level=3] [ref=e3733]
+          - paragraph [ref=e3734]: Аниме-сериал «Ложиться Медицина!!» студии Ufotable стал настоящим хитом сезона. История повествует о...
+        - generic [ref=e3735]:
+          - link "Edit" [ref=e3736] [cursor=pointer]:
+            - /url: /notes/437916b5-9b14-49d9-90a4-c15ac2ce09fd/edit
+          - button "Delete" [ref=e3737]
+      - generic [ref=e3738]:
+        - 'link "Интеллектуальный Интеллектуальный: Хроники Аниме-сериал «Интеллектуальный Интеллектуальный: Хроники» студии Ufotable стал настоящим хитом сезон..." [ref=e3739] [cursor=pointer]':
+          - /url: /notes/9e327723-ccfa-4849-acba-0bc22aeef41e
+          - 'heading "Интеллектуальный Интеллектуальный: Хроники" [level=3] [ref=e3740]'
+          - paragraph [ref=e3741]: "Аниме-сериал «Интеллектуальный Интеллектуальный: Хроники» студии Ufotable стал настоящим хитом сезон..."
+        - generic [ref=e3742]:
+          - link "Edit" [ref=e3743] [cursor=pointer]:
+            - /url: /notes/9e327723-ccfa-4849-acba-0bc22aeef41e/edit
+          - button "Delete" [ref=e3744]
+      - generic [ref=e3745]:
+        - 'link "Разуметься Еврейский: Перерождение Аниме-сериал «Разуметься Еврейский: Перерождение» студии Ufotable стал настоящим хитом сезона. Истор..." [ref=e3746] [cursor=pointer]':
+          - /url: /notes/7029f2cf-d54e-445a-ac33-2c4e7a54495b
+          - 'heading "Разуметься Еврейский: Перерождение" [level=3] [ref=e3747]'
+          - paragraph [ref=e3748]: "Аниме-сериал «Разуметься Еврейский: Перерождение» студии Ufotable стал настоящим хитом сезона. Истор..."
+        - generic [ref=e3749]:
+          - link "Edit" [ref=e3750] [cursor=pointer]:
+            - /url: /notes/7029f2cf-d54e-445a-ac33-2c4e7a54495b/edit
+          - button "Delete" [ref=e3751]
+      - generic [ref=e3752]:
+        - 'link "Очередной Карандаш: Хроники Аниме-сериал «Очередной Карандаш: Хроники» студии Bones стал настоящим хитом сезона. История повеств..." [ref=e3753] [cursor=pointer]':
+          - /url: /notes/15cc7fc0-4935-461a-873f-ec1e2a9bb361
+          - 'heading "Очередной Карандаш: Хроники" [level=3] [ref=e3754]'
+          - paragraph [ref=e3755]: "Аниме-сериал «Очередной Карандаш: Хроники» студии Bones стал настоящим хитом сезона. История повеств..."
+        - generic [ref=e3756]:
+          - link "Edit" [ref=e3757] [cursor=pointer]:
+            - /url: /notes/15cc7fc0-4935-461a-873f-ec1e2a9bb361/edit
+          - button "Delete" [ref=e3758]
+      - generic [ref=e3759]:
+        - link "Головной Эпоха Kai Аниме-сериал «Головной Эпоха Kai» студии Bones стал настоящим хитом сезона. История повествует о Буд..." [ref=e3760] [cursor=pointer]:
+          - /url: /notes/4b96fa01-4b04-400a-8d45-73176d4d9008
+          - heading "Головной Эпоха Kai" [level=3] [ref=e3761]
+          - paragraph [ref=e3762]: Аниме-сериал «Головной Эпоха Kai» студии Bones стал настоящим хитом сезона. История повествует о Буд...
+        - generic [ref=e3763]:
+          - link "Edit" [ref=e3764] [cursor=pointer]:
+            - /url: /notes/4b96fa01-4b04-400a-8d45-73176d4d9008/edit
+          - button "Delete" [ref=e3765]
+      - generic [ref=e3766]:
+        - link "Витрина Хлеб!! Аниме-сериал «Витрина Хлеб!!» студии Ufotable стал настоящим хитом сезона. История повествует о Тара..." [ref=e3767] [cursor=pointer]:
+          - /url: /notes/ff70a741-f6ce-4683-9505-f2bf18b22478
+          - heading "Витрина Хлеб!!" [level=3] [ref=e3768]
+          - paragraph [ref=e3769]: Аниме-сериал «Витрина Хлеб!!» студии Ufotable стал настоящим хитом сезона. История повествует о Тара...
+        - generic [ref=e3770]:
+          - link "Edit" [ref=e3771] [cursor=pointer]:
+            - /url: /notes/ff70a741-f6ce-4683-9505-f2bf18b22478/edit
+          - button "Delete" [ref=e3772]
+      - generic [ref=e3773]:
+        - link "Девка Порт!! Аниме-сериал «Девка Порт!!» студии Madhouse стал настоящим хитом сезона. История повествует о Галина..." [ref=e3774] [cursor=pointer]:
+          - /url: /notes/b0a3a03d-e335-4b54-a209-3b51f4b1a0ae
+          - heading "Девка Порт!!" [level=3] [ref=e3775]
+          - paragraph [ref=e3776]: Аниме-сериал «Девка Порт!!» студии Madhouse стал настоящим хитом сезона. История повествует о Галина...
+        - generic [ref=e3777]:
+          - link "Edit" [ref=e3778] [cursor=pointer]:
+            - /url: /notes/b0a3a03d-e335-4b54-a209-3b51f4b1a0ae/edit
+          - button "Delete" [ref=e3779]
+      - generic [ref=e3780]:
+        - link "Спорт Волк Kai Аниме-сериал «Спорт Волк Kai» студии Bones стал настоящим хитом сезона. История повествует о Прохор ..." [ref=e3781] [cursor=pointer]:
+          - /url: /notes/f6bde9c2-55fb-4236-a987-dc32a8b1e1be
+          - heading "Спорт Волк Kai" [level=3] [ref=e3782]
+          - paragraph [ref=e3783]: Аниме-сериал «Спорт Волк Kai» студии Bones стал настоящим хитом сезона. История повествует о Прохор ...
+        - generic [ref=e3784]:
+          - link "Edit" [ref=e3785] [cursor=pointer]:
+            - /url: /notes/f6bde9c2-55fb-4236-a987-dc32a8b1e1be/edit
+          - button "Delete" [ref=e3786]
+      - generic [ref=e3787]:
+        - link "Район Солнце Kai Аниме-сериал «Район Солнце Kai» студии MAPPA стал настоящим хитом сезона. История повествует о Варфо..." [ref=e3788] [cursor=pointer]:
+          - /url: /notes/ef6b5ed2-c241-499f-9a1a-b2b87f8db6a8
+          - heading "Район Солнце Kai" [level=3] [ref=e3789]
+          - paragraph [ref=e3790]: Аниме-сериал «Район Солнце Kai» студии MAPPA стал настоящим хитом сезона. История повествует о Варфо...
+        - generic [ref=e3791]:
+          - link "Edit" [ref=e3792] [cursor=pointer]:
+            - /url: /notes/ef6b5ed2-c241-499f-9a1a-b2b87f8db6a8/edit
+          - button "Delete" [ref=e3793]
+      - generic [ref=e3794]:
+        - 'link "Проход Запустить: Хроники Аниме-сериал «Проход Запустить: Хроники» студии Ufotable стал настоящим хитом сезона. История повест..." [ref=e3795] [cursor=pointer]':
+          - /url: /notes/ec8d002f-4fee-4b25-9861-ccd6767ffd89
+          - 'heading "Проход Запустить: Хроники" [level=3] [ref=e3796]'
+          - paragraph [ref=e3797]: "Аниме-сериал «Проход Запустить: Хроники» студии Ufotable стал настоящим хитом сезона. История повест..."
+        - generic [ref=e3798]:
+          - link "Edit" [ref=e3799] [cursor=pointer]:
+            - /url: /notes/ec8d002f-4fee-4b25-9861-ccd6767ffd89/edit
+          - button "Delete" [ref=e3800]
+      - generic [ref=e3801]:
+        - 'link "Упор Адвокат: Хроники Аниме-сериал «Упор Адвокат: Хроники» студии Kyoto Animation стал настоящим хитом сезона. История пов..." [ref=e3802] [cursor=pointer]':
+          - /url: /notes/5ff09236-dda3-4f09-8693-e7d089e18c7d
+          - 'heading "Упор Адвокат: Хроники" [level=3] [ref=e3803]'
+          - paragraph [ref=e3804]: "Аниме-сериал «Упор Адвокат: Хроники» студии Kyoto Animation стал настоящим хитом сезона. История пов..."
+        - generic [ref=e3805]:
+          - link "Edit" [ref=e3806] [cursor=pointer]:
+            - /url: /notes/5ff09236-dda3-4f09-8693-e7d089e18c7d/edit
+          - button "Delete" [ref=e3807]
+      - generic [ref=e3808]:
+        - 'link "Покидать Командир: Хроники Аниме-сериал «Покидать Командир: Хроники» студии Bones стал настоящим хитом сезона. История повеству..." [ref=e3809] [cursor=pointer]':
+          - /url: /notes/1e9fecff-7c03-4425-8acb-41e1d1d175ff
+          - 'heading "Покидать Командир: Хроники" [level=3] [ref=e3810]'
+          - paragraph [ref=e3811]: "Аниме-сериал «Покидать Командир: Хроники» студии Bones стал настоящим хитом сезона. История повеству..."
+        - generic [ref=e3812]:
+          - link "Edit" [ref=e3813] [cursor=pointer]:
+            - /url: /notes/1e9fecff-7c03-4425-8acb-41e1d1d175ff/edit
+          - button "Delete" [ref=e3814]
+      - generic [ref=e3815]:
+        - 'link "Передо Забирать: Перерождение Аниме-сериал «Передо Забирать: Перерождение» студии Kyoto Animation стал настоящим хитом сезона. Ист..." [ref=e3816] [cursor=pointer]':
+          - /url: /notes/46272e0a-18df-4c12-8677-c3f9d2b5b3a0
+          - 'heading "Передо Забирать: Перерождение" [level=3] [ref=e3817]'
+          - paragraph [ref=e3818]: "Аниме-сериал «Передо Забирать: Перерождение» студии Kyoto Animation стал настоящим хитом сезона. Ист..."
+        - generic [ref=e3819]:
+          - link "Edit" [ref=e3820] [cursor=pointer]:
+            - /url: /notes/46272e0a-18df-4c12-8677-c3f9d2b5b3a0/edit
+          - button "Delete" [ref=e3821]
+      - generic [ref=e3822]:
+        - link "Картинка Факультет~ Аниме-сериал «Картинка Факультет~» студии Bones стал настоящим хитом сезона. История повествует о Лю..." [ref=e3823] [cursor=pointer]:
+          - /url: /notes/352ea105-af1e-40d5-8035-e8bc7bf17be9
+          - heading "Картинка Факультет~" [level=3] [ref=e3824]
+          - paragraph [ref=e3825]: Аниме-сериал «Картинка Факультет~» студии Bones стал настоящим хитом сезона. История повествует о Лю...
+        - generic [ref=e3826]:
+          - link "Edit" [ref=e3827] [cursor=pointer]:
+            - /url: /notes/352ea105-af1e-40d5-8035-e8bc7bf17be9/edit
+          - button "Delete" [ref=e3828]
+      - generic [ref=e3829]:
+        - 'link "Смеяться Поколение: Хроники Аниме-сериал «Смеяться Поколение: Хроники» студии Kyoto Animation стал настоящим хитом сезона. Истор..." [ref=e3830] [cursor=pointer]':
+          - /url: /notes/80144821-449a-4a08-9841-33b94daf2009
+          - 'heading "Смеяться Поколение: Хроники" [level=3] [ref=e3831]'
+          - paragraph [ref=e3832]: "Аниме-сериал «Смеяться Поколение: Хроники» студии Kyoto Animation стал настоящим хитом сезона. Истор..."
+        - generic [ref=e3833]:
+          - link "Edit" [ref=e3834] [cursor=pointer]:
+            - /url: /notes/80144821-449a-4a08-9841-33b94daf2009/edit
+          - button "Delete" [ref=e3835]
+      - generic [ref=e3836]:
+        - link "Выражаться Какой Kai Аниме-сериал «Выражаться Какой Kai» студии Ufotable стал настоящим хитом сезона. История повествует ..." [ref=e3837] [cursor=pointer]:
+          - /url: /notes/a37dbf8f-4dfa-48ed-a301-101df5abad9f
+          - heading "Выражаться Какой Kai" [level=3] [ref=e3838]
+          - paragraph [ref=e3839]: Аниме-сериал «Выражаться Какой Kai» студии Ufotable стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3840]:
+          - link "Edit" [ref=e3841] [cursor=pointer]:
+            - /url: /notes/a37dbf8f-4dfa-48ed-a301-101df5abad9f/edit
+          - button "Delete" [ref=e3842]
+      - generic [ref=e3843]:
+        - link "Трясти Жидкий!! Аниме-сериал «Трясти Жидкий!!» студии Ufotable стал настоящим хитом сезона. История повествует о Бог..." [ref=e3844] [cursor=pointer]:
+          - /url: /notes/712c9fba-9e68-422c-b314-9d28476563b2
+          - heading "Трясти Жидкий!!" [level=3] [ref=e3845]
+          - paragraph [ref=e3846]: Аниме-сериал «Трясти Жидкий!!» студии Ufotable стал настоящим хитом сезона. История повествует о Бог...
+        - generic [ref=e3847]:
+          - link "Edit" [ref=e3848] [cursor=pointer]:
+            - /url: /notes/712c9fba-9e68-422c-b314-9d28476563b2/edit
+          - button "Delete" [ref=e3849]
+      - generic [ref=e3850]:
+        - link "Спалить Мальчишка Kai Аниме-сериал «Спалить Мальчишка Kai» студии Madhouse стал настоящим хитом сезона. История повествует..." [ref=e3851] [cursor=pointer]:
+          - /url: /notes/a7e3e57b-bbfd-4653-b7b8-102b563f4db4
+          - heading "Спалить Мальчишка Kai" [level=3] [ref=e3852]
+          - paragraph [ref=e3853]: Аниме-сериал «Спалить Мальчишка Kai» студии Madhouse стал настоящим хитом сезона. История повествует...
+        - generic [ref=e3854]:
+          - link "Edit" [ref=e3855] [cursor=pointer]:
+            - /url: /notes/a7e3e57b-bbfd-4653-b7b8-102b563f4db4/edit
+          - button "Delete" [ref=e3856]
+      - generic [ref=e3857]:
+        - 'link "Коллектив Дружно: Хроники Аниме-сериал «Коллектив Дружно: Хроники» студии MAPPA стал настоящим хитом сезона. История повествуе..." [ref=e3858] [cursor=pointer]':
+          - /url: /notes/cf4c54a9-22b6-472c-bec9-b07d719adaa8
+          - 'heading "Коллектив Дружно: Хроники" [level=3] [ref=e3859]'
+          - paragraph [ref=e3860]: "Аниме-сериал «Коллектив Дружно: Хроники» студии MAPPA стал настоящим хитом сезона. История повествуе..."
+        - generic [ref=e3861]:
+          - link "Edit" [ref=e3862] [cursor=pointer]:
+            - /url: /notes/cf4c54a9-22b6-472c-bec9-b07d719adaa8/edit
+          - button "Delete" [ref=e3863]
+      - generic [ref=e3864]:
+        - link "Танцевать Головка~ Аниме-сериал «Танцевать Головка~» студии Ufotable стал настоящим хитом сезона. История повествует о ..." [ref=e3865] [cursor=pointer]:
+          - /url: /notes/f97c8df3-8f02-439e-9cc9-5a0b506b4ade
+          - heading "Танцевать Головка~" [level=3] [ref=e3866]
+          - paragraph [ref=e3867]: Аниме-сериал «Танцевать Головка~» студии Ufotable стал настоящим хитом сезона. История повествует о ...
+        - generic [ref=e3868]:
+          - link "Edit" [ref=e3869] [cursor=pointer]:
+            - /url: /notes/f97c8df3-8f02-439e-9cc9-5a0b506b4ade/edit
+          - button "Delete" [ref=e3870]
+      - generic [ref=e3871]:
+        - link "Руководитель Еврейский~ Аниме-сериал «Руководитель Еврейский~» студии Kyoto Animation стал настоящим хитом сезона. История п..." [ref=e3872] [cursor=pointer]:
+          - /url: /notes/533412ad-96e7-4934-9eb2-47e28ab6549e
+          - heading "Руководитель Еврейский~" [level=3] [ref=e3873]
+          - paragraph [ref=e3874]: Аниме-сериал «Руководитель Еврейский~» студии Kyoto Animation стал настоящим хитом сезона. История п...
+        - generic [ref=e3875]:
+          - link "Edit" [ref=e3876] [cursor=pointer]:
+            - /url: /notes/533412ad-96e7-4934-9eb2-47e28ab6549e/edit
+          - button "Delete" [ref=e3877]
+      - generic [ref=e3878]:
+        - link "О Рота~ Аниме-сериал «О Рота~» студии Ufotable стал настоящим хитом сезона. История повествует о Меркушев Бо..." [ref=e3879] [cursor=pointer]:
+          - /url: /notes/81db8b93-765d-4018-9aa7-1013736bb117
+          - heading "О Рота~" [level=3] [ref=e3880]
+          - paragraph [ref=e3881]: Аниме-сериал «О Рота~» студии Ufotable стал настоящим хитом сезона. История повествует о Меркушев Бо...
+        - generic [ref=e3882]:
+          - link "Edit" [ref=e3883] [cursor=pointer]:
+            - /url: /notes/81db8b93-765d-4018-9aa7-1013736bb117/edit
+          - button "Delete" [ref=e3884]
+      - generic [ref=e3885]:
+        - 'link "Применяться Песенка: Хроники Аниме-сериал «Применяться Песенка: Хроники» студии MAPPA стал настоящим хитом сезона. История повест..." [ref=e3886] [cursor=pointer]':
+          - /url: /notes/ca21a675-6bb9-4be4-b0b5-039cb1ef3cdc
+          - 'heading "Применяться Песенка: Хроники" [level=3] [ref=e3887]'
+          - paragraph [ref=e3888]: "Аниме-сериал «Применяться Песенка: Хроники» студии MAPPA стал настоящим хитом сезона. История повест..."
+        - generic [ref=e3889]:
+          - link "Edit" [ref=e3890] [cursor=pointer]:
+            - /url: /notes/ca21a675-6bb9-4be4-b0b5-039cb1ef3cdc/edit
+          - button "Delete" [ref=e3891]
+      - generic [ref=e3892]:
+        - 'link "Засунуть Способ: Хроники Аниме-сериал «Засунуть Способ: Хроники» студии Bones стал настоящим хитом сезона. История повествует..." [ref=e3893] [cursor=pointer]':
+          - /url: /notes/ed7608d7-2c09-4cb5-a390-b85b09fcf2ca
+          - 'heading "Засунуть Способ: Хроники" [level=3] [ref=e3894]'
+          - paragraph [ref=e3895]: "Аниме-сериал «Засунуть Способ: Хроники» студии Bones стал настоящим хитом сезона. История повествует..."
+        - generic [ref=e3896]:
+          - link "Edit" [ref=e3897] [cursor=pointer]:
+            - /url: /notes/ed7608d7-2c09-4cb5-a390-b85b09fcf2ca/edit
+          - button "Delete" [ref=e3898]
+      - generic [ref=e3899]:
+        - link "Механический Спешить Kai Аниме-сериал «Механический Спешить Kai» студии Ufotable стал настоящим хитом сезона. История повеств..." [ref=e3900] [cursor=pointer]:
+          - /url: /notes/dbf59121-5655-43eb-80b6-feeb2f9f2fde
+          - heading "Механический Спешить Kai" [level=3] [ref=e3901]
+          - paragraph [ref=e3902]: Аниме-сериал «Механический Спешить Kai» студии Ufotable стал настоящим хитом сезона. История повеств...
+        - generic [ref=e3903]:
+          - link "Edit" [ref=e3904] [cursor=pointer]:
+            - /url: /notes/dbf59121-5655-43eb-80b6-feeb2f9f2fde/edit
+          - button "Delete" [ref=e3905]
+      - generic [ref=e3906]:
+        - link "Правильный Счастье Zero Аниме-сериал «Правильный Счастье Zero» студии Bones стал настоящим хитом сезона. История повествует ..." [ref=e3907] [cursor=pointer]:
+          - /url: /notes/56a68af0-6222-4284-91e4-439550a5e83e
+          - heading "Правильный Счастье Zero" [level=3] [ref=e3908]
+          - paragraph [ref=e3909]: Аниме-сериал «Правильный Счастье Zero» студии Bones стал настоящим хитом сезона. История повествует ...
+        - generic [ref=e3910]:
+          - link "Edit" [ref=e3911] [cursor=pointer]:
+            - /url: /notes/56a68af0-6222-4284-91e4-439550a5e83e/edit
+          - button "Delete" [ref=e3912]
+      - generic [ref=e3913]:
+        - 'link "Зима Порядок: Хроники Аниме-сериал «Зима Порядок: Хроники» студии Ufotable стал настоящим хитом сезона. История повествует..." [ref=e3914] [cursor=pointer]':
+          - /url: /notes/8b418cfb-ed4d-4d72-8d04-b096f01ad269
+          - 'heading "Зима Порядок: Хроники" [level=3] [ref=e3915]'
+          - paragraph [ref=e3916]: "Аниме-сериал «Зима Порядок: Хроники» студии Ufotable стал настоящим хитом сезона. История повествует..."
+        - generic [ref=e3917]:
+          - link "Edit" [ref=e3918] [cursor=pointer]:
+            - /url: /notes/8b418cfb-ed4d-4d72-8d04-b096f01ad269/edit
+          - button "Delete" [ref=e3919]
+      - generic [ref=e3920]:
+        - 'link "Изучить Проход: Хроники Аниме-сериал «Изучить Проход: Хроники» студии Bones стал настоящим хитом сезона. История повествует ..." [ref=e3921] [cursor=pointer]':
+          - /url: /notes/26dbfda8-40b1-4167-80b0-c7dea97b9a9d
+          - 'heading "Изучить Проход: Хроники" [level=3] [ref=e3922]'
+          - paragraph [ref=e3923]: "Аниме-сериал «Изучить Проход: Хроники» студии Bones стал настоящим хитом сезона. История повествует ..."
+        - generic [ref=e3924]:
+          - link "Edit" [ref=e3925] [cursor=pointer]:
+            - /url: /notes/26dbfda8-40b1-4167-80b0-c7dea97b9a9d/edit
+          - button "Delete" [ref=e3926]
+      - generic [ref=e3927]:
+        - link "Что Некоторый Zero Аниме-сериал «Что Некоторый Zero» студии Ufotable стал настоящим хитом сезона. История повествует о ..." [ref=e3928] [cursor=pointer]:
+          - /url: /notes/5bdc51b2-ac53-4cc8-899c-f5ecfd4bbddd
+          - heading "Что Некоторый Zero" [level=3] [ref=e3929]
+          - paragraph [ref=e3930]: Аниме-сериал «Что Некоторый Zero» студии Ufotable стал настоящим хитом сезона. История повествует о ...
+        - generic [ref=e3931]:
+          - link "Edit" [ref=e3932] [cursor=pointer]:
+            - /url: /notes/5bdc51b2-ac53-4cc8-899c-f5ecfd4bbddd/edit
+          - button "Delete" [ref=e3933]
+      - generic [ref=e3934]:
+        - link "Войти Лиловый!! Аниме-сериал «Войти Лиловый!!» студии Kyoto Animation стал настоящим хитом сезона. История повествуе..." [ref=e3935] [cursor=pointer]:
+          - /url: /notes/17e7b1ed-04dc-4737-b477-3e87f32d13ca
+          - heading "Войти Лиловый!!" [level=3] [ref=e3936]
+          - paragraph [ref=e3937]: Аниме-сериал «Войти Лиловый!!» студии Kyoto Animation стал настоящим хитом сезона. История повествуе...
+        - generic [ref=e3938]:
+          - link "Edit" [ref=e3939] [cursor=pointer]:
+            - /url: /notes/17e7b1ed-04dc-4737-b477-3e87f32d13ca/edit
+          - button "Delete" [ref=e3940]
+      - generic [ref=e3941]:
+        - link "Реализация Надежных Технологий 4 Фильм «Реализация Надежных Технологий 4» режиссёра Харитон Эдуардович Елисеев — это визуальный шедев..." [ref=e3942] [cursor=pointer]:
+          - /url: /notes/49c09974-f719-4e60-8633-9a596f6224e2
+          - heading "Реализация Надежных Технологий 4" [level=3] [ref=e3943]
+          - paragraph [ref=e3944]: Фильм «Реализация Надежных Технологий 4» режиссёра Харитон Эдуардович Елисеев — это визуальный шедев...
+        - generic [ref=e3945]:
+          - link "Edit" [ref=e3946] [cursor=pointer]:
+            - /url: /notes/49c09974-f719-4e60-8633-9a596f6224e2/edit
+          - button "Delete" [ref=e3947]
+      - generic [ref=e3948]:
+        - link "Конструирование Безотказных Знаний 5 Фильм «Конструирование Безотказных Знаний 5» режиссёра Суворов Аггей Германович — это визуальный шед..." [ref=e3949] [cursor=pointer]:
+          - /url: /notes/d5454d08-1c96-4039-87c8-fd0d8b695bf4
+          - heading "Конструирование Безотказных Знаний 5" [level=3] [ref=e3950]
+          - paragraph [ref=e3951]: Фильм «Конструирование Безотказных Знаний 5» режиссёра Суворов Аггей Германович — это визуальный шед...
+        - generic [ref=e3952]:
+          - link "Edit" [ref=e3953] [cursor=pointer]:
+            - /url: /notes/d5454d08-1c96-4039-87c8-fd0d8b695bf4/edit
+          - button "Delete" [ref=e3954]
+      - generic [ref=e3955]:
+        - link "Увеличение Богатых Ниш 2 Фильм «Увеличение Богатых Ниш 2» режиссёра Александр Тимурович Елисеев — это визуальный шедевр, кото..." [ref=e3956] [cursor=pointer]:
+          - /url: /notes/8294589c-aa2a-42af-b6f6-dfd59aafbdd5
+          - heading "Увеличение Богатых Ниш 2" [level=3] [ref=e3957]
+          - paragraph [ref=e3958]: Фильм «Увеличение Богатых Ниш 2» режиссёра Александр Тимурович Елисеев — это визуальный шедевр, кото...
+        - generic [ref=e3959]:
+          - link "Edit" [ref=e3960] [cursor=pointer]:
+            - /url: /notes/8294589c-aa2a-42af-b6f6-dfd59aafbdd5/edit
+          - button "Delete" [ref=e3961]
+      - generic [ref=e3962]:
+        - link "Распределение Притягательных Платформ 2 Фильм «Распределение Притягательных Платформ 2» режиссёра Карп Арсенович Шубин — это визуальный шеде..." [ref=e3963] [cursor=pointer]:
+          - /url: /notes/d9a46c57-0950-4697-a2b1-8da1668e7975
+          - heading "Распределение Притягательных Платформ 2" [level=3] [ref=e3964]
+          - paragraph [ref=e3965]: Фильм «Распределение Притягательных Платформ 2» режиссёра Карп Арсенович Шубин — это визуальный шеде...
+        - generic [ref=e3966]:
+          - link "Edit" [ref=e3967] [cursor=pointer]:
+            - /url: /notes/d9a46c57-0950-4697-a2b1-8da1668e7975/edit
+          - button "Delete" [ref=e3968]
+      - generic [ref=e3969]:
+        - link "Продление Распределённых Аудиторий 4 Фильм «Продление Распределённых Аудиторий 4» режиссёра Степан Федотович Крюков — это визуальный шеде..." [ref=e3970] [cursor=pointer]:
+          - /url: /notes/a79cd759-a9e1-432d-8b7b-a1ae9ef4e75e
+          - heading "Продление Распределённых Аудиторий 4" [level=3] [ref=e3971]
+          - paragraph [ref=e3972]: Фильм «Продление Распределённых Аудиторий 4» режиссёра Степан Федотович Крюков — это визуальный шеде...
+        - generic [ref=e3973]:
+          - link "Edit" [ref=e3974] [cursor=pointer]:
+            - /url: /notes/a79cd759-a9e1-432d-8b7b-a1ae9ef4e75e/edit
+          - button "Delete" [ref=e3975]
+      - generic [ref=e3976]:
+        - link "Распределение Концептуальных Схем 4 Фильм «Распределение Концептуальных Схем 4» режиссёра Роман Аверьянович Мухин — это визуальный шедев..." [ref=e3977] [cursor=pointer]:
+          - /url: /notes/549d8b6b-4121-4a02-bcac-0e771d9a86f3
+          - heading "Распределение Концептуальных Схем 4" [level=3] [ref=e3978]
+          - paragraph [ref=e3979]: Фильм «Распределение Концептуальных Схем 4» режиссёра Роман Аверьянович Мухин — это визуальный шедев...
+        - generic [ref=e3980]:
+          - link "Edit" [ref=e3981] [cursor=pointer]:
+            - /url: /notes/549d8b6b-4121-4a02-bcac-0e771d9a86f3/edit
+          - button "Delete" [ref=e3982]
+      - generic [ref=e3983]:
+        - link "Разработка Круглогодичных Результатов 3 Фильм «Разработка Круглогодичных Результатов 3» режиссёра Шаров Феоктист Богданович — это визуальный..." [ref=e3984] [cursor=pointer]:
+          - /url: /notes/58612552-1205-4fd2-b47f-e91c8274a029
+          - heading "Разработка Круглогодичных Результатов 3" [level=3] [ref=e3985]
+          - paragraph [ref=e3986]: Фильм «Разработка Круглогодичных Результатов 3» режиссёра Шаров Феоктист Богданович — это визуальный...
+        - generic [ref=e3987]:
+          - link "Edit" [ref=e3988] [cursor=pointer]:
+            - /url: /notes/58612552-1205-4fd2-b47f-e91c8274a029/edit
+          - button "Delete" [ref=e3989]
+      - generic [ref=e3990]:
+        - link "Переопределение Ультрасовременных Знаний 3 Фильм «Переопределение Ультрасовременных Знаний 3» режиссёра Вероника Владиславовна Шилова — это виз..." [ref=e3991] [cursor=pointer]:
+          - /url: /notes/46314463-43ed-4bc3-8b2a-faedde692613
+          - heading "Переопределение Ультрасовременных Знаний 3" [level=3] [ref=e3992]
+          - paragraph [ref=e3993]: Фильм «Переопределение Ультрасовременных Знаний 3» режиссёра Вероника Владиславовна Шилова — это виз...
+        - generic [ref=e3994]:
+          - link "Edit" [ref=e3995] [cursor=pointer]:
+            - /url: /notes/46314463-43ed-4bc3-8b2a-faedde692613/edit
+          - button "Delete" [ref=e3996]
+      - generic [ref=e3997]:
+        - link "Преображение Интегрированных Действий 4 Фильм «Преображение Интегрированных Действий 4» режиссёра Варвара Евгеньевна Карпова — это визуальны..." [ref=e3998] [cursor=pointer]:
+          - /url: /notes/e15205d9-e244-4866-82ab-ace544756c4b
+          - heading "Преображение Интегрированных Действий 4" [level=3] [ref=e3999]
+          - paragraph [ref=e4000]: Фильм «Преображение Интегрированных Действий 4» режиссёра Варвара Евгеньевна Карпова — это визуальны...
+        - generic [ref=e4001]:
+          - link "Edit" [ref=e4002] [cursor=pointer]:
+            - /url: /notes/e15205d9-e244-4866-82ab-ace544756c4b/edit
+          - button "Delete" [ref=e4003]
+      - generic [ref=e4004]:
+        - link "Разработка Стратегических Областей Интереса 5 Фильм «Разработка Стратегических Областей Интереса 5» режиссёра Агата Дмитриевна Матвеева — это визу..." [ref=e4005] [cursor=pointer]:
+          - /url: /notes/0ec10829-08e0-43e9-b5ef-c7e269ec7fe1
+          - heading "Разработка Стратегических Областей Интереса 5" [level=3] [ref=e4006]
+          - paragraph [ref=e4007]: Фильм «Разработка Стратегических Областей Интереса 5» режиссёра Агата Дмитриевна Матвеева — это визу...
+        - generic [ref=e4008]:
+          - link "Edit" [ref=e4009] [cursor=pointer]:
+            - /url: /notes/0ec10829-08e0-43e9-b5ef-c7e269ec7fe1/edit
+          - button "Delete" [ref=e4010]
+      - generic [ref=e4011]:
+        - link "Мотивация Богатых Приложений 3 Фильм «Мотивация Богатых Приложений 3» режиссёра Зинаида Рудольфовна Ильина — это визуальный шедевр,..." [ref=e4012] [cursor=pointer]:
+          - /url: /notes/b693661f-033f-42b6-b534-77f2bc8f0488
+          - heading "Мотивация Богатых Приложений 3" [level=3] [ref=e4013]
+          - paragraph [ref=e4014]: Фильм «Мотивация Богатых Приложений 3» режиссёра Зинаида Рудольфовна Ильина — это визуальный шедевр,...
+        - generic [ref=e4015]:
+          - link "Edit" [ref=e4016] [cursor=pointer]:
+            - /url: /notes/b693661f-033f-42b6-b534-77f2bc8f0488/edit
+          - button "Delete" [ref=e4017]
+      - generic [ref=e4018]:
+        - link "Перепрофилирование Индивидуальных Технологий 4 Фильм «Перепрофилирование Индивидуальных Технологий 4» режиссёра Светлана Захаровна Кириллова — это ..." [ref=e4019] [cursor=pointer]:
+          - /url: /notes/3811a045-8a55-4efb-bcc4-a6f42056881c
+          - heading "Перепрофилирование Индивидуальных Технологий 4" [level=3] [ref=e4020]
+          - paragraph [ref=e4021]: Фильм «Перепрофилирование Индивидуальных Технологий 4» режиссёра Светлана Захаровна Кириллова — это ...
+        - generic [ref=e4022]:
+          - link "Edit" [ref=e4023] [cursor=pointer]:
+            - /url: /notes/3811a045-8a55-4efb-bcc4-a6f42056881c/edit
+          - button "Delete" [ref=e4024]
+      - generic [ref=e4025]:
+        - link "Управление Безотказных Интернет-Магазинов 2 Фильм «Управление Безотказных Интернет-Магазинов 2» режиссёра Виссарион Гавриилович Исаев — это визу..." [ref=e4026] [cursor=pointer]:
+          - /url: /notes/3db1267e-a73b-446e-a47f-a65239920d4f
+          - heading "Управление Безотказных Интернет-Магазинов 2" [level=3] [ref=e4027]
+          - paragraph [ref=e4028]: Фильм «Управление Безотказных Интернет-Магазинов 2» режиссёра Виссарион Гавриилович Исаев — это визу...
+        - generic [ref=e4029]:
+          - link "Edit" [ref=e4030] [cursor=pointer]:
+            - /url: /notes/3db1267e-a73b-446e-a47f-a65239920d4f/edit
+          - button "Delete" [ref=e4031]
+      - generic [ref=e4032]:
+        - link "Эксплуатация Вертикальных Интерфейсов 5 Фильм «Эксплуатация Вертикальных Интерфейсов 5» режиссёра тов. Дорофеев Федот Ефимович — это визуаль..." [ref=e4033] [cursor=pointer]:
+          - /url: /notes/ce3c98d5-c362-4d31-b6ff-e3a090f22a6e
+          - heading "Эксплуатация Вертикальных Интерфейсов 5" [level=3] [ref=e4034]
+          - paragraph [ref=e4035]: Фильм «Эксплуатация Вертикальных Интерфейсов 5» режиссёра тов. Дорофеев Федот Ефимович — это визуаль...
+        - generic [ref=e4036]:
+          - link "Edit" [ref=e4037] [cursor=pointer]:
+            - /url: /notes/ce3c98d5-c362-4d31-b6ff-e3a090f22a6e/edit
+          - button "Delete" [ref=e4038]
+      - generic [ref=e4039]:
+        - link "Ускорение Интегрированных Пользователей 5 Фильм «Ускорение Интегрированных Пользователей 5» режиссёра Гришин Милен Иосифович — это визуальный ..." [ref=e4040] [cursor=pointer]:
+          - /url: /notes/68a87318-3f9f-4bb3-9710-2eca9b5b032d
+          - heading "Ускорение Интегрированных Пользователей 5" [level=3] [ref=e4041]
+          - paragraph [ref=e4042]: Фильм «Ускорение Интегрированных Пользователей 5» режиссёра Гришин Милен Иосифович — это визуальный ...
+        - generic [ref=e4043]:
+          - link "Edit" [ref=e4044] [cursor=pointer]:
+            - /url: /notes/68a87318-3f9f-4bb3-9710-2eca9b5b032d/edit
+          - button "Delete" [ref=e4045]
+      - generic [ref=e4046]:
+        - link "Реализация Ультрасовременных Результатов 4 Фильм «Реализация Ультрасовременных Результатов 4» режиссёра Федот Даниилович Шарапов — это визуальн..." [ref=e4047] [cursor=pointer]:
+          - /url: /notes/7f34fa9b-e9a2-418c-80a3-23d800683d06
+          - heading "Реализация Ультрасовременных Результатов 4" [level=3] [ref=e4048]
+          - paragraph [ref=e4049]: Фильм «Реализация Ультрасовременных Результатов 4» режиссёра Федот Даниилович Шарапов — это визуальн...
+        - generic [ref=e4050]:
+          - link "Edit" [ref=e4051] [cursor=pointer]:
+            - /url: /notes/7f34fa9b-e9a2-418c-80a3-23d800683d06/edit
+          - button "Delete" [ref=e4052]
+      - generic [ref=e4053]:
+        - link "Развитие Фронт-Энд Систем 2 Фильм «Развитие Фронт-Энд Систем 2» режиссёра Синклитикия Евгеньевна Морозова — это визуальный шедев..." [ref=e4054] [cursor=pointer]:
+          - /url: /notes/fe8ca283-e26e-45bb-9bf9-7f041718fee0
+          - heading "Развитие Фронт-Энд Систем 2" [level=3] [ref=e4055]
+          - paragraph [ref=e4056]: Фильм «Развитие Фронт-Энд Систем 2» режиссёра Синклитикия Евгеньевна Морозова — это визуальный шедев...
+        - generic [ref=e4057]:
+          - link "Edit" [ref=e4058] [cursor=pointer]:
+            - /url: /notes/fe8ca283-e26e-45bb-9bf9-7f041718fee0/edit
+          - button "Delete" [ref=e4059]
+      - generic [ref=e4060]:
+        - link "Культивация Кроссплатформенных Инфраструктур 5 Фильм «Культивация Кроссплатформенных Инфраструктур 5» режиссёра Денисова Евфросиния Максимовна — эт..." [ref=e4061] [cursor=pointer]:
+          - /url: /notes/af775486-265e-4cee-9687-2141e820cb1c
+          - heading "Культивация Кроссплатформенных Инфраструктур 5" [level=3] [ref=e4062]
+          - paragraph [ref=e4063]: Фильм «Культивация Кроссплатформенных Инфраструктур 5» режиссёра Денисова Евфросиния Максимовна — эт...
+        - generic [ref=e4064]:
+          - link "Edit" [ref=e4065] [cursor=pointer]:
+            - /url: /notes/af775486-265e-4cee-9687-2141e820cb1c/edit
+          - button "Delete" [ref=e4066]
+      - generic [ref=e4067]:
+        - link "Синхронизация Распределённых Схем 5 Фильм «Синхронизация Распределённых Схем 5» режиссёра Мариан Денисович Вишняков — это визуальный шед..." [ref=e4068] [cursor=pointer]:
+          - /url: /notes/731a320b-2349-444b-b369-3358128843d0
+          - heading "Синхронизация Распределённых Схем 5" [level=3] [ref=e4069]
+          - paragraph [ref=e4070]: Фильм «Синхронизация Распределённых Схем 5» режиссёра Мариан Денисович Вишняков — это визуальный шед...
+        - generic [ref=e4071]:
+          - link "Edit" [ref=e4072] [cursor=pointer]:
+            - /url: /notes/731a320b-2349-444b-b369-3358128843d0/edit
+          - button "Delete" [ref=e4073]
+      - generic [ref=e4074]:
+        - link "Продление Цельных Знаний 2 Фильм «Продление Цельных Знаний 2» режиссёра Меркушев Эммануил Валентинович — это визуальный шедевр,..." [ref=e4075] [cursor=pointer]:
+          - /url: /notes/5ba45139-9528-4a4b-874b-730749c95714
+          - heading "Продление Цельных Знаний 2" [level=3] [ref=e4076]
+          - paragraph [ref=e4077]: Фильм «Продление Цельных Знаний 2» режиссёра Меркушев Эммануил Валентинович — это визуальный шедевр,...
+        - generic [ref=e4078]:
+          - link "Edit" [ref=e4079] [cursor=pointer]:
+            - /url: /notes/5ba45139-9528-4a4b-874b-730749c95714/edit
+          - button "Delete" [ref=e4080]
+      - generic [ref=e4081]:
+        - link "Визуализация Вертикальных Моделей 5 Фильм «Визуализация Вертикальных Моделей 5» режиссёра Вероника Матвеевна Шарапова — это визуальный ш..." [ref=e4082] [cursor=pointer]:
+          - /url: /notes/aa3a12ce-d7b0-4e7b-b81b-596204d5e4a6
+          - heading "Визуализация Вертикальных Моделей 5" [level=3] [ref=e4083]
+          - paragraph [ref=e4084]: Фильм «Визуализация Вертикальных Моделей 5» режиссёра Вероника Матвеевна Шарапова — это визуальный ш...
+        - generic [ref=e4085]:
+          - link "Edit" [ref=e4086] [cursor=pointer]:
+            - /url: /notes/aa3a12ce-d7b0-4e7b-b81b-596204d5e4a6/edit
+          - button "Delete" [ref=e4087]
+      - generic [ref=e4088]:
+        - link "Освоение B2C Веб-Сервисов 2 Фильм «Освоение B2C Веб-Сервисов 2» режиссёра Агата Геннадьевна Щербакова — это визуальный шедевр, к..." [ref=e4089] [cursor=pointer]:
+          - /url: /notes/5bf3d888-d597-4b84-8811-53a03af2c5f6
+          - heading "Освоение B2C Веб-Сервисов 2" [level=3] [ref=e4090]
+          - paragraph [ref=e4091]: Фильм «Освоение B2C Веб-Сервисов 2» режиссёра Агата Геннадьевна Щербакова — это визуальный шедевр, к...
+        - generic [ref=e4092]:
+          - link "Edit" [ref=e4093] [cursor=pointer]:
+            - /url: /notes/5bf3d888-d597-4b84-8811-53a03af2c5f6/edit
+          - button "Delete" [ref=e4094]
+      - generic [ref=e4095]:
+        - link "Освоение Целостных Веб-Сервисов 3 Фильм «Освоение Целостных Веб-Сервисов 3» режиссёра Гостомысл Гурьевич Сергеев — это визуальный шеде..." [ref=e4096] [cursor=pointer]:
+          - /url: /notes/f75e5460-4cd7-43a4-9dac-dbfa427713e0
+          - heading "Освоение Целостных Веб-Сервисов 3" [level=3] [ref=e4097]
+          - paragraph [ref=e4098]: Фильм «Освоение Целостных Веб-Сервисов 3» режиссёра Гостомысл Гурьевич Сергеев — это визуальный шеде...
+        - generic [ref=e4099]:
+          - link "Edit" [ref=e4100] [cursor=pointer]:
+            - /url: /notes/f75e5460-4cd7-43a4-9dac-dbfa427713e0/edit
+          - button "Delete" [ref=e4101]
+      - generic [ref=e4102]:
+        - link "Увеличение Глобальных Областей Интереса 4 Фильм «Увеличение Глобальных Областей Интереса 4» режиссёра Веселов Станислав Давыдович — это визуал..." [ref=e4103] [cursor=pointer]:
+          - /url: /notes/1d386c1e-053c-4c9c-9adc-95cb85829296
+          - heading "Увеличение Глобальных Областей Интереса 4" [level=3] [ref=e4104]
+          - paragraph [ref=e4105]: Фильм «Увеличение Глобальных Областей Интереса 4» режиссёра Веселов Станислав Давыдович — это визуал...
+        - generic [ref=e4106]:
+          - link "Edit" [ref=e4107] [cursor=pointer]:
+            - /url: /notes/1d386c1e-053c-4c9c-9adc-95cb85829296/edit
+          - button "Delete" [ref=e4108]
+      - generic [ref=e4109]:
+        - link "Реализация Надежных Пользователей 2 Фильм «Реализация Надежных Пользователей 2» режиссёра тов. Зайцева Евдокия Оскаровна — это визуальны..." [ref=e4110] [cursor=pointer]:
+          - /url: /notes/c4d673af-9e8f-4c5b-b80c-b3bce036a37d
+          - heading "Реализация Надежных Пользователей 2" [level=3] [ref=e4111]
+          - paragraph [ref=e4112]: Фильм «Реализация Надежных Пользователей 2» режиссёра тов. Зайцева Евдокия Оскаровна — это визуальны...
+        - generic [ref=e4113]:
+          - link "Edit" [ref=e4114] [cursor=pointer]:
+            - /url: /notes/c4d673af-9e8f-4c5b-b80c-b3bce036a37d/edit
+          - button "Delete" [ref=e4115]
+      - generic [ref=e4116]:
+        - link "Монетизация Совместных Интернет-Услуг 4 Фильм «Монетизация Совместных Интернет-Услуг 4» режиссёра Федорова Мария Рубеновна — это визуальный ..." [ref=e4117] [cursor=pointer]:
+          - /url: /notes/006c8309-913f-47d5-8d5a-053f5e8c0f82
+          - heading "Монетизация Совместных Интернет-Услуг 4" [level=3] [ref=e4118]
+          - paragraph [ref=e4119]: Фильм «Монетизация Совместных Интернет-Услуг 4» режиссёра Федорова Мария Рубеновна — это визуальный ...
+        - generic [ref=e4120]:
+          - link "Edit" [ref=e4121] [cursor=pointer]:
+            - /url: /notes/006c8309-913f-47d5-8d5a-053f5e8c0f82/edit
+          - button "Delete" [ref=e4122]
+      - generic [ref=e4123]:
+        - link "Трансформация Интуитивных Инфопосредников 3 Фильм «Трансформация Интуитивных Инфопосредников 3» режиссёра Добромысл Антипович Меркушев — это виз..." [ref=e4124] [cursor=pointer]:
+          - /url: /notes/b92d00dd-e0b8-4ad5-a413-b0de2fe0c11f
+          - heading "Трансформация Интуитивных Инфопосредников 3" [level=3] [ref=e4125]
+          - paragraph [ref=e4126]: Фильм «Трансформация Интуитивных Инфопосредников 3» режиссёра Добромысл Антипович Меркушев — это виз...
+        - generic [ref=e4127]:
+          - link "Edit" [ref=e4128] [cursor=pointer]:
+            - /url: /notes/b92d00dd-e0b8-4ad5-a413-b0de2fe0c11f/edit
+          - button "Delete" [ref=e4129]
+      - generic [ref=e4130]:
+        - link "Генерация Беспроводных Решений 3 Фильм «Генерация Беспроводных Решений 3» режиссёра Назар Фадеевич Гуляев — это визуальный шедевр, ко..." [ref=e4131] [cursor=pointer]:
+          - /url: /notes/057aa863-af8e-46f0-a6ef-2f915d954b2d
+          - heading "Генерация Беспроводных Решений 3" [level=3] [ref=e4132]
+          - paragraph [ref=e4133]: Фильм «Генерация Беспроводных Решений 3» режиссёра Назар Фадеевич Гуляев — это визуальный шедевр, ко...
+        - generic [ref=e4134]:
+          - link "Edit" [ref=e4135] [cursor=pointer]:
+            - /url: /notes/057aa863-af8e-46f0-a6ef-2f915d954b2d/edit
+          - button "Delete" [ref=e4136]
+      - generic [ref=e4137]:
+        - link "Преображение Сенсационных Схем 4 Фильм «Преображение Сенсационных Схем 4» режиссёра Фокина Варвара Евгеньевна — это визуальный шедевр..." [ref=e4138] [cursor=pointer]:
+          - /url: /notes/ef027cfc-98f1-4c73-8dd7-e7d9b818c03a
+          - heading "Преображение Сенсационных Схем 4" [level=3] [ref=e4139]
+          - paragraph [ref=e4140]: Фильм «Преображение Сенсационных Схем 4» режиссёра Фокина Варвара Евгеньевна — это визуальный шедевр...
+        - generic [ref=e4141]:
+          - link "Edit" [ref=e4142] [cursor=pointer]:
+            - /url: /notes/ef027cfc-98f1-4c73-8dd7-e7d9b818c03a/edit
+          - button "Delete" [ref=e4143]
+      - generic [ref=e4144]:
+        - link "Интеграция Динамичных Решений 2 Фильм «Интеграция Динамичных Решений 2» режиссёра Соловьев Зосима Устинович — это визуальный шедевр,..." [ref=e4145] [cursor=pointer]:
+          - /url: /notes/6c1295c0-eb1a-4796-a150-3d427a41f685
+          - heading "Интеграция Динамичных Решений 2" [level=3] [ref=e4146]
+          - paragraph [ref=e4147]: Фильм «Интеграция Динамичных Решений 2» режиссёра Соловьев Зосима Устинович — это визуальный шедевр,...
+        - generic [ref=e4148]:
+          - link "Edit" [ref=e4149] [cursor=pointer]:
+            - /url: /notes/6c1295c0-eb1a-4796-a150-3d427a41f685/edit
+          - button "Delete" [ref=e4150]
+      - generic [ref=e4151]:
+        - link "Шкалирование Надежных Ниш 2 Фильм «Шкалирование Надежных Ниш 2» режиссёра Зимина Евдокия Аскольдовна — это визуальный шедевр, ко..." [ref=e4152] [cursor=pointer]:
+          - /url: /notes/9d2d23ed-3bd1-46a8-b56c-c6a27ed45c70
+          - heading "Шкалирование Надежных Ниш 2" [level=3] [ref=e4153]
+          - paragraph [ref=e4154]: Фильм «Шкалирование Надежных Ниш 2» режиссёра Зимина Евдокия Аскольдовна — это визуальный шедевр, ко...
+        - generic [ref=e4155]:
+          - link "Edit" [ref=e4156] [cursor=pointer]:
+            - /url: /notes/9d2d23ed-3bd1-46a8-b56c-c6a27ed45c70/edit
+          - button "Delete" [ref=e4157]
+      - generic [ref=e4158]:
+        - link "Эксплуатация Заказных Инфраструктур 5 Фильм «Эксплуатация Заказных Инфраструктур 5» режиссёра Терентьева Олимпиада Никифоровна — это визуа..." [ref=e4159] [cursor=pointer]:
+          - /url: /notes/b72f9e72-a0b6-4f41-9e0e-61854c377178
+          - heading "Эксплуатация Заказных Инфраструктур 5" [level=3] [ref=e4160]
+          - paragraph [ref=e4161]: Фильм «Эксплуатация Заказных Инфраструктур 5» режиссёра Терентьева Олимпиада Никифоровна — это визуа...
+        - generic [ref=e4162]:
+          - link "Edit" [ref=e4163] [cursor=pointer]:
+            - /url: /notes/b72f9e72-a0b6-4f41-9e0e-61854c377178/edit
+          - button "Delete" [ref=e4164]
+      - generic [ref=e4165]:
+        - link "Конструирование Активных Инфопосредников 2 Фильм «Конструирование Активных Инфопосредников 2» режиссёра Меркушев Онуфрий Ануфриевич — это визуа..." [ref=e4166] [cursor=pointer]:
+          - /url: /notes/ee70278e-e1e0-451b-87d9-d44be5a18588
+          - heading "Конструирование Активных Инфопосредников 2" [level=3] [ref=e4167]
+          - paragraph [ref=e4168]: Фильм «Конструирование Активных Инфопосредников 2» режиссёра Меркушев Онуфрий Ануфриевич — это визуа...
+        - generic [ref=e4169]:
+          - link "Edit" [ref=e4170] [cursor=pointer]:
+            - /url: /notes/ee70278e-e1e0-451b-87d9-d44be5a18588/edit
+          - button "Delete" [ref=e4171]
+      - generic [ref=e4172]:
+        - link "Приспособление Распространенных Систем Снабжения 5 Фильм «Приспособление Распространенных Систем Снабжения 5» режиссёра Зиновьева Синклитикия Эльдаровн..." [ref=e4173] [cursor=pointer]:
+          - /url: /notes/9a1d5ab8-1548-48c4-8a1d-18f3ba79de1d
+          - heading "Приспособление Распространенных Систем Снабжения 5" [level=3] [ref=e4174]
+          - paragraph [ref=e4175]: Фильм «Приспособление Распространенных Систем Снабжения 5» режиссёра Зиновьева Синклитикия Эльдаровн...
+        - generic [ref=e4176]:
+          - link "Edit" [ref=e4177] [cursor=pointer]:
+            - /url: /notes/9a1d5ab8-1548-48c4-8a1d-18f3ba79de1d/edit
+          - button "Delete" [ref=e4178]
+      - generic [ref=e4179]:
+        - link "Продление Открытых Порталов 5 Фильм «Продление Открытых Порталов 5» режиссёра Куликова Синклитикия Максимовна — это визуальный шед..." [ref=e4180] [cursor=pointer]:
+          - /url: /notes/dee95f41-62fc-45c9-b733-1ec2b3e534ee
+          - heading "Продление Открытых Порталов 5" [level=3] [ref=e4181]
+          - paragraph [ref=e4182]: Фильм «Продление Открытых Порталов 5» режиссёра Куликова Синклитикия Максимовна — это визуальный шед...
+        - generic [ref=e4183]:
+          - link "Edit" [ref=e4184] [cursor=pointer]:
+            - /url: /notes/dee95f41-62fc-45c9-b733-1ec2b3e534ee/edit
+          - button "Delete" [ref=e4185]
+      - generic [ref=e4186]:
+        - link "Визуализация Глобальных Пользователей 4 Фильм «Визуализация Глобальных Пользователей 4» режиссёра Любовь Степановна Кулагина — это визуальны..." [ref=e4187] [cursor=pointer]:
+          - /url: /notes/5f236b21-2e21-4502-bd59-7c12ef3c14c2
+          - heading "Визуализация Глобальных Пользователей 4" [level=3] [ref=e4188]
+          - paragraph [ref=e4189]: Фильм «Визуализация Глобальных Пользователей 4» режиссёра Любовь Степановна Кулагина — это визуальны...
+        - generic [ref=e4190]:
+          - link "Edit" [ref=e4191] [cursor=pointer]:
+            - /url: /notes/5f236b21-2e21-4502-bd59-7c12ef3c14c2/edit
+          - button "Delete" [ref=e4192]
+      - generic [ref=e4193]:
+        - link "Генерация Ориентированных На Пользователя Рынков 2 Фильм «Генерация Ориентированных На Пользователя Рынков 2» режиссёра Пономарева Варвара Дмитриевна —..." [ref=e4194] [cursor=pointer]:
+          - /url: /notes/39bd4c7e-14f5-49eb-a5fa-d53b1f2e10ed
+          - heading "Генерация Ориентированных На Пользователя Рынков 2" [level=3] [ref=e4195]
+          - paragraph [ref=e4196]: Фильм «Генерация Ориентированных На Пользователя Рынков 2» режиссёра Пономарева Варвара Дмитриевна —...
+        - generic [ref=e4197]:
+          - link "Edit" [ref=e4198] [cursor=pointer]:
+            - /url: /notes/39bd4c7e-14f5-49eb-a5fa-d53b1f2e10ed/edit
+          - button "Delete" [ref=e4199]
+      - generic [ref=e4200]:
+        - link "Продление Ультрасовременных Технологий 4 Фильм «Продление Ультрасовременных Технологий 4» режиссёра Агафонов Симон Эдгарович — это визуальный..." [ref=e4201] [cursor=pointer]:
+          - /url: /notes/b442ac4b-200e-4421-b0a5-30c943731599
+          - heading "Продление Ультрасовременных Технологий 4" [level=3] [ref=e4202]
+          - paragraph [ref=e4203]: Фильм «Продление Ультрасовременных Технологий 4» режиссёра Агафонов Симон Эдгарович — это визуальный...
+        - generic [ref=e4204]:
+          - link "Edit" [ref=e4205] [cursor=pointer]:
+            - /url: /notes/b442ac4b-200e-4421-b0a5-30c943731599/edit
+          - button "Delete" [ref=e4206]
+      - generic [ref=e4207]:
+        - link "Максимизация Революционных Интернет-Магазинов 4 Фильм «Максимизация Революционных Интернет-Магазинов 4» режиссёра Ирина Натановна Титова — это визуа..." [ref=e4208] [cursor=pointer]:
+          - /url: /notes/f431991d-2b1d-4513-8718-4b46389a6fbf
+          - heading "Максимизация Революционных Интернет-Магазинов 4" [level=3] [ref=e4209]
+          - paragraph [ref=e4210]: Фильм «Максимизация Революционных Интернет-Магазинов 4» режиссёра Ирина Натановна Титова — это визуа...
+        - generic [ref=e4211]:
+          - link "Edit" [ref=e4212] [cursor=pointer]:
+            - /url: /notes/f431991d-2b1d-4513-8718-4b46389a6fbf/edit
+          - button "Delete" [ref=e4213]
+      - generic [ref=e4214]:
+        - link "Разворачивание Надежных Ниш 3 Фильм «Разворачивание Надежных Ниш 3» режиссёра Одинцов Ерофей Харлампьевич — это визуальный шедевр,..." [ref=e4215] [cursor=pointer]:
+          - /url: /notes/2007cb2d-85ad-4b28-a4c0-9cf63fff1c03
+          - heading "Разворачивание Надежных Ниш 3" [level=3] [ref=e4216]
+          - paragraph [ref=e4217]: Фильм «Разворачивание Надежных Ниш 3» режиссёра Одинцов Ерофей Харлампьевич — это визуальный шедевр,...
+        - generic [ref=e4218]:
+          - link "Edit" [ref=e4219] [cursor=pointer]:
+            - /url: /notes/2007cb2d-85ad-4b28-a4c0-9cf63fff1c03/edit
+          - button "Delete" [ref=e4220]
+      - generic [ref=e4221]:
+        - link "Синхронизация Надежных Приложений 4 Фильм «Синхронизация Надежных Приложений 4» режиссёра Александра Владиславовна Калашникова — это виз..." [ref=e4222] [cursor=pointer]:
+          - /url: /notes/8bd05c71-d118-4df9-abd0-a34fc7f92862
+          - heading "Синхронизация Надежных Приложений 4" [level=3] [ref=e4223]
+          - paragraph [ref=e4224]: Фильм «Синхронизация Надежных Приложений 4» режиссёра Александра Владиславовна Калашникова — это виз...
+        - generic [ref=e4225]:
+          - link "Edit" [ref=e4226] [cursor=pointer]:
+            - /url: /notes/8bd05c71-d118-4df9-abd0-a34fc7f92862/edit
+          - button "Delete" [ref=e4227]
+      - generic [ref=e4228]:
+        - link "Координация Цельных Метрик 3 Фильм «Координация Цельных Метрик 3» режиссёра Олег Арсеньевич Носков — это визуальный шедевр, котор..." [ref=e4229] [cursor=pointer]:
+          - /url: /notes/a574be08-05f3-45db-8885-c001a71b52cb
+          - heading "Координация Цельных Метрик 3" [level=3] [ref=e4230]
+          - paragraph [ref=e4231]: Фильм «Координация Цельных Метрик 3» режиссёра Олег Арсеньевич Носков — это визуальный шедевр, котор...
+        - generic [ref=e4232]:
+          - link "Edit" [ref=e4233] [cursor=pointer]:
+            - /url: /notes/a574be08-05f3-45db-8885-c001a71b52cb/edit
+          - button "Delete" [ref=e4234]
+      - generic [ref=e4235]:
+        - link "Перепрофилирование Индивидуальных Парадигм 4 Фильм «Перепрофилирование Индивидуальных Парадигм 4» режиссёра Кузнецова Евдокия Аскольдовна — это в..." [ref=e4236] [cursor=pointer]:
+          - /url: /notes/b009ed04-cfff-4714-84f0-5b8189bf0434
+          - heading "Перепрофилирование Индивидуальных Парадигм 4" [level=3] [ref=e4237]
+          - paragraph [ref=e4238]: Фильм «Перепрофилирование Индивидуальных Парадигм 4» режиссёра Кузнецова Евдокия Аскольдовна — это в...
+        - generic [ref=e4239]:
+          - link "Edit" [ref=e4240] [cursor=pointer]:
+            - /url: /notes/b009ed04-cfff-4714-84f0-5b8189bf0434/edit
+          - button "Delete" [ref=e4241]
+      - generic [ref=e4242]:
+        - link "Монетизация Прибыльных Аудиторий 5 Фильм «Монетизация Прибыльных Аудиторий 5» режиссёра Никита Ильясович Куликов — это визуальный шедев..." [ref=e4243] [cursor=pointer]:
+          - /url: /notes/58120a83-ad50-4fb0-bd65-c17a318b95b7
+          - heading "Монетизация Прибыльных Аудиторий 5" [level=3] [ref=e4244]
+          - paragraph [ref=e4245]: Фильм «Монетизация Прибыльных Аудиторий 5» режиссёра Никита Ильясович Куликов — это визуальный шедев...
+        - generic [ref=e4246]:
+          - link "Edit" [ref=e4247] [cursor=pointer]:
+            - /url: /notes/58120a83-ad50-4fb0-bd65-c17a318b95b7/edit
+          - button "Delete" [ref=e4248]
+      - generic [ref=e4249]:
+        - link "Использование Подробных Ниш 4 Фильм «Использование Подробных Ниш 4» режиссёра Ольга Леонидовна Никитина — это визуальный шедевр, к..." [ref=e4250] [cursor=pointer]:
+          - /url: /notes/f4bfce62-64e3-44b3-ac2e-e68eabddfd56
+          - heading "Использование Подробных Ниш 4" [level=3] [ref=e4251]
+          - paragraph [ref=e4252]: Фильм «Использование Подробных Ниш 4» режиссёра Ольга Леонидовна Никитина — это визуальный шедевр, к...
+        - generic [ref=e4253]:
+          - link "Edit" [ref=e4254] [cursor=pointer]:
+            - /url: /notes/f4bfce62-64e3-44b3-ac2e-e68eabddfd56/edit
+          - button "Delete" [ref=e4255]
+      - generic [ref=e4256]:
+        - link "Управление Распределённых Интернет-Компаний 4 Фильм «Управление Распределённых Интернет-Компаний 4» режиссёра Агафья Даниловна Михеева — это визуа..." [ref=e4257] [cursor=pointer]:
+          - /url: /notes/e7888e2e-6457-494b-b3e8-49cff87de659
+          - heading "Управление Распределённых Интернет-Компаний 4" [level=3] [ref=e4258]
+          - paragraph [ref=e4259]: Фильм «Управление Распределённых Интернет-Компаний 4» режиссёра Агафья Даниловна Михеева — это визуа...
+        - generic [ref=e4260]:
+          - link "Edit" [ref=e4261] [cursor=pointer]:
+            - /url: /notes/e7888e2e-6457-494b-b3e8-49cff87de659/edit
+          - button "Delete" [ref=e4262]
+      - generic [ref=e4263]:
+        - link "Модернизация Открытых Схем 3 Фильм «Модернизация Открытых Схем 3» режиссёра Жданова Жанна Федоровна — это визуальный шедевр, кото..." [ref=e4264] [cursor=pointer]:
+          - /url: /notes/cc8a8061-fd5a-4bc0-aaf3-afecb5b742b3
+          - heading "Модернизация Открытых Схем 3" [level=3] [ref=e4265]
+          - paragraph [ref=e4266]: Фильм «Модернизация Открытых Схем 3» режиссёра Жданова Жанна Федоровна — это визуальный шедевр, кото...
+        - generic [ref=e4267]:
+          - link "Edit" [ref=e4268] [cursor=pointer]:
+            - /url: /notes/cc8a8061-fd5a-4bc0-aaf3-afecb5b742b3/edit
+          - button "Delete" [ref=e4269]
+      - generic [ref=e4270]:
+        - link "Преображение Революционных Решений 4 Фильм «Преображение Революционных Решений 4» режиссёра Васильев Рубен Терентьевич — это визуальный ш..." [ref=e4271] [cursor=pointer]:
+          - /url: /notes/ce3edda1-c5b6-454a-9335-40e3dd909030
+          - heading "Преображение Революционных Решений 4" [level=3] [ref=e4272]
+          - paragraph [ref=e4273]: Фильм «Преображение Революционных Решений 4» режиссёра Васильев Рубен Терентьевич — это визуальный ш...
+        - generic [ref=e4274]:
+          - link "Edit" [ref=e4275] [cursor=pointer]:
+            - /url: /notes/ce3edda1-c5b6-454a-9335-40e3dd909030/edit
+          - button "Delete" [ref=e4276]
+      - generic [ref=e4277]:
+        - link "Перезагрузка Вертикальных Платформ 2 Фильм «Перезагрузка Вертикальных Платформ 2» режиссёра Доброслав Аксёнович Константинов — это визуал..." [ref=e4278] [cursor=pointer]:
+          - /url: /notes/e3b4eeff-3377-44cc-ba0d-2d2739e77ef4
+          - heading "Перезагрузка Вертикальных Платформ 2" [level=3] [ref=e4279]
+          - paragraph [ref=e4280]: Фильм «Перезагрузка Вертикальных Платформ 2» режиссёра Доброслав Аксёнович Константинов — это визуал...
+        - generic [ref=e4281]:
+          - link "Edit" [ref=e4282] [cursor=pointer]:
+            - /url: /notes/e3b4eeff-3377-44cc-ba0d-2d2739e77ef4/edit
+          - button "Delete" [ref=e4283]
+      - generic [ref=e4284]:
+        - link "Переход Корпоративных Диапазонов 4 Фильм «Переход Корпоративных Диапазонов 4» режиссёра Елизавета Васильевна Терентьева — это визуальны..." [ref=e4285] [cursor=pointer]:
+          - /url: /notes/bb24217c-8b77-4ca9-9ea2-2f7d055c2f36
+          - heading "Переход Корпоративных Диапазонов 4" [level=3] [ref=e4286]
+          - paragraph [ref=e4287]: Фильм «Переход Корпоративных Диапазонов 4» режиссёра Елизавета Васильевна Терентьева — это визуальны...
+        - generic [ref=e4288]:
+          - link "Edit" [ref=e4289] [cursor=pointer]:
+            - /url: /notes/bb24217c-8b77-4ca9-9ea2-2f7d055c2f36/edit
+          - button "Delete" [ref=e4290]
+      - generic [ref=e4291]:
+        - link "Поэтапный и многозадачный мониторинг — Вскинуть Прежний Роман «Поэтапный и многозадачный мониторинг — Вскинуть Прежний» — это глубокое философское произведе..." [ref=e4292] [cursor=pointer]:
+          - /url: /notes/e2eeea41-a5cd-4ac1-88c8-486be1f784d2
+          - heading "Поэтапный и многозадачный мониторинг — Вскинуть Прежний" [level=3] [ref=e4293]
+          - paragraph [ref=e4294]: Роман «Поэтапный и многозадачный мониторинг — Вскинуть Прежний» — это глубокое философское произведе...
+        - generic [ref=e4295]:
+          - link "Edit" [ref=e4296] [cursor=pointer]:
+            - /url: /notes/e2eeea41-a5cd-4ac1-88c8-486be1f784d2/edit
+          - button "Delete" [ref=e4297]
+      - generic [ref=e4298]:
+        - link "Адаптивный и методичный эталон — Решение Ученый Роман «Адаптивный и методичный эталон — Решение Ученый» — это глубокое философское произведение, исс..." [ref=e4299] [cursor=pointer]:
+          - /url: /notes/09cfe14c-4eb3-4a77-a3f1-0d2141d02ffe
+          - heading "Адаптивный и методичный эталон — Решение Ученый" [level=3] [ref=e4300]
+          - paragraph [ref=e4301]: Роман «Адаптивный и методичный эталон — Решение Ученый» — это глубокое философское произведение, исс...
+        - generic [ref=e4302]:
+          - link "Edit" [ref=e4303] [cursor=pointer]:
+            - /url: /notes/09cfe14c-4eb3-4a77-a3f1-0d2141d02ffe/edit
+          - button "Delete" [ref=e4304]
+      - generic [ref=e4305]:
+        - link "Прогрессивная и специализированная методология — Совещание Редактор Роман «Прогрессивная и специализированная методология — Совещание Редактор» — это глубокое философск..." [ref=e4306] [cursor=pointer]:
+          - /url: /notes/671278bd-9d75-4e5a-bda9-5b6e850829e5
+          - heading "Прогрессивная и специализированная методология — Совещание Редактор" [level=3] [ref=e4307]
+          - paragraph [ref=e4308]: Роман «Прогрессивная и специализированная методология — Совещание Редактор» — это глубокое философск...
+        - generic [ref=e4309]:
+          - link "Edit" [ref=e4310] [cursor=pointer]:
+            - /url: /notes/671278bd-9d75-4e5a-bda9-5b6e850829e5/edit
+          - button "Delete" [ref=e4311]
+      - generic [ref=e4312]:
+        - link "Автоматизированный и социальный графический интерфейс пользователя — Ставить Подробность Роман «Автоматизированный и социальный графический интерфейс пользователя — Ставить Подробность» — э..." [ref=e4313] [cursor=pointer]:
+          - /url: /notes/aaaa6783-fda7-4edd-b3ac-3bcb255efddd
+          - heading "Автоматизированный и социальный графический интерфейс пользователя — Ставить Подробность" [level=3] [ref=e4314]
+          - paragraph [ref=e4315]: Роман «Автоматизированный и социальный графический интерфейс пользователя — Ставить Подробность» — э...
+        - generic [ref=e4316]:
+          - link "Edit" [ref=e4317] [cursor=pointer]:
+            - /url: /notes/aaaa6783-fda7-4edd-b3ac-3bcb255efddd/edit
+          - button "Delete" [ref=e4318]
+      - generic [ref=e4319]:
+        - link "Новая и яркая прошивка — Школьный Художественный Роман «Новая и яркая прошивка — Школьный Художественный» — это глубокое философское произведение, ис..." [ref=e4320] [cursor=pointer]:
+          - /url: /notes/13299357-351e-4c86-ba29-4c5aa4c2376d
+          - heading "Новая и яркая прошивка — Школьный Художественный" [level=3] [ref=e4321]
+          - paragraph [ref=e4322]: Роман «Новая и яркая прошивка — Школьный Художественный» — это глубокое философское произведение, ис...
+        - generic [ref=e4323]:
+          - link "Edit" [ref=e4324] [cursor=pointer]:
+            - /url: /notes/13299357-351e-4c86-ba29-4c5aa4c2376d/edit
+          - button "Delete" [ref=e4325]
+      - generic [ref=e4326]:
+        - link "Многогранная и динамичная матрица — Близко Висеть Роман «Многогранная и динамичная матрица — Близко Висеть» — это глубокое философское произведение, и..." [ref=e4327] [cursor=pointer]:
+          - /url: /notes/57c29af3-fb6f-483e-bc53-bf9e290b2ac9
+          - heading "Многогранная и динамичная матрица — Близко Висеть" [level=3] [ref=e4328]
+          - paragraph [ref=e4329]: Роман «Многогранная и динамичная матрица — Близко Висеть» — это глубокое философское произведение, и...
+        - generic [ref=e4330]:
+          - link "Edit" [ref=e4331] [cursor=pointer]:
+            - /url: /notes/57c29af3-fb6f-483e-bc53-bf9e290b2ac9/edit
+          - button "Delete" [ref=e4332]
+      - generic [ref=e4333]:
+        - link "Сетевой и пошаговый системный движок — Собеседник Пространство Роман «Сетевой и пошаговый системный движок — Собеседник Пространство» — это глубокое философское пр..." [ref=e4334] [cursor=pointer]:
+          - /url: /notes/462b04ec-3828-465b-a417-10ffb889caf8
+          - heading "Сетевой и пошаговый системный движок — Собеседник Пространство" [level=3] [ref=e4335]
+          - paragraph [ref=e4336]: Роман «Сетевой и пошаговый системный движок — Собеседник Пространство» — это глубокое философское пр...
+        - generic [ref=e4337]:
+          - link "Edit" [ref=e4338] [cursor=pointer]:
+            - /url: /notes/462b04ec-3828-465b-a417-10ffb889caf8/edit
+          - button "Delete" [ref=e4339]
+      - generic [ref=e4340]:
+        - link "Автоматизированный и целостный массив — Вскинуть Умолять Роман «Автоматизированный и целостный массив — Вскинуть Умолять» — это глубокое философское произвед..." [ref=e4341] [cursor=pointer]:
+          - /url: /notes/639f79e2-b740-4a01-ad8c-3026f7c1dc55
+          - heading "Автоматизированный и целостный массив — Вскинуть Умолять" [level=3] [ref=e4342]
+          - paragraph [ref=e4343]: Роман «Автоматизированный и целостный массив — Вскинуть Умолять» — это глубокое философское произвед...
+        - generic [ref=e4344]:
+          - link "Edit" [ref=e4345] [cursor=pointer]:
+            - /url: /notes/639f79e2-b740-4a01-ad8c-3026f7c1dc55/edit
+          - button "Delete" [ref=e4346]
+      - generic [ref=e4347]:
+        - link "Функциональная и отказостойкая архитектура — Избегать Труп Роман «Функциональная и отказостойкая архитектура — Избегать Труп» — это глубокое философское произв..." [ref=e4348] [cursor=pointer]:
+          - /url: /notes/1bf5c9b8-f67d-4458-adf9-761613af02c6
+          - heading "Функциональная и отказостойкая архитектура — Избегать Труп" [level=3] [ref=e4349]
+          - paragraph [ref=e4350]: Роман «Функциональная и отказостойкая архитектура — Избегать Труп» — это глубокое философское произв...
+        - generic [ref=e4351]:
+          - link "Edit" [ref=e4352] [cursor=pointer]:
+            - /url: /notes/1bf5c9b8-f67d-4458-adf9-761613af02c6/edit
+          - button "Delete" [ref=e4353]
+      - generic [ref=e4354]:
+        - link "Устойчивая и максимальная суперструктура — Дрогнуть Угодный Роман «Устойчивая и максимальная суперструктура — Дрогнуть Угодный» — это глубокое философское произ..." [ref=e4355] [cursor=pointer]:
+          - /url: /notes/39faf99d-ddce-4190-85b5-227abf3a8558
+          - heading "Устойчивая и максимальная суперструктура — Дрогнуть Угодный" [level=3] [ref=e4356]
+          - paragraph [ref=e4357]: Роман «Устойчивая и максимальная суперструктура — Дрогнуть Угодный» — это глубокое философское произ...
+        - generic [ref=e4358]:
+          - link "Edit" [ref=e4359] [cursor=pointer]:
+            - /url: /notes/39faf99d-ddce-4190-85b5-227abf3a8558/edit
+          - button "Delete" [ref=e4360]
+      - generic [ref=e4361]:
+        - link "Оптимизированная и статическая инициатива — Вздрогнуть Разнообразный Роман «Оптимизированная и статическая инициатива — Вздрогнуть Разнообразный» — это глубокое философс..." [ref=e4362] [cursor=pointer]:
+          - /url: /notes/57d1b8a2-eb2e-4d00-a40d-3b3d5b1b11cc
+          - heading "Оптимизированная и статическая инициатива — Вздрогнуть Разнообразный" [level=3] [ref=e4363]
+          - paragraph [ref=e4364]: Роман «Оптимизированная и статическая инициатива — Вздрогнуть Разнообразный» — это глубокое философс...
+        - generic [ref=e4365]:
+          - link "Edit" [ref=e4366] [cursor=pointer]:
+            - /url: /notes/57d1b8a2-eb2e-4d00-a40d-3b3d5b1b11cc/edit
+          - button "Delete" [ref=e4367]
+      - generic [ref=e4368]:
+        - link "Уменьшенное и промежуточное взаимодействие — Еврейский Школьный Роман «Уменьшенное и промежуточное взаимодействие — Еврейский Школьный» — это глубокое философское п..." [ref=e4369] [cursor=pointer]:
+          - /url: /notes/9596dea4-c82d-4e12-991b-7521dface29f
+          - heading "Уменьшенное и промежуточное взаимодействие — Еврейский Школьный" [level=3] [ref=e4370]
+          - paragraph [ref=e4371]: Роман «Уменьшенное и промежуточное взаимодействие — Еврейский Школьный» — это глубокое философское п...
+        - generic [ref=e4372]:
+          - link "Edit" [ref=e4373] [cursor=pointer]:
+            - /url: /notes/9596dea4-c82d-4e12-991b-7521dface29f/edit
+          - button "Delete" [ref=e4374]
+      - generic [ref=e4375]:
+        - link "Реконструируемое и пошаговое использование — Единый Очередной Роман «Реконструируемое и пошаговое использование — Единый Очередной» — это глубокое философское про..." [ref=e4376] [cursor=pointer]:
+          - /url: /notes/9a3225a0-406e-41aa-82f3-380c8d6da6b8
+          - heading "Реконструируемое и пошаговое использование — Единый Очередной" [level=3] [ref=e4377]
+          - paragraph [ref=e4378]: Роман «Реконструируемое и пошаговое использование — Единый Очередной» — это глубокое философское про...
+        - generic [ref=e4379]:
+          - link "Edit" [ref=e4380] [cursor=pointer]:
+            - /url: /notes/9a3225a0-406e-41aa-82f3-380c8d6da6b8/edit
+          - button "Delete" [ref=e4381]
+      - generic [ref=e4382]:
+        - link "Разнообразная и отказостойкая база знаний — Проход Табак Роман «Разнообразная и отказостойкая база знаний — Проход Табак» — это глубокое философское произвед..." [ref=e4383] [cursor=pointer]:
+          - /url: /notes/50e02c81-ff3d-4f8c-90c4-92386ff361f7
+          - heading "Разнообразная и отказостойкая база знаний — Проход Табак" [level=3] [ref=e4384]
+          - paragraph [ref=e4385]: Роман «Разнообразная и отказостойкая база знаний — Проход Табак» — это глубокое философское произвед...
+        - generic [ref=e4386]:
+          - link "Edit" [ref=e4387] [cursor=pointer]:
+            - /url: /notes/50e02c81-ff3d-4f8c-90c4-92386ff361f7/edit
+          - button "Delete" [ref=e4388]
+      - generic [ref=e4389]:
+        - link "Синхронизированная и максимальная проекция — Табак Свежий Роман «Синхронизированная и максимальная проекция — Табак Свежий» — это глубокое философское произве..." [ref=e4390] [cursor=pointer]:
+          - /url: /notes/077e8029-773e-4393-b180-35d223d7cbd7
+          - heading "Синхронизированная и максимальная проекция — Табак Свежий" [level=3] [ref=e4391]
+          - paragraph [ref=e4392]: Роман «Синхронизированная и максимальная проекция — Табак Свежий» — это глубокое философское произве...
+        - generic [ref=e4393]:
+          - link "Edit" [ref=e4394] [cursor=pointer]:
+            - /url: /notes/077e8029-773e-4393-b180-35d223d7cbd7/edit
+          - button "Delete" [ref=e4395]
+      - generic [ref=e4396]:
+        - link "Улучшенное и радикальное использование — Прежде Заведение Роман «Улучшенное и радикальное использование — Прежде Заведение» — это глубокое философское произве..." [ref=e4397] [cursor=pointer]:
+          - /url: /notes/93860fd4-d0a9-4191-8ff4-da416da0b91f
+          - heading "Улучшенное и радикальное использование — Прежде Заведение" [level=3] [ref=e4398]
+          - paragraph [ref=e4399]: Роман «Улучшенное и радикальное использование — Прежде Заведение» — это глубокое философское произве...
+        - generic [ref=e4400]:
+          - link "Edit" [ref=e4401] [cursor=pointer]:
+            - /url: /notes/93860fd4-d0a9-4191-8ff4-da416da0b91f/edit
+          - button "Delete" [ref=e4402]
+      - generic [ref=e4403]:
+        - link "Прочное и региональное взаимодействие — Кожа Бровь Роман «Прочное и региональное взаимодействие — Кожа Бровь» — это глубокое философское произведение, ..." [ref=e4404] [cursor=pointer]:
+          - /url: /notes/dfb1c00d-1249-4765-83d7-47a6baec2dc7
+          - heading "Прочное и региональное взаимодействие — Кожа Бровь" [level=3] [ref=e4405]
+          - paragraph [ref=e4406]: Роман «Прочное и региональное взаимодействие — Кожа Бровь» — это глубокое философское произведение, ...
+        - generic [ref=e4407]:
+          - link "Edit" [ref=e4408] [cursor=pointer]:
+            - /url: /notes/dfb1c00d-1249-4765-83d7-47a6baec2dc7/edit
+          - button "Delete" [ref=e4409]
+      - generic [ref=e4410]:
+        - link "Интегрированный и динамичный продукт — Висеть Издали Роман «Интегрированный и динамичный продукт — Висеть Издали» — это глубокое философское произведение..." [ref=e4411] [cursor=pointer]:
+          - /url: /notes/e5ddbcc5-c09c-4ab1-8ddb-8d4f15c5d26e
+          - heading "Интегрированный и динамичный продукт — Висеть Издали" [level=3] [ref=e4412]
+          - paragraph [ref=e4413]: Роман «Интегрированный и динамичный продукт — Висеть Издали» — это глубокое философское произведение...
+        - generic [ref=e4414]:
+          - link "Edit" [ref=e4415] [cursor=pointer]:
+            - /url: /notes/e5ddbcc5-c09c-4ab1-8ddb-8d4f15c5d26e/edit
+          - button "Delete" [ref=e4416]
+      - generic [ref=e4417]:
+        - link "Автоматизированная и масштабируемая сеть Экстранет — Выбирать Разуметься Роман «Автоматизированная и масштабируемая сеть Экстранет — Выбирать Разуметься» — это глубокое фило..." [ref=e4418] [cursor=pointer]:
+          - /url: /notes/e71bb880-5af0-4076-8665-f9f31ded9b73
+          - heading "Автоматизированная и масштабируемая сеть Экстранет — Выбирать Разуметься" [level=3] [ref=e4419]
+          - paragraph [ref=e4420]: Роман «Автоматизированная и масштабируемая сеть Экстранет — Выбирать Разуметься» — это глубокое фило...
+        - generic [ref=e4421]:
+          - link "Edit" [ref=e4422] [cursor=pointer]:
+            - /url: /notes/e71bb880-5af0-4076-8665-f9f31ded9b73/edit
+          - button "Delete" [ref=e4423]
+      - generic [ref=e4424]:
+        - link "Сбалансированная и локальная проекция — Дальний Палка Роман «Сбалансированная и локальная проекция — Дальний Палка» — это глубокое философское произведени..." [ref=e4425] [cursor=pointer]:
+          - /url: /notes/dd45e7dc-24ec-4926-a5cb-565f67aca342
+          - heading "Сбалансированная и локальная проекция — Дальний Палка" [level=3] [ref=e4426]
+          - paragraph [ref=e4427]: Роман «Сбалансированная и локальная проекция — Дальний Палка» — это глубокое философское произведени...
+        - generic [ref=e4428]:
+          - link "Edit" [ref=e4429] [cursor=pointer]:
+            - /url: /notes/dd45e7dc-24ec-4926-a5cb-565f67aca342/edit
+          - button "Delete" [ref=e4430]
+      - generic [ref=e4431]:
+        - link "Прогрессивное и основное ядро — Ленинград Перебивать Роман «Прогрессивное и основное ядро — Ленинград Перебивать» — это глубокое философское произведение..." [ref=e4432] [cursor=pointer]:
+          - /url: /notes/b8c6ff28-4bc1-434a-a656-9b2d29b3d707
+          - heading "Прогрессивное и основное ядро — Ленинград Перебивать" [level=3] [ref=e4433]
+          - paragraph [ref=e4434]: Роман «Прогрессивное и основное ядро — Ленинград Перебивать» — это глубокое философское произведение...
+        - generic [ref=e4435]:
+          - link "Edit" [ref=e4436] [cursor=pointer]:
+            - /url: /notes/b8c6ff28-4bc1-434a-a656-9b2d29b3d707/edit
+          - button "Delete" [ref=e4437]
+      - generic [ref=e4438]:
+        - link "Реализованная и аналитическая сеть Экстранет — Спасть Освободить Роман «Реализованная и аналитическая сеть Экстранет — Спасть Освободить» — это глубокое философское ..." [ref=e4439] [cursor=pointer]:
+          - /url: /notes/952ed5f8-7ccb-4657-81fc-cb08f4652b53
+          - heading "Реализованная и аналитическая сеть Экстранет — Спасть Освободить" [level=3] [ref=e4440]
+          - paragraph [ref=e4441]: Роман «Реализованная и аналитическая сеть Экстранет — Спасть Освободить» — это глубокое философское ...
+        - generic [ref=e4442]:
+          - link "Edit" [ref=e4443] [cursor=pointer]:
+            - /url: /notes/952ed5f8-7ccb-4657-81fc-cb08f4652b53/edit
+          - button "Delete" [ref=e4444]
+      - generic [ref=e4445]:
+        - link "Функциональная и объектно-ориентированная эмуляция — Выражаться Столетие Роман «Функциональная и объектно-ориентированная эмуляция — Выражаться Столетие» — это глубокое фило..." [ref=e4446] [cursor=pointer]:
+          - /url: /notes/cb62ce7d-5458-46c6-946b-4f7858c82247
+          - heading "Функциональная и объектно-ориентированная эмуляция — Выражаться Столетие" [level=3] [ref=e4447]
+          - paragraph [ref=e4448]: Роман «Функциональная и объектно-ориентированная эмуляция — Выражаться Столетие» — это глубокое фило...
+        - generic [ref=e4449]:
+          - link "Edit" [ref=e4450] [cursor=pointer]:
+            - /url: /notes/cb62ce7d-5458-46c6-946b-4f7858c82247/edit
+          - button "Delete" [ref=e4451]
+      - generic [ref=e4452]:
+        - link "Виртуальная и объектно-ориентированная нейронная сеть — Дремать Упор Роман «Виртуальная и объектно-ориентированная нейронная сеть — Дремать Упор» — это глубокое философс..." [ref=e4453] [cursor=pointer]:
+          - /url: /notes/1919a327-aac2-4392-875f-d147d9c39413
+          - heading "Виртуальная и объектно-ориентированная нейронная сеть — Дремать Упор" [level=3] [ref=e4454]
+          - paragraph [ref=e4455]: Роман «Виртуальная и объектно-ориентированная нейронная сеть — Дремать Упор» — это глубокое философс...
+        - generic [ref=e4456]:
+          - link "Edit" [ref=e4457] [cursor=pointer]:
+            - /url: /notes/1919a327-aac2-4392-875f-d147d9c39413/edit
+          - button "Delete" [ref=e4458]
+      - generic [ref=e4459]:
+        - link "Обязательное и асинхронное групповое программное обеспечение — Чувство Товар Роман «Обязательное и асинхронное групповое программное обеспечение — Чувство Товар» — это глубокое ..." [ref=e4460] [cursor=pointer]:
+          - /url: /notes/b0c7f40c-508a-4845-99cf-e7eab1453d2d
+          - heading "Обязательное и асинхронное групповое программное обеспечение — Чувство Товар" [level=3] [ref=e4461]
+          - paragraph [ref=e4462]: Роман «Обязательное и асинхронное групповое программное обеспечение — Чувство Товар» — это глубокое ...
+        - generic [ref=e4463]:
+          - link "Edit" [ref=e4464] [cursor=pointer]:
+            - /url: /notes/b0c7f40c-508a-4845-99cf-e7eab1453d2d/edit
+          - button "Delete" [ref=e4465]
+      - generic [ref=e4466]:
+        - link "Интуитивная и систематическая конгломерация — Возможно Медицина Роман «Интуитивная и систематическая конгломерация — Возможно Медицина» — это глубокое философское п..." [ref=e4467] [cursor=pointer]:
+          - /url: /notes/533bf6fe-ddd3-4220-8c88-1a854618f2b1
+          - heading "Интуитивная и систематическая конгломерация — Возможно Медицина" [level=3] [ref=e4468]
+          - paragraph [ref=e4469]: Роман «Интуитивная и систематическая конгломерация — Возможно Медицина» — это глубокое философское п...
+        - generic [ref=e4470]:
+          - link "Edit" [ref=e4471] [cursor=pointer]:
+            - /url: /notes/533bf6fe-ddd3-4220-8c88-1a854618f2b1/edit
+          - button "Delete" [ref=e4472]
+      - generic [ref=e4473]:
+        - link "Бизнес-ориентированная и бездефектная прошивка — Наслаждение Приятель Роман «Бизнес-ориентированная и бездефектная прошивка — Наслаждение Приятель» — это глубокое философ..." [ref=e4474] [cursor=pointer]:
+          - /url: /notes/02aefb58-96a1-41cb-9a2a-e34d2081474d
+          - heading "Бизнес-ориентированная и бездефектная прошивка — Наслаждение Приятель" [level=3] [ref=e4475]
+          - paragraph [ref=e4476]: Роман «Бизнес-ориентированная и бездефектная прошивка — Наслаждение Приятель» — это глубокое философ...
+        - generic [ref=e4477]:
+          - link "Edit" [ref=e4478] [cursor=pointer]:
+            - /url: /notes/02aefb58-96a1-41cb-9a2a-e34d2081474d/edit
+          - button "Delete" [ref=e4479]
+      - generic [ref=e4480]:
+        - link "Интуитивная и интерактивная фокус-группа — Каюта Шлем Роман «Интуитивная и интерактивная фокус-группа — Каюта Шлем» — это глубокое философское произведени..." [ref=e4481] [cursor=pointer]:
+          - /url: /notes/fde9b5dc-3ca8-4f07-93ea-d6bf1d99f3a2
+          - heading "Интуитивная и интерактивная фокус-группа — Каюта Шлем" [level=3] [ref=e4482]
+          - paragraph [ref=e4483]: Роман «Интуитивная и интерактивная фокус-группа — Каюта Шлем» — это глубокое философское произведени...
+        - generic [ref=e4484]:
+          - link "Edit" [ref=e4485] [cursor=pointer]:
+            - /url: /notes/fde9b5dc-3ca8-4f07-93ea-d6bf1d99f3a2/edit
+          - button "Delete" [ref=e4486]
+      - generic [ref=e4487]:
+        - link "Совместимая и составная гибкость — Виднеться Рай Роман «Совместимая и составная гибкость — Виднеться Рай» — это глубокое философское произведение, ис..." [ref=e4488] [cursor=pointer]:
+          - /url: /notes/27203b26-8974-4a15-a1fa-e1107d415db1
+          - heading "Совместимая и составная гибкость — Виднеться Рай" [level=3] [ref=e4489]
+          - paragraph [ref=e4490]: Роман «Совместимая и составная гибкость — Виднеться Рай» — это глубокое философское произведение, ис...
+        - generic [ref=e4491]:
+          - link "Edit" [ref=e4492] [cursor=pointer]:
+            - /url: /notes/27203b26-8974-4a15-a1fa-e1107d415db1/edit
+          - button "Delete" [ref=e4493]
+      - generic [ref=e4494]:
+        - link "Полный и высокоуровневый фреймворк — Дальний Сустав Роман «Полный и высокоуровневый фреймворк — Дальний Сустав» — это глубокое философское произведение,..." [ref=e4495] [cursor=pointer]:
+          - /url: /notes/f4a184e2-5c23-409d-afe4-5f0c67320a77
+          - heading "Полный и высокоуровневый фреймворк — Дальний Сустав" [level=3] [ref=e4496]
+          - paragraph [ref=e4497]: Роман «Полный и высокоуровневый фреймворк — Дальний Сустав» — это глубокое философское произведение,...
+        - generic [ref=e4498]:
+          - link "Edit" [ref=e4499] [cursor=pointer]:
+            - /url: /notes/f4a184e2-5c23-409d-afe4-5f0c67320a77/edit
+          - button "Delete" [ref=e4500]
+      - generic [ref=e4501]:
+        - link "Оперативная и веб-ориентированная служба поддержки — Светило Порядок Роман «Оперативная и веб-ориентированная служба поддержки — Светило Порядок» — это глубокое философс..." [ref=e4502] [cursor=pointer]:
+          - /url: /notes/3c698831-967a-4c29-968b-7204cd2809e5
+          - heading "Оперативная и веб-ориентированная служба поддержки — Светило Порядок" [level=3] [ref=e4503]
+          - paragraph [ref=e4504]: Роман «Оперативная и веб-ориентированная служба поддержки — Светило Порядок» — это глубокое философс...
+        - generic [ref=e4505]:
+          - link "Edit" [ref=e4506] [cursor=pointer]:
+            - /url: /notes/3c698831-967a-4c29-968b-7204cd2809e5/edit
+          - button "Delete" [ref=e4507]
+      - generic [ref=e4508]:
+        - link "Настраиваемый и нестандартный графический интерфейс — Рис Песенка Роман «Настраиваемый и нестандартный графический интерфейс — Рис Песенка» — это глубокое философское..." [ref=e4509] [cursor=pointer]:
+          - /url: /notes/2f2519da-3a78-4221-bd8f-2b19d05d0c41
+          - heading "Настраиваемый и нестандартный графический интерфейс — Рис Песенка" [level=3] [ref=e4510]
+          - paragraph [ref=e4511]: Роман «Настраиваемый и нестандартный графический интерфейс — Рис Песенка» — это глубокое философское...
+        - generic [ref=e4512]:
+          - link "Edit" [ref=e4513] [cursor=pointer]:
+            - /url: /notes/2f2519da-3a78-4221-bd8f-2b19d05d0c41/edit
+          - button "Delete" [ref=e4514]
+      - generic [ref=e4515]:
+        - link "Глубокая и круглосуточная возможность — Коричневый Дружно Роман «Глубокая и круглосуточная возможность — Коричневый Дружно» — это глубокое философское произве..." [ref=e4516] [cursor=pointer]:
+          - /url: /notes/fe589d4f-9c4b-4009-b62b-fd1befc29c6e
+          - heading "Глубокая и круглосуточная возможность — Коричневый Дружно" [level=3] [ref=e4517]
+          - paragraph [ref=e4518]: Роман «Глубокая и круглосуточная возможность — Коричневый Дружно» — это глубокое философское произве...
+        - generic [ref=e4519]:
+          - link "Edit" [ref=e4520] [cursor=pointer]:
+            - /url: /notes/fe589d4f-9c4b-4009-b62b-fd1befc29c6e/edit
+          - button "Delete" [ref=e4521]
+      - generic [ref=e4522]:
+        - link "Интегрированная и связная иерархия — Тюрьма Потянуться Роман «Интегрированная и связная иерархия — Тюрьма Потянуться» — это глубокое философское произведен..." [ref=e4523] [cursor=pointer]:
+          - /url: /notes/914aa604-dda2-44e3-81f2-31723e66ee53
+          - heading "Интегрированная и связная иерархия — Тюрьма Потянуться" [level=3] [ref=e4524]
+          - paragraph [ref=e4525]: Роман «Интегрированная и связная иерархия — Тюрьма Потянуться» — это глубокое философское произведен...
+        - generic [ref=e4526]:
+          - link "Edit" [ref=e4527] [cursor=pointer]:
+            - /url: /notes/914aa604-dda2-44e3-81f2-31723e66ee53/edit
+          - button "Delete" [ref=e4528]
+      - generic [ref=e4529]:
+        - link "Бизнес-ориентированный и локальный подход — Более Увеличиваться Роман «Бизнес-ориентированный и локальный подход — Более Увеличиваться» — это глубокое философское п..." [ref=e4530] [cursor=pointer]:
+          - /url: /notes/262b140e-a816-4322-9fe2-e50781c44da9
+          - heading "Бизнес-ориентированный и локальный подход — Более Увеличиваться" [level=3] [ref=e4531]
+          - paragraph [ref=e4532]: Роман «Бизнес-ориентированный и локальный подход — Более Увеличиваться» — это глубокое философское п...
+        - generic [ref=e4533]:
+          - link "Edit" [ref=e4534] [cursor=pointer]:
+            - /url: /notes/262b140e-a816-4322-9fe2-e50781c44da9/edit
+          - button "Delete" [ref=e4535]
+      - generic [ref=e4536]:
+        - link "Цельный и основной мониторинг — Правильный Лететь Роман «Цельный и основной мониторинг — Правильный Лететь» — это глубокое философское произведение, и..." [ref=e4537] [cursor=pointer]:
+          - /url: /notes/3b6bb3df-ab28-40db-b3ac-a51bcf975f6c
+          - heading "Цельный и основной мониторинг — Правильный Лететь" [level=3] [ref=e4538]
+          - paragraph [ref=e4539]: Роман «Цельный и основной мониторинг — Правильный Лететь» — это глубокое философское произведение, и...
+        - generic [ref=e4540]:
+          - link "Edit" [ref=e4541] [cursor=pointer]:
+            - /url: /notes/3b6bb3df-ab28-40db-b3ac-a51bcf975f6c/edit
+          - button "Delete" [ref=e4542]
+      - generic [ref=e4543]:
+        - link "Распределённая и статическая координация — Миг Остановить Роман «Распределённая и статическая координация — Миг Остановить» — это глубокое философское произве..." [ref=e4544] [cursor=pointer]:
+          - /url: /notes/030b65b5-8bce-4fc3-9df4-32ac962f2195
+          - heading "Распределённая и статическая координация — Миг Остановить" [level=3] [ref=e4545]
+          - paragraph [ref=e4546]: Роман «Распределённая и статическая координация — Миг Остановить» — это глубокое философское произве...
+        - generic [ref=e4547]:
+          - link "Edit" [ref=e4548] [cursor=pointer]:
+            - /url: /notes/030b65b5-8bce-4fc3-9df4-32ac962f2195/edit
+          - button "Delete" [ref=e4549]
+      - generic [ref=e4550]:
+        - link "Цельная и однородная миграция — Триста Свежий Роман «Цельная и однородная миграция — Триста Свежий» — это глубокое философское произведение, иссле..." [ref=e4551] [cursor=pointer]:
+          - /url: /notes/f51819e6-9731-4497-9685-77594af55aa7
+          - heading "Цельная и однородная миграция — Триста Свежий" [level=3] [ref=e4552]
+          - paragraph [ref=e4553]: Роман «Цельная и однородная миграция — Триста Свежий» — это глубокое философское произведение, иссле...
+        - generic [ref=e4554]:
+          - link "Edit" [ref=e4555] [cursor=pointer]:
+            - /url: /notes/f51819e6-9731-4497-9685-77594af55aa7/edit
+          - button "Delete" [ref=e4556]
+      - generic [ref=e4557]:
+        - link "Разнообразный и направленный массив — Отъезд Избегать Роман «Разнообразный и направленный массив — Отъезд Избегать» — это глубокое философское произведени..." [ref=e4558] [cursor=pointer]:
+          - /url: /notes/dd5a99de-312d-4399-8d03-390da6b690e9
+          - heading "Разнообразный и направленный массив — Отъезд Избегать" [level=3] [ref=e4559]
+          - paragraph [ref=e4560]: Роман «Разнообразный и направленный массив — Отъезд Избегать» — это глубокое философское произведени...
+        - generic [ref=e4561]:
+          - link "Edit" [ref=e4562] [cursor=pointer]:
+            - /url: /notes/dd5a99de-312d-4399-8d03-390da6b690e9/edit
+          - button "Delete" [ref=e4563]
+      - generic [ref=e4564]:
+        - link "Модернизируемое и гибкое ядро — Издали Помимо Роман «Модернизируемое и гибкое ядро — Издали Помимо» — это глубокое философское произведение, иссле..." [ref=e4565] [cursor=pointer]:
+          - /url: /notes/4fe8ff97-30f4-4121-a119-999c61e6e91b
+          - heading "Модернизируемое и гибкое ядро — Издали Помимо" [level=3] [ref=e4566]
+          - paragraph [ref=e4567]: Роман «Модернизируемое и гибкое ядро — Издали Помимо» — это глубокое философское произведение, иссле...
+        - generic [ref=e4568]:
+          - link "Edit" [ref=e4569] [cursor=pointer]:
+            - /url: /notes/4fe8ff97-30f4-4121-a119-999c61e6e91b/edit
+          - button "Delete" [ref=e4570]
+      - generic [ref=e4571]:
+        - link "Переработанная и аналитическая инициатива — Дьявол Рай Роман «Переработанная и аналитическая инициатива — Дьявол Рай» — это глубокое философское произведен..." [ref=e4572] [cursor=pointer]:
+          - /url: /notes/62f3bf3f-d3ec-4915-9cfe-72756d755b2f
+          - heading "Переработанная и аналитическая инициатива — Дьявол Рай" [level=3] [ref=e4573]
+          - paragraph [ref=e4574]: Роман «Переработанная и аналитическая инициатива — Дьявол Рай» — это глубокое философское произведен...
+        - generic [ref=e4575]:
+          - link "Edit" [ref=e4576] [cursor=pointer]:
+            - /url: /notes/62f3bf3f-d3ec-4915-9cfe-72756d755b2f/edit
+          - button "Delete" [ref=e4577]
+      - generic [ref=e4578]:
+        - link "Распределённая и составная конгломерация — Указанный Правление Роман «Распределённая и составная конгломерация — Указанный Правление» — это глубокое философское пр..." [ref=e4579] [cursor=pointer]:
+          - /url: /notes/0e2a9d97-6024-47d7-bc00-b13ca6939ef6
+          - heading "Распределённая и составная конгломерация — Указанный Правление" [level=3] [ref=e4580]
+          - paragraph [ref=e4581]: Роман «Распределённая и составная конгломерация — Указанный Правление» — это глубокое философское пр...
+        - generic [ref=e4582]:
+          - link "Edit" [ref=e4583] [cursor=pointer]:
+            - /url: /notes/0e2a9d97-6024-47d7-bc00-b13ca6939ef6/edit
+          - button "Delete" [ref=e4584]
+      - generic [ref=e4585]:
+        - link "Корпоративное и специализированное совершенствование процесса — Вздрагивать Райком Роман «Корпоративное и специализированное совершенствование процесса — Вздрагивать Райком» — это глу..." [ref=e4586] [cursor=pointer]:
+          - /url: /notes/53c41b09-a84c-44b6-8308-3438ad951dc8
+          - heading "Корпоративное и специализированное совершенствование процесса — Вздрагивать Райком" [level=3] [ref=e4587]
+          - paragraph [ref=e4588]: Роман «Корпоративное и специализированное совершенствование процесса — Вздрагивать Райком» — это глу...
+        - generic [ref=e4589]:
+          - link "Edit" [ref=e4590] [cursor=pointer]:
+            - /url: /notes/53c41b09-a84c-44b6-8308-3438ad951dc8/edit
+          - button "Delete" [ref=e4591]
+      - generic [ref=e4592]:
+        - link "Децентрализованный и связный успех — Пропадать Вздрагивать Роман «Децентрализованный и связный успех — Пропадать Вздрагивать» — это глубокое философское произв..." [ref=e4593] [cursor=pointer]:
+          - /url: /notes/9b37a93d-7502-48bc-a4fa-c226c4cbe44d
+          - heading "Децентрализованный и связный успех — Пропадать Вздрагивать" [level=3] [ref=e4594]
+          - paragraph [ref=e4595]: Роман «Децентрализованный и связный успех — Пропадать Вздрагивать» — это глубокое философское произв...
+        - generic [ref=e4596]:
+          - link "Edit" [ref=e4597] [cursor=pointer]:
+            - /url: /notes/9b37a93d-7502-48bc-a4fa-c226c4cbe44d/edit
+          - button "Delete" [ref=e4598]
+      - generic [ref=e4599]:
+        - link "Стабильная и максимальная рабочая группа — Крыса Монета Роман «Стабильная и максимальная рабочая группа — Крыса Монета» — это глубокое философское произведе..." [ref=e4600] [cursor=pointer]:
+          - /url: /notes/b68326c6-cb24-47ac-bb6a-52d58fc10d09
+          - heading "Стабильная и максимальная рабочая группа — Крыса Монета" [level=3] [ref=e4601]
+          - paragraph [ref=e4602]: Роман «Стабильная и максимальная рабочая группа — Крыса Монета» — это глубокое философское произведе...
+        - generic [ref=e4603]:
+          - link "Edit" [ref=e4604] [cursor=pointer]:
+            - /url: /notes/b68326c6-cb24-47ac-bb6a-52d58fc10d09/edit
+          - button "Delete" [ref=e4605]
+      - generic [ref=e4606]:
+        - link "Улучшенный и прибыльный проект — Заложить Монета Роман «Улучшенный и прибыльный проект — Заложить Монета» — это глубокое философское произведение, ис..." [ref=e4607] [cursor=pointer]:
+          - /url: /notes/5608ceb8-ebc0-4934-b3b6-c4c3080934b6
+          - heading "Улучшенный и прибыльный проект — Заложить Монета" [level=3] [ref=e4608]
+          - paragraph [ref=e4609]: Роман «Улучшенный и прибыльный проект — Заложить Монета» — это глубокое философское произведение, ис...
+        - generic [ref=e4610]:
+          - link "Edit" [ref=e4611] [cursor=pointer]:
+            - /url: /notes/5608ceb8-ebc0-4934-b3b6-c4c3080934b6/edit
+          - button "Delete" [ref=e4612]
+      - generic [ref=e4613]:
+        - link "Поэтапная и широкопрофильная иерархия — Добиться Проход Роман «Поэтапная и широкопрофильная иерархия — Добиться Проход» — это глубокое философское произведе..." [ref=e4614] [cursor=pointer]:
+          - /url: /notes/57da833e-52d7-4db2-a864-bd2e84b68411
+          - heading "Поэтапная и широкопрофильная иерархия — Добиться Проход" [level=3] [ref=e4615]
+          - paragraph [ref=e4616]: Роман «Поэтапная и широкопрофильная иерархия — Добиться Проход» — это глубокое философское произведе...
+        - generic [ref=e4617]:
+          - link "Edit" [ref=e4618] [cursor=pointer]:
+            - /url: /notes/57da833e-52d7-4db2-a864-bd2e84b68411/edit
+          - button "Delete" [ref=e4619]
+      - generic [ref=e4620]:
+        - link "Автономная и составная стандартизация — Отметить Банк Роман «Автономная и составная стандартизация — Отметить Банк» — это глубокое философское произведени..." [ref=e4621] [cursor=pointer]:
+          - /url: /notes/ab7b3e57-1735-4f3a-bc80-d55c5a70ec2f
+          - heading "Автономная и составная стандартизация — Отметить Банк" [level=3] [ref=e4622]
+          - paragraph [ref=e4623]: Роман «Автономная и составная стандартизация — Отметить Банк» — это глубокое философское произведени...
+        - generic [ref=e4624]:
+          - link "Edit" [ref=e4625] [cursor=pointer]:
+            - /url: /notes/ab7b3e57-1735-4f3a-bc80-d55c5a70ec2f/edit
+          - button "Delete" [ref=e4626]
+      - generic [ref=e4627]:
+        - link "Перспективное и бездефектное решение — Банк Посидеть Роман «Перспективное и бездефектное решение — Банк Посидеть» — это глубокое философское произведение..." [ref=e4628] [cursor=pointer]:
+          - /url: /notes/ccbd1dd3-fc59-44b2-b769-e3bf79ee094f
+          - heading "Перспективное и бездефектное решение — Банк Посидеть" [level=3] [ref=e4629]
+          - paragraph [ref=e4630]: Роман «Перспективное и бездефектное решение — Банк Посидеть» — это глубокое философское произведение...
+        - generic [ref=e4631]:
+          - link "Edit" [ref=e4632] [cursor=pointer]:
+            - /url: /notes/ccbd1dd3-fc59-44b2-b769-e3bf79ee094f/edit
+          - button "Delete" [ref=e4633]
+      - generic [ref=e4634]:
+        - link "Совместимая и итернациональная база знаний — Плясать Умолять Роман «Совместимая и итернациональная база знаний — Плясать Умолять» — это глубокое философское прои..." [ref=e4635] [cursor=pointer]:
+          - /url: /notes/90f3b102-4b21-4313-a349-90248cf6fab5
+          - heading "Совместимая и итернациональная база знаний — Плясать Умолять" [level=3] [ref=e4636]
+          - paragraph [ref=e4637]: Роман «Совместимая и итернациональная база знаний — Плясать Умолять» — это глубокое философское прои...
+        - generic [ref=e4638]:
+          - link "Edit" [ref=e4639] [cursor=pointer]:
+            - /url: /notes/90f3b102-4b21-4313-a349-90248cf6fab5/edit
+          - button "Delete" [ref=e4640]
+    - button "Создать заметку" [ref=e4641] [cursor=pointer]:
+      - img [ref=e4642]
+    - generic:
+      - generic: Ctrl+N
+      - text: — новая заметка
+      - generic: Ctrl+F
+      - text: — поиск
+      - generic: Esc
+      - text: — закрыть
+  - generic [ref=e4646]:
+    - generic [ref=e4647]: window is not defined
+    - generic [ref=e4648]: "ReferenceError: window is not defined at file:///D:/knowledge-graph/frontend/node_modules/three-forcegraph/dist/three-forcegraph.mjs:404:15 at ModuleJob.run (node:internal/modules/esm/module_job:271:25) at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26) at async nodeImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53105:15) at async ssrImport (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:52963:16) at async eval (D:/knowledge-graph/frontend/src/lib/components/Graph3D.svelte:8:31) at async instantiateModule (file:///D:/knowledge-graph/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:53021:5"
+    - generic [ref=e4649]:
+      - text: Click outside, press Esc key, or fix the code to dismiss.
+      - text: You can also disable this overlay by setting
+      - code [ref=e4650]: server.hmr.overlay
+      - text: to
+      - code [ref=e4651]: "false"
+      - text: in
+      - code [ref=e4652]: vite.config.ts
+      - text: .
+```
+
+# Test source
+
+```ts
+  1   | import { test, expect } from '@playwright/test';
+  2   | 
+  3   | test.describe('Knowledge Graph Frontend', () => {
+  4   |   test.beforeEach(async ({ page }) => {
+  5   |     // Очистка БД через API (опционально)
+  6   |     await page.goto('http://localhost:5173');
+  7   |   });
+  8   | 
+  9   |   test('should create a new note', async ({ page }) => {
+> 10  |     await page.click('a:has-text("+ New Note")');
+      |                ^ Error: page.click: Test timeout of 30000ms exceeded.
+  11  |     await page.fill('input[placeholder="Title"]', 'Playwright Test');
+  12  |     await page.fill('textarea', 'Automated content');
+  13  |     await page.click('button:has-text("Create")');
+  14  |     // Wait for navigation to complete with explicit timeout
+  15  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
+  16  |     await expect(page.locator('h1')).toHaveText('Playwright Test');
+  17  |   });
+  18  | 
+  19  |   test('should edit a note', async ({ page }) => {
+  20  |     // Сначала создадим заметку через API или UI
+  21  |     await page.click('a:has-text("+ New Note")');
+  22  |     await page.fill('input[placeholder="Title"]', 'To Edit');
+  23  |     await page.fill('textarea', 'Original');
+  24  |     await page.click('button:has-text("Create")');
+  25  |     await page.waitForURL(/\/notes\/[a-f0-9-]+/, { timeout: 5000 });
+  26  |     // Wait additional time for page to fully load
+  27  |     await page.waitForTimeout(1000);
+  28  | 
+  29  |     await page.click('a:has-text("Edit")');
+  30  |     await page.fill('input[placeholder="Title"]', 'Edited');
+  31  |     await page.fill('textarea', 'New content');
+  32  |     await page.click('button:has-text("Update")');
+  33  |     await expect(page.locator('h1')).toHaveText('Edited');
+  34  |     await expect(page.locator('.content')).toHaveText('New content');
+  35  |   });
+  36  | 
+  37  |   test('should delete a note', async ({ page, request }) => {
+  38  |     // Create a note via API first
+  39  |     const timestamp = Date.now();
+  40  |     const note = await request.post('http://localhost:8080/notes', {
+  41  |       data: { title: 'Delete Test ' + timestamp, content: 'Test content for deletion' }
+  42  |     });
+  43  |     const noteId = (await note.json()).id;
+  44  |     const noteTitle = 'Delete Test ' + timestamp;
+  45  |     
+  46  |     // Go to home page to see the note in the list
+  47  |     await page.goto('http://localhost:5173/');
+  48  |     await page.waitForSelector('.note-card', { timeout: 5000 });
+  49  |     await expect(page.locator('text=' + noteTitle)).toBeVisible();
+  50  |     
+  51  |     // Delete the note via API
+  52  |     await request.delete(`http://localhost:8080/notes/${noteId}`);
+  53  |     
+  54  |     // Wait and reload to see the changes
+  55  |     await page.waitForTimeout(1000);
+  56  |     await page.goto('http://localhost:5173/');
+  57  |     await page.waitForLoadState('networkidle');
+  58  |     
+  59  |     // Check that the specific note is no longer present
+  60  |     await expect(page.locator('text=' + noteTitle)).not.toBeVisible();
+  61  |   });
+  62  | 
+  63  |   test('should open graph for a note with links', async ({ page, request }) => {
+  64  |     // Сначала создадим две заметки и связь через API
+  65  |     const note1 = await request.post('http://localhost:8080/notes', {
+  66  |       data: { title: 'Node A', content: 'A' }
+  67  |     });
+  68  |     const note2 = await request.post('http://localhost:8080/notes', {
+  69  |       data: { title: 'Node B', content: 'B' }
+  70  |     });
+  71  |     const id1 = (await note1.json()).id;
+  72  |     const id2 = (await note2.json()).id;
+  73  |     await request.post('http://localhost:8080/links', {
+  74  |       data: { source_note_id: id1, target_note_id: id2, link_type: 'reference', weight: 1.0 }
+  75  |     });
+  76  | 
+  77  |     await page.goto(`http://localhost:5173/graph/${id1}`);
+  78  |     await expect(page.locator('canvas')).toBeVisible();
+  79  |     // Ждём, пока d3-force немного стабилизируется
+  80  |     await page.waitForTimeout(1000);
+  81  |     // Проверяем, что canvas не пустой (можно по цвету пикселя, но сложно)
+  82  |     const canvas = page.locator('canvas');
+  83  |     await expect(canvas).toBeVisible();
+  84  |   });
+  85  | 
+  86  |   test('should show back button on note detail page', async ({ page, request }) => {
+  87  |     // Create a note via API first
+  88  |     const note = await request.post('http://localhost:8080/notes', {
+  89  |       data: { title: 'Back Button Test', content: 'Testing back button functionality' }
+  90  |     });
+  91  |     const noteId = (await note.json()).id;
+  92  |     
+  93  |     // Navigate to note detail page
+  94  |     await page.goto(`http://localhost:5173/notes/${noteId}`);
+  95  |     await page.waitForTimeout(1000);
+  96  | 
+  97  |     // Check that back button is visible
+  98  |     await expect(page.locator('button:has-text("Back")')).toBeVisible();
+  99  |     
+  100 |     // Test back button functionality - should go back to home page
+  101 |     await page.click('button:has-text("Back")');
+  102 |     await expect(page).toHaveURL('http://localhost:5173/');
+  103 |   });
+  104 | 
+  105 |   test('should show back button on graph page', async ({ page, request }) => {
+  106 |     // Create a note via API first
+  107 |     const note = await request.post('http://localhost:8080/notes', {
+  108 |       data: { title: 'Graph Back Test', content: 'Testing back button on graph' }
+  109 |     });
+  110 |     const noteId = (await note.json()).id;
+```
