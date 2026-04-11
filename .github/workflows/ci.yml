@@ -113,6 +113,12 @@ jobs:
         flags: backend
         name: backend-coverage
 
+    - name: Validate OpenAPI specification
+      working-directory: ./backend
+      run: |
+        curl -fsSL https://github.com/swagger-api/swagger-validator/releases/download/v2.1.5/swagger-validator-linux-amd64.tar.gz | tar xz
+        ./swagger-validator validate openAPI.yaml
+
     - name: Build backend
       working-directory: ./backend
       run: |
@@ -263,6 +269,12 @@ jobs:
         flags: nlp
         name: nlp-coverage
 
+    - name: Validate OpenAPI specification
+      working-directory: ./nlp-service
+      run: |
+        pip install openapi-spec-validator
+        python -c "from openapi_spec_validator import validate_spec; import yaml; validate_spec(yaml.safe_load(open('openapi.yaml')))"
+
     - name: Upload test results
       uses: actions/upload-artifact@v5
       if: always()
@@ -388,6 +400,48 @@ jobs:
     - name: Stop services
       if: always()
       run: docker compose down
+
+  api-docs:
+    name: API Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate Backend API Docs
+      uses: swagger-api/swagger-ui-action@v0.2.0
+      with:
+        spec-file: ./backend/openAPI.yaml
+        output: ./backend-docs
+        path-prefix: /backend
+
+    - name: Generate NLP Service API Docs
+      uses: swagger-api/swagger-ui-action@v0.2.0
+      with:
+        spec-file: ./nlp-service/openapi.yaml
+        output: ./nlp-docs
+        path-prefix: /nlp
+
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        publish_branch: gh-pages
+        keep_files: true
+        destination_dir: api-docs
+
+    - name: Upload API docs as artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: api-documentation
+        path: |
+          ./backend-docs/
+          ./nlp-docs/
+        retention-days: 30
 
   security-scan:
     name: Security Scan
