@@ -413,6 +413,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests, nlp-tests, integration-tests, security-scan]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/windsurf') && github.event_name == 'push'
+    environment: production  # Требует ручного approval
 
     steps:
     - name: Checkout code
