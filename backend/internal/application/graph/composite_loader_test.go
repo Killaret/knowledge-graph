@@ -28,8 +28,8 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 	t.Run("single loader with weight 1.0", func(t *testing.T) {
 		loader1 := new(MockNeighborLoader)
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.5, Type: "link"},
-			{TargetID: uuid.New(), Weight: 0.8, Type: "link"},
+			{From: nodeID, To: uuid.New(), Weight: 0.5},
+			{From: nodeID, To: uuid.New(), Weight: 0.8},
 		}, nil)
 
 		composite := NewCompositeNeighborLoaderWithWeights(
@@ -51,11 +51,11 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 		loader2 := new(MockNeighborLoader)
 
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.5, Type: "link"},
+			{From: nodeID, To: uuid.New(), Weight: 0.5},
 		}, nil)
 
 		loader2.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.6, Type: "embedding"},
+			{From: nodeID, To: uuid.New(), Weight: 0.6},
 		}, nil)
 
 		// Веса: 0.7 для первого, 0.3 для второго
@@ -86,7 +86,7 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{}, assert.AnError)
 
 		loader2.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.6, Type: "embedding"},
+			{From: nodeID, To: uuid.New(), Weight: 0.6},
 		}, nil)
 
 		composite := NewCompositeNeighborLoaderWithWeights(
@@ -108,7 +108,7 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 		loader1 := new(MockNeighborLoader)
 
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.5, Type: "link"},
+			{From: nodeID, To: uuid.New(), Weight: 0.5},
 		}, nil)
 
 		// Не передаем веса - должно использоваться 1.0
@@ -130,7 +130,7 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 		loader1 := new(MockNeighborLoader)
 
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.8, Type: "link"},
+			{From: nodeID, To: uuid.New(), Weight: 0.8},
 		}, nil)
 
 		// Вес 0 - ребро должно иметь вес 0
@@ -152,9 +152,9 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 		loader1 := new(MockNeighborLoader)
 
 		loader1.On("GetNeighbors", ctx, nodeID).Return([]graph.Edge{
-			{TargetID: uuid.New(), Weight: 0.2, Type: "link"},
-			{TargetID: uuid.New(), Weight: 0.4, Type: "link"},
-			{TargetID: uuid.New(), Weight: 0.6, Type: "link"},
+			{From: nodeID, To: uuid.New(), Weight: 0.2},
+			{From: nodeID, To: uuid.New(), Weight: 0.4},
+			{From: nodeID, To: uuid.New(), Weight: 0.6},
 		}, nil)
 
 		composite := NewCompositeNeighborLoaderWithWeights(
@@ -166,9 +166,9 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, edges, 3)
-		assert.InDelta(t, 0.1, edges[0].Weight, 0.001)  // 0.2 * 0.5
-		assert.InDelta(t, 0.2, edges[1].Weight, 0.001)  // 0.4 * 0.5
-		assert.InDelta(t, 0.3, edges[2].Weight, 0.001)  // 0.6 * 0.5
+		assert.InDelta(t, 0.1, edges[0].Weight, 0.001) // 0.2 * 0.5
+		assert.InDelta(t, 0.2, edges[1].Weight, 0.001) // 0.4 * 0.5
+		assert.InDelta(t, 0.3, edges[2].Weight, 0.001) // 0.6 * 0.5
 
 		loader1.AssertExpectations(t)
 	})
