@@ -405,9 +405,8 @@ jobs:
     name: API Documentation
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pages: write
-      id-token: write
+      contents: read
+      actions: write
 
     steps:
     - name: Checkout code
@@ -418,15 +417,6 @@ jobs:
         mkdir -p _site/api-docs
         cp ./backend/openAPI.yaml _site/api-docs/
         cp ./nlp-service/openapi.yaml _site/api-docs/
-
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./_site
-        publish_branch: gh-pages
-        keep_files: true
 
     - name: Upload API docs as artifacts
       uses: actions/upload-artifact@v5
