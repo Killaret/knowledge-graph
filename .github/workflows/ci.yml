@@ -404,43 +404,36 @@ jobs:
   api-docs:
     name: API Documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    - name: Generate Backend API Docs
-      uses: swagger-api/swagger-ui-action@v0.2.0
-      with:
-        spec-file: ./backend/openAPI.yaml
-        output: ./backend-docs
-        path-prefix: /backend
-
-    - name: Generate NLP Service API Docs
-      uses: swagger-api/swagger-ui-action@v0.2.0
-      with:
-        spec-file: ./nlp-service/openapi.yaml
-        output: ./nlp-docs
-        path-prefix: /nlp
+    - name: Copy API Specs
+      run: |
+        mkdir -p _site/api-docs
+        cp ./backend/openAPI.yaml _site/api-docs/
+        cp ./nlp-service/openapi.yaml _site/api-docs/
 
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./
+        publish_dir: ./_site
         publish_branch: gh-pages
         keep_files: true
-        destination_dir: api-docs
 
     - name: Upload API docs as artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: api-documentation
-        path: |
-          ./backend-docs/
-          ./nlp-docs/
+        path: ./_site/api-docs/
         retention-days: 30
 
   security-scan:
