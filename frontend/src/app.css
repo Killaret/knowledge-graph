@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom font application */
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}

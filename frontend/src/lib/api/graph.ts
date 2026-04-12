@@ -27,3 +27,14 @@ export interface GraphData {
 export async function getGraphData(noteId: string): Promise<GraphData> {
   return api.get(`notes/${noteId}/graph`).json();
 }
+
+// Запросить глобальный граф всех заметок
+export async function getGlobalGraphData(): Promise<GraphData> {
+  try {
+    return api.get('graph').json();
+  } catch (e) {
+    // Fallback: если эндпоинта нет, возвращаем пустой граф
+    console.warn('Global graph endpoint not available, returning empty graph');
+    return { nodes: [], links: [] };
+  }
+}

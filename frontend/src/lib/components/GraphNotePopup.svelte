@@ -2,7 +2,7 @@
   import { fade, scale } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { deleteNote } from '$lib/api/notes';
-  import ConfirmModal from './ConfirmModal.svelte';
+  import ConfirmDialog from './ui/ConfirmDialog.svelte';
   
   interface Note {
     id: string;
@@ -137,8 +137,8 @@
   </div>
 {/if}
 
-<ConfirmModal
-  isOpen={showConfirmModal}
+<ConfirmDialog
+  open={showConfirmModal}
   title="Удалить заметку?"
   message="Вы уверены, что хотите удалить «{note?.title || ''}»? Это действие нельзя отменить."
   confirmText="Удалить"

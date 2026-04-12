@@ -3,8 +3,8 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import * as THREE from 'three';
-  import ThreeForceGraph from 'three-forcegraph';
-  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+  import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
+  import type ThreeForceGraphType from 'three-forcegraph';
 
   // Types
   interface GraphNode {
@@ -31,10 +31,12 @@
   // Props
   let { 
     data,
-    onNodeClick
+    onNodeClick,
+    onNodeRightClick
   }: { 
     data: GraphData;
     onNodeClick?: (node: GraphNode, event: MouseEvent) => void;
+    onNodeRightClick?: (node: GraphNode, event: MouseEvent) => void;
   } = $props();
 
   // DOM refs
@@ -44,8 +46,10 @@
   let renderer: THREE.WebGLRenderer | null = $state(null);
   let scene: THREE.Scene | null = $state(null);
   let camera: THREE.PerspectiveCamera | null = $state(null);
-  let controls: OrbitControls | null = $state(null);
-  let graphInstance: ThreeForceGraph | null = $state(null);
+  let controls: OrbitControlsType | null = $state(null);
+  let graphInstance: ThreeForceGraphType | null = $state(null);
+  let ThreeForceGraphClass: typeof ThreeForceGraphType | null = null;
+  let OrbitControlsClass: typeof OrbitControlsType | null = null;
   let animationId: number = $state(0);
   let resizeObserver: ResizeObserver | null = $state(null);
   let glowTextures: THREE.CanvasTexture[] = [];
@@ -189,6 +193,7 @@
     camera = newCamera;
 
     // Controls
+    // @ts-ignore - dynamic import
     const newControls = new OrbitControls(newCamera, newRenderer.domElement);
     newControls.enablePan = true;
     newControls.enableZoom = true;
@@ -202,6 +207,7 @@
     newScene.add(dirLight);
 
     // Graph
+    // @ts-ignore - dynamic import
     const newGraph = new ThreeForceGraph()
       .nodeRelSize(CONFIG.NODE_REL_SIZE)
       .nodeColor((node: ForceGraphNode) => getColorByType(node.type))
@@ -282,7 +288,8 @@
       if (intersects.length > 0) {
         let obj: THREE.Object3D | null = intersects[0].object;
         while (obj) {
-          const nodeData = (obj as ForceGraphNode).__data;
+          // @ts-ignore - three-forcegraph internal data structure
+          const nodeData = (obj as any).__data;
           if (nodeData?.id) {
             if (onNodeClick) {
               onNodeClick(nodeData as GraphNode, event);
@@ -297,6 +304,32 @@
     };
 
     newRenderer.domElement.addEventListener('click', handleClick);
+    
+    // Right-click handler for context menu
+    const handleRightClick = (event: MouseEvent) => {
+      event.preventDefault();
+      const rect = newRenderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, newCamera);
+      const intersects = raycaster.intersectObjects(newGraph.children, true);
+      
+      if (intersects.length > 0) {
+        let obj: THREE.Object3D | null = intersects[0].object;
+        while (obj) {
+          // @ts-ignore - three-forcegraph internal data structure
+          const nodeData = (obj as any).__data;
+          if (nodeData?.id) {
+            onNodeRightClick?.(nodeData as GraphNode, event);
+            break;
+          }
+          obj = obj.parent;
+        }
+      }
+    };
+    
+    newRenderer.domElement.addEventListener('contextmenu', handleRightClick);
 
     // Resize with throttle
     const resizeHandler = createThrottledResizeHandler(newCamera, newRenderer);
@@ -316,6 +349,7 @@
     // Cleanup
     return () => {
       newRenderer.domElement.removeEventListener('click', handleClick);
+      newRenderer.domElement.removeEventListener('contextmenu', handleRightClick);
       cancelAnimationFrame(animationId);
       newResizeObserver.disconnect();
       newControls.dispose();

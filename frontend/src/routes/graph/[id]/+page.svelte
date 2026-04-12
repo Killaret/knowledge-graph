@@ -5,17 +5,18 @@
   import Graph3D from '$lib/components/Graph3D.svelte';
   import { getGraphData } from '$lib/api/graph';
   import BackButton from '$lib/components/BackButton.svelte';
-  import GraphNotePopup from '$lib/components/GraphNotePopup.svelte';
+  import NodeContextMenu from '$lib/components/NodeContextMenu.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
+  import { Skeleton } from 'flowbite-svelte';
 
   let graphData = $state<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
   let loading = $state(true);
   let error = $state('');
 
-  // Note popup state
+  // Context menu state
   let selectedNote = $state<any>(null);
-  let popupPosition = $state({ x: 0, y: 0 });
-  let isPopupOpen = $state(false);
+  let contextMenuPosition = $state({ x: 0, y: 0 });
+  let isContextMenuOpen = $state(false);
 
   function getRouteId(): string {
     const id = $page.params.id;
@@ -45,9 +46,13 @@
   </header>
 
   {#if loading}
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading constellation...</p>
+    <div class="loading-skeleton">
+      <div class="skeleton-header">
+        <Skeleton size="lg" class="w-64 mb-4" />
+      </div>
+      <div class="skeleton-canvas">
+        <Skeleton size="xl" class="w-full h-96" />
+      </div>
     </div>
   {:else if error}
     <div class="error-state">
@@ -66,27 +71,33 @@
       {:else}
         <Graph3D 
           data={graphData} 
-          onNodeClick={(node, event) => {
+          onNodeClick={(node) => {
+            goto(`/notes/${node.id}`);
+          }}
+          onNodeRightClick={(node, event) => {
             selectedNote = node;
-            popupPosition = { x: event.clientX, y: event.clientY };
-            isPopupOpen = true;
+            contextMenuPosition = { x: event.clientX, y: event.clientY };
+            isContextMenuOpen = true;
           }}
         />
       {/if}
     </div>
     
-    <GraphNotePopup
+    <NodeContextMenu
       note={selectedNote}
-      isOpen={isPopupOpen}
-      position={popupPosition}
-      onClose={() => isPopupOpen = false}
+      isOpen={isContextMenuOpen}
+      position={contextMenuPosition}
+      onClose={() => isContextMenuOpen = false}
+      onEdit={(id) => goto(`/notes/${id}/edit`)}
+      onCreateLink={(id) => console.log('Create link for', id)}
+      onCopyLink={(id) => console.log('Copy link for', id)}
       onDelete={(id) => {
-        // Remove node from graph data
         graphData = {
           ...graphData,
           nodes: graphData.nodes.filter(n => n.id !== id)
         };
       }}
+      onChangeType={(id, type) => console.log('Change type', id, type)}
     />
   {/if}
 </div>
@@ -131,7 +142,22 @@
     position: relative;
   }
 
-  .loading-state,
+  .loading-skeleton {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .skeleton-header {
+    margin-bottom: 2rem;
+  }
+
+  .skeleton-canvas {
+    height: 500px;
+  }
+
   .error-state {
     flex: 1;
     display: flex;
@@ -139,19 +165,6 @@
     align-items: center;
     justify-content: center;
     gap: 1rem;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(100, 150, 200, 0.3);
-    border-top-color: #ffdd88;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
 
   .error {

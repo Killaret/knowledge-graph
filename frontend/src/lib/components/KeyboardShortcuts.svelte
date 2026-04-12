@@ -25,7 +25,11 @@
     // Ctrl/Cmd + F - Focus search
     if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
       event.preventDefault();
-      onSearchFocus?.();
+      if (onSearchFocus) {
+        onSearchFocus();
+      } else if (browser) {
+        window.dispatchEvent(new CustomEvent('app:focus-search'));
+      }
     }
     
     // Escape - Close modals (handled by individual components)

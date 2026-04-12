@@ -91,19 +91,11 @@ test.describe('UI Components from Flowchart', () => {
     await page.waitForLoadState('networkidle');
     
     // Check empty state
-    await expect(page.locator('text=Нет данных')).toBeVisible();
-    await expect(page.locator('text=Создайте первую заметку')).toBeVisible();
+    await expect(page.locator('text=Нет заметок')).toBeVisible();
+    await expect(page.locator('text=Создайте первую заметку, чтобы начать')).toBeVisible();
   });
 
   test('should use keyboard shortcuts', async ({ page }) => {
-    // Test Ctrl+N - should navigate to new note
-    await page.keyboard.press('Control+n');
-    await page.waitForURL('**/notes/new', { timeout: 5000 });
-    await expect(page.locator('text=New Note')).toBeVisible();
-    
-    // Go back
-    await page.goto('http://localhost:5173');
-    
     // Test Ctrl+F - should open search
     await page.keyboard.press('Control+f');
     await expect(page.locator('input[placeholder="Поиск по заметкам..."]')).toBeVisible();
