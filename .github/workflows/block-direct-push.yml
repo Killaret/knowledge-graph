@@ -1,0 +1,36 @@
+name: Block Direct Push to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  block-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if push is from PR merge
+        run: |
+          # Check if this is a PR merge by looking at the commit message
+          if [[ "${{ github.event.head_commit.message }}" =~ ^Merge[[:space:]]pull[[:space:]]request[[:space:]]#[0-9]+ ]]; then
+            echo "✅ This is a PR merge commit. Allowed."
+            exit 0
+          fi
+          
+          # Check if this is from GitHub Actions (CI merge)
+          if [[ "${{ github.actor }}" == "github-actions[bot]" ]] || [[ "${{ github.actor }}" == "web-flow" ]]; then
+            echo "✅ This is from GitHub automation. Allowed."
+            exit 0
+          fi
+          
+          # Block direct push
+          echo "::error::❌ Direct push to main is not allowed!"
+          echo "::error::Please create a Pull Request from your feature branch instead."
+          echo ""
+          echo "Workflow:"
+          echo "1. git checkout -b feature/your-branch-name"
+          echo "2. git add ."
+          echo "3. git commit -m 'your message'"
+          echo "4. git push origin feature/your-branch-name"
+          echo "5. Create Pull Request on GitHub"
+          exit 1
