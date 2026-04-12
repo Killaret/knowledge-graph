@@ -413,16 +413,16 @@
         
         <div class="notes-grid" class:selection-mode={selectionMode}>
           {#each groupNotes as note}
-            <div 
-              class="note-card" 
-              class:selected={isNoteSelected(note)}
-              onclick={() => selectionMode ? toggleNoteSelection(note) : goto(`/notes/${note.id}`)}
-              onkeydown={(e) => e.key === 'Enter' && (selectionMode ? toggleNoteSelection(note) : goto(`/notes/${note.id}`))}
-              role={selectionMode ? 'checkbox' : 'button'}
-              tabindex="0"
-              aria-checked={selectionMode ? isNoteSelected(note) : undefined}
-            >
-              {#if selectionMode}
+            {#if selectionMode}
+              <div
+                class="note-card"
+                class:selected={isNoteSelected(note)}
+                role="checkbox"
+                tabindex="0"
+                aria-checked={isNoteSelected(note)}
+                onclick={() => toggleNoteSelection(note)}
+                onkeydown={(e) => e.key === 'Enter' && toggleNoteSelection(note)}
+              >
                 <div class="selection-checkbox">
                   <input
                     type="checkbox"
@@ -432,26 +432,57 @@
                     aria-label={`Выбрать ${note.title}`}
                   />
                 </div>
-              {/if}
-              
-              <div class="note-header">
-                <span class="note-type">{getTypeIcon(note.metadata?.type)}</span>
-                <h3 class="note-title">{note.title}</h3>
+
+                <div class="note-header">
+                  <span class="note-type">{getTypeIcon(note.metadata?.type)}</span>
+                  <h3 class="note-title">{note.title}</h3>
+                </div>
+                <p class="note-preview">{note.content.slice(0, 120)}...</p>
+                <div class="note-meta">
+                  <span class="note-date">{formatDate(note.created_at)}</span>
+                  {#if note.metadata?.tags}
+                    <div class="note-tags">
+                      {#each note.metadata.tags.slice(0, 3) as tag}
+                        <span class="tag">{tag}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+
+                <div class="note-actions" onclick={(e) => e.stopPropagation()}>
+                  <button onclick={() => goto(`/notes/${note.id}/edit`)} class="btn-edit">
+                    Редактировать
+                  </button>
+                  <button onclick={() => handleDelete(note.id)} class="btn-delete">
+                    Удалить
+                  </button>
+                </div>
               </div>
-              <p class="note-preview">{note.content.slice(0, 120)}...</p>
-              <div class="note-meta">
-                <span class="note-date">{formatDate(note.created_at)}</span>
-                {#if note.metadata?.tags}
-                  <div class="note-tags">
-                    {#each note.metadata.tags.slice(0, 3) as tag}
-                      <span class="tag">{tag}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-              
-              <div class="note-actions" onclick={(e) => e.stopPropagation()}>
-                {#if !selectionMode}
+            {:else}
+              <button
+                class="note-card"
+                class:selected={isNoteSelected(note)}
+                type="button"
+                on:click={() => goto(`/notes/${note.id}`)}
+                aria-label={note.title}
+              >
+                <div class="note-header">
+                  <span class="note-type">{getTypeIcon(note.metadata?.type)}</span>
+                  <h3 class="note-title">{note.title}</h3>
+                </div>
+                <p class="note-preview">{note.content.slice(0, 120)}...</p>
+                <div class="note-meta">
+                  <span class="note-date">{formatDate(note.created_at)}</span>
+                  {#if note.metadata?.tags}
+                    <div class="note-tags">
+                      {#each note.metadata.tags.slice(0, 3) as tag}
+                        <span class="tag">{tag}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+
+                <div class="note-actions" onclick={(e) => e.stopPropagation()}>
                   <button onclick={() => openQuickLink(note)} class="btn-link" title="Связать с другими">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -459,15 +490,15 @@
                     </svg>
                     Связать
                   </button>
-                {/if}
-                <button onclick={() => goto(`/notes/${note.id}/edit`)} class="btn-edit">
-                  Редактировать
-                </button>
-                <button onclick={() => handleDelete(note.id)} class="btn-delete">
-                  Удалить
-                </button>
-              </div>
-            </div>
+                  <button onclick={() => goto(`/notes/${note.id}/edit`)} class="btn-edit">
+                    Редактировать
+                  </button>
+                  <button onclick={() => handleDelete(note.id)} class="btn-delete">
+                    Удалить
+                  </button>
+                </div>
+              </button>
+            {/if}
           {/each}
         </div>
       {/each}
