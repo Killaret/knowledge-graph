@@ -4,9 +4,10 @@
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import { getGraphData } from '$lib/api/graph';
   import BackButton from '$lib/components/BackButton.svelte';
+  import type { GraphNode, GraphLink } from '$lib/api/graph';
 
-  let nodes: Array<{ id: string; title: string; type: string }> = $state([]);
-  let links: Array<{ source: string; target: string; weight: number }> = $state([]);
+  let nodes: GraphNode[] = $state([]);
+  let links: GraphLink[] = $state([]);
   let loading = $state(true);
   let error = $state('');
 
