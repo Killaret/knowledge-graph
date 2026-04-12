@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, untrack, createEventDispatcher } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import type * as ThreeType from 'three';
@@ -29,6 +29,9 @@
   interface ForceGraphNode extends GraphNode {
     __threeObj?: ThreeType.Group;
   }
+
+  // Svelte dispatcher
+  const dispatch = createEventDispatcher();
 
   // Props
   const { 
@@ -156,6 +159,11 @@
       return;
     }
 
+    // mark container early for E2E tests
+    try {
+      containerRef.setAttribute('data-testid', 'graph-wrapper');
+    } catch { /* ignore */ }
+
     // If WebGL is not supported (headless browsers), render a testable placeholder
     if (!isWebGLSupported()) {
       const placeholder = document.createElement('div');
@@ -166,7 +174,7 @@
       containerRef.appendChild(placeholder);
 
       // signal readiness so E2E tests can proceed in headless envs
-      try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); } catch { /* ignore */ }
+      try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); dispatch('ready'); document.dispatchEvent(new CustomEvent('graph-ready')); } catch { /* ignore */ }
 
       // cleanup for this path
       _cleanup = () => {
@@ -203,7 +211,7 @@
       (window as any).__graphReady = false;
       // signal ready on next animation frame to ensure first render occurred
       requestAnimationFrame(() => {
-        try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); } catch { /* ignore */ }
+        try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); dispatch('ready'); document.dispatchEvent(new CustomEvent('graph-ready')); } catch { /* ignore */ }
       });
     } catch { /* ignore */ }
 
@@ -437,7 +445,7 @@
   });
 </script>
 
-<div class="graph-3d-container" bind:this={containerRef} data-legacy-testid="graph-canvas">
+<div class="graph-3d-container" bind:this={containerRef} data-testid="graph-wrapper" data-legacy-testid="graph-canvas" role="region" aria-label="Knowledge graph">
   {#if !data?.nodes?.length}
     <div class="empty-state">No nodes to display</div>
   {/if}

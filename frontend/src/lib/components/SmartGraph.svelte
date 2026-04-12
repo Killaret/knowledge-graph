@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
   import { detectDeviceCapabilities, shouldUse3D } from '$lib/utils/deviceCapabilities';
   import GraphCanvas from './GraphCanvas.svelte';
@@ -28,6 +28,15 @@
   let isLoading = $state(true);
   let _loadError = $state<string | null>(null);
   let Graph3DComponent: any = $state(null);
+  const dispatch = createEventDispatcher();
+
+  function handleReady() {
+    try {
+      (window as any).__graphReady = true;
+      document.dispatchEvent(new Event('graph-ready'));
+      dispatch('ready');
+    } catch { /* ignore */ }
+  }
 
   onMount(async () => {
     if (!browser) {
@@ -72,7 +81,7 @@
   </div>
 {:else if use3D && Graph3DComponent}
   <div class="graph-wrapper graph-3d">
-    <Graph3DComponent data={{ nodes, links }} />
+    <Graph3DComponent data={{ nodes, links }} on:ready={handleReady} />
     <div class="performance-hint">3D Mode</div>
   </div>
 {:else}

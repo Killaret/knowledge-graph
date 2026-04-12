@@ -41,6 +41,7 @@ test.describe('3D Graph Visualization', () => {
       try {
         return (window as any).__graphReady === true
           || !!document.querySelector('[data-testid="graph-canvas"]')
+          || !!document.querySelector('[data-testid="graph-wrapper"]')
           || !!document.querySelector('.graph-wrapper')
           || !!document.querySelector('.graph-container');
       } catch { return false; }
