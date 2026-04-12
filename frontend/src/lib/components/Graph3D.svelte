@@ -1,0 +1,371 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+  import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+  import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force-3d';
+  import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
+  import { goto } from '$app/navigation';
+
+  let { data }: { data: GraphData } = $props();
+
+  let container: HTMLDivElement;
+  let scene: THREE.Scene;
+  let camera: THREE.PerspectiveCamera;
+  let renderer: THREE.WebGLRenderer;
+  let labelRenderer: CSS2DRenderer;
+  let controls: OrbitControls;
+  let animationFrame: number;
+  let simulation: any;
+
+  let isLoading = $state(true);
+  let error = $state<string | null>(null);
+
+  const nodeObjects = new Map<string, THREE.Mesh>();
+  const linkObjects = new Map<string, THREE.Line>();
+  const labelObjects = new Map<string, CSS2DObject>();
+
+  onMount(() => {
+    try {
+      initThree();
+      initSimulation(data);
+      startAnimationLoop();
+      window.addEventListener('resize', onResize);
+      isLoading = false;
+    } catch (e) {
+      error = 'Ошибка инициализации 3D сцены';
+      console.error(e);
+    }
+
+    return () => {
+      cleanup();
+    };
+  });
+
+  function initThree() {
+    if (!container) return;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050510);
+
+    const aspect = container.clientWidth / container.clientHeight;
+    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+    camera.position.set(20, 15, 30);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(container.clientWidth, container.clientHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.left = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    container.appendChild(labelRenderer.domElement);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.8;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.maxPolarAngle = Math.PI / 1.8;
+
+    const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    dirLight.position.set(10, 30, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    const fillLight1 = new THREE.PointLight(0x4466ff, 0.8);
+    fillLight1.position.set(15, 5, 20);
+    scene.add(fillLight1);
+
+    const fillLight2 = new THREE.PointLight(0xff66aa, 0.5);
+    fillLight2.position.set(-15, 10, -20);
+    scene.add(fillLight2);
+
+    addStarfield();
+    scene.fog = new THREE.FogExp2(0x050510, 0.002);
+
+    // Add click handler
+    renderer.domElement.addEventListener('click', onMouseClick);
+  }
+
+  function addStarfield() {
+    const geometry = new THREE.BufferGeometry();
+    const count = 4000;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i += 3) {
+      const r = 80 + Math.random() * 70;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions[i] = Math.sin(phi) * Math.cos(theta) * r;
+      positions[i+1] = Math.sin(phi) * Math.sin(theta) * r;
+      positions[i+2] = Math.cos(phi) * r;
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.15,
+      transparent: true,
+      blending: THREE.AdditiveBlending
+    });
+    const stars = new THREE.Points(geometry, material);
+    scene.add(stars);
+  }
+
+  function onMouseClick(event: MouseEvent) {
+    if (!camera || !scene) return;
+    
+    const rect = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(Array.from(nodeObjects.values()));
+    if (intersects.length > 0) {
+      const clickedNode = intersects[0].object;
+      const nodeId = clickedNode.userData.id;
+      if (nodeId) {
+        goto(`/notes/${nodeId}`);
+      }
+    }
+  }
+
+  function initSimulation(graphData: GraphData) {
+    const nodes = graphData.nodes.map(n => ({
+      ...n,
+      x: (Math.random() - 0.5) * 30,
+      y: (Math.random() - 0.5) * 30,
+      z: (Math.random() - 0.5) * 30
+    }));
+
+    const links = graphData.links.map(l => ({
+      ...l,
+      source: l.source,
+      target: l.target,
+      value: l.weight || 1
+    }));
+
+    createVisualObjects(nodes, links);
+
+    simulation = forceSimulation(nodes)
+      .force('link', forceLink(links)
+        .id((d: any) => d.id)
+        .distance((l: any) => 20 / (l.value * 0.8))
+        .strength(0.5)
+      )
+      .force('charge', forceManyBody().strength(-200).distanceMax(50))
+      .force('center', forceCenter(0, 0, 0))
+      .on('tick', () => {
+        updatePositions(nodes);
+        updateLinks(links);
+      });
+
+    simulation.alpha(1).restart();
+  }
+
+  function getColorByType(type?: string): number {
+    const colors: Record<string, number> = {
+      star: 0xffaa44,
+      planet: 0x44aaff,
+      comet: 0xff44aa,
+      galaxy: 0xaa44ff,
+      default: 0x88aaff
+    };
+    return colors[type || 'default'] || colors.default;
+  }
+
+  function createVisualObjects(nodes: any[], links: any[]) {
+    // Clear existing
+    nodeObjects.forEach(obj => scene.remove(obj));
+    linkObjects.forEach(obj => scene.remove(obj));
+    labelObjects.forEach(obj => scene.remove(obj));
+    nodeObjects.clear();
+    linkObjects.clear();
+    labelObjects.clear();
+
+    // Create nodes
+    nodes.forEach(node => {
+      const geometry = new THREE.SphereGeometry(node.size || 2, 32, 32);
+      const color = getColorByType(node.type);
+      const material = new THREE.MeshPhysicalMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.3,
+        roughness: 0.4,
+        metalness: 0.6,
+        clearcoat: 0.8
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.position.set(node.x || 0, node.y || 0, node.z || 0);
+      sphere.castShadow = true;
+      sphere.receiveShadow = true;
+      sphere.userData = { id: node.id };
+      scene.add(sphere);
+      nodeObjects.set(node.id, sphere);
+
+      // Create label
+      const div = document.createElement('div');
+      div.className = 'node-label';
+      div.textContent = node.title;
+      div.style.color = 'white';
+      div.style.fontSize = '12px';
+      div.style.fontWeight = 'bold';
+      div.style.textShadow = '0 0 4px rgba(0,0,0,0.8)';
+      div.style.pointerEvents = 'none';
+      div.style.whiteSpace = 'nowrap';
+      const label = new CSS2DObject(div);
+      label.position.set(0, (node.size || 2) + 1, 0);
+      sphere.add(label);
+      labelObjects.set(node.id, label);
+    });
+
+    // Create links
+    links.forEach(link => {
+      const geometry = new THREE.BufferGeometry();
+      const material = new THREE.LineBasicMaterial({
+        color: 0x6688cc,
+        transparent: true,
+        opacity: 0.4,
+        blending: THREE.AdditiveBlending
+      });
+      const line = new THREE.Line(geometry, material);
+      scene.add(line);
+      linkObjects.set(`${link.source}-${link.target}`, line);
+    });
+  }
+
+  function updatePositions(nodes: any[]) {
+    nodes.forEach(node => {
+      const obj = nodeObjects.get(node.id);
+      if (obj) {
+        obj.position.set(node.x, node.y, node.z);
+      }
+    });
+  }
+
+  function updateLinks(links: any[]) {
+    links.forEach(link => {
+      const key = `${link.source}-${link.target}`;
+      const line = linkObjects.get(key);
+      if (!line) return;
+
+      const sourceNode = nodeObjects.get(link.source);
+      const targetNode = nodeObjects.get(link.target);
+      if (!sourceNode || !targetNode) return;
+
+      const points = [sourceNode.position, targetNode.position];
+      line.geometry.dispose();
+      line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+    });
+  }
+
+  function startAnimationLoop() {
+    function animate() {
+      animationFrame = requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    animate();
+  }
+
+  function onResize() {
+    if (!container) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    renderer.setSize(width, height);
+    labelRenderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  function cleanup() {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (simulation) simulation.stop();
+    window.removeEventListener('resize', onResize);
+    if (renderer) {
+      renderer.dispose();
+      renderer.domElement.remove();
+    }
+    if (labelRenderer) labelRenderer.domElement.remove();
+    nodeObjects.forEach(obj => {
+      obj.traverse((child: any) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material))
+            child.material.forEach((m: { dispose(): void }) => m.dispose());
+          else
+            child.material.dispose();
+        }
+      });
+    });
+    scene?.clear();
+  }
+</script>
+
+<div class="graph-3d-container" bind:this={container}>
+  {#if isLoading}
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Загрузка 3D созвездия...</p>
+    </div>
+  {/if}
+  {#if error}
+    <div class="error-overlay">
+      <p>{error}</p>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .graph-3d-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background: #050510;
+  }
+  .loading-overlay, .error-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,5,16,0.9);
+    color: white;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #88aaff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
