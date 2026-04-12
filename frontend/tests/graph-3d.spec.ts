@@ -94,11 +94,11 @@ test.describe('3D Graph Visualization', () => {
     
     // Verify canvas or wrapper depending on 2D/3D rendering
     const canvasByTestId = page.locator('[data-testid="graph-canvas"]');
-    const graphWrapper = page.locator('.graph-wrapper');
+    const graphWrapper = page.locator('.graph-container');
     if ((await canvasByTestId.count()) > 0) {
       await expect(canvasByTestId).toBeVisible({ timeout: 30000 });
     } else {
-      // fallback: graph-wrapper should exist for either 2D or 3D
+      // fallback: graph container should exist for either 2D or 3D
       await expect(graphWrapper).toBeVisible({ timeout: 30000 });
     }
   });
@@ -127,8 +127,9 @@ test.describe('3D Graph Visualization', () => {
       await page.waitForLoadState('networkidle');
     }
 
-    // Verify we're on home page
-    await expect(page.locator('h1')).toHaveText('My Notes');
+    // Verify we're on home page (URL + visible title)
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('h1')).toBeVisible();
   });
 
   test('should display performance mode indicator', async ({ page, request }) => {
@@ -153,7 +154,7 @@ test.describe('3D Graph Visualization', () => {
       const hintText = await performanceHint.textContent();
       expect(hintText).toMatch(/(3D Mode|2D Mode)/);
     } else {
-      await expect(page.locator('.graph-wrapper')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.graph-container')).toBeVisible({ timeout: 5000 });
     }
   });
 
