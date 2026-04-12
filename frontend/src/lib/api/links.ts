@@ -61,7 +61,7 @@ export async function createLinksBatch(
   try {
     // Пробуем batch endpoint если есть
     return api.post('links/batch', { json: { links } }).json();
-  } catch (e) {
+  } catch {
     // Fallback: создаём последовательно
     const created: Link[] = [];
     for (const link of links) {

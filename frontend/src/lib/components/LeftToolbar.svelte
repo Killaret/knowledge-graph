@@ -148,6 +148,16 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
     padding: 0.75rem;
+
+    /* Prevent the toolbar container from intercepting pointer events
+       while keeping individual buttons interactive. This avoids UI elements
+       (modals/forms) being blocked by the toolbar box in narrow viewports. */
+    pointer-events: none;
+  }
+
+  /* Buttons should still receive pointer events */
+  .left-toolbar .toolbar-item {
+    pointer-events: auto;
   }
   
   .left-toolbar.mobile {

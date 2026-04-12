@@ -63,7 +63,8 @@
       <div class="welcome-content">
         <span class="welcome-icon">🌌</span>
         <h1>Knowledge Constellation</h1>
-        <p>Ваше созвездие знаний пусто. Создайте первую звезду, чтобы начать.</p>
+        <h2 class="empty-notes-title">Нет заметок</h2>
+        <p class="empty-notes-msg">Создайте первую заметку, чтобы начать.</p>
         <div class="welcome-actions">
           <button class="btn-primary" onclick={handleCreateFirstNote}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">

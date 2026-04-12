@@ -26,7 +26,7 @@
 
   let use3D = $state(false); // Start with false to avoid flash
   let isLoading = $state(true);
-  let loadError = $state<string | null>(null);
+  let _loadError = $state<string | null>(null);
   let Graph3DComponent: any = $state(null);
 
   onMount(async () => {
@@ -50,7 +50,7 @@
         Graph3DComponent = module.default;
       } catch (e) {
         console.warn('Failed to load 3D graph component, falling back to 2D:', e);
-        loadError = 'Failed to load 3D visualization';
+        _loadError = 'Failed to load 3D visualization';
         use3D = false;
       }
     }
@@ -74,6 +74,10 @@
     <GraphCanvas {nodes} {links} />
     <div class="performance-hint">2D Mode (optimized)</div>
   </div>
+{/if}
+
+{#if _loadError}
+  <div class="graph-error-banner" role="alert">{_loadError}</div>
 {/if}
 
 <style>

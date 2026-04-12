@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Note } from '$lib/api/notes';
-  import { getNotes, deleteNote, searchNotes } from '$lib/api/notes';
+  import { getNotes, deleteNote } from '$lib/api/notes';
   import { Skeleton } from 'flowbite-svelte';
   import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
@@ -114,11 +114,12 @@
         case 'alpha':
           comparison = a.title.localeCompare(b.title);
           break;
-        case 'links':
+        case 'links': {
           const linksA = a.metadata?.links?.length || 0;
           const linksB = b.metadata?.links?.length || 0;
           comparison = linksA - linksB;
           break;
+        }
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
@@ -146,10 +147,11 @@
         case 'type':
           key = note.metadata?.type || 'Без типа';
           break;
-        case 'date':
+        case 'date': {
           const date = new Date(note.created_at);
           key = date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
           break;
+        }
       }
       if (!groups[key]) groups[key] = [];
       groups[key].push(note);
@@ -257,15 +259,16 @@
 
   // Re-apply filters when any filter changes
   $effect(() => {
-    searchQuery;
-    selectedType;
-    selectedTag;
-    dateFrom;
-    dateTo;
-    sortBy;
-    sortOrder;
-    currentPage;
-    pageSize;
+    // read dependencies to trigger the effect
+    void searchQuery;
+    void selectedType;
+    void selectedTag;
+    void dateFrom;
+    void dateTo;
+    void sortBy;
+    void sortOrder;
+    void currentPage;
+    void pageSize;
     
     if (!loading) {
       applyFilters();
@@ -385,6 +388,14 @@
     </div>
   {:else if error}
     <p class="error">{error}</p>
+  {:else if notes.length === 0}
+    <EmptyState
+      icon="🔭"
+      title="Нет заметок"
+      message="Создайте первую заметку, чтобы начать"
+      actionText="Создать заметку"
+      onAction={() => goto('/notes/new')}
+    />
   {:else if filteredNotes.length === 0}
     <EmptyState
       icon="🔭"

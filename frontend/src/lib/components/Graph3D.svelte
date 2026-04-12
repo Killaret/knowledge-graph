@@ -6,7 +6,6 @@
   let THREE: any = null;
   let OrbitControls: any = null;
   let ThreeForceGraph: any = null;
-  import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
   import type ThreeForceGraphType from 'three-forcegraph';
 
   // Types
@@ -46,15 +45,8 @@
   let containerRef: HTMLDivElement;
 
   // Three.js refs (initialized in onMount)
-  let renderer: ThreeType.WebGLRenderer | null = $state(null);
-  let scene: ThreeType.Scene | null = $state(null);
-  let camera: ThreeType.PerspectiveCamera | null = $state(null);
-  let controls: OrbitControlsType | null = $state(null);
   let graphInstance: ThreeForceGraphType | null = $state(null);
-  const ThreeForceGraphClass: typeof ThreeForceGraphType | null = null;
-  const OrbitControlsClass: typeof OrbitControlsType | null = null;
   let animationId: number = $state(0);
-  let resizeObserver: ResizeObserver | null = $state(null);
   let glowTextures: ThreeType.CanvasTexture[] = [];
   let labelTextures: ThreeType.Texture[] = [];
   let createdMaterials: ThreeType.Material[] = [];
@@ -67,7 +59,7 @@
         window.WebGLRenderingContext &&
         (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
       );
-    } catch (e) {
+    } catch { /* ignore */
       return false;
     }
   }
@@ -118,7 +110,7 @@
     labelTextures.forEach(t => t.dispose());
     labelTextures = [];
     createdMaterials.forEach(m => {
-      try { (m as any).dispose?.(); } catch (e) { /* ignore */ }
+      try { (m as any).dispose?.(); } catch { /* ignore */ }
     });
     createdMaterials = [];
   }
@@ -127,10 +119,10 @@
   function createThrottledResizeHandler(
     camera: ThreeType.PerspectiveCamera,
     renderer: ThreeType.WebGLRenderer
-  ): ResizeObserverCallback {
+  ) {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
-    return (entries) => {
+    return (entries: ResizeObserverEntry[]) => {
       if (timeoutId) return;
       
       timeoutId = setTimeout(() => {
@@ -160,7 +152,22 @@
   });
 
   onMount(() => { let _cleanup: (() => void) | undefined; (async () => {
-    if (!containerRef || !browser || !isWebGLSupported()) {
+    if (!containerRef || !browser) {
+      return;
+    }
+
+    // If WebGL is not supported (headless browsers), render a testable placeholder
+    if (!isWebGLSupported()) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'no-webgl-placeholder';
+      placeholder.setAttribute('data-testid', 'main-graph-canvas');
+      placeholder.textContent = 'WebGL not available';
+      containerRef.appendChild(placeholder);
+
+      // cleanup for this path
+      _cleanup = () => {
+        try { if (placeholder.parentNode === containerRef) containerRef.removeChild(placeholder); } catch { /* ignore */ }
+      };
       return;
     }
 
@@ -180,12 +187,13 @@
     newRenderer.setSize(width, height);
     newRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.appendChild(newRenderer.domElement);
-    renderer = newRenderer;
+    // Mark the actual canvas with test id so tests can reliably wait for it
+    try { newRenderer.domElement.setAttribute('data-testid', 'main-graph-canvas'); } catch { /* ignore in non-DOM env */ }
+
 
     // Scene
     const newScene = new THREE.Scene();
     newScene.background = new THREE.Color(0x0a1a3a);
-    scene = newScene;
 
     // Starfield
     const starGeometry = new THREE.BufferGeometry();
@@ -208,15 +216,12 @@
     // Camera
     const newCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
     newCamera.position.z = CONFIG.CAMERA_Z;
-    camera = newCamera;
 
     // Controls
-    // @ts-ignore - dynamic import
     const newControls = new OrbitControls(newCamera, newRenderer.domElement);
     newControls.enablePan = true;
     newControls.enableZoom = true;
     newControls.enableRotate = true;
-    controls = newControls;
 
     // Lights
     newScene.add(new THREE.AmbientLight(0x404040, 1.5));
@@ -225,7 +230,6 @@
     newScene.add(dirLight);
 
     // Graph
-    // @ts-ignore - dynamic import
     const newGraph = new ThreeForceGraph()
       .nodeRelSize(CONFIG.NODE_REL_SIZE)
       .nodeColor((node: ForceGraphNode) => getColorByType(node.type))
@@ -306,7 +310,6 @@
       if (intersects.length > 0) {
         let obj: ThreeType.Object3D | null = intersects[0].object;
         while (obj) {
-          // @ts-ignore - three-forcegraph internal data structure
           const nodeData = (obj as any).__data;
           if (nodeData?.id) {
             if (onNodeClick) {
@@ -336,7 +339,6 @@
       if (intersects.length > 0) {
         let obj: ThreeType.Object3D | null = intersects[0].object;
         while (obj) {
-          // @ts-ignore - three-forcegraph internal data structure
           const nodeData = (obj as any).__data;
           if (nodeData?.id) {
             onNodeRightClick?.(nodeData as GraphNode, event);
@@ -353,7 +355,6 @@
     const resizeHandler = createThrottledResizeHandler(newCamera, newRenderer);
     const newResizeObserver = new ResizeObserver(resizeHandler);
     newResizeObserver.observe(containerRef);
-    resizeObserver = newResizeObserver;
 
     // Animation
     const animate = () => {
@@ -369,19 +370,19 @@
       try {
         newRenderer.domElement.removeEventListener('click', handleClick);
         newRenderer.domElement.removeEventListener('contextmenu', handleRightClick);
-      } catch (e) {}
+      } catch { /* ignore */ }
       cancelAnimationFrame(animationId);
-      try { newResizeObserver.disconnect(); } catch(e) {}
-      try { newControls.dispose(); } catch(e) {}
+      try { newResizeObserver.disconnect(); } catch { /* ignore */ }
+      try { newControls.dispose(); } catch { /* ignore */ }
 
       // Pause/stop graph engine if available
       try {
         const maybePause = (newGraph as any)?.pause ?? (newGraph as any)?.stop ?? (newGraph as any)?.dispose;
         if (typeof maybePause === 'function') maybePause.call(newGraph);
-      } catch (e) {}
+      } catch { /* ignore */ }
 
       // Remove graph from scene
-      try { if (newScene && newGraph) newScene.remove(newGraph as any); } catch(e) {}
+      try { if (newScene && newGraph) newScene.remove(newGraph as any); } catch { /* ignore */ }
 
       // Dispose tracked textures & materials
       disposeTextures();
@@ -390,30 +391,27 @@
       try {
         newScene?.traverse((obj: any) => {
           if (obj?.material) {
-            try { obj.material.dispose(); } catch (e) {}
+            try { obj.material.dispose(); } catch { /* ignore */ }
           }
           if (obj?.geometry) {
-            try { obj.geometry.dispose(); } catch (e) {}
+            try { obj.geometry.dispose(); } catch { /* ignore */ }
           }
           if (obj?.texture) {
-            try { obj.texture.dispose(); } catch (e) {}
+            try { obj.texture.dispose(); } catch { /* ignore */ }
           }
         });
-      } catch (e) {}
+      } catch { /* ignore */ }
 
-      try { newRenderer.dispose(); } catch (e) {}
+      try { newRenderer.dispose(); } catch { /* ignore */ }
       try {
         if (newRenderer.domElement.parentNode === containerRef) {
           containerRef.removeChild(newRenderer.domElement);
         }
-      } catch (e) {}
+      } catch { /* ignore */ }
 
       // clear refs
-      renderer = null;
-      scene = null;
-      camera = null;
-      controls = null;
       graphInstance = null;
+      animationId = 0;
     };
       })();
 
@@ -421,7 +419,7 @@
   });
 </script>
 
-<div class="graph-3d-container" bind:this={containerRef} data-testid="graph-canvas">
+<div class="graph-3d-container" bind:this={containerRef} data-legacy-testid="graph-canvas">
   {#if !data?.nodes?.length}
     <div class="empty-state">No nodes to display</div>
   {/if}

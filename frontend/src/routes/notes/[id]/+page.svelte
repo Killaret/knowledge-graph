@@ -48,9 +48,9 @@
     <div class="meta">Created: {new Date(note.created_at).toLocaleString()}</div>
     <div class="content">{note.content}</div>
     <div class="actions">
-      <a href={`/notes/${note.id}/edit`}>Edit</a>
-      <button onclick={handleDelete}>Delete</button>
-      <a href={`/graph/${note.id}`} class="graph-link">✨ Show constellation</a>
+      <button onclick={() => goto(`/notes/${note!.id}/edit`)}>Редактировать</button>
+      <button onclick={handleDelete}>Удалить</button>
+      <a href={`/graph/${note!.id}`} class="graph-link">✨ Показать созвездие</a>
     </div>
 
     {#if suggestions.length}

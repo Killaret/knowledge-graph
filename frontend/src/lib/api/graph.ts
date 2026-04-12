@@ -32,7 +32,7 @@ export async function getGraphData(noteId: string): Promise<GraphData> {
 export async function getGlobalGraphData(): Promise<GraphData> {
   try {
     return api.get('graph').json();
-  } catch (e) {
+  } catch {
     // Fallback: если эндпоинта нет, возвращаем пустой граф
     console.warn('Global graph endpoint not available, returning empty graph');
     return { nodes: [], links: [] };

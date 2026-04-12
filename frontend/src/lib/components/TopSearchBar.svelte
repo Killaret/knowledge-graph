@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import type { Note, SearchResponse } from '$lib/api/notes';
+  import type { Note } from '$lib/api/notes';
   import { searchNotes } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';

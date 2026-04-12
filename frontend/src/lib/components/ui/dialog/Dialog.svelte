@@ -1,15 +1,19 @@
-<script lang="ts">
-  import { fade, fly } from 'svelte/transition';
-  import { cn } from '$lib/utils.js';
-
-  interface Props {
+<script lang="ts" module>
+  export interface Props {
     open?: boolean;
     className?: string;
     onClose?: () => void;
     children?: import('svelte').Snippet;
   }
+</script>
 
-  let { open = false, className, onClose, children }: Props = $props();
+<script lang="ts">
+  import { fade, fly } from 'svelte/transition';
+  import { cn } from '$lib/utils.js';
+
+  const props = $props();
+  let open = props.open ?? false;
+  const { className, onClose, children } = props;
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {

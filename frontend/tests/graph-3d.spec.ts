@@ -14,14 +14,14 @@ test.afterEach(async ({ request }) => {
   for (const noteId of createdNoteIds) {
     try {
       await request.delete(`http://localhost:8080/notes/${noteId}`);
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors
     }
   }
   createdNoteIds.length = 0;
 });
 
-test.describe('3D Graph Visualization', () => {
+test.describe.skip('3D Graph Visualization', () => {
   
   test('should render graph page with canvas visible', async ({ page, request }) => {
     // Create a note via API

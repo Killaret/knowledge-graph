@@ -74,7 +74,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   ) || window.innerWidth < 768;
 
   // Check for touch device
-  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const _isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   // Check hardware concurrency (CPU cores)
   const cpuCores = navigator.hardwareConcurrency || 2;
@@ -92,7 +92,12 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     const debugInfo = (gl as any).getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
       const renderer = (gl as any).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-      const vendor = (gl as any).getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+      const _vendor = (gl as any).getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+
+      // If vendor indicates generic or Microsoft software renderer, mark as low
+      if (_vendor && /microsoft/i.test(_vendor)) {
+        gpuTier = 'low';
+      }
 
       // Check for software renderer or low-end GPUs
       const lowEndGPUs = ['swiftshader', 'llvmpipe', 'software', 'microsoft basic render'];
@@ -123,7 +128,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
 
   // Determine tier config and low power mode
   const tierConfig = TIER_CONFIG[gpuTier];
-  const isLowPower = isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === 'low';
+  const isLowPower = isMobile || _isTouch || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === 'low';
 
   // Build result
   const result: DeviceCapabilities = {

@@ -1,7 +1,5 @@
-<script lang="ts">
-  import { Dialog } from './dialog/index.js';
-
-  interface Props {
+<script lang="ts" module>
+  export interface Props {
     open?: boolean;
     title?: string;
     message?: string;
@@ -10,16 +8,14 @@
     onConfirm?: () => void;
     onCancel?: () => void;
   }
+</script>
 
-  let { 
-    open = false, 
-    title = 'Подтвердите действие', 
-    message = 'Вы уверены?', 
-    confirmText = 'Подтвердить', 
-    cancelText = 'Отмена',
-    onConfirm,
-    onCancel
-  }: Props = $props();
+<script lang="ts">
+  import { Dialog } from './dialog/index.js';
+
+  const props = $props();
+  let open = props.open ?? false;
+  const { title = 'Подтвердите действие', message = 'Вы уверены?', confirmText = 'Подтвердить', cancelText = 'Отмена', onConfirm, onCancel } = props;
 
   function handleConfirm() {
     open = false;
