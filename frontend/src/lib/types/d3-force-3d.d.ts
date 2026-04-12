@@ -45,8 +45,8 @@ declare module 'd3-force-3d' {
 
   export interface ForceLink<NodeDatum extends SimulationNodeDatum, LinkDatum extends SimulationLinkDatum<NodeDatum>> extends Force<NodeDatum> {
     id(callback: (d: NodeDatum) => string | number): this;
-    distance(callback: (d: LinkDatum) => number): this;
-    strength(callback: (d: LinkDatum) => number): this;
+    distance(distance: number | ((d: LinkDatum) => number)): this;
+    strength(strength: number | ((d: LinkDatum) => number)): this;
     links(links?: LinkDatum[]): LinkDatum[];
   }
 
