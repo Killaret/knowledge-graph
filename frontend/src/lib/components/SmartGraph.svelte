@@ -24,9 +24,11 @@
     links: GraphLink[];
   }>();
 
-  let use3D = $state(true);
+  let use3D = $state(false);
   let isLoading = $state(true);
   let Graph3DComponent: any = $state(null);
+  // Allow forcing 3D mode via URL param ?force3d=1 (useful for debugging/CI)
+  const isForce3D = (typeof window !== 'undefined') && (new URLSearchParams(window.location.search).get('force3d') === '1');
 
   onMount(async () => {
     if (!browser) {
@@ -50,7 +52,7 @@
       webglSupported = false;
     }
 
-    use3D = shouldRender3D && webglSupported;
+    use3D = isForce3D ? true : (shouldRender3D && webglSupported);
 
     // Dynamically import 3D component if needed
     if (use3D) {
