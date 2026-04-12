@@ -35,12 +35,15 @@
 </script>
 
 {#if isOpen}
-  <div 
-    class="modal-backdrop" 
+  <div
+    class="modal-backdrop"
+    role="button"
+    tabindex="0"
     onclick={handleBackdropClick}
+    onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleCancel()}
     transition:fade={{ duration: 200 }}
   >
-    <div class="modal-content" transition:scale={{ duration: 200, start: 0.9 }}>
+    <div class="modal-content" transition:scale={{ duration: 200, start: 0.9 }} role="dialog" aria-modal="true" tabindex="-1">
       <h3 class="modal-title">{title}</h3>
       <p class="modal-message">{message}</p>
       <div class="modal-actions">

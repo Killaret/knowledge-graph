@@ -27,7 +27,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if open}
-  <div class="dialog-overlay" onclick={handleOverlayClick} transition:fade={{ duration: 150 }}>
+  <div class="dialog-overlay" role="button" tabindex="0" onclick={handleOverlayClick} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleOverlayClick()} transition:fade={{ duration: 150 }}>
     <div
       class={cn(
         "dialog-content bg-white rounded-lg shadow-lg border p-6 max-w-lg w-full mx-4",
@@ -37,6 +37,7 @@
       transition:fly={{ y: 10, duration: 200 }}
       role="dialog"
       aria-modal="true"
+      tabindex="-1"
     >
       {@render children?.()}
     </div>

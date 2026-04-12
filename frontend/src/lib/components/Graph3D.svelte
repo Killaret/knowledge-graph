@@ -56,6 +56,8 @@
   let animationId: number = $state(0);
   let resizeObserver: ResizeObserver | null = $state(null);
   let glowTextures: ThreeType.CanvasTexture[] = [];
+  let labelTextures: ThreeType.Texture[] = [];
+  let createdMaterials: ThreeType.Material[] = [];
 
   // WebGL support check
   function isWebGLSupported(): boolean {
@@ -113,6 +115,12 @@
   function disposeTextures(): void {
     glowTextures.forEach(texture => texture.dispose());
     glowTextures = [];
+    labelTextures.forEach(t => t.dispose());
+    labelTextures = [];
+    createdMaterials.forEach(m => {
+      try { (m as any).dispose?.(); } catch (e) { /* ignore */ }
+    });
+    createdMaterials = [];
   }
 
   // Throttled resize handler
@@ -358,17 +366,54 @@
 
     // Cleanup
     _cleanup = () => {
-      newRenderer.domElement.removeEventListener('click', handleClick);
-      newRenderer.domElement.removeEventListener('contextmenu', handleRightClick);
+      try {
+        newRenderer.domElement.removeEventListener('click', handleClick);
+        newRenderer.domElement.removeEventListener('contextmenu', handleRightClick);
+      } catch (e) {}
       cancelAnimationFrame(animationId);
-      newResizeObserver.disconnect();
-      newControls.dispose();
+      try { newResizeObserver.disconnect(); } catch(e) {}
+      try { newControls.dispose(); } catch(e) {}
+
+      // Pause/stop graph engine if available
+      try {
+        const maybePause = (newGraph as any)?.pause ?? (newGraph as any)?.stop ?? (newGraph as any)?.dispose;
+        if (typeof maybePause === 'function') maybePause.call(newGraph);
+      } catch (e) {}
+
+      // Remove graph from scene
+      try { if (newScene && newGraph) newScene.remove(newGraph as any); } catch(e) {}
+
+      // Dispose tracked textures & materials
       disposeTextures();
-      newRenderer.dispose();
-      
-      if (newRenderer.domElement.parentNode === containerRef) {
-        containerRef.removeChild(newRenderer.domElement);
-      }
+
+      // Traverse scene to dispose leftover materials/textures
+      try {
+        newScene?.traverse((obj: any) => {
+          if (obj?.material) {
+            try { obj.material.dispose(); } catch (e) {}
+          }
+          if (obj?.geometry) {
+            try { obj.geometry.dispose(); } catch (e) {}
+          }
+          if (obj?.texture) {
+            try { obj.texture.dispose(); } catch (e) {}
+          }
+        });
+      } catch (e) {}
+
+      try { newRenderer.dispose(); } catch (e) {}
+      try {
+        if (newRenderer.domElement.parentNode === containerRef) {
+          containerRef.removeChild(newRenderer.domElement);
+        }
+      } catch (e) {}
+
+      // clear refs
+      renderer = null;
+      scene = null;
+      camera = null;
+      controls = null;
+      graphInstance = null;
     };
       })();
 

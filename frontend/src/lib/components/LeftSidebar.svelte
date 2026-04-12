@@ -56,7 +56,10 @@
   {#if isOpen}
     <div 
       class="sidebar-overlay"
+      role="button"
+      tabindex="0"
       onclick={onToggle}
+      onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
       transition:fade={{ duration: 200 }}
     ></div>
     
