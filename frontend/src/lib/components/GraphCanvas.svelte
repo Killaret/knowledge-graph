@@ -4,8 +4,8 @@
   import { goto } from '$app/navigation';
 
   let { nodes, links }: { 
-    nodes: Array<{ id: string; title: string; type: string }>;
-    links: Array<{ source: string; target: string; weight: number }>;
+    nodes: Array<{ id: string; title: string; type?: string }>;
+    links: Array<{ source: string; target: string; weight?: number }>;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -69,7 +69,7 @@
 
   function startSimulation() {
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
-    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight }));
+    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1 }));
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
@@ -165,8 +165,9 @@
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
       ctx.lineTo(targetNode.x, targetNode.y);
-      ctx.lineWidth = Math.max(1, link.weight * 3);
-      ctx.strokeStyle = `rgba(100, 150, 200, ${0.4 + link.weight * 0.6})`;
+      const weight = link.weight ?? 1;
+      ctx.lineWidth = Math.max(1, weight * 3);
+      ctx.strokeStyle = `rgba(100, 150, 200, ${0.4 + weight * 0.6})`;
       ctx.stroke();
     });
 

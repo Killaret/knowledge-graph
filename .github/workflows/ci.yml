@@ -2,9 +2,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, windsurf ]
+    branches-ignore:
+      - 'alximac'
+      - 'alximac/**'
   pull_request:
-    branches: [ main, develop, windsurf ]
+    branches-ignore:
+      - 'alximac'
+      - 'alximac/**'
 
 jobs:
   backend-tests:

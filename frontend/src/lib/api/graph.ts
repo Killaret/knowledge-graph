@@ -7,14 +7,18 @@ const api = ky.create({ prefixUrl: '/api' });
 export interface GraphNode {
   id: string;
   title: string;
-  type: string;
+  type?: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  size?: number;
 }
 
 // Ребро графа – связь между заметками
 export interface GraphLink {
   source: string;   // ID исходной заметки
   target: string;   // ID целевой заметки
-  weight: number;    // вес связи (толщина линии)
+  weight?: number;    // вес связи (толщина линии)
 }
 
 // Данные графа: список узлов и рёбер
