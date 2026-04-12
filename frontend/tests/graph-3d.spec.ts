@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Allow forcing 3D rendering in CI/debug via environment variable FORCE3D=1
+const forceSuffix = process.env.FORCE3D === '1' ? '?force3d=1' : '';
+
 /**
  * Tests for 3D Graph Visualization
  * These tests verify that the 3D graph canvas renders correctly
@@ -32,7 +35,7 @@ test.describe('3D Graph Visualization', () => {
     const noteId = noteUrl.split('/').pop();
     
     // Navigate to graph page
-    await page.goto(`/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}${forceSuffix}`);
     await page.waitForLoadState('networkidle');
     
     // Verify page title
@@ -63,7 +66,7 @@ test.describe('3D Graph Visualization', () => {
     const noteId = noteUrl.split('/').pop();
     
     // Navigate to graph page
-    await page.goto(`/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}${forceSuffix}`);
     await page.waitForLoadState('networkidle');
     
     // Verify graph container has correct background
@@ -90,7 +93,7 @@ test.describe('3D Graph Visualization', () => {
     const noteId = noteUrl.split('/').pop();
     
     // Navigate to graph page
-    await page.goto(`/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}${forceSuffix}`);
     await page.waitForLoadState('networkidle');
     
     // Click back button
@@ -115,7 +118,7 @@ test.describe('3D Graph Visualization', () => {
     const noteId = noteUrl.split('/').pop();
     
     // Navigate to graph page
-    await page.goto(`/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}${forceSuffix}`);
     await page.waitForLoadState('networkidle');
     
     // Wait for graph to load (either 2D or 3D)
@@ -143,7 +146,7 @@ test.describe('3D Graph Visualization', () => {
     const noteId = noteUrl.split('/').pop();
     
     // Navigate to graph page
-    await page.goto(`/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}${forceSuffix}`);
     await page.waitForLoadState('networkidle');
     
     // Page should still render without errors
