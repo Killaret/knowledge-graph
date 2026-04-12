@@ -7,13 +7,14 @@
   interface GraphNode {
     id: string;
     title: string;
-    type: string;
+    type?: string;
+    size?: number;
   }
 
   interface GraphLink {
     source: string;
     target: string;
-    weight: number;
+    weight?: number;
   }
 
   let { 

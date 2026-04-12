@@ -21,8 +21,17 @@
     try {
       const id = getRouteId();
       const data = await getGraphData(id);
-      nodes = data.nodes;
-      links = data.links;
+      // Map nodes with defaults for SmartGraph compatibility
+      nodes = data.nodes.map(n => ({
+        ...n,
+        type: n.type ?? 'default',
+        size: n.size ?? 5
+      }));
+      // Map links with defaults
+      links = data.links.map(l => ({
+        ...l,
+        weight: l.weight ?? 1
+      }));
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
