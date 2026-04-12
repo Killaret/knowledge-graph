@@ -70,13 +70,6 @@ Call log:
        - <nav aria-label="Main navigation" class="left-toolbar s-ESI0TD1rjbdy">…</nav> intercepts pointer events
   - retrying click action
     - waiting 500ms
-    - waiting for element to be visible, enabled and stable
-    - element is visible, enabled and stable
-    - scrolling into view if needed
-    - done scrolling
-    - <nav aria-label="Main navigation" class="left-toolbar s-ESI0TD1rjbdy">…</nav> intercepts pointer events
-  - retrying click action
-    - waiting 500ms
 
 ```
 

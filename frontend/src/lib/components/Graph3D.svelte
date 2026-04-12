@@ -2,7 +2,10 @@
   import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import * as THREE from 'three';
+  import type * as ThreeType from 'three';
+  let THREE: any = null;
+  let OrbitControls: any = null;
+  let ThreeForceGraph: any = null;
   import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
   import type ThreeForceGraphType from 'three-forcegraph';
 
@@ -25,7 +28,7 @@
   }
 
   interface ForceGraphNode extends GraphNode {
-    __threeObj?: THREE.Group;
+    __threeObj?: ThreeType.Group;
   }
 
   // Props
@@ -43,16 +46,16 @@
   let containerRef: HTMLDivElement;
 
   // Three.js refs (initialized in onMount)
-  let renderer: THREE.WebGLRenderer | null = $state(null);
-  let scene: THREE.Scene | null = $state(null);
-  let camera: THREE.PerspectiveCamera | null = $state(null);
+  let renderer: ThreeType.WebGLRenderer | null = $state(null);
+  let scene: ThreeType.Scene | null = $state(null);
+  let camera: ThreeType.PerspectiveCamera | null = $state(null);
   let controls: OrbitControlsType | null = $state(null);
   let graphInstance: ThreeForceGraphType | null = $state(null);
   const ThreeForceGraphClass: typeof ThreeForceGraphType | null = null;
   const OrbitControlsClass: typeof OrbitControlsType | null = null;
   let animationId: number = $state(0);
   let resizeObserver: ResizeObserver | null = $state(null);
-  let glowTextures: THREE.CanvasTexture[] = [];
+  let glowTextures: ThreeType.CanvasTexture[] = [];
 
   // WebGL support check
   function isWebGLSupported(): boolean {
@@ -71,7 +74,7 @@
   const CONFIG = {
     STAR_COUNT: 1000,
     CAMERA_Z: 200,
-    NODE_REL_SIZE: 6,
+    NODE_REL_SIZE: 2,
     LABEL_MAX_LENGTH: 20,
     RESIZE_THROTTLE_MS: 100
   } as const;
@@ -88,7 +91,7 @@
     return TYPE_COLORS[type] || TYPE_COLORS.default;
   }
 
-  function generateGlowTexture(color: string): THREE.CanvasTexture {
+  function generateGlowTexture(color: string): ThreeType.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
@@ -114,8 +117,8 @@
 
   // Throttled resize handler
   function createThrottledResizeHandler(
-    camera: THREE.PerspectiveCamera,
-    renderer: THREE.WebGLRenderer
+    camera: ThreeType.PerspectiveCamera,
+    renderer: ThreeType.WebGLRenderer
   ): ResizeObserverCallback {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
@@ -148,10 +151,17 @@
     }
   });
 
-  onMount(() => {
+  onMount(() => { let _cleanup: (() => void) | undefined; (async () => {
     if (!containerRef || !browser || !isWebGLSupported()) {
       return;
     }
+
+    // Dynamic imports at runtime to avoid SSR issues
+    THREE = await import('three');
+    const orbitModule = await import('three/examples/jsm/controls/OrbitControls.js');
+    OrbitControls = (orbitModule as any).OrbitControls ?? (orbitModule as any).default ?? orbitModule;
+    const tfModule = await import('three-forcegraph');
+    ThreeForceGraph = (tfModule as any).default ?? tfModule;
 
     const rect = containerRef.getBoundingClientRect();
     const width = rect.width;
@@ -180,7 +190,7 @@
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 2,
+      size: 1,
       transparent: true,
       opacity: 0.6
     });
@@ -223,7 +233,7 @@
           transparent: true
         });
         const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(20, 20, 1);
+        sprite.scale.set(6, 6, 1);
         group.add(sprite);
 
         // Label
@@ -249,7 +259,7 @@
           transparent: true
         });
         const labelSprite = new THREE.Sprite(labelMaterial);
-        labelSprite.scale.set(40, 10, 1);
+        labelSprite.scale.set(16, 4, 1);
         labelSprite.position.y = -15;
         group.add(labelSprite);
 
@@ -286,7 +296,7 @@
       const intersects = raycaster.intersectObjects(newGraph.children, true);
 
       if (intersects.length > 0) {
-        let obj: THREE.Object3D | null = intersects[0].object;
+        let obj: ThreeType.Object3D | null = intersects[0].object;
         while (obj) {
           // @ts-ignore - three-forcegraph internal data structure
           const nodeData = (obj as any).__data;
@@ -316,7 +326,7 @@
       const intersects = raycaster.intersectObjects(newGraph.children, true);
       
       if (intersects.length > 0) {
-        let obj: THREE.Object3D | null = intersects[0].object;
+        let obj: ThreeType.Object3D | null = intersects[0].object;
         while (obj) {
           // @ts-ignore - three-forcegraph internal data structure
           const nodeData = (obj as any).__data;
@@ -347,7 +357,7 @@
     animate();
 
     // Cleanup
-    return () => {
+    _cleanup = () => {
       newRenderer.domElement.removeEventListener('click', handleClick);
       newRenderer.domElement.removeEventListener('contextmenu', handleRightClick);
       cancelAnimationFrame(animationId);
@@ -360,10 +370,13 @@
         containerRef.removeChild(newRenderer.domElement);
       }
     };
+      })();
+
+    return () => { _cleanup?.(); };
   });
 </script>
 
-<div class="graph-3d-container" bind:this={containerRef} data-testid="main-graph-canvas">
+<div class="graph-3d-container" bind:this={containerRef} data-testid="graph-canvas">
   {#if !data?.nodes?.length}
     <div class="empty-state">No nodes to display</div>
   {/if}
