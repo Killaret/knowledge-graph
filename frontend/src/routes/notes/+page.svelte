@@ -459,11 +459,13 @@
                 </div>
               </div>
             {:else}
-              <button
+              <div
                 class="note-card"
                 class:selected={isNoteSelected(note)}
-                type="button"
-                on:click={() => goto(`/notes/${note.id}`)}
+                role="button"
+                tabindex="0"
+                onclick={() => goto(`/notes/${note.id}`)}
+                onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && goto(`/notes/${note.id}`)}
                 aria-label={note.title}
               >
                 <div class="note-header">
@@ -497,7 +499,7 @@
                     Удалить
                   </button>
                 </div>
-              </button>
+              </div>
             {/if}
           {/each}
         </div>
