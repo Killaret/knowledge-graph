@@ -70,7 +70,7 @@
     return texture;
   }
 
-  onMount(async () => {
+  onMount(() => {
     if (!containerRef || !browser) return;
 
     // Detect device capabilities for optimization
@@ -89,12 +89,17 @@
       return;
     }
 
-    // Dynamic imports for SSR compatibility
-    THREE = await import('three');
-    const forceGraphModule = await import('three-forcegraph');
-    ThreeForceGraph = forceGraphModule.default;
-    const controlsModule = await import('three/examples/jsm/controls/OrbitControls.js');
-    OrbitControls = controlsModule.OrbitControls;
+    // Dynamic imports for SSR compatibility (using .then() to avoid async onMount issues)
+    let cleanupFn: (() => void) | undefined;
+    
+    import('three').then(threeModule => {
+      THREE = threeModule;
+      return import('three-forcegraph');
+    }).then(forceGraphModule => {
+      ThreeForceGraph = forceGraphModule.default;
+      return import('three/examples/jsm/controls/OrbitControls.js');
+    }).then(controlsModule => {
+      OrbitControls = controlsModule.OrbitControls;
 
     // Get container dimensions
     const rect = containerRef.getBoundingClientRect();
@@ -257,8 +262,8 @@
 
     // Set data
     const graphData = {
-      nodes: nodes.map(n => ({ ...n })),
-      links: links.map(l => ({ ...l }))
+      nodes: nodes.map((n: GraphNode) => ({ ...n })),
+      links: links.map((l: GraphLink) => ({ ...l }))
     };
     graphInstance.graphData(graphData);
 
@@ -283,18 +288,25 @@
     };
     animate();
 
-    return () => {
-      renderer.domElement.removeEventListener('click', handleClick);
-      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationId);
-      resizeObserver.disconnect();
-      controls.dispose();
-      renderer.dispose();
-      if (containerRef && renderer.domElement.parentNode === containerRef) {
-        containerRef.removeChild(renderer.domElement);
-      }
-    };
-  });
+  // Store cleanup function
+  cleanupFn = (): void => {
+    renderer.domElement.removeEventListener('click', handleClick);
+    renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+    cancelAnimationFrame(animationId);
+    resizeObserver.disconnect();
+    controls.dispose();
+    renderer.dispose();
+    if (containerRef && renderer.domElement.parentNode === containerRef) {
+      containerRef.removeChild(renderer.domElement);
+    }
+  };
+});
+
+// Return cleanup function synchronously
+return (): void => {
+  if (cleanupFn) cleanupFn();
+  };
+});
 </script>
 
 <div class="graph-3d-container" bind:this={containerRef}>
