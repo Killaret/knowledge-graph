@@ -39,10 +39,14 @@ test.describe('3D Graph Visualization', () => {
     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
     
     // Verify canvas or 2D fallback is visible
-    const canvas = page.locator('canvas').first();
-    const graph2D = page.locator('.graph-2d, .graph-3d, .graph-container canvas').first();
-    
-    await expect(canvas.or(graph2D)).toBeVisible({ timeout: 10000 });
+    const canvas3D = page.locator('.graph-3d canvas');
+    const canvas2D = page.locator('.graph-2d canvas');
+
+    if ((await canvas3D.count()) > 0) {
+      await expect(canvas3D.first()).toBeVisible({ timeout: 10000 });
+    } else {
+      await expect(canvas2D.first()).toBeVisible({ timeout: 10000 });
+    }
   });
 
   test('should show graph container with correct styling', async ({ page }) => {

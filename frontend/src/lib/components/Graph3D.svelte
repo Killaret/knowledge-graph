@@ -114,6 +114,13 @@
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(deviceCaps.pixelRatio); // Use optimized pixel ratio
+    // Remove any existing canvas elements in the container to avoid duplicate canvases
+    try {
+      const existingCanvases = containerRef.querySelectorAll('canvas');
+      existingCanvases.forEach((c: any) => c.remove());
+    } catch (e) {
+      // ignore
+    }
     containerRef.appendChild(renderer.domElement);
 
     // Initialize scene
