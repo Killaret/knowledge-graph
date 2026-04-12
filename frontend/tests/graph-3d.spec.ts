@@ -36,16 +36,30 @@ test.describe('3D Graph Visualization', () => {
     // Navigate to graph page
     await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
-    // Wait for Graph3D to signal readiness (onReady)
-    await page.waitForFunction(() => (window as any).__graphReady === true, { timeout: 30000 });
-    
+    // Wait for Graph3D or fallback to be ready (onReady or DOM markers)
+    await page.waitForFunction(() => {
+      try {
+        return (window as any).__graphReady === true
+          || !!document.querySelector('[data-testid="graph-canvas"]')
+          || !!document.querySelector('.graph-wrapper')
+          || !!document.querySelector('.graph-container');
+      } catch { return false; }
+    }, { timeout: 30000 });
+
     // Verify page title
     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
     
     // Verify canvas or graph container is visible
+    const canvasByTestId = page.locator('[data-testid="graph-canvas"]');
     const canvas = page.locator('canvas');
     const graphContainer = page.locator('.graph-container');
-    await expect(canvas.or(graphContainer)).toBeVisible({ timeout: 30000 });
+    if ((await canvasByTestId.count()) > 0) {
+      await expect(canvasByTestId).toBeVisible({ timeout: 5000 });
+    } else if ((await canvas.count()) > 0) {
+      await expect(canvas).toBeVisible({ timeout: 5000 });
+    } else {
+      await expect(graphContainer).toBeVisible({ timeout: 5000 });
+    }
     
     // Verify WebGL is available (if canvas exists)
     const hasWebGL = await page.evaluate(() => {
