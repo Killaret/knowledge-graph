@@ -6,7 +6,7 @@
   import RightPanel from '$lib/components/RightPanel.svelte';
   import KeyboardShortcuts from '$lib/components/KeyboardShortcuts.svelte';
   
-  let { children } = $props();
+  const { children } = $props();
 
   // Search context for components
   let searchFocusHandler: (() => void) | null = null;

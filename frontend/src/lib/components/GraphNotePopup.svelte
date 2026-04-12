@@ -11,7 +11,7 @@
     created_at?: string;
   }
   
-  let { 
+  const { 
     note,
     isOpen = false,
     position = { x: 0, y: 0 },

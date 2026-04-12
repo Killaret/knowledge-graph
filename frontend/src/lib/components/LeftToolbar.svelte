@@ -9,7 +9,7 @@
     onSettings?: () => void;
   }
   
-  let { onNewNote, onImport, onExport, onSettings }: Props = $props();
+  const { onNewNote, onImport, onExport, onSettings }: Props = $props();
   
   let hoveredItem = $state<string | null>(null);
   let isMobile = $state(false);
@@ -67,13 +67,25 @@
 
 <nav class="left-toolbar" class:mobile={isMobile} aria-label="Main navigation">
   <!-- New Note (Accent) -->
-  {@render toolbarItem(
-    'new',
-    '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-    'Новая звезда',
-    () => onNewNote?.() || goto('/notes/new'),
-    true
-  )}
+  <button
+    class="toolbar-item accent"
+    onclick={() => onNewNote?.() || goto('/notes/new')}
+    onmouseenter={() => hoveredItem = 'new'}
+    onmouseleave={() => hoveredItem = null}
+    aria-label="Новая звезда"
+    data-testid="toolbar-new-note"
+  >
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    
+    {#if hoveredItem === 'new'}
+      <span class="tooltip" class:mobile={isMobile}>
+        Новая звезда
+      </span>
+    {/if}
+  </button>
   
   <!-- Divider -->
   <div class="divider"></div>

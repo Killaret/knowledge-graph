@@ -29,7 +29,7 @@
   }
 
   // Props
-  let { 
+  const { 
     data,
     onNodeClick,
     onNodeRightClick
@@ -48,8 +48,8 @@
   let camera: THREE.PerspectiveCamera | null = $state(null);
   let controls: OrbitControlsType | null = $state(null);
   let graphInstance: ThreeForceGraphType | null = $state(null);
-  let ThreeForceGraphClass: typeof ThreeForceGraphType | null = null;
-  let OrbitControlsClass: typeof OrbitControlsType | null = null;
+  const ThreeForceGraphClass: typeof ThreeForceGraphType | null = null;
+  const OrbitControlsClass: typeof OrbitControlsType | null = null;
   let animationId: number = $state(0);
   let resizeObserver: ResizeObserver | null = $state(null);
   let glowTextures: THREE.CanvasTexture[] = [];
@@ -363,7 +363,7 @@
   });
 </script>
 
-<div class="graph-3d-container" bind:this={containerRef} data-testid="graph-canvas">
+<div class="graph-3d-container" bind:this={containerRef} data-testid="main-graph-canvas">
   {#if !data?.nodes?.length}
     <div class="empty-state">No nodes to display</div>
   {/if}

@@ -9,7 +9,7 @@
     onResultSelect?: (result: Note) => void;
   }
   
-  let { onResultSelect }: Props = $props();
+  const { onResultSelect }: Props = $props();
   
   let isOpen = $state(false);
   let query = $state('');

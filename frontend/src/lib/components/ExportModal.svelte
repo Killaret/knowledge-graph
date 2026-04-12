@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
   
-  let { 
+  const { 
     isOpen = false,
     notes = [],
     onClose,

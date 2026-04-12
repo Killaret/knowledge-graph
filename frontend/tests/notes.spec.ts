@@ -7,7 +7,8 @@ test.describe('Knowledge Graph Frontend', () => {
   });
 
   test('should create a new note', async ({ page }) => {
-    await page.click('[data-testid="fab-new-note"]');
+    // Click new note button in left toolbar
+    await page.click('[data-testid="toolbar-new-note"]');
     await page.fill('input[placeholder="Title"]', 'Playwright Test');
     await page.fill('textarea', 'Automated content');
     await page.click('button:has-text("Create")');
@@ -18,7 +19,7 @@ test.describe('Knowledge Graph Frontend', () => {
 
   test('should edit a note', async ({ page }) => {
     // Сначала создадим заметку через API или UI
-    await page.click('[data-testid="fab-new-note"]');
+    await page.click('[data-testid="toolbar-new-note"]');
     await page.fill('input[placeholder="Title"]', 'To Edit');
     await page.fill('textarea', 'Original');
     await page.click('button:has-text("Create")');
@@ -26,7 +27,7 @@ test.describe('Knowledge Graph Frontend', () => {
     // Wait additional time for page to fully load
     await page.waitForTimeout(1000);
 
-    await page.click('a:has-text("Edit")');
+    await page.click('button:has-text("Редактировать")');
     await page.fill('input[placeholder="Title"]', 'Edited');
     await page.fill('textarea', 'New content');
     await page.click('button:has-text("Update")');
@@ -43,8 +44,8 @@ test.describe('Knowledge Graph Frontend', () => {
     const noteId = (await note.json()).id;
     const noteTitle = 'Delete Test ' + timestamp;
     
-    // Go to home page to see the note in the list
-    await page.goto('http://localhost:5173/');
+    // Go to notes list to see the note
+    await page.goto('http://localhost:5173/notes');
     await page.waitForSelector('.note-card', { timeout: 5000 });
     await expect(page.locator('text=' + noteTitle)).toBeVisible();
     
@@ -53,7 +54,7 @@ test.describe('Knowledge Graph Frontend', () => {
     
     // Wait and reload to see the changes
     await page.waitForTimeout(1000);
-    await page.goto('http://localhost:5173/');
+    await page.goto('http://localhost:5173/notes');
     await page.waitForLoadState('networkidle');
     
     // Check that the specific note is no longer present
@@ -75,11 +76,11 @@ test.describe('Knowledge Graph Frontend', () => {
     });
 
     await page.goto(`http://localhost:5173/graph/${id1}`);
-    await expect(page.locator('canvas')).toBeVisible();
+    await expect(page.locator('[data-testid="main-graph-canvas"]')).toBeVisible();
     // Ждём, пока d3-force немного стабилизируется
     await page.waitForTimeout(1000);
-    // Проверяем, что canvas не пустой (можно по цвету пикселя, но сложно)
-    const canvas = page.locator('canvas');
+    // Проверяем, что canvas не пустой
+    const canvas = page.locator('[data-testid="main-graph-canvas"]');
     await expect(canvas).toBeVisible();
   });
 
@@ -95,10 +96,10 @@ test.describe('Knowledge Graph Frontend', () => {
     await page.waitForTimeout(1000);
 
     // Check that back button is visible
-    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    await expect(page.locator('[data-testid="back-button"]')).toBeVisible();
     
-    // Test back button functionality - should go back to home page
-    await page.click('button:has-text("Back")');
+    // Test back button functionality - should go back to home page (graph)
+    await page.click('[data-testid="back-button"]');
     await expect(page).toHaveURL('http://localhost:5173/');
   });
 
@@ -122,10 +123,10 @@ test.describe('Knowledge Graph Frontend', () => {
     await page.waitForTimeout(1000);
     
     // Check that back button is visible
-    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    await expect(page.locator('[data-testid="back-button"]')).toBeVisible();
     
     // Test back button functionality - should go back to note page using browser history
-    await page.click('button:has-text("Back")');
+    await page.click('[data-testid="back-button"]');
     await page.waitForTimeout(1000);
     
     // Should be back on note page
@@ -151,12 +152,12 @@ test.describe('Knowledge Graph Frontend', () => {
     // Go back to note page using browser history
     await page.goBack();
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("Back")')).toBeVisible();
+    await expect(page.locator('[data-testid="back-button"]')).toBeVisible();
     
-    // Click back button - should use browser history to go home
-    await page.click('button:has-text("Back")');
+    // Click back button - should use browser history to go home (graph page)
+    await page.click('[data-testid="back-button"]');
     await page.waitForTimeout(2000);
-    // Check if we're back on home page
-    await expect(page.locator('h1')).toHaveText('My Notes');
+    // Check if we're back on home page (graph)
+    await expect(page.locator('.home-graph-page')).toBeVisible();
   });
 });

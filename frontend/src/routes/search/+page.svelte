@@ -11,7 +11,7 @@
   let total = $state(0);
   let currentPage = $state(1);
   let totalPages = $state(1);
-  let size = 20;
+  const size = 20;
 
   // Get parameters from URL and perform search
   $effect(() => {

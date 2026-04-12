@@ -3,7 +3,7 @@
   import * as d3Force from 'd3-force';
   import { goto } from '$app/navigation';
 
-  let { nodes, links }: { 
+  const { nodes, links }: { 
     nodes: Array<{ id: string; title: string; type: string }>;
     links: Array<{ source: string; target: string; weight: number }>;
   } = $props();
@@ -13,10 +13,10 @@
   let width = 800;
   let height = 600;
   let animationId: number;
-  let angles: Map<string, number> = new Map();
-  let speeds: Map<string, number> = new Map();
+  const angles: Map<string, number> = new Map();
+  const speeds: Map<string, number> = new Map();
 
-  let transform = $state({ x: 0, y: 0, k: 1 });
+  const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
   let simulation: any = null;
@@ -36,7 +36,7 @@
 
   function startAnimation() {
     function animate() {
-      for (let node of simulation?.nodes() || []) {
+      for (const node of simulation?.nodes() || []) {
         const id = node.id;
         const type = node.type || 'star';
         let baseSpeed = 0.005; // звезда

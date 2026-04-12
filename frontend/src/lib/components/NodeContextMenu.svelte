@@ -22,7 +22,7 @@
     onChangeType?: (id: string, type: string) => void;
   }
   
-  let { 
+  const { 
     note, 
     isOpen, 
     position, 

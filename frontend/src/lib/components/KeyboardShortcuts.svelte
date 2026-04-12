@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   
-  let { 
+  const { 
     onSearchFocus
   }: {
     onSearchFocus?: () => void;

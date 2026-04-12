@@ -2,7 +2,7 @@
   import { fade, fly } from 'svelte/transition';
   import { goto } from '$app/navigation';
   
-  let { 
+  const { 
     isOpen = false,
     onToggle,
     onImportClick,
@@ -14,7 +14,7 @@
     onExportClick: () => void;
   } = $props();
   
-  let menuItems = [
+  const menuItems = [
     { id: 'graph', label: 'Граф', icon: '🕸️', href: '/' },
     { id: 'import', label: 'Импорт', icon: '📥', action: 'import' },
     { id: 'export', label: 'Экспорт', icon: '📤', action: 'export' },

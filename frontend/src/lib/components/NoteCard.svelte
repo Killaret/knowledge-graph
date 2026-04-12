@@ -2,7 +2,7 @@
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
 
-  let { note }: { note: Note } = $props();
+  const { note }: { note: Note } = $props();
 
   function goToNote() {
     goto(`/notes/${note.id}`);

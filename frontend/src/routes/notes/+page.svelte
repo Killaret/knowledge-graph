@@ -6,6 +6,7 @@
   import { Skeleton } from 'flowbite-svelte';
   import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
+  import LinkCreationModal from '$lib/components/LinkCreationModal.svelte';
 
   // Data
   let notes = $state<Note[]>([]);
@@ -29,12 +30,21 @@
   
   // Pagination
   let currentPage = $state(1);
-  let pageSize = $state(12);
+  const pageSize = $state(12);
   let totalPages = $state(1);
   
   // Confirm dialog
   let showConfirmDialog = $state(false);
   let noteToDelete = $state<string | null>(null);
+
+  // Selection mode state
+  let selectionMode = $state(false);
+  let selectedNotes = $state<Note[]>([]);
+  let showLinkModal = $state(false);
+
+  // Quick link from single note
+  let quickLinkSource = $state<Note | null>(null);
+  let showQuickLinkModal = $state(false);
 
   // Available types and tags
   const noteTypes = ['star', 'planet', 'comet', 'galaxy'];
@@ -186,6 +196,65 @@
     return new Date(dateStr).toLocaleDateString('ru-RU');
   }
 
+  // Selection mode functions
+  function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    if (!selectionMode) {
+      selectedNotes = []; // Clear selection when exiting mode
+    }
+  }
+
+  function toggleNoteSelection(note: Note) {
+    const index = selectedNotes.findIndex(n => n.id === note.id);
+    if (index === -1) {
+      selectedNotes = [...selectedNotes, note];
+    } else {
+      selectedNotes = selectedNotes.filter(n => n.id !== note.id);
+    }
+  }
+
+  function isNoteSelected(note: Note): boolean {
+    return selectedNotes.some(n => n.id === note.id);
+  }
+
+  function selectAllVisible() {
+    const newSelection = [...selectedNotes];
+    filteredNotes.forEach(note => {
+      if (!newSelection.some(n => n.id === note.id)) {
+        newSelection.push(note);
+      }
+    });
+    selectedNotes = newSelection;
+  }
+
+  function clearSelection() {
+    selectedNotes = [];
+  }
+
+  function openLinkModal() {
+    if (selectedNotes.length < 2) return;
+    showLinkModal = true;
+  }
+
+  function handleLinkSuccess() {
+    showLinkModal = false;
+    selectedNotes = [];
+    selectionMode = false;
+    // Show success toast (could be implemented with a toast store)
+    alert('Связи успешно созданы!');
+  }
+
+  function openQuickLink(note: Note) {
+    quickLinkSource = note;
+    showQuickLinkModal = true;
+  }
+
+  function handleQuickLinkSuccess() {
+    showQuickLinkModal = false;
+    quickLinkSource = null;
+    alert('Связь успешно создана!');
+  }
+
   // Re-apply filters when any filter changes
   $effect(() => {
     searchQuery;
@@ -206,14 +275,36 @@
 
 <div class="notes-page">
   <header class="page-header">
-    <h1>Все звёзды</h1>
-    <button class="btn-new" onclick={() => goto('/notes/new')}>
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Новая звезда
-    </button>
+    <div class="header-left">
+      <h1>Все звёзды</h1>
+      {#if selectionMode}
+        <span class="selection-badge">{selectedNotes.length} выбрано</span>
+      {/if}
+    </div>
+    <div class="header-actions">
+      <button 
+        class="btn-select" 
+        class:active={selectionMode}
+        onclick={toggleSelectionMode}
+        aria-label={selectionMode ? 'Отменить выбор' : 'Выбрать заметки'}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          {#if selectionMode}
+            <polyline points="20,6 9,17 4,12"/>
+          {:else}
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          {/if}
+        </svg>
+        {selectionMode ? 'Готово' : 'Выбрать'}
+      </button>
+      <button class="btn-new" onclick={() => goto('/notes/new')}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Новая звезда
+      </button>
+    </div>
   </header>
 
   <!-- Filters -->
@@ -309,9 +400,29 @@
           <h2 class="group-header">{groupName}</h2>
         {/if}
         
-        <div class="notes-grid">
+        <div class="notes-grid" class:selection-mode={selectionMode}>
           {#each groupNotes as note}
-            <div class="note-card" onclick={() => goto(`/notes/${note.id}`)}>
+            <div 
+              class="note-card" 
+              class:selected={isNoteSelected(note)}
+              onclick={() => selectionMode ? toggleNoteSelection(note) : goto(`/notes/${note.id}`)}
+              onkeydown={(e) => e.key === 'Enter' && (selectionMode ? toggleNoteSelection(note) : goto(`/notes/${note.id}`))}
+              role={selectionMode ? 'checkbox' : 'button'}
+              tabindex="0"
+              aria-checked={selectionMode ? isNoteSelected(note) : undefined}
+            >
+              {#if selectionMode}
+                <div class="selection-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={isNoteSelected(note)}
+                    onchange={() => toggleNoteSelection(note)}
+                    onclick={(e) => e.stopPropagation()}
+                    aria-label={`Выбрать ${note.title}`}
+                  />
+                </div>
+              {/if}
+              
               <div class="note-header">
                 <span class="note-type">{getTypeIcon(note.metadata?.type)}</span>
                 <h3 class="note-title">{note.title}</h3>
@@ -327,7 +438,17 @@
                   </div>
                 {/if}
               </div>
+              
               <div class="note-actions" onclick={(e) => e.stopPropagation()}>
+                {#if !selectionMode}
+                  <button onclick={() => openQuickLink(note)} class="btn-link" title="Связать с другими">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    Связать
+                  </button>
+                {/if}
                 <button onclick={() => goto(`/notes/${note.id}/edit`)} class="btn-edit">
                   Редактировать
                 </button>
@@ -373,6 +494,50 @@
     {/if}
   {/if}
 </div>
+
+<!-- Floating Selection Action Bar -->
+{#if selectionMode && selectedNotes.length > 0}
+  <div class="selection-action-bar" role="toolbar" aria-label="Действия с выбранными">
+    <div class="selection-info">
+      <span class="selection-count">{selectedNotes.length} выбрано</span>
+      <button class="btn-select-all" onclick={selectAllVisible}>
+        Выбрать все на странице
+      </button>
+      <button class="btn-clear" onclick={clearSelection}>
+        Снять выбор
+      </button>
+    </div>
+    <button 
+      class="btn-link-selected" 
+      onclick={openLinkModal}
+      disabled={selectedNotes.length < 2}
+      title={selectedNotes.length < 2 ? 'Выберите минимум 2 заметки' : 'Связать выбранные заметки'}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      Связать выбранные
+    </button>
+  </div>
+{/if}
+
+<!-- Link Creation Modal for multiple selection -->
+<LinkCreationModal
+  open={showLinkModal}
+  selectedNotes={selectedNotes}
+  onClose={() => showLinkModal = false}
+  onSuccess={handleLinkSuccess}
+/>
+
+<!-- Quick Link Modal for single note -->
+<LinkCreationModal
+  open={showQuickLinkModal}
+  selectedNotes={notes}
+  preselectedSource={quickLinkSource}
+  onClose={() => { showQuickLinkModal = false; quickLinkSource = null; }}
+  onSuccess={handleQuickLinkSuccess}
+/>
 
 <ConfirmDialog
   open={showConfirmDialog}
@@ -422,6 +587,54 @@
   .btn-new:hover {
     background: rgba(99, 102, 241, 1);
     transform: translateY(-1px);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .selection-badge {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.875rem;
+    background: rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 1rem;
+    color: rgba(165, 180, 252, 1);
+    font-weight: 500;
+  }
+
+  .btn-select {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-select:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-select.active {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: rgba(165, 180, 252, 1);
   }
 
   .filters-bar {
@@ -528,6 +741,43 @@
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+  }
+
+  .note-card.selected {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+
+  .selection-checkbox {
+    margin-bottom: 0.75rem;
+  }
+
+  .selection-checkbox input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    accent-color: rgba(99, 102, 241, 1);
+  }
+
+  .btn-link {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(34, 197, 94, 0.2);
+    border: none;
+    border-radius: 0.5rem;
+    color: rgba(74, 222, 128, 1);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-link:hover {
+    background: rgba(34, 197, 94, 0.3);
+    transform: translateY(-1px);
   }
 
   .note-header {
@@ -657,6 +907,114 @@
     background: rgba(99, 102, 241, 0.8);
     border-color: rgba(99, 102, 241, 0.5);
     color: white;
+  }
+
+  /* Floating Selection Action Bar */
+  .selection-action-bar {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+  }
+
+  .selection-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-right: 1rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .selection-count {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .btn-select-all,
+  .btn-clear {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-select-all:hover,
+  .btn-clear:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-link-selected {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: rgba(99, 102, 241, 0.8);
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-link-selected:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 1);
+    transform: translateY(-1px);
+  }
+
+  .btn-link-selected:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (max-width: 768px) {
+    .selection-action-bar {
+      left: 1rem;
+      right: 1rem;
+      transform: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .selection-info {
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-right: 0;
+      padding-bottom: 0.75rem;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .btn-link-selected {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .header-actions {
+      gap: 0.5rem;
+    }
+
+    .btn-select span {
+      display: none;
+    }
   }
 
   .error {

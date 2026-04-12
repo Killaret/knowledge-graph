@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   
-  let { 
+  const { 
     title = 'Нет данных',
     message = 'Здесь пока ничего нет',
     actionText = '',

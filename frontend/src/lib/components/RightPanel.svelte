@@ -12,7 +12,7 @@
     miniMapData?: { nodes: any[]; links: any[] };
   }
   
-  let { 
+  const { 
     nodeCount = 0, 
     linkCount = 0, 
     nodeTypes = [],

@@ -16,7 +16,7 @@
     weight: number;
   }
 
-  let { 
+  const { 
     nodes = [] as GraphNode[],
     links = [] as GraphLink[]
   } = $props<{

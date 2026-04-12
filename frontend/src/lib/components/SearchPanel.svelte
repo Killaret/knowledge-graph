@@ -2,7 +2,7 @@
   import { fade, fly } from 'svelte/transition';
   import { tick } from 'svelte';
   
-  let { 
+  const { 
     isOpen = false,
     onClose,
     onSearch,
