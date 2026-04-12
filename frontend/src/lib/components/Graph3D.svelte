@@ -161,12 +161,17 @@
       const placeholder = document.createElement('div');
       placeholder.className = 'no-webgl-placeholder';
       placeholder.setAttribute('data-testid', 'main-graph-canvas');
+      placeholder.setAttribute('data-testid', 'graph-canvas');
       placeholder.textContent = 'WebGL not available';
       containerRef.appendChild(placeholder);
+
+      // signal readiness so E2E tests can proceed in headless envs
+      try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); } catch { /* ignore */ }
 
       // cleanup for this path
       _cleanup = () => {
         try { if (placeholder.parentNode === containerRef) containerRef.removeChild(placeholder); } catch { /* ignore */ }
+        try { (window as any).__graphReady = false; } catch { /* ignore */ }
       };
       return;
     }
@@ -187,8 +192,20 @@
     newRenderer.setSize(width, height);
     newRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.appendChild(newRenderer.domElement);
-    // Mark the actual canvas with test id so tests can reliably wait for it
-    try { newRenderer.domElement.setAttribute('data-testid', 'main-graph-canvas'); } catch { /* ignore in non-DOM env */ }
+    // Mark the actual canvas with test ids so tests can reliably wait for it
+    try {
+      newRenderer.domElement.setAttribute('data-testid', 'main-graph-canvas');
+      newRenderer.domElement.setAttribute('data-testid', 'graph-canvas');
+    } catch { /* ignore in non-DOM env */ }
+
+    // Expose readiness for E2E tests: set a global flag and dispatch an event after renderer is attached
+    try {
+      (window as any).__graphReady = false;
+      // signal ready on next animation frame to ensure first render occurred
+      requestAnimationFrame(() => {
+        try { (window as any).__graphReady = true; window.dispatchEvent(new Event('graph-ready')); } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
 
 
     // Scene
@@ -412,6 +429,7 @@
       // clear refs
       graphInstance = null;
       animationId = 0;
+      try { (window as any).__graphReady = false; } catch { /* ignore */ }
     };
       })();
 

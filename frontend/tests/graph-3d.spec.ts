@@ -21,7 +21,7 @@ test.afterEach(async ({ request }) => {
   createdNoteIds.length = 0;
 });
 
-test.describe.skip('3D Graph Visualization', () => {
+test.describe('3D Graph Visualization', () => {
   
   test('should render graph page with canvas visible', async ({ page, request }) => {
     // Create a note via API
@@ -34,8 +34,10 @@ test.describe.skip('3D Graph Visualization', () => {
     createdNoteIds.push(noteId);
     
     // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
+    // Wait for Graph3D to signal readiness (onReady)
+    await page.waitForFunction(() => (window as any).__graphReady === true, { timeout: 10000 });
     
     // Verify page title
     await expect(page.locator('h1')).toHaveText('Knowledge Constellation');
@@ -66,7 +68,7 @@ test.describe.skip('3D Graph Visualization', () => {
     createdNoteIds.push(noteId);
     
     // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
     
     // Verify graph container has correct structure
@@ -92,7 +94,7 @@ test.describe.skip('3D Graph Visualization', () => {
     createdNoteIds.push(noteId);
     
     // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
     
     // Click back button
@@ -116,7 +118,7 @@ test.describe.skip('3D Graph Visualization', () => {
     createdNoteIds.push(noteId);
     
     // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
     
     // Wait for performance hint to appear (with better selector)
@@ -139,7 +141,7 @@ test.describe.skip('3D Graph Visualization', () => {
     createdNoteIds.push(noteId);
     
     // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`http://localhost:5173/graph/${noteId}?force3d=1`);
     await page.waitForLoadState('networkidle');
     
     // Page should render without errors even with no connections
@@ -171,3 +173,4 @@ test.describe.skip('3D Graph Visualization', () => {
     expect(isEmptyVisible || isErrorVisible).toBe(true);
   });
 });
+

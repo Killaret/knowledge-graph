@@ -39,7 +39,13 @@
     const deviceCaps = detectDeviceCapabilities();
     
     // Check if we should use 3D
-    const shouldRender3D = shouldUse3D(deviceCaps);
+    let shouldRender3D = shouldUse3D(deviceCaps);
+
+    // Allow forcing 3D via query param (useful for E2E/testing)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('force3d') === '1') shouldRender3D = true;
+    } catch { /* ignore in SSR */ }
     
     use3D = shouldRender3D;
 
