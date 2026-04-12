@@ -49,7 +49,7 @@
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       webglSupported = !!gl;
-    } catch (e) {
+    } catch (_e) {
       webglSupported = false;
     }
 

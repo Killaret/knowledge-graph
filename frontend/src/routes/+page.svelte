@@ -77,9 +77,11 @@
 </script>
 
 <div class="page-header">
-  <h1>My Knowledge Graph</h1>
-  <SearchBar placeholder="Search through your notes..." />
+  <h1>My Notes</h1>
+  <a href="/notes/new" class="new-note">+ New Note</a>
 </div>
+
+<SearchBar placeholder="Search through your notes..." />
 
 {#if loading}
   <div class="center">

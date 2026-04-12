@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import * as THREE from 'three';
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
   import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force-3d';
-  import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
+  import type { GraphData } from '$lib/api/graph';
   import { goto } from '$app/navigation';
 
   let { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
@@ -27,7 +27,7 @@
   let tooltipTitle = $state('');
   let tooltipType = $state('');
   let tooltipPosition = $state({ x: 0, y: 0 });
-  let hoveredNodeId = $state<string | null>(null);
+  let _hoveredNodeId = $state<string | null>(null);
 
   const nodeObjects = new Map<string, THREE.Mesh>();
   const linkObjects = new Map<string, THREE.Line>();
@@ -171,7 +171,7 @@
       const node = data.nodes.find(n => n.id === nodeId);
 
       if (node) {
-        hoveredNodeId = nodeId;
+        _hoveredNodeId = nodeId;
         tooltipTitle = node.title;
         tooltipType = node.type || 'default';
         tooltipPosition = { x: event.clientX - rect.left + 10, y: event.clientY - rect.top - 30 };
@@ -179,13 +179,13 @@
         container.style.cursor = 'pointer';
       }
     } else {
-      hoveredNodeId = null;
+      _hoveredNodeId = null;
       tooltipVisible = false;
       container.style.cursor = 'default';
     }
   }
 
-  function onMouseClick(event: MouseEvent) {
+  function onMouseClick(_event: MouseEvent) {
     if (!camera || !scene) return;
 
     raycaster.setFromCamera(mouse, camera);
