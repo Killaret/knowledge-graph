@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { createNote } from '$lib/api/notes';
 
   let title = $state('');
@@ -15,7 +16,7 @@
     error = '';
     try {
       const note = await createNote({ title, content, metadata: {} });
-      window.location.href = `/notes/${note.id}`;
+      await goto(`/notes/${note.id}`);
     } catch (e) {
       error = 'Failed to create note';
       console.error('Create note error:', e);

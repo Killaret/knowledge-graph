@@ -2,7 +2,15 @@
 import ky from 'ky';
 
 // Базовый URL с прокси /api → http://localhost:8080
-const api = ky.create({ prefixUrl: '/api' });
+const api = ky.create({ 
+  prefixUrl: '/api',
+  timeout: 30000,
+  retry: {
+    limit: 2,
+    methods: ['get', 'post', 'put', 'delete'],
+    statusCodes: [408, 413, 429, 500, 502, 503, 504]
+  }
+});
 
 // Тип данных заметки (соответствует ответу бэкенда)
 export interface Note {
@@ -33,7 +41,7 @@ export async function getNote(id: string): Promise<Note> {
 }
 
 // Создать новую заметку
-export async function createNote(data: { title: string; content: string; metadata?: any }): Promise<Note> {
+export async function createNote(data: { title: string; content: string; type?: string; metadata?: any }): Promise<Note> {
   return api.post('notes', { json: data }).json();
 }
 

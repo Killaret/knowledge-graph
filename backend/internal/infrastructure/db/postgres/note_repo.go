@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"knowledge-graph/internal/domain/note"
 
@@ -78,44 +79,67 @@ func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.N
 }
 
 // Search performs multilingual full-text search on notes (Russian + English)
+// Falls back to ILIKE search if full-text search returns no results
 func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
 	var total int64
 
-	db := r.db.WithContext(ctx).Model(&NoteModel{})
-
+	// Try full-text search first
 	if query != "" {
-		// Multilingual search: search in both Russian and English
-		// Russian search with stemming
-		// English search with simple configuration (no stemming)
+		db := r.db.WithContext(ctx).Model(&NoteModel{})
+
+		// Multilingual search using tsvector
 		db = db.Where(`
 			search_vector @@ plainto_tsquery('russian', ?) OR 
 			search_vector @@ plainto_tsquery('simple', ?)
 		`, query, query)
 
-		// Ranking: combine both Russian and English rankings
-		// Use COALESCE to handle null rankings and give preference to matches
-		db = db.Order(`
-			COALESCE(ts_rank(search_vector, plainto_tsquery('russian', '" + query + "')), 0) +
-			COALESCE(ts_rank(search_vector, plainto_tsquery('simple', '" + query + "')), 0) 
-			DESC
-		`)
-	} else {
-		// If query is empty, return all notes ordered by creation date
-		db = db.Order("created_at DESC")
+		db = db.Order(fmt.Sprintf(`
+			COALESCE(ts_rank(search_vector, plainto_tsquery('russian', '%s')), 0) +
+			COALESCE(ts_rank(search_vector, plainto_tsquery('simple', '%s')), 0) DESC
+		`, query, query))
+
+		// Count and get results
+		if err := db.Count(&total).Error; err != nil {
+			return nil, 0, err
+		}
+
+		if total > 0 {
+			// Full-text search returned results, use them
+			err := db.Limit(limit).Offset(offset).Find(&models).Error
+			if err != nil {
+				return nil, 0, err
+			}
+			return toDomainNotes(models), total, nil
+		}
+
+		// Fallback: use ILIKE search if full-text returned nothing
+		dbLike := r.db.WithContext(ctx).Model(&NoteModel{})
+		dbLike = dbLike.Where(`
+			title ILIKE ? OR content ILIKE ?
+		`, "%"+query+"%", "%"+query+"%")
+		dbLike = dbLike.Order("created_at DESC")
+
+		if err := dbLike.Count(&total).Error; err != nil {
+			return nil, 0, err
+		}
+
+		err := dbLike.Limit(limit).Offset(offset).Find(&models).Error
+		if err != nil {
+			return nil, 0, err
+		}
+		return toDomainNotes(models), total, nil
 	}
 
-	// Count total matching records first
+	// Empty query - return all notes
+	db := r.db.WithContext(ctx).Model(&NoteModel{}).Order("created_at DESC")
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-
-	// Get the paginated results
 	err := db.Limit(limit).Offset(offset).Find(&models).Error
 	if err != nil {
 		return nil, 0, err
 	}
-
 	return toDomainNotes(models), total, nil
 }
 

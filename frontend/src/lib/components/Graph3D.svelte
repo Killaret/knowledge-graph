@@ -1,24 +1,31 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as THREE from 'three';
-  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-  import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-  import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force-3d';
+  import { browser } from '$app/environment';
   import type { GraphData } from '$lib/api/graph';
   import { goto } from '$app/navigation';
+
+  // Types for dynamic imports
+  type THREE_Module = typeof import('three');
+  type OrbitControls_Type = typeof import('three/examples/jsm/controls/OrbitControls.js').OrbitControls;
+  type CSS2DRenderer_Type = typeof import('three/examples/jsm/renderers/CSS2DRenderer.js').CSS2DRenderer;
+  type CSS2DObject_Type = typeof import('three/examples/jsm/renderers/CSS2DRenderer.js').CSS2DObject;
+
+  // Helper for window access
+  const win = () => window as any;
 
   let { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
 
   let container: HTMLDivElement;
-  let scene: THREE.Scene;
-  let camera: THREE.PerspectiveCamera;
-  let renderer: THREE.WebGLRenderer;
-  let labelRenderer: CSS2DRenderer;
-  let controls: OrbitControls;
+  let THREE: THREE_Module | null = null;
+  let scene: any;
+  let camera: any;
+  let renderer: any;
+  let labelRenderer: any;
+  let controls: any;
   let animationFrame: number;
   let simulation: any;
-  let raycaster: THREE.Raycaster;
-  let mouse: THREE.Vector2;
+  let raycaster: any;
+  let mouse: any;
 
   let isLoading = $state(true);
   let error = $state<string | null>(null);
@@ -29,9 +36,9 @@
   let tooltipPosition = $state({ x: 0, y: 0 });
   let _hoveredNodeId = $state<string | null>(null);
 
-  const nodeObjects = new Map<string, THREE.Mesh>();
-  const linkObjects = new Map<string, THREE.Line>();
-  const labelObjects = new Map<string, CSS2DObject>();
+  const nodeObjects = new Map<string, any>();
+  const linkObjects = new Map<string, any>();
+  const labelObjects = new Map<string, any>();
 
   const typeColors: Record<string, { color: string; label: string }> = {
     star: { color: '#ffaa44', label: 'Star' },
@@ -45,32 +52,55 @@
   const initialCameraTarget = { x: 0, y: 0, z: 0 };
 
   onMount(() => {
-    try {
-      // Check if graph is empty
-      if (!data.nodes || data.nodes.length === 0) {
-        isLoading = false;
-        error = 'No connected notes found';
-        return;
-      }
+    if (!browser) return;
 
-      initThree();
-      initSimulation(data);
-      startAnimationLoop();
-      window.addEventListener('resize', onResize);
-      container.addEventListener('mousemove', onMouseMove);
-      isLoading = false;
-    } catch (e) {
-      error = 'Error initializing 3D scene';
-      console.error(e);
-    }
+    let isActive = true;
+
+    const init = async () => {
+      try {
+        // Dynamic imports for SSR safety
+        THREE = await import('three');
+        const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
+        const { CSS2DRenderer, CSS2DObject } = await import('three/examples/jsm/renderers/CSS2DRenderer.js');
+        const d3Force3d = await import('d3-force-3d');
+
+        if (!isActive) return;
+
+        // Store constructors
+        win().OrbitControls = OrbitControls;
+        win().CSS2DRenderer = CSS2DRenderer;
+        win().CSS2DObject = CSS2DObject;
+        win().d3Force3d = d3Force3d;
+
+        // Check if graph is empty
+        if (!data.nodes || data.nodes.length === 0) {
+          isLoading = false;
+          error = 'No connected notes found';
+          return;
+        }
+
+        initThree();
+        initSimulation(data);
+        startAnimationLoop();
+        window.addEventListener('resize', onResize);
+        container.addEventListener('mousemove', onMouseMove);
+        isLoading = false;
+      } catch (e) {
+        error = 'Error initializing 3D scene';
+        console.error(e);
+      }
+    };
+
+    init();
 
     return () => {
+      isActive = false;
       cleanup();
     };
   });
 
   function initThree() {
-    if (!container) return;
+    if (!container || !THREE) return;
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050510);
@@ -87,7 +117,7 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    labelRenderer = new CSS2DRenderer();
+    labelRenderer = new win().CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.domElement.style.position = 'absolute';
     labelRenderer.domElement.style.top = '0';
@@ -95,7 +125,7 @@
     labelRenderer.domElement.style.pointerEvents = 'none';
     container.appendChild(labelRenderer.domElement);
 
-    controls = new OrbitControls(camera, renderer.domElement);
+    controls = new win().OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.autoRotate = isAutoRotating;
@@ -133,6 +163,7 @@
   }
 
   function addStarfield() {
+    if (!THREE) return;
     const geometry = new THREE.BufferGeometry();
     const count = 4000;
     const positions = new Float32Array(count * 3);
@@ -201,6 +232,8 @@
   }
 
   function initSimulation(graphData: GraphData) {
+    if (!win().d3Force3d || !THREE) return;
+
     const nodes = graphData.nodes.map(n => ({
       ...n,
       x: (Math.random() - 0.5) * 30,
@@ -216,6 +249,8 @@
     }));
 
     createVisualObjects(nodes, links);
+
+    const { forceSimulation, forceLink, forceManyBody, forceCenter } = win().d3Force3d;
 
     simulation = forceSimulation(nodes)
       .force('link', forceLink(links)
@@ -245,6 +280,8 @@
   }
 
   function createVisualObjects(nodes: any[], links: any[]) {
+    if (!THREE || !win().CSS2DObject) return;
+
     nodeObjects.forEach(obj => scene.remove(obj));
     linkObjects.forEach(obj => scene.remove(obj));
     labelObjects.forEach(obj => scene.remove(obj));
@@ -253,9 +290,9 @@
     labelObjects.clear();
 
     nodes.forEach(node => {
-      const geometry = new THREE.SphereGeometry(node.size || 2, 32, 32);
+      const geometry = new THREE!.SphereGeometry(node.size || 2, 32, 32);
       const color = getColorByType(node.type);
-      const material = new THREE.MeshPhysicalMaterial({
+      const material = new THREE!.MeshPhysicalMaterial({
         color: color,
         emissive: color,
         emissiveIntensity: 0.3,
@@ -263,7 +300,7 @@
         metalness: 0.6,
         clearcoat: 0.8
       });
-      const sphere = new THREE.Mesh(geometry, material);
+      const sphere = new THREE!.Mesh(geometry, material);
       sphere.position.set(node.x || 0, node.y || 0, node.z || 0);
       sphere.castShadow = true;
       sphere.receiveShadow = true;
@@ -280,21 +317,21 @@
       div.style.textShadow = '0 0 4px rgba(0,0,0,0.8)';
       div.style.pointerEvents = 'none';
       div.style.whiteSpace = 'nowrap';
-      const label = new CSS2DObject(div);
+      const label = new win().CSS2DObject(div);
       label.position.set(0, (node.size || 2) + 1, 0);
       sphere.add(label);
       labelObjects.set(node.id, label);
     });
 
     links.forEach(link => {
-      const geometry = new THREE.BufferGeometry();
-      const material = new THREE.LineBasicMaterial({
+      const geometry = new THREE!.BufferGeometry();
+      const material = new THREE!.LineBasicMaterial({
         color: 0x6688cc,
         transparent: true,
         opacity: 0.4,
-        blending: THREE.AdditiveBlending
+        blending: THREE!.AdditiveBlending
       });
-      const line = new THREE.Line(geometry, material);
+      const line = new THREE!.Line(geometry, material);
       scene.add(line);
       linkObjects.set(`${link.source}-${link.target}`, line);
     });
@@ -321,7 +358,7 @@
 
       const points = [sourceNode.position, targetNode.position];
       line.geometry.dispose();
-      line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+      line.geometry = new THREE!.BufferGeometry().setFromPoints(points);
     });
   }
 

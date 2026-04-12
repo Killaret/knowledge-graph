@@ -306,19 +306,28 @@ func (h *Handler) Search(c *gin.Context) {
 		return
 	}
 
-	// Convert domain notes to response format
-	data := make([]*note.Note, len(notes))
-	copy(data, notes)
+	// Convert domain notes to JSON-структуры (как в методе List)
+	responseNotes := make([]gin.H, len(notes))
+	for i, n := range notes {
+		responseNotes[i] = gin.H{
+			"id":         n.ID(),
+			"title":      n.Title().String(),
+			"content":    n.Content().String(),
+			"metadata":   n.Metadata().Value(),
+			"created_at": n.CreatedAt(),
+			"updated_at": n.UpdatedAt(),
+		}
+	}
 
 	// Calculate total pages
 	totalPages := int((total + int64(req.Size) - 1) / int64(req.Size))
 
-	c.JSON(200, SearchResponse{
-		Data:       data,
-		Total:      total,
-		Page:       req.Page,
-		Size:       req.Size,
-		TotalPages: totalPages,
+	c.JSON(200, gin.H{
+		"data":       responseNotes,
+		"total":      total,
+		"page":       req.Page,
+		"size":       req.Size,
+		"totalPages": totalPages,
 	})
 }
 
@@ -342,8 +351,21 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
+	// Преобразуем доменные модели в JSON-структуры
+	responseNotes := make([]gin.H, len(notes))
+	for i, n := range notes {
+		responseNotes[i] = gin.H{
+			"id":         n.ID(),
+			"title":      n.Title().String(),
+			"content":    n.Content().String(),
+			"metadata":   n.Metadata().Value(),
+			"created_at": n.CreatedAt(),
+			"updated_at": n.UpdatedAt(),
+		}
+	}
+
 	c.JSON(200, gin.H{
-		"notes":  notes,
+		"notes":  responseNotes,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,

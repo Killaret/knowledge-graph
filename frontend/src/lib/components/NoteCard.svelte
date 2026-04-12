@@ -2,7 +2,15 @@
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
 
-  let { note, highlightQuery = '' }: { note: Note; highlightQuery?: string } = $props();
+  let { 
+    note, 
+    highlightQuery = '',
+    onClick
+  }: { 
+    note: Note; 
+    highlightQuery?: string;
+    onClick?: (note: Note) => void;
+  } = $props();
 
   function highlightText(text: string, query: string): string {
     if (!query.trim()) return text;
@@ -11,8 +19,12 @@
     return text.replace(regex, '<mark>$1</mark>');
   }
 
-  function goToNote() {
-    goto(`/notes/${note.id}`);
+  function handleClick() {
+    if (onClick) {
+      onClick(note);
+    } else {
+      goto(`/notes/${note.id}`);
+    }
   }
 
   function formatDate(dateString: string): string {
@@ -33,8 +45,8 @@
 
 <div 
     class="note-card" 
-    onclick={goToNote}
-    onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? goToNote() : null}
+    onclick={handleClick}
+    onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
     role="button" 
     tabindex="0"
   >

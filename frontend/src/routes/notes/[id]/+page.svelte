@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
   import type { Note, Suggestion } from '$lib/api/notes';
@@ -30,10 +31,11 @@
   });
 
   async function handleDelete() {
+    if (!browser) return;
     if (!confirm('Delete this note?')) return;
     const id = getRouteId();
     await deleteNote(id);
-    goto('/');
+    await goto('/');
   }
 </script>
 

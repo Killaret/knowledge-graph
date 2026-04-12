@@ -29,7 +29,13 @@
   let isLoading = $state(true);
   let Graph3DComponent: any = $state(null);
   // Allow forcing 3D mode via URL param ?force3d=1 (useful for debugging/CI)
-  const isForce3D = (typeof window !== 'undefined') && (new URLSearchParams(window.location.search).get('force3d') === '1');
+  let isForce3D = $state(false);
+
+  $effect(() => {
+    if (browser) {
+      isForce3D = new URLSearchParams(window.location.search).get('force3d') === '1';
+    }
+  });
 
   onMount(async () => {
     if (!browser) {

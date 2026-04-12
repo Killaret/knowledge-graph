@@ -1,16 +1,34 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Note } from '$lib/api/notes';
-  import { getNotes } from '$lib/api/notes';
+  import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
+  import FloatingControls from '$lib/components/FloatingControls.svelte';
+  import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
+  import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import SearchBar from '$lib/components/SearchBar.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
+  import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
+  import { getGraphData, type GraphData } from '$lib/api/graph';
+  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
 
-  // Реактивные переменные (Svelte 5 runes)
+  // State
   let allNotes: Note[] = $state([]);
   let filteredNotes: Note[] = $state([]);
   let loading = $state(true);
   let error = $state('');
-
+  let selectedNodeId: string | null = $state(null);
+  let showCreateModal = $state(false);
+  let showConfirmDelete = $state(false);
+  let noteToDelete: string | null = $state(null);
+  let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
+  
+  // Graph state
+  let graphData: GraphData = $state({ nodes: [], links: [] });
+  let graphLoading = $state(false);
+  let searchQuery = $state('');
+  
   // Filter and sort state
   let selectedType = $state<string>('all');
   let sortOption = $state<string>('newest');
@@ -30,12 +48,61 @@
     { id: 'za', label: 'Alphabetical (Z-A)' }
   ];
 
+  onMount(async () => {
+    if (!browser) return;
+    await loadNotes();
+  });
+
+  async function loadNotes() {
+    try {
+      allNotes = await getNotes();
+      applyFiltersAndSort();
+      // Also load graph data when notes are loaded
+      await loadGraphData();
+    } catch (e) {
+      error = 'Failed to load notes';
+      console.error(e);
+    } finally {
+      loading = false;
+    }
+  }
+  
+  async function loadGraphData() {
+    if (allNotes.length === 0) return;
+    
+    graphLoading = true;
+    try {
+      // Build graph from all notes - use first note as center
+      const centerNote = allNotes[0];
+      const data = await getGraphData(centerNote.id, 2);
+      graphData = data;
+    } catch (e) {
+      console.error('Failed to load graph:', e);
+      // Fallback: build simple graph from notes
+      graphData = {
+        nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+        links: []
+      };
+    } finally {
+      graphLoading = false;
+    }
+  }
+
   function applyFiltersAndSort() {
     let result = [...allNotes];
 
     // Apply type filter
     if (selectedType !== 'all') {
       result = result.filter(n => n.type === selectedType);
+    }
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(n => 
+        n.title.toLowerCase().includes(query) || 
+        n.content.toLowerCase().includes(query)
+      );
     }
 
     // Apply sorting
@@ -57,125 +124,425 @@
     filteredNotes = result;
   }
 
-  $effect(() => {
-    if (allNotes.length > 0) {
-      applyFiltersAndSort();
+  async function handleSearch() {
+    if (!searchQuery.trim()) {
+      await loadNotes();
+      return;
     }
-  });
-
-  onMount(async () => {
+    
     try {
-      allNotes = await getNotes();
-      filteredNotes = allNotes;
+      const response = await searchNotes(searchQuery, 1, 20);
+      allNotes = response.data;
+      applyFiltersAndSort();
     } catch (e) {
-      error = 'Failed to load notes';
-      console.error(e);
-    } finally {
-      loading = false;
+      console.error('Search error:', e);
     }
-  });
+  }
+
+  function handleDeleteRequest(id: string) {
+    noteToDelete = id;
+    showConfirmDelete = true;
+  }
+
+  function handleDeleteConfirm() {
+    if (!noteToDelete) return;
+    handleDeleteExecute();
+  }
+
+  async function handleDeleteExecute() {
+    if (!noteToDelete) return;
+
+    try {
+      await deleteNote(noteToDelete);
+      selectedNodeId = null;
+      await loadNotes();
+    } catch (e) {
+      if (browser) {
+        alert('Failed to delete note');
+      }
+    } finally {
+      noteToDelete = null;
+      showConfirmDelete = false;
+    }
+  }
+
+  function handleNoteCreated(note: Note) {
+    showCreateModal = false;
+    selectedNodeId = note.id;
+    loadNotes();
+  }
+
+  function handleToggleView() {
+    currentView = currentView === 'graph' ? 'list' : 'graph';
+    if (currentView === 'graph') {
+      goto('/graph');
+    }
+  }
+
+  function getPluralForm(count: number, one: string, few: string, many: string): string {
+    const lastDigit = count % 10;
+    const lastTwoDigits = count % 100;
+    
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+      return many;
+    }
+    if (lastDigit === 1) {
+      return one;
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return few;
+    }
+    return many;
+  }
 </script>
 
-<div class="page-header">
-  <h1>My Notes</h1>
-  <a href="/notes/new" class="new-note">+ New Note</a>
-</div>
+<div class="page-container">
+  <!-- Floating Controls -->
+  <FloatingControls
+    onCreate={() => { showCreateModal = true; }}
+    onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
+    onToggleView={() => { handleToggleView(); }}
+  />
 
-<SearchBar placeholder="Search through your notes..." />
-
-{#if loading}
-  <div class="center">
-    <div class="spinner"></div>
-    <p>Loading notes...</p>
-  </div>
-{:else if error}
-  <p class="error">{error}</p>
-{:else}
-  <!-- Filters and Sort -->
-  <div class="controls-bar">
-    <!-- Type Filters -->
-    <div class="filter-group">
-      <span class="filter-label">Filter:</span>
-      <div class="filter-buttons">
-        {#each typeFilters as filter}
-          <button
-            class="filter-button"
-            class:active={selectedType === filter.id}
-            onclick={() => { selectedType = filter.id; applyFiltersAndSort(); }}
-          >
-            <span class="emoji">{filter.emoji}</span>
-            <span>{filter.label}</span>
-          </button>
-        {/each}
+  <!-- Main Content -->
+  <div class="content-area">
+    {#if loading}
+      <div class="center">
+        <div class="spinner"></div>
+        <p>Loading notes...</p>
       </div>
-    </div>
+    {:else if error}
+      <p class="error">{error}</p>
+    {:else}
+      <!-- Filters and Sort -->
+      <div class="controls-bar">
+        <div class="filter-group">
+          <span class="filter-label">Filter:</span>
+          <div class="filter-buttons">
+            {#each typeFilters as filter}
+              <button
+                class="filter-button"
+                class:active={selectedType === filter.id}
+                onclick={() => { selectedType = filter.id; applyFiltersAndSort(); }}
+              >
+                <span class="emoji">{filter.emoji}</span>
+                <span>{filter.label}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
 
-    <!-- Sort Dropdown -->
-    <div class="sort-group">
-      <label for="sort-select" class="sort-label">Sort:</label>
-      <select
-        id="sort-select"
-        class="sort-select"
-        bind:value={sortOption}
-        onchange={applyFiltersAndSort}
-      >
-        {#each sortOptions as option}
-          <option value={option.id}>{option.label}</option>
-        {/each}
-      </select>
-    </div>
-  </div>
+        <div class="sort-group">
+          <label for="sort-select" class="sort-label">Sort:</label>
+          <select
+            id="sort-select"
+            class="sort-select"
+            bind:value={sortOption}
+            onchange={applyFiltersAndSort}
+          >
+            {#each sortOptions as option}
+              <option value={option.id}>{option.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
 
-  <!-- Stats -->
-  <div class="stats-bar">
-    <span class="stats-total">{filteredNotes.length} notes</span>
-    {#if selectedType !== 'all'}
-      <span class="stats-filter">(filtered by: {typeFilters.find(f => f.id === selectedType)?.label})</span>
+      <!-- Stats -->
+      <div class="stats-bar">
+        <span class="stats-total">{filteredNotes.length} {getPluralForm(filteredNotes.length, 'note', 'notes', 'notes')}</span>
+        {#if selectedType !== 'all'}
+          <span class="stats-filter">(filtered by: {typeFilters.find(f => f.id === selectedType)?.label})</span>
+        {/if}
+        {#if searchQuery}
+          <span class="stats-filter">(search: "{searchQuery}")</span>
+        {/if}
+      </div>
+
+      <!-- Graph View (Primary) -->
+      {#if currentView === 'graph' && !loading}
+        <div class="graph-container" style="height: 600px; margin-bottom: 40px;">
+          {#if graphLoading}
+            <div class="center">
+              <div class="spinner"></div>
+              <p>Loading graph...</p>
+            </div>
+          {:else if graphData.nodes.length > 0}
+            <GraphCanvas 
+              nodes={graphData.nodes}
+              links={graphData.links}
+              onNodeClick={(node) => selectedNodeId = node.id}
+            />
+          {:else}
+            <div class="empty-state">
+              <div class="empty-icon">🌌</div>
+              <h2>No graph data</h2>
+              <p>Create some notes to see the knowledge graph</p>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Notes Grid (Secondary/List View) -->
+      {#if filteredNotes.length === 0}
+        <div class="empty-state">
+          <div class="empty-icon">🌌</div>
+          <h2>No notes found</h2>
+          <p>
+            {selectedType === 'all' && !searchQuery
+              ? "You haven't created any notes yet."
+              : searchQuery
+                ? `No notes match "${searchQuery}".`
+                : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
+          </p>
+          <button class="new-note-button" onclick={() => showCreateModal = true}>
+            Create your first note
+          </button>
+        </div>
+      {:else}
+        <div class="notes-grid">
+          {#each filteredNotes as note (note.id)}
+            <NoteCard 
+              {note} 
+              onClick={() => selectedNodeId = note.id}
+              highlightQuery={searchQuery}
+            />
+          {/each}
+        </div>
+      {/if}
     {/if}
   </div>
+</div>
 
-  <!-- Notes Grid -->
-  {#if filteredNotes.length === 0}
-    <div class="empty-state">
-      <div class="empty-icon">🌌</div>
-      <h2>No notes found</h2>
-      <p>
-        {selectedType === 'all'
-          ? "You haven't created any notes yet."
-          : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
-      </p>
-      <a href="/notes/new" class="new-note-button">Create your first note</a>
-    </div>
-  {:else}
-    <div class="notes-grid">
-      {#each filteredNotes as note (note.id)}
-        <NoteCard {note} />
-      {/each}
-    </div>
-  {/if}
+<!-- Side Panel for selected note -->
+{#if selectedNodeId}
+  <NoteSidePanel 
+    nodeId={selectedNodeId} 
+    onClose={() => selectedNodeId = null}
+    onEdit={(id) => goto(`/notes/${id}/edit`)}
+    onDelete={handleDeleteRequest}
+  />
 {/if}
 
+<!-- Create Note Modal -->
+<CreateNoteModal 
+  bind:open={showCreateModal}
+  onSuccess={handleNoteCreated}
+/>
+
+<!-- Confirm Modal for delete -->
+<ConfirmModal
+  bind:open={showConfirmDelete}
+  title="Delete Note?"
+  message="Are you sure you want to delete this note? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  danger={true}
+  onConfirm={handleDeleteExecute}
+  onCancel={() => { showConfirmDelete = false; noteToDelete = null; }}
+/>
+
 <style>
-  .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
-  .note-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; transition: box-shadow 0.2s; }
-  .controls-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-  .filter-group { display: flex; align-items: center; }
-  .filter-label { margin-right: 0.5rem; }
-  .filter-buttons { display: flex; }
-  .filter-button { background: none; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-  .filter-button:hover { background: #f0f0f0; }
-  .filter-button.active { background: #3b82f6; color: white; }
-  .sort-group { display: flex; align-items: center; }
-  .sort-label { margin-right: 0.5rem; }
-  .sort-select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
-  .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-  .stats-total { font-weight: bold; }
-  .stats-filter { color: #666; }
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-  .empty-icon { font-size: 48px; margin-bottom: 1rem; }
-  .new-note-button { background: #3b82f6; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; }
-  .note-card a { text-decoration: none; color: inherit; }
-  .actions { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
-  .new-note { display: inline-block; background: #3b82f6; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; }
-  .error { color: red; }
+  .page-container {
+    min-height: 100vh;
+    padding-top: 100px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  }
+
+  .content-area {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #64748b;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .error {
+    padding: 20px;
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 8px;
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .filter-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .filter-button.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  .emoji {
+    font-size: 16px;
+  }
+
+  .sort-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sort-label {
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  .sort-select {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+  }
+
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+
+  .stats-total {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .stats-filter {
+    color: #64748b;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  .empty-state h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 8px;
+  }
+
+  .empty-state p {
+    color: #64748b;
+    margin: 0 0 24px;
+  }
+
+  .new-note-button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .new-note-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) {
+    .content-area {
+      padding: 0 16px 32px;
+    }
+
+    .controls-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .filter-buttons {
+      justify-content: center;
+    }
+
+    .notes-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
