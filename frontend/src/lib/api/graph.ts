@@ -28,6 +28,6 @@ export interface GraphData {
 }
 
 // Запросить граф для заметки (возвращает все прямые связи и связанные заметки)
-export async function getGraphData(noteId: string): Promise<GraphData> {
-  return api.get(`notes/${noteId}/graph`).json();
+export async function getGraphData(noteId: string, depth: number = 2): Promise<GraphData> {
+  return api.get(`notes/${noteId}/graph?depth=${depth}`).json();
 }

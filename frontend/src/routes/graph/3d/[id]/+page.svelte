@@ -1,16 +1,18 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { getGraphData } from '$lib/api/graph';
-  import Graph3D from '$lib/components/Graph3D.svelte';
+  import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
   import type { GraphData } from '$lib/api/graph';
 
   let graphData: GraphData | null = $state(null);
+  let centerNodeId: string = $state('');
   let loading = $state(true);
   let error = $state('');
 
   $effect(() => {
     const id = $page.params.id;
     if (id) {
+      centerNodeId = id;
       loadGraph(id);
     }
   });
@@ -19,9 +21,10 @@
     loading = true;
     error = '';
     try {
-      graphData = await getGraphData(noteId);
+      // Use depth=2 for performance optimization
+      graphData = await getGraphData(noteId, 2);
     } catch (e) {
-      error = 'Не удалось загрузить данные графа';
+      error = 'Failed to load graph data';
       console.error(e);
     } finally {
       loading = false;
@@ -35,10 +38,8 @@
   {:else if error}
     <div class="center error">{error}</div>
   {:else if graphData}
-    <Graph3D data={graphData} />
+    <LazyGraph3D data={graphData} {centerNodeId} />
   {/if}
-
-  <a href="/notes/{$page.params.id}" class="back-button">← Назад к заметке</a>
 </div>
 
 <style>
@@ -58,21 +59,4 @@
   .error {
     color: #ff6666;
   }
-  .back-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 8px 16px;
-    background: rgba(20,30,50,0.8);
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.2);
-    z-index: 5;
-    transition: background 0.2s;
-  }
-  .back-button:hover {
-    background: rgba(40,60,100,0.9);
-  }
-</style>
+  </style>

@@ -2,7 +2,14 @@
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
 
-  let { note }: { note: Note } = $props();
+  let { note, highlightQuery = '' }: { note: Note; highlightQuery?: string } = $props();
+
+  function highlightText(text: string, query: string): string {
+    if (!query.trim()) return text;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+  }
 
   function goToNote() {
     goto(`/notes/${note.id}`);
@@ -32,12 +39,12 @@
     tabindex="0"
   >
   <div class="note-header">
-    <h3 class="note-title">{note.title}</h3>
+    <h3 class="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>
     <div class="note-date">{formatDate(note.created_at)}</div>
   </div>
-  
+
   <div class="note-content">
-    {truncateText(note.content, 200)}
+    {@html highlightQuery ? highlightText(truncateText(note.content, 200), highlightQuery) : truncateText(note.content, 200)}
   </div>
   
   {#if note.metadata && Object.keys(note.metadata).length > 0}
@@ -116,5 +123,13 @@
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
+  }
+
+  :global(mark) {
+    background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+    color: #1f2937;
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+    font-weight: 600;
   }
 </style>

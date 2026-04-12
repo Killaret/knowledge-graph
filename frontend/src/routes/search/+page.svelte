@@ -23,9 +23,8 @@
     if (q) {
       performSearch(q, currentPage);
     } else {
-      // If query is empty, show empty state
-      notes = [];
-      total = 0;
+      // If query is empty, redirect to home page
+      goto('/');
     }
   });
 
@@ -96,7 +95,7 @@
 
     <div class="notes-grid">
       {#each notes as note}
-        <NoteCard {note} />
+        <NoteCard {note} highlightQuery={$page.url.searchParams.get('q') || ''} />
       {/each}
     </div>
 
