@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Note } from '$lib/api/notes';
-  import { getNotes, deleteNote } from '$lib/api/notes';
+  import { getNotes } from '$lib/api/notes';
   import SearchBar from '$lib/components/SearchBar.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
 
@@ -74,17 +74,6 @@
       loading = false;
     }
   });
-
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this note?')) return;
-    try {
-      await deleteNote(id);
-      allNotes = await getNotes();
-      applyFiltersAndSort();
-    } catch {
-      alert('Delete failed');
-    }
-  }
 </script>
 
 <div class="page-header">
@@ -158,7 +147,7 @@
   {:else}
     <div class="notes-grid">
       {#each filteredNotes as note (note.id)}
-        <NoteCard {note} onDelete={handleDelete} />
+        <NoteCard {note} />
       {/each}
     </div>
   {/if}

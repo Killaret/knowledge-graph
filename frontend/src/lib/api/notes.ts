@@ -10,6 +10,7 @@ export interface Note {
   title: string;
   content: string;
   metadata: Record<string, any>;
+  type?: string;
   created_at: string;
   updated_at: string;
 }
