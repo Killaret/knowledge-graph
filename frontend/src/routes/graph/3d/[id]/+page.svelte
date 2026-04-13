@@ -9,11 +9,21 @@
   let loading = $state(true);
   let error = $state('');
   let showFullGraph = $state(false); // По умолчанию локальный вид
+  let currentNoteId: string | null = $state(null);
 
+  // Единый эффект для загрузки графа при изменении ID или режима
   $effect(() => {
+    if (!browser) return;
+    
     const id = $page.params.id;
-    if (id) {
-      loadGraph(id);
+    const mode = showFullGraph;
+    
+    if (id && id !== currentNoteId) {
+      currentNoteId = id;
+    }
+    
+    if (currentNoteId) {
+      loadGraph(currentNoteId);
     }
   });
 
@@ -35,17 +45,6 @@
       loading = false;
     }
   }
-
-  // Отслеживаем изменение showFullGraph и загружаем данные
-  $effect(() => {
-    if (browser) {
-      const mode = showFullGraph;
-      const id = $page.params.id;
-      if (id) {
-        loadGraph(id);
-      }
-    }
-  });
 </script>
 
 <div class="page">
