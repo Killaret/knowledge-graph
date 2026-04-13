@@ -139,7 +139,7 @@ func clearData(ctx context.Context, pool *pgxpool.Pool) error {
 }
 
 func generateNotes(count int) []Note {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	notes := make([]Note, 0, count)
 
 	types := []struct {
@@ -153,18 +153,18 @@ func generateNotes(count int) []Note {
 	}
 
 	for i := 0; i < count; i++ {
-		typeInfo := types[rand.Intn(len(types))]
-		title := typeInfo.titles[rand.Intn(len(typeInfo.titles))]
+		typeInfo := types[r.Intn(len(types))]
+		title := typeInfo.titles[r.Intn(len(typeInfo.titles))]
 
 		// Make title unique by adding number if needed
 		if i >= len(typeInfo.titles) {
 			title = fmt.Sprintf("%s %d", title, i)
 		}
 
-		content := contentSamples[rand.Intn(len(contentSamples))]
+		content := contentSamples[r.Intn(len(contentSamples))]
 		// Add more content
 		for j := 0; j < 2; j++ {
-			content += " " + contentSamples[rand.Intn(len(contentSamples))]
+			content += " " + contentSamples[r.Intn(len(contentSamples))]
 		}
 
 		note := Note{
@@ -172,7 +172,7 @@ func generateNotes(count int) []Note {
 			Title:     title,
 			Content:   content,
 			Type:      typeInfo.name,
-			CreatedAt: time.Now().Add(-time.Duration(rand.Intn(365)) * 24 * time.Hour),
+			CreatedAt: time.Now().Add(-time.Duration(r.Intn(365)) * 24 * time.Hour),
 		}
 		notes = append(notes, note)
 	}
@@ -202,24 +202,24 @@ func insertNotes(ctx context.Context, pool *pgxpool.Pool, notes []Note) ([]strin
 }
 
 func generateLinks(noteIDs []string, count int) []Link {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	links := make([]Link, 0, count)
 	linkTypes := []string{"reference", "related", "inspired", "similar", "derived"}
 
 	for i := 0; i < count; i++ {
-		sourceIdx := rand.Intn(len(noteIDs))
-		targetIdx := rand.Intn(len(noteIDs))
+		sourceIdx := r.Intn(len(noteIDs))
+		targetIdx := r.Intn(len(noteIDs))
 
 		// Ensure source and target are different
 		for targetIdx == sourceIdx {
-			targetIdx = rand.Intn(len(noteIDs))
+			targetIdx = r.Intn(len(noteIDs))
 		}
 
 		link := Link{
 			SourceNoteID: noteIDs[sourceIdx],
 			TargetNoteID: noteIDs[targetIdx],
-			LinkType:     linkTypes[rand.Intn(len(linkTypes))],
-			Weight:       0.5 + rand.Float64()*0.5, // Random weight between 0.5 and 1.0
+			LinkType:     linkTypes[r.Intn(len(linkTypes))],
+			Weight:       0.5 + r.Float64()*0.5, // Random weight between 0.5 and 1.0
 		}
 		links = append(links, link)
 	}
