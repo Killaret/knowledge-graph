@@ -42,6 +42,6 @@ export async function getGraphData(noteId: string, depth: number = 2): Promise<G
 }
 
 // Запросить полный граф всех заметок и связей
-export async function getFullGraphData(): Promise<GraphData> {
-  return api.get('graph/all').json();
+export async function getFullGraphData(limit: number = 100): Promise<GraphData> {
+  return api.get(`graph/all?limit=${limit}`).json();
 }
