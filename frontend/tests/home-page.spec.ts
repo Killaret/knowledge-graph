@@ -112,7 +112,6 @@ test.describe('Home Page - Graph First', () => {
     
     // Verify stats bar shows note count (or wait for loading to finish)
     const statsBar = page.locator('.stats-bar, .stats-total').first();
-    const loadingIndicator = page.locator('text=Loading').first();
     
     // Wait for loading to finish
     await page.waitForTimeout(2000);

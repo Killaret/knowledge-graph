@@ -208,7 +208,7 @@
     ctx.restore();
   }
 
-  function drawAsteroid(x: number, y: number, r: number, angle: number) {
+  function drawAsteroid(x: number, y: number, r: number, _angle: number) {
     if (!ctx) return;
     // Irregular rocky shape
     ctx.beginPath();
@@ -229,7 +229,7 @@
     ctx.stroke();
   }
 
-  function drawDebris(x: number, y: number, r: number, angle: number) {
+  function drawDebris(x: number, y: number, r: number, _angle: number) {
     if (!ctx) return;
     // Scattered small particles
     ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';

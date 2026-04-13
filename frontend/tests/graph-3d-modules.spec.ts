@@ -18,7 +18,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     try {
       const healthCheck = await request.get('http://localhost:8080/notes', { timeout: 5000 });
       backendAvailable = healthCheck.status() < 500;
-    } catch (e) {
+    } catch {
       backendAvailable = false;
     }
     
@@ -297,6 +297,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     const notesResp = await request.get('http://localhost:8080/notes');
     const notesData = await notesResp.json();
     const totalNotes = notesData.total || 0;
+    console.log('Total notes in DB:', totalNotes);
     
     // Navigate to 2D graph page
     await page.goto('http://localhost:5173/graph');
@@ -376,7 +377,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     
     // Get initial stats
     const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '') || '';
-    const nodesBefore = statsBefore.match(/(\d+)\s+nodes?/i)?.[1];
+    console.log('Stats before toggle:', statsBefore);
     
     // Toggle to local view
     await toggle.click();
@@ -384,7 +385,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     
     // Get stats after toggle
     const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '') || '';
-    const nodesAfter = statsAfter.match(/(\d+)\s+nodes?/i)?.[1];
+    console.log('Stats after toggle:', statsAfter);
     
     // Graph should still render
     const container = page.locator('.graph-container, .error-overlay').first();
