@@ -25,7 +25,7 @@ export function handleCanvasClick(
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(scene.children, true);
-  const nodeIntersect = intersects.find((i) => i.object.userData.type === 'node');
+  const nodeIntersect = intersects.find((i) => i.object.userData?.type === 'node');
   if (!nodeIntersect && onEmptyClick) {
     onEmptyClick();
   }

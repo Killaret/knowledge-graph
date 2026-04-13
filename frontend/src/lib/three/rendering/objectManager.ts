@@ -87,6 +87,4 @@ export class ObjectManager {
   getNode(id: string) {
     return this.nodeMap.get(id);
   }
-
-  // ... можно добавить методы для удаления/добавления отдельных объектов
 }

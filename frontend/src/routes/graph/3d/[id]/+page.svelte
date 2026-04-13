@@ -5,7 +5,6 @@
   import type { GraphData } from '$lib/api/graph';
 
   let graphData: GraphData | null = $state(null);
-  let centerNodeId: string = $state('');
   let loading = $state(true);
   let error = $state('');
   let showFullGraph = $state(true); // По умолчанию показываем все заметки
@@ -13,7 +12,6 @@
   $effect(() => {
     const id = $page.params.id;
     if (id) {
-      centerNodeId = id;
       loadGraph(id);
     }
   });
