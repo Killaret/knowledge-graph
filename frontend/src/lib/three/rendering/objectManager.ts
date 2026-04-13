@@ -41,8 +41,8 @@ export class ObjectManager {
 
       const sourcePos = new THREE.Vector3((sourceNode as any).x ?? 0, (sourceNode as any).y ?? 0, (sourceNode as any).z ?? 0);
       const targetPos = new THREE.Vector3((targetNode as any).x ?? 0, (targetNode as any).y ?? 0, (targetNode as any).z ?? 0);
-      const line = createLinkLine(sourcePos, targetPos, link.weight ?? 1);
-      line.userData = { type: 'link', source: link.source, target: link.target };
+      const line = createLinkLine(sourcePos, targetPos, link.weight ?? 1, link.link_type);
+      line.userData = { type: 'link', source: link.source, target: link.target, linkType: link.link_type };
       this.scene.add(line);
       this.linkMap.set(`${link.source}-${link.target}`, line);
     });

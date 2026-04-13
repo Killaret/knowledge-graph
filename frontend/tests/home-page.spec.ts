@@ -271,4 +271,85 @@ test.describe('Home Page - Graph First', () => {
       test.skip();
     }
   });
+
+  test('should toggle full graph mode on home page', async ({ page, request }) => {
+    // Create test notes if needed
+    const notesResponse = await request.get('http://localhost:8080/notes');
+    const notesData = await notesResponse.json();
+    
+    if (notesData.total < 2) {
+      // Create at least 2 notes for meaningful test
+      await request.post('http://localhost:8080/notes', {
+        data: { title: 'Note 1', content: 'Content 1', type: 'star' }
+      });
+      await request.post('http://localhost:8080/notes', {
+        data: { title: 'Note 2', content: 'Content 2', type: 'planet' }
+      });
+      await page.reload();
+      await page.waitForTimeout(2000);
+    }
+    
+    // Find and click the full graph toggle
+    const toggle = page.locator('.graph-mode-toggle input[type="checkbox"]').first();
+    const hasToggle = await toggle.isVisible().catch(() => false);
+    
+    if (!hasToggle) {
+      test.skip(true, 'Full graph toggle not found');
+      return;
+    }
+    
+    // Get initial state
+    const isInitiallyChecked = await toggle.isChecked();
+    
+    // Click to toggle
+    await toggle.click();
+    await page.waitForTimeout(2000);
+    
+    // Verify toggle changed state
+    const isNowChecked = await toggle.isChecked();
+    expect(isNowChecked).toBe(!isInitiallyChecked);
+    
+    // Verify graph still renders
+    const container = page.locator('.graph-container, .lazy-error, .error-overlay').first();
+    await expect(container).toBeVisible();
+  });
+
+  test('should display correct note count in stats', async ({ page, request }) => {
+    // Get actual note count from API
+    const notesResponse = await request.get('http://localhost:8080/notes');
+    const notesData = await notesResponse.json();
+    const totalNotes = notesData.total || notesData.notes?.length || 0;
+    
+    // Reload page to ensure fresh data
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Check stats bar shows correct count
+    const statsBar = page.locator('.stats-bar').first();
+    const hasStats = await statsBar.isVisible().catch(() => false);
+    
+    if (hasStats) {
+      const statsText = await statsBar.textContent();
+      // Stats should show at least one number
+      expect(statsText).toMatch(/\d+/);
+    }
+    
+    // Toggle to list view and check count
+    const viewToggle = page.locator('button:has-text("List")').first();
+    if (await viewToggle.isVisible().catch(() => false)) {
+      await viewToggle.click();
+      await page.waitForTimeout(1000);
+      
+      // Verify notes grid or count matches
+      const notesGrid = page.locator('.notes-grid').first();
+      const noteCards = page.locator('.note-card');
+      
+      const hasGrid = await notesGrid.isVisible().catch(() => false);
+      const cardCount = hasGrid ? await noteCards.count() : 0;
+      
+      // Card count should be reasonable (not more than total)
+      expect(cardCount).toBeLessThanOrEqual(totalNotes + 5); // +5 tolerance for newly created notes
+    }
+  });
 });

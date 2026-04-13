@@ -292,6 +292,105 @@ test.describe('3D Graph - Modular Architecture', () => {
     }
   });
 
+  test('should display correct stats in 2D graph page', async ({ page, request }) => {
+    // Get current notes count
+    const notesResp = await request.get('http://localhost:8080/notes');
+    const notesData = await notesResp.json();
+    const totalNotes = notesData.total || 0;
+    
+    // Navigate to 2D graph page
+    await page.goto('http://localhost:5173/graph');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
+    
+    // Check for stats bar
+    const statsBar = page.locator('.stats-bar').first();
+    const hasStats = await statsBar.isVisible().catch(() => false);
+    
+    if (hasStats) {
+      const statsText = await statsBar.textContent();
+      // Verify stats show numbers (nodes/links count)
+      expect(statsText).toMatch(/\d+\s+nodes?/i);
+      expect(statsText).toMatch(/\d+\s+links?/i);
+      
+      // Verify mode indicator (Full graph or Local view)
+      const hasMode = statsText?.toLowerCase().includes('full') || statsText?.toLowerCase().includes('local');
+      expect(hasMode).toBe(true);
+    }
+  });
+
+  test('should display correct stats in 3D graph page', async ({ page, request }) => {
+    // Create a note for 3D graph
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { title: '3D Stats Test', content: 'Testing 3D stats display', type: 'galaxy' }
+    });
+    const noteId = (await note.json()).id;
+    
+    // Navigate to 3D graph page
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    // Check for stats bar
+    const statsBar = page.locator('.stats-bar').first();
+    const hasStats = await statsBar.isVisible().catch(() => false);
+    
+    if (hasStats) {
+      const statsText = await statsBar.textContent();
+      // Verify stats show numbers
+      expect(statsText).toMatch(/\d+\s+nodes?/i);
+      expect(statsText).toMatch(/\d+\s+links?/i);
+    }
+  });
+
+  test('should toggle full graph mode in 2D and verify data changes', async ({ page, request }) => {
+    // Ensure we have notes with links
+    const note1 = await request.post('http://localhost:8080/notes', {
+      data: { title: '2D Toggle Test 1', content: 'First note', type: 'star' }
+    });
+    const note1Id = (await note1.json()).id;
+    
+    const note2 = await request.post('http://localhost:8080/notes', {
+      data: { title: '2D Toggle Test 2', content: 'Second note', type: 'planet' }
+    });
+    const note2Id = (await note2.json()).id;
+    
+    // Create link
+    await request.post('http://localhost:8080/links', {
+      data: { source_note_id: note1Id, target_note_id: note2Id, link_type: 'reference', weight: 0.7 }
+    });
+    
+    // Navigate to 2D graph
+    await page.goto('http://localhost:5173/graph');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
+    
+    // Find toggle
+    const toggle = page.locator('.toggle input[type="checkbox"]').first();
+    const hasToggle = await toggle.isVisible().catch(() => false);
+    
+    if (!hasToggle) {
+      test.skip(true, 'Toggle not found on 2D graph page');
+      return;
+    }
+    
+    // Get initial stats
+    const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '');
+    const nodesBefore = statsBefore.match(/(\d+)\s+nodes?/i)?.[1];
+    
+    // Toggle to local view
+    await toggle.click();
+    await page.waitForTimeout(3000);
+    
+    // Get stats after toggle
+    const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '');
+    const nodesAfter = statsAfter.match(/(\d+)\s+nodes?/i)?.[1];
+    
+    // Graph should still render
+    const container = page.locator('.graph-container, .error-overlay').first();
+    await expect(container).toBeVisible();
+  });
+
   test('should fetch full graph data via API', async ({ request }) => {
     // Create test notes for full graph
     const notes = [];

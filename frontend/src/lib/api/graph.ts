@@ -27,6 +27,7 @@ export interface GraphLink {
   source: string;   // ID исходной заметки
   target: string;   // ID целевой заметки
   weight?: number;    // вес связи (толщина линии)
+  link_type?: string; // тип связи: reference, dependency, related, custom
 }
 
 // Данные графа: список узлов и рёбер

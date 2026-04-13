@@ -9,19 +9,45 @@
     onNodeClick
   }: { 
     nodes: Array<{ id: string; title: string; type?: string }>;
-    links: Array<{ source: string; target: string; weight?: number }>;
+    links: Array<{ source: string; target: string; weight?: number; link_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
-  // Функция для получения цвета связи по весу (градиент от синего к оранжевому)
-  function getLinkColor(weight: number): string {
-    const w = Math.max(0, Math.min(1, weight));
+  // Цвета для разных типов связей
+  const linkTypeColors: Record<string, string> = {
+    'reference': '#3366ff',   // Синий - ссылочная связь
+    'dependency': '#ff6600',  // Оранжевый - зависимость
+    'related': '#66ff66',     // Зеленый - связанная тема
+    'custom': '#ff66ff',      // Розовый - пользовательская
+  };
+
+  // Функция для получения цвета связи по типу и весу
+  function getLinkColor(weight: number, linkType?: string): string {
+    // Если есть тип связи - используем его цвет
+    if (linkType && linkTypeColors[linkType]) {
+      const opacity = 0.4 + (weight ?? 0.5) * 0.4;
+      return linkTypeColors[linkType] + Math.round(opacity * 255).toString(16).padStart(2, '0');
+    }
+    
+    // Иначе градиент по весу
+    const w = Math.max(0, Math.min(1, weight ?? 0.5));
     // Blue (51, 102, 255) to Orange (255, 170, 0)
     const r = Math.round(51 + (255 - 51) * w);
     const g = Math.round(102 + (170 - 102) * w);
     const b = Math.round(255 + (0 - 255) * w);
     const opacity = 0.3 + w * 0.5;
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
+  // Функция для получения стиля линии по типу связи
+  function getLineDash(linkType?: string): number[] {
+    switch (linkType) {
+      case 'related': return [8, 4];      // Пунктир длинный
+      case 'custom': return [2, 6];       // Точечный
+      case 'reference': return [];        // Сплошная
+      case 'dependency': return [];       // Сплошная жирная
+      default: return [];
+    }
   }
 
   let canvas: HTMLCanvasElement;
@@ -191,13 +217,32 @@
       const sourceNode = simulation.nodes().find((n: any) => n.id === link.source);
       const targetNode = simulation.nodes().find((n: any) => n.id === link.target);
       if (!sourceNode || !targetNode) return;
+      
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
       ctx.lineTo(targetNode.x, targetNode.y);
+      
       const weight = link.weight ?? 0.5;
-      ctx.lineWidth = Math.max(1, weight * 4);
-      ctx.strokeStyle = getLinkColor(weight);
+      const linkType = link.link_type;
+      
+      // Толщина линии зависит от типа и веса
+      let lineWidth = Math.max(1, weight * 4);
+      if (linkType === 'dependency') lineWidth *= 1.5;
+      if (linkType === 'reference') lineWidth *= 0.8;
+      
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = getLinkColor(weight, linkType);
+      
+      // Устанавливаем dash pattern для пунктирных линий
+      const dash = getLineDash(linkType);
+      if (dash.length > 0) {
+        ctx.setLineDash(dash);
+      } else {
+        ctx.setLineDash([]);
+      }
+      
       ctx.stroke();
+      ctx.setLineDash([]); // Сброс dash pattern
     });
 
     const r = 24; // радиус увеличен для лучшей читаемости
