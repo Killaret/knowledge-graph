@@ -13,7 +13,8 @@
     try {
       // Dynamic import of Graph3D component
       const module = await import('./Graph3D.svelte');
-      Graph3DComponent = module.default;
+      // Svelte 5 named export
+      Graph3DComponent = (module as any).default || module.Graph3D || Object.values(module)[0];
     } catch (e) {
       loadError = 'Failed to load 3D visualization';
       console.error('Error loading Graph3D:', e);
