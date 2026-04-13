@@ -78,6 +78,13 @@ func (m *mockNoteRepoForLink) Search(ctx context.Context, query string, limit, o
 
 	return results[offset:end], total, nil
 }
+func (m *mockNoteRepoForLink) FindAll(ctx context.Context) ([]*note.Note, error) {
+	var allNotes []*note.Note
+	for _, n := range m.notes {
+		allNotes = append(allNotes, n)
+	}
+	return allNotes, nil
+}
 
 func setupLinkRouter() (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
 	gin.SetMode(gin.TestMode)

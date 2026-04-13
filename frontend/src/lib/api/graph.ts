@@ -39,3 +39,8 @@ export interface GraphData {
 export async function getGraphData(noteId: string, depth: number = 2): Promise<GraphData> {
   return api.get(`notes/${noteId}/graph?depth=${depth}`).json();
 }
+
+// Запросить полный граф всех заметок и связей
+export async function getFullGraphData(): Promise<GraphData> {
+  return api.get('graph/all').json();
+}

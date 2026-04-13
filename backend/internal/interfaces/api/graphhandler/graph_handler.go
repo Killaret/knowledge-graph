@@ -1,6 +1,10 @@
 package graphhandler
 
 import (
+	"context"
+	"log"
+	"strconv"
+
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
@@ -28,10 +32,15 @@ type GraphData struct {
 type Handler struct {
 	noteRepo note.Repository
 	linkRepo link.Repository
+	maxDepth int // максимальная глубина загрузки графа
 }
 
-func New(noteRepo note.Repository, linkRepo link.Repository) *Handler {
-	return &Handler{noteRepo: noteRepo, linkRepo: linkRepo}
+func New(noteRepo note.Repository, linkRepo link.Repository, maxDepth int) *Handler {
+	return &Handler{
+		noteRepo: noteRepo,
+		linkRepo: linkRepo,
+		maxDepth: maxDepth,
+	}
 }
 
 func (h *Handler) GetGraph(c *gin.Context) {
@@ -42,29 +51,95 @@ func (h *Handler) GetGraph(c *gin.Context) {
 		return
 	}
 
-	outgoing, err := h.linkRepo.FindBySource(c.Request.Context(), centerID)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	incoming, err := h.linkRepo.FindByTarget(c.Request.Context(), centerID)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
+	// Парсим параметр depth из query (с ограничением по maxDepth)
+	depth := h.maxDepth
+	if d := c.Query("depth"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
+			if parsed > h.maxDepth {
+				depth = h.maxDepth
+			} else {
+				depth = parsed
+			}
+		}
 	}
 
+	// BFS для загрузки графа с заданной глубиной
+	nodes, links := h.loadGraphBFS(c.Request.Context(), centerID, depth)
+
+	c.JSON(200, GraphData{Nodes: nodes, Links: links})
+}
+
+// loadGraphBFS загружает граф с помощью BFS до заданной глубины
+func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth int) ([]GraphNode, []GraphLink) {
 	nodeMap := make(map[uuid.UUID]bool)
-	nodeMap[centerID] = true
-	for _, l := range outgoing {
-		nodeMap[l.TargetNoteID()] = true
+	linkMap := make(map[string]GraphLink) // ключ: "source->target"
+
+	// BFS очередь: [noteID, depth]
+	type queueItem struct {
+		id    uuid.UUID
+		depth int
 	}
-	for _, l := range incoming {
-		nodeMap[l.SourceNoteID()] = true
+	queue := []queueItem{{id: centerID, depth: 0}}
+	nodeMap[centerID] = true
+
+	for len(queue) > 0 {
+		// Извлекаем из очереди
+		item := queue[0]
+		queue = queue[1:]
+
+		if item.depth >= maxDepth {
+			continue
+		}
+
+		// Загружаем исходящие связи
+		outgoing, err := h.linkRepo.FindBySource(ctx, item.id)
+		if err != nil {
+			log.Printf("Error finding outgoing links for %s: %v", item.id, err)
+			continue
+		}
+		for _, l := range outgoing {
+			targetID := l.TargetNoteID()
+			linkKey := l.SourceNoteID().String() + "->" + targetID.String()
+			if _, exists := linkMap[linkKey]; !exists {
+				linkMap[linkKey] = GraphLink{
+					Source: l.SourceNoteID().String(),
+					Target: targetID.String(),
+					Weight: l.Weight().Value(),
+				}
+			}
+			if !nodeMap[targetID] {
+				nodeMap[targetID] = true
+				queue = append(queue, queueItem{id: targetID, depth: item.depth + 1})
+			}
+		}
+
+		// Загружаем входящие связи
+		incoming, err := h.linkRepo.FindByTarget(ctx, item.id)
+		if err != nil {
+			log.Printf("Error finding incoming links for %s: %v", item.id, err)
+			continue
+		}
+		for _, l := range incoming {
+			sourceID := l.SourceNoteID()
+			linkKey := sourceID.String() + "->" + l.TargetNoteID().String()
+			if _, exists := linkMap[linkKey]; !exists {
+				linkMap[linkKey] = GraphLink{
+					Source: sourceID.String(),
+					Target: l.TargetNoteID().String(),
+					Weight: l.Weight().Value(),
+				}
+			}
+			if !nodeMap[sourceID] {
+				nodeMap[sourceID] = true
+				queue = append(queue, queueItem{id: sourceID, depth: item.depth + 1})
+			}
+		}
 	}
 
+	// Формируем список узлов
 	nodes := make([]GraphNode, 0, len(nodeMap))
 	for id := range nodeMap {
-		n, err := h.noteRepo.FindByID(c.Request.Context(), id)
+		n, err := h.noteRepo.FindByID(ctx, id)
 		if err != nil || n == nil {
 			continue
 		}
@@ -84,21 +159,62 @@ func (h *Handler) GetGraph(c *gin.Context) {
 		})
 	}
 
-	links := make([]GraphLink, 0, len(outgoing)+len(incoming))
-	for _, l := range outgoing {
-		links = append(links, GraphLink{
-			Source: l.SourceNoteID().String(),
-			Target: l.TargetNoteID().String(),
-			Weight: l.Weight().Value(),
+	// Формируем список связей
+	links := make([]GraphLink, 0, len(linkMap))
+	for _, link := range linkMap {
+		links = append(links, link)
+	}
+
+	return nodes, links
+}
+
+// GetFullGraph возвращает полный граф всех заметок и связей
+func (h *Handler) GetFullGraph(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Загружаем все заметки
+	notes, err := h.noteRepo.FindAll(ctx)
+	if err != nil {
+		log.Printf("Error loading all notes: %v", err)
+		c.JSON(500, gin.H{"error": "failed to load notes"})
+		return
+	}
+
+	// Загружаем все связи
+	links, err := h.linkRepo.FindAll(ctx)
+	if err != nil {
+		log.Printf("Error loading all links: %v", err)
+		c.JSON(500, gin.H{"error": "failed to load links"})
+		return
+	}
+
+	// Формируем ответ
+	nodes := make([]GraphNode, 0, len(notes))
+	for _, n := range notes {
+		// Определяем тип небесного тела
+		nodeType := "star"
+		if metadata := n.Metadata().Value(); metadata != nil {
+			if t, ok := metadata["type"]; ok {
+				if ts, ok := t.(string); ok {
+					nodeType = ts
+				}
+			}
+		}
+		nodes = append(nodes, GraphNode{
+			ID:    n.ID().String(),
+			Title: n.Title().String(),
+			Type:  nodeType,
 		})
 	}
-	for _, l := range incoming {
-		links = append(links, GraphLink{
+
+	graphLinks := make([]GraphLink, 0, len(links))
+	for _, l := range links {
+		graphLinks = append(graphLinks, GraphLink{
 			Source: l.SourceNoteID().String(),
 			Target: l.TargetNoteID().String(),
 			Weight: l.Weight().Value(),
 		})
 	}
 
-	c.JSON(200, GraphData{Nodes: nodes, Links: links})
+	c.JSON(200, GraphData{Nodes: nodes, Links: graphLinks})
 }

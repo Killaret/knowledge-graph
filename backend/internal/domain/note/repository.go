@@ -18,5 +18,6 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, limit, offset int) ([]*Note, int64, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*Note, int64, error)
+	FindAll(ctx context.Context) ([]*Note, error)
 	// FindBySpecification — позже добавим
 }

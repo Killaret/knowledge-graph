@@ -52,7 +52,7 @@
     <div class="actions">
       <a href={`/notes/${note.id}/edit`}>Edit</a>
       <button onclick={handleDelete}>Delete</button>
-      <a href={`/graph/${note.id}`} class="graph-link">✨ Show constellation</a>
+      <a href={`/graph/3d/${note.id}`} class="graph-link">✨ Show constellation</a>
     </div>
 
     {#if suggestions.length}

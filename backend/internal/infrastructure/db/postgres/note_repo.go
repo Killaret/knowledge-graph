@@ -57,6 +57,16 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
 }
 
+// FindAll возвращает все заметки без пагинации
+func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
+	var models []NoteModel
+	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainNotes(models), nil
+}
+
 // List возвращает заметки с пагинацией
 func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel

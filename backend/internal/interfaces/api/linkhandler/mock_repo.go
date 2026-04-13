@@ -88,3 +88,7 @@ func (m *mockLinkRepo) List(ctx context.Context) ([]*link.Link, error) {
 	}
 	return result, nil
 }
+
+func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
+	return m.List(ctx)
+}

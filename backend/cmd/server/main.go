@@ -28,10 +28,10 @@ import (
 func main() {
 	cfg := config.Load()
 
-	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d",
+	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d, graphLoadDepth=%d",
 		cfg.RecommendationAlpha, cfg.RecommendationBeta,
 		cfg.RecommendationDepth, cfg.RecommendationDecay,
-		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit)
+		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit, cfg.GraphLoadDepth)
 
 	db.Init()
 	if db.DB == nil {
@@ -85,7 +85,7 @@ func main() {
 	// Хендлеры
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler)
 	linkHandler := linkhandler.New(linkRepo, noteRepo)
-	graphHandler := graphhandler.New(noteRepo, linkRepo)
+	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg.GraphLoadDepth)
 
 	// Роуты
 	r := gin.Default()
@@ -118,6 +118,7 @@ func main() {
 	r.DELETE("/notes/:id/links", linkHandler.DeleteByNote)
 
 	r.GET("/notes/:id/graph", graphHandler.GetGraph)
+	r.GET("/graph/all", graphHandler.GetFullGraph)
 
 	// Create HTTP server
 	srv := &http.Server{
