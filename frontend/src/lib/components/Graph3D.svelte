@@ -1,27 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
+  import { initScene } from '$lib/three/core/sceneSetup';
+  import { createSimulation } from '$lib/three/simulation/forceSimulation';
+  import { ObjectManager } from '$lib/three/rendering/objectManager';
+  import { autoZoomToFit } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
-  import { goto } from '$app/navigation';
-
-  // Types for dynamic imports
-  type THREE_Module = typeof import('three');
-  
-  // Constructor types
-  type OrbitControlsCtor = new (camera: any, domElement: HTMLElement) => any;
-  type CSS2DRendererCtor = new () => any;
-  type CSS2DObjectCtor = new (element: HTMLElement) => any;
-
-  // Extended window interface for dynamic imports
-  interface ExtendedWindow extends Window {
-    OrbitControls?: OrbitControlsCtor;
-    CSS2DRenderer?: CSS2DRendererCtor;
-    CSS2DObject?: CSS2DObjectCtor;
-    d3Force3d?: typeof import('d3-force-3d');
-  }
-
-  // Helper for window access
-  const win = () => window as ExtendedWindow;
+  import * as THREE from 'three';
 
   const { 
     data, 
@@ -34,88 +19,64 @@
   } = $props();
 
   let container: HTMLDivElement;
-  let THREE: THREE_Module | null = null;
-  let scene: any;
-  let camera: any;
-  let renderer: any;
+  let scene: THREE.Scene;
+  let camera: THREE.PerspectiveCamera;
+  let renderer: THREE.WebGLRenderer;
   let labelRenderer: any;
   let controls: any;
-  let animationFrame: number;
   let simulation: any;
-  let raycaster: any;
-  let mouse: any;
+  let objectManager: ObjectManager;
+  let animationFrame: number;
 
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
-  let tooltipVisible = $state(false);
-  let tooltipTitle = $state('');
-  let tooltipType = $state('');
-  let tooltipPosition = $state({ x: 0, y: 0 });
 
-  const nodeObjects = new Map<string, any>();
-  const linkObjects = new Map<string, any>();
-  const labelObjects = new Map<string, any>();
+  onMount(async () => {
+    if (!browser || !container) return;
 
-  const typeColors: Record<string, { color: string; label: string }> = {
-    star: { color: '#ffaa44', label: 'Star' },
-    planet: { color: '#44aaff', label: 'Planet' },
-    comet: { color: '#ff44aa', label: 'Comet' },
-    galaxy: { color: '#aa44ff', label: 'Galaxy' },
-    default: { color: '#88aaff', label: 'Default' }
-  };
+    try {
+      const setup = initScene(container);
+      scene = setup.scene;
+      camera = setup.camera;
+      renderer = setup.renderer;
+      labelRenderer = setup.labelRenderer;
+      controls = setup.controls;
 
-  const initialCameraPosition = { x: 20, y: 15, z: 30 };
-  const initialCameraTarget = { x: 0, y: 0, z: 0 };
-
-  onMount(() => {
-    if (!browser) return;
-
-    let isActive = true;
-
-    const init = async () => {
-      try {
-        // Dynamic imports for SSR safety
-        THREE = await import('three');
-        const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
-        const { CSS2DRenderer, CSS2DObject } = await import('three/examples/jsm/renderers/CSS2DRenderer.js');
-        const d3Force3d = await import('d3-force-3d');
-
-        if (!isActive) return;
-
-        // Store constructors
-        win().OrbitControls = OrbitControls;
-        win().CSS2DRenderer = CSS2DRenderer;
-        win().CSS2DObject = CSS2DObject;
-        win().d3Force3d = d3Force3d;
-
-        // Check if graph is empty
-        if (!data.nodes || data.nodes.length === 0) {
-          isLoading = false;
-          error = 'No connected notes found';
-          return;
+      objectManager = new ObjectManager(scene);
+      simulation = createSimulation(data, objectManager);
+      
+      // Auto-zoom when simulation ends
+      simulation.on('end', () => {
+        if (simulation && camera && controls) {
+          autoZoomToFit(simulation.nodes(), camera, controls);
         }
-
-        initThree();
-        initSimulation(data);
-        startAnimationLoop();
-        window.addEventListener('resize', onResize);
-        container.addEventListener('mousemove', onMouseMove);
         isLoading = false;
-      } catch (e) {
-        error = 'Error initializing 3D scene';
-        console.error(e);
+      });
+
+      // Animation loop
+      function animate() {
+        animationFrame = requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
       }
-    };
+      animate();
 
-    init();
-
-    return () => {
-      isActive = false;
-      cleanup();
-    };
+      // Resize handler
+      window.addEventListener('resize', onResize);
+      
+      // Click handler for nodes
+      container.addEventListener('click', handleClick);
+      
+    } catch (e) {
+      console.error('Failed to initialize 3D graph:', e);
+      error = 'Failed to initialize 3D visualization';
+      isLoading = false;
+    }
   });
 
+<<<<<<< HEAD
   function initThree() {
     if (!container || !THREE) return;
 
@@ -415,8 +376,10 @@
     animate();
   }
 
+=======
+>>>>>>> ai-agents
   function onResize() {
-    if (!container) return;
+    if (!container || !renderer || !camera || !labelRenderer) return;
     const width = container.clientWidth;
     const height = container.clientHeight;
     renderer.setSize(width, height);
@@ -425,49 +388,54 @@
     camera.updateProjectionMatrix();
   }
 
-  function resetCamera() {
-    if (!camera || !controls) return;
-    camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
-    camera.lookAt(initialCameraTarget.x, initialCameraTarget.y, initialCameraTarget.z);
-    controls.target.set(initialCameraTarget.x, initialCameraTarget.y, initialCameraTarget.z);
-    controls.update();
+  function handleClick(event: MouseEvent) {
+    if (!camera || !scene || !objectManager) return;
+    
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const rect = container.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    const nodeIntersect = intersects.find((i: any) => i.object.userData?.type === 'node');
+    
+    if (nodeIntersect) {
+      const nodeData = nodeIntersect.object.userData?.nodeData;
+      if (nodeData && onNodeClick) {
+        onNodeClick(nodeData);
+      }
+    }
   }
 
-  function toggleAutoRotate() {
+  onDestroy(() => {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (simulation) simulation.stop();
+    if (renderer) renderer.dispose();
+    window.removeEventListener('resize', onResize);
+    if (container) {
+      container.removeEventListener('click', handleClick);
+    }
+  });
+
+  // Public method to reset camera
+  export function resetCamera() {
+    if (simulation && camera && controls) {
+      autoZoomToFit(simulation.nodes(), camera, controls);
+    }
+  }
+
+  // Toggle auto-rotation
+  export function toggleAutoRotate() {
     isAutoRotating = !isAutoRotating;
     if (controls) {
       controls.autoRotate = isAutoRotating;
     }
   }
-
-  function cleanup() {
-    if (animationFrame) cancelAnimationFrame(animationFrame);
-    if (simulation) simulation.stop();
-    window.removeEventListener('resize', onResize);
-    if (container) {
-      container.removeEventListener('mousemove', onMouseMove);
-    }
-    if (renderer) {
-      renderer.dispose();
-      renderer.domElement.remove();
-    }
-    if (labelRenderer) labelRenderer.domElement.remove();
-    nodeObjects.forEach(obj => {
-      obj.traverse((child: any) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material))
-            child.material.forEach((m: { dispose(): void }) => m.dispose());
-          else
-            child.material.dispose();
-        }
-      });
-    });
-    scene?.clear();
-  }
 </script>
 
-<div class="graph-3d-container" bind:this={container}>
+<div bind:this={container} class="graph-3d-container">
   {#if isLoading}
     <div class="loading-overlay">
       <div class="spinner"></div>
@@ -481,42 +449,6 @@
         <span class="error-icon">🌌</span>
         <h2>{error}</h2>
         <p>This note has no connections yet.</p>
-        <a href="/notes/{centerNodeId}" class="back-button">Back to Note</a>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Controls -->
-  <div class="controls-panel">
-    <button class="control-btn" onclick={resetCamera} title="Reset Camera">
-      <span>🏠</span>
-      <span class="btn-label">Reset</span>
-    </button>
-    <button class="control-btn" onclick={toggleAutoRotate} title={isAutoRotating ? 'Pause Rotation' : 'Resume Rotation'}>
-      <span>{isAutoRotating ? '⏸️' : '▶️'}</span>
-      <span class="btn-label">{isAutoRotating ? 'Pause' : 'Play'}</span>
-    </button>
-  </div>
-
-  <!-- Legend -->
-  <div class="legend-panel">
-    <h3 class="legend-title">Types</h3>
-    {#each Object.entries(typeColors) as [type, { color, label }]}
-      {#if type !== 'default'}
-        <div class="legend-item">
-          <span class="legend-color" style="background-color: {color}"></span>
-          <span class="legend-label">{label}</span>
-        </div>
-      {/if}
-    {/each}
-  </div>
-
-  <!-- Tooltip -->
-  {#if tooltipVisible}
-    <div class="tooltip" style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px;">
-      <div class="tooltip-title">{tooltipTitle}</div>
-      <div class="tooltip-type" style="color: {typeColors[tooltipType]?.color || typeColors.default.color}">
-        {typeColors[tooltipType]?.label || typeColors.default.label}
       </div>
     </div>
   {/if}
@@ -557,21 +489,6 @@
     display: block;
   }
 
-  .back-button {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 0.75rem 1.5rem;
-    background: #3b82f6;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 500;
-  }
-
-  .back-button:hover {
-    background: #2563eb;
-  }
-
   .spinner {
     width: 40px;
     height: 40px;
@@ -579,11 +496,13 @@
     border-top-color: #88aaff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
   }
 
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+<<<<<<< HEAD
 
   .controls-panel {
     position: absolute;
@@ -732,3 +651,6 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 </style>
+=======
+</style>
+>>>>>>> ai-agents
