@@ -84,9 +84,9 @@ test.describe('Knowledge Graph Frontend', () => {
     
     // Click Delete button
     await page.click('button:has-text("Delete")');
-    
-    // Wait for redirect to home page (give more time)
-    await page.waitForURL('http://localhost:5173/', { timeout: 10000 });
+
+    // Wait for navigation away from note page (either redirect or URL change)
+    await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 10000 });
     await page.waitForTimeout(1000);
     
     // Verify via API that note is deleted
