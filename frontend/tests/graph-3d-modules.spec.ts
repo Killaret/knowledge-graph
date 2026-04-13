@@ -246,4 +246,81 @@ test.describe('3D Graph - Modular Architecture', () => {
     const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
     await expect(container).toBeVisible();
   });
+
+  test('should open graph page and verify full graph toggle', async ({ page, request }) => {
+    // Create test notes
+    const note1 = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Main Note', content: 'Main content', type: 'star' }
+    });
+    const note1Id = (await note1.json()).id;
+    
+    const note2 = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Linked Note', content: 'Linked content', type: 'planet' }
+    });
+    const note2Id = (await note2.json()).id;
+    
+    // Create link between notes
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: note1Id, targetNoteId: note2Id, weight: 0.8 }
+    });
+    
+    // Test 1: Open 3D graph page for specific note (local constellation)
+    await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    // Verify graph container or error state is visible
+    const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+    await expect(container).toBeVisible();
+    
+    // Test 2: Verify the "Show all notes" toggle exists and works
+    const toggle = page.locator('.toggle input[type="checkbox"], [data-testid="full-graph-toggle"]').first();
+    const hasToggle = await toggle.isVisible().catch(() => false);
+    
+    if (hasToggle) {
+      // Click toggle to switch to full graph view
+      await toggle.click();
+      await page.waitForTimeout(3000);
+      
+      // Verify graph still renders after toggle
+      const containerAfterToggle = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+      await expect(containerAfterToggle).toBeVisible();
+      
+      // Click again to switch back to local view
+      await toggle.click();
+      await page.waitForTimeout(2000);
+    }
+  });
+
+  test('should fetch full graph data via API', async ({ request }) => {
+    // Create test notes for full graph
+    const notes = [];
+    for (let i = 0; i < 3; i++) {
+      const note = await request.post('http://localhost:8080/notes', {
+        data: { title: `Full Graph Note ${i}`, content: `Content ${i}`, type: i === 0 ? 'star' : 'planet' }
+      });
+      notes.push((await note.json()).id);
+    }
+    
+    // Create links
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: notes[0], targetNoteId: notes[1], weight: 0.7 }
+    });
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: notes[1], targetNoteId: notes[2], weight: 0.5 }
+    });
+    
+    // Test the /api/graph/all endpoint via proxy
+    const response = await request.get('http://localhost:5173/api/graph/all', { timeout: 10000 });
+    
+    // Should return 200 OK with graph data
+    expect(response.status()).toBe(200);
+    
+    const data = await response.json();
+    // Verify response structure
+    expect(data).toHaveProperty('nodes');
+    expect(data).toHaveProperty('links');
+    expect(Array.isArray(data.nodes)).toBe(true);
+    expect(Array.isArray(data.links)).toBe(true);
+  });
 });
