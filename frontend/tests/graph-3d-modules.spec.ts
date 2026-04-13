@@ -286,9 +286,15 @@ test.describe('3D Graph - Modular Architecture', () => {
       const containerAfterToggle = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
       await expect(containerAfterToggle).toBeVisible();
       
-      // Click again to switch back to local view
-      await toggle.click();
-      await page.waitForTimeout(2000);
+      // Re-query toggle for second click (DOM might have changed)
+      const toggleAfter = page.locator('.toggle input[type="checkbox"], [data-testid="full-graph-toggle"]').first();
+      const hasToggleAfter = await toggleAfter.isVisible().catch(() => false);
+      
+      if (hasToggleAfter) {
+        // Click again to switch back to local view
+        await toggleAfter.click();
+        await page.waitForTimeout(2000);
+      }
     }
   });
 

@@ -91,6 +91,16 @@
     return () => cleanup();
   });
 
+  // Реактивно перезапускаем симуляцию при изменении данных
+  $effect(() => {
+    if (d3Force && nodes && links && simulation) {
+      // Останавливаем старую симуляцию
+      simulation.stop();
+      // Запускаем новую с обновленными данными
+      startSimulation();
+    }
+  });
+
   function startAnimation() {
     function animate() {
       for (const node of simulation?.nodes() || []) {

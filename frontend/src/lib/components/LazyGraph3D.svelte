@@ -35,7 +35,9 @@
     <p>{loadError}</p>
   </div>
 {:else if Graph3DComponent}
-  <Graph3DComponent {data} />
+  {#key data.nodes.length + data.links.length}
+    <Graph3DComponent {data} />
+  {/key}
 {/if}
 
 <style>

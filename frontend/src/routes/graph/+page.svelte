@@ -97,11 +97,13 @@
   {:else}
     <div class="graph-container">
       {#if graphData.nodes.length > 0}
-        <GraphCanvas 
-          nodes={graphData.nodes}
-          links={graphData.links}
-          onNodeClick={(node) => handleNodeSelect(node.id)}
-        />
+        {#key graphData.nodes.length + '-' + graphData.links.length}
+          <GraphCanvas 
+            nodes={graphData.nodes}
+            links={graphData.links}
+            onNodeClick={(node) => handleNodeSelect(node.id)}
+          />
+        {/key}
       {:else}
         <div class="empty">
           <p>No graph data available</p>
