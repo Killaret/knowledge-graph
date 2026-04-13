@@ -167,9 +167,10 @@
 
   function handleToggleView() {
     currentView = currentView === 'graph' ? 'list' : 'graph';
-    if (currentView === 'graph') {
-      goto('/graph');
-    }
+  }
+
+  function handleToggle3D() {
+    goto('/graph');
   }
 
   function getPluralForm(count: number, one: string, few: string, many: string): string {
@@ -194,7 +195,8 @@
   <FloatingControls
     onCreate={() => { showCreateModal = true; }}
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
-    onToggleView={() => { handleToggleView(); }}
+    onToggleView={handleToggleView}
+    onToggle3D={handleToggle3D}
   />
 
   <!-- Main Content -->
@@ -275,32 +277,34 @@
         </div>
       {/if}
 
-      <!-- Notes Grid (Secondary/List View) -->
-      {#if filteredNotes.length === 0}
-        <div class="empty-state">
-          <div class="empty-icon">🌌</div>
-          <h2>No notes found</h2>
-          <p>
-            {selectedType === 'all' && !searchQuery
-              ? "You haven't created any notes yet."
-              : searchQuery
-                ? `No notes match "${searchQuery}".`
-                : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
-          </p>
-          <button class="new-note-button" onclick={() => showCreateModal = true}>
-            Create your first note
-          </button>
-        </div>
-      {:else}
-        <div class="notes-grid">
-          {#each filteredNotes as note (note.id)}
-            <NoteCard 
-              {note} 
-              onClick={() => selectedNodeId = note.id}
-              highlightQuery={searchQuery}
-            />
-          {/each}
-        </div>
+      <!-- Notes Grid (List View Only) -->
+      {#if currentView === 'list'}
+        {#if filteredNotes.length === 0}
+          <div class="empty-state">
+            <div class="empty-icon">🌌</div>
+            <h2>No notes found</h2>
+            <p>
+              {selectedType === 'all' && !searchQuery
+                ? "You haven't created any notes yet."
+                : searchQuery
+                  ? `No notes match "${searchQuery}".`
+                  : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
+            </p>
+            <button class="new-note-button" onclick={() => showCreateModal = true}>
+              Create your first note
+            </button>
+          </div>
+        {:else}
+          <div class="notes-grid">
+            {#each filteredNotes as note (note.id)}
+              <NoteCard
+                {note}
+                onClick={() => goto(`/graph/3d/${note.id}`)}
+                highlightQuery={searchQuery}
+              />
+            {/each}
+          </div>
+        {/if}
       {/if}
     {/if}
   </div>

@@ -30,12 +30,12 @@
 </script>
 
 <div class="floating-controls">
-  <!-- View Toggle -->
+  <!-- View Toggle: 2D / 3D / List -->
   <div class="view-toggle">
-    <button 
+    <button
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
       onclick={toggleView}
-      title="Graph View"
+      title="2D Graph"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3"/>
@@ -48,8 +48,21 @@
         <line x1="7" y1="17" x2="10" y2="14"/>
         <line x1="14" y1="14" x2="17" y2="17"/>
       </svg>
+      <span class="btn-label">2D</span>
     </button>
-    <button 
+    <button
+      class="toggle-btn"
+      onclick={() => onToggle3D?.()}
+      title="3D Graph"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+      <span class="btn-label">3D</span>
+    </button>
+    <button
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
       onclick={toggleView}
       title="List View"
@@ -59,6 +72,7 @@
         <line x1="3" y1="12" x2="21" y2="12"/>
         <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
+      <span class="btn-label">List</span>
     </button>
   </div>
 
@@ -71,7 +85,7 @@
       onkeyup={(e) => e.key === 'Enter' && handleSearch()}
       class="search-input"
     />
-    <button class="search-btn" onclick={handleSearch}>
+    <button class="search-btn" onclick={handleSearch} aria-label="Search">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -143,6 +157,9 @@
   }
 
   .toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     padding: 8px 12px;
     border: none;
     background: transparent;
@@ -150,6 +167,7 @@
     cursor: pointer;
     transition: all 0.2s;
     color: #64748b;
+    font-size: 12px;
   }
 
   .toggle-btn:hover {
@@ -160,6 +178,10 @@
     background: white;
     color: #3b82f6;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-label {
+    font-weight: 500;
   }
 
   .search-container {
