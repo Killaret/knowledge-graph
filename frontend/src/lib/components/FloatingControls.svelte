@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  
   const { 
     onCreate,
     onSearch,
     onToggleView,
     onToggle3D,
     onImport,
-    onExport
+    onExport,
+    noteId = ''
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
@@ -13,6 +16,7 @@
     onToggle3D?: () => void;
     onImport?: () => void;
     onExport?: () => void;
+    noteId?: string;
   } = $props();
   
   let searchQuery = $state('');
@@ -21,6 +25,12 @@
   
   function handleSearch() {
     onSearch?.(searchQuery);
+  }
+  
+  function handleToggle3D() {
+    // Если есть noteId, переходим на 3D граф этой заметки, иначе на общий 3D граф
+    const targetUrl = noteId ? `/graph/3d/${noteId}` : '/graph/3d';
+    goto(targetUrl);
   }
   
   function toggleView() {

@@ -143,25 +143,44 @@
   });
   
   function createGraphSimulation() {
-    if (!objectManager || !scene) return;
+    console.log('[Graph3D] createGraphSimulation called:', { 
+      hasObjectManager: !!objectManager, 
+      hasScene: !!scene,
+      nodeCount: data.nodes.length,
+      linkCount: data.links.length
+    });
     
-    console.log('[Graph3D] Creating simulation with', data.nodes.length, 'nodes');
+    if (!objectManager || !scene) {
+      console.error('[Graph3D] Cannot create simulation - missing objectManager or scene');
+      return;
+    }
     
+    console.log('[Graph3D] Clearing existing objects...');
     // Clear existing objects
     objectManager.clear();
     if (simulation) {
       simulation.stop();
     }
     
+    console.log('[Graph3D] Calling createSimulation...');
     isLoading = true;
     simulation = createSimulation(data, objectManager);
     
+    console.log('[Graph3D] Simulation created, setting up event handlers...');
     simulation.on('end', () => {
       console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
       if (simulation && camera && controls) {
+        console.log('[Graph3D] Calling autoZoomToFit...');
         autoZoomToFit(simulation.nodes(), camera, controls);
       }
       isLoading = false;
+    });
+    
+    simulation.on('tick', () => {
+      // Обновляем позиции объектов при каждом тике симуляции
+      if (objectManager) {
+        objectManager.updatePositions();
+      }
     });
   }
 

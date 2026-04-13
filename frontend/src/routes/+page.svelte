@@ -215,6 +215,7 @@
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
     onToggleView={handleToggleView}
     onToggle3D={handleToggle3D}
+    noteId={selectedNodeId ?? undefined}
   />
 
   <!-- Main Content -->
