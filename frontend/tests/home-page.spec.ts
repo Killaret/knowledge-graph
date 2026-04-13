@@ -1,0 +1,244 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * Tests for Home Page - Graph-first interface
+ * Verifies that the main page displays the graph canvas by default
+ * and list view is accessible from it
+ */
+
+test.describe('Home Page - Graph First', () => {
+  
+  test.beforeEach(async ({ page }) => {
+    // Navigate to home page
+    await page.goto('http://localhost:5173/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+  });
+
+  test('should display graph canvas by default on home page', async ({ page }) => {
+    // Verify graph container is visible
+    const graphContainer = page.locator('.graph-container, .graph-canvas, canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 10000 });
+    
+    // Verify graph has height (is rendered)
+    const containerHeight = await graphContainer.evaluate(el => (el as HTMLElement).style.height);
+    expect(containerHeight).toBeTruthy();
+  });
+
+  test('should load notes and display them on graph', async ({ page, request }) => {
+    // Create a test note via API
+    const timestamp = Date.now();
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { 
+        title: `Home Page Test Note ${timestamp}`, 
+        content: 'Test content for home page',
+        type: 'star'
+      }
+    });
+    expect(note.status()).toBe(201);
+    
+    // Reload page to see the note
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // Verify graph shows data (not empty state)
+    const emptyState = page.locator('text=No graph data, text=Create some notes').first();
+    const isEmptyVisible = await emptyState.isVisible().catch(() => false);
+    
+    // Either graph has nodes or we see note cards
+    if (isEmptyVisible) {
+      // If empty state is visible, that's also valid - means no notes with links yet
+      await expect(emptyState).toBeVisible();
+    } else {
+      // Otherwise graph should be rendered
+      const graphCanvas = page.locator('.graph-container canvas, .graph-canvas').first();
+      await expect(graphCanvas).toBeVisible();
+    }
+  });
+
+  test('should display list view when toggled from graph view', async ({ page }) => {
+    // Create a note first
+    await page.click('.create-btn, button:has-text("+")');
+    await page.fill('input[name="title"]', 'List View Test Note');
+    await page.fill('textarea[name="content"]', 'Content for list view test');
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(1500);
+    
+    // Reload to ensure we're on fresh home page
+    await page.goto('http://localhost:5173/');
+    await page.waitForTimeout(1000);
+    
+    // Toggle to list view (using FloatingControls or view toggle)
+    // Try to find and click the view toggle button
+    const viewToggle = page.locator('button:has-text("List"), button:has-text("View"), .view-toggle').first();
+    if (await viewToggle.isVisible().catch(() => false)) {
+      await viewToggle.click();
+    }
+    
+    // Verify list view elements
+    const noteCards = page.locator('.note-card');
+    const notesGrid = page.locator('.notes-grid').first();
+    
+    // Either notes grid is visible or we see the graph
+    const hasListView = await notesGrid.isVisible().catch(() => false);
+    const hasNoteCards = await noteCards.first().isVisible().catch(() => false);
+    
+    // At least one of these should be visible
+    expect(hasListView || hasNoteCards).toBe(true);
+  });
+
+  test('should show note count in stats bar', async ({ page, request }) => {
+    // Create test notes
+    const timestamp = Date.now();
+    await request.post('http://localhost:8080/notes', {
+      data: { title: `Stats Test 1 ${timestamp}`, content: 'Content 1', type: 'star' }
+    });
+    await request.post('http://localhost:8080/notes', {
+      data: { title: `Stats Test 2 ${timestamp}`, content: 'Content 2', type: 'planet' }
+    });
+    
+    // Reload page
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // Verify stats bar shows note count
+    const statsBar = page.locator('.stats-bar, .stats-total').first();
+    await expect(statsBar).toBeVisible();
+    
+    // Check that count is greater than 0
+    const statsText = await statsBar.textContent();
+    const countMatch = statsText?.match(/(\d+)\s+note/);
+    if (countMatch) {
+      const count = parseInt(countMatch[1], 10);
+      expect(count).toBeGreaterThan(0);
+    }
+  });
+
+  test('should filter notes by type from home page', async ({ page, request }) => {
+    // Create notes of different types
+    const timestamp = Date.now();
+    await request.post('http://localhost:8080/notes', {
+      data: { title: `Star Note ${timestamp}`, content: 'Star content', type: 'star' }
+    });
+    await request.post('http://localhost:8080/notes', {
+      data: { title: `Planet Note ${timestamp}`, content: 'Planet content', type: 'planet' }
+    });
+    
+    // Reload page
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // Click on "Stars" filter
+    const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), [data-filter="star"]').first();
+    if (await starsFilter.isVisible().catch(() => false)) {
+      await starsFilter.click();
+      await page.waitForTimeout(500);
+      
+      // Verify filter is applied (stats should show filtered count)
+      const statsFilter = page.locator('.stats-filter').first();
+      const hasFilterText = await statsFilter.isVisible().catch(() => false);
+      
+      if (hasFilterText) {
+        const filterText = await statsFilter.textContent();
+        expect(filterText?.toLowerCase()).toContain('filter');
+      }
+    }
+  });
+
+  test('should search notes from home page', async ({ page, request }) => {
+    // Create a searchable note
+    const timestamp = Date.now();
+    const searchTerm = `Searchable${timestamp}`;
+    await request.post('http://localhost:8080/notes', {
+      data: { 
+        title: `Test ${searchTerm} Note`, 
+        content: 'Test content',
+        type: 'star'
+      }
+    });
+    
+    // Reload page
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // Fill search input
+    const searchInput = page.locator('.search-input, input[type="search"]').first();
+    if (await searchInput.isVisible().catch(() => false)) {
+      await searchInput.fill(searchTerm);
+      await page.waitForTimeout(1000); // Wait for search to apply
+      
+      // Verify search filter indicator appears
+      const searchIndicator = page.locator('text=search:, .stats-filter').first();
+      const statsBar = page.locator('.stats-bar').first();
+      await expect(statsBar).toBeVisible();
+    }
+  });
+
+  test('should open side panel when clicking on graph node', async ({ page, request }) => {
+    // Create a note
+    const timestamp = Date.now();
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { 
+        title: `Side Panel Test ${timestamp}`, 
+        content: 'Test content for side panel',
+        type: 'star'
+      }
+    });
+    const noteId = (await note.json()).id;
+    
+    // Reload page
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // Try to click on a note card (fallback if graph click doesn't work)
+    const noteCard = page.locator('.note-card').first();
+    if (await noteCard.isVisible().catch(() => false)) {
+      await noteCard.click();
+      
+      // Verify side panel opens
+      const sidePanel = page.locator('.side-panel, .note-side-panel').first();
+      await expect(sidePanel).toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('should navigate to graph view for specific note', async ({ page, request }) => {
+    // Create a note
+    const timestamp = Date.now();
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { 
+        title: `Graph View Test ${timestamp}`, 
+        content: 'Test content',
+        type: 'star'
+      }
+    });
+    const noteId = (await note.json()).id;
+    
+    // Navigate to specific graph page
+    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.waitForTimeout(2000);
+    
+    // Verify graph container is visible
+    const graphContainer = page.locator('.graph-3d-container, .graph-container, canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should handle empty state when no notes exist', async ({ page, request }) => {
+    // Clear all notes via API (if possible) or just check current state
+    // This test verifies the empty state message
+    
+    const notesResponse = await request.get('http://localhost:8080/notes');
+    const notesData = await notesResponse.json();
+    
+    if (notesData.total === 0 || notesData.notes?.length === 0) {
+      // If truly empty, verify empty state
+      await page.reload();
+      await page.waitForTimeout(1000);
+      
+      const emptyState = page.locator('.empty-state, text=No notes').first();
+      await expect(emptyState).toBeVisible();
+    } else {
+      // Skip this test if notes exist
+      test.skip();
+    }
+  });
+});

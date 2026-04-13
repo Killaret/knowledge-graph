@@ -31,8 +31,10 @@ export interface Suggestion {
 }
 
 // Получить все заметки (GET /notes)
+// API возвращает { notes: Note[], total, limit, offset }
 export async function getNotes(): Promise<Note[]> {
-  return api.get('notes').json();
+  const response = await api.get('notes').json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+  return response.notes;
 }
 
 // Получить одну заметку по ID
