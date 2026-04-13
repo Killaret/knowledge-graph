@@ -123,7 +123,7 @@
     scene.background = new THREE.Color(0x050510);
 
     const aspect = container.clientWidth / container.clientHeight;
-    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 5000);
     camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
     camera.lookAt(initialCameraTarget.x, initialCameraTarget.y, initialCameraTarget.z);
 
@@ -173,7 +173,7 @@
     scene.add(fillLight2);
 
     addStarfield();
-    scene.fog = new THREE.FogExp2(0x050510, 0.002);
+    scene.fog = new THREE.FogExp2(0x050510, 0.0005);
 
     // Raycaster for hover
     raycaster = new THREE.Raycaster();
