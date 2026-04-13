@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { getNote, type Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   
@@ -13,16 +12,25 @@
   let note = $state<Note | null>(null);
   let loading = $state(true);
   let error = $state('');
-  
-  onMount(async () => {
+
+  // Load note when nodeId changes
+  $effect(() => {
+    const id = nodeId; // track dependency
+    loadNote(id);
+  });
+
+  async function loadNote(id: string) {
+    loading = true;
+    error = '';
     try {
-      note = await getNote(nodeId);
+      note = await getNote(id);
     } catch {
       error = 'Failed to load note';
+      note = null;
     } finally {
       loading = false;
     }
-  });
+  }
   
   function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {
