@@ -3,7 +3,7 @@
   import { getNote, type Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   
-  let { nodeId, onClose, onEdit, onDelete }: { 
+  const { nodeId, onClose, onEdit, onDelete }: { 
     nodeId: string; 
     onClose: () => void;
     onEdit?: (id: string) => void;
@@ -17,7 +17,7 @@
   onMount(async () => {
     try {
       note = await getNote(nodeId);
-    } catch (e) {
+    } catch {
       error = 'Failed to load note';
     } finally {
       loading = false;

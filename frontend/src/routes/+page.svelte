@@ -2,12 +2,10 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-  import SearchBar from '$lib/components/SearchBar.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
   import { getGraphData, type GraphData } from '$lib/api/graph';
@@ -144,19 +142,14 @@
     showConfirmDelete = true;
   }
 
-  function handleDeleteConfirm() {
-    if (!noteToDelete) return;
-    handleDeleteExecute();
-  }
-
-  async function handleDeleteExecute() {
+  async function handleDeleteConfirm() {
     if (!noteToDelete) return;
 
     try {
       await deleteNote(noteToDelete);
       selectedNodeId = null;
       await loadNotes();
-    } catch (e) {
+    } catch {
       if (browser) {
         alert('Failed to delete note');
       }
@@ -337,7 +330,7 @@
   confirmText="Delete"
   cancelText="Cancel"
   danger={true}
-  onConfirm={handleDeleteExecute}
+  onConfirm={handleDeleteConfirm}
   onCancel={() => { showConfirmDelete = false; noteToDelete = null; }}
 />
 

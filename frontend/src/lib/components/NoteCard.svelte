@@ -2,7 +2,7 @@
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
 
-  let { 
+  const { 
     note, 
     highlightQuery = '',
     onClick

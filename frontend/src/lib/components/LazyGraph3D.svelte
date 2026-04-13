@@ -3,7 +3,7 @@
   import type { GraphData } from '$lib/api/graph';
   import type { Component } from 'svelte';
 
-  let { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
+  const { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
 
   let Graph3DComponent: Component<{ data: GraphData; centerNodeId: string }> | null = $state(null);
   let isLoading = $state(true);

@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
 
   // Props
-  let { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
+  const { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
 
   let query = $state('');
   let inputElement: HTMLInputElement;

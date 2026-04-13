@@ -12,6 +12,7 @@
     onCancel: () => void;
   }
 
+  /* eslint-disable prefer-const */
   let {
     open = $bindable(false),
     title = 'Confirm',
@@ -22,6 +23,7 @@
     onConfirm,
     onCancel
   }: Props = $props();
+  /* eslint-enable prefer-const */
 
   function handleConfirm() {
     if (!browser) return;

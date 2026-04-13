@@ -167,8 +167,7 @@ test.describe('Home Page - Graph First', () => {
       await searchInput.fill(searchTerm);
       await page.waitForTimeout(1000); // Wait for search to apply
       
-      // Verify search filter indicator appears
-      const searchIndicator = page.locator('text=search:, .stats-filter').first();
+      // Verify stats bar appears
       const statsBar = page.locator('.stats-bar').first();
       await expect(statsBar).toBeVisible();
     }
@@ -184,7 +183,7 @@ test.describe('Home Page - Graph First', () => {
         type: 'star'
       }
     });
-    const noteId = (await note.json()).id;
+    await note.json();
     
     // Reload page
     await page.reload();

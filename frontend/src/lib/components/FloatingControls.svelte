@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { browser } from '$app/environment';
-  
-  let { 
+  const { 
     onCreate,
     onSearch,
     onToggleView,

@@ -1,10 +1,11 @@
 <script lang="ts">
   import { createNote, type Note } from '$lib/api/notes';
-  
-  let { 
+
+  /* eslint-disable prefer-const */
+  let {
     open = $bindable(false),
-    onSuccess 
-  }: { 
+    onSuccess
+  }: {
     open: boolean;
     onSuccess?: (note: Note) => void;
   } = $props();
@@ -43,7 +44,7 @@
       
       onSuccess?.(note);
       close();
-    } catch (e) {
+    } catch {
       error = 'Failed to create note';
     } finally {
       loading = false;

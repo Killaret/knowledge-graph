@@ -31,9 +31,6 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     navigator.userAgent
   ) || window.innerWidth < 768;
 
-  // Check for touch device
-  const _isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
   // Check hardware concurrency (CPU cores)
   const cpuCores = navigator.hardwareConcurrency || 2;
 
@@ -50,7 +47,6 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     const debugInfo = (gl as any).getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
       const renderer = (gl as any).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-      const _vendor = (gl as any).getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
 
       // Check for software renderer or low-end GPUs
       const lowEndGPUs = ['swiftshader', 'llvmpipe', 'software', 'microsoft basic render'];

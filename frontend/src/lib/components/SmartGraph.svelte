@@ -17,7 +17,7 @@
     weight?: number;
   }
 
-  let { 
+  const { 
     nodes = [] as GraphNode[],
     links = [] as GraphLink[]
   } = $props<{
@@ -55,7 +55,7 @@
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       webglSupported = !!gl;
-    } catch (_e) {
+    } catch {
       webglSupported = false;
     }
 

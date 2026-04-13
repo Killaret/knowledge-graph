@@ -23,7 +23,7 @@
   // Helper for window access
   const win = () => window as ExtendedWindow;
 
-  let { 
+  const { 
     data, 
     centerNodeId,
     onNodeClick
@@ -52,7 +52,6 @@
   let tooltipTitle = $state('');
   let tooltipType = $state('');
   let tooltipPosition = $state({ x: 0, y: 0 });
-  let _hoveredNodeId = $state<string | null>(null);
 
   const nodeObjects = new Map<string, any>();
   const linkObjects = new Map<string, any>();
@@ -224,7 +223,6 @@
       const node = data.nodes.find(n => n.id === nodeId);
 
       if (node) {
-        _hoveredNodeId = nodeId;
         tooltipTitle = node.title;
         tooltipType = node.type || 'default';
         tooltipPosition = { x: event.clientX - rect.left + 10, y: event.clientY - rect.top - 30 };
@@ -232,7 +230,6 @@
         container.style.cursor = 'pointer';
       }
     } else {
-      _hoveredNodeId = null;
       tooltipVisible = false;
       container.style.cursor = 'default';
     }
