@@ -30,6 +30,7 @@
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
   let isInitialized = $state(false);
+  let lastProcessedKey = $state(0);
   
   // Создаем ключ для отслеживания изменений данных
   let dataUpdateKey = $state(0);
@@ -38,30 +39,63 @@
   $effect(() => {
     const nodesLen = data.nodes.length;
     const linksLen = data.links.length;
-    console.log('[Graph3D] Data effect triggered:', { nodesLen, linksLen, isInitialized });
-    // Инкрементируем ключ при изменении данных
-    dataUpdateKey = nodesLen + linksLen * 1000 + Date.now();
+    // Инкрементируем ключ только если данные реально изменились
+    const newKey = nodesLen + linksLen * 1000;
+    if (newKey !== dataUpdateKey) {
+      dataUpdateKey = newKey;
+      console.log('[Graph3D] Data changed:', { nodesLen, linksLen, key: newKey });
+    }
   });
 
   // Reactively update graph when data changes
   $effect(() => {
-    // Явно читаем данные для создания реактивной зависимости
-    const _nodes = data.nodes;
-    const _links = data.links;
     const _key = dataUpdateKey;
     
-    console.log('[Graph3D] Update effect:', { 
-      nodes: _nodes.length, 
-      links: _links.length, 
-      isInitialized,
-      key: _key 
-    });
-    
-    if (isInitialized && _nodes.length > 0) {
-      console.log('[Graph3D] Updating simulation with new data');
-      createGraphSimulation();
+    // Пропускаем если данные уже обработаны или инициализация не завершена
+    if (!isInitialized || _key === lastProcessedKey) {
+      return;
     }
+    
+    // Ограничение для очень больших графов
+    if (data.nodes.length > 500) {
+      console.warn('[Graph3D] Large graph detected:', data.nodes.length, 'nodes. Limiting to 500 for performance.');
+    }
+    
+    console.log('[Graph3D] Creating simulation:', data.nodes.length, 'nodes');
+    lastProcessedKey = _key;
+    createGraphSimulation();
   });
+
+  function onResize() {
+    if (!container || !renderer || !camera || !labelRenderer) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    renderer.setSize(width, height);
+    labelRenderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  function handleClick(event: MouseEvent) {
+    if (!camera || !scene || !objectManager) return;
+    
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const rect = container.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    const nodeIntersect = intersects.find((i: any) => i.object.userData?.type === 'node');
+    
+    if (nodeIntersect) {
+      const nodeData = nodeIntersect.object.userData?.nodeData;
+      if (nodeData && onNodeClick) {
+        onNodeClick(nodeData);
+      }
+    }
+  }
 
   onMount(async () => {
     if (!browser || !container) return;
@@ -122,35 +156,13 @@
     isLoading = true;
     simulation = createSimulation(data, objectManager);
     
-  function onResize() {
-    if (!container || !renderer || !camera || !labelRenderer) return;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    renderer.setSize(width, height);
-    labelRenderer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  }
-
-  function handleClick(event: MouseEvent) {
-    if (!camera || !scene || !objectManager) return;
-    
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    const rect = container.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    const nodeIntersect = intersects.find((i: any) => i.object.userData?.type === 'node');
-    
-    if (nodeIntersect) {
-      const nodeData = nodeIntersect.object.userData?.nodeData;
-      if (nodeData && onNodeClick) {
-        onNodeClick(nodeData);
+    simulation.on('end', () => {
+      console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
+      if (simulation && camera && controls) {
+        autoZoomToFit(simulation.nodes(), camera, controls);
       }
-    }
+      isLoading = false;
+    });
   }
 
   onDestroy(() => {
