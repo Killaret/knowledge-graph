@@ -299,7 +299,7 @@
             {#each filteredNotes as note (note.id)}
               <NoteCard
                 {note}
-                onClick={() => goto(`/graph/3d/${note.id}`)}
+                onClick={() => selectedNodeId = note.id}
                 highlightQuery={searchQuery}
               />
             {/each}
