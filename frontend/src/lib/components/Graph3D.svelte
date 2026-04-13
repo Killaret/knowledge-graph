@@ -33,7 +33,14 @@
 
   // Reactively update graph when data changes
   $effect(() => {
-    if (isInitialized && data && objectManager) {
+    // Явно отслеживаем изменения в данных для реактивности
+    const nodeCount = data.nodes.length;
+    const linkCount = data.links.length;
+    const nodes = data.nodes;
+    
+    if (isInitialized && nodeCount > 0 && objectManager) {
+      console.log('[Graph3D] Data changed, updating:', { nodeCount, linkCount });
+      
       // Clear existing objects and recreate simulation with new data
       objectManager.clear();
       if (simulation) {

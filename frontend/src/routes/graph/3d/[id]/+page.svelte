@@ -72,12 +72,18 @@
     </div>
   {/if}
   
-  {#if loading}
-    <div class="center">Загрузка...</div>
-  {:else if error}
+  {#if error}
     <div class="center error">{error}</div>
   {:else if graphData}
-    <LazyGraph3D data={graphData} />
+    <div class="graph-wrapper" class:loading>
+      <LazyGraph3D data={graphData} />
+      {#if loading}
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          <span>Загрузка...</span>
+        </div>
+      {/if}
+    </div>
   {/if}
 </div>
 
@@ -156,5 +162,40 @@
     font-style: italic;
     color: #64748b;
     font-size: 12px;
+  }
+
+  .graph-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1000;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #88aaff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>
