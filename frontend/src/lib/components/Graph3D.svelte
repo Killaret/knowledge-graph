@@ -305,6 +305,15 @@
     return colors[type || 'default'] || colors.default;
   }
 
+  function getLinkColor(weight: number): number {
+    // Gradient from blue (cold/weak, weight=0) to orange (warm/strong, weight=1)
+    if (!THREE) return 0x3366ff;
+    const coldColor = new THREE.Color(0x3366ff);
+    const warmColor = new THREE.Color(0xffaa00);
+    const color = coldColor.clone().lerp(warmColor, Math.max(0, Math.min(1, weight)));
+    return color.getHex();
+  }
+
   function createVisualObjects(nodes: any[], links: any[]) {
     if (!THREE || !win().CSS2DObject) return;
 
@@ -352,14 +361,16 @@
     });
 
     links.forEach(link => {
+      const weight = link.weight || 0.5;
       const geometry = new THREE!.BufferGeometry();
       const material = new THREE!.LineBasicMaterial({
-        color: 0x6688cc,
+        color: getLinkColor(weight),
         transparent: true,
-        opacity: 0.4,
+        opacity: 0.3 + weight * 0.5,
         blending: THREE!.AdditiveBlending
       });
       const line = new THREE!.Line(geometry, material);
+      line.userData = { weight };
       scene.add(line);
       linkObjects.set(`${link.source}-${link.target}`, line);
     });
