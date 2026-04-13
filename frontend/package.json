@@ -14,7 +14,7 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
-    "test:cucumber": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config ../cucumber.mjs",
+    "test:cucumber": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs",
     "test:bdd": "npm run test:cucumber",
     "test:all": "npm run test && npm run test:cucumber"
   },

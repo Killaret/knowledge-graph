@@ -6,12 +6,22 @@
 
   // Types for dynamic imports
   type THREE_Module = typeof import('three');
-  type OrbitControls_Type = typeof import('three/examples/jsm/controls/OrbitControls.js').OrbitControls;
-  type CSS2DRenderer_Type = typeof import('three/examples/jsm/renderers/CSS2DRenderer.js').CSS2DRenderer;
-  type CSS2DObject_Type = typeof import('three/examples/jsm/renderers/CSS2DRenderer.js').CSS2DObject;
+  
+  // Constructor types
+  type OrbitControlsCtor = new (camera: any, domElement: HTMLElement) => any;
+  type CSS2DRendererCtor = new () => any;
+  type CSS2DObjectCtor = new (element: HTMLElement) => any;
+
+  // Extended window interface for dynamic imports
+  interface ExtendedWindow extends Window {
+    OrbitControls?: OrbitControlsCtor;
+    CSS2DRenderer?: CSS2DRendererCtor;
+    CSS2DObject?: CSS2DObjectCtor;
+    d3Force3d?: typeof import('d3-force-3d');
+  }
 
   // Helper for window access
-  const win = () => window as any;
+  const win = () => window as ExtendedWindow;
 
   let { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
 
@@ -117,7 +127,9 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    labelRenderer = new win().CSS2DRenderer();
+    const CSS2DRendererCtor = win().CSS2DRenderer;
+    if (!CSS2DRendererCtor) throw new Error('CSS2DRenderer not loaded');
+    labelRenderer = new CSS2DRendererCtor();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.domElement.style.position = 'absolute';
     labelRenderer.domElement.style.top = '0';
@@ -125,7 +137,9 @@
     labelRenderer.domElement.style.pointerEvents = 'none';
     container.appendChild(labelRenderer.domElement);
 
-    controls = new win().OrbitControls(camera, renderer.domElement);
+    const OrbitControlsCtor = win().OrbitControls;
+    if (!OrbitControlsCtor) throw new Error('OrbitControls not loaded');
+    controls = new OrbitControlsCtor(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.autoRotate = isAutoRotating;
@@ -250,7 +264,9 @@
 
     createVisualObjects(nodes, links);
 
-    const { forceSimulation, forceLink, forceManyBody, forceCenter } = win().d3Force3d;
+    const d3Force = win().d3Force3d;
+    if (!d3Force) throw new Error('d3-force-3d not loaded');
+    const { forceSimulation, forceLink, forceManyBody, forceCenter } = d3Force;
 
     simulation = forceSimulation(nodes)
       .force('link', forceLink(links)
@@ -317,7 +333,9 @@
       div.style.textShadow = '0 0 4px rgba(0,0,0,0.8)';
       div.style.pointerEvents = 'none';
       div.style.whiteSpace = 'nowrap';
-      const label = new win().CSS2DObject(div);
+      const CSS2DObjectCtor = win().CSS2DObject;
+      if (!CSS2DObjectCtor) throw new Error('CSS2DObject not loaded');
+      const label = new CSS2DObjectCtor(div);
       label.position.set(0, (node.size || 2) + 1, 0);
       sphere.add(label);
       labelObjects.set(node.id, label);

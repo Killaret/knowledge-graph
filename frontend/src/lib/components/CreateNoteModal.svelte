@@ -15,7 +15,7 @@
   let loading = $state(false);
   let error = $state('');
   
-  const types = [
+  const types: Array<{ value: typeof type, label: string, color: string }> = [
     { value: 'star', label: '⭐ Star', color: '#fbbf24' },
     { value: 'planet', label: '🪐 Planet', color: '#60a5fa' },
     { value: 'comet', label: '☄️ Comet', color: '#f472b6' },

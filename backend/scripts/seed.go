@@ -155,7 +155,7 @@ func generateNotes(count int) []Note {
 	for i := 0; i < count; i++ {
 		typeInfo := types[rand.Intn(len(types))]
 		title := typeInfo.titles[rand.Intn(len(typeInfo.titles))]
-		
+
 		// Make title unique by adding number if needed
 		if i >= len(typeInfo.titles) {
 			title = fmt.Sprintf("%s %d", title, i)
@@ -189,7 +189,7 @@ func insertNotes(ctx context.Context, pool *pgxpool.Pool, notes []Note) ([]strin
 			VALUES ($1, $2, $3, $4, $4)
 			RETURNING id
 		`
-		
+
 		var id string
 		err := pool.QueryRow(ctx, query, note.Title, note.Content, note.Type, note.CreatedAt).Scan(&id)
 		if err != nil {
@@ -209,7 +209,7 @@ func generateLinks(noteIDs []string, count int) []Link {
 	for i := 0; i < count; i++ {
 		sourceIdx := rand.Intn(len(noteIDs))
 		targetIdx := rand.Intn(len(noteIDs))
-		
+
 		// Ensure source and target are different
 		for targetIdx == sourceIdx {
 			targetIdx = rand.Intn(len(noteIDs))
@@ -229,14 +229,14 @@ func generateLinks(noteIDs []string, count int) []Link {
 
 func insertLinks(ctx context.Context, pool *pgxpool.Pool, links []Link) (int, error) {
 	count := 0
-	
+
 	for _, link := range links {
 		query := `
 			INSERT INTO links (source_note_id, target_note_id, link_type, weight, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, NOW(), NOW())
 			ON CONFLICT (source_note_id, target_note_id) DO NOTHING
 		`
-		
+
 		result, err := pool.Exec(ctx, query, link.SourceNoteID, link.TargetNoteID, link.LinkType, link.Weight)
 		if err != nil {
 			// Skip duplicate link errors

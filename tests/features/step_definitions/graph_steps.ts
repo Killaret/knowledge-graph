@@ -1,5 +1,6 @@
 import { Given, When, Then, Before, After } from '@cucumber/cucumber';
-import { expect, Page, Browser } from '@playwright/test';
+import { expect } from '@playwright/test';
+import type { Page, Browser } from '@playwright/test';
 import type { ITestWorld } from '../support/world';
 
 // Page object helpers

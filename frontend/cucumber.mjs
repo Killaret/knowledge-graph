@@ -1,5 +1,5 @@
 export default {
-  // Path to feature files (relative to cwd)
+  // Path to feature files
   paths: ['../tests/features/**/*.feature'],
 
   // Path to step definitions and support files
