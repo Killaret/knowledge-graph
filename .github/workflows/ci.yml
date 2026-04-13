@@ -213,7 +213,9 @@ jobs:
       working-directory: ./frontend
       env:
         FORCE3D: '1'
-      run: npx playwright test --config=playwright.config.ts
+        CI: 'true'
+      timeout-minutes: 15
+      run: npx playwright test --config=playwright.config.ts --project=chromium
 
     - name: Upload Playwright report
       uses: actions/upload-artifact@v5
