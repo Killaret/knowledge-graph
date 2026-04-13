@@ -8,7 +8,7 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getGraphData, type GraphData } from '$lib/api/graph';
+  import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
 
   // State
@@ -26,6 +26,7 @@
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphLoading = $state(false);
   let searchQuery = $state('');
+  let showFullGraph = $state(true); // Toggle between full graph and local view
   
   // Filter and sort state
   let selectedType = $state<string>('all');
@@ -70,10 +71,15 @@
     
     graphLoading = true;
     try {
-      // Build graph from all notes - use first note as center
-      const centerNote = allNotes[0];
-      const data = await getGraphData(centerNote.id, 2);
-      graphData = data;
+      if (showFullGraph) {
+        // Load full graph of all notes
+        graphData = await getFullGraphData();
+      } else {
+        // Build local graph from all notes - use first note as center
+        const centerNote = allNotes[0];
+        const data = await getGraphData(centerNote.id, 2);
+        graphData = data;
+      }
     } catch (e) {
       console.error('Failed to load graph:', e);
       // Fallback: build simple graph from notes
@@ -84,6 +90,11 @@
     } finally {
       graphLoading = false;
     }
+  }
+  
+  function toggleGraphMode() {
+    showFullGraph = !showFullGraph;
+    loadGraphData();
   }
 
   function applyFiltersAndSort() {
@@ -148,6 +159,10 @@
     try {
       await deleteNote(noteToDelete);
       selectedNodeId = null;
+      // Remove deleted note from local arrays immediately
+      allNotes = allNotes.filter(n => n.id !== noteToDelete);
+      filteredNotes = filteredNotes.filter(n => n.id !== noteToDelete);
+      // Then reload from server to ensure sync
       await loadNotes();
     } catch {
       if (browser) {
@@ -252,6 +267,20 @@
           <span class="stats-filter">(search: "{searchQuery}")</span>
         {/if}
       </div>
+
+      <!-- Graph Mode Toggle (Full Graph / Local View) -->
+      {#if currentView === 'graph'}
+        <div class="graph-mode-toggle">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              bind:checked={showFullGraph} 
+              onchange={toggleGraphMode}
+            />
+            <span class="toggle-text">Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
+          </label>
+        </div>
+      {/if}
 
       <!-- Graph View (Primary) -->
       {#if currentView === 'graph' && !loading}
@@ -473,6 +502,37 @@
 
   .stats-filter {
     color: #64748b;
+  }
+
+  .graph-mode-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border-radius: 8px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  .toggle-label input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
+
+  .toggle-text {
+    user-select: none;
   }
 
   .empty-state {

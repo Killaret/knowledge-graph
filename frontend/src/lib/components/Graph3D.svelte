@@ -29,6 +29,28 @@
   let isLoading = $state(true);
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
+  let isInitialized = $state(false);
+
+  // Reactively update graph when data changes
+  $effect(() => {
+    if (isInitialized && data && objectManager) {
+      // Clear existing objects and recreate simulation with new data
+      objectManager.clear();
+      if (simulation) {
+        simulation.stop();
+      }
+      
+      isLoading = true;
+      simulation = createSimulation(data, objectManager);
+      
+      simulation.on('end', () => {
+        if (simulation && camera && controls) {
+          autoZoomToFit(simulation.nodes(), camera, controls);
+        }
+        isLoading = false;
+      });
+    }
+  });
 
   onMount(async () => {
     if (!browser || !container) return;
@@ -66,6 +88,8 @@
       
       // Click handler for nodes
       container.addEventListener('click', handleClick);
+      
+      isInitialized = true;
       
     } catch (e) {
       console.error('Failed to initialize 3D graph:', e);
