@@ -1,12 +1,11 @@
 import * as THREE from 'three';
-import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { ObjectManager } from '$lib/three/rendering/objectManager';
 
 export function handleNodeClick(
-  event: MouseEvent,
-  camera: THREE.PerspectiveCamera,
-  scene: THREE.Scene,
-  objectManager: ObjectManager
+  _event: MouseEvent,
+  _camera: THREE.PerspectiveCamera,
+  _scene: THREE.Scene,
+  _objectManager: ObjectManager
 ) {
   // Реализация рейкастинга для определения узла под мышью
   // Возвращает ID узла или null

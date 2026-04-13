@@ -10,11 +10,9 @@
 
   const { 
     data, 
-    centerNodeId,
     onNodeClick
   }: { 
     data: GraphData; 
-    centerNodeId: string;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 

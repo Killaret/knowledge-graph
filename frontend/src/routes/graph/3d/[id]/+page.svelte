@@ -59,7 +59,7 @@
   {:else if error}
     <div class="center error">{error}</div>
   {:else if graphData}
-    <LazyGraph3D data={graphData} {centerNodeId} />
+    <LazyGraph3D data={graphData} />
   {/if}
 </div>
 

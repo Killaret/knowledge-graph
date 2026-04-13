@@ -3,9 +3,9 @@
   import type { GraphData } from '$lib/api/graph';
   import type { Component } from 'svelte';
 
-  const { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
+  const { data }: { data: GraphData } = $props();
 
-  let Graph3DComponent: Component<{ data: GraphData; centerNodeId: string }> | null = $state(null);
+  let Graph3DComponent: Component<{ data: GraphData }> | null = $state(null);
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
 
@@ -35,7 +35,7 @@
     <p>{loadError}</p>
   </div>
 {:else if Graph3DComponent}
-  <Graph3DComponent {data} {centerNodeId} />
+  <Graph3DComponent {data} />
 {/if}
 
 <style>
