@@ -376,12 +376,16 @@
 
   function updateLinks(links: any[]) {
     links.forEach(link => {
-      const key = `${link.source}-${link.target}`;
+      // After d3-force simulation, source/target may be objects instead of IDs
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+
+      const key = `${sourceId}-${targetId}`;
       const line = linkObjects.get(key);
       if (!line) return;
 
-      const sourceNode = nodeObjects.get(link.source);
-      const targetNode = nodeObjects.get(link.target);
+      const sourceNode = nodeObjects.get(sourceId);
+      const targetNode = nodeObjects.get(targetId);
       if (!sourceNode || !targetNode) return;
 
       const points = [sourceNode.position, targetNode.position];
