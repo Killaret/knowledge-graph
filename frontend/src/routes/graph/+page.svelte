@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { getNotes, type Note } from '$lib/api/notes';
   import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
-  import Graph3D from '$lib/components/Graph3D.svelte';
+  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
 
@@ -80,9 +80,9 @@
   {:else}
     <div class="graph-container">
       {#if graphData.nodes.length > 0}
-        <Graph3D 
-          data={graphData} 
-          centerNodeId={graphData.nodes[0]?.id || ''}
+        <GraphCanvas 
+          nodes={graphData.nodes}
+          links={graphData.links}
           onNodeClick={(node) => handleNodeSelect(node.id)}
         />
       {:else}
@@ -115,8 +115,13 @@
     padding: 20px;
     background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
     color: white;
-    overflow: hidden;
   }
+
+  h1 {
+    margin: 0 0 20px 0;
+    font-size: 1.5rem;
+  }
+
   .controls {
     position: absolute;
     top: 80px;
@@ -129,15 +134,29 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
   }
+
   .toggle {
     display: flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    font-size: 14px;
   }
+
   .toggle input {
     cursor: pointer;
+    width: 18px;
+    height: 18px;
   }
+
+  .graph-container {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
   .center {
     display: flex;
     flex-direction: column;

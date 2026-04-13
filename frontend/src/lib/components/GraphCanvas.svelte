@@ -20,7 +20,8 @@
     const r = Math.round(51 + (255 - 51) * w);
     const g = Math.round(102 + (170 - 102) * w);
     const b = Math.round(255 + (0 - 255) * w);
-    return `rgba(${r}, ${g}, ${b}, ${0.3 + w * 0.5})`;
+    const opacity = 0.3 + w * 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
   let canvas: HTMLCanvasElement;
@@ -193,8 +194,8 @@
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
       ctx.lineTo(targetNode.x, targetNode.y);
-      const weight = link.weight ?? 1;
-      ctx.lineWidth = Math.max(1, weight * 3);
+      const weight = link.weight ?? 0.5;
+      ctx.lineWidth = Math.max(1, weight * 4);
       ctx.strokeStyle = getLinkColor(weight);
       ctx.stroke();
     });

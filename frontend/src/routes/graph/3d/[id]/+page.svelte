@@ -74,12 +74,21 @@
     position: absolute;
     top: 80px;
     right: 20px;
+<<<<<<< HEAD
     z-index: 1000;
     background: rgba(0, 0, 0, 0.8);
     padding: 12px 16px;
     border-radius: 8px;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
+=======
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+>>>>>>> ai-agents
     backdrop-filter: blur(10px);
   }
   .toggle {
@@ -87,9 +96,18 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
+<<<<<<< HEAD
   }
   .toggle input {
     cursor: pointer;
+=======
+    font-size: 14px;
+  }
+  .toggle input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+>>>>>>> ai-agents
   }
   .center {
     display: flex;
