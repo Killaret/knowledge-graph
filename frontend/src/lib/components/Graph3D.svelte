@@ -50,28 +50,16 @@
     const _links = data.links;
     const _key = dataUpdateKey;
     
-    if (isInitialized && objectManager && _nodes.length > 0) {
-      console.log('[Graph3D] Data changed, updating:', { 
-        nodes: _nodes.length, 
-        links: _links.length,
-        key: _key 
-      });
-      
-      // Clear existing objects and recreate simulation with new data
-      objectManager.clear();
-      if (simulation) {
-        simulation.stop();
-      }
-      
-      isLoading = true;
-      simulation = createSimulation(data, objectManager);
-      
-      simulation.on('end', () => {
-        if (simulation && camera && controls) {
-          autoZoomToFit(simulation.nodes(), camera, controls);
-        }
-        isLoading = false;
-      });
+    console.log('[Graph3D] Update effect:', { 
+      nodes: _nodes.length, 
+      links: _links.length, 
+      isInitialized,
+      key: _key 
+    });
+    
+    if (isInitialized && _nodes.length > 0) {
+      console.log('[Graph3D] Updating simulation with new data');
+      createGraphSimulation();
     }
   });
 
@@ -79,6 +67,7 @@
     if (!browser || !container) return;
 
     try {
+      console.log('[Graph3D] Initializing scene...');
       const setup = initScene(container);
       scene = setup.scene;
       camera = setup.camera;
@@ -87,16 +76,7 @@
       controls = setup.controls;
 
       objectManager = new ObjectManager(scene);
-      simulation = createSimulation(data, objectManager);
       
-      // Auto-zoom when simulation ends
-      simulation.on('end', () => {
-        if (simulation && camera && controls) {
-          autoZoomToFit(simulation.nodes(), camera, controls);
-        }
-        isLoading = false;
-      });
-
       // Animation loop
       function animate() {
         animationFrame = requestAnimationFrame(animate);
@@ -113,6 +93,13 @@
       container.addEventListener('click', handleClick);
       
       isInitialized = true;
+      console.log('[Graph3D] Scene initialized, isInitialized = true');
+      
+      // Если данные уже есть - создаем симуляцию сразу
+      if (data.nodes.length > 0) {
+        console.log('[Graph3D] Initial data available, creating simulation:', data.nodes.length, 'nodes');
+        createGraphSimulation();
+      }
       
     } catch (e) {
       console.error('Failed to initialize 3D graph:', e);
@@ -120,7 +107,21 @@
       isLoading = false;
     }
   });
-
+  
+  function createGraphSimulation() {
+    if (!objectManager || !scene) return;
+    
+    console.log('[Graph3D] Creating simulation with', data.nodes.length, 'nodes');
+    
+    // Clear existing objects
+    objectManager.clear();
+    if (simulation) {
+      simulation.stop();
+    }
+    
+    isLoading = true;
+    simulation = createSimulation(data, objectManager);
+    
   function onResize() {
     if (!container || !renderer || !camera || !labelRenderer) return;
     const width = container.clientWidth;
