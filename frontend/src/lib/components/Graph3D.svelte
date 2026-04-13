@@ -30,16 +30,32 @@
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
   let isInitialized = $state(false);
+  
+  // Создаем ключ для отслеживания изменений данных
+  let dataUpdateKey = $state(0);
+  
+  // Отслеживаем изменения в данных и обновляем ключ
+  $effect(() => {
+    const nodesLen = data.nodes.length;
+    const linksLen = data.links.length;
+    console.log('[Graph3D] Data effect triggered:', { nodesLen, linksLen, isInitialized });
+    // Инкрементируем ключ при изменении данных
+    dataUpdateKey = nodesLen + linksLen * 1000 + Date.now();
+  });
 
   // Reactively update graph when data changes
   $effect(() => {
-    // Явно отслеживаем изменения в данных для реактивности
-    const nodeCount = data.nodes.length;
-    const linkCount = data.links.length;
-    const nodes = data.nodes;
+    // Явно читаем данные для создания реактивной зависимости
+    const _nodes = data.nodes;
+    const _links = data.links;
+    const _key = dataUpdateKey;
     
-    if (isInitialized && nodeCount > 0 && objectManager) {
-      console.log('[Graph3D] Data changed, updating:', { nodeCount, linkCount });
+    if (isInitialized && objectManager && _nodes.length > 0) {
+      console.log('[Graph3D] Data changed, updating:', { 
+        nodes: _nodes.length, 
+        links: _links.length,
+        key: _key 
+      });
       
       // Clear existing objects and recreate simulation with new data
       objectManager.clear();

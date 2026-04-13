@@ -28,16 +28,21 @@
   });
 
   async function loadGraph(noteId: string) {
+    console.log('[3D Page] loadGraph called:', { noteId, showFullGraph });
     loading = true;
     error = '';
     try {
+      let newData;
       if (showFullGraph) {
         // Загружаем полный граф всех заметок
-        graphData = await getFullGraphData();
+        newData = await getFullGraphData();
+        console.log('[3D Page] Loaded full graph:', newData.nodes.length, 'nodes');
       } else {
         // Загружаем локальный граф вокруг заметки
-        graphData = await getGraphData(noteId, 2);
+        newData = await getGraphData(noteId, 2);
+        console.log('[3D Page] Loaded local graph:', newData.nodes.length, 'nodes');
       }
+      graphData = newData;
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
