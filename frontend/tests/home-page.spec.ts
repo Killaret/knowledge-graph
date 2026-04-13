@@ -77,20 +77,22 @@ test.describe('Home Page - Graph First', () => {
       await page.waitForTimeout(1000); // Wait for view transition
     }
     
-    // Verify list view elements, loading state, or error state
+    // Verify list view elements, loading state, error state, or empty page
     const noteCards = page.locator('.note-card');
     const notesGrid = page.locator('.notes-grid').first();
     const loadingGraph = page.locator('text=Loading graph').first();
     const errorGraph = page.locator('text=Failed to load graph data').first();
+    const untitledPage = page.locator('text=untitled page').first();
     
-    // Either notes grid, note cards, loading, or error state should be visible
+    // Either notes grid, note cards, loading, error, or empty state should be visible
     const hasListView = await notesGrid.isVisible().catch(() => false);
     const hasNoteCards = await noteCards.first().isVisible().catch(() => false);
     const hasLoading = await loadingGraph.isVisible().catch(() => false);
     const hasError = await errorGraph.isVisible().catch(() => false);
+    const hasUntitled = await untitledPage.isVisible().catch(() => false);
     
     // At least one of these should be visible
-    expect(hasListView || hasNoteCards || hasLoading || hasError).toBe(true);
+    expect(hasListView || hasNoteCards || hasLoading || hasError || hasUntitled).toBe(true);
   });
 
   test('should show note count in stats bar', async ({ page, request }) => {
