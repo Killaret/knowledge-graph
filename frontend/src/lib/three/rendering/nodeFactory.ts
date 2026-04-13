@@ -104,6 +104,41 @@ export function createNodeMesh(node: GraphNode): THREE.Group {
       group.add(particles);
       break;
     }
+    case 'asteroid': {
+      // Irregular rocky shape - dodecahedron with noise
+      const asteroidMat = new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.2 });
+      const geometry = new THREE.DodecahedronGeometry(size, 0);
+      const positionAttribute = geometry.attributes.position;
+      for (let i = 0; i < positionAttribute.count; i++) {
+        const vertex = new THREE.Vector3();
+        vertex.fromBufferAttribute(positionAttribute, i);
+        // Add noise to create irregular shape
+        const noise = 0.7 + Math.random() * 0.6;
+        vertex.multiplyScalar(noise);
+        positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+      }
+      geometry.computeVertexNormals();
+      const asteroidMesh = new THREE.Mesh(geometry, asteroidMat);
+      group.add(asteroidMesh);
+      break;
+    }
+    case 'debris': {
+      // Scattered small rocks/particles
+      const debrisMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.8, metalness: 0.1 });
+      const particleCount = 8;
+      for (let i = 0; i < particleCount; i++) {
+        const particleSize = size * (0.3 + Math.random() * 0.4);
+        const particle = new THREE.Mesh(new THREE.TetrahedronGeometry(particleSize, 0), debrisMat);
+        // Random position around center
+        particle.position.x = (Math.random() - 0.5) * size * 2;
+        particle.position.y = (Math.random() - 0.5) * size * 2;
+        particle.position.z = (Math.random() - 0.5) * size * 2;
+        particle.rotation.x = Math.random() * Math.PI;
+        particle.rotation.y = Math.random() * Math.PI;
+        group.add(particle);
+      }
+      break;
+    }
     default: {
       const mat = new THREE.MeshStandardMaterial({ color });
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), mat);
@@ -114,11 +149,11 @@ export function createNodeMesh(node: GraphNode): THREE.Group {
 }
 
 function getNodeSize(type?: string): number {
-  const sizes: Record<string, number> = { star: 1.4, planet: 1.0, comet: 0.9, galaxy: 1.8 };
+  const sizes: Record<string, number> = { star: 1.4, planet: 1.0, comet: 0.9, galaxy: 1.8, asteroid: 0.8, debris: 1.2 };
   return sizes[type || ''] || 1.2;
 }
 
 function getNodeColor(type?: string): number {
-  const colors: Record<string, number> = { star: 0xffdd44, planet: 0x44aaff, comet: 0xaa88ff, galaxy: 0xff88cc };
+  const colors: Record<string, number> = { star: 0xffdd44, planet: 0x44aaff, comet: 0xaa88ff, galaxy: 0xff88cc, asteroid: 0x8b7355, debris: 0x999999 };
   return colors[type || ''] || 0x88aaff;
 }

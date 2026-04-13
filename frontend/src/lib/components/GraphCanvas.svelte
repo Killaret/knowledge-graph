@@ -208,6 +208,40 @@
     ctx.restore();
   }
 
+  function drawAsteroid(x: number, y: number, r: number, angle: number) {
+    if (!ctx) return;
+    // Irregular rocky shape
+    ctx.beginPath();
+    const points = 7;
+    for (let i = 0; i < points; i++) {
+      const theta = (i / points) * 2 * Math.PI;
+      const radiusVariation = 0.7 + Math.random() * 0.3;
+      const px = x + Math.cos(theta) * r * radiusVariation;
+      const py = y + Math.sin(theta) * r * radiusVariation;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#8b7355';
+    ctx.fill();
+    ctx.strokeStyle = '#5c4a3a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawDebris(x: number, y: number, r: number, angle: number) {
+    if (!ctx) return;
+    // Scattered small particles
+    ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';
+    for (let i = 0; i < 5; i++) {
+      const offsetX = (Math.random() - 0.5) * r * 2;
+      const offsetY = (Math.random() - 0.5) * r * 2;
+      ctx.beginPath();
+      ctx.arc(x + offsetX, y + offsetY, r * 0.3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
   function draw() {
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
@@ -269,6 +303,12 @@
           break;
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
+          break;
+        case 'asteroid':
+          drawAsteroid(node.x, node.y, r, angle);
+          break;
+        case 'debris':
+          drawDebris(node.x, node.y, r, angle);
           break;
         default:
           drawStar(node.x, node.y, r, angle);

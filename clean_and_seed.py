@@ -50,8 +50,8 @@ def create_test_data():
         {'title': 'Earth', 'content': 'Third planet, only known to support life', 'type': 'planet'},
         {'title': 'Mars', 'content': 'Fourth planet, red due to iron oxide', 'type': 'planet'},
         {'title': 'Jupiter', 'content': 'Fifth planet, largest gas giant with Great Red Spot', 'type': 'planet'},
-        {'title': 'Asteroid Belt', 'content': 'Region between Mars and Jupiter with rocky bodies', 'type': 'comet'},
-        {'title': 'Kuiper Belt', 'content': 'Region beyond Neptune with icy bodies and dwarf planets', 'type': 'comet'},
+        {'title': 'Asteroid Belt', 'content': 'Region between Mars and Jupiter with rocky bodies', 'type': 'asteroid'},
+        {'title': 'Kuiper Belt', 'content': 'Region beyond Neptune with icy bodies and dwarf planets', 'type': 'debris'},
         {'title': 'Milky Way', 'content': 'Our home galaxy, a barred spiral galaxy', 'type': 'galaxy'},
         {'title': 'Andromeda', 'content': 'Nearest major galaxy to Milky Way, approaching us', 'type': 'galaxy'},
     ]
@@ -124,7 +124,8 @@ def create_test_data():
     print(f'   📝 Notes: {len(note_ids)}')
     print(f'      • Stars: 1')
     print(f'      • Planets: 5')
-    print(f'      • Comets: 2')
+    print(f'      • Asteroid belts: 1')
+    print(f'      • Debris fields: 1')
     print(f'      • Galaxies: 2')
     print(f'   🔗 Links: {links_created}')
     print(f'      • Reference (blue, solid): 3')
