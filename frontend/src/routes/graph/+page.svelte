@@ -49,10 +49,13 @@
     selectedNodeId = nodeId;
   }
 
-  function toggleGraphMode() {
-    showFullGraph = !showFullGraph;
-    loadGraphData();
-  }
+  // Отслеживаем изменение showFullGraph и загружаем данные
+  $effect(() => {
+    if (browser) {
+      const mode = showFullGraph;
+      loadGraphData();
+    }
+  });
 </script>
 
 <div class="graph-page">
@@ -62,7 +65,7 @@
   
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" checked={showFullGraph} onchange={toggleGraphMode} />
+      <input type="checkbox" bind:checked={showFullGraph} />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>

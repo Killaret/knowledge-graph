@@ -92,10 +92,13 @@
     }
   }
   
-  function toggleGraphMode() {
-    showFullGraph = !showFullGraph;
-    loadGraphData();
-  }
+  // Отслеживаем изменение showFullGraph и загружаем данные
+  $effect(() => {
+    if (browser) {
+      const mode = showFullGraph;
+      loadGraphData();
+    }
+  });
 
   function applyFiltersAndSort() {
     let result = [...allNotes];
@@ -277,8 +280,7 @@
           <label class="toggle-label">
             <input 
               type="checkbox" 
-              checked={showFullGraph} 
-              onchange={toggleGraphMode}
+              bind:checked={showFullGraph}
             />
             <span class="toggle-text">Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
           </label>

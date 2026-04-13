@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import { getGraphData, getFullGraphData } from '$lib/api/graph';
   import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
   import type { GraphData } from '$lib/api/graph';
@@ -35,19 +36,22 @@
     }
   }
 
-  function toggleGraphMode() {
-    showFullGraph = !showFullGraph;
-    const id = $page.params.id;
-    if (id) {
-      loadGraph(id);
+  // Отслеживаем изменение showFullGraph и загружаем данные
+  $effect(() => {
+    if (browser) {
+      const mode = showFullGraph;
+      const id = $page.params.id;
+      if (id) {
+        loadGraph(id);
+      }
     }
-  }
+  });
 </script>
 
 <div class="page">
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" checked={showFullGraph} onchange={toggleGraphMode} />
+      <input type="checkbox" bind:checked={showFullGraph} />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>
