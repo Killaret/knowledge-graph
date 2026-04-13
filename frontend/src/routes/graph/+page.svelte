@@ -67,6 +67,23 @@
     </label>
   </div>
   
+  <!-- Stats -->
+  {#if !loading && !error}
+    <div class="stats-bar">
+      <span class="stats-item">
+        <strong>{graphData.nodes.length}</strong> nodes
+      </span>
+      <span class="stats-item">
+        <strong>{graphData.links.length}</strong> links
+      </span>
+      {#if showFullGraph}
+        <span class="stats-mode">(Full graph)</span>
+      {:else}
+        <span class="stats-mode">(Local view)</span>
+      {/if}
+    </div>
+  {/if}
+  
   {#if loading}
     <div class="center">
       <div class="spinner"></div>
@@ -147,6 +164,35 @@
     cursor: pointer;
     width: 18px;
     height: 18px;
+  }
+
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 10px 0 20px 0;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+
+  .stats-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stats-item strong {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .stats-mode {
+    margin-left: auto;
+    font-style: italic;
+    color: #64748b;
   }
 
   .graph-container {

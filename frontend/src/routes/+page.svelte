@@ -260,6 +260,9 @@
       <!-- Stats -->
       <div class="stats-bar">
         <span class="stats-total">{filteredNotes.length} {getPluralForm(filteredNotes.length, 'note', 'notes', 'notes')}</span>
+        {#if filteredNotes.length !== allNotes.length}
+          <span class="stats-of">of {allNotes.length} total</span>
+        {/if}
         {#if selectedType !== 'all'}
           <span class="stats-filter">(filtered by: {typeFilters.find(f => f.id === selectedType)?.label})</span>
         {/if}
@@ -502,6 +505,11 @@
 
   .stats-filter {
     color: #64748b;
+  }
+
+  .stats-of {
+    color: #94a3b8;
+    font-size: 13px;
   }
 
   .graph-mode-toggle {
