@@ -1,11 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as d3Force from 'd3-force';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
 
-  let { nodes, links }: { 
+  const { 
+    nodes, 
+    links,
+    onNodeClick
+  }: { 
     nodes: Array<{ id: string; title: string; type?: string }>;
     links: Array<{ source: string; target: string; weight?: number }>;
+    onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -13,30 +18,42 @@
   let width = 800;
   let height = 600;
   let animationId: number;
-  let angles: Map<string, number> = new Map();
-  let speeds: Map<string, number> = new Map();
+  const angles: Map<string, number> = new Map();
+  const speeds: Map<string, number> = new Map();
+  let d3Force: typeof import('d3-force') | null = null;
 
-  let transform = $state({ x: 0, y: 0, k: 1 });
+  const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
   let simulation: any = null;
 
   onMount(() => {
-    ctx = canvas.getContext('2d')!;
-    resize();
-    window.addEventListener('resize', resize);
-    startSimulation();
-    startAnimation();
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (simulation) simulation.stop();
-      cancelAnimationFrame(animationId);
-    };
+    if (!browser) return;
+    
+    // Dynamic import for SSR safety
+    let cleanup = () => {};
+    
+    import('d3-force').then(d3 => {
+      d3Force = d3;
+      ctx = canvas.getContext('2d')!;
+      resize();
+      window.addEventListener('resize', resize);
+      startSimulation();
+      startAnimation();
+      
+      cleanup = () => {
+        window.removeEventListener('resize', resize);
+        if (simulation) simulation.stop();
+        cancelAnimationFrame(animationId);
+      };
+    });
+    
+    return () => cleanup();
   });
 
   function startAnimation() {
     function animate() {
-      for (let node of simulation?.nodes() || []) {
+      for (const node of simulation?.nodes() || []) {
         const id = node.id;
         const type = node.type || 'star';
         let baseSpeed = 0.005; // звезда
@@ -68,6 +85,7 @@
   }
 
   function startSimulation() {
+    if (!d3Force) return;
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
     const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1 }));
 
@@ -253,7 +271,11 @@
       return Math.hypot(dx, dy) < 24;
     });
     if (node) {
-      goto(`/notes/${node.id}`);
+      if (onNodeClick) {
+        onNodeClick({ id: node.id, title: node.title, type: node.type });
+      } else {
+        goto(`/notes/${node.id}`);
+      }
     }
   }
 </script>

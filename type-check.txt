@@ -1,0 +1,468 @@
+Loading svelte-check in workspace: d:\knowledge-graph\frontend
+Getting Svelte diagnostics...
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:62:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if open}
+  [35m<div class="modal-overlay" onclick={close}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <h2>Create New Note</h2>
+        <button class="close-btn" onclick={close} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form onsubmit={handleSubmit}>
+        <div class="form-group">
+          <label for="note-title">Title *</label>
+          <input
+            id="note-title"
+            type="text"
+            bind:value={title}
+            placeholder="Enter note title..."
+            disabled={loading}
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="note-type">Type</label>
+          <div class="type-selector">
+            {#each types as t}
+              <button
+                type="button"
+                class="type-btn {type === t.value ? 'active' : ''}"
+                onclick={() => type = t.value}
+                style="--type-color: {t.color}"
+              >
+                {t.label}
+              </button>
+            {/each}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="note-content">Content</label>
+          <textarea
+            id="note-content"
+            bind:value={content}
+            placeholder="Enter note content..."
+            rows={6}
+            disabled={loading}
+          />
+        </div>
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick={close} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Note'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>[36m
+{/if}[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:62:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m{#if open}
+  [35m<div class="modal-overlay" onclick={close}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <h2>Create New Note</h2>
+        <button class="close-btn" onclick={close} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form onsubmit={handleSubmit}>
+        <div class="form-group">
+          <label for="note-title">Title *</label>
+          <input
+            id="note-title"
+            type="text"
+            bind:value={title}
+            placeholder="Enter note title..."
+            disabled={loading}
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="note-type">Type</label>
+          <div class="type-selector">
+            {#each types as t}
+              <button
+                type="button"
+                class="type-btn {type === t.value ? 'active' : ''}"
+                onclick={() => type = t.value}
+                style="--type-color: {t.color}"
+              >
+                {t.label}
+              </button>
+            {/each}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="note-content">Content</label>
+          <textarea
+            id="note-content"
+            bind:value={content}
+            placeholder="Enter note content..."
+            rows={6}
+            disabled={loading}
+          />
+        </div>
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick={close} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Note'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>[36m
+{/if}[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:63:5
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m  <div class="modal-overlay" onclick={close}>
+    [35m<div class="modal" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <h2>Create New Note</h2>
+        <button class="close-btn" onclick={close} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form onsubmit={handleSubmit}>
+        <div class="form-group">
+          <label for="note-title">Title *</label>
+          <input
+            id="note-title"
+            type="text"
+            bind:value={title}
+            placeholder="Enter note title..."
+            disabled={loading}
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="note-type">Type</label>
+          <div class="type-selector">
+            {#each types as t}
+              <button
+                type="button"
+                class="type-btn {type === t.value ? 'active' : ''}"
+                onclick={() => type = t.value}
+                style="--type-color: {t.color}"
+              >
+                {t.label}
+              </button>
+            {/each}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="note-content">Content</label>
+          <textarea
+            id="note-content"
+            bind:value={content}
+            placeholder="Enter note content..."
+            rows={6}
+            disabled={loading}
+          />
+        </div>
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick={close} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Note'}
+          </button>
+        </div>
+      </form>
+    </div>[36m
+  </div>[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:63:5
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m  <div class="modal-overlay" onclick={close}>
+    [35m<div class="modal" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <h2>Create New Note</h2>
+        <button class="close-btn" onclick={close} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form onsubmit={handleSubmit}>
+        <div class="form-group">
+          <label for="note-title">Title *</label>
+          <input
+            id="note-title"
+            type="text"
+            bind:value={title}
+            placeholder="Enter note title..."
+            disabled={loading}
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="note-type">Type</label>
+          <div class="type-selector">
+            {#each types as t}
+              <button
+                type="button"
+                class="type-btn {type === t.value ? 'active' : ''}"
+                onclick={() => type = t.value}
+                style="--type-color: {t.color}"
+              >
+                {t.label}
+              </button>
+            {/each}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="note-content">Content</label>
+          <textarea
+            id="note-content"
+            bind:value={content}
+            placeholder="Enter note content..."
+            rows={6}
+            disabled={loading}
+          />
+        </div>
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick={close} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Note'}
+          </button>
+        </div>
+      </form>
+    </div>[36m
+  </div>[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:104:11
+[33mWarn[39m: Self-closing HTML tags for non-void elements are ambiguous тАФ use `<textarea ...></textarea>` rather than `<textarea ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+[36m          <label for="note-content">Content</label>
+          [35m<textarea
+            id="note-content"
+            bind:value={content}
+            placeholder="Enter note content..."
+            rows={6}
+            disabled={loading}
+          />[36m
+        </div>[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\CreateNoteModal.svelte[39m:93:32
+[31mError[39m: Type 'string' is not assignable to type '"default" | "star" | "planet" | "comet" | "galaxy"'. (ts)
+[36m                class="type-btn {type === t.value ? 'active' : ''}"
+                onclick={() => [35mtype[36m = t.value}
+                style="--type-color: {t.color}"[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\FloatingControls.svelte[39m:76:5
+[33mWarn[39m: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+[36m    />
+    [35m<button class="search-btn" onclick={handleSearch}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </button>[36m
+  </div>[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:8:3
+[31mError[39m: An ambient module declaration is only allowed at the top level in a file. (ts)
+[36m  // Global declarations for dynamic imports
+  [35mdeclare[36m global {
+    interface Window {[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:48:40
+[31mError[39m: Cannot find name 'CSS2DObject'. (ts)
+[36m  const linkObjects = new Map<string, THREE.Line>();
+  const labelObjects = new Map<string, [35mCSS2DObject[36m>();[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:61:11
+[31mError[39m: Argument of type '() => Promise<(() => void) | undefined>' is not assignable to parameter of type '() => (() => any) | Promise<undefined> | undefined'.
+  Type 'Promise<(() => void) | undefined>' is not assignable to type '(() => any) | Promise<undefined> | undefined'.
+    Type 'Promise<(() => void) | undefined>' is not assignable to type 'Promise<undefined>'.
+      Type '(() => void) | undefined' is not assignable to type 'undefined'.
+        Type '() => void' is not assignable to type 'undefined'. (ts)
+[36m
+  onMount([35masync () => {[36m
+    if (!browser) return;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:72:14
+[31mError[39m: Property 'OrbitControls' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m      // Store constructors
+      window.[35mOrbitControls[36m = OrbitControls;
+      window.CSS2DRenderer = CSS2DRenderer;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:73:14
+[31mError[39m: Property 'CSS2DRenderer' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m      window.OrbitControls = OrbitControls;
+      window.[35mCSS2DRenderer[36m = CSS2DRenderer;
+      window.CSS2DObject = CSS2DObject;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:74:14
+[31mError[39m: Property 'CSS2DObject' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m      window.CSS2DRenderer = CSS2DRenderer;
+      window.[35mCSS2DObject[36m = CSS2DObject;
+      window.d3Force3d = d3Force3d;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:75:14
+[31mError[39m: Property 'd3Force3d' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m      window.CSS2DObject = CSS2DObject;
+      window.[35md3Force3d[36m = d3Force3d;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:118:32
+[31mError[39m: Property 'CSS2DRenderer' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m
+    labelRenderer = new window.[35mCSS2DRenderer[36m();
+    labelRenderer.setSize(container.clientWidth, container.clientHeight);[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:126:27
+[31mError[39m: Property 'OrbitControls' does not exist on type 'Window & typeof globalThis'. (ts)
+[36m
+    controls = new window.[35mOrbitControls[36m(camera, renderer.domElement);
+    controls.enableDamping = true;[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:249:18
+[31mError[39m: Cannot find name 'forceSimulation'. Did you mean 'simulation'? (ts)
+[36m
+    simulation = [35mforceSimulation[36m(nodes)
+      .force('link', forceLink(links)[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:250:22
+[31mError[39m: Cannot find name 'forceLink'. (ts)
+[36m    simulation = forceSimulation(nodes)
+      .force('link', [35mforceLink[36m(links)
+        .id((d: any) => d.id)[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:255:24
+[31mError[39m: Cannot find name 'forceManyBody'. (ts)
+[36m      )
+      .force('charge', [35mforceManyBody[36m().strength(-200).distanceMax(50))
+      .force('center', forceCenter(0, 0, 0))[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:256:24
+[31mError[39m: Cannot find name 'forceCenter'. (ts)
+[36m      .force('charge', forceManyBody().strength(-200).distanceMax(50))
+      .force('center', [35mforceCenter[36m(0, 0, 0))
+      .on('tick', () => {[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:285:28
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m    nodes.forEach(node => {
+      const geometry = new [35mTHREE[36m.SphereGeometry(node.size || 2, 32, 32);
+      const color = getColorByType(node.type);[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:287:28
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m      const color = getColorByType(node.type);
+      const material = new [35mTHREE[36m.MeshPhysicalMaterial({
+        color: color,[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:295:26
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m      });
+      const sphere = new [35mTHREE[36m.Mesh(geometry, material);
+      sphere.position.set(node.x || 0, node.y || 0, node.z || 0);[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:312:25
+[31mError[39m: Cannot find name 'CSS2DObject'. (ts)
+[36m      div.style.whiteSpace = 'nowrap';
+      const label = new [35mCSS2DObject[36m(div);
+      label.position.set(0, (node.size || 2) + 1, 0);[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:319:28
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m    links.forEach(link => {
+      const geometry = new [35mTHREE[36m.BufferGeometry();
+      const material = new THREE.LineBasicMaterial({[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:320:28
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m      const geometry = new THREE.BufferGeometry();
+      const material = new [35mTHREE[36m.LineBasicMaterial({
+        color: 0x6688cc,[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:324:19
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m        opacity: 0.4,
+        blending: [35mTHREE[36m.AdditiveBlending
+      });[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:326:24
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m      });
+      const line = new [35mTHREE[36m.Line(geometry, material);
+      scene.add(line);[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\Graph3D.svelte[39m:353:27
+[31mError[39m: 'THREE' is possibly 'null'. (ts)
+[36m      line.geometry.dispose();
+      line.geometry = new [35mTHREE[36m.BufferGeometry().setFromPoints(points);
+    });[39m
+
+d:\knowledge-graph\frontend\[32msrc\lib\components\NoteSidePanel.svelte[39m:114:69
+[31mError[39m: 'note' is possibly 'null'. (ts)
+[36m      <div class="panel-footer">
+        <button class="view-full-btn" onclick={() => goto(`/notes/${[35mnote[36m.id}`)}>
+          View Full Page тЖТ[39m
+
+d:\knowledge-graph\frontend\[32msrc\routes\+page.svelte[39m:401:3
+[33mWarn[39m: Unused CSS selector ".search-section"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+  [35m.search-section[36m {
+    margin-bottom: 20px;[39m
+
+====================================
+[31msvelte-check found 24 errors and 7 warnings in 5 files
+[39m

@@ -7,16 +7,17 @@
   interface GraphNode {
     id: string;
     title: string;
-    type: string;
+    type?: string;
+    size?: number;
   }
 
   interface GraphLink {
     source: string;
     target: string;
-    weight: number;
+    weight?: number;
   }
 
-  let { 
+  const { 
     nodes = [] as GraphNode[],
     links = [] as GraphLink[]
   } = $props<{
@@ -28,7 +29,13 @@
   let isLoading = $state(true);
   let Graph3DComponent: any = $state(null);
   // Allow forcing 3D mode via URL param ?force3d=1 (useful for debugging/CI)
-  const isForce3D = (typeof window !== 'undefined') && (new URLSearchParams(window.location.search).get('force3d') === '1');
+  let isForce3D = $state(false);
+
+  $effect(() => {
+    if (browser) {
+      isForce3D = new URLSearchParams(window.location.search).get('force3d') === '1';
+    }
+  });
 
   onMount(async () => {
     if (!browser) {
@@ -48,7 +55,7 @@
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       webglSupported = !!gl;
-    } catch (e) {
+    } catch {
       webglSupported = false;
     }
 

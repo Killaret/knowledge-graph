@@ -1,10 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import { onMount } from 'svelte';
 
   // Props
-  let { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
+  const { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
 
   let query = $state('');
   let inputElement: HTMLInputElement;
@@ -28,10 +29,11 @@
   }
 
   // Debounce for automatic search while typing (optional)
-  let debounceTimer: number;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   function handleInput() {
-    clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(() => {
+    if (!browser) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
       doSearch();
     }, 500); // search after 500ms of no typing
   }
@@ -39,7 +41,7 @@
   // Handle Enter key
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
-      clearTimeout(debounceTimer);
+      if (debounceTimer) clearTimeout(debounceTimer);
       doSearch();
     }
   }

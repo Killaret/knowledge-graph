@@ -1,5 +1,6 @@
 declare module 'd3-force-3d' {
-  export interface Simulation<NodeDatum extends SimulationNodeDatum, LinkDatum extends SimulationLinkDatum<NodeDatum>> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export interface Simulation<NodeDatum extends SimulationNodeDatum, _LinkDatum extends SimulationLinkDatum<NodeDatum>> {
     alpha(value?: number): number;
     alphaMin(value?: number): number;
     alphaDecay(value?: number): number;

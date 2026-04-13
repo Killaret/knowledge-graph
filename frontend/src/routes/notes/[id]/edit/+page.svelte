@@ -59,8 +59,8 @@ async function handleSubmit(event: Event) {
   <p class="error">{error}</p>
 {:else}
   <form onsubmit={handleSubmit}>
-    <input type="text" placeholder="Title" bind:value={title} required />
-    <textarea bind:value={content} rows="15"></textarea>
+    <input type="text" name="title" placeholder="Title" bind:value={title} required />
+    <textarea name="content" bind:value={content} rows="15"></textarea>
     <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Update'}</button>
   </form>
 {/if}
