@@ -23,7 +23,15 @@
   // Helper for window access
   const win = () => window as ExtendedWindow;
 
-  let { data, centerNodeId }: { data: GraphData; centerNodeId: string } = $props();
+  let { 
+    data, 
+    centerNodeId,
+    onNodeClick
+  }: { 
+    data: GraphData; 
+    centerNodeId: string;
+    onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+  } = $props();
 
   let container: HTMLDivElement;
   let THREE: THREE_Module | null = null;
@@ -239,8 +247,13 @@
     if (intersects.length > 0) {
       const clickedNode = intersects[0].object;
       const nodeId = clickedNode.userData.id;
-      if (nodeId) {
-        goto(`/notes/${nodeId}`);
+      const node = data.nodes.find(n => n.id === nodeId);
+      if (nodeId && node) {
+        if (onNodeClick) {
+          onNodeClick({ id: nodeId, title: node.title, type: node.type });
+        } else {
+          goto(`/notes/${nodeId}`);
+        }
       }
     }
   }

@@ -222,6 +222,26 @@ test.describe('Home Page - Graph First', () => {
     await expect(graphContainer).toBeVisible({ timeout: 10000 });
   });
 
+  test('should display general graph view at /graph', async ({ page }) => {
+    // Navigate to general graph page
+    await page.goto('http://localhost:5173/graph');
+    await page.waitForTimeout(2000);
+    
+    // Verify no 404 error
+    const error404 = page.locator('text=404, text=Not Found').first();
+    const has404 = await error404.isVisible().catch(() => false);
+    expect(has404).toBe(false);
+    
+    // Verify graph container or empty state is visible
+    const graphContainer = page.locator('.graph-container, .graph-3d-container, canvas').first();
+    const emptyState = page.locator('text=No notes found, text=No graph data').first();
+    
+    const hasGraph = await graphContainer.isVisible().catch(() => false);
+    const hasEmpty = await emptyState.isVisible().catch(() => false);
+    
+    expect(hasGraph || hasEmpty).toBe(true);
+  });
+
   test('should handle empty state when no notes exist', async ({ page, request }) => {
     // Clear all notes via API (if possible) or just check current state
     // This test verifies the empty state message
