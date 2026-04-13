@@ -375,7 +375,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     }
     
     // Get initial stats
-    const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '');
+    const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '') || '';
     const nodesBefore = statsBefore.match(/(\d+)\s+nodes?/i)?.[1];
     
     // Toggle to local view
@@ -383,7 +383,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     await page.waitForTimeout(3000);
     
     // Get stats after toggle
-    const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '');
+    const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '') || '';
     const nodesAfter = statsAfter.match(/(\d+)\s+nodes?/i)?.[1];
     
     // Graph should still render
