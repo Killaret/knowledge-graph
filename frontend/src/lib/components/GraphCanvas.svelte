@@ -17,36 +17,39 @@
   const linkTypeColors: Record<string, string> = {
     'reference': '#3366ff',   // Синий - ссылочная связь
     'dependency': '#ff6600',  // Оранжевый - зависимость
-    'related': '#66ff66',     // Зеленый - связанная тема
+    'related': '#999999',     // Серый - связанная тема (по умолчанию)
     'custom': '#ff66ff',      // Розовый - пользовательская
   };
 
-  // Функция для получения цвета связи по типу и весу
+  // Функция для получения цвета связи по типу
   function getLinkColor(weight: number, linkType?: string): string {
-    // Если есть тип связи - используем его цвет
-    if (linkType && linkTypeColors[linkType]) {
-      const opacity = 0.4 + (weight ?? 0.5) * 0.4;
-      return linkTypeColors[linkType] + Math.round(opacity * 255).toString(16).padStart(2, '0');
-    }
+    const effectiveType = linkType || 'related';
+    const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
+    const opacity = 0.4 + (weight ?? 0.5) * 0.4;
     
-    // Иначе градиент по весу
-    const w = Math.max(0, Math.min(1, weight ?? 0.5));
-    // Blue (51, 102, 255) to Orange (255, 170, 0)
-    const r = Math.round(51 + (255 - 51) * w);
-    const g = Math.round(102 + (170 - 102) * w);
-    const b = Math.round(255 + (0 - 255) * w);
-    const opacity = 0.3 + w * 0.5;
+    // Конвертируем hex в rgba
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
-  // Функция для получения стиля линии по типу связи
-  function getLineDash(linkType?: string): number[] {
-    switch (linkType) {
-      case 'related': return [8, 4];      // Пунктир длинный
-      case 'custom': return [2, 6];       // Точечный
-      case 'reference': return [];        // Сплошная
-      case 'dependency': return [];       // Сплошная жирная
-      default: return [];
+  // Функция для получения стиля линии по типу связи и весу
+  function getLineDash(linkType?: string, weight?: number): number[] {
+    const effectiveType = linkType || 'related';
+    
+    switch (effectiveType) {
+      case 'reference': 
+        return []; // Сплошная
+      case 'dependency': 
+        return [10, 3]; // Штрихпунктир
+      case 'related': 
+        // Пунктир только при слабом весе
+        return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
+      case 'custom': 
+        return [2, 6]; // Точечный
+      default: 
+        return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
     }
   }
 
@@ -234,7 +237,7 @@
       ctx.strokeStyle = getLinkColor(weight, linkType);
       
       // Устанавливаем dash pattern для пунктирных линий
-      const dash = getLineDash(linkType);
+      const dash = getLineDash(linkType, weight);
       if (dash.length > 0) {
         ctx.setLineDash(dash);
       } else {
