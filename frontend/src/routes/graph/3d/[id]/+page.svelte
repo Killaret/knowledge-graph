@@ -8,7 +8,7 @@
   let centerNodeId: string = $state('');
   let loading = $state(true);
   let error = $state('');
-  let showFullGraph = $state(false); // Переключатель между локальным и полным графом
+  let showFullGraph = $state(true); // По умолчанию показываем все заметки
 
   $effect(() => {
     const id = $page.params.id;
@@ -72,13 +72,15 @@
   }
   .controls {
     position: absolute;
-    top: 20px;
+    top: 80px;
     right: 20px;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 10px 15px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 12px 16px;
     border-radius: 8px;
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
   }
   .toggle {
     display: flex;

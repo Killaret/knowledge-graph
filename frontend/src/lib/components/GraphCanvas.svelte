@@ -13,6 +13,16 @@
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
+  // Функция для получения цвета связи по весу (градиент от синего к оранжевому)
+  function getLinkColor(weight: number): string {
+    const w = Math.max(0, Math.min(1, weight));
+    // Blue (51, 102, 255) to Orange (255, 170, 0)
+    const r = Math.round(51 + (255 - 51) * w);
+    const g = Math.round(102 + (170 - 102) * w);
+    const b = Math.round(255 + (0 - 255) * w);
+    return `rgba(${r}, ${g}, ${b}, ${0.3 + w * 0.5})`;
+  }
+
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let width = 800;
@@ -185,7 +195,7 @@
       ctx.lineTo(targetNode.x, targetNode.y);
       const weight = link.weight ?? 1;
       ctx.lineWidth = Math.max(1, weight * 3);
-      ctx.strokeStyle = `rgba(100, 150, 200, ${0.4 + weight * 0.6})`;
+      ctx.strokeStyle = getLinkColor(weight);
       ctx.stroke();
     });
 

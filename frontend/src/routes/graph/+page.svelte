@@ -3,7 +3,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { getNotes, type Note } from '$lib/api/notes';
-  import { getGraphData, type GraphData } from '$lib/api/graph';
+  import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
   import Graph3D from '$lib/components/Graph3D.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
@@ -13,20 +13,24 @@
   let loading = $state(true);
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
+  let showFullGraph = $state(true); // По умолчанию показываем все заметки
 
-  onMount(async () => {
-    if (!browser) return;
-    
+  async function loadGraphData() {
+    loading = true;
+    error = '';
     try {
-      // Load all notes
-      notes = await getNotes();
-      
-      if (notes.length > 0) {
-        // Use first note as center for graph
-        const centerNote = notes[0];
-        graphData = await getGraphData(centerNote.id, 3);
+      if (showFullGraph) {
+        // Загружаем полный граф всех заметок
+        graphData = await getFullGraphData();
       } else {
-        error = 'No notes found. Create some notes first.';
+        // Загружаем локальный граф
+        notes = await getNotes();
+        if (notes.length > 0) {
+          const centerNote = notes[0];
+          graphData = await getGraphData(centerNote.id, 3);
+        } else {
+          error = 'No notes found. Create some notes first.';
+        }
       }
     } catch (e) {
       console.error('Failed to load graph:', e);
@@ -34,10 +38,20 @@
     } finally {
       loading = false;
     }
+  }
+
+  onMount(async () => {
+    if (!browser) return;
+    await loadGraphData();
   });
 
   function handleNodeSelect(nodeId: string) {
     selectedNodeId = nodeId;
+  }
+
+  function toggleGraphMode() {
+    showFullGraph = !showFullGraph;
+    loadGraphData();
   }
 </script>
 
@@ -45,6 +59,13 @@
   <BackButton href="/" />
   
   <h1>Knowledge Graph</h1>
+  
+  <div class="controls">
+    <label class="toggle">
+      <input type="checkbox" bind:checked={showFullGraph} onchange={toggleGraphMode} />
+      <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
+    </label>
+  </div>
   
   {#if loading}
     <div class="center">
@@ -94,21 +115,29 @@
     padding: 20px;
     background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
     color: white;
-  }
-
-  h1 {
-    margin: 0 0 20px 0;
-    font-size: 1.5rem;
-  }
-
-  .graph-container {
-    flex: 1;
-    position: relative;
-    min-height: 0;
-    border-radius: 12px;
     overflow: hidden;
   }
-
+  .controls {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .toggle input {
+    cursor: pointer;
+  }
   .center {
     display: flex;
     flex-direction: column;

@@ -614,27 +614,33 @@
     transform: translateY(-2px);
   }
 
-  .control-btn span:first-child {
-    font-size: 18px;
-  }
+.control-btn span:first-child {
+font-size: 18px;
+}
 
-  .legend-panel {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 12px;
-    padding: 16px;
-    z-index: 5;
-    min-width: 140px;
-  }
+.legend-panel {
+position: absolute;
+bottom: 20px;
+right: 20px;
+background: rgba(255,255,255,0.1);
+backdrop-filter: blur(10px);
+border: 1px solid rgba(255,255,255,0.2);
+border-radius: 12px;
+padding: 16px;
+z-index: 5;
+min-width: 140px;
+max-height: calc(100vh - 200px);
+overflow-y: auto;
+}
 
-  .legend-title {
-    margin: 0 0 12px 0;
-    color: white;
-    font-size: 14px;
+.legend-title {
+margin: 0 0 12px 0;
+color: white;
+font-size: 14px;
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
