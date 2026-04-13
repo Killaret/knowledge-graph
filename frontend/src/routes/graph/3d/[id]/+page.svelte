@@ -7,7 +7,7 @@
   let graphData: GraphData | null = $state(null);
   let loading = $state(true);
   let error = $state('');
-  let showFullGraph = $state(true); // По умолчанию показываем все заметки
+  let showFullGraph = $state(false); // По умолчанию локальный вид
 
   $effect(() => {
     const id = $page.params.id;
@@ -47,7 +47,7 @@
 <div class="page">
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} onchange={toggleGraphMode} />
+      <input type="checkbox" checked={showFullGraph} onchange={toggleGraphMode} />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>

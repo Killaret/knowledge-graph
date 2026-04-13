@@ -93,9 +93,18 @@
 
   // Реактивно перезапускаем симуляцию при изменении данных
   $effect(() => {
-    if (d3Force && nodes && links && simulation) {
+    // Отслеживаем изменения в данных
+    const nodesKey = nodes.map(n => n.id).join(',');
+    const linksKey = links.map(l => `${l.source}-${l.target}`).join(',');
+    
+    if (d3Force && nodes.length > 0) {
       // Останавливаем старую симуляцию
-      simulation.stop();
+      if (simulation) {
+        simulation.stop();
+      }
+      // Очищаем углы и скорости для новых данных
+      angles.clear();
+      speeds.clear();
       // Запускаем новую с обновленными данными
       startSimulation();
     }

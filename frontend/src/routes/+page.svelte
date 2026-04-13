@@ -26,7 +26,7 @@
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphLoading = $state(false);
   let searchQuery = $state('');
-  let showFullGraph = $state(true); // Toggle between full graph and local view
+  let showFullGraph = $state(false); // Toggle between full graph and local view
   
   // Filter and sort state
   let selectedType = $state<string>('all');
@@ -277,7 +277,7 @@
           <label class="toggle-label">
             <input 
               type="checkbox" 
-              bind:checked={showFullGraph} 
+              checked={showFullGraph} 
               onchange={toggleGraphMode}
             />
             <span class="toggle-text">Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>

@@ -13,7 +13,7 @@
   let loading = $state(true);
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(true); // По умолчанию показываем все заметки
+  let showFullGraph = $state(false); // По умолчанию локальный вид
 
   async function loadGraphData() {
     loading = true;
@@ -62,7 +62,7 @@
   
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} onchange={toggleGraphMode} />
+      <input type="checkbox" checked={showFullGraph} onchange={toggleGraphMode} />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>
