@@ -99,7 +99,7 @@
   });
 
   // Reactive filtered graph data based on selected type
-  let filteredGraphData = $derived(() => {
+  const filteredGraphData = $derived(() => {
     if (selectedType === 'all' || !graphData.nodes.length) {
       return graphData;
     }
