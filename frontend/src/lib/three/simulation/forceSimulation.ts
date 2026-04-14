@@ -5,9 +5,9 @@ import type { ObjectManager } from '$lib/three/rendering/objectManager';
 export function createSimulation(data: GraphData, objectManager: ObjectManager) {
   const nodes = data.nodes.map(n => ({
     ...n,
-    x: (n as any).x ?? (Math.random() - 0.5) * 50,
-    y: (n as any).y ?? (Math.random() - 0.5) * 50,
-    z: (n as any).z ?? (Math.random() - 0.5) * 50
+    x: (n as any).x ?? (Math.random() - 0.5) * 100,
+    y: (n as any).y ?? (Math.random() - 0.5) * 100,
+    z: (n as any).z ?? (Math.random() - 0.5) * 100
   }));
   const links = data.links.map(l => ({
     ...l,
@@ -20,16 +20,16 @@ export function createSimulation(data: GraphData, objectManager: ObjectManager) 
   const sim = forceSimulation(nodes)
     .force('link', forceLink(links)
       .id((d: any) => d.id)
-      .distance(30)
-      .strength(0.5)
+      .distance(50)
+      .strength(0.8)
     )
     .force('charge', forceManyBody()
-      .strength(-50)
-      .distanceMax(150)
+      .strength(-200)
+      .distanceMax(200)
     )
     .force('center', forceCenter(0, 0, 0));
   
-  (sim as any).alphaDecay(0.02);
+  (sim as any).alphaDecay(0.015);
   
   let tickCount = 0;
   sim.on('tick', () => {

@@ -5,6 +5,19 @@ import { createLinkLine } from './linkFactory';
 import { createLabel } from './labelFactory';
 import type { GraphNode, GraphLink } from '$lib/api/graph';
 
+// Вспомогательная функция для получения размера узла по типу
+function getNodeSize(type?: string): number {
+  const sizes: Record<string, number> = { 
+    star: 1.4, 
+    planet: 1.0, 
+    comet: 0.9, 
+    galaxy: 1.8,
+    asteroid: 0.6,
+    debris: 0.4
+  };
+  return sizes[type || ''] || 1.2;
+}
+
 export class ObjectManager {
   private scene: THREE.Scene;
   private nodeMap = new Map<string, THREE.Group>();
@@ -30,7 +43,9 @@ export class ObjectManager {
       const label = createLabel(node.title || node.id.substring(0, 6), () => {
         window.location.href = `/notes/${node.id}`;
       });
-      label.position.copy(mesh.position);
+      // Размещаем метку над узлом на фиксированном расстоянии (зависит от размера узла)
+      const labelOffset = getNodeSize(node.type) + 2.5;
+      label.position.copy(mesh.position).add(new THREE.Vector3(0, labelOffset, 0));
       label.userData = { type: 'label', nodeId: node.id };
       this.scene.add(label);
       this.labelMap.set(node.id, label);
@@ -60,7 +75,11 @@ export class ObjectManager {
       const label = this.labelMap.get(node.id);
       if (obj) {
         obj.position.set((node as any).x ?? 0, (node as any).y ?? 0, (node as any).z ?? 0);
-        if (label) label.position.copy(obj.position);
+        if (label) {
+          // Обновляем позицию метки с тем же смещением что и при создании
+          const labelOffset = getNodeSize(node.type) + 2.5;
+          label.position.copy(obj.position).add(new THREE.Vector3(0, labelOffset, 0));
+        }
       }
     });
   }
