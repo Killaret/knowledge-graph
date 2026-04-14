@@ -30,8 +30,19 @@ export function createSimulation(data: GraphData, objectManager: ObjectManager) 
     .force('center', forceCenter(0, 0, 0));
   
   (sim as any).alphaDecay(0.02);
+  
+  let tickCount = 0;
   sim.on('tick', () => {
     objectManager.updatePositions(nodes);
+    // Only update links every 10 ticks for performance, and log first few
+    if (++tickCount % 10 === 0 || tickCount <= 3) {
+      console.log(`[forceSimulation] Tick ${tickCount}, updating ${links.length} links`);
+      objectManager.updateLinks(links);
+    }
+  });
+  
+  sim.on('end', () => {
+    console.log(`[forceSimulation] Simulation ended after ${tickCount} ticks, final link update`);
     objectManager.updateLinks(links);
   });
   

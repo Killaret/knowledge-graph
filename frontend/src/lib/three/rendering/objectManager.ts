@@ -66,19 +66,30 @@ export class ObjectManager {
   }
 
   updateLinks(links: GraphLink[]) {
+    let updatedCount = 0;
     links.forEach((link) => {
       const key = `${link.source}-${link.target}`;
       const line = this.linkMap.get(key);
-      if (!line) return;
+      if (!line) {
+        console.warn(`[ObjectManager] Link ${key} not found in linkMap`);
+        return;
+      }
 
       const sourceObj = this.nodeMap.get(link.source);
       const targetObj = this.nodeMap.get(link.target);
-      if (!sourceObj || !targetObj) return;
+      if (!sourceObj || !targetObj) {
+        console.warn(`[ObjectManager] Cannot update link ${key}: source or target not found`);
+        return;
+      }
 
       const points = [sourceObj.position.clone(), targetObj.position.clone()];
       line.geometry.dispose();
       line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+      updatedCount++;
     });
+    if (updatedCount > 0) {
+      console.log(`[ObjectManager] Updated ${updatedCount}/${links.length} links`);
+    }
   }
 
   clear() {
