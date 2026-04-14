@@ -52,7 +52,7 @@
   // Отслеживаем изменение showFullGraph и загружаем данные
   $effect(() => {
     if (browser) {
-      const mode = showFullGraph;
+      showFullGraph; // Access for reactivity
       loadGraphData();
     }
   });

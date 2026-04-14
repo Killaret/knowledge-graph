@@ -8,7 +8,7 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
+  import { getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
 
   // State

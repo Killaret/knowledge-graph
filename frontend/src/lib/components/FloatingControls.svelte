@@ -1,11 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   
-  const { 
+  const {
     onCreate,
     onSearch,
     onToggleView,
-    onToggle3D,
     onImport,
     onExport,
     noteId = ''
@@ -13,7 +12,6 @@
     onCreate?: () => void;
     onSearch?: (query: string) => void;
     onToggleView?: () => void;
-    onToggle3D?: () => void;
     onImport?: () => void;
     onExport?: () => void;
     noteId?: string;

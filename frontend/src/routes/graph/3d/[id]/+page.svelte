@@ -14,14 +14,14 @@
   // Единый эффект для загрузки графа при изменении ID или режима
   $effect(() => {
     if (!browser) return;
-    
+
     const id = $page.params.id;
-    const mode = showFullGraph;
-    
+    showFullGraph; // Access for reactivity
+
     if (id && id !== currentNoteId) {
       currentNoteId = id;
     }
-    
+
     if (currentNoteId) {
       loadGraph(currentNoteId);
     }
