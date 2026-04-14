@@ -182,7 +182,15 @@
     console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
     
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
-    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+    
+    // Filter links to only include those where both source and target nodes exist
+    const nodeIds = new Set(nodes.map(n => n.id));
+    const validLinks = links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    if (validLinks.length !== links.length) {
+      console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
+    }
+    
+    const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
