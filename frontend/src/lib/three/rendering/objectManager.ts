@@ -68,15 +68,19 @@ export class ObjectManager {
   updateLinks(links: GraphLink[]) {
     let updatedCount = 0;
     links.forEach((link) => {
-      const key = `${link.source}-${link.target}`;
+      // Извлекаем ID независимо от того, строка это или объект (d3-force заменяет строки на объекты-ссылки)
+      const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+      const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+      const key = `${sourceId}-${targetId}`;
+      
       const line = this.linkMap.get(key);
       if (!line) {
         console.warn(`[ObjectManager] Link ${key} not found in linkMap`);
         return;
       }
 
-      const sourceObj = this.nodeMap.get(link.source);
-      const targetObj = this.nodeMap.get(link.target);
+      const sourceObj = this.nodeMap.get(sourceId);
+      const targetObj = this.nodeMap.get(targetId);
       if (!sourceObj || !targetObj) {
         console.warn(`[ObjectManager] Cannot update link ${key}: source or target not found`);
         return;
