@@ -16,6 +16,7 @@ export class ObjectManager {
   }
 
   createAll(nodes: GraphNode[], links: GraphLink[]) {
+    console.log(`[ObjectManager] createAll called: ${nodes.length} nodes, ${links.length} links`);
     this.clear();
 
     nodes.forEach((node) => {
@@ -24,6 +25,7 @@ export class ObjectManager {
       mesh.userData = { type: 'node', id: node.id, nodeData: node };
       this.scene.add(mesh);
       this.nodeMap.set(node.id, mesh);
+      console.log(`[ObjectManager] Created node ${node.id} (${node.type || 'default'}) at (${mesh.position.x.toFixed(2)}, ${mesh.position.y.toFixed(2)}, ${mesh.position.z.toFixed(2)})`);
 
       const label = createLabel(node.title || node.id.substring(0, 6), () => {
         window.location.href = `/notes/${node.id}`;
@@ -37,7 +39,10 @@ export class ObjectManager {
     links.forEach((link) => {
       const sourceNode = nodes.find((n) => n.id === link.source);
       const targetNode = nodes.find((n) => n.id === link.target);
-      if (!sourceNode || !targetNode) return;
+      if (!sourceNode || !targetNode) {
+        console.warn(`[ObjectManager] Skipping link ${link.source}-${link.target}: nodes not found`);
+        return;
+      }
 
       const sourcePos = new THREE.Vector3((sourceNode as any).x ?? 0, (sourceNode as any).y ?? 0, (sourceNode as any).z ?? 0);
       const targetPos = new THREE.Vector3((targetNode as any).x ?? 0, (targetNode as any).y ?? 0, (targetNode as any).z ?? 0);
@@ -46,6 +51,7 @@ export class ObjectManager {
       this.scene.add(line);
       this.linkMap.set(`${link.source}-${link.target}`, line);
     });
+    console.log(`[ObjectManager] Total created: ${this.nodeMap.size} nodes, ${this.linkMap.size} links, ${this.labelMap.size} labels`);
   }
 
   updatePositions(nodes: GraphNode[]) {

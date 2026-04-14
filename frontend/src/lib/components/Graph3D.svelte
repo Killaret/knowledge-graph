@@ -112,11 +112,20 @@
       objectManager = new ObjectManager(scene);
       
       // Animation loop
+      let frameCount = 0;
       function animate() {
         animationFrame = requestAnimationFrame(animate);
         controls.update();
         renderer.render(scene, camera);
         labelRenderer.render(scene, camera);
+        
+        // Log camera position once after 60 frames (~1 sec at 60fps)
+        if (++frameCount === 60) {
+          console.log('[Graph3D] Camera position after 1s:', 
+            `(${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})`,
+            'Target:', `(${controls.target.x.toFixed(2)}, ${controls.target.y.toFixed(2)}, ${controls.target.z.toFixed(2)})`
+          );
+        }
       }
       animate();
 

@@ -22,8 +22,12 @@ export function autoZoomToFit(
   const fov = camera.fov * Math.PI / 180;
   const dist = radius / Math.tan(fov / 2);
 
+  console.log('[autoZoomToFit] center:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`, 'radius:', radius.toFixed(2), 'distance:', dist.toFixed(2), 'nodes:', nodes.length);
+
   const direction = new THREE.Vector3(1, 1, 1).normalize();
-  camera.position.copy(center.clone().add(direction.multiplyScalar(dist)));
+  const newPos = center.clone().add(direction.multiplyScalar(dist));
+  camera.position.copy(newPos);
   controls.target.copy(center);
   controls.update();
+  console.log('[autoZoomToFit] camera position set to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
 }
