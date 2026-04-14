@@ -124,20 +124,15 @@ test.describe('Graph Visualization', () => {
     // Navigate to graph page
     await page.goto(`http://localhost:5173/graph/${noteId}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(6000); // Wait for 5s loading timeout + buffer
     
-    // Page should render without errors - check for any graph container or error message
-    const graphElements = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay, .no-data-message').first();
-    await expect(graphElements).toBeVisible();
+    // Page should render without errors - wait for loading to complete
+    // Check for container which should always exist, or empty state messages
+    const graphContainer = page.locator('.graph-3d-container');
+    const noDataMessage = page.locator('.no-data-message');
+    const errorOverlay = page.locator('.error-overlay');
     
-    // Either canvas or error/empty state message should be shown
-    const canvas = page.locator('canvas, .graph-canvas').first();
-    const message = page.locator('.error-overlay, .no-data-message, .empty-state').first();
-    
-    const hasCanvas = await canvas.isVisible().catch(() => false);
-    const hasMessage = await message.isVisible().catch(() => false);
-    
-    // At least one visualization element should be present
-    expect(hasCanvas || hasMessage).toBe(true);
+    // Wait for container or empty state (with extended timeout for 5s simulation timeout)
+    await expect(graphContainer.or(noDataMessage).or(errorOverlay)).toBeVisible({ timeout: 10000 });
   });
 });

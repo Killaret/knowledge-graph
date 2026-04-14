@@ -51,8 +51,13 @@
   $effect(() => {
     const _key = dataUpdateKey;
     
-    // Пропускаем если данные уже обработаны или инициализация не завершена
-    if (!isInitialized || _key === lastProcessedKey) {
+    // Wait for initialization to complete
+    if (!isInitialized) {
+      return;
+    }
+    
+    // Skip only if exact same data state was already processed
+    if (_key === lastProcessedKey && lastProcessedKey !== 0) {
       return;
     }
     
@@ -150,6 +155,13 @@
       if (data.nodes.length > 0) {
         console.log('[Graph3D] Initial data available, creating simulation:', data.nodes.length, 'nodes');
         createGraphSimulation();
+        // Mark this state as processed so effect doesn't re-trigger for same data
+        lastProcessedKey = dataUpdateKey;
+      } else {
+        // No nodes - show empty state immediately
+        console.log('[Graph3D] No nodes in data, showing empty state');
+        isLoading = false;
+        // Don't set lastProcessedKey here - we want the effect to trigger when data arrives
       }
       
     } catch (e) {
@@ -184,6 +196,18 @@
     simulation = createSimulation(data, objectManager);
     
     console.log('[Graph3D] Simulation created, setting up event handlers...');
+    
+    // If no links or single node, simulation won't emit 'end' (already at equilibrium)
+    // Stop immediately and show the graph
+    if (data.links.length === 0 || data.nodes.length <= 1) {
+      console.log('[Graph3D] No links or single node, stopping simulation immediately');
+      simulation.stop();
+      isLoading = false;
+      if (camera && controls) {
+        autoZoomToFit(simulation.nodes(), camera, controls);
+      }
+      return;
+    }
     
     // Резервный таймаут - принудительно выключаем загрузку через 5 секунд
     const loadingTimeout = setTimeout(() => {
@@ -263,6 +287,16 @@
       </div>
     </div>
   {/if}
+
+  {#if !isLoading && !error && data.nodes.length === 0}
+    <div class="no-data-message">
+      <div class="empty-content">
+        <span class="empty-icon">🔭</span>
+        <h2>No Connections Yet</h2>
+        <p>This note has no links to other notes.</p>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -274,7 +308,7 @@
     background: #050510;
   }
 
-  .loading-overlay, .error-overlay {
+  .loading-overlay, .error-overlay, .no-data-message {
     position: absolute;
     top: 0;
     left: 0;
@@ -289,12 +323,12 @@
     z-index: 10;
   }
 
-  .error-content {
+  .error-content, .empty-content {
     text-align: center;
     padding: 2rem;
   }
 
-  .error-icon {
+  .error-icon, .empty-icon {
     font-size: 48px;
     margin-bottom: 1rem;
     display: block;
