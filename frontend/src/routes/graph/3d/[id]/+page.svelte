@@ -16,7 +16,8 @@
     if (!browser) return;
 
     const id = $page.params.id;
-    showFullGraph; // Access for reactivity
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    showFullGraph;
 
     if (id && id !== currentNoteId) {
       currentNoteId = id;

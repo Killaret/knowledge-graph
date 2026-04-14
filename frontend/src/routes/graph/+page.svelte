@@ -52,7 +52,8 @@
   // Отслеживаем изменение showFullGraph и загружаем данные
   $effect(() => {
     if (browser) {
-      showFullGraph; // Access for reactivity
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      showFullGraph;
       loadGraphData();
     }
   });
