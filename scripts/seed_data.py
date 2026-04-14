@@ -23,7 +23,7 @@ from tqdm import tqdm
 # ----------------------------------------------------------------------
 DEFAULT_API_URL = "http://localhost:8080"
 CATEGORIES = ["book", "movie", "anime", "manga", "adaptation"]
-NOTES_PER_CATEGORY = 50
+NOTES_PER_CATEGORY = 10
 TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
 
 fake = Faker('ru_RU')
@@ -100,19 +100,19 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
     """Создаёт payload для POST /notes."""
     title = generate_title(category, index)
     content = generate_content(category, title)
-    # Определяем тип небесного тела в metadata для визуализации
+    # FIXED: Тип теперь на верхнем уровне, а не в metadata
     type_mapping = {
         "book": "star",
         "movie": "planet",
         "anime": "comet",
         "manga": "galaxy",
-        "adaptation": "star"
+        "adaptation": "default"
     }
     return {
         "title": title,
         "content": content,
+        "type": type_mapping.get(category, "star"),   # <-- основное изменение
         "metadata": {
-            "celestial_type": type_mapping.get(category, "star"),
             "category": category,
             "word_count": len(content.split())
         }
@@ -159,15 +159,22 @@ class APIClient:
             return result
         return None
 
-    def create_link(self, source_id: str, target_id: str, description: str = "", weight: float = 1.0) -> Optional[Dict[str, Any]]:
-        """POST /links — обязателен link_type (reference/dependency/related/custom)."""
-        link_type = "related"
-        if "экранизация" in description or "адаптация" in description:
-            link_type = "reference"
-        elif "основано" in description:
-            link_type = "dependency"
-        elif "похожее" in description:
-            link_type = "related"
+    # FIXED: Добавлен параметр link_type для явного указания типа связи
+    def create_link(self, source_id: str, target_id: str, description: str = "",
+                    weight: float = 1.0, link_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        POST /links — обязателен link_type (reference/dependency/related/custom).
+        Если link_type не передан, он определяется по описанию.
+        """
+        if link_type is None:
+            if "экранизация" in description or "адаптация" in description:
+                link_type = "reference"
+            elif "основано" in description:
+                link_type = "dependency"
+            elif "похожее" in description:
+                link_type = "related"
+            else:
+                link_type = "related"
 
         payload = {
             "source_note_id": source_id,
@@ -233,6 +240,7 @@ def create_links_between_categories(api: APIClient, ids_map: Dict[str, List[str]
         for _ in range(pairs):
             src = random.choice(ids_map["book"])
             dst = random.choice(ids_map["adaptation"])
+            # reference тип определится автоматически по описанию
             if api.create_link(src, dst, description="экранизация книги", weight=0.9):
                 total_links += 1
             if api.create_link(dst, src, description="основано на книге", weight=0.8):
@@ -276,7 +284,8 @@ def create_links_within_category(api: APIClient, ids_map: Dict[str, List[str]]) 
                 total_links += 1
     print(f"   Создано {total_links} внутрикатегорийных связей.")
 
-def create_random_links(api: APIClient, all_ids: List[str], count: int = 150) -> None:
+# FIXED: Добавлено использование link_type="custom" для части случайных связей
+def create_random_links(api: APIClient, all_ids: List[str], count: int = 75) -> None:
     """Создаёт случайные связи для увеличения связности графа."""
     print(f"\n🎲 Создание {count} случайных связей...")
     created = 0
@@ -285,7 +294,14 @@ def create_random_links(api: APIClient, all_ids: List[str], count: int = 150) ->
         dst = random.choice(all_ids)
         if src == dst:
             continue
-        if api.create_link(src, dst, description="связано", weight=0.3):
+        # 30% случайных связей делаем custom
+        if random.random() < 0.3:
+            link_type = "custom"
+            description = "пользовательская связь"
+        else:
+            link_type = "related"
+            description = "связано"
+        if api.create_link(src, dst, description=description, link_type=link_type, weight=0.3):
             created += 1
     print(f"   Создано {created} случайных связей.")
 
@@ -317,7 +333,7 @@ def main():
     create_links_between_categories(api, ids_by_category)
     create_links_within_category(api, ids_by_category)
     if not args.no_random_links:
-        create_random_links(api, all_ids, count=150)
+        create_random_links(api, all_ids, count=30)
 
     print("\n✅ Загрузка тестовых данных завершена!")
     print(f"   Всего создано заметок: {len(all_ids)}")
