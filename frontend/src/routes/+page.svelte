@@ -185,10 +185,6 @@
     currentView = currentView === 'graph' ? 'list' : 'graph';
   }
 
-  function handleToggle3D() {
-    goto('/graph');
-  }
-
   function getPluralForm(count: number, one: string, few: string, many: string): string {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
@@ -212,7 +208,6 @@
     onCreate={() => { showCreateModal = true; }}
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
     onToggleView={handleToggleView}
-    onToggle3D={handleToggle3D}
     noteId={selectedNodeId ?? undefined}
   />
 
