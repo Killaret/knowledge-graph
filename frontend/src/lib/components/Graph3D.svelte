@@ -191,9 +191,21 @@
       simulation.stop();
     }
     
+    // Filter links to only include those where both source and target nodes exist
+    // (for local graph, API may return links to nodes outside the graph)
+    const nodeIds = new Set(data.nodes.map(n => n.id));
+    const validLinks = data.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    if (validLinks.length !== data.links.length) {
+      console.warn(`[Graph3D] Filtered out ${data.links.length - validLinks.length} orphan links`);
+    }
+    const filteredData = {
+      nodes: data.nodes,
+      links: validLinks
+    };
+    
     console.log('[Graph3D] Calling createSimulation...');
     isLoading = true;
-    simulation = createSimulation(data, objectManager);
+    simulation = createSimulation(filteredData, objectManager);
     
     console.log('[Graph3D] Simulation created, setting up event handlers...');
     
