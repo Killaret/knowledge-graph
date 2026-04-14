@@ -98,6 +98,30 @@
     }
   });
 
+  // Reactive filtered graph data based on selected type
+  let filteredGraphData = $derived(() => {
+    if (selectedType === 'all' || !graphData.nodes.length) {
+      return graphData;
+    }
+    
+    const allowedNodeIds = new Set(
+      allNotes.filter(n => n.type === selectedType).map(n => n.id)
+    );
+    
+    const filteredNodes = graphData.nodes.filter(n => allowedNodeIds.has(n.id));
+    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = graphData.links.filter(l => 
+      filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
+    );
+    
+    console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`);
+    
+    return {
+      nodes: filteredNodes,
+      links: filteredLinks
+    };
+  });
+
   function applyFiltersAndSort() {
     let result = [...allNotes];
 
@@ -277,17 +301,20 @@
               <div class="spinner"></div>
               <p>Loading graph...</p>
             </div>
-          {:else if graphData.nodes.length > 0}
+          {:else if filteredGraphData().nodes.length > 0}
             <GraphCanvas 
-              nodes={graphData.nodes}
-              links={graphData.links}
+              nodes={filteredGraphData().nodes}
+              links={filteredGraphData().links}
               onNodeClick={(node) => selectedNodeId = node.id}
             />
           {:else}
             <div class="empty-state">
               <div class="empty-icon">🌌</div>
               <h2>No graph data</h2>
-              <p>Create some notes to see the knowledge graph</p>
+              <p>{selectedType === 'all' 
+                ? "Create some notes to see the knowledge graph" 
+                : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
+              </p>
             </div>
           {/if}
         </div>
