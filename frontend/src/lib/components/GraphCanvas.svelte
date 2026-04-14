@@ -174,6 +174,11 @@
       return;
     }
     
+    // Reset transform when starting new simulation
+    transform.x = 0;
+    transform.y = 0;
+    transform.k = 1;
+    
     console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
     
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));

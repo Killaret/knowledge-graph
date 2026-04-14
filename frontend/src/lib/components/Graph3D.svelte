@@ -111,6 +111,14 @@
 
       objectManager = new ObjectManager(scene);
       
+      // Export objects for debugging
+      if (browser) {
+        (window as any).scene = scene;
+        (window as any).camera = camera;
+        (window as any).controls = controls;
+        (window as any).simulation = simulation;
+      }
+      
       // Animation loop
       let frameCount = 0;
       function animate() {
@@ -188,14 +196,20 @@
       }
     }, 5000);
     
+    // Zoom timeout for delayed auto-zoom
+    let zoomTimeout: any;
+    
     simulation.on('end', () => {
       console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
-      clearTimeout(loadingTimeout); // Отменяем таймаут
-      if (simulation && camera && controls) {
-        console.log('[Graph3D] Calling autoZoomToFit...');
-        autoZoomToFit(simulation.nodes(), camera, controls);
-      }
+      clearTimeout(loadingTimeout);
       isLoading = false;
+      clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(() => {
+        if (simulation && camera && controls) {
+          console.log('[Graph3D] Calling autoZoomToFit...');
+          autoZoomToFit(simulation.nodes(), camera, controls);
+        }
+      }, 300);
     });
     
     simulation.on('tick', () => {
