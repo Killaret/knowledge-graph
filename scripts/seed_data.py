@@ -128,8 +128,8 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
     return {
         "title": title,
         "content": content,
-        "type": type_mapping.get(category, "star"),   # <-- основное изменение
         "metadata": {
+            "type": type_mapping.get(category, "star"),  # <-- type в metadata!
             "category": category,
             "word_count": len(content.split())
         }
@@ -302,7 +302,7 @@ def create_links_within_category(api: APIClient, ids_map: Dict[str, List[str]]) 
     print(f"   Создано {total_links} внутрикатегорийных связей.")
 
 # FIXED: Добавлено использование link_type="custom" для части случайных связей
-def create_random_links(api: APIClient, all_ids: List[str], count: int = 75) -> None:
+def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> None:
     """Создаёт случайные связи для увеличения связности графа."""
     print(f"\n🎲 Создание {count} случайных связей...")
     created = 0
