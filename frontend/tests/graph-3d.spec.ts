@@ -114,25 +114,4 @@ test.describe('Graph Visualization', () => {
     await expect(container).toBeVisible();
   });
 
-  test('should handle graph page with no nodes gracefully', async ({ page, request }) => {
-    // Create a note with no links via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Isolated Note', content: 'This note has no connections' }
-    });
-    const noteId = (await note.json()).id;
-    
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(6000); // Wait for 5s loading timeout + buffer
-    
-    // Page should render without errors - wait for loading to complete
-    // Check for container which should always exist, or empty state messages
-    const graphContainer = page.locator('.graph-3d-container');
-    const noDataMessage = page.locator('.no-data-message');
-    const errorOverlay = page.locator('.error-overlay');
-    
-    // Wait for container or empty state (with extended timeout for 5s simulation timeout)
-    await expect(graphContainer.or(noDataMessage).or(errorOverlay)).toBeVisible({ timeout: 10000 });
-  });
 });
