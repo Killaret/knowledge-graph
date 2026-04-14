@@ -167,8 +167,21 @@
     simulation = createSimulation(data, objectManager);
     
     console.log('[Graph3D] Simulation created, setting up event handlers...');
+    
+    // Резервный таймаут - принудительно выключаем загрузку через 5 секунд
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('[Graph3D] Loading timeout reached, forcing isLoading = false');
+        isLoading = false;
+        if (simulation && camera && controls) {
+          autoZoomToFit(simulation.nodes(), camera, controls);
+        }
+      }
+    }, 5000);
+    
     simulation.on('end', () => {
       console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
+      clearTimeout(loadingTimeout); // Отменяем таймаут
       if (simulation && camera && controls) {
         console.log('[Graph3D] Calling autoZoomToFit...');
         autoZoomToFit(simulation.nodes(), camera, controls);
@@ -178,8 +191,8 @@
     
     simulation.on('tick', () => {
       // Обновляем позиции объектов при каждом тике симуляции
-      if (objectManager) {
-        objectManager.updatePositions();
+      if (objectManager && simulation) {
+        objectManager.updatePositions(simulation.nodes());
       }
     });
   }

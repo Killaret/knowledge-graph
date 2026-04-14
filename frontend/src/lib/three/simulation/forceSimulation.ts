@@ -34,6 +34,7 @@ export function createSimulation(
     )
     .force('charge', forceManyBody().strength(-200).distanceMax(50))
     .force('center', forceCenter(0, 0, 0))
+    .alphaDecay(0.02) // Добавляем затухание чтобы симуляция остановилась естественно
     .on('tick', () => {
       objectManager.updatePositions(nodes);
       objectManager.updateLinks(links);

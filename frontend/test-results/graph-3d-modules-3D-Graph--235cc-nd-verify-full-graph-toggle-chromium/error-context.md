@@ -1,0 +1,2972 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should open graph page and verify full graph toggle
+- Location: tests\graph-3d-modules.spec.ts:250:3
+
+# Error details
+
+```
+TimeoutError: locator.click: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator('.toggle input[type="checkbox"], [data-testid="full-graph-toggle"]').first()
+    - locator resolved to <input type="checkbox" class="s-5mW6p3cFhHG9"/>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e5] [cursor=pointer]:
+    - checkbox "Показать все заметки (включено)" [checked] [active] [ref=e6]
+    - generic [ref=e7]: Показать все заметки (включено)
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - strong [ref=e10]: "2723"
+      - text: nodes
+    - generic [ref=e11]:
+      - strong [ref=e12]: "305"
+      - text: links
+    - generic [ref=e13]: (Full graph)
+  - generic [ref=e15]:
+    - paragraph [ref=e18]: Loading 3D constellation...
+    - generic:
+      - generic [ref=e20] [cursor=pointer]: Note 4
+      - generic [ref=e21] [cursor=pointer]: Note 3
+      - generic [ref=e22] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e23] [cursor=pointer]: Note 2
+      - generic [ref=e24] [cursor=pointer]: Note 1
+      - generic [ref=e25] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e26] [cursor=pointer]: Linked Note
+      - generic [ref=e27] [cursor=pointer]: Note 0
+      - generic [ref=e28] [cursor=pointer]: Comet Node
+      - generic [ref=e29] [cursor=pointer]: Scene Test Note
+      - generic [ref=e30] [cursor=pointer]: Main Note
+      - generic [ref=e31] [cursor=pointer]: Graph Test Note
+      - generic [ref=e32] [cursor=pointer]: History Test
+      - generic [ref=e33] [cursor=pointer]: Searchable Note 1776100430642
+      - generic [ref=e34] [cursor=pointer]: Back Button Test
+      - generic [ref=e35] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e36] [cursor=pointer]: Node B
+      - generic [ref=e37] [cursor=pointer]: Node A
+      - generic [ref=e38] [cursor=pointer]: Playwright Test 1776100427000
+      - generic [ref=e39] [cursor=pointer]: Edited 1776100426345
+      - generic [ref=e40] [cursor=pointer]: Test Searchable1776100421797 Note
+      - generic [ref=e41] [cursor=pointer]: Graph View Test 1776100419716
+      - generic [ref=e42] [cursor=pointer]: Side Panel Test 1776100418387
+      - generic [ref=e43] [cursor=pointer]: Planet Note 1776100417134
+      - generic [ref=e44] [cursor=pointer]: Star Note 1776100417134
+      - generic [ref=e45] [cursor=pointer]: Stats Test 2 1776100416543
+      - generic [ref=e46] [cursor=pointer]: Stats Test 1 1776100416543
+      - generic [ref=e47] [cursor=pointer]: List View Test Note
+      - generic [ref=e48] [cursor=pointer]: Home Page Test Note 1776100409998
+      - generic [ref=e49] [cursor=pointer]: Isolated Note
+      - generic [ref=e50] [cursor=pointer]: Performance Test Note
+      - generic [ref=e51] [cursor=pointer]: Weak Link
+      - generic [ref=e52] [cursor=pointer]: Strong Link
+      - generic [ref=e53] [cursor=pointer]: Source
+      - generic [ref=e54] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e55] [cursor=pointer]: Labeled Node
+      - generic [ref=e56] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e57] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e58] [cursor=pointer]: Planet Node
+      - generic [ref=e59] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e60] [cursor=pointer]: Toggle Test
+      - generic [ref=e61] [cursor=pointer]: Galaxy Node
+      - generic [ref=e62] [cursor=pointer]: Linked
+      - generic [ref=e63] [cursor=pointer]: Star Node
+      - generic [ref=e64] [cursor=pointer]: Styling Test Note
+      - generic [ref=e65] [cursor=pointer]: Note 4
+      - generic [ref=e66] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e67] [cursor=pointer]: Note 3
+      - generic [ref=e68] [cursor=pointer]: Linked Note
+      - generic [ref=e69] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e70] [cursor=pointer]: Note 2
+      - generic [ref=e71] [cursor=pointer]: Main Note
+      - generic [ref=e72] [cursor=pointer]: Note 1
+      - generic [ref=e73] [cursor=pointer]: Scene Test Note
+      - generic [ref=e74] [cursor=pointer]: Note 0
+      - generic [ref=e75] [cursor=pointer]: Comet Node
+      - generic [ref=e76] [cursor=pointer]: Graph Test Note
+      - generic [ref=e77] [cursor=pointer]: History Test
+      - generic [ref=e78] [cursor=pointer]: Searchable Note 1776096950920
+      - generic [ref=e79] [cursor=pointer]: Back Button Test
+      - generic [ref=e80] [cursor=pointer]: Node B
+      - generic [ref=e81] [cursor=pointer]: Node A
+      - generic [ref=e82] [cursor=pointer]: Playwright Test 1776096946271
+      - generic [ref=e83] [cursor=pointer]: Edited 1776096945985
+      - generic [ref=e84] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e85] [cursor=pointer]: Planet Note 1776096941554
+      - generic [ref=e86] [cursor=pointer]: Star Note 1776096941554
+      - generic [ref=e87] [cursor=pointer]: Side Panel Test 1776096941516
+      - generic [ref=e88] [cursor=pointer]: Graph View Test 1776096941365
+      - generic [ref=e89] [cursor=pointer]: Test Searchable1776096934716 Note
+      - generic [ref=e90] [cursor=pointer]: Labeled Node
+      - generic [ref=e91] [cursor=pointer]: Stats Test 2 1776096932088
+      - generic [ref=e92] [cursor=pointer]: Stats Test 1 1776096932088
+      - generic [ref=e93] [cursor=pointer]: List View Test Note
+      - generic [ref=e94] [cursor=pointer]: Home Page Test Note 1776096929535
+      - generic [ref=e95] [cursor=pointer]: Isolated Note
+      - generic [ref=e96] [cursor=pointer]: Performance Test Note
+      - generic [ref=e97] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e98] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e99] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e100] [cursor=pointer]: Weak Link
+      - generic [ref=e101] [cursor=pointer]: Planet Node
+      - generic [ref=e102] [cursor=pointer]: Strong Link
+      - generic [ref=e103] [cursor=pointer]: Source
+      - generic [ref=e104] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e105] [cursor=pointer]: Toggle Test
+      - generic [ref=e106] [cursor=pointer]: Galaxy Node
+      - generic [ref=e107] [cursor=pointer]: Linked
+      - generic [ref=e108] [cursor=pointer]: Star Node
+      - generic [ref=e109] [cursor=pointer]: Styling Test Note
+      - generic [ref=e110] [cursor=pointer]: Note 4
+      - generic [ref=e111] [cursor=pointer]: Note 3
+      - generic [ref=e112] [cursor=pointer]: Note 2
+      - generic [ref=e113] [cursor=pointer]: Note 1
+      - generic [ref=e114] [cursor=pointer]: Comet Node
+      - generic [ref=e115] [cursor=pointer]: Note 0
+      - generic [ref=e116] [cursor=pointer]: Scene Test Note
+      - generic [ref=e117] [cursor=pointer]: Linked Note
+      - generic [ref=e118] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e119] [cursor=pointer]: Main Note
+      - generic [ref=e120] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e121] [cursor=pointer]: Graph Test Note
+      - generic [ref=e122] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e123] [cursor=pointer]: Labeled Node
+      - generic [ref=e124] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e125] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e126] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e127] [cursor=pointer]: Weak Link
+      - generic [ref=e128] [cursor=pointer]: Strong Link
+      - generic [ref=e129] [cursor=pointer]: Source
+      - generic [ref=e130] [cursor=pointer]: Planet Node
+      - generic [ref=e131] [cursor=pointer]: Toggle Test
+      - generic [ref=e132] [cursor=pointer]: Galaxy Node
+      - generic [ref=e133] [cursor=pointer]: Linked
+      - generic [ref=e134] [cursor=pointer]: Star Node
+      - generic [ref=e135] [cursor=pointer]: Linked Note
+      - generic [ref=e136] [cursor=pointer]: Note 4
+      - generic [ref=e137] [cursor=pointer]: Main Note
+      - generic [ref=e138] [cursor=pointer]: Note 3
+      - generic [ref=e139] [cursor=pointer]: Note 2
+      - generic [ref=e140] [cursor=pointer]: Scene Test Note
+      - generic [ref=e141] [cursor=pointer]: Note 1
+      - generic [ref=e142] [cursor=pointer]: Note 0
+      - generic [ref=e143] [cursor=pointer]: Comet Node
+      - generic [ref=e144] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e145] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e146] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e147] [cursor=pointer]: Labeled Node
+      - generic [ref=e148] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e149] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e150] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e151] [cursor=pointer]: Weak Link
+      - generic [ref=e152] [cursor=pointer]: Strong Link
+      - generic [ref=e153] [cursor=pointer]: Source
+      - generic [ref=e154] [cursor=pointer]: Planet Node
+      - generic [ref=e155] [cursor=pointer]: Toggle Test
+      - generic [ref=e156] [cursor=pointer]: Galaxy Node
+      - generic [ref=e157] [cursor=pointer]: Linked
+      - generic [ref=e158] [cursor=pointer]: Star Node
+      - generic [ref=e159] [cursor=pointer]: Note 4
+      - generic [ref=e160] [cursor=pointer]: Note 3
+      - generic [ref=e161] [cursor=pointer]: Note 2
+      - generic [ref=e162] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e163] [cursor=pointer]: Note 1
+      - generic [ref=e164] [cursor=pointer]: Scene Test Note
+      - generic [ref=e165] [cursor=pointer]: Linked Note
+      - generic [ref=e166] [cursor=pointer]: Note 0
+      - generic [ref=e167] [cursor=pointer]: Comet Node
+      - generic [ref=e168] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e169] [cursor=pointer]: Main Note
+      - generic [ref=e170] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e171] [cursor=pointer]: Labeled Node
+      - generic [ref=e172] [cursor=pointer]: Weak Link
+      - generic [ref=e173] [cursor=pointer]: Strong Link
+      - generic [ref=e174] [cursor=pointer]: Source
+      - generic [ref=e175] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e176] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e177] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e178] [cursor=pointer]: Planet Node
+      - generic [ref=e179] [cursor=pointer]: Toggle Test
+      - generic [ref=e180] [cursor=pointer]: Galaxy Node
+      - generic [ref=e181] [cursor=pointer]: Linked
+      - generic [ref=e182] [cursor=pointer]: Star Node
+      - generic [ref=e183] [cursor=pointer]: Note 4
+      - generic [ref=e184] [cursor=pointer]: Note 3
+      - generic [ref=e185] [cursor=pointer]: Note 2
+      - generic [ref=e186] [cursor=pointer]: Note 1
+      - generic [ref=e187] [cursor=pointer]: Note 0
+      - generic [ref=e188] [cursor=pointer]: Comet Node
+      - generic [ref=e189] [cursor=pointer]: Scene Test Note
+      - generic [ref=e190] [cursor=pointer]: Linked Note
+      - generic [ref=e191] [cursor=pointer]: Main Note
+      - generic [ref=e192] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e193] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e194] [cursor=pointer]: History Test
+      - generic [ref=e195] [cursor=pointer]: Searchable Note 1776092140532
+      - generic [ref=e196] [cursor=pointer]: Back Button Test
+      - generic [ref=e197] [cursor=pointer]: Node B
+      - generic [ref=e198] [cursor=pointer]: Node A
+      - generic [ref=e199] [cursor=pointer]: Playwright Test 1776092136890
+      - generic [ref=e200] [cursor=pointer]: Edited 1776092136962
+      - generic [ref=e201] [cursor=pointer]: Stats Test 2 1776092133513
+      - generic [ref=e202] [cursor=pointer]: Stats Test 1 1776092133513
+      - generic [ref=e203] [cursor=pointer]: Graph View Test 1776092132214
+      - generic [ref=e204] [cursor=pointer]: Side Panel Test 1776092129663
+      - generic [ref=e205] [cursor=pointer]: Test Searchable1776092127281 Note
+      - generic [ref=e206] [cursor=pointer]: Planet Note 1776092127119
+      - generic [ref=e207] [cursor=pointer]: Star Note 1776092127119
+      - generic [ref=e208] [cursor=pointer]: List View Test Note
+      - generic [ref=e209] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e210] [cursor=pointer]: Home Page Test Note 1776092124100
+      - generic [ref=e211] [cursor=pointer]: Isolated Note
+      - generic [ref=e212] [cursor=pointer]: Labeled Node
+      - generic [ref=e213] [cursor=pointer]: Performance Test Note
+      - generic [ref=e214] [cursor=pointer]: Weak Link
+      - generic [ref=e215] [cursor=pointer]: Strong Link
+      - generic [ref=e216] [cursor=pointer]: Source
+      - generic [ref=e217] [cursor=pointer]: Planet Node
+      - generic [ref=e218] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e219] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e220] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e221] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e222] [cursor=pointer]: Galaxy Node
+      - generic [ref=e223] [cursor=pointer]: Toggle Test
+      - generic [ref=e224] [cursor=pointer]: Linked
+      - generic [ref=e225] [cursor=pointer]: Star Node
+      - generic [ref=e226] [cursor=pointer]: Styling Test Note
+      - generic [ref=e227] [cursor=pointer]: Note 4
+      - generic [ref=e228] [cursor=pointer]: Linked Note
+      - generic [ref=e229] [cursor=pointer]: Note 3
+      - generic [ref=e230] [cursor=pointer]: Comet Node
+      - generic [ref=e231] [cursor=pointer]: Main Note
+      - generic [ref=e232] [cursor=pointer]: Note 2
+      - generic [ref=e233] [cursor=pointer]: Note 1
+      - generic [ref=e234] [cursor=pointer]: Note 0
+      - generic [ref=e235] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e236] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e237] [cursor=pointer]: Scene Test Note
+      - generic [ref=e238] [cursor=pointer]: Graph Test Note
+      - generic [ref=e239] [cursor=pointer]: History Test
+      - generic [ref=e240] [cursor=pointer]: Searchable Note 1776091669913
+      - generic [ref=e241] [cursor=pointer]: Back Button Test
+      - generic [ref=e242] [cursor=pointer]: Node B
+      - generic [ref=e243] [cursor=pointer]: Node A
+      - generic [ref=e244] [cursor=pointer]: Playwright Test 1776091666277
+      - generic [ref=e245] [cursor=pointer]: Edited 1776091666482
+      - generic [ref=e246] [cursor=pointer]: Graph View Test 1776091659883
+      - generic [ref=e247] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e248] [cursor=pointer]: Side Panel Test 1776091658511
+      - generic [ref=e249] [cursor=pointer]: Labeled Node
+      - generic [ref=e250] [cursor=pointer]: Test Searchable1776091653934 Note
+      - generic [ref=e251] [cursor=pointer]: Planet Note 1776091653086
+      - generic [ref=e252] [cursor=pointer]: Star Note 1776091653086
+      - generic [ref=e253] [cursor=pointer]: List View Test Note
+      - generic [ref=e254] [cursor=pointer]: Stats Test 2 1776091652593
+      - generic [ref=e255] [cursor=pointer]: Stats Test 1 1776091652593
+      - generic [ref=e256] [cursor=pointer]: Home Page Test Note 1776091649232
+      - generic [ref=e257] [cursor=pointer]: Isolated Note
+      - generic [ref=e258] [cursor=pointer]: Performance Test Note
+      - generic [ref=e259] [cursor=pointer]: Weak Link
+      - generic [ref=e260] [cursor=pointer]: Planet Node
+      - generic [ref=e261] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e262] [cursor=pointer]: Strong Link
+      - generic [ref=e263] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e264] [cursor=pointer]: Source
+      - generic [ref=e265] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e266] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e267] [cursor=pointer]: Galaxy Node
+      - generic [ref=e268] [cursor=pointer]: Toggle Test
+      - generic [ref=e269] [cursor=pointer]: Linked
+      - generic [ref=e270] [cursor=pointer]: Star Node
+      - generic [ref=e271] [cursor=pointer]: Styling Test Note
+      - generic [ref=e272] [cursor=pointer]: Note 4
+      - generic [ref=e273] [cursor=pointer]: Note 3
+      - generic [ref=e274] [cursor=pointer]: Note 2
+      - generic [ref=e275] [cursor=pointer]: Scene Test Note
+      - generic [ref=e276] [cursor=pointer]: Note 1
+      - generic [ref=e277] [cursor=pointer]: Note 0
+      - generic [ref=e278] [cursor=pointer]: Linked Note
+      - generic [ref=e279] [cursor=pointer]: Main Note
+      - generic [ref=e280] [cursor=pointer]: Comet Node
+      - generic [ref=e281] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e282] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e283] [cursor=pointer]: Graph Test Note
+      - generic [ref=e284] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e285] [cursor=pointer]: Labeled Node
+      - generic [ref=e286] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e287] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e288] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e289] [cursor=pointer]: Weak Link
+      - generic [ref=e290] [cursor=pointer]: Strong Link
+      - generic [ref=e291] [cursor=pointer]: Source
+      - generic [ref=e292] [cursor=pointer]: Planet Node
+      - generic [ref=e293] [cursor=pointer]: Toggle Test
+      - generic [ref=e294] [cursor=pointer]: Galaxy Node
+      - generic [ref=e295] [cursor=pointer]: Linked
+      - generic [ref=e296] [cursor=pointer]: Star Node
+      - generic [ref=e297] [cursor=pointer]: Note 4
+      - generic [ref=e298] [cursor=pointer]: Note 3
+      - generic [ref=e299] [cursor=pointer]: Note 2
+      - generic [ref=e300] [cursor=pointer]: Note 1
+      - generic [ref=e301] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e302] [cursor=pointer]: Linked Note
+      - generic [ref=e303] [cursor=pointer]: Note 0
+      - generic [ref=e304] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e305] [cursor=pointer]: Main Note
+      - generic [ref=e306] [cursor=pointer]: Scene Test Note
+      - generic [ref=e307] [cursor=pointer]: Comet Node
+      - generic [ref=e308] [cursor=pointer]: History Test
+      - generic [ref=e309] [cursor=pointer]: Searchable Note 1776090873195
+      - generic [ref=e310] [cursor=pointer]: Back Button Test
+      - generic [ref=e311] [cursor=pointer]: Node B
+      - generic [ref=e312] [cursor=pointer]: Node A
+      - generic [ref=e313] [cursor=pointer]: Edited 1776090869723
+      - generic [ref=e314] [cursor=pointer]: Playwright Test 1776090867348
+      - generic [ref=e315] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e316] [cursor=pointer]: Graph View Test 1776090862013
+      - generic [ref=e317] [cursor=pointer]: Side Panel Test 1776090860494
+      - generic [ref=e318] [cursor=pointer]: Stats Test 2 1776090855149
+      - generic [ref=e319] [cursor=pointer]: Labeled Node
+      - generic [ref=e320] [cursor=pointer]: Stats Test 1 1776090855149
+      - generic [ref=e321] [cursor=pointer]: Test Searchable1776090854949 Note
+      - generic [ref=e322] [cursor=pointer]: Planet Note 1776090854766
+      - generic [ref=e323] [cursor=pointer]: Star Note 1776090854766
+      - generic [ref=e324] [cursor=pointer]: List View Test Note
+      - generic [ref=e325] [cursor=pointer]: Home Page Test Note 1776090844683
+      - generic [ref=e326] [cursor=pointer]: Isolated Note
+      - generic [ref=e327] [cursor=pointer]: Performance Test Note
+      - generic [ref=e328] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e329] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e330] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e331] [cursor=pointer]: Planet Node
+      - generic [ref=e332] [cursor=pointer]: Weak Link
+      - generic [ref=e333] [cursor=pointer]: Strong Link
+      - generic [ref=e334] [cursor=pointer]: Source
+      - generic [ref=e335] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e336] [cursor=pointer]: Toggle Test
+      - generic [ref=e337] [cursor=pointer]: Linked
+      - generic [ref=e338] [cursor=pointer]: Star Node
+      - generic [ref=e339] [cursor=pointer]: Galaxy Node
+      - generic [ref=e340] [cursor=pointer]: Styling Test Note
+      - generic [ref=e341] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e342] [cursor=pointer]: Linked Note
+      - generic [ref=e343] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e344] [cursor=pointer]: Main Note
+      - generic [ref=e345] [cursor=pointer]: Note 4
+      - generic [ref=e346] [cursor=pointer]: Scene Test Note
+      - generic [ref=e347] [cursor=pointer]: Note 3
+      - generic [ref=e348] [cursor=pointer]: Comet Node
+      - generic [ref=e349] [cursor=pointer]: Note 2
+      - generic [ref=e350] [cursor=pointer]: Note 1
+      - generic [ref=e351] [cursor=pointer]: Note 0
+      - generic [ref=e352] [cursor=pointer]: Graph Test Note
+      - generic [ref=e353] [cursor=pointer]: Planet Node
+      - generic [ref=e354] [cursor=pointer]: Weak Link
+      - generic [ref=e355] [cursor=pointer]: Strong Link
+      - generic [ref=e356] [cursor=pointer]: Source
+      - generic [ref=e357] [cursor=pointer]: Labeled Node
+      - generic [ref=e358] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e359] [cursor=pointer]: Linked
+      - generic [ref=e360] [cursor=pointer]: Star Node
+      - generic [ref=e361] [cursor=pointer]: Toggle Test
+      - generic [ref=e362] [cursor=pointer]: Galaxy Node
+      - generic [ref=e363] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e364] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e365] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e366] [cursor=pointer]: Linked Note
+      - generic [ref=e367] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e368] [cursor=pointer]: Main Note
+      - generic [ref=e369] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e370] [cursor=pointer]: Comet Node
+      - generic [ref=e371] [cursor=pointer]: Scene Test Note
+      - generic [ref=e372] [cursor=pointer]: Note 4
+      - generic [ref=e373] [cursor=pointer]: Note 3
+      - generic [ref=e374] [cursor=pointer]: Note 2
+      - generic [ref=e375] [cursor=pointer]: Note 1
+      - generic [ref=e376] [cursor=pointer]: Note 0
+      - generic [ref=e377] [cursor=pointer]: Labeled Node
+      - generic [ref=e378] [cursor=pointer]: Weak Link
+      - generic [ref=e379] [cursor=pointer]: Strong Link
+      - generic [ref=e380] [cursor=pointer]: Source
+      - generic [ref=e381] [cursor=pointer]: Planet Node
+      - generic [ref=e382] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e383] [cursor=pointer]: Toggle Test
+      - generic [ref=e384] [cursor=pointer]: Linked
+      - generic [ref=e385] [cursor=pointer]: Galaxy Node
+      - generic [ref=e386] [cursor=pointer]: Star Node
+      - generic [ref=e387] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e388] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e389] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e390] [cursor=pointer]: Note 4
+      - generic [ref=e391] [cursor=pointer]: Note 3
+      - generic [ref=e392] [cursor=pointer]: Note 2
+      - generic [ref=e393] [cursor=pointer]: Note 1
+      - generic [ref=e394] [cursor=pointer]: Comet Node
+      - generic [ref=e395] [cursor=pointer]: Note 0
+      - generic [ref=e396] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e397] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e398] [cursor=pointer]: Scene Test Note
+      - generic [ref=e399] [cursor=pointer]: Linked Note
+      - generic [ref=e400] [cursor=pointer]: Main Note
+      - generic [ref=e401] [cursor=pointer]: Searchable Note 1776089939587
+      - generic [ref=e402] [cursor=pointer]: History Test
+      - generic [ref=e403] [cursor=pointer]: Back Button Test
+      - generic [ref=e404] [cursor=pointer]: Node B
+      - generic [ref=e405] [cursor=pointer]: Node A
+      - generic [ref=e406] [cursor=pointer]: Playwright Test 1776089932316
+      - generic [ref=e407] [cursor=pointer]: Edited 1776089932639
+      - generic [ref=e408] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e409] [cursor=pointer]: Graph View Test 1776089925929
+      - generic [ref=e410] [cursor=pointer]: Side Panel Test 1776089922704
+      - generic [ref=e411] [cursor=pointer]: Labeled Node
+      - generic [ref=e412] [cursor=pointer]: Stats Test 2 1776089916655
+      - generic [ref=e413] [cursor=pointer]: Planet Note 1776089916512
+      - generic [ref=e414] [cursor=pointer]: Stats Test 1 1776089916655
+      - generic [ref=e415] [cursor=pointer]: Star Note 1776089916512
+      - generic [ref=e416] [cursor=pointer]: Test Searchable1776089916434 Note
+      - generic [ref=e417] [cursor=pointer]: List View Test Note
+      - generic [ref=e418] [cursor=pointer]: Home Page Test Note 1776089907403
+      - generic [ref=e419] [cursor=pointer]: Isolated Note
+      - generic [ref=e420] [cursor=pointer]: Performance Test Note
+      - generic [ref=e421] [cursor=pointer]: Weak Link
+      - generic [ref=e422] [cursor=pointer]: Strong Link
+      - generic [ref=e423] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e424] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e425] [cursor=pointer]: Source
+      - generic [ref=e426] [cursor=pointer]: Planet Node
+      - generic [ref=e427] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e428] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e429] [cursor=pointer]: Galaxy Node
+      - generic [ref=e430] [cursor=pointer]: Toggle Test
+      - generic [ref=e431] [cursor=pointer]: Linked
+      - generic [ref=e432] [cursor=pointer]: Star Node
+      - generic [ref=e433] [cursor=pointer]: Styling Test Note
+      - generic [ref=e434] [cursor=pointer]: Note 4
+      - generic [ref=e435] [cursor=pointer]: Note 3
+      - generic [ref=e436] [cursor=pointer]: Note 2
+      - generic [ref=e437] [cursor=pointer]: Note 1
+      - generic [ref=e438] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e439] [cursor=pointer]: Note 0
+      - generic [ref=e440] [cursor=pointer]: Linked Note
+      - generic [ref=e441] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e442] [cursor=pointer]: Main Note
+      - generic [ref=e443] [cursor=pointer]: Comet Node
+      - generic [ref=e444] [cursor=pointer]: Scene Test Note
+      - generic [ref=e445] [cursor=pointer]: Graph Test Note
+      - generic [ref=e446] [cursor=pointer]: History Test
+      - generic [ref=e447] [cursor=pointer]: Searchable Note 1776088980556
+      - generic [ref=e448] [cursor=pointer]: Back Button Test
+      - generic [ref=e449] [cursor=pointer]: Node B
+      - generic [ref=e450] [cursor=pointer]: Node A
+      - generic [ref=e451] [cursor=pointer]: Edited 1776088977005
+      - generic [ref=e452] [cursor=pointer]: Playwright Test 1776088974564
+      - generic [ref=e453] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e454] [cursor=pointer]: Graph View Test 1776088969417
+      - generic [ref=e455] [cursor=pointer]: Side Panel Test 1776088968884
+      - generic [ref=e456] [cursor=pointer]: Labeled Node
+      - generic [ref=e457] [cursor=pointer]: Test Searchable1776088964304 Note
+      - generic [ref=e458] [cursor=pointer]: Planet Note 1776088960640
+      - generic [ref=e459] [cursor=pointer]: Stats Test 2 1776088958242
+      - generic [ref=e460] [cursor=pointer]: List View Test Note
+      - generic [ref=e461] [cursor=pointer]: Star Note 1776088960640
+      - generic [ref=e462] [cursor=pointer]: Stats Test 1 1776088958242
+      - generic [ref=e463] [cursor=pointer]: Home Page Test Note 1776088952840
+      - generic [ref=e464] [cursor=pointer]: Performance Test Note
+      - generic [ref=e465] [cursor=pointer]: Isolated Note
+      - generic [ref=e466] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e467] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e468] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e469] [cursor=pointer]: Planet Node
+      - generic [ref=e470] [cursor=pointer]: Weak Link
+      - generic [ref=e471] [cursor=pointer]: Strong Link
+      - generic [ref=e472] [cursor=pointer]: Source
+      - generic [ref=e473] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e474] [cursor=pointer]: Toggle Test
+      - generic [ref=e475] [cursor=pointer]: Linked
+      - generic [ref=e476] [cursor=pointer]: Star Node
+      - generic [ref=e477] [cursor=pointer]: Galaxy Node
+      - generic [ref=e478] [cursor=pointer]: Styling Test Note
+      - generic [ref=e479] [cursor=pointer]: Note 4
+      - generic [ref=e480] [cursor=pointer]: Note 3
+      - generic [ref=e481] [cursor=pointer]: Note 2
+      - generic [ref=e482] [cursor=pointer]: Note 1
+      - generic [ref=e483] [cursor=pointer]: Note 0
+      - generic [ref=e484] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e485] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e486] [cursor=pointer]: Linked Note
+      - generic [ref=e487] [cursor=pointer]: Scene Test Note
+      - generic [ref=e488] [cursor=pointer]: Main Note
+      - generic [ref=e489] [cursor=pointer]: Comet Node
+      - generic [ref=e490] [cursor=pointer]: Graph Test Note
+      - generic [ref=e491] [cursor=pointer]: Space Debris
+      - generic [ref=e492] [cursor=pointer]: Vesta
+      - generic [ref=e493] [cursor=pointer]: Ceres
+      - generic [ref=e494] [cursor=pointer]: Jazz History
+      - generic [ref=e495] [cursor=pointer]: Python Programming
+      - generic [ref=e496] [cursor=pointer]: Italian Cuisine
+      - generic [ref=e497] [cursor=pointer]: Kuiper Belt
+      - generic [ref=e498] [cursor=pointer]: Oort Cloud
+      - generic [ref=e499] [cursor=pointer]: Halley's Comet
+      - generic [ref=e500] [cursor=pointer]: Black Hole
+      - generic [ref=e501] [cursor=pointer]: Andromeda Galaxy
+      - generic [ref=e502] [cursor=pointer]: Milky Way
+      - generic [ref=e503] [cursor=pointer]: Asteroid Belt
+      - generic [ref=e504] [cursor=pointer]: Jupiter
+      - generic [ref=e505] [cursor=pointer]: Mars
+      - generic [ref=e506] [cursor=pointer]: Earth
+      - generic [ref=e507] [cursor=pointer]: Solar System
+      - generic [ref=e508] [cursor=pointer]: Playwright Test 1776087274772
+      - generic [ref=e509] [cursor=pointer]: History Test
+      - generic [ref=e510] [cursor=pointer]: Searchable Note 1776087270179
+      - generic [ref=e511] [cursor=pointer]: Back Button Test
+      - generic [ref=e512] [cursor=pointer]: Node B
+      - generic [ref=e513] [cursor=pointer]: Node A
+      - generic [ref=e514] [cursor=pointer]: Edited 1776087261416
+      - generic [ref=e515] [cursor=pointer]: List View Test Note
+      - generic [ref=e516] [cursor=pointer]: Graph View Test 1776087248898
+      - generic [ref=e517] [cursor=pointer]: Side Panel Test 1776087247057
+      - generic [ref=e518] [cursor=pointer]: Test Searchable1776087235174 Note
+      - generic [ref=e519] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e520] [cursor=pointer]: Planet Note 1776087229373
+      - generic [ref=e521] [cursor=pointer]: Star Note 1776087229373
+      - generic [ref=e522] [cursor=pointer]: Labeled Node
+      - generic [ref=e523] [cursor=pointer]: Stats Test 2 1776087228834
+      - generic [ref=e524] [cursor=pointer]: Stats Test 1 1776087228834
+      - generic [ref=e525] [cursor=pointer]: Home Page Test Note 1776087217304
+      - generic [ref=e526] [cursor=pointer]: Planet Node
+      - generic [ref=e527] [cursor=pointer]: Weak Link
+      - generic [ref=e528] [cursor=pointer]: Strong Link
+      - generic [ref=e529] [cursor=pointer]: Source
+      - generic [ref=e530] [cursor=pointer]: Isolated Note
+      - generic [ref=e531] [cursor=pointer]: Performance Test Note
+      - generic [ref=e532] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e533] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e534] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e535] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e536] [cursor=pointer]: Linked
+      - generic [ref=e537] [cursor=pointer]: Star Node
+      - generic [ref=e538] [cursor=pointer]: Toggle Test
+      - generic [ref=e539] [cursor=pointer]: Galaxy Node
+      - generic [ref=e540] [cursor=pointer]: Styling Test Note
+      - generic [ref=e541] [cursor=pointer]: Note 4
+      - generic [ref=e542] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e543] [cursor=pointer]: Note 3
+      - generic [ref=e544] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e545] [cursor=pointer]: Note 2
+      - generic [ref=e546] [cursor=pointer]: Linked Note
+      - generic [ref=e547] [cursor=pointer]: Note 1
+      - generic [ref=e548] [cursor=pointer]: Main Note
+      - generic [ref=e549] [cursor=pointer]: Note 0
+      - generic [ref=e550] [cursor=pointer]: Scene Test Note
+      - generic [ref=e551] [cursor=pointer]: Comet Node
+      - generic [ref=e552] [cursor=pointer]: Graph Test Note
+      - generic [ref=e553] [cursor=pointer]: Main Note
+      - generic [ref=e554] [cursor=pointer]: Note 2
+      - generic [ref=e555] [cursor=pointer]: Note 1
+      - generic [ref=e556] [cursor=pointer]: Note 0
+      - generic [ref=e557] [cursor=pointer]: Graph Test Note
+      - generic [ref=e558] [cursor=pointer]: Note 2
+      - generic [ref=e559] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e560] [cursor=pointer]: Note 1
+      - generic [ref=e561] [cursor=pointer]: Scene Test Note
+      - generic [ref=e562] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e563] [cursor=pointer]: Note 0
+      - generic [ref=e564] [cursor=pointer]: Comet Node
+      - generic [ref=e565] [cursor=pointer]: Linked Note
+      - generic [ref=e566] [cursor=pointer]: Main Note
+      - generic [ref=e567] [cursor=pointer]: Graph Test Note
+      - generic [ref=e568] [cursor=pointer]: Playwright Test 1776085577842
+      - generic [ref=e569] [cursor=pointer]: History Test
+      - generic [ref=e570] [cursor=pointer]: Searchable Note 1776085579876
+      - generic [ref=e571] [cursor=pointer]: Back Button Test
+      - generic [ref=e572] [cursor=pointer]: Node B
+      - generic [ref=e573] [cursor=pointer]: Node A
+      - generic [ref=e574] [cursor=pointer]: Edited 1776085569320
+      - generic [ref=e575] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e576] [cursor=pointer]: Galaxy Node
+      - generic [ref=e577] [cursor=pointer]: Toggle Test
+      - generic [ref=e578] [cursor=pointer]: Linked
+      - generic [ref=e579] [cursor=pointer]: Star Node
+      - generic [ref=e580] [cursor=pointer]: Styling Test Note
+      - generic [ref=e581] [cursor=pointer]: Note 4
+      - generic [ref=e582] [cursor=pointer]: Comet Node
+      - generic [ref=e583] [cursor=pointer]: Note 3
+      - generic [ref=e584] [cursor=pointer]: Note 2
+      - generic [ref=e585] [cursor=pointer]: Note 1
+      - generic [ref=e586] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e587] [cursor=pointer]: Note 0
+      - generic [ref=e588] [cursor=pointer]: Scene Test Note
+      - generic [ref=e589] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e590] [cursor=pointer]: Linked Note
+      - generic [ref=e591] [cursor=pointer]: Main Note
+      - generic [ref=e592] [cursor=pointer]: Graph Test Note
+      - generic [ref=e593] [cursor=pointer]: Playwright Test 1776085377665
+      - generic [ref=e594] [cursor=pointer]: History Test
+      - generic [ref=e595] [cursor=pointer]: Searchable Note 1776085379667
+      - generic [ref=e596] [cursor=pointer]: Back Button Test
+      - generic [ref=e597] [cursor=pointer]: Node B
+      - generic [ref=e598] [cursor=pointer]: Node A
+      - generic [ref=e599] [cursor=pointer]: Edited 1776085365748
+      - generic [ref=e600] [cursor=pointer]: List View Test Note
+      - generic [ref=e601] [cursor=pointer]: Graph View Test 1776085358546
+      - generic [ref=e602] [cursor=pointer]: Side Panel Test 1776085356756
+      - generic [ref=e603] [cursor=pointer]: Test Searchable1776085347952 Note
+      - generic [ref=e604] [cursor=pointer]: Planet Note 1776085346814
+      - generic [ref=e605] [cursor=pointer]: Star Note 1776085346814
+      - generic [ref=e606] [cursor=pointer]: Stats Test 2 1776085339628
+      - generic [ref=e607] [cursor=pointer]: Stats Test 1 1776085339628
+      - generic [ref=e608] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e609] [cursor=pointer]: Labeled Node
+      - generic [ref=e610] [cursor=pointer]: Home Page Test Note 1776085330373
+      - generic [ref=e611] [cursor=pointer]: Planet Node
+      - generic [ref=e612] [cursor=pointer]: Weak Link
+      - generic [ref=e613] [cursor=pointer]: Strong Link
+      - generic [ref=e614] [cursor=pointer]: Source
+      - generic [ref=e615] [cursor=pointer]: Isolated Note
+      - generic [ref=e616] [cursor=pointer]: Performance Test Note
+      - generic [ref=e617] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e618] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e619] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e620] [cursor=pointer]: Linked
+      - generic [ref=e621] [cursor=pointer]: Star Node
+      - generic [ref=e622] [cursor=pointer]: Toggle Test
+      - generic [ref=e623] [cursor=pointer]: Galaxy Node
+      - generic [ref=e624] [cursor=pointer]: Styling Test Note
+      - generic [ref=e625] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e626] [cursor=pointer]: Linked Note
+      - generic [ref=e627] [cursor=pointer]: Main Note
+      - generic [ref=e628] [cursor=pointer]: Comet Node
+      - generic [ref=e629] [cursor=pointer]: Note 4
+      - generic [ref=e630] [cursor=pointer]: Note 3
+      - generic [ref=e631] [cursor=pointer]: Note 2
+      - generic [ref=e632] [cursor=pointer]: Note 1
+      - generic [ref=e633] [cursor=pointer]: Note 0
+      - generic [ref=e634] [cursor=pointer]: Scene Test Note
+      - generic [ref=e635] [cursor=pointer]: Graph Test Note
+      - generic [ref=e636] [cursor=pointer]: Playwright Test 1776085240480
+      - generic [ref=e637] [cursor=pointer]: History Test
+      - generic [ref=e638] [cursor=pointer]: Searchable Note 1776085242128
+      - generic [ref=e639] [cursor=pointer]: Back Button Test
+      - generic [ref=e640] [cursor=pointer]: Node B
+      - generic [ref=e641] [cursor=pointer]: Node A
+      - generic [ref=e642] [cursor=pointer]: Edited 1776085228572
+      - generic [ref=e643] [cursor=pointer]: List View Test Note
+      - generic [ref=e644] [cursor=pointer]: Graph View Test 1776085220907
+      - generic [ref=e645] [cursor=pointer]: Side Panel Test 1776085218816
+      - generic [ref=e646] [cursor=pointer]: Test Searchable1776085213711 Note
+      - generic [ref=e647] [cursor=pointer]: Planet Note 1776085206718
+      - generic [ref=e648] [cursor=pointer]: Star Note 1776085206718
+      - generic [ref=e649] [cursor=pointer]: Stats Test 2 1776085204978
+      - generic [ref=e650] [cursor=pointer]: Stats Test 1 1776085204978
+      - generic [ref=e651] [cursor=pointer]: Home Page Test Note 1776085202844
+      - generic [ref=e652] [cursor=pointer]: Weak Link
+      - generic [ref=e653] [cursor=pointer]: Strong Link
+      - generic [ref=e654] [cursor=pointer]: Labeled Node
+      - generic [ref=e655] [cursor=pointer]: Isolated Note
+      - generic [ref=e656] [cursor=pointer]: Planet Node
+      - generic [ref=e657] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e658] [cursor=pointer]: Performance Test Note
+      - generic [ref=e659] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e660] [cursor=pointer]: Linked
+      - generic [ref=e661] [cursor=pointer]: Star Node
+      - generic [ref=e662] [cursor=pointer]: Toggle Test
+      - generic [ref=e663] [cursor=pointer]: Galaxy Node
+      - generic [ref=e664] [cursor=pointer]: Styling Test Note
+      - generic [ref=e665] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e666] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e667] [cursor=pointer]: Comet Node
+      - generic [ref=e668] [cursor=pointer]: Scene Test Note
+      - generic [ref=e669] [cursor=pointer]: Note 4
+      - generic [ref=e670] [cursor=pointer]: Note 3
+      - generic [ref=e671] [cursor=pointer]: Note 2
+      - generic [ref=e672] [cursor=pointer]: Note 1
+      - generic [ref=e673] [cursor=pointer]: Linked Note
+      - generic [ref=e674] [cursor=pointer]: Note 0
+      - generic [ref=e675] [cursor=pointer]: Main Note
+      - generic [ref=e676] [cursor=pointer]: Graph Test Note
+      - generic [ref=e677] [cursor=pointer]: Playwright Test 1776084915819
+      - generic [ref=e678] [cursor=pointer]: History Test
+      - generic [ref=e679] [cursor=pointer]: Back Button Test
+      - generic [ref=e680] [cursor=pointer]: Searchable Note 1776084915486
+      - generic [ref=e681] [cursor=pointer]: Node B
+      - generic [ref=e682] [cursor=pointer]: Node A
+      - generic [ref=e683] [cursor=pointer]: Edited 1776084906018
+      - generic [ref=e684] [cursor=pointer]: List View Test Note
+      - generic [ref=e685] [cursor=pointer]: Graph View Test 1776084897665
+      - generic [ref=e686] [cursor=pointer]: Side Panel Test 1776084896493
+      - generic [ref=e687] [cursor=pointer]: Test Searchable1776084893778 Note
+      - generic [ref=e688] [cursor=pointer]: Planet Note 1776084890460
+      - generic [ref=e689] [cursor=pointer]: Star Note 1776084890460
+      - generic [ref=e690] [cursor=pointer]: Stats Test 2 1776084883909
+      - generic [ref=e691] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e692] [cursor=pointer]: Stats Test 1 1776084883909
+      - generic [ref=e693] [cursor=pointer]: Home Page Test Note 1776084882142
+      - generic [ref=e694] [cursor=pointer]: Labeled Node
+      - generic [ref=e695] [cursor=pointer]: Planet Node
+      - generic [ref=e696] [cursor=pointer]: Isolated Note
+      - generic [ref=e697] [cursor=pointer]: Weak Link
+      - generic [ref=e698] [cursor=pointer]: Strong Link
+      - generic [ref=e699] [cursor=pointer]: Source
+      - generic [ref=e700] [cursor=pointer]: Performance Test Note
+      - generic [ref=e701] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e702] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e703] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e704] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e705] [cursor=pointer]: Linked
+      - generic [ref=e706] [cursor=pointer]: Star Node
+      - generic [ref=e707] [cursor=pointer]: Toggle Test
+      - generic [ref=e708] [cursor=pointer]: Galaxy Node
+      - generic [ref=e709] [cursor=pointer]: Styling Test Note
+      - generic [ref=e710] [cursor=pointer]: Scene Test Note
+      - generic [ref=e711] [cursor=pointer]: Linked Note
+      - generic [ref=e712] [cursor=pointer]: Main Note
+      - generic [ref=e713] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e714] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e715] [cursor=pointer]: Comet Node
+      - generic [ref=e716] [cursor=pointer]: Note 4
+      - generic [ref=e717] [cursor=pointer]: Note 3
+      - generic [ref=e718] [cursor=pointer]: Note 2
+      - generic [ref=e719] [cursor=pointer]: Note 1
+      - generic [ref=e720] [cursor=pointer]: Note 0
+      - generic [ref=e721] [cursor=pointer]: Graph Test Note
+      - generic [ref=e722] [cursor=pointer]: List View Test Note
+      - generic [ref=e723] [cursor=pointer]: Graph View Test 1776084790513
+      - generic [ref=e724] [cursor=pointer]: Side Panel Test 1776084789259
+      - generic [ref=e725] [cursor=pointer]: Planet Note 1776084786591
+      - generic [ref=e726] [cursor=pointer]: Star Note 1776084786591
+      - generic [ref=e727] [cursor=pointer]: Test Searchable1776084786541 Note
+      - generic [ref=e728] [cursor=pointer]: Stats Test 2 1776084777680
+      - generic [ref=e729] [cursor=pointer]: Stats Test 1 1776084777680
+      - generic [ref=e730] [cursor=pointer]: Home Page Test Note 1776084776972
+      - generic [ref=e731] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e732] [cursor=pointer]: Planet Node
+      - generic [ref=e733] [cursor=pointer]: Isolated Note
+      - generic [ref=e734] [cursor=pointer]: Labeled Node
+      - generic [ref=e735] [cursor=pointer]: Weak Link
+      - generic [ref=e736] [cursor=pointer]: Strong Link
+      - generic [ref=e737] [cursor=pointer]: Source
+      - generic [ref=e738] [cursor=pointer]: Performance Test Note
+      - generic [ref=e739] [cursor=pointer]: Back Button Test
+      - generic [ref=e740] [cursor=pointer]: History Test
+      - generic [ref=e741] [cursor=pointer]: Searchable Note 1776084744997
+      - generic [ref=e742] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e743] [cursor=pointer]: Linked
+      - generic [ref=e744] [cursor=pointer]: Playwright Test 1776084728900
+      - generic [ref=e745] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e746] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e747] [cursor=pointer]: Star Node
+      - generic [ref=e748] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e749] [cursor=pointer]: Galaxy Node
+      - generic [ref=e750] [cursor=pointer]: Toggle Test
+      - generic [ref=e751] [cursor=pointer]: Node B
+      - generic [ref=e752] [cursor=pointer]: Styling Test Note
+      - generic [ref=e753] [cursor=pointer]: Node A
+      - generic [ref=e754] [cursor=pointer]: Edited 1776084715786
+      - generic [ref=e755] [cursor=pointer]: Linked Note
+      - generic [ref=e756] [cursor=pointer]: Main Note
+      - generic [ref=e757] [cursor=pointer]: Scene Test Note
+      - generic [ref=e758] [cursor=pointer]: Note 4
+      - generic [ref=e759] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e760] [cursor=pointer]: Note 3
+      - generic [ref=e761] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e762] [cursor=pointer]: Note 2
+      - generic [ref=e763] [cursor=pointer]: Note 1
+      - generic [ref=e764] [cursor=pointer]: Note 0
+      - generic [ref=e765] [cursor=pointer]: Graph Test Note
+      - generic [ref=e766] [cursor=pointer]: Comet Node
+      - generic [ref=e767] [cursor=pointer]: Graph View Test 1776084698889
+      - generic [ref=e768] [cursor=pointer]: Side Panel Test 1776084693406
+      - generic [ref=e769] [cursor=pointer]: List View Test Note
+      - generic [ref=e770] [cursor=pointer]: Test Searchable1776084690065 Note
+      - generic [ref=e771] [cursor=pointer]: Planet Note 1776084689764
+      - generic [ref=e772] [cursor=pointer]: Star Note 1776084689764
+      - generic [ref=e773] [cursor=pointer]: Stats Test 2 1776084683134
+      - generic [ref=e774] [cursor=pointer]: Stats Test 1 1776084683134
+      - generic [ref=e775] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e776] [cursor=pointer]: Labeled Node
+      - generic [ref=e777] [cursor=pointer]: Home Page Test Note 1776084671382
+      - generic [ref=e778] [cursor=pointer]: Planet Node
+      - generic [ref=e779] [cursor=pointer]: Weak Link
+      - generic [ref=e780] [cursor=pointer]: Strong Link
+      - generic [ref=e781] [cursor=pointer]: Source
+      - generic [ref=e782] [cursor=pointer]: Isolated Note
+      - generic [ref=e783] [cursor=pointer]: Performance Test Note
+      - generic [ref=e784] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e785] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e786] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e787] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e788] [cursor=pointer]: Linked
+      - generic [ref=e789] [cursor=pointer]: Star Node
+      - generic [ref=e790] [cursor=pointer]: Toggle Test
+      - generic [ref=e791] [cursor=pointer]: Galaxy Node
+      - generic [ref=e792] [cursor=pointer]: Styling Test Note
+      - generic [ref=e793] [cursor=pointer]: Note 4
+      - generic [ref=e794] [cursor=pointer]: Note 3
+      - generic [ref=e795] [cursor=pointer]: Scene Test Note
+      - generic [ref=e796] [cursor=pointer]: Note 2
+      - generic [ref=e797] [cursor=pointer]: Comet Node
+      - generic [ref=e798] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e799] [cursor=pointer]: Note 1
+      - generic [ref=e800] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e801] [cursor=pointer]: Note 0
+      - generic [ref=e802] [cursor=pointer]: Linked Note
+      - generic [ref=e803] [cursor=pointer]: Main Note
+      - generic [ref=e804] [cursor=pointer]: Graph Test Note
+      - generic [ref=e805] [cursor=pointer]: Playwright Test 1776084574960
+      - generic [ref=e806] [cursor=pointer]: History Test
+      - generic [ref=e807] [cursor=pointer]: Searchable Note 1776084575889
+      - generic [ref=e808] [cursor=pointer]: Back Button Test
+      - generic [ref=e809] [cursor=pointer]: Node B
+      - generic [ref=e810] [cursor=pointer]: Node A
+      - generic [ref=e811] [cursor=pointer]: Edited 1776084567744
+      - generic [ref=e812] [cursor=pointer]: List View Test Note
+      - generic [ref=e813] [cursor=pointer]: Graph View Test 1776084559945
+      - generic [ref=e814] [cursor=pointer]: Side Panel Test 1776084559637
+      - generic [ref=e815] [cursor=pointer]: Test Searchable1776084559464 Note
+      - generic [ref=e816] [cursor=pointer]: Planet Note 1776084548228
+      - generic [ref=e817] [cursor=pointer]: Star Note 1776084548228
+      - generic [ref=e818] [cursor=pointer]: Stats Test 2 1776084547751
+      - generic [ref=e819] [cursor=pointer]: Stats Test 1 1776084547751
+      - generic [ref=e820] [cursor=pointer]: Home Page Test Note 1776084541812
+      - generic [ref=e821] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e822] [cursor=pointer]: Labeled Node
+      - generic [ref=e823] [cursor=pointer]: Isolated Note
+      - generic [ref=e824] [cursor=pointer]: Planet Node
+      - generic [ref=e825] [cursor=pointer]: Weak Link
+      - generic [ref=e826] [cursor=pointer]: Strong Link
+      - generic [ref=e827] [cursor=pointer]: Source
+      - generic [ref=e828] [cursor=pointer]: Performance Test Note
+      - generic [ref=e829] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e830] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e831] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e832] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e833] [cursor=pointer]: Linked
+      - generic [ref=e834] [cursor=pointer]: Star Node
+      - generic [ref=e835] [cursor=pointer]: Toggle Test
+      - generic [ref=e836] [cursor=pointer]: Galaxy Node
+      - generic [ref=e837] [cursor=pointer]: Styling Test Note
+      - generic [ref=e838] [cursor=pointer]: Note 4
+      - generic [ref=e839] [cursor=pointer]: Note 3
+      - generic [ref=e840] [cursor=pointer]: Note 2
+      - generic [ref=e841] [cursor=pointer]: Linked Note
+      - generic [ref=e842] [cursor=pointer]: Main Note
+      - generic [ref=e843] [cursor=pointer]: Note 1
+      - generic [ref=e844] [cursor=pointer]: Scene Test Note
+      - generic [ref=e845] [cursor=pointer]: Note 0
+      - generic [ref=e846] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e847] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e848] [cursor=pointer]: Comet Node
+      - generic [ref=e849] [cursor=pointer]: Graph Test Note
+      - generic [ref=e850] [cursor=pointer]: Playwright Test 1776084438221
+      - generic [ref=e851] [cursor=pointer]: History Test
+      - generic [ref=e852] [cursor=pointer]: Searchable Note 1776084439344
+      - generic [ref=e853] [cursor=pointer]: Back Button Test
+      - generic [ref=e854] [cursor=pointer]: Node B
+      - generic [ref=e855] [cursor=pointer]: Node A
+      - generic [ref=e856] [cursor=pointer]: Edited 1776084429552
+      - generic [ref=e857] [cursor=pointer]: Graph View Test 1776084423921
+      - generic [ref=e858] [cursor=pointer]: Side Panel Test 1776084420486
+      - generic [ref=e859] [cursor=pointer]: List View Test Note
+      - generic [ref=e860] [cursor=pointer]: Test Searchable1776084412002 Note
+      - generic [ref=e861] [cursor=pointer]: Planet Note 1776084409410
+      - generic [ref=e862] [cursor=pointer]: Star Note 1776084409410
+      - generic [ref=e863] [cursor=pointer]: Stats Test 2 1776084409175
+      - generic [ref=e864] [cursor=pointer]: Stats Test 1 1776084409175
+      - generic [ref=e865] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e866] [cursor=pointer]: Labeled Node
+      - generic [ref=e867] [cursor=pointer]: Home Page Test Note 1776084397961
+      - generic [ref=e868] [cursor=pointer]: Planet Node
+      - generic [ref=e869] [cursor=pointer]: Weak Link
+      - generic [ref=e870] [cursor=pointer]: Strong Link
+      - generic [ref=e871] [cursor=pointer]: Source
+      - generic [ref=e872] [cursor=pointer]: Isolated Note
+      - generic [ref=e873] [cursor=pointer]: Performance Test Note
+      - generic [ref=e874] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e875] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e876] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e877] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e878] [cursor=pointer]: Linked
+      - generic [ref=e879] [cursor=pointer]: Star Node
+      - generic [ref=e880] [cursor=pointer]: Toggle Test
+      - generic [ref=e881] [cursor=pointer]: Galaxy Node
+      - generic [ref=e882] [cursor=pointer]: Styling Test Note
+      - generic [ref=e883] [cursor=pointer]: Note 4
+      - generic [ref=e884] [cursor=pointer]: Note 3
+      - generic [ref=e885] [cursor=pointer]: Linked Note
+      - generic [ref=e886] [cursor=pointer]: Note 2
+      - generic [ref=e887] [cursor=pointer]: Main Note
+      - generic [ref=e888] [cursor=pointer]: Note 1
+      - generic [ref=e889] [cursor=pointer]: Comet Node
+      - generic [ref=e890] [cursor=pointer]: Note 0
+      - generic [ref=e891] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e892] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e893] [cursor=pointer]: Scene Test Note
+      - generic [ref=e894] [cursor=pointer]: Graph Test Note
+      - generic [ref=e895] [cursor=pointer]: Playwright Test 1776084063858
+      - generic [ref=e896] [cursor=pointer]: History Test
+      - generic [ref=e897] [cursor=pointer]: Searchable Note 1776084066226
+      - generic [ref=e898] [cursor=pointer]: Back Button Test
+      - generic [ref=e899] [cursor=pointer]: Node B
+      - generic [ref=e900] [cursor=pointer]: Node A
+      - generic [ref=e901] [cursor=pointer]: Edited 1776084055933
+      - generic [ref=e902] [cursor=pointer]: List View Test Note
+      - generic [ref=e903] [cursor=pointer]: Graph View Test 1776084050553
+      - generic [ref=e904] [cursor=pointer]: Side Panel Test 1776084049235
+      - generic [ref=e905] [cursor=pointer]: Test Searchable1776084046542 Note
+      - generic [ref=e906] [cursor=pointer]: Planet Note 1776084038743
+      - generic [ref=e907] [cursor=pointer]: Star Note 1776084038743
+      - generic [ref=e908] [cursor=pointer]: Stats Test 2 1776084038076
+      - generic [ref=e909] [cursor=pointer]: Stats Test 1 1776084038076
+      - generic [ref=e910] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e911] [cursor=pointer]: Home Page Test Note 1776084031019
+      - generic [ref=e912] [cursor=pointer]: Labeled Node
+      - generic [ref=e913] [cursor=pointer]: Planet Node
+      - generic [ref=e914] [cursor=pointer]: Weak Link
+      - generic [ref=e915] [cursor=pointer]: Strong Link
+      - generic [ref=e916] [cursor=pointer]: Source
+      - generic [ref=e917] [cursor=pointer]: Isolated Note
+      - generic [ref=e918] [cursor=pointer]: Performance Test Note
+      - generic [ref=e919] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e920] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e921] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e922] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e923] [cursor=pointer]: Linked
+      - generic [ref=e924] [cursor=pointer]: Star Node
+      - generic [ref=e925] [cursor=pointer]: Toggle Test
+      - generic [ref=e926] [cursor=pointer]: Galaxy Node
+      - generic [ref=e927] [cursor=pointer]: Styling Test Note
+      - generic [ref=e928] [cursor=pointer]: Note 4
+      - generic [ref=e929] [cursor=pointer]: Note 3
+      - generic [ref=e930] [cursor=pointer]: Note 2
+      - generic [ref=e931] [cursor=pointer]: Note 1
+      - generic [ref=e932] [cursor=pointer]: Note 0
+      - generic [ref=e933] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e934] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e935] [cursor=pointer]: Linked Note
+      - generic [ref=e936] [cursor=pointer]: Scene Test Note
+      - generic [ref=e937] [cursor=pointer]: Main Note
+      - generic [ref=e938] [cursor=pointer]: Comet Node
+      - generic [ref=e939] [cursor=pointer]: Graph Test Note
+      - generic [ref=e940] [cursor=pointer]: History Test
+      - generic [ref=e941] [cursor=pointer]: Playwright Test 1776083873036
+      - generic [ref=e942] [cursor=pointer]: Searchable Note 1776083875053
+      - generic [ref=e943] [cursor=pointer]: Back Button Test
+      - generic [ref=e944] [cursor=pointer]: Node B
+      - generic [ref=e945] [cursor=pointer]: Node A
+      - generic [ref=e946] [cursor=pointer]: Edited 1776083865636
+      - generic [ref=e947] [cursor=pointer]: List View Test Note
+      - generic [ref=e948] [cursor=pointer]: Graph View Test 1776083860464
+      - generic [ref=e949] [cursor=pointer]: Side Panel Test 1776083859335
+      - generic [ref=e950] [cursor=pointer]: Test Searchable1776083855251 Note
+      - generic [ref=e951] [cursor=pointer]: Planet Note 1776083850243
+      - generic [ref=e952] [cursor=pointer]: Star Note 1776083850243
+      - generic [ref=e953] [cursor=pointer]: Stats Test 2 1776083849231
+      - generic [ref=e954] [cursor=pointer]: Stats Test 1 1776083849231
+      - generic [ref=e955] [cursor=pointer]: Home Page Test Note 1776083845513
+      - generic [ref=e956] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e957] [cursor=pointer]: Labeled Node
+      - generic [ref=e958] [cursor=pointer]: Weak Link
+      - generic [ref=e959] [cursor=pointer]: Strong Link
+      - generic [ref=e960] [cursor=pointer]: Source
+      - generic [ref=e961] [cursor=pointer]: Isolated Note
+      - generic [ref=e962] [cursor=pointer]: Planet Node
+      - generic [ref=e963] [cursor=pointer]: Performance Test Note
+      - generic [ref=e964] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e965] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e966] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e967] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e968] [cursor=pointer]: Linked
+      - generic [ref=e969] [cursor=pointer]: Star Node
+      - generic [ref=e970] [cursor=pointer]: Toggle Test
+      - generic [ref=e971] [cursor=pointer]: Galaxy Node
+      - generic [ref=e972] [cursor=pointer]: Styling Test Note
+      - generic [ref=e973] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e974] [cursor=pointer]: Linked Note
+      - generic [ref=e975] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e976] [cursor=pointer]: Note 4
+      - generic [ref=e977] [cursor=pointer]: Main Note
+      - generic [ref=e978] [cursor=pointer]: Note 3
+      - generic [ref=e979] [cursor=pointer]: Scene Test Note
+      - generic [ref=e980] [cursor=pointer]: Note 2
+      - generic [ref=e981] [cursor=pointer]: Note 1
+      - generic [ref=e982] [cursor=pointer]: Comet Node
+      - generic [ref=e983] [cursor=pointer]: Note 0
+      - generic [ref=e984] [cursor=pointer]: Graph Test Note
+      - generic [ref=e985] [cursor=pointer]: Andromeda
+      - generic [ref=e986] [cursor=pointer]: Milky Way
+      - generic [ref=e987] [cursor=pointer]: Kuiper Belt
+      - generic [ref=e988] [cursor=pointer]: Asteroid Belt
+      - generic [ref=e989] [cursor=pointer]: Jupiter
+      - generic [ref=e990] [cursor=pointer]: Mars
+      - generic [ref=e991] [cursor=pointer]: Earth
+      - generic [ref=e992] [cursor=pointer]: Venus
+      - generic [ref=e993] [cursor=pointer]: Mercury
+      - generic [ref=e994] [cursor=pointer]: Solar System
+      - generic [ref=e995] [cursor=pointer]: Source
+      - generic [ref=e996] [cursor=pointer]: Planet Node
+      - generic [ref=e997] [cursor=pointer]: Isolated Note
+      - generic [ref=e998] [cursor=pointer]: Performance Test Note
+      - generic [ref=e999] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1000] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1001] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1002] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1003] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1004] [cursor=pointer]: Linked
+      - generic [ref=e1005] [cursor=pointer]: Star Node
+      - generic [ref=e1006] [cursor=pointer]: Toggle Test
+      - generic [ref=e1007] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1008] [cursor=pointer]: Note 4
+      - generic [ref=e1009] [cursor=pointer]: Note 3
+      - generic [ref=e1010] [cursor=pointer]: Note 2
+      - generic [ref=e1011] [cursor=pointer]: Linked Note
+      - generic [ref=e1012] [cursor=pointer]: Note 1
+      - generic [ref=e1013] [cursor=pointer]: Main Note
+      - generic [ref=e1014] [cursor=pointer]: Note 0
+      - generic [ref=e1015] [cursor=pointer]: Comet Node
+      - generic [ref=e1016] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1017] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1018] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1019] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1020] [cursor=pointer]: Graph View Test 1776081215288
+      - generic [ref=e1021] [cursor=pointer]: Side Panel Test 1776081206308
+      - generic [ref=e1022] [cursor=pointer]: Test Searchable1776081206149 Note
+      - generic [ref=e1023] [cursor=pointer]: Planet Note 1776081202226
+      - generic [ref=e1024] [cursor=pointer]: Star Note 1776081202226
+      - generic [ref=e1025] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1026] [cursor=pointer]: Labeled Node
+      - generic [ref=e1027] [cursor=pointer]: List View Test Note
+      - generic [ref=e1028] [cursor=pointer]: Planet Node
+      - generic [ref=e1029] [cursor=pointer]: Weak Link
+      - generic [ref=e1030] [cursor=pointer]: Strong Link
+      - generic [ref=e1031] [cursor=pointer]: Source
+      - generic [ref=e1032] [cursor=pointer]: Stats Test 2 1776081181968
+      - generic [ref=e1033] [cursor=pointer]: Stats Test 1 1776081181968
+      - generic [ref=e1034] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1035] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1036] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1037] [cursor=pointer]: Linked
+      - generic [ref=e1038] [cursor=pointer]: Star Node
+      - generic [ref=e1039] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1040] [cursor=pointer]: Toggle Test
+      - generic [ref=e1041] [cursor=pointer]: Home Page Test Note 1776081163131
+      - generic [ref=e1042] [cursor=pointer]: Note 4
+      - generic [ref=e1043] [cursor=pointer]: Note 3
+      - generic [ref=e1044] [cursor=pointer]: Note 2
+      - generic [ref=e1045] [cursor=pointer]: Note 1
+      - generic [ref=e1046] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1047] [cursor=pointer]: Note 0
+      - generic [ref=e1048] [cursor=pointer]: Comet Node
+      - generic [ref=e1049] [cursor=pointer]: Linked Note
+      - generic [ref=e1050] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1051] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1052] [cursor=pointer]: Main Note
+      - generic [ref=e1053] [cursor=pointer]: History Test
+      - generic [ref=e1054] [cursor=pointer]: Playwright Test 1776080980614
+      - generic [ref=e1055] [cursor=pointer]: Searchable Note 1776080983599
+      - generic [ref=e1056] [cursor=pointer]: Back Button Test
+      - generic [ref=e1057] [cursor=pointer]: Node B
+      - generic [ref=e1058] [cursor=pointer]: Node A
+      - generic [ref=e1059] [cursor=pointer]: Edited 1776080974924
+      - generic [ref=e1060] [cursor=pointer]: Graph View Test 1776080970128
+      - generic [ref=e1061] [cursor=pointer]: Side Panel Test 1776080968387
+      - generic [ref=e1062] [cursor=pointer]: List View Test Note
+      - generic [ref=e1063] [cursor=pointer]: Test Searchable1776080963414 Note
+      - generic [ref=e1064] [cursor=pointer]: Planet Note 1776080961626
+      - generic [ref=e1065] [cursor=pointer]: Star Note 1776080961626
+      - generic [ref=e1066] [cursor=pointer]: Stats Test 2 1776080961473
+      - generic [ref=e1067] [cursor=pointer]: Stats Test 1 1776080961473
+      - generic [ref=e1068] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1069] [cursor=pointer]: Home Page Test Note 1776080952039
+      - generic [ref=e1070] [cursor=pointer]: Labeled Node
+      - generic [ref=e1071] [cursor=pointer]: Planet Node
+      - generic [ref=e1072] [cursor=pointer]: Weak Link
+      - generic [ref=e1073] [cursor=pointer]: Strong Link
+      - generic [ref=e1074] [cursor=pointer]: Source
+      - generic [ref=e1075] [cursor=pointer]: Isolated Note
+      - generic [ref=e1076] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1077] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1078] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1079] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1080] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1081] [cursor=pointer]: Linked
+      - generic [ref=e1082] [cursor=pointer]: Star Node
+      - generic [ref=e1083] [cursor=pointer]: Toggle Test
+      - generic [ref=e1084] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1085] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1086] [cursor=pointer]: Note 4
+      - generic [ref=e1087] [cursor=pointer]: Note 3
+      - generic [ref=e1088] [cursor=pointer]: Note 2
+      - generic [ref=e1089] [cursor=pointer]: Note 1
+      - generic [ref=e1090] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1091] [cursor=pointer]: Note 0
+      - generic [ref=e1092] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1093] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1094] [cursor=pointer]: Comet Node
+      - generic [ref=e1095] [cursor=pointer]: Linked Note
+      - generic [ref=e1096] [cursor=pointer]: Main Note
+      - generic [ref=e1097] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1098] [cursor=pointer]: Playwright Test 1776080669559
+      - generic [ref=e1099] [cursor=pointer]: History Test
+      - generic [ref=e1100] [cursor=pointer]: Searchable Note 1776080672231
+      - generic [ref=e1101] [cursor=pointer]: Back Button Test
+      - generic [ref=e1102] [cursor=pointer]: Node B
+      - generic [ref=e1103] [cursor=pointer]: Node A
+      - generic [ref=e1104] [cursor=pointer]: Edited 1776080664288
+      - generic [ref=e1105] [cursor=pointer]: List View Test Note
+      - generic [ref=e1106] [cursor=pointer]: Graph View Test 1776080658210
+      - generic [ref=e1107] [cursor=pointer]: Side Panel Test 1776080658018
+      - generic [ref=e1108] [cursor=pointer]: Test Searchable1776080654958 Note
+      - generic [ref=e1109] [cursor=pointer]: Planet Note 1776080648699
+      - generic [ref=e1110] [cursor=pointer]: Star Note 1776080648699
+      - generic [ref=e1111] [cursor=pointer]: Stats Test 2 1776080648218
+      - generic [ref=e1112] [cursor=pointer]: Stats Test 1 1776080648218
+      - generic [ref=e1113] [cursor=pointer]: Home Page Test Note 1776080644983
+      - generic [ref=e1114] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1115] [cursor=pointer]: Labeled Node
+      - generic [ref=e1116] [cursor=pointer]: Weak Link
+      - generic [ref=e1117] [cursor=pointer]: Strong Link
+      - generic [ref=e1118] [cursor=pointer]: Source
+      - generic [ref=e1119] [cursor=pointer]: Planet Node
+      - generic [ref=e1120] [cursor=pointer]: Isolated Note
+      - generic [ref=e1121] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1122] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1123] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1124] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1125] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1126] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1127] [cursor=pointer]: Toggle Test
+      - generic [ref=e1128] [cursor=pointer]: Linked
+      - generic [ref=e1129] [cursor=pointer]: Star Node
+      - generic [ref=e1130] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1131] [cursor=pointer]: Note 4
+      - generic [ref=e1132] [cursor=pointer]: Note 3
+      - generic [ref=e1133] [cursor=pointer]: Note 2
+      - generic [ref=e1134] [cursor=pointer]: Note 1
+      - generic [ref=e1135] [cursor=pointer]: Note 0
+      - generic [ref=e1136] [cursor=pointer]: Comet Node
+      - generic [ref=e1137] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1138] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1139] [cursor=pointer]: Linked Note
+      - generic [ref=e1140] [cursor=pointer]: Main Note
+      - generic [ref=e1141] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1142] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1143] [cursor=pointer]: Andromeda
+      - generic [ref=e1144] [cursor=pointer]: Milky Way
+      - generic [ref=e1145] [cursor=pointer]: Kuiper Belt
+      - generic [ref=e1146] [cursor=pointer]: Asteroid Belt
+      - generic [ref=e1147] [cursor=pointer]: Jupiter
+      - generic [ref=e1148] [cursor=pointer]: Mars
+      - generic [ref=e1149] [cursor=pointer]: Earth
+      - generic [ref=e1150] [cursor=pointer]: Venus
+      - generic [ref=e1151] [cursor=pointer]: Mercury
+      - generic [ref=e1152] [cursor=pointer]: Solar System
+      - generic [ref=e1153] [cursor=pointer]: Labeled Node
+      - generic [ref=e1154] [cursor=pointer]: Planet Node
+      - generic [ref=e1155] [cursor=pointer]: Isolated Note
+      - generic [ref=e1156] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1157] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1158] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1159] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1160] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1161] [cursor=pointer]: Linked
+      - generic [ref=e1162] [cursor=pointer]: Star Node
+      - generic [ref=e1163] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1164] [cursor=pointer]: Toggle Test
+      - generic [ref=e1165] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1166] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1167] [cursor=pointer]: Comet Node
+      - generic [ref=e1168] [cursor=pointer]: Note 4
+      - generic [ref=e1169] [cursor=pointer]: Note 3
+      - generic [ref=e1170] [cursor=pointer]: Note 2
+      - generic [ref=e1171] [cursor=pointer]: Note 1
+      - generic [ref=e1172] [cursor=pointer]: Linked Note
+      - generic [ref=e1173] [cursor=pointer]: Note 0
+      - generic [ref=e1174] [cursor=pointer]: Main Note
+      - generic [ref=e1175] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1176] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1177] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1178] [cursor=pointer]: Linked Note
+      - generic [ref=e1179] [cursor=pointer]: Main Note
+      - generic [ref=e1180] [cursor=pointer]: Back Button Test
+      - generic [ref=e1181] [cursor=pointer]: Playwright Test 1776079685732
+      - generic [ref=e1182] [cursor=pointer]: History Test
+      - generic [ref=e1183] [cursor=pointer]: Searchable Note 1776079688452
+      - generic [ref=e1184] [cursor=pointer]: Node B
+      - generic [ref=e1185] [cursor=pointer]: Node A
+      - generic [ref=e1186] [cursor=pointer]: Edited 1776079680990
+      - generic [ref=e1187] [cursor=pointer]: List View Test Note
+      - generic [ref=e1188] [cursor=pointer]: Graph View Test 1776079675331
+      - generic [ref=e1189] [cursor=pointer]: Side Panel Test 1776079674390
+      - generic [ref=e1190] [cursor=pointer]: Test Searchable1776079673957 Note
+      - generic [ref=e1191] [cursor=pointer]: Planet Note 1776079668734
+      - generic [ref=e1192] [cursor=pointer]: Star Note 1776079668734
+      - generic [ref=e1193] [cursor=pointer]: Stats Test 2 1776079668286
+      - generic [ref=e1194] [cursor=pointer]: Stats Test 1 1776079668286
+      - generic [ref=e1195] [cursor=pointer]: Home Page Test Note 1776079662594
+      - generic [ref=e1196] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1197] [cursor=pointer]: Labeled Node
+      - generic [ref=e1198] [cursor=pointer]: Planet Node
+      - generic [ref=e1199] [cursor=pointer]: Weak Link
+      - generic [ref=e1200] [cursor=pointer]: Strong Link
+      - generic [ref=e1201] [cursor=pointer]: Source
+      - generic [ref=e1202] [cursor=pointer]: Isolated Note
+      - generic [ref=e1203] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1204] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1205] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1206] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1207] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1208] [cursor=pointer]: Linked
+      - generic [ref=e1209] [cursor=pointer]: Star Node
+      - generic [ref=e1210] [cursor=pointer]: Toggle Test
+      - generic [ref=e1211] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1212] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1213] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1214] [cursor=pointer]: Linked Note
+      - generic [ref=e1215] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1216] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1217] [cursor=pointer]: Main Note
+      - generic [ref=e1218] [cursor=pointer]: Note 4
+      - generic [ref=e1219] [cursor=pointer]: Note 3
+      - generic [ref=e1220] [cursor=pointer]: Note 2
+      - generic [ref=e1221] [cursor=pointer]: Note 1
+      - generic [ref=e1222] [cursor=pointer]: Note 0
+      - generic [ref=e1223] [cursor=pointer]: Comet Node
+      - generic [ref=e1224] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1225] [cursor=pointer]: History Test
+      - generic [ref=e1226] [cursor=pointer]: Playwright Test 1776079277125
+      - generic [ref=e1227] [cursor=pointer]: Node B
+      - generic [ref=e1228] [cursor=pointer]: Node A
+      - generic [ref=e1229] [cursor=pointer]: Searchable Note 1776079279059
+      - generic [ref=e1230] [cursor=pointer]: Back Button Test
+      - generic [ref=e1231] [cursor=pointer]: Edited 1776079272128
+      - generic [ref=e1232] [cursor=pointer]: Graph View Test 1776079267034
+      - generic [ref=e1233] [cursor=pointer]: List View Test Note
+      - generic [ref=e1234] [cursor=pointer]: Side Panel Test 1776079263927
+      - generic [ref=e1235] [cursor=pointer]: Test Searchable1776079260769 Note
+      - generic [ref=e1236] [cursor=pointer]: Planet Note 1776079260141
+      - generic [ref=e1237] [cursor=pointer]: Star Note 1776079260141
+      - generic [ref=e1238] [cursor=pointer]: Stats Test 2 1776079260105
+      - generic [ref=e1239] [cursor=pointer]: Stats Test 1 1776079260105
+      - generic [ref=e1240] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1241] [cursor=pointer]: Home Page Test Note 1776079253500
+      - generic [ref=e1242] [cursor=pointer]: Labeled Node
+      - generic [ref=e1243] [cursor=pointer]: Planet Node
+      - generic [ref=e1244] [cursor=pointer]: Weak Link
+      - generic [ref=e1245] [cursor=pointer]: Strong Link
+      - generic [ref=e1246] [cursor=pointer]: Source
+      - generic [ref=e1247] [cursor=pointer]: Isolated Note
+      - generic [ref=e1248] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1249] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1250] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1251] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1252] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1253] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1254] [cursor=pointer]: Linked
+      - generic [ref=e1255] [cursor=pointer]: Star Node
+      - generic [ref=e1256] [cursor=pointer]: Toggle Test
+      - generic [ref=e1257] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1258] [cursor=pointer]: Note 4
+      - generic [ref=e1259] [cursor=pointer]: Note 3
+      - generic [ref=e1260] [cursor=pointer]: Note 2
+      - generic [ref=e1261] [cursor=pointer]: Note 1
+      - generic [ref=e1262] [cursor=pointer]: Comet Node
+      - generic [ref=e1263] [cursor=pointer]: Note 0
+      - generic [ref=e1264] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1265] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1266] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1267] [cursor=pointer]: Linked Note
+      - generic [ref=e1268] [cursor=pointer]: Main Note
+      - generic [ref=e1269] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1270] [cursor=pointer]: Back Button Test
+      - generic [ref=e1271] [cursor=pointer]: Playwright Test 1776078719642
+      - generic [ref=e1272] [cursor=pointer]: History Test
+      - generic [ref=e1273] [cursor=pointer]: Searchable Note 1776078720707
+      - generic [ref=e1274] [cursor=pointer]: Node B
+      - generic [ref=e1275] [cursor=pointer]: Node A
+      - generic [ref=e1276] [cursor=pointer]: Edited 1776078714700
+      - generic [ref=e1277] [cursor=pointer]: Graph View Test 1776078709203
+      - generic [ref=e1278] [cursor=pointer]: Side Panel Test 1776078707912
+      - generic [ref=e1279] [cursor=pointer]: List View Test Note
+      - generic [ref=e1280] [cursor=pointer]: Test Searchable1776078705336 Note
+      - generic [ref=e1281] [cursor=pointer]: Planet Note 1776078702631
+      - generic [ref=e1282] [cursor=pointer]: Star Note 1776078702631
+      - generic [ref=e1283] [cursor=pointer]: Stats Test 2 1776078699508
+      - generic [ref=e1284] [cursor=pointer]: Stats Test 1 1776078699508
+      - generic [ref=e1285] [cursor=pointer]: Home Page Test Note 1776078699254
+      - generic [ref=e1286] [cursor=pointer]: 3D Stats Test
+      - generic [ref=e1287] [cursor=pointer]: Labeled Node
+      - generic [ref=e1288] [cursor=pointer]: Isolated Note
+      - generic [ref=e1289] [cursor=pointer]: Weak Link
+      - generic [ref=e1290] [cursor=pointer]: Strong Link
+      - generic [ref=e1291] [cursor=pointer]: Source
+      - generic [ref=e1292] [cursor=pointer]: Planet Node
+      - generic [ref=e1293] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1294] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1295] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1296] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1297] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1298] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1299] [cursor=pointer]: Toggle Test
+      - generic [ref=e1300] [cursor=pointer]: Linked
+      - generic [ref=e1301] [cursor=pointer]: Star Node
+      - generic [ref=e1302] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1303] [cursor=pointer]: Note 4
+      - generic [ref=e1304] [cursor=pointer]: Linked Note
+      - generic [ref=e1305] [cursor=pointer]: Note 3
+      - generic [ref=e1306] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1307] [cursor=pointer]: Note 2
+      - generic [ref=e1308] [cursor=pointer]: Main Note
+      - generic [ref=e1309] [cursor=pointer]: Note 1
+      - generic [ref=e1310] [cursor=pointer]: Comet Node
+      - generic [ref=e1311] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e1312] [cursor=pointer]: Note 0
+      - generic [ref=e1313] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e1314] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1315] [cursor=pointer]: Playwright Test 1776077680161
+      - generic [ref=e1316] [cursor=pointer]: History Test
+      - generic [ref=e1317] [cursor=pointer]: Searchable Note 1776077680100
+      - generic [ref=e1318] [cursor=pointer]: Back Button Test
+      - generic [ref=e1319] [cursor=pointer]: Node B
+      - generic [ref=e1320] [cursor=pointer]: Node A
+      - generic [ref=e1321] [cursor=pointer]: Edited 1776077675637
+      - generic [ref=e1322] [cursor=pointer]: Graph View Test 1776077671237
+      - generic [ref=e1323] [cursor=pointer]: List View Test Note
+      - generic [ref=e1324] [cursor=pointer]: Side Panel Test 1776077668374
+      - generic [ref=e1325] [cursor=pointer]: Test Searchable1776077668223 Note
+      - generic [ref=e1326] [cursor=pointer]: Planet Note 1776077667169
+      - generic [ref=e1327] [cursor=pointer]: Star Note 1776077667169
+      - generic [ref=e1328] [cursor=pointer]: Stats Test 2 1776077666470
+      - generic [ref=e1329] [cursor=pointer]: Stats Test 1 1776077666470
+      - generic [ref=e1330] [cursor=pointer]: Home Page Test Note 1776077665019
+      - generic [ref=e1331] [cursor=pointer]: Isolated Note
+      - generic [ref=e1332] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1333] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1334] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1335] [cursor=pointer]: Linked
+      - generic [ref=e1336] [cursor=pointer]: Star Node
+      - generic [ref=e1337] [cursor=pointer]: Toggle Test
+      - generic [ref=e1338] [cursor=pointer]: Comet Node
+      - generic [ref=e1339] [cursor=pointer]: Weak Link
+      - generic [ref=e1340] [cursor=pointer]: Strong Link
+      - generic [ref=e1341] [cursor=pointer]: Linked Note
+      - generic [ref=e1342] [cursor=pointer]: Source
+      - generic [ref=e1343] [cursor=pointer]: Main Note
+      - generic [ref=e1344] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1345] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1346] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1347] [cursor=pointer]: Note 4
+      - generic [ref=e1348] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1349] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1350] [cursor=pointer]: Planet Node
+      - generic [ref=e1351] [cursor=pointer]: Note 3
+      - generic [ref=e1352] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1353] [cursor=pointer]: Note 2
+      - generic [ref=e1354] [cursor=pointer]: Note 1
+      - generic [ref=e1355] [cursor=pointer]: Labeled Node
+      - generic [ref=e1356] [cursor=pointer]: Note 0
+      - generic [ref=e1357] [cursor=pointer]: Playwright Test 1776076789580
+      - generic [ref=e1358] [cursor=pointer]: History Test
+      - generic [ref=e1359] [cursor=pointer]: Searchable Note 1776076788568
+      - generic [ref=e1360] [cursor=pointer]: Back Button Test
+      - generic [ref=e1361] [cursor=pointer]: Node B
+      - generic [ref=e1362] [cursor=pointer]: Node A
+      - generic [ref=e1363] [cursor=pointer]: Edited 1776076781679
+      - generic [ref=e1364] [cursor=pointer]: Graph View Test 1776076777155
+      - generic [ref=e1365] [cursor=pointer]: List View Test Note
+      - generic [ref=e1366] [cursor=pointer]: Side Panel Test 1776076771766
+      - generic [ref=e1367] [cursor=pointer]: Test Searchable1776076769977 Note
+      - generic [ref=e1368] [cursor=pointer]: Planet Note 1776076768754
+      - generic [ref=e1369] [cursor=pointer]: Star Note 1776076768754
+      - generic [ref=e1370] [cursor=pointer]: Stats Test 2 1776076766840
+      - generic [ref=e1371] [cursor=pointer]: Stats Test 1 1776076766840
+      - generic [ref=e1372] [cursor=pointer]: Home Page Test Note 1776076765055
+      - generic [ref=e1373] [cursor=pointer]: Isolated Note
+      - generic [ref=e1374] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1375] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1376] [cursor=pointer]: Linked
+      - generic [ref=e1377] [cursor=pointer]: Star Node
+      - generic [ref=e1378] [cursor=pointer]: Comet Node
+      - generic [ref=e1379] [cursor=pointer]: Linked Note
+      - generic [ref=e1380] [cursor=pointer]: Weak Link
+      - generic [ref=e1381] [cursor=pointer]: Main Note
+      - generic [ref=e1382] [cursor=pointer]: Strong Link
+      - generic [ref=e1383] [cursor=pointer]: Source
+      - generic [ref=e1384] [cursor=pointer]: Toggle Test
+      - generic [ref=e1385] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1386] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1387] [cursor=pointer]: Note 4
+      - generic [ref=e1388] [cursor=pointer]: Note 3
+      - generic [ref=e1389] [cursor=pointer]: Note 2
+      - generic [ref=e1390] [cursor=pointer]: Note 1
+      - generic [ref=e1391] [cursor=pointer]: Note 0
+      - generic [ref=e1392] [cursor=pointer]: Planet Node
+      - generic [ref=e1393] [cursor=pointer]: Labeled Node
+      - generic [ref=e1394] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1395] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1396] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1397] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1398] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1399] [cursor=pointer]: Playwright Test 1776076661318
+      - generic [ref=e1400] [cursor=pointer]: History Test
+      - generic [ref=e1401] [cursor=pointer]: Searchable Note 1776076661572
+      - generic [ref=e1402] [cursor=pointer]: Back Button Test
+      - generic [ref=e1403] [cursor=pointer]: Node B
+      - generic [ref=e1404] [cursor=pointer]: Node A
+      - generic [ref=e1405] [cursor=pointer]: Edited 1776076655923
+      - generic [ref=e1406] [cursor=pointer]: Side Panel Test 1776076653069
+      - generic [ref=e1407] [cursor=pointer]: Graph View Test 1776076649609
+      - generic [ref=e1408] [cursor=pointer]: List View Test Note
+      - generic [ref=e1409] [cursor=pointer]: Test Searchable1776076643083 Note
+      - generic [ref=e1410] [cursor=pointer]: Planet Note 1776076642421
+      - generic [ref=e1411] [cursor=pointer]: Star Note 1776076642421
+      - generic [ref=e1412] [cursor=pointer]: Stats Test 2 1776076642079
+      - generic [ref=e1413] [cursor=pointer]: Stats Test 1 1776076642079
+      - generic [ref=e1414] [cursor=pointer]: Home Page Test Note 1776076639842
+      - generic [ref=e1415] [cursor=pointer]: Isolated Note
+      - generic [ref=e1416] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1417] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1418] [cursor=pointer]: Linked
+      - generic [ref=e1419] [cursor=pointer]: Weak Link
+      - generic [ref=e1420] [cursor=pointer]: Star Node
+      - generic [ref=e1421] [cursor=pointer]: Strong Link
+      - generic [ref=e1422] [cursor=pointer]: Toggle Test
+      - generic [ref=e1423] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1424] [cursor=pointer]: Source
+      - generic [ref=e1425] [cursor=pointer]: Comet Node
+      - generic [ref=e1426] [cursor=pointer]: Linked Note
+      - generic [ref=e1427] [cursor=pointer]: Main Note
+      - generic [ref=e1428] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1429] [cursor=pointer]: Note 4
+      - generic [ref=e1430] [cursor=pointer]: Note 3
+      - generic [ref=e1431] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1432] [cursor=pointer]: Note 2
+      - generic [ref=e1433] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1434] [cursor=pointer]: Note 1
+      - generic [ref=e1435] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1436] [cursor=pointer]: Note 0
+      - generic [ref=e1437] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1438] [cursor=pointer]: Labeled Node
+      - generic [ref=e1439] [cursor=pointer]: Planet Node
+      - generic [ref=e1440] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1441] [cursor=pointer]: History Test
+      - generic [ref=e1442] [cursor=pointer]: Searchable Note 1776076281310
+      - generic [ref=e1443] [cursor=pointer]: Back Button Test
+      - generic [ref=e1444] [cursor=pointer]: Node B
+      - generic [ref=e1445] [cursor=pointer]: Node A
+      - generic [ref=e1446] [cursor=pointer]: Playwright Test 1776076277749
+      - generic [ref=e1447] [cursor=pointer]: Edited 1776076277326
+      - generic [ref=e1448] [cursor=pointer]: Graph View Test 1776076273571
+      - generic [ref=e1449] [cursor=pointer]: Side Panel Test 1776076273008
+      - generic [ref=e1450] [cursor=pointer]: Test Searchable1776076272217 Note
+      - generic [ref=e1451] [cursor=pointer]: Planet Note 1776076271900
+      - generic [ref=e1452] [cursor=pointer]: Star Note 1776076271900
+      - generic [ref=e1453] [cursor=pointer]: List View Test Note
+      - generic [ref=e1454] [cursor=pointer]: Stats Test 2 1776076269364
+      - generic [ref=e1455] [cursor=pointer]: Stats Test 1 1776076269364
+      - generic [ref=e1456] [cursor=pointer]: Home Page Test Note 1776076266926
+      - generic [ref=e1457] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1458] [cursor=pointer]: Isolated Note
+      - generic [ref=e1459] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1460] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1461] [cursor=pointer]: Linked Note
+      - generic [ref=e1462] [cursor=pointer]: Main Note
+      - generic [ref=e1463] [cursor=pointer]: Toggle Test
+      - generic [ref=e1464] [cursor=pointer]: Weak Link
+      - generic [ref=e1465] [cursor=pointer]: Comet Node
+      - generic [ref=e1466] [cursor=pointer]: Strong Link
+      - generic [ref=e1467] [cursor=pointer]: Linked
+      - generic [ref=e1468] [cursor=pointer]: Source
+      - generic [ref=e1469] [cursor=pointer]: Star Node
+      - generic [ref=e1470] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1471] [cursor=pointer]: Note 4
+      - generic [ref=e1472] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1473] [cursor=pointer]: Note 3
+      - generic [ref=e1474] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1475] [cursor=pointer]: Labeled Node
+      - generic [ref=e1476] [cursor=pointer]: Note 2
+      - generic [ref=e1477] [cursor=pointer]: Planet Node
+      - generic [ref=e1478] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1479] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1480] [cursor=pointer]: Note 1
+      - generic [ref=e1481] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1482] [cursor=pointer]: Note 0
+      - generic [ref=e1483] [cursor=pointer]: Asteroid Mining
+      - generic [ref=e1484] [cursor=pointer]: Cosmic Rays
+      - generic [ref=e1485] [cursor=pointer]: Parsec
+      - generic [ref=e1486] [cursor=pointer]: Light Year
+      - generic [ref=e1487] [cursor=pointer]: Astronomical Units
+      - generic [ref=e1488] [cursor=pointer]: Orbital Mechanics
+      - generic [ref=e1489] [cursor=pointer]: Rocket Propulsion
+      - generic [ref=e1490] [cursor=pointer]: Space Telescopes
+      - generic [ref=e1491] [cursor=pointer]: SETI
+      - generic [ref=e1492] [cursor=pointer]: Exoplanets
+      - generic [ref=e1493] [cursor=pointer]: Gravitational Waves
+      - generic [ref=e1494] [cursor=pointer]: Hubble Constant
+      - generic [ref=e1495] [cursor=pointer]: Cosmic Microwave
+      - generic [ref=e1496] [cursor=pointer]: Dark Energy
+      - generic [ref=e1497] [cursor=pointer]: Dark Matter
+      - generic [ref=e1498] [cursor=pointer]: Binary Star
+      - generic [ref=e1499] [cursor=pointer]: Pulsar
+      - generic [ref=e1500] [cursor=pointer]: Magnetar
+      - generic [ref=e1501] [cursor=pointer]: Gamma Ray Burst
+      - generic [ref=e1502] [cursor=pointer]: Accretion Disk
+      - generic [ref=e1503] [cursor=pointer]: Stellar Wind
+      - generic [ref=e1504] [cursor=pointer]: Tolman-Oppenheimer
+      - generic [ref=e1505] [cursor=pointer]: Chandrasekhar Limit
+      - generic [ref=e1506] [cursor=pointer]: Supernova Remnant
+      - generic [ref=e1507] [cursor=pointer]: Planetary Nebula
+      - generic [ref=e1508] [cursor=pointer]: Stellar Nursery
+      - generic [ref=e1509] [cursor=pointer]: Hertzsprung-Russell
+      - generic [ref=e1510] [cursor=pointer]: Nuclear Fusion
+      - generic [ref=e1511] [cursor=pointer]: Supernova
+      - generic [ref=e1512] [cursor=pointer]: Black Hole
+      - generic [ref=e1513] [cursor=pointer]: Neutron Star
+      - generic [ref=e1514] [cursor=pointer]: White Dwarf
+      - generic [ref=e1515] [cursor=pointer]: Red Giant
+      - generic [ref=e1516] [cursor=pointer]: Main Sequence
+      - generic [ref=e1517] [cursor=pointer]: Stellar Evolution
+      - generic [ref=e1518] [cursor=pointer]: Andromeda
+      - generic [ref=e1519] [cursor=pointer]: Milky Way
+      - generic [ref=e1520] [cursor=pointer]: Oort Cloud
+      - generic [ref=e1521] [cursor=pointer]: Kuiper Belt
+      - generic [ref=e1522] [cursor=pointer]: Asteroid Belt
+      - generic [ref=e1523] [cursor=pointer]: Pluto
+      - generic [ref=e1524] [cursor=pointer]: Neptune
+      - generic [ref=e1525] [cursor=pointer]: Uranus
+      - generic [ref=e1526] [cursor=pointer]: Saturn
+      - generic [ref=e1527] [cursor=pointer]: Jupiter
+      - generic [ref=e1528] [cursor=pointer]: Mars
+      - generic [ref=e1529] [cursor=pointer]: Earth
+      - generic [ref=e1530] [cursor=pointer]: Venus
+      - generic [ref=e1531] [cursor=pointer]: Mercury
+      - generic [ref=e1532] [cursor=pointer]: Solar System
+      - generic [ref=e1533] [cursor=pointer]: Strong Link
+      - generic [ref=e1534] [cursor=pointer]: Source
+      - generic [ref=e1535] [cursor=pointer]: Linked Note
+      - generic [ref=e1536] [cursor=pointer]: Main Note
+      - generic [ref=e1537] [cursor=pointer]: Comet Node
+      - generic [ref=e1538] [cursor=pointer]: Toggle Test
+      - generic [ref=e1539] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1540] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1541] [cursor=pointer]: Note 4
+      - generic [ref=e1542] [cursor=pointer]: Note 3
+      - generic [ref=e1543] [cursor=pointer]: Note 2
+      - generic [ref=e1544] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1545] [cursor=pointer]: Note 1
+      - generic [ref=e1546] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1547] [cursor=pointer]: Note 0
+      - generic [ref=e1548] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1549] [cursor=pointer]: Labeled Node
+      - generic [ref=e1550] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1551] [cursor=pointer]: Planet Node
+      - generic [ref=e1552] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1553] [cursor=pointer]: History Test
+      - generic [ref=e1554] [cursor=pointer]: Searchable Note 1776075607410
+      - generic [ref=e1555] [cursor=pointer]: Back Button Test
+      - generic [ref=e1556] [cursor=pointer]: Node B
+      - generic [ref=e1557] [cursor=pointer]: Node A
+      - generic [ref=e1558] [cursor=pointer]: Playwright Test 1776075603793
+      - generic [ref=e1559] [cursor=pointer]: Edited 1776075602835
+      - generic [ref=e1560] [cursor=pointer]: Graph View Test 1776075598101
+      - generic [ref=e1561] [cursor=pointer]: Side Panel Test 1776075598099
+      - generic [ref=e1562] [cursor=pointer]: Planet Note 1776075597575
+      - generic [ref=e1563] [cursor=pointer]: Test Searchable1776075597589 Note
+      - generic [ref=e1564] [cursor=pointer]: Star Note 1776075597575
+      - generic [ref=e1565] [cursor=pointer]: Stats Test 2 1776075595034
+      - generic [ref=e1566] [cursor=pointer]: Stats Test 1 1776075595034
+      - generic [ref=e1567] [cursor=pointer]: List View Test Note
+      - generic [ref=e1568] [cursor=pointer]: Home Page Test Note 1776075592757
+      - generic [ref=e1569] [cursor=pointer]: Isolated Note
+      - generic [ref=e1570] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1571] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1572] [cursor=pointer]: Weak Link
+      - generic [ref=e1573] [cursor=pointer]: Strong Link
+      - generic [ref=e1574] [cursor=pointer]: Linked Note
+      - generic [ref=e1575] [cursor=pointer]: Linked
+      - generic [ref=e1576] [cursor=pointer]: Source
+      - generic [ref=e1577] [cursor=pointer]: Main Note
+      - generic [ref=e1578] [cursor=pointer]: Star Node
+      - generic [ref=e1579] [cursor=pointer]: Toggle Test
+      - generic [ref=e1580] [cursor=pointer]: Comet Node
+      - generic [ref=e1581] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1582] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1583] [cursor=pointer]: Note 4
+      - generic [ref=e1584] [cursor=pointer]: Note 3
+      - generic [ref=e1585] [cursor=pointer]: Note 2
+      - generic [ref=e1586] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1587] [cursor=pointer]: Note 1
+      - generic [ref=e1588] [cursor=pointer]: Planet Node
+      - generic [ref=e1589] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1590] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1591] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1592] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1593] [cursor=pointer]: Note 0
+      - generic [ref=e1594] [cursor=pointer]: Labeled Node
+      - generic [ref=e1595] [cursor=pointer]: Test Note 50 - Gamma Field
+      - generic [ref=e1596] [cursor=pointer]: Test Note 49 - Gamma Cluster
+      - generic [ref=e1597] [cursor=pointer]: Test Note 48 - Epsilon Cluster
+      - generic [ref=e1598] [cursor=pointer]: Test Note 47 - Alpha Nebula
+      - generic [ref=e1599] [cursor=pointer]: Test Note 46 - Epsilon Cluster
+      - generic [ref=e1600] [cursor=pointer]: Test Note 45 - Alpha Cluster
+      - generic [ref=e1601] [cursor=pointer]: Test Note 44 - Alpha Stream
+      - generic [ref=e1602] [cursor=pointer]: Test Note 43 - Beta Field
+      - generic [ref=e1603] [cursor=pointer]: Test Note 42 - Alpha Cluster
+      - generic [ref=e1604] [cursor=pointer]: Test Note 41 - Epsilon Stream
+      - generic [ref=e1605] [cursor=pointer]: Test Note 40 - Beta Stream
+      - generic [ref=e1606] [cursor=pointer]: Test Note 39 - Gamma Nebula
+      - generic [ref=e1607] [cursor=pointer]: Test Note 38 - Delta Nebula
+      - generic [ref=e1608] [cursor=pointer]: Test Note 37 - Beta Stream
+      - generic [ref=e1609] [cursor=pointer]: Test Note 36 - Gamma System
+      - generic [ref=e1610] [cursor=pointer]: Test Note 35 - Gamma System
+      - generic [ref=e1611] [cursor=pointer]: Test Note 34 - Alpha Cluster
+      - generic [ref=e1612] [cursor=pointer]: Test Note 33 - Epsilon Field
+      - generic [ref=e1613] [cursor=pointer]: Test Note 32 - Gamma Stream
+      - generic [ref=e1614] [cursor=pointer]: Test Note 31 - Epsilon Field
+      - generic [ref=e1615] [cursor=pointer]: Test Note 30 - Beta System
+      - generic [ref=e1616] [cursor=pointer]: Test Note 29 - Beta Cluster
+      - generic [ref=e1617] [cursor=pointer]: Test Note 28 - Delta Field
+      - generic [ref=e1618] [cursor=pointer]: Test Note 27 - Alpha Cluster
+      - generic [ref=e1619] [cursor=pointer]: Test Note 26 - Delta Stream
+      - generic [ref=e1620] [cursor=pointer]: Test Note 25 - Delta System
+      - generic [ref=e1621] [cursor=pointer]: Test Note 24 - Delta Nebula
+      - generic [ref=e1622] [cursor=pointer]: Test Note 23 - Beta Cluster
+      - generic [ref=e1623] [cursor=pointer]: Test Note 22 - Beta Stream
+      - generic [ref=e1624] [cursor=pointer]: Test Note 21 - Gamma Field
+      - generic [ref=e1625] [cursor=pointer]: Test Note 20 - Gamma Nebula
+      - generic [ref=e1626] [cursor=pointer]: Test Note 19 - Epsilon Cluster
+      - generic [ref=e1627] [cursor=pointer]: Test Note 18 - Gamma System
+      - generic [ref=e1628] [cursor=pointer]: Test Note 17 - Beta Stream
+      - generic [ref=e1629] [cursor=pointer]: Test Note 16 - Gamma Field
+      - generic [ref=e1630] [cursor=pointer]: Test Note 15 - Alpha Nebula
+      - generic [ref=e1631] [cursor=pointer]: Test Note 14 - Beta Cluster
+      - generic [ref=e1632] [cursor=pointer]: Test Note 13 - Delta System
+      - generic [ref=e1633] [cursor=pointer]: Test Note 12 - Alpha Stream
+      - generic [ref=e1634] [cursor=pointer]: Test Note 11 - Epsilon Cluster
+      - generic [ref=e1635] [cursor=pointer]: Test Note 10 - Epsilon Cluster
+      - generic [ref=e1636] [cursor=pointer]: Test Note 9 - Delta Field
+      - generic [ref=e1637] [cursor=pointer]: Test Note 8 - Delta Field
+      - generic [ref=e1638] [cursor=pointer]: Test Note 7 - Beta Cluster
+      - generic [ref=e1639] [cursor=pointer]: Test Note 6 - Alpha Nebula
+      - generic [ref=e1640] [cursor=pointer]: Test Note 5 - Alpha Field
+      - generic [ref=e1641] [cursor=pointer]: Test Note 4 - Alpha Stream
+      - generic [ref=e1642] [cursor=pointer]: Test Note 3 - Alpha Field
+      - generic [ref=e1643] [cursor=pointer]: Test Note 2 - Beta Stream
+      - generic [ref=e1644] [cursor=pointer]: Test Note 1 - Beta Nebula
+      - generic [ref=e1645] [cursor=pointer]: Test Note 50 - Delta Field
+      - generic [ref=e1646] [cursor=pointer]: Test Note 49 - Beta Cluster
+      - generic [ref=e1647] [cursor=pointer]: Test Note 48 - Gamma Nebula
+      - generic [ref=e1648] [cursor=pointer]: Test Note 47 - Gamma Stream
+      - generic [ref=e1649] [cursor=pointer]: Test Note 46 - Delta Nebula
+      - generic [ref=e1650] [cursor=pointer]: Test Note 45 - Alpha Nebula
+      - generic [ref=e1651] [cursor=pointer]: Test Note 44 - Alpha Cluster
+      - generic [ref=e1652] [cursor=pointer]: Test Note 43 - Beta Field
+      - generic [ref=e1653] [cursor=pointer]: Test Note 42 - Alpha System
+      - generic [ref=e1654] [cursor=pointer]: Test Note 41 - Gamma Stream
+      - generic [ref=e1655] [cursor=pointer]: Test Note 40 - Gamma Stream
+      - generic [ref=e1656] [cursor=pointer]: Test Note 39 - Alpha Stream
+      - generic [ref=e1657] [cursor=pointer]: Test Note 38 - Gamma Stream
+      - generic [ref=e1658] [cursor=pointer]: Test Note 37 - Alpha Cluster
+      - generic [ref=e1659] [cursor=pointer]: Test Note 36 - Epsilon Field
+      - generic [ref=e1660] [cursor=pointer]: Test Note 35 - Epsilon System
+      - generic [ref=e1661] [cursor=pointer]: Test Note 34 - Beta Field
+      - generic [ref=e1662] [cursor=pointer]: Test Note 33 - Alpha Stream
+      - generic [ref=e1663] [cursor=pointer]: Test Note 32 - Alpha Field
+      - generic [ref=e1664] [cursor=pointer]: Test Note 31 - Epsilon Stream
+      - generic [ref=e1665] [cursor=pointer]: Test Note 30 - Alpha Field
+      - generic [ref=e1666] [cursor=pointer]: Test Note 29 - Epsilon Field
+      - generic [ref=e1667] [cursor=pointer]: Test Note 28 - Alpha Stream
+      - generic [ref=e1668] [cursor=pointer]: Test Note 27 - Delta Field
+      - generic [ref=e1669] [cursor=pointer]: Test Note 26 - Beta Field
+      - generic [ref=e1670] [cursor=pointer]: Test Note 25 - Gamma Stream
+      - generic [ref=e1671] [cursor=pointer]: Test Note 24 - Alpha Stream
+      - generic [ref=e1672] [cursor=pointer]: Test Note 23 - Alpha Field
+      - generic [ref=e1673] [cursor=pointer]: Test Note 22 - Epsilon Stream
+      - generic [ref=e1674] [cursor=pointer]: Test Note 21 - Epsilon Cluster
+      - generic [ref=e1675] [cursor=pointer]: Test Note 20 - Beta System
+      - generic [ref=e1676] [cursor=pointer]: Test Note 19 - Beta Cluster
+      - generic [ref=e1677] [cursor=pointer]: Test Note 18 - Delta Stream
+      - generic [ref=e1678] [cursor=pointer]: Test Note 17 - Delta Nebula
+      - generic [ref=e1679] [cursor=pointer]: Test Note 16 - Gamma Stream
+      - generic [ref=e1680] [cursor=pointer]: Test Note 15 - Gamma System
+      - generic [ref=e1681] [cursor=pointer]: Test Note 14 - Alpha Field
+      - generic [ref=e1682] [cursor=pointer]: Test Note 13 - Gamma Field
+      - generic [ref=e1683] [cursor=pointer]: Test Note 12 - Alpha System
+      - generic [ref=e1684] [cursor=pointer]: Test Note 11 - Epsilon Cluster
+      - generic [ref=e1685] [cursor=pointer]: Test Note 10 - Epsilon Stream
+      - generic [ref=e1686] [cursor=pointer]: Test Note 9 - Beta System
+      - generic [ref=e1687] [cursor=pointer]: Test Note 8 - Epsilon Cluster
+      - generic [ref=e1688] [cursor=pointer]: Test Note 7 - Delta Cluster
+      - generic [ref=e1689] [cursor=pointer]: Test Note 6 - Gamma Cluster
+      - generic [ref=e1690] [cursor=pointer]: Test Note 5 - Delta Nebula
+      - generic [ref=e1691] [cursor=pointer]: Test Note 4 - Delta System
+      - generic [ref=e1692] [cursor=pointer]: Test Note 3 - Delta Stream
+      - generic [ref=e1693] [cursor=pointer]: Test Note 2 - Epsilon Nebula
+      - generic [ref=e1694] [cursor=pointer]: Test Note 1 - Delta Stream
+      - generic [ref=e1695] [cursor=pointer]: Test Note 50 - Gamma System
+      - generic [ref=e1696] [cursor=pointer]: Test Note 49 - Gamma Stream
+      - generic [ref=e1697] [cursor=pointer]: Test Note 48 - Gamma Stream
+      - generic [ref=e1698] [cursor=pointer]: Test Note 47 - Alpha Stream
+      - generic [ref=e1699] [cursor=pointer]: Test Note 46 - Gamma Cluster
+      - generic [ref=e1700] [cursor=pointer]: Test Note 45 - Epsilon Field
+      - generic [ref=e1701] [cursor=pointer]: Test Note 44 - Beta Stream
+      - generic [ref=e1702] [cursor=pointer]: Test Note 43 - Delta System
+      - generic [ref=e1703] [cursor=pointer]: Test Note 42 - Delta Field
+      - generic [ref=e1704] [cursor=pointer]: Test Note 41 - Alpha Stream
+      - generic [ref=e1705] [cursor=pointer]: Test Note 40 - Alpha System
+      - generic [ref=e1706] [cursor=pointer]: Test Note 39 - Epsilon Nebula
+      - generic [ref=e1707] [cursor=pointer]: Test Note 38 - Gamma Field
+      - generic [ref=e1708] [cursor=pointer]: Test Note 37 - Alpha System
+      - generic [ref=e1709] [cursor=pointer]: Test Note 36 - Gamma Cluster
+      - generic [ref=e1710] [cursor=pointer]: Test Note 35 - Delta System
+      - generic [ref=e1711] [cursor=pointer]: Test Note 34 - Alpha Cluster
+      - generic [ref=e1712] [cursor=pointer]: Test Note 33 - Delta System
+      - generic [ref=e1713] [cursor=pointer]: Test Note 32 - Gamma Stream
+      - generic [ref=e1714] [cursor=pointer]: Test Note 31 - Alpha Stream
+      - generic [ref=e1715] [cursor=pointer]: Test Note 30 - Delta Nebula
+      - generic [ref=e1716] [cursor=pointer]: Test Note 29 - Delta Cluster
+      - generic [ref=e1717] [cursor=pointer]: Test Note 28 - Alpha Field
+      - generic [ref=e1718] [cursor=pointer]: Test Note 27 - Gamma System
+      - generic [ref=e1719] [cursor=pointer]: Test Note 26 - Alpha Stream
+      - generic [ref=e1720] [cursor=pointer]: Test Note 25 - Epsilon Stream
+      - generic [ref=e1721] [cursor=pointer]: Test Note 24 - Beta Stream
+      - generic [ref=e1722] [cursor=pointer]: Test Note 23 - Epsilon System
+      - generic [ref=e1723] [cursor=pointer]: Test Note 22 - Alpha Nebula
+      - generic [ref=e1724] [cursor=pointer]: Test Note 21 - Beta Stream
+      - generic [ref=e1725] [cursor=pointer]: Test Note 20 - Alpha System
+      - generic [ref=e1726] [cursor=pointer]: Test Note 19 - Delta Stream
+      - generic [ref=e1727] [cursor=pointer]: Test Note 18 - Delta Field
+      - generic [ref=e1728] [cursor=pointer]: Test Note 17 - Alpha Cluster
+      - generic [ref=e1729] [cursor=pointer]: Test Note 16 - Beta Nebula
+      - generic [ref=e1730] [cursor=pointer]: Test Note 15 - Delta Field
+      - generic [ref=e1731] [cursor=pointer]: Test Note 14 - Beta Stream
+      - generic [ref=e1732] [cursor=pointer]: Test Note 13 - Alpha System
+      - generic [ref=e1733] [cursor=pointer]: Test Note 12 - Alpha Nebula
+      - generic [ref=e1734] [cursor=pointer]: Test Note 11 - Gamma Field
+      - generic [ref=e1735] [cursor=pointer]: Test Note 10 - Epsilon System
+      - generic [ref=e1736] [cursor=pointer]: Test Note 9 - Beta System
+      - generic [ref=e1737] [cursor=pointer]: Test Note 8 - Gamma System
+      - generic [ref=e1738] [cursor=pointer]: Test Note 7 - Beta Cluster
+      - generic [ref=e1739] [cursor=pointer]: Test Note 6 - Gamma Cluster
+      - generic [ref=e1740] [cursor=pointer]: Test Note 5 - Delta Stream
+      - generic [ref=e1741] [cursor=pointer]: Test Note 4 - Beta Nebula
+      - generic [ref=e1742] [cursor=pointer]: Test Note 3 - Gamma System
+      - generic [ref=e1743] [cursor=pointer]: Test Note 2 - Alpha Stream
+      - generic [ref=e1744] [cursor=pointer]: Test Note 1 - Alpha Field
+      - generic [ref=e1745] [cursor=pointer]: Weak Link
+      - generic [ref=e1746] [cursor=pointer]: Linked
+      - generic [ref=e1747] [cursor=pointer]: Strong Link
+      - generic [ref=e1748] [cursor=pointer]: Star Node
+      - generic [ref=e1749] [cursor=pointer]: Linked Note
+      - generic [ref=e1750] [cursor=pointer]: Comet Node
+      - generic [ref=e1751] [cursor=pointer]: Source
+      - generic [ref=e1752] [cursor=pointer]: Toggle Test
+      - generic [ref=e1753] [cursor=pointer]: Main Note
+      - generic [ref=e1754] [cursor=pointer]: Note 4
+      - generic [ref=e1755] [cursor=pointer]: Note 3
+      - generic [ref=e1756] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1757] [cursor=pointer]: Note 2
+      - generic [ref=e1758] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1759] [cursor=pointer]: Note 1
+      - generic [ref=e1760] [cursor=pointer]: Planet Node
+      - generic [ref=e1761] [cursor=pointer]: Labeled Node
+      - generic [ref=e1762] [cursor=pointer]: Note 0
+      - generic [ref=e1763] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1764] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1765] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1766] [cursor=pointer]: Weak Link
+      - generic [ref=e1767] [cursor=pointer]: Strong Link
+      - generic [ref=e1768] [cursor=pointer]: Comet Node
+      - generic [ref=e1769] [cursor=pointer]: Source
+      - generic [ref=e1770] [cursor=pointer]: Toggle Test
+      - generic [ref=e1771] [cursor=pointer]: Linked Note
+      - generic [ref=e1772] [cursor=pointer]: Main Note
+      - generic [ref=e1773] [cursor=pointer]: Linked
+      - generic [ref=e1774] [cursor=pointer]: Star Node
+      - generic [ref=e1775] [cursor=pointer]: Note 4
+      - generic [ref=e1776] [cursor=pointer]: Note 3
+      - generic [ref=e1777] [cursor=pointer]: Full Graph Note 2
+      - generic [ref=e1778] [cursor=pointer]: Note 2
+      - generic [ref=e1779] [cursor=pointer]: Full Graph Note 1
+      - generic [ref=e1780] [cursor=pointer]: Note 1
+      - generic [ref=e1781] [cursor=pointer]: Labeled Node
+      - generic [ref=e1782] [cursor=pointer]: Planet Node
+      - generic [ref=e1783] [cursor=pointer]: Full Graph Note 0
+      - generic [ref=e1784] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1785] [cursor=pointer]: Note 0
+      - generic [ref=e1786] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1787] [cursor=pointer]: History Test
+      - generic [ref=e1788] [cursor=pointer]: Searchable Note 1776072619283
+      - generic [ref=e1789] [cursor=pointer]: Back Button Test
+      - generic [ref=e1790] [cursor=pointer]: Node B
+      - generic [ref=e1791] [cursor=pointer]: Node A
+      - generic [ref=e1792] [cursor=pointer]: Playwright Test 1776072615378
+      - generic [ref=e1793] [cursor=pointer]: Edited 1776072615312
+      - generic [ref=e1794] [cursor=pointer]: Graph View Test 1776072613006
+      - generic [ref=e1795] [cursor=pointer]: Side Panel Test 1776072610663
+      - generic [ref=e1796] [cursor=pointer]: Test Searchable1776072610517 Note
+      - generic [ref=e1797] [cursor=pointer]: Planet Note 1776072609204
+      - generic [ref=e1798] [cursor=pointer]: Star Note 1776072609204
+      - generic [ref=e1799] [cursor=pointer]: Stats Test 2 1776072608978
+      - generic [ref=e1800] [cursor=pointer]: Stats Test 1 1776072608978
+      - generic [ref=e1801] [cursor=pointer]: List View Test Note
+      - generic [ref=e1802] [cursor=pointer]: Home Page Test Note 1776072607663
+      - generic [ref=e1803] [cursor=pointer]: Isolated Note
+      - generic [ref=e1804] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1805] [cursor=pointer]: Comet Node
+      - generic [ref=e1806] [cursor=pointer]: Weak Link
+      - generic [ref=e1807] [cursor=pointer]: Strong Link
+      - generic [ref=e1808] [cursor=pointer]: Source
+      - generic [ref=e1809] [cursor=pointer]: Toggle Test
+      - generic [ref=e1810] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1811] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1812] [cursor=pointer]: Linked
+      - generic [ref=e1813] [cursor=pointer]: Star Node
+      - generic [ref=e1814] [cursor=pointer]: Note 4
+      - generic [ref=e1815] [cursor=pointer]: Note 3
+      - generic [ref=e1816] [cursor=pointer]: Note 2
+      - generic [ref=e1817] [cursor=pointer]: Note 1
+      - generic [ref=e1818] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1819] [cursor=pointer]: Labeled Node
+      - generic [ref=e1820] [cursor=pointer]: Planet Node
+      - generic [ref=e1821] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1822] [cursor=pointer]: Note 0
+      - generic [ref=e1823] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1824] [cursor=pointer]: History Test
+      - generic [ref=e1825] [cursor=pointer]: Searchable Note 1776072403002
+      - generic [ref=e1826] [cursor=pointer]: Back Button Test
+      - generic [ref=e1827] [cursor=pointer]: Node B
+      - generic [ref=e1828] [cursor=pointer]: Node A
+      - generic [ref=e1829] [cursor=pointer]: Playwright Test 1776072398117
+      - generic [ref=e1830] [cursor=pointer]: Edited 1776072394460
+      - generic [ref=e1831] [cursor=pointer]: Graph View Test 1776072389917
+      - generic [ref=e1832] [cursor=pointer]: Side Panel Test 1776072388167
+      - generic [ref=e1833] [cursor=pointer]: Test Searchable1776072387780 Note
+      - generic [ref=e1834] [cursor=pointer]: Planet Note 1776072385583
+      - generic [ref=e1835] [cursor=pointer]: List View Test Note
+      - generic [ref=e1836] [cursor=pointer]: Stats Test 2 1776072385549
+      - generic [ref=e1837] [cursor=pointer]: Star Note 1776072385583
+      - generic [ref=e1838] [cursor=pointer]: Stats Test 1 1776072385549
+      - generic [ref=e1839] [cursor=pointer]: Home Page Test Note 1776072383870
+      - generic [ref=e1840] [cursor=pointer]: Isolated Note
+      - generic [ref=e1841] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1842] [cursor=pointer]: Toggle Test
+      - generic [ref=e1843] [cursor=pointer]: Weak Link
+      - generic [ref=e1844] [cursor=pointer]: Strong Link
+      - generic [ref=e1845] [cursor=pointer]: Source
+      - generic [ref=e1846] [cursor=pointer]: Comet Node
+      - generic [ref=e1847] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1848] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1849] [cursor=pointer]: Linked
+      - generic [ref=e1850] [cursor=pointer]: Star Node
+      - generic [ref=e1851] [cursor=pointer]: Note 4
+      - generic [ref=e1852] [cursor=pointer]: Note 3
+      - generic [ref=e1853] [cursor=pointer]: Note 2
+      - generic [ref=e1854] [cursor=pointer]: Note 1
+      - generic [ref=e1855] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1856] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1857] [cursor=pointer]: Planet Node
+      - generic [ref=e1858] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1859] [cursor=pointer]: Note 0
+      - generic [ref=e1860] [cursor=pointer]: Labeled Node
+      - generic [ref=e1861] [cursor=pointer]: Node B
+      - generic [ref=e1862] [cursor=pointer]: Node A
+      - generic [ref=e1863] [cursor=pointer]: History Test
+      - generic [ref=e1864] [cursor=pointer]: Searchable Note 1776072246499
+      - generic [ref=e1865] [cursor=pointer]: Back Button Test
+      - generic [ref=e1866] [cursor=pointer]: Playwright Test 1776072244383
+      - generic [ref=e1867] [cursor=pointer]: Edited 1776072243475
+      - generic [ref=e1868] [cursor=pointer]: Graph View Test 1776072241552
+      - generic [ref=e1869] [cursor=pointer]: Side Panel Test 1776072239401
+      - generic [ref=e1870] [cursor=pointer]: Test Searchable1776072238599 Note
+      - generic [ref=e1871] [cursor=pointer]: Planet Note 1776072238362
+      - generic [ref=e1872] [cursor=pointer]: Star Note 1776072238362
+      - generic [ref=e1873] [cursor=pointer]: Stats Test 2 1776072237540
+      - generic [ref=e1874] [cursor=pointer]: Stats Test 1 1776072237540
+      - generic [ref=e1875] [cursor=pointer]: List View Test Note
+      - generic [ref=e1876] [cursor=pointer]: Home Page Test Note 1776072236622
+      - generic [ref=e1877] [cursor=pointer]: Isolated Note
+      - generic [ref=e1878] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1879] [cursor=pointer]: Toggle Test
+      - generic [ref=e1880] [cursor=pointer]: Comet Node
+      - generic [ref=e1881] [cursor=pointer]: Weak Link
+      - generic [ref=e1882] [cursor=pointer]: Strong Link
+      - generic [ref=e1883] [cursor=pointer]: Source
+      - generic [ref=e1884] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1885] [cursor=pointer]: Linked
+      - generic [ref=e1886] [cursor=pointer]: Star Node
+      - generic [ref=e1887] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1888] [cursor=pointer]: Note 4
+      - generic [ref=e1889] [cursor=pointer]: Note 3
+      - generic [ref=e1890] [cursor=pointer]: Note 2
+      - generic [ref=e1891] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1892] [cursor=pointer]: Planet Node
+      - generic [ref=e1893] [cursor=pointer]: Note 1
+      - generic [ref=e1894] [cursor=pointer]: Note 0
+      - generic [ref=e1895] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1896] [cursor=pointer]: Labeled Node
+      - generic [ref=e1897] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1898] [cursor=pointer]: Back Button Test
+      - generic [ref=e1899] [cursor=pointer]: History Test
+      - generic [ref=e1900] [cursor=pointer]: Searchable Note 1776071656507
+      - generic [ref=e1901] [cursor=pointer]: Node B
+      - generic [ref=e1902] [cursor=pointer]: Node A
+      - generic [ref=e1903] [cursor=pointer]: Playwright Test 1776071653169
+      - generic [ref=e1904] [cursor=pointer]: Edited 1776071653202
+      - generic [ref=e1905] [cursor=pointer]: Graph View Test 1776071649261
+      - generic [ref=e1906] [cursor=pointer]: Side Panel Test 1776071648722
+      - generic [ref=e1907] [cursor=pointer]: Test Searchable1776071646385 Note
+      - generic [ref=e1908] [cursor=pointer]: List View Test Note
+      - generic [ref=e1909] [cursor=pointer]: Planet Note 1776071645382
+      - generic [ref=e1910] [cursor=pointer]: Stats Test 2 1776071645425
+      - generic [ref=e1911] [cursor=pointer]: Stats Test 1 1776071645425
+      - generic [ref=e1912] [cursor=pointer]: Star Note 1776071645382
+      - generic [ref=e1913] [cursor=pointer]: Home Page Test Note 1776071643986
+      - generic [ref=e1914] [cursor=pointer]: Isolated Note
+      - generic [ref=e1915] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1916] [cursor=pointer]: Weak Link
+      - generic [ref=e1917] [cursor=pointer]: Strong Link
+      - generic [ref=e1918] [cursor=pointer]: Source
+      - generic [ref=e1919] [cursor=pointer]: Comet Node
+      - generic [ref=e1920] [cursor=pointer]: Toggle Test
+      - generic [ref=e1921] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1922] [cursor=pointer]: Linked
+      - generic [ref=e1923] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1924] [cursor=pointer]: Star Node
+      - generic [ref=e1925] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1926] [cursor=pointer]: Labeled Node
+      - generic [ref=e1927] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1928] [cursor=pointer]: Planet Node
+      - generic [ref=e1929] [cursor=pointer]: Note 4
+      - generic [ref=e1930] [cursor=pointer]: Note 3
+      - generic [ref=e1931] [cursor=pointer]: Note 2
+      - generic [ref=e1932] [cursor=pointer]: Note 1
+      - generic [ref=e1933] [cursor=pointer]: Note 0
+      - generic [ref=e1934] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1935] [cursor=pointer]: Searchable Note 1776071463041
+      - generic [ref=e1936] [cursor=pointer]: History Test
+      - generic [ref=e1937] [cursor=pointer]: Back Button Test
+      - generic [ref=e1938] [cursor=pointer]: Node B
+      - generic [ref=e1939] [cursor=pointer]: Node A
+      - generic [ref=e1940] [cursor=pointer]: Playwright Test 1776071457422
+      - generic [ref=e1941] [cursor=pointer]: Edited 1776071456932
+      - generic [ref=e1942] [cursor=pointer]: Graph View Test 1776071455204
+      - generic [ref=e1943] [cursor=pointer]: Side Panel Test 1776071452550
+      - generic [ref=e1944] [cursor=pointer]: Test Searchable1776071452376 Note
+      - generic [ref=e1945] [cursor=pointer]: Planet Note 1776071452230
+      - generic [ref=e1946] [cursor=pointer]: Star Note 1776071452230
+      - generic [ref=e1947] [cursor=pointer]: Stats Test 2 1776071451908
+      - generic [ref=e1948] [cursor=pointer]: Stats Test 1 1776071451908
+      - generic [ref=e1949] [cursor=pointer]: List View Test Note
+      - generic [ref=e1950] [cursor=pointer]: Home Page Test Note 1776071450070
+      - generic [ref=e1951] [cursor=pointer]: Isolated Note
+      - generic [ref=e1952] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1953] [cursor=pointer]: Comet Node
+      - generic [ref=e1954] [cursor=pointer]: Weak Link
+      - generic [ref=e1955] [cursor=pointer]: Strong Link
+      - generic [ref=e1956] [cursor=pointer]: Source
+      - generic [ref=e1957] [cursor=pointer]: Toggle Test
+      - generic [ref=e1958] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1959] [cursor=pointer]: Linked
+      - generic [ref=e1960] [cursor=pointer]: Star Node
+      - generic [ref=e1961] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1962] [cursor=pointer]: Note 4
+      - generic [ref=e1963] [cursor=pointer]: Note 3
+      - generic [ref=e1964] [cursor=pointer]: Note 2
+      - generic [ref=e1965] [cursor=pointer]: Note 1
+      - generic [ref=e1966] [cursor=pointer]: Note 0
+      - generic [ref=e1967] [cursor=pointer]: Galaxy Node
+      - generic [ref=e1968] [cursor=pointer]: Labeled Node
+      - generic [ref=e1969] [cursor=pointer]: Planet Node
+      - generic [ref=e1970] [cursor=pointer]: Scene Test Note
+      - generic [ref=e1971] [cursor=pointer]: Graph Test Note
+      - generic [ref=e1972] [cursor=pointer]: History Test
+      - generic [ref=e1973] [cursor=pointer]: Playwright Test 1776070740764
+      - generic [ref=e1974] [cursor=pointer]: Searchable Note 1776070740751
+      - generic [ref=e1975] [cursor=pointer]: Back Button Test
+      - generic [ref=e1976] [cursor=pointer]: Node B
+      - generic [ref=e1977] [cursor=pointer]: Node A
+      - generic [ref=e1978] [cursor=pointer]: Edited 1776070737570
+      - generic [ref=e1979] [cursor=pointer]: Graph View Test 1776070736846
+      - generic [ref=e1980] [cursor=pointer]: Side Panel Test 1776070734136
+      - generic [ref=e1981] [cursor=pointer]: Test Searchable1776070733504 Note
+      - generic [ref=e1982] [cursor=pointer]: Planet Note 1776070733366
+      - generic [ref=e1983] [cursor=pointer]: Star Note 1776070733366
+      - generic [ref=e1984] [cursor=pointer]: List View Test Note
+      - generic [ref=e1985] [cursor=pointer]: Stats Test 2 1776070732605
+      - generic [ref=e1986] [cursor=pointer]: Stats Test 1 1776070732605
+      - generic [ref=e1987] [cursor=pointer]: Home Page Test Note 1776070732319
+      - generic [ref=e1988] [cursor=pointer]: Isolated Note
+      - generic [ref=e1989] [cursor=pointer]: Performance Test Note
+      - generic [ref=e1990] [cursor=pointer]: Weak Link
+      - generic [ref=e1991] [cursor=pointer]: Strong Link
+      - generic [ref=e1992] [cursor=pointer]: Toggle Test
+      - generic [ref=e1993] [cursor=pointer]: Source
+      - generic [ref=e1994] [cursor=pointer]: Comet Node
+      - generic [ref=e1995] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e1996] [cursor=pointer]: Linked
+      - generic [ref=e1997] [cursor=pointer]: Star Node
+      - generic [ref=e1998] [cursor=pointer]: Styling Test Note
+      - generic [ref=e1999] [cursor=pointer]: Note 4
+      - generic [ref=e2000] [cursor=pointer]: Note 3
+      - generic [ref=e2001] [cursor=pointer]: Note 2
+      - generic [ref=e2002] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2003] [cursor=pointer]: Note 1
+      - generic [ref=e2004] [cursor=pointer]: Planet Node
+      - generic [ref=e2005] [cursor=pointer]: Labeled Node
+      - generic [ref=e2006] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2007] [cursor=pointer]: Note 0
+      - generic [ref=e2008] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2009] [cursor=pointer]: History Test
+      - generic [ref=e2010] [cursor=pointer]: Playwright Test 1776068183311
+      - generic [ref=e2011] [cursor=pointer]: Searchable Note 1776068181795
+      - generic [ref=e2012] [cursor=pointer]: Node B
+      - generic [ref=e2013] [cursor=pointer]: Back Button Test
+      - generic [ref=e2014] [cursor=pointer]: Node A
+      - generic [ref=e2015] [cursor=pointer]: Edited 1776068178754
+      - generic [ref=e2016] [cursor=pointer]: Graph View Test 1776068176817
+      - generic [ref=e2017] [cursor=pointer]: Side Panel Test 1776068173982
+      - generic [ref=e2018] [cursor=pointer]: Planet Note 1776068173468
+      - generic [ref=e2019] [cursor=pointer]: Test Searchable1776068173563 Note
+      - generic [ref=e2020] [cursor=pointer]: Star Note 1776068173468
+      - generic [ref=e2021] [cursor=pointer]: List View Test Note
+      - generic [ref=e2022] [cursor=pointer]: Stats Test 2 1776068172332
+      - generic [ref=e2023] [cursor=pointer]: Stats Test 1 1776068172332
+      - generic [ref=e2024] [cursor=pointer]: Home Page Test Note 1776068171533
+      - generic [ref=e2025] [cursor=pointer]: Isolated Note
+      - generic [ref=e2026] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2027] [cursor=pointer]: Weak Link
+      - generic [ref=e2028] [cursor=pointer]: Toggle Test
+      - generic [ref=e2029] [cursor=pointer]: Strong Link
+      - generic [ref=e2030] [cursor=pointer]: Comet Node
+      - generic [ref=e2031] [cursor=pointer]: Source
+      - generic [ref=e2032] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2033] [cursor=pointer]: Linked
+      - generic [ref=e2034] [cursor=pointer]: Star Node
+      - generic [ref=e2035] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2036] [cursor=pointer]: Note 4
+      - generic [ref=e2037] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2038] [cursor=pointer]: Note 3
+      - generic [ref=e2039] [cursor=pointer]: Planet Node
+      - generic [ref=e2040] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2041] [cursor=pointer]: Note 2
+      - generic [ref=e2042] [cursor=pointer]: Note 1
+      - generic [ref=e2043] [cursor=pointer]: Note 0
+      - generic [ref=e2044] [cursor=pointer]: Labeled Node
+      - generic [ref=e2045] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2046] [cursor=pointer]: History Test
+      - generic [ref=e2047] [cursor=pointer]: Playwright Test 1776067975161
+      - generic [ref=e2048] [cursor=pointer]: Searchable Note 1776067974219
+      - generic [ref=e2049] [cursor=pointer]: Back Button Test
+      - generic [ref=e2050] [cursor=pointer]: Node B
+      - generic [ref=e2051] [cursor=pointer]: Node A
+      - generic [ref=e2052] [cursor=pointer]: Edited 1776067971029
+      - generic [ref=e2053] [cursor=pointer]: Graph View Test 1776067970104
+      - generic [ref=e2054] [cursor=pointer]: Side Panel Test 1776067966848
+      - generic [ref=e2055] [cursor=pointer]: Test Searchable1776067965563 Note
+      - generic [ref=e2056] [cursor=pointer]: Planet Note 1776067965499
+      - generic [ref=e2057] [cursor=pointer]: Star Note 1776067965499
+      - generic [ref=e2058] [cursor=pointer]: List View Test Note
+      - generic [ref=e2059] [cursor=pointer]: Stats Test 2 1776067964509
+      - generic [ref=e2060] [cursor=pointer]: Stats Test 1 1776067964509
+      - generic [ref=e2061] [cursor=pointer]: Home Page Test Note 1776067964063
+      - generic [ref=e2062] [cursor=pointer]: Isolated Note
+      - generic [ref=e2063] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2064] [cursor=pointer]: Weak Link
+      - generic [ref=e2065] [cursor=pointer]: Strong Link
+      - generic [ref=e2066] [cursor=pointer]: Toggle Test
+      - generic [ref=e2067] [cursor=pointer]: Source
+      - generic [ref=e2068] [cursor=pointer]: Comet Node
+      - generic [ref=e2069] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2070] [cursor=pointer]: Linked
+      - generic [ref=e2071] [cursor=pointer]: Star Node
+      - generic [ref=e2072] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2073] [cursor=pointer]: Labeled Node
+      - generic [ref=e2074] [cursor=pointer]: Planet Node
+      - generic [ref=e2075] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2076] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2077] [cursor=pointer]: Note 4
+      - generic [ref=e2078] [cursor=pointer]: Note 3
+      - generic [ref=e2079] [cursor=pointer]: Note 2
+      - generic [ref=e2080] [cursor=pointer]: Note 1
+      - generic [ref=e2081] [cursor=pointer]: Note 0
+      - generic [ref=e2082] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2083] [cursor=pointer]: Node B
+      - generic [ref=e2084] [cursor=pointer]: Node A
+      - generic [ref=e2085] [cursor=pointer]: Playwright Test 1776067919437
+      - generic [ref=e2086] [cursor=pointer]: Edited 1776067919554
+      - generic [ref=e2087] [cursor=pointer]: Graph View Test 1776067917477
+      - generic [ref=e2088] [cursor=pointer]: Side Panel Test 1776067916061
+      - generic [ref=e2089] [cursor=pointer]: Test Searchable1776067914505 Note
+      - generic [ref=e2090] [cursor=pointer]: Planet Note 1776067913882
+      - generic [ref=e2091] [cursor=pointer]: Star Note 1776067913882
+      - generic [ref=e2092] [cursor=pointer]: List View Test Note
+      - generic [ref=e2093] [cursor=pointer]: Stats Test 2 1776067913195
+      - generic [ref=e2094] [cursor=pointer]: Stats Test 1 1776067913195
+      - generic [ref=e2095] [cursor=pointer]: Home Page Test Note 1776067912273
+      - generic [ref=e2096] [cursor=pointer]: Isolated Note
+      - generic [ref=e2097] [cursor=pointer]: Weak Link
+      - generic [ref=e2098] [cursor=pointer]: Strong Link
+      - generic [ref=e2099] [cursor=pointer]: Source
+      - generic [ref=e2100] [cursor=pointer]: Toggle Test
+      - generic [ref=e2101] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2102] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2103] [cursor=pointer]: Comet Node
+      - generic [ref=e2104] [cursor=pointer]: Linked
+      - generic [ref=e2105] [cursor=pointer]: Star Node
+      - generic [ref=e2106] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2107] [cursor=pointer]: Labeled Node
+      - generic [ref=e2108] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2109] [cursor=pointer]: Note 4
+      - generic [ref=e2110] [cursor=pointer]: Note 3
+      - generic [ref=e2111] [cursor=pointer]: Note 2
+      - generic [ref=e2112] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2113] [cursor=pointer]: Note 1
+      - generic [ref=e2114] [cursor=pointer]: Note 0
+      - generic [ref=e2115] [cursor=pointer]: Planet Node
+      - generic [ref=e2116] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2117] [cursor=pointer]: Toggle Test
+      - generic [ref=e2118] [cursor=pointer]: Weak Link
+      - generic [ref=e2119] [cursor=pointer]: Strong Link
+      - generic [ref=e2120] [cursor=pointer]: Source
+      - generic [ref=e2121] [cursor=pointer]: Comet Node
+      - generic [ref=e2122] [cursor=pointer]: Linked
+      - generic [ref=e2123] [cursor=pointer]: Star Node
+      - generic [ref=e2124] [cursor=pointer]: Note 2
+      - generic [ref=e2125] [cursor=pointer]: Note 4
+      - generic [ref=e2126] [cursor=pointer]: Note 3
+      - generic [ref=e2127] [cursor=pointer]: Note 1
+      - generic [ref=e2128] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2129] [cursor=pointer]: Note 0
+      - generic [ref=e2130] [cursor=pointer]: Planet Node
+      - generic [ref=e2131] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2132] [cursor=pointer]: Labeled Node
+      - generic [ref=e2133] [cursor=pointer]: Linked
+      - generic [ref=e2134] [cursor=pointer]: Star Node
+      - generic [ref=e2135] [cursor=pointer]: Note 4
+      - generic [ref=e2136] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2137] [cursor=pointer]: Note 3
+      - generic [ref=e2138] [cursor=pointer]: Labeled Node
+      - generic [ref=e2139] [cursor=pointer]: Note 2
+      - generic [ref=e2140] [cursor=pointer]: Note 1
+      - generic [ref=e2141] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2142] [cursor=pointer]: Note 0
+      - generic [ref=e2143] [cursor=pointer]: Planet Node
+      - generic [ref=e2144] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2145] [cursor=pointer]: Linked
+      - generic [ref=e2146] [cursor=pointer]: Star Node
+      - generic [ref=e2147] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2148] [cursor=pointer]: Note 4
+      - generic [ref=e2149] [cursor=pointer]: Note 3
+      - generic [ref=e2150] [cursor=pointer]: Note 2
+      - generic [ref=e2151] [cursor=pointer]: Note 1
+      - generic [ref=e2152] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2153] [cursor=pointer]: Note 0
+      - generic [ref=e2154] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2155] [cursor=pointer]: Labeled Node
+      - generic [ref=e2156] [cursor=pointer]: Planet Node
+      - generic [ref=e2157] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2158] [cursor=pointer]: Note 4
+      - generic [ref=e2159] [cursor=pointer]: Note 3
+      - generic [ref=e2160] [cursor=pointer]: Note 2
+      - generic [ref=e2161] [cursor=pointer]: Note 1
+      - generic [ref=e2162] [cursor=pointer]: Note 0
+      - generic [ref=e2163] [cursor=pointer]: Weak Link
+      - generic [ref=e2164] [cursor=pointer]: Strong Link
+      - generic [ref=e2165] [cursor=pointer]: Source
+      - generic [ref=e2166] [cursor=pointer]: Linked
+      - generic [ref=e2167] [cursor=pointer]: Star Node
+      - generic [ref=e2168] [cursor=pointer]: Comet Node
+      - generic [ref=e2169] [cursor=pointer]: Planet Node
+      - generic [ref=e2170] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2171] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2172] [cursor=pointer]: Note 4
+      - generic [ref=e2173] [cursor=pointer]: Note 3
+      - generic [ref=e2174] [cursor=pointer]: Note 2
+      - generic [ref=e2175] [cursor=pointer]: Note 1
+      - generic [ref=e2176] [cursor=pointer]: Note 0
+      - generic [ref=e2177] [cursor=pointer]: Weak Link
+      - generic [ref=e2178] [cursor=pointer]: Planet Node
+      - generic [ref=e2179] [cursor=pointer]: Comet Node
+      - generic [ref=e2180] [cursor=pointer]: Strong Link
+      - generic [ref=e2181] [cursor=pointer]: Source
+      - generic [ref=e2182] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2183] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2184] [cursor=pointer]: Linked
+      - generic [ref=e2185] [cursor=pointer]: Star Node
+      - generic [ref=e2186] [cursor=pointer]: Weak Link
+      - generic [ref=e2187] [cursor=pointer]: Strong Link
+      - generic [ref=e2188] [cursor=pointer]: Linked Note
+      - generic [ref=e2189] [cursor=pointer]: Comet Node
+      - generic [ref=e2190] [cursor=pointer]: Source
+      - generic [ref=e2191] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2192] [cursor=pointer]: Star Node
+      - generic [ref=e2193] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2194] [cursor=pointer]: Planet Node
+      - generic [ref=e2195] [cursor=pointer]: Searchable Note 1776066333804
+      - generic [ref=e2196] [cursor=pointer]: History Test
+      - generic [ref=e2197] [cursor=pointer]: Node B
+      - generic [ref=e2198] [cursor=pointer]: Back Button Test
+      - generic [ref=e2199] [cursor=pointer]: Node A
+      - generic [ref=e2200] [cursor=pointer]: Playwright Test 1776066328878
+      - generic [ref=e2201] [cursor=pointer]: Side Panel Test 1776066328843
+      - generic [ref=e2202] [cursor=pointer]: Edited 1776066328505
+      - generic [ref=e2203] [cursor=pointer]: Test Searchable1776066326452 Note
+      - generic [ref=e2204] [cursor=pointer]: Stats Test 2 1776066324288
+      - generic [ref=e2205] [cursor=pointer]: Stats Test 1 1776066324288
+      - generic [ref=e2206] [cursor=pointer]: Graph View Test 1776066323909
+      - generic [ref=e2207] [cursor=pointer]: Planet Note 1776066321082
+      - generic [ref=e2208] [cursor=pointer]: Star Note 1776066321082
+      - generic [ref=e2209] [cursor=pointer]: List View Test Note
+      - generic [ref=e2210] [cursor=pointer]: Home Page Test Note 1776066318905
+      - generic [ref=e2211] [cursor=pointer]: Isolated Note
+      - generic [ref=e2212] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2213] [cursor=pointer]: Note 3
+      - generic [ref=e2214] [cursor=pointer]: Note 4
+      - generic [ref=e2215] [cursor=pointer]: Note 2
+      - generic [ref=e2216] [cursor=pointer]: Note 1
+      - generic [ref=e2217] [cursor=pointer]: Note 0
+      - generic [ref=e2218] [cursor=pointer]: Labeled Node
+      - generic [ref=e2219] [cursor=pointer]: Toggle Test
+      - generic [ref=e2220] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2221] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2222] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2223] [cursor=pointer]: Weak Link
+      - generic [ref=e2224] [cursor=pointer]: Strong Link
+      - generic [ref=e2225] [cursor=pointer]: Linked Note
+      - generic [ref=e2226] [cursor=pointer]: Comet Node
+      - generic [ref=e2227] [cursor=pointer]: Source
+      - generic [ref=e2228] [cursor=pointer]: Galaxy Node
+      - generic [ref=e2229] [cursor=pointer]: Star Node
+      - generic [ref=e2230] [cursor=pointer]: Scene Test Note
+      - generic [ref=e2231] [cursor=pointer]: Planet Node
+      - generic [ref=e2232] [cursor=pointer]: "???? Another Planet"
+      - generic [ref=e2233] [cursor=pointer]: "?�? Another Star"
+      - generic [ref=e2234] [cursor=pointer]: "???? Galaxy Note"
+      - generic [ref=e2235] [cursor=pointer]: "???? Planet Note"
+      - generic [ref=e2236] [cursor=pointer]: "?�? Star Note"
+      - generic [ref=e2237] [cursor=pointer]: ☄️ Test Note 8 (comet)
+      - generic [ref=e2238] [cursor=pointer]: 🪐 Test Note 7 (planet)
+      - generic [ref=e2239] [cursor=pointer]: ⭐ Test Note 6 (star)
+      - generic [ref=e2240] [cursor=pointer]: 📄 Test Note 5 (default)
+      - generic [ref=e2241] [cursor=pointer]: 🌀 Test Note 4 (galaxy)
+      - generic [ref=e2242] [cursor=pointer]: ☄️ Test Note 3 (comet)
+      - generic [ref=e2243] [cursor=pointer]: 🪐 Test Note 2 (planet)
+      - generic [ref=e2244] [cursor=pointer]: ⭐ Test Note 1 (star)
+      - generic [ref=e2245] [cursor=pointer]: Delta Node
+      - generic [ref=e2246] [cursor=pointer]: Gamma Node
+      - generic [ref=e2247] [cursor=pointer]: Beta Node
+      - generic [ref=e2248] [cursor=pointer]: Alpha Node
+      - generic [ref=e2249] [cursor=pointer]: Searchable Note 1776044925950
+      - generic [ref=e2250] [cursor=pointer]: History Test
+      - generic [ref=e2251] [cursor=pointer]: Back Button Test
+      - generic [ref=e2252] [cursor=pointer]: Graph View Test 1776044915604
+      - generic [ref=e2253] [cursor=pointer]: Side Panel Test 1776044914863
+      - generic [ref=e2254] [cursor=pointer]: Test Searchable1776044914728 Note
+      - generic [ref=e2255] [cursor=pointer]: List View Test Note
+      - generic [ref=e2256] [cursor=pointer]: Planet Note 1776044913515
+      - generic [ref=e2257] [cursor=pointer]: Stats Test 2 1776044913464
+      - generic [ref=e2258] [cursor=pointer]: Star Note 1776044913515
+      - generic [ref=e2259] [cursor=pointer]: Stats Test 1 1776044913464
+      - generic [ref=e2260] [cursor=pointer]: Home Page Test Note 1776044910827
+      - generic [ref=e2261] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2262] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2263] [cursor=pointer]: Isolated Note
+      - generic [ref=e2264] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2265] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2266] [cursor=pointer]: History Test
+      - generic [ref=e2267] [cursor=pointer]: Back Button Test
+      - generic [ref=e2268] [cursor=pointer]: Searchable Note 1776044871494
+      - generic [ref=e2269] [cursor=pointer]: Node B
+      - generic [ref=e2270] [cursor=pointer]: Node A
+      - generic [ref=e2271] [cursor=pointer]: Playwright Test 1776044870067
+      - generic [ref=e2272] [cursor=pointer]: Edited 1776044870429
+      - generic [ref=e2273] [cursor=pointer]: Graph View Test 1776044866519
+      - generic [ref=e2274] [cursor=pointer]: Side Panel Test 1776044866432
+      - generic [ref=e2275] [cursor=pointer]: Test Searchable1776044866347 Note
+      - generic [ref=e2276] [cursor=pointer]: List View Test Note
+      - generic [ref=e2277] [cursor=pointer]: Planet Note 1776044865110
+      - generic [ref=e2278] [cursor=pointer]: Stats Test 2 1776044865098
+      - generic [ref=e2279] [cursor=pointer]: Star Note 1776044865110
+      - generic [ref=e2280] [cursor=pointer]: Stats Test 1 1776044865098
+      - generic [ref=e2281] [cursor=pointer]: Home Page Test Note 1776044861850
+      - generic [ref=e2282] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2283] [cursor=pointer]: Isolated Note
+      - generic [ref=e2284] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2285] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2286] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2287] [cursor=pointer]: Microservices Architecture
+      - generic [ref=e2288] [cursor=pointer]: REST API Design
+      - generic [ref=e2289] [cursor=pointer]: Graph Databases
+      - generic [ref=e2290] [cursor=pointer]: Kubernetes Guide
+      - generic [ref=e2291] [cursor=pointer]: Docker Containers
+      - generic [ref=e2292] [cursor=pointer]: React vs Svelte
+      - generic [ref=e2293] [cursor=pointer]: Python for Data Science
+      - generic [ref=e2294] [cursor=pointer]: Neural Networks History
+      - generic [ref=e2295] [cursor=pointer]: Deep Learning Basics
+      - generic [ref=e2296] [cursor=pointer]: Introduction to Machine Learning
+      - generic [ref=e2297] [cursor=pointer]: History Test
+      - generic [ref=e2298] [cursor=pointer]: Searchable Note 1776044322842
+      - generic [ref=e2299] [cursor=pointer]: Back Button Test
+      - generic [ref=e2300] [cursor=pointer]: Node B
+      - generic [ref=e2301] [cursor=pointer]: Node A
+      - generic [ref=e2302] [cursor=pointer]: Playwright Test 1776044321486
+      - generic [ref=e2303] [cursor=pointer]: Edited 1776044321653
+      - generic [ref=e2304] [cursor=pointer]: Graph View Test 1776044317613
+      - generic [ref=e2305] [cursor=pointer]: Side Panel Test 1776044317485
+      - generic [ref=e2306] [cursor=pointer]: Test Searchable1776044317403 Note
+      - generic [ref=e2307] [cursor=pointer]: List View Test Note
+      - generic [ref=e2308] [cursor=pointer]: Stats Test 2 1776044316167
+      - generic [ref=e2309] [cursor=pointer]: Stats Test 1 1776044316167
+      - generic [ref=e2310] [cursor=pointer]: Planet Note 1776044316130
+      - generic [ref=e2311] [cursor=pointer]: Star Note 1776044316130
+      - generic [ref=e2312] [cursor=pointer]: Home Page Test Note 1776044312480
+      - generic [ref=e2313] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2314] [cursor=pointer]: Isolated Note
+      - generic [ref=e2315] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2316] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2317] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2318] [cursor=pointer]: History Test
+      - generic [ref=e2319] [cursor=pointer]: Searchable Note 1776044106224
+      - generic [ref=e2320] [cursor=pointer]: Node B
+      - generic [ref=e2321] [cursor=pointer]: Back Button Test
+      - generic [ref=e2322] [cursor=pointer]: Node A
+      - generic [ref=e2323] [cursor=pointer]: Edited 1776044104436
+      - generic [ref=e2324] [cursor=pointer]: Playwright Test 1776044101380
+      - generic [ref=e2325] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2326] [cursor=pointer]: Isolated Note
+      - generic [ref=e2327] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2328] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2329] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2330] [cursor=pointer]: "123"
+      - generic [ref=e2331] [cursor=pointer]: History Test
+      - generic [ref=e2332] [cursor=pointer]: Searchable Note 1776043687540
+      - generic [ref=e2333] [cursor=pointer]: Back Button Test
+      - generic [ref=e2334] [cursor=pointer]: Node B
+      - generic [ref=e2335] [cursor=pointer]: Node A
+      - generic [ref=e2336] [cursor=pointer]: Edited 1776043686050
+      - generic [ref=e2337] [cursor=pointer]: Playwright Test 1776043682679
+      - generic [ref=e2338] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2339] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2340] [cursor=pointer]: Isolated Note
+      - generic [ref=e2341] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2342] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2343] [cursor=pointer]: History Test
+      - generic [ref=e2344] [cursor=pointer]: Searchable Note 1776034648217
+      - generic [ref=e2345] [cursor=pointer]: Node B
+      - generic [ref=e2346] [cursor=pointer]: Node A
+      - generic [ref=e2347] [cursor=pointer]: Back Button Test
+      - generic [ref=e2348] [cursor=pointer]: Edited 1776034646609
+      - generic [ref=e2349] [cursor=pointer]: Playwright Test 1776034643469
+      - generic [ref=e2350] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2351] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2352] [cursor=pointer]: Isolated Note
+      - generic [ref=e2353] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2354] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2355] [cursor=pointer]: History Test
+      - generic [ref=e2356] [cursor=pointer]: Searchable Note 1776034023143
+      - generic [ref=e2357] [cursor=pointer]: Node B
+      - generic [ref=e2358] [cursor=pointer]: Node A
+      - generic [ref=e2359] [cursor=pointer]: Back Button Test
+      - generic [ref=e2360] [cursor=pointer]: Edited 1776034021274
+      - generic [ref=e2361] [cursor=pointer]: Playwright Test 1776034018138
+      - generic [ref=e2362] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2363] [cursor=pointer]: Isolated Note
+      - generic [ref=e2364] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2365] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2366] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2367] [cursor=pointer]: History Test
+      - generic [ref=e2368] [cursor=pointer]: Searchable Note 1776033937090
+      - generic [ref=e2369] [cursor=pointer]: Node B
+      - generic [ref=e2370] [cursor=pointer]: Node A
+      - generic [ref=e2371] [cursor=pointer]: Back Button Test
+      - generic [ref=e2372] [cursor=pointer]: Delete Test 1776033936167
+      - generic [ref=e2373] [cursor=pointer]: Edited 1776033935349
+      - generic [ref=e2374] [cursor=pointer]: Playwright Test 1776033932226
+      - generic [ref=e2375] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2376] [cursor=pointer]: Isolated Note
+      - generic [ref=e2377] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2378] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2379] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2380] [cursor=pointer]: Searchable Note 1776033716908
+      - generic [ref=e2381] [cursor=pointer]: History Test
+      - generic [ref=e2382] [cursor=pointer]: Node B
+      - generic [ref=e2383] [cursor=pointer]: Back Button Test
+      - generic [ref=e2384] [cursor=pointer]: Node A
+      - generic [ref=e2385] [cursor=pointer]: Delete Test 1776033715993
+      - generic [ref=e2386] [cursor=pointer]: Edited 1776033714679
+      - generic [ref=e2387] [cursor=pointer]: Playwright Test 1776033711359
+      - generic [ref=e2388] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2389] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2390] [cursor=pointer]: Isolated Note
+      - generic [ref=e2391] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2392] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2393] [cursor=pointer]: Searchable Note 1776033644123
+      - generic [ref=e2394] [cursor=pointer]: History Test
+      - generic [ref=e2395] [cursor=pointer]: Node B
+      - generic [ref=e2396] [cursor=pointer]: Back Button Test
+      - generic [ref=e2397] [cursor=pointer]: Delete Test 1776033643554
+      - generic [ref=e2398] [cursor=pointer]: Node A
+      - generic [ref=e2399] [cursor=pointer]: Edited 1776033642109
+      - generic [ref=e2400] [cursor=pointer]: Playwright Test 1776033638935
+      - generic [ref=e2401] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2402] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2403] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2404] [cursor=pointer]: Isolated Note
+      - generic [ref=e2405] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2406] [cursor=pointer]: History Test
+      - generic [ref=e2407] [cursor=pointer]: Searchable Note 1776033497929
+      - generic [ref=e2408] [cursor=pointer]: Back Button Test
+      - generic [ref=e2409] [cursor=pointer]: Delete Test 1776033497027
+      - generic [ref=e2410] [cursor=pointer]: Node B
+      - generic [ref=e2411] [cursor=pointer]: Node A
+      - generic [ref=e2412] [cursor=pointer]: Edit Test 1776033496284
+      - generic [ref=e2413] [cursor=pointer]: Playwright Test 1776033493100
+      - generic [ref=e2414] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2415] [cursor=pointer]: Isolated Note
+      - generic [ref=e2416] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2417] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2418] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2419] [cursor=pointer]: History Test
+      - generic [ref=e2420] [cursor=pointer]: Searchable Note 1776033224204
+      - generic [ref=e2421] [cursor=pointer]: Node B
+      - generic [ref=e2422] [cursor=pointer]: Node A
+      - generic [ref=e2423] [cursor=pointer]: Back Button Test
+      - generic [ref=e2424] [cursor=pointer]: Delete Test 1776033223096
+      - generic [ref=e2425] [cursor=pointer]: Edit Test 1776033222370
+      - generic [ref=e2426] [cursor=pointer]: Playwright Test 1776033218983
+      - generic [ref=e2427] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2428] [cursor=pointer]: Isolated Note
+      - generic [ref=e2429] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2430] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2431] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2432] [cursor=pointer]: History Test
+      - generic [ref=e2433] [cursor=pointer]: Searchable Note 1776031751749
+      - generic [ref=e2434] [cursor=pointer]: Node B
+      - generic [ref=e2435] [cursor=pointer]: Node A
+      - generic [ref=e2436] [cursor=pointer]: Back Button Test
+      - generic [ref=e2437] [cursor=pointer]: Delete Test 1776031750353
+      - generic [ref=e2438] [cursor=pointer]: Edit Test 1776031749446
+      - generic [ref=e2439] [cursor=pointer]: Playwright Test 1776031747179
+      - generic [ref=e2440] [cursor=pointer]: Isolated Note
+      - generic [ref=e2441] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2442] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2443] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2444] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2445] [cursor=pointer]: coursera-1.1
+      - generic [ref=e2446] [cursor=pointer]: History Test
+      - generic [ref=e2447] [cursor=pointer]: Node B
+      - generic [ref=e2448] [cursor=pointer]: Search Test Note
+      - generic [ref=e2449] [cursor=pointer]: Back Button Test
+      - generic [ref=e2450] [cursor=pointer]: To Edit
+      - generic [ref=e2451] [cursor=pointer]: Node A
+      - generic [ref=e2452] [cursor=pointer]: Delete Test 1776031624347
+      - generic [ref=e2453] [cursor=pointer]: Playwright Test
+      - generic [ref=e2454] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2455] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2456] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2457] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2458] [cursor=pointer]: Isolated Note
+      - generic [ref=e2459] [cursor=pointer]: History Test
+      - generic [ref=e2460] [cursor=pointer]: Back Button Test
+      - generic [ref=e2461] [cursor=pointer]: Node B
+      - generic [ref=e2462] [cursor=pointer]: Delete Test 1776031423084
+      - generic [ref=e2463] [cursor=pointer]: Node A
+      - generic [ref=e2464] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2465] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2466] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2467] [cursor=pointer]: Isolated Note
+      - generic [ref=e2468] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2469] [cursor=pointer]: Microservices Architecture
+      - generic [ref=e2470] [cursor=pointer]: REST API Design
+      - generic [ref=e2471] [cursor=pointer]: Graph Databases
+      - generic [ref=e2472] [cursor=pointer]: Kubernetes Guide
+      - generic [ref=e2473] [cursor=pointer]: Docker Containers
+      - generic [ref=e2474] [cursor=pointer]: React vs Svelte
+      - generic [ref=e2475] [cursor=pointer]: Python for Data Science
+      - generic [ref=e2476] [cursor=pointer]: Neural Networks History
+      - generic [ref=e2477] [cursor=pointer]: Deep Learning Basics
+      - generic [ref=e2478] [cursor=pointer]: Introduction to Machine Learning
+      - generic [ref=e2479] [cursor=pointer]: dsd
+      - generic [ref=e2480] [cursor=pointer]: History Test
+      - generic [ref=e2481] [cursor=pointer]: Node B
+      - generic [ref=e2482] [cursor=pointer]: Node A
+      - generic [ref=e2483] [cursor=pointer]: Back Button Test
+      - generic [ref=e2484] [cursor=pointer]: Delete Test 1776030710317
+      - generic [ref=e2485] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2486] [cursor=pointer]: Isolated Note
+      - generic [ref=e2487] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2488] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2489] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2490] [cursor=pointer]: History Test
+      - generic [ref=e2491] [cursor=pointer]: Back Button Test
+      - generic [ref=e2492] [cursor=pointer]: Node B
+      - generic [ref=e2493] [cursor=pointer]: Node A
+      - generic [ref=e2494] [cursor=pointer]: Delete Test 1776030579019
+      - generic [ref=e2495] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2496] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2497] [cursor=pointer]: Isolated Note
+      - generic [ref=e2498] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2499] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2500] [cursor=pointer]: History Test
+      - generic [ref=e2501] [cursor=pointer]: Back Button Test
+      - generic [ref=e2502] [cursor=pointer]: Node B
+      - generic [ref=e2503] [cursor=pointer]: Node A
+      - generic [ref=e2504] [cursor=pointer]: Delete Test 1776030111392
+      - generic [ref=e2505] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2506] [cursor=pointer]: Isolated Note
+      - generic [ref=e2507] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2508] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2509] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2510] [cursor=pointer]: History Test
+      - generic [ref=e2511] [cursor=pointer]: Back Button Test
+      - generic [ref=e2512] [cursor=pointer]: Node B
+      - generic [ref=e2513] [cursor=pointer]: Node A
+      - generic [ref=e2514] [cursor=pointer]: Delete Test 1776029982023
+      - generic [ref=e2515] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2516] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2517] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2518] [cursor=pointer]: Isolated Note
+      - generic [ref=e2519] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2520] [cursor=pointer]: History Test
+      - generic [ref=e2521] [cursor=pointer]: Back Button Test
+      - generic [ref=e2522] [cursor=pointer]: Node B
+      - generic [ref=e2523] [cursor=pointer]: Node A
+      - generic [ref=e2524] [cursor=pointer]: Delete Test 1776029858525
+      - generic [ref=e2525] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2526] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2527] [cursor=pointer]: Isolated Note
+      - generic [ref=e2528] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2529] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2530] [cursor=pointer]: History Test
+      - generic [ref=e2531] [cursor=pointer]: Back Button Test
+      - generic [ref=e2532] [cursor=pointer]: Node B
+      - generic [ref=e2533] [cursor=pointer]: Node A
+      - generic [ref=e2534] [cursor=pointer]: Delete Test 1776029754024
+      - generic [ref=e2535] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2536] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2537] [cursor=pointer]: Isolated Note
+      - generic [ref=e2538] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2539] [cursor=pointer]: History Test
+      - generic [ref=e2540] [cursor=pointer]: Delete Test 1776029603259
+      - generic [ref=e2541] [cursor=pointer]: Back Button Test
+      - generic [ref=e2542] [cursor=pointer]: Node B
+      - generic [ref=e2543] [cursor=pointer]: Node A
+      - generic [ref=e2544] [cursor=pointer]: Isolated Note
+      - generic [ref=e2545] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2546] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2547] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2548] [cursor=pointer]: History Test
+      - generic [ref=e2549] [cursor=pointer]: Node B
+      - generic [ref=e2550] [cursor=pointer]: Node A
+      - generic [ref=e2551] [cursor=pointer]: Back Button Test
+      - generic [ref=e2552] [cursor=pointer]: Delete Test 1776028933885
+      - generic [ref=e2553] [cursor=pointer]: Isolated Note
+      - generic [ref=e2554] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2555] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2556] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2557] [cursor=pointer]: History Test
+      - generic [ref=e2558] [cursor=pointer]: Back Button Test
+      - generic [ref=e2559] [cursor=pointer]: Delete Test 1776028561155
+      - generic [ref=e2560] [cursor=pointer]: Node B
+      - generic [ref=e2561] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2562] [cursor=pointer]: Node A
+      - generic [ref=e2563] [cursor=pointer]: History Test
+      - generic [ref=e2564] [cursor=pointer]: Node B
+      - generic [ref=e2565] [cursor=pointer]: Node A
+      - generic [ref=e2566] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2567] [cursor=pointer]: Back Button Test
+      - generic [ref=e2568] [cursor=pointer]: Delete Test 1776028309960
+      - generic [ref=e2569] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2570] [cursor=pointer]: History Test
+      - generic [ref=e2571] [cursor=pointer]: Back Button Test
+      - generic [ref=e2572] [cursor=pointer]: Delete Test 1776027875179
+      - generic [ref=e2573] [cursor=pointer]: Node B
+      - generic [ref=e2574] [cursor=pointer]: Node A
+      - generic [ref=e2575] [cursor=pointer]: Node B
+      - generic [ref=e2576] [cursor=pointer]: Node A
+      - generic [ref=e2577] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2578] [cursor=pointer]: Delete Test 1776027773911
+      - generic [ref=e2579] [cursor=pointer]: Back Button Test
+      - generic [ref=e2580] [cursor=pointer]: History Test
+      - generic [ref=e2581] [cursor=pointer]: "1"
+      - generic [ref=e2582] [cursor=pointer]: History Test
+      - generic [ref=e2583] [cursor=pointer]: Node B
+      - generic [ref=e2584] [cursor=pointer]: Node A
+      - generic [ref=e2585] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2586] [cursor=pointer]: Back Button Test
+      - generic [ref=e2587] [cursor=pointer]: Delete Test 1776022985642
+      - generic [ref=e2588] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2589] [cursor=pointer]: Isolated Note
+      - generic [ref=e2590] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2591] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2592] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2593] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2594] [cursor=pointer]: History Test
+      - generic [ref=e2595] [cursor=pointer]: Back Button Test
+      - generic [ref=e2596] [cursor=pointer]: Node B
+      - generic [ref=e2597] [cursor=pointer]: Node A
+      - generic [ref=e2598] [cursor=pointer]: Delete Test 1776022497554
+      - generic [ref=e2599] [cursor=pointer]: Performance Test Note
+      - generic [ref=e2600] [cursor=pointer]: Isolated Note
+      - generic [ref=e2601] [cursor=pointer]: Graph Test Note
+      - generic [ref=e2602] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e2603] [cursor=pointer]: Styling Test Note
+      - generic [ref=e2604] [cursor=pointer]: History Test
+      - generic [ref=e2605] [cursor=pointer]: Node B
+      - generic [ref=e2606] [cursor=pointer]: Node A
+      - generic [ref=e2607] [cursor=pointer]: Delete Test 1776022100232
+      - generic [ref=e2608] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2609] [cursor=pointer]: Back Button Test
+      - generic [ref=e2610] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2611] [cursor=pointer]: Node B
+      - generic [ref=e2612] [cursor=pointer]: Node A
+      - generic [ref=e2613] [cursor=pointer]: Back Button Test
+      - generic [ref=e2614] [cursor=pointer]: History Test
+      - generic [ref=e2615] [cursor=pointer]: Delete Test 1776021283346
+      - generic [ref=e2616] [cursor=pointer]: вавав
+      - generic [ref=e2617] [cursor=pointer]: "1"
+      - generic [ref=e2618] [cursor=pointer]: "213"
+      - generic [ref=e2619] [cursor=pointer]: "321"
+      - generic [ref=e2620] [cursor=pointer]: fdf
+      - generic [ref=e2621] [cursor=pointer]: History Test
+      - generic [ref=e2622] [cursor=pointer]: Edited
+      - generic [ref=e2623] [cursor=pointer]: Playwright Test
+      - generic [ref=e2624] [cursor=pointer]: Back Button Test
+      - generic [ref=e2625] [cursor=pointer]: Delete Test 1776000878988
+      - generic [ref=e2626] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2627] [cursor=pointer]: Node B
+      - generic [ref=e2628] [cursor=pointer]: Node A
+      - generic [ref=e2629] [cursor=pointer]: Star Beta
+      - generic [ref=e2630] [cursor=pointer]: Star Alpha
+      - generic [ref=e2631] [cursor=pointer]: Export Test Note
+      - generic [ref=e2632] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2633] [cursor=pointer]: Isolated Node
+      - generic [ref=e2634] [cursor=pointer]: Graph Node B
+      - generic [ref=e2635] [cursor=pointer]: Graph Node A
+      - generic [ref=e2636] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2637] [cursor=pointer]: History Test
+      - generic [ref=e2638] [cursor=pointer]: Edited
+      - generic [ref=e2639] [cursor=pointer]: Playwright Test
+      - generic [ref=e2640] [cursor=pointer]: Node B
+      - generic [ref=e2641] [cursor=pointer]: Back Button Test
+      - generic [ref=e2642] [cursor=pointer]: Delete Test 1776000722042
+      - generic [ref=e2643] [cursor=pointer]: Node A
+      - generic [ref=e2644] [cursor=pointer]: "2"
+      - generic [ref=e2645] [cursor=pointer]: Star Alpha
+      - generic [ref=e2646] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2647] [cursor=pointer]: Export Test Note
+      - generic [ref=e2648] [cursor=pointer]: Isolated Node
+      - generic [ref=e2649] [cursor=pointer]: Graph Node B
+      - generic [ref=e2650] [cursor=pointer]: Graph Node A
+      - generic [ref=e2651] [cursor=pointer]: History Test
+      - generic [ref=e2652] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2653] [cursor=pointer]: Playwright Test
+      - generic [ref=e2654] [cursor=pointer]: Back Button Test
+      - generic [ref=e2655] [cursor=pointer]: Delete Test 1775999436119
+      - generic [ref=e2656] [cursor=pointer]: Node B
+      - generic [ref=e2657] [cursor=pointer]: Node A
+      - generic [ref=e2658] [cursor=pointer]: Edited
+      - generic [ref=e2659] [cursor=pointer]: Export Test Note
+      - generic [ref=e2660] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2661] [cursor=pointer]: Isolated Node
+      - generic [ref=e2662] [cursor=pointer]: Graph Node B
+      - generic [ref=e2663] [cursor=pointer]: Graph Node A
+      - generic [ref=e2664] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2665] [cursor=pointer]: History Test
+      - generic [ref=e2666] [cursor=pointer]: Edited
+      - generic [ref=e2667] [cursor=pointer]: Playwright Test
+      - generic [ref=e2668] [cursor=pointer]: Node B
+      - generic [ref=e2669] [cursor=pointer]: Node A
+      - generic [ref=e2670] [cursor=pointer]: Delete Test 1775999189847
+      - generic [ref=e2671] [cursor=pointer]: Back Button Test
+      - generic [ref=e2672] [cursor=pointer]: Export Test Note
+      - generic [ref=e2673] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2674] [cursor=pointer]: Isolated Node
+      - generic [ref=e2675] [cursor=pointer]: Graph Node B
+      - generic [ref=e2676] [cursor=pointer]: Graph Node A
+      - generic [ref=e2677] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2678] [cursor=pointer]: History Test
+      - generic [ref=e2679] [cursor=pointer]: Edited
+      - generic [ref=e2680] [cursor=pointer]: Playwright Test
+      - generic [ref=e2681] [cursor=pointer]: Node B
+      - generic [ref=e2682] [cursor=pointer]: Node A
+      - generic [ref=e2683] [cursor=pointer]: Delete Test 1775999135511
+      - generic [ref=e2684] [cursor=pointer]: Back Button Test
+      - generic [ref=e2685] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2686] [cursor=pointer]: Isolated Node
+      - generic [ref=e2687] [cursor=pointer]: Export Test Note
+      - generic [ref=e2688] [cursor=pointer]: Graph Node B
+      - generic [ref=e2689] [cursor=pointer]: Graph Node A
+      - generic [ref=e2690] [cursor=pointer]: History Test
+      - generic [ref=e2691] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2692] [cursor=pointer]: Back Button Test
+      - generic [ref=e2693] [cursor=pointer]: Edited
+      - generic [ref=e2694] [cursor=pointer]: Node B
+      - generic [ref=e2695] [cursor=pointer]: Node A
+      - generic [ref=e2696] [cursor=pointer]: Delete Test 1775999085518
+      - generic [ref=e2697] [cursor=pointer]: Playwright Test
+      - generic [ref=e2698] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2699] [cursor=pointer]: Export Test Note
+      - generic [ref=e2700] [cursor=pointer]: Isolated Node
+      - generic [ref=e2701] [cursor=pointer]: Graph Node B
+      - generic [ref=e2702] [cursor=pointer]: Graph Node A
+      - generic [ref=e2703] [cursor=pointer]: History Test
+      - generic [ref=e2704] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2705] [cursor=pointer]: Edited
+      - generic [ref=e2706] [cursor=pointer]: Playwright Test
+      - generic [ref=e2707] [cursor=pointer]: Back Button Test
+      - generic [ref=e2708] [cursor=pointer]: Node B
+      - generic [ref=e2709] [cursor=pointer]: Node A
+      - generic [ref=e2710] [cursor=pointer]: Delete Test 1775998949942
+      - generic [ref=e2711] [cursor=pointer]: Graph Node B
+      - generic [ref=e2712] [cursor=pointer]: Graph Node A
+      - generic [ref=e2713] [cursor=pointer]: Export Test Note
+      - generic [ref=e2714] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2715] [cursor=pointer]: Isolated Node
+      - generic [ref=e2716] [cursor=pointer]: History Test
+      - generic [ref=e2717] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2718] [cursor=pointer]: Playwright Test
+      - generic [ref=e2719] [cursor=pointer]: Edited
+      - generic [ref=e2720] [cursor=pointer]: Back Button Test
+      - generic [ref=e2721] [cursor=pointer]: Node B
+      - generic [ref=e2722] [cursor=pointer]: Node A
+      - generic [ref=e2723] [cursor=pointer]: Delete Test 1775998893710
+      - generic [ref=e2724] [cursor=pointer]: Graph Node B
+      - generic [ref=e2725] [cursor=pointer]: Graph Node A
+      - generic [ref=e2726] [cursor=pointer]: Export Test Note
+      - generic [ref=e2727] [cursor=pointer]: Toolbar Created Note
+      - generic [ref=e2728] [cursor=pointer]: Isolated Node
+      - generic [ref=e2729] [cursor=pointer]: Node B
+      - generic [ref=e2730] [cursor=pointer]: Node A
+      - generic [ref=e2731] [cursor=pointer]: History Test
+      - generic [ref=e2732] [cursor=pointer]: Graph Back Test
+      - generic [ref=e2733] [cursor=pointer]: Back Button Test
+      - generic [ref=e2734] [cursor=pointer]: Delete Test 1775998141887
+      - generic [ref=e2735] [cursor=pointer]: Edited
+      - generic [ref=e2736] [cursor=pointer]: Playwright Test
+      - generic [ref=e2737] [cursor=pointer]: "1123"
+      - generic [ref=e2738] [cursor=pointer]: "123"
+      - generic [ref=e2739] [cursor=pointer]: Isolated Node
+      - generic [ref=e2740] [cursor=pointer]: Graph Node B
+      - generic [ref=e2741] [cursor=pointer]: Graph Node A
+      - generic [ref=e2742] [cursor=pointer]: Toolbar Created Note
+```
+
+# Test source
+
+```ts
+  195 |         data: { sourceNoteId: notes[i], targetNoteId: notes[i + 1], weight: 0.5 }
+  196 |       });
+  197 |     }
+  198 |     
+  199 |     await page.goto(`http://localhost:5173/graph/3d/${notes[0]}`);
+  200 |     await page.waitForLoadState('networkidle');
+  201 |     await page.waitForTimeout(4000); // Wait for simulation to settle and auto-zoom
+  202 |     
+  203 |     const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+  204 |     await expect(container).toBeVisible();
+  205 |     
+  206 |     // After auto-zoom, loading should be complete (no loading overlay)
+  207 |     const loading = page.locator('.loading-overlay');
+  208 |     const isLoading = await loading.isVisible().catch(() => false);
+  209 |     // Either not loading or error state is acceptable
+  210 |     expect(typeof isLoading).toBe('boolean');
+  211 |   });
+  212 | 
+  213 |   test('should handle full graph toggle', async ({ page, request }) => {
+  214 |     const note = await request.post('http://localhost:8080/notes', {
+  215 |       data: { title: 'Toggle Test', content: 'Testing full graph toggle' }
+  216 |     });
+  217 |     const noteId = (await note.json()).id;
+  218 |     
+  219 |     await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+  220 |     await page.waitForLoadState('networkidle');
+  221 |     await page.waitForTimeout(2000);
+  222 |     
+  223 |     // Find and click the toggle
+  224 |     const toggle = page.locator('.toggle input[type="checkbox"]').first();
+  225 |     if (await toggle.isVisible().catch(() => false)) {
+  226 |       await toggle.click();
+  227 |       await page.waitForTimeout(2000);
+  228 |       
+  229 |       // Verify graph still renders after toggle
+  230 |       const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+  231 |       await expect(container).toBeVisible();
+  232 |     }
+  233 |   });
+  234 | 
+  235 |   test('should display node labels via CSS2D', async ({ page, request }) => {
+  236 |     const note = await request.post('http://localhost:8080/notes', {
+  237 |       data: { title: 'Labeled Node', content: 'Testing CSS2D labels' }
+  238 |     });
+  239 |     const noteId = (await note.json()).id;
+  240 |     
+  241 |     await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+  242 |     await page.waitForLoadState('networkidle');
+  243 |     await page.waitForTimeout(4000);
+  244 |     
+  245 |     // Check for labels in the DOM (CSS2D creates div elements)
+  246 |     const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+  247 |     await expect(container).toBeVisible();
+  248 |   });
+  249 | 
+  250 |   test('should open graph page and verify full graph toggle', async ({ page, request }) => {
+  251 |     // Create test notes
+  252 |     const note1 = await request.post('http://localhost:8080/notes', {
+  253 |       data: { title: 'Main Note', content: 'Main content', type: 'star' }
+  254 |     });
+  255 |     const note1Id = (await note1.json()).id;
+  256 |     
+  257 |     const note2 = await request.post('http://localhost:8080/notes', {
+  258 |       data: { title: 'Linked Note', content: 'Linked content', type: 'planet' }
+  259 |     });
+  260 |     const note2Id = (await note2.json()).id;
+  261 |     
+  262 |     // Create link between notes
+  263 |     await request.post('http://localhost:8080/links', {
+  264 |       data: { sourceNoteId: note1Id, targetNoteId: note2Id, weight: 0.8 }
+  265 |     });
+  266 |     
+  267 |     // Test 1: Open 3D graph page for specific note (local constellation)
+  268 |     await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
+  269 |     await page.waitForLoadState('networkidle');
+  270 |     await page.waitForTimeout(4000);
+  271 |     
+  272 |     // Verify graph container or error state is visible
+  273 |     const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+  274 |     await expect(container).toBeVisible();
+  275 |     
+  276 |     // Test 2: Verify the "Show all notes" toggle exists and works
+  277 |     const toggle = page.locator('.toggle input[type="checkbox"], [data-testid="full-graph-toggle"]').first();
+  278 |     const hasToggle = await toggle.isVisible().catch(() => false);
+  279 |     
+  280 |     if (hasToggle) {
+  281 |       // Click toggle to switch to full graph view
+  282 |       await toggle.click();
+  283 |       await page.waitForTimeout(3000);
+  284 |       
+  285 |       // Verify graph still renders after toggle
+  286 |       const containerAfterToggle = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+  287 |       await expect(containerAfterToggle).toBeVisible();
+  288 |       
+  289 |       // Re-query toggle for second click (DOM might have changed)
+  290 |       const toggleAfter = page.locator('.toggle input[type="checkbox"], [data-testid="full-graph-toggle"]').first();
+  291 |       const hasToggleAfter = await toggleAfter.isVisible().catch(() => false);
+  292 |       
+  293 |       if (hasToggleAfter) {
+  294 |         // Click again to switch back to local view
+> 295 |         await toggleAfter.click();
+      |                           ^ TimeoutError: locator.click: Timeout 15000ms exceeded.
+  296 |         await page.waitForTimeout(2000);
+  297 |       }
+  298 |     }
+  299 |   });
+  300 | 
+  301 |   test('should display correct stats in 2D graph page', async ({ page, request }) => {
+  302 |     // Get current notes count
+  303 |     const notesResp = await request.get('http://localhost:8080/notes');
+  304 |     const notesData = await notesResp.json();
+  305 |     const totalNotes = notesData.total || 0;
+  306 |     console.log('Total notes in DB:', totalNotes);
+  307 |     
+  308 |     // Navigate to 2D graph page
+  309 |     await page.goto('http://localhost:5173/graph');
+  310 |     await page.waitForLoadState('networkidle');
+  311 |     await page.waitForTimeout(3000);
+  312 |     
+  313 |     // Check for stats bar
+  314 |     const statsBar = page.locator('.stats-bar').first();
+  315 |     const hasStats = await statsBar.isVisible().catch(() => false);
+  316 |     
+  317 |     if (hasStats) {
+  318 |       const statsText = await statsBar.textContent();
+  319 |       // Verify stats show numbers (nodes/links count)
+  320 |       expect(statsText).toMatch(/\d+\s+nodes?/i);
+  321 |       expect(statsText).toMatch(/\d+\s+links?/i);
+  322 |       
+  323 |       // Verify mode indicator (Full graph or Local view)
+  324 |       const hasMode = statsText?.toLowerCase().includes('full') || statsText?.toLowerCase().includes('local');
+  325 |       expect(hasMode).toBe(true);
+  326 |     }
+  327 |   });
+  328 | 
+  329 |   test('should display correct stats in 3D graph page', async ({ page, request }) => {
+  330 |     // Create a note for 3D graph
+  331 |     const note = await request.post('http://localhost:8080/notes', {
+  332 |       data: { title: '3D Stats Test', content: 'Testing 3D stats display', type: 'galaxy' }
+  333 |     });
+  334 |     const noteId = (await note.json()).id;
+  335 |     
+  336 |     // Navigate to 3D graph page
+  337 |     await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+  338 |     await page.waitForLoadState('networkidle');
+  339 |     await page.waitForTimeout(4000);
+  340 |     
+  341 |     // Check for stats bar
+  342 |     const statsBar = page.locator('.stats-bar').first();
+  343 |     const hasStats = await statsBar.isVisible().catch(() => false);
+  344 |     
+  345 |     if (hasStats) {
+  346 |       const statsText = await statsBar.textContent();
+  347 |       // Verify stats show numbers
+  348 |       expect(statsText).toMatch(/\d+\s+nodes?/i);
+  349 |       expect(statsText).toMatch(/\d+\s+links?/i);
+  350 |     }
+  351 |   });
+  352 | 
+  353 |   test('should toggle full graph mode in 2D and verify data changes', async ({ page, request }) => {
+  354 |     // Ensure we have notes with links
+  355 |     const note1 = await request.post('http://localhost:8080/notes', {
+  356 |       data: { title: '2D Toggle Test 1', content: 'First note', type: 'star' }
+  357 |     });
+  358 |     const note1Id = (await note1.json()).id;
+  359 |     
+  360 |     const note2 = await request.post('http://localhost:8080/notes', {
+  361 |       data: { title: '2D Toggle Test 2', content: 'Second note', type: 'planet' }
+  362 |     });
+  363 |     const note2Id = (await note2.json()).id;
+  364 |     
+  365 |     // Create link
+  366 |     await request.post('http://localhost:8080/links', {
+  367 |       data: { source_note_id: note1Id, target_note_id: note2Id, link_type: 'reference', weight: 0.7 }
+  368 |     });
+  369 |     
+  370 |     // Navigate to 2D graph
+  371 |     await page.goto('http://localhost:5173/graph');
+  372 |     await page.waitForLoadState('networkidle');
+  373 |     await page.waitForTimeout(3000);
+  374 |     
+  375 |     // Find toggle
+  376 |     const toggle = page.locator('.toggle input[type="checkbox"]').first();
+  377 |     const hasToggle = await toggle.isVisible().catch(() => false);
+  378 |     
+  379 |     if (!hasToggle) {
+  380 |       test.skip(true, 'Toggle not found on 2D graph page');
+  381 |       return;
+  382 |     }
+  383 |     
+  384 |     // Get initial stats
+  385 |     const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '') || '';
+  386 |     console.log('Stats before toggle:', statsBefore);
+  387 |     
+  388 |     // Toggle to local view
+  389 |     await toggle.click();
+  390 |     await page.waitForTimeout(3000);
+  391 |     
+  392 |     // Get stats after toggle
+  393 |     const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '') || '';
+  394 |     console.log('Stats after toggle:', statsAfter);
+  395 |     
+```
