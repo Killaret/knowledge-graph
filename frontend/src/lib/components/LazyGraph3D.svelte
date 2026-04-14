@@ -10,16 +10,20 @@
   let loadError = $state<string | null>(null);
 
   onMount(async () => {
+    console.log('[LazyGraph3D] Starting dynamic import of Graph3D.svelte...');
     try {
       // Dynamic import of Graph3D component
       const module = await import('./Graph3D.svelte');
+      console.log('[LazyGraph3D] Module loaded:', module);
       // Svelte 5 default export
       Graph3DComponent = (module as { default?: Component<{ data: GraphData }> }).default || null;
+      console.log('[LazyGraph3D] Graph3DComponent assigned:', Graph3DComponent ? 'success' : 'null');
     } catch (e) {
       loadError = 'Failed to load 3D visualization';
-      console.error('Error loading Graph3D:', e);
+      console.error('[LazyGraph3D] Error loading Graph3D:', e);
     } finally {
       isLoading = false;
+      console.log('[LazyGraph3D] Loading complete, error:', loadError);
     }
   });
 </script>
