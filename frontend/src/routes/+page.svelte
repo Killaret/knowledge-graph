@@ -22,11 +22,10 @@
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
   
-  // Graph state
+  // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphLoading = $state(false);
   let searchQuery = $state('');
-  let showFullGraph = $state(false); // Toggle between full graph and local view
   
   // Filter and sort state
   let selectedType = $state<string>('all');
@@ -67,21 +66,20 @@
   }
   
   async function loadGraphData() {
-    if (allNotes.length === 0) return;
+    if (allNotes.length === 0) {
+      console.log('[+page] No notes to load graph');
+      graphData = { nodes: [], links: [] };
+      return;
+    }
     
     graphLoading = true;
+    console.log('[+page] Loading full graph...');
     try {
-      if (showFullGraph) {
-        // Load full graph of all notes
-        graphData = await getFullGraphData();
-      } else {
-        // Build local graph from all notes - use first note as center
-        const centerNote = allNotes[0];
-        const data = await getGraphData(centerNote.id, 2);
-        graphData = data;
-      }
+      // Always load full graph on main page
+      graphData = await getFullGraphData();
+      console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
     } catch (e) {
-      console.error('Failed to load graph:', e);
+      console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
       graphData = {
         nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
@@ -92,10 +90,10 @@
     }
   }
   
-  // Отслеживаем изменение showFullGraph и загружаем данные
+  // Reload graph when allNotes changes (notes added/deleted)
   $effect(() => {
-    if (browser) {
-      const mode = showFullGraph;
+    if (browser && allNotes.length > 0) {
+      console.log('[+page] allNotes changed, reloading graph...');
       loadGraphData();
     }
   });
@@ -275,18 +273,6 @@
         {/if}
       </div>
 
-      <!-- Graph Mode Toggle (Full Graph / Local View) -->
-      {#if currentView === 'graph'}
-        <div class="graph-mode-toggle">
-          <label class="toggle-label">
-            <input 
-              type="checkbox" 
-              bind:checked={showFullGraph}
-            />
-            <span class="toggle-text">Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
-          </label>
-        </div>
-      {/if}
 
       <!-- Graph View (Primary) -->
       {#if currentView === 'graph' && !loading}
@@ -513,37 +499,6 @@
   .stats-of {
     color: #94a3b8;
     font-size: 13px;
-  }
-
-  .graph-mode-toggle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 16px;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    border-radius: 8px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  .toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1e293b;
-  }
-
-  .toggle-label input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #3b82f6;
-  }
-
-  .toggle-text {
-    user-select: none;
   }
 
   .empty-state {
