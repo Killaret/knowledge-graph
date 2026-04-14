@@ -96,17 +96,42 @@
     // Отслеживаем изменения в данных
     const nodesKey = nodes.map(n => n.id).join(',');
     const linksKey = links.map(l => `${l.source}-${l.target}`).join(',');
+    const dataKey = `${nodesKey}|${linksKey}`;
     
-    if (d3Force && nodes.length > 0) {
+    console.log('[GraphCanvas] $effect triggered:', { nodes: nodes.length, links: links.length, dataKey: dataKey.slice(0, 50) });
+    
+    if (d3Force) {
+      if (nodes.length === 0) {
+        console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
+        if (simulation) {
+          simulation.stop();
+          simulation = null;
+        }
+        // Clear canvas
+        if (ctx) {
+          ctx.clearRect(0, 0, width, height);
+        }
+        return;
+      }
+      
+      console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
+      
       // Останавливаем старую симуляцию
       if (simulation) {
+        console.log('[GraphCanvas] Stopping old simulation');
         simulation.stop();
       }
+      
       // Очищаем углы и скорости для новых данных
       angles.clear();
       speeds.clear();
+      console.log('[GraphCanvas] Cleared angles and speeds maps');
+      
       // Запускаем новую с обновленными данными
       startSimulation();
+      console.log('[GraphCanvas] New simulation started');
+    } else {
+      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
     }
   });
 
@@ -144,9 +169,15 @@
   }
 
   function startSimulation() {
-    if (!d3Force) return;
+    if (!d3Force) {
+      console.log('[GraphCanvas] Cannot start simulation: d3Force not loaded');
+      return;
+    }
+    
+    console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
+    
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
-    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1 }));
+    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
@@ -156,7 +187,9 @@
       .alphaDecay(0.02)
       .on('tick', () => draw());
 
+    // Run initial ticks to stabilize
     simulation.tick(100);
+    console.log('[GraphCanvas] Simulation initialized and ticked 100 times');
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
