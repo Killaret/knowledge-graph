@@ -2,14 +2,16 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { getGraphData, getFullGraphData } from '$lib/api/graph';
-  import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
+  import Graph3D from '$lib/components/Graph3D.svelte';
   import type { GraphData } from '$lib/api/graph';
 
   let graphData: GraphData | null = $state(null);
-  let loading = $state(true);
+  let loading = $state(false); // No spinner - show graph immediately
   let error = $state('');
   let showFullGraph = $state(false); // По умолчанию локальный вид
   let currentNoteId: string | null = $state(null);
+  let graphRef: ReturnType<typeof Graph3D> | null = $state(null);
+  let isLoadingFull = $state(false); // Background loading indicator only
 
   // Единый эффект для загрузки графа при изменении ID или режима
   $effect(() => {
@@ -24,30 +26,65 @@
     }
 
     if (currentNoteId) {
-      loadGraph(currentNoteId);
+      loadGraphProgressive(currentNoteId);
     }
   });
 
-  async function loadGraph(noteId: string) {
-    console.log('[3D Page] loadGraph called:', { noteId, showFullGraph });
+  async function loadGraphProgressive(noteId: string) {
+    console.log('[3D Page] loadGraphProgressive called:', { noteId, showFullGraph });
     loading = true;
     error = '';
+    
     try {
-      let newData;
+      let initialData: GraphData;
+      
       if (showFullGraph) {
-        // Загружаем полный граф всех заметок
-        newData = await getFullGraphData();
-        console.log('[3D Page] Loaded full graph:', newData.nodes.length, 'nodes');
+        // For full graph, still load progressively
+        initialData = await getFullGraphData(50); // Load first 50 nodes initially
+        console.log('[3D Page] Loaded initial full graph (limited):', initialData.nodes.length, 'nodes');
+        
+        graphData = initialData;
+        loading = false;
+        
+        // Load remaining full graph in background
+        isLoadingFull = true;
+        getFullGraphData().then(fullData => {
+          console.log('[3D Page] Background loaded full graph:', fullData.nodes.length, 'nodes');
+          if (graphRef && fullData.nodes.length > initialData.nodes.length) {
+            graphRef.addData(fullData);
+          }
+          isLoadingFull = false;
+        });
       } else {
-        // Загружаем локальный граф вокруг заметки
-        newData = await getGraphData(noteId, 2);
-        console.log('[3D Page] Loaded local graph:', newData.nodes.length, 'nodes');
+        // TWO-PHASE LOADING for local graph
+        // Phase 1: Load initial data (depth 1) - immediate display
+        initialData = await getGraphData(noteId, 1);
+        console.log('[3D Page] Phase 1 - Loaded initial graph (depth 1):', initialData.nodes.length, 'nodes');
+        
+        // Immediately display initial data
+        graphData = initialData;
+        loading = false;
+        
+        // Phase 2: Background load full graph (depth 3)
+        isLoadingFull = true;
+        console.log('[3D Page] Starting Phase 2 - loading full graph (depth 3)...');
+        
+        getGraphData(noteId, 3).then(fullData => {
+          console.log('[3D Page] Phase 2 - Loaded full graph:', fullData.nodes.length, 'nodes');
+          
+          // Call addData on the Graph3D component to add new nodes incrementally
+          if (graphRef && fullData.nodes.length > initialData.nodes.length) {
+            graphRef.addData(fullData);
+          }
+          isLoadingFull = false;
+        }).catch(e => {
+          console.error('[3D Page] Failed to load full graph:', e);
+          isLoadingFull = false;
+        });
       }
-      graphData = newData;
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
-    } finally {
       loading = false;
     }
   }
@@ -61,8 +98,8 @@
     </label>
   </div>
   
-  <!-- Stats -->
-  {#if !loading && !error && graphData}
+  <!-- Stats with background loading indicator -->
+  {#if graphData}
     <div class="stats-bar">
       <span class="stats-item">
         <strong>{graphData.nodes.length}</strong> nodes
@@ -75,20 +112,19 @@
       {:else}
         <span class="stats-mode">(Local view)</span>
       {/if}
+      {#if isLoadingFull}
+        <span class="loading-indicator" title="Loading more data...">
+          <span class="mini-spinner"></span>
+        </span>
+      {/if}
     </div>
   {/if}
   
   {#if error}
     <div class="center error">{error}</div>
   {:else if graphData}
-    <div class="graph-wrapper" class:loading>
-      <LazyGraph3D data={graphData} />
-      {#if loading}
-        <div class="loading-overlay">
-          <div class="spinner"></div>
-          <span>Загрузка...</span>
-        </div>
-      {/if}
+    <div class="graph-wrapper">
+      <Graph3D bind:this={graphRef} data={graphData} />
     </div>
   {/if}
 </div>
@@ -176,29 +212,19 @@
     height: 100%;
   }
 
-  .loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    flex-direction: column;
+  .loading-indicator {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    color: white;
-    z-index: 1000;
-    gap: 12px;
+    margin-left: 8px;
   }
 
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+  .mini-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-top-color: #88aaff;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin {

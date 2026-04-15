@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import { initScene } from '$lib/three/core/sceneSetup';
-  import { createSimulation } from '$lib/three/simulation/forceSimulation';
+  import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
+  import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
   import { autoZoomToFit } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
@@ -26,11 +26,16 @@
   let objectManager: ObjectManager;
   let animationFrame: number;
 
-  let isLoading = $state(true);
+  let isLoading = $state(false); // No loading spinner - we show graph immediately
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
   let isInitialized = $state(false);
   let lastProcessedKey = $state(0);
+  
+  // Progressive loading state
+  let currentData = $state<GraphData>({ nodes: [], links: [] });
+  let isFullyLoaded = $state(false);
+  let fogAnimationFrame: number | null = null;
   
   // Создаем ключ для отслеживания изменений данных
   let dataUpdateKey = $state(0);
@@ -204,6 +209,12 @@
     };
     
     console.log('[Graph3D] Calling createSimulation...');
+    // Track current data for progressive loading
+    currentData = filteredData;
+    // Reset fog to dense for "fog of war" effect on initial load
+    if (scene) {
+      setFogDensity(scene, 0.08);
+    }
     isLoading = true;
     simulation = createSimulation(filteredData, objectManager);
     
@@ -256,8 +267,99 @@
     });
   }
 
+  // Animate fog density from start to end over duration
+  function animateFog(startDensity: number, endDensity: number, duration: number = 2000) {
+    if (!scene) return;
+    
+    const startTime = performance.now();
+    
+    function updateFog() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out cubic
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const currentDensity = startDensity + (endDensity - startDensity) * ease;
+      
+      setFogDensity(scene, currentDensity);
+      
+      if (progress < 1) {
+        fogAnimationFrame = requestAnimationFrame(updateFog);
+      } else {
+        fogAnimationFrame = null;
+      }
+    }
+    
+    // Cancel any existing fog animation
+    if (fogAnimationFrame) {
+      cancelAnimationFrame(fogAnimationFrame);
+    }
+    
+    updateFog();
+  }
+
+  // Public method to add more data (for progressive loading)
+  export function addData(newData: GraphData) {
+    if (!simulation || !objectManager || !scene) {
+      console.warn('[Graph3D] addData called but simulation not ready');
+      return;
+    }
+    
+    console.log('[Graph3D] addData called:', { 
+      currentNodes: currentData.nodes.length, 
+      newNodes: newData.nodes.length,
+      currentLinks: currentData.links.length,
+      newLinks: newData.links.length
+    });
+    
+    // Filter new data to only include valid links
+    const newNodeIds = new Set(newData.nodes.map(n => n.id));
+    const validNewLinks = newData.links.filter(l => 
+      newNodeIds.has(l.source) && newNodeIds.has(l.target)
+    );
+    
+    const filteredNewData = {
+      nodes: newData.nodes,
+      links: validNewLinks
+    };
+    
+    // Add new data to simulation
+    addNodesToSimulation(simulation, filteredNewData, currentData, objectManager);
+    
+    // Update current data tracking
+    const existingNodeIds = new Set(currentData.nodes.map(n => n.id));
+    const existingLinkIds = new Set(currentData.links.map(l => `${l.source}-${l.target}`));
+    
+    const mergedNodes = [
+      ...currentData.nodes,
+      ...newData.nodes.filter(n => !existingNodeIds.has(n.id))
+    ];
+    const mergedLinks = [
+      ...currentData.links,
+      ...validNewLinks.filter(l => !existingLinkIds.has(`${l.source}-${l.target}`))
+    ];
+    
+    currentData = { nodes: mergedNodes, links: mergedLinks };
+    
+    // Animate fog dissipation (dense to clear)
+    console.log('[Graph3D] Starting fog animation (0.08 -> 0.005)');
+    animateFog(0.08, 0.005, 2500);
+    
+    // Mark as fully loaded
+    isFullyLoaded = true;
+    
+    // Call autoZoomToFit with animation after a delay to let simulation settle
+    setTimeout(() => {
+      if (simulation && camera && controls) {
+        console.log('[Graph3D] Auto zooming to fit full graph with animation');
+        autoZoomToFit(simulation.nodes(), camera, controls, true);
+      }
+    }, 500);
+  }
+
   onDestroy(() => {
     if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (fogAnimationFrame) cancelAnimationFrame(fogAnimationFrame);
     if (simulation) simulation.stop();
     if (renderer) renderer.dispose();
     window.removeEventListener('resize', onResize);
@@ -269,7 +371,7 @@
   // Public method to reset camera
   export function resetCamera() {
     if (simulation && camera && controls) {
-      autoZoomToFit(simulation.nodes(), camera, controls);
+      autoZoomToFit(simulation.nodes(), camera, controls, isFullyLoaded);
     }
   }
 

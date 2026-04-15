@@ -69,6 +69,59 @@ export class ObjectManager {
     console.log(`[ObjectManager] Total created: ${this.nodeMap.size} nodes, ${this.linkMap.size} links, ${this.labelMap.size} labels`);
   }
 
+  /**
+   * Add new nodes and links incrementally without clearing existing ones
+   */
+  addNodes(newNodes: GraphNode[], newLinks: GraphLink[]) {
+    console.log(`[ObjectManager] addNodes called: ${newNodes.length} new nodes, ${newLinks.length} new links`);
+    
+    // Add new nodes
+    newNodes.forEach((node) => {
+      if (this.nodeMap.has(node.id)) {
+        return; // Skip existing nodes
+      }
+      
+      const mesh = createNodeMesh(node);
+      mesh.position.set((node as any).x ?? 0, (node as any).y ?? 0, (node as any).z ?? 0);
+      mesh.userData = { type: 'node', id: node.id, nodeData: node };
+      this.scene.add(mesh);
+      this.nodeMap.set(node.id, mesh);
+
+      const label = createLabel(node.title || node.id.substring(0, 6), () => {
+        window.location.href = `/notes/${node.id}`;
+      });
+      const labelOffset = getNodeSize(node.type) + 2.5;
+      label.position.copy(mesh.position).add(new THREE.Vector3(0, labelOffset, 0));
+      label.userData = { type: 'label', nodeId: node.id };
+      this.scene.add(label);
+      this.labelMap.set(node.id, label);
+    });
+
+    // Add new links
+    newLinks.forEach((link) => {
+      const linkId = `${link.source}-${link.target}`;
+      if (this.linkMap.has(linkId)) {
+        return; // Skip existing links
+      }
+      
+      // Get source and target from the complete node map (existing + new)
+      const sourceObj = this.nodeMap.get(link.source);
+      const targetObj = this.nodeMap.get(link.target);
+      
+      if (!sourceObj || !targetObj) {
+        console.warn(`[ObjectManager] Skipping link ${linkId}: nodes not found (source: ${!!sourceObj}, target: ${!!targetObj})`);
+        return;
+      }
+
+      const line = createLinkLine(sourceObj.position, targetObj.position, link.weight ?? 1, link.link_type);
+      line.userData = { type: 'link', source: link.source, target: link.target, linkType: link.link_type };
+      this.scene.add(line);
+      this.linkMap.set(linkId, line);
+    });
+    
+    console.log(`[ObjectManager] After addNodes: ${this.nodeMap.size} total nodes, ${this.linkMap.size} total links`);
+  }
+
   updatePositions(nodes: GraphNode[]) {
     nodes.forEach((node) => {
       const obj = this.nodeMap.get(node.id);
