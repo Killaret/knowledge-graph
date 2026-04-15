@@ -16,7 +16,9 @@
     "test:debug": "playwright test --debug",
     "test:cucumber": "node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs",
     "test:bdd": "npm run test:cucumber",
-    "test:all": "npm run test && npm run test:cucumber"
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:all": "npm run test:unit && npm run test && npm run test:cucumber"
   },
   "dependencies": {
     "d3-force": "^3.0.0",
@@ -40,6 +42,10 @@
     "svelte": "^5.54.0",
     "svelte-check": "^4.4.2",
     "svelte-eslint-parser": "^0.43.0",
+    "@testing-library/svelte": "^5.2.7",
+    "@testing-library/jest-dom": "^6.6.3",
+    "jsdom": "^26.0.0",
+    "vitest": "^3.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0",

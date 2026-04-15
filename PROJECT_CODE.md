@@ -4134,6 +4134,356 @@ func TestCreateLink(t *testing.T) {
 }
 ```
 
+#### `backend/internal/infrastructure/db/postgres/embedding_repo_test.go`
+
+```go
+//go:build integration
+// +build integration
+
+package postgres
+
+import (
+	"context"
+	"testing"
+
+	"knowledge-graph/internal/domain/note"
+
+	"github.com/google/uuid"
+	"github.com/pgvector/pgvector-go"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+func setupTestDBForEmbedding(t *testing.T) *gorm.DB {
+	dsn := "host=localhost user=kb_user password=kb_password dbname=knowledge_base_test port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect test db: %v", err)
+	}
+	if err := db.AutoMigrate(&NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate: %v", err)
+	}
+	db.Exec("DELETE FROM note_embeddings")
+	db.Exec("DELETE FROM notes")
+	return db
+}
+
+func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
+	db := setupTestDBForEmbedding(t)
+	repo := NewEmbeddingRepository(db)
+	noteRepo := NewNoteRepository(db)
+
+	title, _ := note.NewTitle("Embedding Test")
+	content, _ := note.NewContent("Test content for embedding")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, metadata)
+
+	ctx := context.Background()
+	if err := noteRepo.Save(ctx, n); err != nil {
+		t.Fatalf("Save note failed: %v", err)
+	}
+
+	// Создаем эмбеддинг (384 dimensions)
+	embedding := make([]float32, 384)
+	for i := range embedding {
+		embedding[i] = float32(i) / 100.0
+	}
+	vec := pgvector.NewVector(embedding)
+
+	err := repo.Upsert(ctx, n.ID(), vec)
+	if err != nil {
+		t.Fatalf("Upsert embedding failed: %v", err)
+	}
+
+	var count int64
+	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Count(&count)
+	if count != 1 {
+		t.Errorf("expected 1 embedding, got %d", count)
+	}
+}
+
+func TestEmbeddingRepository_FindSimilarNotes(t *testing.T) {
+	db := setupTestDBForEmbedding(t)
+	repo := NewEmbeddingRepository(db)
+	noteRepo := NewNoteRepository(db)
+
+	ctx := context.Background()
+
+	// Создаем 3 заметки
+	notes := make([]*note.Note, 3)
+	for i := 0; i < 3; i++ {
+		title, _ := note.NewTitle("Note " + string(rune('A'+i)))
+		content, _ := note.NewContent("Content " + string(rune('A'+i)))
+		metadata, _ := note.NewMetadata(nil)
+		notes[i] = note.NewNote(title, content, metadata)
+		if err := noteRepo.Save(ctx, notes[i]); err != nil {
+			t.Fatalf("Save note %d failed: %v", i, err)
+		}
+	}
+
+	// Создаем эмбеддинги с разным сходством
+	for i, n := range notes {
+		embedding := make([]float32, 384)
+		if i == 0 {
+			embedding[0] = 1.0
+		} else if i == 1 {
+			embedding[0] = 0.9
+			embedding[1] = 0.1
+		} else {
+			embedding[1] = 1.0
+		}
+		vec := pgvector.NewVector(embedding)
+		if err := repo.Upsert(ctx, n.ID(), vec); err != nil {
+			t.Fatalf("Upsert embedding %d failed: %v", i, err)
+		}
+	}
+
+	// Ищем похожие на Note A
+	similar, err := repo.FindSimilarNotes(ctx, notes[0].ID(), 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotes failed: %v", err)
+	}
+
+	if len(similar) != 2 {
+		t.Errorf("expected 2 similar notes, got %d", len(similar))
+	}
+}
+```
+
+#### `backend/internal/interfaces/api/graphhandler/graph_handler_test.go`
+
+```go
+package graphhandler
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"knowledge-graph/internal/domain/link"
+	"knowledge-graph/internal/domain/note"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type mockNoteRepo struct {
+	mock.Mock
+}
+
+func (m *mockNoteRepo) Save(ctx context.Context, n *note.Note) error {
+	args := m.Called(ctx, n)
+	return args.Error(0)
+}
+
+func (m *mockNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*note.Note), args.Error(1)
+}
+
+func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, query, limit, offset)
+	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]*note.Note), args.Error(1)
+}
+
+type mockLinkRepo struct {
+	mock.Mock
+}
+
+func (m *mockLinkRepo) Save(ctx context.Context, l *link.Link) error {
+	args := m.Called(ctx, l)
+	return args.Error(0)
+}
+
+func (m *mockLinkRepo) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*link.Link), args.Error(1)
+}
+
+func (m *mockLinkRepo) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
+	args := m.Called(ctx, sourceID)
+	return args.Get(0).([]*link.Link), args.Error(1)
+}
+
+func (m *mockLinkRepo) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
+	args := m.Called(ctx, targetID)
+	return args.Get(0).([]*link.Link), args.Error(1)
+}
+
+func (m *mockLinkRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
+	args := m.Called(ctx, sourceID)
+	return args.Error(0)
+}
+
+func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]*link.Link), args.Error(1)
+}
+
+func setupGraphRouter() (*gin.Engine, *mockNoteRepo, *mockLinkRepo) {
+	gin.SetMode(gin.TestMode)
+	noteRepo := new(mockNoteRepo)
+	linkRepo := new(mockLinkRepo)
+	handler := New(noteRepo, linkRepo, 3)
+	r := gin.Default()
+	r.GET("/graph/:id", handler.GetGraph)
+	r.GET("/graph", handler.GetFullGraph)
+	return r, noteRepo, linkRepo
+}
+
+func TestHandler_GetGraph(t *testing.T) {
+	t.Run("successful graph load", func(t *testing.T) {
+		r, noteRepo, linkRepo := setupGraphRouter()
+
+		centerID := uuid.New()
+		title, _ := note.NewTitle("Center Node")
+		content, _ := note.NewContent("Center content")
+		metadata, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
+		centerNote := note.NewNote(title, content, metadata)
+
+		noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+		linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+		linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+		req := httptest.NewRequest("GET", "/graph/"+centerID.String(), nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response GraphData
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Len(t, response.Nodes, 1)
+		assert.Equal(t, "Center Node", response.Nodes[0].Title)
+		assert.Equal(t, "star", response.Nodes[0].Type)
+	})
+
+	t.Run("graph with connected nodes", func(t *testing.T) {
+		r, noteRepo, linkRepo := setupGraphRouter()
+
+		centerID := uuid.New()
+		neighborID := uuid.New()
+
+		title1, _ := note.NewTitle("Center")
+		content1, _ := note.NewContent("Center content")
+		metadata1, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
+		centerNote := note.NewNote(title1, content1, metadata1)
+
+		title2, _ := note.NewTitle("Neighbor")
+		content2, _ := note.NewContent("Neighbor content")
+		metadata2, _ := note.NewMetadata(map[string]interface{}{"type": "planet"})
+		neighborNote := note.NewNote(title2, content2, metadata2)
+
+		linkType, _ := link.NewLinkType("reference")
+		weight, _ := link.NewWeight(0.8)
+		linkMetadata, _ := link.NewMetadata(nil)
+		l := link.NewLink(centerID, neighborID, linkType, weight, linkMetadata)
+
+		noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+		noteRepo.On("FindByID", mock.Anything, neighborID).Return(neighborNote, nil)
+		linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{l}, nil)
+		linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+		linkRepo.On("FindBySource", mock.Anything, neighborID).Return([]*link.Link{}, nil)
+		linkRepo.On("FindByTarget", mock.Anything, neighborID).Return([]*link.Link{}, nil)
+
+		req := httptest.NewRequest("GET", "/graph/"+centerID.String(), nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response GraphData
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Len(t, response.Nodes, 2)
+		assert.Len(t, response.Links, 1)
+	})
+}
+
+func TestHandler_GetFullGraph(t *testing.T) {
+	t.Run("successful full graph load", func(t *testing.T) {
+		r, noteRepo, linkRepo := setupGraphRouter()
+
+		note1ID := uuid.New()
+		note2ID := uuid.New()
+
+		title1, _ := note.NewTitle("Note 1")
+		content1, _ := note.NewContent("Content 1")
+		metadata1, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
+		n1 := note.NewNote(title1, content1, metadata1)
+
+		title2, _ := note.NewTitle("Note 2")
+		content2, _ := note.NewContent("Content 2")
+		metadata2, _ := note.NewMetadata(map[string]interface{}{"type": "planet"})
+		n2 := note.NewNote(title2, content2, metadata2)
+
+		linkType, _ := link.NewLinkType("reference")
+		weight, _ := link.NewWeight(1.0)
+		linkMetadata, _ := link.NewMetadata(nil)
+		l := link.NewLink(note1ID, note2ID, linkType, weight, linkMetadata)
+
+		noteRepo.On("FindAll", mock.Anything).Return([]*note.Note{n1, n2}, nil)
+		linkRepo.On("FindAll", mock.Anything).Return([]*link.Link{l}, nil)
+
+		req := httptest.NewRequest("GET", "/graph", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response GraphData
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Len(t, response.Nodes, 2)
+		assert.Len(t, response.Links, 1)
+	})
+
+	t.Run("database error - should return 500", func(t *testing.T) {
+		r, noteRepo, _ := setupGraphRouter()
+
+		noteRepo.On("FindAll", mock.Anything).Return([]*note.Note{}, errors.New("db error"))
+
+		req := httptest.NewRequest("GET", "/graph", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+```
+
 ### 4.2 Frontend E2E Tests (Playwright)
 
 #### `frontend/tests/notes.spec.ts`
@@ -4961,13 +5311,16 @@ GRAPH_LOAD_DEPTH=2
 #### Что протестировано:
 - ✅ **Domain Layer** - Полное покрытие (entities, value objects, traversal с MAX стратегией)
 - ✅ **Application Layer** - Composite loader с взвешенным объединением
-- ⚠️ **Infrastructure** - Repositories (требует интеграционных тестов с БД)
-- ⚠️ **Interface Layer** - HTTP handlers (partial, покрыты E2E)
-- ❌ **Worker/Queue** - Требует дополнительных тестов
-- ❌ **Graph Handler** - Нет unit тестов (покрыт E2E)
+- ✅ **Interface Layer** - HTTP handlers (graph handler, note/link handlers)
+- ✅ **Infrastructure** - PostgreSQL репозитории (integration tests с build tag)
+- ✅ **Embedding Repository** - Upsert, Delete, FindSimilarNotes (pgvector similarity search)
+- ✅ **Worker/Queue** - Task payload сериализация
+- ⚠️ **Worker Processing** - Требует интеграционных тестов с Redis/NLP
+- ✅ **Svelte Components** - Unit тесты для NoteCard, ConfirmModal, BackButton (Vitest + @testing-library/svelte)
 
 #### Детальное покрытие Frontend:
-- ✅ **E2E Tests** - Note CRUD, Graph visualization, Progressive loading
+- ✅ **E2E Tests** - Note CRUD, Graph visualization, Progressive loading (48 тестов)
 - ✅ **3D Graph** - Fog animation, camera transitions, WebGL rendering
-- ⚠️ **Unit Tests** - Three.js modules (частично)
-- ❌ **Component Tests** - Svelte компоненты (только E2E)
+- ✅ **Unit Tests** - Svelte компоненты (NoteCard, ConfirmModal, BackButton)
+- ✅ **Unit Tests** - Three.js modules (`graph-3d-modules.spec.ts`)
+- ✅ **Test Infrastructure** - Vitest + @testing-library/svelte + jsdom

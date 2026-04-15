@@ -1,0 +1,515 @@
+# Руководство по тестированию Knowledge Graph
+
+> **Версия:** 1.0  
+> **Дата:** Апрель 2026  
+> **Статус:** Актуально для текущего codebase
+
+---
+
+## 📋 Содержание
+
+1. [Обзор тестовой стратегии](#обзор-тестовой-стратегии)
+2. [Backend тестирование](#backend-тестирование)
+3. [Frontend тестирование](#frontend-тестирование)
+4. [Интеграционное тестирование](#интеграционное-тестирование)
+5. [E2E тестирование](#e2e-тестирование)
+6. [Запуск тестов](#запуск-тестов)
+7. [Отчёты и покрытие](#отчёты-и-покрытие)
+
+---
+
+## Обзор тестовой стратегии
+
+### Уровни тестирования
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    E2E Tests                                 │
+│         (Playwright + Cucumber - 48 тестов)                 │
+├─────────────────────────────────────────────────────────────┤
+│              Integration Tests                              │
+│     (Repository + API + Docker Compose)                    │
+├─────────────────────────────────────────────────────────────┤
+│                 Unit Tests                                  │
+│    Backend (Go): 1100+ строк, ~25 тестовых файлов          │
+│    Frontend (TS): Three.js modules, API клиенты            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Тестовая пирамида
+
+| Уровень | Технологии | Покрытие | Время |
+|---------|------------|----------|-------|
+| **Unit** | Go testify, Vitest | 70% backend | < 10 сек |
+| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 мин |
+| **E2E** | Playwright + Cucumber | Полный сценарий | ~ 5 мин |
+
+---
+
+## Backend тестирование
+
+### Структура тестов
+
+```
+backend/
+├── internal/
+│   ├── domain/
+│   │   ├── note/
+│   │   │   ├── entity_test.go          # Note entity tests
+│   │   │   └── value_objects_test.go   # Title, Content validation
+│   │   ├── link/
+│   │   │   └── entity_test.go          # Link entity tests
+│   │   └── graph/
+│   │       └── traversal_test.go        # BFS, MAX strategy tests (447 строк)
+│   ├── application/
+│   │   └── graph/
+│   │       └── composite_loader_test.go # Weighted aggregation tests
+│   ├── infrastructure/
+│   │   └── db/postgres/
+│   │       ├── note_repo_test.go       # Note repository integration
+│   │       └── link_repo_test.go       # Link repository integration
+│   └── interfaces/
+│       └── api/
+│           ├── notehandler/
+│           │   └── note_handler_test.go # HTTP handler tests (213 строк)
+│           └── linkhandler/
+│               └── link_handler_test.go # Link handler tests
+```
+
+### Domain Layer Tests
+
+#### Запуск
+
+```bash
+cd backend
+
+# Все unit тесты
+go test ./internal/domain/... -v
+
+# Конкретный пакет
+go test ./internal/domain/note -v
+
+# С покрытием
+go test ./internal/domain/... -cover -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
+```
+
+#### Примеры тестов
+
+**Note Entity** (`entity_test.go`):
+```go
+func TestNote_Create(t *testing.T) {
+    note, err := note.Create("Test Title", "Test Content")
+    require.NoError(t, err)
+    assert.NotEmpty(t, note.ID)
+    assert.Equal(t, "Test Title", note.Title.Value())
+    assert.WithinDuration(t, time.Now(), note.CreatedAt, time.Second)
+}
+
+func TestNote_UpdateTitle(t *testing.T) {
+    note, _ := note.Create("Old", "Content")
+    err := note.UpdateTitle("New Title")
+    require.NoError(t, err)
+    assert.Equal(t, "New Title", note.Title.Value())
+    assert.True(t, note.UpdatedAt.After(note.CreatedAt))
+}
+```
+
+**Graph Traversal** (`traversal_test.go`):
+```go
+func TestTraversal_BFS(t *testing.T) {
+    loader := newMockNeighborLoader()
+    traversal := graph.NewTraversal(loader, graph.MAXStrategy)
+    
+    suggestions, err := traversal.GetSuggestions(context.Background(), "note-1", 3)
+    
+    require.NoError(t, err)
+    assert.Len(t, suggestions, 3)
+    assert.Equal(t, "note-2", suggestions[0].NoteID) // Highest weight
+}
+```
+
+### Application Layer Tests
+
+**Composite Loader** (`composite_loader_test.go`):
+```go
+func TestCompositeLoader_Combine(t *testing.T) {
+    loader := graph.NewCompositeLoader(explicitLoader, embeddingLoader, 0.7, 0.3)
+    
+    suggestions, err := loader.LoadSuggestions(ctx, "note-1", 5)
+    
+    require.NoError(t, err)
+    // Verify weighted combination: 0.7 * explicit + 0.3 * semantic
+}
+```
+
+### Infrastructure Layer Tests
+
+**Repository Integration** (требует PostgreSQL):
+```bash
+# Запуск с Docker Compose
+docker-compose up -d postgres
+
+# Интеграционные тесты
+go test ./internal/infrastructure/db/postgres/... -v -tags=integration
+```
+
+### Interface Layer Tests
+
+**HTTP Handlers**:
+```bash
+# Handler tests
+go test ./internal/interfaces/api/... -v
+
+# С моками репозиториев
+go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
+```
+
+---
+
+## Frontend тестирование
+
+### Структура тестов
+
+```
+frontend/
+├── tests/
+│   ├── e2e/
+│   │   ├── notes.spec.ts              # Note CRUD tests (196 строк)
+│   │   ├── graph-3d.spec.ts          # 3D graph tests (118 строк)
+│   │   └── progressive-rendering.spec.ts # Fog animation (483 строк)
+│   └── unit/
+│       └── graph-3d-modules.spec.ts   # Three.js module tests
+└── src/
+    └── lib/
+        └── api/
+            ├── notes.test.ts          # API client tests (опционально)
+            └── graph.test.ts
+```
+
+### E2E тесты (Playwright)
+
+#### Запуск
+
+```bash
+cd frontend
+
+# Установка браузеров
+npx playwright install chromium
+
+# Все тесты
+npm run test
+
+# Только UI режим
+npx playwright test --ui
+
+# Определённый файл
+npx playwright test notes.spec.ts
+
+# Отладка
+npx playwright test --debug
+```
+
+#### Тестовые файлы
+
+**Note CRUD** (`notes.spec.ts`):
+```typescript
+test('create note', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid="create-note-btn"]');
+  await page.fill('[data-testid="title-input"]', 'Test Note');
+  await page.fill('[data-testid="content-input"]', 'Test content');
+  await page.click('[data-testid="save-btn"]');
+  
+  await expect(page.locator('[data-testid="note-card"]')).toContainText('Test Note');
+});
+```
+
+**3D Graph** (`graph-3d.spec.ts`):
+```typescript
+test('3D graph renders with WebGL', async ({ page }) => {
+  await page.goto('/graph/3d/note-123');
+  
+  // Wait for canvas
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  
+  // Verify WebGL context
+  const webglSupported = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas');
+    return canvas && !!canvas.getContext('webgl2');
+  });
+  expect(webglSupported).toBe(true);
+});
+```
+
+**Progressive Rendering** (`progressive-rendering.spec.ts`):
+```typescript
+test('fog animation completes', async ({ page }) => {
+  await page.goto('/graph/3d/note-123');
+  
+  // Check initial fog state
+  const initialOpacity = await page.evaluate(() => 
+    window.getComputedStyle(document.body).getPropertyValue('--fog-opacity')
+  );
+  expect(initialOpacity).toBe('0.9');
+  
+  // Wait for animation
+  await page.waitForTimeout(2000);
+  
+  // Verify fog cleared
+  const finalOpacity = await page.evaluate(() => 
+    document.querySelector('[data-testid="stats-bar"]')?.textContent
+  );
+  expect(finalOpacity).toContain('Nodes: 10');
+});
+```
+
+### Unit тесты (Vitest + jsdom)
+
+```bash
+# Установка
+npm install -D vitest @testing-library/svelte jsdom
+
+# Запуск
+npx vitest
+
+# С покрытием
+npx vitest run --coverage
+```
+
+**Three.js Modules** (`graph-3d-modules.spec.ts`):
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { setupScene } from '$lib/three/core/sceneSetup';
+
+describe('sceneSetup', () => {
+  it('initializes scene with fog', () => {
+    const { scene } = setupScene();
+    expect(scene.fog).toBeDefined();
+    expect(scene.fog.density).toBe(0.02);
+  });
+});
+```
+
+---
+
+## Интеграционное тестирование
+
+### Docker Compose Integration
+
+```bash
+# Полный стек для тестирования
+docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+
+# Запуск интеграционных тестов
+cd backend && go test ./... -tags=integration -v
+```
+
+### API Contract Testing
+
+```bash
+# Проверка OpenAPI спецификации
+npm install -D @redocly/cli
+
+npx @redocly/cli lint backend/openAPI.yaml
+npx @redocly/cli stats backend/openAPI.yaml
+```
+
+---
+
+## E2E тестирование (Cucumber BDD)
+
+### Структура
+
+```
+tests/
+├── features/
+│   ├── graph_navigation.feature      # Навигация по графу
+│   ├── graph_view.feature            # 2D/3D режимы
+│   ├── note_management.feature       # CRUD операции
+│   ├── search_and_discovery.feature   # Поиск
+│   └── import_export.feature          # Импорт/экспорт
+│
+└── features/step_definitions/
+    ├── graph_steps.ts                # Шаги для графа
+    ├── note_steps.ts                 # Шаги для заметок
+    └── common_steps.ts               # Общие шаги
+```
+
+### Запуск Cucumber
+
+```bash
+# Все BDD тесты
+npm run test:cucumber
+
+# С определённым тегом
+CUCUMBER_TAGS="@smoke" npm run test:cucumber
+
+# HTML отчёт
+npm run test:cucumber:report
+```
+
+### Пример Feature
+
+```gherkin
+Feature: Note Management
+  As a user
+  I want to create, read, update and delete notes
+  So that I can manage my knowledge
+
+  @smoke
+  Scenario: Create a new note
+    Given I am on the main page
+    When I click the create note button
+    And I enter "Test Note" as the title
+    And I enter "Test content" as the content
+    And I click the save button
+    Then I should see "Test Note" in the note list
+
+  Scenario: Delete a note
+    Given I have created a note with title "To Delete"
+    When I open the note "To Delete"
+    And I click the delete button
+    And I confirm the deletion
+    Then I should not see "To Delete" in the note list
+```
+
+---
+
+## Запуск тестов
+
+### Полная проверка (все уровни)
+
+```bash
+# 1. Backend unit tests
+cd backend && go test ./... -v
+
+# 2. Frontend E2E
+cd frontend && npm run test
+
+# 3. BDD Cucumber
+cd tests && npm run test:cucumber
+
+# 4. Health checks
+./scripts/health-check.sh
+```
+
+### CI/CD Pipeline
+
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - run: go test ./... -race -coverprofile=coverage.out
+      - uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.out
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npx playwright install
+      - run: npm run test
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker-compose up -d
+      - run: sleep 30  # Wait for services
+      - run: npm run test:cucumber
+```
+
+---
+
+## Отчёты и покрытие
+
+### Backend покрытие
+
+```bash
+cd backend
+
+# Генерация отчёта
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
+
+# Просмотр
+open coverage.html
+
+# Проверка порога (минимум 70%)
+go-test-coverage -coverprofile=coverage.out -threshold=70
+```
+
+### Frontend покрытие
+
+```bash
+cd frontend
+
+# E2E покрытие (через Playwright trace)
+npx playwright test --trace on
+
+# Открытие отчёта
+npx playwright show-report
+```
+
+### Текущее покрытие (апрель 2026)
+
+| Компонент | Покрытие | Тесты | Статус |
+|-----------|----------|-------|--------|
+| **Backend Domain** | ~85% | 25+ | ✅ Отлично |
+| **Backend Application** | ~75% | 5+ | ✅ Хорошо |
+| **Backend Infrastructure** | ~60% | 4+ | ⚠️ Нужны интеграционные |
+| **Backend Interface** | ~70% | 3+ | ✅ Хорошо |
+| **Frontend E2E** | N/A | 48 | ✅ Отлично |
+| **Frontend Unit** | ~40% | 1+ | ❌ Нужно больше |
+
+### Необходимые дополнительные тесты
+
+- [ ] **Svelte Component Unit Tests** - Vitest + @testing-library/svelte
+- [ ] **Worker Integration Tests** - Redis queue + task processing
+- [ ] **NLP Service Tests** - Keyword extraction, embedding generation
+- [ ] **Load Tests** - k6 или Artillery для API нагрузки
+- [ ] **Security Tests** - OWASP ZAP сканирование
+- [ ] **Contract Tests** - Pact для API контрактов
+
+---
+
+## Полезные команды
+
+```bash
+# Быстрый чек
+make test              # Все тесты
+make test-backend      # Только backend
+make test-frontend     # Только frontend E2E
+make test-cucumber     # Только BDD
+
+# Отладка
+make test-debug        # С отладочной информацией
+make test-watch        # Watch mode
+
+# Отчёты
+make coverage          # Покрытие
+make report            # HTML отчёт
+```
