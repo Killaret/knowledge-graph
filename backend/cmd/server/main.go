@@ -1,7 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -22,10 +28,10 @@ import (
 func main() {
 	cfg := config.Load()
 
-	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d",
+	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d, graphLoadDepth=%d",
 		cfg.RecommendationAlpha, cfg.RecommendationBeta,
 		cfg.RecommendationDepth, cfg.RecommendationDecay,
-		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit)
+		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit, cfg.GraphLoadDepth)
 
 	db.Init()
 	if db.DB == nil {
@@ -48,7 +54,11 @@ func main() {
 	} else {
 		log.Printf("Asynq client created successfully")
 		taskQueue = asynqClient
-		defer asynqClient.Close()
+		defer func() {
+			if err := asynqClient.Close(); err != nil {
+				log.Printf("Error closing asynq client: %v", err)
+			}
+		}()
 	}
 
 	// Загрузчики графа
@@ -62,16 +72,20 @@ func main() {
 
 	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay)
 
-	// Кэш
+	// Redis
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing redis client: %v", err)
+		}
+	}()
 
 	suggestionsHandler := graphQueries.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
 
 	// Хендлеры
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler)
 	linkHandler := linkhandler.New(linkRepo, noteRepo)
-	graphHandler := graphhandler.New(noteRepo, linkRepo)
+	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg.GraphLoadDepth)
 
 	// Роуты
 	r := gin.Default()
@@ -95,6 +109,7 @@ func main() {
 	r.DELETE("/notes/:id", noteHandler.Delete)
 	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
 	r.GET("/notes", noteHandler.List)
+	r.GET("/notes/search", noteHandler.Search)
 
 	r.POST("/links", linkHandler.Create)
 	r.GET("/links/:id", linkHandler.Get)
@@ -103,6 +118,36 @@ func main() {
 	r.DELETE("/notes/:id/links", linkHandler.DeleteByNote)
 
 	r.GET("/notes/:id/graph", graphHandler.GetGraph)
+	r.GET("/graph/all", graphHandler.GetFullGraph)
 
-	r.Run(":" + cfg.ServerPort)
+	// Create HTTP server
+	srv := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: r,
+	}
+
+	// Start server in goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	log.Printf("Server started on port %s", cfg.ServerPort)
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
+
+	log.Println("Server exited gracefully")
 }

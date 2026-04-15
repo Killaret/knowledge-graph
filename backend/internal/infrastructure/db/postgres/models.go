@@ -10,12 +10,13 @@ import (
 
 // NoteModel — модель заметки
 type NoteModel struct {
-	ID        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Title     string         `gorm:"not null"`
-	Content   string         `gorm:"type:text"`
-	Metadata  datatypes.JSON `gorm:"type:jsonb"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Title        string         `gorm:"not null"`
+	Content      string         `gorm:"type:text"`
+	Metadata     datatypes.JSON `gorm:"type:jsonb"`
+	SearchVector string         `gorm:"column:search_vector;type:tsvector;->"` // read-only, updated by trigger
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func (NoteModel) TableName() string {

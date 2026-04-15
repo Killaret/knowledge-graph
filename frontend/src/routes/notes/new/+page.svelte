@@ -16,9 +16,10 @@
     error = '';
     try {
       const note = await createNote({ title, content, metadata: {} });
-      goto(`/notes/${note.id}`);
+      await goto(`/notes/${note.id}`);
     } catch (e) {
       error = 'Failed to create note';
+      console.error('Create note error:', e);
     } finally {
       saving = false;
     }
@@ -32,8 +33,8 @@
 {/if}
 
 <form onsubmit={handleSubmit}>
-  <input type="text" placeholder="Title" bind:value={title} required />
-  <textarea placeholder="Content (supports [[wiki links]])" bind:value={content} rows="15"></textarea>
+  <input type="text" name="title" placeholder="Title" bind:value={title} required />
+  <textarea name="content" placeholder="Content (supports [[wiki links]])" bind:value={content} rows="15"></textarea>
   <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create'}</button>
 </form>
 

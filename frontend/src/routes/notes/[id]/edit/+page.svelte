@@ -12,14 +12,19 @@
   let error = $state('');
   let loading = $state(true);
 
-  const id = $page.params.id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error('Missing route parameter: id');
+    return id;
+  }
 
   onMount(async () => {
     try {
+      const id = getRouteId();
       note = await getNote(id);
       title = note.title;
       content = note.content;
-    } catch (e) {
+    } catch {
       error = 'Note not found';
     } finally {
       loading = false;
@@ -28,6 +33,7 @@
 
 async function handleSubmit(event: Event) {
     event.preventDefault();
+    const id = getRouteId();
     if (!title.trim()) {
         error = 'Title is required';
         return;
@@ -37,7 +43,7 @@ async function handleSubmit(event: Event) {
     try {
         await updateNote(id, { title, content });
         goto(`/notes/${id}`);
-    } catch (e) {
+    } catch {
         error = 'Failed to update note';
     } finally {
         saving = false;
@@ -53,8 +59,8 @@ async function handleSubmit(event: Event) {
   <p class="error">{error}</p>
 {:else}
   <form onsubmit={handleSubmit}>
-    <input type="text" placeholder="Title" bind:value={title} required />
-    <textarea bind:value={content} rows="15"></textarea>
+    <input type="text" name="title" placeholder="Title" bind:value={title} required />
+    <textarea name="content" bind:value={content} rows="15"></textarea>
     <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Update'}</button>
   </form>
 {/if}

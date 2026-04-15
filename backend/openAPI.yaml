@@ -1,0 +1,378 @@
+openapi: 3.1.0
+info:
+  title: Knowledge Graph API
+  version: 1.0.0
+  description: |
+    Knowledge Graph - Notes with graph links and AI recommendations.
+    Notes = stars, Links = rays with weights.
+    Recs = BFS graph + pgvector embeddings (α=0.7 explicit, β=0.3 semantic).
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /db-check:
+    get:
+      summary: Database health check
+      description: Check if the database connection is working
+      responses:
+        '200':
+          description: Database is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "db ok"
+        '500':
+          description: Database not reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /notes:
+    get:
+      summary: List all notes
+      responses:
+        '200':
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+    post:
+      summary: Create note (async keywords/embedding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+
+  /notes/{id}:
+    get:
+      summary: Get note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+    put:
+      summary: Update note title/content (async re-embed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+    delete:
+      summary: Delete note + links
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /notes/{id}/suggestions:
+    get:
+      summary: Get recommendations (graph + embeddings)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  /notes/{id}/graph:
+    get:
+      summary: Graph data for note (nodes/links BFS depth 3)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Graph JSON for d3-force
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphData'
+
+  /links:
+    post:
+      summary: Create link (explicit relation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+  /links/{id}:
+    get:
+      summary: Get link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+    delete:
+      summary: Delete link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+  /notes/{id}/links:
+    get:
+      summary: Get links for note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+    delete:
+      summary: Delete all links for note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: All links deleted
+
+components:
+  schemas:
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        keywords:
+          type: array
+          items:
+            type: string
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+        # Добавлены поля из реальной модели
+        type:
+          type: string
+          description: "Категория контента (book, movie, anime, manga, adaptation и др.)"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: "Дополнительные метаданные (например, celestial_type для визуализации графа)"
+    CreateNoteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        # Добавлены опциональные поля
+        type:
+          type: string
+          description: "Категория заметки"
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - title
+    UpdateNoteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        type:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+        source_note_id:
+          type: string
+        target_note_id:
+          type: string
+        weight:
+          type: number
+          format: float
+        # Заменено поле type на description (согласно реальной реализации)
+        description:
+          type: string
+          description: "Описание связи (например, 'экранизация', 'основано на')"
+    CreateLinkRequest:
+      type: object
+      properties:
+        source_note_id:
+          type: string
+        target_note_id:
+          type: string
+        weight:
+          type: number
+          format: float
+        # Используется description, а не type
+        description:
+          type: string
+      required:
+        - source_note_id
+        - target_note_id
+    Suggestion:
+      type: object
+      properties:
+        note_id:
+          type: string
+        title:
+          type: string
+        score:
+          type: number
+          format: float
+    GraphData:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              type:
+                type: string
+                enum: [star, planet, comet, galaxy]
+                description: "Тип небесного тела из metadata.celestial_type"
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              target:
+                type: string
+              weight:
+                type: number
+tags:
+  - Notes
+  - Graph
+  - Links

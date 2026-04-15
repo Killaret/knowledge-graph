@@ -78,6 +78,15 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
+func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
+	var models []LinkModel
+	err := r.db.WithContext(ctx).Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainLinks(models), nil
+}
+
 // toGormLink преобразует доменную связь в GORM-модель
 func toGormLink(l *link.Link) (LinkModel, error) {
 	metadataJSON, err := json.Marshal(l.Metadata().Value())

@@ -1,42 +1,70 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as d3Force from 'd3-force';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
 
-  let { nodes, links }: { 
-    nodes: Array<{ id: string; title: string; type: string }>;
-    links: Array<{ source: string; target: string; weight: number }>;
+  const { 
+    nodes, 
+    links,
+    onNodeClick
+  }: { 
+    nodes: Array<{ id: string; title: string; type?: string }>;
+    links: Array<{ source: string; target: string; weight?: number }>;
+    onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
+
+  // Функция для получения цвета связи по весу (градиент от синего к оранжевому)
+  function getLinkColor(weight: number): string {
+    const w = Math.max(0, Math.min(1, weight));
+    // Blue (51, 102, 255) to Orange (255, 170, 0)
+    const r = Math.round(51 + (255 - 51) * w);
+    const g = Math.round(102 + (170 - 102) * w);
+    const b = Math.round(255 + (0 - 255) * w);
+    const opacity = 0.3 + w * 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let width = 800;
   let height = 600;
   let animationId: number;
-  let angles: Map<string, number> = new Map();
-  let speeds: Map<string, number> = new Map();
+  const angles: Map<string, number> = new Map();
+  const speeds: Map<string, number> = new Map();
+  let d3Force: typeof import('d3-force') | null = null;
 
-  let transform = $state({ x: 0, y: 0, k: 1 });
+  const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
   let simulation: any = null;
 
   onMount(() => {
-    ctx = canvas.getContext('2d')!;
-    resize();
-    window.addEventListener('resize', resize);
-    startSimulation();
-    startAnimation();
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (simulation) simulation.stop();
-      cancelAnimationFrame(animationId);
-    };
+    if (!browser) return;
+    
+    // Dynamic import for SSR safety
+    let cleanup = () => {};
+    
+    import('d3-force').then(d3 => {
+      d3Force = d3;
+      ctx = canvas.getContext('2d')!;
+      resize();
+      window.addEventListener('resize', resize);
+      startSimulation();
+      startAnimation();
+      
+      cleanup = () => {
+        window.removeEventListener('resize', resize);
+        if (simulation) simulation.stop();
+        cancelAnimationFrame(animationId);
+      };
+    });
+    
+    return () => cleanup();
   });
 
   function startAnimation() {
     function animate() {
-      for (let node of simulation?.nodes() || []) {
+      for (const node of simulation?.nodes() || []) {
         const id = node.id;
         const type = node.type || 'star';
         let baseSpeed = 0.005; // звезда
@@ -68,8 +96,9 @@
   }
 
   function startSimulation() {
+    if (!d3Force) return;
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
-    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight }));
+    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1 }));
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
@@ -165,8 +194,9 @@
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
       ctx.lineTo(targetNode.x, targetNode.y);
-      ctx.lineWidth = Math.max(1, link.weight * 3);
-      ctx.strokeStyle = `rgba(100, 150, 200, ${0.4 + link.weight * 0.6})`;
+      const weight = link.weight ?? 0.5;
+      ctx.lineWidth = Math.max(1, weight * 4);
+      ctx.strokeStyle = getLinkColor(weight);
       ctx.stroke();
     });
 
@@ -252,7 +282,11 @@
       return Math.hypot(dx, dy) < 24;
     });
     if (node) {
-      goto(`/notes/${node.id}`);
+      if (onNodeClick) {
+        onNodeClick({ id: node.id, title: node.title, type: node.type });
+      } else {
+        goto(`/notes/${node.id}`);
+      }
     }
   }
 </script>
@@ -263,5 +297,6 @@
   onmousemove={handlePanMove}
   onmouseup={handlePanEnd}
   onclick={handleClick}
+  onwheel={handleZoom}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>

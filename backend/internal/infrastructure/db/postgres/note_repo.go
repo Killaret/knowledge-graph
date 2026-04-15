@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"knowledge-graph/internal/domain/note"
 
@@ -56,14 +57,100 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
 }
 
-// List возвращает все заметки
-func (r *NoteRepository) List(ctx context.Context) ([]*note.Note, error) {
+// FindAll возвращает все заметки без пагинации
+func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	var models []NoteModel
 	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
 	return toDomainNotes(models), nil
+}
+
+// List возвращает заметки с пагинацией
+func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	var models []NoteModel
+	var total int64
+
+	db := r.db.WithContext(ctx).Model(&NoteModel{})
+
+	// Count total
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	err := db.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainNotes(models), total, nil
+}
+
+// Search performs multilingual full-text search on notes (Russian + English)
+// Falls back to ILIKE search if full-text search returns no results
+func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+	var models []NoteModel
+	var total int64
+
+	// Try full-text search first
+	if query != "" {
+		db := r.db.WithContext(ctx).Model(&NoteModel{})
+
+		// Multilingual search using tsvector
+		db = db.Where(`
+			search_vector @@ plainto_tsquery('russian', ?) OR 
+			search_vector @@ plainto_tsquery('simple', ?)
+		`, query, query)
+
+		db = db.Order(fmt.Sprintf(`
+			COALESCE(ts_rank(search_vector, plainto_tsquery('russian', '%s')), 0) +
+			COALESCE(ts_rank(search_vector, plainto_tsquery('simple', '%s')), 0) DESC
+		`, query, query))
+
+		// Count and get results
+		if err := db.Count(&total).Error; err != nil {
+			return nil, 0, err
+		}
+
+		if total > 0 {
+			// Full-text search returned results, use them
+			err := db.Limit(limit).Offset(offset).Find(&models).Error
+			if err != nil {
+				return nil, 0, err
+			}
+			return toDomainNotes(models), total, nil
+		}
+
+		// Fallback: use ILIKE search if full-text returned nothing
+		dbLike := r.db.WithContext(ctx).Model(&NoteModel{})
+		dbLike = dbLike.Where(`
+			title ILIKE ? OR content ILIKE ?
+		`, "%"+query+"%", "%"+query+"%")
+		dbLike = dbLike.Order("created_at DESC")
+
+		if err := dbLike.Count(&total).Error; err != nil {
+			return nil, 0, err
+		}
+
+		err := dbLike.Limit(limit).Offset(offset).Find(&models).Error
+		if err != nil {
+			return nil, 0, err
+		}
+		return toDomainNotes(models), total, nil
+	}
+
+	// Empty query - return all notes
+	db := r.db.WithContext(ctx).Model(&NoteModel{}).Order("created_at DESC")
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	err := db.Limit(limit).Offset(offset).Find(&models).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return toDomainNotes(models), total, nil
 }
 
 // toGormNote преобразует доменную заметку в GORM-модель

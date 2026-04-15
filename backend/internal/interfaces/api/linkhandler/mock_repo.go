@@ -78,3 +78,17 @@ func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) e
 	}
 	return nil
 }
+
+func (m *mockLinkRepo) List(ctx context.Context) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		result = append(result, l)
+	}
+	return result, nil
+}
+
+func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
+	return m.List(ctx)
+}

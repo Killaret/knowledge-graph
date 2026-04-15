@@ -13,4 +13,5 @@ type Repository interface {
 	FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*Link, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	DeleteBySource(ctx context.Context, sourceID uuid.UUID) error
+	FindAll(ctx context.Context) ([]*Link, error)
 }

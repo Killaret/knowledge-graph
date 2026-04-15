@@ -27,6 +27,9 @@ type Config struct {
 	RecommendationDecay      float64
 	RecommendationCacheTTL   time.Duration
 	EmbeddingSimilarityLimit int
+
+	// Загрузка графа (визуализация)
+	GraphLoadDepth int // Глубина загрузки графа для визуализации
 }
 
 // Load загружает конфигурацию из переменных окружения.
@@ -44,6 +47,9 @@ func Load() *Config {
 		RecommendationDecay:      getFloatEnv("RECOMMENDATION_DECAY", 0.5),
 		RecommendationCacheTTL:   time.Duration(getIntEnv("RECOMMENDATION_CACHE_TTL_SECONDS", 300)) * time.Second,
 		EmbeddingSimilarityLimit: getIntEnv("EMBEDDING_SIMILARITY_LIMIT", 30),
+
+		// Загрузка графа
+		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", 2),
 	}
 }
 

@@ -267,25 +267,107 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 	c.JSON(200, suggestions)
 }
 
-// List возвращает список всех заметок
-func (h *Handler) List(c *gin.Context) {
-	// Получаем все заметки из репозитория (нужно добавить метод List в Repository)
-	notes, err := h.repo.List(c.Request.Context())
-	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch notes"})
+// SearchRequest - search query parameters
+type SearchRequest struct {
+	Q    string `form:"q"`    // search query
+	Page int    `form:"page"` // page number (default 1)
+	Size int    `form:"size"` // page size (default 20)
+}
+
+// SearchResponse - search response structure
+type SearchResponse struct {
+	Data       []*note.Note `json:"data"`
+	Total      int64        `json:"total"`
+	Page       int          `json:"page"`
+	Size       int          `json:"size"`
+	TotalPages int          `json:"totalPages"`
+}
+
+// Search performs full-text search on notes
+func (h *Handler) Search(c *gin.Context) {
+	var req SearchRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	result := make([]gin.H, 0, len(notes))
-	for _, n := range notes {
-		result = append(result, gin.H{
+	// Default values
+	if req.Page == 0 {
+		req.Page = 1
+	}
+	if req.Size == 0 {
+		req.Size = 20
+	}
+
+	// Perform search using repository directly (for simplicity, could use service layer)
+	notes, total, err := h.repo.Search(c.Request.Context(), req.Q, req.Size, (req.Page-1)*req.Size)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to search notes"})
+		return
+	}
+
+	// Convert domain notes to JSON-структуры (как в методе List)
+	responseNotes := make([]gin.H, len(notes))
+	for i, n := range notes {
+		responseNotes[i] = gin.H{
 			"id":         n.ID(),
 			"title":      n.Title().String(),
 			"content":    n.Content().String(),
 			"metadata":   n.Metadata().Value(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
-		})
+		}
 	}
-	c.JSON(200, result)
+
+	// Calculate total pages
+	totalPages := int((total + int64(req.Size) - 1) / int64(req.Size))
+
+	c.JSON(200, gin.H{
+		"data":       responseNotes,
+		"total":      total,
+		"page":       req.Page,
+		"size":       req.Size,
+		"totalPages": totalPages,
+	})
+}
+
+// List возвращает список заметок с пагинацией
+func (h *Handler) List(c *gin.Context) {
+	// Получаем параметры пагинации из query
+	limitStr := c.DefaultQuery("limit", "20")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	// Получаем заметки из репозитория
+	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to fetch notes"})
+		return
+	}
+
+	// Преобразуем доменные модели в JSON-структуры
+	responseNotes := make([]gin.H, len(notes))
+	for i, n := range notes {
+		responseNotes[i] = gin.H{
+			"id":         n.ID(),
+			"title":      n.Title().String(),
+			"content":    n.Content().String(),
+			"metadata":   n.Metadata().Value(),
+			"created_at": n.CreatedAt(),
+			"updated_at": n.UpdatedAt(),
+		}
+	}
+
+	c.JSON(200, gin.H{
+		"notes":  responseNotes,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+	})
 }

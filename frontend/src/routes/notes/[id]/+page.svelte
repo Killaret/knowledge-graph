@@ -1,22 +1,29 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
   import type { Note, Suggestion } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import BackButton from '$lib/components/BackButton.svelte';
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
   let loading = $state(true);
   let error = $state('');
 
-  const id = $page.params.id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error('Missing route parameter: id');
+    return id;
+  }
 
   onMount(async () => {
     try {
+      const id = getRouteId();
       note = await getNote(id);
       suggestions = await getSuggestions(id, 5);
-    } catch (e) {
+    } catch {
       error = 'Note not found';
     } finally {
       loading = false;
@@ -24,9 +31,11 @@
   });
 
   async function handleDelete() {
+    if (!browser) return;
     if (!confirm('Delete this note?')) return;
+    const id = getRouteId();
     await deleteNote(id);
-    goto('/');
+    await goto('/');
   }
 </script>
 
@@ -36,13 +45,14 @@
   <p class="error">{error}</p>
 {:else if note}
   <div class="note-container">
+    <BackButton href="/" />
     <h1>{note.title}</h1>
     <div class="meta">Created: {new Date(note.created_at).toLocaleString()}</div>
     <div class="content">{note.content}</div>
     <div class="actions">
       <a href={`/notes/${note.id}/edit`}>Edit</a>
       <button onclick={handleDelete}>Delete</button>
-      <a href={`/graph/${note.id}`} class="graph-link">✨ Show constellation</a>
+      <a href={`/graph/3d/${note.id}`} class="graph-link">✨ Show constellation</a>
     </div>
 
     {#if suggestions.length}

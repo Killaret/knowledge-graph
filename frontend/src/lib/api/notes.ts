@@ -2,7 +2,15 @@
 import ky from 'ky';
 
 // Базовый URL с прокси /api → http://localhost:8080
-const api = ky.create({ prefixUrl: '/api' });
+const api = ky.create({ 
+  prefixUrl: '/api',
+  timeout: 30000,
+  retry: {
+    limit: 2,
+    methods: ['get', 'post', 'put', 'delete'],
+    statusCodes: [408, 413, 429, 500, 502, 503, 504]
+  }
+});
 
 // Тип данных заметки (соответствует ответу бэкенда)
 export interface Note {
@@ -10,6 +18,7 @@ export interface Note {
   title: string;
   content: string;
   metadata: Record<string, any>;
+  type?: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,8 +31,10 @@ export interface Suggestion {
 }
 
 // Получить все заметки (GET /notes)
+// API возвращает { notes: Note[], total, limit, offset }
 export async function getNotes(): Promise<Note[]> {
-  return api.get('notes').json();
+  const response = await api.get('notes').json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+  return response.notes;
 }
 
 // Получить одну заметку по ID
@@ -32,7 +43,7 @@ export async function getNote(id: string): Promise<Note> {
 }
 
 // Создать новую заметку
-export async function createNote(data: { title: string; content: string; metadata?: any }): Promise<Note> {
+export async function createNote(data: { title: string; content: string; type?: string; metadata?: any }): Promise<Note> {
   return api.post('notes', { json: data }).json();
 }
 
@@ -49,4 +60,27 @@ export async function deleteNote(id: string): Promise<void> {
 // Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
   return api.get(`notes/${id}/suggestions`, { searchParams: { limit } }).json();
+}
+
+// Search response type
+export interface SearchResponse {
+  data: Note[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+}
+
+// Search notes with full-text search
+export async function searchNotes(
+  query: string,
+  page = 1,
+  size = 20
+): Promise<SearchResponse> {
+  const searchParams = new URLSearchParams({
+    q: query,
+    page: page.toString(),
+    size: size.toString(),
+  });
+  return api.get(`notes/search?${searchParams}`).json();
 }

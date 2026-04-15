@@ -27,6 +27,12 @@
 | `RECOMMENDATION_CACHE_TTL_SECONDS` | Время жизни кэша рекомендаций в Redis (секунды) | `300` |
 | `EMBEDDING_SIMILARITY_LIMIT` | Количество кандидатов при поиске похожих заметок через pgvector | `30` |
 
+## Параметры визуализации графа
+
+| Переменная | Описание | Значение по умолчанию |
+|------------|----------|----------------------|
+| `GRAPH_LOAD_DEPTH` | Максимальная глубина загрузки графа для визуализации | `2` |
+
 ## Полный пример `.env` файла
 
 ```env
@@ -46,6 +52,9 @@ RECOMMENDATION_DECAY=0.5
 RECOMMENDATION_CACHE_TTL_SECONDS=300
 EMBEDDING_SIMILARITY_LIMIT=30
 
+# Визуализация графа
+GRAPH_LOAD_DEPTH=2
+
 ## Примеры различных конфигураций
 
 ### 1. Только явные связи (без эмбеддингов)
@@ -54,28 +63,52 @@ RECOMMENDATION_ALPHA=1.0
 RECOMMENDATION_BETA=0.0
 RECOMMENDATION_DEPTH=3
 RECOMMENDATION_DECAY=0.5
-2. Только семантическое сходство (игнорировать явные связи)
-env
+```
+
+### 2. Только семантическое сходство (игнорировать явные связи)
+```env
 RECOMMENDATION_ALPHA=0.0
 RECOMMENDATION_BETA=1.0
-3. Сбалансированный режим (50/50)
-env
+```
+
+### 3. Сбалансированный режим (50/50)
+```env
 RECOMMENDATION_ALPHA=0.5
 RECOMMENDATION_BETA=0.5
-4. Глубокий обход графа (осторожно, может быть медленно)
-env
+```
+
+### 4. Глубокий обход графа (осторожно, может быть медленно)
+```env
 RECOMMENDATION_DEPTH=5
 RECOMMENDATION_DECAY=0.3
-5. Увеличенный кэш рекомендаций (10 минут)
-env
+```
+
+### 5. Увеличенный кэш рекомендаций (10 минут)
+```env
 RECOMMENDATION_CACHE_TTL_SECONDS=600
-6. Больше кандидатов от эмбеддингов
-env
+```
+
+### 6. Больше кандидатов от эмбеддингов
+```env
 EMBEDDING_SIMILARITY_LIMIT=50
-7. Высокая чувствительность к эмбеддингам (α=0.3, β=0.7)
-env
+```
+
+### 7. Высокая чувствительность к эмбеддингам (α=0.3, β=0.7)
+```env
 RECOMMENDATION_ALPHA=0.3
 RECOMMENDATION_BETA=0.7
+```
+
+### 8. Глубокая визуализация графа (больше уровней соседей)
+```env
+GRAPH_LOAD_DEPTH=4
+```
+
+### 9. Минимальная визуализация графа (только прямые связи)
+```env
+GRAPH_LOAD_DEPTH=1
+```
+
 Как применить изменения
 После редактирования .env или переменных в docker-compose.yml перезапустите бэкенд:
 
@@ -88,7 +121,8 @@ docker logs kg-backend --tail 30 | grep "Config loaded"
 Пример вывода:
 
 text
-Config loaded: alpha=0.70, beta=0.30, depth=3, decay=0.50, cacheTTL=5m0s, embeddingLimit=30
+Config loaded: alpha=0.70, beta=0.30, depth=3, decay=0.50, cacheTTL=5m0s, embeddingLimit=30, graphLoadDepth=2
+
 Формула итогового веса рекомендации
 Для заметки-источника A и кандидата C:
 

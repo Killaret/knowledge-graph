@@ -14,6 +14,9 @@ RUN pip install --no-cache-dir --no-deps sentence-transformers==2.2.2
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir transformers tqdm scikit-learn scipy sentencepiece huggingface-hub
 
+# Pre-download model during build to avoid runtime issues
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-V2')"
+
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
 COPY . .

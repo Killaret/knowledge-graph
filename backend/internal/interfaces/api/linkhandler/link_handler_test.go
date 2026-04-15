@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"knowledge-graph/internal/domain/note"
@@ -34,6 +35,56 @@ func (m *mockNoteRepoForLink) FindByID(ctx context.Context, id uuid.UUID) (*note
 	return n, nil
 }
 func (m *mockNoteRepoForLink) Delete(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *mockNoteRepoForLink) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	var allNotes []*note.Note
+	for _, n := range m.notes {
+		allNotes = append(allNotes, n)
+	}
+
+	total := int64(len(allNotes))
+
+	if offset >= len(allNotes) {
+		return []*note.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(allNotes) {
+		end = len(allNotes)
+	}
+
+	return allNotes[offset:end], total, nil
+}
+func (m *mockNoteRepoForLink) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+	var results []*note.Note
+	for _, n := range m.notes {
+		// Simple string matching for mock
+		if len(query) == 0 ||
+			strings.Contains(strings.ToLower(n.Title().String()), strings.ToLower(query)) ||
+			strings.Contains(strings.ToLower(n.Content().String()), strings.ToLower(query)) {
+			results = append(results, n)
+		}
+	}
+
+	// Apply pagination
+	total := int64(len(results))
+	if offset >= len(results) {
+		return []*note.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(results) {
+		end = len(results)
+	}
+
+	return results[offset:end], total, nil
+}
+func (m *mockNoteRepoForLink) FindAll(ctx context.Context) ([]*note.Note, error) {
+	var allNotes []*note.Note
+	for _, n := range m.notes {
+		allNotes = append(allNotes, n)
+	}
+	return allNotes, nil
+}
 
 func setupLinkRouter() (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
 	gin.SetMode(gin.TestMode)
