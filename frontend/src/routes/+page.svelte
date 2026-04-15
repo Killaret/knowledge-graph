@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  // @ts-ignore - no type definitions available
+  import VirtualList from 'svelte-virtual-list';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
@@ -48,8 +50,41 @@
 
   onMount(async () => {
     if (!browser) return;
-    await loadNotes();
+    await loadDataParallel();
   });
+
+  async function loadDataParallel() {
+    try {
+      // Load notes and graph data in parallel
+      const [notesResult, graphResult] = await Promise.all([
+        getNotes(),
+        getFullGraphData().catch(e => {
+          console.error('[+page] Failed to load graph:', e);
+          return null;
+        })
+      ]);
+      
+      allNotes = notesResult;
+      applyFiltersAndSort();
+      
+      // Set graph data if successful
+      if (graphResult) {
+        graphData = graphResult;
+        console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      } else {
+        // Fallback: build simple graph from notes
+        graphData = {
+          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+          links: []
+        };
+      }
+    } catch (e) {
+      error = 'Failed to load notes';
+      console.error(e);
+    } finally {
+      loading = false;
+    }
+  }
 
   async function loadNotes() {
     try {
@@ -345,14 +380,16 @@
             </button>
           </div>
         {:else}
-          <div class="notes-grid">
-            {#each filteredNotes as note (note.id)}
-              <NoteCard
-                {note}
-                onClick={() => selectedNodeId = note.id}
-                highlightQuery={searchQuery}
-              />
-            {/each}
+          <div class="virtual-list-container">
+            <VirtualList items={filteredNotes} itemHeight={120} let:item>
+              <div class="virtual-list-item">
+                <NoteCard
+                  note={item}
+                  onClick={() => selectedNodeId = item.id}
+                  highlightQuery={searchQuery}
+                />
+              </div>
+            </VirtualList>
           </div>
         {/if}
       {/if}
@@ -600,10 +637,15 @@
     box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
   }
 
-  .notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
+  .virtual-list-container {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .virtual-list-item {
+    padding: 8px 0;
+    height: 120px;
+    box-sizing: border-box;
   }
 
   @media (max-width: 768px) {
@@ -620,8 +662,8 @@
       justify-content: center;
     }
 
-    .notes-grid {
-      grid-template-columns: 1fr;
+    .virtual-list-container {
+      height: calc(100vh - 240px);
     }
   }
 </style>

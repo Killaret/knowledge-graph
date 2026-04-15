@@ -4,6 +4,7 @@
     "ky": "^2.0.0"
   },
   "devDependencies": {
-    "@types/d3-force": "^3.0.10"
+    "@types/d3-force": "^3.0.10",
+    "svelte-virtual-list": "^3.0.1"
   }
 }
