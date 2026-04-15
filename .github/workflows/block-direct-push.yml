@@ -1,10 +1,9 @@
-name: Block Direct Push to Protected Branches
+name: Block Direct Push to Main
 
 on:
   push:
     branches:
       - main
-      - ai-agents
 
 jobs:
   block-direct-push:
@@ -25,6 +24,13 @@ jobs:
           fi
           
           # Block direct push
-          echo "::error::❌ Direct push to ${{ github.ref_name }} is not allowed!"
-          echo "::error::Please create a Pull Request to ${{ github.ref_name }} instead."
+          echo "::error::❌ Direct push to main is not allowed!"
+          echo "::error::Please create a Pull Request from your feature branch instead."
+          echo ""
+          echo "Workflow:"
+          echo "1. git checkout -b feature/your-branch-name"
+          echo "2. git add ."
+          echo "3. git commit -m 'your message'"
+          echo "4. git push origin feature/your-branch-name"
+          echo "5. Create Pull Request on GitHub"
           exit 1
