@@ -5286,6 +5286,33 @@ Feature: Note Management
     Then the node "Updated Project Ideas" displays the updated title
 ```
 
+#### Статус BDD тестов (Cucumber)
+
+| Feature File | Сценариев | Реализовано шагов | Статус |
+|-------------|-----------|-------------------|--------|
+| **graph_view.feature** | 8 | 25+ | ⚠️ Частично |
+| **graph_navigation.feature** | 6 | 20+ | ⚠️ Частично |
+| **note_management.feature** | 9 | 30+ | ⚠️ Частично |
+| **search_and_discovery.feature** | 9 | 25+ | ⚠️ Частично |
+| **import_export.feature** | 5 | 15+ | ⚠️ Частично |
+| **ИТОГО** | **37** | **~115** | **15 ambiguous, 8 undefined** |
+
+**Step Definition файлы:**
+- `tests/features/step_definitions/graph_steps.ts` - основные шаги графа
+- `tests/features/step_definitions/note_steps.ts` - управление заметками
+- `tests/features/step_definitions/search_steps.ts` - поиск и обнаружение
+- `tests/features/step_definitions/import_export_steps.ts` - импорт/экспорт
+- `tests/features/step_definitions/progressive-graph-steps.ts` - прогрессивный рендеринг
+
+**Запуск тестов:**
+```bash
+# Dry run (проверка шагов)
+npm run test:cucumber:dry
+
+# Полный запуск
+npm run test:cucumber
+```
+
 ---
 
 ## 5. Docker & Configuration
@@ -5492,7 +5519,7 @@ GRAPH_LOAD_DEPTH=2
 |-----------|--------|--------|----------|
 | **Backend Unit** | 11 | 50+ | Domain: ✅ 98%, Application: ✅ 47%, Interface: ⚠️ 25% |
 | **Frontend E2E** | 4 spec | 48 | Notes, Graph 3D, Progressive Rendering |
-| **BDD Cucumber** | 8 | 37 сценариев | Graph View, Note Management |
+| **BDD Cucumber** | 5 feature файлов | 37 сценариев, 254 шага | Graph View, Note Management, Search, Import/Export |
 | **ИТОГО** | **22+** | **135+** | **~75%** |
 
 #### Детальное покрытие Backend (актуальные метрики):

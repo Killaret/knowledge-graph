@@ -1,5 +1,7 @@
 # Конфигурация Knowledge Graph
 
+🌐 **Языки**: [Русский](CONFIGURATION.md) | [English](CONFIGURATION_EN.md)
+
 Все параметры системы задаются через переменные окружения. Для локальной разработки их можно определить в файле `.env` в корне проекта. В продакшене переменные передаются через `environment` в `docker-compose.yml` или `ConfigMap`/`Secrets` в Kubernetes.
 
 ---
@@ -285,10 +287,10 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 
 ## Связанная документация
 
-| Документ | Описание |
-|----------|----------|
-| [`architecture/README.md`](architecture/README.md) | Backend архитектура, DDD слои |
-| [`architecture/adr.md`](architecture/adr.md) | Архитектурные решения (ADR) |
-| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Развёртывание, проверка конфигурации |
-| [`TESTING.md`](TESTING.md) | Тестирование, проверка работы параметров |
-| [`backend/openAPI.yaml`](../backend/openAPI.yaml) | API спецификация |
+| Документ | Описание | English |
+|----------|----------|---------|
+| [`architecture/README.md`](architecture/README.md) | Backend архитектура, DDD слои | — |
+| [`architecture/adr.md`](architecture/adr.md) | Архитектурные решения (ADR) | — |
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Развёртывание, проверка конфигурации | [DEPLOYMENT_EN.md](DEPLOYMENT_EN.md) |
+| [`TESTING.md`](TESTING.md) | Тестирование, проверка работы параметров | — |
+| [`backend/openAPI.yaml`](../backend/openAPI.yaml) | API спецификация | — |

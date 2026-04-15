@@ -100,6 +100,11 @@
   - Параметры Gamma, BFS_AGGREGATION, ASYNQ_CONCURRENCY помечены как зарезервированные
   - Добавлена колонка "Компонент" для всех переменных
   - Улучшено форматирование примеров
+- **Двуязычная документация**: Созданы английские версии ключевых документов:
+  - `README_EN.md` — English version of main README
+  - `docs/CONFIGURATION_EN.md` — English configuration guide
+  - `docs/DEPLOYMENT_EN.md` — English deployment guide
+  - Добавлены переключатели языков в русские версии
 - **architecture/README.md**: Добавлена секция Backend Architecture с диаграммами
 - **Frontend Arch**: Обновлена документация для 3D модулей
 - **ADR-014**: Добавлено описание Progressive Rendering решения
