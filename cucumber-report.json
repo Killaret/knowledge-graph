@@ -13,8 +13,8 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2802008499
             }
           },
           {
@@ -26,8 +26,9 @@
               "location": "tests\\features\\step_definitions\\graph_steps.ts:30"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 287676800,
+              "error_message": "page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n\u001b[2m  - navigating to \"/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\step_definitions\\graph_steps.ts:31:19)"
             }
           },
           {
@@ -73,8 +74,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2724168999
             }
           }
         ],
@@ -92,8 +93,8 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 3706670700
             }
           },
           {
@@ -105,8 +106,9 @@
               "location": "tests\\features\\step_definitions\\graph_steps.ts:30"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 8172800,
+              "error_message": "page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n\u001b[2m  - navigating to \"/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\step_definitions\\graph_steps.ts:31:19)"
             }
           },
           {
@@ -217,8 +219,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2486041399
             }
           }
         ],
@@ -236,8 +238,8 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 3910560600
             }
           },
           {
@@ -249,8 +251,9 @@
               "location": "tests\\features\\step_definitions\\graph_steps.ts:30"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 14449499,
+              "error_message": "page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n\u001b[2m  - navigating to \"/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\step_definitions\\graph_steps.ts:31:19)"
             }
           },
           {
@@ -361,8 +364,9 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5061559000,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           }
         ],
@@ -380,8 +384,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5015612700,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -479,8 +484,9 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 1745100,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'screenshot')\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:32:21)"
             }
           }
         ],
@@ -498,8 +504,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5019358400,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -610,8 +617,9 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 452499,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'screenshot')\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:32:21)"
             }
           }
         ],
@@ -629,8 +637,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5056843700,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -741,8 +750,9 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 927299,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'screenshot')\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:32:21)"
             }
           }
         ],
@@ -771,8 +781,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5013078300,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -838,8 +849,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 4612239199
             }
           }
         ],
@@ -857,8 +868,8 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2008884500
             }
           },
           {
@@ -870,8 +881,9 @@
               "location": "tests\\features\\step_definitions\\graph_steps.ts:30"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 11073199,
+              "error_message": "page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n\u001b[2m  - navigating to \"/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\step_definitions\\graph_steps.ts:31:19)"
             }
           },
           {
@@ -941,8 +953,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 4409837100
             }
           }
         ],
@@ -960,8 +972,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3116855100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1037,8 +1050,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 537890800
             }
           }
         ],
@@ -1056,8 +1069,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3529929200,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1140,8 +1154,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 266195499
             }
           }
         ],
@@ -1159,8 +1173,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2884709799,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1263,8 +1278,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 320054300
             }
           }
         ],
@@ -1282,8 +1297,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2949045700,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1366,8 +1382,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 264635099
             }
           }
         ],
@@ -1385,8 +1401,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2943961200,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1462,8 +1479,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 296395900
             }
           }
         ],
@@ -1481,8 +1498,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2863766600,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1558,8 +1576,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 294588600
             }
           }
         ],
@@ -1588,8 +1606,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2792110799,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1678,8 +1697,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 348027199
             }
           }
         ],
@@ -1697,8 +1716,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2866930700,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1787,8 +1807,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 328618999
             }
           }
         ],
@@ -1806,8 +1826,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2853609100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1896,8 +1917,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 280649900
             }
           }
         ],
@@ -1915,8 +1936,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2825031300,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -1988,8 +2010,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 286388300
             }
           }
         ],
@@ -2007,8 +2029,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2837566099,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2080,8 +2103,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 280167200
             }
           }
         ],
@@ -2099,8 +2122,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2815503100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2172,8 +2196,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 284706600
             }
           }
         ],
@@ -2202,8 +2226,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2945294999,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2322,8 +2347,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 267315900
             }
           }
         ],
@@ -2341,8 +2366,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2845072000,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2435,8 +2461,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 270929900
             }
           }
         ],
@@ -2454,8 +2480,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2815470499,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2548,8 +2575,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 307043299
             }
           }
         ],
@@ -2567,8 +2594,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3115488799,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2661,8 +2689,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 313502399
             }
           }
         ],
@@ -2680,8 +2708,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2868665600,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2758,8 +2787,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 293895099
             }
           }
         ],
@@ -2777,8 +2806,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2818631000,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2835,8 +2865,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 240094800
             }
           }
         ],
@@ -2854,8 +2884,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2797750500,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -2912,8 +2943,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 533856300
             }
           }
         ],
@@ -2931,8 +2962,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2932564100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3032,8 +3064,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 283457800
             }
           }
         ],
@@ -3062,8 +3094,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2947297000,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3156,8 +3189,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 258774900
             }
           }
         ],
@@ -3175,8 +3208,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2809064499,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3269,8 +3303,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 481040299
             }
           }
         ],
@@ -3288,8 +3322,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3208040399,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3359,8 +3394,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 335256599
             }
           }
         ],
@@ -3378,8 +3413,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2906457800,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3449,8 +3485,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 425195100
             }
           }
         ],
@@ -3468,8 +3504,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2763734900,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3539,8 +3576,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 437449400
             }
           }
         ],
@@ -3558,8 +3595,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3124476899,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3639,8 +3677,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 384671400
             }
           }
         ],
@@ -3658,8 +3696,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2859543600,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3739,8 +3778,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 467225700
             }
           }
         ],
@@ -3758,8 +3797,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 3080864399,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3829,8 +3869,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 367823199
             }
           }
         ],
@@ -3848,8 +3888,9 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 2856463199,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\tests\\features\\support\\hooks.ts:23:19)"
             }
           },
           {
@@ -3919,8 +3960,8 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 294035199
             }
           }
         ],

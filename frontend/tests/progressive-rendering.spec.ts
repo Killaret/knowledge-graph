@@ -227,14 +227,10 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     await page.goto(`http://localhost:5173/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     
-    // Check for mini-spinner in stats bar (may appear during background loading)
-    const miniSpinner = page.locator('.mini-spinner');
-    
-    // Wait a bit to see if spinner appears
+    // Wait a bit for potential background loading
     await page.waitForTimeout(500);
     
-    // The spinner may or may not be visible depending on loading speed
-    // Just verify the stats bar is present
+    // Verify the stats bar is present (spinner may or may not appear)
     const statsBar = page.locator('.stats-bar').first();
     await expect(statsBar).toBeVisible();
   });
@@ -328,7 +324,6 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     // Verify either graph container or no-data message is shown
     const graphContainer = page.locator('.graph-3d-container').first();
     const noDataMessage = page.locator('.no-data-message, .empty-content').first();
-    const singleNodeMessage = page.locator('text=/single|one|only/i').first();
     
     const hasGraph = await graphContainer.isVisible().catch(() => false);
     const hasNoData = await noDataMessage.isVisible().catch(() => false);

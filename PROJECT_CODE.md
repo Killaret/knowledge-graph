@@ -1888,8 +1888,8 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import { initScene } from '$lib/three/core/sceneSetup';
-  import { createSimulation } from '$lib/three/simulation/forceSimulation';
+  import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
+  import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
   import { autoZoomToFit } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
@@ -1906,10 +1906,18 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
   let simulation: any;
   let objectManager: ObjectManager;
   let animationFrame: number;
-  let isLoading = $state(true);
+  let isLoading = $state(false); // No loading spinner - we show graph immediately
   let error = $state<string | null>(null);
+  let isAutoRotating = $state(true);
   let isInitialized = $state(false);
   let lastProcessedKey = $state(0);
+  
+  // Progressive loading state
+  let currentData = $state<GraphData>({ nodes: [], links: [] });
+  let isFullyLoaded = $state(false);
+  let fogAnimationFrame: number | null = null;
+  
+  // Создаем ключ для отслеживания изменений данных
   let dataUpdateKey = $state(0);
 
   $effect(() => {
@@ -1921,13 +1929,26 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
     }
   });
 
+  // Reactively update graph when data changes
   $effect(() => {
     const _key = dataUpdateKey;
-    if (!isInitialized) return;
-    if (_key === lastProcessedKey && lastProcessedKey !== 0) return;
-    if (data.nodes.length > 500) {
-      console.warn('[Graph3D] Large graph detected:', data.nodes.length, 'nodes');
+    
+    // Wait for initialization to complete
+    if (!isInitialized) {
+      return;
     }
+    
+    // Skip only if exact same data state was already processed
+    if (_key === lastProcessedKey && lastProcessedKey !== 0) {
+      return;
+    }
+    
+    // Ограничение для очень больших графов
+    if (data.nodes.length > 500) {
+      console.warn('[Graph3D] Large graph detected:', data.nodes.length, 'nodes. Limiting to 500 for performance.');
+    }
+    
+    console.log('[Graph3D] Creating simulation:', data.nodes.length, 'nodes');
     lastProcessedKey = _key;
     createGraphSimulation();
   });
@@ -1971,10 +1992,12 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
       controls = setup.controls;
       objectManager = new ObjectManager(scene);
       
+      // Export objects for debugging
       if (browser) {
         (window as any).scene = scene;
         (window as any).camera = camera;
         (window as any).controls = controls;
+        (window as any).simulation = simulation;
       }
       
       let frameCount = 0;
@@ -1992,14 +2015,24 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
       animate();
 
       window.addEventListener('resize', onResize);
+      
+      // Click handler for nodes
       container.addEventListener('click', handleClick);
       
       isInitialized = true;
+      console.log('[Graph3D] Scene initialized, isInitialized = true');
+      
+      // Если данные уже есть - создаем симуляцию сразу
       if (data.nodes.length > 0) {
+        console.log('[Graph3D] Initial data available, creating simulation:', data.nodes.length, 'nodes');
         createGraphSimulation();
+        // Mark this state as processed so effect doesn't re-trigger for same data
         lastProcessedKey = dataUpdateKey;
       } else {
+        // No nodes - show empty state immediately
+        console.log('[Graph3D] No nodes in data, showing empty state');
         isLoading = false;
+        // Don't set lastProcessedKey here - we want the effect to trigger when data arrives
       }
     } catch (e) {
       error = 'Failed to initialize 3D visualization';
@@ -2008,57 +2041,209 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
   });
 
   function createGraphSimulation() {
-    if (!objectManager || !scene) return;
-    objectManager.clear();
-    if (simulation) simulation.stop();
+    console.log('[Graph3D] createGraphSimulation called:', { 
+      hasObjectManager: !!objectManager, 
+      hasScene: !!scene,
+      nodeCount: data.nodes.length,
+      linkCount: data.links.length
+    });
     
-    const nodeIds = new Set(data.nodes.map(n => n.id));
-    const validLinks = data.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
-    const filteredData = { nodes: data.nodes, links: validLinks };
-    
-    isLoading = true;
-    simulation = createSimulation(filteredData, objectManager);
-    
-    if (filteredData.links.length === 0 || filteredData.nodes.length <= 1) {
-      simulation.stop();
-      isLoading = false;
-      if (camera && controls) autoZoomToFit(simulation.nodes(), camera, controls);
+    if (!objectManager || !scene) {
+      console.error('[Graph3D] Cannot create simulation - missing objectManager or scene');
       return;
     }
     
+    console.log('[Graph3D] Clearing existing objects...');
+    // Clear existing objects
+    objectManager.clear();
+    if (simulation) {
+      simulation.stop();
+    }
+    
+    // Filter links to only include those where both source and target nodes exist
+    // (for local graph, API may return links to nodes outside the graph)
+    const nodeIds = new Set(data.nodes.map(n => n.id));
+    const validLinks = data.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    if (validLinks.length !== data.links.length) {
+      console.warn(`[Graph3D] Filtered out ${data.links.length - validLinks.length} orphan links`);
+    }
+    const filteredData = {
+      nodes: data.nodes,
+      links: validLinks
+    };
+    
+    console.log('[Graph3D] Calling createSimulation...');
+    // Track current data for progressive loading
+    currentData = filteredData;
+    // Reset fog to dense for "fog of war" effect on initial load
+    if (scene) {
+      setFogDensity(scene, 0.08);
+    }
+    isLoading = true;
+    simulation = createSimulation(filteredData, objectManager);
+    
+    console.log('[Graph3D] Simulation created, setting up event handlers...');
+    
+    // If no links or single node, simulation won't emit 'end' (already at equilibrium)
+    // Stop immediately and show the graph
+    if (filteredData.links.length === 0 || filteredData.nodes.length <= 1) {
+      console.log('[Graph3D] No links or single node, stopping simulation immediately');
+      simulation.stop();
+      isLoading = false;
+      if (camera && controls) {
+        autoZoomToFit(simulation.nodes(), camera, controls);
+      }
+      return;
+    }
+    
+    // Резервный таймаут - принудительно выключаем загрузку через 5 секунд
     const loadingTimeout = setTimeout(() => {
       if (isLoading) {
+        console.log('[Graph3D] Loading timeout reached, forcing isLoading = false');
         isLoading = false;
-        if (simulation && camera && controls) autoZoomToFit(simulation.nodes(), camera, controls);
+        if (simulation && camera && controls) {
+          autoZoomToFit(simulation.nodes(), camera, controls);
+        }
       }
     }, 5000);
     
+    // Zoom timeout for delayed auto-zoom
+    let zoomTimeout: any;
+    
     simulation.on('end', () => {
+      console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
       clearTimeout(loadingTimeout);
       isLoading = false;
-      if (simulation && camera && controls) {
-        setTimeout(() => autoZoomToFit(simulation.nodes(), camera, controls), 300);
-      }
+      clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(() => {
+        if (simulation && camera && controls) {
+          console.log('[Graph3D] Calling autoZoomToFit...');
+          autoZoomToFit(simulation.nodes(), camera, controls);
+        }
+      }, 300);
     });
     
     simulation.on('tick', () => {
+      // Обновляем позиции объектов при каждом тике симуляции
       if (objectManager && simulation) {
         objectManager.updatePositions(simulation.nodes());
       }
     });
   }
 
+  // Animate fog density from start to end over duration
+  function animateFog(startDensity: number, endDensity: number, duration: number = 2000) {
+    if (!scene) return;
+    
+    const startTime = performance.now();
+    
+    function updateFog() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out cubic
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const currentDensity = startDensity + (endDensity - startDensity) * ease;
+      
+      setFogDensity(scene, currentDensity);
+      
+      if (progress < 1) {
+        fogAnimationFrame = requestAnimationFrame(updateFog);
+      } else {
+        fogAnimationFrame = null;
+      }
+    }
+    
+    // Cancel any existing fog animation
+    if (fogAnimationFrame) {
+      cancelAnimationFrame(fogAnimationFrame);
+    }
+    
+    updateFog();
+  }
+
+  // Public method to add more data (for progressive loading)
+  export function addData(newData: GraphData) {
+    if (!simulation || !objectManager || !scene) {
+      console.warn('[Graph3D] addData called but simulation not ready');
+      return;
+    }
+    
+    console.log('[Graph3D] addData called:', { 
+      currentNodes: currentData.nodes.length, 
+      newNodes: newData.nodes.length,
+      currentLinks: currentData.links.length,
+      newLinks: newData.links.length
+    });
+    
+    // Filter new data to only include valid links
+    const newNodeIds = new Set(newData.nodes.map(n => n.id));
+    const validNewLinks = newData.links.filter(l => 
+      newNodeIds.has(l.source) && newNodeIds.has(l.target)
+    );
+    
+    const filteredNewData = {
+      nodes: newData.nodes,
+      links: validNewLinks
+    };
+    
+    // Add new data to simulation
+    addNodesToSimulation(simulation, filteredNewData, currentData, objectManager);
+    
+    // Update current data tracking
+    const existingNodeIds = new Set(currentData.nodes.map(n => n.id));
+    const existingLinkIds = new Set(currentData.links.map(l => `${l.source}-${l.target}`));
+    
+    const mergedNodes = [
+      ...currentData.nodes,
+      ...newData.nodes.filter(n => !existingNodeIds.has(n.id))
+    ];
+    const mergedLinks = [
+      ...currentData.links,
+      ...validNewLinks.filter(l => !existingLinkIds.has(`${l.source}-${l.target}`))
+    ];
+    
+    currentData = { nodes: mergedNodes, links: mergedLinks };
+    
+    // Animate fog dissipation (dense to clear)
+    console.log('[Graph3D] Starting fog animation (0.08 -> 0.005)');
+    animateFog(0.08, 0.005, 2500);
+    
+    // Mark as fully loaded
+    isFullyLoaded = true;
+    
+    // Call autoZoomToFit with animation after a delay to let simulation settle
+    setTimeout(() => {
+      if (simulation && camera && controls) {
+        console.log('[Graph3D] Auto zooming to fit full graph with animation');
+        autoZoomToFit(simulation.nodes(), camera, controls, true);
+      }
+    }, 500);
+  }
+
   onDestroy(() => {
     if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (fogAnimationFrame) cancelAnimationFrame(fogAnimationFrame);
     if (simulation) simulation.stop();
     if (renderer) renderer.dispose();
     window.removeEventListener('resize', onResize);
-    if (container) container.removeEventListener('click', handleClick);
+    if (container) {
+      container.removeEventListener('click', handleClick);
+    }
   });
 
+  // Public method to reset camera
   export function resetCamera() {
     if (simulation && camera && controls) {
-      autoZoomToFit(simulation.nodes(), camera, controls);
+      autoZoomToFit(simulation.nodes(), camera, controls, isFullyLoaded);
+    }
+  }
+
+  // Toggle auto-rotation
+  export function toggleAutoRotate() {
+    isAutoRotating = !isAutoRotating;
+    if (controls) {
+      controls.autoRotate = isAutoRotating;
     }
   }
 </script>
@@ -2114,6 +2299,8 @@ export async function getFullGraphData(limit: number = 100): Promise<GraphData> 
 
 ### 2.4 Three.js Modules
 
+#### `frontend/src/lib/three/camera/cameraUtils.ts`
+
 #### `frontend/src/lib/three/core/sceneSetup.ts`
 
 ```typescript
@@ -2130,15 +2317,19 @@ export interface SceneSetupResult {
 }
 
 export function initScene(container: HTMLElement): SceneSetupResult {
+  // Сцена
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050510);
-  scene.fog = new THREE.FogExp2(0x050510, 0.002);
+  // Initial dense fog for "fog of war" effect during progressive loading
+  scene.fog = new THREE.FogExp2(0x050510, 0.08);
 
+  // Камера
   const aspect = container.clientWidth / container.clientHeight;
   const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
   camera.position.set(20, 15, 30);
   camera.lookAt(0, 0, 0);
 
+  // Рендереры
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -2154,6 +2345,7 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   labelRenderer.domElement.style.pointerEvents = 'none';
   container.appendChild(labelRenderer.domElement);
 
+  // Управление
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
@@ -2161,22 +2353,42 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   controls.autoRotateSpeed = 0.8;
   controls.enableZoom = true;
   controls.enablePan = true;
+  controls.maxPolarAngle = Math.PI / 1.8;
 
+  // Освещение
   const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
   scene.add(ambientLight);
 
   const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
   dirLight.position.set(10, 30, 10);
   dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
   scene.add(dirLight);
 
   const fillLight1 = new THREE.PointLight(0x4466ff, 0.8);
   fillLight1.position.set(15, 5, 20);
   scene.add(fillLight1);
 
+  const fillLight2 = new THREE.PointLight(0xff66aa, 0.5);
+  fillLight2.position.set(-15, 10, -20);
+  scene.add(fillLight2);
+
+  // Звёздное небо
   addStarfield(scene);
 
   return { scene, camera, renderer, labelRenderer, controls };
+}
+
+/**
+ * Set the fog density for the scene
+ * @param scene - The THREE.Scene instance
+ * @param density - Fog density value (0.0 to disable, 0.08 for dense, 0.005 for clear)
+ */
+export function setFogDensity(scene: THREE.Scene, density: number): void {
+  if (scene.fog && scene.fog instanceof THREE.FogExp2) {
+    scene.fog.density = density;
+  }
 }
 
 function addStarfield(scene: THREE.Scene) {
@@ -2236,22 +2448,97 @@ export function createSimulation(data: GraphData, objectManager: ObjectManager) 
       .distanceMax(200)
     )
     .force('center', forceCenter(0, 0, 0));
-
+  
   (sim as any).alphaDecay(0.015);
-
+  
   let tickCount = 0;
   sim.on('tick', () => {
     objectManager.updatePositions(nodes);
+    // Only update links every 10 ticks for performance, and log first few
     if (++tickCount % 10 === 0 || tickCount <= 3) {
+      console.log(`[forceSimulation] Tick ${tickCount}, updating ${links.length} links`);
       objectManager.updateLinks(links);
     }
   });
-
+  
   sim.on('end', () => {
+    console.log(`[forceSimulation] Simulation ended after ${tickCount} ticks, final link update`);
     objectManager.updateLinks(links);
   });
-
+  
   return sim;
+}
+
+/**
+ * Add new nodes and links to an existing simulation without restarting completely
+ * This allows for progressive loading while keeping existing nodes stable
+ */
+export function addNodesToSimulation(
+  sim: any,
+  newData: GraphData,
+  existingData: GraphData,
+  objectManager: ObjectManager
+): void {
+  // Get existing node IDs
+  const existingNodeIds = new Set(existingData.nodes.map(n => n.id));
+  const existingLinkIds = new Set(existingData.links.map(l => `${l.source}-${l.target}`));
+  
+  // Filter out only new nodes and links
+  const newNodes = newData.nodes.filter(n => !existingNodeIds.has(n.id)).map(n => ({
+    ...n,
+    x: (n as any).x ?? (Math.random() - 0.5) * 100,
+    y: (n as any).y ?? (Math.random() - 0.5) * 100,
+    z: (n as any).z ?? (Math.random() - 0.5) * 100
+  }));
+  
+  const newLinks = newData.links.filter(l => {
+    const linkId = `${l.source}-${l.target}`;
+    return !existingLinkIds.has(linkId);
+  }).map(l => ({
+    ...l,
+    source: l.source,
+    target: l.target,
+    value: l.weight ?? 1
+  }));
+  
+  if (newNodes.length === 0 && newLinks.length === 0) {
+    console.log('[addNodesToSimulation] No new nodes or links to add');
+    return;
+  }
+  
+  console.log(`[addNodesToSimulation] Adding ${newNodes.length} nodes and ${newLinks.length} links`);
+  
+  // Add new visual objects
+  objectManager.addNodes(newNodes, newLinks);
+  
+  // Get current nodes and links from simulation
+  const currentNodes = sim.nodes();
+  const currentLinks = sim.force('link').links();
+  
+  // Add new nodes to simulation
+  currentNodes.push(...newNodes);
+  
+  // Add new links to simulation
+  currentLinks.push(...newLinks);
+  
+  // "Warm up" the simulation with reduced charge strength for stability
+  const chargeForce = sim.force('charge');
+  if (chargeForce) {
+    // Temporarily reduce repulsion for smoother integration
+    (chargeForce as any).strength(-100);
+  }
+  
+  // Restart simulation with controlled alpha target
+  sim.alphaTarget(0.1).restart();
+  
+  // Gradually restore original charge strength
+  setTimeout(() => {
+    if (chargeForce) {
+      (chargeForce as any).strength(-200);
+    }
+    // Settle to lower alpha
+    sim.alphaTarget(0);
+  }, 1000);
 }
 ```
 
@@ -2283,9 +2570,58 @@ export class ObjectManager {
   }
 
   createAll(nodes: GraphNode[], links: GraphLink[]) {
+    console.log(`[ObjectManager] createAll called: ${nodes.length} nodes, ${links.length} links`);
     this.clear();
 
     nodes.forEach((node) => {
+      const mesh = createNodeMesh(node);
+      mesh.position.set((node as any).x ?? 0, (node as any).y ?? 0, (node as any).z ?? 0);
+      mesh.userData = { type: 'node', id: node.id, nodeData: node };
+      this.scene.add(mesh);
+      this.nodeMap.set(node.id, mesh);
+      console.log(`[ObjectManager] Created node ${node.id} (${node.type || 'default'}) at (${mesh.position.x.toFixed(2)}, ${mesh.position.y.toFixed(2)}, ${mesh.position.z.toFixed(2)})`);
+
+      const label = createLabel(node.title || node.id.substring(0, 6), () => {
+        window.location.href = `/notes/${node.id}`;
+      });
+      // Размещаем метку над узлом на фиксированном расстоянии (зависит от размера узла)
+      const labelOffset = getNodeSize(node.type) + 2.5;
+      label.position.copy(mesh.position).add(new THREE.Vector3(0, labelOffset, 0));
+      label.userData = { type: 'label', nodeId: node.id };
+      this.scene.add(label);
+      this.labelMap.set(node.id, label);
+    });
+
+    links.forEach((link) => {
+      const sourceNode = nodes.find((n) => n.id === link.source);
+      const targetNode = nodes.find((n) => n.id === link.target);
+      if (!sourceNode || !targetNode) {
+        console.warn(`[ObjectManager] Skipping link ${link.source}-${link.target}: nodes not found`);
+        return;
+      }
+
+      const sourcePos = new THREE.Vector3((sourceNode as any).x ?? 0, (sourceNode as any).y ?? 0, (sourceNode as any).z ?? 0);
+      const targetPos = new THREE.Vector3((targetNode as any).x ?? 0, (targetNode as any).y ?? 0, (targetNode as any).z ?? 0);
+      const line = createLinkLine(sourcePos, targetPos, link.weight ?? 1, link.link_type);
+      line.userData = { type: 'link', source: link.source, target: link.target, linkType: link.link_type };
+      this.scene.add(line);
+      this.linkMap.set(`${link.source}-${link.target}`, line);
+    });
+    console.log(`[ObjectManager] Total created: ${this.nodeMap.size} nodes, ${this.linkMap.size} links, ${this.labelMap.size} labels`);
+  }
+
+  /**
+   * Add new nodes and links incrementally without clearing existing ones
+   */
+  addNodes(newNodes: GraphNode[], newLinks: GraphLink[]) {
+    console.log(`[ObjectManager] addNodes called: ${newNodes.length} new nodes, ${newLinks.length} new links`);
+    
+    // Add new nodes
+    newNodes.forEach((node) => {
+      if (this.nodeMap.has(node.id)) {
+        return; // Skip existing nodes
+      }
+      
       const mesh = createNodeMesh(node);
       mesh.position.set((node as any).x ?? 0, (node as any).y ?? 0, (node as any).z ?? 0);
       mesh.userData = { type: 'node', id: node.id, nodeData: node };
@@ -2297,21 +2633,34 @@ export class ObjectManager {
       });
       const labelOffset = getNodeSize(node.type) + 2.5;
       label.position.copy(mesh.position).add(new THREE.Vector3(0, labelOffset, 0));
+      label.userData = { type: 'label', nodeId: node.id };
       this.scene.add(label);
       this.labelMap.set(node.id, label);
     });
 
-    links.forEach((link) => {
-      const sourceNode = nodes.find((n) => n.id === link.source);
-      const targetNode = nodes.find((n) => n.id === link.target);
-      if (!sourceNode || !targetNode) return;
+    // Add new links
+    newLinks.forEach((link) => {
+      const linkId = `${link.source}-${link.target}`;
+      if (this.linkMap.has(linkId)) {
+        return; // Skip existing links
+      }
+      
+      // Get source and target from the complete node map (existing + new)
+      const sourceObj = this.nodeMap.get(link.source);
+      const targetObj = this.nodeMap.get(link.target);
+      
+      if (!sourceObj || !targetObj) {
+        console.warn(`[ObjectManager] Skipping link ${linkId}: nodes not found (source: ${!!sourceObj}, target: ${!!targetObj})`);
+        return;
+      }
 
-      const sourcePos = new THREE.Vector3((sourceNode as any).x ?? 0, (sourceNode as any).y ?? 0, (sourceNode as any).z ?? 0);
-      const targetPos = new THREE.Vector3((targetNode as any).x ?? 0, (targetNode as any).y ?? 0, (targetNode as any).z ?? 0);
-      const line = createLinkLine(sourcePos, targetPos, link.weight ?? 1, link.link_type);
+      const line = createLinkLine(sourceObj.position, targetObj.position, link.weight ?? 1, link.link_type);
+      line.userData = { type: 'link', source: link.source, target: link.target, linkType: link.link_type };
       this.scene.add(line);
-      this.linkMap.set(`${link.source}-${link.target}`, line);
+      this.linkMap.set(linkId, line);
     });
+    
+    console.log(`[ObjectManager] After addNodes: ${this.nodeMap.size} total nodes, ${this.linkMap.size} total links`);
   }
 
   updatePositions(nodes: GraphNode[]) {
@@ -2321,6 +2670,7 @@ export class ObjectManager {
       if (obj) {
         obj.position.set((node as any).x ?? 0, (node as any).y ?? 0, (node as any).z ?? 0);
         if (label) {
+          // Обновляем позицию метки с тем же смещением что и при создании
           const labelOffset = getNodeSize(node.type) + 2.5;
           label.position.copy(obj.position).add(new THREE.Vector3(0, labelOffset, 0));
         }
@@ -2329,22 +2679,34 @@ export class ObjectManager {
   }
 
   updateLinks(links: GraphLink[]) {
+    let updatedCount = 0;
     links.forEach((link) => {
+      // Извлекаем ID независимо от того, строка это или объект (d3-force заменяет строки на объекты-ссылки)
       const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
       const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
       const key = `${sourceId}-${targetId}`;
       
       const line = this.linkMap.get(key);
-      if (!line) return;
+      if (!line) {
+        console.warn(`[ObjectManager] Link ${key} not found in linkMap`);
+        return;
+      }
 
       const sourceObj = this.nodeMap.get(sourceId);
       const targetObj = this.nodeMap.get(targetId);
-      if (!sourceObj || !targetObj) return;
+      if (!sourceObj || !targetObj) {
+        console.warn(`[ObjectManager] Cannot update link ${key}: source or target not found`);
+        return;
+      }
 
       const points = [sourceObj.position.clone(), targetObj.position.clone()];
       line.geometry.dispose();
       line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+      updatedCount++;
     });
+    if (updatedCount > 0) {
+      console.log(`[ObjectManager] Updated ${updatedCount}/${links.length} links`);
+    }
   }
 
   clear() {
@@ -2355,6 +2717,93 @@ export class ObjectManager {
     this.linkMap.clear();
     this.labelMap.clear();
   }
+
+  getNode(id: string) {
+    return this.nodeMap.get(id);
+  }
+}
+```
+
+#### `frontend/src/lib/three/camera/cameraUtils.ts`
+
+```typescript
+import * as THREE from 'three';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+/**
+ * Animate camera position and target smoothly using lerp
+ * @param camera - The camera to animate
+ * @param controls - The orbit controls
+ * @param targetPos - Target camera position
+ * @param targetCenter - Target look-at point
+ * @param duration - Animation duration in ms
+ */
+export function lerpCamera(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  targetPos: THREE.Vector3,
+  targetCenter: THREE.Vector3,
+  duration: number = 1000
+): void {
+  const startPos = camera.position.clone();
+  const startCenter = controls.target.clone();
+  const startTime = performance.now();
+
+  function animate() {
+    const elapsed = performance.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    
+    camera.position.lerpVectors(startPos, targetPos, ease);
+    controls.target.lerpVectors(startCenter, targetCenter, ease);
+    controls.update();
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+  
+  animate();
+}
+
+export function autoZoomToFit(
+  nodes: { x: number; y: number; z: number }[],
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  animate: boolean = false
+) {
+  if (nodes.length === 0) return;
+
+  const center = new THREE.Vector3();
+  nodes.forEach((n) => center.add(new THREE.Vector3(n.x, n.y, n.z)));
+  center.divideScalar(nodes.length);
+
+  let maxDist = 0;
+  nodes.forEach((n) => {
+    const dist = new THREE.Vector3(n.x, n.y, n.z).distanceTo(center);
+    if (dist > maxDist) maxDist = dist;
+  });
+
+  const radius = maxDist * 1.2;
+  const fov = camera.fov * Math.PI / 180;
+  const dist = radius / Math.tan(fov / 2);
+
+  console.log('[autoZoomToFit] center:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`, 'radius:', radius.toFixed(2), 'distance:', dist.toFixed(2), 'nodes:', nodes.length, 'animate:', animate);
+
+  const direction = new THREE.Vector3(1, 1, 1).normalize();
+  const newPos = center.clone().add(direction.multiplyScalar(dist));
+  
+  if (animate) {
+    lerpCamera(camera, controls, newPos, center, 1500);
+  } else {
+    camera.position.copy(newPos);
+    controls.target.copy(center);
+    controls.update();
+  }
+  
+  console.log('[autoZoomToFit] camera position set to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
 }
 ```
 
