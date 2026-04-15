@@ -1,4 +1,4 @@
-ташп json name: Block Direct Push to Main
+name: Block Direct Push to Main
 
 on:
   push:

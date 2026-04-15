@@ -30,6 +30,13 @@ type Config struct {
 
 	// Загрузка графа (визуализация)
 	GraphLoadDepth int // Глубина загрузки графа для визуализации
+
+	// Новые параметры для улучшения алгоритма рекомендаций
+	RecommendationGamma float64 // Коэффициент для дополнительного компонента
+	BFSAggregation      string  // Метод агрегации BFS: "max", "sum", "avg"
+	BFSNormalize        bool    // Нормализация весов в BFS
+	AsynqConcurrency    int     // Уровень параллелизма Asynq
+	AsynqQueueDefault   int     // Приоритет дефолтной очереди Asynq
 }
 
 // Load загружает конфигурацию из переменных окружения.
@@ -50,6 +57,13 @@ func Load() *Config {
 
 		// Загрузка графа
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", 2),
+
+		// Новые параметры
+		RecommendationGamma: getFloatEnv("RECOMMENDATION_GAMMA", 0.2),
+		BFSAggregation:      getEnv("BFS_AGGREGATION", "max"),
+		BFSNormalize:        getBoolEnv("BFS_NORMALIZE", true),
+		AsynqConcurrency:    getIntEnv("ASYNQ_CONCURRENCY", 10),
+		AsynqQueueDefault:   getIntEnv("ASYNQ_QUEUE_DEFAULT", 1),
 	}
 }
 
@@ -80,6 +94,15 @@ func getIntEnv(key string, defaultValue int) int {
 func getFloatEnv(key string, defaultValue float64) float64 {
 	if str := os.Getenv(key); str != "" {
 		if val, err := strconv.ParseFloat(str, 64); err == nil {
+			return val
+		}
+	}
+	return defaultValue
+}
+
+func getBoolEnv(key string, defaultValue bool) bool {
+	if str := os.Getenv(key); str != "" {
+		if val, err := strconv.ParseBool(str); err == nil {
 			return val
 		}
 	}

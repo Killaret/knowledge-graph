@@ -9,19 +9,48 @@
     onNodeClick
   }: { 
     nodes: Array<{ id: string; title: string; type?: string }>;
-    links: Array<{ source: string; target: string; weight?: number }>;
+    links: Array<{ source: string; target: string; weight?: number; link_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
-  // Функция для получения цвета связи по весу (градиент от синего к оранжевому)
-  function getLinkColor(weight: number): string {
-    const w = Math.max(0, Math.min(1, weight));
-    // Blue (51, 102, 255) to Orange (255, 170, 0)
-    const r = Math.round(51 + (255 - 51) * w);
-    const g = Math.round(102 + (170 - 102) * w);
-    const b = Math.round(255 + (0 - 255) * w);
-    const opacity = 0.3 + w * 0.5;
+  // Цвета для разных типов связей
+  const linkTypeColors: Record<string, string> = {
+    'reference': '#3366ff',   // Синий - ссылочная связь
+    'dependency': '#ff6600',  // Оранжевый - зависимость
+    'related': '#999999',     // Серый - связанная тема (по умолчанию)
+    'custom': '#ff66ff',      // Розовый - пользовательская
+  };
+
+  // Функция для получения цвета связи по типу
+  function getLinkColor(weight: number, linkType?: string): string {
+    const effectiveType = linkType || 'related';
+    const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
+    const opacity = 0.4 + (weight ?? 0.5) * 0.4;
+    
+    // Конвертируем hex в rgba
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
+  // Функция для получения стиля линии по типу связи и весу
+  function getLineDash(linkType?: string, weight?: number): number[] {
+    const effectiveType = linkType || 'related';
+    
+    switch (effectiveType) {
+      case 'reference': 
+        return []; // Сплошная
+      case 'dependency': 
+        return [10, 3]; // Штрихпунктир
+      case 'related': 
+        // Пунктир только при слабом весе
+        return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
+      case 'custom': 
+        return [2, 6]; // Точечный
+      default: 
+        return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
+    }
   }
 
   let canvas: HTMLCanvasElement;
@@ -62,6 +91,50 @@
     return () => cleanup();
   });
 
+  // Реактивно перезапускаем симуляцию при изменении данных
+  $effect(() => {
+    // Отслеживаем изменения в данных
+    const nodesKey = nodes.map(n => n.id).join(',');
+    const linksKey = links.map(l => `${l.source}-${l.target}`).join(',');
+    const dataKey = `${nodesKey}|${linksKey}`;
+    
+    console.log('[GraphCanvas] $effect triggered:', { nodes: nodes.length, links: links.length, dataKey: dataKey.slice(0, 50) });
+    
+    if (d3Force) {
+      if (nodes.length === 0) {
+        console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
+        if (simulation) {
+          simulation.stop();
+          simulation = null;
+        }
+        // Clear canvas
+        if (ctx) {
+          ctx.clearRect(0, 0, width, height);
+        }
+        return;
+      }
+      
+      console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
+      
+      // Останавливаем старую симуляцию
+      if (simulation) {
+        console.log('[GraphCanvas] Stopping old simulation');
+        simulation.stop();
+      }
+      
+      // Очищаем углы и скорости для новых данных
+      angles.clear();
+      speeds.clear();
+      console.log('[GraphCanvas] Cleared angles and speeds maps');
+      
+      // Запускаем новую с обновленными данными
+      startSimulation();
+      console.log('[GraphCanvas] New simulation started');
+    } else {
+      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
+    }
+  });
+
   function startAnimation() {
     function animate() {
       for (const node of simulation?.nodes() || []) {
@@ -96,9 +169,28 @@
   }
 
   function startSimulation() {
-    if (!d3Force) return;
+    if (!d3Force) {
+      console.log('[GraphCanvas] Cannot start simulation: d3Force not loaded');
+      return;
+    }
+    
+    // Reset transform when starting new simulation
+    transform.x = 0;
+    transform.y = 0;
+    transform.k = 1;
+    
+    console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
+    
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
-    const edges = links.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1 }));
+    
+    // Filter links to only include those where both source and target nodes exist
+    const nodeIds = new Set(nodes.map(n => n.id));
+    const validLinks = links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    if (validLinks.length !== links.length) {
+      console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
+    }
+    
+    const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
@@ -108,7 +200,9 @@
       .alphaDecay(0.02)
       .on('tick', () => draw());
 
+    // Run initial ticks to stabilize
     simulation.tick(100);
+    console.log('[GraphCanvas] Simulation initialized and ticked 100 times');
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -179,6 +273,40 @@
     ctx.restore();
   }
 
+  function drawAsteroid(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Irregular rocky shape
+    ctx.beginPath();
+    const points = 7;
+    for (let i = 0; i < points; i++) {
+      const theta = (i / points) * 2 * Math.PI;
+      const radiusVariation = 0.7 + Math.random() * 0.3;
+      const px = x + Math.cos(theta) * r * radiusVariation;
+      const py = y + Math.sin(theta) * r * radiusVariation;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#8b7355';
+    ctx.fill();
+    ctx.strokeStyle = '#5c4a3a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawDebris(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Scattered small particles
+    ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';
+    for (let i = 0; i < 5; i++) {
+      const offsetX = (Math.random() - 0.5) * r * 2;
+      const offsetY = (Math.random() - 0.5) * r * 2;
+      ctx.beginPath();
+      ctx.arc(x + offsetX, y + offsetY, r * 0.3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
   function draw() {
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
@@ -191,13 +319,32 @@
       const sourceNode = simulation.nodes().find((n: any) => n.id === link.source);
       const targetNode = simulation.nodes().find((n: any) => n.id === link.target);
       if (!sourceNode || !targetNode) return;
+      
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
       ctx.lineTo(targetNode.x, targetNode.y);
+      
       const weight = link.weight ?? 0.5;
-      ctx.lineWidth = Math.max(1, weight * 4);
-      ctx.strokeStyle = getLinkColor(weight);
+      const linkType = link.link_type;
+      
+      // Толщина линии зависит от типа и веса
+      let lineWidth = Math.max(1, weight * 4);
+      if (linkType === 'dependency') lineWidth *= 1.5;
+      if (linkType === 'reference') lineWidth *= 0.8;
+      
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = getLinkColor(weight, linkType);
+      
+      // Устанавливаем dash pattern для пунктирных линий
+      const dash = getLineDash(linkType, weight);
+      if (dash.length > 0) {
+        ctx.setLineDash(dash);
+      } else {
+        ctx.setLineDash([]);
+      }
+      
       ctx.stroke();
+      ctx.setLineDash([]); // Сброс dash pattern
     });
 
     const r = 24; // радиус увеличен для лучшей читаемости
@@ -221,6 +368,12 @@
           break;
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
+          break;
+        case 'asteroid':
+          drawAsteroid(node.x, node.y, r, angle);
+          break;
+        case 'debris':
+          drawDebris(node.x, node.y, r, angle);
           break;
         default:
           drawStar(node.x, node.y, r, angle);

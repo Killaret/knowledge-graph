@@ -1,8 +1,27 @@
-# Implementation Summary: Frontend Stabilization, BDD & Graph-Centric UI
+# ➡️ Документ перемещён в архив
 
-## Summary
+**Этот отчёт устарел** — полная информация теперь в `CHANGELOG.md`.
 
-This document summarizes the comprehensive frontend improvements made to the Knowledge Graph application.
+---
+
+## 📚 Актуальная документация
+
+| Документ | Описание |
+|----------|----------|
+| **`CHANGELOG.md`** | Полная история изменений v1.0.0 |
+| **`FRONTEND_ARCHITECTURE.md`** | Актуальная архитектура фронтенда |
+| **`TESTING.md`** | Руководство по тестированию |
+
+---
+
+## 📦 Архив
+
+Этот файл сохранён в `docs/archive/` для истории.
+См. `archive/README.md` для полного списка архивированных документов.
+
+---
+
+## Устаревшее резюме (до v1.0.0):
 
 ## Completed Tasks
 

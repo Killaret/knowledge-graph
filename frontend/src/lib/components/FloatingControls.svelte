@@ -1,18 +1,20 @@
 <script lang="ts">
-  const { 
+  import { goto } from '$app/navigation';
+  
+  const {
     onCreate,
     onSearch,
     onToggleView,
-    onToggle3D,
     onImport,
-    onExport
+    onExport,
+    noteId = ''
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
     onToggleView?: () => void;
-    onToggle3D?: () => void;
     onImport?: () => void;
     onExport?: () => void;
+    noteId?: string;
   } = $props();
   
   let searchQuery = $state('');
@@ -21,6 +23,12 @@
   
   function handleSearch() {
     onSearch?.(searchQuery);
+  }
+  
+  function handleToggle3D() {
+    // Если есть noteId, переходим на 3D граф этой заметки, иначе на общий 3D граф
+    const targetUrl = noteId ? `/graph/3d/${noteId}` : '/graph/3d';
+    goto(targetUrl);
   }
   
   function toggleView() {
@@ -52,8 +60,11 @@
     </button>
     <button
       class="toggle-btn"
-      onclick={() => onToggle3D?.()}
-      title="3D Graph"
+      onclick={handleToggle3D}
+      title={noteId ? "3D Graph" : "Select a note first"}
+      disabled={!noteId}
+      style:opacity={noteId ? 1 : 0.4}
+      style:cursor={noteId ? 'pointer' : 'not-allowed'}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -115,9 +126,11 @@
         <button class="menu-item" onclick={() => { onExport?.(); showMenu = false; }}>
           Export
         </button>
-        <button class="menu-item" onclick={() => { onToggle3D?.(); showMenu = false; }}>
-          3D View
-        </button>
+        {#if noteId}
+          <button class="menu-item" onclick={() => { handleToggle3D(); showMenu = false; }}>
+            3D View
+          </button>
+        {/if}
       </div>
     {/if}
   </div>

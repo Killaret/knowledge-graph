@@ -4,6 +4,18 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // D3 force simulation libraries
+          'd3': ['d3-force', 'd3-force-3d'],
+          // Vendor chunk for framework and utilities
+          'vendor': ['svelte', 'ky', 'svelte-sonner']
+        }
+      }
+    }
+  },
   server: {
     proxy: {
       // Прокси для запросов к API бэкенда

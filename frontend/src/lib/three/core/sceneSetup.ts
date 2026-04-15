@@ -14,7 +14,8 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   // Сцена
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050510);
-  scene.fog = new THREE.FogExp2(0x050510, 0.002);
+  // Initial dense fog for "fog of war" effect during progressive loading
+  scene.fog = new THREE.FogExp2(0x050510, 0.08);
 
   // Камера
   const aspect = container.clientWidth / container.clientHeight;
@@ -71,6 +72,17 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   addStarfield(scene);
 
   return { scene, camera, renderer, labelRenderer, controls };
+}
+
+/**
+ * Set the fog density for the scene
+ * @param scene - The THREE.Scene instance
+ * @param density - Fog density value (0.0 to disable, 0.08 for dense, 0.005 for clear)
+ */
+export function setFogDensity(scene: THREE.Scene, density: number): void {
+  if (scene.fog && scene.fog instanceof THREE.FogExp2) {
+    scene.fog.density = density;
+  }
 }
 
 function addStarfield(scene: THREE.Scene) {

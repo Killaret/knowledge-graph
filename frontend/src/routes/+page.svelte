@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import VirtualList from 'svelte-virtual-list';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
@@ -8,7 +9,7 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getGraphData, type GraphData } from '$lib/api/graph';
+  import { getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
 
   // State
@@ -22,7 +23,7 @@
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
   
-  // Graph state
+  // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphLoading = $state(false);
   let searchQuery = $state('');
@@ -48,8 +49,41 @@
 
   onMount(async () => {
     if (!browser) return;
-    await loadNotes();
+    await loadDataParallel();
   });
+
+  async function loadDataParallel() {
+    try {
+      // Load notes and graph data in parallel
+      const [notesResult, graphResult] = await Promise.all([
+        getNotes(),
+        getFullGraphData().catch(e => {
+          console.error('[+page] Failed to load graph:', e);
+          return null;
+        })
+      ]);
+      
+      allNotes = notesResult;
+      applyFiltersAndSort();
+      
+      // Set graph data if successful
+      if (graphResult) {
+        graphData = graphResult;
+        console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      } else {
+        // Fallback: build simple graph from notes
+        graphData = {
+          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+          links: []
+        };
+      }
+    } catch (e) {
+      error = 'Failed to load notes';
+      console.error(e);
+    } finally {
+      loading = false;
+    }
+  }
 
   async function loadNotes() {
     try {
@@ -66,16 +100,20 @@
   }
   
   async function loadGraphData() {
-    if (allNotes.length === 0) return;
+    if (allNotes.length === 0) {
+      console.log('[+page] No notes to load graph');
+      graphData = { nodes: [], links: [] };
+      return;
+    }
     
     graphLoading = true;
+    console.log('[+page] Loading full graph...');
     try {
-      // Build graph from all notes - use first note as center
-      const centerNote = allNotes[0];
-      const data = await getGraphData(centerNote.id, 2);
-      graphData = data;
+      // Always load full graph on main page
+      graphData = await getFullGraphData();
+      console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
     } catch (e) {
-      console.error('Failed to load graph:', e);
+      console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
       graphData = {
         nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
@@ -85,6 +123,38 @@
       graphLoading = false;
     }
   }
+  
+  // Reload graph when allNotes changes (notes added/deleted)
+  $effect(() => {
+    if (browser && allNotes.length > 0) {
+      console.log('[+page] allNotes changed, reloading graph...');
+      loadGraphData();
+    }
+  });
+
+  // Reactive filtered graph data based on selected type
+  const filteredGraphData = $derived(() => {
+    if (selectedType === 'all' || !graphData.nodes.length) {
+      return graphData;
+    }
+    
+    const allowedNodeIds = new Set(
+      allNotes.filter(n => n.type === selectedType).map(n => n.id)
+    );
+    
+    const filteredNodes = graphData.nodes.filter(n => allowedNodeIds.has(n.id));
+    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = graphData.links.filter(l => 
+      filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
+    );
+    
+    console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`);
+    
+    return {
+      nodes: filteredNodes,
+      links: filteredLinks
+    };
+  });
 
   function applyFiltersAndSort() {
     let result = [...allNotes];
@@ -148,6 +218,10 @@
     try {
       await deleteNote(noteToDelete);
       selectedNodeId = null;
+      // Remove deleted note from local arrays immediately
+      allNotes = allNotes.filter(n => n.id !== noteToDelete);
+      filteredNotes = filteredNotes.filter(n => n.id !== noteToDelete);
+      // Then reload from server to ensure sync
       await loadNotes();
     } catch {
       if (browser) {
@@ -167,10 +241,6 @@
 
   function handleToggleView() {
     currentView = currentView === 'graph' ? 'list' : 'graph';
-  }
-
-  function handleToggle3D() {
-    goto('/graph');
   }
 
   function getPluralForm(count: number, one: string, few: string, many: string): string {
@@ -196,7 +266,7 @@
     onCreate={() => { showCreateModal = true; }}
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
     onToggleView={handleToggleView}
-    onToggle3D={handleToggle3D}
+    noteId={selectedNodeId ?? undefined}
   />
 
   <!-- Main Content -->
@@ -240,11 +310,21 @@
             {/each}
           </select>
         </div>
+
+        <div class="view-group">
+          <button class="view-button-3d" onclick={() => goto('/graph/3d/all')}>
+            <span class="emoji">🧊</span>
+            <span>3D</span>
+          </button>
+        </div>
       </div>
 
       <!-- Stats -->
       <div class="stats-bar">
         <span class="stats-total">{filteredNotes.length} {getPluralForm(filteredNotes.length, 'note', 'notes', 'notes')}</span>
+        {#if filteredNotes.length !== allNotes.length}
+          <span class="stats-of">of {allNotes.length} total</span>
+        {/if}
         {#if selectedType !== 'all'}
           <span class="stats-filter">(filtered by: {typeFilters.find(f => f.id === selectedType)?.label})</span>
         {/if}
@@ -252,6 +332,7 @@
           <span class="stats-filter">(search: "{searchQuery}")</span>
         {/if}
       </div>
+
 
       <!-- Graph View (Primary) -->
       {#if currentView === 'graph' && !loading}
@@ -261,17 +342,20 @@
               <div class="spinner"></div>
               <p>Loading graph...</p>
             </div>
-          {:else if graphData.nodes.length > 0}
+          {:else if filteredGraphData().nodes.length > 0}
             <GraphCanvas 
-              nodes={graphData.nodes}
-              links={graphData.links}
+              nodes={filteredGraphData().nodes}
+              links={filteredGraphData().links}
               onNodeClick={(node) => selectedNodeId = node.id}
             />
           {:else}
             <div class="empty-state">
               <div class="empty-icon">🌌</div>
               <h2>No graph data</h2>
-              <p>Create some notes to see the knowledge graph</p>
+              <p>{selectedType === 'all' 
+                ? "Create some notes to see the knowledge graph" 
+                : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
+              </p>
             </div>
           {/if}
         </div>
@@ -295,14 +379,16 @@
             </button>
           </div>
         {:else}
-          <div class="notes-grid">
-            {#each filteredNotes as note (note.id)}
-              <NoteCard
-                {note}
-                onClick={() => selectedNodeId = note.id}
-                highlightQuery={searchQuery}
-              />
-            {/each}
+          <div class="virtual-list-container">
+            <VirtualList items={filteredNotes} itemHeight={120} let:item>
+              <div class="virtual-list-item">
+                <NoteCard
+                  note={item}
+                  onClick={() => selectedNodeId = item.id}
+                  highlightQuery={searchQuery}
+                />
+              </div>
+            </VirtualList>
           </div>
         {/if}
       {/if}
@@ -410,6 +496,33 @@
     flex-wrap: wrap;
   }
 
+  .view-group {
+    margin-left: auto;
+  }
+
+  .view-button-3d {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .view-button-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .emoji {
+    font-size: 1.2em;
+  }
+
   .filter-button {
     display: flex;
     align-items: center;
@@ -475,6 +588,11 @@
     color: #64748b;
   }
 
+  .stats-of {
+    color: #94a3b8;
+    font-size: 13px;
+  }
+
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -518,10 +636,15 @@
     box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
   }
 
-  .notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
+  .virtual-list-container {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .virtual-list-item {
+    padding: 8px 0;
+    height: 120px;
+    box-sizing: border-box;
   }
 
   @media (max-width: 768px) {
@@ -538,8 +661,8 @@
       justify-content: center;
     }
 
-    .notes-grid {
-      grid-template-columns: 1fr;
+    .virtual-list-container {
+      height: calc(100vh - 240px);
     }
   }
 </style>

@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Tests for Graph Visualization (2D primary, 3D optional)
- * These tests verify that the graph renders correctly in both modes
- * Note: WebGL may be limited in headless environments, so we test for either 2D or 3D
+ * Tests for Graph Visualization with Progressive Rendering
+ * These tests verify the new architecture with immediate loading and fog effect
  */
 
-test.describe('Graph Visualization', () => {
+test.describe('Graph Visualization - Progressive Rendering', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to home page first
@@ -14,66 +13,77 @@ test.describe('Graph Visualization', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should render graph page with visualization', async ({ page, request }) => {
+  test('should render 3D graph immediately without spinner', async ({ page, request }) => {
     // Create a note via API
     const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Graph Test Note', content: 'Test note for graph' }
+      data: { title: '3D Graph Test Note', content: 'Test note for 3D graph' }
     });
     const noteId = (await note.json()).id;
     
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    // Navigate to 3D graph page directly
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
     
-    // Verify either canvas (2D/3D) or error message is shown
-    // WebGL may not work in headless mode, so we check for any graph container
-    const canvas = page.locator('canvas, .graph-canvas').first();
-    const graphContainer = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay').first();
+    // Graph should appear immediately (no lazy loading spinner)
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible({ timeout: 3000 });
     
-    const hasCanvas = await canvas.isVisible().catch(() => false);
-    const hasContainer = await graphContainer.isVisible().catch(() => false);
+    // No spinner overlay should be present
+    const loadingOverlay = page.locator('.loading-overlay, .lazy-loading');
+    const hasLoading = await loadingOverlay.isVisible().catch(() => false);
+    expect(hasLoading).toBe(false);
     
-    // At least one visualization element should be present
-    expect(hasCanvas || hasContainer).toBe(true);
+    // Stats bar should show immediately with node count
+    const statsBar = page.locator('.stats-bar').first();
+    await expect(statsBar).toBeVisible({ timeout: 2000 });
+    
+    const statsText = await statsBar.textContent();
+    expect(statsText).toMatch(/\d+\s*nodes?/i);
   });
 
-  test('should show graph container with correct styling', async ({ page, request }) => {
+  test('should show graph container with correct 3D styling', async ({ page, request }) => {
     // Create a note via API
     const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Styling Test Note', content: 'Testing graph styling' }
+      data: { title: 'Styling Test Note', content: 'Testing 3D graph styling' }
     });
     const noteId = (await note.json()).id;
     
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    // Navigate to 3D graph page
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
-    // Verify graph container is visible (use first())
-    await expect(page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay').first()).toBeVisible();
+    // Verify 3D graph container is visible
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible();
     
-    // Canvas may not be available in headless mode due to WebGL limitations
-    // Just verify the container loaded correctly
-    const container = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper').first();
-    const errorOverlay = page.locator('.error-overlay').first();
+    // Verify container has correct CSS
+    const containerStyles = await graphContainer.evaluate(el => {
+      const styles = window.getComputedStyle(el);
+      return {
+        position: styles.position,
+        width: styles.width,
+        height: styles.height,
+        overflow: styles.overflow,
+        backgroundColor: styles.backgroundColor
+      };
+    });
     
-    const hasContainer = await container.isVisible().catch(() => false);
-    const hasError = await errorOverlay.isVisible().catch(() => false);
-    
-    // Either graph or error message should be shown
-    expect(hasContainer || hasError).toBe(true);
+    expect(containerStyles.position).toBe('relative');
+    expect(containerStyles.overflow).toBe('hidden');
+    expect(containerStyles.width).not.toBe('0px');
+    expect(containerStyles.height).not.toBe('0px');
   });
 
-  test('should handle back button navigation from graph page', async ({ page, request }) => {
+  test('should handle back button navigation from 3D graph page', async ({ page, request }) => {
     // Create a note via API
     const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Navigation Test Note', content: 'Testing navigation from graph' }
+      data: { title: 'Navigation Test Note', content: 'Testing navigation from 3D graph' }
     });
     const noteId = (await note.json()).id;
     
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    // Navigate to 3D graph page
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
     
@@ -86,58 +96,38 @@ test.describe('Graph Visualization', () => {
     expect(currentUrl).toMatch(/http:\/\/localhost:5173(\/|\/notes\/.+)/);
   });
 
-  test('should display performance mode or fallback indicator', async ({ page, request }) => {
-    // Create a note via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Performance Test Note', content: 'Testing performance mode indicator' }
+  test('should display stats bar with node and link counts', async ({ page, request }) => {
+    // Create a note with connections
+    const note1 = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Stats Test Node 1', content: 'Node 1' }
     });
-    const noteId = (await note.json()).id;
+    const note1Id = (await note1.json()).id;
     
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for graph to load (either 2D or 3D)
-    await page.waitForTimeout(3000);
-    
-    // Check for performance hint (optional - may not be visible in headless)
-    const performanceHint = page.locator('.performance-hint');
-    const hasHint = await performanceHint.isVisible().catch(() => false);
-    
-    if (hasHint) {
-      const hintText = await performanceHint.textContent();
-      expect(hintText).toMatch(/(3D Mode|2D Mode|Performance)/i);
-    }
-    
-    // Verify graph container loaded (success or error state)
-    const container = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay').first();
-    await expect(container).toBeVisible();
-  });
-
-  test('should handle graph page with no nodes gracefully', async ({ page, request }) => {
-    // Create a note with no links via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Isolated Note', content: 'This note has no connections' }
+    const note2 = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Stats Test Node 2', content: 'Node 2' }
     });
-    const noteId = (await note.json()).id;
+    const note2Id = (await note2.json()).id;
     
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    // Create link between notes
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: note1Id, targetNoteId: note2Id, weight: 0.8 }
+    });
+    
+    // Navigate to 3D graph
+    await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
-    // Page should render without errors - check for any graph container or error message
-    const graphElements = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay, .no-data-message').first();
-    await expect(graphElements).toBeVisible();
+    // Verify stats bar shows correct counts
+    const statsBar = page.locator('.stats-bar').first();
+    await expect(statsBar).toBeVisible();
     
-    // Either canvas or error/empty state message should be shown
-    const canvas = page.locator('canvas, .graph-canvas').first();
-    const message = page.locator('.error-overlay, .no-data-message, .empty-state').first();
+    const statsText = await statsBar.textContent();
+    expect(statsText).toContain('nodes');
+    expect(statsText).toContain('links');
     
-    const hasCanvas = await canvas.isVisible().catch(() => false);
-    const hasMessage = await message.isVisible().catch(() => false);
-    
-    // At least one visualization element should be present
-    expect(hasCanvas || hasMessage).toBe(true);
+    // Should show "Local view" mode
+    expect(statsText).toContain('Local view');
   });
+
 });

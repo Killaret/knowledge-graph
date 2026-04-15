@@ -172,12 +172,26 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 func (h *Handler) GetFullGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	// Получаем лимит из query параметра (по умолчанию 0 - все заметки)
+	limit := 0
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
 	// Загружаем все заметки
 	notes, err := h.noteRepo.FindAll(ctx)
 	if err != nil {
 		log.Printf("Error loading all notes: %v", err)
 		c.JSON(500, gin.H{"error": "failed to load notes"})
 		return
+	}
+
+	// Применяем лимит если задан
+	if limit > 0 && len(notes) > limit {
+		notes = notes[:limit]
+		log.Printf("[GetFullGraph] Limited to %d notes (total available: more)", limit)
 	}
 
 	// Загружаем все связи

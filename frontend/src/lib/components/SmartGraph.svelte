@@ -15,6 +15,7 @@
     source: string;
     target: string;
     weight?: number;
+    link_type?: string;
   }
 
   const { 

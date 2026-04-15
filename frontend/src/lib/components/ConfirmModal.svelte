@@ -54,8 +54,7 @@
     aria-labelledby="confirm-title"
     tabindex="-1"
   >
-    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+    <div class="modal-content" role="button" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <h2 id="confirm-title" class="modal-title">{title}</h2>
       <p class="modal-message">{message}</p>
       <div class="modal-actions">

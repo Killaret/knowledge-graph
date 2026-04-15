@@ -1,47 +1,89 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import { getGraphData, getFullGraphData } from '$lib/api/graph';
-  import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
+  import Graph3D from '$lib/components/Graph3D.svelte';
   import type { GraphData } from '$lib/api/graph';
 
   let graphData: GraphData | null = $state(null);
-  let centerNodeId: string = $state('');
-  let loading = $state(true);
   let error = $state('');
-  let showFullGraph = $state(true); // По умолчанию показываем все заметки
+  let showFullGraph = $state(false); // По умолчанию локальный вид
+  let currentNoteId: string | null = $state(null);
+  let graphRef: ReturnType<typeof Graph3D> | null = $state(null);
+  let isLoadingFull = $state(false); // Background loading indicator only
 
+  // Единый эффект для загрузки графа при изменении ID или режима
   $effect(() => {
+    if (!browser) return;
+
     const id = $page.params.id;
-    if (id) {
-      centerNodeId = id;
-      loadGraph(id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    showFullGraph;
+
+    if (id && id !== currentNoteId) {
+      currentNoteId = id;
+    }
+
+    if (currentNoteId) {
+      loadGraphProgressive(currentNoteId);
     }
   });
 
-  async function loadGraph(noteId: string) {
-    loading = true;
+  async function loadGraphProgressive(noteId: string) {
+    console.log('[3D Page] loadGraphProgressive called:', { noteId, showFullGraph });
+    // Progressive loading: no spinner, show graph immediately
     error = '';
+    
     try {
+      let initialData: GraphData;
+      
       if (showFullGraph) {
-        // Загружаем полный граф всех заметок
-        graphData = await getFullGraphData();
+        // For full graph, still load progressively
+        initialData = await getFullGraphData(50); // Load first 50 nodes initially
+        console.log('[3D Page] Loaded initial full graph (limited):', initialData.nodes.length, 'nodes');
+        
+        graphData = initialData;
+        // Graph is shown immediately without waiting
+        
+        // Load remaining full graph in background
+        isLoadingFull = true;
+        getFullGraphData().then(fullData => {
+          console.log('[3D Page] Background loaded full graph:', fullData.nodes.length, 'nodes');
+          if (graphRef && fullData.nodes.length > initialData.nodes.length) {
+            graphRef.addData(fullData);
+          }
+          isLoadingFull = false;
+        });
       } else {
-        // Загружаем локальный граф вокруг заметки
-        graphData = await getGraphData(noteId, 2);
+        // TWO-PHASE LOADING for local graph
+        // Phase 1: Load initial data (depth 1) - immediate display
+        initialData = await getGraphData(noteId, 1);
+        console.log('[3D Page] Phase 1 - Loaded initial graph (depth 1):', initialData.nodes.length, 'nodes');
+        
+        // Immediately display initial data
+        graphData = initialData;
+        // Graph is shown immediately without waiting
+        
+        // Phase 2: Background load full graph (depth 3)
+        isLoadingFull = true;
+        console.log('[3D Page] Starting Phase 2 - loading full graph (depth 3)...');
+        
+        getGraphData(noteId, 3).then(fullData => {
+          console.log('[3D Page] Phase 2 - Loaded full graph:', fullData.nodes.length, 'nodes');
+          
+          // Call addData on the Graph3D component to add new nodes incrementally
+          if (graphRef && fullData.nodes.length > initialData.nodes.length) {
+            graphRef.addData(fullData);
+          }
+          isLoadingFull = false;
+        }).catch(e => {
+          console.error('[3D Page] Failed to load full graph:', e);
+          isLoadingFull = false;
+        });
       }
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  function toggleGraphMode() {
-    showFullGraph = !showFullGraph;
-    const id = $page.params.id;
-    if (id) {
-      loadGraph(id);
     }
   }
 </script>
@@ -49,17 +91,39 @@
 <div class="page">
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} onchange={toggleGraphMode} />
+      <input type="checkbox" bind:checked={showFullGraph} />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>
   
-  {#if loading}
-    <div class="center">Загрузка...</div>
-  {:else if error}
+  <!-- Stats with background loading indicator -->
+  {#if graphData}
+    <div class="stats-bar">
+      <span class="stats-item">
+        <strong>{graphData.nodes.length}</strong> nodes
+      </span>
+      <span class="stats-item">
+        <strong>{graphData.links.length}</strong> links
+      </span>
+      {#if showFullGraph}
+        <span class="stats-mode">(Full graph)</span>
+      {:else}
+        <span class="stats-mode">(Local view)</span>
+      {/if}
+      {#if isLoadingFull}
+        <span class="loading-indicator" title="Loading more data...">
+          <span class="mini-spinner"></span>
+        </span>
+      {/if}
+    </div>
+  {/if}
+  
+  {#if error}
     <div class="center error">{error}</div>
   {:else if graphData}
-    <LazyGraph3D data={graphData} />
+    <div class="graph-wrapper">
+      <Graph3D bind:this={graphRef} data={graphData} />
+    </div>
   {/if}
 </div>
 
@@ -103,5 +167,65 @@
   }
   .error {
     color: #ff6666;
+  }
+
+  .stats-bar {
+    position: absolute;
+    top: 140px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  }
+
+  .stats-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stats-item strong {
+    color: #88aaff;
+    font-weight: 600;
+  }
+
+  .stats-mode {
+    margin-left: 8px;
+    font-style: italic;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .graph-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+  }
+
+  .mini-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #88aaff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

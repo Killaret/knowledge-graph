@@ -1,11 +1,11 @@
 export default {
-  // Path to feature files (relative to cwd)
-  paths: ['../tests/features/**/*.feature'],
+  // Path to feature files (relative to cwd when running from root)
+  paths: ['tests/features/**/*.feature'],
 
   // Path to step definitions and support files
   import: [
-    '../tests/features/step_definitions/**/*.ts',
-    '../tests/features/support/**/*.ts'
+    'tests/features/step_definitions/**/*.ts',
+    'tests/features/support/**/*.ts'
   ],
 
   // Formatters

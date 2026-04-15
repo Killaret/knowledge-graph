@@ -61,8 +61,8 @@
 </script>
 
 {#if open}
-  <div class="modal-overlay" onclick={close}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" role="button" tabindex="0" onclick={close} onkeydown={(e) => e.key === 'Enter' && close()}>
+    <div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && close()}>
       <div class="modal-header">
         <h2>Create New Note</h2>
         <button class="close-btn" onclick={close} aria-label="Close">

@@ -40,7 +40,33 @@ type SuggestionResult struct {
 	Score  float64
 }
 
-func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]SuggestionResult, error) {
+type bfsNode struct {
+	ID     uuid.UUID
+	Weight float64
+	Depth  int
+}
+
+func normalizeWeights(weights map[uuid.UUID]float64) map[uuid.UUID]float64 {
+	if len(weights) == 0 {
+		return weights
+	}
+	maxW := 0.0
+	for _, w := range weights {
+		if w > maxW {
+			maxW = w
+		}
+	}
+	if maxW == 0 {
+		return weights
+	}
+	normalized := make(map[uuid.UUID]float64, len(weights))
+	for id, w := range weights {
+		normalized[id] = w / maxW
+	}
+	return normalized
+}
+
+func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uuid.UUID]float64 {
 	depth := s.depth
 	decay := s.decay
 	if depth < 1 {
@@ -50,54 +76,54 @@ func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID
 		decay = 0.5
 	}
 
-	scores := make(map[uuid.UUID]float64)
-	type bfsItem struct {
-		nodeID uuid.UUID
-		weight float64
-		depth  int
-	}
-	queue := []bfsItem{{nodeID: startID, weight: 1.0, depth: 0}}
-	visited := map[uuid.UUID]bool{startID: true}
+	bestWeight := make(map[uuid.UUID]float64)
+	queue := []bfsNode{{ID: startID, Weight: 1.0, Depth: 0}}
+	bestWeight[startID] = 1.0
 
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		if current.depth >= depth {
+		if current.Weight < bestWeight[current.ID] {
 			continue
 		}
 
-		neighbors, err := s.loader.GetNeighbors(ctx, current.nodeID)
+		if current.Depth >= depth {
+			continue
+		}
+
+		neighbors, err := s.loader.GetNeighbors(ctx, current.ID)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		for _, edge := range neighbors {
 			if edge.To == startID {
 				continue
 			}
-			newWeight := current.weight * edge.Weight
-			if current.depth > 0 {
-				newWeight *= decay
-			}
-			if _, ok := scores[edge.To]; !ok {
-				scores[edge.To] = newWeight
-			} else {
-				scores[edge.To] += newWeight
-			}
-			if !visited[edge.To] {
-				visited[edge.To] = true
-				queue = append(queue, bfsItem{
-					nodeID: edge.To,
-					weight: newWeight,
-					depth:  current.depth + 1,
+			candidateWeight := current.Weight * edge.Weight * decay
+
+			if candidateWeight > bestWeight[edge.To] {
+				bestWeight[edge.To] = candidateWeight
+				queue = append(queue, bfsNode{
+					ID:     edge.To,
+					Weight: candidateWeight,
+					Depth:  current.Depth + 1,
 				})
 			}
 		}
 	}
 
-	results := make([]SuggestionResult, 0, len(scores))
-	for id, score := range scores {
+	delete(bestWeight, startID)
+	return bestWeight
+}
+
+func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]SuggestionResult, error) {
+	bestWeight := s.runBFS(ctx, startID)
+	normalized := normalizeWeights(bestWeight)
+
+	results := make([]SuggestionResult, 0, len(normalized))
+	for id, score := range normalized {
 		results = append(results, SuggestionResult{NodeID: id, Score: score})
 	}
 	sort.Slice(results, func(i, j int) bool {
