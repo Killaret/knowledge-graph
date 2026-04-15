@@ -9,6 +9,12 @@
 ## [Unreleased]
 
 ### Added
+- **Config**: 5 новых параметров для рекомендаций и Asynq:
+  - `RECOMMENDATION_GAMMA` — дополнительный коэффициент (default: 0.2)
+  - `BFS_AGGREGATION` — метод агрегации BFS: max/sum/avg (default: max)
+  - `BFS_NORMALIZE` — нормализация весов в BFS (default: true)
+  - `ASYNQ_CONCURRENCY` — уровень параллелизма воркера (default: 10)
+  - `ASYNQ_QUEUE_DEFAULT` — приоритет очереди (default: 1)
 - Планируется: Graph export (изображение/видео)
 - Планируется: Node grouping в визуализации
 - Планируется: Keyboard shortcuts для графа
@@ -84,7 +90,11 @@
 
 ### 🐛 Fixed
 
-- **OpenAPI**: Исправлены несоответствия с реализацией (Link schema, Error schema, теги)
+- **OpenAPI**: Исправлены несоответствия с реализацией:
+  - Link schema (добавлен `link_type`, `created_at`, `updated_at`)
+  - Error schema (поля `error`, `message`, `detail`, `code`)
+  - Добавлены endpoints: `/notes/search`, `/graph/all` с параметром `limit`
+  - Добавлены теги с описаниями
 - **Frontend Arch**: Обновлена документация для 3D модулей
 - **ADR-014**: Добавлено описание Progressive Rendering решения
 
