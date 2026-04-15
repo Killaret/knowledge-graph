@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  // @ts-ignore - no type definitions available
   import VirtualList from 'svelte-virtual-list';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';

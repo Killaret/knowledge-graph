@@ -6,7 +6,6 @@
   import type { GraphData } from '$lib/api/graph';
 
   let graphData: GraphData | null = $state(null);
-  let loading = $state(false); // No spinner - show graph immediately
   let error = $state('');
   let showFullGraph = $state(false); // По умолчанию локальный вид
   let currentNoteId: string | null = $state(null);
@@ -32,7 +31,7 @@
 
   async function loadGraphProgressive(noteId: string) {
     console.log('[3D Page] loadGraphProgressive called:', { noteId, showFullGraph });
-    loading = true;
+    // Progressive loading: no spinner, show graph immediately
     error = '';
     
     try {
@@ -44,7 +43,7 @@
         console.log('[3D Page] Loaded initial full graph (limited):', initialData.nodes.length, 'nodes');
         
         graphData = initialData;
-        loading = false;
+        // Graph is shown immediately without waiting
         
         // Load remaining full graph in background
         isLoadingFull = true;
@@ -63,7 +62,7 @@
         
         // Immediately display initial data
         graphData = initialData;
-        loading = false;
+        // Graph is shown immediately without waiting
         
         // Phase 2: Background load full graph (depth 3)
         isLoadingFull = true;
@@ -85,7 +84,6 @@
     } catch (e) {
       error = 'Failed to load graph data';
       console.error(e);
-      loading = false;
     }
   }
 </script>

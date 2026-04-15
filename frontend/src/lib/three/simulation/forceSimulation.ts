@@ -1,5 +1,5 @@
 import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force-3d';
-import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
+import type { GraphData } from '$lib/api/graph';
 import type { ObjectManager } from '$lib/three/rendering/objectManager';
 
 export function createSimulation(data: GraphData, objectManager: ObjectManager) {
