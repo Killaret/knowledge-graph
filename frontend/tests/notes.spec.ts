@@ -94,7 +94,7 @@ test.describe('Knowledge Graph Frontend', () => {
     expect(checkResponse.status()).toBe(404);
   });
 
-  test('should open graph for a note with links', async ({ page, request }) => {
+  test('should open 3D graph for a note with links', async ({ page, request }) => {
     // Create two notes and a link via API
     const note1 = await request.post('http://localhost:8080/notes', {
       data: { title: 'Node A', content: 'A' }
@@ -105,22 +105,25 @@ test.describe('Knowledge Graph Frontend', () => {
     const id1 = (await note1.json()).id;
     const id2 = (await note2.json()).id;
     await request.post('http://localhost:8080/links', {
-      data: { source_note_id: id1, target_note_id: id2, link_type: 'reference', weight: 1.0 }
+      data: { sourceNoteId: id1, targetNoteId: id2, link_type: 'reference', weight: 1.0 }
     });
 
-    // Navigate to graph page
-    await page.goto(`http://localhost:5173/graph/${id1}`);
+    // Navigate to 3D graph page directly
+    await page.goto(`http://localhost:5173/graph/3d/${id1}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
     
-    // Verify graph visualization is present (canvas or error container)
-    const canvas = page.locator('canvas, .graph-canvas').first();
-    const container = page.locator('.graph-3d-container, .graph-2d, .graph-wrapper, .error-overlay').first();
+    // Verify 3D graph container is visible immediately (no lazy loading)
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible({ timeout: 3000 });
     
-    const hasCanvas = await canvas.isVisible().catch(() => false);
-    const hasContainer = await container.isVisible().catch(() => false);
+    // Verify stats bar shows node and link counts
+    const statsBar = page.locator('.stats-bar').first();
+    await expect(statsBar).toBeVisible();
     
-    expect(hasCanvas || hasContainer).toBe(true);
+    const statsText = await statsBar.textContent();
+    expect(statsText).toMatch(/\d+\s*nodes?/i);
+    expect(statsText).toMatch(/\d+\s*links?/i);
   });
 
   test('should show back button on note detail page', async ({ page, request }) => {

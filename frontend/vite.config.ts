@@ -8,8 +8,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Three.js - heavy 3D library
-          'three': ['three'],
           // D3 force simulation libraries
           'd3': ['d3-force', 'd3-force-3d'],
           // Vendor chunk for framework and utilities
