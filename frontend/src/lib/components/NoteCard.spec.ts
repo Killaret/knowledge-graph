@@ -1,5 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+  
+import { describe, it, expect } from 'vitest';
+ 
+import { vi } from 'vitest';
+ 
+import { render, screen } from '@testing-library/svelte';
+ 
+import { fireEvent } from '@testing-library/svelte';
 import NoteCard from './NoteCard.svelte';
 
 describe('NoteCard', () => {
@@ -38,14 +44,13 @@ describe('NoteCard', () => {
 	it('handles click events', async () => {
 		const onClick = vi.fn();
 		render(NoteCard, { props: { note: mockNote, onClick } });
-		
-		const card = screen.getByText('Test Note Title').closest('.note-card, [role="button"]') || 
-		             document.querySelector('.note-card');
-		
-		if (card) {
-			await fireEvent.click(card);
-			// onClick should be called if component supports it
-		}
+
+		const card = document.querySelector('.note-card');
+		expect(card).toBeTruthy();
+		expect(onClick).not.toHaveBeenCalled();
+
+		await fireEvent.click(card!);
+		expect(onClick).toHaveBeenCalledWith(mockNote);
 	});
 
 	it('renders with minimal note data', () => {
