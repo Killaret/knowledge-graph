@@ -95,6 +95,12 @@
   - Error schema (поля `error`, `message`, `detail`, `code`)
   - Добавлены endpoints: `/notes/search`, `/graph/all` с параметром `limit`
   - Добавлены теги с описаниями
+- **CONFIGURATION.md**: Полная проверка и исправление:
+  - Исправлены значения по умолчанию (Alpha=0.5, Beta=0.5 как в коде)
+  - Параметры Gamma, BFS_AGGREGATION, ASYNQ_CONCURRENCY помечены как зарезервированные
+  - Добавлена колонка "Компонент" для всех переменных
+  - Улучшено форматирование примеров
+- **architecture/README.md**: Добавлена секция Backend Architecture с диаграммами
 - **Frontend Arch**: Обновлена документация для 3D модулей
 - **ADR-014**: Добавлено описание Progressive Rendering решения
 

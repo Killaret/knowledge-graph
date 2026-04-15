@@ -9,7 +9,6 @@ import (
 
 	"knowledge-graph/internal/domain/note"
 
-	"github.com/google/uuid"
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -1,34 +1,17 @@
-# Чек-лист: Пересборка и тестирование async tasks
+# ➡️ Документ удалён
 
-## ✅ Шаг 1: Пересборка проекта
-
-```bash
-cd D:\knowledge-graph
-docker-compose down
-docker-compose up --build -d
-```
-
-**Проверка:**
-```bash
-docker-compose ps
-```
-
-Ожидаемый результат:
-- `kg-postgres` - healthy ✓
-- `kg-redis` - healthy ✓  
-- `kg-backend` - running ✓
-- `kg-worker` - running ✓
-- `kg-nlp` - running ✓
+**Этот файл устарел.**  
+Диагностика теперь в `DEPLOYMENT.md` → раздел Troubleshooting.
 
 ---
 
-## ✅ Шаг 2: Проверить логи backend'а
+## 📚 Актуальная документация
 
-```bash
-docker-compose logs kg-backend --tail=30
-```
+| Документ | Описание |
+|----------|----------|
+| **`../DEPLOYMENT.md`** | Развёртывание и диагностика |
+| **`../TESTING.md`** | Проверка работоспособности |
 
-**Ищите:**
 - `Connected to PostgreSQL` ✓
 - `Asynq client created successfully` ✓
 - Никаких ошибок подключения ✓

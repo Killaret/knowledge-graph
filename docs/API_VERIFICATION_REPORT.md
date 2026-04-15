@@ -1,81 +1,26 @@
-# API Verification Report - Frontend
+# ➡️ Документ перемещён в архив
 
-## Дата проверки: 13 апреля 2026
+**Этот отчёт устарел (дата: 13 апреля 2026)**
 
-## Общая оценка: ✅ Корректно (с рекомендациями)
+Все проблемы, описанные в этом отчёте, были исправлены в версии 1.0.0.
 
-## 1. Структура API клиента
+---
 
-### ✅ Хорошо:
-- Используется `ky` - современная HTTP-библиотека
-- Единый базовый URL `/api` с прокси на бэкенд
-- Типизированные интерфейсы TypeScript
-- Прокси настроен корректно в `vite.config.ts`
+## 📚 Актуальная документация
 
-### Файлы API:
-```
-frontend/src/lib/api/
-├── notes.ts  - API для заметок
-└── graph.ts  - API для графа
-```
+| Документ | Описание |
+|----------|----------|
+| **`API_ERRORS.md`** | Коды ошибок API, примеры обработки |
+| **`backend/openAPI.yaml`** | OpenAPI 3.1 спецификация |
+| **`FRONTEND_ARCHITECTURE.md`** | Архитектура фронтенда, API клиент |
 
-## 2. Проверка endpoints
+---
 
-### Notes API (`notes.ts`):
+## 📦 Архив
 
-| Функция | Method | Endpoint | Статус |
-|---------|--------|----------|--------|
-| `getNotes()` | GET | `/api/notes` | ✅ |
-| `getNote(id)` | GET | `/api/notes/${id}` | ✅ |
-| `createNote(data)` | POST | `/api/notes` | ✅ |
-| `updateNote(id, data)` | PUT | `/api/notes/${id}` | ✅ |
-| `deleteNote(id)` | DELETE | `/api/notes/${id}` | ✅ |
-| `getSuggestions(id)` | GET | `/api/notes/${id}/suggestions` | ✅ |
-| `searchNotes(query)` | GET | `/api/notes/search?q=${query}` | ✅ |
+Этот файл сохранён в `docs/archive/` для истории.
+См. `archive/README.md` для полного списка архивированных документов.
 
-### Graph API (`graph.ts`):
-
-| Функция | Method | Endpoint | Статус |
-|---------|--------|----------|--------|
-| `getGraphData(id, depth)` | GET | `/api/notes/${id}/graph?depth=${depth}` | ✅ |
-
-## 3. Найденные проблемы
-
-### ⚠️ Проблема #1: Несоответствие типа заметки
-
-**Место:** `CreateNoteModal.svelte` vs `NoteSidePanel.svelte`
-
-**Суть проблемы:**
-```typescript
-// CreateNoteModal.svelte (строка 40)
-metadata: { type }  // тип сохраняется в metadata
-
-// NoteSidePanel.svelte (строка 35)
-note.type  // ожидается на верхнем уровне
-```
-
-**Интерфейс Note:**
-```typescript
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  metadata: Record<string, any>;
-  type?: string;  // <-- есть поле type на верхнем уровне!
-  created_at: string;
-  updated_at: string;
-}
-```
-
-**Исправление:**
-```typescript
-// CreateNoteModal.svelte
-const note = await createNote({ 
-  title: title.trim(), 
-  content: content.trim(),
-  type: type  // <-- передавать type на верхний уровень
-});
-```
 
 ### ⚠️ Проблема #2: Отсутствие валидации ответов
 

@@ -169,3 +169,75 @@ Then('after completion, new nodes appear on the graph', async function(this: ITe
   const count = await noteCards.count();
   expect(count).toBeGreaterThan(0);
 });
+
+// Basic import/export steps
+When('I open the menu and select {string}', async function(this: ITestWorld, menuItem: string) {
+  // Open menu (hamburger or menu button)
+  const menuBtn = this.page.locator('.menu-button, [data-testid="menu"], button:has-text("Menu")').first();
+  await menuBtn.click();
+  await this.page.waitForTimeout(300);
+  
+  // Click menu item
+  const item = this.page.locator(`.menu-item:has-text("${menuItem}"), text="${menuItem}"`).first();
+  await item.click();
+});
+
+When('I choose a Markdown file {string}', async function(this: ITestWorld, filename: string) {
+  const fileInput = this.page.locator('input[type="file"]').first();
+  
+  await fileInput.setInputFiles({
+    name: filename,
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('# Test Note\n\nThis is test content.')
+  });
+});
+
+When('I choose a PDF file {string}', async function(this: ITestWorld, filename: string) {
+  const fileInput = this.page.locator('input[type="file"]').first();
+  
+  await fileInput.setInputFiles({
+    name: filename,
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4 test content')
+  });
+});
+
+When('I start the import', async function(this: ITestWorld) {
+  const importBtn = this.page.locator('button:has-text("Import"), button:has-text("Start"), button[type="submit"]').first();
+  await importBtn.click();
+  await this.page.waitForTimeout(2000);
+});
+
+Then('a progress indicator is shown', async function(this: ITestWorld) {
+  const progress = this.page.locator('.progress, .progress-bar, .loading-indicator, [class*="progress"]').first();
+  await expect(progress).toBeVisible();
+});
+
+When('I enter URL {string}', async function(this: ITestWorld, url: string) {
+  const urlInput = this.page.locator('input[type="url"], input[name="url"], input[placeholder*="URL"]').first();
+  await urlInput.fill(url);
+});
+
+Given('I have several notes on the graph', async function(this: ITestWorld) {
+  // Create test notes
+  for (let i = 1; i <= 3; i++) {
+    await this.request.post('http://localhost:8080/notes', {
+      data: { title: `Export Test ${i}`, content: `Content ${i}` }
+    });
+  }
+  
+  // Navigate to graph
+  await this.page.goto('http://localhost:5173/');
+  await this.page.waitForLoadState('networkidle');
+});
+
+When('I choose format {string}', async function(this: ITestWorld, format: string) {
+  const formatSelect = this.page.locator('select[name="format"], .format-select').first();
+  await formatSelect.selectOption(format);
+});
+
+Then('a file {string} is downloaded', async function(this: ITestWorld, filename: string) {
+  const download = await this.page.waitForEvent('download', { timeout: 5000 });
+  const suggestedFilename = download.suggestedFilename();
+  expect(suggestedFilename).toContain(filename.split('.')[0]);
+});

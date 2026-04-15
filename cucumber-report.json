@@ -166,11 +166,8 @@
             "keyword": "And ",
             "line": 19,
             "name": "I select type \"Star\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:110"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -179,11 +176,8 @@
             "keyword": "And ",
             "line": 20,
             "name": "I click \"Save\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -297,11 +291,8 @@
             "keyword": "When ",
             "line": 28,
             "name": "I click \"Edit\" in the side panel",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:171"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -323,11 +314,8 @@
             "keyword": "When ",
             "line": 30,
             "name": "I change \"Title\" to \"Updated Note\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:95"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -336,11 +324,8 @@
             "keyword": "And ",
             "line": 31,
             "name": "I click \"Save\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -428,11 +413,8 @@
             "keyword": "And ",
             "line": 37,
             "name": "I click \"Delete\" in the side panel",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:171"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -442,7 +424,7 @@
             "line": 38,
             "name": "a confirmation modal appears with text \"Delete note?\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:185"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:302"
             },
             "result": {
               "status": "skipped",
@@ -455,7 +437,7 @@
             "line": 39,
             "name": "I confirm the deletion",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:189"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:306"
             },
             "result": {
               "status": "skipped",
@@ -468,7 +450,7 @@
             "line": 40,
             "name": "the node \"To Be Deleted\" disappears from the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:193"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:310"
             },
             "result": {
               "status": "skipped",
@@ -520,11 +502,8 @@
             "keyword": "Given ",
             "line": 43,
             "name": "notes \"Source\" and \"Target\" exist on the graph",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:201"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -533,11 +512,8 @@
             "keyword": "When ",
             "line": 44,
             "name": "I drag from node \"Source\" to node \"Target\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:206"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -546,11 +522,8 @@
             "keyword": "Then ",
             "line": 45,
             "name": "a link preview line is shown",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:225"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -559,11 +532,8 @@
             "keyword": "When ",
             "line": 46,
             "name": "I release the mouse over \"Target\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:229"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -572,11 +542,8 @@
             "keyword": "Then ",
             "line": 47,
             "name": "a weight selector appears",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:233"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -585,11 +552,8 @@
             "keyword": "When ",
             "line": 48,
             "name": "I select weight \"4\" and confirm",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:237"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -598,11 +562,8 @@
             "keyword": "Then ",
             "line": 49,
             "name": "a new edge appears between \"Source\" and \"Target\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:242"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -652,7 +613,7 @@
             "line": 52,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -664,11 +625,8 @@
             "keyword": "When ",
             "line": 53,
             "name": "I click the search icon",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:255"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -677,11 +635,8 @@
             "keyword": "And ",
             "line": 54,
             "name": "I type \"cosmos\" in the search input",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:259"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -690,11 +645,8 @@
             "keyword": "Then ",
             "line": 55,
             "name": "a list of matching notes appears",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:263"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -703,11 +655,8 @@
             "keyword": "When ",
             "line": 56,
             "name": "I click on a search result \"Cosmos Article\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:267"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -716,11 +665,8 @@
             "keyword": "Then ",
             "line": 57,
             "name": "the graph zooms to the node \"Cosmos Article\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:271"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -730,7 +676,7 @@
             "line": 58,
             "name": "the node is highlighted",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:277"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:387"
             },
             "result": {
               "status": "skipped",
@@ -794,7 +740,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -886,7 +832,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1004,7 +950,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1109,7 +1055,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1121,8 +1067,11 @@
             "keyword": "Given ",
             "line": 29,
             "name": "I am using a low-end device",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:392"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1131,8 +1080,11 @@
             "keyword": "When ",
             "line": 30,
             "name": "I open the graph view",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:403"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1141,8 +1093,11 @@
             "keyword": "Then ",
             "line": 31,
             "name": "the graph defaults to 2D mode",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:408"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1151,8 +1106,11 @@
             "keyword": "And ",
             "line": 32,
             "name": "the \"3D View\" button shows a warning icon",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:414"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1161,8 +1119,11 @@
             "keyword": "And ",
             "line": 33,
             "name": "clicking it shows a performance warning",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:422"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1212,7 +1173,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1237,8 +1198,11 @@
             "keyword": "When ",
             "line": 37,
             "name": "I scroll the mouse wheel up",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:429"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1247,8 +1211,11 @@
             "keyword": "Then ",
             "line": 38,
             "name": "the graph zooms in",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:443"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1257,8 +1224,11 @@
             "keyword": "When ",
             "line": 39,
             "name": "I scroll the mouse wheel down",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:436"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1267,8 +1237,11 @@
             "keyword": "Then ",
             "line": 40,
             "name": "the graph zooms out",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:449"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1277,8 +1250,11 @@
             "keyword": "When ",
             "line": 41,
             "name": "I drag the canvas",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:454"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1287,8 +1263,11 @@
             "keyword": "Then ",
             "line": 42,
             "name": "the graph pans in the dragged direction",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:468"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1338,7 +1317,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1363,8 +1342,11 @@
             "keyword": "When ",
             "line": 46,
             "name": "I drag the mouse on the canvas",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:475"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1373,8 +1355,11 @@
             "keyword": "Then ",
             "line": 47,
             "name": "the camera rotates around the graph",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:489"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1383,8 +1368,11 @@
             "keyword": "When ",
             "line": 48,
             "name": "I use the scroll wheel",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:495"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1393,8 +1381,11 @@
             "keyword": "Then ",
             "line": 49,
             "name": "the camera zooms in and out",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:504"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1444,7 +1435,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1469,8 +1460,11 @@
             "keyword": "When ",
             "line": 53,
             "name": "I click on a node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:510"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1492,8 +1486,11 @@
             "keyword": "And ",
             "line": 55,
             "name": "the node is highlighted with a glow effect",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:517"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1543,7 +1540,7 @@
             "line": 8,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -1568,8 +1565,11 @@
             "keyword": "When ",
             "line": 59,
             "name": "I click on a node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:510"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1591,8 +1591,11 @@
             "keyword": "And ",
             "line": 61,
             "name": "the camera centers on the clicked node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:522"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1665,8 +1668,18 @@
             "keyword": "When ",
             "line": 10,
             "name": "I open the menu and select \"Import\"",
+            "result": {
+              "status": "ambiguous",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "I choose a Markdown file \"notes.md\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:185"
             },
             "result": {
               "status": "skipped",
@@ -1676,20 +1689,13 @@
           {
             "arguments": [],
             "keyword": "And ",
-            "line": 11,
-            "name": "I choose a Markdown file \"notes.md\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
             "line": 12,
             "name": "I start the import",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:205"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1698,8 +1704,11 @@
             "keyword": "Then ",
             "line": 13,
             "name": "a progress indicator is shown",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:211"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1774,8 +1783,18 @@
             "keyword": "When ",
             "line": 18,
             "name": "I open the menu and select \"Import\"",
+            "result": {
+              "status": "ambiguous",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "I choose a PDF file \"document.pdf\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:195"
             },
             "result": {
               "status": "skipped",
@@ -1785,20 +1804,13 @@
           {
             "arguments": [],
             "keyword": "And ",
-            "line": 19,
-            "name": "I choose a PDF file \"document.pdf\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
             "line": 20,
             "name": "I start the import",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:205"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1807,8 +1819,11 @@
             "keyword": "Then ",
             "line": 21,
             "name": "a progress indicator is shown",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:211"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1883,8 +1898,18 @@
             "keyword": "When ",
             "line": 26,
             "name": "I open the menu and select \"Import\"",
+            "result": {
+              "status": "ambiguous",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 27,
+            "name": "I enter URL \"https://example.com/article\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:216"
             },
             "result": {
               "status": "skipped",
@@ -1894,20 +1919,13 @@
           {
             "arguments": [],
             "keyword": "And ",
-            "line": 27,
-            "name": "I enter URL \"https://example.com/article\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
             "line": 28,
             "name": "I start the import",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:205"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1916,8 +1934,11 @@
             "keyword": "Then ",
             "line": 29,
             "name": "a progress indicator is shown",
+            "match": {
+              "location": "tests\\features\\step_definitions\\import_export_steps.ts:211"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -1979,11 +2000,8 @@
             "keyword": "Given ",
             "line": 33,
             "name": "I have several notes on the graph",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:89"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -1992,11 +2010,8 @@
             "keyword": "When ",
             "line": 34,
             "name": "I open the menu and select \"Export\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2005,11 +2020,8 @@
             "keyword": "And ",
             "line": 35,
             "name": "I choose format \"JSON\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:116"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2018,11 +2030,8 @@
             "keyword": "Then ",
             "line": 36,
             "name": "a file \"knowledge_graph_export.json\" is downloaded",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:124"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2071,11 +2080,8 @@
             "keyword": "Given ",
             "line": 39,
             "name": "I have several notes on the graph",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:89"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2084,11 +2090,8 @@
             "keyword": "When ",
             "line": 40,
             "name": "I open the menu and select \"Export\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2097,11 +2100,8 @@
             "keyword": "And ",
             "line": 41,
             "name": "I choose format \"Markdown\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:116"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2110,11 +2110,8 @@
             "keyword": "Then ",
             "line": 42,
             "name": "a file \"knowledge_graph_export.md\" is downloaded",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:124"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2163,11 +2160,8 @@
             "keyword": "Given ",
             "line": 45,
             "name": "I have several notes on the graph",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:89"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2176,11 +2170,8 @@
             "keyword": "When ",
             "line": 46,
             "name": "I open the menu and select \"Export\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:105"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2189,11 +2180,8 @@
             "keyword": "And ",
             "line": 47,
             "name": "I choose format \"GraphML\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:116"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2202,11 +2190,8 @@
             "keyword": "Then ",
             "line": 48,
             "name": "a file \"knowledge_graph_export.graphml\" is downloaded",
-            "match": {
-              "location": "tests\\features\\step_definitions\\import_export_steps.ts:124"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2273,8 +2258,11 @@
             "keyword": "Given ",
             "line": 11,
             "name": "I am creating a new note",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:243"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2309,11 +2297,8 @@
             "keyword": "And ",
             "line": 14,
             "name": "I select type \"Galaxy\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:110"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2322,11 +2307,8 @@
             "keyword": "And ",
             "line": 15,
             "name": "I click \"Save\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2335,8 +2317,11 @@
             "keyword": "Then ",
             "line": 16,
             "name": "the note is saved",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:313"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2355,8 +2340,11 @@
             "keyword": "And ",
             "line": 18,
             "name": "a link to \"Galaxy Formation\" is created if it exists",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:319"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2412,8 +2400,11 @@
             "keyword": "Given ",
             "line": 21,
             "name": "I am creating a new note",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:243"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2435,11 +2426,8 @@
             "keyword": "And ",
             "line": 23,
             "name": "I click \"Save\"",
-            "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
-            },
             "result": {
-              "status": "skipped",
+              "status": "ambiguous",
               "duration": 0
             }
           },
@@ -2448,8 +2436,11 @@
             "keyword": "Then ",
             "line": 24,
             "name": "the note is saved",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:313"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2458,8 +2449,11 @@
             "keyword": "And ",
             "line": 25,
             "name": "a placeholder node \"New Topic\" appears on the graph",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:330"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2548,18 +2542,8 @@
             "keyword": "And ",
             "line": 31,
             "name": "I change the content to \"Updated content with [[Another Link]]\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 32,
-            "name": "I click \"Save\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
+              "location": "tests\\features\\step_definitions\\note_steps.ts:299"
             },
             "result": {
               "status": "skipped",
@@ -2568,11 +2552,24 @@
           },
           {
             "arguments": [],
+            "keyword": "And ",
+            "line": 32,
+            "name": "I click \"Save\"",
+            "result": {
+              "status": "ambiguous",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
             "keyword": "Then ",
             "line": 33,
             "name": "the note content is updated",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:341"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2581,8 +2578,11 @@
             "keyword": "And ",
             "line": 34,
             "name": "new links are created based on wiki syntax",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:347"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2648,28 +2648,8 @@
             "keyword": "When ",
             "line": 38,
             "name": "I edit the note",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 39,
-            "name": "I change the type to \"Star\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 40,
-            "name": "I click \"Save\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:121"
+              "location": "tests\\features\\step_definitions\\note_steps.ts:274"
             },
             "result": {
               "status": "skipped",
@@ -2678,11 +2658,37 @@
           },
           {
             "arguments": [],
+            "keyword": "And ",
+            "line": 39,
+            "name": "I change the type to \"Star\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:280"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 40,
+            "name": "I click \"Save\"",
+            "result": {
+              "status": "ambiguous",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
             "keyword": "Then ",
             "line": 41,
             "name": "the node appearance changes to reflect the new type",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:353"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2748,8 +2754,11 @@
             "keyword": "Given ",
             "line": 45,
             "name": "notes of types \"Star\", \"Planet\", and \"Comet\" exist",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:260"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2758,8 +2767,11 @@
             "keyword": "When ",
             "line": 46,
             "name": "I click the \"Star\" filter button",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:366"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2768,8 +2780,11 @@
             "keyword": "Then ",
             "line": 47,
             "name": "only \"Star\" type nodes are visible on the graph",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:372"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2778,8 +2793,11 @@
             "keyword": "When ",
             "line": 48,
             "name": "I click the \"All\" filter button",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:366"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2788,8 +2806,11 @@
             "keyword": "Then ",
             "line": 49,
             "name": "all nodes are visible again",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:379"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2855,8 +2876,11 @@
             "keyword": "When ",
             "line": 53,
             "name": "I select sort option \"Alphabetical (A-Z)\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:385"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2865,8 +2889,11 @@
             "keyword": "Then ",
             "line": 54,
             "name": "the notes are ordered \"Apple\", \"Mango\", \"Zebra\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:390"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2932,8 +2959,11 @@
             "keyword": "When ",
             "line": 58,
             "name": "I select sort option \"Newest first\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:385"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -2942,8 +2972,11 @@
             "keyword": "Then ",
             "line": 59,
             "name": "the most recently created note appears first",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:397"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3000,7 +3033,7 @@
             "line": 62,
             "name": "multiple notes exist on the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_steps.ts:249"
+              "location": "tests\\features\\step_definitions\\graph_steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -3012,8 +3045,11 @@
             "keyword": "When ",
             "line": 63,
             "name": "I hold Shift and click on 3 nodes",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:404"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3032,8 +3068,11 @@
             "keyword": "When ",
             "line": 65,
             "name": "I press Delete key",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:423"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3052,8 +3091,11 @@
             "keyword": "When ",
             "line": 67,
             "name": "I confirm",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:428"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3062,8 +3104,11 @@
             "keyword": "Then ",
             "line": 68,
             "name": "all 3 selected nodes are deleted",
+            "match": {
+              "location": "tests\\features\\step_definitions\\note_steps.ts:434"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3123,8 +3168,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3146,8 +3194,11 @@
             "keyword": "When ",
             "line": 12,
             "name": "I click the search icon in floating controls",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:176"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3156,8 +3207,11 @@
             "keyword": "Then ",
             "line": 13,
             "name": "a search input appears",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:182"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3166,8 +3220,11 @@
             "keyword": "When ",
             "line": 14,
             "name": "I type \"quantum\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:187"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3176,8 +3233,11 @@
             "keyword": "Then ",
             "line": 15,
             "name": "a dropdown with matching notes appears",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:193"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3186,8 +3246,11 @@
             "keyword": "And ",
             "line": 16,
             "name": "each result shows the note title and snippet",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:198"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3236,8 +3299,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3246,8 +3312,11 @@
             "keyword": "Given ",
             "line": 19,
             "name": "I have searched for \"physics\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:209"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3269,8 +3338,11 @@
             "keyword": "When ",
             "line": 21,
             "name": "I click on a result \"Quantum Physics\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:218"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3279,8 +3351,11 @@
             "keyword": "Then ",
             "line": 22,
             "name": "the graph centers on the node \"Quantum Physics\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:224"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3289,8 +3364,11 @@
             "keyword": "And ",
             "line": 23,
             "name": "the node pulses to indicate location",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:230"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3349,8 +3427,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3359,8 +3440,11 @@
             "keyword": "Given ",
             "line": 27,
             "name": "notes with various content exist",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:235"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3379,8 +3463,11 @@
             "keyword": "Then ",
             "line": 29,
             "name": "notes containing \"relativity\" in title or content are found",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:245"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3389,8 +3476,11 @@
             "keyword": "And ",
             "line": 30,
             "name": "the matching text is highlighted in results",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:251"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3439,8 +3529,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3449,8 +3542,11 @@
             "keyword": "Given ",
             "line": 33,
             "name": "semantic search is enabled",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:257"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3469,8 +3565,11 @@
             "keyword": "Then ",
             "line": 35,
             "name": "notes about \"rockets\", \"mars missions\", and \"astronauts\" are also found",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:264"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3479,8 +3578,11 @@
             "keyword": "And ",
             "line": 36,
             "name": "results are ranked by relevance score",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:270"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3529,8 +3631,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3539,8 +3644,11 @@
             "keyword": "Given ",
             "line": 39,
             "name": "I search for a term with no matches",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:278"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3549,8 +3657,11 @@
             "keyword": "When ",
             "line": 40,
             "name": "I type \"xyznonexistent\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:187"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3559,8 +3670,11 @@
             "keyword": "Then ",
             "line": 41,
             "name": "a \"No results found\" message is displayed",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:285"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3569,8 +3683,11 @@
             "keyword": "And ",
             "line": 42,
             "name": "suggestions for similar terms are shown",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:290"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3619,8 +3736,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3629,8 +3749,11 @@
             "keyword": "Given ",
             "line": 45,
             "name": "I have performed searches before",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:296"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3639,8 +3762,11 @@
             "keyword": "When ",
             "line": 46,
             "name": "I click on the search input",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:305"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3649,8 +3775,11 @@
             "keyword": "Then ",
             "line": 47,
             "name": "my recent searches are displayed",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:311"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3659,8 +3788,11 @@
             "keyword": "When ",
             "line": 48,
             "name": "I click on a recent search",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:316"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3669,8 +3801,11 @@
             "keyword": "Then ",
             "line": 49,
             "name": "the search is executed again",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:322"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3719,8 +3854,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3729,8 +3867,11 @@
             "keyword": "Given ",
             "line": 52,
             "name": "I have searched for \"star\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:209"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3739,8 +3880,11 @@
             "keyword": "When ",
             "line": 53,
             "name": "I click the \"Star\" type filter",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:327"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3759,8 +3903,11 @@
             "keyword": "When ",
             "line": 55,
             "name": "I clear the filter",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:333"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3769,8 +3916,11 @@
             "keyword": "Then ",
             "line": 56,
             "name": "all notes matching \"star\" are shown",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:338"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3819,8 +3969,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3829,8 +3982,11 @@
             "keyword": "Given ",
             "line": 59,
             "name": "I am viewing a note \"Solar System\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:344"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3839,8 +3995,11 @@
             "keyword": "When ",
             "line": 60,
             "name": "I look at the side panel",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:351"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3849,8 +4008,11 @@
             "keyword": "Then ",
             "line": 61,
             "name": "a \"Related Notes\" section shows semantically similar notes",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:357"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3859,8 +4021,11 @@
             "keyword": "And ",
             "line": 62,
             "name": "related notes are sorted by similarity score",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:362"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3909,8 +4074,11 @@
             "keyword": "And ",
             "line": 8,
             "name": "various notes exist in the system",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:167"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3919,8 +4087,11 @@
             "keyword": "Given ",
             "line": 65,
             "name": "notes \"A\" and \"Z\" exist with multiple paths between them",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:368"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3929,8 +4100,11 @@
             "keyword": "When ",
             "line": 66,
             "name": "I select node \"A\" and then Shift+click node \"Z\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:396"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3939,8 +4113,11 @@
             "keyword": "Then ",
             "line": 67,
             "name": "the shortest path between \"A\" and \"Z\" is highlighted",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:409"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -3949,8 +4126,11 @@
             "keyword": "And ",
             "line": 68,
             "name": "intermediate nodes on the path are emphasized",
+            "match": {
+              "location": "tests\\features\\step_definitions\\search_steps.ts:414"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },

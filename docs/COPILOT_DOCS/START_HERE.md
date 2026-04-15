@@ -1,34 +1,42 @@
-# 🚀 ГОТОВО К ПЕРЕСБОРКЕ И ТЕСТИРОВАНИЮ
+# 🚀 Knowledge Graph - Документация
 
-**Статус:** ✅ Все подготовлено
-
----
-
-## Что было подготовлено:
-
-### 📝 Скрипты (в D:\knowledge-graph\)
-1. **rebuild_and_test.ps1** ← Запустите ЭТОТ скрипт
-   - Полная пересборка Docker
-   - Проверка всех контейнеров
-   - Автоматическое тестирование async tasks
-   - Подробные результаты
-
-2. **test_async_tasks.ps1** ← Для повторного тестирования
-   - Создает тестовую заметку
-   - Проверяет обработку worker'ом
-   - Показывает результаты
-
-### 📚 Документация
-1. **QUICK_START.md** ← Начните ОТСЮДА (2 мин)
-2. **README_ASYNC_SETUP.md** ← Полное руководство (10 мин)
-3. **REBUILD_CHECKLIST.md** ← Чек-лист диагностики
-4. **ASYNC_TESTING_GUIDE.md** ← Как тестировать
-5. **ARCHITECTURE_DIAGRAMS.md** ← Визуальная архитектура
-6. **SUMMARY.md** ← Подробный отчет
+**Статус:** ✅ Production Ready v1.0.0
 
 ---
 
-## Как запустить: 3 шага
+## 📚 Актуальная документация
+
+### Основное (начните здесь)
+| Документ | Описание | Время чтения |
+|----------|----------|--------------|
+| **`../DEPLOYMENT.md`** | Развёртывание (Docker, K8s) | 10 мин |
+| **`../TESTING.md`** | Тестирование (Go, Playwright, Cucumber) | 10 мин |
+| **`../CONFIGURATION.md`** | Env переменные, формулы рекомендаций | 5 мин |
+| **`../CHANGELOG.md`** | История изменений v1.0.0 | 5 мин |
+
+### Архитектура
+| Документ | Описание |
+|----------|----------|
+| **`../architecture/README.md`** | C4 Model, UML диаграммы |
+| **`../architecture/adr.md`** | 14 архитектурных решений (ADR) |
+| **`../FRONTEND_ARCHITECTURE.md`** | Three.js, Progressive Rendering |
+
+### API
+| Документ | Описание |
+|----------|----------|
+| **`../../backend/openAPI.yaml`** | OpenAPI 3.1 спецификация |
+| **`../API_ERRORS.md`** | Коды ошибок, примеры обработки |
+
+### Вспомогательное
+| Документ | Описание |
+|----------|----------|
+| **`../TASKS.md`** | Бэклог задач (TODO) |
+| **`../IDEAS.md`** | Идеи для развития |
+| **`../UX_GUIDELINES.md`** | UX принципы (Шнейдерман, Нильсен, Рамс) |
+
+---
+
+## 🚀 Быстрый старт: 3 шага
 
 ### Шаг 1: Откройте PowerShell
 ```powershell
@@ -121,47 +129,64 @@ docker-compose logs --tail=50 kg-worker
 
 ---
 
-## Файлы проекта:
+## Структура проекта:
 
 ```
 D:\knowledge-graph\
-├── rebuild_and_test.ps1         ← Запустите ЭТО
-├── test_async_tasks.ps1
-├── rebuild_and_test.bat
-├── QUICK_START.md               ← Читайте ЭТО первым
-├── README_ASYNC_SETUP.md
-├── REBUILD_CHECKLIST.md
-├── ASYNC_TESTING_GUIDE.md
-├── ARCHITECTURE_DIAGRAMS.md
-├── SUMMARY.md
-├── THIS_FILE.md
-├── backend/                     (Go: server + worker)
-├── nlp-service/                 (Python: embeddings)
-├── frontend/                    (React/Vue)
+├── 📁 backend/                  # Go: server + worker + tests
+│   ├── cmd/server, cmd/worker
+│   ├── internal/ (domain, application, infrastructure, interfaces)
+│   ├── migrations/
+│   └── openAPI.yaml            # API спецификация
+├── 📁 frontend/                 # Svelte 5 + TypeScript
+│   ├── src/lib/
+│   │   ├── api/                # HTTP клиенты
+│   │   ├── three/              # Three.js модули (3D граф)
+│   │   └── components/
+│   └── tests/                  # E2E тесты (Playwright)
+├── 📁 nlp-service/              # Python: embeddings, keywords
+├── 📁 docs/                     # 📚 Документация
+│   ├── DEPLOYMENT.md           # ← Развёртывание
+│   ├── TESTING.md              # ← Тестирование
+│   ├── CONFIGURATION.md        # ← Конфигурация
+│   ├── CHANGELOG.md            # ← История версий
+│   ├── API_ERRORS.md           # ← Ошибки API
+│   ├── FRONTEND_ARCHITECTURE.md
+│   ├── architecture/           # C4, ADR, UML
+│   └── COPILOT_DOCS/           # AI-ассистенты
 ├── docker-compose.yml
-└── .env
+├── .env
+└── rebuild_and_test.ps1        # ← Скрипт пересборки
 ```
 
 ---
 
 ## Что дальше:
 
-1. **Запустите пересборку:**
+1. **Запустите развёртывание:**
    ```powershell
+   # Полная инструкция в DEPLOYMENT.md
    .\rebuild_and_test.ps1
    ```
 
 2. **Проверьте результаты:**
-   - Должно быть "Rebuild and testing complete! ✅"
-   - Должны быть успешные обработки tasks
+   - Должно быть "All services healthy ✅"
+   - API доступен: http://localhost:8080/health
+   - Frontend: http://localhost:5173
 
 3. **При проблемах:**
-   - Откройте REBUILD_CHECKLIST.md
-   - Следуйте пошаговой диагностике
+   - Читайте `../DEPLOYMENT.md` → раздел Troubleshooting
+   - Проверьте логи: `docker-compose logs -f`
 
-4. **Для повторного тестирования:**
+4. **Тестирование:**
    ```powershell
-   .\test_async_tasks.ps1
+   # Backend unit tests
+   cd backend && go test ./...
+   
+   # Frontend E2E
+   cd frontend && npm run test
+   
+   # Полная инструкция в TESTING.md
    ```
 
 5. **Для слежения в реальном времени:**
@@ -188,9 +213,13 @@ D:\knowledge-graph\
 **Начните отсюда:**
 ```powershell
 cd D:\knowledge-graph
-.\rebuild_and_test.ps1
+docker-compose up -d
 ```
 
-**Вопросы?** → QUICK_START.md + REBUILD_CHECKLIST.md
+**Документация:**
+- Развёртывание → `../DEPLOYMENT.md`
+- Тестирование → `../TESTING.md`
+- Конфигурация → `../CONFIGURATION.md`
+- История изменений → `../CHANGELOG.md`
 
 **Удачи!** 🚀

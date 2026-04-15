@@ -41,7 +41,45 @@
 
 ---
 
-## 2. Технологический стек
+## 2. Backend Архитектура
+
+### 2.1 Структура проекта (DDD Layers)
+
+```
+backend/
+├── cmd/
+│   ├── server/           # HTTP API (Gin)
+│   └── worker/           # Async task processor (asynq)
+├── internal/
+│   ├── domain/           # Entities, Value Objects
+│   ├── application/      # Use cases, Command/Query handlers
+│   ├── infrastructure/   # PostgreSQL, Redis, Asynq, NLP client
+│   └── interfaces/       # HTTP handlers, DTOs
+└── migrations/           # SQL migrations
+```
+
+### 2.2 Поток запроса (Request Flow)
+
+```
+HTTP Request → Router → Handler → Application → Domain → Infrastructure
+                (Gin)    (DTO)     (Use Case)   (Entity)  (DB/Cache/Queue)
+```
+
+### 2.3 Async Tasks Flow
+
+```
+Handler → Enqueue task → Redis → Worker → Process → Save to DB
+```
+
+### 2.4 Recommendation Algorithm
+
+```
+Cache Check → BFS Links (α=0.7) + Semantic Search (β=0.3) → Combine → Rank
+```
+
+---
+
+## 3. Технологический стек
 
 | Компонент | Технология |
 |-----------|-----------|

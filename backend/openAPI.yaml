@@ -291,6 +291,13 @@ paths:
     get:
       summary: Get entire graph structure
       description: Returns all nodes and links for full graph visualization
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Maximum number of notes to return (0 = all)
       responses:
         '200':
           description: Complete graph data

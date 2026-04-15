@@ -12,7 +12,8 @@
 4. [Tests](#4-tests)
    - [4.1 Backend Unit Tests (Go)](#41-backend-unit-tests-go)
    - [4.2 Frontend E2E Tests (Playwright)](#42-frontend-e2e-tests-playwright)
-   - [4.3 Cucumber BDD Tests](#43-cucumber-bdd-tests)
+   - [4.3 Frontend Component Unit Tests (Vitest)](#43-frontend-component-unit-tests-vitest--testing-librarysvelte)
+   - [4.4 Cucumber BDD Tests](#44-cucumber-bdd-tests)
 5. [Docker & Configuration](#5-docker--configuration)
 6. [Сводка покрытия](#сводка)
 
@@ -4771,7 +4772,219 @@ test.describe('Graph Visualization', () => {
 });
 ```
 
-### 4.3 Cucumber BDD Tests
+### 4.3 Frontend Component Unit Tests (Vitest + @testing-library/svelte)
+
+#### `frontend/vitest.config.ts`
+
+```typescript
+import { defineConfig } from 'vitest/config';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+export default defineConfig({
+	plugins: [svelte({ hot: !process.env.VITEST })],
+	test: {
+		environment: 'jsdom',
+		globals: true,
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		setupFiles: ['./vitest-setup.ts']
+	}
+});
+```
+
+#### `frontend/vitest-setup.ts`
+
+```typescript
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// Mock SvelteKit modules
+vi.mock('$app/environment', () => ({
+	browser: true,
+	dev: true,
+	building: false,
+	version: 'test'
+}));
+
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn(),
+	beforeNavigate: vi.fn(),
+	afterNavigate: vi.fn()
+}));
+
+vi.mock('$app/stores', () => ({
+	page: {
+		subscribe: vi.fn((fn) => {
+			fn({ url: new URL('http://localhost'), params: {} });
+			return () => {};
+		})
+	}
+}));
+```
+
+#### `frontend/src/lib/components/NoteCard.spec.ts`
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import NoteCard from './NoteCard.svelte';
+
+describe('NoteCard', () => {
+	const mockNote = {
+		id: '123e4567-e89b-12d3-a456-426614174000',
+		title: 'Test Note Title',
+		content: 'Test note content',
+		created_at: '2024-01-15T10:00:00Z',
+		updated_at: '2024-01-15T12:00:00Z',
+		metadata: { type: 'star' }
+	};
+
+	it('renders note title and content', () => {
+		render(NoteCard, { props: { note: mockNote } });
+		
+		expect(screen.getByText('Test Note Title')).toBeInTheDocument();
+		expect(screen.getByText('Test note content')).toBeInTheDocument();
+	});
+
+	it('displays formatted date', () => {
+		render(NoteCard, { props: { note: mockNote } });
+		
+		const dateElement = screen.getByText(/2024|Jan|15/);
+		expect(dateElement).toBeInTheDocument();
+	});
+
+	it('renders different note types with correct styling', () => {
+		const starNote = { ...mockNote, metadata: { type: 'star' } };
+		const { container } = render(NoteCard, { props: { note: starNote } });
+		
+		expect(container.querySelector('.note-card')).toBeInTheDocument();
+	});
+});
+```
+
+#### `frontend/src/lib/components/ConfirmModal.spec.ts`
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import ConfirmModal from './ConfirmModal.svelte';
+
+describe('ConfirmModal', () => {
+	it('renders modal with title and message when open', () => {
+		render(ConfirmModal, {
+			props: {
+				isOpen: true,
+				title: 'Delete Note?',
+				message: 'Are you sure you want to delete this note?',
+				onConfirm: vi.fn(),
+				onCancel: vi.fn()
+			}
+		});
+		
+		expect(screen.getByText('Delete Note?')).toBeInTheDocument();
+		expect(screen.getByText('Are you sure you want to delete this note?')).toBeInTheDocument();
+	});
+
+	it('calls onConfirm when confirm button clicked', async () => {
+		const onConfirm = vi.fn();
+		const onCancel = vi.fn();
+		
+		render(ConfirmModal, {
+			props: {
+				isOpen: true,
+				title: 'Confirm?',
+				message: 'Test message',
+				onConfirm,
+				onCancel
+			}
+		});
+		
+		const confirmButton = screen.getByRole('button', { name: /confirm|yes|delete/i }) ||
+		                     screen.getByText(/confirm|yes|delete/i, { selector: 'button' });
+		
+		if (confirmButton) {
+			await fireEvent.click(confirmButton);
+			expect(onConfirm).toHaveBeenCalled();
+			expect(onCancel).not.toHaveBeenCalled();
+		}
+	});
+
+	it('calls onCancel when cancel button clicked', async () => {
+		const onConfirm = vi.fn();
+		const onCancel = vi.fn();
+		
+		render(ConfirmModal, {
+			props: {
+				isOpen: true,
+				title: 'Confirm?',
+				message: 'Test message',
+				onConfirm,
+				onCancel
+			}
+		});
+		
+		const cancelButton = screen.getByRole('button', { name: /cancel|no/i }) ||
+		                    screen.getByText(/cancel|no/i, { selector: 'button' });
+		
+		if (cancelButton) {
+			await fireEvent.click(cancelButton);
+			expect(onCancel).toHaveBeenCalled();
+			expect(onConfirm).not.toHaveBeenCalled();
+		}
+	});
+
+	it('does not render when isOpen is false', () => {
+		const { container } = render(ConfirmModal, {
+			props: {
+				isOpen: false,
+				title: 'Hidden Modal',
+				message: 'Should not see this',
+				onConfirm: vi.fn(),
+				onCancel: vi.fn()
+			}
+		});
+		
+		expect(screen.queryByText('Hidden Modal')).not.toBeInTheDocument();
+	});
+});
+```
+
+#### `frontend/src/lib/components/BackButton.spec.ts`
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import BackButton from './BackButton.svelte';
+
+describe('BackButton', () => {
+	it('renders back button', () => {
+		render(BackButton);
+		
+		const button = screen.getByRole('button') || screen.getByText(/back|←/i);
+		expect(button).toBeInTheDocument();
+	});
+
+	it('calls onClick when clicked', async () => {
+		const onClick = vi.fn();
+		render(BackButton, { props: { onClick } });
+		
+		const button = screen.getByRole('button') || screen.getByText(/back|←/i).closest('button');
+		
+		if (button) {
+			await fireEvent.click(button);
+			expect(onClick).toHaveBeenCalled();
+		}
+	});
+
+	it('is disabled when disabled prop is true', () => {
+		render(BackButton, { props: { disabled: true } });
+		
+		const button = screen.getByRole('button');
+		expect(button).toBeDisabled();
+	});
+});
+```
+
+### 4.4 Cucumber BDD Tests
 
 ```typescript
 import { setWorldConstructor, World } from '@cucumber/cucumber';
