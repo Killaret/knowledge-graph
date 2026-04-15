@@ -21,14 +21,17 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.22'
+      
+      - name: Download dependencies
+        run: go mod download
       
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           working-directory: ./backend
           version: latest
-          args: --timeout=5m
+          args: --path-prefix=. --timeout=5m
 
   test-backend:
     name: Test Backend (Go)
@@ -42,7 +45,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.22'
       
       - name: Download dependencies
         run: go mod download
