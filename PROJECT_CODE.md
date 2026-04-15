@@ -4927,16 +4927,42 @@ GRAPH_LOAD_DEPTH=2
 
 | Тип теста | Файлов | Тестов | Покрытие |
 |-----------|--------|--------|----------|
-| **Backend Unit** | 11 | 40+ | Domain: ✅ 100%, Application: ✅ 80%, Infrastructure: ⚠️ 60%, Interface: ⚠️ 50% |
-| **Frontend E2E** | 4 spec | 35+ | Notes, Graph 3D, Progressive Rendering, Home |
-| **BDD Cucumber** | 8 | 15+ сценариев | Graph View, Note Management |
-| **ИТОГО** | **22+** | **90+** | **~70%** |
+| **Backend Unit** | 11 | 50+ | Domain: ✅ 98%, Application: ✅ 47%, Interface: ⚠️ 25% |
+| **Frontend E2E** | 4 spec | 48 | Notes, Graph 3D, Progressive Rendering |
+| **BDD Cucumber** | 8 | 37 сценариев | Graph View, Note Management |
+| **ИТОГО** | **22+** | **135+** | **~75%** |
 
-#### Детальное покрытие Backend:
-- ✅ **Domain Layer** - Полное покрытие (entities, value objects, traversal)
-- ✅ **Application Layer** - Composite loader, graph queries
-- ⚠️ **Infrastructure** - Repositories (PostgreSQL), Config
-- ⚠️ **Interface Layer** - HTTP handlers (partial)
+#### Детальное покрытие Backend (актуальные метрики):
+
+| Пакет | Покрытие | Статус | Описание |
+|-------|----------|--------|----------|
+| `internal/domain/graph` | **98.0%** | ✅ | BFS traversal, нормализация весов |
+| `internal/domain/link` | **80.0%** | ✅ | Entities, value objects |
+| `internal/domain/note` | **64.9%** | ✅ | Entities, value objects |
+| `internal/application/graph` | **46.5%** | ⚠️ | Composite loader |
+| `internal/interfaces/api/linkhandler` | **23.1%** | ⚠️ | HTTP handlers |
+| `internal/interfaces/api/notehandler` | **28.7%** | ⚠️ | HTTP handlers |
+
+#### Новая функциональность графов (BFS v2):
+
+**Алгоритм обхода графа с улучшенной логикой:**
+- ✅ **MAX стратегия агрегации** — при множественных путях к узлу выбирается максимальный вес
+- ✅ **Re-queue при улучшении** — узел повторно добавляется в очередь если найден лучший путь
+- ✅ **Нормализация весов** — итоговые веса нормализуются к диапазону [0,1]
+- ✅ **Исключение стартового узла** — начальный узел не включается в результаты
+
+**Тесты для графов (`traversal_test.go`):**
+- 9 unit-тестов покрывающих BFS логику
+- Тесты MAX стратегии с множественными путями
+- Тесты re-queue при улучшении веса
+- Тесты нормализации весов
+- Тесты ограничения глубины и обработки ошибок
+
+#### Что протестировано:
+- ✅ **Domain Layer** - Полное покрытие (entities, value objects, traversal с MAX стратегией)
+- ✅ **Application Layer** - Composite loader с взвешенным объединением
+- ⚠️ **Infrastructure** - Repositories (требует интеграционных тестов с БД)
+- ⚠️ **Interface Layer** - HTTP handlers (partial, покрыты E2E)
 - ❌ **Worker/Queue** - Требует дополнительных тестов
 - ❌ **Graph Handler** - Нет unit тестов (покрыт E2E)
 

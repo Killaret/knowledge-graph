@@ -2,7 +2,13 @@
 
 ## Overview
 
-The Knowledge Graph frontend is a **graph-centric Svelte 5 application** with a focus on visual interaction and intuitive note management. The architecture prioritizes **2D visualization as the primary interface**, with 3D as an optional enhancement for users with capable devices.
+The Knowledge Graph frontend is a **note-centric Svelte 5 application** with graph visualization as a secondary view. The architecture supports both 2D and 3D visualization modes, with **3D Progressive Rendering (Fog of War)** as the primary graph interface for modern browsers.
+
+### Key Features
+- **Progressive Graph Loading**: 3D graph loads nodes incrementally with animated "fog of war" effect
+- **Three.js Modular Architecture**: Organized core/simulation/rendering/camera modules
+- **Device-Adaptive**: Automatic quality adjustment based on GPU capabilities
+- **SSR-Safe**: All browser APIs properly guarded for server-side rendering
 
 ## Core Principles
 
@@ -16,36 +22,89 @@ The Knowledge Graph frontend is a **graph-centric Svelte 5 application** with a 
 - **Framework**: Svelte 5 (Runes mode)
 - **Language**: TypeScript
 - **Styling**: CSS with CSS variables for theming
-- **Visualization**: D3-force (2D), Three.js (3D optional)
+- **Visualization**: 
+  - **3D (Primary)**: Three.js + d3-force-3d physics
+  - **2D (Fallback)**: D3-force + Canvas API
 - **Testing**: Playwright + Cucumber (BDD)
 - **Build**: Vite
+
+## Three.js Module Architecture
+
+The 3D graph visualization is organized in modular layers:
+
+```
+src/lib/three/
+├── core/
+│   ├── sceneSetup.ts         # Scene, camera, renderer initialization
+│   └── controls.ts           # OrbitControls, mouse interactions
+├── simulation/
+│   └── forceSimulation.ts    # d3-force-3d physics engine integration
+├── rendering/
+│   ├── objectManager.ts      # Node/link mesh management
+│   ├── nodeFactory.ts        # 3D node geometry creation
+│   ├── linkFactory.ts        # Link line geometry creation
+│   └── labelFactory.ts       # Text label management
+└── camera/
+    └── cameraUtils.ts        # Animation, zoom, positioning utilities
+```
+
+### Progressive Rendering (Fog of War)
+
+**Concept**: Nodes gradually appear from "fog" with camera animation
+
+```typescript
+// Initialization
+sceneSetup.init(scene, camera, renderer)
+  └── scene.fog = new THREE.FogExp2(0x000000, 0.02)  // Dense fog
+
+// Progressive loading
+forceSimulation.addNodesToSimulation(nodes, incremental = true)
+  └── Animate nodes from camera position to final position
+  └── Fade in opacity over time
+  └── Reduce fog density as more nodes appear
+
+// Camera controls
+cameraUtils.lerpCamera(targetPosition, duration)
+cameraUtils.autoZoomToFit(nodes, padding)
+```
+
+**Key Functions**:
+- `addNodesToSimulation()`: Adds nodes incrementally with animation
+- `lerpCamera()`: Smooth camera transitions
+- `animateFogDensity()`: Gradually clears fog during loading
 
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Main Page (/)                           │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │              GraphCanvas (2D Primary)                │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │   Nodes     │  │    Links    │  │  Animation  │   │  │
-│  │  │  (D3-force) │  │ (D3-force)  │  │ (Canvas 2D) │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                           │                                  │
-│         ┌─────────────────┼─────────────────┐               │
-│         │                 │                 │               │
-│    ┌────▼────┐      ┌────▼────┐      ┌────▼────┐          │
-│    │Floating │      │  Note   │      │ Create  │          │
-│    │Controls │      │SidePanel│      │  Modal  │          │
-│    └─────────┘      └─────────┘      └─────────┘          │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      Main Page (/)                               │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                 NoteListView (Primary)                     ││
+│  │     Grid of note cards with search and filters             ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                              │                                   │
+│         ┌────────────────────┼────────────────────┐             │
+│         │                    │                    │             │
+│    ┌────▼────┐         ┌────▼────┐         ┌────▼────┐       │
+│    │Floating │         │  Note   │         │ Create  │       │
+│    │Controls │         │SidePanel│         │  Modal  │       │
+│    └─────────┘         └─────────┘         └─────────┘       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
                               │
-                    ┌─────────▼─────────┐
-                    │   Optional 3D     │
-                    │  (lazy-loaded)    │
-                    │   Graph3D.svelte  │
-                    └───────────────────┘
+              ┌───────────────┴───────────────┐
+              │                               │
+     ┌────────▼─────────┐          ┌──────────▼──────────┐
+     │  2D Graph View   │          │  3D Graph View      │
+     │  /graph/:id      │          │  /graph/3d/:id      │
+     │                  │          │                     │
+     │  GraphCanvas     │          │  Graph3D.svelte     │
+     │  ├── Nodes       │          │  ├── sceneSetup.ts  │
+     │  ├── Links       │          │  ├── forceSim       │
+     │  └── Canvas      │          │  └── Progressive    │
+     │                  │          │     Rendering       │
+     └──────────────────┘          └─────────────────────┘
 ```
 
 ## Component Hierarchy
@@ -126,6 +185,64 @@ Smart component that decides between 2D and 3D:
 - Respects user preference via URL param (`?force3d=1`)
 - Falls back to 2D on low-end devices
 
+### 7. Graph3D.svelte (3D Visualization)
+
+Three.js-based 3D graph visualization with progressive loading:
+
+**Props**:
+```typescript
+{
+  noteId: string;              // Central note ID to build graph from
+  loadDepth?: number;         // Graph traversal depth (default: 2)
+  performanceMode?: boolean;  // Reduce quality for low-end devices
+}
+```
+
+**Features**:
+- **Progressive Rendering**: Nodes animate in from "fog" with staggered timing
+- **Fog of War**: Dense fog initially obscures distant nodes, clears as graph loads
+- **Auto-zoom**: Camera automatically positions to fit all nodes
+- **Camera Animation**: Smooth transitions between views
+- **Stats Bar**: Shows loading progress and node count
+
+**Three.js Integration**:
+```typescript
+// Core modules
+import { setupScene } from '$lib/three/core/sceneSetup';
+import { createSimulation } from '$lib/three/simulation/forceSimulation';
+import { ObjectManager } from '$lib/three/rendering/objectManager';
+import { lerpCamera, autoZoomToFit } from '$lib/three/camera/cameraUtils';
+
+// Progressive loading flow
+onMount(async () => {
+  const { scene, camera, renderer } = setupScene(container);
+  const simulation = createSimulation();
+  const objects = new ObjectManager(scene);
+  
+  // Load graph data
+  const graphData = await fetchGraphData(noteId, loadDepth);
+  
+  // Progressive loading with fog animation
+  await loadNodesProgressively(graphData.nodes, {
+    batchSize: 5,
+    delay: 200,
+    onBatch: (nodes) => {
+      objects.addNodes(nodes);
+      simulation.addNodes(nodes);
+      animateFogClearing();
+    }
+  });
+  
+  // Auto-position camera
+  autoZoomToFit(camera, objects.getNodes(), { padding: 50 });
+});
+```
+
+**Public Methods**:
+- `resetCamera()`: Reset to initial position with animation
+- `toggleAutoRotation()`: Enable/disable automatic camera rotation
+- `exportView()`: Export current camera position as shareable URL
+
 ## State Management
 
 ### Graph Store (`$lib/stores/graph.ts`)
@@ -151,13 +268,45 @@ export const graphStore = writable<GraphState>({
 ## Routing Structure
 
 ```
-/                          → Main graph view (graph-centric)
-/?note=:id                 → Main view with specific note selected
-/graph/:id                 → Redirect to /?note=:id
-/graph/3d/:id              → Optional 3D view page
-/notes/:id                 → Redirect to /?note=:id (legacy support)
-/notes/:id/edit            → Edit note page (for complex editing)
-/search?q=:query          → Search results overlay
+/                           → Main page with note list (note-centric)
+/?search=:query             → Main page with search active
+/notes/:id                  → Note detail page
+/notes/:id/edit             → Note edit page
+/notes/create               → Create note page (alternative to modal)
+/graph/:id                  → 2D graph view for note
+/graph/3d/:id               → 3D graph view with progressive rendering
+/search?q=:query            → Search results page (redirects to /?search=)
+```
+
+### Route Details
+
+**Main Page (/)**
+- Note list with search/filter
+- Floating controls (create, search)
+- Entry point for application
+
+**Note Detail (/notes/:id)**
+- Full note view with content
+- Actions: edit, delete, view graph
+- Back button to main page
+
+**Graph Views**
+- `/graph/:id` - 2D force-directed graph using D3
+- `/graph/3d/:id` - 3D graph with Three.js progressive rendering
+
+### Navigation Flow
+
+```
+Main Page (/) 
+    ├── Click Note Card → /notes/:id
+    │   ├── Click "View Graph" → /graph/3d/:id
+    │   └── Click "Edit" → /notes/:id/edit
+    ├── Click "Create" → CreateNoteModal or /notes/create
+    └── Search → Updates URL to /?search=:query
+
+Graph Page (/graph/3d/:id)
+    ├── Click Node → Navigate to /notes/:nodeId
+    └── Click "Back" → Returns to previous page
 ```
 
 ## SSR Error Prevention
@@ -293,8 +442,20 @@ npm run lint
 
 ## Future Enhancements
 
-1. **Offline Support**: Service Worker + IndexedDB
-2. **Collaborative Editing**: WebRTC or WebSocket integration
-3. **AI-Powered Suggestions**: Integration with NLP service
-4. **Mobile App**: Capacitor or PWA packaging
-5. **Plugin System**: Third-party visualization plugins
+### Short Term (v1.1)
+1. **Graph Export**: Export 3D graph view as image/video
+2. **Node Grouping**: Group related notes visually in graph
+3. **Graph Filters**: Filter by link type, weight threshold
+4. **Keyboard Shortcuts**: Full keyboard navigation for graph
+
+### Medium Term (v1.2)
+5. **Offline Support**: Service Worker + IndexedDB for note caching
+6. **AI-Powered Suggestions**: Inline note recommendations via NLP service
+7. **Mobile App**: Capacitor packaging for iOS/Android
+8. **Plugin System**: Third-party visualization plugins
+
+### Long Term (v2.0)
+9. **Collaborative Editing**: WebRTC or WebSocket for real-time collaboration
+10. **Version History**: Note versioning with diff view
+11. **Advanced Analytics**: Usage statistics, most connected notes
+12. **Voice Input**: Speech-to-text for note creation

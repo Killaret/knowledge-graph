@@ -45,23 +45,53 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+                $ref: '#/components/schemas/Error'
 
   /notes:
     get:
-      summary: List all notes
+      summary: List all notes with pagination
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Maximum number of notes to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Number of notes to skip
       responses:
         '200':
-          description: List of notes
+          description: Paginated list of notes
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Note'
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  total:
+                    type: integer
+                    description: Total count of notes
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '400':
+          description: Bad request - invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     post:
       summary: Create note (async keywords/embedding)
       requestBody:
@@ -77,6 +107,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad request - invalid input or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /notes/{id}:
     get:
@@ -94,6 +130,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Note'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     put:
       summary: Update note title/content (async re-embed)
       parameters:
@@ -115,6 +158,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad request - invalid input or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     delete:
       summary: Delete note + links
       parameters:
@@ -126,6 +182,12 @@ paths:
       responses:
         '204':
           description: Deleted
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /notes/{id}/suggestions:
     get:
@@ -141,6 +203,7 @@ paths:
           schema:
             type: integer
             default: 10
+          description: Maximum number of suggestions to return
       responses:
         '200':
           description: Suggestions
@@ -150,6 +213,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Suggestion'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /notes/{id}/graph:
     get:
@@ -167,6 +236,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GraphData'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notes/search:
+    get:
+      summary: Search notes by query
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Offset for pagination
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  total:
+                    type: integer
+                    description: Total count of matching notes
+        '400':
+          description: Bad request - missing query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /graph/all:
+    get:
+      summary: Get entire graph structure
+      description: Returns all nodes and links for full graph visualization
+      responses:
+        '200':
+          description: Complete graph data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphData'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /links:
     post:
@@ -184,6 +321,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Link'
+        '400':
+          description: Bad request - invalid input or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Source or target note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /links/{id}:
     get:
       summary: Get link
@@ -200,6 +350,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Link'
+        '404':
+          description: Link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     delete:
       summary: Delete link
       parameters:
@@ -211,6 +368,13 @@ paths:
       responses:
         '204':
           description: Deleted
+        '404':
+          description: Link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /notes/{id}/links:
     get:
       summary: Get links for note
@@ -229,6 +393,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Link'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     delete:
       summary: Delete all links for note
       parameters:
@@ -240,6 +411,12 @@ paths:
       responses:
         '204':
           description: All links deleted
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -267,7 +444,6 @@ components:
           items:
             type: number
             format: float
-        # Добавлены поля из реальной модели
         type:
           type: string
           description: "Категория контента (book, movie, anime, manga, adaptation и др.)"
@@ -275,6 +451,7 @@ components:
           type: object
           additionalProperties: true
           description: "Дополнительные метаданные (например, celestial_type для визуализации графа)"
+
     CreateNoteRequest:
       type: object
       properties:
@@ -282,7 +459,6 @@ components:
           type: string
         content:
           type: string
-        # Добавлены опциональные поля
         type:
           type: string
           description: "Категория заметки"
@@ -291,6 +467,7 @@ components:
           additionalProperties: true
       required:
         - title
+
     UpdateNoteRequest:
       type: object
       properties:
@@ -303,38 +480,72 @@ components:
         metadata:
           type: object
           additionalProperties: true
+
     Link:
       type: object
       properties:
         id:
           type: string
+          format: uuid
+          description: Unique identifier for the link
         source_note_id:
           type: string
+          format: uuid
+          description: ID of the source note
         target_note_id:
           type: string
+          format: uuid
+          description: ID of the target note
         weight:
           type: number
           format: float
-        # Заменено поле type на description (согласно реальной реализации)
+          minimum: 0.0
+          maximum: 1.0
+          description: Link weight from 0.0 to 1.0
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom]
+          description: Type of relationship between notes
         description:
           type: string
-          description: "Описание связи (например, 'экранизация', 'основано на')"
+          description: Optional human-readable description of the link
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     CreateLinkRequest:
       type: object
       properties:
         source_note_id:
           type: string
+          format: uuid
+          description: ID of the source note
         target_note_id:
           type: string
+          format: uuid
+          description: ID of the target note
         weight:
           type: number
           format: float
-        # Используется description, а не type
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.5
+          description: Link weight (0.0 to 1.0)
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom]
+          default: reference
+          description: Type of relationship
         description:
           type: string
+          description: Optional human-readable description
       required:
         - source_note_id
         - target_note_id
+
     Suggestion:
       type: object
       properties:
@@ -345,6 +556,7 @@ components:
         score:
           type: number
           format: float
+
     GraphData:
       type: object
       properties:
@@ -372,7 +584,39 @@ components:
                 type: string
               weight:
                 type: number
+
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: "not_found"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Note with ID 'abc-123' not found"
+        detail:
+          type: string
+          description: Detailed error information (optional)
+          example: "The requested resource does not exist in the database"
+        code:
+          type: integer
+          description: HTTP status code
+          example: 404
+      required:
+        - error
+        - message
+
 tags:
-  - Notes
-  - Graph
-  - Links
+  - name: Health
+    description: Health check and system status
+  - name: Notes
+    description: Note management operations
+  - name: Links
+    description: Link/relationship management
+  - name: Graph
+    description: Graph visualization and traversal
+  - name: Search
+    description: Search and discovery operations
