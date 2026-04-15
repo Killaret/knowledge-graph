@@ -276,6 +276,13 @@
             {/each}
           </select>
         </div>
+
+        <div class="view-group">
+          <button class="view-button-3d" onclick={() => goto('/graph/3d/all')}>
+            <span class="emoji">🧊</span>
+            <span>3D</span>
+          </button>
+        </div>
       </div>
 
       <!-- Stats -->
@@ -451,6 +458,33 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .view-group {
+    margin-left: auto;
+  }
+
+  .view-button-3d {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .view-button-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .emoji {
+    font-size: 1.2em;
   }
 
   .filter-button {

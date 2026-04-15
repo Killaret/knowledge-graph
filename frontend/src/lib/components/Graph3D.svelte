@@ -211,7 +211,7 @@
     
     // If no links or single node, simulation won't emit 'end' (already at equilibrium)
     // Stop immediately and show the graph
-    if (data.links.length === 0 || data.nodes.length <= 1) {
+    if (filteredData.links.length === 0 || filteredData.nodes.length <= 1) {
       console.log('[Graph3D] No links or single node, stopping simulation immediately');
       simulation.stop();
       isLoading = false;
