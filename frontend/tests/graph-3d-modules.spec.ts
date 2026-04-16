@@ -394,7 +394,7 @@ test.describe('3D Graph - Modular Architecture', () => {
     console.log('Stats after toggle:', statsAfter);
     
     // Graph should still render
-    const container = page.locator('.graph-container, .error-overlay').first();
+    const container = page.locator('.fullscreen-graph, .graph-3d-container, .error-overlay').first();
     await expect(container).toBeVisible();
   });
 

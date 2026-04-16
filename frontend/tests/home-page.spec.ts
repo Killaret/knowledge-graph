@@ -16,8 +16,8 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should display graph canvas by default on home page', async ({ page }) => {
-    // Verify graph container is visible
-    const graphContainer = page.locator('.graph-container, .graph-canvas, canvas').first();
+    // Verify graph container is visible (fullscreen graph)
+    const graphContainer = page.locator('.fullscreen-graph, .graph-canvas, canvas').first();
     await expect(graphContainer).toBeVisible({ timeout: 10000 });
     
     // Verify graph has height (is rendered)
@@ -51,7 +51,7 @@ test.describe('Home Page - Graph First', () => {
       await expect(emptyState).toBeVisible();
     } else {
       // Otherwise graph should be rendered
-      const graphCanvas = page.locator('.graph-container canvas, .graph-canvas').first();
+      const graphCanvas = page.locator('.fullscreen-graph canvas, .graph-canvas').first();
       await expect(graphCanvas).toBeVisible();
     }
   });
@@ -78,7 +78,7 @@ test.describe('Home Page - Graph First', () => {
     }
     
     // Verify any content is visible (graph, list, loading, or error states)
-    const content = page.locator('.graph-container, .notes-grid, .note-card, .lazy-loading, .error-overlay').first();
+    const content = page.locator('.fullscreen-graph, .list-container, .note-card, .loading-overlay, .error-overlay').first();
     await expect(content).toBeVisible({ timeout: 10000 });
   });
 
@@ -220,7 +220,7 @@ test.describe('Home Page - Graph First', () => {
     await page.waitForTimeout(2000);
     
     // Verify graph container is visible
-    const graphContainer = page.locator('.graph-3d-container, .graph-container, canvas').first();
+    const graphContainer = page.locator('.graph-3d-container, .fullscreen-graph, canvas').first();
     await expect(graphContainer).toBeVisible({ timeout: 10000 });
   });
 
@@ -236,7 +236,7 @@ test.describe('Home Page - Graph First', () => {
     expect(has404).toBe(false);
     
     // Verify graph container, empty state, or error state is visible
-    const graphContainer = page.locator('.graph-container, .graph-3d-container, canvas').first();
+    const graphContainer = page.locator('.fullscreen-graph, .graph-3d-container, canvas').first();
     const emptyState = page.locator('text=No notes found, text=No graph data').first();
     const errorState = page.locator('text=Failed to load graph data').first();
     
@@ -259,7 +259,7 @@ test.describe('Home Page - Graph First', () => {
     
     if (!hasNotes) {
       // If no notes, verify some content is visible (empty state, graph container, or error)
-      const content = page.locator('.graph-container, .notes-grid, .empty-state, .lazy-loading, .error-overlay, text=/No notes|empty|Loading/i').first();
+      const content = page.locator('.fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i').first();
       await expect(content).toBeVisible({ timeout: 10000 });
     }
     // If notes exist, test passes - we just verify the page loads
@@ -300,7 +300,7 @@ test.describe('Home Page - Graph First', () => {
     await page.waitForTimeout(2000);
     
     // Verify graph still renders after toggle
-    const container = page.locator('.graph-container, canvas, .lazy-loading').first();
+    const container = page.locator('.fullscreen-graph, canvas, .loading-overlay').first();
     await expect(container).toBeVisible();
     
     // Click again to toggle back

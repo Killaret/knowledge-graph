@@ -27,68 +27,63 @@ Received: false
       - strong [ref=e6]: "100"
       - text: nodes
     - generic [ref=e7]:
-      - strong [ref=e8]: "1837"
+      - strong [ref=e8]: "1942"
       - text: links
   - generic [ref=e9]:
-    - paragraph [ref=e12]: Loading 3D constellation...
     - generic:
-      - generic [ref=e14] [cursor=pointer]: Scene Test Note
-      - generic [ref=e15] [cursor=pointer]: Isolated Node
-      - generic [ref=e16] [cursor=pointer]: Direct URL Test
-      - generic [ref=e17] [cursor=pointer]: Full Graph Node 4
-      - generic [ref=e18] [cursor=pointer]: Full Graph Node 2
-      - generic [ref=e19] [cursor=pointer]: Linked Node
-      - generic [ref=e20] [cursor=pointer]: 2D to 3D Transition
-      - generic [ref=e21] [cursor=pointer]: Toggle Camera Test
-      - generic [ref=e22] [cursor=pointer]: Center Node
-      - generic [ref=e23] [cursor=pointer]: Автономный и заме...
-      - generic [ref=e24] [cursor=pointer]: Настраиваемое и м...
-      - generic [ref=e25] [cursor=pointer]: Функциональная и ...
-      - generic [ref=e26] [cursor=pointer]: Настраиваемая и п...
-      - generic [ref=e27] [cursor=pointer]: Безопасная и глоб...
-      - generic [ref=e28] [cursor=pointer]: Выражение no Посв...
-      - generic [ref=e29] [cursor=pointer]: Призыв no Направо
-      - generic [ref=e30] [cursor=pointer]: Металл no Налоговый
-      - generic [ref=e31] [cursor=pointer]: Направо no Освобо...
-      - generic [ref=e32] [cursor=pointer]: Точно no Палата
-      - generic [ref=e33] [cursor=pointer]: Магазин Потянутьс...
-      - generic [ref=e34] [cursor=pointer]: Угроза Мусор Kai
-      - generic [ref=e35] [cursor=pointer]: Упорно Мелькнуть ...
-      - generic [ref=e36] [cursor=pointer]: Интеллектуальный ...
-      - generic [ref=e37] [cursor=pointer]: Экзамен Сравнение!!
-      - generic [ref=e38] [cursor=pointer]: Механический Бесп...
-      - generic [ref=e39] [cursor=pointer]: Интеграция Лучших...
-      - generic [ref=e40] [cursor=pointer]: Максимизация Ульт...
-      - generic [ref=e41] [cursor=pointer]: Оптимизация Прибы...
-      - generic [ref=e42] [cursor=pointer]: Революция Круглог...
-      - generic [ref=e43] [cursor=pointer]: Увеличение B2B Сх...
-      - generic [ref=e44] [cursor=pointer]: Оптимизация Безот...
-      - generic [ref=e45] [cursor=pointer]: Сравнение Масштаб...
-      - generic [ref=e46] [cursor=pointer]: Культивация Богат...
-      - generic [ref=e47] [cursor=pointer]: Разнообразная и ц...
-      - generic [ref=e48] [cursor=pointer]: Оптимизированное ...
-      - generic [ref=e49] [cursor=pointer]: Canvas Dimension ...
-      - generic [ref=e50] [cursor=pointer]: Isolated Node
-      - generic [ref=e51] [cursor=pointer]: Structure Test
-      - generic [ref=e52] [cursor=pointer]: Camera Reset Test
-      - generic [ref=e53] [cursor=pointer]: Fog Link 2
-      - generic [ref=e54] [cursor=pointer]: Fog Link 1
-      - generic [ref=e55] [cursor=pointer]: Fog Link 0
-      - generic [ref=e56] [cursor=pointer]: asteroid Node
-      - generic [ref=e57] [cursor=pointer]: planet Node
-      - generic [ref=e58] [cursor=pointer]: Linked to First
-      - generic [ref=e59] [cursor=pointer]: First Graph Note
-      - generic [ref=e60] [cursor=pointer]: Loading Test Link 5
-      - generic [ref=e61] [cursor=pointer]: Loading Test Link 4
-      - generic [ref=e62] [cursor=pointer]: Loading Test Link 3
-      - generic [ref=e63] [cursor=pointer]: Loading Test Link 1
-      - generic [ref=e64] [cursor=pointer]: Loading Test Link 0
-      - generic [ref=e65] [cursor=pointer]: Progressive Loadi...
-      - generic [ref=e66] [cursor=pointer]: Linked Note 4
-      - generic [ref=e67] [cursor=pointer]: Linked Note 3
-      - generic [ref=e68] [cursor=pointer]: Linked Note 2
-      - generic [ref=e69] [cursor=pointer]: Linked Note 1
-      - generic [ref=e70] [cursor=pointer]: Горький Призыв~
+      - generic [ref=e11] [cursor=pointer]: Scene Test Note
+      - generic [ref=e12] [cursor=pointer]: Galaxy Node
+      - generic [ref=e13] [cursor=pointer]: Full Graph Node 1
+      - generic [ref=e14] [cursor=pointer]: Linked Node
+      - generic [ref=e15] [cursor=pointer]: Navigation Test
+      - generic [ref=e16] [cursor=pointer]: Toggle Camera Test
+      - generic [ref=e17] [cursor=pointer]: Graph View Test 1...
+      - generic [ref=e18] [cursor=pointer]: Test Searchable17...
+      - generic [ref=e19] [cursor=pointer]: List View Test Note
+      - generic [ref=e20] [cursor=pointer]: Stats Test 1 1776...
+      - generic [ref=e21] [cursor=pointer]: Star Note 1776333...
+      - generic [ref=e22] [cursor=pointer]: Stats Test Node 2
+      - generic [ref=e23] [cursor=pointer]: Stats Test Node 1
+      - generic [ref=e24] [cursor=pointer]: Debris Node
+      - generic [ref=e25] [cursor=pointer]: Navigation Test Note
+      - generic [ref=e26] [cursor=pointer]: Asteroid Node
+      - generic [ref=e27] [cursor=pointer]: Toggle Test
+      - generic [ref=e28] [cursor=pointer]: Linked Note
+      - generic [ref=e29] [cursor=pointer]: Main Note
+      - generic [ref=e30] [cursor=pointer]: Link Types Source
+      - generic [ref=e31] [cursor=pointer]: Note 4
+      - generic [ref=e32] [cursor=pointer]: Note 3
+      - generic [ref=e33] [cursor=pointer]: Note 0
+      - generic [ref=e34] [cursor=pointer]: Weak Link
+      - generic [ref=e35] [cursor=pointer]: Strong Link
+      - generic [ref=e36] [cursor=pointer]: 2D Toggle Test 2
+      - generic [ref=e37] [cursor=pointer]: 2D Toggle Test 1
+      - generic [ref=e38] [cursor=pointer]: Linked
+      - generic [ref=e39] [cursor=pointer]: Star Node
+      - generic [ref=e40] [cursor=pointer]: Galaxy Node
+      - generic [ref=e41] [cursor=pointer]: Isolated Node
+      - generic [ref=e42] [cursor=pointer]: Direct URL Test
+      - generic [ref=e43] [cursor=pointer]: Linked Node
+      - generic [ref=e44] [cursor=pointer]: Toggle Camera Test
+      - generic [ref=e45] [cursor=pointer]: Full Graph Node 2
+      - generic [ref=e46] [cursor=pointer]: Full Graph Node 1
+      - generic [ref=e47] [cursor=pointer]: Navigation Test
+      - generic [ref=e48] [cursor=pointer]: Graph Comet 17763...
+      - generic [ref=e49] [cursor=pointer]: Graph Planet 1776...
+      - generic [ref=e50] [cursor=pointer]: All Filter Planet...
+      - generic [ref=e51] [cursor=pointer]: Root Planet 17763...
+      - generic [ref=e52] [cursor=pointer]: Metadata Star 177...
+      - generic [ref=e53] [cursor=pointer]: Galaxy Filter 177...
+      - generic [ref=e54] [cursor=pointer]: Comet Filter 1776...
+      - generic [ref=e55] [cursor=pointer]: Planet Type 17763...
+      - generic [ref=e56] [cursor=pointer]: Camera Reset Test
+      - generic [ref=e57] [cursor=pointer]: asteroid Node
+      - generic [ref=e58] [cursor=pointer]: comet Node
+      - generic [ref=e59] [cursor=pointer]: Structure Link
+      - generic [ref=e60] [cursor=pointer]: Structure Test
+      - generic [ref=e61] [cursor=pointer]: Linked to Second
+      - generic [ref=e62] [cursor=pointer]: Linked to First
+      - generic [ref=e63] [cursor=pointer]: Second Graph Note
 ```
 
 # Test source
@@ -116,7 +111,7 @@ Received: false
   175 |     await page.waitForTimeout(3000);
   176 |     
   177 |     // Verify 2D graph loads
-  178 |     const graph2D = page.locator('.graph-container').first();
+  178 |     const graph2D = page.locator('.fullscreen-graph, canvas').first();
   179 |     await expect(graph2D).toBeVisible();
   180 |     
   181 |     // Navigate to 3D version

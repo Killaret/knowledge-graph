@@ -150,7 +150,7 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
     await page.waitForTimeout(2000);
     
     // Home page should load
-    const homeContent = page.locator('.content-area, .graph-container').first();
+    const homeContent = page.locator('.fullscreen-graph, .list-container').first();
     await expect(homeContent).toBeVisible();
     
     // Navigate back to 3D graph
@@ -175,7 +175,7 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
     await page.waitForTimeout(3000);
     
     // Verify 2D graph loads
-    const graph2D = page.locator('.graph-container').first();
+    const graph2D = page.locator('.fullscreen-graph, canvas').first();
     await expect(graph2D).toBeVisible();
     
     // Navigate to 3D version

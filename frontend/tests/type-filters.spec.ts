@@ -236,7 +236,7 @@ test.describe('Type Filters - Home Page Filtering', () => {
       await page.waitForTimeout(2000);
       
       // Graph should still be visible (filtered to show only stars)
-      const graphContainer = page.locator('.graph-container, .graph-canvas').first();
+      const graphContainer = page.locator('.fullscreen-graph, .graph-canvas, canvas').first();
       await expect(graphContainer).toBeVisible({ timeout: 5000 });
     }
   });
