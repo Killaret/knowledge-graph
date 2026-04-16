@@ -147,15 +147,17 @@
         renderer.render(scene, camera);
         labelRenderer.render(scene, camera);
         
-        // Log camera position once after 60 frames (~1 sec at 60fps)
-        if (++frameCount === 60) {
-          console.log('[Graph3D] Camera position after 1s:', 
-            `(${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})`,
-            'Target:', `(${controls.target.x.toFixed(2)}, ${controls.target.y.toFixed(2)}, ${controls.target.z.toFixed(2)})`
+        // Log debug info once after 30 frames (~0.5 sec at 60fps)
+        if (++frameCount === 30) {
+          console.log('[Graph3D] Render frame 30 - Camera:', 
+            `(${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})`,
+            'Scene children:', scene.children.length,
+            'Fog density:', (scene.fog as any)?.density ?? 'no fog'
           );
         }
       }
       animate();
+      console.log('[Graph3D] Animation loop started');
 
       // Resize handler
       window.addEventListener('resize', onResize);
@@ -221,9 +223,9 @@
     console.log('[Graph3D] Calling createSimulation...');
     // Track current data for progressive loading
     currentData = filteredData;
-    // Reset fog to dense for "fog of war" effect on initial load
+    // Reset fog for subtle depth effect (was 0.08 - too dense)
     if (scene) {
-      setFogDensity(scene, 0.08);
+      setFogDensity(scene, 0.02);
     }
     isLoading = true;
     simulation = createSimulation(filteredData, objectManager);
@@ -238,7 +240,7 @@
       isLoading = false;
       // Animate fog dissipation for this edge case too
       console.log('[Graph3D] Starting fog animation for single node/no links');
-      animateFog(0.08, 0.005, 1500);
+      animateFog(0.02, 0.005, 1500);
       isFullyLoaded = true;
       if (camera && controls) {
         autoZoomToFit(simulation.nodes(), camera, controls, true);
@@ -252,7 +254,7 @@
         console.log('[Graph3D] Loading timeout reached, forcing isLoading = false');
         isLoading = false;
         // Also animate fog on timeout
-        animateFog(0.08, 0.005, 2000);
+        animateFog(0.02, 0.005, 2000);
         isFullyLoaded = true;
         if (simulation && camera && controls) {
           autoZoomToFit(simulation.nodes(), camera, controls, true);
@@ -269,8 +271,8 @@
       isLoading = false;
 
       // Animate fog dissipation for initial load (same as addData)
-      console.log('[Graph3D] Starting fog animation for initial load (0.08 -> 0.005)');
-      animateFog(0.08, 0.005, 2500);
+      console.log('[Graph3D] Starting fog animation for initial load (0.02 -> 0.005)');
+      animateFog(0.02, 0.005, 2500);
       isFullyLoaded = true;
 
       clearTimeout(zoomTimeout);

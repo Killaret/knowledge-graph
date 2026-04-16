@@ -84,7 +84,7 @@
   </div>
 {:else if use3D && Graph3DComponent}
   <div class="graph-wrapper graph-3d">
-    <Graph3DComponent {nodes} {links} />
+    <Graph3DComponent data={{ nodes, links }} />
     <div class="performance-hint">3D Mode</div>
   </div>
 {:else}

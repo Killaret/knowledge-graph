@@ -149,8 +149,9 @@ export function createNodeMesh(node: GraphNode): THREE.Group {
 }
 
 function getNodeSize(type?: string): number {
-  const sizes: Record<string, number> = { star: 1.4, planet: 1.0, comet: 0.9, galaxy: 1.8, asteroid: 0.8, debris: 1.2 };
-  return sizes[type || ''] || 1.2;
+  // Increased sizes for better visibility (were: 1.4, 1.0, 0.9, 1.8, 0.8, 1.2)
+  const sizes: Record<string, number> = { star: 2.5, planet: 2.0, comet: 1.8, galaxy: 3.0, asteroid: 1.5, debris: 2.0 };
+  return sizes[type || ''] || 2.0;
 }
 
 function getNodeColor(type?: string): number {

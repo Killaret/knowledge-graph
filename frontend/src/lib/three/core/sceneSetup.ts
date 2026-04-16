@@ -14,8 +14,8 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   // Сцена
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050510);
-  // Initial dense fog for "fog of war" effect during progressive loading
-  scene.fog = new THREE.FogExp2(0x050510, 0.08);
+  // Initial light fog for subtle depth effect (was 0.08 - too dense)
+  scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
   // Камера
   const aspect = container.clientWidth / container.clientHeight;
@@ -49,8 +49,8 @@ export function initScene(container: HTMLElement): SceneSetupResult {
   controls.enablePan = true;
   controls.maxPolarAngle = Math.PI / 1.8;
 
-  // Освещение
-  const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+  // Освещение - увеличена яркость для лучшей видимости
+  const ambientLight = new THREE.AmbientLight(0x606080, 1.2);
   scene.add(ambientLight);
 
   const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
