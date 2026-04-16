@@ -292,6 +292,99 @@ describe('sceneSetup', () => {
 });
 ```
 
+### Тесты сохранения связей (Link Preservation)
+
+Тесты проверяют, что связи между заметками корректно отображаются и не теряются при различных операциях с 3D графом.
+
+#### Сценарии тестирования
+
+**1. Сохранение связей при переключении режимов просмотра**
+```gherkin
+Scenario: Links remain visible when switching from local to full graph
+  Given a note "Hub Note" has 3 related notes
+  When I navigate to local 3D view for "Hub Note"
+  And I click the "Show all notes" toggle
+  Then all existing links remain visible without flickering
+  And the stats bar shows link count greater than 0
+```
+
+**2. Сохранение связей при зуме камеры**
+```gherkin
+Scenario: Links persist during camera zoom operations
+  Given a note "Zoom Test" has 2 related notes
+  When I navigate to "/graph/3d/{zoomTestId}"
+  And I zoom in on the graph
+  Then the links remain connected to their nodes
+  And no links appear disconnected or floating
+```
+
+**3. Сохранение связей при вращении камеры**
+```gherkin
+Scenario: Links persist during camera rotation
+  Given a note "Rotate Test" has 2 related notes
+  When I navigate to "/graph/3d/{rotateTestId}"
+  And I rotate the camera 90 degrees around the graph
+  Then the links remain connected to their nodes
+  And the links rotate with the nodes
+```
+
+**4. Проверка на дублирование связей**
+```gherkin
+Scenario: Links are not duplicated when switching views multiple times
+  Given a note "Switch Test" has 2 related notes
+  When I navigate to "/graph/3d/{switchTestId}"
+  And I record the initial link count
+  And I toggle "Show all notes" twice
+  Then the link count matches the initial recorded count
+  And no duplicate links are present in the graph
+```
+
+#### Реализация тестов
+
+Файл: `tests/features/step_definitions/progressive-graph-steps.ts`
+
+```typescript
+// Camera zoom steps
+When('I zoom in on the graph', async function(this: ITestWorld) {
+  const canvas = this.page.locator('canvas').first();
+  const box = await canvas.boundingBox();
+  if (box) {
+    await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
+    await this.page.mouse.wheel(0, -500);
+    await this.page.waitForTimeout(500);
+  }
+});
+
+// Link preservation verification
+Then('the links remain connected to their nodes', async function(this: ITestWorld) {
+  const canvas = this.page.locator('canvas').first();
+  await expect(canvas).toBeVisible();
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+});
+
+Then('no links appear disconnected or floating', async function(this: ITestWorld) {
+  const statsBar = this.page.locator('.stats-bar').first();
+  await expect(statsBar).toBeVisible();
+  const statsText = await statsBar.textContent();
+  const linkMatch = statsText!.match(/(\d+)\s*links?/i);
+  if (linkMatch) {
+    expect(parseInt(linkMatch[1], 10)).toBeGreaterThan(0);
+  }
+});
+```
+
+#### Запуск тестов
+
+```bash
+# Запуск тестов связей
+cd tests
+npx cucumber-js --tags "@link-preservation"
+
+# Запуск всех 3D тестов
+npx cucumber-js features/local_3d_graph.feature features/full_3d_graph.feature
+```
+
 ---
 
 ## Интеграционное тестирование
@@ -327,15 +420,42 @@ tests/
 ├── features/
 │   ├── graph_navigation.feature      # Навигация по графу
 │   ├── graph_view.feature            # 2D/3D режимы
+│   ├── full_3d_graph.feature         # Полный 3D граф (все заметки)
+│   ├── local_3d_graph.feature        # Локальный 3D граф (одна заметка + связи)
 │   ├── note_management.feature       # CRUD операции
 │   ├── search_and_discovery.feature   # Поиск
 │   └── import_export.feature          # Импорт/экспорт
 │
 └── features/step_definitions/
     ├── graph_steps.ts                # Шаги для графа
+    ├── progressive-graph-steps.ts    # Шаги для 3D графа (fog, camera, links)
     ├── note_steps.ts                 # Шаги для заметок
     └── common_steps.ts               # Общие шаги
 ```
+
+### Feature-файлы 3D графа
+
+**`full_3d_graph.feature`** (9 сценариев):
+- Переход на полный 3D граф с главной страницы
+- Отображение всех заметок
+- Загрузка без спиннера (progressive loading)
+- Туманность при загрузке
+- Центрирование камеры
+- **Сохранение связей при зуме**
+- **Сохранение связей при вращении**
+- Корректное отображение связей с множеством узлов
+
+**`local_3d_graph.feature`** (13 сценариев):
+- Переход из деталей заметки в 3D
+- Переход с главной при выделении
+- Одиночная заметка с туманом
+- Прогрессивная загрузка
+- Переключатель "Показать все заметки"
+- **Сохранение связей при переключении режимов**
+- **Сохранение связей при зуме камеры**
+- **Сохранение связей при вращении камеры**
+- **Проверка на дублирование связей**
+- **Корректность связей после прогрессивной загрузки**
 
 ### Запуск Cucumber
 

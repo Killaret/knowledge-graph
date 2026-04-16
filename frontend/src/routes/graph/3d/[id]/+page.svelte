@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { getGraphData, getFullGraphData } from '$lib/api/graph';
+  import { getNote } from '$lib/api/notes';
   import Graph3D from '$lib/components/Graph3D.svelte';
   import type { GraphData } from '$lib/api/graph';
 
@@ -17,14 +18,15 @@
     if (!browser) return;
 
     const id = $page.params.id;
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    showFullGraph;
+    // Explicitly track showFullGraph as a dependency
+    const showFull = showFullGraph;
 
     if (id && id !== currentNoteId) {
       currentNoteId = id;
     }
 
     if (currentNoteId) {
+      console.log('[3D Page] Effect triggered:', { id: currentNoteId, showFullGraph: showFull });
       loadGraphProgressive(currentNoteId);
     }
   });
@@ -60,6 +62,23 @@
         initialData = await getGraphData(noteId, 1);
         console.log('[3D Page] Phase 1 - Loaded initial graph (depth 1):', initialData.nodes.length, 'nodes');
         
+        // Check if start node is in the data - backend may not include it
+        const hasStartNode = initialData.nodes.some(n => n.id === noteId);
+        if (!hasStartNode) {
+          console.log('[3D Page] Start node not in response, fetching separately...');
+          try {
+            const startNote = await getNote(noteId);
+            initialData.nodes.unshift({
+              id: startNote.id,
+              title: startNote.title,
+              type: startNote.type ?? (startNote.metadata?.type as string) ?? 'star'
+            });
+            console.log('[3D Page] Added start node to graph:', startNote.id);
+          } catch (noteErr) {
+            console.error('[3D Page] Failed to fetch start note:', noteErr);
+          }
+        }
+        
         // Immediately display initial data
         graphData = initialData;
         // Graph is shown immediately without waiting
@@ -70,6 +89,13 @@
         
         getGraphData(noteId, 3).then(fullData => {
           console.log('[3D Page] Phase 2 - Loaded full graph:', fullData.nodes.length, 'nodes');
+          
+          // Ensure start node is in the full data too
+          const hasStartNodeFull = fullData.nodes.some(n => n.id === noteId);
+          if (!hasStartNodeFull) {
+            // Start node will be added when we merge, but let's verify
+            console.log('[3D Page] Start node not in full data, it will be merged from current data');
+          }
           
           // Call addData on the Graph3D component to add new nodes incrementally
           if (graphRef && fullData.nodes.length > initialData.nodes.length) {

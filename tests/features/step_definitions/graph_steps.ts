@@ -28,18 +28,43 @@ async function findNodeByLabel(page: Page, label: string) {
 
 // Background steps
 Given('the application is open on the graph view', async function(this: ITestWorld) {
-  await this.page.goto('/');
+  await this.page.goto('http://localhost:5173/');
   await waitForGraphCanvas(this.page);
 });
 
 Given('I am on the graph view', async function(this: ITestWorld) {
-  await this.page.goto('/');
+  await this.page.goto('http://localhost:5173/');
   await waitForGraphCanvas(this.page);
 });
 
 Given('I am on the main page', async function(this: ITestWorld) {
-  await this.page.goto('/');
+  await this.page.goto('http://localhost:5173/');
   await expect(this.page.locator('body')).toBeVisible();
+});
+
+Given('I am on the home page', async function(this: ITestWorld) {
+  await this.page.goto('http://localhost:5173/');
+  await this.page.waitForLoadState('networkidle');
+  await expect(this.page.locator('body')).toBeVisible();
+});
+
+Given('the application is open on the home page', async function(this: ITestWorld) {
+  await this.page.goto('http://localhost:5173/');
+  await this.page.waitForLoadState('networkidle');
+  await expect(this.page.locator('body')).toBeVisible();
+});
+
+Given('notes of various types exist in the system', async function(this: ITestWorld) {
+  const types = ['star', 'planet', 'comet', 'galaxy'];
+  for (let i = 0; i < types.length; i++) {
+    await this.request.post('http://localhost:8080/notes', {
+      data: { title: `Type Test ${types[i]}`, content: `Test content ${i}`, type: types[i] }
+    });
+  }
+});
+
+Given('notes of various types exist', async function(this: ITestWorld) {
+  await this.step('notes of various types exist in the system');
 });
 
 // State assertions
@@ -89,21 +114,6 @@ When('I fill in {string} with {string}', async function(this: ITestWorld, field:
     selector = `input[name="${fieldName}"], textarea[name="${fieldName}"]`;
   }
 
-  await this.page.fill(selector, value);
-});
-
-When('I change {string} to {string}', async function(this: ITestWorld, field: string, value: string) {
-  // Same as fill in - clear first then type
-  const fieldName = field.toLowerCase();
-  let selector: string;
-
-  if (fieldName.includes('title')) {
-    selector = 'input[name="title"], input[placeholder*="Title"], #title';
-  } else {
-    selector = `input[name="${fieldName}"], textarea[name="${fieldName}"]`;
-  }
-
-  await this.page.fill(selector, '');
   await this.page.fill(selector, value);
 });
 
@@ -166,11 +176,6 @@ When('I click on the node {string}', async function(this: ITestWorld, label: str
 
 Then('a side panel opens showing note details', async function(this: ITestWorld) {
   await expect(this.page.locator('.side-panel, .note-side-panel, [class*="panel"]')).toBeVisible();
-});
-
-When('I click {string} in the side panel', async function(this: ITestWorld, action: string) {
-  const sidePanel = this.page.locator('.side-panel, .note-side-panel').first();
-  await sidePanel.locator(`button:has-text("${action}"), a:has-text("${action}")`).click();
 });
 
 Then('the node label changes to {string}', async function(this: ITestWorld, newLabel: string) {

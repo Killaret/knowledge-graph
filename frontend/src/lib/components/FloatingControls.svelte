@@ -61,10 +61,7 @@
     <button
       class="toggle-btn"
       onclick={handleToggle3D}
-      title={noteId ? "3D Graph" : "Select a note first"}
-      disabled={!noteId}
-      style:opacity={noteId ? 1 : 0.4}
-      style:cursor={noteId ? 'pointer' : 'not-allowed'}
+      title={noteId ? "3D Graph for selected note" : "Full 3D Graph"}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -126,11 +123,9 @@
         <button class="menu-item" onclick={() => { onExport?.(); showMenu = false; }}>
           Export
         </button>
-        {#if noteId}
-          <button class="menu-item" onclick={() => { handleToggle3D(); showMenu = false; }}>
-            3D View
-          </button>
-        {/if}
+        <button class="menu-item" onclick={() => { handleToggle3D(); showMenu = false; }}>
+          {noteId ? '3D View for Note' : 'Full 3D View'}
+        </button>
       </div>
     {/if}
   </div>

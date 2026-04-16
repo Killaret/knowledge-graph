@@ -57,15 +57,21 @@ export function autoZoomToFit(
     if (dist > maxDist) maxDist = dist;
   });
 
-  const radius = maxDist * 1.2;
+  // Increase margin for larger graphs and ensure minimum distance
+  const marginMultiplier = nodes.length > 50 ? 1.8 : nodes.length > 20 ? 1.5 : 1.3;
+  const radius = maxDist * marginMultiplier;
   const fov = camera.fov * Math.PI / 180;
-  const dist = radius / Math.tan(fov / 2);
+  const calculatedDist = radius / Math.tan(fov / 2);
+
+  // Ensure minimum distance to prevent camera being too close
+  const minDistance = 30;
+  const dist = Math.max(calculatedDist, minDistance);
 
   console.log('[autoZoomToFit] center:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`, 'radius:', radius.toFixed(2), 'distance:', dist.toFixed(2), 'nodes:', nodes.length, 'animate:', animate);
 
-  const direction = new THREE.Vector3(1, 1, 1).normalize();
+  const direction = new THREE.Vector3(1, 0.8, 1).normalize();
   const newPos = center.clone().add(direction.multiplyScalar(dist));
-  
+
   if (animate) {
     lerpCamera(camera, controls, newPos, center, 1500);
   } else {
@@ -73,6 +79,6 @@ export function autoZoomToFit(
     controls.target.copy(center);
     controls.update();
   }
-  
+
   console.log('[autoZoomToFit] camera position set to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
 }

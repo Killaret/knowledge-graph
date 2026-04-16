@@ -4,6 +4,10 @@
 *.swp
 *.swo
 
+# Large project code exports
+FULL_PROJECT_CODE*.md
+PROJECT_CODE*.md
+
 # Go
 backend/server
 backend/worker

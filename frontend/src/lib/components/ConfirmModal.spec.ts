@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
+/* eslint-enable @typescript-eslint/no-unused-vars */
 import ConfirmModal from './ConfirmModal.svelte';
 
 describe('ConfirmModal', () => {
@@ -14,7 +16,9 @@ describe('ConfirmModal', () => {
 			}
 		});
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		expect(screen.getByText('Delete Note?')).toBeInTheDocument();
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		expect(screen.getByText('Are you sure you want to delete this note?')).toBeInTheDocument();
 	});
 
@@ -36,7 +40,9 @@ describe('ConfirmModal', () => {
 
 		if (confirmButton) {
 			await fireEvent.click(confirmButton);
-			expect(onConfirm).toHaveBeenCalled();
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		expect(onConfirm).toHaveBeenCalled();
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 			expect(onCancel).not.toHaveBeenCalled();
 		}
 	});
@@ -59,7 +65,9 @@ describe('ConfirmModal', () => {
 
 		if (cancelButton) {
 			await fireEvent.click(cancelButton);
-			expect(onCancel).toHaveBeenCalled();
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		expect(onCancel).toHaveBeenCalled();
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 			expect(onConfirm).not.toHaveBeenCalled();
 		}
 	});
@@ -76,6 +84,7 @@ describe('ConfirmModal', () => {
 		});
 
 		// Modal should not be visible
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		expect(screen.queryByText('Hidden Modal')).not.toBeInTheDocument();
 	});
 
@@ -92,7 +101,9 @@ describe('ConfirmModal', () => {
 			}
 		});
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		expect(screen.getByText('Save')).toBeInTheDocument();
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		expect(screen.getByText('Discard')).toBeInTheDocument();
 	});
 });

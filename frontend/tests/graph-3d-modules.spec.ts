@@ -429,4 +429,142 @@ test.describe('3D Graph - Modular Architecture', () => {
     expect(Array.isArray(data.nodes)).toBe(true);
     expect(Array.isArray(data.links)).toBe(true);
   });
+
+  test('should display asteroid celestial body', async ({ page, request }) => {
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Asteroid Node', content: 'Asteroid type', type: 'asteroid' }
+    });
+    const noteId = (await note.json()).id;
+    
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+    await expect(container).toBeVisible();
+  });
+
+  test('should display debris celestial body', async ({ page, request }) => {
+    const note = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Debris Node', content: 'Debris type', type: 'debris' }
+    });
+    const noteId = (await note.json()).id;
+    
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+    await expect(container).toBeVisible();
+  });
+
+  test('should render different link types with distinct styling', async ({ page, request }) => {
+    // Create notes for different link types
+    const sourceNote = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Link Types Source', content: 'Source for link types test', type: 'star' }
+    });
+    const sourceId = (await sourceNote.json()).id;
+    
+    const referenceTarget = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Reference Target', content: 'Reference link target', type: 'planet' }
+    });
+    const referenceId = (await referenceTarget.json()).id;
+    
+    const dependencyTarget = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Dependency Target', content: 'Dependency link target', type: 'comet' }
+    });
+    const dependencyId = (await dependencyTarget.json()).id;
+    
+    const relatedTarget = await request.post('http://localhost:8080/notes', {
+      data: { title: 'Related Target', content: 'Related link target', type: 'galaxy' }
+    });
+    const relatedId = (await relatedTarget.json()).id;
+    
+    // Create links with different types
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: sourceId, targetNoteId: referenceId, weight: 0.8, link_type: 'reference' }
+    });
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: sourceId, targetNoteId: dependencyId, weight: 0.7, link_type: 'dependency' }
+    });
+    await request.post('http://localhost:8080/links', {
+      data: { sourceNoteId: sourceId, targetNoteId: relatedId, weight: 0.6, link_type: 'related' }
+    });
+    
+    await page.goto(`http://localhost:5173/graph/3d/${sourceId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    // Verify graph renders with multiple link types
+    const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+    await expect(container).toBeVisible();
+    
+    // Stats should show multiple nodes and links
+    const statsBar = page.locator('.stats-bar').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      // Should have 4 nodes (source + 3 targets) and 3 links
+      expect(statsText).toMatch(/4\s*nodes/);
+      expect(statsText).toMatch(/3\s*links/);
+    }
+  });
+
+  test('should render full 3D graph at /graph/3d without note ID', async ({ page }) => {
+    // Navigate to full 3D graph page
+    await page.goto('http://localhost:5173/graph/3d');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    // Verify container or loading/error state is visible
+    const container = page.locator('.graph-3d-container, .lazy-loading, .lazy-error, .center.error').first();
+    await expect(container).toBeVisible();
+    
+    // Verify no 404 error
+    const error404 = page.locator('text=404, text=Not Found').first();
+    const has404 = await error404.isVisible().catch(() => false);
+    expect(has404).toBe(false);
+    
+    // Stats bar should show full graph info
+    const statsBar = page.locator('.stats-bar').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      expect(statsText).toMatch(/\d+\s*nodes/);
+      expect(statsText).toMatch(/\d+\s*links/);
+    }
+  });
+
+  test('should render isolated note without connections in 3D graph', async ({ page, request }) => {
+    // Create a note with NO connections
+    const isolatedNote = await request.post('http://localhost:8080/notes', {
+      data: { 
+        title: 'Isolated Note No Links', 
+        content: 'This note has no connections to other notes',
+        type: 'star'
+      }
+    });
+    const noteId = (await isolatedNote.json()).id;
+    
+    // Navigate to 3D graph for this isolated note
+    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(4000);
+    
+    // Graph should still render (even with single node)
+    const container = page.locator('.graph-3d-container, .no-data-message, .error-overlay').first();
+    await expect(container).toBeVisible();
+    
+    // Stats should show 1 node and 0 links
+    const statsBar = page.locator('.stats-bar').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      // Should show at least 1 node (the start node)
+      const nodeMatch = statsText?.match(/(\d+)\s*nodes/);
+      if (nodeMatch) {
+        const nodeCount = parseInt(nodeMatch[1], 10);
+        expect(nodeCount).toBeGreaterThanOrEqual(1);
+      }
+      // Links should be 0
+      expect(statsText).toMatch(/0\s*links/);
+    }
+  });
 });

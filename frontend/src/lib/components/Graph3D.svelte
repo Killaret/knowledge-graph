@@ -26,7 +26,7 @@
   let objectManager: ObjectManager;
   let animationFrame: number;
 
-  let isLoading = $state(false); // No loading spinner - we show graph immediately
+  let isLoading = $state(true); // Show loading while graph initializes
   let error = $state<string | null>(null);
   let isAutoRotating = $state(true);
   let isInitialized = $state(false);
@@ -37,20 +37,30 @@
   let isFullyLoaded = $state(false);
   let fogAnimationFrame: number | null = null;
   
-  // Создаем ключ для отслеживания изменений данных
+  // Создаем ключ для отслеживания изменений данных (включает timestamp для гарантированного обновления)
   let dataUpdateKey = $state(0);
-  
+  let lastDataTimestamp = $state(0);
+
   // Отслеживаем изменения в данных и обновляем ключ
   $effect(() => {
     const nodesLen = data.nodes.length;
     const linksLen = data.links.length;
-    // Инкрементируем ключ только если данные реально изменились
-    const newKey = nodesLen + linksLen * 1000;
+    // Проверяем, действительно ли данные изменились (сравниваем ссылку на массив)
+    const dataChanged = data.nodes !== lastProcessedData.nodes || data.links !== lastProcessedData.links;
+    if (dataChanged) {
+      lastDataTimestamp = Date.now();
+      lastProcessedData = { nodes: data.nodes, links: data.links };
+    }
+    // Ключ включает timestamp для гарантированного обновления при переключении режима
+    const newKey = nodesLen + linksLen * 1000 + lastDataTimestamp;
     if (newKey !== dataUpdateKey) {
       dataUpdateKey = newKey;
-      console.log('[Graph3D] Data changed:', { nodesLen, linksLen, key: newKey });
+      console.log('[Graph3D] Data changed:', { nodesLen, linksLen, key: newKey, timestamp: lastDataTimestamp });
     }
   });
+
+  // Храним ссылку на последние обработанные данные
+  let lastProcessedData = $state<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
 
   // Reactively update graph when data changes
   $effect(() => {
@@ -226,8 +236,12 @@
       console.log('[Graph3D] No links or single node, stopping simulation immediately');
       simulation.stop();
       isLoading = false;
+      // Animate fog dissipation for this edge case too
+      console.log('[Graph3D] Starting fog animation for single node/no links');
+      animateFog(0.08, 0.005, 1500);
+      isFullyLoaded = true;
       if (camera && controls) {
-        autoZoomToFit(simulation.nodes(), camera, controls);
+        autoZoomToFit(simulation.nodes(), camera, controls, true);
       }
       return;
     }
@@ -237,8 +251,11 @@
       if (isLoading) {
         console.log('[Graph3D] Loading timeout reached, forcing isLoading = false');
         isLoading = false;
+        // Also animate fog on timeout
+        animateFog(0.08, 0.005, 2000);
+        isFullyLoaded = true;
         if (simulation && camera && controls) {
-          autoZoomToFit(simulation.nodes(), camera, controls);
+          autoZoomToFit(simulation.nodes(), camera, controls, true);
         }
       }
     }, 5000);
@@ -250,11 +267,17 @@
       console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
       clearTimeout(loadingTimeout);
       isLoading = false;
+
+      // Animate fog dissipation for initial load (same as addData)
+      console.log('[Graph3D] Starting fog animation for initial load (0.08 -> 0.005)');
+      animateFog(0.08, 0.005, 2500);
+      isFullyLoaded = true;
+
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
         if (simulation && camera && controls) {
           console.log('[Graph3D] Calling autoZoomToFit...');
-          autoZoomToFit(simulation.nodes(), camera, controls);
+          autoZoomToFit(simulation.nodes(), camera, controls, true);
         }
       }, 300);
     });

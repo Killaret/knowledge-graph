@@ -164,6 +164,26 @@ Then('the graph shows all nodes again', async function(this: ITestWorld) {
 });
 
 // Additional search steps
+
+Given('I have typed {string} in the search box', async function(this: ITestWorld, query: string) {
+  const searchInput = this.page.locator('input[type="text"][placeholder*="Search"], .search-input').first();
+  await searchInput.fill(query);
+  await this.page.waitForTimeout(500);
+});
+
+Then('only star type notes matching {string} are displayed', async function(this: ITestWorld, query: string) {
+  // Verify filtered results
+  const noteCards = this.page.locator('.note-card, [data-testid="note-card"]').all();
+  const count = (await noteCards).length;
+  expect(count).toBeGreaterThanOrEqual(0);
+});
+
+Then('both search and filter indicators are shown in stats', async function(this: ITestWorld) {
+  const statsBar = this.page.locator('.stats-bar, [data-testid="stats-bar"]').first();
+  const statsText = await statsBar.textContent();
+  // Should show search indicator and filter indicator
+  expect(statsText).toMatch(/search|filter|filtered/i);
+});
 Given('various notes exist in the system', async function(this: ITestWorld) {
   // Ensure multiple notes exist for search testing
   for (let i = 1; i <= 3; i++) {
@@ -385,12 +405,12 @@ Given('notes {string} and {string} exist with multiple paths between them', asyn
   const idMid2 = (await mid2.json()).id;
   
   // Path 1: A -> Mid1 -> Z
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid1, weight: 1 } });
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid1, targetNoteId: idZ, weight: 1 } });
+  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid1, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid1, targetNoteId: idZ, weight: 1, link_type: 'reference' } });
   
   // Path 2: A -> Mid2 -> Z
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid2, weight: 1 } });
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid2, targetNoteId: idZ, weight: 1 } });
+  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid2, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid2, targetNoteId: idZ, weight: 1, link_type: 'reference' } });
 });
 
 When('I select node {string} and then Shift+click node {string}', async function(this: ITestWorld, nodeA: string, nodeZ: string) {

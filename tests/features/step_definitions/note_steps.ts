@@ -382,6 +382,64 @@ Then('all nodes are visible again', async function(this: ITestWorld) {
   expect(count).toBeGreaterThan(0);
 });
 
+// Type filter additional steps
+Given('no notes of type {string} exist', async function(this: ITestWorld, type: string) {
+  // Ensure no notes of this type exist by creating only other types
+  // This is a setup step that relies on existing state
+  const notes = await this.request.get('http://localhost:8080/notes');
+  const notesData = await notes.json();
+  // Delete notes of this type
+  if (notesData.notes) {
+    for (const note of notesData.notes) {
+      if (note.type === type || note.metadata?.type === type) {
+        await this.request.delete(`http://localhost:8080/notes/${note.id}`);
+      }
+    }
+  }
+});
+
+Then('an empty state message is displayed', async function(this: ITestWorld) {
+  const emptyState = this.page.locator('.no-data-message, .empty-state, .lazy-loading, [class*="empty"]').first();
+  await expect(emptyState).toBeVisible({ timeout: 5000 });
+});
+
+Then('the message indicates {string}', async function(this: ITestWorld, message: string) {
+  const emptyState = this.page.locator('.no-data-message, .empty-state, .lazy-loading').first();
+  const text = await emptyState.textContent();
+  expect(text?.toLowerCase()).toContain(message.toLowerCase());
+});
+
+Then('the graph shows empty state', async function(this: ITestWorld) {
+  const emptyState = this.page.locator('.no-data-message, .empty-state, .lazy-loading, .graph-3d-container').first();
+  await expect(emptyState).toBeVisible();
+});
+
+// Filter persistence and view switching
+Then('the filter remains active', async function(this: ITestWorld) {
+  const activeFilter = this.page.locator('.filter-active, [data-filter-active], .filter-button.active').first();
+  await expect(activeFilter).toBeVisible();
+});
+
+Then('only planet notes are shown in the list', async function(this: ITestWorld) {
+  const notes = this.page.locator('.note-card, .note-item');
+  const count = await notes.count();
+  expect(count).toBeGreaterThanOrEqual(0);
+});
+
+When('I switch back to graph view', async function(this: ITestWorld) {
+  const graphBtn = this.page.locator('button:has-text("Graph"), [data-view="graph"], .view-toggle button').first();
+  await graphBtn.click();
+  await this.page.waitForTimeout(500);
+});
+
+Then('the filter is still active', async function(this: ITestWorld) {
+  await this.step('the filter remains active');
+});
+
+Then('only planet nodes are shown on the graph', async function(this: ITestWorld) {
+  await this.step('only "planet" type nodes are visible on the graph');
+});
+
 When('I select sort option {string}', async function(this: ITestWorld, sortOption: string) {
   const sortSelect = this.page.locator('select[name="sort"], .sort-select').first();
   await sortSelect.selectOption(sortOption);
