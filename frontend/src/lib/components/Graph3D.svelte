@@ -225,9 +225,9 @@
     console.log('[Graph3D] Calling createSimulation...');
     // Track current data for progressive loading
     currentData = filteredData;
-    // Reset fog for subtle depth effect (was 0.08 - too dense)
+    // Set dense fog for "veil of creation" effect - will clear when nodes appear
     if (scene) {
-      setFogDensity(scene, 0.02);
+      setFogDensity(scene, 0.06); // Dense but visible veil
     }
     isLoading = true;
     simulation = createSimulation(filteredData, objectManager);
@@ -302,10 +302,28 @@
       }, 300);
     });
     
+    // Track if first node is visible to clear fog
+    let firstNodeVisible = false;
+    
     simulation.on('tick', () => {
       // Обновляем позиции объектов при каждом тике симуляции
       if (objectManager && simulation) {
         objectManager.updatePositions(simulation.nodes());
+      }
+      
+      // Check if first node is visible and clear fog
+      if (!firstNodeVisible && scene && camera) {
+        const nodes = simulation.nodes();
+        if (nodes.length > 0 && nodes[0].x !== undefined) {
+          // First node has position - clear the fog veil
+          firstNodeVisible = true;
+          console.log('[Graph3D] First node visible, clearing fog veil');
+          animateFog(0.06, 0.005, 1500); // Clear from dense veil to light fog
+          // Also hide loading overlay when first node appears
+          if (isLoading) {
+            isLoading = false;
+          }
+        }
       }
     });
   }
@@ -442,7 +460,8 @@
   {#if isLoading}
     <div class="loading-overlay">
       <div class="spinner"></div>
-      <p>Loading 3D constellation...</p>
+      <p class="loading-text">The universe isn't still created, but soon</p>
+      <p class="loading-subtext">First celestial body appearing...</p>
     </div>
   {/if}
 
@@ -486,9 +505,26 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(5,5,16,0.95);
+    background: rgba(5,5,16,0.85);
     color: white;
     z-index: 10;
+    backdrop-filter: blur(5px);
+  }
+
+  .loading-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    text-align: center;
+    color: #88aaff;
+    text-shadow: 0 0 20px rgba(136, 170, 255, 0.5);
+  }
+
+  .loading-subtext {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    color: #64748b;
+    font-style: italic;
   }
 
   .error-content, .empty-content {

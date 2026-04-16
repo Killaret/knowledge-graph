@@ -160,11 +160,19 @@
 
   function resize() {
     const rect = canvas.parentElement?.getBoundingClientRect();
-    if (rect) {
+    if (rect && rect.width > 0 && rect.height > 0) {
       width = rect.width;
       height = rect.height;
       canvas.width = width;
       canvas.height = height;
+      console.log('[GraphCanvas] Resized to:', width, 'x', height);
+    } else {
+      // Fallback: use window size if parent not available
+      width = window.innerWidth;
+      height = window.innerHeight - 80; // Account for controls
+      canvas.width = width;
+      canvas.height = height;
+      console.log('[GraphCanvas] Fallback resize to:', width, 'x', height);
     }
   }
 
