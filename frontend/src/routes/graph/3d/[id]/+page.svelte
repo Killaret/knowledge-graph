@@ -148,7 +148,7 @@
     <div class="center error">{error}</div>
   {:else if graphData}
     <div class="graph-wrapper">
-      <Graph3D bind:this={graphRef} data={graphData} />
+      <Graph3D bind:this={graphRef} data={graphData} centerNodeId={currentNoteId} />
     </div>
   {/if}
 </div>

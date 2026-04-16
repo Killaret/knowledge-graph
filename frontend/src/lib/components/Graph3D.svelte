@@ -4,15 +4,17 @@
   import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
   import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
-  import { autoZoomToFit } from '$lib/three/camera/cameraUtils';
+  import { autoZoomToFit, centerCameraOnNode } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
   import * as THREE from 'three';
 
   const { 
     data, 
+    centerNodeId,
     onNodeClick
   }: { 
     data: GraphData; 
+    centerNodeId?: string | null;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
@@ -243,7 +245,12 @@
       animateFog(0.02, 0.005, 1500);
       isFullyLoaded = true;
       if (camera && controls) {
-        autoZoomToFit(simulation.nodes(), camera, controls, true);
+        // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
+        if (centerNodeId) {
+          centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
+        } else {
+          autoZoomToFit(simulation.nodes(), camera, controls, true);
+        }
       }
       return;
     }
@@ -257,7 +264,12 @@
         animateFog(0.02, 0.005, 2000);
         isFullyLoaded = true;
         if (simulation && camera && controls) {
-          autoZoomToFit(simulation.nodes(), camera, controls, true);
+          // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
+          if (centerNodeId) {
+            centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
+          } else {
+            autoZoomToFit(simulation.nodes(), camera, controls, true);
+          }
         }
       }
     }, 5000);
@@ -278,8 +290,14 @@
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
         if (simulation && camera && controls) {
-          console.log('[Graph3D] Calling autoZoomToFit...');
-          autoZoomToFit(simulation.nodes(), camera, controls, true);
+          // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
+          if (centerNodeId) {
+            console.log('[Graph3D] Calling centerCameraOnNode for local graph...');
+            centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
+          } else {
+            console.log('[Graph3D] Calling autoZoomToFit for full graph...');
+            autoZoomToFit(simulation.nodes(), camera, controls, true);
+          }
         }
       }, 300);
     });
@@ -373,11 +391,17 @@
     // Mark as fully loaded
     isFullyLoaded = true;
     
-    // Call autoZoomToFit with animation after a delay to let simulation settle
+    // Call camera positioning with animation after a delay to let simulation settle
     setTimeout(() => {
       if (simulation && camera && controls) {
-        console.log('[Graph3D] Auto zooming to fit full graph with animation');
-        autoZoomToFit(simulation.nodes(), camera, controls, true);
+        // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
+        if (centerNodeId) {
+          console.log('[Graph3D] Centering on central node after addData');
+          centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
+        } else {
+          console.log('[Graph3D] Auto zooming to fit full graph with animation');
+          autoZoomToFit(simulation.nodes(), camera, controls, true);
+        }
       }
     }, 500);
   }
@@ -396,7 +420,12 @@
   // Public method to reset camera
   export function resetCamera() {
     if (simulation && camera && controls) {
-      autoZoomToFit(simulation.nodes(), camera, controls, isFullyLoaded);
+      // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
+      if (centerNodeId) {
+        centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, isFullyLoaded);
+      } else {
+        autoZoomToFit(simulation.nodes(), camera, controls, isFullyLoaded);
+      }
     }
   }
 

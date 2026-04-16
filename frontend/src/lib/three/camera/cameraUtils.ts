@@ -2,6 +2,58 @@ import * as THREE from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 /**
+ * Center camera on a specific node (for local graph view)
+ * @param nodeId - ID of the central node to focus on
+ * @param nodes - All nodes in the graph
+ * @param camera - The camera to position
+ * @param controls - The orbit controls
+ * @param animate - Whether to animate the transition
+ */
+export function centerCameraOnNode(
+  nodeId: string,
+  nodes: { id: string; x: number; y: number; z: number }[],
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  animate: boolean = false
+) {
+  const centerNode = nodes.find(n => n.id === nodeId);
+  if (!centerNode) {
+    console.warn('[centerCameraOnNode] Central node not found:', nodeId);
+    // Fall back to auto zoom to fit all nodes
+    return autoZoomToFit(nodes, camera, controls, animate);
+  }
+
+  const center = new THREE.Vector3(centerNode.x, centerNode.y, centerNode.z);
+  
+  // Calculate distance based on number of connected nodes
+  // More nodes = need to see more of the graph = farther away
+  const connectedCount = nodes.length;
+  const baseDistance = connectedCount > 10 ? 50 : connectedCount > 5 ? 40 : 30;
+  
+  // Direction: slightly elevated angle for better view
+  const direction = new THREE.Vector3(0.5, 0.6, 1).normalize();
+  const dist = Math.max(baseDistance, 25); // Minimum 25 units
+  
+  const newPos = center.clone().add(direction.multiplyScalar(dist));
+  
+  console.log('[centerCameraOnNode] Centering on node:', nodeId, 
+    'at:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`,
+    'distance:', dist.toFixed(2),
+    'animate:', animate
+  );
+
+  if (animate) {
+    lerpCamera(camera, controls, newPos, center, 1500);
+  } else {
+    camera.position.copy(newPos);
+    controls.target.copy(center);
+    controls.update();
+  }
+  
+  console.log('[centerCameraOnNode] Camera positioned to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
+}
+
+/**
  * Animate camera position and target smoothly using lerp
  * @param camera - The camera to animate
  * @param controls - The orbit controls
