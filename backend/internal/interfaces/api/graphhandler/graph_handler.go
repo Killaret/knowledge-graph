@@ -19,9 +19,10 @@ type GraphNode struct {
 }
 
 type GraphLink struct {
-	Source string  `json:"source"`
-	Target string  `json:"target"`
-	Weight float64 `json:"weight"`
+	Source   string  `json:"source"`
+	Target   string  `json:"target"`
+	Weight   float64 `json:"weight"`
+	LinkType string  `json:"link_type"` // "reference", "dependency", "related", "custom"
 }
 
 type GraphData struct {
@@ -102,9 +103,10 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			linkKey := l.SourceNoteID().String() + "->" + targetID.String()
 			if _, exists := linkMap[linkKey]; !exists {
 				linkMap[linkKey] = GraphLink{
-					Source: l.SourceNoteID().String(),
-					Target: targetID.String(),
-					Weight: l.Weight().Value(),
+					Source:   l.SourceNoteID().String(),
+					Target:   targetID.String(),
+					Weight:   l.Weight().Value(),
+					LinkType: l.LinkType().String(),
 				}
 			}
 			if !nodeMap[targetID] {
@@ -124,9 +126,10 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			linkKey := sourceID.String() + "->" + l.TargetNoteID().String()
 			if _, exists := linkMap[linkKey]; !exists {
 				linkMap[linkKey] = GraphLink{
-					Source: sourceID.String(),
-					Target: l.TargetNoteID().String(),
-					Weight: l.Weight().Value(),
+					Source:   sourceID.String(),
+					Target:   l.TargetNoteID().String(),
+					Weight:   l.Weight().Value(),
+					LinkType: l.LinkType().String(),
 				}
 			}
 			if !nodeMap[sourceID] {
@@ -224,9 +227,10 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	graphLinks := make([]GraphLink, 0, len(links))
 	for _, l := range links {
 		graphLinks = append(graphLinks, GraphLink{
-			Source: l.SourceNoteID().String(),
-			Target: l.TargetNoteID().String(),
-			Weight: l.Weight().Value(),
+			Source:   l.SourceNoteID().String(),
+			Target:   l.TargetNoteID().String(),
+			Weight:   l.Weight().Value(),
+			LinkType: l.LinkType().String(),
 		})
 	}
 
