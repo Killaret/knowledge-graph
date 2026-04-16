@@ -78,6 +78,17 @@
       ctx = canvas.getContext('2d')!;
       resize();
       window.addEventListener('resize', resize);
+      
+      // Delayed resize to ensure container has settled dimensions
+      setTimeout(() => {
+        console.log('[GraphCanvas] Delayed resize check');
+        resize();
+        if (nodes.length > 0 && !simulation) {
+          console.log('[GraphCanvas] Starting delayed simulation');
+          startSimulation();
+        }
+      }, 100);
+      
       startSimulation();
       startAnimation();
       
