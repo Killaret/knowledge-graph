@@ -459,7 +459,6 @@
 <div bind:this={container} class="graph-3d-container">
   {#if isLoading}
     <div class="loading-overlay">
-      <div class="spinner"></div>
       <p class="loading-text">The universe isn't still created, but soon</p>
       <p class="loading-subtext">First celestial body appearing...</p>
     </div>
@@ -512,19 +511,39 @@
   }
 
   .loading-text {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 500;
-    margin-top: 1rem;
     text-align: center;
-    color: #88aaff;
-    text-shadow: 0 0 20px rgba(136, 170, 255, 0.5);
+    color: rgba(136, 170, 255, 0.9);
+    text-shadow: 0 0 30px rgba(136, 170, 255, 0.6);
+    background: rgba(5, 5, 16, 0.7);
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(136, 170, 255, 0.2);
+    animation: pulse-dim 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dim {
+    0%, 100% { 
+      opacity: 0.6;
+      text-shadow: 0 0 20px rgba(136, 170, 255, 0.4);
+    }
+    50% { 
+      opacity: 1;
+      text-shadow: 0 0 40px rgba(136, 170, 255, 0.8);
+    }
   }
 
   .loading-subtext {
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-    color: #64748b;
+    font-size: 1rem;
+    margin-top: 1rem;
+    color: rgba(100, 116, 139, 0.8);
     font-style: italic;
+    background: rgba(5, 5, 16, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
   }
 
   .error-content, .empty-content {
@@ -536,19 +555,5 @@
     font-size: 48px;
     margin-bottom: 1rem;
     display: block;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-top-color: #88aaff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
 </style>
