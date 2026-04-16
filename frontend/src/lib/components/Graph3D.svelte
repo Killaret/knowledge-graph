@@ -225,9 +225,9 @@
     console.log('[Graph3D] Calling createSimulation...');
     // Track current data for progressive loading
     currentData = filteredData;
-    // Set dense fog for "veil of creation" effect - will clear when nodes appear
+    // Set dense fog for "veil of creation" effect - will clear progressively as nodes load
     if (scene) {
-      setFogDensity(scene, 0.06); // Dense but visible veil
+      setFogDensity(scene, 0.08); // Dense veil that clears progressively
     }
     isLoading = true;
     simulation = createSimulation(filteredData, objectManager);
@@ -237,15 +237,13 @@
     // If no links or single node, simulation won't emit 'end' (already at equilibrium)
     // Stop immediately and show the graph
     if (filteredData.links.length === 0 || filteredData.nodes.length <= 1) {
-      console.log('[Graph3D] No links or single node, stopping simulation immediately');
+      console.log('[Graph3D] No links or single node, clearing fog immediately');
       simulation.stop();
       isLoading = false;
-      // Animate fog dissipation for this edge case too
-      console.log('[Graph3D] Starting fog animation for single node/no links');
-      animateFog(0.02, 0.005, 1500);
+      // Clear fog immediately for edge case (no progressive loading needed)
+      if (scene) setFogDensity(scene, 0.005);
       isFullyLoaded = true;
       if (camera && controls) {
-        // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
         if (centerNodeId) {
           centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
         } else {
@@ -260,11 +258,10 @@
       if (isLoading) {
         console.log('[Graph3D] Loading timeout reached, forcing isLoading = false');
         isLoading = false;
-        // Also animate fog on timeout
-        animateFog(0.02, 0.005, 2000);
+        // Fog is managed progressively in tick handler, but ensure it's cleared on timeout
+        if (scene) setFogDensity(scene, 0.005);
         isFullyLoaded = true;
         if (simulation && camera && controls) {
-          // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
           if (centerNodeId) {
             centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
           } else {
@@ -281,16 +278,15 @@
       console.log('[Graph3D] Simulation ended, nodes:', simulation?.nodes()?.length || 0);
       clearTimeout(loadingTimeout);
       isLoading = false;
-
-      // Animate fog dissipation for initial load (same as addData)
-      console.log('[Graph3D] Starting fog animation for initial load (0.02 -> 0.005)');
-      animateFog(0.02, 0.005, 2500);
       isFullyLoaded = true;
+
+      // Ensure fog is fully cleared when simulation ends
+      if (scene) setFogDensity(scene, 0.005);
+      console.log('[Graph3D] Simulation complete, fog cleared');
 
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
         if (simulation && camera && controls) {
-          // Use centerCameraOnNode for local graph, autoZoomToFit for full graph
           if (centerNodeId) {
             console.log('[Graph3D] Calling centerCameraOnNode for local graph...');
             centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
@@ -302,8 +298,9 @@
       }, 300);
     });
     
-    // Track if first node is visible to clear fog
-    let firstNodeVisible = false;
+    // Progressive fog clearing based on node loading
+    let lastFogUpdate = 0;
+    const totalNodes = filteredData.nodes.length;
     
     simulation.on('tick', () => {
       // Обновляем позиции объектов при каждом тике симуляции
@@ -311,18 +308,28 @@
         objectManager.updatePositions(simulation.nodes());
       }
       
-      // Check if first node is visible and clear fog
-      if (!firstNodeVisible && scene && camera) {
+      // Progressive fog clearing - update every 10 ticks for performance
+      if (scene && ++lastFogUpdate % 10 === 0) {
         const nodes = simulation.nodes();
-        if (nodes.length > 0 && nodes[0].x !== undefined) {
-          // First node has position - clear the fog veil
-          firstNodeVisible = true;
-          console.log('[Graph3D] First node visible, clearing fog veil');
-          animateFog(0.06, 0.005, 1500); // Clear from dense veil to light fog
-          // Also hide loading overlay when first node appears
-          if (isLoading) {
-            isLoading = false;
-          }
+        const nodesWithPosition = nodes.filter((n: any) => n.x !== undefined && !isNaN(n.x)).length;
+        const progress = Math.min(nodesWithPosition / totalNodes, 1);
+        
+        // Calculate fog density: 0.08 (dense) -> 0.005 (clear)
+        const startDensity = 0.08;
+        const endDensity = 0.005;
+        const currentDensity = startDensity - (startDensity - endDensity) * progress;
+        
+        setFogDensity(scene, currentDensity);
+        
+        // Hide loading overlay when first nodes appear (30% loaded)
+        if (isLoading && progress > 0.3) {
+          isLoading = false;
+          console.log('[Graph3D] Loading overlay hidden, progress:', (progress * 100).toFixed(0) + '%');
+        }
+        
+        // Log progress occasionally
+        if (lastFogUpdate % 50 === 0) {
+          console.log('[Graph3D] Fog progress:', (progress * 100).toFixed(0) + '%', 'density:', currentDensity.toFixed(4));
         }
       }
     });
@@ -402,9 +409,8 @@
     
     currentData = { nodes: mergedNodes, links: mergedLinks };
     
-    // Animate fog dissipation (dense to clear)
-    console.log('[Graph3D] Starting fog animation (0.08 -> 0.005)');
-    animateFog(0.08, 0.005, 2500);
+    // Fog is managed progressively in tick handler, ensure it's cleared
+    if (scene) setFogDensity(scene, 0.005);
     
     // Mark as fully loaded
     isFullyLoaded = true;
