@@ -5,16 +5,22 @@
     onCreate,
     onSearch,
     onToggleView,
+    onFilter,
     onImport,
     onExport,
-    noteId = ''
+    noteId = '',
+    typeFilters = [],
+    selectedType = 'all'
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
     onToggleView?: () => void;
+    onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
     noteId?: string;
+    typeFilters?: Array<{ id: string; label: string; emoji: string }>;
+    selectedType?: string;
   } = $props();
   
   let searchQuery = $state('');
@@ -34,6 +40,10 @@
   function toggleView() {
     currentView = currentView === 'graph' ? 'list' : 'graph';
     onToggleView?.();
+  }
+
+  function handleFilter(typeId: string) {
+    onFilter?.(typeId);
   }
 </script>
 
@@ -83,6 +93,22 @@
       <span class="btn-label">List</span>
     </button>
   </div>
+
+  <!-- Type Filters -->
+  {#if typeFilters.length > 0}
+    <div class="type-filters">
+      {#each typeFilters as filter}
+        <button
+          class="filter-chip {selectedType === filter.id ? 'active' : ''}"
+          onclick={() => handleFilter(filter.id)}
+          title={filter.label}
+        >
+          <span class="filter-emoji">{filter.emoji}</span>
+          <span class="filter-label">{filter.label}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 
   <!-- Search -->
   <div class="search-container">
@@ -293,5 +319,45 @@
   .create-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+  }
+
+  /* Type Filters */
+  .type-filters {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .filter-chip:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .filter-chip.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  .filter-emoji {
+    font-size: 14px;
+  }
+
+  .filter-label {
+    font-weight: 500;
   }
 </style>

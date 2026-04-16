@@ -266,16 +266,19 @@
 </script>
 
 <div class="page-container">
-  <!-- Floating Controls -->
+  <!-- Floating Controls with Filters -->
   <FloatingControls
     onCreate={() => { showCreateModal = true; }}
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
     onToggleView={handleToggleView}
+    onFilter={(type: string) => { selectedType = type; applyFiltersAndSort(); }}
     noteId={selectedNodeId ?? undefined}
+    typeFilters={typeFilters}
+    selectedType={selectedType}
   />
 
-  <!-- Main Content -->
-  <div class="content-area">
+  <!-- Fullscreen Graph Container -->
+  <div class="fullscreen-graph">
     {#if loading}
       <div class="center">
         <div class="spinner"></div>
@@ -283,85 +286,41 @@
       </div>
     {:else if error}
       <p class="error">{error}</p>
-    {:else}
-      <!-- Filters and Sort -->
-      <div class="controls-bar">
-        <div class="filter-group">
-          <span class="filter-label">Filter:</span>
-          <div class="filter-buttons">
-            {#each typeFilters as filter}
-              <button
-                class="filter-button"
-                class:active={selectedType === filter.id}
-                onclick={() => { selectedType = filter.id; applyFiltersAndSort(); }}
-              >
-                <span class="emoji">{filter.emoji}</span>
-                <span>{filter.label}</span>
-              </button>
-            {/each}
-          </div>
+    {:else if currentView === 'graph'}
+      <!-- Fullscreen 2D Graph View -->
+      {#if graphLoading}
+        <div class="center">
+          <div class="spinner"></div>
+          <p>Loading graph...</p>
         </div>
-
-        <div class="sort-group">
-          <label for="sort-select" class="sort-label">Sort:</label>
-          <select
-            id="sort-select"
-            class="sort-select"
-            bind:value={sortOption}
-            onchange={applyFiltersAndSort}
-          >
-            {#each sortOptions as option}
-              <option value={option.id}>{option.label}</option>
-            {/each}
-          </select>
-        </div>
-
-      </div>
-
-      <!-- Stats -->
-      <div class="stats-bar">
-        <span class="stats-total">{filteredNotes.length} {getPluralForm(filteredNotes.length, 'note', 'notes', 'notes')}</span>
-        {#if filteredNotes.length !== allNotes.length}
-          <span class="stats-of">of {allNotes.length} total</span>
-        {/if}
-        {#if selectedType !== 'all'}
-          <span class="stats-filter">(filtered by: {typeFilters.find(f => f.id === selectedType)?.label})</span>
-        {/if}
-        {#if searchQuery}
-          <span class="stats-filter">(search: "{searchQuery}")</span>
-        {/if}
-      </div>
-
-
-      <!-- Graph View (Primary) -->
-      {#if currentView === 'graph' && !loading}
-        <div class="graph-container" style="height: 600px; margin-bottom: 40px;">
-          {#if graphLoading}
-            <div class="center">
-              <div class="spinner"></div>
-              <p>Loading graph...</p>
-            </div>
-          {:else if filteredGraphData().nodes.length > 0}
-            <GraphCanvas 
-              nodes={filteredGraphData().nodes}
-              links={filteredGraphData().links}
-              onNodeClick={(node) => selectedNodeId = node.id}
-            />
-          {:else}
-            <div class="empty-state">
-              <div class="empty-icon">🌌</div>
-              <h2>No graph data</h2>
-              <p>{selectedType === 'all' 
-                ? "Create some notes to see the knowledge graph" 
-                : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
-              </p>
-            </div>
+      {:else if filteredGraphData().nodes.length > 0}
+        <GraphCanvas 
+          nodes={filteredGraphData().nodes}
+          links={filteredGraphData().links}
+          onNodeClick={(node) => selectedNodeId = node.id}
+        />
+        <!-- Stats Overlay -->
+        <div class="graph-stats-overlay">
+          <span class="stat-item"><strong>{filteredGraphData().nodes.length}</strong> nodes</span>
+          <span class="stat-item"><strong>{filteredGraphData().links.length}</strong> links</span>
+          {#if selectedType !== 'all'}
+            <span class="stat-filter">{typeFilters.find(f => f.id === selectedType)?.label}</span>
           {/if}
+        </div>
+      {:else}
+        <div class="empty-state">
+          <div class="empty-icon">🌌</div>
+          <h2>No graph data</h2>
+          <p>{selectedType === 'all' 
+            ? "Create some notes to see the knowledge graph" 
+            : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
+          </p>
         </div>
       {/if}
 
-      <!-- Notes Grid (List View Only) -->
-      {#if currentView === 'list'}
+    {:else if currentView === 'list'}
+      <!-- List View -->
+      <div class="list-container">
         {#if filteredNotes.length === 0}
           <div class="empty-state">
             <div class="empty-icon">🌌</div>
@@ -390,7 +349,7 @@
             </VirtualList>
           </div>
         {/if}
-      {/if}
+      </div>
     {/if}
   </div>
 </div>
@@ -425,15 +384,61 @@
 
 <style>
   .page-container {
-    min-height: 100vh;
-    padding-top: 100px;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
   }
 
-  .content-area {
+  /* Fullscreen Graph Container */
+  .fullscreen-graph {
+    position: fixed;
+    top: 80px; /* Space for floating controls */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: calc(100vh - 80px);
+  }
+
+  .fullscreen-graph :global(canvas) {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Stats Overlay on Graph */
+  .graph-stats-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 16px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 14px;
+    z-index: 10;
+  }
+
+  .stat-item strong {
+    color: #88aaff;
+    font-weight: 600;
+  }
+
+  .stat-filter {
+    color: #64748b;
+    font-style: italic;
+  }
+
+  /* List Container */
+  .list-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 24px 40px;
+    padding: 24px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
   }
 
   .center {
@@ -465,110 +470,11 @@
     color: #dc2626;
     border-radius: 8px;
     text-align: center;
-    margin: 20px 0;
+    margin: 20px auto;
+    max-width: 600px;
   }
 
-  .controls-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-
-  .filter-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .filter-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-  }
-
-  .filter-buttons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .emoji {
-    font-size: 1.2em;
-  }
-
-  .filter-button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .filter-button:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-  }
-
-  .filter-button.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    color: white;
-    border-color: transparent;
-  }
-
-  .emoji {
-    font-size: 16px;
-  }
-
-  .sort-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sort-label {
-    font-size: 14px;
-    color: #64748b;
-  }
-
-  .sort-select {
-    padding: 8px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 14px;
-    background: white;
-    cursor: pointer;
-  }
-
-  .stats-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    font-size: 14px;
-  }
-
-  .stats-total {
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .stats-filter {
-    color: #64748b;
-  }
-
-  .stats-of {
-    color: #94a3b8;
-    font-size: 13px;
-  }
-
+  /* Empty State */
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -576,6 +482,8 @@
     justify-content: center;
     padding: 80px 20px;
     text-align: center;
+    background: linear-gradient(135deg, #0a1a3a 0%, #020617 100%);
+    height: 100%;
   }
 
   .empty-icon {
@@ -586,12 +494,12 @@
   .empty-state h2 {
     font-size: 24px;
     font-weight: 600;
-    color: #1e293b;
+    color: #f8fafc;
     margin: 0 0 8px;
   }
 
   .empty-state p {
-    color: #64748b;
+    color: #94a3b8;
     margin: 0 0 24px;
   }
 
@@ -613,7 +521,7 @@
   }
 
   .virtual-list-container {
-    height: calc(100vh - 200px);
+    height: 100%;
     overflow-y: auto;
   }
 
@@ -624,21 +532,20 @@
   }
 
   @media (max-width: 768px) {
-    .content-area {
-      padding: 0 16px 32px;
+    .fullscreen-graph {
+      top: 70px;
+      height: calc(100vh - 70px);
     }
 
-    .controls-bar {
-      flex-direction: column;
-      align-items: stretch;
+    .list-container {
+      padding: 16px;
     }
 
-    .filter-buttons {
-      justify-content: center;
-    }
-
-    .virtual-list-container {
-      height: calc(100vh - 240px);
+    .graph-stats-overlay {
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      flex-wrap: wrap;
     }
   }
 </style>
