@@ -75,6 +75,14 @@ export async function createLink(
   weight = 0.5,
   linkType = 'related'
 ): Promise<{ id: string; [key: string]: unknown }> {
+  // Debug logging
+  console.log('[createLink] Creating link:', { sourceId, targetId, weight, linkType });
+  
+  // Validate inputs
+  if (!sourceId || !targetId) {
+    throw new Error(`Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`);
+  }
+  
   // Go backend expects PascalCase field names
   const payload = {
     SourceNoteID: sourceId,
@@ -83,6 +91,8 @@ export async function createLink(
     LinkType: linkType,
     Metadata: {},
   };
+  
+  console.log('[createLink] Payload:', JSON.stringify(payload));
 
   const response = await request.post(`${getBackendUrl()}/links`, {
     data: payload,
