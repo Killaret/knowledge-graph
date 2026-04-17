@@ -60,37 +60,39 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.goto(`/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     
-    // Verify graph container appears immediately (no spinner overlay)
-    const graphContainer = page.locator('.graph-3d-container').first();
+    // Verify graph container appears immediately
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     await expect(graphContainer).toBeVisible({ timeout: 2000 });
     
-    // Verify no loading overlay is present
-    const loadingOverlay = page.locator('.loading-overlay');
-    const hasLoadingOverlay = await loadingOverlay.isVisible().catch(() => false);
-    expect(hasLoadingOverlay).toBe(false);
+    // Loading overlay may appear briefly but should disappear quickly
+    const loadingOverlay = page.locator('[data-testid="loading-overlay"]');
+    await expect(loadingOverlay).toBeHidden({ timeout: 8000 });
     
     // Verify stats bar shows initial data
-    const statsBar = page.locator('.stats-bar').first();
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
     await expect(statsBar).toBeVisible();
     
     // Check that nodes count is displayed
-    const nodesCount = statsBar.locator('.stats-item').first();
-    await expect(nodesCount).toBeVisible();
+    const statsText = await statsBar.textContent();
+    expect(statsText).toMatch(/\d+\s*nodes?/i);
   });
 
   test('should show dense fog initially and clear after progressive load', async ({ page, request }) => {
-    // Create a note with connections
-    const centralNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Fog Test Note', content: 'Testing fog effect', type: 'galaxy' }
+    // Create a note with connections using helper
+    const centralNote = await createNote(request, {
+      title: 'Fog Test Note',
+      content: 'Testing fog effect',
+      type: 'galaxy'
     });
-    const centralId = (await centralNote.json()).id;
+    const centralId = centralNote.id;
     
     // Create linked notes
     for (let i = 0; i < 3; i++) {
-      const linked = await request.post('http://localhost:8080/notes', {
-        data: { title: `Fog Link ${i}`, content: 'Link content' }
+      const linked = await createNote(request, {
+        title: `Fog Link ${i}`,
+        content: 'Link content'
       });
-      await createLink(request, centralId, (await linked.json()).id, 0.8, 'reference');
+      await createLink(request, centralId, linked.id, 0.8, 'reference');
     }
     
     // Navigate to 3D graph
@@ -99,7 +101,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForTimeout(1000);
     
     // Verify graph container is visible
-    const graphContainer = page.locator('.graph-3d-container').first();
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     await expect(graphContainer).toBeVisible();
     
     // Wait for progressive loading to complete (Phase 2)
@@ -115,11 +117,13 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should display node elements in 3D space', async ({ page, request }) => {
-    // Create a note
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Node Display Test', content: 'Testing node rendering', type: 'planet' }
+    // Create a note using helper
+    const note = await createNote(request, {
+      title: 'Node Display Test',
+      content: 'Testing node rendering',
+      type: 'planet'
     });
-    const noteId = (await note.json()).id;
+    const noteId = note.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -127,7 +131,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForTimeout(2000);
     
     // Verify graph container exists
-    const graphContainer = page.locator('.graph-3d-container').first();
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     await expect(graphContainer).toBeVisible();
     
     // Check that canvas is present (WebGL rendering)

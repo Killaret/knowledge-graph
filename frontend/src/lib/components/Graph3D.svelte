@@ -512,6 +512,23 @@
       </div>
     </div>
   {/if}
+
+  <!-- Camera Controls -->
+  {#if !isLoading && !error}
+    <div class="camera-controls">
+      <button 
+        class="camera-btn" 
+        onclick={resetCamera}
+        data-testid="reset-camera-button"
+        title="Reset camera to fit all nodes"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+        </svg>
+        <span>Reset View</span>
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -588,5 +605,37 @@
     font-size: 48px;
     margin-bottom: 1rem;
     display: block;
+  }
+
+  .camera-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+  }
+
+  .camera-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+
+  .camera-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .camera-btn svg {
+    width: 18px;
+    height: 18px;
   }
 </style>

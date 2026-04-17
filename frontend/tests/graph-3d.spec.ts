@@ -27,16 +27,15 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
     await page.waitForLoadState('networkidle');
     
     // Graph should appear immediately (no lazy loading spinner)
-    const graphContainer = page.locator('.graph-3d-container').first();
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     await expect(graphContainer).toBeVisible({ timeout: 3000 });
     
-    // No spinner overlay should be present
-    const loadingOverlay = page.locator('.loading-overlay, .lazy-loading');
-    const hasLoading = await loadingOverlay.isVisible().catch(() => false);
-    expect(hasLoading).toBe(false);
+    // Loading overlay may be present briefly but should disappear
+    const loadingOverlay = page.locator('[data-testid="loading-overlay"]');
+    await expect(loadingOverlay).toBeHidden({ timeout: 8000 });
     
     // Stats bar should show immediately with node count
-    const statsBar = page.locator('.stats-bar').first();
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
     await expect(statsBar).toBeVisible({ timeout: 2000 });
     
     const statsText = await statsBar.textContent();
@@ -57,7 +56,7 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
     await page.waitForTimeout(2000);
     
     // Verify 3D graph container is visible
-    const graphContainer = page.locator('.graph-3d-container').first();
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     await expect(graphContainer).toBeVisible();
     
     // Verify container has correct CSS

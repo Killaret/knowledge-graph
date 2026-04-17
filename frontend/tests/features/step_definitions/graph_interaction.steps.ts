@@ -126,7 +126,13 @@ Then('the loading overlay should not block the interaction', async function(this
 
 // Camera reset
 When('I click the {string} button', async function(this: ITestWorld, buttonText: string) {
-  const button = this.page.locator('button').filter({ hasText: new RegExp(buttonText, 'i') }).first();
+  // Use data-testid for reset camera button, or fallback to text search
+  let button;
+  if (buttonText.toLowerCase().includes('reset') || buttonText.toLowerCase().includes('camera')) {
+    button = this.page.locator('[data-testid="reset-camera-button"]').first();
+  } else {
+    button = this.page.locator('button').filter({ hasText: new RegExp(buttonText, 'i') }).first();
+  }
   await expect(button).toBeVisible({ timeout: 5000 });
   
   // Store camera position before reset
@@ -217,7 +223,7 @@ Then('I should navigate to {string}', async function(this: ITestWorld, path: str
 
 Then('the new graph should center on that node', async function(this: ITestWorld) {
   // Verify the graph loaded
-  const canvas = this.page.locator('.graph-3d-container canvas, canvas').first();
+  const canvas = this.page.locator('[data-testid="graph-3d-container"] canvas, canvas').first();
   await expect(canvas).toBeVisible({ timeout: 10000 });
   
   // Check that centerNodeId is set in window
