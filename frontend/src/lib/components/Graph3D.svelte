@@ -216,7 +216,6 @@
     
     // Reset fog update counter for progressive loading
     let lastFogUpdate = 0;
-    let lastTickTime = 0;
     let zoomApplied = false;
     
     // Filter links to only include those where both source and target nodes exist
@@ -322,11 +321,13 @@
         objectManager.updatePositions(simulation.nodes());
       }
       
-      // Обновляем связи только каждые 16мс (~60fps) для производительности
+      // ✅ ИЗМЕНЕНИЕ: Связи обновляем каждые 16мс (~60fps)
       if (now - lastLinkUpdateTime >= 16) {
         lastLinkUpdateTime = now;
         if (objectManager && simulation) {
-          objectManager.updateLinks(simulation.nodes());
+          // Получаем связи из силы 'link' симуляции
+          const links = (simulation.force('link') as any)?.links() || [];
+          objectManager.updateLinks(links);
         }
       }
       
