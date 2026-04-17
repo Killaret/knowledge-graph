@@ -49,20 +49,21 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     // Wait for lazy loading to complete
     await page.waitForTimeout(2000);
     
-    // Check for lazy loading state
-    const lazyLoading = page.locator('.lazy-loading').first();
+    // Check for loading overlay
+    const loadingOverlay = page.locator('[data-testid="loading-overlay"]').first();
     
-    // Wait for lazy loading to finish
+    // Wait for loading to finish or graph to appear
+    await page.waitForTimeout(3000);
     let attempts = 0;
     while (attempts < 30) {
-      const isLazyLoading = await lazyLoading.isVisible().catch(() => false);
-      if (!isLazyLoading) break;
+      const isLoading = await loadingOverlay.isVisible().catch(() => false);
+      if (!isLoading) break;
       await page.waitForTimeout(500);
       attempts++;
     }
     
-    // After lazy loading, check for graph container or error
-    const graphContainer = page.locator('.graph-3d-container').first();
+    // After loading, check for graph container or error
+    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
     const lazyError = page.locator('.lazy-error').first();
     const errorOverlay = page.locator('.error-overlay').first();
     const centerError = page.locator('.center.error').first();
@@ -91,8 +92,8 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
-    // After lazy loading, verify graph or error state
-    const container = page.locator('.graph-3d-container, .lazy-error, .error-overlay, .center.error').first();
+    // After loading, verify graph or error state
+    const container = page.locator('[data-testid="graph-3d-container"], .error-overlay').first();
     await expect(container).toBeVisible();
   });
 

@@ -485,9 +485,9 @@
   }
 </script>
 
-<div bind:this={container} class="graph-3d-container">
+<div bind:this={container} class="graph-3d-container" data-testid="graph-3d-container">
   {#if isLoading}
-    <div class="loading-overlay" transition:fade={{ duration: 800 }}>
+    <div class="loading-overlay" transition:fade={{ duration: 800 }} data-testid="loading-overlay">
       <p class="loading-text">The universe isn't still created, but soon</p>
       <p class="loading-subtext">First celestial body appearing...</p>
     </div>

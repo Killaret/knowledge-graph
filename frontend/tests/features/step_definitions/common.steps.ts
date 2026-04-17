@@ -113,21 +113,24 @@ Given('I am on the 3D graph page for a note with connections', async function(th
 
 // UI interaction steps
 When('I click the {string} toggle button in the floating controls', async function(this: ITestWorld, viewName: string) {
-  const button = this.page.locator('.floating-controls button, [data-testid="view-toggle"]').filter({ hasText: new RegExp(viewName, 'i') }).first();
+  const testId = viewName.toLowerCase() === 'list' ? 'view-toggle-list' : 
+                 viewName.toLowerCase() === 'graph' ? 'view-toggle-graph' : 'view-toggle-3d';
+  const button = this.page.locator(`[data-testid="${testId}"]`).first();
   await expect(button).toBeVisible({ timeout: 5000 });
   await button.click();
   await this.page.waitForTimeout(500);
 });
 
 When('I click the {string} filter chip in floating controls', async function(this: ITestWorld, filterName: string) {
-  const chip = this.page.locator('.floating-controls .filter-chip, [data-testid="type-filter"]').filter({ hasText: new RegExp(filterName, 'i') }).first();
+  const filterId = filterName.toLowerCase().replace('s', ''); // stars -> star
+  const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
   await chip.click();
   await this.page.waitForTimeout(300);
 });
 
 When('I type {string} in the search input', async function(this: ITestWorld, searchText: string) {
-  const searchInput = this.page.locator('.floating-controls input[type="search"], [data-testid="search-input"], input[placeholder*="Search"]').first();
+  const searchInput = this.page.locator('[data-testid="search-input"]').first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(searchText);
   await this.page.waitForTimeout(300);
@@ -147,21 +150,21 @@ When('I click the {string} button in floating controls', async function(this: IT
 
 // View state assertions
 Then('I should see the 2D force graph by default', async function(this: ITestWorld) {
-  const graph = this.page.locator('.fullscreen-graph, canvas, .graph-canvas').first();
+  const graph = this.page.locator('[data-testid="graph-2d-container"]').first();
   await expect(graph).toBeVisible({ timeout: 10000 });
 });
 
 Then('I should see a grid of note cards', async function(this: ITestWorld) {
-  const grid = this.page.locator('.list-container, .notes-grid, [data-testid="notes-list"]').first();
+  const grid = this.page.locator('[data-testid="list-container"]').first();
   await expect(grid).toBeVisible({ timeout: 10000 });
   const cards = this.page.locator('.note-card');
   await expect(cards.first()).toBeVisible({ timeout: 5000 });
 });
 
 Then('I should see the fullscreen 2D force graph', async function(this: ITestWorld) {
-  const graph = this.page.locator('.fullscreen-graph').first();
+  const graph = this.page.locator('[data-testid="graph-2d-container"]').first();
   await expect(graph).toBeVisible({ timeout: 10000 });
-  const canvas = this.page.locator('.fullscreen-graph canvas').first();
+  const canvas = this.page.locator('[data-testid="graph-2d-container"] canvas').first();
   await expect(canvas).toBeVisible({ timeout: 5000 });
 });
 

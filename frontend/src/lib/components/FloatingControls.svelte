@@ -54,6 +54,7 @@
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
       onclick={toggleView}
       title="2D Graph"
+      data-testid="view-toggle-graph"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3"/>
@@ -72,6 +73,7 @@
       class="toggle-btn"
       onclick={handleToggle3D}
       title={noteId ? "3D Graph for selected note" : "Full 3D Graph"}
+      data-testid="view-toggle-3d"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -84,6 +86,7 @@
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
       onclick={toggleView}
       title="List View"
+      data-testid="view-toggle-list"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -102,6 +105,7 @@
           class="filter-chip {selectedType === filter.id ? 'active' : ''}"
           onclick={() => handleFilter(filter.id)}
           title={filter.label}
+          data-testid="filter-chip-{filter.id}"
         >
           <span class="filter-emoji">{filter.emoji}</span>
           <span class="filter-label">{filter.label}</span>
@@ -118,6 +122,7 @@
       placeholder="Search notes..."
       onkeyup={(e) => e.key === 'Enter' && handleSearch()}
       class="search-input"
+      data-testid="search-input"
     />
     <button class="search-btn" onclick={handleSearch} aria-label="Search">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -157,7 +162,7 @@
   </div>
 
   <!-- Create Button -->
-  <button class="create-btn" onclick={() => onCreate?.()} title="Create new note">
+  <button class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="12" y1="5" x2="12" y2="19"/>
       <line x1="5" y1="12" x2="19" y2="12"/>

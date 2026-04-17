@@ -319,7 +319,7 @@
   />
 
   <!-- Fullscreen Graph Container -->
-  <div class="fullscreen-graph">
+  <div class="fullscreen-graph" data-testid="graph-2d-container">
     {#if loading}
       <div class="center">
         <div class="spinner"></div>
@@ -341,7 +341,7 @@
           onNodeClick={(node) => selectedNodeId = node.id}
         />
         <!-- Stats Overlay -->
-        <div class="graph-stats-overlay">
+        <div class="graph-stats-overlay" data-testid="graph-stats">
           <span class="stat-item"><strong>{filteredGraphData().nodes.length}</strong> nodes</span>
           <span class="stat-item"><strong>{filteredGraphData().links.length}</strong> links</span>
           {#if selectedType !== 'all'}
@@ -361,7 +361,7 @@
 
     {:else if currentView === 'list'}
       <!-- List View -->
-      <div class="list-container">
+      <div class="list-container" data-testid="list-container">
         {#if filteredNotes.length === 0}
           <div class="empty-state">
             <div class="empty-icon">🌌</div>
