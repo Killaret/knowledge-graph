@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
+  import { filterValidLinks } from '$lib/utils/graphUtils';
 
   const { 
     nodes, 
@@ -77,7 +78,14 @@
       d3Force = d3;
       ctx = canvas.getContext('2d')!;
       resize();
-      window.addEventListener('resize', resize);
+      // Use ResizeObserver for better container size tracking
+      const resizeObserver = new ResizeObserver(() => {
+        console.log('[GraphCanvas] ResizeObserver triggered');
+        resize();
+      });
+      if (canvas.parentElement) {
+        resizeObserver.observe(canvas.parentElement);
+      }
       
       // Delayed resize to ensure container has settled dimensions
       setTimeout(() => {
@@ -93,7 +101,7 @@
       startAnimation();
       
       cleanup = () => {
-        window.removeEventListener('resize', resize);
+        resizeObserver.disconnect();
         if (simulation) simulation.stop();
         cancelAnimationFrame(animationId);
       };
@@ -203,8 +211,7 @@
     const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
     
     // Filter links to only include those where both source and target nodes exist
-    const nodeIds = new Set(nodes.map(n => n.id));
-    const validLinks = links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    const validLinks = filterValidLinks(nodes, links);
     if (validLinks.length !== links.length) {
       console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
     }
@@ -219,9 +226,9 @@
       .alphaDecay(0.02)
       .on('tick', () => draw());
 
-    // Run initial ticks to stabilize
-    simulation.tick(100);
-    console.log('[GraphCanvas] Simulation initialized and ticked 100 times');
+    // Async warmup - let the simulation run naturally
+    simulation.alpha(1).restart();
+    console.log('[GraphCanvas] Simulation initialized with async warmup');
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -371,12 +378,17 @@
       const type = node.type || 'star';
       const angle = angles.get(node.id) || 0;
 
+      // Only enable shadows for small graphs (< 100 nodes)
+      const enableShadows = simulation.nodes().length < 100;
+      
       switch (type) {
         case 'star':
           drawStar(node.x, node.y, r, angle);
           ctx.fillStyle = '#ffdd88';
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+          if (enableShadows) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+          }
           ctx.fill();
           break;
         case 'planet':

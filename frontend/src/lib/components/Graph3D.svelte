@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { browser } from '$app/environment';
   import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
   import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
   import { autoZoomToFit, centerCameraOnNode } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
+  import { filterValidLinks } from '$lib/utils/graphUtils';
   import * as THREE from 'three';
 
   const { 
@@ -37,7 +39,7 @@
   // Progressive loading state
   let currentData = $state<GraphData>({ nodes: [], links: [] });
   let isFullyLoaded = $state(false);
-  let fogAnimationFrame: number | null = null;
+  const fogAnimationFrame: number | null = null;
   
   // Создаем ключ для отслеживания изменений данных (включает timestamp для гарантированного обновления)
   let dataUpdateKey = $state(0);
@@ -208,12 +210,18 @@
     objectManager.clear();
     if (simulation) {
       simulation.stop();
+      // Remove old tick handler to prevent memory leaks
+      simulation.on('tick', null);
     }
+    
+    // Reset fog update counter for progressive loading
+    let lastFogUpdate = 0;
+    let lastTickTime = 0;
+    let zoomApplied = false;
     
     // Filter links to only include those where both source and target nodes exist
     // (for local graph, API may return links to nodes outside the graph)
-    const nodeIds = new Set(data.nodes.map(n => n.id));
-    const validLinks = data.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    const validLinks = filterValidLinks(data.nodes, data.links);
     if (validLinks.length !== data.links.length) {
       console.warn(`[Graph3D] Filtered out ${data.links.length - validLinks.length} orphan links`);
     }
@@ -280,13 +288,17 @@
       isLoading = false;
       isFullyLoaded = true;
 
-      // Ensure fog is fully cleared when simulation ends
-      if (scene) setFogDensity(scene, 0.005);
-      console.log('[Graph3D] Simulation complete, fog cleared');
+      // Smoothly animate fog to final clear state over 1 second
+      if (scene) {
+        const currentDensity = (scene.fog as any)?.density ?? 0.08;
+        animateFog(currentDensity, 0.005, 1000);
+      }
+      console.log('[Graph3D] Simulation complete, fog animating to clear');
 
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
-        if (simulation && camera && controls) {
+        if (simulation && camera && controls && !zoomApplied) {
+          zoomApplied = true;
           if (centerNodeId) {
             console.log('[Graph3D] Calling centerCameraOnNode for local graph...');
             centerCameraOnNode(centerNodeId, simulation.nodes(), camera, controls, true);
@@ -298,11 +310,15 @@
       }, 300);
     });
     
-    // Progressive fog clearing based on node loading
-    let lastFogUpdate = 0;
     const totalNodes = filteredData.nodes.length;
     
     simulation.on('tick', () => {
+      const now = performance.now();
+      
+      // Throttle position updates to ~60fps (16ms)
+      if (now - lastTickTime < 16) return;
+      lastTickTime = now;
+      
       // Обновляем позиции объектов при каждом тике симуляции
       if (objectManager && simulation) {
         objectManager.updatePositions(simulation.nodes());
@@ -321,10 +337,11 @@
         
         setFogDensity(scene, currentDensity);
         
-        // Hide loading overlay when first nodes appear (30% loaded)
-        if (isLoading && progress > 0.3) {
+        // Hide loading overlay early (at 10% progress) for instant response feel
+        // Fog continues to clear progressively while user sees nodes emerging
+        if (isLoading && progress > 0.1) {
           isLoading = false;
-          console.log('[Graph3D] Loading overlay hidden, progress:', (progress * 100).toFixed(0) + '%');
+          console.log('[Graph3D] Loading overlay hidden at 10% progress, nodes visible:', nodesWithPosition);
         }
         
         // Log progress occasionally
@@ -335,11 +352,13 @@
     });
   }
 
-  // Animate fog density from start to end over duration
+  // Animates fog density from start to end over a specified duration (in ms)
+  // It creates a smooth transition effect for the scene fog
   function animateFog(startDensity: number, endDensity: number, duration: number = 2000) {
     if (!scene) return;
     
     const startTime = performance.now();
+    let localFogFrame: number | null = null;
     
     function updateFog() {
       const elapsed = performance.now() - startTime;
@@ -352,9 +371,7 @@
       setFogDensity(scene, currentDensity);
       
       if (progress < 1) {
-        fogAnimationFrame = requestAnimationFrame(updateFog);
-      } else {
-        fogAnimationFrame = null;
+        localFogFrame = requestAnimationFrame(updateFog);
       }
     }
     
@@ -365,7 +382,6 @@
     
     updateFog();
   }
-
   // Public method to add more data (for progressive loading)
   export function addData(newData: GraphData) {
     if (!simulation || !objectManager || !scene) {
@@ -434,6 +450,7 @@
     if (animationFrame) cancelAnimationFrame(animationFrame);
     if (fogAnimationFrame) cancelAnimationFrame(fogAnimationFrame);
     if (simulation) simulation.stop();
+    if (objectManager) objectManager.clear();
     if (renderer) renderer.dispose();
     window.removeEventListener('resize', onResize);
     if (container) {
@@ -464,7 +481,7 @@
 
 <div bind:this={container} class="graph-3d-container">
   {#if isLoading}
-    <div class="loading-overlay">
+    <div class="loading-overlay" transition:fade={{ duration: 800 }}>
       <p class="loading-text">The universe isn't still created, but soon</p>
       <p class="loading-subtext">First celestial body appearing...</p>
     </div>

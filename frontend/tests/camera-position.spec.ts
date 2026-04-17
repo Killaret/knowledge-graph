@@ -1,3 +1,18 @@
+/*
+ * NOTE: This file previously contained a duplicate test suite that was removed to fix merge conflicts.
+ * The preserved version below contains the complete test suite for Camera Position and Navigation.
+ * 
+ * Functionality of removed duplicate tests:
+ * - Test camera positioning for local graph with center node
+ * - Test camera positioning for full 3D graph with multiple nodes  
+ * - Test camera adjustment when toggling full graph mode
+ * - Test camera position maintenance on route navigation
+ * - Test 2D to 3D graph transition maintaining context
+ * - Test navigation from home page 3D button to full 3D graph
+ * - Test direct URL access to 3D graph routes
+ * - Test empty state with appropriate camera position
+ * - Test camera positioning for isolated single node
+ */
 import { test, expect } from '@playwright/test';
 
 /**
@@ -100,8 +115,10 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
     // Find and click the toggle
     const toggle = page.locator('.toggle input[type="checkbox"]').first();
     if (await toggle.isVisible().catch(() => false)) {
-      // Get initial state
-      const isChecked = await toggle.isChecked();
+      // NOTE: isChecked temporarily commented out to fix ESLint error
+      // This variable captures the initial state of the toggle checkbox
+      // Useful for verifying that the toggle actually changed state after clicking
+      // const isChecked = await toggle.isChecked();
       
       // Toggle to other mode
       await toggle.click();
@@ -300,3 +317,4 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
     }
   });
 });
+// End of Camera Position and Navigation test suite
