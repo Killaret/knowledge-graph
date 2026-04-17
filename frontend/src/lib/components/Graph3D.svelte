@@ -288,10 +288,10 @@
       isLoading = false;
       isFullyLoaded = true;
 
-      // Smoothly animate fog to final clear state over 1 second
+      // Smoothly animate fog to final clear state over 800ms
       if (scene) {
         const currentDensity = (scene.fog as any)?.density ?? 0.08;
-        animateFog(currentDensity, 0.005, 1000);
+        animateFog(currentDensity, 0.005, 800);
       }
       console.log('[Graph3D] Simulation complete, fog animating to clear');
 
@@ -312,16 +312,22 @@
     
     const totalNodes = filteredData.nodes.length;
     
+    let lastLinkUpdateTime = 0;
+    
     simulation.on('tick', () => {
       const now = performance.now();
       
-      // Throttle position updates to ~60fps (16ms)
-      if (now - lastTickTime < 16) return;
-      lastTickTime = now;
-      
-      // Обновляем позиции объектов при каждом тике симуляции
+      // Обновляем позиции узлов всегда (для плавности)
       if (objectManager && simulation) {
         objectManager.updatePositions(simulation.nodes());
+      }
+      
+      // Обновляем связи только каждые 16мс (~60fps) для производительности
+      if (now - lastLinkUpdateTime >= 16) {
+        lastLinkUpdateTime = now;
+        if (objectManager && simulation) {
+          objectManager.updateLinks(simulation.nodes());
+        }
       }
       
       // Progressive fog clearing - update every 10 ticks for performance
@@ -531,6 +537,10 @@
     color: white;
     z-index: 10;
     backdrop-filter: blur(5px);
+  }
+
+  .loading-overlay {
+    pointer-events: none; /* Allow interaction with graph during loading */
   }
 
   .loading-text {
