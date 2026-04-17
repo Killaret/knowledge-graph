@@ -365,7 +365,6 @@
     if (!scene) return;
     
     const startTime = performance.now();
-    let localFogFrame: number | null = null;
     
     function updateFog() {
       const elapsed = performance.now() - startTime;
@@ -378,7 +377,7 @@
       setFogDensity(scene, currentDensity);
       
       if (progress < 1) {
-        localFogFrame = requestAnimationFrame(updateFog);
+        requestAnimationFrame(updateFog);
       }
     }
     
