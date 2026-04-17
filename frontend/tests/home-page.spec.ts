@@ -147,13 +147,13 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
       await starsFilter.click();
       await page.waitForTimeout(500);
       
-      // Verify filter is applied (stats should show filtered count)
+      // Verify filter is applied (stats should show 'stars' indicating star filter is active)
       const statsFilter = page.locator('[data-testid="graph-stats"]').first();
       const hasFilterText = await statsFilter.isVisible().catch(() => false);
       
       if (hasFilterText) {
         const filterText = await statsFilter.textContent();
-        expect(filterText?.toLowerCase()).toContain('filter');
+        expect(filterText?.toLowerCase()).toContain('stars');
       }
     }
   });
