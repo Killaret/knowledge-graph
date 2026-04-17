@@ -7,7 +7,7 @@
 # Test info
 
 - Name: progressive-rendering.spec.ts >> Progressive Graph Rendering - Fog of War >> should show background loading indicator during progressive load
-- Location: tests\progressive-rendering.spec.ts:186:3
+- Location: tests\progressive-rendering.spec.ts:190:3
 
 # Error details
 

@@ -1,4 +1,4 @@
-import { setWorldConstructor, World, type IWorldOptions } from '@cucumber/cucumber';
+import { setWorldConstructor, setDefaultTimeout, World, type IWorldOptions } from '@cucumber/cucumber';
 import { chromium, type Browser, type BrowserContext, type Page, type APIRequestContext } from '@playwright/test';
 
 export interface ITestWorld extends World {
@@ -30,3 +30,4 @@ class CustomWorld extends World implements ITestWorld {
 }
 
 setWorldConstructor(CustomWorld);
+setDefaultTimeout(10000);

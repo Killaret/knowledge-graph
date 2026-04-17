@@ -6,61 +6,13 @@
 
 # Test info
 
-- Name: graph-3d.spec.ts >> Graph Visualization - Progressive Rendering >> should display stats bar with node and link counts
-- Location: tests\graph-3d.spec.ts:103:3
+- Name: visual\visual-regression.spec.ts >> Visual Regression @visual >> 3D Graph - with connections
+- Location: tests\visual\visual-regression.spec.ts:111:3
 
 # Error details
 
 ```
 Error: Failed to create link: 400 - {"error":"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag"}
-```
-
-# Page snapshot
-
-```yaml
-- generic [ref=e3]:
-  - generic [ref=e4]:
-    - generic [ref=e5]:
-      - button "2D" [ref=e6] [cursor=pointer]:
-        - img [ref=e7]
-        - generic [ref=e17]: 2D
-      - button "3D" [ref=e18] [cursor=pointer]:
-        - img [ref=e19]
-        - generic [ref=e23]: 3D
-      - button "List" [ref=e24] [cursor=pointer]:
-        - img [ref=e25]
-        - generic [ref=e26]: List
-    - generic [ref=e27]:
-      - button "🌌 All" [ref=e28] [cursor=pointer]:
-        - generic [ref=e29]: 🌌
-        - generic [ref=e30]: All
-      - button "⭐ Stars" [ref=e31] [cursor=pointer]:
-        - generic [ref=e32]: ⭐
-        - generic [ref=e33]: Stars
-      - button "🪐 Planets" [ref=e34] [cursor=pointer]:
-        - generic [ref=e35]: 🪐
-        - generic [ref=e36]: Planets
-      - button "☄️ Comets" [ref=e37] [cursor=pointer]:
-        - generic [ref=e38]: ☄️
-        - generic [ref=e39]: Comets
-      - button "🌀 Galaxies" [ref=e40] [cursor=pointer]:
-        - generic [ref=e41]: 🌀
-        - generic [ref=e42]: Galaxies
-    - generic [ref=e43]:
-      - textbox "Search notes..." [ref=e44]
-      - button "Search" [ref=e45] [cursor=pointer]:
-        - img [ref=e46]
-    - button "Menu" [ref=e50] [cursor=pointer]:
-      - img [ref=e51]
-    - button "Create new note" [ref=e52] [cursor=pointer]:
-      - img [ref=e53]
-  - generic [ref=e56]:
-    - generic [ref=e57]:
-      - strong [ref=e58]: "100"
-      - text: nodes
-    - generic [ref=e59]:
-      - strong [ref=e60]: "2444"
-      - text: links
 ```
 
 # Test source

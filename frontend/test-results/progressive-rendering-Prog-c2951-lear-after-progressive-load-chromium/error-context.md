@@ -7,7 +7,7 @@
 # Test info
 
 - Name: progressive-rendering.spec.ts >> Progressive Graph Rendering - Fog of War >> should show dense fog initially and clear after progressive load
-- Location: tests\progressive-rendering.spec.ts:81:3
+- Location: tests\progressive-rendering.spec.ts:80:3
 
 # Error details
 

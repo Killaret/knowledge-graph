@@ -43,7 +43,7 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       await page.waitForTimeout(1000);
       
       // Verify filter is applied - stats should show filtered state
-      const statsBar = page.locator('.stats-bar').first();
+      const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
         // Should show filter indicator or specific count
@@ -117,7 +117,7 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       await cometsFilter.click();
       await page.waitForTimeout(1000);
       
-      const statsBar = page.locator('.stats-bar').first();
+      const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
         expect(statsText?.toLowerCase()).toMatch(/filter|comet/);
@@ -144,7 +144,7 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       await galaxiesFilter.click();
       await page.waitForTimeout(1000);
       
-      const statsBar = page.locator('.stats-bar').first();
+      const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
         expect(statsText?.toLowerCase()).toMatch(/filter|galaxy/);
@@ -189,11 +189,11 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       await page.waitForTimeout(1000);
       
       // Stats should show total count without filter indicator
-      const statsBar = page.locator('.stats-bar').first();
+      const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
         // Should show total notes (at least 3 we just created)
-        const countMatch = statsText?.match(/(\d+)\s*note/);
+        const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
         if (countMatch) {
           const count = parseInt(countMatch[1], 10);
           expect(count).toBeGreaterThanOrEqual(3);
@@ -241,11 +241,11 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       await page.waitForTimeout(1000);
       
       // Stats should show total count without filter indicator
-      const statsBar = page.locator('.stats-bar').first();
+      const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
         // Should show total notes (at least 3 we just created)
-        const countMatch = statsText?.match(/(\d+)\s*note/);
+        const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
         if (countMatch) {
           const count = parseInt(countMatch[1], 10);
           expect(count).toBeGreaterThanOrEqual(3);

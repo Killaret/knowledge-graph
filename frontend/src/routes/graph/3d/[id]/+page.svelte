@@ -148,7 +148,12 @@
     <div class="center error">{error}</div>
   {:else if graphData}
     <div class="graph-wrapper">
-      <Graph3D bind:this={graphRef} data={graphData} centerNodeId={currentNoteId} />
+      <Graph3D 
+        bind:this={graphRef} 
+        data={graphData} 
+        centerNodeId={currentNoteId}
+        onNodeDoubleClick={(node) => console.log('Double-clicked node:', node.id)}
+      />
     </div>
   {/if}
 </div>

@@ -7,7 +7,7 @@
 # Test info
 
 - Name: progressive-rendering.spec.ts >> Progressive Graph Rendering - Fog of War >> should display correct celestial body types
-- Location: tests\progressive-rendering.spec.ts:317:3
+- Location: tests\progressive-rendering.spec.ts:321:3
 
 # Error details
 

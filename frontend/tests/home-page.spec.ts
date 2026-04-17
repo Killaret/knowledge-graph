@@ -18,7 +18,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test('should display graph canvas by default on home page', async ({ page }) => {
     // Verify graph container is visible (fullscreen graph)
-    const graphContainer = page.locator('.fullscreen-graph, .graph-canvas, canvas').first();
+    const graphContainer = page.locator('[data-testid="graph-2d-container"], canvas').first();
     await expect(graphContainer).toBeVisible({ timeout: 10000 });
     
     // Verify graph has height (is rendered)
@@ -49,7 +49,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
       await expect(emptyState).toBeVisible();
     } else {
       // Otherwise graph should be rendered
-      const graphCanvas = page.locator('.fullscreen-graph canvas, .graph-canvas').first();
+      const graphCanvas = page.locator('[data-testid="graph-2d-container"] canvas, canvas').first();
       await expect(graphCanvas).toBeVisible();
     }
   });
@@ -76,18 +76,22 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     }
     
     // Verify any content is visible (graph, list, loading, or error states)
-    const content = page.locator('.fullscreen-graph, .list-container, .note-card, .loading-overlay, .error-overlay').first();
+    const content = page.locator('[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card, [data-testid="loading-overlay"], .error-overlay').first();
     await expect(content).toBeVisible({ timeout: 10000 });
   });
 
   test('should show note count in stats bar', async ({ page, request }) => {
-    // Create test notes
+    // Create test notes using helper
     const timestamp = Date.now();
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `Stats Test 1 ${timestamp}`, content: 'Content 1', type: 'star' }
+    await createNote(request, {
+      title: `Stats Test 1 ${timestamp}`,
+      content: 'Content 1',
+      type: 'star'
     });
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `Stats Test 2 ${timestamp}`, content: 'Content 2', type: 'planet' }
+    await createNote(request, {
+      title: `Stats Test 2 ${timestamp}`,
+      content: 'Content 2',
+      type: 'planet'
     });
     
     // Reload page and wait for network
