@@ -75,12 +75,13 @@ export async function createLink(
   weight = 0.5,
   linkType = 'related'
 ): Promise<{ id: string; [key: string]: unknown }> {
-  const payload: LinkData = {
-    sourceNoteId: sourceId,
-    targetNoteId: targetId,
-    weight,
-    link_type: linkType,
-    metadata: {},
+  // Go backend expects PascalCase field names
+  const payload = {
+    SourceNoteID: sourceId,
+    TargetNoteID: targetId,
+    Weight: weight,
+    LinkType: linkType,
+    Metadata: {},
   };
 
   const response = await request.post(`${getBackendUrl()}/links`, {

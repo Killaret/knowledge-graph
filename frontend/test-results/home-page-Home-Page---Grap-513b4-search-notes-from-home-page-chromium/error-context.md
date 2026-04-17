@@ -57,7 +57,7 @@ Call log:
         - generic [ref=e41]: 🌀
         - generic [ref=e42]: Galaxies
     - generic [ref=e43]:
-      - textbox "Search notes..." [active] [ref=e44]: Searchable1776420727804
+      - textbox "Search notes..." [active] [ref=e44]: Searchable1776422491460
       - button "Search" [ref=e45] [cursor=pointer]:
         - img [ref=e46]
     - button "Menu" [ref=e50] [cursor=pointer]:

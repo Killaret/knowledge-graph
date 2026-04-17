@@ -13,16 +13,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 692199
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 106966699
             }
           },
           {
@@ -34,8 +34,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:83"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1531042999
             }
           },
           {
@@ -47,8 +47,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:67"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 99080600
             }
           },
           {
@@ -56,9 +56,12 @@
             "keyword": "Then ",
             "line": 13,
             "name": "I should see the 2D force graph by default",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:149"
+            },
             "result": {
-              "status": "ambiguous",
-              "duration": 0
+              "status": "passed",
+              "duration": 366655500
             }
           },
           {
@@ -70,8 +73,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:115"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2023871799
             }
           },
           {
@@ -83,8 +86,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:154"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 13396399
             }
           },
           {
@@ -93,11 +96,12 @@
             "line": 16,
             "name": "the view toggle should show \"Graph\" option",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:197"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:192"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5010047800,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -106,7 +110,7 @@
             "line": 17,
             "name": "I click the \"Graph\" toggle button",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:314"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:309"
             },
             "result": {
               "status": "skipped",
@@ -132,7 +136,7 @@
             "line": 19,
             "name": "the graph canvas should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:322"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:317"
             },
             "result": {
               "status": "skipped",
@@ -143,16 +147,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 72738900
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 4873999
             }
           }
         ],
@@ -187,16 +191,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 363000
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 62843100
             }
           },
           {
@@ -208,8 +212,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:83"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1417799799
             }
           },
           {
@@ -221,8 +225,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:67"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 59344699
             }
           },
           {
@@ -231,11 +235,11 @@
             "line": 23,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:173"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:168"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2231616799
             }
           },
           {
@@ -247,8 +251,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:122"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 414456799
             }
           },
           {
@@ -257,11 +261,12 @@
             "line": 25,
             "name": "only notes of type \"Planet\" should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:203"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 7984599,
+              "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:201:17)"
             }
           },
           {
@@ -270,7 +275,7 @@
             "line": 26,
             "name": "the count badge should show the correct number",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:216"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:211"
             },
             "result": {
               "status": "skipped",
@@ -283,7 +288,7 @@
             "line": 27,
             "name": "I click the \"All\" filter chip",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:328"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:323"
             },
             "result": {
               "status": "skipped",
@@ -296,7 +301,7 @@
             "line": 28,
             "name": "all notes should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:223"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:218"
             },
             "result": {
               "status": "skipped",
@@ -307,16 +312,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 60112900
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 4119800
             }
           }
         ],
@@ -351,16 +356,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 99600
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 60831600
             }
           },
           {
@@ -372,8 +377,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:83"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1383964200
             }
           },
           {
@@ -385,8 +390,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:67"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 55735300
             }
           },
           {
@@ -395,11 +400,11 @@
             "line": 32,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:173"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:168"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2114302400
             }
           },
           {
@@ -411,8 +416,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:129"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 383136699
             }
           },
           {
@@ -421,11 +426,12 @@
             "line": 34,
             "name": "the list should show only notes containing \"cosmos\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:228"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:223"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 9262099,
+              "error_message": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"cosmos\"\nReceived string:    \"graph comet 1776422008143\"\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:236:34)"
             }
           },
           {
@@ -434,7 +440,7 @@
             "line": 35,
             "name": "the note cards should highlight the matching text",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:245"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:240"
             },
             "result": {
               "status": "skipped",
@@ -460,7 +466,7 @@
             "line": 37,
             "name": "all notes should be displayed again",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:336"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:331"
             },
             "result": {
               "status": "skipped",
@@ -471,16 +477,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 55311500
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 3992699
             }
           }
         ],
@@ -515,16 +521,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 178200
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 66400499
             }
           },
           {
@@ -536,8 +542,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:83"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1396844900
             }
           },
           {
@@ -549,8 +555,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:67"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 53369899
             }
           },
           {
@@ -559,11 +565,11 @@
             "line": 41,
             "name": "I am in graph view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:185"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:180"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 465776600
             }
           },
           {
@@ -575,8 +581,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:129"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1129212400
             }
           },
           {
@@ -585,11 +591,11 @@
             "line": 43,
             "name": "only nodes matching \"star\" should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:344"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:339"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 271385500
             }
           },
           {
@@ -598,11 +604,11 @@
             "line": 44,
             "name": "non-matching nodes should be dimmed or hidden",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:279"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:274"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 255119800
             }
           },
           {
@@ -614,8 +620,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:136"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5005886799,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -624,7 +631,7 @@
             "line": 46,
             "name": "all nodes should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:294"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:289"
             },
             "result": {
               "status": "skipped",
@@ -635,16 +642,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 54688799
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2803800
             }
           }
         ],
@@ -679,16 +686,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 277099
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 62428700
             }
           },
           {
@@ -700,8 +707,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:83"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1385743099
             }
           },
           {
@@ -713,8 +720,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:67"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 53791600
             }
           },
           {
@@ -723,11 +730,11 @@
             "line": 50,
             "name": "I am on the main page",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:307"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:302"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1432038599
             }
           },
           {
@@ -739,8 +746,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:142"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5005210599,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -749,7 +757,7 @@
             "line": 52,
             "name": "a create note modal should open",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:251"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:246"
             },
             "result": {
               "status": "skipped",
@@ -762,7 +770,7 @@
             "line": 53,
             "name": "I fill in the title \"Test Note\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:256"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:251"
             },
             "result": {
               "status": "skipped",
@@ -775,7 +783,7 @@
             "line": 54,
             "name": "I select type \"Star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:261"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:256"
             },
             "result": {
               "status": "skipped",
@@ -801,7 +809,7 @@
             "line": 56,
             "name": "the modal should close",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:266"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:261"
             },
             "result": {
               "status": "skipped",
@@ -814,7 +822,7 @@
             "line": 57,
             "name": "the new note should appear in the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:271"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:266"
             },
             "result": {
               "status": "skipped",
@@ -825,16 +833,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 53316799
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 3060600
             }
           }
         ],
@@ -893,16 +901,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 191300
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 62408600
             }
           },
           {
@@ -914,8 +922,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:29"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 100363699
             }
           },
           {
@@ -927,8 +935,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:89"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1852968499
             }
           },
           {
@@ -940,8 +948,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:12"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 38408799
             }
           },
           {
@@ -953,8 +961,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:17"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 32383600
             }
           },
           {
@@ -966,8 +974,9 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:30"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 6634399,
+              "error_message": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 0.05\nReceived:    0.0050000000000000044\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:34:19)"
             }
           },
           {
@@ -1026,16 +1035,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 70155899
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 6515500
             }
           }
         ],
@@ -1066,16 +1075,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 110899
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 67476700
             }
           },
           {
@@ -1087,8 +1096,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:29"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 99336999
             }
           },
           {
@@ -1100,8 +1109,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:89"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1684870699
             }
           },
           {
@@ -1113,8 +1122,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:73"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 49576099
             }
           },
           {
@@ -1126,8 +1135,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:45"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 10925999
             }
           },
           {
@@ -1139,8 +1148,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:90"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 215904799
             }
           },
           {
@@ -1152,24 +1161,24 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 9852500
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 104098599
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 4790899
             }
           }
         ],
@@ -1200,16 +1209,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 158499
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 75741499
             }
           },
           {
@@ -1221,8 +1230,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:29"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 103526099
             }
           },
           {
@@ -1234,8 +1243,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:89"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1665764000
             }
           },
           {
@@ -1247,8 +1256,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 137260000
             }
           },
           {
@@ -1260,8 +1269,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:123"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 479827199
             }
           },
           {
@@ -1273,8 +1282,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:144"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 13856999
             }
           },
           {
@@ -1286,24 +1295,24 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:163"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 136459699
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 83815399
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2811900
             }
           }
         ],
@@ -1354,16 +1363,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 402699
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 65416099
             }
           },
           {
@@ -1375,8 +1384,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1565858700
             }
           },
           {
@@ -1388,8 +1397,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 85616500
             }
           },
           {
@@ -1401,8 +1410,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:11"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 734301700
             }
           },
           {
@@ -1414,8 +1423,9 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:58"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5015896800,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -1448,16 +1458,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 39463000
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2733000
             }
           }
         ],
@@ -1492,16 +1502,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 170300
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 64622400
             }
           },
           {
@@ -1513,8 +1523,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1405925199
             }
           },
           {
@@ -1526,8 +1536,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 77431499
             }
           },
           {
@@ -1539,8 +1549,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 249339899
             }
           },
           {
@@ -1552,8 +1562,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:76"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 947421999
             }
           },
           {
@@ -1565,8 +1575,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 6033400
             }
           },
           {
@@ -1578,24 +1588,24 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:114"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 16048300
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 34241600
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2605400
             }
           }
         ],
@@ -1630,16 +1640,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 149199
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 68914100
             }
           },
           {
@@ -1651,8 +1661,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1409468399
             }
           },
           {
@@ -1664,8 +1674,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 79615899
             }
           },
           {
@@ -1677,8 +1687,9 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:128"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 5009821199,
+              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -1711,16 +1722,16 @@
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 35156500
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2133000
             }
           }
         ],
@@ -1755,16 +1766,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 184000
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 65277999
             }
           },
           {
@@ -1776,8 +1787,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1538900099
             }
           },
           {
@@ -1789,8 +1800,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 84937700
             }
           },
           {
@@ -1802,8 +1813,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:46"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 593851999
             }
           },
           {
@@ -1815,8 +1826,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:180"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 37932399
             }
           },
           {
@@ -1828,24 +1839,24 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:197"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 21755700
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 36040299
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1735999
             }
           }
         ],
@@ -1880,16 +1891,16 @@
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 198199
             }
           },
           {
             "keyword": "Before",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 64140099
             }
           },
           {
@@ -1901,8 +1912,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:97"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1449127000
             }
           },
           {
@@ -1914,8 +1925,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 74642199
             }
           },
           {
@@ -1927,8 +1938,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:35"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 919863600
             }
           },
           {
@@ -1940,8 +1951,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:211"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 505642100
             }
           },
           {
@@ -1953,24 +1964,25 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:218"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 44820800,
+              "error_message": "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:228:20)"
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 36360799
             }
           },
           {
             "keyword": "After",
             "hidden": true,
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2030499
             }
           }
         ],

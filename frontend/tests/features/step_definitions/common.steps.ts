@@ -165,11 +165,6 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
   await expect(canvas).toBeVisible({ timeout: 5000 });
 });
 
-Then('I should see the 2D force graph by default', async function(this: ITestWorld) {
-  const graph = this.page.locator('.fullscreen-graph, canvas, .graph-canvas').first();
-  await expect(graph).toBeVisible({ timeout: 10000 });
-});
-
 Then('I am in list view', async function(this: ITestWorld) {
   const listView = this.page.locator('.list-container, .notes-grid').first();
   const isVisible = await listView.isVisible().catch(() => false);

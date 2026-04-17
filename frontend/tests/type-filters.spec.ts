@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, getBackendUrl } from './helpers/testData';
+import { createNote, createLink, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
@@ -276,13 +276,20 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       type: 'comet'
     });
     
-    // Create links between notes
-    await request.post(getBackendUrl() + '/links', {
-      data: { sourceNoteId: 'star', targetNoteId: 'planet', weight: 0.8 }
-    });
-    await request.post(getBackendUrl() + '/links', {
-      data: { sourceNoteId: 'planet', targetNoteId: 'comet', weight: 0.6 }
-    });
+    // Get the created notes to get their IDs
+    const notesResp = await request.get(`${getBackendUrl()}/notes`);
+    const notesData = await notesResp.json();
+    const starNote = notesData.notes?.find((n: any) => n.title?.includes(`Graph Star ${timestamp}`));
+    const planetNote = notesData.notes?.find((n: any) => n.title?.includes(`Graph Planet ${timestamp}`));
+    const cometNote = notesData.notes?.find((n: any) => n.title?.includes(`Graph Comet ${timestamp}`));
+    
+    // Create links between notes using helper
+    if (starNote && planetNote) {
+      await createLink(request, starNote.id, planetNote.id, 0.8);
+    }
+    if (planetNote && cometNote) {
+      await createLink(request, planetNote.id, cometNote.id, 0.6);
+    }
     
     await page.reload();
     await page.waitForTimeout(3000);
