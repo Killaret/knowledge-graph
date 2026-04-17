@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createNote, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -6,11 +7,11 @@ import { test, expect } from '@playwright/test';
  * and list view is accessible from it
  */
 
-test.describe('Home Page - Graph First', () => {
-  
+test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
+
   test.beforeEach(async ({ page }) => {
     // Navigate to home page
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
   });
@@ -26,16 +27,13 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should load notes and display them on graph', async ({ page, request }) => {
-    // Create a test note via API
+    // Create a test note via API using helper
     const timestamp = Date.now();
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Home Page Test Note ${timestamp}`, 
-        content: 'Test content for home page',
-        type: 'star'
-      }
+    const note = await createNote(request, {
+      title: `Home Page Test Note ${timestamp}`,
+      content: 'Test content for home page',
+      type: 'star'
     });
-    expect(note.status()).toBe(201);
     
     // Reload page to see the note
     await page.reload();
@@ -65,7 +63,7 @@ test.describe('Home Page - Graph First', () => {
     await page.waitForTimeout(1500);
     
     // Reload to ensure we're on fresh home page
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForTimeout(3000); // Wait for page to load
     
     // Toggle to list view (using FloatingControls or view toggle)
@@ -118,13 +116,17 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should filter notes by type from home page', async ({ page, request }) => {
-    // Create notes of different types
+    // Create notes of different types using helper
     const timestamp = Date.now();
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `Star Note ${timestamp}`, content: 'Star content', type: 'star' }
+    await createNote(request, {
+      title: `Star Note ${timestamp}`,
+      content: 'Star content',
+      type: 'star'
     });
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `Planet Note ${timestamp}`, content: 'Planet content', type: 'planet' }
+    await createNote(request, {
+      title: `Planet Note ${timestamp}`,
+      content: 'Planet content',
+      type: 'planet'
     });
     
     // Reload page
@@ -149,15 +151,13 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should search notes from home page', async ({ page, request }) => {
-    // Create a searchable note
+    // Create a searchable note using helper
     const timestamp = Date.now();
     const searchTerm = `Searchable${timestamp}`;
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Test ${searchTerm} Note`, 
-        content: 'Test content',
-        type: 'star'
-      }
+    await createNote(request, {
+      title: `Test ${searchTerm} Note`,
+      content: 'Test content',
+      type: 'star'
     });
     
     // Reload page
@@ -177,16 +177,13 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should open side panel when clicking on graph node', async ({ page, request }) => {
-    // Create a note
+    // Create a note using helper
     const timestamp = Date.now();
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Side Panel Test ${timestamp}`, 
-        content: 'Test content for side panel',
-        type: 'star'
-      }
+    await createNote(request, {
+      title: `Side Panel Test ${timestamp}`,
+      content: 'Test content for side panel',
+      type: 'star'
     });
-    await note.json();
     
     // Reload page
     await page.reload();
@@ -204,19 +201,17 @@ test.describe('Home Page - Graph First', () => {
   });
 
   test('should navigate to graph view for specific note', async ({ page, request }) => {
-    // Create a note
+    // Create a note using helper
     const timestamp = Date.now();
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Graph View Test ${timestamp}`, 
-        content: 'Test content',
-        type: 'star'
-      }
+    const note = await createNote(request, {
+      title: `Graph View Test ${timestamp}`,
+      content: 'Test content',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to specific graph page
-    await page.goto(`http://localhost:5173/graph/${noteId}`);
+    await page.goto(`/graph/${noteId}`);
     await page.waitForTimeout(2000);
     
     // Verify graph container is visible
@@ -226,7 +221,7 @@ test.describe('Home Page - Graph First', () => {
 
   test('should display general graph view at /graph', async ({ page }) => {
     // Navigate to general graph page
-    await page.goto('http://localhost:5173/graph');
+    await page.goto('/graph');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     

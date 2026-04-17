@@ -5,6 +5,8 @@ declare const process: {
   env: {
     CI?: string;
     FORCE3D?: string;
+    FRONTEND_URL?: string;
+    BACKEND_URL?: string;
   };
 };
 
@@ -17,10 +19,14 @@ export default defineConfig({
   timeout: 60 * 1000, // 60s per test
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     actionTimeout: 15000,
     navigationTimeout: 15000,
+    // Expose backend URL for API requests
+    extraHTTPHeaders: {
+      'X-BACKEND-URL': process.env.BACKEND_URL || 'http://localhost:8080',
+    },
   },
   projects: [
     {
@@ -30,7 +36,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: process.env.FRONTEND_URL || 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: process.env.CI ? 180 * 1000 : 120 * 1000, // 3min in CI
   },

@@ -23,7 +23,7 @@ from tqdm import tqdm
 # ----------------------------------------------------------------------
 DEFAULT_API_URL = "http://localhost:8080"
 CATEGORIES = ["book", "movie", "anime", "manga", "adaptation"]
-NOTES_PER_CATEGORY = 10
+NOTES_PER_CATEGORY = 30
 TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
 
 # ----------------------------------------------------------------------
@@ -117,19 +117,13 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
     """Создаёт payload для POST /notes."""
     title = generate_title(category, index)
     content = generate_content(category, title)
-    # FIXED: Тип теперь на верхнем уровне, а не в metadata
-    type_mapping = {
-        "book": "star",
-        "movie": "planet",
-        "anime": "comet",
-        "manga": "galaxy",
-        "adaptation": "default"
-    }
+    # Разнообразные типы небесных тел для всех заметок
+    ALL_CELESTIAL_TYPES = ["star", "planet", "comet", "galaxy", "nebula", "asteroid"]
     return {
         "title": title,
         "content": content,
+        "type": random.choice(ALL_CELESTIAL_TYPES),  # Случайный тип для каждой заметки
         "metadata": {
-            "type": type_mapping.get(category, "star"),  # <-- type в metadata!
             "category": category,
             "word_count": len(content.split())
         }

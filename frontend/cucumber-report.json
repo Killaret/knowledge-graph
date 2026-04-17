@@ -1,782 +1,40 @@
 [
   {
-    "description": "  As a user\n  I want to interact with the knowledge graph visually\n  So that I can explore and manage my notes intuitively",
+    "description": "  As a user\n  I want to toggle between graph and list views\n  So that I can explore notes in different ways",
     "elements": [
       {
         "description": "",
-        "id": "graph-navigation;empty-state-prompts-note-creation",
+        "id": "2d-graph-and-list-view;toggle-between-graph-and-list-views",
         "keyword": "Scenario",
-        "line": 9,
-        "name": "Empty state prompts note creation",
+        "line": 12,
+        "name": "Toggle between graph and list views",
         "steps": [
           {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
+            "keyword": "Before",
+            "hidden": true,
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
           {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 10,
-            "name": "there are no notes in the system",
+            "keyword": "Before",
+            "hidden": true,
             "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 11,
-            "name": "the graph canvas shows a message \"No notes yet\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 12,
-            "name": "a \"+\" button is visible",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;create-a-new-note-via-the-plus-button",
-        "keyword": "Scenario",
-        "line": 14,
-        "name": "Create a new note via the plus button",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
           {
             "arguments": [],
             "keyword": "Given ",
-            "line": 15,
-            "name": "the graph view is active",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 16,
-            "name": "I click the \"+\" button",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 17,
-            "name": "a modal with a note form appears",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 18,
-            "name": "I fill in \"Title\" with \"My First Note\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 19,
-            "name": "I select type \"Star\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 20,
-            "name": "I click \"Save\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 21,
-            "name": "the modal closes",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 22,
-            "name": "a new node labeled \"My First Note\" appears on the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;edit-a-note-from-the-graph",
-        "keyword": "Scenario",
-        "line": 24,
-        "name": "Edit a note from the graph",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 25,
-            "name": "a note \"My First Note\" exists on the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 26,
-            "name": "I click on the node \"My First Note\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 27,
-            "name": "a side panel opens showing note details",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 28,
-            "name": "I click \"Edit\" in the side panel",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 29,
-            "name": "a modal with the note form appears pre-filled",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 30,
-            "name": "I change \"Title\" to \"Updated Note\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 31,
-            "name": "I click \"Save\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 32,
-            "name": "the node label changes to \"Updated Note\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;delete-a-note-with-confirmation",
-        "keyword": "Scenario",
-        "line": 34,
-        "name": "Delete a note with confirmation",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 35,
-            "name": "a note \"To Be Deleted\" exists",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 36,
-            "name": "I click on the node \"To Be Deleted\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 37,
-            "name": "I click \"Delete\" in the side panel",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 38,
-            "name": "a confirmation modal appears with text \"Delete note?\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 39,
-            "name": "I confirm the deletion",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 40,
-            "name": "the node \"To Be Deleted\" disappears from the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;create-a-link-by-dragging-between-nodes",
-        "keyword": "Scenario",
-        "line": 42,
-        "name": "Create a link by dragging between nodes",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 43,
-            "name": "notes \"Source\" and \"Target\" exist on the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 44,
-            "name": "I drag from node \"Source\" to node \"Target\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 45,
-            "name": "a link preview line is shown",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 46,
-            "name": "I release the mouse over \"Target\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 47,
-            "name": "a weight selector appears",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 48,
-            "name": "I select weight \"4\" and confirm",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 49,
-            "name": "a new edge appears between \"Source\" and \"Target\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;search-and-focus-on-a-node",
-        "keyword": "Scenario",
-        "line": 51,
-        "name": "Search and focus on a node",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 52,
-            "name": "multiple notes exist on the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 53,
-            "name": "I click the search icon",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 54,
-            "name": "I type \"cosmos\" in the search input",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 55,
-            "name": "a list of matching notes appears",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 56,
-            "name": "I click on a search result \"Cosmos Article\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 57,
-            "name": "the graph zooms to the node \"Cosmos Article\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 58,
-            "name": "the node is highlighted",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;switch-to-list-view-and-filter-notes",
-        "keyword": "Scenario",
-        "line": 60,
-        "name": "Switch to list view and filter notes",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 61,
-            "name": "I am on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 62,
-            "name": "I click the \"List\" toggle",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 63,
-            "name": "the view changes to a list of note cards",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 64,
-            "name": "I see a search input, type filter, and sort dropdown",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;search-notes-in-list-view",
-        "keyword": "Scenario",
-        "line": 66,
-        "name": "Search notes in list view",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 67,
-            "name": "I type \"cosmos\" in the search input",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 68,
-            "name": "the list shows only notes containing \"cosmos\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 69,
-            "name": "matching words are highlighted",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;filter-notes-by-type",
-        "keyword": "Scenario",
-        "line": 71,
-        "name": "Filter notes by type",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 72,
-            "name": "I select \"Planet\" from the type filter",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 73,
-            "name": "only notes of type \"Planet\" are displayed",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "graph-navigation;delete-a-note-from-the-list",
-        "keyword": "Scenario",
-        "line": 75,
-        "name": "Delete a note from the list",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 7,
-            "name": "the application is open on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 76,
-            "name": "a note \"To Delete\" exists",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 77,
-            "name": "I click the trash icon on its card",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 78,
-            "name": "I confirm deletion",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "Then ",
-            "line": 79,
-            "name": "the note disappears from the list",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      }
-    ],
-    "id": "graph-navigation",
-    "line": 1,
-    "keyword": "Feature",
-    "name": "Graph Navigation",
-    "tags": [],
-    "uri": "tests\\features\\graph_navigation.feature"
-  },
-  {
-    "description": "  As a user\n  I want to import external documents and export my knowledge graph",
-    "elements": [
-      {
-        "description": "",
-        "id": "import-and-export;import-from-a-file",
-        "keyword": "Scenario",
-        "line": 5,
-        "name": "Import from a file",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 6,
-            "name": "I am on the graph view",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "When ",
-            "line": 7,
-            "name": "I open the menu and select \"Import\"",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
             "line": 8,
-            "name": "I choose a Markdown file \"notes.md\"",
+            "name": "I am on the main page \"/\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -784,60 +42,48 @@
             "arguments": [],
             "keyword": "And ",
             "line": 9,
-            "name": "I start the import",
+            "name": "there are notes of various types in the database",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
           {
             "arguments": [],
             "keyword": "Then ",
-            "line": 10,
-            "name": "a progress indicator is shown",
+            "line": 13,
+            "name": "I should see the 2D force graph by default",
             "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 11,
-            "name": "after completion, new nodes appear on the graph",
-            "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          }
-        ],
-        "tags": [],
-        "type": "scenario"
-      },
-      {
-        "description": "",
-        "id": "import-and-export;export-to-json",
-        "keyword": "Scenario",
-        "line": 13,
-        "name": "Export to JSON",
-        "steps": [
-          {
-            "arguments": [],
-            "keyword": "Given ",
-            "line": 14,
-            "name": "I have several notes on the graph",
-            "result": {
-              "status": "undefined",
+              "status": "ambiguous",
               "duration": 0
             }
           },
           {
             "arguments": [],
             "keyword": "When ",
-            "line": 15,
-            "name": "I open the menu and select \"Export\"",
+            "line": 14,
+            "name": "I click the \"List\" toggle button in the floating controls",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:115"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "I should see a grid of note cards",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:154"
+            },
+            "result": {
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -845,9 +91,895 @@
             "arguments": [],
             "keyword": "And ",
             "line": 16,
-            "name": "I choose format \"JSON\"",
+            "name": "the view toggle should show \"Graph\" option",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:197"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 17,
+            "name": "I click the \"Graph\" toggle button",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:314"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "I should see the fullscreen 2D force graph",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:161"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "the graph canvas should be visible",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:322"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@2d-graph",
+            "line": 1
+          },
+          {
+            "name": "@list-view",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "2d-graph-and-list-view;filter-notes-by-type-in-list-view",
+        "keyword": "Scenario",
+        "line": 22,
+        "name": "Filter notes by type in list view",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the main page \"/\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "there are notes of various types in the database",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 23,
+            "name": "I am in list view",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:173"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 24,
+            "name": "I click the \"Planet\" filter chip in floating controls",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:122"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 25,
+            "name": "only notes of type \"Planet\" should be displayed",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:203"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 26,
+            "name": "the count badge should show the correct number",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:216"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 27,
+            "name": "I click the \"All\" filter chip",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:328"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "all notes should be displayed",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:223"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@2d-graph",
+            "line": 1
+          },
+          {
+            "name": "@list-view",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 21
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "2d-graph-and-list-view;search-filters-notes-in-list-view",
+        "keyword": "Scenario",
+        "line": 31,
+        "name": "Search filters notes in list view",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the main page \"/\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "there are notes of various types in the database",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 32,
+            "name": "I am in list view",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:173"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 33,
+            "name": "I type \"cosmos\" in the search input",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:129"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 34,
+            "name": "the list should show only notes containing \"cosmos\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:228"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 35,
+            "name": "the note cards should highlight the matching text",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:245"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 36,
+            "name": "I clear the search input",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:136"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 37,
+            "name": "all notes should be displayed again",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:336"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@2d-graph",
+            "line": 1
+          },
+          {
+            "name": "@list-view",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 30
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "2d-graph-and-list-view;search-filters-nodes-in-2d-graph-view",
+        "keyword": "Scenario",
+        "line": 40,
+        "name": "Search filters nodes in 2D graph view",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the main page \"/\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "there are notes of various types in the database",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 41,
+            "name": "I am in graph view",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 42,
+            "name": "I type \"star\" in the search input",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:129"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 43,
+            "name": "only nodes matching \"star\" should be visible",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:344"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 44,
+            "name": "non-matching nodes should be dimmed or hidden",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:279"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 45,
+            "name": "I clear the search input",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:136"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 46,
+            "name": "all nodes should be visible",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:294"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@2d-graph",
+            "line": 1
+          },
+          {
+            "name": "@list-view",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 39
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "2d-graph-and-list-view;create-note-from-floating-controls",
+        "keyword": "Scenario",
+        "line": 49,
+        "name": "Create note from floating controls",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the main page \"/\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "there are notes of various types in the database",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 50,
+            "name": "I am on the main page",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:307"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 51,
+            "name": "I click the \"+\" button in floating controls",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:142"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 52,
+            "name": "a create note modal should open",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:251"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 53,
+            "name": "I fill in the title \"Test Note\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:256"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "I select type \"Star\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:261"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 55,
+            "name": "I click the \"Create\" button",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:128"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 56,
+            "name": "the modal should close",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:266"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 57,
+            "name": "the new note should appear in the graph",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:271"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@2d-graph",
+            "line": 1
+          },
+          {
+            "name": "@list-view",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 48
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "2d-graph-and-list-view",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "2D Graph and List View",
+    "tags": [
+      {
+        "name": "@smoke",
+        "line": 1
+      },
+      {
+        "name": "@2d-graph",
+        "line": 1
+      },
+      {
+        "name": "@list-view",
+        "line": 1
+      }
+    ],
+    "uri": "tests\\features\\graph_2d_list.feature"
+  },
+  {
+    "description": "  As a user\n  I want to see the graph appearing gradually with fog\n  So that I can start interacting early",
+    "elements": [
+      {
+        "description": "",
+        "id": "3d-graph-progressive-loading;overlay-disappears-early-while-fog-persists",
+        "keyword": "Scenario",
+        "line": 12,
+        "name": "Overlay disappears early while fog persists",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I have test notes with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the loading overlay should be visible",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:12"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 14,
+            "name": "the loading text should contain \"universe isn't still created\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:17"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the fog density should be at least 0.05",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:30"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 16,
+            "name": "the simulation progresses to at least 10% nodes positioned",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:57"
+            },
+            "result": {
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -855,30 +987,559 @@
             "arguments": [],
             "keyword": "Then ",
             "line": 17,
-            "name": "a file \"knowledge_graph_export.json\" is downloaded",
+            "name": "the loading overlay should disappear within 2 seconds",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:24"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "But ",
+            "line": 18,
+            "name": "the fog density should still be greater than 0.005",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:38"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "I should be able to click on the canvas",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:83"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
               "duration": 0
             }
           }
         ],
-        "tags": [],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 11
+          }
+        ],
         "type": "scenario"
       },
       {
         "description": "",
-        "id": "import-and-export;export-to-csv",
+        "id": "3d-graph-progressive-loading;fog-fully-clears-after-simulation-stabilizes",
+        "keyword": "Scenario",
+        "line": 22,
+        "name": "Fog fully clears after simulation stabilizes",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I have test notes with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 23,
+            "name": "I wait for the simulation to end",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:73"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 24,
+            "name": "the fog density should become less than 0.01 within 1 second",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:45"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 25,
+            "name": "all nodes should be clickable",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:90"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 26,
+            "name": "links should be visible with opacity based on weight",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 21
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "3d-graph-progressive-loading;early-interaction-is-not-blocked-by-overlay",
+        "keyword": "Scenario",
+        "line": 29,
+        "name": "Early interaction is not blocked by overlay",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I have test notes with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 30,
+            "name": "the graph is still loading",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 31,
+            "name": "I drag the canvas to rotate the view",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:123"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 32,
+            "name": "the camera position should change",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:144"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 33,
+            "name": "the loading overlay should still be visible or fading",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:163"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 28
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "3d-graph-progressive-loading",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "3D Graph Progressive Loading",
+    "tags": [
+      {
+        "name": "@smoke",
+        "line": 1
+      },
+      {
+        "name": "@3d-graph",
+        "line": 1
+      }
+    ],
+    "uri": "tests\\features\\graph_3d_loading.feature"
+  },
+  {
+    "description": "  As a user\n  I want to interact with the graph nodes and camera\n  So that I can explore the knowledge graph intuitively",
+    "elements": [
+      {
+        "description": "",
+        "id": "3d-graph-interaction;click-on-a-node-opens-side-panel",
+        "keyword": "Scenario",
+        "line": 12,
+        "name": "Click on a node opens side panel",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the 3D graph page for a note with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the graph has fully loaded",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "I click on a visible node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:11"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "a side panel should open",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:58"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the panel should display the note title",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:63"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "the panel should contain a link to the note details",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:70"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@interaction",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "3d-graph-interaction;camera-controls-work-during-loading",
         "keyword": "Scenario",
         "line": 19,
-        "name": "Export to CSV",
+        "name": "Camera controls work during loading",
         "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the 3D graph page for a note with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the graph has fully loaded",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
           {
             "arguments": [],
             "keyword": "Given ",
             "line": 20,
-            "name": "I have several notes on the graph",
+            "name": "the graph is still loading",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
@@ -886,42 +1547,472 @@
             "arguments": [],
             "keyword": "When ",
             "line": 21,
-            "name": "I open the menu and select \"Export\"",
+            "name": "I drag to rotate the camera",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:76"
+            },
             "result": {
-              "status": "undefined",
-              "duration": 0
-            }
-          },
-          {
-            "arguments": [],
-            "keyword": "And ",
-            "line": 22,
-            "name": "I choose format \"CSV\"",
-            "result": {
-              "status": "undefined",
+              "status": "skipped",
               "duration": 0
             }
           },
           {
             "arguments": [],
             "keyword": "Then ",
-            "line": 23,
-            "name": "a file \"knowledge_graph_export.csv\" is downloaded",
+            "line": 22,
+            "name": "the view should change accordingly",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:97"
+            },
             "result": {
-              "status": "undefined",
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "the loading overlay should not block the interaction",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:114"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
               "duration": 0
             }
           }
         ],
-        "tags": [],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@interaction",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 18
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "3d-graph-interaction;camera-reset-button-zooms-to-fit-all-nodes",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Camera reset button zooms to fit all nodes",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the 3D graph page for a note with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the graph has fully loaded",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 27,
+            "name": "I click the \"Reset Camera\" button",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:128"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "the camera should smoothly animate to show all nodes",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:142"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 29,
+            "name": "the animation should complete within 1 second",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:154"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@interaction",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 25
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "3d-graph-interaction;hover-over-node-highlights-it",
+        "keyword": "Scenario",
+        "line": 32,
+        "name": "Hover over node highlights it",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the 3D graph page for a note with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the graph has fully loaded",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 33,
+            "name": "I hover over a node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:46"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 34,
+            "name": "the node should visually highlight",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:180"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 35,
+            "name": "a tooltip should appear with the note title",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:197"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@interaction",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 31
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "3d-graph-interaction;double-click-on-node-navigates-to-its-local-graph",
+        "keyword": "Scenario",
+        "line": 38,
+        "name": "Double-click on node navigates to its local graph",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "I am on the 3D graph page for a note with connections",
+            "match": {
+              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the graph has fully loaded",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 39,
+            "name": "I double-click on a node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:35"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 40,
+            "name": "I should navigate to \"/graph/3d/{nodeId}\"",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:211"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 41,
+            "name": "the new graph should center on that node",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:218"
+            },
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@smoke",
+            "line": 1
+          },
+          {
+            "name": "@3d-graph",
+            "line": 1
+          },
+          {
+            "name": "@interaction",
+            "line": 1
+          },
+          {
+            "name": "@regression",
+            "line": 37
+          }
+        ],
         "type": "scenario"
       }
     ],
-    "id": "import-and-export",
-    "line": 1,
+    "id": "3d-graph-interaction",
+    "line": 2,
     "keyword": "Feature",
-    "name": "Import and Export",
-    "tags": [],
-    "uri": "tests\\features\\import_export.feature"
+    "name": "3D Graph Interaction",
+    "tags": [
+      {
+        "name": "@smoke",
+        "line": 1
+      },
+      {
+        "name": "@3d-graph",
+        "line": 1
+      },
+      {
+        "name": "@interaction",
+        "line": 1
+      }
+    ],
+    "uri": "tests\\features\\graph_interaction.feature"
   }
 ]

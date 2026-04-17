@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createNote, createLink, isBackendAvailable, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for 3D Graph Modules (Three.js Refactored)
@@ -11,45 +12,38 @@ import { test, expect } from '@playwright/test';
 // Global flag to track backend availability
 let backendAvailable = false;
 
-test.describe('3D Graph - Modular Architecture', () => {
+test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modules'] }, () => {
   
   test.beforeAll(async ({ request }) => {
     // Check backend availability once before all tests
-    try {
-      const healthCheck = await request.get('http://localhost:8080/notes', { timeout: 5000 });
-      backendAvailable = healthCheck.status() < 500;
-    } catch {
-      backendAvailable = false;
-    }
-    
+    backendAvailable = await isBackendAvailable(request);
+
     if (!backendAvailable) {
-      console.log('⚠️  Backend not available on localhost:8080 - 3D graph tests will be skipped');
+      console.log(`⚠️  Backend not available on ${getBackendUrl()} - 3D graph tests will be skipped`);
     }
   });
-  
+
   test.beforeEach(async ({ page }) => {
     if (!backendAvailable) {
       test.skip();
     }
-    
-    await page.goto('http://localhost:5173/');
+
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
   });
 
   test('should render 3D graph with scene setup module', async ({ page, request }) => {
-    // Create a note via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: 'Scene Test Note', 
-        content: 'Testing scene setup module',
-        type: 'star'
-      }
+    // Create a note via API using helper
+    const note = await createNote(request, {
+      title: 'Scene Test Note',
+      content: 'Testing scene setup module',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to 3D graph page
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     
     // Wait for lazy loading to complete
@@ -83,19 +77,17 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display star celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Star Node', content: 'Star type test', type: 'star' }
+    const note = await createNote(request, {
+      title: 'Star Node',
+      content: 'Star type test',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Linked', content: 'Link' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: noteId, targetNoteId: (await note2.json()).id, weight: 0.8 }
-    });
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    const note2 = await createNote(request, { title: 'Linked', content: 'Link' });
+    await createLink(request, noteId, note2.id, 0.8);
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -105,12 +97,14 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display planet celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Planet Node', content: 'Planet type', type: 'planet' }
+    const note = await createNote(request, {
+      title: 'Planet Node',
+      content: 'Planet type',
+      type: 'planet'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -119,12 +113,14 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display comet celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Comet Node', content: 'Comet type', type: 'comet' }
+    const note = await createNote(request, {
+      title: 'Comet Node',
+      content: 'Comet type',
+      type: 'comet'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -133,12 +129,14 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display galaxy celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Galaxy Node', content: 'Galaxy type', type: 'galaxy' }
+    const note = await createNote(request, {
+      title: 'Galaxy Node',
+      content: 'Galaxy type',
+      type: 'galaxy'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -147,31 +145,21 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should render links with weight-based styling', async ({ page, request }) => {
-    // Create notes with different link weights
-    const sourceNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Source', content: 'Source note' }
-    });
-    const sourceId = (await sourceNote.json()).id;
-    
-    const strongTarget = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Strong Link', content: 'Strong connection' }
-    });
-    const strongId = (await strongTarget.json()).id;
-    
-    const weakTarget = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Weak Link', content: 'Weak connection' }
-    });
-    const weakId = (await weakTarget.json()).id;
-    
+    // Create notes with different link weights using helper
+    const sourceNote = await createNote(request, { title: 'Source', content: 'Source note' });
+    const sourceId = sourceNote.id;
+
+    const strongTarget = await createNote(request, { title: 'Strong Link', content: 'Strong connection' });
+    const strongId = strongTarget.id;
+
+    const weakTarget = await createNote(request, { title: 'Weak Link', content: 'Weak connection' });
+    const weakId = weakTarget.id;
+
     // Create links with different weights
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: strongId, weight: 0.9 }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: weakId, weight: 0.2 }
-    });
-    
-    await page.goto(`http://localhost:5173/graph/3d/${sourceId}`);
+    await createLink(request, sourceId, strongId, 0.9);
+    await createLink(request, sourceId, weakId, 0.2);
+
+    await page.goto(`/graph/3d/${sourceId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -180,23 +168,19 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should auto-zoom camera to fit graph', async ({ page, request }) => {
-    // Create multiple notes to form a graph
+    // Create multiple notes to form a graph using helper
     const notes = [];
     for (let i = 0; i < 5; i++) {
-      const note = await request.post('http://localhost:8080/notes', {
-        data: { title: `Note ${i}`, content: `Content ${i}` }
-      });
-      notes.push((await note.json()).id);
+      const note = await createNote(request, { title: `Note ${i}`, content: `Content ${i}` });
+      notes.push(note.id);
     }
-    
+
     // Create links between notes
     for (let i = 0; i < notes.length - 1; i++) {
-      await request.post('http://localhost:8080/links', {
-        data: { sourceNoteId: notes[i], targetNoteId: notes[i + 1], weight: 0.5 }
-      });
+      await createLink(request, notes[i], notes[i + 1], 0.5);
     }
-    
-    await page.goto(`http://localhost:5173/graph/3d/${notes[0]}`);
+
+    await page.goto(`/graph/3d/${notes[0]}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000); // Wait for simulation to settle and auto-zoom
     
@@ -211,12 +195,13 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should handle full graph toggle', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Toggle Test', content: 'Testing full graph toggle' }
+    const note = await createNote(request, {
+      title: 'Toggle Test',
+      content: 'Testing full graph toggle'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -233,12 +218,13 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display node labels via CSS2D', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Labeled Node', content: 'Testing CSS2D labels' }
+    const note = await createNote(request, {
+      title: 'Labeled Node',
+      content: 'Testing CSS2D labels'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -248,24 +234,26 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should open graph page and verify full graph toggle', async ({ page, request }) => {
-    // Create test notes
-    const note1 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Main Note', content: 'Main content', type: 'star' }
+    // Create test notes using helper
+    const note1 = await createNote(request, {
+      title: 'Main Note',
+      content: 'Main content',
+      type: 'star'
     });
-    const note1Id = (await note1.json()).id;
-    
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Linked Note', content: 'Linked content', type: 'planet' }
+    const note1Id = note1.id;
+
+    const note2 = await createNote(request, {
+      title: 'Linked Note',
+      content: 'Linked content',
+      type: 'planet'
     });
-    const note2Id = (await note2.json()).id;
-    
+    const note2Id = note2.id;
+
     // Create link between notes
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: note1Id, targetNoteId: note2Id, weight: 0.8 }
-    });
-    
+    await createLink(request, note1Id, note2Id, 0.8);
+
     // Test 1: Open 3D graph page for specific note (local constellation)
-    await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
+    await page.goto(`/graph/3d/${note1Id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -300,13 +288,13 @@ test.describe('3D Graph - Modular Architecture', () => {
 
   test('should display correct stats in 2D graph page', async ({ page, request }) => {
     // Get current notes count
-    const notesResp = await request.get('http://localhost:8080/notes');
+    const notesResp = await request.get(`${getBackendUrl()}/notes`);
     const notesData = await notesResp.json();
     const totalNotes = notesData.total || 0;
     console.log('Total notes in DB:', totalNotes);
-    
+
     // Navigate to 2D graph page
-    await page.goto('http://localhost:5173/graph');
+    await page.goto('/graph');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -327,14 +315,16 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display correct stats in 3D graph page', async ({ page, request }) => {
-    // Create a note for 3D graph
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: '3D Stats Test', content: 'Testing 3D stats display', type: 'galaxy' }
+    // Create a note for 3D graph using helper
+    const note = await createNote(request, {
+      title: '3D Stats Test',
+      content: 'Testing 3D stats display',
+      type: 'galaxy'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to 3D graph page
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -351,24 +341,26 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should toggle full graph mode in 2D and verify data changes', async ({ page, request }) => {
-    // Ensure we have notes with links
-    const note1 = await request.post('http://localhost:8080/notes', {
-      data: { title: '2D Toggle Test 1', content: 'First note', type: 'star' }
+    // Ensure we have notes with links using helper
+    const note1 = await createNote(request, {
+      title: '2D Toggle Test 1',
+      content: 'First note',
+      type: 'star'
     });
-    const note1Id = (await note1.json()).id;
-    
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: '2D Toggle Test 2', content: 'Second note', type: 'planet' }
+    const note1Id = note1.id;
+
+    const note2 = await createNote(request, {
+      title: '2D Toggle Test 2',
+      content: 'Second note',
+      type: 'planet'
     });
-    const note2Id = (await note2.json()).id;
-    
+    const note2Id = note2.id;
+
     // Create link
-    await request.post('http://localhost:8080/links', {
-      data: { source_note_id: note1Id, target_note_id: note2Id, link_type: 'reference', weight: 0.7 }
-    });
-    
+    await createLink(request, note1Id, note2Id, 0.7, 'reference');
+
     // Navigate to 2D graph
-    await page.goto('http://localhost:5173/graph');
+    await page.goto('/graph');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -399,25 +391,24 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should fetch full graph data via API', async ({ request }) => {
-    // Create test notes for full graph
+    // Create test notes for full graph using helper
     const notes = [];
     for (let i = 0; i < 3; i++) {
-      const note = await request.post('http://localhost:8080/notes', {
-        data: { title: `Full Graph Note ${i}`, content: `Content ${i}`, type: i === 0 ? 'star' : 'planet' }
+      const note = await createNote(request, {
+        title: `Full Graph Note ${i}`,
+        content: `Content ${i}`,
+        type: i === 0 ? 'star' : 'planet'
       });
-      notes.push((await note.json()).id);
+      notes.push(note.id);
     }
-    
+
     // Create links
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: notes[0], targetNoteId: notes[1], weight: 0.7 }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: notes[1], targetNoteId: notes[2], weight: 0.5 }
-    });
-    
+    await createLink(request, notes[0], notes[1], 0.7);
+    await createLink(request, notes[1], notes[2], 0.5);
+
     // Test the /api/graph/all endpoint via proxy
-    const response = await request.get('http://localhost:5173/api/graph/all', { timeout: 10000 });
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const response = await request.get(`${baseUrl}/api/graph/all`, { timeout: 10000 });
     
     // Should return 200 OK with graph data
     expect(response.status()).toBe(200);
@@ -431,12 +422,14 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display asteroid celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Asteroid Node', content: 'Asteroid type', type: 'asteroid' }
+    const note = await createNote(request, {
+      title: 'Asteroid Node',
+      content: 'Asteroid type',
+      type: 'asteroid'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -445,12 +438,14 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should display debris celestial body', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Debris Node', content: 'Debris type', type: 'debris' }
+    const note = await createNote(request, {
+      title: 'Debris Node',
+      content: 'Debris type',
+      type: 'debris'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -459,39 +454,41 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should render different link types with distinct styling', async ({ page, request }) => {
-    // Create notes for different link types
-    const sourceNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Link Types Source', content: 'Source for link types test', type: 'star' }
+    // Create notes for different link types using helper
+    const sourceNote = await createNote(request, {
+      title: 'Link Types Source',
+      content: 'Source for link types test',
+      type: 'star'
     });
-    const sourceId = (await sourceNote.json()).id;
-    
-    const referenceTarget = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Reference Target', content: 'Reference link target', type: 'planet' }
+    const sourceId = sourceNote.id;
+
+    const referenceTarget = await createNote(request, {
+      title: 'Reference Target',
+      content: 'Reference link target',
+      type: 'planet'
     });
-    const referenceId = (await referenceTarget.json()).id;
-    
-    const dependencyTarget = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Dependency Target', content: 'Dependency link target', type: 'comet' }
+    const referenceId = referenceTarget.id;
+
+    const dependencyTarget = await createNote(request, {
+      title: 'Dependency Target',
+      content: 'Dependency link target',
+      type: 'comet'
     });
-    const dependencyId = (await dependencyTarget.json()).id;
-    
-    const relatedTarget = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Related Target', content: 'Related link target', type: 'galaxy' }
+    const dependencyId = dependencyTarget.id;
+
+    const relatedTarget = await createNote(request, {
+      title: 'Related Target',
+      content: 'Related link target',
+      type: 'galaxy'
     });
-    const relatedId = (await relatedTarget.json()).id;
-    
+    const relatedId = relatedTarget.id;
+
     // Create links with different types
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: referenceId, weight: 0.8, link_type: 'reference' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: dependencyId, weight: 0.7, link_type: 'dependency' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: relatedId, weight: 0.6, link_type: 'related' }
-    });
-    
-    await page.goto(`http://localhost:5173/graph/3d/${sourceId}`);
+    await createLink(request, sourceId, referenceId, 0.8, 'reference');
+    await createLink(request, sourceId, dependencyId, 0.7, 'dependency');
+    await createLink(request, sourceId, relatedId, 0.6, 'related');
+
+    await page.goto(`/graph/3d/${sourceId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -511,7 +508,7 @@ test.describe('3D Graph - Modular Architecture', () => {
 
   test('should render full 3D graph at /graph/3d without note ID', async ({ page }) => {
     // Navigate to full 3D graph page
-    await page.goto('http://localhost:5173/graph/3d');
+    await page.goto('/graph/3d');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -534,18 +531,16 @@ test.describe('3D Graph - Modular Architecture', () => {
   });
 
   test('should render isolated note without connections in 3D graph', async ({ page, request }) => {
-    // Create a note with NO connections
-    const isolatedNote = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: 'Isolated Note No Links', 
-        content: 'This note has no connections to other notes',
-        type: 'star'
-      }
+    // Create a note with NO connections using helper
+    const isolatedNote = await createNote(request, {
+      title: 'Isolated Note No Links',
+      content: 'This note has no connections to other notes',
+      type: 'star'
     });
-    const noteId = (await isolatedNote.json()).id;
-    
+    const noteId = isolatedNote.id;
+
     // Navigate to 3D graph for this isolated note
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     

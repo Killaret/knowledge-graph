@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createNote, createLink, isBackendAvailable, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for Progressive Graph Rendering (Fog of War Effect)
@@ -10,19 +11,14 @@ import { test, expect } from '@playwright/test';
 // Global flag to track backend availability
 let backendAvailable = false;
 
-test.describe('Progressive Graph Rendering - Fog of War', () => {
+test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d', '@progressive'] }, () => {
   
   test.beforeAll(async ({ request }) => {
     // Check backend availability once before all tests
-    try {
-      const healthCheck = await request.get('http://localhost:8080/notes', { timeout: 5000 });
-      backendAvailable = healthCheck.status() < 500;
-    } catch {
-      backendAvailable = false;
-    }
-    
+    backendAvailable = await isBackendAvailable(request);
+
     if (!backendAvailable) {
-      console.log('⚠️  Backend not available on localhost:8080 - Progressive rendering tests will be skipped');
+      console.log(`⚠️  Backend not available on ${getBackendUrl()} - Progressive rendering tests will be skipped`);
     }
   });
   
@@ -31,49 +27,37 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
       test.skip();
     }
     
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
   test('should load initial graph immediately without spinner', async ({ page, request }) => {
-    // Create a note with multiple connections via API
-    const centralNote = await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: 'Central Progressive Test Note', 
-        content: 'Central node for progressive loading test',
-        type: 'star'
-      }
+    // Create a note with multiple connections via API using helper
+    const centralNote = await createNote(request, {
+      title: 'Central Progressive Test Note',
+      content: 'Central node for progressive loading test',
+      type: 'star'
     });
-    const centralId = (await centralNote.json()).id;
-    
+    const centralId = centralNote.id;
+
     // Create multiple linked notes to ensure depth-3 loading has more nodes
     const linkedIds = [];
     for (let i = 0; i < 5; i++) {
-      const linked = await request.post('http://localhost:8080/notes', {
-        data: { title: `Linked Note ${i}`, content: `Content ${i}` }
-      });
-      const linkedId = (await linked.json()).id;
-      linkedIds.push(linkedId);
-      
+      const linked = await createNote(request, { title: `Linked Note ${i}`, content: `Content ${i}` });
+      linkedIds.push(linked.id);
+
       // Link to central
-      await request.post('http://localhost:8080/links', {
-        data: { sourceNoteId: centralId, targetNoteId: linkedId, weight: 0.7 }
-      });
-      
+      await createLink(request, centralId, linked.id, 0.7);
+
       // Create secondary links (depth-2 connections)
       if (i < 3) {
-        const secondary = await request.post('http://localhost:8080/notes', {
-          data: { title: `Secondary ${i}`, content: `Secondary content ${i}` }
-        });
-        const secondaryId = (await secondary.json()).id;
-        await request.post('http://localhost:8080/links', {
-          data: { sourceNoteId: linkedId, targetNoteId: secondaryId, weight: 0.5 }
-        });
+        const secondary = await createNote(request, { title: `Secondary ${i}`, content: `Secondary content ${i}` });
+        await createLink(request, linked.id, secondary.id, 0.5);
       }
     }
-    
+
     // Navigate to 3D graph page
-    await page.goto(`http://localhost:5173/graph/3d/${centralId}`);
+    await page.goto(`/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     
     // Verify graph container appears immediately (no spinner overlay)
@@ -106,18 +90,11 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
       const linked = await request.post('http://localhost:8080/notes', {
         data: { title: `Fog Link ${i}`, content: 'Link content' }
       });
-      await request.post('http://localhost:8080/links', {
-        data: { 
-          sourceNoteId: centralId, 
-          targetNoteId: (await linked.json()).id, 
-          weight: 0.8,
-          link_type: 'reference'
-        }
-      });
+      await createLink(request, centralId, (await linked.json()).id, 0.8, 'reference');
     }
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${centralId}`);
+    await page.goto(`/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
     
@@ -145,7 +122,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     const noteId = (await note.json()).id;
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -189,7 +166,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     });
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
+    await page.goto(`/graph/3d/${note1Id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -218,13 +195,11 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
       const linked = await request.post('http://localhost:8080/notes', {
         data: { title: `Loading Test Link ${i}`, content: `Content ${i}` }
       });
-      await request.post('http://localhost:8080/links', {
-        data: { sourceNoteId: centralId, targetNoteId: (await linked.json()).id, weight: 0.6 }
-      });
+      await createLink(request, centralId, (await linked.json()).id, 0.6);
     }
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${centralId}`);
+    await page.goto(`/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     
     // Wait a bit for potential background loading
@@ -243,7 +218,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     const noteId = (await note.json()).id;
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -289,7 +264,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     });
     
     // Navigate to first graph
-    await page.goto(`http://localhost:5173/graph/3d/${note1Id}`);
+    await page.goto(`/graph/3d/${note1Id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -297,7 +272,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     await expect(graphContainer).toBeVisible();
     
     // Navigate to second graph
-    await page.goto(`http://localhost:5173/graph/3d/${note2Id}`);
+    await page.goto(`/graph/3d/${note2Id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -317,7 +292,7 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     const isolatedId = (await isolatedNote.json()).id;
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${isolatedId}`);
+    await page.goto(`/graph/3d/${isolatedId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -358,17 +333,11 @@ test.describe('Progressive Graph Rendering - Fog of War', () => {
     
     // Create all links
     for (const linkedId of linkedIds) {
-      await request.post('http://localhost:8080/links', {
-        data: { 
-          sourceNoteId: centralId, 
-          targetNoteId: linkedId, 
-          weight: 0.8 
-        }
-      });
+      await createLink(request, centralId, linkedId, 0.8);
     }
     
     // Navigate to central node's graph
-    await page.goto(`http://localhost:5173/graph/3d/${centralId}`);
+    await page.goto(`/graph/3d/${centralId}`);
     await page.waitForLoadState('networkidle');
     
     // Wait for progressive loading to complete (initial + background)
@@ -420,7 +389,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
       test.skip();
     }
     
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
@@ -432,7 +401,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
     const noteId = (await note.json()).id;
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -470,7 +439,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
     });
     
     // Navigate to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     

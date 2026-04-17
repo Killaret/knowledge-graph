@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { createNote, createLink, getBackendUrl } from './helpers/testData';
 
-test.describe('Knowledge Graph Frontend', () => {
+test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
@@ -30,7 +31,7 @@ test.describe('Knowledge Graph Frontend', () => {
     await page.waitForTimeout(2000);
     
     // Verify via API that note was created
-    const notesResponse = await request.get('http://localhost:8080/notes');
+    const notesResponse = await request.get(`${getBackendUrl()}/notes`);
     const notesData = await notesResponse.json();
     expect(notesData.total).toBeGreaterThan(0);
     
@@ -39,15 +40,17 @@ test.describe('Knowledge Graph Frontend', () => {
   });
 
   test('should edit a note', async ({ page, request }) => {
-    // Create a note via API first
+    // Create a note via API first using helper
     const timestamp = Date.now();
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Edit Test ' + timestamp, content: 'Original content', type: 'star' }
+    const note = await createNote(request, {
+      title: 'Edit Test ' + timestamp,
+      content: 'Original content',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to edit page directly
-    await page.goto(`http://localhost:5173/notes/${noteId}/edit`);
+    await page.goto(`/notes/${noteId}/edit`);
     await page.waitForTimeout(1000);
     
     // Update note
@@ -57,24 +60,26 @@ test.describe('Knowledge Graph Frontend', () => {
     await page.click('button[type="submit"]');
     
     // Wait for redirect to note page
-    await page.waitForURL(`http://localhost:5173/notes/${noteId}`, { timeout: 5000 });
-    
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    await page.waitForURL(`${baseUrl}/notes/${noteId}`, { timeout: 5000 });
+
     // Verify via API
-    const updatedNote = await request.get(`http://localhost:8080/notes/${noteId}`);
+    const updatedNote = await request.get(`${getBackendUrl()}/notes/${noteId}`);
     const noteData = await updatedNote.json();
     expect(noteData.title).toBe('Edited ' + timestamp);
   });
 
   test('should delete a note', async ({ page, request }) => {
-    // Create a note via API first
+    // Create a note via API first using helper
     const timestamp = Date.now();
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Delete Test ' + timestamp, content: 'Test content for deletion' }
+    const note = await createNote(request, {
+      title: 'Delete Test ' + timestamp,
+      content: 'Test content for deletion'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate directly to note page
-    await page.goto(`http://localhost:5173/notes/${noteId}`);
+    await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(1000);
     
     // Setup dialog handler before click
@@ -90,26 +95,20 @@ test.describe('Knowledge Graph Frontend', () => {
     await page.waitForTimeout(1000);
     
     // Verify via API that note is deleted
-    const checkResponse = await request.get(`http://localhost:8080/notes/${noteId}`);
+    const checkResponse = await request.get(`${getBackendUrl()}/notes/${noteId}`);
     expect(checkResponse.status()).toBe(404);
   });
 
   test('should open 3D graph for a note with links', async ({ page, request }) => {
-    // Create two notes and a link via API
-    const note1 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Node A', content: 'A' }
-    });
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Node B', content: 'B' }
-    });
-    const id1 = (await note1.json()).id;
-    const id2 = (await note2.json()).id;
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: id1, targetNoteId: id2, link_type: 'reference', weight: 1.0 }
-    });
+    // Create two notes and a link via API using helper
+    const note1 = await createNote(request, { title: 'Node A', content: 'A' });
+    const note2 = await createNote(request, { title: 'Node B', content: 'B' });
+    const id1 = note1.id;
+    const id2 = note2.id;
+    await createLink(request, id1, id2, 1.0, 'reference');
 
     // Navigate to 3D graph page directly
-    await page.goto(`http://localhost:5173/graph/3d/${id1}`);
+    await page.goto(`/graph/3d/${id1}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -127,14 +126,15 @@ test.describe('Knowledge Graph Frontend', () => {
   });
 
   test('should show back button on note detail page', async ({ page, request }) => {
-    // Create a note via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Back Button Test', content: 'Testing back button functionality' }
+    // Create a note via API using helper
+    const note = await createNote(request, {
+      title: 'Back Button Test',
+      content: 'Testing back button functionality'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to note detail page
-    await page.goto(`http://localhost:5173/notes/${noteId}`);
+    await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(1000);
 
     // Check that back button is visible (use first())
@@ -142,57 +142,60 @@ test.describe('Knowledge Graph Frontend', () => {
     
     // Test back button functionality
     await page.click('.back-button');
-    await expect(page).toHaveURL('http://localhost:5173/');
+    await expect(page).toHaveURL('/');
   });
 
   test('should search for notes', async ({ page, request }) => {
-    // Create a note via API with searchable content
+    // Create a note via API with searchable content using helper
     const timestamp = Date.now();
-    await request.post('http://localhost:8080/notes', {
-      data: { title: 'Searchable Note ' + timestamp, content: 'Unique search content ' + timestamp, type: 'star' }
+    await createNote(request, {
+      title: 'Searchable Note ' + timestamp,
+      content: 'Unique search content ' + timestamp,
+      type: 'star'
     });
-    
+
     // Navigate to home
-    await page.goto('http://localhost:5173');
+    await page.goto('/');
     await page.waitForTimeout(1000);
-    
+
     // Use search in floating controls
     await page.fill('.search-input', 'Unique search content');
     await page.click('.search-btn');
-    
+
     // Verify search works via API
-    const searchResponse = await request.get('http://localhost:8080/notes/search?q=Unique+search+content');
+    const searchResponse = await request.get(`${getBackendUrl()}/notes/search?q=Unique+search+content`);
     const searchData = await searchResponse.json();
     expect(searchData.total).toBeGreaterThan(0);
   });
 
   test('should use browser back when history exists', async ({ page, request }) => {
-    // Create a note via API
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'History Test', content: 'Testing browser back functionality' }
+    // Create a note via API using helper
+    const note = await createNote(request, {
+      title: 'History Test',
+      content: 'Testing browser back functionality'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Navigate to note page
-    await page.goto(`http://localhost:5173/notes/${noteId}`);
+    await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(1000);
-    
+
     // Navigate to home page
-    await page.goto('http://localhost:5173');
+    await page.goto('/');
     await page.waitForTimeout(1000);
-    
+
     // Go back to note page
     await page.goBack();
     await page.waitForTimeout(1000);
-    
+
     // Verify back button is visible
     await expect(page.locator('.back-button')).toBeVisible();
-    
+
     // Click back button - should navigate using browser history
     await page.click('.back-button');
     await page.waitForTimeout(2000);
-    
+
     // Should be back on home page
-    await expect(page).toHaveURL('http://localhost:5173/');
+    await expect(page).toHaveURL('/');
   });
 });

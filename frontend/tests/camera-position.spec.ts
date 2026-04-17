@@ -14,73 +14,91 @@
  * - Test camera positioning for isolated single node
  */
 import { test, expect } from '@playwright/test';
+import { createNote, createLink, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for Camera Position and Navigation in 3D Graph
  * Verifies camera positioning, auto-zoom, and route transitions
  */
 
-test.describe('3D Graph - Camera Position and Navigation', () => {
+test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3d', '@camera'] }, () => {
   
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
   });
 
   test('should position camera to show start node in center for local graph', async ({ page, request }) => {
-    // Create a note with connections
-    const centerNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Center Node', content: 'Main node for camera test', type: 'star' }
+    // Create a note with connections using helper
+    const centerNote = await createNote(request, {
+      title: 'Center Node',
+      content: 'Main node for camera test',
+      type: 'star'
     });
-    const centerId = (await centerNote.json()).id;
-    
-    const linkedNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Linked Node', content: 'Secondary node', type: 'planet' }
+    const centerId = centerNote.id;
+
+    const linkedNote = await createNote(request, {
+      title: 'Linked Node',
+      content: 'Secondary node',
+      type: 'planet'
     });
-    const linkedId = (await linkedNote.json()).id;
-    
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: centerId, targetNoteId: linkedId, weight: 0.8 }
-    });
-    
+    const linkedId = linkedNote.id;
+
+    await createLink(request, centerId, linkedId, 0.8);
+
     // Navigate to 3D graph for center node
-    await page.goto(`http://localhost:5173/graph/3d/${centerId}`);
+    await page.goto(`/graph/3d/${centerId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000); // Wait for simulation and auto-zoom
-    
+
     const container = page.locator('.graph-3d-container').first();
     await expect(container).toBeVisible({ timeout: 10000 });
-    
-    // Check that camera logs show centering on nodes
-    const logs: string[] = await page.evaluate(() => {
-      return (window as any).consoleLogs || [];
+
+    // Check camera position directly instead of console logs
+    const cameraPos = await page.evaluate(() => {
+      return (window as any).camera?.position;
     });
-    
-    // Verify auto-zoom was called
-    const autoZoomLog = logs.find(log => log.includes('autoZoomToFit'));
-    expect(autoZoomLog).toBeTruthy();
+    const controlsTarget = await page.evaluate(() => {
+      return (window as any).controls?.target;
+    });
+
+    expect(cameraPos).toBeDefined();
+    expect(controlsTarget).toBeDefined();
+
+    // Verify camera is not in default position (20, 15, 30)
+    expect(cameraPos.x).not.toBe(20);
+    expect(cameraPos.y).not.toBe(15);
+    expect(cameraPos.z).not.toBe(30);
+
+    // Camera should have been adjusted to show the node
+    const distanceFromOrigin = Math.sqrt(
+      cameraPos.x * cameraPos.x +
+      cameraPos.y * cameraPos.y +
+      cameraPos.z * cameraPos.z
+    );
+    expect(distanceFromOrigin).toBeGreaterThan(0);
   });
 
   test('should position camera appropriately for full 3D graph', async ({ page, request }) => {
-    // Create multiple notes for full graph
+    // Create multiple notes for full graph using helper
     const notes = [];
     for (let i = 0; i < 5; i++) {
-      const note = await request.post('http://localhost:8080/notes', {
-        data: { title: `Full Graph Node ${i}`, content: `Node ${i}`, type: i === 0 ? 'star' : 'planet' }
+      const note = await createNote(request, {
+        title: `Full Graph Node ${i}`,
+        content: `Node ${i}`,
+        type: i === 0 ? 'star' : 'planet'
       });
-      notes.push((await note.json()).id);
+      notes.push(note.id);
     }
-    
+
     // Create some links
     for (let i = 0; i < notes.length - 1; i++) {
-      await request.post('http://localhost:8080/links', {
-        data: { sourceNoteId: notes[i], targetNoteId: notes[i + 1], weight: 0.7 }
-      });
+      await createLink(request, notes[i], notes[i + 1], 0.7);
     }
-    
+
     // Navigate to full 3D graph
-    await page.goto('http://localhost:5173/graph/3d');
+    await page.goto('/graph/3d');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(5000);
     
@@ -100,12 +118,14 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
   });
 
   test('should adjust camera when toggling full graph mode', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Toggle Camera Test', content: 'Testing camera on toggle', type: 'star' }
+    const note = await createNote(request, {
+      title: 'Toggle Camera Test',
+      content: 'Testing camera on toggle',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = note.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -148,21 +168,23 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
 
   test('should maintain camera position on route navigation', async ({ page, request }) => {
     // Create test note
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Navigation Test', content: 'Testing route navigation', type: 'star' }
+    const note = await createNote(request, {
+      title: 'Navigation Test',
+      content: 'Testing route navigation',
+      type: 'star'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Go to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
-    
+
     const container3D = page.locator('.graph-3d-container').first();
     await expect(container3D).toBeVisible();
-    
+
     // Navigate to home page
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -171,7 +193,7 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
     await expect(homeContent).toBeVisible();
     
     // Navigate back to 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -181,22 +203,24 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
   });
 
   test('should transition from 2D to 3D graph maintaining context', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: '2D to 3D Transition', content: 'Testing 2D to 3D', type: 'planet' }
+    const note = await createNote(request, {
+      title: '2D to 3D Transition',
+      content: 'Testing 2D to 3D',
+      type: 'planet'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Start at 2D graph page
-    await page.goto('http://localhost:5173/graph');
+    await page.goto('/graph');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
-    
+
     // Verify 2D graph loads
     const graph2D = page.locator('.fullscreen-graph, canvas').first();
     await expect(graph2D).toBeVisible();
-    
+
     // Navigate to 3D version
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -215,7 +239,7 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
 
   test('should navigate from home page 3D button to full 3D graph', async ({ page }) => {
     // Start at home page
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
@@ -236,19 +260,21 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
   });
 
   test('should handle direct URL access to 3D graph routes', async ({ page, request }) => {
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Direct URL Test', content: 'Testing direct URL access', type: 'comet' }
+    const note = await createNote(request, {
+      title: 'Direct URL Test',
+      content: 'Testing direct URL access',
+      type: 'comet'
     });
-    const noteId = (await note.json()).id;
-    
+    const noteId = note.id;
+
     // Test direct access to local 3D graph
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
-    
+
     const localContainer = page.locator('.graph-3d-container').first();
     await expect(localContainer).toBeVisible();
-    
+
     // Local mode should be indicated
     const statsLocal = page.locator('.stats-bar').first();
     if (await statsLocal.isVisible().catch(() => false)) {
@@ -256,9 +282,9 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
       const hasLocalMode = statsText?.toLowerCase().includes('local');
       expect(hasLocalMode).toBe(true);
     }
-    
+
     // Test direct access to full 3D graph
-    await page.goto('http://localhost:5173/graph/3d');
+    await page.goto('/graph/3d');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -276,7 +302,7 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
 
   test('should show empty state with appropriate camera position when no notes', async ({ page }) => {
     // Navigate to full 3D graph when no notes exist (or after clearing)
-    await page.goto('http://localhost:5173/graph/3d');
+    await page.goto('/graph/3d');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -292,12 +318,14 @@ test.describe('3D Graph - Camera Position and Navigation', () => {
 
   test('should position camera correctly for isolated single node', async ({ page, request }) => {
     // Create note with NO connections
-    const isolatedNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Isolated Node', content: 'No connections', type: 'galaxy' }
+    const isolatedNote = await createNote(request, {
+      title: 'Isolated Node',
+      content: 'No connections',
+      type: 'galaxy'
     });
-    const noteId = (await isolatedNote.json()).id;
-    
-    await page.goto(`http://localhost:5173/graph/3d/${noteId}`);
+    const noteId = isolatedNote.id;
+
+    await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     

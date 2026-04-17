@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createNote, getBackendUrl } from './helpers/testData';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
@@ -6,33 +7,29 @@ import { test, expect } from '@playwright/test';
  * instead of the root type field
  */
 
-test.describe('Type Filters - Home Page Filtering', () => {
-  
+test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'] }, () => {
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
   });
 
   test('should filter notes by star type', async ({ page, request }) => {
     const timestamp = Date.now();
-    
-    // Create star type note
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Star Filter Test ${timestamp}`, 
-        content: 'Star content',
-        type: 'star'
-      }
+
+    // Create star type note using helper
+    await createNote(request, {
+      title: `Star Filter Test ${timestamp}`,
+      content: 'Star content',
+      type: 'star'
     });
-    
+
     // Create planet type note
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Planet Filter Test ${timestamp}`, 
-        content: 'Planet content',
-        type: 'planet'
-      }
+    await createNote(request, {
+      title: `Planet Filter Test ${timestamp}`,
+      content: 'Planet content',
+      type: 'planet'
     });
     
     // Reload to see new notes
@@ -59,22 +56,18 @@ test.describe('Type Filters - Home Page Filtering', () => {
 
   test('should filter notes by planet type', async ({ page, request }) => {
     const timestamp = Date.now();
-    
-    // Create notes with different types
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Planet Type ${timestamp}`, 
-        content: 'Planet content',
-        type: 'planet'
-      }
+
+    // Create notes with different types using helper
+    await createNote(request, {
+      title: `Planet Type ${timestamp}`,
+      content: 'Planet content',
+      type: 'planet'
     });
-    
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Comet Type ${timestamp}`, 
-        content: 'Comet content',
-        type: 'comet'
-      }
+
+    await createNote(request, {
+      title: `Comet Type ${timestamp}`,
+      content: 'Comet content',
+      type: 'comet'
     });
     
     await page.reload();
@@ -99,15 +92,22 @@ test.describe('Type Filters - Home Page Filtering', () => {
 
   test('should filter notes by comet type', async ({ page, request }) => {
     const timestamp = Date.now();
-    
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Comet Filter ${timestamp}`, 
-        content: 'Comet content',
-        type: 'comet'
-      }
+
+    // Create comet type note using helper
+    await createNote(request, {
+      title: `Comet Filter Test ${timestamp}`,
+      content: 'Comet content',
+      type: 'comet'
+    });
+
+    // Create galaxy type note
+    await createNote(request, {
+      title: `Galaxy Filter Test ${timestamp}`,
+      content: 'Galaxy content',
+      type: 'galaxy'
     });
     
+    // Reload to see new notes
     await page.reload();
     await page.waitForTimeout(2000);
     
@@ -127,13 +127,12 @@ test.describe('Type Filters - Home Page Filtering', () => {
 
   test('should filter notes by galaxy type', async ({ page, request }) => {
     const timestamp = Date.now();
-    
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Galaxy Filter ${timestamp}`, 
-        content: 'Galaxy content',
-        type: 'galaxy'
-      }
+
+    // Create galaxy type note using helper
+    await createNote(request, {
+      title: `Galaxy Filter Test ${timestamp}`,
+      content: 'Galaxy content',
+      type: 'galaxy'
     });
     
     await page.reload();
@@ -155,16 +154,74 @@ test.describe('Type Filters - Home Page Filtering', () => {
 
   test('should show all notes when selecting All filter', async ({ page, request }) => {
     const timestamp = Date.now();
+
+    // Create multiple notes of different types using helper
+    await createNote(request, {
+      title: `All Filter Star ${timestamp}`,
+      content: 'Star',
+      type: 'star'
+    });
+    await createNote(request, {
+      title: `All Filter Planet ${timestamp}`,
+      content: 'Planet',
+      type: 'planet'
+    });
+    await createNote(request, {
+      title: `All Filter Comet ${timestamp}`,
+      content: 'Comet',
+      type: 'comet'
+    });
     
-    // Create multiple notes of different types
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `All Filter Star ${timestamp}`, content: 'Star', type: 'star' }
+    await page.reload();
+    await page.waitForTimeout(2000);
+    
+    // First filter by star
+    const starsFilter = page.locator('button:has-text("⭐"), button[data-filter="star"]').first();
+    if (await starsFilter.isVisible().catch(() => false)) {
+      await starsFilter.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // Then click All filter
+    const allFilter = page.locator('button:has-text("🌌"), button:has-text("All"), button[data-filter="all"]').first();
+    if (await allFilter.isVisible().catch(() => false)) {
+      await allFilter.click();
+      await page.waitForTimeout(1000);
+      
+      // Stats should show total count without filter indicator
+      const statsBar = page.locator('.stats-bar').first();
+      if (await statsBar.isVisible().catch(() => false)) {
+        const statsText = await statsBar.textContent();
+        // Should show total notes (at least 3 we just created)
+        const countMatch = statsText?.match(/(\d+)\s*note/);
+        if (countMatch) {
+          const count = parseInt(countMatch[1], 10);
+          expect(count).toBeGreaterThanOrEqual(3);
+        }
+        // Filter indicator should not be present for "All"
+        expect(statsText?.toLowerCase()).not.toContain('filtered');
+      }
+    }
+  });
+
+  test('should clear filter by clicking All', async ({ page, request }) => {
+    const timestamp = Date.now();
+
+    // Create notes of different types using helper
+    await createNote(request, {
+      title: `Clear Filter Star ${timestamp}`,
+      content: 'Star content',
+      type: 'star'
     });
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `All Filter Planet ${timestamp}`, content: 'Planet', type: 'planet' }
+    await createNote(request, {
+      title: `Clear Filter Planet ${timestamp}`,
+      content: 'Planet content',
+      type: 'planet'
     });
-    await request.post('http://localhost:8080/notes', {
-      data: { title: `All Filter Comet ${timestamp}`, content: 'Comet', type: 'comet' }
+    await createNote(request, {
+      title: `Clear Filter Comet ${timestamp}`,
+      content: 'Comet content',
+      type: 'comet'
     });
     
     await page.reload();
@@ -202,28 +259,29 @@ test.describe('Type Filters - Home Page Filtering', () => {
   test('should filter graph nodes when type filter is applied', async ({ page, request }) => {
     const timestamp = Date.now();
     
-    // Create notes with links of different types
-    const starNote = await request.post('http://localhost:8080/notes', {
-      data: { title: `Graph Star ${timestamp}`, content: 'Star note', type: 'star' }
+    // Create notes with links of different types using helper
+    await createNote(request, {
+      title: `Graph Star ${timestamp}`,
+      content: 'Star note',
+      type: 'star'
     });
-    const starId = (await starNote.json()).id;
-    
-    const planetNote = await request.post('http://localhost:8080/notes', {
-      data: { title: `Graph Planet ${timestamp}`, content: 'Planet note', type: 'planet' }
+    await createNote(request, {
+      title: `Graph Planet ${timestamp}`,
+      content: 'Planet note',
+      type: 'planet'
     });
-    const planetId = (await planetNote.json()).id;
-    
-    const cometNote = await request.post('http://localhost:8080/notes', {
-      data: { title: `Graph Comet ${timestamp}`, content: 'Comet note', type: 'comet' }
+    await createNote(request, {
+      title: `Graph Comet ${timestamp}`,
+      content: 'Comet note',
+      type: 'comet'
     });
-    const cometId = (await cometNote.json()).id;
     
     // Create links between notes
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: starId, targetNoteId: planetId, weight: 0.8 }
+    await request.post(getBackendUrl() + '/links', {
+      data: { sourceNoteId: 'star', targetNoteId: 'planet', weight: 0.8 }
     });
-    await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: planetId, targetNoteId: cometId, weight: 0.6 }
+    await request.post(getBackendUrl() + '/links', {
+      data: { sourceNoteId: 'planet', targetNoteId: 'comet', weight: 0.6 }
     });
     
     await page.reload();
@@ -242,27 +300,23 @@ test.describe('Type Filters - Home Page Filtering', () => {
   });
 });
 
-test.describe('Type Filters - metadata.type fallback', () => {
+test.describe('Type Filters - metadata.type fallback', { tag: ['@metadata'] }, () => {
   
   test('should filter notes with type in metadata field', async ({ page, request }) => {
     const timestamp = Date.now();
-    
-    // Create note with type in metadata (simulating API that stores type in metadata)
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Metadata Star ${timestamp}`, 
-        content: 'Star type in metadata',
-        metadata: { type: 'star', custom_field: 'value' }
-      }
+
+    // Create note with type in metadata (new format) using helper
+    await createNote(request, {
+      title: `Metadata Star ${timestamp}`,
+      content: 'Star type in metadata',
+      metadata: { type: 'star', custom_field: 'value' }
     });
-    
-    // Create note with type in root field
-    await request.post('http://localhost:8080/notes', {
-      data: { 
-        title: `Root Planet ${timestamp}`, 
-        content: 'Planet type in root',
-        type: 'planet'
-      }
+
+    // Create note with type at root (old format)
+    await createNote(request, {
+      title: `Root Planet ${timestamp}`,
+      content: 'Planet type at root',
+      type: 'planet'
     });
     
     await page.reload();
