@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should fetch full graph data via API
-- Location: tests\graph-3d-modules.spec.ts:393:3
+- Location: tests\graph-3d-modules.spec.ts:394:3
 
 # Error details
 

@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should auto-zoom camera to fit graph
-- Location: tests\graph-3d-modules.spec.ts:170:3
+- Location: tests\graph-3d-modules.spec.ts:171:3
 
 # Error details
 

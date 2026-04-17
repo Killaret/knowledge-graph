@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should display star celestial body
-- Location: tests\graph-3d-modules.spec.ts:79:3
+- Location: tests\graph-3d-modules.spec.ts:80:3
 
 # Error details
 

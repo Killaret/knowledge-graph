@@ -55,10 +55,10 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
     // Create link to center
     await this.request.post('http://localhost:8080/links', {
       data: {
-        source_note_id: this.centerNoteId,
-        target_note_id: noteData.id,
-        link_type: 'related',
-        weight: 0.5 + Math.random() * 0.5
+        SourceNoteID: this.centerNoteId,
+        TargetNoteID: noteData.id,
+        LinkType: 'related',
+        Weight: 0.5 + Math.random() * 0.5
       }
     });
   }

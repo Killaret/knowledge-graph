@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should render different link types with distinct styling
-- Location: tests\graph-3d-modules.spec.ts:456:3
+- Location: tests\graph-3d-modules.spec.ts:457:3
 
 # Error details
 

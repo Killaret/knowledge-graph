@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should open graph page and verify full graph toggle
-- Location: tests\graph-3d-modules.spec.ts:236:3
+- Location: tests\graph-3d-modules.spec.ts:237:3
 
 # Error details
 

@@ -7,7 +7,7 @@
 # Test info
 
 - Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should toggle full graph mode in 2D and verify data changes
-- Location: tests\graph-3d-modules.spec.ts:343:3
+- Location: tests\graph-3d-modules.spec.ts:344:3
 
 # Error details
 

@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should render links with weight-based styling
-- Location: tests\graph-3d-modules.spec.ts:148:3
+- Name: type-filters.spec.ts >> Type Filters - Home Page Filtering >> should filter graph nodes when type filter is applied
+- Location: tests\type-filters.spec.ts:259:3
 
 # Error details
 
