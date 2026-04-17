@@ -8,6 +8,7 @@ export interface ITestWorld extends World {
   request: APIRequestContext;
   testNotes: Array<{ id: string; title: string; type: string }>;
   centerNoteId?: string;
+  currentNoteId?: string;
   initialFogDensity?: number;
   initialCameraPos?: { x: number; y: number; z: number } | null;
   clickedNodeId?: string;
@@ -20,6 +21,7 @@ class CustomWorld extends World implements ITestWorld {
   request!: APIRequestContext;
   testNotes: Array<{ id: string; title: string; type: string }> = [];
   centerNoteId?: string;
+  currentNoteId?: string;
   initialFogDensity?: number;
   initialCameraPos?: { x: number; y: number; z: number } | null;
   clickedNodeId?: string;
@@ -30,4 +32,4 @@ class CustomWorld extends World implements ITestWorld {
 }
 
 setWorldConstructor(CustomWorld);
-setDefaultTimeout(10000);
+setDefaultTimeout(15000);

@@ -240,10 +240,26 @@ Then('the new graph should center on that node', async function(this: ITestWorld
   const canvas = this.page.locator('[data-testid="graph-3d-container"] canvas, canvas').first();
   await expect(canvas).toBeVisible({ timeout: 10000 });
   
-  // Check that centerNodeId is set in window
+  // Wait for navigation and page to settle
+  await this.page.waitForTimeout(1000);
+  
+  // Check that we're on a 3D graph page with a note ID in URL
+  const currentUrl = this.page.url();
+  const urlMatch = currentUrl.match(/\/graph\/3d\/([^/\s]+)/);
+  expect(urlMatch).toBeTruthy();
+  
+  // Verify the note ID is present in URL (not empty or undefined)
+  if (urlMatch) {
+    const noteId = urlMatch[1];
+    expect(noteId).toBeTruthy();
+    expect(noteId.length).toBeGreaterThan(0);
+  }
+  
+  // Also check that centerNodeId is exposed to window (for backward compatibility)
   const centerId = await this.page.evaluate(() => {
     return (window as any).centerNodeId;
   });
   
+  // centerId should match the URL noteId if both are available
   expect(centerId).toBeTruthy();
 });

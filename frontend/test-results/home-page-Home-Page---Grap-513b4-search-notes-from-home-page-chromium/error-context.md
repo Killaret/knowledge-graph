@@ -7,7 +7,7 @@
 # Test info
 
 - Name: home-page.spec.ts >> Home Page - Graph First >> should search notes from home page
-- Location: tests\home-page.spec.ts:153:3
+- Location: tests\home-page.spec.ts:157:3
 
 # Error details
 
@@ -57,7 +57,7 @@ Call log:
         - generic [ref=e41]: 🌀
         - generic [ref=e42]: Galaxies
     - generic [ref=e43]:
-      - textbox "Search notes..." [active] [ref=e44]: Searchable1776427658924
+      - textbox "Search notes..." [active] [ref=e44]: Searchable1776432858247
       - button "Search" [ref=e45] [cursor=pointer]:
         - img [ref=e46]
     - button "Menu" [ref=e50] [cursor=pointer]:
@@ -76,206 +76,206 @@ Call log:
 # Test source
 
 ```ts
-  75  |       await page.waitForTimeout(1500);
-  76  |     }
-  77  |     
-  78  |     // Verify any content is visible (graph, list, loading, or error states)
-  79  |     const content = page.locator('.fullscreen-graph, .list-container, .note-card, .loading-overlay, .error-overlay').first();
+  79  |     const content = page.locator('[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card, [data-testid="loading-overlay"], .error-overlay').first();
   80  |     await expect(content).toBeVisible({ timeout: 10000 });
   81  |   });
   82  | 
   83  |   test('should show note count in stats bar', async ({ page, request }) => {
-  84  |     // Create test notes
+  84  |     // Create test notes using helper
   85  |     const timestamp = Date.now();
-  86  |     await request.post('http://localhost:8080/notes', {
-  87  |       data: { title: `Stats Test 1 ${timestamp}`, content: 'Content 1', type: 'star' }
-  88  |     });
-  89  |     await request.post('http://localhost:8080/notes', {
-  90  |       data: { title: `Stats Test 2 ${timestamp}`, content: 'Content 2', type: 'planet' }
-  91  |     });
-  92  |     
-  93  |     // Reload page and wait for network
-  94  |     await page.reload();
-  95  |     await page.waitForLoadState('networkidle');
-  96  |     await page.waitForTimeout(3000);
-  97  |     
-  98  |     // Verify stats bar shows note count (or wait for loading to finish)
-  99  |     const statsBar = page.locator('.stats-bar, .stats-total').first();
-  100 |     
-  101 |     // Wait for loading to finish
-  102 |     await page.waitForTimeout(2000);
-  103 |     
-  104 |     const hasStats = await statsBar.isVisible().catch(() => false);
-  105 |     if (hasStats) {
-  106 |       // Check that count is greater than 0
-  107 |       const statsText = await statsBar.textContent();
-  108 |       const countMatch = statsText?.match(/(\d+)\s+note/);
-  109 |       if (countMatch) {
-  110 |         const count = parseInt(countMatch[1], 10);
-  111 |         expect(count).toBeGreaterThan(0);
-  112 |       }
-  113 |     }
-  114 |     // If stats not visible, test passes if page loaded without errors
-  115 |     expect(true).toBe(true);
-  116 |   });
-  117 | 
-  118 |   test('should filter notes by type from home page', async ({ page, request }) => {
-  119 |     // Create notes of different types using helper
-  120 |     const timestamp = Date.now();
-  121 |     await createNote(request, {
-  122 |       title: `Star Note ${timestamp}`,
-  123 |       content: 'Star content',
-  124 |       type: 'star'
-  125 |     });
-  126 |     await createNote(request, {
-  127 |       title: `Planet Note ${timestamp}`,
-  128 |       content: 'Planet content',
-  129 |       type: 'planet'
-  130 |     });
-  131 |     
-  132 |     // Reload page
-  133 |     await page.reload();
-  134 |     await page.waitForTimeout(2000);
+  86  |     await createNote(request, {
+  87  |       title: `Stats Test 1 ${timestamp}`,
+  88  |       content: 'Content 1',
+  89  |       type: 'star'
+  90  |     });
+  91  |     await createNote(request, {
+  92  |       title: `Stats Test 2 ${timestamp}`,
+  93  |       content: 'Content 2',
+  94  |       type: 'planet'
+  95  |     });
+  96  |     
+  97  |     // Reload page and wait for network
+  98  |     await page.reload();
+  99  |     await page.waitForLoadState('networkidle');
+  100 |     await page.waitForTimeout(3000);
+  101 |     
+  102 |     // Verify stats bar shows note count (or wait for loading to finish)
+  103 |     const statsBar = page.locator('.stats-bar, .stats-total').first();
+  104 |     
+  105 |     // Wait for loading to finish
+  106 |     await page.waitForTimeout(2000);
+  107 |     
+  108 |     const hasStats = await statsBar.isVisible().catch(() => false);
+  109 |     if (hasStats) {
+  110 |       // Check that count is greater than 0
+  111 |       const statsText = await statsBar.textContent();
+  112 |       const countMatch = statsText?.match(/(\d+)\s+note/);
+  113 |       if (countMatch) {
+  114 |         const count = parseInt(countMatch[1], 10);
+  115 |         expect(count).toBeGreaterThan(0);
+  116 |       }
+  117 |     }
+  118 |     // If stats not visible, test passes if page loaded without errors
+  119 |     expect(true).toBe(true);
+  120 |   });
+  121 | 
+  122 |   test('should filter notes by type from home page', async ({ page, request }) => {
+  123 |     // Create notes of different types using helper
+  124 |     const timestamp = Date.now();
+  125 |     await createNote(request, {
+  126 |       title: `Star Note ${timestamp}`,
+  127 |       content: 'Star content',
+  128 |       type: 'star'
+  129 |     });
+  130 |     await createNote(request, {
+  131 |       title: `Planet Note ${timestamp}`,
+  132 |       content: 'Planet content',
+  133 |       type: 'planet'
+  134 |     });
   135 |     
-  136 |     // Click on "Stars" filter
-  137 |     const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), [data-filter="star"]').first();
-  138 |     if (await starsFilter.isVisible().catch(() => false)) {
-  139 |       await starsFilter.click();
-  140 |       await page.waitForTimeout(500);
-  141 |       
-  142 |       // Verify filter is applied (stats should show filtered count)
-  143 |       const statsFilter = page.locator('.stats-filter').first();
-  144 |       const hasFilterText = await statsFilter.isVisible().catch(() => false);
+  136 |     // Reload page
+  137 |     await page.reload();
+  138 |     await page.waitForTimeout(2000);
+  139 |     
+  140 |     // Click on "Stars" filter
+  141 |     const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), [data-filter="star"]').first();
+  142 |     if (await starsFilter.isVisible().catch(() => false)) {
+  143 |       await starsFilter.click();
+  144 |       await page.waitForTimeout(500);
   145 |       
-  146 |       if (hasFilterText) {
-  147 |         const filterText = await statsFilter.textContent();
-  148 |         expect(filterText?.toLowerCase()).toContain('filter');
-  149 |       }
-  150 |     }
-  151 |   });
-  152 | 
-  153 |   test('should search notes from home page', async ({ page, request }) => {
-  154 |     // Create a searchable note using helper
-  155 |     const timestamp = Date.now();
-  156 |     const searchTerm = `Searchable${timestamp}`;
-  157 |     await createNote(request, {
-  158 |       title: `Test ${searchTerm} Note`,
-  159 |       content: 'Test content',
-  160 |       type: 'star'
-  161 |     });
-  162 |     
-  163 |     // Reload page
-  164 |     await page.reload();
-  165 |     await page.waitForTimeout(2000);
+  146 |       // Verify filter is applied (stats should show filtered count)
+  147 |       const statsFilter = page.locator('.stats-filter').first();
+  148 |       const hasFilterText = await statsFilter.isVisible().catch(() => false);
+  149 |       
+  150 |       if (hasFilterText) {
+  151 |         const filterText = await statsFilter.textContent();
+  152 |         expect(filterText?.toLowerCase()).toContain('filter');
+  153 |       }
+  154 |     }
+  155 |   });
+  156 | 
+  157 |   test('should search notes from home page', async ({ page, request }) => {
+  158 |     // Create a searchable note using helper
+  159 |     const timestamp = Date.now();
+  160 |     const searchTerm = `Searchable${timestamp}`;
+  161 |     await createNote(request, {
+  162 |       title: `Test ${searchTerm} Note`,
+  163 |       content: 'Test content',
+  164 |       type: 'star'
+  165 |     });
   166 |     
-  167 |     // Fill search input
-  168 |     const searchInput = page.locator('.search-input, input[type="search"]').first();
-  169 |     if (await searchInput.isVisible().catch(() => false)) {
-  170 |       await searchInput.fill(searchTerm);
-  171 |       await page.waitForTimeout(1000); // Wait for search to apply
-  172 |       
-  173 |       // Verify stats bar appears
-  174 |       const statsBar = page.locator('.stats-bar').first();
-> 175 |       await expect(statsBar).toBeVisible();
+  167 |     // Reload page
+  168 |     await page.reload();
+  169 |     await page.waitForTimeout(2000);
+  170 |     
+  171 |     // Fill search input
+  172 |     const searchInput = page.locator('.search-input, input[type="search"]').first();
+  173 |     if (await searchInput.isVisible().catch(() => false)) {
+  174 |       await searchInput.fill(searchTerm);
+  175 |       await page.waitForTimeout(1000); // Wait for search to apply
+  176 |       
+  177 |       // Verify stats bar appears
+  178 |       const statsBar = page.locator('.stats-bar').first();
+> 179 |       await expect(statsBar).toBeVisible();
       |                              ^ Error: expect(locator).toBeVisible() failed
-  176 |     }
-  177 |   });
-  178 | 
-  179 |   test('should open side panel when clicking on graph node', async ({ page, request }) => {
-  180 |     // Create a note using helper
-  181 |     const timestamp = Date.now();
-  182 |     await createNote(request, {
-  183 |       title: `Side Panel Test ${timestamp}`,
-  184 |       content: 'Test content for side panel',
-  185 |       type: 'star'
-  186 |     });
-  187 |     
-  188 |     // Reload page
-  189 |     await page.reload();
-  190 |     await page.waitForTimeout(2000);
+  180 |     }
+  181 |   });
+  182 | 
+  183 |   test('should open side panel when clicking on graph node', async ({ page, request }) => {
+  184 |     // Create a note using helper
+  185 |     const timestamp = Date.now();
+  186 |     await createNote(request, {
+  187 |       title: `Side Panel Test ${timestamp}`,
+  188 |       content: 'Test content for side panel',
+  189 |       type: 'star'
+  190 |     });
   191 |     
-  192 |     // Try to click on a note card (fallback if graph click doesn't work)
-  193 |     const noteCard = page.locator('.note-card').first();
-  194 |     if (await noteCard.isVisible().catch(() => false)) {
-  195 |       await noteCard.click();
-  196 |       
-  197 |       // Verify side panel opens
-  198 |       const sidePanel = page.locator('.side-panel, .note-side-panel').first();
-  199 |       await expect(sidePanel).toBeVisible({ timeout: 5000 });
-  200 |     }
-  201 |   });
-  202 | 
-  203 |   test('should navigate to graph view for specific note', async ({ page, request }) => {
-  204 |     // Create a note using helper
-  205 |     const timestamp = Date.now();
-  206 |     const note = await createNote(request, {
-  207 |       title: `Graph View Test ${timestamp}`,
-  208 |       content: 'Test content',
-  209 |       type: 'star'
-  210 |     });
-  211 |     const noteId = note.id;
-  212 | 
-  213 |     // Navigate to specific graph page
-  214 |     await page.goto(`/graph/${noteId}`);
-  215 |     await page.waitForTimeout(2000);
-  216 |     
-  217 |     // Verify graph container is visible
-  218 |     const graphContainer = page.locator('.graph-3d-container, .fullscreen-graph, canvas').first();
-  219 |     await expect(graphContainer).toBeVisible({ timeout: 10000 });
-  220 |   });
-  221 | 
-  222 |   test('should display general graph view at /graph', async ({ page }) => {
-  223 |     // Navigate to general graph page
-  224 |     await page.goto('/graph');
-  225 |     await page.waitForLoadState('networkidle');
-  226 |     await page.waitForTimeout(3000);
-  227 |     
-  228 |     // Verify no 404 error
-  229 |     const error404 = page.locator('text=404, text=Not Found').first();
-  230 |     const has404 = await error404.isVisible().catch(() => false);
-  231 |     expect(has404).toBe(false);
-  232 |     
-  233 |     // Verify graph container, empty state, or error state is visible
-  234 |     const graphContainer = page.locator('.fullscreen-graph, .graph-3d-container, canvas').first();
-  235 |     const emptyState = page.locator('text=No notes found, text=No graph data').first();
-  236 |     const errorState = page.locator('text=Failed to load graph data').first();
-  237 |     
-  238 |     const hasGraph = await graphContainer.isVisible().catch(() => false);
-  239 |     const hasEmpty = await emptyState.isVisible().catch(() => false);
-  240 |     const hasError = await errorState.isVisible().catch(() => false);
+  192 |     // Reload page
+  193 |     await page.reload();
+  194 |     await page.waitForTimeout(2000);
+  195 |     
+  196 |     // Try to click on a note card (fallback if graph click doesn't work)
+  197 |     const noteCard = page.locator('.note-card').first();
+  198 |     if (await noteCard.isVisible().catch(() => false)) {
+  199 |       await noteCard.click();
+  200 |       
+  201 |       // Verify side panel opens
+  202 |       const sidePanel = page.locator('.side-panel, .note-side-panel').first();
+  203 |       await expect(sidePanel).toBeVisible({ timeout: 5000 });
+  204 |     }
+  205 |   });
+  206 | 
+  207 |   test('should navigate to graph view for specific note', async ({ page, request }) => {
+  208 |     // Create a note using helper
+  209 |     const timestamp = Date.now();
+  210 |     const note = await createNote(request, {
+  211 |       title: `Graph View Test ${timestamp}`,
+  212 |       content: 'Test content',
+  213 |       type: 'star'
+  214 |     });
+  215 |     const noteId = note.id;
+  216 | 
+  217 |     // Navigate to specific graph page
+  218 |     await page.goto(`/graph/${noteId}`);
+  219 |     await page.waitForTimeout(2000);
+  220 |     
+  221 |     // Verify graph container is visible
+  222 |     const graphContainer = page.locator('.graph-3d-container, .fullscreen-graph, canvas').first();
+  223 |     await expect(graphContainer).toBeVisible({ timeout: 10000 });
+  224 |   });
+  225 | 
+  226 |   test('should display general graph view at /graph', async ({ page }) => {
+  227 |     // Navigate to general graph page
+  228 |     await page.goto('/graph');
+  229 |     await page.waitForLoadState('networkidle');
+  230 |     await page.waitForTimeout(3000);
+  231 |     
+  232 |     // Verify no 404 error
+  233 |     const error404 = page.locator('text=404, text=Not Found').first();
+  234 |     const has404 = await error404.isVisible().catch(() => false);
+  235 |     expect(has404).toBe(false);
+  236 |     
+  237 |     // Verify graph container, empty state, or error state is visible
+  238 |     const graphContainer = page.locator('.fullscreen-graph, .graph-3d-container, canvas').first();
+  239 |     const emptyState = page.locator('text=No notes found, text=No graph data').first();
+  240 |     const errorState = page.locator('text=Failed to load graph data').first();
   241 |     
-  242 |     expect(hasGraph || hasEmpty || hasError).toBe(true);
-  243 |   });
-  244 | 
-  245 |   test('should handle empty state when no notes exist', async ({ page, request }) => {
-  246 |     // Check current notes count
-  247 |     const notesResponse = await request.get('http://localhost:8080/notes');
-  248 |     const notesData = await notesResponse.json();
-  249 |     const hasNotes = notesData.total > 0 || (notesData.notes?.length > 0);
-  250 |     
-  251 |     // Reload page
-  252 |     await page.reload();
-  253 |     await page.waitForTimeout(2000);
+  242 |     const hasGraph = await graphContainer.isVisible().catch(() => false);
+  243 |     const hasEmpty = await emptyState.isVisible().catch(() => false);
+  244 |     const hasError = await errorState.isVisible().catch(() => false);
+  245 |     
+  246 |     expect(hasGraph || hasEmpty || hasError).toBe(true);
+  247 |   });
+  248 | 
+  249 |   test('should handle empty state when no notes exist', async ({ page, request }) => {
+  250 |     // Check current notes count
+  251 |     const notesResponse = await request.get('http://localhost:8080/notes');
+  252 |     const notesData = await notesResponse.json();
+  253 |     const hasNotes = notesData.total > 0 || (notesData.notes?.length > 0);
   254 |     
-  255 |     if (!hasNotes) {
-  256 |       // If no notes, verify some content is visible (empty state, graph container, or error)
-  257 |       const content = page.locator('.fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i').first();
-  258 |       await expect(content).toBeVisible({ timeout: 10000 });
-  259 |     }
-  260 |     // If notes exist, test passes - we just verify the page loads
-  261 |     expect(true).toBe(true);
-  262 |   });
-  263 | 
-  264 |   test('should toggle full graph mode on home page', async ({ page, request }) => {
-  265 |     // Create test notes if needed
-  266 |     const notesResponse = await request.get('http://localhost:8080/notes');
-  267 |     const notesData = await notesResponse.json();
-  268 |     
-  269 |     if (notesData.total < 2) {
-  270 |       // Create at least 2 notes for meaningful test
-  271 |       await request.post('http://localhost:8080/notes', {
-  272 |         data: { title: 'Note 1', content: 'Content 1', type: 'star' }
-  273 |       });
-  274 |       await request.post('http://localhost:8080/notes', {
-  275 |         data: { title: 'Note 2', content: 'Content 2', type: 'planet' }
+  255 |     // Reload page
+  256 |     await page.reload();
+  257 |     await page.waitForTimeout(2000);
+  258 |     
+  259 |     if (!hasNotes) {
+  260 |       // If no notes, verify some content is visible (empty state, graph container, or error)
+  261 |       const content = page.locator('.fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i').first();
+  262 |       await expect(content).toBeVisible({ timeout: 10000 });
+  263 |     }
+  264 |     // If notes exist, test passes - we just verify the page loads
+  265 |     expect(true).toBe(true);
+  266 |   });
+  267 | 
+  268 |   test('should toggle full graph mode on home page', async ({ page, request }) => {
+  269 |     // Create test notes if needed
+  270 |     const notesResponse = await request.get('http://localhost:8080/notes');
+  271 |     const notesData = await notesResponse.json();
+  272 |     
+  273 |     if (notesData.total < 2) {
+  274 |       // Create at least 2 notes for meaningful test
+  275 |       await request.post('http://localhost:8080/notes', {
+  276 |         data: { title: 'Note 1', content: 'Content 1', type: 'star' }
+  277 |       });
+  278 |       await request.post('http://localhost:8080/notes', {
+  279 |         data: { title: 'Note 2', content: 'Content 2', type: 'planet' }
 ```

@@ -1,6 +1,7 @@
 import { Given, When, Then, Before, After, type IWorld } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import type { Page, APIRequestContext } from '@playwright/test';
+import { createNote, createLink } from '../../helpers/testData';
 
 // Custom world type
 interface ITestWorld extends IWorld {
@@ -27,55 +28,39 @@ After(async function(this: ITestWorld) {
 
 // Background steps
 Given('I have test notes with connections', async function(this: ITestWorld) {
-  // Create center note
-  const centerNote = await this.request.post('http://localhost:8080/notes', {
-    data: {
-      title: 'Center Test Note',
-      content: 'This is the center note for testing',
-      type: 'star'
-    }
+  // Create center note using helper
+  const centerData = await createNote(this.request, {
+    title: 'Center Test Note',
+    content: 'This is the center note for testing',
+    type: 'star'
   });
-  const centerData = await centerNote.json();
   this.centerNoteId = centerData.id;
-  this.testNotes.push({ id: centerData.id, title: centerData.title, type: 'star' });
+  this.testNotes.push({ id: centerData.id, title: String(centerData.title || ''), type: 'star' });
   
   // Create connected notes
   const types = ['planet', 'comet', 'galaxy', 'asteroid'];
   for (let i = 0; i < 4; i++) {
-    const note = await this.request.post('http://localhost:8080/notes', {
-      data: {
-        title: `Connected Note ${i}`,
-        content: `Content for note ${i}`,
-        type: types[i % types.length]
-      }
+    const noteData = await createNote(this.request, {
+      title: `Connected Note ${i}`,
+      content: `Content for note ${i}`,
+      type: types[i % types.length]
     });
-    const noteData = await note.json();
-    this.testNotes.push({ id: noteData.id, title: noteData.title, type: types[i % types.length] });
+    this.testNotes.push({ id: noteData.id, title: String(noteData.title || ''), type: types[i % types.length] });
     
-    // Create link to center
-    await this.request.post('http://localhost:8080/links', {
-      data: {
-        SourceNoteID: this.centerNoteId,
-        TargetNoteID: noteData.id,
-        LinkType: 'related',
-        Weight: 0.5 + Math.random() * 0.5
-      }
-    });
+    // Create link to center using helper
+    await createLink(this.request, this.centerNoteId!, noteData.id, 0.5 + Math.random() * 0.5, 'related');
   }
 });
 
 Given('there are notes of various types in the database', async function(this: ITestWorld) {
   const types = ['star', 'planet', 'comet', 'galaxy', 'asteroid'];
   for (let i = 0; i < 5; i++) {
-    const note = await this.request.post('http://localhost:8080/notes', {
-      data: {
-        title: `Test ${types[i]} ${Date.now()}`,
-        content: `Content for ${types[i]}`,
-        type: types[i]
-      }
+    const noteData = await createNote(this.request, {
+      title: `Test ${types[i]} ${Date.now()}`,
+      content: `Content for ${types[i]}`,
+      type: types[i]
     });
-    const noteData = await note.json();
-    this.testNotes.push({ id: noteData.id, title: noteData.title, type: types[i] });
+    this.testNotes.push({ id: noteData.id, title: String(noteData.title || ''), type: types[i] });
   }
 });
 
@@ -97,13 +82,14 @@ Given('I navigate to {string}', async function(this: ITestWorld, path: string) {
 Given('I am on the 3D graph page for a note with connections', async function(this: ITestWorld) {
   // Create notes if needed
   if (!this.centerNoteId) {
-    // Create center note
-    const centerNote = await this.request.post('http://localhost:8080/notes', {
-      data: { title: 'Center Test Note', content: 'Center note', type: 'star' }
+    // Create center note using helper
+    const centerData = await createNote(this.request, {
+      title: 'Center Test Note',
+      content: 'Center note',
+      type: 'star'
     });
-    const centerData = await centerNote.json();
     this.centerNoteId = centerData.id;
-    this.testNotes.push({ id: centerData.id, title: centerData.title, type: 'star' });
+    this.testNotes.push({ id: centerData.id, title: String(centerData.title || ''), type: 'star' });
   }
   // Navigate to 3D graph
   await this.page.goto(`http://localhost:5173/graph/3d/${this.centerNoteId}`);
@@ -137,13 +123,28 @@ When('I type {string} in the search input', async function(this: ITestWorld, sea
 });
 
 When('I clear the search input', async function(this: ITestWorld) {
-  const searchInput = this.page.locator('.floating-controls input[type="search"], [data-testid="search-input"]').first();
+  const searchInput = this.page.locator('[data-testid="search-input"]').first();
   await searchInput.clear();
   await this.page.waitForTimeout(300);
 });
 
 When('I click the {string} button in floating controls', async function(this: ITestWorld, buttonLabel: string) {
-  const button = this.page.locator('.floating-controls button').filter({ hasText: new RegExp(buttonLabel.replace(/[+*]/g, '\\$&'), 'i') }).first();
+  // Map button labels to data-testid selectors
+  const label = buttonLabel.toLowerCase();
+  let selector: string;
+  if (label.includes('list')) {
+    selector = '[data-testid="view-toggle-list"]';  
+  } else if (label.includes('graph')) {
+    selector = '[data-testid="view-toggle-graph"]';
+  } else if (label.includes('3d') || label.includes('3d view')) {
+    selector = '[data-testid="view-toggle-3d"]';  
+  } else if (label.includes('reset') || label.includes('camera')) {
+    selector = '[data-testid="reset-camera-button"]';
+  } else {
+    // Fallback to text search for other buttons
+    selector = `button:has-text("${buttonLabel}")`;
+  }
+  const button = this.page.locator(selector).first();
   await expect(button).toBeVisible({ timeout: 5000 });
   await button.click();
 });
@@ -173,7 +174,7 @@ Then('I am in list view', async function(this: ITestWorld) {
   const isVisible = await listView.isVisible().catch(() => false);
   if (!isVisible) {
     // Click list toggle
-    const button = this.page.locator('.floating-controls button').filter({ hasText: /List/i }).first();
+    const button = this.page.locator('[data-testid="view-toggle-list"]').first();
     await button.click();
     await this.page.waitForTimeout(500);
   }
@@ -185,7 +186,7 @@ Then('I am in graph view', async function(this: ITestWorld) {
   const isVisible = await graph.isVisible().catch(() => false);
   if (!isVisible) {
     // Click graph toggle
-    const button = this.page.locator('.floating-controls button').filter({ hasText: /Graph/i }).first();
+    const button = this.page.locator('[data-testid="view-toggle-graph"]').first();
     await button.click();
     await this.page.waitForTimeout(500);
   }
@@ -193,7 +194,20 @@ Then('I am in graph view', async function(this: ITestWorld) {
 });
 
 Then('the view toggle should show {string} option', async function(this: ITestWorld, optionText: string) {
-  const button = this.page.locator('.floating-controls button').filter({ hasText: new RegExp(optionText, 'i') }).first();
+  // Map option text to data-testid
+  const text = optionText.toLowerCase();
+  let selector: string;
+  if (text.includes('list')) {
+    selector = '[data-testid="view-toggle-list"]';  
+  } else if (text.includes('graph')) {
+    selector = '[data-testid="view-toggle-graph"]';
+  } else if (text.includes('3d')) {
+    selector = '[data-testid="view-toggle-3d"]';  
+  } else {
+    // Fallback to text search
+    selector = `button:has-text("${optionText}")`;
+  }
+  const button = this.page.locator(selector).first();
   await expect(button).toBeVisible({ timeout: 5000 });
 });
 
@@ -310,7 +324,24 @@ Given('I am on the main page', async function(this: ITestWorld) {
 
 // Toggle button variations
 When('I click the {string} toggle button', async function(this: ITestWorld, viewName: string) {
-  const button = this.page.locator('.floating-controls button').filter({ hasText: new RegExp(viewName, 'i') }).first();
+  // Map view names to data-testid selectors
+  const name = viewName.toLowerCase();
+  let testId: string;
+  if (name.includes('list')) {
+    testId = 'view-toggle-list';  
+  } else if (name.includes('graph')) {
+    testId = 'view-toggle-graph';
+  } else if (name.includes('3d')) {
+    testId = 'view-toggle-3d';  
+  } else {
+    // Fallback to text search
+    const button = this.page.locator('button').filter({ hasText: new RegExp(viewName, 'i') }).first();
+    await expect(button).toBeVisible({ timeout: 5000 });
+    await button.click();
+    await this.page.waitForTimeout(500);
+    return;
+  }
+  const button = this.page.locator(`[data-testid="${testId}"]`).first();
   await expect(button).toBeVisible({ timeout: 5000 });
   await button.click();
   await this.page.waitForTimeout(500);
@@ -324,7 +355,20 @@ Then('the graph canvas should be visible', async function(this: ITestWorld) {
 
 // Filter chip variations
 When('I click the {string} filter chip', async function(this: ITestWorld, filterName: string) {
-  const chip = this.page.locator('.floating-controls .filter-chip, .chip').filter({ hasText: new RegExp(filterName, 'i') }).first();
+  // Map filter names to data-testid
+  const filterMap: Record<string, string> = {
+    'star': 'filter-chip-star',
+    'stars': 'filter-chip-star',
+    'planet': 'filter-chip-planet',
+    'planets': 'filter-chip-planet',
+    'comet': 'filter-chip-comet',
+    'comets': 'filter-chip-comet',
+    'galaxy': 'filter-chip-galaxy',
+    'galaxies': 'filter-chip-galaxy',
+    'all': 'filter-chip-all'
+  };
+  const filterId = filterMap[filterName.toLowerCase()] || `filter-chip-${filterName.toLowerCase()}`;
+  const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
   await chip.click();
   await this.page.waitForTimeout(300);

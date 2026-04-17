@@ -27,6 +27,8 @@
 
     if (currentNoteId) {
       console.log('[3D Page] Effect triggered:', { id: currentNoteId, showFullGraph: showFull });
+      // Expose centerNodeId to window for tests
+      (window as any).centerNodeId = currentNoteId;
       loadGraphProgressive(currentNoteId);
     }
   });

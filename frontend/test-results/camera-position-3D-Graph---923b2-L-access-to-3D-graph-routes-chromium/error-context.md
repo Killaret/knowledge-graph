@@ -34,106 +34,106 @@ Received: false
       - img [ref=e12]
       - generic [ref=e14]: Reset View
     - generic:
-      - generic [ref=e16] [cursor=pointer]: Scene Test Note
-      - generic [ref=e17] [cursor=pointer]: Galaxy Node
-      - generic [ref=e18] [cursor=pointer]: Isolated Node
-      - generic [ref=e19] [cursor=pointer]: Direct URL Test
-      - generic [ref=e20] [cursor=pointer]: Navigation Test
-      - generic [ref=e21] [cursor=pointer]: Linked Node
-      - generic [ref=e22] [cursor=pointer]: Center Node
-      - generic [ref=e23] [cursor=pointer]: Toggle Camera Test
-      - generic [ref=e24] [cursor=pointer]: Full Graph Node 4
-      - generic [ref=e25] [cursor=pointer]: Full Graph Node 3
-      - generic [ref=e26] [cursor=pointer]: Full Graph Node 2
-      - generic [ref=e27] [cursor=pointer]: Full Graph Node 1
-      - generic [ref=e28] [cursor=pointer]: 2D to 3D Transition
-      - generic [ref=e29] [cursor=pointer]: Graph Comet 17764...
-      - generic [ref=e30] [cursor=pointer]: Graph Planet 1776...
-      - generic [ref=e31] [cursor=pointer]: Graph Star 177642...
-      - generic [ref=e32] [cursor=pointer]: Root Planet 17764...
-      - generic [ref=e33] [cursor=pointer]: No Type 177642417...
-      - generic [ref=e34] [cursor=pointer]: Clear Filter Come...
-      - generic [ref=e35] [cursor=pointer]: Clear Filter Star...
-      - generic [ref=e36] [cursor=pointer]: Canvas Dimension ...
-      - generic [ref=e37] [cursor=pointer]: All Filter Comet ...
-      - generic [ref=e38] [cursor=pointer]: All Filter Planet...
-      - generic [ref=e39] [cursor=pointer]: Planet Filter Tes...
-      - generic [ref=e40] [cursor=pointer]: Star Filter Test ...
-      - generic [ref=e41] [cursor=pointer]: Galaxy Filter Tes...
-      - generic [ref=e42] [cursor=pointer]: Galaxy Filter Tes...
-      - generic [ref=e43] [cursor=pointer]: Comet Filter Test...
-      - generic [ref=e44] [cursor=pointer]: Planet Type 17764...
-      - generic [ref=e45] [cursor=pointer]: Isolated Node
-      - generic [ref=e46] [cursor=pointer]: Camera Reset Test
-      - generic [ref=e47] [cursor=pointer]: Structure Link
-      - generic [ref=e48] [cursor=pointer]: Structure Test
-      - generic [ref=e49] [cursor=pointer]: comet Node
-      - generic [ref=e50] [cursor=pointer]: planet Node
-      - generic [ref=e51] [cursor=pointer]: Central Star
-      - generic [ref=e52] [cursor=pointer]: Fog Link 0
-      - generic [ref=e53] [cursor=pointer]: Fog Test Note
-      - generic [ref=e54] [cursor=pointer]: Source Node
-      - generic [ref=e55] [cursor=pointer]: Linked to Second
-      - generic [ref=e56] [cursor=pointer]: Linked to First
-      - generic [ref=e57] [cursor=pointer]: Second Graph Note
-      - generic [ref=e58] [cursor=pointer]: First Graph Note
-      - generic [ref=e59] [cursor=pointer]: Loading Test Link 0
-      - generic [ref=e60] [cursor=pointer]: Playwright Test 1...
-      - generic [ref=e61] [cursor=pointer]: Node Display Test
-      - generic [ref=e62] [cursor=pointer]: Linked Note 0
-      - generic [ref=e63] [cursor=pointer]: Central Progressi...
-      - generic [ref=e64] [cursor=pointer]: Searchable Note 1...
-      - generic [ref=e65] [cursor=pointer]: History Test
-      - generic [ref=e66] [cursor=pointer]: Back Button Test
-      - generic [ref=e67] [cursor=pointer]: Edited 1776424141910
-      - generic [ref=e68] [cursor=pointer]: Node B
-      - generic [ref=e69] [cursor=pointer]: Node A
-      - generic [ref=e70] [cursor=pointer]: List View Test Note
-      - generic [ref=e71] [cursor=pointer]: Planet Note 17764...
-      - generic [ref=e72] [cursor=pointer]: Star Note 1776424...
-      - generic [ref=e73] [cursor=pointer]: Graph View Test 1...
-      - generic [ref=e74] [cursor=pointer]: Side Panel Test 1...
-      - generic [ref=e75] [cursor=pointer]: Test Searchable17...
-      - generic [ref=e76] [cursor=pointer]: Stats Test 1 1776...
-      - generic [ref=e77] [cursor=pointer]: Debris Node
-      - generic [ref=e78] [cursor=pointer]: 3D Stats Test
-      - generic [ref=e79] [cursor=pointer]: Stats Test Node 2
-      - generic [ref=e80] [cursor=pointer]: Stats Test Node 1
-      - generic [ref=e81] [cursor=pointer]: Toggle Test
-      - generic [ref=e82] [cursor=pointer]: Asteroid Node
-      - generic [ref=e83] [cursor=pointer]: Comet Node
-      - generic [ref=e84] [cursor=pointer]: Isolated Note No ...
-      - generic [ref=e85] [cursor=pointer]: Navigation Test Note
-      - generic [ref=e86] [cursor=pointer]: Styling Test Note
-      - generic [ref=e87] [cursor=pointer]: Planet Node
-      - generic [ref=e88] [cursor=pointer]: Note 4
-      - generic [ref=e89] [cursor=pointer]: Note 3
-      - generic [ref=e90] [cursor=pointer]: Note 2
-      - generic [ref=e91] [cursor=pointer]: Note 1
-      - generic [ref=e92] [cursor=pointer]: Note 0
-      - generic [ref=e93] [cursor=pointer]: Full Graph Note 2
-      - generic [ref=e94] [cursor=pointer]: Full Graph Note 1
-      - generic [ref=e95] [cursor=pointer]: Full Graph Note 0
-      - generic [ref=e96] [cursor=pointer]: Linked Note
-      - generic [ref=e97] [cursor=pointer]: Main Note
-      - generic [ref=e98] [cursor=pointer]: 3D Graph Test Note
-      - generic [ref=e99] [cursor=pointer]: Linked
-      - generic [ref=e100] [cursor=pointer]: Star Node
-      - generic [ref=e101] [cursor=pointer]: Weak Link
-      - generic [ref=e102] [cursor=pointer]: Strong Link
-      - generic [ref=e103] [cursor=pointer]: Source
-      - generic [ref=e104] [cursor=pointer]: Related Target
-      - generic [ref=e105] [cursor=pointer]: Dependency Target
-      - generic [ref=e106] [cursor=pointer]: Full Graph Node 0
-      - generic [ref=e107] [cursor=pointer]: Metadata Star 177...
-      - generic [ref=e108] [cursor=pointer]: Clear Filter Plan...
-      - generic [ref=e109] [cursor=pointer]: All Filter Star 1...
-      - generic [ref=e110] [cursor=pointer]: Comet Type 177642...
-      - generic [ref=e111] [cursor=pointer]: asteroid Node
-      - generic [ref=e112] [cursor=pointer]: Target Node
-      - generic [ref=e113] [cursor=pointer]: Progressive Loadi...
-      - generic [ref=e114] [cursor=pointer]: Stats Test 2 1776...
-      - generic [ref=e115] [cursor=pointer]: Home Page Test No...
+      - generic [ref=e16] [cursor=pointer]: Labeled Node
+      - generic [ref=e17] [cursor=pointer]: Direct URL Test
+      - generic [ref=e18] [cursor=pointer]: Scene Test Note
+      - generic [ref=e19] [cursor=pointer]: Galaxy Node
+      - generic [ref=e20] [cursor=pointer]: Isolated Node
+      - generic [ref=e21] [cursor=pointer]: Full Graph Node 4
+      - generic [ref=e22] [cursor=pointer]: Full Graph Node 3
+      - generic [ref=e23] [cursor=pointer]: Full Graph Node 2
+      - generic [ref=e24] [cursor=pointer]: Full Graph Node 1
+      - generic [ref=e25] [cursor=pointer]: Full Graph Node 0
+      - generic [ref=e26] [cursor=pointer]: 2D to 3D Transition
+      - generic [ref=e27] [cursor=pointer]: Linked Node
+      - generic [ref=e28] [cursor=pointer]: Center Node
+      - generic [ref=e29] [cursor=pointer]: Toggle Camera Test
+      - generic [ref=e30] [cursor=pointer]: Searchable Test Note
+      - generic [ref=e31] [cursor=pointer]: Star Visual Test
+      - generic [ref=e32] [cursor=pointer]: Satellite Node
+      - generic [ref=e33] [cursor=pointer]: Center Node
+      - generic [ref=e34] [cursor=pointer]: Visual 3D Test
+      - generic [ref=e35] [cursor=pointer]: Planet Visual Test
+      - generic [ref=e36] [cursor=pointer]: Graph Comet 17764...
+      - generic [ref=e37] [cursor=pointer]: Graph Star 177642...
+      - generic [ref=e38] [cursor=pointer]: All Filter Comet ...
+      - generic [ref=e39] [cursor=pointer]: All Filter Planet...
+      - generic [ref=e40] [cursor=pointer]: All Filter Star 1...
+      - generic [ref=e41] [cursor=pointer]: No Type 177642770...
+      - generic [ref=e42] [cursor=pointer]: Metadata Star 177...
+      - generic [ref=e43] [cursor=pointer]: Galaxy Filter Tes...
+      - generic [ref=e44] [cursor=pointer]: Galaxy Filter Tes...
+      - generic [ref=e45] [cursor=pointer]: Comet Filter Test...
+      - generic [ref=e46] [cursor=pointer]: Comet Type 177642...
+      - generic [ref=e47] [cursor=pointer]: Planet Type 17764...
+      - generic [ref=e48] [cursor=pointer]: Structure Link
+      - generic [ref=e49] [cursor=pointer]: Isolated Node
+      - generic [ref=e50] [cursor=pointer]: Planet Filter Tes...
+      - generic [ref=e51] [cursor=pointer]: Star Filter Test ...
+      - generic [ref=e52] [cursor=pointer]: Target Node
+      - generic [ref=e53] [cursor=pointer]: Source Node
+      - generic [ref=e54] [cursor=pointer]: Camera Reset Test
+      - generic [ref=e55] [cursor=pointer]: Fog Link 0
+      - generic [ref=e56] [cursor=pointer]: Node Display Test
+      - generic [ref=e57] [cursor=pointer]: Loading Test Link 0
+      - generic [ref=e58] [cursor=pointer]: Progressive Loadi...
+      - generic [ref=e59] [cursor=pointer]: comet Node
+      - generic [ref=e60] [cursor=pointer]: planet Node
+      - generic [ref=e61] [cursor=pointer]: Central Star
+      - generic [ref=e62] [cursor=pointer]: Linked to Second
+      - generic [ref=e63] [cursor=pointer]: Linked to First
+      - generic [ref=e64] [cursor=pointer]: Second Graph Note
+      - generic [ref=e65] [cursor=pointer]: First Graph Note
+      - generic [ref=e66] [cursor=pointer]: Load Test Node 99
+      - generic [ref=e67] [cursor=pointer]: Load Test Node 98
+      - generic [ref=e68] [cursor=pointer]: Load Test Node 97
+      - generic [ref=e69] [cursor=pointer]: Load Test Node 96
+      - generic [ref=e70] [cursor=pointer]: Load Test Node 95
+      - generic [ref=e71] [cursor=pointer]: Load Test Node 93
+      - generic [ref=e72] [cursor=pointer]: Load Test Node 92
+      - generic [ref=e73] [cursor=pointer]: Load Test Node 91
+      - generic [ref=e74] [cursor=pointer]: Load Test Node 90
+      - generic [ref=e75] [cursor=pointer]: Linked Note 0
+      - generic [ref=e76] [cursor=pointer]: Central Progressi...
+      - generic [ref=e77] [cursor=pointer]: Load Test Node 89
+      - generic [ref=e78] [cursor=pointer]: Load Test Node 87
+      - generic [ref=e79] [cursor=pointer]: Filter Test 39
+      - generic [ref=e80] [cursor=pointer]: Load Test Node 86
+      - generic [ref=e81] [cursor=pointer]: Filter Test 38
+      - generic [ref=e82] [cursor=pointer]: Load Test Node 84
+      - generic [ref=e83] [cursor=pointer]: Filter Test 37
+      - generic [ref=e84] [cursor=pointer]: Load Test Node 83
+      - generic [ref=e85] [cursor=pointer]: Filter Test 36
+      - generic [ref=e86] [cursor=pointer]: Filter Test 35
+      - generic [ref=e87] [cursor=pointer]: Load Test Node 82
+      - generic [ref=e88] [cursor=pointer]: Filter Test 34
+      - generic [ref=e89] [cursor=pointer]: Load Test Node 81
+      - generic [ref=e90] [cursor=pointer]: Filter Test 33
+      - generic [ref=e91] [cursor=pointer]: Load Test Node 80
+      - generic [ref=e92] [cursor=pointer]: Filter Test 32
+      - generic [ref=e93] [cursor=pointer]: Load Test Node 79
+      - generic [ref=e94] [cursor=pointer]: Filter Test 31
+      - generic [ref=e95] [cursor=pointer]: Load Test Node 78
+      - generic [ref=e96] [cursor=pointer]: Filter Test 30
+      - generic [ref=e97] [cursor=pointer]: Load Test Node 77
+      - generic [ref=e98] [cursor=pointer]: Filter Test 29
+      - generic [ref=e99] [cursor=pointer]: Load Test Node 76
+      - generic [ref=e100] [cursor=pointer]: Filter Test 28
+      - generic [ref=e101] [cursor=pointer]: Load Test Node 75
+      - generic [ref=e102] [cursor=pointer]: Filter Test 27
+      - generic [ref=e103] [cursor=pointer]: Navigation Test
+      - generic [ref=e104] [cursor=pointer]: Graph Planet 1776...
+      - generic [ref=e105] [cursor=pointer]: Clear Filter Come...
+      - generic [ref=e106] [cursor=pointer]: Clear Filter Plan...
+      - generic [ref=e107] [cursor=pointer]: Clear Filter Star...
+      - generic [ref=e108] [cursor=pointer]: Root Planet 17764...
+      - generic [ref=e109] [cursor=pointer]: Structure Test
+      - generic [ref=e110] [cursor=pointer]: Canvas Dimension ...
+      - generic [ref=e111] [cursor=pointer]: Fog Test Note
+      - generic [ref=e112] [cursor=pointer]: asteroid Node
+      - generic [ref=e113] [cursor=pointer]: Load Test Node 94
+      - generic [ref=e114] [cursor=pointer]: Load Test Node 88
+      - generic [ref=e115] [cursor=pointer]: Load Test Node 85
 ```
 
 # Test source
