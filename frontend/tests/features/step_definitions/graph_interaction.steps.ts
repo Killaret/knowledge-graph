@@ -145,6 +145,20 @@ When('I click the {string} button', async function(this: ITestWorld, buttonText:
   await this.page.waitForTimeout(100);
 });
 
+When('I click the Camera reset button', async function(this: ITestWorld) {
+  const button = this.page.locator('[data-testid="reset-camera-button"]').first();
+  await expect(button).toBeVisible({ timeout: 5000 });
+  
+  // Store camera position before reset
+  this.initialCameraPos = await this.page.evaluate(() => {
+    const camera = (window as any).camera;
+    return camera ? { x: camera.position.x, y: camera.position.y, z: camera.position.z } : null;
+  });
+  
+  await button.click();
+  await this.page.waitForTimeout(100);
+});
+
 Then('the camera should smoothly animate to show all nodes', async function(this: ITestWorld) {
   // Wait for animation to complete
   await this.page.waitForTimeout(1000);

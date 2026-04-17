@@ -13,11 +13,13 @@
   const { 
     data, 
     centerNodeId,
-    onNodeClick
+    onNodeClick,
+    onNodeDoubleClick
   }: { 
     data: GraphData; 
     centerNodeId?: string | null;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+    onNodeDoubleClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
   let container: HTMLDivElement;
@@ -121,6 +123,27 @@
     }
   }
 
+  function handleDoubleClick(event: MouseEvent) {
+    if (!camera || !scene || !objectManager) return;
+    
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const rect = container.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    const nodeIntersect = intersects.find((i: any) => i.object.userData?.type === 'node');
+    
+    if (nodeIntersect) {
+      const nodeData = nodeIntersect.object.userData?.nodeData;
+      if (nodeData && onNodeDoubleClick) {
+        onNodeDoubleClick(nodeData);
+      }
+    }
+  }
+
   onMount(async () => {
     if (!browser || !container) return;
 
@@ -168,6 +191,9 @@
       
       // Click handler for nodes
       container.addEventListener('click', handleClick);
+      
+      // Double-click handler for nodes
+      container.addEventListener('dblclick', handleDoubleClick);
       
       isInitialized = true;
       console.log('[Graph3D] Scene initialized, isInitialized = true');
@@ -461,6 +487,7 @@
     window.removeEventListener('resize', onResize);
     if (container) {
       container.removeEventListener('click', handleClick);
+      container.removeEventListener('dblclick', handleDoubleClick);
     }
   });
 

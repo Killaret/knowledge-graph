@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 627300
+              "duration": 815399
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 93393600
+              "duration": 93039600
             }
           },
           {
@@ -35,7 +35,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1499828599
+              "duration": 1533459100
             }
           },
           {
@@ -48,7 +48,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 92315700
+              "duration": 95693400
             }
           },
           {
@@ -61,7 +61,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 363404400
+              "duration": 378229599
             }
           },
           {
@@ -74,7 +74,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1789032000
+              "duration": 1985183999
             }
           },
           {
@@ -87,7 +87,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 10581500
+              "duration": 9892200
             }
           },
           {
@@ -100,7 +100,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 5007904099,
+              "duration": 5009691800,
               "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -148,7 +148,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68711699
+              "duration": 64038199
             }
           },
           {
@@ -156,7 +156,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5260399
+              "duration": 3810100
             }
           }
         ],
@@ -192,7 +192,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 153200
+              "duration": 139199
             }
           },
           {
@@ -200,7 +200,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61060499
+              "duration": 59427999
             }
           },
           {
@@ -213,7 +213,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1449727299
+              "duration": 1398656100
             }
           },
           {
@@ -226,7 +226,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 58958700
+              "duration": 59431500
             }
           },
           {
@@ -239,7 +239,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2187806900
+              "duration": 2269261700
             }
           },
           {
@@ -252,7 +252,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 415062299
+              "duration": 397360600
             }
           },
           {
@@ -265,7 +265,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 9955599,
+              "duration": 6550400,
               "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:204:17)"
             }
           },
@@ -313,7 +313,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60181800
+              "duration": 59562200
             }
           },
           {
@@ -321,7 +321,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3894099
+              "duration": 3731800
             }
           }
         ],
@@ -357,7 +357,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 136099
+              "duration": 196399
             }
           },
           {
@@ -365,7 +365,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63096899
+              "duration": 58892599
             }
           },
           {
@@ -378,7 +378,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1397852699
+              "duration": 1391601699
             }
           },
           {
@@ -391,7 +391,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 55739799
+              "duration": 61460399
             }
           },
           {
@@ -404,7 +404,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2157580599
+              "duration": 2216196200
             }
           },
           {
@@ -417,7 +417,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 384101200
+              "duration": 382013600
             }
           },
           {
@@ -430,7 +430,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 10669000,
+              "duration": 9826199,
               "error_message": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"cosmos\"\nReceived string:    \"graph comet 1776424174934\"\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:239:34)"
             }
           },
@@ -478,7 +478,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 58231999
+              "duration": 58244699
             }
           },
           {
@@ -486,7 +486,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3821700
+              "duration": 3384300
             }
           }
         ],
@@ -522,7 +522,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 137500
+              "duration": 116400
             }
           },
           {
@@ -530,7 +530,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 64549699
+              "duration": 63661200
             }
           },
           {
@@ -543,7 +543,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1447025499
+              "duration": 1380436399
             }
           },
           {
@@ -556,7 +556,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 55611000
+              "duration": 57491399
             }
           },
           {
@@ -569,7 +569,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 377993900
+              "duration": 471632200
             }
           },
           {
@@ -582,7 +582,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1082972799
+              "duration": 1148195599
             }
           },
           {
@@ -595,7 +595,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 384861500
+              "duration": 389586999
             }
           },
           {
@@ -608,7 +608,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 247107100
+              "duration": 253523600
             }
           },
           {
@@ -621,7 +621,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1112551100
+              "duration": 1118669200
             }
           },
           {
@@ -634,7 +634,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 217863099
+              "duration": 134011099
             }
           },
           {
@@ -642,7 +642,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 55567100
+              "duration": 54810599
             }
           },
           {
@@ -650,7 +650,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4177299
+              "duration": 5899199
             }
           }
         ],
@@ -686,7 +686,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 88599
+              "duration": 152099
             }
           },
           {
@@ -694,7 +694,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 65194100
+              "duration": 62815200
             }
           },
           {
@@ -707,7 +707,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1384841599
+              "duration": 1356353100
             }
           },
           {
@@ -720,7 +720,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 57825100
+              "duration": 59598900
             }
           },
           {
@@ -733,7 +733,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1390848899
+              "duration": 1528221699
             }
           },
           {
@@ -746,7 +746,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 5013560300,
+              "duration": 5016508900,
               "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -833,7 +833,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 55364099
+              "duration": 56805599
             }
           },
           {
@@ -841,7 +841,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4444199
+              "duration": 3017699
             }
           }
         ],
@@ -901,7 +901,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 116099
+              "duration": 97600
             }
           },
           {
@@ -909,7 +909,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60434499
+              "duration": 61400599
             }
           },
           {
@@ -922,7 +922,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 69208599
+              "duration": 68748299
             }
           },
           {
@@ -935,7 +935,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1393557300
+              "duration": 1392222099
             }
           },
           {
@@ -948,7 +948,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 5004615100,
+              "duration": 5004675699,
               "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1035,7 +1035,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 90332899
+              "duration": 82708700
             }
           },
           {
@@ -1043,7 +1043,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5273499
+              "duration": 4261699
             }
           }
         ],
@@ -1075,7 +1075,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 131300
+              "duration": 199500
             }
           },
           {
@@ -1083,7 +1083,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 67916999
+              "duration": 62836699
             }
           },
           {
@@ -1096,7 +1096,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 71661400
+              "duration": 64282599
             }
           },
           {
@@ -1109,7 +1109,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1545037199
+              "duration": 1521528299
             }
           },
           {
@@ -1122,7 +1122,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 85192399
+              "duration": 77609799
             }
           },
           {
@@ -1135,7 +1135,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 34098400
+              "duration": 35882399
             }
           },
           {
@@ -1148,7 +1148,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 300746699
+              "duration": 302399499
             }
           },
           {
@@ -1161,7 +1161,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 13997999,
+              "duration": 9831099,
               "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:112:29)"
             }
           },
@@ -1170,7 +1170,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 84958899
+              "duration": 83121200
             }
           },
           {
@@ -1178,7 +1178,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3053500
+              "duration": 3548799
             }
           }
         ],
@@ -1210,7 +1210,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 114600
+              "duration": 145600
             }
           },
           {
@@ -1218,7 +1218,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59739300
+              "duration": 59799099
             }
           },
           {
@@ -1231,7 +1231,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 63479599
+              "duration": 64206400
             }
           },
           {
@@ -1244,7 +1244,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1402919000
+              "duration": 1376670100
             }
           },
           {
@@ -1257,7 +1257,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 233375500
+              "duration": 246891100
             }
           },
           {
@@ -1270,7 +1270,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 605958299
+              "duration": 593971999
             }
           },
           {
@@ -1283,7 +1283,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 13302400
+              "duration": 6520100
             }
           },
           {
@@ -1296,7 +1296,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 171903300
+              "duration": 141967299
             }
           },
           {
@@ -1304,7 +1304,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 86409799
+              "duration": 82114499
             }
           },
           {
@@ -1312,7 +1312,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3496300
+              "duration": 3450199
             }
           }
         ],
@@ -1364,7 +1364,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 215499
+              "duration": 217900
             }
           },
           {
@@ -1372,7 +1372,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63538100
+              "duration": 60846699
             }
           },
           {
@@ -1385,7 +1385,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1410027799
+              "duration": 1391776299
             }
           },
           {
@@ -1398,7 +1398,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 92850899
+              "duration": 85335800
             }
           },
           {
@@ -1411,7 +1411,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 733861400
+              "duration": 726534399
             }
           },
           {
@@ -1424,7 +1424,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 5007693300,
+              "duration": 5011392400,
               "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1459,7 +1459,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 39965799
+              "duration": 34387699
             }
           },
           {
@@ -1467,7 +1467,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1411199
+              "duration": 1530099
             }
           }
         ],
@@ -1503,7 +1503,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 289199
+              "duration": 234900
             }
           },
           {
@@ -1511,7 +1511,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 66621699
+              "duration": 61287000
             }
           },
           {
@@ -1524,7 +1524,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1407657500
+              "duration": 1455223799
             }
           },
           {
@@ -1537,7 +1537,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 82662400
+              "duration": 82453199
             }
           },
           {
@@ -1550,7 +1550,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 244408600
+              "duration": 243129800
             }
           },
           {
@@ -1563,7 +1563,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 904904699
+              "duration": 940546500
             }
           },
           {
@@ -1576,7 +1576,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 4974799
+              "duration": 16229200
             }
           },
           {
@@ -1589,7 +1589,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 17927200
+              "duration": 14703900
             }
           },
           {
@@ -1597,7 +1597,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 32285100
+              "duration": 33865300
             }
           },
           {
@@ -1605,7 +1605,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1891600
+              "duration": 1481799
             }
           }
         ],
@@ -1641,7 +1641,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 121299
+              "duration": 230599
             }
           },
           {
@@ -1649,7 +1649,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 64924200
+              "duration": 61114499
             }
           },
           {
@@ -1662,7 +1662,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1536144599
+              "duration": 1520868599
             }
           },
           {
@@ -1675,7 +1675,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 77708999
+              "duration": 82433900
             }
           },
           {
@@ -1687,9 +1687,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 5013979800,
-              "error_message": "Error: function timed out, ensure the promise resolves within 5000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 429463700
             }
           },
           {
@@ -1698,11 +1697,11 @@
             "line": 28,
             "name": "the camera should smoothly animate to show all nodes",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:142"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:162"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1027826099
             }
           },
           {
@@ -1711,11 +1710,11 @@
             "line": 29,
             "name": "the animation should complete within 1 second",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:154"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:174"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 135505499
             }
           },
           {
@@ -1723,7 +1722,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 25463400
+              "duration": 25100899
             }
           },
           {
@@ -1731,7 +1730,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1233800
+              "duration": 1431799
             }
           }
         ],
@@ -1767,7 +1766,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 320200
+              "duration": 343600
             }
           },
           {
@@ -1775,7 +1774,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 64023499
+              "duration": 65706700
             }
           },
           {
@@ -1788,7 +1787,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1431782100
+              "duration": 1521867900
             }
           },
           {
@@ -1801,7 +1800,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 92694999
+              "duration": 78212800
             }
           },
           {
@@ -1814,7 +1813,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 648480900
+              "duration": 609457000
             }
           },
           {
@@ -1823,11 +1822,11 @@
             "line": 34,
             "name": "the node should visually highlight",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:180"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:200"
             },
             "result": {
               "status": "passed",
-              "duration": 21943300
+              "duration": 25873899
             }
           },
           {
@@ -1836,11 +1835,11 @@
             "line": 35,
             "name": "a tooltip should appear with the note title",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:197"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:217"
             },
             "result": {
               "status": "passed",
-              "duration": 17547999
+              "duration": 16948700
             }
           },
           {
@@ -1848,7 +1847,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 26034500
+              "duration": 34721099
             }
           },
           {
@@ -1856,7 +1855,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1603699
+              "duration": 1353999
             }
           }
         ],
@@ -1892,7 +1891,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 455999
+              "duration": 175999
             }
           },
           {
@@ -1900,7 +1899,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 62937099
+              "duration": 63689599
             }
           },
           {
@@ -1913,7 +1912,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1399600400
+              "duration": 1532527200
             }
           },
           {
@@ -1926,7 +1925,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 116223400
+              "duration": 71923699
             }
           },
           {
@@ -1939,7 +1938,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 957727099
+              "duration": 907864000
             }
           },
           {
@@ -1948,11 +1947,11 @@
             "line": 40,
             "name": "I should navigate to \"/graph/3d/{nodeId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:211"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:231"
             },
             "result": {
               "status": "passed",
-              "duration": 519537400
+              "duration": 513825800
             }
           },
           {
@@ -1961,12 +1960,12 @@
             "line": 41,
             "name": "the new graph should center on that node",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:218"
+              "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:238"
             },
             "result": {
               "status": "failed",
-              "duration": 37814899,
-              "error_message": "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:228:20)"
+              "duration": 38640100,
+              "error_message": "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:248:20)"
             }
           },
           {
@@ -1974,7 +1973,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 28730600
+              "duration": 30199399
             }
           },
           {
@@ -1982,7 +1981,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2187999
+              "duration": 1707699
             }
           }
         ],
