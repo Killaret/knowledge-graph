@@ -9,6 +9,8 @@ interface ITestWorld extends IWorld {
   request: APIRequestContext;
   testNotes: Array<{ id: string; title: string; type: string }>;
   centerNoteId?: string;
+  currentNoteId?: string;
+  clickedNodeId?: string;
 }
 
 Before(async function(this: ITestWorld) {
@@ -34,8 +36,8 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
     content: 'This is the center note for testing',
     type: 'star'
   });
-  this.centerNoteId = centerData.id;
-  this.testNotes.push({ id: centerData.id, title: String(centerData.title || ''), type: 'star' });
+  this.centerNoteId = String(centerData.id);
+  this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
   
   // Create connected notes
   const types = ['planet', 'comet', 'galaxy', 'asteroid'];
@@ -45,10 +47,10 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
       content: `Content for note ${i}`,
       type: types[i % types.length]
     });
-    this.testNotes.push({ id: noteData.id, title: String(noteData.title || ''), type: types[i % types.length] });
+    this.testNotes.push({ id: String(noteData.id), title: String(noteData.title || ''), type: types[i % types.length] });
     
     // Create link to center using helper
-    await createLink(this.request, this.centerNoteId!, noteData.id, 0.5 + Math.random() * 0.5, 'related');
+    await createLink(this.request, this.centerNoteId!, String(noteData.id), 0.5 + Math.random() * 0.5, 'related');
   }
 });
 
@@ -60,7 +62,7 @@ Given('there are notes of various types in the database', async function(this: I
       content: `Content for ${types[i]}`,
       type: types[i]
     });
-    this.testNotes.push({ id: noteData.id, title: String(noteData.title || ''), type: types[i] });
+    this.testNotes.push({ id: String(noteData.id), title: String(noteData.title || ''), type: types[i] });
   }
 });
 
@@ -88,8 +90,8 @@ Given('I am on the 3D graph page for a note with connections', async function(th
       content: 'Center note',
       type: 'star'
     });
-    this.centerNoteId = centerData.id;
-    this.testNotes.push({ id: centerData.id, title: String(centerData.title || ''), type: 'star' });
+    this.centerNoteId = String(centerData.id);
+    this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
   }
   // Navigate to 3D graph
   await this.page.goto(`http://localhost:5173/graph/3d/${this.centerNoteId}`);

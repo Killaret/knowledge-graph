@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 838400
+              "duration": 908900
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 165769999
+              "duration": 1179089399
             }
           },
           {
@@ -31,11 +31,11 @@
             "line": 8,
             "name": "I am on the main page \"/\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:68"
             },
             "result": {
               "status": "passed",
-              "duration": 1748839000
+              "duration": 8337733899
             }
           },
           {
@@ -44,11 +44,11 @@
             "line": 9,
             "name": "there are notes of various types in the database",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:55"
             },
             "result": {
               "status": "passed",
-              "duration": 134562299
+              "duration": 1978815800
             }
           },
           {
@@ -57,11 +57,11 @@
             "line": 13,
             "name": "I should see the 2D force graph by default",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:152"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:153"
             },
             "result": {
               "status": "passed",
-              "duration": 461489100
+              "duration": 564074699
             }
           },
           {
@@ -70,11 +70,11 @@
             "line": 14,
             "name": "I click the \"List\" toggle button in the floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:115"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:101"
             },
             "result": {
               "status": "passed",
-              "duration": 2738851000
+              "duration": 3298538499
             }
           },
           {
@@ -83,11 +83,11 @@
             "line": 15,
             "name": "I should see a grid of note cards",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:157"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:158"
             },
             "result": {
               "status": "passed",
-              "duration": 12863800
+              "duration": 24392900
             }
           },
           {
@@ -96,12 +96,11 @@
             "line": 16,
             "name": "the view toggle should show \"Graph\" option",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:195"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:196"
             },
             "result": {
-              "status": "failed",
-              "duration": 5012772899,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.floating-controls button').filter({ hasText: /Graph/i }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"to.be.visible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.floating-controls button').filter({ hasText: /Graph/i }).first()\u001b[22m\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:197:24)"
+              "status": "passed",
+              "duration": 27857200
             }
           },
           {
@@ -110,11 +109,11 @@
             "line": 17,
             "name": "I click the \"Graph\" toggle button",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:312"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:326"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1340565699
             }
           },
           {
@@ -123,11 +122,11 @@
             "line": 18,
             "name": "I should see the fullscreen 2D force graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:164"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:165"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 417110300
             }
           },
           {
@@ -136,11 +135,11 @@
             "line": 19,
             "name": "the graph canvas should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:320"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:351"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 251281999
             }
           },
           {
@@ -148,7 +147,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 79629999
+              "duration": 360597899
             }
           },
           {
@@ -156,7 +155,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5057699
+              "duration": 9637999
             }
           }
         ],
@@ -192,7 +191,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 110400
+              "duration": 316100
             }
           },
           {
@@ -200,7 +199,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 72904599
+              "duration": 271791799
             }
           },
           {
@@ -209,11 +208,11 @@
             "line": 8,
             "name": "I am on the main page \"/\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:68"
             },
             "result": {
               "status": "passed",
-              "duration": 1584691400
+              "duration": 2819214599
             }
           },
           {
@@ -222,11 +221,11 @@
             "line": 9,
             "name": "there are notes of various types in the database",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:55"
             },
             "result": {
               "status": "passed",
-              "duration": 83885200
+              "duration": 426766000
             }
           },
           {
@@ -235,11 +234,11 @@
             "line": 23,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:171"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:172"
             },
             "result": {
               "status": "passed",
-              "duration": 2645279299
+              "duration": 3280267200
             }
           },
           {
@@ -248,11 +247,11 @@
             "line": 24,
             "name": "I click the \"Planet\" filter chip in floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:124"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:110"
             },
             "result": {
               "status": "passed",
-              "duration": 433915199
+              "duration": 526753499
             }
           },
           {
@@ -261,12 +260,12 @@
             "line": 25,
             "name": "only notes of type \"Planet\" should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:201"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:215"
             },
             "result": {
               "status": "failed",
-              "duration": 7788099,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:204:17)"
+              "duration": 22556400,
+              "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:218:17)"
             }
           },
           {
@@ -275,7 +274,7 @@
             "line": 26,
             "name": "the count badge should show the correct number",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:214"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:228"
             },
             "result": {
               "status": "skipped",
@@ -288,7 +287,7 @@
             "line": 27,
             "name": "I click the \"All\" filter chip",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:326"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:357"
             },
             "result": {
               "status": "skipped",
@@ -301,7 +300,7 @@
             "line": 28,
             "name": "all notes should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:221"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:235"
             },
             "result": {
               "status": "skipped",
@@ -313,7 +312,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 56844200
+              "duration": 328779300
             }
           },
           {
@@ -321,7 +320,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 6603499
+              "duration": 7259400
             }
           }
         ],
@@ -357,7 +356,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 126599
+              "duration": 371299
             }
           },
           {
@@ -365,7 +364,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 85208099
+              "duration": 244717700
             }
           },
           {
@@ -374,11 +373,11 @@
             "line": 8,
             "name": "I am on the main page \"/\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:68"
             },
             "result": {
               "status": "passed",
-              "duration": 1574159700
+              "duration": 2816110899
             }
           },
           {
@@ -387,11 +386,11 @@
             "line": 9,
             "name": "there are notes of various types in the database",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:55"
             },
             "result": {
               "status": "passed",
-              "duration": 69329999
+              "duration": 92112499
             }
           },
           {
@@ -400,11 +399,11 @@
             "line": 32,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:171"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:172"
             },
             "result": {
               "status": "passed",
-              "duration": 2708088800
+              "duration": 3449187900
             }
           },
           {
@@ -413,11 +412,11 @@
             "line": 33,
             "name": "I type \"cosmos\" in the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:132"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:118"
             },
             "result": {
               "status": "passed",
-              "duration": 396349199
+              "duration": 410116399
             }
           },
           {
@@ -426,12 +425,12 @@
             "line": 34,
             "name": "the list should show only notes containing \"cosmos\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:226"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:240"
             },
             "result": {
               "status": "failed",
-              "duration": 11324899,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"cosmos\"\u001b[39m\nReceived string:    \u001b[31m\"searchable test note\"\u001b[39m\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:239:34)"
+              "duration": 38404399,
+              "error_message": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"cosmos\"\nReceived string:    \"test searchable1776435805944 note\"\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:253:34)"
             }
           },
           {
@@ -440,7 +439,7 @@
             "line": 35,
             "name": "the note cards should highlight the matching text",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:243"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:257"
             },
             "result": {
               "status": "skipped",
@@ -453,7 +452,7 @@
             "line": 36,
             "name": "I clear the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:139"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:125"
             },
             "result": {
               "status": "skipped",
@@ -466,7 +465,7 @@
             "line": 37,
             "name": "all notes should be displayed again",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:334"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:378"
             },
             "result": {
               "status": "skipped",
@@ -478,7 +477,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60737400
+              "duration": 347549700
             }
           },
           {
@@ -486,7 +485,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 6733800
+              "duration": 7283199
             }
           }
         ],
@@ -522,7 +521,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 190300
+              "duration": 231999
             }
           },
           {
@@ -530,7 +529,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 89631600
+              "duration": 315711500
             }
           },
           {
@@ -539,11 +538,11 @@
             "line": 8,
             "name": "I am on the main page \"/\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:68"
             },
             "result": {
               "status": "passed",
-              "duration": 1608414500
+              "duration": 2264649199
             }
           },
           {
@@ -552,11 +551,11 @@
             "line": 9,
             "name": "there are notes of various types in the database",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:55"
             },
             "result": {
               "status": "passed",
-              "duration": 87143599
+              "duration": 282846499
             }
           },
           {
@@ -565,11 +564,11 @@
             "line": 41,
             "name": "I am in graph view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:183"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:184"
             },
             "result": {
               "status": "passed",
-              "duration": 558338700
+              "duration": 762851099
             }
           },
           {
@@ -578,11 +577,11 @@
             "line": 42,
             "name": "I type \"star\" in the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:132"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:118"
             },
             "result": {
               "status": "passed",
-              "duration": 1287528200
+              "duration": 1607772400
             }
           },
           {
@@ -591,11 +590,11 @@
             "line": 43,
             "name": "only nodes matching \"star\" should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:342"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:386"
             },
             "result": {
               "status": "passed",
-              "duration": 364432400
+              "duration": 484789800
             }
           },
           {
@@ -604,11 +603,11 @@
             "line": 44,
             "name": "non-matching nodes should be dimmed or hidden",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:277"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:291"
             },
             "result": {
               "status": "passed",
-              "duration": 289447199
+              "duration": 423044500
             }
           },
           {
@@ -617,11 +616,11 @@
             "line": 45,
             "name": "I clear the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:139"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:125"
             },
             "result": {
               "status": "passed",
-              "duration": 1266209900
+              "duration": 1754986300
             }
           },
           {
@@ -630,11 +629,11 @@
             "line": 46,
             "name": "all nodes should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:292"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:306"
             },
             "result": {
               "status": "passed",
-              "duration": 207010599
+              "duration": 213302100
             }
           },
           {
@@ -642,7 +641,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 70015500
+              "duration": 648313600
             }
           },
           {
@@ -650,7 +649,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5772400
+              "duration": 10312500
             }
           }
         ],
@@ -686,7 +685,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 171500
+              "duration": 247799
             }
           },
           {
@@ -694,7 +693,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 81553799
+              "duration": 121936199
             }
           },
           {
@@ -703,11 +702,11 @@
             "line": 8,
             "name": "I am on the main page \"/\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:83"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:68"
             },
             "result": {
               "status": "passed",
-              "duration": 1496249800
+              "duration": 4684284900
             }
           },
           {
@@ -716,11 +715,11 @@
             "line": 9,
             "name": "there are notes of various types in the database",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:67"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:55"
             },
             "result": {
               "status": "passed",
-              "duration": 66763599
+              "duration": 1257088600
             }
           },
           {
@@ -729,11 +728,11 @@
             "line": 50,
             "name": "I am on the main page",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:305"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:319"
             },
             "result": {
               "status": "passed",
-              "duration": 1595896899
+              "duration": 4951640800
             }
           },
           {
@@ -742,12 +741,12 @@
             "line": 51,
             "name": "I click the \"+\" button in floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:145"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:131"
             },
             "result": {
               "status": "failed",
-              "duration": 5012068599,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.floating-controls button').filter({ hasText: /\\+/i }).first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"to.be.visible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.floating-controls button').filter({ hasText: /\\+/i }).first()\u001b[22m\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:147:24)"
+              "duration": 5022563200,
+              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('button:has-text(\"+\")').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('button:has-text(\"+\")').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:148:24)"
             }
           },
           {
@@ -756,7 +755,7 @@
             "line": 52,
             "name": "a create note modal should open",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:249"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:263"
             },
             "result": {
               "status": "skipped",
@@ -769,7 +768,7 @@
             "line": 53,
             "name": "I fill in the title \"Test Note\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:254"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:268"
             },
             "result": {
               "status": "skipped",
@@ -782,7 +781,7 @@
             "line": 54,
             "name": "I select type \"Star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:259"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:273"
             },
             "result": {
               "status": "skipped",
@@ -808,7 +807,7 @@
             "line": 56,
             "name": "the modal should close",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:264"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:278"
             },
             "result": {
               "status": "skipped",
@@ -821,7 +820,7 @@
             "line": 57,
             "name": "the new note should appear in the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:269"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:283"
             },
             "result": {
               "status": "skipped",
@@ -833,7 +832,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 111759700
+              "duration": 269721900
             }
           },
           {
@@ -841,7 +840,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 7695600
+              "duration": 12221499
             }
           }
         ],
@@ -901,7 +900,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 245100
+              "duration": 260399
             }
           },
           {
@@ -909,7 +908,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 132523000
+              "duration": 184828499
             }
           },
           {
@@ -918,11 +917,12 @@
             "line": 8,
             "name": "I have test notes with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:30"
             },
             "result": {
-              "status": "passed",
-              "duration": 137828800
+              "status": "failed",
+              "duration": 163965700,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:51:5)"
             }
           },
           {
@@ -931,11 +931,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:74"
             },
             "result": {
-              "status": "passed",
-              "duration": 2033150699
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -947,9 +947,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:12"
             },
             "result": {
-              "status": "failed",
-              "duration": 5017288500,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.loading-overlay').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"to.be.visible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.loading-overlay').first()\u001b[22m\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:14:25)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1035,7 +1034,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 351644599
+              "duration": 104597899
             }
           },
           {
@@ -1043,7 +1042,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 19700299
+              "duration": 2992700
             }
           }
         ],
@@ -1075,7 +1074,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1367200
+              "duration": 470800
             }
           },
           {
@@ -1083,7 +1082,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 169753099
+              "duration": 110454600
             }
           },
           {
@@ -1092,11 +1091,12 @@
             "line": 8,
             "name": "I have test notes with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:30"
             },
             "result": {
-              "status": "passed",
-              "duration": 246245100
+              "status": "failed",
+              "duration": 56005600,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:51:5)"
             }
           },
           {
@@ -1105,11 +1105,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:74"
             },
             "result": {
-              "status": "passed",
-              "duration": 2001725300
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1121,8 +1121,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:73"
             },
             "result": {
-              "status": "passed",
-              "duration": 136030100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1134,8 +1134,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:45"
             },
             "result": {
-              "status": "passed",
-              "duration": 64000500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1147,8 +1147,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:90"
             },
             "result": {
-              "status": "passed",
-              "duration": 463655399
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1160,9 +1160,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:97"
             },
             "result": {
-              "status": "failed",
-              "duration": 24794000,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:112:29)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1170,7 +1169,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 144036699
+              "duration": 49843699
             }
           },
           {
@@ -1178,7 +1177,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 10916199
+              "duration": 3123399
             }
           }
         ],
@@ -1210,7 +1209,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 341899
+              "duration": 193700
             }
           },
           {
@@ -1218,7 +1217,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 109065699
+              "duration": 137921099
             }
           },
           {
@@ -1227,11 +1226,12 @@
             "line": 8,
             "name": "I have test notes with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:29"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:30"
             },
             "result": {
-              "status": "passed",
-              "duration": 171442800
+              "status": "failed",
+              "duration": 61866200,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:51:5)"
             }
           },
           {
@@ -1240,11 +1240,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:89"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:74"
             },
             "result": {
-              "status": "passed",
-              "duration": 2363584599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1256,8 +1256,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
             },
             "result": {
-              "status": "passed",
-              "duration": 349963899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1269,8 +1269,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:123"
             },
             "result": {
-              "status": "passed",
-              "duration": 856340100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1282,8 +1282,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:144"
             },
             "result": {
-              "status": "passed",
-              "duration": 14536500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1295,8 +1295,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:163"
             },
             "result": {
-              "status": "passed",
-              "duration": 155497499
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1304,7 +1304,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 136037900
+              "duration": 50629899
             }
           },
           {
@@ -1312,7 +1312,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5002300
+              "duration": 4663599
             }
           }
         ],
@@ -1364,7 +1364,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 260199
+              "duration": 245200
             }
           },
           {
@@ -1372,7 +1372,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 103635099
+              "duration": 143596499
             }
           },
           {
@@ -1381,11 +1381,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:82"
             },
             "result": {
               "status": "passed",
-              "duration": 1740813600
+              "duration": 2585011299
             }
           },
           {
@@ -1398,7 +1398,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 79419099
+              "duration": 333226599
             }
           },
           {
@@ -1411,7 +1411,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 777769899
+              "duration": 1220419100
             }
           },
           {
@@ -1424,8 +1424,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 5005866899,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"to.be.visible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\u001b[22m\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:60:23)"
+              "duration": 5032913599,
+              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:60:23)"
             }
           },
           {
@@ -1459,7 +1459,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 43728399
+              "duration": 646602299
             }
           },
           {
@@ -1467,7 +1467,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2347399
+              "duration": 1613899
             }
           }
         ],
@@ -1503,7 +1503,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 206000
+              "duration": 332999
             }
           },
           {
@@ -1511,7 +1511,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 210797400
+              "duration": 163833700
             }
           },
           {
@@ -1520,11 +1520,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:82"
             },
             "result": {
               "status": "passed",
-              "duration": 1873631099
+              "duration": 5235454700
             }
           },
           {
@@ -1537,7 +1537,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 164743399
+              "duration": 219045299
             }
           },
           {
@@ -1550,7 +1550,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 347748800
+              "duration": 494120200
             }
           },
           {
@@ -1563,7 +1563,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1155913500
+              "duration": 1616715599
             }
           },
           {
@@ -1576,7 +1576,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 34602900
+              "duration": 35596300
             }
           },
           {
@@ -1589,7 +1589,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 24913200
+              "duration": 35258100
             }
           },
           {
@@ -1597,7 +1597,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 53145900
+              "duration": 123139100
             }
           },
           {
@@ -1605,7 +1605,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3207799
+              "duration": 1499000
             }
           }
         ],
@@ -1641,7 +1641,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 176599
+              "duration": 217099
             }
           },
           {
@@ -1649,7 +1649,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 129015499
+              "duration": 296710200
             }
           },
           {
@@ -1658,11 +1658,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:82"
             },
             "result": {
               "status": "passed",
-              "duration": 2025875000
+              "duration": 2218034800
             }
           },
           {
@@ -1675,7 +1675,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 131379000
+              "duration": 146489999
             }
           },
           {
@@ -1688,7 +1688,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 655740300
+              "duration": 628759200
             }
           },
           {
@@ -1701,7 +1701,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1040994700
+              "duration": 1071732699
             }
           },
           {
@@ -1714,7 +1714,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 163307899
+              "duration": 160849199
             }
           },
           {
@@ -1722,7 +1722,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59527600
+              "duration": 981365699
             }
           },
           {
@@ -1730,7 +1730,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2373500
+              "duration": 2384099
             }
           }
         ],
@@ -1766,7 +1766,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 226200
+              "duration": 263699
             }
           },
           {
@@ -1774,7 +1774,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 105407200
+              "duration": 149079200
             }
           },
           {
@@ -1783,11 +1783,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:82"
             },
             "result": {
               "status": "passed",
-              "duration": 2164446600
+              "duration": 2585951699
             }
           },
           {
@@ -1800,7 +1800,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 148474399
+              "duration": 124372799
             }
           },
           {
@@ -1813,7 +1813,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 867655400
+              "duration": 832330799
             }
           },
           {
@@ -1826,7 +1826,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 74173399
+              "duration": 63240899
             }
           },
           {
@@ -1839,7 +1839,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 25719700
+              "duration": 29208399
             }
           },
           {
@@ -1847,7 +1847,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 73665399
+              "duration": 547484699
             }
           },
           {
@@ -1855,7 +1855,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4183700
+              "duration": 1844499
             }
           }
         ],
@@ -1891,7 +1891,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 290500
+              "duration": 186400
             }
           },
           {
@@ -1899,7 +1899,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 108963300
+              "duration": 130264200
             }
           },
           {
@@ -1908,11 +1908,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:82"
             },
             "result": {
               "status": "passed",
-              "duration": 1770965499
+              "duration": 2644352200
             }
           },
           {
@@ -1925,7 +1925,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 121430599
+              "duration": 127161800
             }
           },
           {
@@ -1938,7 +1938,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1091531199
+              "duration": 1107930099
             }
           },
           {
@@ -1951,7 +1951,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 521323600
+              "duration": 508688500
             }
           },
           {
@@ -1963,9 +1963,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:238"
             },
             "result": {
-              "status": "failed",
-              "duration": 90679100,
-              "error_message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mundefined\u001b[39m\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:248:20)"
+              "status": "passed",
+              "duration": 1110023000
             }
           },
           {
@@ -1973,7 +1972,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 285730500
+              "duration": 261078299
             }
           },
           {
@@ -1981,7 +1980,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2010599
+              "duration": 2111199
             }
           }
         ],
