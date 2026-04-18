@@ -185,6 +185,11 @@
         n.content.toLowerCase().includes(query)
       );
     }
+    
+    // Expose to window for tests
+    if (browser) {
+      (window as any).filteredNotes = result;
+    }
 
     // Apply sorting
     switch (sortOption) {
