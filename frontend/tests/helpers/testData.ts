@@ -39,10 +39,7 @@ export async function createNote(
   };
 
   const response = await request.post(`${getBackendUrl()}/notes`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: JSON.stringify(payload),
+    data: payload,
   });
 
   if (!response.ok()) {
@@ -88,30 +85,34 @@ export async function createLink(
     throw new Error(`Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`);
   }
   
-  // Go backend expects PascalCase field names
+  // Go backend expects snake_case field names in JSON (based on struct tags)
   const payload = {
-    SourceNoteID: sourceId,
-    TargetNoteID: targetId,
-    Weight: weight,
-    LinkType: linkType,
-    Metadata: {},
+    source_note_id: sourceId,
+    target_note_id: targetId,
+    weight: weight,
+    link_type: linkType,
+    metadata: {},
   };
   
   console.log('[createLink] Payload:', JSON.stringify(payload));
 
-  const response = await request.post(`${getBackendUrl()}/links`, {
+  // Use fetch API directly with explicit JSON headers
+  const url = `${getBackendUrl()}/links`;
+  const fetchResponse = await fetch(url, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
-    data: JSON.stringify(payload),
+    body: JSON.stringify(payload),
   });
 
-  if (!response.ok()) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create link: ${response.status()} - ${errorText}`);
+  if (!fetchResponse.ok) {
+    const errorText = await fetchResponse.text();
+    throw new Error(`Failed to create link: ${fetchResponse.status} - ${errorText}`);
   }
 
-  return await response.json();
+  return await fetchResponse.json();
 }
 
 /**
