@@ -30,8 +30,8 @@ Feature: 2D Graph and List View
   @regression
   Scenario: Search filters notes in list view
     Given I am in list view
-    When I type "cosmos" in the search input
-    Then the list should show only notes containing "cosmos"
+    When I type "Test star" in the search input
+    Then the list should show only notes containing "Test star"
     And the note cards should highlight the matching text
     When I clear the search input
     Then all notes should be displayed again

@@ -151,14 +151,14 @@ When('I click the {string} filter chip in floating controls', async function(thi
   const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
   await chip.click();
-  await this.page.waitForTimeout(300);
+  await this.page.waitForTimeout(1000); // Wait for list to filter
 });
 
 When('I type {string} in the search input', async function(this: ITestWorld, searchText: string) {
   const searchInput = this.page.locator('[data-testid="search-input"]').first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(searchText);
-  await this.page.waitForTimeout(300);
+  await this.page.waitForTimeout(800); // Wait for search filtering
 });
 
 When('I clear the search input', async function(this: ITestWorld) {
@@ -314,26 +314,9 @@ When('I fill in the title {string}', async function(this: ITestWorld, title: str
 
 When('I select type {string}', async function(this: ITestWorld, type: string) {
   // Type selector uses buttons, not a select element
+  // Use simpler selector and click first matching button
   const typeLower = type.toLowerCase();
-  // Try to find button by type value or label text
-  const typeButton = this.page.locator(`.type-btn:has-text("${type}"), .type-btn:has-text("${typeLower}"), button:has-text("${type}"), button:has-text("${typeLower}")`).first();
-  
-  // Check if button exists, if not try alternative selectors
-  const count = await typeButton.count();
-  if (count === 0) {
-    // Try finding by partial text match
-    const buttons = this.page.locator('.type-selector button, .type-btn');
-    const allButtons = await buttons.all();
-    for (const btn of allButtons) {
-      const text = await btn.textContent();
-      if (text?.toLowerCase().includes(typeLower)) {
-        await btn.click();
-        return;
-      }
-    }
-    throw new Error(`Could not find type button for: ${type}`);
-  }
-  
+  const typeButton = this.page.locator('.type-selector button').filter({ hasText: new RegExp(type, 'i') }).first();
   await typeButton.click();
 });
 
@@ -433,7 +416,7 @@ When('I click the {string} filter chip', async function(this: ITestWorld, filter
   const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
   await chip.click();
-  await this.page.waitForTimeout(300);
+  await this.page.waitForTimeout(1000); // Wait for list to filter
 });
 
 // All notes displayed again after clearing
