@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 906199
+              "duration": 646400
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 104298199
+              "duration": 97218199
             }
           },
           {
@@ -34,8 +34,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:70"
             },
             "result": {
-              "status": "passed",
-              "duration": 1486196400
+              "status": "failed",
+              "duration": 2437312100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:71:19)"
             }
           },
           {
@@ -47,8 +48,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:57"
             },
             "result": {
-              "status": "passed",
-              "duration": 109746300
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -60,8 +61,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:155"
             },
             "result": {
-              "status": "passed",
-              "duration": 295610600
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -73,8 +74,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:103"
             },
             "result": {
-              "status": "passed",
-              "duration": 1876366799
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -86,8 +87,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:160"
             },
             "result": {
-              "status": "passed",
-              "duration": 11317799
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -99,8 +100,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:198"
             },
             "result": {
-              "status": "passed",
-              "duration": 5747899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -112,8 +113,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:328"
             },
             "result": {
-              "status": "passed",
-              "duration": 605920799
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -125,8 +126,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:167"
             },
             "result": {
-              "status": "passed",
-              "duration": 165608400
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -138,8 +139,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:353"
             },
             "result": {
-              "status": "passed",
-              "duration": 126253399
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -147,7 +148,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 67678300
+              "duration": 18446199
             }
           },
           {
@@ -155,7 +156,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3873700
+              "duration": 473399
             }
           }
         ],
@@ -191,7 +192,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 121399
+              "duration": 163700
             }
           },
           {
@@ -199,7 +200,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68823099
+              "duration": 64186799
             }
           },
           {
@@ -211,8 +212,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:70"
             },
             "result": {
-              "status": "passed",
-              "duration": 1446375900
+              "status": "failed",
+              "duration": 2413833599,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:71:19)"
             }
           },
           {
@@ -224,8 +226,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:57"
             },
             "result": {
-              "status": "passed",
-              "duration": 63096599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -237,8 +239,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:174"
             },
             "result": {
-              "status": "passed",
-              "duration": 2396177600
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -250,8 +252,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:112"
             },
             "result": {
-              "status": "passed",
-              "duration": 414294100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -263,9 +265,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:217"
             },
             "result": {
-              "status": "failed",
-              "duration": 7521500,
-              "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:220:17)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -312,7 +313,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 62338700
+              "duration": 17250000
             }
           },
           {
@@ -320,7 +321,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3807099
+              "duration": 253999
             }
           }
         ],
@@ -356,7 +357,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 148600
+              "duration": 198699
             }
           },
           {
@@ -364,7 +365,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60800199
+              "duration": 69345699
             }
           },
           {
@@ -376,8 +377,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:70"
             },
             "result": {
-              "status": "passed",
-              "duration": 1473430400
+              "status": "failed",
+              "duration": 2413062699,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:71:19)"
             }
           },
           {
@@ -389,8 +391,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:57"
             },
             "result": {
-              "status": "passed",
-              "duration": 66865099
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -402,8 +404,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:174"
             },
             "result": {
-              "status": "passed",
-              "duration": 1998745199
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -415,8 +417,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:120"
             },
             "result": {
-              "status": "passed",
-              "duration": 386324000
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -428,9 +430,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:242"
             },
             "result": {
-              "status": "failed",
-              "duration": 12371800,
-              "error_message": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"cosmos\"\nReceived string:    \"searchable test note\"\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:255:34)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -477,7 +478,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60989900
+              "duration": 9921599
             }
           },
           {
@@ -485,7 +486,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8209600
+              "duration": 113200
             }
           }
         ],
@@ -521,7 +522,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 297699
+              "duration": 129700
             }
           },
           {
@@ -529,7 +530,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 101523100
+              "duration": 60111799
             }
           },
           {
@@ -541,8 +542,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:70"
             },
             "result": {
-              "status": "passed",
-              "duration": 1400484199
+              "status": "failed",
+              "duration": 2414886900,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:71:19)"
             }
           },
           {
@@ -554,8 +556,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:57"
             },
             "result": {
-              "status": "passed",
-              "duration": 96830600
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -567,8 +569,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:186"
             },
             "result": {
-              "status": "passed",
-              "duration": 519682399
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -580,8 +582,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:120"
             },
             "result": {
-              "status": "passed",
-              "duration": 1243836100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -593,8 +595,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:388"
             },
             "result": {
-              "status": "passed",
-              "duration": 370272899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -606,8 +608,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:293"
             },
             "result": {
-              "status": "passed",
-              "duration": 239469700
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -619,8 +621,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:127"
             },
             "result": {
-              "status": "passed",
-              "duration": 1210765899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -632,8 +634,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:308"
             },
             "result": {
-              "status": "passed",
-              "duration": 278392500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -641,7 +643,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 101737300
+              "duration": 11761500
             }
           },
           {
@@ -649,7 +651,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8322499
+              "duration": 126099
             }
           }
         ],
@@ -685,7 +687,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 215500
+              "duration": 171699
             }
           },
           {
@@ -693,7 +695,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 132130300
+              "duration": 63127400
             }
           },
           {
@@ -705,8 +707,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:70"
             },
             "result": {
-              "status": "passed",
-              "duration": 2013115499
+              "status": "failed",
+              "duration": 2426764499,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:71:19)"
             }
           },
           {
@@ -718,8 +721,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:57"
             },
             "result": {
-              "status": "passed",
-              "duration": 352863499
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -731,8 +734,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:321"
             },
             "result": {
-              "status": "passed",
-              "duration": 3224444100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -744,9 +747,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:133"
             },
             "result": {
-              "status": "failed",
-              "duration": 5030333800,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('button:has-text(\"+\")').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('button:has-text(\"+\")').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:150:24)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -832,7 +834,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 956929499
+              "duration": 8295899
             }
           },
           {
@@ -840,7 +842,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 11985599
+              "duration": 119399
             }
           }
         ],
@@ -900,7 +902,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 298599
+              "duration": 115999
             }
           },
           {
@@ -908,7 +910,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 727850100
+              "duration": 60290499
             }
           },
           {
@@ -921,8 +923,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 179616399,
-              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
+              "duration": 61300600,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:103:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
             }
           },
           {
@@ -1034,7 +1036,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 245390599
+              "duration": 35562799
             }
           },
           {
@@ -1042,7 +1044,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 6324199
+              "duration": 1761499
             }
           }
         ],
@@ -1074,7 +1076,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 406399
+              "duration": 264499
             }
           },
           {
@@ -1082,7 +1084,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 170464899
+              "duration": 59067699
             }
           },
           {
@@ -1095,8 +1097,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 373389199,
-              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
+              "duration": 32642100,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:103:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
             }
           },
           {
@@ -1169,7 +1171,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 252330200
+              "duration": 30429700
             }
           },
           {
@@ -1177,7 +1179,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3082900
+              "duration": 2047900
             }
           }
         ],
@@ -1209,7 +1211,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 669900
+              "duration": 98100
             }
           },
           {
@@ -1217,7 +1219,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 295808300
+              "duration": 58981400
             }
           },
           {
@@ -1230,8 +1232,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 124187000,
-              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:93:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
+              "duration": 26612500,
+              "error_message": "Error: Failed to create link: 400 - {\"error\":\"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:103:11)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:53:5)"
             }
           },
           {
@@ -1304,7 +1306,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 120927700
+              "duration": 27959700
             }
           },
           {
@@ -1312,7 +1314,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4151899
+              "duration": 2425899
             }
           }
         ],
@@ -1364,7 +1366,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 269200
+              "duration": 89100
             }
           },
           {
@@ -1372,7 +1374,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 390279800
+              "duration": 59517200
             }
           },
           {
@@ -1384,8 +1386,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:84"
             },
             "result": {
-              "status": "passed",
-              "duration": 3701478499
+              "status": "failed",
+              "duration": 2439029300,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/graph/3d/b8c43b72-2a9a-4b68-8742-81cb038d8388\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/graph/3d/b8c43b72-2a9a-4b68-8742-81cb038d8388\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:97:19)"
             }
           },
           {
@@ -1397,8 +1400,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "passed",
-              "duration": 677288200
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1410,8 +1413,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:11"
             },
             "result": {
-              "status": "passed",
-              "duration": 1178900900
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1423,9 +1426,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:58"
             },
             "result": {
-              "status": "failed",
-              "duration": 5046647600,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.side-panel, .note-side-panel, [role=\"complementary\"]').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_interaction.steps.ts:60:23)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1459,7 +1461,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 157548900
+              "duration": 18114899
             }
           },
           {
@@ -1467,7 +1469,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1758999
+              "duration": 1151799
             }
           }
         ],
@@ -1503,7 +1505,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 195999
+              "duration": 121500
             }
           },
           {
@@ -1511,7 +1513,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 144749400
+              "duration": 58977499
             }
           },
           {
@@ -1523,8 +1525,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:84"
             },
             "result": {
-              "status": "passed",
-              "duration": 3014544399
+              "status": "failed",
+              "duration": 2425698500,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/graph/3d/4f3e8d61-243b-4bf3-bb42-3be295a4a7ab\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/graph/3d/4f3e8d61-243b-4bf3-bb42-3be295a4a7ab\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:97:19)"
             }
           },
           {
@@ -1536,8 +1539,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "passed",
-              "duration": 385056599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1549,8 +1552,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:194"
             },
             "result": {
-              "status": "passed",
-              "duration": 669160499
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1562,8 +1565,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:76"
             },
             "result": {
-              "status": "passed",
-              "duration": 2904450899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1575,8 +1578,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:97"
             },
             "result": {
-              "status": "passed",
-              "duration": 81755599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1588,8 +1591,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:114"
             },
             "result": {
-              "status": "passed",
-              "duration": 36405399
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1597,7 +1600,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 879356700
+              "duration": 18353799
             }
           },
           {
@@ -1605,7 +1608,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2646000
+              "duration": 930100
             }
           }
         ],
@@ -1641,7 +1644,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 261500
+              "duration": 112199
             }
           },
           {
@@ -1649,7 +1652,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 423126299
+              "duration": 61850299
             }
           },
           {
@@ -1661,8 +1664,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:84"
             },
             "result": {
-              "status": "passed",
-              "duration": 4289016299
+              "status": "failed",
+              "duration": 2403236500,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/graph/3d/e3025255-86a0-4cc9-a954-8c784f4c65bf\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/graph/3d/e3025255-86a0-4cc9-a954-8c784f4c65bf\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:97:19)"
             }
           },
           {
@@ -1674,8 +1678,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "passed",
-              "duration": 159286599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1687,8 +1691,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:128"
             },
             "result": {
-              "status": "passed",
-              "duration": 637308400
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1700,8 +1704,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:162"
             },
             "result": {
-              "status": "passed",
-              "duration": 1066006700
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1713,8 +1717,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:174"
             },
             "result": {
-              "status": "passed",
-              "duration": 159894500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1722,7 +1726,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 205071600
+              "duration": 17273900
             }
           },
           {
@@ -1730,7 +1734,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2032800
+              "duration": 900499
             }
           }
         ],
@@ -1766,7 +1770,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 208200
+              "duration": 254100
             }
           },
           {
@@ -1774,7 +1778,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 126495900
+              "duration": 57422399
             }
           },
           {
@@ -1786,8 +1790,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:84"
             },
             "result": {
-              "status": "passed",
-              "duration": 1857881500
+              "status": "failed",
+              "duration": 2406541300,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/graph/3d/fc5f628a-e560-4465-9e49-d47b54daca99\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/graph/3d/fc5f628a-e560-4465-9e49-d47b54daca99\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:97:19)"
             }
           },
           {
@@ -1799,8 +1804,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "passed",
-              "duration": 112944100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1812,8 +1817,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:46"
             },
             "result": {
-              "status": "passed",
-              "duration": 827554599
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1825,8 +1830,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:200"
             },
             "result": {
-              "status": "passed",
-              "duration": 61043100
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1838,8 +1843,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:217"
             },
             "result": {
-              "status": "passed",
-              "duration": 23586399
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1847,7 +1852,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 405649899
+              "duration": 17792400
             }
           },
           {
@@ -1855,7 +1860,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 2073900
+              "duration": 1968300
             }
           }
         ],
@@ -1891,7 +1896,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 220099
+              "duration": 114499
             }
           },
           {
@@ -1899,7 +1904,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 130719899
+              "duration": 58209800
             }
           },
           {
@@ -1911,8 +1916,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:84"
             },
             "result": {
-              "status": "passed",
-              "duration": 1803991899
+              "status": "failed",
+              "duration": 2403123100,
+              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/graph/3d/8f4296f4-38fb-414f-9493-14d00f57f88b\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/graph/3d/8f4296f4-38fb-414f-9493-14d00f57f88b\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:97:19)"
             }
           },
           {
@@ -1924,8 +1930,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "passed",
-              "duration": 115916499
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1937,8 +1943,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:35"
             },
             "result": {
-              "status": "passed",
-              "duration": 1126497700
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1950,8 +1956,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:231"
             },
             "result": {
-              "status": "passed",
-              "duration": 509413899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1963,8 +1969,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:238"
             },
             "result": {
-              "status": "passed",
-              "duration": 1122142699
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1972,7 +1978,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 238631999
+              "duration": 20906000
             }
           },
           {
@@ -1980,7 +1986,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1798099
+              "duration": 1425999
             }
           }
         ],

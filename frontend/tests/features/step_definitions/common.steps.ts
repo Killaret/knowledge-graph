@@ -36,7 +36,15 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
     content: 'This is the center note for testing',
     type: 'star'
   });
+  
+  // Validate center note creation
+  if (!centerData || !centerData.id) {
+    throw new Error(`Failed to create center note: ${JSON.stringify(centerData)}`);
+  }
+  
   this.centerNoteId = String(centerData.id);
+  console.log(`[DEBUG] Created center note with ID: ${this.centerNoteId}`);
+  
   this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
   
   // Create connected notes
@@ -47,10 +55,26 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
       content: `Content for note ${i}`,
       type: types[i % types.length]
     });
-    this.testNotes.push({ id: String(noteData.id), title: String(noteData.title || ''), type: types[i % types.length] });
+    
+    // Validate connected note creation
+    if (!noteData || !noteData.id) {
+      console.error(`[ERROR] Failed to create note ${i}:`, noteData);
+      continue;
+    }
+    
+    const noteId = String(noteData.id);
+    console.log(`[DEBUG] Created note ${i} with ID: ${noteId}`);
+    
+    this.testNotes.push({ id: noteId, title: String(noteData.title || ''), type: types[i % types.length] });
+    
+    // Validate IDs before creating link
+    if (!this.centerNoteId) {
+      throw new Error(`[ERROR] centerNoteId is undefined when creating link for note ${i}`);
+    }
     
     // Create link to center using helper
-    await createLink(this.request, this.centerNoteId!, String(noteData.id), 0.5 + Math.random() * 0.5, 'related');
+    console.log(`[DEBUG] Creating link: ${this.centerNoteId} -> ${noteId}`);
+    await createLink(this.request, this.centerNoteId, noteId, 0.5 + Math.random() * 0.5, 'related');
   }
 });
 
@@ -90,9 +114,22 @@ Given('I am on the 3D graph page for a note with connections', async function(th
       content: 'Center note',
       type: 'star'
     });
+    
+    // Validate center note was created
+    if (!centerData || !centerData.id) {
+      throw new Error(`Failed to create center note for 3D graph: ${JSON.stringify(centerData)}`);
+    }
+    
     this.centerNoteId = String(centerData.id);
+    console.log(`[DEBUG] 3D graph page: Created center note with ID: ${this.centerNoteId}`);
     this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
   }
+  
+  // Validate we have a valid ID before navigating
+  if (!this.centerNoteId) {
+    throw new Error('[ERROR] centerNoteId is undefined when navigating to 3D graph page');
+  }
+  
   // Navigate to 3D graph
   await this.page.goto(`http://localhost:5173/graph/3d/${this.centerNoteId}`);
   await this.page.waitForLoadState('networkidle');

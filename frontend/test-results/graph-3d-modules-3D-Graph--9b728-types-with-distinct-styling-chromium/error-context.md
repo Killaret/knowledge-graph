@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: notes.spec.ts >> Knowledge Graph Frontend >> should open 3D graph for a note with links
-- Location: tests\notes.spec.ts:102:3
+- Name: graph-3d-modules.spec.ts >> 3D Graph - Modular Architecture >> should render different link types with distinct styling
+- Location: tests\graph-3d-modules.spec.ts:457:3
 
 # Error details
 
@@ -66,8 +66,6 @@ Error: Failed to create link: 400 - {"error":"Key: 'createLinkRequest.SourceNote
 # Test source
 
 ```ts
-  1   | import type { APIRequestContext } from '@playwright/test';
-  2   | 
   3   | export interface NoteData {
   4   |   id?: string;
   5   |   title: string;
@@ -143,116 +141,126 @@ Error: Failed to create link: 400 - {"error":"Key: 'createLinkRequest.SourceNote
   75  |   weight = 0.5,
   76  |   linkType = 'related'
   77  | ): Promise<{ id: string; [key: string]: unknown }> {
-  78  |   // Go backend expects PascalCase field names
-  79  |   const payload = {
-  80  |     SourceNoteID: sourceId,
-  81  |     TargetNoteID: targetId,
-  82  |     Weight: weight,
-  83  |     LinkType: linkType,
-  84  |     Metadata: {},
-  85  |   };
-  86  | 
-  87  |   const response = await request.post(`${getBackendUrl()}/links`, {
-  88  |     data: payload,
-  89  |   });
-  90  | 
-  91  |   if (!response.ok()) {
-  92  |     const errorText = await response.text();
-> 93  |     throw new Error(`Failed to create link: ${response.status()} - ${errorText}`);
+  78  |   // Debug logging
+  79  |   console.log('[createLink] Creating link:', { sourceId, targetId, weight, linkType });
+  80  |   
+  81  |   // Validate inputs
+  82  |   if (!sourceId || !targetId) {
+  83  |     throw new Error(`Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`);
+  84  |   }
+  85  |   
+  86  |   // Go backend expects PascalCase field names
+  87  |   const payload = {
+  88  |     SourceNoteID: sourceId,
+  89  |     TargetNoteID: targetId,
+  90  |     Weight: weight,
+  91  |     LinkType: linkType,
+  92  |     Metadata: {},
+  93  |   };
+  94  |   
+  95  |   console.log('[createLink] Payload:', JSON.stringify(payload));
+  96  | 
+  97  |   const response = await request.post(`${getBackendUrl()}/links`, {
+  98  |     data: payload,
+  99  |   });
+  100 | 
+  101 |   if (!response.ok()) {
+  102 |     const errorText = await response.text();
+> 103 |     throw new Error(`Failed to create link: ${response.status()} - ${errorText}`);
       |           ^ Error: Failed to create link: 400 - {"error":"Key: 'createLinkRequest.SourceNoteID' Error:Field validation for 'SourceNoteID' failed on the 'required' tag\nKey: 'createLinkRequest.TargetNoteID' Error:Field validation for 'TargetNoteID' failed on the 'required' tag\nKey: 'createLinkRequest.LinkType' Error:Field validation for 'LinkType' failed on the 'required' tag"}
-  94  |   }
-  95  | 
-  96  |   return await response.json();
-  97  | }
-  98  | 
-  99  | /**
-  100 |  * Create a star topology - center note with surrounding notes
-  101 |  */
-  102 | export async function createStarTopology(
-  103 |   request: APIRequestContext,
-  104 |   centerNote: Partial<NoteData>,
-  105 |   surroundingNotes: Partial<NoteData>[],
-  106 |   linkWeight = 0.7
-  107 | ): Promise<{
-  108 |   center: { id: string };
-  109 |   surrounding: Array<{ id: string }>;
-  110 | }> {
-  111 |   const center = await createNote(request, centerNote);
-  112 |   const surrounding = [];
-  113 | 
-  114 |   for (const noteData of surroundingNotes) {
-  115 |     const note = await createNote(request, noteData);
-  116 |     surrounding.push(note);
-  117 |     await createLink(request, center.id, note.id, linkWeight);
-  118 |   }
-  119 | 
-  120 |   return { center, surrounding };
-  121 | }
-  122 | 
-  123 | /**
-  124 |  * Create a chain topology - notes linked in sequence
-  125 |  */
-  126 | export async function createChainTopology(
-  127 |   request: APIRequestContext,
-  128 |   notes: Partial<NoteData>[],
-  129 |   linkWeight = 0.8
-  130 | ): Promise<Array<{ id: string }>> {
-  131 |   const created = [];
+  104 |   }
+  105 | 
+  106 |   return await response.json();
+  107 | }
+  108 | 
+  109 | /**
+  110 |  * Create a star topology - center note with surrounding notes
+  111 |  */
+  112 | export async function createStarTopology(
+  113 |   request: APIRequestContext,
+  114 |   centerNote: Partial<NoteData>,
+  115 |   surroundingNotes: Partial<NoteData>[],
+  116 |   linkWeight = 0.7
+  117 | ): Promise<{
+  118 |   center: { id: string };
+  119 |   surrounding: Array<{ id: string }>;
+  120 | }> {
+  121 |   const center = await createNote(request, centerNote);
+  122 |   const surrounding = [];
+  123 | 
+  124 |   for (const noteData of surroundingNotes) {
+  125 |     const note = await createNote(request, noteData);
+  126 |     surrounding.push(note);
+  127 |     await createLink(request, center.id, note.id, linkWeight);
+  128 |   }
+  129 | 
+  130 |   return { center, surrounding };
+  131 | }
   132 | 
-  133 |   for (let i = 0; i < notes.length; i++) {
-  134 |     const note = await createNote(request, notes[i]);
-  135 |     created.push(note);
-  136 | 
-  137 |     // Link to previous note
-  138 |     if (i > 0) {
-  139 |       await createLink(request, created[i - 1].id, note.id, linkWeight);
-  140 |     }
-  141 |   }
+  133 | /**
+  134 |  * Create a chain topology - notes linked in sequence
+  135 |  */
+  136 | export async function createChainTopology(
+  137 |   request: APIRequestContext,
+  138 |   notes: Partial<NoteData>[],
+  139 |   linkWeight = 0.8
+  140 | ): Promise<Array<{ id: string }>> {
+  141 |   const created = [];
   142 | 
-  143 |   return created;
-  144 | }
-  145 | 
-  146 | /**
-  147 |  * Delete a note via API
-  148 |  */
-  149 | export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
-  150 |   const response = await request.delete(`${getBackendUrl()}/notes/${noteId}`);
-  151 | 
-  152 |   if (!response.ok() && response.status() !== 404) {
-  153 |     const errorText = await response.text();
-  154 |     throw new Error(`Failed to delete note: ${response.status()} - ${errorText}`);
-  155 |   }
-  156 | }
-  157 | 
-  158 | /**
-  159 |  * Clean up all test data
-  160 |  */
-  161 | export async function cleanupTestData(
-  162 |   request: APIRequestContext,
-  163 |   noteIds: string[]
-  164 | ): Promise<void> {
-  165 |   for (const id of noteIds) {
-  166 |     try {
-  167 |       await deleteNote(request, id);
-  168 |     } catch (e) {
-  169 |       // Ignore errors during cleanup
-  170 |       console.warn(`Failed to delete note ${id}:`, e);
-  171 |     }
-  172 |   }
-  173 | }
-  174 | 
-  175 | /**
-  176 |  * Check if backend is available
-  177 |  */
-  178 | export async function isBackendAvailable(request: APIRequestContext): Promise<boolean> {
-  179 |   try {
-  180 |     const response = await request.get(`${getBackendUrl()}/notes`, {
-  181 |       timeout: 5000,
-  182 |     });
-  183 |     return response.status() < 500;
-  184 |   } catch {
-  185 |     return false;
-  186 |   }
-  187 | }
-  188 | 
+  143 |   for (let i = 0; i < notes.length; i++) {
+  144 |     const note = await createNote(request, notes[i]);
+  145 |     created.push(note);
+  146 | 
+  147 |     // Link to previous note
+  148 |     if (i > 0) {
+  149 |       await createLink(request, created[i - 1].id, note.id, linkWeight);
+  150 |     }
+  151 |   }
+  152 | 
+  153 |   return created;
+  154 | }
+  155 | 
+  156 | /**
+  157 |  * Delete a note via API
+  158 |  */
+  159 | export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
+  160 |   const response = await request.delete(`${getBackendUrl()}/notes/${noteId}`);
+  161 | 
+  162 |   if (!response.ok() && response.status() !== 404) {
+  163 |     const errorText = await response.text();
+  164 |     throw new Error(`Failed to delete note: ${response.status()} - ${errorText}`);
+  165 |   }
+  166 | }
+  167 | 
+  168 | /**
+  169 |  * Clean up all test data
+  170 |  */
+  171 | export async function cleanupTestData(
+  172 |   request: APIRequestContext,
+  173 |   noteIds: string[]
+  174 | ): Promise<void> {
+  175 |   for (const id of noteIds) {
+  176 |     try {
+  177 |       await deleteNote(request, id);
+  178 |     } catch (e) {
+  179 |       // Ignore errors during cleanup
+  180 |       console.warn(`Failed to delete note ${id}:`, e);
+  181 |     }
+  182 |   }
+  183 | }
+  184 | 
+  185 | /**
+  186 |  * Check if backend is available
+  187 |  */
+  188 | export async function isBackendAvailable(request: APIRequestContext): Promise<boolean> {
+  189 |   try {
+  190 |     const response = await request.get(`${getBackendUrl()}/notes`, {
+  191 |       timeout: 5000,
+  192 |     });
+  193 |     return response.status() < 500;
+  194 |   } catch {
+  195 |     return false;
+  196 |   }
+  197 | }
+  198 | 
 ```
