@@ -39,7 +39,10 @@ export async function createNote(
   };
 
   const response = await request.post(`${getBackendUrl()}/notes`, {
-    data: payload,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: JSON.stringify(payload),
   });
 
   if (!response.ok()) {
@@ -47,7 +50,9 @@ export async function createNote(
     throw new Error(`Failed to create note: ${response.status()} - ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('[createNote] API response:', JSON.stringify(result));
+  return result;
 }
 
 /**
@@ -95,7 +100,10 @@ export async function createLink(
   console.log('[createLink] Payload:', JSON.stringify(payload));
 
   const response = await request.post(`${getBackendUrl()}/links`, {
-    data: payload,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: JSON.stringify(payload),
   });
 
   if (!response.ok()) {
