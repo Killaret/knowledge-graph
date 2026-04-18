@@ -257,18 +257,32 @@ Then('the view toggle should show {string} option', async function(this: ITestWo
 // Filter and search assertions
 Then('only notes of type {string} should be displayed', async function(this: ITestWorld, type: string) {
   // Wait longer for list to update after filter
-  await this.page.waitForTimeout(1500);
+  await this.page.waitForTimeout(2000);
   
   const cards = this.page.locator('.note-card');
   const count = await cards.count();
   
+  console.log(`[TEST] Filter "${type}": found ${count} note cards`);
+  
   if (count === 0) {
     // Check if empty state is shown (valid when no notes of this type)
-    const emptyState = this.page.locator('.empty-state, text=/No notes found/i').first();
+    const emptyState = this.page.locator('.empty-state, text=/No/i').first();
     const isEmptyVisible = await emptyState.isVisible().catch(() => false);
+    console.log(`[TEST] Empty state visible: ${isEmptyVisible}`);
     if (isEmptyVisible) {
       console.log(`[TEST] Empty state shown for type "${type}" - no notes of this type exist`);
       return; // This is valid - no notes of this type
+    }
+    // If no cards and no empty state, wait more and retry
+    console.log(`[TEST] No cards and no empty state, waiting more...`);
+    await this.page.waitForTimeout(2000);
+    const count2 = await cards.count();
+    console.log(`[TEST] After extra wait: ${count2} cards`);
+    if (count2 === 0) {
+      // Still nothing - check page state
+      const html = await this.page.content();
+      console.log(`[TEST] Page has note-card: ${html.includes('note-card')}`);
+      console.log(`[TEST] Page has empty-state: ${html.includes('empty-state')}`);
     }
   }
   

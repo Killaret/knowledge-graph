@@ -42,6 +42,13 @@ Then('the fog density should still be greater than {float}', async function(this
   expect(density).toBeGreaterThan(threshold);
 });
 
+Then('the fog density should still be at least {float}', async function(this: ITestWorld, threshold: number) {
+  const density = await this.page.evaluate(() => {
+    return (window as any).scene?.fog?.density ?? 0;
+  });
+  expect(density).toBeGreaterThanOrEqual(threshold);
+});
+
 Then('the fog density should become less than {float} within {int} second', async function(this: ITestWorld, maxDensity: number, seconds: number) {
   await this.page.waitForFunction(
     (max: number) => {
