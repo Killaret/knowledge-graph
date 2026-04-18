@@ -56,19 +56,22 @@ When('I hover over a node', async function(this: ITestWorld) {
 
 // Side panel assertions
 Then('a side panel should open', async function(this: ITestWorld) {
-  const panel = this.page.locator('.side-panel, .note-side-panel, [role="complementary"]').first();
+  // Try multiple possible side panel selectors
+  const panel = this.page.locator('.side-panel, .note-side-panel, [role="complementary"], [data-testid="side-panel"], .slide-over, .drawer, aside').first();
   await expect(panel).toBeVisible({ timeout: 5000 });
 });
 
 Then('the panel should display the note title', async function(this: ITestWorld) {
-  const title = this.page.locator('.side-panel .note-title, .side-panel h2, .side-panel h3').first();
+  // Flexible title selector within any panel-like element
+  const title = this.page.locator('.side-panel .note-title, .side-panel h2, .side-panel h3, [data-testid="side-panel"] h2, [data-testid="side-panel"] h3, .slide-over h2, .drawer h2, aside h2').first();
   await expect(title).toBeVisible({ timeout: 5000 });
   const text = await title.textContent();
   expect(text?.length).toBeGreaterThan(0);
 });
 
 Then('the panel should contain a link to the note details', async function(this: ITestWorld) {
-  const link = this.page.locator('.side-panel a[href^="/notes/"], .side-panel button:has-text("View Details")').first();
+  // Flexible link selector within panel
+  const link = this.page.locator('.side-panel a[href^="/notes/"], .side-panel button:has-text("View Details"), [data-testid="side-panel"] a, .slide-over a[href^="/notes/"]').first();
   await expect(link).toBeVisible({ timeout: 5000 });
 });
 

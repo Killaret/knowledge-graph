@@ -179,6 +179,9 @@ When('I click the {string} button in floating controls', async function(this: IT
     selector = '[data-testid="view-toggle-3d"]';  
   } else if (label.includes('reset') || label.includes('camera')) {
     selector = '[data-testid="reset-camera-button"]';
+  } else if (label.includes('+') || label.includes('create')) {
+    // Create note button - try multiple selectors
+    selector = '[data-testid="create-note-button"], button[title*="Create"], .create-btn, button:has-text("+")';
   } else {
     // Fallback to text search for other buttons
     selector = `button:has-text("${buttonLabel}")`;
