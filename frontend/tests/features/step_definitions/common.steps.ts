@@ -313,8 +313,28 @@ When('I fill in the title {string}', async function(this: ITestWorld, title: str
 });
 
 When('I select type {string}', async function(this: ITestWorld, type: string) {
-  const select = this.page.locator('select[name="type"], [data-testid="note-type-select"]').first();
-  await select.selectOption(type.toLowerCase());
+  // Type selector uses buttons, not a select element
+  const typeLower = type.toLowerCase();
+  // Try to find button by type value or label text
+  const typeButton = this.page.locator(`.type-btn:has-text("${type}"), .type-btn:has-text("${typeLower}"), button:has-text("${type}"), button:has-text("${typeLower}")`).first();
+  
+  // Check if button exists, if not try alternative selectors
+  const count = await typeButton.count();
+  if (count === 0) {
+    // Try finding by partial text match
+    const buttons = this.page.locator('.type-selector button, .type-btn');
+    const allButtons = await buttons.all();
+    for (const btn of allButtons) {
+      const text = await btn.textContent();
+      if (text?.toLowerCase().includes(typeLower)) {
+        await btn.click();
+        return;
+      }
+    }
+    throw new Error(`Could not find type button for: ${type}`);
+  }
+  
+  await typeButton.click();
 });
 
 Then('the modal should close', async function(this: ITestWorld) {

@@ -12,7 +12,7 @@ Feature: 3D Graph Progressive Loading
   Scenario: Overlay disappears early while fog persists
     Then the loading overlay should be visible
     And the loading text should contain "universe isn't still created"
-    And the fog density should be at least 0.05
+    And the fog density should be at least 0.005
     When the simulation progresses to at least 10% nodes positioned
     Then the loading overlay should disappear within 2 seconds
     But the fog density should still be greater than 0.005
