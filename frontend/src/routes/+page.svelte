@@ -321,6 +321,7 @@
     noteId={selectedNodeId ?? undefined}
     typeFilters={typeFilters}
     selectedType={selectedType}
+    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? allNotes.length : allNotes.filter(n => getNoteType(n) === f.id).length]))}
   />
 
   <!-- Fullscreen Graph Container -->

@@ -10,7 +10,8 @@
     onExport,
     noteId = '',
     typeFilters = [],
-    selectedType = 'all'
+    selectedType = 'all',
+    typeCounts = {}
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
@@ -21,6 +22,7 @@
     noteId?: string;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
+    typeCounts?: Record<string, number>;
   } = $props();
   
   let searchQuery = $state('');
@@ -109,6 +111,9 @@
         >
           <span class="filter-emoji">{filter.emoji}</span>
           <span class="filter-label">{filter.label}</span>
+          {#if typeCounts[filter.id] !== undefined}
+            <span class="filter-count" data-testid="filter-count-{filter.id}">{typeCounts[filter.id]}</span>
+          {/if}
         </button>
       {/each}
     </div>
@@ -364,5 +369,18 @@
 
   .filter-label {
     font-weight: 500;
+  }
+
+  .filter-count {
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 2px;
+    font-weight: 600;
+  }
+
+  .filter-chip.active .filter-count {
+    background: rgba(255, 255, 255, 0.2);
   }
 </style>
