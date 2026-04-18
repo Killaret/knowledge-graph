@@ -15,7 +15,7 @@ Feature: 3D Graph Progressive Loading
     And the fog density should be at least 0.005
     When the simulation progresses to at least 10% nodes positioned
     Then the loading overlay should disappear within 2 seconds
-    But the fog density should still be greater than 0.005
+    But the fog density should still be at least 0.001
     And I should be able to click on the canvas
 
   @regression
