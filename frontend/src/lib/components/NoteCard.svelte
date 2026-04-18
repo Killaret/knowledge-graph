@@ -52,7 +52,12 @@
   >
   <div class="note-header">
     <h3 class="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>
-    <div class="note-date">{formatDate(note.created_at)}</div>
+    <div class="note-meta">
+      {#if note.type}
+        <span class="type-badge" data-testid="note-type">{note.type}</span>
+      {/if}
+      <div class="note-date">{formatDate(note.created_at)}</div>
+    </div>
   </div>
 
   <div class="note-content">
@@ -114,6 +119,22 @@
     font-size: 0.875rem;
     color: var(--color-text-secondary, #6b7280);
     white-space: nowrap;
+  }
+
+  .note-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  .type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--color-background-secondary, #f3f4f6);
+    color: var(--color-text-secondary, #6b7280);
+    text-transform: capitalize;
   }
 
   .note-content {

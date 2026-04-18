@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 832899
+              "duration": 581599
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 94600799
+              "duration": 95276800
             }
           },
           {
@@ -35,7 +35,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1469710500
+              "duration": 1506693699
             }
           },
           {
@@ -48,7 +48,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 119735599
+              "duration": 88737599
             }
           },
           {
@@ -61,7 +61,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 349675100
+              "duration": 271229400
             }
           },
           {
@@ -74,7 +74,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1972165600
+              "duration": 1965508499
             }
           },
           {
@@ -87,7 +87,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 9819499
+              "duration": 10948600
             }
           },
           {
@@ -100,7 +100,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 8476300
+              "duration": 8053600
             }
           },
           {
@@ -109,11 +109,11 @@
             "line": 17,
             "name": "I click the \"Graph\" toggle button",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:386"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:400"
             },
             "result": {
               "status": "passed",
-              "duration": 604049200
+              "duration": 588529800
             }
           },
           {
@@ -126,7 +126,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 241809999
+              "duration": 147829799
             }
           },
           {
@@ -135,11 +135,11 @@
             "line": 19,
             "name": "the graph canvas should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:411"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:425"
             },
             "result": {
               "status": "passed",
-              "duration": 121416099
+              "duration": 122260800
             }
           },
           {
@@ -147,7 +147,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 83492999
+              "duration": 96362700
             }
           },
           {
@@ -155,7 +155,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4951399
+              "duration": 4498599
             }
           }
         ],
@@ -191,7 +191,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 101200
+              "duration": 148299
             }
           },
           {
@@ -199,7 +199,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61782000
+              "duration": 64546299
             }
           },
           {
@@ -212,7 +212,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1432818799
+              "duration": 1412924699
             }
           },
           {
@@ -225,7 +225,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 80990099
+              "duration": 92610599
             }
           },
           {
@@ -238,7 +238,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2260099099
+              "duration": 2193022500
             }
           },
           {
@@ -251,7 +251,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1109381600
+              "duration": 1115440700
             }
           },
           {
@@ -264,8 +264,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 1510806200,
-              "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:275:17)"
+              "duration": 4053700300,
+              "error_message": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:289:17)"
             }
           },
           {
@@ -274,7 +274,7 @@
             "line": 26,
             "name": "the count badge should show the correct number",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:285"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:299"
             },
             "result": {
               "status": "skipped",
@@ -287,7 +287,7 @@
             "line": 27,
             "name": "I click the \"All\" filter chip",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:417"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:431"
             },
             "result": {
               "status": "skipped",
@@ -300,7 +300,7 @@
             "line": 28,
             "name": "all notes should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:292"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:306"
             },
             "result": {
               "status": "skipped",
@@ -312,7 +312,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 77503899
+              "duration": 88020499
             }
           },
           {
@@ -320,7 +320,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3740799
+              "duration": 4835000
             }
           }
         ],
@@ -356,7 +356,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 109000
+              "duration": 115599
             }
           },
           {
@@ -364,7 +364,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60157100
+              "duration": 67167799
             }
           },
           {
@@ -377,7 +377,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1479234399
+              "duration": 1456730899
             }
           },
           {
@@ -390,7 +390,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 73172099
+              "duration": 345999700
             }
           },
           {
@@ -403,7 +403,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2189325799
+              "duration": 2514152800
             }
           },
           {
@@ -416,7 +416,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1171177100
+              "duration": 1155760699
             }
           },
           {
@@ -425,11 +425,11 @@
             "line": 34,
             "name": "the list should show only notes containing \"Test star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:297"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:311"
             },
             "result": {
               "status": "passed",
-              "duration": 26857199
+              "duration": 29537499
             }
           },
           {
@@ -438,11 +438,11 @@
             "line": 35,
             "name": "the note cards should highlight the matching text",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:314"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:328"
             },
             "result": {
               "status": "passed",
-              "duration": 7234400
+              "duration": 6012399
             }
           },
           {
@@ -455,7 +455,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 388284400
+              "duration": 387023900
             }
           },
           {
@@ -464,11 +464,11 @@
             "line": 37,
             "name": "all notes should be displayed again",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:438"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:452"
             },
             "result": {
               "status": "passed",
-              "duration": 6396399
+              "duration": 7318100
             }
           },
           {
@@ -476,7 +476,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 66083900
+              "duration": 73706099
             }
           },
           {
@@ -484,7 +484,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3387399
+              "duration": 3952699
             }
           }
         ],
@@ -520,7 +520,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 91599
+              "duration": 95599
             }
           },
           {
@@ -528,7 +528,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63139299
+              "duration": 65873200
             }
           },
           {
@@ -541,7 +541,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1404862900
+              "duration": 1438186900
             }
           },
           {
@@ -554,7 +554,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 76616399
+              "duration": 71361300
             }
           },
           {
@@ -567,7 +567,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 550082699
+              "duration": 441113999
             }
           },
           {
@@ -580,7 +580,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2838795999
+              "duration": 2734259099
             }
           },
           {
@@ -589,11 +589,11 @@
             "line": 43,
             "name": "only nodes matching \"star\" should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:446"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:460"
             },
             "result": {
               "status": "passed",
-              "duration": 327419299
+              "duration": 342526999
             }
           },
           {
@@ -602,11 +602,11 @@
             "line": 44,
             "name": "non-matching nodes should be dimmed or hidden",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:351"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:365"
             },
             "result": {
               "status": "passed",
-              "duration": 262657900
+              "duration": 243029800
             }
           },
           {
@@ -619,7 +619,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1160582200
+              "duration": 1091971600
             }
           },
           {
@@ -628,11 +628,11 @@
             "line": 46,
             "name": "all nodes should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:366"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:380"
             },
             "result": {
               "status": "passed",
-              "duration": 188977200
+              "duration": 237482700
             }
           },
           {
@@ -640,7 +640,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 72793499
+              "duration": 65955799
             }
           },
           {
@@ -648,7 +648,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3585100
+              "duration": 3922199
             }
           }
         ],
@@ -684,7 +684,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 164700
+              "duration": 127100
             }
           },
           {
@@ -692,7 +692,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68043299
+              "duration": 62034500
             }
           },
           {
@@ -705,7 +705,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1485578000
+              "duration": 1448424800
             }
           },
           {
@@ -718,7 +718,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 70181599
+              "duration": 82429100
             }
           },
           {
@@ -727,11 +727,11 @@
             "line": 50,
             "name": "I am on the main page",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:379"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:393"
             },
             "result": {
               "status": "passed",
-              "duration": 1540272000
+              "duration": 1530216899
             }
           },
           {
@@ -744,7 +744,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1861253000
+              "duration": 1880060900
             }
           },
           {
@@ -753,11 +753,11 @@
             "line": 52,
             "name": "a create note modal should open",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:320"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:334"
             },
             "result": {
               "status": "passed",
-              "duration": 74409100
+              "duration": 78587299
             }
           },
           {
@@ -766,11 +766,11 @@
             "line": 53,
             "name": "I fill in the title \"Test Note\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:325"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:339"
             },
             "result": {
               "status": "passed",
-              "duration": 64543400
+              "duration": 688891400
             }
           },
           {
@@ -779,11 +779,11 @@
             "line": 54,
             "name": "I select type \"Star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:330"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:344"
             },
             "result": {
               "status": "passed",
-              "duration": 1494748100
+              "duration": 1489410299
             }
           },
           {
@@ -796,7 +796,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1225544699
+              "duration": 1310006000
             }
           },
           {
@@ -805,11 +805,11 @@
             "line": 56,
             "name": "the modal should close",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:338"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:352"
             },
             "result": {
               "status": "passed",
-              "duration": 152551899
+              "duration": 122624100
             }
           },
           {
@@ -818,11 +818,11 @@
             "line": 57,
             "name": "the new note should appear in the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:343"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:357"
             },
             "result": {
               "status": "passed",
-              "duration": 1135372199
+              "duration": 1102523300
             }
           },
           {
@@ -830,7 +830,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 69099500
+              "duration": 70221000
             }
           },
           {
@@ -838,7 +838,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3477200
+              "duration": 3581100
             }
           }
         ],
@@ -898,7 +898,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 127099
+              "duration": 94199
             }
           },
           {
@@ -906,7 +906,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61842599
+              "duration": 62282700
             }
           },
           {
@@ -919,7 +919,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 166278899
+              "duration": 167652500
             }
           },
           {
@@ -932,7 +932,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1697127799
+              "duration": 1722722899
             }
           },
           {
@@ -945,7 +945,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 40323700
+              "duration": 41591599
             }
           },
           {
@@ -958,7 +958,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 13030000
+              "duration": 10798500
             }
           },
           {
@@ -971,7 +971,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 29162799
+              "duration": 6281100
             }
           },
           {
@@ -980,11 +980,11 @@
             "line": 16,
             "name": "the simulation progresses to at least 10% nodes positioned",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:57"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:64"
             },
             "result": {
               "status": "passed",
-              "duration": 10035237000
+              "duration": 10046389199
             }
           },
           {
@@ -997,7 +997,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 19331500
+              "duration": 17969100
             }
           },
           {
@@ -1005,9 +1005,12 @@
             "keyword": "But ",
             "line": 18,
             "name": "the fog density should still be at least 0.001",
+            "match": {
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:45"
+            },
             "result": {
-              "status": "undefined",
-              "duration": 0
+              "status": "passed",
+              "duration": 19374400
             }
           },
           {
@@ -1016,11 +1019,11 @@
             "line": 19,
             "name": "I should be able to click on the canvas",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:97"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:104"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 262432300
             }
           },
           {
@@ -1028,7 +1031,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 104246100
+              "duration": 181514299
             }
           },
           {
@@ -1036,7 +1039,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4170700
+              "duration": 6787400
             }
           }
         ],
@@ -1068,7 +1071,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 110000
+              "duration": 162599
             }
           },
           {
@@ -1076,7 +1079,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 66106800
+              "duration": 94608599
             }
           },
           {
@@ -1089,7 +1092,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 120420899
+              "duration": 164519900
             }
           },
           {
@@ -1102,7 +1105,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1717608099
+              "duration": 1629033999
             }
           },
           {
@@ -1111,11 +1114,11 @@
             "line": 23,
             "name": "I wait for the simulation to end",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:87"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:94"
             },
             "result": {
               "status": "passed",
-              "duration": 26873399
+              "duration": 34036800
             }
           },
           {
@@ -1124,11 +1127,11 @@
             "line": 24,
             "name": "the fog density should become less than 0.01 within 1 second",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:45"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:52"
             },
             "result": {
               "status": "passed",
-              "duration": 7318900
+              "duration": 7639400
             }
           },
           {
@@ -1137,11 +1140,11 @@
             "line": 25,
             "name": "all nodes should be clickable",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:104"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:111"
             },
             "result": {
               "status": "passed",
-              "duration": 212381999
+              "duration": 191899599
             }
           },
           {
@@ -1150,11 +1153,11 @@
             "line": 26,
             "name": "links should be visible with opacity based on weight",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:111"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:118"
             },
             "result": {
               "status": "passed",
-              "duration": 26410300
+              "duration": 6431900
             }
           },
           {
@@ -1162,7 +1165,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 117728499
+              "duration": 100892299
             }
           },
           {
@@ -1170,7 +1173,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5181199
+              "duration": 4978299
             }
           }
         ],
@@ -1202,7 +1205,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 247299
+              "duration": 264799
             }
           },
           {
@@ -1210,7 +1213,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68198700
+              "duration": 71161500
             }
           },
           {
@@ -1223,7 +1226,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 124060499
+              "duration": 123571400
             }
           },
           {
@@ -1236,7 +1239,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1865763599
+              "duration": 1602266299
             }
           },
           {
@@ -1245,11 +1248,11 @@
             "line": 30,
             "name": "the graph is still loading",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:208"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:215"
             },
             "result": {
               "status": "passed",
-              "duration": 167866799
+              "duration": 181970699
             }
           },
           {
@@ -1258,11 +1261,11 @@
             "line": 31,
             "name": "I drag the canvas to rotate the view",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:137"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:144"
             },
             "result": {
               "status": "passed",
-              "duration": 464667199
+              "duration": 506428700
             }
           },
           {
@@ -1271,11 +1274,11 @@
             "line": 32,
             "name": "the camera position should change",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:158"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:165"
             },
             "result": {
               "status": "passed",
-              "duration": 17196400
+              "duration": 18888299
             }
           },
           {
@@ -1284,11 +1287,11 @@
             "line": 33,
             "name": "the loading overlay should still be visible or fading",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:177"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:184"
             },
             "result": {
               "status": "passed",
-              "duration": 157546300
+              "duration": 146578500
             }
           },
           {
@@ -1296,7 +1299,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 109965400
+              "duration": 98393600
             }
           },
           {
@@ -1304,7 +1307,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3845000
+              "duration": 3825299
             }
           }
         ],
@@ -1356,7 +1359,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 196900
+              "duration": 165000
             }
           },
           {
@@ -1364,7 +1367,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68681599
+              "duration": 67596100
             }
           },
           {
@@ -1377,7 +1380,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1604716500
+              "duration": 1591349999
             }
           },
           {
@@ -1386,11 +1389,11 @@
             "line": 9,
             "name": "the graph has fully loaded",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:199"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:206"
             },
             "result": {
               "status": "passed",
-              "duration": 82763500
+              "duration": 92121999
             }
           },
           {
@@ -1403,7 +1406,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 719259599
+              "duration": 724189800
             }
           },
           {
@@ -1416,7 +1419,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 518671300
+              "duration": 522793899
             }
           },
           {
@@ -1429,7 +1432,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 17906800
+              "duration": 16942300
             }
           },
           {
@@ -1442,7 +1445,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 15849199
+              "duration": 16226499
             }
           },
           {
@@ -1450,7 +1453,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 36419900
+              "duration": 31902300
             }
           },
           {
@@ -1458,7 +1461,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1184200
+              "duration": 1256799
             }
           }
         ],
@@ -1494,7 +1497,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 122400
+              "duration": 128000
             }
           },
           {
@@ -1502,7 +1505,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61548499
+              "duration": 62842500
             }
           },
           {
@@ -1515,7 +1518,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1411605700
+              "duration": 1434845099
             }
           },
           {
@@ -1524,11 +1527,11 @@
             "line": 9,
             "name": "the graph has fully loaded",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:199"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:206"
             },
             "result": {
               "status": "passed",
-              "duration": 78731200
+              "duration": 99245100
             }
           },
           {
@@ -1537,11 +1540,11 @@
             "line": 20,
             "name": "the graph is still loading",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:208"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:215"
             },
             "result": {
               "status": "passed",
-              "duration": 247032699
+              "duration": 206321600
             }
           },
           {
@@ -1554,7 +1557,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 938161899
+              "duration": 929584699
             }
           },
           {
@@ -1567,7 +1570,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 21813199
+              "duration": 15502000
             }
           },
           {
@@ -1580,7 +1583,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 17172200
+              "duration": 17101699
             }
           },
           {
@@ -1588,7 +1591,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 36026799
+              "duration": 36213000
             }
           },
           {
@@ -1596,7 +1599,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1582399
+              "duration": 1410700
             }
           }
         ],
@@ -1632,7 +1635,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 128399
+              "duration": 129799
             }
           },
           {
@@ -1640,7 +1643,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 66860599
+              "duration": 67085600
             }
           },
           {
@@ -1653,7 +1656,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1446292300
+              "duration": 1440049799
             }
           },
           {
@@ -1662,11 +1665,11 @@
             "line": 9,
             "name": "the graph has fully loaded",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:199"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:206"
             },
             "result": {
               "status": "passed",
-              "duration": 93315699
+              "duration": 88681299
             }
           },
           {
@@ -1679,7 +1682,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 462682099
+              "duration": 450353599
             }
           },
           {
@@ -1692,7 +1695,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1021679900
+              "duration": 1032694800
             }
           },
           {
@@ -1705,7 +1708,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 137232400
+              "duration": 136425399
             }
           },
           {
@@ -1713,7 +1716,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 38045700
+              "duration": 35259200
             }
           },
           {
@@ -1721,7 +1724,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 925300
+              "duration": 1752999
             }
           }
         ],
@@ -1757,7 +1760,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 132400
+              "duration": 130900
             }
           },
           {
@@ -1765,7 +1768,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 65880899
+              "duration": 64882199
             }
           },
           {
@@ -1778,7 +1781,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1568168600
+              "duration": 1429542199
             }
           },
           {
@@ -1787,11 +1790,11 @@
             "line": 9,
             "name": "the graph has fully loaded",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:199"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:206"
             },
             "result": {
               "status": "passed",
-              "duration": 82173199
+              "duration": 84495699
             }
           },
           {
@@ -1804,7 +1807,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 598135600
+              "duration": 598242799
             }
           },
           {
@@ -1817,7 +1820,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 39958299
+              "duration": 26401299
             }
           },
           {
@@ -1830,7 +1833,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 4166599
+              "duration": 17488299
             }
           },
           {
@@ -1838,7 +1841,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 28705099
+              "duration": 36684200
             }
           },
           {
@@ -1846,7 +1849,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1667699
+              "duration": 1101399
             }
           }
         ],
@@ -1882,7 +1885,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 110800
+              "duration": 112200
             }
           },
           {
@@ -1890,7 +1893,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 64233800
+              "duration": 63163300
             }
           },
           {
@@ -1903,7 +1906,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1429011899
+              "duration": 1424597999
             }
           },
           {
@@ -1912,11 +1915,11 @@
             "line": 9,
             "name": "the graph has fully loaded",
             "match": {
-              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:199"
+              "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:206"
             },
             "result": {
               "status": "passed",
-              "duration": 89848499
+              "duration": 77263999
             }
           },
           {
@@ -1929,7 +1932,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 946610399
+              "duration": 921764699
             }
           },
           {
@@ -1942,7 +1945,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 508222699
+              "duration": 512835399
             }
           },
           {
@@ -1955,7 +1958,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1032365700
+              "duration": 1042233900
             }
           },
           {
@@ -1963,7 +1966,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 38606400
+              "duration": 41686300
             }
           },
           {
@@ -1971,7 +1974,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1390499
+              "duration": 1419999
             }
           }
         ],
