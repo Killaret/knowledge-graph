@@ -213,15 +213,24 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
 });
 
 Then('I am in list view', async function(this: ITestWorld) {
+  // First wait for notes to load
+  await this.page.waitForTimeout(1000);
+  
   const listView = this.page.locator('.list-container, .notes-grid').first();
   const isVisible = await listView.isVisible().catch(() => false);
   if (!isVisible) {
     // Click list toggle
     const button = this.page.locator('[data-testid="view-toggle-list"]').first();
     await button.click();
-    await this.page.waitForTimeout(500);
+    await this.page.waitForTimeout(800);
   }
   await expect(listView).toBeVisible({ timeout: 5000 });
+  
+  // Wait for data to be loaded
+  await this.page.waitForFunction(() => {
+    const notes = (window as any).filteredNotes;
+    return notes && notes.length > 0;
+  }, { timeout: 5000 });
 });
 
 Then('I am in graph view', async function(this: ITestWorld) {
