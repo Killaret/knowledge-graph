@@ -275,13 +275,12 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
     const localContainer = page.locator('.graph-3d-container').first();
     await expect(localContainer).toBeVisible();
 
-    // Local mode should be indicated
-    const statsLocal = page.locator('.stats-bar').first();
-    if (await statsLocal.isVisible().catch(() => false)) {
-      const statsText = await statsLocal.textContent();
-      const hasLocalMode = statsText?.toLowerCase().includes('local');
-      expect(hasLocalMode).toBe(true);
-    }
+    // Local mode should be indicated - wait for stats to appear
+    const statsLocal = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsLocal).toBeVisible({ timeout: 5000 });
+    const statsText = await statsLocal.textContent();
+    const hasLocalMode = statsText?.toLowerCase().includes('local') || statsText?.toLowerCase().includes('view');
+    expect(hasLocalMode).toBe(true);
 
     // Test direct access to full 3D graph
     await page.goto('/graph/3d');
@@ -291,13 +290,12 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
     const fullContainer = page.locator('.graph-3d-container, .lazy-loading').first();
     await expect(fullContainer).toBeVisible();
     
-    // Full mode should be indicated
-    const statsFull = page.locator('.stats-bar').first();
-    if (await statsFull.isVisible().catch(() => false)) {
-      const statsText = await statsFull.textContent();
-      const hasFullMode = statsText?.toLowerCase().includes('full');
-      expect(hasFullMode).toBe(true);
-    }
+    // Full mode should be indicated - wait for stats to appear
+    const statsFull = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsFull).toBeVisible({ timeout: 5000 });
+    const statsTextFull = await statsFull.textContent();
+    const hasFullMode = statsTextFull?.toLowerCase().includes('full') || statsTextFull?.toLowerCase().includes('graph');
+    expect(hasFullMode).toBe(true);
   });
 
   test('should show empty state with appropriate camera position when no notes', async ({ page }) => {

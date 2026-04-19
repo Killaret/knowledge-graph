@@ -341,17 +341,17 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     }
   });
 
-  test('should toggle full graph mode in 2D and verify data changes', async ({ page, request }) => {
+  test('should toggle full graph mode in 3D and verify data changes', async ({ page, request }) => {
     // Ensure we have notes with links using helper
     const note1 = await createNote(request, {
-      title: '2D Toggle Test 1',
+      title: '3D Toggle Test 1',
       content: 'First note',
       type: 'star'
     });
     const note1Id = note1.id;
 
     const note2 = await createNote(request, {
-      title: '2D Toggle Test 2',
+      title: '3D Toggle Test 2',
       content: 'Second note',
       type: 'planet'
     });
@@ -360,34 +360,38 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     // Create link
     await createLink(request, note1Id, note2Id, 0.7, 'reference');
 
-    // Navigate to 2D graph
-    await page.goto('/graph');
+    // Navigate to 3D graph with the first note as center
+    await page.goto(`/graph/3d/${note1Id}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
     
     // Find toggle
     const toggle = page.locator('.toggle input[type="checkbox"]').first();
     const hasToggle = await toggle.isVisible().catch(() => false);
     
     if (!hasToggle) {
-      test.skip(true, 'Toggle not found on 2D graph page');
+      test.skip(true, 'Toggle not found on 3D graph page');
       return;
     }
     
-    // Get initial stats
-    const statsBefore = await page.locator('.stats-bar').textContent().catch(() => '') || '';
+    // Get initial stats (local mode)
+    const statsBefore = await page.locator('[data-testid="graph-stats"], .stats-bar').textContent().catch(() => '') || '';
     console.log('Stats before toggle:', statsBefore);
     
-    // Toggle to local view
+    // Toggle to full graph mode
     await toggle.click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
     
-    // Get stats after toggle
-    const statsAfter = await page.locator('.stats-bar').textContent().catch(() => '') || '';
+    // Get stats after toggle (should show more nodes in full mode)
+    const statsAfter = await page.locator('[data-testid="graph-stats"], .stats-bar').textContent().catch(() => '') || '';
     console.log('Stats after toggle:', statsAfter);
     
+    // Verify mode changed (check for 'Full graph' text)
+    const hasFullMode = statsAfter.toLowerCase().includes('full');
+    expect(hasFullMode).toBe(true);
+    
     // Graph should still render
-    const container = page.locator('.fullscreen-graph, .graph-3d-container, .error-overlay').first();
+    const container = page.locator('.graph-3d-container, [data-testid="graph-3d-container"]').first();
     await expect(container).toBeVisible();
   });
 

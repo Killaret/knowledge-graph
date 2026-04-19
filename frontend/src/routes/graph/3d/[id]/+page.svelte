@@ -126,7 +126,7 @@
   
   <!-- Stats with background loading indicator -->
   {#if graphData}
-    <div class="stats-bar">
+    <div class="stats-bar" data-testid="graph-stats">
       <span class="stats-item">
         <strong>{graphData.nodes.length}</strong> nodes
       </span>
