@@ -32,11 +32,17 @@ type Config struct {
 	GraphLoadDepth int // Глубина загрузки графа для визуализации
 
 	// Новые параметры для улучшения алгоритма рекомендаций
-	RecommendationGamma float64 // Коэффициент для дополнительного компонента
-	BFSAggregation      string  // Метод агрегации BFS: "max", "sum", "avg"
-	BFSNormalize        bool    // Нормализация весов в BFS
-	AsynqConcurrency    int     // Уровень параллелизма Asynq
-	AsynqQueueDefault   int     // Приоритет дефолтной очереди Asynq
+	RecommendationGamma                   float64       // Коэффициент для дополнительного компонента
+	BFSAggregation                        string        // Метод агрегации BFS: "max", "sum", "avg"
+	BFSNormalize                          bool          // Нормализация весов в BFS
+	RecommendationTopN                    int           // Количество рекомендаций для сохранения
+	RecommendationTaskDelaySeconds        int           // Задержка перед выполнением задачи (dedup)
+	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
+	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
+	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
+	AsynqConcurrency                      int           // Уровень параллелизма Asynq
+	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
+	AsynqQueueMaxLen                      int           // Максимальная длина очереди
 }
 
 // Load загружает конфигурацию из переменных окружения.
@@ -59,11 +65,17 @@ func Load() *Config {
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", 2),
 
 		// Новые параметры
-		RecommendationGamma: getFloatEnv("RECOMMENDATION_GAMMA", 0.2),
-		BFSAggregation:      getEnv("BFS_AGGREGATION", "max"),
-		BFSNormalize:        getBoolEnv("BFS_NORMALIZE", true),
-		AsynqConcurrency:    getIntEnv("ASYNQ_CONCURRENCY", 10),
-		AsynqQueueDefault:   getIntEnv("ASYNQ_QUEUE_DEFAULT", 1),
+		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", 0.2),
+		BFSAggregation:                        getEnv("BFS_AGGREGATION", "max"),
+		BFSNormalize:                          getBoolEnv("BFS_NORMALIZE", true),
+		RecommendationTopN:                    getIntEnv("RECOMMENDATION_TOP_N", 20),
+		RecommendationTaskDelaySeconds:        getIntEnv("RECOMMENDATION_TASK_DELAY_SECONDS", 5),
+		RecommendationFallbackEnabled:         getBoolEnv("RECOMMENDATION_FALLBACK_ENABLED", true),
+		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", 3600)) * time.Second,
+		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", true),
+		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", 10),
+		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", 1),
+		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", 10000),
 	}
 }
 

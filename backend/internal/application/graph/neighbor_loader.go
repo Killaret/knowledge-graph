@@ -26,6 +26,13 @@ func NewNeighborLoader(linkRepo link.Repository, noteRepo note.Repository) graph
 	}
 }
 
+// linkRepositoryWithBatch — интерфейс, который расширяет link.Repository batch-методами
+type linkRepositoryWithBatch interface {
+	link.Repository
+	FindBySourceIDs(ctx context.Context, sourceIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error)
+	FindByTargetIDs(ctx context.Context, targetIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error)
+}
+
 // GetNeighbors — метод, который для заданной заметки (nodeID) возвращает список рёбер (связей) к соседним заметкам.
 // В рамках рекомендаций мы делаем граф неориентированным: учитываем как исходящие, так и входящие связи.
 // Каждое ребро содержит:
@@ -70,4 +77,69 @@ func (l *neighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]
 
 	// 6. Возвращаем список рёбер
 	return edges, nil
+}
+
+// GetNeighborsBatch возвращает соседей для нескольких узлов (batch-запрос)
+func (l *neighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
+	if len(nodeIDs) == 0 {
+		return make(map[uuid.UUID][]graph.Edge), nil
+	}
+
+	// Пробуем привести linkRepo к интерфейсу с batch-методами
+	batchRepo, ok := l.linkRepo.(linkRepositoryWithBatch)
+	if !ok {
+		// Если batch-методы недоступны, fallback на последовательные запросы
+		result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
+		for _, nodeID := range nodeIDs {
+			edges, err := l.GetNeighbors(ctx, nodeID)
+			if err != nil {
+				continue
+			}
+			result[nodeID] = edges
+		}
+		return result, nil
+	}
+
+	// Batch-запросы для outgoing и incoming связей
+	outgoingMap, err := batchRepo.FindBySourceIDs(ctx, nodeIDs)
+	if err != nil {
+		outgoingMap = make(map[uuid.UUID][]*link.Link)
+	}
+
+	incomingMap, err := batchRepo.FindByTargetIDs(ctx, nodeIDs)
+	if err != nil {
+		incomingMap = make(map[uuid.UUID][]*link.Link)
+	}
+
+	// Объединяем результаты
+	result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		edges := make([]graph.Edge, 0)
+
+		// Исходящие связи
+		if outgoing, ok := outgoingMap[nodeID]; ok {
+			for _, ln := range outgoing {
+				edges = append(edges, graph.Edge{
+					From:   ln.SourceNoteID(),
+					To:     ln.TargetNoteID(),
+					Weight: ln.Weight().Value(),
+				})
+			}
+		}
+
+		// Входящие связи (разворачиваем направление)
+		if incoming, ok := incomingMap[nodeID]; ok {
+			for _, ln := range incoming {
+				edges = append(edges, graph.Edge{
+					From:   ln.TargetNoteID(),
+					To:     ln.SourceNoteID(),
+					Weight: ln.Weight().Value(),
+				})
+			}
+		}
+
+		result[nodeID] = edges
+	}
+
+	return result, nil
 }

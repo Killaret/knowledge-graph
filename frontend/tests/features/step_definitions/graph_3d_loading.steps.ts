@@ -76,7 +76,7 @@ When('the simulation progresses to at least {int}% nodes positioned', async func
       percent,
       { timeout: 10000 }
     );
-  } catch (err) {
+  } catch {
     console.log(`[TEST] Simulation progress timeout - checking current state...`);
     const state = await this.page.evaluate(() => {
       const simulation = (window as any).simulation;
@@ -188,18 +188,9 @@ Then('the loading overlay should still be visible or fading', async function(thi
   
   // Either visible (still loading) or has fade-out style
   if (!isVisible) {
-    // Check that it faded out (was recently removed)
-    const overlayExisted = await this.page.evaluate(() => {
-      // Wait a bit for transition
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const el = document.querySelector('.loading-overlay');
-          resolve(!!el);
-        }, 100);
-      });
-    });
     // If not visible immediately, that's fine - it may have already faded
-    expect(true).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    await this.page.waitForTimeout(100);
   }
 });
 

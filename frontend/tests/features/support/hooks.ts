@@ -1,5 +1,5 @@
 import { Before, After, BeforeAll, AfterAll } from '@cucumber/cucumber';
-import { chromium, type Browser, type BrowserContext } from 'playwright';
+import { chromium, type Browser } from 'playwright';
 import type { ITestWorld } from './world';
 
 let browser: Browser;
@@ -30,7 +30,7 @@ After(async function(this: ITestWorld) {
   for (const note of this.testNotes) {
     try {
       await this.request.delete(`http://localhost:8080/notes/${note.id}`);
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors
     }
   }

@@ -4,8 +4,6 @@ import (
 	"log"
 	"os"
 
-	"knowledge-graph/internal/infrastructure/db/postgres"
-
 	pgdriver "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -25,20 +23,5 @@ func Init() {
 	}
 
 	log.Println("Connected to PostgreSQL")
-
-	// Run migrations
-	if err := DB.AutoMigrate(
-		&postgres.NoteModel{},
-		&postgres.LinkModel{},
-		&postgres.NoteKeywordModel{},
-		&postgres.NoteEmbeddingModel{},
-		&postgres.NoteTagModel{},
-		&postgres.UserModel{},
-		&postgres.NoteLikeModel{},
-		&postgres.SuggestionFeedbackModel{},
-		&postgres.ShareLinkModel{},
-	); err != nil {
-		log.Fatal("failed to run migrations:", err)
-	}
-	log.Println("Database migrations completed successfully")
+	log.Println("Note: Database migrations should be applied via SQL files in migrations/ directory")
 }

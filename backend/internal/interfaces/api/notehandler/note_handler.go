@@ -1,28 +1,84 @@
 package notehandler
 
 import (
-	"knowledge-graph/internal/application/common"
-	"knowledge-graph/internal/domain/note"
+	"context"
+	"encoding/json"
 	"log"
 	"strconv"
+	"time"
 
-	graphQueries "knowledge-graph/internal/application/queries/graph"
+	"knowledge-graph/internal/application/common"
+	"knowledge-graph/internal/application/queries/graph"
+	"knowledge-graph/internal/application/recommendation"
+	"knowledge-graph/internal/config"
+	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
 	repo               note.Repository
 	taskQueue          common.TaskQueue
-	suggestionsHandler *graphQueries.GetSuggestionsHandler
+	suggestionsHandler *graph.GetSuggestionsHandler
+	affectedNotesSvc   *recommendation.AffectedNotesService
+	taskDelay          time.Duration
+	recRepo            *postgres.RecommendationRepository
+	embeddingRepo      note.EmbeddingRepository
+	redis              *redis.Client
+	cfg                *config.Config
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler) *Handler {
+// SuggestionsResponse represents the response for recommendations
+type SuggestionsResponse struct {
+	Suggestions []Suggestion `json:"suggestions"`
+	GeneratedAt time.Time    `json:"generated_at,omitempty"`
+}
+
+// Suggestion represents a single recommendation
+type Suggestion struct {
+	NoteID string  `json:"note_id"`
+	Title  string  `json:"title"`
+	Score  float64 `json:"score"`
+}
+
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graph.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo note.EmbeddingRepository, redis *redis.Client, cfg *config.Config) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
 		suggestionsHandler: suggestionsHandler,
+		affectedNotesSvc:   affectedNotesSvc,
+		taskDelay:          taskDelay,
+		recRepo:            recRepo,
+		embeddingRepo:      embeddingRepo,
+		redis:              redis,
+		cfg:                cfg,
+	}
+}
+
+// enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
+func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
+	if h.affectedNotesSvc == nil || h.taskQueue == nil {
+		return
+	}
+
+	affected, err := h.affectedNotesSvc.GetAffectedNotes(ctx, noteID)
+	if err != nil {
+		// Log error but don't fail the request
+		return
+	}
+
+	for _, nid := range affected {
+		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
+		if err != nil {
+			continue
+		}
+		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
+			// Log error but continue
+		}
 	}
 }
 
@@ -76,6 +132,9 @@ func (h *Handler) Create(c *gin.Context) {
 	} else {
 		log.Println("taskQueue is nil, tasks not enqueued")
 	}
+
+	// Enqueue recommendation refresh tasks for affected notes
+	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
 
 	c.JSON(201, gin.H{
 		"id":         newNote.ID(),
@@ -169,6 +228,9 @@ func (h *Handler) Update(c *gin.Context) {
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
 	}
 
+	// Enqueue recommendation refresh tasks for affected notes
+	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
+
 	c.JSON(200, gin.H{
 		"id":         existing.ID(),
 		"title":      existing.Title().String(),
@@ -232,39 +294,121 @@ func (h *Handler) Get(c *gin.Context) {
 	})
 }
 
-// GetSuggestions возвращает рекомендации для заметки
+// GetSuggestions returns precomputed recommendations for a note
+// with fallback to semantic neighbors and Redis cache
 func (h *Handler) GetSuggestions(c *gin.Context) {
-	// Парсим ID из URL
+	ctx := c.Request.Context()
+
+	// Parse note ID
 	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	noteID, err := uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid id"})
 		return
 	}
 
-	// Парсим параметр limit (по умолчанию 10)
-	limit := 10
+	// Parse limit parameter (default from config)
+	limit := h.cfg.RecommendationTopN
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
 			limit = parsed
 		}
 	}
 
-	// Формируем запрос
-	query := graphQueries.GetSuggestionsQuery{
-		NoteID: id,
-		Limit:  limit,
+	// 1. Try to get precomputed recommendations from database
+	if h.recRepo != nil {
+		recs, err := h.recRepo.Get(ctx, noteID, limit)
+		if err == nil && len(recs) > 0 {
+			// Check staleness by comparing recommendation timestamp with note update time
+			stale := false
+			note, _ := h.repo.FindByID(ctx, noteID)
+			if note != nil && len(recs) > 0 {
+				if recs[0].UpdatedAt.Before(note.UpdatedAt()) {
+					stale = true
+					// Trigger background refresh
+					h.enqueueRefreshWithDelay(noteID)
+				}
+			}
+
+			// Convert to response format
+			resp := SuggestionsResponse{
+				Suggestions: make([]Suggestion, 0, len(recs)),
+				GeneratedAt: recs[0].UpdatedAt,
+			}
+			for _, rec := range recs {
+				resp.Suggestions = append(resp.Suggestions, Suggestion{
+					NoteID: rec.RecommendedNoteID.String(),
+					Score:  rec.Score,
+				})
+			}
+
+			if stale {
+				c.Header("X-Recommendations-Stale", "true")
+			}
+			c.JSON(200, resp)
+			return
+		}
 	}
 
-	// Вызываем обработчик
-	suggestions, err := h.suggestionsHandler.Handle(c.Request.Context(), query)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to get suggestions"})
+	// 2. Fallback to semantic neighbors (if enabled)
+	if h.cfg.RecommendationFallbackSemanticEnabled && h.embeddingRepo != nil {
+		neighbors, err := h.embeddingRepo.GetNearestNeighbors(ctx, noteID, limit)
+		if err == nil && len(neighbors) > 0 {
+			suggestions := make([]Suggestion, 0, len(neighbors))
+			for _, n := range neighbors {
+				suggestions = append(suggestions, Suggestion{
+					NoteID: n.ID.String(),
+					Title:  n.Title,
+					Score:  n.Similarity,
+				})
+			}
+
+			c.Header("X-Recommendations-Source", "semantic-fallback")
+			c.Header("X-Recommendations-Stale", "true")
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+			h.enqueueRefreshWithDelay(noteID)
+			return
+		}
+	}
+
+	// 3. Fallback to Redis cache (if enabled)
+	if h.cfg.RecommendationFallbackEnabled && h.redis != nil {
+		cacheKey := "recommendations:" + noteID.String()
+		cached, err := h.redis.Get(ctx, cacheKey).Result()
+		if err == nil && cached != "" {
+			var suggestions []Suggestion
+			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
+				c.Header("X-Recommendations-Source", "redis-fallback")
+				c.Header("X-Recommendations-Stale", "true")
+				c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+				h.enqueueRefreshWithDelay(noteID)
+				return
+			}
+		}
+	}
+
+	// 4. Nothing available - trigger background calculation and return Accepted
+	h.enqueueRefreshWithDelay(noteID)
+	c.Header("X-Recommendations-Stale", "true")
+	c.JSON(202, SuggestionsResponse{Suggestions: []Suggestion{}})
+}
+
+// enqueueRefreshWithDelay creates and enqueues a refresh task with configured delay
+func (h *Handler) enqueueRefreshWithDelay(noteID uuid.UUID) {
+	if h.taskQueue == nil {
 		return
 	}
 
-	// Отдаём JSON
-	c.JSON(200, suggestions)
+	delay := time.Duration(h.cfg.RecommendationTaskDelaySeconds) * time.Second
+	task, err := tasks.NewRefreshRecommendationsTask(noteID, delay)
+	if err != nil {
+		log.Printf("failed to create refresh task: %v", err)
+		return
+	}
+
+	if err := h.taskQueue.Enqueue(context.Background(), task); err != nil {
+		log.Printf("failed to enqueue refresh task: %v", err)
+	}
 }
 
 // SearchRequest - search query parameters

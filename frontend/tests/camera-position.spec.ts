@@ -14,7 +14,7 @@
  * - Test camera positioning for isolated single node
  */
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, getBackendUrl } from './helpers/testData';
+import { createNote, createLink } from './helpers/testData';
 
 /**
  * Tests for Camera Position and Navigation in 3D Graph

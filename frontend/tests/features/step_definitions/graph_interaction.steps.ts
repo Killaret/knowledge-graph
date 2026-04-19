@@ -1,4 +1,4 @@
-import { Given, When, Then, type IWorld } from '@cucumber/cucumber';
+import { When, Then, type IWorld } from '@cucumber/cucumber';
 import { expect, type Page } from '@playwright/test';
 
 interface ITestWorld extends IWorld {
@@ -198,7 +198,7 @@ Then('the camera should smoothly animate to show all nodes', async function(this
   expect(finalPos).toBeTruthy();
 });
 
-Then('the animation should complete within {int} second', async function(this: ITestWorld, seconds: number) {
+Then('the animation should complete within {int} second', async function(this: ITestWorld, _seconds: number) {
   // Wait and verify camera is stable
   const pos1 = await this.page.evaluate(() => {
     const camera = (window as any).camera;

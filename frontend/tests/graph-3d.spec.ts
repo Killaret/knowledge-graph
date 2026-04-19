@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, getBackendUrl } from './helpers/testData';
+import { createNote, createLink } from './helpers/testData';
 
 /**
  * Tests for Graph Visualization with Progressive Rendering
@@ -97,7 +97,7 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
     // Should be back on home or note page
     const currentUrl = page.url();
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    expect(currentUrl).toMatch(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\/|\/notes\/.+)`));
+    expect(currentUrl).toMatch(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|/notes/.+)`));
   });
 
   test('should display stats bar with node and link counts', async ({ page, request }) => {

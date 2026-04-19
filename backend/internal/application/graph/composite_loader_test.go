@@ -21,6 +21,11 @@ func (m *MockNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.UUID)
 	return args.Get(0).([]graph.Edge), args.Error(1)
 }
 
+func (m *MockNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
+	args := m.Called(ctx, nodeIDs)
+	return args.Get(0).(map[uuid.UUID][]graph.Edge), args.Error(1)
+}
+
 func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 	ctx := context.Background()
 	nodeID := uuid.New()

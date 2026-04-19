@@ -14,7 +14,8 @@ import (
 
 	"knowledge-graph/internal/application/common"
 	appGraph "knowledge-graph/internal/application/graph"
-	graphQueries "knowledge-graph/internal/application/queries/graph"
+	"knowledge-graph/internal/application/queries/graph"
+	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/infrastructure/db"
@@ -77,13 +78,18 @@ func main() {
 		[]float64{cfg.RecommendationAlpha, cfg.RecommendationBeta},
 	)
 
-	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay)
+	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay, cfg.BFSAggregation, cfg.BFSNormalize)
 
-	suggestionsHandler := graphQueries.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
+	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
 
-	// Хендлеры
-	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler)
-	linkHandler := linkhandler.New(linkRepo, noteRepo)
+	// Recommendation repository and affected notes service
+	recRepo := postgres.NewRecommendationRepository(db.DB)
+	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
+	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
+
+	// Хендлеры с новыми параметрами
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg)
+	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg.GraphLoadDepth)
 
 	// Роуты

@@ -60,3 +60,45 @@ func (c *compositeNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.
 
 	return allEdges, nil
 }
+
+// GetNeighborsBatch возвращает соседей для нескольких узлов, объединяя результаты внутренних загрузчиков
+func (c *compositeNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
+	result := make(map[uuid.UUID][]graph.Edge)
+	var errs []string
+	anySuccess := false
+
+	// Инициализируем пустые срезы для всех nodeIDs
+	for _, nodeID := range nodeIDs {
+		result[nodeID] = []graph.Edge{}
+	}
+
+	for i, loader := range c.loaders {
+		batchResult, err := loader.GetNeighborsBatch(ctx, nodeIDs)
+		if err != nil {
+			errMsg := fmt.Sprintf("loader %T batch: %v", loader, err)
+			log.Printf("compositeNeighborLoader: %s", errMsg)
+			errs = append(errs, errMsg)
+			continue
+		}
+		anySuccess = true
+
+		weight := 1.0
+		if i < len(c.weights) {
+			weight = c.weights[i]
+		}
+
+		// Объединяем результаты с применением веса
+		for nodeID, edges := range batchResult {
+			for _, e := range edges {
+				e.Weight *= weight
+				result[nodeID] = append(result[nodeID], e)
+			}
+		}
+	}
+
+	if !anySuccess && len(errs) > 0 {
+		return nil, fmt.Errorf("compositeNeighborLoader: all loaders failed: %s", strings.Join(errs, "; "))
+	}
+
+	return result, nil
+}

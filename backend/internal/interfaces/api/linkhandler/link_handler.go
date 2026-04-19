@@ -1,20 +1,58 @@
 package linkhandler
 
 import (
+	"context"
+	"time"
+
+	"knowledge-graph/internal/application/common"
+	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	linkRepo link.Repository
-	noteRepo note.Repository
+	linkRepo         link.Repository
+	noteRepo         note.Repository
+	taskQueue        common.TaskQueue
+	affectedNotesSvc *recommendation.AffectedNotesService
+	taskDelay        time.Duration
 }
 
-func New(linkRepo link.Repository, noteRepo note.Repository) *Handler {
-	return &Handler{linkRepo: linkRepo, noteRepo: noteRepo}
+func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.TaskQueue, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration) *Handler {
+	return &Handler{
+		linkRepo:         linkRepo,
+		noteRepo:         noteRepo,
+		taskQueue:        taskQueue,
+		affectedNotesSvc: affectedNotesSvc,
+		taskDelay:        taskDelay,
+	}
+}
+
+// enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
+func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
+	if h.affectedNotesSvc == nil || h.taskQueue == nil {
+		return
+	}
+
+	affected, err := h.affectedNotesSvc.GetAffectedNotes(ctx, noteID)
+	if err != nil {
+		// Log error but don't fail the request
+		return
+	}
+
+	for _, nid := range affected {
+		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
+		if err != nil {
+			continue
+		}
+		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
+			// Log error but continue
+		}
+	}
 }
 
 type createLinkRequest struct {

@@ -19,19 +19,27 @@ type Edge struct {
 
 type NeighborLoader interface {
 	GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]Edge, error)
+	GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]Edge, error)
 }
 
 type TraversalService struct {
-	loader NeighborLoader
-	depth  int
-	decay  float64
+	loader      NeighborLoader
+	depth       int
+	decay       float64
+	aggregation string // "max" или "sum"
+	normalize   bool
 }
 
-func NewTraversalService(loader NeighborLoader, depth int, decay float64) *TraversalService {
+func NewTraversalService(loader NeighborLoader, depth int, decay float64, aggregation string, normalize bool) *TraversalService {
+	if aggregation != "max" && aggregation != "sum" {
+		aggregation = "max"
+	}
 	return &TraversalService{
-		loader: loader,
-		depth:  depth,
-		decay:  decay,
+		loader:      loader,
+		depth:       depth,
+		decay:       decay,
+		aggregation: aggregation,
+		normalize:   normalize,
 	}
 }
 
@@ -40,30 +48,10 @@ type SuggestionResult struct {
 	Score  float64
 }
 
-type bfsNode struct {
-	ID     uuid.UUID
-	Weight float64
-	Depth  int
-}
-
-func normalizeWeights(weights map[uuid.UUID]float64) map[uuid.UUID]float64 {
-	if len(weights) == 0 {
-		return weights
-	}
-	maxW := 0.0
-	for _, w := range weights {
-		if w > maxW {
-			maxW = w
-		}
-	}
-	if maxW == 0 {
-		return weights
-	}
-	normalized := make(map[uuid.UUID]float64, len(weights))
-	for id, w := range weights {
-		normalized[id] = w / maxW
-	}
-	return normalized
+type bfsItem struct {
+	nodeID uuid.UUID
+	weight float64
+	depth  int
 }
 
 func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uuid.UUID]float64 {
@@ -77,22 +65,30 @@ func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uu
 	}
 
 	bestWeight := make(map[uuid.UUID]float64)
-	queue := []bfsNode{{ID: startID, Weight: 1.0, Depth: 0}}
+	queue := []bfsItem{{nodeID: startID, weight: 1.0, depth: 0}}
 	bestWeight[startID] = 1.0
+
+	// Для sum-агрегации отслеживаем visited, чтобы не обрабатывать узлы повторно
+	var visited map[uuid.UUID]bool
+	if s.aggregation == "sum" {
+		visited = make(map[uuid.UUID]bool)
+		visited[startID] = true
+	}
 
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		if current.Weight < bestWeight[current.ID] {
+		// Для max-агрегации: пропускаем, если нашли лучший путь
+		if s.aggregation == "max" && current.weight < bestWeight[current.nodeID] {
 			continue
 		}
 
-		if current.Depth >= depth {
+		if current.depth >= depth {
 			continue
 		}
 
-		neighbors, err := s.loader.GetNeighbors(ctx, current.ID)
+		neighbors, err := s.loader.GetNeighbors(ctx, current.nodeID)
 		if err != nil {
 			continue
 		}
@@ -101,29 +97,52 @@ func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uu
 			if edge.To == startID {
 				continue
 			}
-			candidateWeight := current.Weight * edge.Weight * decay
 
-			if candidateWeight > bestWeight[edge.To] {
-				bestWeight[edge.To] = candidateWeight
-				queue = append(queue, bfsNode{
-					ID:     edge.To,
-					Weight: candidateWeight,
-					Depth:  current.Depth + 1,
-				})
+			newWeight := current.weight * edge.Weight
+			if current.depth > 0 {
+				newWeight *= decay
+			}
+
+			if s.aggregation == "max" {
+				if newWeight > bestWeight[edge.To] {
+					bestWeight[edge.To] = newWeight
+					queue = append(queue, bfsItem{nodeID: edge.To, weight: newWeight, depth: current.depth + 1})
+				}
+			} else { // "sum"
+				bestWeight[edge.To] += newWeight
+				if !visited[edge.To] {
+					visited[edge.To] = true
+					queue = append(queue, bfsItem{nodeID: edge.To, weight: newWeight, depth: current.depth + 1})
+				}
 			}
 		}
 	}
 
 	delete(bestWeight, startID)
+
+	// Нормализация
+	if s.normalize {
+		maxW := 0.0
+		for _, w := range bestWeight {
+			if w > maxW {
+				maxW = w
+			}
+		}
+		if maxW > 0 {
+			for id := range bestWeight {
+				bestWeight[id] /= maxW
+			}
+		}
+	}
+
 	return bestWeight
 }
 
 func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]SuggestionResult, error) {
 	bestWeight := s.runBFS(ctx, startID)
-	normalized := normalizeWeights(bestWeight)
 
-	results := make([]SuggestionResult, 0, len(normalized))
-	for id, score := range normalized {
+	results := make([]SuggestionResult, 0, len(bestWeight))
+	for id, score := range bestWeight {
 		results = append(results, SuggestionResult{NodeID: id, Score: score})
 	}
 	sort.Slice(results, func(i, j int) bool {

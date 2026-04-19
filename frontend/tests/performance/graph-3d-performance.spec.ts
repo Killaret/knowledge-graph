@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, getBackendUrl } from '../helpers/testData';
+import { createNote, createLink } from '../helpers/testData';
 
 /**
  * Performance tests for 3D Graph

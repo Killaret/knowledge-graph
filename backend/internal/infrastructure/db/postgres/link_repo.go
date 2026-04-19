@@ -70,6 +70,52 @@ func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) (
 	return toDomainLinks(models), nil
 }
 
+// FindBySourceIDs возвращает связи для нескольких source note ID (batch-запрос)
+func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error) {
+	if len(sourceIDs) == 0 {
+		return make(map[uuid.UUID][]*link.Link), nil
+	}
+
+	var models []LinkModel
+	err := r.db.WithContext(ctx).Where("source_note_id IN ?", sourceIDs).Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[uuid.UUID][]*link.Link)
+	for _, m := range models {
+		l, err := toDomainLink(&m)
+		if err != nil {
+			continue
+		}
+		result[m.SourceNoteID] = append(result[m.SourceNoteID], l)
+	}
+	return result, nil
+}
+
+// FindByTargetIDs возвращает связи для нескольких target note ID (batch-запрос)
+func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error) {
+	if len(targetIDs) == 0 {
+		return make(map[uuid.UUID][]*link.Link), nil
+	}
+
+	var models []LinkModel
+	err := r.db.WithContext(ctx).Where("target_note_id IN ?", targetIDs).Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[uuid.UUID][]*link.Link)
+	for _, m := range models {
+		l, err := toDomainLink(&m)
+		if err != nil {
+			continue
+		}
+		result[m.TargetNoteID] = append(result[m.TargetNoteID], l)
+	}
+	return result, nil
+}
+
 func (r *LinkRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&LinkModel{}, "id = ?", id).Error
 }

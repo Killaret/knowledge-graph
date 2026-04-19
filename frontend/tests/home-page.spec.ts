@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, getBackendUrl } from './helpers/testData';
+import { createNote } from './helpers/testData';
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -33,12 +33,12 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
   test('should load notes and display them on graph', async ({ page, request }) => {
     // Create a test note via API using helper
     const timestamp = Date.now();
-    const note = await createNote(request, {
+    await createNote(request, {
       title: `Home Page Test Note ${timestamp}`,
       content: 'Test content for home page',
       type: 'star'
     });
-    
+
     // Reload page to see the note
     await page.reload();
     await page.waitForTimeout(2000);

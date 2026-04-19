@@ -22,7 +22,7 @@ After(async function(this: ITestWorld) {
   for (const note of this.testNotes) {
     try {
       await this.request.delete(`http://localhost:8080/notes/${note.id}`);
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors
     }
   }
@@ -355,7 +355,6 @@ When('I fill in the title {string}', async function(this: ITestWorld, title: str
 When('I select type {string}', async function(this: ITestWorld, type: string) {
   // Type selector uses buttons, not a select element
   // Use simpler selector and click first matching button
-  const typeLower = type.toLowerCase();
   const typeButton = this.page.locator('.type-selector button').filter({ hasText: new RegExp(type, 'i') }).first();
   await typeButton.click();
 });
