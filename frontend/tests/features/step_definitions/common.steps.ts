@@ -307,7 +307,8 @@ Then('only notes of type {string} should be displayed', async function(this: ITe
 });
 
 Then('the count badge should show the correct number', async function(this: ITestWorld) {
-  const badge = this.page.locator('.filter-chip .count, [data-testid="filter-count"]').first();
+  // Count badge has data-testid="filter-count-{type}" - use starts-with selector
+  const badge = this.page.locator('.filter-count, [data-testid^="filter-count-"]').first();
   await expect(badge).toBeVisible({ timeout: 5000 });
   const count = await badge.textContent();
   expect(parseInt(count || '0')).toBeGreaterThan(0);
