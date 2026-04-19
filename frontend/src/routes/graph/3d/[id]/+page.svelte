@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { getGraphData, getFullGraphData } from '$lib/api/graph';
   import { getNote } from '$lib/api/notes';
   import Graph3D from '$lib/components/Graph3D.svelte';
@@ -109,8 +110,13 @@
           isLoadingFull = false;
         });
       }
-    } catch (e) {
-      error = 'Failed to load graph data';
+    } catch (e: any) {
+      if (e.response?.status === 404) {
+        error = 'Заметка не найдена';
+        setTimeout(() => goto('/'), 3000);
+      } else {
+        error = 'Failed to load graph data';
+      }
       console.error(e);
     }
   }

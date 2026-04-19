@@ -23,8 +23,13 @@
       const id = getRouteId();
       note = await getNote(id);
       suggestions = await getSuggestions(id, 5);
-    } catch {
-      error = 'Note not found';
+    } catch (e: any) {
+      if (e.response?.status === 404) {
+        error = 'Заметка не найдена';
+        setTimeout(() => goto('/'), 3000);
+      } else {
+        error = 'Note not found';
+      }
     } finally {
       loading = false;
     }

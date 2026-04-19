@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"knowledge-graph/internal/domain/note"
@@ -65,6 +66,7 @@ func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note
 	var model NoteModel
 	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Printf("[INFO] note not found: id=%s", id.String())
 		return nil, nil
 	}
 	if err != nil {
