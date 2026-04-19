@@ -27,12 +27,7 @@ func main() {
 	}
 	log.Println("Worker: Connected to PostgreSQL")
 
-	// Репозитории
-	noteRepo := postgres.NewNoteRepository(db.DB)
-	keywordRepo := postgres.NewKeywordRepository(db.DB)
-	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
-
-	// NLP клиент (с Redis для кэша)
+	// Redis для кэша
 	redisAddr := os.Getenv("REDIS_URL")
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
@@ -44,6 +39,11 @@ func main() {
 			log.Printf("Error closing redis client: %v", err)
 		}
 	}()
+
+	// Репозитории
+	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
+	keywordRepo := postgres.NewKeywordRepository(db.DB)
+	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
 	nlpURL := os.Getenv("NLP_SERVICE_URL")

@@ -5,20 +5,35 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
+const (
+	notesCacheKey = "notes:all"
+	notesCacheTTL = 5 * time.Minute
+)
+
 type NoteRepository struct {
-	db *gorm.DB
+	db    *gorm.DB
+	redis *redis.Client
 }
 
-func NewNoteRepository(db *gorm.DB) *NoteRepository {
-	return &NoteRepository{db: db}
+func NewNoteRepository(db *gorm.DB, redis *redis.Client) *NoteRepository {
+	return &NoteRepository{db: db, redis: redis}
+}
+
+// invalidateCache удаляет кэш списка заметок
+func (r *NoteRepository) invalidateCache(ctx context.Context) {
+	if r.redis != nil {
+		r.redis.Del(ctx, notesCacheKey)
+	}
 }
 
 func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
@@ -29,7 +44,12 @@ func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 		if err != nil {
 			return err
 		}
-		return r.db.WithContext(ctx).Create(&model).Error
+		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
+			return err
+		}
+		// Инвалидация кэша при создании новой заметки
+		r.invalidateCache(ctx)
+		return nil
 	}
 	if err != nil {
 		return err
@@ -54,17 +74,43 @@ func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note
 }
 
 func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error
+	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	// Инвалидация кэша при удалении заметки
+	r.invalidateCache(ctx)
+	return nil
 }
 
-// FindAll возвращает все заметки без пагинации
+// FindAll возвращает все заметки без пагинации с кэшированием в Redis
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
+	// 1. Проверяем кэш Redis
+	if r.redis != nil {
+		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
+		if err == nil {
+			var notes []*note.Note
+			if err := json.Unmarshal(cached, &notes); err == nil {
+				return notes, nil
+			}
+		}
+	}
+
+	// 2. Получаем из БД
 	var models []NoteModel
 	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
-	return toDomainNotes(models), nil
+	notes := toDomainNotes(models)
+
+	// 3. Сохраняем в кэш
+	if r.redis != nil {
+		if data, err := json.Marshal(notes); err == nil {
+			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
+		}
+	}
+
+	return notes, nil
 }
 
 // List возвращает заметки с пагинацией

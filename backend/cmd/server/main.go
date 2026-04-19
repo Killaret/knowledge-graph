@@ -39,12 +39,19 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
-	noteRepo := postgres.NewNoteRepository(db.DB)
-	linkRepo := postgres.NewLinkRepository(db.DB)
-	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
-
+	// Redis
 	redisAddr := cfg.RedisURL
 	log.Printf("Redis address: %s", redisAddr)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing redis client: %v", err)
+		}
+	}()
+
+	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
+	linkRepo := postgres.NewLinkRepository(db.DB)
+	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
 	// Очередь
 	var taskQueue common.TaskQueue
@@ -71,14 +78,6 @@ func main() {
 	)
 
 	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay)
-
-	// Redis
-	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
-	defer func() {
-		if err := redisClient.Close(); err != nil {
-			log.Printf("Error closing redis client: %v", err)
-		}
-	}()
 
 	suggestionsHandler := graphQueries.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
 
