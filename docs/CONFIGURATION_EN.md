@@ -63,7 +63,7 @@ score = α × explicit_score + β × semantic_score
 - `α + β` doesn't have to equal 1, but recommended for consistent scale
 - `α = 1.0, β = 0.0` — explicit links only (ignore semantics)
 - `α = 0.0, β = 1.0` — semantics only (ignore links)
-- `α = 0.7, β = 0.3` — balanced: links matter more, but semantics considered
+- `α = 0.5, β = 0.5` — balanced: equal weight for links and semantics (default)
 
 **DEPTH** — BFS Depth:
 - `1` — direct links only (fast)
@@ -294,7 +294,7 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 | Document | Description |
 |----------|-------------|
 | [`architecture/README.md`](architecture/README.md) | Backend architecture, DDD layers |
-| [`architecture/adr.md`](architecture/adr.md) | Architectural Decision Records (ADR) |
+| [`architecture/decisions/`](architecture/decisions/) | Architectural Decision Records (ADR) |
 | [`DEPLOYMENT_EN.md`](DEPLOYMENT_EN.md) | Deployment, configuration verification |
 | [`TESTING.md`](TESTING.md) | Testing, parameter verification |
 | [`backend/openAPI.yaml`](../backend/openAPI.yaml) | API specification |

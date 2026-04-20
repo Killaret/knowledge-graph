@@ -67,7 +67,7 @@
 - Kubernetes manifests (production-ready)
 
 #### Documentation
-- **Architecture**: C4 Model, UML diagrams, 14 ADRs
+- **Architecture**: C4 Model, UML diagrams, 1 ADR (layered architecture)
 - **Configuration**: Complete env variable description with code verification
 - **API**: OpenAPI 3.1 specification (fixed to match implementation)
 - **Frontend Arch**: Three.js modules, Progressive Rendering
@@ -114,7 +114,7 @@
   - Added language switchers to Russian versions
 - **architecture/README.md**: Added Backend Architecture section with diagrams
 - **Frontend Arch**: Updated documentation for 3D modules
-- **ADR-014**: Added Progressive Rendering decision description
+- **ADR-001**: Layered architecture decision description
 
 ### 🧪 Testing
 

@@ -2,7 +2,7 @@
 
 **Версия:** 1.0  
 **Статус:** Проектирование завершено  
-**Дата:** Март 2026
+**Дата:** Март 2026 (актуально на момент написания)
 
 ---
 
@@ -21,9 +21,9 @@
    - [ER-диаграмма (модель данных)](uml/er-diagram.puml)
    - [Sequence: создание заметки](uml/sequence-create-note.puml)
    - [Sequence: рекомендации](uml/sequence-suggestions.puml)
-5. [Архитектурные решения (ADR)](adr.md)
+5. [Архитектурные решения (ADR)](#5-архитектурные-решения-adr)
 6. [ATAM анализ](atam.md)
-7. [Конфигурация системы](../CONFIGURATION.md)
+7. [Конфигурация системы](../CONFIGURATION_EN.md)
 
 ---
 
@@ -74,7 +74,7 @@ Handler → Enqueue task → Redis → Worker → Process → Save to DB
 ### 2.4 Recommendation Algorithm
 
 ```
-Cache Check → BFS Links (α=0.7) + Semantic Search (β=0.3) → Combine → Rank
+Cache Check → BFS Links (α=0.5) + Semantic Search (β=0.5) → Combine → Rank
 ```
 
 ---
@@ -118,7 +118,7 @@ Cache Check → BFS Links (α=0.7) + Semantic Search (β=0.3) → Combine → Ra
 
 ## 5. Архитектурные решения (ADR)
 
-Список принятых решений с обоснованием — в файле [`adr.md`](adr.md).
+Список принятых решений с обоснованием — в папке [`decisions/`](decisions/).
 
 **Краткий список:**
 1. DDD с чёткими слоями
@@ -147,7 +147,7 @@ Cache Check → BFS Links (α=0.7) + Semantic Search (β=0.3) → Combine → Ra
 ## 7. Конфигурация системы
 
 Все настраиваемые параметры описаны в отдельном документе:  
-👉 [**CONFIGURATION.md**](../CONFIGURATION.md)
+👉 [**CONFIGURATION_EN.md**](../CONFIGURATION_EN.md)
 
 ---
 
