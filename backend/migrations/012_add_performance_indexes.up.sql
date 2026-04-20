@@ -7,6 +7,3 @@ CREATE INDEX IF NOT EXISTS idx_links_target_id ON links(target_id);
 
 -- Index for notes sorting - speeds up ORDER BY created_at queries
 CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);
-
--- Index for notes type filtering - speeds up type-based filtering
-CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(type);
