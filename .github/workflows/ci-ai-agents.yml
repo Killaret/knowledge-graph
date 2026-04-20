@@ -158,7 +158,16 @@ jobs:
         run: |
           cd ../backend
           go mod download
-          go run cmd/server/main.go &
+          
+          # Build and start backend with logging
+          go build -o server cmd/server/main.go 2>&1 | tee backend-build.log
+          if [ $? -ne 0 ]; then
+            echo "::error::Backend build failed!"
+            cat backend-build.log
+            exit 1
+          fi
+          
+          ./server 2>&1 | tee backend.log &
           BACKEND_PID=$!
           echo "Backend PID: $BACKEND_PID"
           
@@ -169,12 +178,19 @@ jobs:
               break
             fi
             echo "Waiting for backend... attempt $i/30"
+            # Show last lines of log if backend died
+            if ! kill -0 $BACKEND_PID 2>/dev/null; then
+              echo "::error::Backend process died! Last 50 lines of log:"
+              tail -50 backend.log
+              exit 1
+            fi
             sleep 2
           done
           
           # Verify backend is still running
           if ! kill -0 $BACKEND_PID 2>/dev/null; then
-            echo "::error::Backend process died!"
+            echo "::error::Backend process died! Last 50 lines of log:"
+            tail -50 backend.log
             exit 1
           fi
       
@@ -208,7 +224,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: frontend/test-results/
+          path: |
+            frontend/test-results/
+            backend/backend.log
           retention-days: 5
 
   test-nlp:
