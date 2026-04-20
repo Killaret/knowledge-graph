@@ -1,5 +1,73 @@
-(docs/ARCHITECTURE_ROADMAP.md, docs/RECOMMENDATION_API.md, docs/RECOMMENDATION_ARCHITECTURE.md, docs/RECOMMENDATION_TROUBLESHOOTING.md, docs/architecture/decisions/001-layered-architecture.md)
+# --- Dependencies & Build Artifacts ---
+# Node.js / Svelte
+node_modules/
+dist/
+build/
+.svelte2tsx-language-server-files/
+playwright-report/
+test-results/screenshots/
+package-lock.json
 
-(docs/RECOMMENDATIONS.md, docs/architecture/adr.md)
+# Go
+go/pkg/
+# Примечание: go.mod и go.sum обычно коммитят, но если нужно игнорировать локальные изменения, раскомментируйте:
+# go.sum
 
-(.gitignore)
+# Python
+.venv/
+venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+*.pyc
+*.pyo
+
+# Java / Gradle
+.gradle/
+target/
+
+# --- Test Results & Coverage ---
+cucumber-report.html
+cucumber-report.json
+test-results/
+test-results.txt
+test-results2.txt
+regression-test-results.txt
+check-results.txt
+final-check.txt
+frontend/test-results/
+coverage/
+htmlcov/
+.coverage
+
+# --- Cache & Temporary Files ---
+# HuggingFace
+huggingface_cache/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Compressed archives (если нужно игнорировать артефакты сборки)
+*.zip
+*.tar.gz
+*.rar
