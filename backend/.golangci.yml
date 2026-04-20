@@ -1,0 +1,36 @@
+run:
+  timeout: 5m
+  tests: false  # Не линтить тестовые файлы (решает проблему с testify mocks)
+  skip-dirs:
+    - "mocks"
+    - "mock"
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+  disable:
+    - typecheck  # Отключаем проблемный линтер для mock-объектов
+
+issues:
+  exclude-rules:
+    # Исключаем ложные ошибки для testify mock-методов
+    - path: _test\.go
+      linters:
+        - typecheck
+    # Исключаем ошибки на неиспользуемые параметры в тестах
+    - path: _test\.go
+      text: "is unused"
+      linters:
+        - unused
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

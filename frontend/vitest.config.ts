@@ -27,6 +27,23 @@ export default defineConfig({
 		globals: true,
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		setupFiles: ['./vitest-setup.ts'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'json', 'html'],
+			exclude: [
+				'node_modules/',
+				'vitest-setup.ts',
+				'src/lib/mocks/**/*',
+				'src/routes/**/*',
+				'**/*.d.ts'
+			],
+			thresholds: {
+				lines: 50,
+				functions: 50,
+				branches: 40,
+				statements: 50
+			}
+		},
 		server: {
 			deps: {
 				inline: [/svelte/]
