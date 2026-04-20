@@ -13,6 +13,7 @@ type NoteModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title        string         `gorm:"not null"`
 	Content      string         `gorm:"type:text"`
+	Type         string         `gorm:"type:varchar(50);default:'star'"`
 	Metadata     datatypes.JSON `gorm:"type:jsonb"`
 	SearchVector string         `gorm:"column:search_vector;type:tsvector;->"` // read-only, updated by trigger
 	CreatedAt    time.Time
@@ -25,16 +26,16 @@ func (NoteModel) TableName() string {
 
 // LinkModel — связь между заметками
 type LinkModel struct {
-	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index"`
-	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index"`
-	LinkType     string         `gorm:"default:'reference'"`
-	Weight       float64        `gorm:"default:1.0"`
-	Metadata     datatypes.JSON `gorm:"type:jsonb"`
-	CreatedAt    time.Time
+	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
+	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:source_id"`
+	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:target_id"`
+	LinkType     string         `gorm:"default:'reference';column:link_type"`
+	Weight       float64        `gorm:"default:1.0;column:weight"`
+	Metadata     datatypes.JSON `gorm:"type:jsonb;column:metadata"`
+	CreatedAt    time.Time      `gorm:"column:created_at"`
 
-	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID"`
-	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID"`
+	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID"`
+	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID;references:ID"`
 }
 
 func (LinkModel) TableName() string {
