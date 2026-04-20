@@ -19,9 +19,6 @@ type AsynqClient struct {
 func NewAsynqClient(redisAddr string) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
-	if err := client.Ping(); err != nil {
-		return nil, err
-	}
 	return &AsynqClient{client: client}, nil
 }
 

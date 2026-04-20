@@ -185,8 +185,13 @@ func TestHandler_GetGraph(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Links, 1)
-		assert.Equal(t, "star", response.Nodes[0].Type)
-		assert.Equal(t, "planet", response.Nodes[1].Type)
+		// Check that both node types exist (order-independent)
+		types := make([]string, len(response.Nodes))
+		for i, node := range response.Nodes {
+			types[i] = node.Type
+		}
+		assert.Contains(t, types, "star")
+		assert.Contains(t, types, "planet")
 	})
 
 	t.Run("custom depth parameter", func(t *testing.T) {

@@ -189,7 +189,7 @@ Then('the loading overlay should still be visible or fading', async function(thi
   // Either visible (still loading) or has fade-out style
   if (!isVisible) {
     // If not visible immediately, that's fine - it may have already faded
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     await this.page.waitForTimeout(100);
   }
 });
