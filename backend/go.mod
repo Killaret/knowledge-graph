@@ -2,6 +2,8 @@ module knowledge-graph
 
 go 1.24
 
+toolchain go1.24.2
+
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.9.1
