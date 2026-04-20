@@ -63,9 +63,12 @@ func (s *RefreshService) RefreshRecommendations(ctx context.Context, noteID uuid
 
 	// Verify note exists
 	noteRepo := postgres.NewNoteRepository(s.db, s.redis)
-	_, err := noteRepo.FindByID(ctx, noteID)
+	n, err := noteRepo.FindByID(ctx, noteID)
 	if err != nil {
 		return fmt.Errorf("note not found: %w", err)
+	}
+	if n == nil {
+		return fmt.Errorf("note not found: %s", noteID)
 	}
 
 	// Get fresh recommendations via BFS traversal

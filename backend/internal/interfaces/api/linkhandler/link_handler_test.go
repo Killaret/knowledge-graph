@@ -90,7 +90,7 @@ func setupLinkRouter() (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
 	gin.SetMode(gin.TestMode)
 	linkRepo := newMockLinkRepo()
 	noteRepo := newMockNoteRepoForLink()
-	handler := New(linkRepo, noteRepo)
+	handler := New(linkRepo, noteRepo, nil, nil, 0)
 	r := gin.Default()
 	r.POST("/links", handler.Create)
 	r.GET("/links/:id", handler.Get)

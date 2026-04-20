@@ -25,6 +25,11 @@ func NewAsynqClient(redisAddr string) (*AsynqClient, error) {
 	return &AsynqClient{client: client}, nil
 }
 
+func (c *AsynqClient) Enqueue(ctx context.Context, task *asynq.Task) error {
+	_, err := c.client.EnqueueContext(ctx, task)
+	return err
+}
+
 func (c *AsynqClient) EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error {
 	log.Printf("EnqueueExtractKeywords called for note %s", noteID)
 	payload, err := json.Marshal(ExtractKeywordsTaskPayload{NoteID: noteID, TopN: topN})

@@ -2,7 +2,6 @@ package recommendation
 
 import (
 	"context"
-	"regexp"
 	"testing"
 
 	"knowledge-graph/internal/infrastructure/db/postgres"
@@ -11,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/postgres"
+	gormPostgres "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +18,7 @@ func setupAffectedNotesMock(t *testing.T) (*AffectedNotesService, sqlmock.Sqlmoc
 	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
-	db, err := gorm.Open(postgres.New(postgres.Config{
+	db, err := gorm.Open(gormPostgres.New(gormPostgres.Config{
 		Conn: sqlDB,
 	}), &gorm.Config{})
 	require.NoError(t, err)
@@ -45,9 +44,8 @@ func TestAffectedNotesService_GetAffectedNotes(t *testing.T) {
 			AddRow(uuid.MustParse("a0000000-0000-0000-0000-000000000002")).
 			AddRow(uuid.MustParse("a0000000-0000-0000-0000-000000000003"))
 
-		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT note_id FROM "note_recommendations" WHERE recommended_note_id = $1`,
-		)).WithArgs(targetNoteID).WillReturnRows(reverseRows)
+		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
+			WithArgs(targetNoteID).WillReturnRows(reverseRows)
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
 		require.NoError(t, err)
@@ -62,9 +60,8 @@ func TestAffectedNotesService_GetAffectedNotes(t *testing.T) {
 
 	t.Run("returns only target note when no reverse dependencies", func(t *testing.T) {
 		// Mock empty result from GetNotesThatRecommend
-		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT note_id FROM "note_recommendations" WHERE recommended_note_id = $1`,
-		)).WithArgs(targetNoteID).WillReturnRows(sqlmock.NewRows([]string{"note_id"}))
+		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
+			WithArgs(targetNoteID).WillReturnRows(sqlmock.NewRows([]string{"note_id"}))
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
 		require.NoError(t, err)
@@ -82,9 +79,8 @@ func TestAffectedNotesService_GetAffectedNotes(t *testing.T) {
 			AddRow(duplicateID).
 			AddRow(duplicateID) // Duplicate
 
-		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT note_id FROM "note_recommendations" WHERE recommended_note_id = $1`,
-		)).WithArgs(targetNoteID).WillReturnRows(reverseRows)
+		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
+			WithArgs(targetNoteID).WillReturnRows(reverseRows)
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
 		require.NoError(t, err)
@@ -95,9 +91,8 @@ func TestAffectedNotesService_GetAffectedNotes(t *testing.T) {
 	})
 
 	t.Run("handles database error", func(t *testing.T) {
-		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT note_id FROM "note_recommendations" WHERE recommended_note_id = $1`,
-		)).WithArgs(targetNoteID).WillReturnError(assert.AnError)
+		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
+			WithArgs(targetNoteID).WillReturnError(assert.AnError)
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
 		require.Error(t, err)

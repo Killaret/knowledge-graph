@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"knowledge-graph/internal/application/common"
-	"knowledge-graph/internal/application/queries/graph"
+	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
@@ -23,11 +23,11 @@ import (
 type Handler struct {
 	repo               note.Repository
 	taskQueue          common.TaskQueue
-	suggestionsHandler *graph.GetSuggestionsHandler
+	suggestionsHandler *graphQueries.GetSuggestionsHandler
 	affectedNotesSvc   *recommendation.AffectedNotesService
 	taskDelay          time.Duration
 	recRepo            *postgres.RecommendationRepository
-	embeddingRepo      note.EmbeddingRepository
+	embeddingRepo      *postgres.EmbeddingRepository
 	redis              *redis.Client
 	cfg                *config.Config
 }
@@ -45,7 +45,7 @@ type Suggestion struct {
 	Score  float64 `json:"score"`
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graph.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo note.EmbeddingRepository, redis *redis.Client, cfg *config.Config) *Handler {
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo *postgres.EmbeddingRepository, redis *redis.Client, cfg *config.Config) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
@@ -352,14 +352,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 
 	// 2. Fallback to semantic neighbors (if enabled)
 	if h.cfg.RecommendationFallbackSemanticEnabled && h.embeddingRepo != nil {
-		neighbors, err := h.embeddingRepo.GetNearestNeighbors(ctx, noteID, limit)
+		neighbors, err := h.embeddingRepo.FindSimilarNotes(ctx, noteID, limit)
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
 				suggestions = append(suggestions, Suggestion{
-					NoteID: n.ID.String(),
-					Title:  n.Title,
-					Score:  n.Similarity,
+					NoteID: n.NoteID.String(),
+					Score:  n.Score,
 				})
 			}
 

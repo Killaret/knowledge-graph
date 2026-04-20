@@ -26,9 +26,8 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 
 	repo := newMockNoteRepo()
 
-	// Для тестов taskQueue и suggestionsHandler не нужны, передаём nil
-
-	handler := New(repo, nil, nil)
+	// Для тестов дополнительные зависимости не нужны, передаём nil
+	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, nil)
 
 	r := gin.Default()
 

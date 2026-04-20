@@ -10,12 +10,12 @@ package-lock.json
 
 # Go
 go/pkg/
-# Примечание: go.mod и go.sum обычно коммитят, но если нужно игнорировать локальные изменения, раскомментируйте:
-# go.sum
+*.exe
 
 # Python
 .venv/
 venv/
+venv311/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
@@ -67,7 +67,10 @@ Thumbs.db
 *.temp
 *.cache
 
-# Compressed archives (если нужно игнорировать артефакты сборки)
+# Compressed archives
 *.zip
 *.tar.gz
 *.rar
+
+# Docker
+.dockerignore

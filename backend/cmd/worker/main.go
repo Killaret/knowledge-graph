@@ -13,6 +13,7 @@ import (
 	"knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
+	graphDomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
@@ -64,8 +65,8 @@ func main() {
 
 	// Graph traversal service for recommendations
 	linkRepo := postgres.NewLinkRepository(db.DB)
-	neighborLoader := graph.NewNeighborLoader(linkRepo)
-	traversalSvc := graph.NewTraversalService(
+	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
+	traversalSvc := graphDomain.NewTraversalService(
 		neighborLoader,
 		cfg.RecommendationDepth,
 		cfg.RecommendationDecay,
@@ -84,7 +85,6 @@ func main() {
 			Queues: map[string]int{
 				"default": cfg.AsynqQueueDefault,
 			},
-			QueueMaxLen: cfg.AsynqQueueMaxLen,
 		},
 	)
 
