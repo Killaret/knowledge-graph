@@ -3,17 +3,17 @@ module knowledge-graph
 go 1.25.0
 
 require (
-	github.com/gin-gonic/gin v1.12.0
+	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.6.0
-	github.com/hibiken/asynq v0.26.0
-	github.com/jackc/pgx/v5 v5.9.1
+	github.com/hibiken/asynq v0.23.0
+	github.com/jackc/pgx/v5 v5.5.5
 	github.com/joho/godotenv v1.5.1
-	github.com/pgvector/pgvector-go v0.3.0
-	github.com/redis/go-redis/v9 v9.18.0
+	github.com/pgvector/pgvector-go v0.2.0
+	github.com/redis/go-redis/v9 v9.5.5
 	github.com/stretchr/testify v1.11.1
 	gorm.io/datatypes v1.2.7
-	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.31.1
+	gorm.io/driver/postgres v1.5.6
+	gorm.io/gorm v1.30.0
 )
 
 require (
