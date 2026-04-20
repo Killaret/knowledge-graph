@@ -97,9 +97,7 @@ This decision aligns with:
 - GDPR Data Segregation Principles
 
 ## Related Decisions
-- ADR-002: CQRS Pattern Implementation
-- ADR-003: Link Entity Design
-- ADR-015: SaaS Migration Strategy (pending)
+- ADR-001: Layered Architecture (this document)
 
 ## References
 - Evans, E. "Domain-Driven Design: Tackling Complexity in the Heart of Software"

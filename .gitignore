@@ -1,76 +1,72 @@
-# --- Dependencies & Build Artifacts ---
-# Node.js / Svelte
+```
+# Dependencies
 node_modules/
-dist/
-build/
-.svelte2tsx-language-server-files/
-playwright-report/
-test-results/screenshots/
-package-lock.json
-
-# Go
-go/pkg/
-*.exe
-
-# Python
-.venv/
 venv/
-venv311/
+.venv/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
-*.pyc
-*.pyo
-
-# Java / Gradle
-.gradle/
 target/
+.gradle/
 
-# --- Test Results & Coverage ---
-cucumber-report.html
-cucumber-report.json
-test-results/
-test-results.txt
-test-results2.txt
-regression-test-results.txt
-check-results.txt
-final-check.txt
-frontend/test-results/
-coverage/
-htmlcov/
-.coverage
-
-# --- Cache & Temporary Files ---
-# HuggingFace
-huggingface_cache/
-
-# Logs
-*.log
+# Build artifacts
+dist/
+build/
+*.pyc
+*.class
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.a
 
 # Environment files
 .env
 .env.local
 *.env.*
 
-# IDE files
+# Editor/IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# OS generated files
+# Logs
+*.log
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# System files
 .DS_Store
 Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
-*.cache
-
-# Compressed archives
+# Compressed files
 *.zip
-*.tar.gz
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
 *.rar
-
-# Docker
-.dockerignore
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```
