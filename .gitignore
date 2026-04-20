@@ -1,67 +1,63 @@
-﻿# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+```
+# Dependencies
+node_modules/
 
-# Large project code exports
-FULL_PROJECT_CODE*.md
-PROJECT_CODE*.md
-
-# Go
-backend/server
-backend/worker
-backend/*.exe
-backend/*.exe~
-backend/*.dll
-backend/*.so
-backend/*.dylib
-backend/*.test
-backend/*.out
-backend/vendor/
-backend/coverage.out
-
-# Python (nlp-service)
-__pycache__/
-*.py[cod]
-*.so
-.Python
-venv/
-venv311/
-*.egg-info/
+# Build artifacts
 dist/
 build/
-.pytest_cache/
-.ruff_cache/
-*.pyc
+target/
 
-# Docker
-*.pid
-docker-compose.override.yml
-huggingface_cache/ # кэш модели (большой, не нужен в репозитории)
-*.onnx
-*.bin
-*.safetensors
-*.pth       
-.dockerignore
+# Go specific
+go/pkg/
+backend/go.sum
 
-# Environment files
-.env
-*.env
-.env.local
-.env.*.local
+# Cucumber reports
+cucumber-report.html
+cucumber-report.json
+
+# Test results and coverage
+test-results/
+test-results.txt
+test-results2.txt
+regression-test-results.txt
+check-results.txt
+final-check.txt
+frontend/test-results/
+coverage/
+htmlcov/
+.coverage
+
+# HuggingFace cache
+huggingface_cache/
 
 # Logs
 *.log
-logs/
 
-# OS
+# Environment files
+.env
+.env.local
+*.env.*
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Temp files
-tmp/
-temp/
+# Package lock files
+package-lock.json
+
+# Temporary files
 *.tmp
-*.bak
-*~
+*.temp
+
+# Svelte related
+.svelte2tsx-language-server-files/
+
+# Playwright
+playwright-report/
+test-results/screenshots/
+
+```
