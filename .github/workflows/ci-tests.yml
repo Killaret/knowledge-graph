@@ -39,10 +39,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       
       - name: Run smoke tests only
-        run: npx playwright test --grep="@smoke" || true
+        run: npx playwright test --grep="@smoke"
       
       - name: Run smoke BDD tests
-        run: npm run test:cucumber -- --tags="@smoke" || true
+        run: npm run test:cucumber -- --tags="@smoke"
 
   # ============ FULL TEST SUITE (main merge) ============
   full-tests:
@@ -90,8 +90,24 @@ jobs:
           cd ../backend
           go mod download
           go run cmd/server/main.go &
-          sleep 10
-          curl http://localhost:8080/health || echo "Backend not ready"
+          BACKEND_PID=$!
+          echo "Backend PID: $BACKEND_PID"
+          
+          # Wait for backend to be ready (polling health check)
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              break
+            fi
+            echo "Waiting for backend... attempt $i/30"
+            sleep 2
+          done
+          
+          # Verify backend is still running
+          if ! kill -0 $BACKEND_PID 2>/dev/null; then
+            echo "::error::Backend process died!"
+            exit 1
+          fi
       
       - name: Run all Playwright tests
         run: npm test
@@ -137,10 +153,10 @@ jobs:
       - name: Run Lighthouse CI
         run: |
           npm install -g @lhci/cli
-          lhci autorun --config=lighthouserc.js || echo "Lighthouse failed but continuing"
+          lhci autorun --config=lighthouserc.js
       
       - name: Run FPS performance tests
-        run: npx playwright test tests/performance/ --project=chromium || true
+        run: npx playwright test tests/performance/ --project=chromium
       
       - name: Upload performance results
         if: always()
@@ -180,7 +196,7 @@ jobs:
         env:
           ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
         run: |
-          npx playwright test tests/visual/ --project=chromium || true
+          npx playwright test tests/visual/ --project=chromium
       
       - name: Upload Argos screenshots
         if: always()

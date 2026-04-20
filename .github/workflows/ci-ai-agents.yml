@@ -113,7 +113,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       
       - name: Run BDD tests
-        run: npm run test:bdd || true
+        run: npm run test:bdd
       
       - name: Upload test results
         if: always()
@@ -147,12 +147,12 @@ jobs:
         run: test -f requirements.txt || (echo "requirements.txt not found" && exit 1)
       
       - name: Run tests
-        run: pytest tests/ -v || echo "No tests found or pytest error"
+        run: pytest tests/ -v
 
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-backend, test-backend, lint-frontend, test-frontend]
+    needs: [lint-backend, test-backend, lint-frontend, test-frontend, test-nlp]
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4

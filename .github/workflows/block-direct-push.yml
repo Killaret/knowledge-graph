@@ -11,20 +11,41 @@ jobs:
     steps:
       - name: Check if push is from PR merge
         run: |
-          # Check if this is a PR merge by looking at the commit message
-          if [[ "${{ github.event.head_commit.message }}" =~ ^Merge[[:space:]]pull[[:space:]]request[[:space:]]#[0-9]+ ]]; then
-            echo "✅ This is a PR merge commit. Allowed."
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          ACTOR="${{ github.actor }}"
+          
+          # Check for standard merge commit
+          if [[ "$COMMIT_MSG" =~ ^Merge[[:space:]]pull[[:space:]]request[[:space:]]#[0-9]+ ]]; then
+            echo "✅ Standard PR merge commit. Allowed."
             exit 0
           fi
           
-          # Check if this is from GitHub Actions (CI merge)
-          if [[ "${{ github.actor }}" == "github-actions[bot]" ]] || [[ "${{ github.actor }}" == "web-flow" ]]; then
-            echo "✅ This is from GitHub automation. Allowed."
+          # Check for squash merge (contains "(#<number>)" in message)
+          if [[ "$COMMIT_MSG" =~ \(#[0-9]+\)$ ]]; then
+            echo "✅ Squash merge commit. Allowed."
             exit 0
           fi
+          
+          # Check for rebase merge (has multiple commits, check via GitHub API)
+          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
+          if [[ -n "$PR_NUMBER" ]]; then
+            echo "✅ Rebase merge or PR-linked commit. Allowed."
+            exit 0
+          fi
+          
+          # Check if this is from GitHub automation (bots)
+          BOT_USERS=("github-actions[bot]" "web-flow" "github-merge-queue[bot]" "dependabot[bot]" "renovate[bot]")
+          for bot in "${BOT_USERS[@]}"; do
+            if [[ "$ACTOR" == "$bot" ]]; then
+              echo "✅ Push from authorized bot: $bot. Allowed."
+              exit 0
+            fi
+          done
           
           # Block direct push
           echo "::error::❌ Direct push to main is not allowed!"
+          echo "::error::Actor: $ACTOR"
+          echo "::error::Commit: $COMMIT_MSG"
           echo "::error::Please create a Pull Request from your feature branch instead."
           echo ""
           echo "Workflow:"
