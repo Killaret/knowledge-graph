@@ -11,7 +11,8 @@
     noteId = '',
     typeFilters = [],
     selectedType = 'all',
-    typeCounts = {}
+    typeCounts = {},
+    currentView = 'graph'
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
@@ -23,10 +24,10 @@
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
+    currentView?: 'graph' | 'list';
   } = $props();
   
   let searchQuery = $state('');
-  let currentView = $state<'graph' | 'list'>('graph');
   let showMenu = $state(false);
   
   function handleSearch() {
@@ -40,7 +41,6 @@
   }
   
   function toggleView() {
-    currentView = currentView === 'graph' ? 'list' : 'graph';
     onToggleView?.();
   }
 
