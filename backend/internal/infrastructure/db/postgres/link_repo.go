@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 
 	"knowledge-graph/internal/domain/link"
 
@@ -26,9 +27,15 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		model, err := toGormLink(l)
 		if err != nil {
+			log.Printf("[LinkRepository.Save] toGormLink failed: %v", err)
 			return err
 		}
-		return r.db.WithContext(ctx).Create(&model).Error
+		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
+			log.Printf("[LinkRepository.Save] Create failed: id=%s source=%s target=%s error=%v",
+				model.ID, model.SourceNoteID, model.TargetNoteID, err)
+			return err
+		}
+		return nil
 	}
 	if err != nil {
 		return err

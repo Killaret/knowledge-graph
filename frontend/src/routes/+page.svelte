@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import VirtualList from 'svelte-virtual-list';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
@@ -370,7 +369,7 @@
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
         {#if filteredNotes.length === 0}
-          <div class="empty-state">
+          <div class="empty-state" data-testid="empty-state">
             <div class="empty-icon">🌌</div>
             <h2>No notes found</h2>
             <p>
@@ -385,16 +384,14 @@
             </button>
           </div>
         {:else}
-          <div class="virtual-list-container">
-            <VirtualList items={filteredNotes} itemHeight={120} let:item>
-              <div class="virtual-list-item">
-                <NoteCard
-                  note={item}
-                  onClick={() => selectedNodeId = item.id}
-                  highlightQuery={searchQuery}
-                />
-              </div>
-            </VirtualList>
+          <div class="notes-grid" data-testid="notes-grid">
+            {#each filteredNotes as note (note.id)}
+              <NoteCard
+                {note}
+                onClick={() => selectedNodeId = note.id}
+                highlightQuery={searchQuery}
+              />
+            {/each}
           </div>
         {/if}
       </div>
@@ -568,15 +565,11 @@
     box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
   }
 
-  .virtual-list-container {
-    height: 100%;
-    overflow-y: auto;
-  }
-
-  .virtual-list-item {
-    padding: 8px 0;
-    height: 120px;
-    box-sizing: border-box;
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
   }
 
   @media (max-width: 768px) {

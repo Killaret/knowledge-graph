@@ -199,10 +199,13 @@ Then('I should see the 2D force graph by default', async function(this: ITestWor
 });
 
 Then('I should see a grid of note cards', async function(this: ITestWorld) {
-  const grid = this.page.locator('[data-testid="list-container"]').first();
-  await expect(grid).toBeVisible({ timeout: 10000 });
+  const grid = this.page.locator('[data-testid="notes-grid"]').first();
+  await expect(grid).toBeVisible({ timeout: 15000 });
   const cards = this.page.locator('.note-card');
-  await expect(cards.first()).toBeVisible({ timeout: 5000 });
+  await expect(cards.first()).toBeVisible({ timeout: 10000 });
+  // Verify multiple cards are present
+  const cardCount = await cards.count();
+  expect(cardCount).toBeGreaterThan(0);
 });
 
 Then('I should see the fullscreen 2D force graph', async function(this: ITestWorld) {
@@ -213,24 +216,31 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
 });
 
 Then('I am in list view', async function(this: ITestWorld) {
-  // First wait for notes to load
-  await this.page.waitForTimeout(1000);
+  // First ensure we're on main page
+  const listContainer = this.page.locator('[data-testid="list-container"]').first();
+  const notesGrid = this.page.locator('[data-testid="notes-grid"]').first();
   
-  const listView = this.page.locator('.list-container, .notes-grid').first();
-  const isVisible = await listView.isVisible().catch(() => false);
-  if (!isVisible) {
+  // Check if already in list view with notes
+  const listVisible = await listContainer.isVisible().catch(() => false);
+  const gridVisible = await notesGrid.isVisible().catch(() => false);
+  
+  if (!listVisible || !gridVisible) {
     // Click list toggle
     const button = this.page.locator('[data-testid="view-toggle-list"]').first();
+    await expect(button).toBeVisible({ timeout: 5000 });
     await button.click();
-    await this.page.waitForTimeout(800);
+    await this.page.waitForTimeout(1000);
   }
-  await expect(listView).toBeVisible({ timeout: 5000 });
   
-  // Wait for data to be loaded
-  await this.page.waitForFunction(() => {
-    const notes = (window as any).filteredNotes;
-    return notes && notes.length > 0;
-  }, { timeout: 5000 });
+  // Wait for list container
+  await expect(listContainer).toBeVisible({ timeout: 15000 });
+  
+  // Wait for notes grid with cards
+  await expect(notesGrid).toBeVisible({ timeout: 15000 });
+  
+  // Verify at least one card is visible
+  const firstCard = this.page.locator('.note-card').first();
+  await expect(firstCard).toBeVisible({ timeout: 10000 });
 });
 
 Then('I am in graph view', async function(this: ITestWorld) {

@@ -2,6 +2,7 @@ package linkhandler
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"knowledge-graph/internal/application/common"
@@ -116,7 +117,9 @@ func (h *Handler) Create(c *gin.Context) {
 	newLink := link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
 
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
-		c.JSON(500, gin.H{"error": "failed to save link"})
+		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
+			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
+		c.JSON(500, gin.H{"error": "failed to save link", "details": err.Error()})
 		return
 	}
 
