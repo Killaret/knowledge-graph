@@ -66,6 +66,15 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       
@@ -85,7 +94,22 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+        run: |
+          # Install golang-migrate
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+          
+          # Apply migrations
+          migrate -path ../backend/migrations -database "$DATABASE_URL" up
+      
       - name: Start backend for E2E tests
+        env:
+          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          GOTOOLCHAIN: local
         run: |
           cd ../backend
           go mod download

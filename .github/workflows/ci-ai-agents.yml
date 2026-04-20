@@ -154,6 +154,7 @@ jobs:
         env:
           DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
           REDIS_URL: redis://localhost:6379
+          GOTOOLCHAIN: local
         run: |
           cd ../backend
           go mod download
