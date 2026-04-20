@@ -14,14 +14,14 @@ require (
 	github.com/pgvector/pgvector-go v0.2.0
 	github.com/redis/go-redis/v9 v9.5.5
 	github.com/stretchr/testify v1.11.1
-	gorm.io/datatypes v1.2.7
+	gorm.io/datatypes v1.2.5
 	gorm.io/driver/postgres v1.5.6
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.25.12
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/bytedance/gopkg v0.1.4 // indirect
+	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.14.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -60,9 +60,9 @@ require (
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
