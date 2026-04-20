@@ -93,6 +93,20 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kg_user
+          POSTGRES_PASSWORD: kg_password
+          POSTGRES_DB: knowledge_graph
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       
@@ -111,6 +125,52 @@ jobs:
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      
+      - name: Start backend for BDD tests
+        run: |
+          cd ../backend
+          go mod download
+          go run cmd/server/main.go &
+          BACKEND_PID=$!
+          echo "Backend PID: $BACKEND_PID"
+          
+          # Wait for backend to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              break
+            fi
+            echo "Waiting for backend... attempt $i/30"
+            sleep 2
+          done
+          
+          # Verify backend is still running
+          if ! kill -0 $BACKEND_PID 2>/dev/null; then
+            echo "::error::Backend process died!"
+            exit 1
+          fi
+      
+      - name: Start frontend dev server
+        run: |
+          npm run dev &
+          FRONTEND_PID=$!
+          echo "Frontend PID: $FRONTEND_PID"
+          
+          # Wait for frontend to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "✅ Frontend is ready!"
+              break
+            fi
+            echo "Waiting for frontend... attempt $i/30"
+            sleep 2
+          done
+          
+          # Verify frontend is still running
+          if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+            echo "::error::Frontend process died!"
+            exit 1
+          fi
       
       - name: Run BDD tests
         run: npm run test:bdd
