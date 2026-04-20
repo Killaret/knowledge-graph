@@ -1,44 +1,22 @@
 ```
+# Go-specific ignores
+*.mod
+*.sum
+vendor/
+
 # Dependencies
-node_modules/
-
-# Build artifacts
-dist/
-build/
-target/
-
-# Go specific
 go/pkg/
-backend/go.sum
 
-# Cucumber reports
-cucumber-report.html
-cucumber-report.json
-
-# Test results and coverage
-test-results/
-test-results.txt
-test-results2.txt
-regression-test-results.txt
-check-results.txt
-final-check.txt
-frontend/test-results/
-coverage/
-htmlcov/
-.coverage
-
-# HuggingFace cache
-huggingface_cache/
-
-# Logs
+# Logs and temp files
 *.log
+*.tmp
 
-# Environment files
+# Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
+# Editors
 .vscode/
 .idea/
 
@@ -46,18 +24,49 @@ huggingface_cache/
 .DS_Store
 Thumbs.db
 
-# Package lock files
-package-lock.json
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
-# Temporary files
-*.tmp
-*.temp
+# Build artifacts
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.a
 
-# Svelte related
-.svelte2tsx-language-server-files/
+# Python cache (if present)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Playwright
-playwright-report/
-test-results/screenshots/
+# Node.js
+node_modules/
 
+# Virtual environments
+venv/
+.venv/
+.env/
+
+# Gradle
+.gradle/
+build/
+
+# Maven
+target/
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
 ```
