@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getGraphData,
   getFullGraphData,
@@ -6,30 +6,11 @@ import {
   type GraphLink,
   type GraphData
 } from './graph';
-
-// Мокаем ky модуль
-vi.mock('ky', () => {
-  const mockResponse = (data: any) => Promise.resolve({
-    json: () => Promise.resolve(data)
-  });
-
-  const mockKy = {
-    get: vi.fn(() => mockResponse({ nodes: [], links: [] })),
-    post: vi.fn(() => mockResponse({})),
-    put: vi.fn(() => mockResponse({})),
-    delete: vi.fn(() => Promise.resolve()),
-    extend: vi.fn(() => mockKy)
-  };
-
-  return {
-    default: mockKy,
-    create: vi.fn(() => mockKy)
-  };
-});
+import { resetKyMocks } from './__mocks__/ky';
 
 describe('graph API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetKyMocks();
   });
 
   it('getGraphData should return graph data for note', async () => {

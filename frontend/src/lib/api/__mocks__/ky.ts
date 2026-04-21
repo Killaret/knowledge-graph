@@ -1,15 +1,22 @@
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 
+ 
 type KyInstance = {
-  get: Mock<() => Promise<{ json: () => Promise<any> }>>;
-  post: Mock<() => Promise<{ json: () => Promise<any> }>>;
-  put: Mock<() => Promise<{ json: () => Promise<any> }>>;
-  delete: Mock<() => Promise<{ json: () => Promise<any> }>>;
-  extend: Mock<() => KyInstance>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  post: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  put: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  extend: any;
 };
 
 // Утилита для создания mock response
-export const createMockResponse = <T>(data: T, status = 200) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const createMockResponse = <T>(data: T, status = 200): any => {
   return {
     json: async () => data,
     ok: status >= 200 && status < 300,
@@ -30,7 +37,10 @@ const createMockKy = (): KyInstance => ({
 const mockKy = createMockKy();
 
 // Добавляем статический метод create как у настоящего ky
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (mockKy as any).create = vi.fn(() => mockKy);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(mockKy as any).extend = vi.fn(() => mockKy);
 
 // Утилита для сброса всех моков
 export const resetKyMocks = () => {
@@ -42,13 +52,15 @@ export const resetKyMocks = () => {
 };
 
 // Утилита для настройки mock ответа
+ 
 export const mockKyResponse = <T>(
   method: keyof Omit<KyInstance, 'extend'>,
   data: T,
   status = 200
-) => {
+): void => {
   const response = createMockResponse(data, status);
-  mockKy[method].mockResolvedValueOnce(response as any);
+   
+  mockKy[method].mockResolvedValueOnce(response);
 };
 
 export default mockKy;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getNotes,
   getNote,
@@ -11,11 +11,11 @@ import {
   type Suggestion,
   type SearchResponse
 } from './notes';
-import { resetKyMocks, mockKyResponse } from './__mocks__/ky';
+import { resetKyMocks } from './__mocks__/ky';
 
 describe('notes API', () => {
   beforeEach(() => {
-    resetMocks();
+    resetKyMocks();
   });
 
   it('getNotes should return array of notes', async () => {
