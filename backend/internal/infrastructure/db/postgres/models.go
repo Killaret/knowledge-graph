@@ -68,11 +68,21 @@ func (NoteEmbeddingModel) TableName() string {
 	return "note_embeddings"
 }
 
-// NoteTagModel — теги заметки
+// TagModel — тег
+type TagModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Name      string    `gorm:"uniqueIndex;not null"`
+	CreatedAt time.Time
+}
+
+func (TagModel) TableName() string { return "tags" }
+
+// NoteTagModel — связь заметки с тегом (многие-ко-многим)
 type NoteTagModel struct {
 	NoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Tag    string    `gorm:"primaryKey"`
+	TagID  uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Note   NoteModel `gorm:"foreignKey:NoteID"`
+	Tag    TagModel  `gorm:"foreignKey:TagID"`
 }
 
 func (NoteTagModel) TableName() string { return "note_tags" }
