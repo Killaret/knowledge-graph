@@ -1,16 +1,5 @@
 // API-клиент для работы с заметками и рекомендациями
-import ky from 'ky';
-
-// Базовый URL с прокси /api → http://localhost:8080
-const api = ky.create({ 
-  prefixUrl: '/api',
-  timeout: 30000,
-  retry: {
-    limit: 2,
-    methods: ['get', 'post', 'put', 'delete'],
-    statusCodes: [408, 413, 429, 500, 502, 503, 504]
-  }
-});
+import { api } from './client';
 
 // Тип данных заметки (соответствует ответу бэкенда)
 export interface Note {

@@ -1,15 +1,5 @@
 // API-клиент для получения данных графа (узлы и связи)
-import ky from 'ky';
-
-const api = ky.create({ 
-  prefixUrl: '/api',
-  timeout: 30000,
-  retry: {
-    limit: 2,
-    methods: ['get'],
-    statusCodes: [408, 413, 429, 500, 502, 503, 504]
-  }
-});
+import { api } from './client';
 
 // Узел графа – заметка (звезда)
 export interface GraphNode {
