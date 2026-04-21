@@ -11,17 +11,22 @@ type Note struct {
 	id        uuid.UUID
 	title     Title
 	content   Content
+	type_     string
 	metadata  Metadata
 	createdAt time.Time
 	updatedAt time.Time
 }
 
-func NewNote(title Title, content Content, metadata Metadata) *Note {
+func NewNote(title Title, content Content, noteType string, metadata Metadata) *Note {
 	now := time.Now()
+	if noteType == "" {
+		noteType = "star"
+	}
 	return &Note{
 		id:        uuid.New(),
 		title:     title,
 		content:   content,
+		type_:     noteType,
 		metadata:  metadata,
 		createdAt: now,
 		updatedAt: now,
@@ -29,11 +34,15 @@ func NewNote(title Title, content Content, metadata Metadata) *Note {
 }
 
 // ReconstructNote восстанавливает заметку из сохранённых данных (используется репозиторием)
-func ReconstructNote(id uuid.UUID, title Title, content Content, metadata Metadata, createdAt, updatedAt time.Time) *Note {
+func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time) *Note {
+	if noteType == "" {
+		noteType = "star"
+	}
 	return &Note{
 		id:        id,
 		title:     title,
 		content:   content,
+		type_:     noteType,
 		metadata:  metadata,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
@@ -55,6 +64,17 @@ func (n *Note) Content() Content {
 
 func (n *Note) Metadata() Metadata {
 	return n.metadata
+}
+
+func (n *Note) Type() string {
+	return n.type_
+}
+
+func (n *Note) SetType(noteType string) {
+	if noteType != "" {
+		n.type_ = noteType
+		n.updatedAt = time.Now()
+	}
 }
 
 func (n *Note) CreatedAt() time.Time {

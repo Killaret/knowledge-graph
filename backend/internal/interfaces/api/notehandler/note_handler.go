@@ -85,6 +85,7 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required"`
 	Content  string                 `json:"content"`
+	Type     string                 `json:"type"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -111,7 +112,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newNote := note.NewNote(title, content, metadata)
+	newNote := note.NewNote(title, content, req.Type, metadata)
 
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		c.JSON(500, gin.H{"error": "failed to save note"})
