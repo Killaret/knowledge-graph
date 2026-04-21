@@ -10,8 +10,8 @@ export interface NoteData {
 
 export interface LinkData {
   id?: string;
-  sourceNoteId: string;
-  targetNoteId: string;
+  source_note_id: string;
+  target_note_id: string;
   weight?: number;
   link_type?: string;
   metadata?: Record<string, unknown>;
