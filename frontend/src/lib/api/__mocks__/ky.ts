@@ -29,6 +29,9 @@ const createMockKy = (): KyInstance => ({
 
 const mockKy = createMockKy();
 
+// Добавляем статический метод create как у настоящего ky
+(mockKy as any).create = vi.fn(() => mockKy);
+
 // Утилита для сброса всех моков
 export const resetKyMocks = () => {
   mockKy.get.mockClear();

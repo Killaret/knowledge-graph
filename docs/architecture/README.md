@@ -24,6 +24,7 @@
 5. [Архитектурные решения (ADR)](#5-архитектурные-решения-adr)
 6. [ATAM анализ](atam.md)
 7. [Конфигурация системы](../CONFIGURATION_EN.md)
+8. [Иерархическая кластеризация (спецификация)](clustering.md)
 
 ---
 
@@ -168,3 +169,4 @@ Cache Check → BFS Links (α=0.5) + Semantic Search (β=0.5) → Combine → Ra
 - [Asynq](https://github.com/hibiken/asynq)
 - [Локальное развёртывание (Docker Compose)](uml/deployment-local.puml)
 - [Развёртывание в Kubernetes](uml/deployment-k8s.puml)
+- [Иерархическая кластеризация (спецификация)](clustering.md)

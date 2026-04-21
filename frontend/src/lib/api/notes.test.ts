@@ -11,30 +11,11 @@ import {
   type Suggestion,
   type SearchResponse
 } from './notes';
-
-// Мокаем ky модуль
-vi.mock('ky', () => {
-  const mockResponse = (data: any) => Promise.resolve({
-    json: () => Promise.resolve(data)
-  });
-
-  const mockKy = {
-    get: vi.fn(() => mockResponse({ notes: [], total: 0, limit: 10, offset: 0 })),
-    post: vi.fn(() => mockResponse({})),
-    put: vi.fn(() => mockResponse({})),
-    delete: vi.fn(() => Promise.resolve()),
-    extend: vi.fn(() => mockKy)
-  };
-
-  return {
-    default: mockKy,
-    create: vi.fn(() => mockKy)
-  };
-});
+import { resetKyMocks, mockKyResponse } from './__mocks__/ky';
 
 describe('notes API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetMocks();
   });
 
   it('getNotes should return array of notes', async () => {

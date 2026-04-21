@@ -98,6 +98,87 @@ func GetAffectedNotes(targetNoteID) []uuid.UUID {
 3. **Cascade limiting** — `reverseCascadeDepth = 1` prevents queue explosion
 4. **Transactionality** — atomic update via `SaveBatch` + `DeleteNotInBatch`
 
+## Migration to Pure Precomputed Scores
+
+### Current State (Transition Period)
+
+The `/suggestions` API currently has 4 fallback levels:
+
+1. **Table `note_recommendations`** — precomputed data (target state)
+2. **Semantic fallback** — fast pgvector query (to be removed)
+3. **Redis cache** — old synchronous results (to be removed)
+4. **Empty list + 202 Accepted** — background computation triggered
+
+### Target Architecture (Pure Precomputed)
+
+```
+┌─────────────────┐     ┌─────────────────────┐
+│  GET /suggestions    │  SELECT FROM note_  │
+│                      │  recommendations    │
+│  Response:           │  (indexed, fast)    │
+│  - suggestions[]     │                     │
+│  - status: "ready"   │                     │
+│    | "pending"       │                     │
+└─────────────────┘     └─────────────────────┘
+```
+
+### Configuration
+
+```bash
+# .env file
+RECOMMENDATION_FALLBACK_ENABLED=false  # Disable all synchronous fallbacks
+```
+
+When `false`:
+- API reads **only** from `note_recommendations` table
+- No pgvector queries on request path
+- No Redis cache lookups for recommendations
+- New notes return empty list until worker completes
+
+### Pros and Cons
+
+| Pros | Cons |
+|------|------|
+| Maximum performance: single indexed SELECT | New notes temporarily without recommendations |
+| Code simplicity: no fallback branches | Requires reliable worker operation |
+| Predictable behavior: always consistent with last computation | Queue backlog delays updates |
+| No embedding repo calls on API path | |
+
+### Handling New Notes
+
+When no recommendations exist (new note):
+
+```json
+{
+  "suggestions": [],
+  "status": "pending",
+  "message": "Рекомендации скоро появятся"
+}
+```
+
+Frontend should show: **"Рекомендации рассчитываются..."**
+
+Background worker is triggered immediately via Asynq task.
+
+### Rollback Strategy
+
+Keep `RECOMMENDATION_FALLBACK_ENABLED` toggle for emergency rollback:
+
+```bash
+# If queue is stuck or recommendations stale
+RECOMMENDATION_FALLBACK_ENABLED=true  # Re-enable fallbacks
+```
+
+Future cleanup: After system proves reliability (30+ days stable), fallback code can be permanently removed.
+
+### Pre-Migration Checklist
+
+- [ ] CLI filled `note_recommendations` for all existing notes
+- [ ] Asynq queue monitoring configured (`asynqmon` deployed)
+- [ ] Worker error alerting enabled
+- [ ] Frontend handles `status: "pending"` gracefully
+- [ ] Fallback toggle tested in staging
+
 ## Monitoring
 
 ### Metrics to Track

@@ -53,6 +53,7 @@ All system parameters are set via environment variables. For local development, 
 | `RECOMMENDATION_DECAY` | backend | Weight decay for indirect links (depth > 1) | `0.5` | 0.0 - 1.0 |
 | `RECOMMENDATION_CACHE_TTL_SECONDS` | backend | Recommendation cache TTL in Redis | `300` | 60 - 3600 |
 | `EMBEDDING_SIMILARITY_LIMIT` | backend | Limit for pgvector similarity candidates | `30` | 10 - 100 |
+| `RECOMMENDATION_FALLBACK_ENABLED` | backend | Enable synchronous fallback queries | `false` | true, false |
 
 ### Detailed Description
 
@@ -82,6 +83,20 @@ score = α × explicit_score + β × semantic_score
 **EMBEDDING_SIMILARITY_LIMIT** — Semantic candidates limit:
 - How many notes to fetch from pgvector by embedding similarity
 - Higher = more accurate, but slower
+
+**RECOMMENDATION_FALLBACK_ENABLED** — Synchronous fallback toggle:
+- `false` (default): Use only precomputed recommendations from `note_recommendations` table. Fastest, but new notes may temporarily have no recommendations.
+- `true`: Enable synchronous pgvector and Redis cache fallbacks. Slower, but always returns results.
+
+When `false`:
+- API reads only from `note_recommendations` (single indexed SELECT)
+- No pgvector queries on request path
+- No Redis cache lookups for recommendations
+- New notes return empty list until async worker completes
+
+Recommended: Set `false` for production after verifying worker reliability. Use `true` only as emergency rollback if queue issues occur.
+
+See also: [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md#migration-to-pure-precomputed-scores)
 
 ---
 
@@ -148,6 +163,7 @@ RECOMMENDATION_DEPTH=3
 RECOMMENDATION_DECAY=0.5
 RECOMMENDATION_CACHE_TTL_SECONDS=300
 EMBEDDING_SIMILARITY_LIMIT=30
+RECOMMENDATION_FALLBACK_ENABLED=false
 
 # Graph visualization
 GRAPH_LOAD_DEPTH=2
@@ -238,6 +254,16 @@ ASYNQ_QUEUE_DEFAULT=2
 ```env
 ASYNQ_CONCURRENCY=2
 ASYNQ_QUEUE_DEFAULT=1
+```
+
+### 14. Pure Precomputed Mode (fastest, no fallbacks)
+```env
+RECOMMENDATION_FALLBACK_ENABLED=false
+```
+
+### 15. Fallback Mode (slower, always returns results)
+```env
+RECOMMENDATION_FALLBACK_ENABLED=true
 ```
 
 ### How to Apply Changes

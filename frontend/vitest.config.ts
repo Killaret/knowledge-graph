@@ -18,7 +18,8 @@ export default defineConfig({
 		alias: [
 			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/environment.ts') },
 			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/navigation.ts') },
-			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') }
+			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') },
+			{ find: 'ky', replacement: path.resolve(__dirname, './src/lib/api/__mocks__/ky.ts') }
 		],
 		conditions: ['browser', 'default']
 	},
