@@ -61,7 +61,7 @@ func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link
 
 func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_id = ?", sourceID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) (
 
 func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id = ?", targetID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_id = ?", targetID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id IN ?", sourceIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_id IN ?", sourceIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id IN ?", targetIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_id IN ?", targetIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *LinkRepository) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
-	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
+	return r.db.WithContext(ctx).Where("source_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
