@@ -66,7 +66,7 @@ func SetupTestDB(t *testing.T) (*gorm.DB, func()) {
 // TruncateTables очищает все таблицы (использовать в SetupTest)
 func TruncateTables(db *gorm.DB) error {
 	// Получаем список базовых таблиц (без note_embeddings и recommendations)
-	tables := []string{"notes", "links", "note_keywords"}
+	tables := []string{"notes", "links", "note_keywords", "users"}
 
 	for _, table := range tables {
 		if err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", table)).Error; err != nil {
