@@ -33,7 +33,9 @@ jobs:
         with:
           working-directory: ./backend
           version: v1.56.0
-          args: --path-prefix=. --timeout=5m
+          args: --path-prefix=. --timeout=10m
+          skip-cache: false
+          install-mode: binary
 
   test-backend:
     name: Test Backend (Go)
