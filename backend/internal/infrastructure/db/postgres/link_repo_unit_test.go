@@ -57,19 +57,19 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 		WithArgs(l.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT
+	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "links"`).
+	mock.ExpectQuery(`INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`).
 		WithArgs(
-			sqlmock.AnyArg(),
 			sourceID,
 			targetID,
 			"reference",
 			0.8,
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
 		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(l.ID()))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
@@ -235,7 +235,7 @@ func TestLinkRepository_FindBySourceIDs_Batch(t *testing.T) {
 
 	sourceIDs := []uuid.UUID{sourceID1, sourceID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_id IN \(\?,\?\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_id IN \(\$1,\$2\)`).
 		WithArgs(sourceID1, sourceID2).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID1, targetID, "reference", 0.8, `{}`, now).
@@ -294,7 +294,7 @@ func TestLinkRepository_FindByTargetIDs_Batch(t *testing.T) {
 
 	targetIDs := []uuid.UUID{targetID1, targetID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_id IN \(\?,\?\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_id IN \(\$1,\$2\)`).
 		WithArgs(targetID1, targetID2).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID1, "reference", 0.8, `{}`, now).

@@ -54,19 +54,19 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 		WithArgs(n.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT
+	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "notes"`).
+	mock.ExpectQuery(`INSERT INTO "notes" \("title","content","type","metadata","created_at","updated_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`).
 		WithArgs(
-			n.ID(),
 			"Test Title",
 			"Test Content",
 			"star",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
 		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(n.ID()))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
