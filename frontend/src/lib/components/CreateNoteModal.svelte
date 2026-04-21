@@ -12,7 +12,7 @@
   
   let title = $state('');
   let content = $state('');
-  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'default'>('default');
+  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid'>('star');
   let loading = $state(false);
   let error = $state('');
   
@@ -21,7 +21,7 @@
     { value: 'planet', label: '🪐 Planet', color: '#60a5fa' },
     { value: 'comet', label: '☄️ Comet', color: '#f472b6' },
     { value: 'galaxy', label: '🌀 Galaxy', color: '#a78bfa' },
-    { value: 'default', label: '📄 Default', color: '#94a3b8' }
+    { value: 'asteroid', label: '☁️ Asteroid', color: '#94a3b8' }
   ];
   
   async function handleSubmit(e: Event) {
@@ -55,7 +55,7 @@
     open = false;
     title = '';
     content = '';
-    type = 'default';
+    type = 'star';
     error = '';
   }
 </script>

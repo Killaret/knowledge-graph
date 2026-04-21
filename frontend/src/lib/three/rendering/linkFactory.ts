@@ -80,7 +80,7 @@ export function createLinkLine(
   }
   
   // Сохраняем тип связи в userData для отладки
-  line.userData.linkType = linkType || 'default';
+  line.userData.linkType = linkType || 'related';
   
   return line;
 }

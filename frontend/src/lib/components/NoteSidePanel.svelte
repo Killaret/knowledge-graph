@@ -45,9 +45,10 @@
       star: '⭐',
       planet: '🪐',
       comet: '☄️',
-      galaxy: '🌀'
+      galaxy: '🌀',
+      asteroid: '☁️'
     };
-    return icons[type || 'default'] || '📄';
+    return icons[type || 'star'] || '📄';
   }
 </script>
 

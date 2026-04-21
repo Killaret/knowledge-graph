@@ -11,7 +11,8 @@ interface ITestWorld extends IWorld {
 // Loading overlay assertions
 Then('the loading overlay should be visible', async function(this: ITestWorld) {
   const overlay = this.page.locator('.loading-overlay').first();
-  await expect(overlay).toBeVisible({ timeout: 5000 });
+  // Overlay disappears quickly at 10% progress, check immediately
+  await expect(overlay).toBeVisible({ timeout: 1000 });
 });
 
 Then('the loading text should contain {string}', async function(this: ITestWorld, text: string) {
