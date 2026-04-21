@@ -61,7 +61,8 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 			n.ID(),
 			"Test Title",
 			"Test Content",
-			string(`{"key":"value"}`),
+			"star",
+			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 		).
@@ -182,9 +183,9 @@ func TestNoteRepository_FindAll(t *testing.T) {
 
 	// Ожидаем SELECT с ORDER BY
 	mock.ExpectQuery(`SELECT \* FROM "notes" ORDER BY created_at DESC`).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "metadata", "created_at", "updated_at"}).
-			AddRow(uuid.New(), "Note 1", "Content 1", `{}`, now, now).
-			AddRow(uuid.New(), "Note 2", "Content 2", `{}`, now, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
+			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
 
 	ctx := context.Background()
 	notes, err := repo.FindAll(ctx)
@@ -214,11 +215,12 @@ func TestNoteRepository_List(t *testing.T) {
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes"`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
 
-	// Ожидаем SELECT с LIMIT и OFFSET
-	mock.ExpectQuery(`SELECT \* FROM "notes" ORDER BY created_at DESC LIMIT 5 OFFSET 10`).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "metadata", "created_at", "updated_at"}).
-			AddRow(uuid.New(), "Note 1", "Content 1", `{}`, now, now).
-			AddRow(uuid.New(), "Note 2", "Content 2", `{}`, now, now))
+	// Ожидаем SELECT с LIMIT и OFFSET (GORM использует параметризованные запросы)
+	mock.ExpectQuery(`SELECT \* FROM "notes" ORDER BY created_at DESC LIMIT \$1 OFFSET \$2`).
+		WithArgs(5, 10).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
+			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
 
 	ctx := context.Background()
 	notes, total, err := repo.List(ctx, 5, 10)
@@ -255,8 +257,8 @@ func TestNoteRepository_Save_Update(t *testing.T) {
 	// Ожидаем запрос на проверку существования - запись найдена
 	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(n.ID(), 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "metadata", "created_at", "updated_at"}).
-			AddRow(n.ID(), "Old Title", "Old Content", `{}`, now, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+			AddRow(n.ID(), "Old Title", "Old Content", "star", `{}`, now, now))
 
 	// Ожидаем UPDATE
 	mock.ExpectBegin()

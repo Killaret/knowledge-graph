@@ -92,7 +92,7 @@ func TestGetNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	ctx := context.Background()
 
@@ -137,7 +137,7 @@ func TestUpdateNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	_ = repo.Save(ctx, n)
 
@@ -184,7 +184,7 @@ func TestDeleteNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	_ = repo.Save(ctx, n)
 

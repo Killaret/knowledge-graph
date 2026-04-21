@@ -12,7 +12,7 @@ func TestNewNote(t *testing.T) {
 	content, _ := NewContent("Content")
 	metadata, _ := NewMetadata(map[string]interface{}{})
 
-	note := NewNote(title, content, metadata)
+	note := NewNote(title, content, "star", metadata)
 
 	if note.ID() == uuid.Nil {
 		t.Error("ID should not be nil")
@@ -32,7 +32,7 @@ func TestNoteUpdateTitle(t *testing.T) {
 	title, _ := NewTitle("Old")
 	content, _ := NewContent("Content")
 	metadata, _ := NewMetadata(map[string]interface{}{})
-	note := NewNote(title, content, metadata)
+	note := NewNote(title, content, "star", metadata)
 
 	newTitle, _ := NewTitle("New")
 	err := note.UpdateTitle(newTitle)

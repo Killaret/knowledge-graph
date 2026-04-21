@@ -110,14 +110,14 @@ func TestCreateLink(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
