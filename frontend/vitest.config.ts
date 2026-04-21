@@ -16,7 +16,7 @@ export default defineConfig({
 			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/environment.ts') },
 			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/navigation.ts') },
 			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') },
-			{ find: /^\$lib\/test-utils$/, replacement: path.resolve(__dirname, './src/lib/test-utils/index.ts') }
+			{ find: /^\$lib/, replacement: path.resolve(__dirname, './src/lib') }
 		],
 		conditions: ['browser', 'default']
 	},
