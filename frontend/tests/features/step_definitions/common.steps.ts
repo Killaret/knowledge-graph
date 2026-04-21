@@ -88,6 +88,10 @@ Given('there are notes of various types in the database', async function(this: I
     });
     this.testNotes.push({ id: String(noteData.id), title: String(noteData.title || ''), type: types[i] });
   }
+  // Reload page to fetch newly created notes
+  await this.page.reload();
+  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForTimeout(500);
 });
 
 // Navigation steps
