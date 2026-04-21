@@ -1,6 +1,8 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi, beforeAll, afterEach, afterAll } from 'vitest';
 import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+import { cleanup } from '@testing-library/svelte';
 
 // MSW server для мокирования HTTP запросов
 export const server = setupServer();
@@ -9,7 +11,10 @@ export const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
 // Очищаем обработчики после каждого теста
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+	cleanup();
+	server.resetHandlers();
+});
 
 // Останавливаем сервер после всех тестов
 afterAll(() => server.close());
@@ -34,5 +39,21 @@ vi.mock('$app/stores', () => ({
 			fn({ url: new URL('http://localhost'), params: {} });
 			return () => {};
 		})
+	},
+	navigating: {
+		subscribe: vi.fn()
 	}
 }));
+
+// Подавляем ошибки Three.js в тестовом окружении
+vi.mock('three', async () => {
+	const actual = await vi.importActual<typeof import('three')>('three');
+	return {
+		...actual,
+		WebGLRenderer: vi.fn().mockImplementation(() => ({
+			render: vi.fn(),
+			setSize: vi.fn(),
+			domElement: document.createElement('canvas'),
+		}))
+	};
+});
