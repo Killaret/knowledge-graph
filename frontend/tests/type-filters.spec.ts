@@ -147,7 +147,7 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
       const statsBar = page.locator('[data-testid="graph-stats"]').first();
       if (await statsBar.isVisible().catch(() => false)) {
         const statsText = await statsBar.textContent();
-        expect(statsText?.toLowerCase()).toMatch(/filter|galaxy/);
+        expect(statsText?.toLowerCase()).toMatch(/filter|galax/);
       }
     }
   });
