@@ -40,7 +40,7 @@ vi.mock('$lib/three/core/sceneSetup', () => ({
     camera: { position: { set: vi.fn() } },
     controls: { update: vi.fn(), autoRotate: false },
     labelRenderer: { render: vi.fn(), setSize: vi.fn() },
-    renderer: { render: vi.fn(), setSize: vi.fn() }
+    renderer: { render: vi.fn(), setSize: vi.fn(), dispose: vi.fn() }
   }),
   setFogDensity: vi.fn()
 }));
@@ -49,7 +49,8 @@ vi.mock('$lib/three/simulation/forceSimulation', () => ({
   createSimulation: vi.fn().mockReturnValue({
     tick: vi.fn(),
     nodes: vi.fn().mockReturnValue([]),
-    alpha: vi.fn().mockReturnValue(0)
+    alpha: vi.fn().mockReturnValue(0),
+    stop: vi.fn()
   }),
   addNodesToSimulation: vi.fn()
 }));
@@ -81,6 +82,11 @@ describe('Graph3D', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Мокаем Web Animations API
+    Element.prototype.animate = vi.fn().mockReturnValue({
+      onfinish: vi.fn(),
+      cancel: vi.fn()
+    });
   });
 
   it('renders canvas element', async () => {

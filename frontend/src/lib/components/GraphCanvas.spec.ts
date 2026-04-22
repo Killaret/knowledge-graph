@@ -109,6 +109,7 @@ describe('GraphCanvas', () => {
   let drawCalls: { type: string; args: any[] }[] = [];
 
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     mockState.simulationNodes = [];
     mockState.simulationLinks = [];
@@ -180,6 +181,7 @@ describe('GraphCanvas', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('renders canvas element', async () => {

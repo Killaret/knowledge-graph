@@ -35,11 +35,11 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 	repo := NewEmbeddingRepository(db)
 
 	// Создаем заметку сначала (для foreign key)
-	noteRepo := NewNoteRepository(db)
+	noteRepo := NewNoteRepository(db, nil)
 	title, _ := note.NewTitle("Embedding Test")
 	content, _ := note.NewContent("Test content for embedding")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	ctx := context.Background()
 	if err := noteRepo.Save(ctx, n); err != nil {
@@ -72,11 +72,11 @@ func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 	repo := NewEmbeddingRepository(db)
 
 	// Создаем заметку
-	noteRepo := NewNoteRepository(db)
+	noteRepo := NewNoteRepository(db, nil)
 	title, _ := note.NewTitle("Update Test")
 	content, _ := note.NewContent("Test content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	ctx := context.Background()
 	if err := noteRepo.Save(ctx, n); err != nil {
@@ -116,11 +116,11 @@ func TestEmbeddingRepository_Delete(t *testing.T) {
 	repo := NewEmbeddingRepository(db)
 
 	// Создаем заметку
-	noteRepo := NewNoteRepository(db)
+	noteRepo := NewNoteRepository(db, nil)
 	title, _ := note.NewTitle("Delete Test")
 	content, _ := note.NewContent("Test content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	ctx := context.Background()
 	if err := noteRepo.Save(ctx, n); err != nil {
@@ -150,7 +150,7 @@ func TestEmbeddingRepository_Delete(t *testing.T) {
 func TestEmbeddingRepository_FindSimilarNotes(t *testing.T) {
 	db := setupTestDBForEmbedding(t)
 	repo := NewEmbeddingRepository(db)
-	noteRepo := NewNoteRepository(db)
+	noteRepo := NewNoteRepository(db, nil)
 
 	ctx := context.Background()
 
@@ -160,7 +160,7 @@ func TestEmbeddingRepository_FindSimilarNotes(t *testing.T) {
 		title, _ := note.NewTitle("Note " + string(rune('A'+i)))
 		content, _ := note.NewContent("Content " + string(rune('A'+i)))
 		metadata, _ := note.NewMetadata(nil)
-		notes[i] = note.NewNote(title, content, metadata)
+		notes[i] = note.NewNote(title, content, "star", metadata)
 		if err := noteRepo.Save(ctx, notes[i]); err != nil {
 			t.Fatalf("Save note %d failed: %v", i, err)
 		}
@@ -210,7 +210,7 @@ func TestEmbeddingRepository_FindSimilarNotes(t *testing.T) {
 func TestEmbeddingRepository_FindSimilarNotesNoEmbedding(t *testing.T) {
 	db := setupTestDBForEmbedding(t)
 	repo := NewEmbeddingRepository(db)
-	noteRepo := NewNoteRepository(db)
+	noteRepo := NewNoteRepository(db, nil)
 
 	ctx := context.Background()
 
@@ -218,7 +218,7 @@ func TestEmbeddingRepository_FindSimilarNotesNoEmbedding(t *testing.T) {
 	title, _ := note.NewTitle("No Embedding")
 	content, _ := note.NewContent("Test")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 	if err := noteRepo.Save(ctx, n); err != nil {
 		t.Fatalf("Save note failed: %v", err)
 	}

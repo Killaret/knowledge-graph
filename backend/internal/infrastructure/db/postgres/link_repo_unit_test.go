@@ -158,7 +158,7 @@ func TestLinkRepository_FindByID_NotFound(t *testing.T) {
 }
 
 // TestLinkRepository_FindBySource тестирует поиск связей по source ID
-func TestLinkRepository_FindBySource(t *testing.T) {
+func TestLinkRepository_FindBySource_Unit(t *testing.T) {
 	db, mock, cleanup := setupMockDBForLink(t)
 	defer cleanup()
 
@@ -343,7 +343,7 @@ func TestLinkRepository_Delete(t *testing.T) {
 }
 
 // TestLinkRepository_DeleteBySource тестирует удаление всех связей по source ID
-func TestLinkRepository_DeleteBySource(t *testing.T) {
+func TestLinkRepository_DeleteBySource_Unit(t *testing.T) {
 	db, mock, cleanup := setupMockDBForLink(t)
 	defer cleanup()
 
