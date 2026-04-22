@@ -26,7 +26,7 @@ func (NoteModel) TableName() string {
 
 // LinkModel — связь между заметками
 type LinkModel struct {
-	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
+	ID           uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:source_id"`
 	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:target_id"`
 	LinkType     string         `gorm:"default:'reference';column:link_type"`

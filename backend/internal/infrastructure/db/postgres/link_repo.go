@@ -9,9 +9,13 @@ import (
 	"knowledge-graph/internal/domain/link"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+// ErrDuplicateLink возвращается при попытке создать дубликат связи
+var ErrDuplicateLink = errors.New("link of this type already exists between these notes")
 
 type LinkRepository struct {
 	db *gorm.DB
@@ -33,6 +37,10 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
 			log.Printf("[LinkRepository.Save] Create failed: id=%s source=%s target=%s error=%v",
 				model.ID, model.SourceNoteID, model.TargetNoteID, err)
+			// Проверяем на нарушение уникального ограничения (PostgreSQL код 23505)
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+				return ErrDuplicateLink
+			}
 			return err
 		}
 		return nil

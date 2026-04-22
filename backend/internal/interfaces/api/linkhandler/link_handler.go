@@ -2,6 +2,7 @@ package linkhandler
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
@@ -119,6 +121,11 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
+		// Проверяем на дубликат связи
+		if errors.Is(err, postgres.ErrDuplicateLink) {
+			c.JSON(409, gin.H{"error": "link of this type already exists between these notes"})
+			return
+		}
 		c.JSON(500, gin.H{"error": "failed to save link", "details": err.Error()})
 		return
 	}

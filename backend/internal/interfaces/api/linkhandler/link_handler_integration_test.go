@@ -45,6 +45,13 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	err := s.db.AutoMigrate(models...)
 	s.Require().NoError(err, "failed to migrate models")
 
+	// Применяем миграцию для уникального ограничения
+	err = s.db.Exec(`
+		ALTER TABLE links DROP CONSTRAINT IF EXISTS links_source_target_type_unique;
+		ALTER TABLE links ADD CONSTRAINT links_source_target_type_unique UNIQUE (source_id, target_id, link_type);
+	`).Error
+	s.Require().NoError(err, "failed to apply unique constraint migration")
+
 	// Создаем репозитории
 	s.noteRepo = postgres.NewNoteRepository(s.db, nil)
 	s.linkRepo = postgres.NewLinkRepository(s.db)
@@ -165,9 +172,9 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MissingTargetNote() {
 	s.Contains(response["error"], "target note not found")
 }
 
-// TestCreateLink_MultipleSamePair - создание нескольких связей между одними заметками
-// В текущей схеме БД дубликаты разрешены (нет unique constraint на source_id + target_id)
-func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MultipleSamePair() {
+// TestCreateLink_Duplicate - проверка отклонения дубликата связи (409 Conflict)
+// После добавления unique constraint на (source_note_id, target_note_id, link_type)
+func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	source := s.createTestNote("Source Note", "content", "star")
 	target := s.createTestNote("Target Note", "content", "planet")
 
@@ -178,7 +185,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MultipleSamePair() {
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
-	// Создаем первую связь
+	// Создаем первую связь - успех
 	w1 := httptest.NewRecorder()
 	req1, _ := http.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
 	req1.Header.Set("Content-Type", "application/json")
@@ -188,25 +195,21 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MultipleSamePair() {
 	var resp1 map[string]interface{}
 	err := json.Unmarshal(w1.Body.Bytes(), &resp1)
 	s.NoError(err)
-	linkID1 := resp1["id"].(string)
+	s.NotEmpty(resp1["id"])
 
-	// Создаем вторую связь (в текущей схеме дубликаты разрешены)
+	// Пытаемся создать дубликат - ожидаем 409 Conflict
 	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
 	req2.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w2, req2)
 
-	// В текущей реализации API позволяет создавать несколько связей
-	// между одними заметками (нет unique constraint)
-	s.Equal(201, w2.Code)
+	// После добавления unique constraint ожидаем 409 Conflict
+	s.Equal(409, w2.Code)
 
 	var resp2 map[string]interface{}
 	err = json.Unmarshal(w2.Body.Bytes(), &resp2)
 	s.NoError(err)
-	linkID2 := resp2["id"].(string)
-
-	// ID должны быть разными
-	s.NotEqual(linkID1, linkID2)
+	s.Contains(resp2["error"], "already exists")
 }
 
 // TestCreateLink_InvalidJSON - невалидный JSON
