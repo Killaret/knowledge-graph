@@ -6,11 +6,13 @@
   import type { Note, Suggestion } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   import BackButton from '$lib/components/BackButton.svelte';
+  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
   let loading = $state(true);
   let error = $state('');
+  let editModalOpen = $state(false);
 
   function getRouteId(): string {
     const id = $page.params.id;
@@ -55,10 +57,16 @@
     <div class="meta">Created: {new Date(note.created_at).toLocaleString()}</div>
     <div class="content">{note.content}</div>
     <div class="actions">
-      <a href={`/notes/${note.id}/edit`}>Edit</a>
+      <button onclick={() => editModalOpen = true} class="edit-btn">Edit</button>
       <button onclick={handleDelete}>Delete</button>
       <a href={`/graph/3d/${note.id}`} class="graph-link">✨ Show constellation</a>
     </div>
+
+    <EditNoteModal
+      bind:open={editModalOpen}
+      noteId={note.id}
+      onSuccess={(updatedNote) => note = updatedNote}
+    />
 
     {#if suggestions.length}
       <h2>Similar notes</h2>
@@ -75,6 +83,24 @@
   .note-container { max-width: 800px; margin: 0 auto; }
   .content { white-space: pre-wrap; margin: 1rem 0; }
   .actions { display: flex; gap: 1rem; margin: 1rem 0; }
+  .actions button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #f5f5f5;
+  }
+  .actions button:hover {
+    background: #e5e5e5;
+  }
+  .edit-btn {
+    background: #4a90d9 !important;
+    color: white;
+    border-color: #4a90d9 !important;
+  }
+  .edit-btn:hover {
+    background: #357abd !important;
+  }
   .suggestions li { margin-bottom: 0.5rem; }
   .score { margin-left: 1rem; color: #666; font-size: 0.9rem; }
   .error { color: red; }

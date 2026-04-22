@@ -6,6 +6,7 @@
   import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
+  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
 
   let notes: Note[] = $state([]);
@@ -14,6 +15,8 @@
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
   let showFullGraph = $state(false); // По умолчанию локальный вид
+  let showEditModal = $state(false);
+  let noteToEdit: string | null = $state(null);
 
   async function loadGraphData() {
     loading = true;
@@ -121,12 +124,20 @@
   <NoteSidePanel 
     nodeId={selectedNodeId}
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => goto(`/notes/${id}/edit`)}
+    onEdit={(id) => { noteToEdit = id; showEditModal = true; }}
     onDelete={() => {
       selectedNodeId = null;
       // Reload graph
       window.location.reload();
     }}
+  />
+{/if}
+
+{#if noteToEdit}
+  <EditNoteModal 
+    bind:open={showEditModal}
+    noteId={noteToEdit}
+    onSuccess={() => { showEditModal = false; noteToEdit = null; window.location.reload(); }}
   />
 {/if}
 

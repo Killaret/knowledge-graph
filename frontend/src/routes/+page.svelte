@@ -5,6 +5,7 @@
   import FloatingControls from '$lib/components/FloatingControls.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
+  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
@@ -18,6 +19,8 @@
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
   let showCreateModal = $state(false);
+  let showEditModal = $state(false);
+  let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
@@ -404,7 +407,7 @@
   <NoteSidePanel 
     nodeId={selectedNodeId} 
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => goto(`/notes/${id}/edit`)}
+    onEdit={(id) => { noteToEdit = id; showEditModal = true; }}
     onDelete={handleDeleteRequest}
   />
 {/if}
@@ -414,6 +417,15 @@
   bind:open={showCreateModal}
   onSuccess={handleNoteCreated}
 />
+
+<!-- Edit Note Modal -->
+{#if noteToEdit}
+  <EditNoteModal 
+    bind:open={showEditModal}
+    noteId={noteToEdit}
+    onSuccess={() => { showEditModal = false; noteToEdit = null; }}
+  />
+{/if}
 
 <!-- Confirm Modal for delete -->
 <ConfirmModal

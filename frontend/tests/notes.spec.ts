@@ -39,7 +39,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     // The UI list may not refresh correctly until backend is fixed
   });
 
-  test('should edit a note', async ({ page, request }) => {
+  test('should edit a note via modal', async ({ page, request }) => {
     // Create a note via API first using helper
     const timestamp = Date.now();
     const note = await createNote(request, {
@@ -49,21 +49,32 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     });
     const noteId = note.id;
 
-    // Navigate to edit page directly
-    await page.goto(`/notes/${noteId}/edit`);
+    // Navigate to note page
+    await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(1000);
-    
-    // Update note
-    await page.waitForSelector('input[name="title"]', { timeout: 5000 });
-    await page.fill('input[name="title"]', 'Edited ' + timestamp);
-    await page.fill('textarea[name="content"]', 'Updated content');
-    await page.click('button[type="submit"]');
-    
-    // Wait for redirect to note page
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    await page.waitForURL(`${baseUrl}/notes/${noteId}`, { timeout: 5000 });
 
-    // Verify via API
+    // Click Edit button to open modal
+    await page.click('button.edit-btn');
+    await page.waitForTimeout(500);
+
+    // Wait for modal to open
+    await page.waitForSelector('.modal[role="dialog"]', { timeout: 5000 });
+
+    // Update note in modal
+    await page.waitForSelector('#edit-note-title', { timeout: 5000 });
+    await page.fill('#edit-note-title', 'Edited ' + timestamp);
+    await page.fill('#edit-note-content', 'Updated content');
+
+    // Save changes
+    await page.click('[data-testid="edit-save-btn"]');
+
+    // Wait for modal to close
+    await page.waitForTimeout(1000);
+
+    // Verify modal is closed
+    await expect(page.locator('.modal[role="dialog"]')).not.toBeVisible();
+
+    // Verify via API that note was updated
     const updatedNote = await request.get(`${getBackendUrl()}/notes/${noteId}`);
     const noteData = await updatedNote.json();
     expect(noteData.title).toBe('Edited ' + timestamp);
