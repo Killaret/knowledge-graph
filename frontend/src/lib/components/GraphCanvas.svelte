@@ -216,7 +216,14 @@
       console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
     }
     
+    console.log('[GraphCanvas] Valid links for simulation:', validLinks.length);
+    
     const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+
+    // Stop existing simulation if any
+    if (simulation) {
+      simulation.stop();
+    }
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
       .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
@@ -224,11 +231,24 @@
       .force('center', d3Force.forceCenter(width/2, height/2))
       .force('collision', d3Force.forceCollide().radius(40))
       .alphaDecay(0.02)
-      .on('tick', () => draw());
+      .on('tick', () => {
+        console.log('[GraphCanvas] Tick callback, nodes count:', simulation.nodes().length);
+        draw();
+      });
 
-    // Async warmup - let the simulation run naturally
+    // Warmup: run simulation synchronously for initial positioning
+    console.log('[GraphCanvas] Starting warmup...');
+    for (let i = 0; i < 100; i++) {
+      simulation.tick();
+    }
+    console.log('[GraphCanvas] Warmup complete, alpha:', simulation.alpha());
+    
+    // Then start the animation
     simulation.alpha(1).restart();
-    console.log('[GraphCanvas] Simulation initialized with async warmup');
+    console.log('[GraphCanvas] Simulation restarted for animation');
+    
+    // Initial draw after warmup
+    draw();
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -334,7 +354,23 @@
   }
 
   function draw() {
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[GraphCanvas] draw() - no ctx');
+      return;
+    }
+    if (!simulation) {
+      console.log('[GraphCanvas] draw() - no simulation');
+      return;
+    }
+    
+    const simNodes = simulation.nodes();
+    console.log('[GraphCanvas] draw() called, nodes:', simNodes.length, 'links:', links.length);
+    
+    if (simNodes.length === 0) {
+      console.log('[GraphCanvas] draw() - no nodes to draw');
+      return;
+    }
+    
     ctx.clearRect(0, 0, width, height);
     ctx.save();
     ctx.translate(transform.x, transform.y);
