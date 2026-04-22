@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { filterValidLinks } from '$lib/utils/graphUtils';
+  import * as d3Force from 'd3-force';
 
   const { 
     nodes, 
@@ -61,7 +62,6 @@
   let animationId: number;
   const angles: Map<string, number> = new Map();
   const speeds: Map<string, number> = new Map();
-  let d3Force: typeof import('d3-force') | null = null;
 
   const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
@@ -71,41 +71,39 @@
   onMount(() => {
     if (!browser) return;
     
-    // Dynamic import for SSR safety
     let cleanup = () => {};
     
-    import('d3-force').then(d3 => {
-      d3Force = d3;
-      ctx = canvas.getContext('2d')!;
+    // SSR-safe: d3-force imported statically but only used in browser
+    ctx = canvas.getContext('2d')!;
+    resize();
+    
+    // Use ResizeObserver for better container size tracking
+    const resizeObserver = new ResizeObserver(() => {
+      console.log('[GraphCanvas] ResizeObserver triggered');
       resize();
-      // Use ResizeObserver for better container size tracking
-      const resizeObserver = new ResizeObserver(() => {
-        console.log('[GraphCanvas] ResizeObserver triggered');
-        resize();
-      });
-      if (canvas.parentElement) {
-        resizeObserver.observe(canvas.parentElement);
-      }
-      
-      // Delayed resize to ensure container has settled dimensions
-      setTimeout(() => {
-        console.log('[GraphCanvas] Delayed resize check');
-        resize();
-        if (nodes.length > 0 && !simulation) {
-          console.log('[GraphCanvas] Starting delayed simulation');
-          startSimulation();
-        }
-      }, 100);
-      
-      startSimulation();
-      startAnimation();
-      
-      cleanup = () => {
-        resizeObserver.disconnect();
-        if (simulation) simulation.stop();
-        cancelAnimationFrame(animationId);
-      };
     });
+    if (canvas.parentElement) {
+      resizeObserver.observe(canvas.parentElement);
+    }
+    
+    // Delayed resize to ensure container has settled dimensions
+    setTimeout(() => {
+      console.log('[GraphCanvas] Delayed resize check');
+      resize();
+      if (nodes.length > 0 && !simulation) {
+        console.log('[GraphCanvas] Starting delayed simulation');
+        startSimulation();
+      }
+    }, 100);
+    
+    startSimulation();
+    startAnimation();
+    
+    cleanup = () => {
+      resizeObserver.disconnect();
+      if (simulation) simulation.stop();
+      cancelAnimationFrame(animationId);
+    };
     
     return () => cleanup();
   });
@@ -119,7 +117,7 @@
     
     console.log('[GraphCanvas] $effect triggered:', { nodes: nodes.length, links: links.length, dataKey: dataKey.slice(0, 50) });
     
-    if (d3Force) {
+    if (browser) {
       if (nodes.length === 0) {
         console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
         if (simulation) {

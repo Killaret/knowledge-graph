@@ -68,8 +68,8 @@ const createMockSimulation = () => {
 
 let currentMockSimulation = createMockSimulation();
 
-// Создаем объект модуля d3-force
-const createD3ForceModule = () => ({
+// Мокаем d3-force статически
+vi.mock('d3-force', () => ({
   forceSimulation: vi.fn().mockImplementation((nodes?: any[]) => {
     currentMockSimulation = createMockSimulation();
     if (nodes) {
@@ -90,19 +90,6 @@ const createD3ForceModule = () => ({
   forceManyBody: vi.fn().mockReturnValue({ strength: vi.fn().mockReturnThis() }),
   forceCenter: vi.fn().mockReturnThis(),
   forceCollide: vi.fn().mockReturnValue({ radius: vi.fn().mockReturnThis() })
-});
-
-let d3ForceModule = createD3ForceModule();
-
-// Мокаем статический импорт
-vi.mock('d3-force', () => d3ForceModule);
-
-// Мокаем динамический импорт через vi.stubGlobal
-vi.stubGlobal('import', vi.fn().mockImplementation((module: string) => {
-  if (module === 'd3-force') {
-    return Promise.resolve(d3ForceModule);
-  }
-  return Promise.reject(new Error(`Unknown module: ${module}`));
 }));
 
 describe('GraphCanvas', () => {
