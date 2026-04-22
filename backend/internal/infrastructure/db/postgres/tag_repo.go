@@ -112,3 +112,18 @@ func (r *TagRepository) FindAll(ctx context.Context) ([]*TagModel, error) {
 	err := r.db.WithContext(ctx).Find(&tags).Error
 	return tags, err
 }
+
+// IsTagAssignedToNote проверяет, привязан ли тег к заметке
+func (r *TagRepository) IsTagAssignedToNote(ctx context.Context, noteID, tagID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&NoteTagModel{}).
+		Where("note_id = ? AND tag_id = ?", noteID, tagID).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// GetTagsByNoteID возвращает теги заметки (алиас для GetTagsForNote)
+func (r *TagRepository) GetTagsByNoteID(ctx context.Context, noteID uuid.UUID) ([]*TagModel, error) {
+	return r.GetTagsForNote(ctx, noteID)
+}
