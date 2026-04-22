@@ -37,7 +37,10 @@ vi.mock('$app/environment', () => ({
 vi.mock('$lib/three/core/sceneSetup', () => ({
   initScene: vi.fn().mockReturnValue({
     scene: { add: vi.fn() },
-    camera: { position: { set: vi.fn() } }
+    camera: { position: { set: vi.fn() } },
+    controls: { update: vi.fn(), autoRotate: false },
+    labelRenderer: { render: vi.fn(), setSize: vi.fn() },
+    renderer: { render: vi.fn(), setSize: vi.fn() }
   }),
   setFogDensity: vi.fn()
 }));

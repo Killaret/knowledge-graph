@@ -1,4 +1,83 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Создаем мок состояние через vi.hoisted
+const mockState = vi.hoisted(() => ({
+  simulationNodes: [] as any[],
+  simulationLinks: [] as any[],
+  tickCallback: null as (() => void) | null,
+  stopCallback: null as (() => void) | null,
+  createSimulation: () => ({
+    nodes: vi.fn().mockImplementation((nodes?: any[]) => {
+      if (nodes) {
+        mockState.simulationNodes = nodes.map((n: any, i: number) => ({
+          ...n,
+          x: 400 + i * 50,
+          y: 300 + i * 30
+        }));
+      }
+      return mockState.simulationNodes;
+    }),
+    force: vi.fn().mockReturnThis(),
+    alphaDecay: vi.fn().mockReturnThis(),
+    on: vi.fn().mockImplementation((event: string, callback: () => void) => {
+      if (event === 'tick') {
+        mockState.tickCallback = callback;
+      }
+      return mockState.currentSimulation;
+    }),
+    alpha: vi.fn().mockReturnThis(),
+    restart: vi.fn().mockImplementation(() => {
+      setTimeout(() => {
+        if (mockState.tickCallback) {
+          mockState.simulationNodes = mockState.simulationNodes.map((n: any, i: number) => ({
+            ...n,
+            x: n.x + 10 + i * 5,
+            y: n.y + 15 + i * 3
+          }));
+          mockState.tickCallback();
+        }
+      }, 10);
+      return mockState.currentSimulation;
+    }),
+    stop: vi.fn().mockImplementation(() => {
+      mockState.stopCallback?.();
+      mockState.tickCallback = null;
+      return mockState.currentSimulation;
+    })
+  }),
+  currentSimulation: null as any
+}));
+
+// Мокаем d3-force статически
+vi.mock('d3-force', () => ({
+  forceSimulation: vi.fn().mockImplementation((nodes?: any[]) => {
+    mockState.currentSimulation = mockState.createSimulation();
+    if (nodes) {
+      mockState.currentSimulation.nodes(nodes);
+    }
+    return mockState.currentSimulation;
+  }),
+  forceLink: vi.fn().mockImplementation((links?: any[]) => {
+    if (links) {
+      mockState.simulationLinks = links;
+    }
+    return {
+      id: vi.fn().mockReturnThis(),
+      distance: vi.fn().mockReturnThis(),
+      strength: vi.fn().mockReturnThis()
+    };
+  }),
+  forceManyBody: vi.fn().mockReturnValue({ strength: vi.fn().mockReturnThis() }),
+  forceCenter: vi.fn().mockReturnThis(),
+  forceCollide: vi.fn().mockReturnValue({ radius: vi.fn().mockReturnThis() })
+}));
+
+// Экспортируем для использования в тестах
+const simulationNodes = mockState.simulationNodes;
+const simulationLinks = mockState.simulationLinks;
+const tickCallback = mockState.tickCallback;
+const stopCallback = mockState.stopCallback;
+
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import GraphCanvas from './GraphCanvas.svelte';
@@ -11,85 +90,6 @@ vi.mock('$app/environment', () => ({
 // Мокаем $app/navigation
 vi.mock('$app/navigation', () => ({
   goto: vi.fn()
-}));
-
-// Хранилище для симуляции и колбэка tick
-let simulationNodes: any[] = [];
-let simulationLinks: any[] = [];
-let tickCallback: (() => void) | null = null;
-let stopCallback: (() => void) | null = null;
-
-// Мокаем d3-force с интерактивной симуляцией
-const createMockSimulation = () => {
-  const simulation = {
-    nodes: vi.fn().mockImplementation((nodes?: any[]) => {
-      if (nodes) {
-        // Инициализация узлов с начальными координатами
-        simulationNodes = nodes.map((n, i) => ({
-          ...n,
-          x: 400 + i * 50, // Фиксированные координаты для теста
-          y: 300 + i * 30
-        }));
-      }
-      return simulationNodes;
-    }),
-    force: vi.fn().mockReturnThis(),
-    alphaDecay: vi.fn().mockReturnThis(),
-    on: vi.fn().mockImplementation((event: string, callback: () => void) => {
-      if (event === 'tick') {
-        tickCallback = callback;
-      }
-      return simulation;
-    }),
-    alpha: vi.fn().mockReturnThis(),
-    restart: vi.fn().mockImplementation(() => {
-      // Эмулируем несколько тиков симуляции
-      setTimeout(() => {
-        if (tickCallback) {
-          // Обновляем координаты узлов
-          simulationNodes = simulationNodes.map((n, i) => ({
-            ...n,
-            x: n.x + 10 + i * 5,
-            y: n.y + 15 + i * 3
-          }));
-          tickCallback();
-        }
-      }, 10);
-      return simulation;
-    }),
-    stop: vi.fn().mockImplementation(() => {
-      stopCallback?.();
-      tickCallback = null;
-      return simulation;
-    })
-  };
-  return simulation;
-};
-
-let currentMockSimulation = createMockSimulation();
-
-// Мокаем d3-force статически
-vi.mock('d3-force', () => ({
-  forceSimulation: vi.fn().mockImplementation((nodes?: any[]) => {
-    currentMockSimulation = createMockSimulation();
-    if (nodes) {
-      currentMockSimulation.nodes(nodes);
-    }
-    return currentMockSimulation;
-  }),
-  forceLink: vi.fn().mockImplementation((links?: any[]) => {
-    if (links) {
-      simulationLinks = links;
-    }
-    return { 
-      id: vi.fn().mockReturnThis(), 
-      distance: vi.fn().mockReturnThis(), 
-      strength: vi.fn().mockReturnThis() 
-    };
-  }),
-  forceManyBody: vi.fn().mockReturnValue({ strength: vi.fn().mockReturnThis() }),
-  forceCenter: vi.fn().mockReturnThis(),
-  forceCollide: vi.fn().mockReturnValue({ radius: vi.fn().mockReturnThis() })
 }));
 
 describe('GraphCanvas', () => {
@@ -110,11 +110,12 @@ describe('GraphCanvas', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    simulationNodes = [];
-    simulationLinks = [];
-    tickCallback = null;
-    stopCallback = null;
+    mockState.simulationNodes = [];
+    mockState.simulationLinks = [];
+    mockState.tickCallback = null;
+    mockState.stopCallback = null;
     drawCalls = [];
+    mockState.currentSimulation = mockState.createSimulation();
     
     // Мокаем canvas API с отслеживанием вызовов
     mockCtx = {
@@ -239,10 +240,10 @@ describe('GraphCanvas', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Проверяем что симуляция была создана с узлами
-    expect(simulationNodes.length).toBe(3);
+    expect(mockState.simulationNodes.length).toBe(3);
     
     // Проверяем что у каждого узла есть координаты
-    simulationNodes.forEach((node, i) => {
+    mockState.simulationNodes.forEach((node, i) => {
       expect(node.x).toBeDefined();
       expect(node.y).toBeDefined();
       expect(typeof node.x).toBe('number');
@@ -266,10 +267,10 @@ describe('GraphCanvas', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Проверяем что количество узлов в симуляции соответствует переданным
-    expect(simulationNodes.length).toBe(mockNodes.length);
+    expect(mockState.simulationNodes.length).toBe(mockNodes.length);
     
     // Проверяем что каждый узел имеет id из mockNodes
-    const nodeIds = simulationNodes.map(n => n.id);
+    const nodeIds = mockState.simulationNodes.map(n => n.id);
     mockNodes.forEach(node => {
       expect(nodeIds).toContain(node.id);
     });
@@ -287,8 +288,8 @@ describe('GraphCanvas', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Ждем тик симуляции для отрисовки связей
-    if (tickCallback) {
-      tickCallback();
+    if (mockState.tickCallback) {
+      mockState.tickCallback();
     }
 
     // Проверяем что были вызовы lineTo (для рисования связей)
@@ -310,16 +311,16 @@ describe('GraphCanvas', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Ждем тик симуляции
-    if (tickCallback) {
-      tickCallback();
+    if (mockState.tickCallback) {
+      mockState.tickCallback();
     }
 
     // Очищаем вызовы до проверки
     drawCalls = [];
 
     // Симулируем еще один тик
-    if (tickCallback) {
-      tickCallback();
+    if (mockState.tickCallback) {
+      mockState.tickCallback();
     }
 
     // При отсутствии связей не должно быть вызовов moveTo/lineTo для связей
@@ -335,7 +336,7 @@ describe('GraphCanvas', () => {
     const onNodeClick = vi.fn();
     
     // Создаем симуляцию с узлами с координатами
-    simulationNodes = [
+    mockState.simulationNodes = [
       { id: '1', title: 'Node 1', type: 'star', x: 100, y: 100 },
       { id: '2', title: 'Node 2', type: 'planet', x: 200, y: 200 }
     ];
@@ -511,7 +512,7 @@ describe('GraphCanvas', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Проверяем что все узлы имеют координаты в пределах canvas
-    simulationNodes.forEach(node => {
+    mockState.simulationNodes.forEach((node: any) => {
       expect(node.x).toBeGreaterThanOrEqual(0);
       expect(node.x).toBeLessThanOrEqual(canvasWidth);
       expect(node.y).toBeGreaterThanOrEqual(0);
@@ -519,7 +520,7 @@ describe('GraphCanvas', () => {
     });
 
     // Проверяем что координаты валидны (не NaN, не Infinity)
-    simulationNodes.forEach(node => {
+    mockState.simulationNodes.forEach((node: any) => {
       expect(Number.isFinite(node.x)).toBe(true);
       expect(Number.isFinite(node.y)).toBe(true);
       expect(Number.isNaN(node.x)).toBe(false);
