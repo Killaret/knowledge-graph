@@ -3,6 +3,17 @@ import { render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import Graph3D from './Graph3D.svelte';
 
+// Хранилище состояния моков для сброса между тестами
+const mockState = vi.hoisted(() => ({
+  simulation: {
+    tick: vi.fn(),
+    nodes: vi.fn().mockReturnValue([]),
+    alpha: vi.fn().mockReturnValue(0),
+    stop: vi.fn(),
+    on: vi.fn().mockReturnThis()
+  }
+}));
+
 // Мокаем Three.js
 vi.mock('three', () => ({
   Scene: vi.fn().mockImplementation(() => ({
@@ -46,11 +57,24 @@ vi.mock('$lib/three/core/sceneSetup', () => ({
 }));
 
 vi.mock('$lib/three/simulation/forceSimulation', () => ({
-  createSimulation: vi.fn().mockReturnValue({
-    tick: vi.fn(),
-    nodes: vi.fn().mockReturnValue([]),
-    alpha: vi.fn().mockReturnValue(0),
-    stop: vi.fn()
+  createSimulation: vi.fn().mockImplementation(() => {
+    // Создаем объект симуляции с методом on, который сохраняет колбэки
+    const simulation = {
+      tick: vi.fn(),
+      nodes: vi.fn().mockReturnValue([]),
+      alpha: vi.fn().mockReturnValue(0),
+      stop: vi.fn(),
+      _endCallback: null as (() => void) | null,
+      on: vi.fn().mockImplementation(function(this: any, event: string, callback: () => void) {
+        if (event === 'end') {
+          this._endCallback = callback;
+          // Автоматически вызываем 'end' через небольшую задержку
+          setTimeout(() => callback(), 10);
+        }
+        return this;
+      })
+    };
+    return simulation;
   }),
   addNodesToSimulation: vi.fn()
 }));
@@ -82,6 +106,12 @@ describe('Graph3D', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Сбрасываем mockState
+    mockState.simulation.tick = vi.fn();
+    mockState.simulation.nodes = vi.fn().mockReturnValue([]);
+    mockState.simulation.alpha = vi.fn().mockReturnValue(0);
+    mockState.simulation.stop = vi.fn();
+    mockState.simulation.on = vi.fn().mockReturnThis();
     // Мокаем Web Animations API
     Element.prototype.animate = vi.fn().mockReturnValue({
       onfinish: vi.fn(),
@@ -189,12 +219,16 @@ describe('Graph3D', () => {
       links: [...mockData.links, { source: '2', target: '4' }]
     };
     
-    // Обновляем пропс
-    // @ts-ignore
-    component.$set({ data: newData });
-    
+    // Обновляем пропсы через re-render (Svelte 5 API)
+    render(Graph3D, {
+      props: {
+        data: newData,
+        centerNodeId: null
+      }
+    });
+
     await tick();
-    
+
     // Компонент должен обновиться без ошибок
     expect(document.querySelector('div')).toBeInTheDocument();
   });
@@ -235,10 +269,9 @@ describe('Graph3D', () => {
     await tick();
     await new Promise(resolve => setTimeout(resolve, 150));
 
-    // Проверяем что камера была создана с PerspectiveCamera
-    // и ей установлена позиция
-    const { PerspectiveCamera } = await import('three');
-    expect(PerspectiveCamera).toHaveBeenCalled();
+    // Проверяем что initScene был вызван (создание камеры происходит внутри)
+    const { initScene } = await import('$lib/three/core/sceneSetup');
+    expect(initScene).toHaveBeenCalled();
   });
 
   it('calls camera fit function when nodes change', async () => {
@@ -262,12 +295,14 @@ describe('Graph3D', () => {
       links: mockData.links
     };
 
-    // Обновляем пропсы
-    // @ts-ignore
-    component.$set({ data: newData });
+    // Обновляем пропсы через re-render (Svelte 5 API)
+    render(Graph3D, {
+      props: {
+        data: newData
+      }
+    });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Проверяем что компонент обновился без ошибок
     expect(document.querySelector('div')).toBeInTheDocument();

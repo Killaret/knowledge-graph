@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { filterValidLinks } from '$lib/utils/graphUtils';
@@ -60,13 +60,14 @@
   let width = 800;
   let height = 600;
   let animationId: number;
+  let simulation: any;
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
   const angles: Map<string, number> = new Map();
   const speeds: Map<string, number> = new Map();
 
   const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
-  let simulation: any = null;
 
   onMount(() => {
     if (!browser) return;
@@ -87,7 +88,7 @@
     }
     
     // Delayed resize to ensure container has settled dimensions
-    setTimeout(() => {
+    resizeTimer = setTimeout(() => {
       console.log('[GraphCanvas] Delayed resize check');
       resize();
       if (nodes.length > 0 && !simulation) {
@@ -103,6 +104,7 @@
       resizeObserver.disconnect();
       if (simulation) simulation.stop();
       cancelAnimationFrame(animationId);
+      if (resizeTimer) clearTimeout(resizeTimer);
     };
     
     return () => cleanup();

@@ -57,3 +57,34 @@ vi.mock('three', async () => {
 		}))
 	};
 });
+
+// Мокируем Web Animations API (Element.prototype.animate)
+if (typeof Element !== 'undefined') {
+	Element.prototype.animate = vi.fn().mockReturnValue({
+		finished: Promise.resolve(),
+		cancel: vi.fn(),
+		pause: vi.fn(),
+		play: vi.fn(),
+	} as any);
+}
+
+// Мокируем requestAnimationFrame/cancelAnimationFrame
+global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+	return setTimeout(() => callback(performance.now()), 16) as unknown as number;
+});
+global.cancelAnimationFrame = vi.fn((id: number) => {
+	clearTimeout(id);
+});
+
+// Мокируем CSS2DRenderer и CSS2DObject из three/examples/jsm
+vi.mock('three/examples/jsm/renderers/CSS2DRenderer.js', () => ({
+	CSS2DRenderer: vi.fn().mockImplementation(() => ({
+		setSize: vi.fn(),
+		render: vi.fn(),
+		domElement: document.createElement('div')
+	})),
+	CSS2DObject: vi.fn().mockImplementation((element: HTMLElement) => ({
+		element,
+		position: { set: vi.fn() }
+	}))
+}));

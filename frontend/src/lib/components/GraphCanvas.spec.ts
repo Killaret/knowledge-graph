@@ -1,86 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Создаем мок состояние через vi.hoisted
-const mockState = vi.hoisted(() => ({
-  simulationNodes: [] as any[],
-  simulationLinks: [] as any[],
-  tickCallback: null as (() => void) | null,
-  stopCallback: null as (() => void) | null,
-  createSimulation: () => ({
-    nodes: vi.fn().mockImplementation((nodes?: any[]) => {
-      if (nodes) {
-        mockState.simulationNodes = nodes.map((n: any, i: number) => ({
-          ...n,
-          x: 400 + i * 50,
-          y: 300 + i * 30
-        }));
-      }
-      return mockState.simulationNodes;
-    }),
-    force: vi.fn().mockReturnThis(),
-    alphaDecay: vi.fn().mockReturnThis(),
-    on: vi.fn().mockImplementation((event: string, callback: () => void) => {
-      if (event === 'tick') {
-        mockState.tickCallback = callback;
-      }
-      return mockState.currentSimulation;
-    }),
-    alpha: vi.fn().mockReturnThis(),
-    restart: vi.fn().mockImplementation(() => {
-      setTimeout(() => {
-        if (mockState.tickCallback) {
-          mockState.simulationNodes = mockState.simulationNodes.map((n: any, i: number) => ({
-            ...n,
-            x: n.x + 10 + i * 5,
-            y: n.y + 15 + i * 3
-          }));
-          mockState.tickCallback();
-        }
-      }, 10);
-      return mockState.currentSimulation;
-    }),
-    stop: vi.fn().mockImplementation(() => {
-      mockState.stopCallback?.();
-      mockState.tickCallback = null;
-      return mockState.currentSimulation;
-    })
-  }),
-  currentSimulation: null as any
-}));
-
-// Мокаем d3-force статически
-vi.mock('d3-force', () => ({
-  forceSimulation: vi.fn().mockImplementation((nodes?: any[]) => {
-    mockState.currentSimulation = mockState.createSimulation();
-    if (nodes) {
-      mockState.currentSimulation.nodes(nodes);
-    }
-    return mockState.currentSimulation;
-  }),
-  forceLink: vi.fn().mockImplementation((links?: any[]) => {
-    if (links) {
-      mockState.simulationLinks = links;
-    }
-    return {
-      id: vi.fn().mockReturnThis(),
-      distance: vi.fn().mockReturnThis(),
-      strength: vi.fn().mockReturnThis()
-    };
-  }),
-  forceManyBody: vi.fn().mockReturnValue({ strength: vi.fn().mockReturnThis() }),
-  forceCenter: vi.fn().mockReturnThis(),
-  forceCollide: vi.fn().mockReturnValue({ radius: vi.fn().mockReturnThis() })
-}));
-
-// Экспортируем для использования в тестах
-const simulationNodes = mockState.simulationNodes;
-const simulationLinks = mockState.simulationLinks;
-const tickCallback = mockState.tickCallback;
-const stopCallback = mockState.stopCallback;
-
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import GraphCanvas from './GraphCanvas.svelte';
+import { mockState } from '../../__mocks__/d3-force';
 
 // Мокаем $app/environment
 vi.mock('$app/environment', () => ({
@@ -108,8 +31,8 @@ describe('GraphCanvas', () => {
   let mockCtx: any;
   let drawCalls: { type: string; args: any[] }[] = [];
 
-  beforeEach(() => {
-    vi.useFakeTimers();
+  beforeEach(async () => {
+    vi.resetModules(); // Сбрасываем кэш модулей
     vi.clearAllMocks();
     mockState.simulationNodes = [];
     mockState.simulationLinks = [];
@@ -148,6 +71,7 @@ describe('GraphCanvas', () => {
       ellipse: vi.fn(),
       strokeRect: vi.fn(),
       fillRect: vi.fn(),
+      rotate: vi.fn(),
       fillText: vi.fn().mockImplementation((text: string, x: number, y: number) => {
         drawCalls.push({ type: 'fillText', args: [text, x, y] });
       }),
@@ -181,7 +105,6 @@ describe('GraphCanvas', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   it('renders canvas element', async () => {
@@ -398,14 +321,17 @@ describe('GraphCanvas', () => {
     await tick();
     await new Promise(resolve => setTimeout(resolve, 150));
 
-    // Обновляем пропсы
+    // Обновляем пропсы через re-render (Svelte 5 API)
     const newNodes = [...mockNodes, { id: '4', title: 'Node 4', type: 'galaxy' }];
     
-    // @ts-ignore - доступ к $set для обновления пропсов
-    component.$set?.({ nodes: newNodes });
+    render(GraphCanvas, {
+      props: {
+        nodes: newNodes,
+        links: mockLinks
+      }
+    });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Компонент должен обновиться без ошибок
     const canvas = document.querySelector('canvas');
