@@ -12,6 +12,9 @@ require (
 	github.com/pgvector/pgvector-go v0.2.0
 	github.com/redis/go-redis/v9 v9.5.5
 	github.com/stretchr/testify v1.11.1
+	github.com/testcontainers/testcontainers-go v0.42.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
+	golang.org/x/time v0.15.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/postgres v1.5.6
 	gorm.io/gorm v1.25.12
@@ -82,13 +85,10 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.3 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	github.com/testcontainers/testcontainers-go v0.42.0 // indirect
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -105,7 +105,6 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
