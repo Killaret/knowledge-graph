@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import GraphCanvas from './GraphCanvas.svelte';
 
@@ -13,23 +13,96 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn()
 }));
 
-// Мокаем d3-force
-const mockSimulation = {
-  nodes: vi.fn().mockReturnValue([]),
-  force: vi.fn().mockReturnThis(),
-  alphaDecay: vi.fn().mockReturnThis(),
-  on: vi.fn().mockReturnThis(),
-  alpha: vi.fn().mockReturnThis(),
-  restart: vi.fn(),
-  stop: vi.fn()
+// Хранилище для симуляции и колбэка tick
+let simulationNodes: any[] = [];
+let simulationLinks: any[] = [];
+let tickCallback: (() => void) | null = null;
+let stopCallback: (() => void) | null = null;
+
+// Мокаем d3-force с интерактивной симуляцией
+const createMockSimulation = () => {
+  const simulation = {
+    nodes: vi.fn().mockImplementation((nodes?: any[]) => {
+      if (nodes) {
+        // Инициализация узлов с начальными координатами
+        simulationNodes = nodes.map((n, i) => ({
+          ...n,
+          x: 400 + i * 50, // Фиксированные координаты для теста
+          y: 300 + i * 30
+        }));
+      }
+      return simulationNodes;
+    }),
+    force: vi.fn().mockReturnThis(),
+    alphaDecay: vi.fn().mockReturnThis(),
+    on: vi.fn().mockImplementation((event: string, callback: () => void) => {
+      if (event === 'tick') {
+        tickCallback = callback;
+      }
+      return simulation;
+    }),
+    alpha: vi.fn().mockReturnThis(),
+    restart: vi.fn().mockImplementation(() => {
+      // Эмулируем несколько тиков симуляции
+      setTimeout(() => {
+        if (tickCallback) {
+          // Обновляем координаты узлов
+          simulationNodes = simulationNodes.map((n, i) => ({
+            ...n,
+            x: n.x + 10 + i * 5,
+            y: n.y + 15 + i * 3
+          }));
+          tickCallback();
+        }
+      }, 10);
+      return simulation;
+    }),
+    stop: vi.fn().mockImplementation(() => {
+      stopCallback?.();
+      tickCallback = null;
+      return simulation;
+    })
+  };
+  return simulation;
 };
 
-vi.mock('d3-force', () => ({
-  forceSimulation: vi.fn().mockReturnValue(mockSimulation),
-  forceLink: vi.fn().mockReturnValue({ id: vi.fn().mockReturnThis(), distance: vi.fn().mockReturnThis(), strength: vi.fn().mockReturnThis() }),
+let currentMockSimulation = createMockSimulation();
+
+// Создаем объект модуля d3-force
+const createD3ForceModule = () => ({
+  forceSimulation: vi.fn().mockImplementation((nodes?: any[]) => {
+    currentMockSimulation = createMockSimulation();
+    if (nodes) {
+      currentMockSimulation.nodes(nodes);
+    }
+    return currentMockSimulation;
+  }),
+  forceLink: vi.fn().mockImplementation((links?: any[]) => {
+    if (links) {
+      simulationLinks = links;
+    }
+    return { 
+      id: vi.fn().mockReturnThis(), 
+      distance: vi.fn().mockReturnThis(), 
+      strength: vi.fn().mockReturnThis() 
+    };
+  }),
   forceManyBody: vi.fn().mockReturnValue({ strength: vi.fn().mockReturnThis() }),
   forceCenter: vi.fn().mockReturnThis(),
   forceCollide: vi.fn().mockReturnValue({ radius: vi.fn().mockReturnThis() })
+});
+
+let d3ForceModule = createD3ForceModule();
+
+// Мокаем статический импорт
+vi.mock('d3-force', () => d3ForceModule);
+
+// Мокаем динамический импорт через vi.stubGlobal
+vi.stubGlobal('import', vi.fn().mockImplementation((module: string) => {
+  if (module === 'd3-force') {
+    return Promise.resolve(d3ForceModule);
+  }
+  return Promise.reject(new Error(`Unknown module: ${module}`));
 }));
 
 describe('GraphCanvas', () => {
@@ -44,28 +117,51 @@ describe('GraphCanvas', () => {
     { source: '2', target: '3', weight: 0.5, link_type: 'dependency' }
   ];
 
+  // Мок контекста canvas для отслеживания вызовов
+  let mockCtx: any;
+  let drawCalls: { type: string; args: any[] }[] = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    simulationNodes = [];
+    simulationLinks = [];
+    tickCallback = null;
+    stopCallback = null;
+    drawCalls = [];
     
-    // Мокаем canvas API
-    HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+    // Мокаем canvas API с отслеживанием вызовов
+    mockCtx = {
       clearRect: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
       translate: vi.fn(),
       scale: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
+      beginPath: vi.fn().mockImplementation(() => {
+        drawCalls.push({ type: 'beginPath', args: [] });
+      }),
+      moveTo: vi.fn().mockImplementation((x: number, y: number) => {
+        drawCalls.push({ type: 'moveTo', args: [x, y] });
+      }),
+      lineTo: vi.fn().mockImplementation((x: number, y: number) => {
+        drawCalls.push({ type: 'lineTo', args: [x, y] });
+      }),
+      stroke: vi.fn().mockImplementation(() => {
+        drawCalls.push({ type: 'stroke', args: [] });
+      }),
       setLineDash: vi.fn(),
-      arc: vi.fn(),
-      fill: vi.fn(),
+      arc: vi.fn().mockImplementation((x: number, y: number, r: number) => {
+        drawCalls.push({ type: 'arc', args: [x, y, r] });
+      }),
+      fill: vi.fn().mockImplementation(() => {
+        drawCalls.push({ type: 'fill', args: [] });
+      }),
       closePath: vi.fn(),
       ellipse: vi.fn(),
       strokeRect: vi.fn(),
       fillRect: vi.fn(),
-      fillText: vi.fn(),
+      fillText: vi.fn().mockImplementation((text: string, x: number, y: number) => {
+        drawCalls.push({ type: 'fillText', args: [text, x, y] });
+      }),
       measureText: vi.fn().mockReturnValue({ width: 50 }),
       font: '',
       textAlign: '',
@@ -75,7 +171,9 @@ describe('GraphCanvas', () => {
       fillStyle: '',
       shadowBlur: 0,
       shadowColor: ''
-    });
+    };
+
+    HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockCtx);
 
     // Мокаем ResizeObserver
     global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -85,7 +183,10 @@ describe('GraphCanvas', () => {
     }));
 
     // Мокаем requestAnimationFrame
-    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockImplementation((cb: FrameRequestCallback) => {
+      setTimeout(cb, 16);
+      return 1;
+    }));
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
   });
 
@@ -131,8 +232,6 @@ describe('GraphCanvas', () => {
     });
 
     await tick();
-    
-    // Ждем инициализации симуляции
     await new Promise(resolve => setTimeout(resolve, 150));
 
     expect(component).toBeDefined();
@@ -140,16 +239,119 @@ describe('GraphCanvas', () => {
     expect(canvas).toBeInTheDocument();
   });
 
+  it('renders nodes with coordinates from simulation', async () => {
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: []
+      }
+    });
+
+    await tick();
+    // Ждем инициализации симуляции и тика
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Проверяем что симуляция была создана с узлами
+    expect(simulationNodes.length).toBe(3);
+    
+    // Проверяем что у каждого узла есть координаты
+    simulationNodes.forEach((node, i) => {
+      expect(node.x).toBeDefined();
+      expect(node.y).toBeDefined();
+      expect(typeof node.x).toBe('number');
+      expect(typeof node.y).toBe('number');
+    });
+
+    // Проверяем что были вызовы отрисовки узлов (arc для кругов)
+    const arcCalls = drawCalls.filter(c => c.type === 'arc');
+    expect(arcCalls.length).toBeGreaterThan(0);
+  });
+
+  it('renders correct number of nodes', async () => {
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: []
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Проверяем что количество узлов в симуляции соответствует переданным
+    expect(simulationNodes.length).toBe(mockNodes.length);
+    
+    // Проверяем что каждый узел имеет id из mockNodes
+    const nodeIds = simulationNodes.map(n => n.id);
+    mockNodes.forEach(node => {
+      expect(nodeIds).toContain(node.id);
+    });
+  });
+
+  it('renders links between correct nodes', async () => {
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: mockLinks
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Ждем тик симуляции для отрисовки связей
+    if (tickCallback) {
+      tickCallback();
+    }
+
+    // Проверяем что были вызовы lineTo (для рисования связей)
+    const lineToCalls = drawCalls.filter(c => c.type === 'lineTo');
+    
+    // Должны быть вызовы lineTo для отрисовки связей
+    expect(lineToCalls.length).toBeGreaterThan(0);
+  });
+
+  it('does not render links when no links provided', async () => {
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: []
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Ждем тик симуляции
+    if (tickCallback) {
+      tickCallback();
+    }
+
+    // Очищаем вызовы до проверки
+    drawCalls = [];
+
+    // Симулируем еще один тик
+    if (tickCallback) {
+      tickCallback();
+    }
+
+    // При отсутствии связей не должно быть вызовов moveTo/lineTo для связей
+    // (только для отрисовки узлов)
+    const moveToCalls = drawCalls.filter(c => c.type === 'moveTo');
+    
+    // Если нет связей, moveTo не должен вызываться для линий
+    // (только arc для узлов)
+    expect(moveToCalls.length).toBe(0);
+  });
+
   it('calls onNodeClick when canvas is clicked on a node', async () => {
     const onNodeClick = vi.fn();
     
-    // Создаем симуляцию с узлами
-    const mockSimNodes = [
+    // Создаем симуляцию с узлами с координатами
+    simulationNodes = [
       { id: '1', title: 'Node 1', type: 'star', x: 100, y: 100 },
       { id: '2', title: 'Node 2', type: 'planet', x: 200, y: 200 }
     ];
-    
-    mockSimulation.nodes.mockReturnValue(mockSimNodes);
 
     render(GraphCanvas, {
       props: {
@@ -160,21 +362,24 @@ describe('GraphCanvas', () => {
     });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     const canvas = document.querySelector('canvas');
     expect(canvas).toBeInTheDocument();
 
-    // Симулируем клик на canvas
-    // Клик в позиции первого узла (с учетом transform)
+    // Симулируем клик на canvas в позиции первого узла
     await fireEvent.click(canvas!, { 
       clientX: 100, 
       clientY: 100 
     });
 
-    // onNodeClick должен был быть вызван
-    // Примечание: точное поведение зависит от реализации handleClick
-    expect(canvas).toBeInTheDocument();
+    // onNodeClick должен был быть вызван с данными узла
+    expect(onNodeClick).toHaveBeenCalled();
+    expect(onNodeClick).toHaveBeenCalledWith(expect.objectContaining({
+      id: '1',
+      title: 'Node 1',
+      type: 'star'
+    }));
   });
 
   it('applies correct cursor style', async () => {
