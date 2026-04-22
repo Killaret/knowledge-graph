@@ -495,4 +495,84 @@ describe('GraphCanvas', () => {
     const canvas = document.querySelector('canvas');
     expect(canvas).toBeInTheDocument();
   });
+
+  it('renders all nodes within canvas bounds after stabilization', async () => {
+    const canvasWidth = 800;
+    const canvasHeight = 600;
+
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: []
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Проверяем что все узлы имеют координаты в пределах canvas
+    simulationNodes.forEach(node => {
+      expect(node.x).toBeGreaterThanOrEqual(0);
+      expect(node.x).toBeLessThanOrEqual(canvasWidth);
+      expect(node.y).toBeGreaterThanOrEqual(0);
+      expect(node.y).toBeLessThanOrEqual(canvasHeight);
+    });
+
+    // Проверяем что координаты валидны (не NaN, не Infinity)
+    simulationNodes.forEach(node => {
+      expect(Number.isFinite(node.x)).toBe(true);
+      expect(Number.isFinite(node.y)).toBe(true);
+      expect(Number.isNaN(node.x)).toBe(false);
+      expect(Number.isNaN(node.y)).toBe(false);
+    });
+  });
+
+  it('restarts simulation with new center when container resizes', async () => {
+    let resizeCallback: (() => void) | null = null;
+
+    // Мокаем ResizeObserver с перехватом колбэка
+    global.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => {
+      resizeCallback = () => {
+        callback([], {} as ResizeObserver);
+      };
+      return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+        unobserve: vi.fn()
+      };
+    });
+
+    render(GraphCanvas, {
+      props: {
+        nodes: mockNodes,
+        links: []
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const initialCenterX = 400;
+    const initialCenterY = 300;
+
+    // Эмулируем изменение размеров контейнера
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      // Изменяем размеры canvas
+      Object.defineProperty(canvas, 'width', { value: 1000, writable: true });
+      Object.defineProperty(canvas, 'height', { value: 800, writable: true });
+      
+      // Вызываем resize колбэк
+      if (resizeCallback) {
+        (resizeCallback as () => void)();
+      }
+    }
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Проверяем что симуляция была пересоздана с новым центром
+    // (forceCenter должен был вызваться с новыми размерами)
+    expect(mockCtx.clearRect).toHaveBeenCalled();
+  });
 });

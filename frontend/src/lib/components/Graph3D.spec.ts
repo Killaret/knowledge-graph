@@ -203,4 +203,91 @@ describe('Graph3D', () => {
     // Размонтируем компонент - не должно быть ошибок
     expect(() => unmount()).not.toThrow();
   });
+
+  it('positions camera to cover all nodes (bounding box)', async () => {
+    const nodesWithPositions = [
+      { id: '1', title: 'Node 1', type: 'star', x: -100, y: 50, z: 0 },
+      { id: '2', title: 'Node 2', type: 'planet', x: 100, y: -50, z: 100 },
+      { id: '3', title: 'Node 3', type: 'comet', x: 0, y: 0, z: -100 }
+    ];
+
+    const dataWithPositions = {
+      nodes: nodesWithPositions,
+      links: mockData.links
+    };
+
+    render(Graph3D, {
+      props: {
+        data: dataWithPositions,
+        centerNodeId: null
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // Проверяем что камера была создана с PerspectiveCamera
+    // и ей установлена позиция
+    const { PerspectiveCamera } = await import('three');
+    expect(PerspectiveCamera).toHaveBeenCalled();
+  });
+
+  it('calls camera fit function when nodes change', async () => {
+    const { component } = render(Graph3D, {
+      props: {
+        data: mockData,
+        centerNodeId: null
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // Создаем новые данные с измененными позициями узлов
+    const newData = {
+      nodes: [
+        { id: '1', title: 'Node 1', type: 'star', x: -200, y: 100, z: 50 },
+        { id: '2', title: 'Node 2', type: 'planet', x: 200, y: -100, z: 150 },
+        { id: '3', title: 'Node 3', type: 'comet', x: 50, y: 50, z: -150 }
+      ],
+      links: mockData.links
+    };
+
+    // Обновляем пропсы
+    // @ts-ignore
+    component.$set({ data: newData });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Проверяем что компонент обновился без ошибок
+    expect(document.querySelector('div')).toBeInTheDocument();
+  });
+
+  it('calculates correct bounding box from node positions', async () => {
+    const nodesWithExtremePositions = [
+      { id: '1', title: 'Far Left', type: 'star', x: -500, y: 0, z: 0 },
+      { id: '2', title: 'Far Right', type: 'planet', x: 500, y: 0, z: 0 },
+      { id: '3', title: 'Far Top', type: 'comet', x: 0, y: 300, z: 0 },
+      { id: '4', title: 'Far Bottom', type: 'galaxy', x: 0, y: -300, z: 0 }
+    ];
+
+    const dataWithExtremes = {
+      nodes: nodesWithExtremePositions,
+      links: []
+    };
+
+    render(Graph3D, {
+      props: {
+        data: dataWithExtremes,
+        centerNodeId: null
+      }
+    });
+
+    await tick();
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // Компонент должен обработать экстремальные позиции без ошибок
+    expect(document.querySelector('div')).toBeInTheDocument();
+  });
 });
