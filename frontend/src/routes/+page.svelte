@@ -121,6 +121,19 @@
     try {
       // Always load full graph on main page
       const rawData = await getFullGraphData();
+      console.log('[+page] Raw data from API:', {
+        nodesCount: rawData.nodes.length,
+        linksCount: rawData.links.length,
+        sampleNode: rawData.nodes[0],
+        sampleLink: rawData.links[0]
+      });
+
+      // Transform nodes: backend might return Id/id/ID in different cases
+      const transformedNodes = rawData.nodes.map((n: any) => ({
+        id: n.id || n.Id || n.ID,
+        title: n.title || n.Title,
+        type: n.type || n.Type || 'star'
+      }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
       const transformedLinks = rawData.links.map((l: any) => ({
@@ -131,11 +144,12 @@
       }));
 
       graphData = {
-        nodes: rawData.nodes,
+        nodes: transformedNodes,
         links: transformedLinks
       };
 
       console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      console.log('[+page] Sample transformed node:', transformedNodes[0]);
       console.log('[+page] Sample transformed link:', transformedLinks[0]);
     } catch (e) {
       console.error('[+page] Failed to load graph:', e);
