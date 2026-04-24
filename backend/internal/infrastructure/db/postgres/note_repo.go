@@ -86,13 +86,14 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 // FindAll возвращает все заметки без пагинации с кэшированием в Redis
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
-	// 1. Проверяем кэш Redis
+	// 1. Проверяем кэш Redis (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
 	if r.redis != nil {
 		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
 		if err == nil {
-			var notes []*note.Note
-			if err := json.Unmarshal(cached, &notes); err == nil {
-				return notes, nil
+			var models []NoteModel
+			if err := json.Unmarshal(cached, &models); err == nil {
+				// Конвертируем модели в доменные объекты
+				return toDomainNotes(models), nil
 			}
 		}
 	}
@@ -105,9 +106,9 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	}
 	notes := toDomainNotes(models)
 
-	// 3. Сохраняем в кэш
+	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
 	if r.redis != nil {
-		if data, err := json.Marshal(notes); err == nil {
+		if data, err := json.Marshal(models); err == nil {
 			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
 		}
 	}
