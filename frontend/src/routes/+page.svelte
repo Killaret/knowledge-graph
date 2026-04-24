@@ -115,13 +115,28 @@
       graphData = { nodes: [], links: [] };
       return;
     }
-    
+
     graphLoading = true;
     console.log('[+page] Loading full graph...');
     try {
       // Always load full graph on main page
-      graphData = await getFullGraphData();
+      const rawData = await getFullGraphData();
+
+      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
+      const transformedLinks = rawData.links.map((l: any) => ({
+        source: l.source_note_id || l.source,
+        target: l.target_note_id || l.target,
+        weight: l.weight,
+        link_type: l.link_type
+      }));
+
+      graphData = {
+        nodes: rawData.nodes,
+        links: transformedLinks
+      };
+
       console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      console.log('[+page] Sample transformed link:', transformedLinks[0]);
     } catch (e) {
       console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
