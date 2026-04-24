@@ -69,6 +69,9 @@
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
 
+  // Для отслеживания изменений данных по ссылке (не по содержимому)
+  let lastDataRef = { nodes: null as any, links: null as any };
+
   onMount(() => {
     if (!browser) return;
     
@@ -110,48 +113,54 @@
     return () => cleanup();
   });
 
-  // Реактивно перезапускаем симуляцию при изменении данных
+  // Реактивно перезапускаем симуляцию при изменении данных (только если изменились ссылки)
   $effect(() => {
-    // Отслеживаем изменения в данных
-    const nodesKey = nodes.map(n => n.id).join(',');
-    const linksKey = links.map(l => `${l.source}-${l.target}`).join(',');
-    const dataKey = `${nodesKey}|${linksKey}`;
+    // Читаем ссылки на массивы (без чтения содержимого - это важно!)
+    const nodesRef = nodes;
+    const linksRef = links;
     
-    console.log('[GraphCanvas] $effect triggered:', { nodes: nodes.length, links: links.length, dataKey: dataKey.slice(0, 50) });
-    
-    if (browser) {
-      if (nodes.length === 0) {
-        console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
-        if (simulation) {
-          simulation.stop();
-          simulation = null;
-        }
-        // Clear canvas
-        if (ctx) {
-          ctx.clearRect(0, 0, width, height);
-        }
-        return;
-      }
-      
-      console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
-      
-      // Останавливаем старую симуляцию
-      if (simulation) {
-        console.log('[GraphCanvas] Stopping old simulation');
-        simulation.stop();
-      }
-      
-      // Очищаем углы и скорости для новых данных
-      angles.clear();
-      speeds.clear();
-      console.log('[GraphCanvas] Cleared angles and speeds maps');
-      
-      // Запускаем новую с обновленными данными
-      startSimulation();
-      console.log('[GraphCanvas] New simulation started');
-    } else {
-      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
+    // Проверяем, изменились ли ссылки
+    if (nodesRef === lastDataRef.nodes && linksRef === lastDataRef.links) {
+      return; // Ссылки не изменились, пропускаем
     }
+    
+    // Обновляем сохранённые ссылки
+    lastDataRef = { nodes: nodesRef, links: linksRef };
+    
+    console.log('[GraphCanvas] $effect: data references changed, nodes:', nodes.length, 'links:', links.length);
+    
+    if (!browser) {
+      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
+      return;
+    }
+    
+    if (nodes.length === 0) {
+      console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
+      if (simulation) {
+        simulation.stop();
+        simulation = null;
+      }
+      if (ctx) {
+        ctx.clearRect(0, 0, width, height);
+      }
+      return;
+    }
+    
+    console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
+    
+    // Останавливаем старую симуляцию
+    if (simulation) {
+      console.log('[GraphCanvas] Stopping old simulation');
+      simulation.stop();
+    }
+    
+    // Очищаем углы и скорости для новых данных
+    angles.clear();
+    speeds.clear();
+    
+    // Запускаем новую с обновленными данными
+    startSimulation();
+    console.log('[GraphCanvas] New simulation started');
   });
 
   function startAnimation() {
@@ -249,6 +258,7 @@
     
     // Initial draw after warmup
     draw();
+    resetView();
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -271,6 +281,12 @@
       rot += step;
     }
     ctx.closePath();
+    // Явно задаём цвет для гарантии видимости
+    ctx.fillStyle = '#ffdd88';
+    ctx.strokeStyle = '#cc9900';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
   }
 
   function drawPlanet(x: number, y: number, r: number, angle: number) {
@@ -353,6 +369,42 @@
     }
   }
 
+  // Функция для центрирования графа в видимой области
+  function resetView() {
+    if (!simulation || !ctx) return;
+    
+    const simNodes = simulation.nodes();
+    if (simNodes.length === 0) return;
+    
+    // Находим границы графа
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const node of simNodes) {
+      if (node.x < minX) minX = node.x;
+      if (node.x > maxX) maxX = node.x;
+      if (node.y < minY) minY = node.y;
+      if (node.y > maxY) maxY = node.y;
+    }
+    
+    // Добавляем отступ
+    const padding = 50;
+    minX -= padding; minY -= padding;
+    maxX += padding; maxY += padding;
+    
+    const graphWidth = maxX - minX;
+    const graphHeight = maxY - minY;
+    
+    // Вычисляем масштаб чтобы вместить весь граф
+    const scaleX = width / graphWidth;
+    const scaleY = height / graphHeight;
+    transform.k = Math.min(scaleX, scaleY, 1); // Не увеличиваем больше 1:1
+    
+    // Центрируем
+    transform.x = (width - graphWidth * transform.k) / 2 - minX * transform.k;
+    transform.y = (height - graphHeight * transform.k) / 2 - minY * transform.k;
+    
+    console.log('[GraphCanvas] resetView:', { x: transform.x, y: transform.y, k: transform.k, bounds: { minX, minY, maxX, maxY } });
+  }
+
   function draw() {
     if (!ctx) {
       console.log('[GraphCanvas] draw() - no ctx');
@@ -364,14 +416,26 @@
     }
     
     const simNodes = simulation.nodes();
-    console.log('[GraphCanvas] draw() called, nodes:', simNodes.length, 'links:', links.length);
     
     if (simNodes.length === 0) {
       console.log('[GraphCanvas] draw() - no nodes to draw');
       return;
     }
     
+    // Отладочный вывод первого узла
+    if (simNodes.length > 0) {
+      const firstNode = simNodes[0];
+      console.log('[GraphCanvas] draw(): first node coords:', { x: firstNode.x, y: firstNode.y, transform });
+    }
+    
     ctx.clearRect(0, 0, width, height);
+    
+    // Отладочный красный прямоугольник в центре (удалить после проверки)
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.fillRect(width/2 - 50, height/2 - 50, 100, 100);
+    ctx.restore();
+    
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
