@@ -533,7 +533,7 @@
       ctx.font = `bold ${Math.min(14, r * 0.65)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      let title = node.title;
+      let title = node.title || 'Untitled';
       if (title.length > 14) title = title.slice(0, 12) + '…';
       ctx.shadowBlur = 2;
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
