@@ -69,8 +69,8 @@
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
 
-  // Для отслеживания изменений данных по ссылке (не по содержимому)
-  let lastDataRef = { nodes: null as any, links: null as any };
+  // Для отслеживания изменений данных по содержимому (не по ссылке)
+  let lastDataKey = '';
 
   onMount(() => {
     if (!browser) return;
@@ -113,21 +113,26 @@
     return () => cleanup();
   });
 
-  // Реактивно перезапускаем симуляцию при изменении данных (только если изменились ссылки)
+  // Реактивно перезапускаем симуляцию при изменении данных (глубокое сравнение по содержимому)
   $effect(() => {
-    // Читаем ссылки на массивы (без чтения содержимого - это важно!)
-    const nodesRef = nodes;
-    const linksRef = links;
+    // Читаем данные для сравнения по содержимому
+    const nodesCount = nodes.length;
+    const linksCount = links.length;
+    const firstNodeId = nodesCount > 0 ? nodes[0].id : null;
+    const lastNodeId = nodesCount > 0 ? nodes[nodesCount - 1].id : null;
     
-    // Проверяем, изменились ли ссылки
-    if (nodesRef === lastDataRef.nodes && linksRef === lastDataRef.links) {
-      return; // Ссылки не изменились, пропускаем
+    // Создаём ключ данных по содержимому (не по ссылке)
+    const dataKey = `${nodesCount}-${linksCount}-${firstNodeId}-${lastNodeId}`;
+    
+    // Проверяем, изменились ли данные по содержимому
+    if (dataKey === lastDataKey) {
+      return; // Данные не изменились, пропускаем
     }
     
-    // Обновляем сохранённые ссылки
-    lastDataRef = { nodes: nodesRef, links: linksRef };
+    // Обновляем сохранённый ключ
+    lastDataKey = dataKey;
     
-    console.log('[GraphCanvas] $effect: data references changed, nodes:', nodes.length, 'links:', links.length);
+    console.log('[GraphCanvas] $effect: data content changed, nodes:', nodesCount, 'links:', linksCount);
     
     if (!browser) {
       console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
@@ -444,12 +449,6 @@
     }
     
     ctx.clearRect(0, 0, width, height);
-    
-    // Отладочный красный прямоугольник в центре (удалить после проверки)
-    ctx.save();
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-    ctx.fillRect(width/2 - 50, height/2 - 50, 100, 100);
-    ctx.restore();
     
     ctx.save();
     ctx.translate(transform.x, transform.y);
