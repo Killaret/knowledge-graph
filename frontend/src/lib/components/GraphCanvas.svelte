@@ -71,6 +71,7 @@
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = '';
+  let isSimulationRunning = false;
 
   onMount(() => {
     if (!browser) return;
@@ -115,57 +116,58 @@
 
   // Реактивно перезапускаем симуляцию при изменении данных (глубокое сравнение по содержимому)
   $effect(() => {
-    // Читаем данные для сравнения по содержимому
+    // Читаем данные для сравнения по содержимому (только количества - более стабильно)
     const nodesCount = nodes.length;
     const linksCount = links.length;
-    const firstNodeId = nodesCount > 0 ? nodes[0].id : null;
-    const lastNodeId = nodesCount > 0 ? nodes[nodesCount - 1].id : null;
-    
-    // Создаём ключ данных по содержимому (не по ссылке)
-    const dataKey = `${nodesCount}-${linksCount}-${firstNodeId}-${lastNodeId}`;
-    
+
+    // Создаём ключ данных только по количеству (избегаем проблем с изменением порядка)
+    const dataKey = `${nodesCount}-${linksCount}`;
+
     // Проверяем, изменились ли данные по содержимому
-    if (dataKey === lastDataKey) {
-      return; // Данные не изменились, пропускаем
+    if (dataKey === lastDataKey && isSimulationRunning) {
+      console.log('[GraphCanvas] $effect: data unchanged and simulation running, skipping');
+      return; // Данные не изменились и симуляция работает
     }
-    
+
     // Обновляем сохранённый ключ
     lastDataKey = dataKey;
-    
-    console.log('[GraphCanvas] $effect: data content changed, nodes:', nodesCount, 'links:', linksCount);
-    
+
+    console.log('[GraphCanvas] $effect: data changed to', nodesCount, 'nodes,', linksCount, 'links');
+
     if (!browser) {
-      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
+      console.log('[GraphCanvas] d3Force not loaded yet, skipping');
       return;
     }
-    
+
     if (nodes.length === 0) {
-      console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
+      console.log('[GraphCanvas] No nodes, stopping simulation');
       if (simulation) {
         simulation.stop();
         simulation = null;
+        isSimulationRunning = false;
       }
       if (ctx) {
         ctx.clearRect(0, 0, width, height);
       }
       return;
     }
-    
-    console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
-    
+
     // Останавливаем старую симуляцию
     if (simulation) {
       console.log('[GraphCanvas] Stopping old simulation');
       simulation.stop();
+      isSimulationRunning = false;
     }
-    
+
     // Очищаем углы и скорости для новых данных
     angles.clear();
     speeds.clear();
-    
+
     // Запускаем новую с обновленными данными
+    console.log('[GraphCanvas] Starting new simulation...');
     startSimulation();
-    console.log('[GraphCanvas] New simulation started');
+    isSimulationRunning = true;
+    console.log('[GraphCanvas] Simulation started successfully');
   });
 
   function startAnimation() {
