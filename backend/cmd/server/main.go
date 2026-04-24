@@ -27,6 +27,7 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
 	cfg := config.Load()
 
 	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d, graphLoadDepth=%d",
@@ -40,6 +41,13 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
+	// Применяем миграции
+	migrationsDir := "./migrations"
+	if err := postgres.RunMigrations(db.DB, migrationsDir); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+	log.Println("Migrations applied successfully")
+
 	// Redis
 	redisAddr := cfg.RedisURL
 	log.Printf("Redis address: %s", redisAddr)
@@ -49,6 +57,13 @@ func main() {
 			log.Printf("Error closing redis client: %v", err)
 		}
 	}()
+
+	// Принудительный сброс кэша при старте сервера (очищаем старый испорченный кэш)
+	if err := redisClient.FlushDB(ctx).Err(); err != nil {
+		log.Printf("WARNING: failed to flush Redis cache on startup: %v", err)
+	} else {
+		log.Println("Redis cache flushed successfully on startup")
+	}
 
 	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
 	linkRepo := postgres.NewLinkRepository(db.DB)
