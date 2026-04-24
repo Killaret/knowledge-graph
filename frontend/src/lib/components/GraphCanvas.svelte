@@ -217,7 +217,18 @@
     
     console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
     
-    const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
+    // Распределяем узлы по кругу вместо одной точки (предотвращаем экстремальные координаты)
+    const simulationNodes = nodes.map((n, i) => {
+      const angle = (i / nodes.length) * 2 * Math.PI;
+      const radius = Math.min(width, height) * 0.3; // 30% от меньшего размера
+      return {
+        ...n,
+        x: width/2 + Math.cos(angle) * radius,
+        y: height/2 + Math.sin(angle) * radius
+      };
+    });
+    
+    console.log('[GraphCanvas] Initial node positions (first 3):', simulationNodes.slice(0, 3).map(n => ({ x: n.x, y: n.y })));
     
     // Filter links to only include those where both source and target nodes exist
     const validLinks = filterValidLinks(nodes, links);
@@ -235,30 +246,34 @@
     }
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
-      .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
-      .force('charge', d3Force.forceManyBody().strength(-300))
-      .force('center', d3Force.forceCenter(width/2, height/2))
-      .force('collision', d3Force.forceCollide().radius(40))
-      .alphaDecay(0.02)
+      .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(100).strength(0.3))
+      .force('charge', d3Force.forceManyBody().strength(-150)) // Уменьшили силу отталкивания
+      .force('center', d3Force.forceCenter(width/2, height/2).strength(0.5))
+      .force('collision', d3Force.forceCollide().radius(30))
+      .alphaDecay(0.01) // Медленнее остывание для стабильности
       .on('tick', () => {
-        console.log('[GraphCanvas] Tick callback, nodes count:', simulation.nodes().length);
+        // Убрали частый лог тика чтобы не засорять консоль
         draw();
       });
 
     // Warmup: run simulation synchronously for initial positioning
-    console.log('[GraphCanvas] Starting warmup...');
-    for (let i = 0; i < 100; i++) {
+    console.log('[GraphCanvas] Starting warmup (50 ticks)...');
+    for (let i = 0; i < 50; i++) {
       simulation.tick();
     }
     console.log('[GraphCanvas] Warmup complete, alpha:', simulation.alpha());
+    console.log('[GraphCanvas] Node positions after warmup (first 3):', simulation.nodes().slice(0, 3).map((n: any) => ({ x: n.x, y: n.y })));
+    
+    // Вычисляем transform ДО первой отрисовки
+    resetView();
+    
+    // Initial draw с правильным transform
+    console.log('[GraphCanvas] Drawing with transform:', { x: transform.x, y: transform.y, k: transform.k });
+    draw();
     
     // Then start the animation
     simulation.alpha(1).restart();
     console.log('[GraphCanvas] Simulation restarted for animation');
-    
-    // Initial draw after warmup
-    draw();
-    resetView();
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
