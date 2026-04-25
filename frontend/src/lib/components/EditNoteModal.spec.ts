@@ -45,7 +45,7 @@ describe('EditNoteModal', () => {
     expect(screen.getByText('Edit Note')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByTestId('edit-save-btn')).toHaveTextContent('Save Changes');
+      expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
     });
   });
 
@@ -69,7 +69,9 @@ describe('EditNoteModal', () => {
     });
 
     expect(screen.getByDisplayValue('Existing content')).toBeInTheDocument();
-    expect(screen.getByTestId('edit-type-select')).toHaveValue('planet');
+    // TypeSelector показывает выбранный тип через aria-pressed
+    const planetButton = screen.getByRole('button', { name: /Planet/i });
+    expect(planetButton).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('shows loading state while loading', async () => {
@@ -116,7 +118,7 @@ describe('EditNoteModal', () => {
     await fireEvent.input(titleInput);
     await tick();
 
-    const saveButton = screen.getByTestId('edit-save-btn');
+    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     await fireEvent.click(saveButton);
     await tick();
 
@@ -153,7 +155,7 @@ describe('EditNoteModal', () => {
     await tick();
 
     // Сохраняем
-    const saveButton = screen.getByTestId('edit-save-btn');
+    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     await fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -183,7 +185,7 @@ describe('EditNoteModal', () => {
       expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByTestId('edit-save-btn');
+    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     await fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -208,7 +210,7 @@ describe('EditNoteModal', () => {
       expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByTestId('edit-save-btn');
+    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     await fireEvent.click(saveButton);
 
     expect(saveButton).toHaveTextContent('Saving...');
@@ -232,7 +234,7 @@ describe('EditNoteModal', () => {
       expect(screen.getByText('Edit Note')).toBeInTheDocument();
     });
 
-    const cancelButton = screen.getByTestId('edit-cancel-btn');
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     await fireEvent.click(cancelButton);
 
     expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
@@ -262,11 +264,12 @@ describe('EditNoteModal', () => {
       expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
     });
 
-    const typeSelect = screen.getByTestId('edit-type-select') as HTMLSelectElement;
-    typeSelect.value = 'comet';
-    await fireEvent.change(typeSelect);
+    // Выбираем Comet через TypeSelector (вместо старого select)
+    const cometButton = screen.getByRole('button', { name: /Comet/i });
+    await fireEvent.click(cometButton);
     await tick();
 
-    expect(screen.getByTestId('edit-type-select')).toHaveValue('comet');
+    // Проверяем что Comet выбран
+    expect(cometButton).toHaveAttribute('aria-pressed', 'true');
   });
 });

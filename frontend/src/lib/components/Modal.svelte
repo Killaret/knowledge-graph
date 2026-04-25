@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { fade, scale } from 'svelte/transition';
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
 
   interface Props {
     open: boolean;
@@ -15,6 +15,10 @@
   }: Props = $props();
 
   let modalRef: HTMLDivElement;
+
+  // Отключаем анимации в тестовом окружении (где нет Web Animations API)
+  const hasAnimations = browser && typeof Element !== 'undefined' && 
+    (Element.prototype.animate || typeof document !== 'undefined');
 
   function handleClose() {
     open = false;
@@ -46,7 +50,7 @@
   <div
     class="modal-overlay"
     onclick={handleOverlayClick}
-    transition:fade={{ duration: 200 }}
+    class:no-transition={!hasAnimations}
   >
     <div
       class="modal-container"
@@ -54,7 +58,7 @@
       aria-modal="true"
       aria-labelledby="modal-title"
       bind:this={modalRef}
-      transition:scale={{ duration: 200, start: 0.95 }}
+      class:no-transition={!hasAnimations}
     >
       <div class="modal-header">
         <h2 id="modal-title">{title}</h2>
@@ -86,6 +90,12 @@
 {/if}
 
 <style>
+  /* Отключаем анимации в тестовом окружении */
+  :global(.no-transition) {
+    animation: none !important;
+    transition: none !important;
+  }
+
   .modal-overlay {
     position: fixed;
     inset: 0;

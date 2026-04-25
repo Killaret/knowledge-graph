@@ -75,7 +75,7 @@ describe('CreateNoteModal', () => {
     await tick();
     
     // Отправляем форму
-    const submitButton = screen.getByText('Create Note');
+    const submitButton = screen.getByRole('button', { name: 'Create Note' });
     await fireEvent.click(submitButton);
     
     await waitFor(() => {
@@ -104,7 +104,7 @@ describe('CreateNoteModal', () => {
     await tick();
     
     // Отправляем форму
-    const submitButton = screen.getByText('Create Note');
+    const submitButton = screen.getByRole('button', { name: 'Create Note' });
     await fireEvent.click(submitButton);
     
     await waitFor(() => {
@@ -115,7 +115,7 @@ describe('CreateNoteModal', () => {
   it('closes modal on Cancel button click', async () => {
     render(CreateNoteModal, { props: { open: true } });
     
-    const cancelButton = screen.getByText('Cancel');
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     await fireEvent.click(cancelButton);
     await tick();
     
@@ -144,8 +144,8 @@ describe('CreateNoteModal', () => {
       } 
     });
     
-    // Выбираем тип Planet
-    const planetButton = screen.getByText('🪐 Planet');
+    // Выбираем тип Planet через TypeSelector (находим по эмодзи + текст)
+    const planetButton = screen.getByRole('button', { name: /Planet/i });
     await fireEvent.click(planetButton);
     await tick();
     
@@ -155,7 +155,7 @@ describe('CreateNoteModal', () => {
     await fireEvent.input(titleInput);
     await tick();
     
-    const submitButton = screen.getByText('Create Note');
+    const submitButton = screen.getByRole('button', { name: 'Create Note' });
     await fireEvent.click(submitButton);
     
     await waitFor(() => {
@@ -179,12 +179,12 @@ describe('CreateNoteModal', () => {
     await tick();
     
     // Отправляем
-    const submitButton = screen.getByText('Create Note');
+    const submitButton = screen.getByRole('button', { name: 'Create Note' });
     await fireEvent.click(submitButton);
     
     // Кнопка должна быть disabled и показывать "Creating..."
     await waitFor(() => {
-      expect(screen.getByText('Creating...')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument();
     });
     
     expect(submitButton).toBeDisabled();
@@ -207,7 +207,7 @@ describe('CreateNoteModal', () => {
     await tick();
     
     // Отправляем
-    const submitButton = screen.getByText('Create Note');
+    const submitButton = screen.getByRole('button', { name: 'Create Note' });
     await fireEvent.click(submitButton);
     
     // После успеха форма очищается и модал закрывается

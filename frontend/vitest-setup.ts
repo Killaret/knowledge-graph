@@ -58,14 +58,26 @@ vi.mock('three', async () => {
 	};
 });
 
-// Мокируем Web Animations API (Element.prototype.animate)
+// Мокируем Web Animations API (Element.prototype.animate) СРАЗУ при импорте
+// Это необходимо для Svelte transitions в jsdom
 if (typeof Element !== 'undefined') {
-	Element.prototype.animate = vi.fn().mockReturnValue({
-		finished: Promise.resolve(),
-		cancel: vi.fn(),
-		pause: vi.fn(),
-		play: vi.fn(),
-	} as any);
+	Element.prototype.animate = vi.fn().mockImplementation(() => {
+		const anim = {
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			pause: vi.fn(),
+			play: vi.fn()
+		};
+		// Define onfinish with setter that auto-triggers
+		Object.defineProperty(anim, 'onfinish', {
+			set(cb: () => void) {
+				if (cb) queueMicrotask(() => cb());
+			},
+			get() { return null; },
+			configurable: true
+		});
+		return anim;
+	});
 }
 
 // Мокируем requestAnimationFrame/cancelAnimationFrame
