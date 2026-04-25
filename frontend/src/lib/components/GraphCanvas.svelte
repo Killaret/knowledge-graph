@@ -509,12 +509,23 @@
           break;
         case 'planet':
           drawPlanet(node.x, node.y, r, angle);
+          ctx.fillStyle = '#88ccff';
+          ctx.fill();
+          break;
+        case 'satellite':
+          drawPlanet(node.x, node.y, r * 0.6, angle);
+          ctx.fillStyle = '#cccccc';
+          ctx.fill();
           break;
         case 'comet':
           drawComet(node.x, node.y, r, angle);
+          ctx.fillStyle = '#ffaa88';
+          ctx.fill();
           break;
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
+          ctx.fillStyle = '#aa88ff';
+          ctx.fill();
           break;
         case 'asteroid':
           drawAsteroid(node.x, node.y, r, angle);
