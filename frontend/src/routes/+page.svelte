@@ -291,52 +291,6 @@
   function handleToggleView() {
     currentView = currentView === 'graph' ? 'list' : 'graph';
   }
-
-  // NOTE: Commented out to fix ESLint errors (unused function, undefined variable)
-  // Functionality: Handles deletion of a note from the list view
-  // - Removes the note from both allNotes and filteredNotes arrays
-  // - Clears selectedNodeId if the deleted note was selected
-  /*
-  function handleNoteDeleted(event: CustomEvent<{ id: string }>) {
-    allNotes = allNotes.filter(n => n.id !== event.detail.id);
-    filteredNotes = filteredNotes.filter(n => n.id !== event.detail.id);
-    if (selectedNodeId === event.detail.id) {
-      selectedNodeId = null;
-    }
-  }
-  */
-
-  // NOTE: Commented out to fix ESLint error (unused function)
-  // Functionality: Closes the note side panel by clearing the selected node ID
-  /*
-  function handleCloseSidebar() {
-    selectedNodeId = null;
-  }
-  */
-
-  // NOTE: Temporarily commented out to fix ESLint error (unused function)
-  // Russian pluralization helper: returns the correct plural form based on count
-  // Parameters: count (number), one (singular form), few (2-4 form), many (5+ form)
-  // Example: getPluralForm(5, 'звезда', 'звезды', 'звезд') → 'звезд'
-  /*
-  function getPluralForm(count: number, one: string, few: string, many: string): string {
-    const lastDigit = count % 10;
-    const lastTwoDigits = count % 100;
-    
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-      return many;
-    }
-    // Functionality: Russian pluralization logic - determines correct plural form
-    // based on the last digit of the count number
-    if (lastDigit === 1) {
-      return one;
-    }
-    if (lastDigit >= 2 && lastDigit <= 4) {
-      return few;
-    }
-    return many;
-  }
-  */
 </script>
 
 <!-- Main page container - root element for the page layout -->
