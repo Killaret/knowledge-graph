@@ -19,7 +19,10 @@ class TestHealthEndpoint:
         """Test the health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert data["model_loaded"] is True
+        assert "version" in data
 
 
 class TestKeywordsEndpoint:

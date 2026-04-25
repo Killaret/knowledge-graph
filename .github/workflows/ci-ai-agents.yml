@@ -55,15 +55,7 @@ jobs:
           go mod tidy
 
       - name: Run tests
-        env:
-          GOEXPERIMENT: nocoverageredesign
-        run: go test -v -coverprofile=coverage.out ./...
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage.out
-          flags: backend
+        run: go test -v ./...
 
   lint-frontend:
     name: Lint Frontend (Svelte)

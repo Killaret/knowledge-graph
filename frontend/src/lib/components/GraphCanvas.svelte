@@ -167,6 +167,7 @@
         if (type === 'planet') baseSpeed = 0.02;
         else if (type === 'comet') baseSpeed = 0.03;
         else if (type === 'galaxy') baseSpeed = 0.01;
+        else if (type === 'nebula') baseSpeed = 0.008;
         let speed = speeds.get(id);
         if (speed === undefined) {
           speed = baseSpeed * (0.7 + Math.random() * 0.6);
@@ -329,6 +330,21 @@
       ctx.beginPath();
       ctx.ellipse(0, 0, r * (1 - i*0.2), r * 0.4, 0, 0, 2 * Math.PI);
       ctx.fillStyle = `rgba(200, 180, 255, ${0.3 - i*0.1})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawNebula(x: number, y: number, r: number, angle: number) {
+    if (!ctx) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    // Туманность - более размытая и бирюзовая
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * (1.2 - i*0.2), r * 0.5, i * 0.3, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgba(100, 220, 220, ${0.25 - i*0.05})`;
       ctx.fill();
     }
     ctx.restore();
@@ -500,7 +516,7 @@
           drawGalaxy(node.x, node.y, r, angle);
           break;
         case 'nebula':
-          drawGalaxy(node.x, node.y, r * 1.5, angle); // туманность рисуем как большую галактику с другим цветом
+          drawNebula(node.x, node.y, r * 1.5, angle);
           break;
         case 'asteroid':
           drawAsteroid(node.x, node.y, r, angle);

@@ -9,6 +9,16 @@ vi.mock('$app/navigation', () => ({
 	goto: vi.fn(),
 }));
 
+// Мокаем $app/stores
+vi.mock('$app/stores', () => ({
+	page: {
+		subscribe: vi.fn((cb: (v: { url: URL }) => void) => {
+			cb({ url: new URL('http://localhost/') });
+			return () => {};
+		})
+	}
+}));
+
 // Хелпер для установки значения input с fireEvent и tick
 async function setInputValue(input: HTMLInputElement, value: string) {
 	input.value = value;
