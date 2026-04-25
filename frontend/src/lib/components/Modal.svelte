@@ -10,7 +10,6 @@
     children?: () => any;
   }
 
-   
   let {
     open = $bindable(false),
     title,

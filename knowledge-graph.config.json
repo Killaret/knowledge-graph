@@ -43,8 +43,8 @@
       "bfs_normalize": true
     },
     "pagination": {
-      "default_limit": 20,
-      "max_limit": 100
+      "default_limit": 100,
+      "max_limit": 300
     },
     "graph": {
       "load_depth": 2,

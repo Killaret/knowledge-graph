@@ -468,7 +468,7 @@ func (h *Handler) Search(c *gin.Context) {
 		req.Page = 1
 	}
 	if req.Size == 0 {
-		req.Size = 20
+		req.Size = h.cfg.PaginationDefaultLimit
 	}
 
 	// Perform search using repository directly (for simplicity, could use service layer)
@@ -507,14 +507,14 @@ func (h *Handler) Search(c *gin.Context) {
 // List возвращает список заметок с пагинацией
 func (h *Handler) List(c *gin.Context) {
 	// Получаем параметры пагинации из query
-	limitStr := c.DefaultQuery("limit", "20")
+	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
 
 	limit, _ := strconv.Atoi(limitStr)
 	offset, _ := strconv.Atoi(offsetStr)
 
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > h.cfg.PaginationMaxLimit {
+		limit = h.cfg.PaginationDefaultLimit
 	}
 
 	// Получаем заметки из репозитория
