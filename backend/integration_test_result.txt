@@ -1,0 +1,393 @@
+
+2026/04/22 16:15:39 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/embedding_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestEmbeddingRepository_UpsertAndFind (0.04s)
+    embedding_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:39 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/embedding_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestEmbeddingRepository_UpsertUpdate (0.00s)
+    embedding_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:39 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/embedding_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestEmbeddingRepository_Delete (0.00s)
+    embedding_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:39 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/embedding_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestEmbeddingRepository_FindSimilarNotes (0.00s)
+    embedding_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:39 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/embedding_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestEmbeddingRepository_FindSimilarNotesNoEmbedding (0.00s)
+    embedding_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestLinkRepositoryIntegrationSuite (7.22s)
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestConstraintProtection (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestConstraintProtection
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestDelete (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestDelete
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestDeleteBySource (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestDeleteBySource
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestDifferentLinkTypes (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestDifferentLinkTypes
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindAll (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindAll
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindByID_NotFound (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindByID_NotFound
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindBySource (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindBySource
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindBySourceIDs (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindBySourceIDs
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindByTarget (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindByTarget
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestFindByTargetIDs (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestFindByTargetIDs
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestSave_Create (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestSave_Create
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestLinkRepositoryIntegrationSuite/TestSave_Update (0.02s)
+        link_repo_integration_test.go:57: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_integration_test.go:57
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestLinkRepositoryIntegrationSuite/TestSave_Update
+            	Messages:   	failed to truncate tables
+
+2026/04/22 16:15:46 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestLinkRepository_SaveAndFind (0.00s)
+    link_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:46 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestLinkRepository_FindBySource (0.00s)
+    link_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:46 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo_test.go:19
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestLinkRepository_DeleteBySource (0.00s)
+    link_repo_test.go:21: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:46 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo.go:30 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "links" WHERE id = 'e1d44aaa-8305-4a8a-aefe-0caef19c79dd' ORDER BY "links"."id" LIMIT 1
+
+2026/04/22 16:15:46 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo.go:37 [35;1mcall to ExecQuery 'INSERT INTO "links" ("id","source_id","target_id","link_type","weight","metadata","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)' with args [{Name: Ordinal:1 Value:e1d44aaa-8305-4a8a-aefe-0caef19c79dd} {Name: Ordinal:2 Value:1b260d17-e37c-4d46-8b97-840757cb35d2} {Name: Ordinal:3 Value:fee997aa-94a1-43e3-888c-3d7a582561b3} {Name: Ordinal:4 Value:reference} {Name: Ordinal:5 Value:0.8} {Name: Ordinal:6 Value:{"strength":"high"}} {Name: Ordinal:7 Value:2026-04-22 16:15:46.9236 +0300 MSK m=+7.291279801}], was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+  - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+  - is with arguments:
+    0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+    1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+    2 - reference
+    3 - 0.8
+    4 - {}
+    5 - {}
+    6 - {}
+  - should return rows:
+    row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]; call to Rollback transaction, was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+  - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+  - is with arguments:
+    0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+    1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+    2 - reference
+    3 - 0.8
+    4 - {}
+    5 - {}
+    6 - {}
+  - should return rows:
+    row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]
+[0m[33m[0.000ms] [34;1m[rows:0][0m INSERT INTO "links" ("id","source_id","target_id","link_type","weight","metadata","created_at") VALUES ('e1d44aaa-8305-4a8a-aefe-0caef19c79dd','1b260d17-e37c-4d46-8b97-840757cb35d2','fee997aa-94a1-43e3-888c-3d7a582561b3','reference',0.8,'{"strength":"high"}','2026-04-22 16:15:46.923')
+2026/04/22 16:15:46 [LinkRepository.Save] Create failed: id=e1d44aaa-8305-4a8a-aefe-0caef19c79dd source=1b260d17-e37c-4d46-8b97-840757cb35d2 target=fee997aa-94a1-43e3-888c-3d7a582561b3 error=call to ExecQuery 'INSERT INTO "links" ("id","source_id","target_id","link_type","weight","metadata","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)' with args [{Name: Ordinal:1 Value:e1d44aaa-8305-4a8a-aefe-0caef19c79dd} {Name: Ordinal:2 Value:1b260d17-e37c-4d46-8b97-840757cb35d2} {Name: Ordinal:3 Value:fee997aa-94a1-43e3-888c-3d7a582561b3} {Name: Ordinal:4 Value:reference} {Name: Ordinal:5 Value:0.8} {Name: Ordinal:6 Value:{"strength":"high"}} {Name: Ordinal:7 Value:2026-04-22 16:15:46.9236 +0300 MSK m=+7.291279801}], was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+  - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+  - is with arguments:
+    0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+    1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+    2 - reference
+    3 - 0.8
+    4 - {}
+    5 - {}
+    6 - {}
+  - should return rows:
+    row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]; call to Rollback transaction, was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+  - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+  - is with arguments:
+    0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+    1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+    2 - reference
+    3 - 0.8
+    4 - {}
+    5 - {}
+    6 - {}
+  - should return rows:
+    row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]
+--- FAIL: TestLinkRepository_Save_Create (0.00s)
+    link_repo_unit_test.go:79: unexpected error: call to ExecQuery 'INSERT INTO "links" ("id","source_id","target_id","link_type","weight","metadata","created_at") VALUES ($1,$2,$3,$4,$5,$6,$7)' with args [{Name: Ordinal:1 Value:e1d44aaa-8305-4a8a-aefe-0caef19c79dd} {Name: Ordinal:2 Value:1b260d17-e37c-4d46-8b97-840757cb35d2} {Name: Ordinal:3 Value:fee997aa-94a1-43e3-888c-3d7a582561b3} {Name: Ordinal:4 Value:reference} {Name: Ordinal:5 Value:0.8} {Name: Ordinal:6 Value:{"strength":"high"}} {Name: Ordinal:7 Value:2026-04-22 16:15:46.9236 +0300 MSK m=+7.291279801}], was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+          - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+          - is with arguments:
+            0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+            1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+            2 - reference
+            3 - 0.8
+            4 - {}
+            5 - {}
+            6 - {}
+          - should return rows:
+            row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]; call to Rollback transaction, was not expected, next expectation is: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+          - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+          - is with arguments:
+            0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+            1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+            2 - reference
+            3 - 0.8
+            4 - {}
+            5 - {}
+            6 - {}
+          - should return rows:
+            row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]
+    link_repo_unit_test.go:83: unfulfilled expectations: there is a remaining expectation which was not matched: ExpectedQuery => expecting Query, QueryContext or QueryRow which:
+          - matches sql: 'INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"'
+          - is with arguments:
+            0 - 1b260d17-e37c-4d46-8b97-840757cb35d2
+            1 - fee997aa-94a1-43e3-888c-3d7a582561b3
+            2 - reference
+            3 - 0.8
+            4 - {}
+            5 - {}
+            6 - {}
+          - should return rows:
+            row 0 - [e1d44aaa-8305-4a8a-aefe-0caef19c79dd]
+
+2026/04/22 16:15:46 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "links" WHERE id = 'e6b2abe4-d40a-4439-a3da-5d87c1d8b0fc' ORDER BY "links"."id" LIMIT 1
+
+2026/04/22 16:15:46 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/link_repo.go:72 [35;1mdatabase connection failed
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "links" WHERE source_id = '7a669787-2a38-4305-b283-e292b20b94b0'
+--- FAIL: TestNoteRepositoryIntegrationSuite (6.01s)
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestDelete (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestDelete
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestFindAll (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestFindAll
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestFindAllWithFilter (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestFindAllWithFilter
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestFindByID_AfterDelete (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestFindByID_AfterDelete
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestFindByID_NotFound (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestFindByID_NotFound
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestSave_Create (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestSave_Create
+    --- FAIL: TestNoteRepositoryIntegrationSuite/TestSave_Update (0.02s)
+        note_repo_integration_test.go:50: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_integration_test.go:50
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate users: ERROR: relation "users" does not exist (SQLSTATE 42P01)
+            	Test:       	TestNoteRepositoryIntegrationSuite/TestSave_Update
+
+2026/04/22 16:15:52 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_test.go:18
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestNoteRepository_SaveAndFind (0.00s)
+    note_repo_test.go:20: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:52 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_test.go:18
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestNoteRepository_Update (0.00s)
+    note_repo_test.go:20: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:52 [35mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo_test.go:18
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+--- FAIL: TestNoteRepository_Delete (0.00s)
+    note_repo_test.go:20: failed to connect test db: failed to connect to `host=localhost user=kb_user database=knowledge_base_test`: dial error (dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.)
+
+2026/04/22 16:15:52 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo.go:42 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "notes" WHERE id = 'aa5eacc8-47f2-4857-82aa-9539411a4403' ORDER BY "notes"."id" LIMIT 1
+
+2026/04/22 16:15:52 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo.go:67 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "notes" WHERE id = '3da6d666-e38e-4cac-8625-95c055a9baa3' ORDER BY "notes"."id" LIMIT 1
+2026/04/22 16:15:52 [INFO] note not found: id=3da6d666-e38e-4cac-8625-95c055a9baa3
+
+2026/04/22 16:15:52 [31;1mD:/knowledge-graph/backend/internal/infrastructure/db/postgres/note_repo.go:67 [35;1mdatabase connection failed
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM "notes" WHERE id = 'df8e8fc3-ae3c-40ee-b610-a00e774a94bb' ORDER BY "notes"."id" LIMIT 1
+--- FAIL: TestUserRepositoryIntegrationSuite (6.40s)
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestCreate (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestCreate
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestDelete (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestDelete
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestDuplicateLogin (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestDuplicateLogin
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestExists (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestExists
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestFindByID (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestFindByID
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestFindByID_NotFound (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestFindByID_NotFound
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestFindByLogin (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestFindByLogin
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestFindByLogin_NotFound (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestFindByLogin_NotFound
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestMultipleUsers (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestMultipleUsers
+            	Messages:   	failed to truncate tables
+    --- FAIL: TestUserRepositoryIntegrationSuite/TestUpdate (0.02s)
+        user_repo_integration_test.go:52: 
+            	Error Trace:	D:/knowledge-graph/backend/internal/infrastructure/db/postgres/user_repo_integration_test.go:52
+            	            				C:/Users/89209/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:188
+            	Error:      	Received unexpected error:
+            	            	failed to truncate tags: ERROR: relation "tags" does not exist (SQLSTATE 42P01)
+            	Test:       	TestUserRepositoryIntegrationSuite/TestUpdate
+            	Messages:   	failed to truncate tables
+FAIL
+FAIL	knowledge-graph/internal/infrastructure/db/postgres	26.593s
+ok  	knowledge-graph/internal/interfaces/api/graphhandler	(cached)
+ok  	knowledge-graph/internal/interfaces/api/linkhandler	(cached)
+ok  	knowledge-graph/internal/interfaces/api/notehandler	(cached)
+ok  	knowledge-graph/internal/interfaces/api/taghandler	(cached)
+FAIL

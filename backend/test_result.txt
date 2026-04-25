@@ -1,0 +1,7 @@
+ok  	knowledge-graph/internal/domain/graph	(cached)
+ok  	knowledge-graph/internal/domain/link	(cached)
+ok  	knowledge-graph/internal/domain/note	(cached)
+?   	knowledge-graph/internal/application/common	[no test files]
+ok  	knowledge-graph/internal/application/graph	(cached)
+?   	knowledge-graph/internal/application/queries/graph	[no test files]
+ok  	knowledge-graph/internal/application/recommendation	(cached)

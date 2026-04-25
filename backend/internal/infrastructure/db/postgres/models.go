@@ -27,8 +27,8 @@ func (NoteModel) TableName() string {
 // LinkModel — связь между заметками
 type LinkModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primaryKey"`
-	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:source_id"`
-	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:target_id"`
+	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:source_note_id"`
+	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:target_note_id"`
 	LinkType     string         `gorm:"default:'reference';column:link_type"`
 	Weight       float64        `gorm:"default:1.0;column:weight"`
 	Metadata     datatypes.JSON `gorm:"type:jsonb;column:metadata"`

@@ -1,0 +1,306 @@
+npm warn "Graph3D" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--run". This will stop working in the next major version of npm.
+
+> frontend@0.0.1 test:unit
+> vitest run Graph3D
+
+11:40:26 PM [vite-plugin-svelte] WARNING: The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mrenders canvas element
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431709[39m,
+  timestamp: [33m1776890430706[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mshows loading state initially
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431730[39m,
+  timestamp: [33m1776890430727[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mprocesses data without errors
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431741[39m,
+  timestamp: [33m1776890430738[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mhandles empty data
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m0[39m,
+  linksLen: [33m0[39m,
+  key: [33m1776890430743[39m,
+  timestamp: [33m1776890430743[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] No nodes in data, showing empty state
+[Graph3D] Creating simulation: [33m0[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m0[39m, linkCount: [33m0[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+[Graph3D] No links or single node, clearing fog immediately
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mhandles centerNodeId prop
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431818[39m,
+  timestamp: [33m1776890430815[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mupdates when data changes
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431825[39m,
+  timestamp: [33m1776890430822[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcleans up on unmount
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431840[39m,
+  timestamp: [33m1776890430837[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890431847[39m,
+  timestamp: [33m1776890430844[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mpositions camera to cover all nodes (bounding box)
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890432010[39m,
+  timestamp: [33m1776890431007[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling centerCameraOnNode for local graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalls camera fit function when nodes change
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m3[39m,
+  linksLen: [33m1[39m,
+  key: [33m1776890432176[39m,
+  timestamp: [33m1776890431173[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m3[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m3[39m, linkCount: [33m1[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalculates correct bounding box from node positions
+[22m[39m[Graph3D] Data changed: {
+  nodesLen: [33m4[39m,
+  linksLen: [33m0[39m,
+  key: [33m1776890431183[39m,
+  timestamp: [33m1776890431179[39m
+}
+[Graph3D] Initializing scene...
+[Graph3D] Animation loop started
+[Graph3D] Scene initialized, isInitialized = true
+[Graph3D] Initial data available, creating simulation: [33m4[39m nodes
+[Graph3D] createGraphSimulation called: { hasObjectManager: [33mtrue[39m, hasScene: [33mtrue[39m, nodeCount: [33m4[39m, linkCount: [33m0[39m }
+[Graph3D] Clearing existing objects...
+[Graph3D] Calling createSimulation...
+[Graph3D] Simulation created, setting up event handlers...
+[Graph3D] No links or single node, clearing fog immediately
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalculates correct bounding box from node positions
+[22m[39m[Graph3D] Simulation ended, nodes: [33m0[39m
+[Graph3D] Simulation complete, fog animating to clear
+
+[90mstdout[2m | src/lib/components/Graph3D.spec.ts[2m > [22m[2mGraph3D[2m > [22m[2mcalculates correct bounding box from node positions
+[22m[39m[Graph3D] Calling autoZoomToFit for full graph...
+
+ [31mтЭп[39m src/lib/components/Graph3D.spec.ts [2m([22m[2m10 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 669[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mrenders canvas element[32m 44[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mshows loading state initially[32m 11[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mprocesses data without errors[32m 5[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mhandles empty data[32m 71[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mhandles centerNodeId prop[32m 6[2mms[22m[39m
+[31m   [31m├Ч[31m Graph3D[2m > [22mupdates when data changes[39m[32m 17[2mms[22m[39m
+[31m     тЖТ component_api_changed
+Calling `$set(...)` on a component instance (of src/lib/components/Graph3D.svelte) is no longer valid in Svelte 5
+https://svelte.dev/e/component_api_changed[39m
+   [32mтЬУ[39m Graph3D[2m > [22mcleans up on unmount[32m 5[2mms[22m[39m
+[31m   [31m├Ч[31m Graph3D[2m > [22mpositions camera to cover all nodes (bounding box)[39m[32m 165[2mms[22m[39m
+[31m     тЖТ expected "spy" to be called at least once[39m
+   [32mтЬУ[39m Graph3D[2m > [22mcalls camera fit function when nodes change[32m 171[2mms[22m[39m
+   [32mтЬУ[39m Graph3D[2m > [22mcalculates correct bounding box from node positions[32m 167[2mms[22m[39m
+
+тОптОптОптОптОптОптОп Failed Tests 2 тОптОптОптОптОптОптОп
+
+ FAIL  src/lib/components/Graph3D.spec.ts > Graph3D > updates when data changes
+Svelte error: component_api_changed
+Calling `$set(...)` on a component instance (of src/lib/components/Graph3D.svelte) is no longer valid in Svelte 5
+https://svelte.dev/e/component_api_changed
+ тЭп Module.component_api_changed node_modules/svelte/src/internal/client/errors.js:85:17
+     83| export function component_api_changed(method, component) {
+     84|  if (DEV) {
+     85|   const error = new Error(`component_api_changed\nCalling \`${method}\тАж
+       |                 ^
+     86| 
+     87|   error.name = 'Svelte error';
+ тЭп error node_modules/svelte/src/internal/client/dev/legacy.js:17:5
+ тЭп Object.$set node_modules/svelte/src/internal/client/dev/legacy.js:23:15
+ тЭп src/lib/components/Graph3D.spec.ts:224:15
+
+тОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОп[1/2]тОп
+
+ FAIL  src/lib/components/Graph3D.spec.ts > Graph3D > positions camera to cover all nodes (bounding box)
+AssertionError: expected "spy" to be called at least once
+ тЭп src/lib/components/Graph3D.spec.ts:271:31
+    269|     // ╨╕ ╨╡╨╣ ╤Г╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜╨░ ╨┐╨╛╨╖╨╕╤Ж╨╕╤П
+    270|     const { PerspectiveCamera } = await import('three');
+    271|     expect(PerspectiveCamera).toHaveBeenCalled();
+       |                               ^
+    272|   });
+    273| 
+
+тОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОп[2/2]тОп
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m8 passed[39m[22m[90m (10)[39m
+[2m   Start at [22m 23:40:26
+[2m   Duration [22m 5.16s[2m (transform 1.09s, setup 2.35s, collect 298ms, tests 669ms, environment 1.10s, prepare 175ms)[22m
+
