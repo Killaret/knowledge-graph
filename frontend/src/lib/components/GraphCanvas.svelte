@@ -85,7 +85,6 @@
     
     // Use ResizeObserver for better container size tracking
     const resizeObserver = new ResizeObserver(() => {
-      console.log('[GraphCanvas] ResizeObserver triggered');
       resize();
     });
     if (canvas.parentElement) {
@@ -94,7 +93,6 @@
     
     // Delayed resize to ensure container has settled dimensions
     resizeTimer = setTimeout(() => {
-      console.log('[GraphCanvas] Delayed resize check');
       resize();
     }, 100);
     
@@ -122,22 +120,18 @@
 
     // Проверяем, изменились ли данные по содержимому
     if (dataKey === lastDataKey && isSimulationRunning) {
-      console.log('[GraphCanvas] $effect: data unchanged and simulation running, skipping');
       return; // Данные не изменились и симуляция работает
     }
 
     // Обновляем сохранённый ключ
     lastDataKey = dataKey;
 
-    console.log('[GraphCanvas] $effect: data changed to', nodesCount, 'nodes,', linksCount, 'links');
 
     if (!browser) {
-      console.log('[GraphCanvas] d3Force not loaded yet, skipping');
       return;
     }
 
     if (nodes.length === 0) {
-      console.log('[GraphCanvas] No nodes, stopping simulation');
       if (simulation) {
         simulation.stop();
         simulation = null;
@@ -151,7 +145,6 @@
 
     // Останавливаем старую симуляцию
     if (simulation) {
-      console.log('[GraphCanvas] Stopping old simulation');
       simulation.stop();
       isSimulationRunning = false;
     }
@@ -161,10 +154,8 @@
     speeds.clear();
 
     // Запускаем новую с обновленными данными
-    console.log('[GraphCanvas] Starting new simulation...');
     startSimulation();
     isSimulationRunning = true;
-    console.log('[GraphCanvas] Simulation started successfully');
   });
 
   function startAnimation() {
@@ -197,20 +188,17 @@
       height = rect.height;
       canvas.width = width;
       canvas.height = height;
-      console.log('[GraphCanvas] Resized to:', width, 'x', height);
     } else {
       // Fallback: use window size if parent not available
       width = window.innerWidth;
       height = window.innerHeight - 80; // Account for controls
       canvas.width = width;
       canvas.height = height;
-      console.log('[GraphCanvas] Fallback resize to:', width, 'x', height);
     }
   }
 
   function startSimulation() {
     if (!d3Force) {
-      console.log('[GraphCanvas] Cannot start simulation: d3Force not loaded');
       return;
     }
     
@@ -219,7 +207,6 @@
     transform.y = 0;
     transform.k = 1;
     
-    console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
     
     // Распределяем узлы по кругу вместо одной точки (предотвращаем экстремальные координаты)
     const simulationNodes = nodes.map((n, i) => {
@@ -232,7 +219,6 @@
       };
     });
     
-    console.log('[GraphCanvas] Initial node positions (first 3):', simulationNodes.slice(0, 3).map(n => ({ x: n.x, y: n.y })));
     
     // Filter links to only include those where both source and target nodes exist
     const validLinks = filterValidLinks(nodes, links);
@@ -240,7 +226,6 @@
       console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
     }
     
-    console.log('[GraphCanvas] Valid links for simulation:', validLinks.length);
     
     const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
 
@@ -261,23 +246,18 @@
       });
 
     // Warmup: run simulation synchronously for initial positioning
-    console.log('[GraphCanvas] Starting warmup (50 ticks)...');
     for (let i = 0; i < 50; i++) {
       simulation.tick();
     }
-    console.log('[GraphCanvas] Warmup complete, alpha:', simulation.alpha());
-    console.log('[GraphCanvas] Node positions after warmup (first 3):', simulation.nodes().slice(0, 3).map((n: any) => ({ x: n.x, y: n.y })));
     
     // Вычисляем transform ДО первой отрисовки
     resetView();
     
     // Initial draw с правильным transform
-    console.log('[GraphCanvas] Drawing with transform:', { x: transform.x, y: transform.y, k: transform.k });
     draw();
     
     // Then start the animation
     simulation.alpha(1).restart();
-    console.log('[GraphCanvas] Simulation restarted for animation');
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -421,30 +401,20 @@
     transform.x = (width - graphWidth * transform.k) / 2 - minX * transform.k;
     transform.y = (height - graphHeight * transform.k) / 2 - minY * transform.k;
     
-    console.log('[GraphCanvas] resetView:', { x: transform.x, y: transform.y, k: transform.k, bounds: { minX, minY, maxX, maxY } });
   }
 
   function draw() {
     if (!ctx) {
-      console.log('[GraphCanvas] draw() - no ctx');
       return;
     }
     if (!simulation) {
-      console.log('[GraphCanvas] draw() - no simulation');
       return;
     }
     
     const simNodes = simulation.nodes();
     
     if (simNodes.length === 0) {
-      console.log('[GraphCanvas] draw() - no nodes to draw');
       return;
-    }
-    
-    // Отладочный вывод первого узла
-    if (simNodes.length > 0) {
-      const firstNode = simNodes[0];
-      console.log('[GraphCanvas] draw(): first node coords:', { x: firstNode.x, y: firstNode.y, transform });
     }
     
     ctx.clearRect(0, 0, width, height);
@@ -454,7 +424,6 @@
     ctx.scale(transform.k, transform.k);
 
     // Рисуем связи
-    console.log('[GraphCanvas] Drawing', links.length, 'links');
     links.forEach((link, i) => {
       // Приводим ID к строке для корректного сравнения (d3-force может менять тип)
       const sourceId = String(link.source);
@@ -464,11 +433,9 @@
       const targetNode = simulation.nodes().find((n: any) => String(n.id) === targetId);
       
       if (!sourceNode || !targetNode) {
-        if (i < 3) console.log('[GraphCanvas] Link', i, 'orphan:', sourceId, '->', targetId, 'source found:', !!sourceNode, 'target found:', !!targetNode);
         return;
       }
       
-      if (i < 1) console.log('[GraphCanvas] Drawing link from', sourceId, 'to', targetId, 'at', sourceNode.x, sourceNode.y, '->', targetNode.x, targetNode.y);
       
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
@@ -499,17 +466,11 @@
 
     const r = 24; // радиус увеличен для лучшей читаемости
     
-    // Debug: count types and first node
     const typeCounts: Record<string, number> = {};
     simulation.nodes().forEach((node: any) => {
       const t = node.type ?? 'star';
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
-    console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
-    if (simulation.nodes().length > 0) {
-      const firstNode = simulation.nodes()[0];
-      console.log('[GraphCanvas] First node:', { id: firstNode.id, title: firstNode.title, type: firstNode.type, x: firstNode.x, y: firstNode.y, ...firstNode });
-    }
     
     simulation.nodes().forEach((node: any) => {
       const type = node.type ?? 'star';
