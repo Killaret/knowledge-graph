@@ -33,14 +33,6 @@
     }
   }
   
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-  
   function getTypeIcon(type: string | undefined): string {
     const icons: Record<string, string> = {
       star: '⭐',
