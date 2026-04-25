@@ -257,7 +257,7 @@ describe('GraphCanvas', () => {
     expect(moveToCalls.length).toBe(0);
   });
 
-  it.skip('calls onNodeClick when canvas is clicked on a node', async () => {
+  it('calls onNodeClick when canvas is clicked on a node', async () => {
     const onNodeClick = vi.fn();
     
     // Создаем симуляцию с узлами с координатами
