@@ -10,10 +10,66 @@
 
 ## [Unreleased]
 
-### Added
-- Planned: Graph export (image/video)
-- Planned: Node grouping in visualization
-- Planned: Keyboard shortcuts for graph
+### � Unified Configuration System
+- **Single Source of Truth**: New `knowledge-graph.config.json` at project root
+  - All structural parameters in one place
+  - Shared between backend, frontend, and NLP service
+  - Priority: ENV vars > JSON config > hardcoded defaults
+- **Frontend Config Module**: `frontend/src/lib/config.ts` imports JSON directly
+  - Exports: `graphConfig2D`, `graphConfig3D`, `apiConfig`, `testConfig`, `ciCdConfig`
+  - Type-safe TypeScript interfaces
+- **Backend Config Updates**: `backend/internal/config/config.go`
+  - JSON loading with fallback paths
+  - New sections: `server`, `database`, `search`, `pagination`
+  - Extended: `graph` (limits), `recommendation` (batch_rate_limit)
+
+### � Security
+- **SQL Injection Fix**: Parameterized queries in note search ORDER BY clause (`note_repo.go`)
+- **Rate Limiting**: Token bucket middleware with config-driven limits
+  - General: 100 req/min per IP (configurable)
+  - Per-endpoint limits for write operations
+  - Conditional enable/disable via config
+
+### 🚀 Added
+- **Comprehensive Health Check**: `/health` endpoint now checks all dependencies
+- **Graph API Pagination**: `/graph/all` supports DB-level pagination
+- **FindAllPaginated**: New repository methods with metadata
+- **Redis Error Handling**: Graceful degradation
+- **NLP Health Check**: Model verification endpoint
+
+### 🔧 Changed
+- **Configuration Architecture**: Centralized all parameters in `knowledge-graph.config.json`
+  - Removed hardcoded constants from `main.go` (rate limits, retry delays)
+  - `graph_handler.go` uses `cfg.GraphDefaultLimit/MaxLimit`
+  - `note_service.go` uses `cfg.PaginationMaxLimit/DefaultLimit`
+  - Frontend uses `graphConfig2D.shadows_threshold`, `apiConfig.default_limit`
+- **Error Handling**: Graceful degradation
+  - Database retry with configurable delay from JSON
+  - Server restart on fallback ports from config
+  - Migration failures log warning but don't crash
+
+### 🧪 Fixed
+- **Integration Tests**: Added missing models to test migrations
+- **SearchBar Tests**: Enabled previously skipped tests
+- **API Documentation**: Updated OpenAPI spec with pagination schema
+- **Configuration Consistency**: All hardcoded numbers now sourced from config
+  - Graph limits: 500/1000 nodes, 500/5000 links
+  - Pagination: 20 default, 100 max
+  - Shadows threshold: 100 nodes (2D graph)
+  - `GraphNode` and `GraphLink` schemas
+- **Input Validation**: Structured validation with human-readable errors:
+  - **Notes**: title (required, max 200), content (max 50000), type (oneof: star, planet, comet, galaxy)
+  - **Links**: source/target UUID validation, link_type (oneof: reference, dependency, related, custom), weight (0-1)
+  - Validation errors return structured JSON: `{"error": "validation_failed", "message": "..."}`
+- **Test Fixes**: Updated `graph_handler_test.go` for pagination support:
+  - `setupGraphRouter()` now creates complete config with pagination limits
+  - Mock expectations updated for `FindAllPaginated` with proper `int64` total counts
+  - All 11 handler tests now passing
+
+### Planned
+- Graph export (image/video)
+- Node grouping in visualization
+- Keyboard shortcuts for graph
 
 ---
 

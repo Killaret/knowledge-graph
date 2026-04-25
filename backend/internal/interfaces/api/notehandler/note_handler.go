@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"knowledge-graph/internal/application/common"
@@ -83,16 +84,32 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 }
 
 type createNoteRequest struct {
-	Title    string                 `json:"title" binding:"required"`
-	Content  string                 `json:"content"`
-	Type     string                 `json:"type"`
+	Title    string                 `json:"title" binding:"required,max=200"`
+	Content  string                 `json:"content" binding:"max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy"`
 	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// NoteValidationErrors defines human-readable error messages for note validation
+var NoteValidationErrors = map[string]string{
+	"title.required": "Title is required",
+	"title.max":      "Title must not exceed 200 characters",
+	"content.max":    "Content must not exceed 50000 characters",
+	"type.oneof":     "Type must be one of: star, planet, comet, galaxy",
 }
 
 func (h *Handler) Create(c *gin.Context) {
 	var req createNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		// Provide structured validation error response
+		errStr := err.Error()
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
+				return
+			}
+		}
+		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
 		return
 	}
 
@@ -149,8 +166,8 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 type updateNoteRequest struct {
-	Title    string                 `json:"title"`
-	Content  string                 `json:"content"`
+	Title    string                 `json:"title" binding:"omitempty,min=1,max=200"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -174,7 +191,15 @@ func (h *Handler) Update(c *gin.Context) {
 
 	var req updateNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		// Provide structured validation error response
+		errStr := err.Error()
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
+				return
+			}
+		}
+		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
 		return
 	}
 

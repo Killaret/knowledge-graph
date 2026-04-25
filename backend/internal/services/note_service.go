@@ -4,18 +4,21 @@ import (
 	"context"
 	"math"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
 )
 
 // NoteService provides business logic for note operations
 type NoteService struct {
 	repo note.Repository
+	cfg  *config.Config
 }
 
 // NewNoteService creates a new instance of NoteService
-func NewNoteService(repo note.Repository) *NoteService {
+func NewNoteService(repo note.Repository, cfg *config.Config) *NoteService {
 	return &NoteService{
 		repo: repo,
+		cfg:  cfg,
 	}
 }
 
@@ -34,8 +37,10 @@ func (s *NoteService) Search(ctx context.Context, query string, page, pageSize i
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
+	maxLimit := s.cfg.PaginationMaxLimit
+	defaultLimit := s.cfg.PaginationDefaultLimit
+	if pageSize < 1 || pageSize > maxLimit {
+		pageSize = defaultLimit
 	}
 
 	offset := (page - 1) * pageSize
@@ -60,8 +65,10 @@ func (s *NoteService) Search(ctx context.Context, query string, page, pageSize i
 
 // List returns notes with pagination
 func (s *NoteService) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	maxLimit := s.cfg.PaginationMaxLimit
+	defaultLimit := s.cfg.PaginationDefaultLimit
+	if limit <= 0 || limit > maxLimit {
+		limit = defaultLimit
 	}
 	if offset < 0 {
 		offset = 0

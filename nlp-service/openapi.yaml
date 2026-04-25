@@ -12,11 +12,14 @@ servers:
 paths:
   /health:
     get:
-      summary: Health check
-      description: Check if the NLP service is running and models are loaded
+      summary: Health check with model verification
+      description: |
+        Comprehensive health check that verifies:
+        - Service is running
+        - Embedding model is loaded and ready
       responses:
         '200':
-          description: Service is healthy
+          description: Service is healthy and models are loaded
           content:
             application/json:
               schema:
@@ -24,7 +27,23 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "ok"
+                    example: "healthy"
+                  model_loaded:
+                    type: boolean
+                    example: true
+                  version:
+                    type: string
+                    example: "1.0.0"
+        '503':
+          description: Service unhealthy or model not loaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Embedding model not loaded"
 
   /extract_keywords:
     post:

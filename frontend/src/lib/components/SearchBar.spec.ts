@@ -31,7 +31,7 @@ describe('SearchBar', () => {
 		expect(input).toBeInTheDocument();
 	});
 
-	it.skip('navigates to search page on button click', async () => {
+	it('navigates to search page on button click', async () => {
 		render(SearchBar);
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
@@ -45,7 +45,7 @@ describe('SearchBar', () => {
 		});
 	});
 
-	it.skip('navigates on Enter key press', async () => {
+	it('navigates on Enter key press', async () => {
 		render(SearchBar);
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
@@ -57,7 +57,7 @@ describe('SearchBar', () => {
 		});
 	});
 
-	it.skip('debounces input and navigates after timeout', async () => {
+	it('debounces input and navigates after timeout', async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		render(SearchBar);
 		
@@ -81,7 +81,7 @@ describe('SearchBar', () => {
 		vi.useRealTimers();
 	}, 10000);
 
-	it.skip('clears debounce timer on Enter key', async () => {
+	it('clears debounce timer on Enter key', async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		render(SearchBar);
 		
@@ -105,7 +105,7 @@ describe('SearchBar', () => {
 		vi.useRealTimers();
 	});
 
-	it.skip('does not navigate when query is empty', async () => {
+	it('does not navigate when query is empty', async () => {
 		render(SearchBar);
 		
 		const button = screen.getByRole('button', { name: /search/i });
@@ -121,7 +121,7 @@ describe('SearchBar', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it.skip('trims whitespace from query', async () => {
+	it('trims whitespace from query', async () => {
 		render(SearchBar);
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;

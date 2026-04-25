@@ -1,0 +1,95 @@
+{
+  "backend": {
+    "server": {
+      "rate_limit": {
+        "enabled": true,
+        "requests": 100,
+        "window_seconds": 60,
+        "endpoints": {
+          "notes_create": 30,
+          "links_create": 50,
+          "notes_update": 20
+        },
+        "fallback_ports": ["8081", "8082"]
+      }
+    },
+    "database": {
+      "retry_max_attempts": 3,
+      "retry_delay_seconds": 5,
+      "migrations_fail_on_error": false
+    },
+    "search": {
+      "fulltext_languages": ["russian", "simple"],
+      "ranking_weights": {
+        "russian": 1.0,
+        "simple": 1.0
+      },
+      "fallback_to_ilike": true
+    },
+    "recommendation": {
+      "depth": 3,
+      "decay": 0.5,
+      "top_n": 20,
+      "alpha": 0.5,
+      "beta": 0.5,
+      "gamma": 0.2,
+      "cache_ttl_seconds": 300,
+      "task_delay_seconds": 5,
+      "batch_rate_limit": 10,
+      "fallback_enabled": true,
+      "fallback_ttl_seconds": 3600,
+      "fallback_semantic_enabled": true,
+      "bfs_aggregation": "max",
+      "bfs_normalize": true
+    },
+    "pagination": {
+      "default_limit": 20,
+      "max_limit": 100
+    },
+    "graph": {
+      "load_depth": 2,
+      "max_nodes": 500,
+      "default_limit": 100,
+      "max_limit": 1000,
+      "link_default_limit": 500,
+      "link_max_limit": 5000
+    },
+    "embedding": {
+      "similarity_limit": 30
+    },
+    "asynq": {
+      "concurrency": 10,
+      "queue_default": 1,
+      "queue_max_len": 10000
+    }
+  },
+  "frontend": {
+    "test": {
+      "debounce_timeout_ms": 300,
+      "max_retry_count": 3,
+      "mock_goto_delay_ms": 0
+    },
+    "graph": {
+      "2d": {
+        "max_nodes": 500,
+        "shadows_threshold": 100
+      },
+      "3d": {
+        "max_nodes": 500
+      }
+    },
+    "api": {
+      "default_limit": 100
+    }
+  },
+  "ci_cd": {
+    "integration_test": {
+      "migrate_all": true,
+      "truncate_list": ["notes", "links", "embeddings", "recommendations"]
+    }
+  },
+  "nlp": {
+    "model_name": "all-MiniLM-L6-V2",
+    "max_text_length": 10000
+  }
+}

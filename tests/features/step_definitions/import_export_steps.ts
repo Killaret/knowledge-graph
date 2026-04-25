@@ -170,17 +170,6 @@ Then('after completion, new nodes appear on the graph', async function(this: ITe
   expect(count).toBeGreaterThan(0);
 });
 
-// Basic import/export steps
-When('I open the menu and select {string}', async function(this: ITestWorld, menuItem: string) {
-  // Open menu (hamburger or menu button)
-  const menuBtn = this.page.locator('.menu-button, [data-testid="menu"], button:has-text("Menu")').first();
-  await menuBtn.click();
-  await this.page.waitForTimeout(300);
-  
-  // Click menu item
-  const item = this.page.locator(`.menu-item:has-text("${menuItem}"), text="${menuItem}"`).first();
-  await item.click();
-});
 
 When('I choose a Markdown file {string}', async function(this: ITestWorld, filename: string) {
   const fileInput = this.page.locator('input[type="file"]').first();
@@ -218,26 +207,4 @@ When('I enter URL {string}', async function(this: ITestWorld, url: string) {
   await urlInput.fill(url);
 });
 
-Given('I have several notes on the graph', async function(this: ITestWorld) {
-  // Create test notes
-  for (let i = 1; i <= 3; i++) {
-    await this.request.post('http://localhost:8080/notes', {
-      data: { title: `Export Test ${i}`, content: `Content ${i}` }
-    });
-  }
-  
-  // Navigate to graph
-  await this.page.goto('http://localhost:5173/');
-  await this.page.waitForLoadState('networkidle');
-});
 
-When('I choose format {string}', async function(this: ITestWorld, format: string) {
-  const formatSelect = this.page.locator('select[name="format"], .format-select').first();
-  await formatSelect.selectOption(format);
-});
-
-Then('a file {string} is downloaded', async function(this: ITestWorld, filename: string) {
-  const download = await this.page.waitForEvent('download', { timeout: 5000 });
-  const suggestedFilename = download.suggestedFilename();
-  expect(suggestedFilename).toContain(filename.split('.')[0]);
-});

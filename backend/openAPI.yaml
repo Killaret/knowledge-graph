@@ -7,16 +7,31 @@ info:
     Notes = stars, Links = rays with weights.
     Recs = BFS graph + pgvector embeddings (α=0.7 explicit, β=0.3 semantic).
 
+    ## Rate Limiting
+    API implements token bucket rate limiting:
+    - **General requests**: 100 requests per minute per IP
+    - **Write operations** (POST /notes, POST /links, PUT/DELETE /notes/{id}):
+      - POST /notes: 30 requests per minute
+      - POST /links: 50 requests per minute  
+      - PUT/DELETE /notes/{id}: 20 requests per minute
+
+    When rate limit is exceeded, API returns `429 Too Many Requests` with error message.
+
 servers:
   - url: http://localhost:8080
 
 paths:
   /health:
     get:
-      summary: Health check
+      summary: Comprehensive health check
+      description: |
+        Returns health status of all service dependencies:
+        - Database (PostgreSQL)
+        - Cache (Redis)
+        - NLP Service (Python microservice)
       responses:
         '200':
-          description: OK
+          description: All services healthy
           content:
             application/json:
               schema:
@@ -24,6 +39,55 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  database:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [healthy, unhealthy]
+                  redis:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [healthy, unhealthy, disabled]
+                  nlp:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [healthy, unhealthy]
+        '503':
+          description: One or more services unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                  database:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                      error:
+                        type: string
+                  redis:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                      error:
+                        type: string
 
   /db-check:
     get:
@@ -282,29 +346,92 @@ paths:
                     description: Total count of matching notes
         '400':
           description: Bad request - missing query parameter
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /graph/all:
     get:
-      summary: Get entire graph structure
-      description: Returns all nodes and links for full graph visualization
+      summary: Get entire graph structure with pagination
+      description: |
+        Returns nodes and links for full graph visualization with pagination support.
+        Separate pagination for notes and links to optimize large graph loading.
       parameters:
         - name: limit
           in: query
           schema:
             type: integer
+            default: 100
+            minimum: 0
+            maximum: 1000
+          description: Maximum number of notes to return (0 = all, max 1000)
+        - name: offset
+          in: query
+          schema:
+            type: integer
             default: 0
-          description: Maximum number of notes to return (0 = all)
+            minimum: 0
+          description: Number of notes to skip for pagination
+        - name: link_limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+            minimum: 0
+            maximum: 5000
+          description: Maximum number of links to return (0 = all, max 5000)
+        - name: link_offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Number of links to skip for pagination
       responses:
         '200':
-          description: Complete graph data
+          description: Complete graph data with pagination metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GraphData'
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphNode'
+                  links:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphLink'
+                  pagination:
+                    type: object
+                    properties:
+                      notes:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: Total count of notes in database
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+                      links:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: Total count of links in database
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Rate limit exceeded. Please try again later."
         '500':
           description: Internal server error
           content:
@@ -564,33 +691,57 @@ components:
           type: number
           format: float
 
+    GraphNode:
+      type: object
+      description: Node representing a note in the graph visualization
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the note
+        title:
+          type: string
+          description: Title of the note
+        type:
+          type: string
+          enum: [star, planet, comet, galaxy]
+          description: "Celestial body type for visualization (from metadata.celestial_type)"
+
+    GraphLink:
+      type: object
+      description: Link representing a connection between notes
+      properties:
+        source:
+          type: string
+          format: uuid
+          description: ID of the source note
+        target:
+          type: string
+          format: uuid
+          description: ID of the target note
+        weight:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Connection strength (0.0 to 1.0)
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom]
+          description: Type of relationship
+
     GraphData:
       type: object
+      description: Graph data structure for D3.js force visualization
       properties:
         nodes:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              title:
-                type: string
-              type:
-                type: string
-                enum: [star, planet, comet, galaxy]
-                description: "Тип небесного тела из metadata.celestial_type"
+            $ref: '#/components/schemas/GraphNode'
         links:
           type: array
           items:
-            type: object
-            properties:
-              source:
-                type: string
-              target:
-                type: string
-              weight:
-                type: number
+            $ref: '#/components/schemas/GraphLink'
 
     Error:
       type: object

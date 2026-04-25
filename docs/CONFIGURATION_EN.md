@@ -1,20 +1,84 @@
 # Knowledge Graph Configuration
 
-All system parameters are set via environment variables. For local development, define them in `.env` file in the project root. In production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
+System parameters can be configured via:
+1. **`knowledge-graph.config.json`** — Unified configuration file (recommended)
+2. **Environment variables** — Override specific values
+3. **`.env` file** — For local development
+
+For production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
 
 🌐 **Languages**: [English](CONFIGURATION_EN.md) | [Русский](CONFIGURATION.md)
 
 ---
 
-## Required Variables
+## Unified Configuration File
+
+The `knowledge-graph.config.json` file in the project root is the **single source of truth** for all structural parameters. It contains settings for backend, frontend, NLP service, and CI/CD.
+
+### Priority (highest to lowest)
+
+1. **Environment variables** — Override any value from JSON
+2. **`knowledge-graph.config.json`** — Shared defaults across all components
+3. **Hardcoded defaults** — Fallback in Go/TypeScript code
+
+### File Structure
+
+```json
+{
+  "backend": {
+    "server": { "rate_limit": { ... } },
+    "database": { ... },
+    "search": { ... },
+    "recommendation": { ... },
+    "pagination": { ... },
+    "graph": { ... },
+    "embedding": { ... },
+    "asynq": { ... }
+  },
+  "frontend": {
+    "test": { ... },
+    "graph": { "2d": { ... }, "3d": { ... } },
+    "api": { ... }
+  },
+  "ci_cd": {
+    "integration_test": { ... }
+  },
+  "nlp": { ... }
+}
+```
+
+### Frontend Usage (TypeScript)
+
+```typescript
+import { graphConfig2D, apiConfig, testConfig } from '$lib/config';
+
+// Use centralized config
+const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
+const limit = apiConfig.default_limit;
+```
+
+### Backend Usage (Go)
+
+```go
+import "knowledge-graph/internal/config"
+
+cfg := config.Load()
+// cfg.ServerRateLimitEnabled
+// cfg.RecommendationDepth
+// cfg.GraphDefaultLimit
+```
+
+---
+
+## Required Environment Variables
+
+These must be set via environment variables (not in JSON):
 
 | Variable | Component | Description | Example |
 |----------|-----------|-------------|---------|
-| `DATABASE_URL` | backend, worker | PostgreSQL connection string. Format: `postgresql://user:password@host:port/dbname?sslmode=disable` | `postgresql://kb_user:kb_pass@postgres:5432/knowledge_base?sslmode=disable` |
+| `DATABASE_URL` | backend, worker | PostgreSQL connection string | `postgresql://kb_user:kb_pass@postgres:5432/knowledge_base?sslmode=disable` |
 
-**Used in:**
-- `backend` — database connection for API requests
-- `worker` — connection for saving async task results
+All other parameters can be configured via `knowledge-graph.config.json` or overridden via environment variables.
 
 ---
 
@@ -43,17 +107,86 @@ All system parameters are set via environment variables. For local development, 
 
 ---
 
-## Recommendation Parameters (Graph + Embeddings)
+## Server & Rate Limiting
 
-| Variable | Where | Description | Default | Range |
-|----------|-------|-------------|---------|-------|
-| `RECOMMENDATION_ALPHA` | backend | Weight of explicit links (BFS) in final score | `0.5` | 0.0 - 1.0 |
-| `RECOMMENDATION_BETA` | backend | Weight of semantic similarity (embeddings) | `0.5` | 0.0 - 1.0 |
-| `RECOMMENDATION_DEPTH` | backend | Maximum BFS traversal depth | `3` | 1 - 5 |
-| `RECOMMENDATION_DECAY` | backend | Weight decay for indirect links (depth > 1) | `0.5` | 0.0 - 1.0 |
-| `RECOMMENDATION_CACHE_TTL_SECONDS` | backend | Recommendation cache TTL in Redis | `300` | 60 - 3600 |
-| `EMBEDDING_SIMILARITY_LIMIT` | backend | Limit for pgvector similarity candidates | `30` | 10 - 100 |
-| `RECOMMENDATION_FALLBACK_ENABLED` | backend | Enable synchronous fallback queries | `false` | true, false |
+### JSON Configuration (`backend.server`)
+
+```json
+{
+  "backend": {
+    "server": {
+      "rate_limit": {
+        "enabled": true,
+        "requests": 100,
+        "window_seconds": 60,
+        "endpoints": {
+          "notes_create": 30,
+          "links_create": 50,
+          "notes_update": 20
+        },
+        "fallback_ports": ["8081", "8082"]
+      }
+    }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SERVER_RATE_LIMIT_ENABLED` | Enable rate limiting | `true` |
+| `SERVER_RATE_LIMIT_REQUESTS` | General request limit | `100` |
+| `SERVER_RATE_LIMIT_WINDOW_SECONDS` | Time window | `60` |
+| `SERVER_PORT` | HTTP server port | `8080` |
+| `SERVER_FALLBACK_PORTS` | Backup ports (comma-separated) | `8081,8082` |
+
+### Rate Limiting Behavior
+
+- **General requests**: All GET requests and unspecified endpoints
+- **Write operations**: Stricter limits for POST/PUT/DELETE to prevent abuse
+- **IP-based**: Limits are applied per client IP address
+- **Response**: When exceeded, API returns `429 Too Many Requests`
+
+---
+
+## Recommendation Algorithm
+
+### JSON Configuration (`backend.recommendation`)
+
+```json
+{
+  "backend": {
+    "recommendation": {
+      "depth": 3,
+      "decay": 0.5,
+      "top_n": 20,
+      "alpha": 0.5,
+      "beta": 0.5,
+      "gamma": 0.2,
+      "cache_ttl_seconds": 300,
+      "task_delay_seconds": 5,
+      "batch_rate_limit": 10,
+      "fallback_enabled": true,
+      "fallback_ttl_seconds": 3600,
+      "fallback_semantic_enabled": true,
+      "bfs_aggregation": "max",
+      "bfs_normalize": true
+    }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default | Range |
+|----------|-------------|---------|-------|
+| `RECOMMENDATION_ALPHA` | Weight of explicit links | `0.5` | 0.0 - 1.0 |
+| `RECOMMENDATION_BETA` | Weight of semantic similarity | `0.5` | 0.0 - 1.0 |
+| `RECOMMENDATION_DEPTH` | BFS traversal depth | `3` | 1 - 5 |
+| `RECOMMENDATION_DECAY` | Weight decay for indirect links | `0.5` | 0.0 - 1.0 |
+| `RECOMMENDATION_CACHE_TTL_SECONDS` | Cache TTL | `300` | 60 - 3600 |
+| `EMBEDDING_SIMILARITY_LIMIT` | pgvector candidates limit | `30` | 10 - 100 |
 
 ### Detailed Description
 
@@ -100,25 +233,104 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md#migrat
 
 ---
 
-## Graph Visualization Parameters
+## Graph Visualization & API
 
-| Variable | Where | Description | Default | Range |
-|----------|-------|-------------|---------|-------|
-| `GRAPH_LOAD_DEPTH` | backend, frontend | Graph loading depth for 3D visualization | `2` | 1 - 4 |
+### JSON Configuration (`backend.graph`, `frontend.graph`)
+
+```json
+{
+  "backend": {
+    "graph": {
+      "load_depth": 2,
+      "max_nodes": 500,
+      "default_limit": 100,
+      "max_limit": 1000,
+      "link_default_limit": 500,
+      "link_max_limit": 5000
+    }
+  },
+  "frontend": {
+    "graph": {
+      "2d": { "max_nodes": 500, "shadows_threshold": 100 },
+      "3d": { "max_nodes": 500 }
+    }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GRAPH_LOAD_DEPTH` | Graph loading depth | `2` |
+| `GRAPH_DEFAULT_LIMIT` | Default `/graph/all` limit | `100` |
+| `GRAPH_MAX_LIMIT` | Max `/graph/all` limit | `1000` |
+| `GRAPH_LINK_DEFAULT_LIMIT` | Default link limit | `500` |
+| `GRAPH_LINK_MAX_LIMIT` | Max link limit | `5000` |
 
 ---
 
-## Advanced Recommendation Parameters (BFS + Asynq)
+## Pagination
 
-> ⚠️ These parameters are declared in `config.go` but **not yet used** in code. Reserved for future algorithm improvements.
+### JSON Configuration (`backend.pagination`)
 
-| Variable | Where | Description | Default | Status |
-|----------|-------|-------------|---------|--------|
-| `RECOMMENDATION_GAMMA` | backend | Coefficient for third component | `0.2` | 🚧 Reserved |
-| `BFS_AGGREGATION` | backend | Weight aggregation method: `max`, `sum`, `avg` | `max` | 🚧 Reserved |
-| `BFS_NORMALIZE` | backend | Normalize link weights | `true` | 🚧 Reserved |
-| `ASYNQ_CONCURRENCY` | worker | Asynq concurrency level | `10` | 🚧 Reserved |
-| `ASYNQ_QUEUE_DEFAULT` | worker | Default queue priority | `1` | 🚧 Reserved |
+```json
+{
+  "backend": {
+    "pagination": {
+      "default_limit": 20,
+      "max_limit": 100
+    }
+  }
+}
+```
+
+Used by `List` and `Search` endpoints for note pagination.
+
+## Database
+
+### JSON Configuration (`backend.database`)
+
+```json
+{
+  "backend": {
+    "database": {
+      "retry_max_attempts": 3,
+      "retry_delay_seconds": 5,
+      "migrations_fail_on_error": false
+    }
+  }
+}
+```
+
+## Search
+
+### JSON Configuration (`backend.search`)
+
+```json
+{
+  "backend": {
+    "search": {
+      "fulltext_languages": ["russian", "simple"],
+      "ranking_weights": { "russian": 1.0, "simple": 1.0 },
+      "fallback_to_ilike": true
+    }
+  }
+}
+```
+
+## Advanced Parameters (BFS + Asynq)
+
+These parameters are now fully integrated and loaded from `knowledge-graph.config.json`:
+
+| JSON Path | Description | Default |
+|-----------|-------------|---------|
+| `backend.recommendation.gamma` | Coefficient for third component | `0.2` |
+| `backend.recommendation.bfs_aggregation` | Weight aggregation: `max`, `sum`, `avg` | `max` |
+| `backend.recommendation.bfs_normalize` | Normalize link weights | `true` |
+| `backend.asynq.concurrency` | Asynq concurrency level | `10` |
+| `backend.asynq.queue_default` | Default queue priority | `1` |
+| `backend.asynq.queue_max_len` | Max queue length | `10000` |
 
 ### Reserved Parameters Description
 
@@ -145,37 +357,74 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md#migrat
 
 ---
 
-## Full `.env` File Example
+## Minimal `.env` File (Recommended)
+
+Only database URL and optional overrides:
 
 ```env
 # Required
 DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
 
-# Optional
+# Optional overrides (rest is in knowledge-graph.config.json)
 SERVER_PORT=8080
 REDIS_URL=redis:6379
 NLP_SERVICE_URL=http://nlp:5000
+```
+
+## Full Environment Variable Reference
+
+For cases where you need to override JSON values via environment:
+
+```env
+# Server
+SERVER_PORT=8080
+SERVER_RATE_LIMIT_ENABLED=true
+SERVER_RATE_LIMIT_REQUESTS=100
+SERVER_RATE_LIMIT_WINDOW_SECONDS=60
+SERVER_FALLBACK_PORTS=8081,8082
+
+# Database
+DATABASE_RETRY_MAX_ATTEMPTS=3
+DATABASE_RETRY_DELAY_SECONDS=5
+MIGRATIONS_FAIL_ON_ERROR=false
+
+# Search
+SEARCH_FALLBACK_TO_ILIKE=true
 
 # Recommendations
 RECOMMENDATION_ALPHA=0.5
 RECOMMENDATION_BETA=0.5
+RECOMMENDATION_GAMMA=0.2
 RECOMMENDATION_DEPTH=3
 RECOMMENDATION_DECAY=0.5
+RECOMMENDATION_TOP_N=20
 RECOMMENDATION_CACHE_TTL_SECONDS=300
-EMBEDDING_SIMILARITY_LIMIT=30
-RECOMMENDATION_FALLBACK_ENABLED=false
-
-# Graph visualization
-GRAPH_LOAD_DEPTH=2
-
-# Advanced recommendation parameters
-RECOMMENDATION_GAMMA=0.2
+RECOMMENDATION_TASK_DELAY_SECONDS=5
+RECOMMENDATION_BATCH_RATE_LIMIT=10
+RECOMMENDATION_FALLBACK_ENABLED=true
+RECOMMENDATION_FALLBACK_TTL_SECONDS=3600
+RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED=true
 BFS_AGGREGATION=max
 BFS_NORMALIZE=true
 
-# Asynq worker parameters
+# Pagination
+PAGINATION_DEFAULT_LIMIT=20
+PAGINATION_MAX_LIMIT=100
+
+# Graph API
+GRAPH_LOAD_DEPTH=2
+GRAPH_DEFAULT_LIMIT=100
+GRAPH_MAX_LIMIT=1000
+GRAPH_LINK_DEFAULT_LIMIT=500
+GRAPH_LINK_MAX_LIMIT=5000
+
+# Embedding
+EMBEDDING_SIMILARITY_LIMIT=30
+
+# Asynq
 ASYNQ_CONCURRENCY=10
 ASYNQ_QUEUE_DEFAULT=1
+ASYNQ_QUEUE_MAX_LEN=10000
 ```
 
 ## Configuration Examples

@@ -139,6 +139,32 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
+// FindAllPaginated возвращает связи с пагинацией на уровне БД
+// limit=0 означает "все записи"
+func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
+	var total int64
+
+	// Считаем общее количество
+	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Запрос с пагинацией
+	query := r.db.WithContext(ctx)
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	var models []LinkModel
+	if err := query.Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainLinks(models), total, nil
+}
+
+// FindAll возвращает все связи без пагинации
+// DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	var models []LinkModel
 	err := r.db.WithContext(ctx).Find(&models).Error

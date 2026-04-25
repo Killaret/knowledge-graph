@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"knowledge-graph/internal/application/common"
@@ -59,17 +60,37 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 }
 
 type createLinkRequest struct {
-	SourceNoteID string                 `json:"source_note_id" binding:"required"`
-	TargetNoteID string                 `json:"target_note_id" binding:"required"`
-	LinkType     string                 `json:"link_type" binding:"required"`
-	Weight       float64                `json:"weight"`
+	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
+	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom"`
+	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+// LinkValidationErrors defines human-readable error messages for link validation
+var LinkValidationErrors = map[string]string{
+	"source_note_id.required": "Source note ID is required",
+	"source_note_id.uuid":     "Source note ID must be a valid UUID",
+	"target_note_id.required": "Target note ID is required",
+	"target_note_id.uuid":     "Target note ID must be a valid UUID",
+	"link_type.required":      "Link type is required",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom",
+	"weight.min":              "Weight must be between 0 and 1",
+	"weight.max":              "Weight must be between 0 and 1",
 }
 
 func (h *Handler) Create(c *gin.Context) {
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		// Provide structured validation error response
+		errStr := err.Error()
+		for key, msg := range LinkValidationErrors {
+			if strings.Contains(errStr, key) {
+				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
+				return
+			}
+		}
+		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
 		return
 	}
 

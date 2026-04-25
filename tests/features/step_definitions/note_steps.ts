@@ -494,3 +494,46 @@ Then('all 3 selected nodes are deleted', async function(this: ITestWorld) {
   const count = await selectedNodes.count();
   expect(count).toBe(0);
 });
+
+// Missing steps for type filters
+Given('a note exists with no type field specified', async function(this: ITestWorld) {
+  // Create a note via API without specifying type (should default to 'star')
+  await this.request.post('http://localhost:8080/notes', {
+    data: { title: 'Note Without Type', content: 'This note has no type specified' }
+  });
+  await this.page.reload();
+  await this.page.waitForTimeout(1000);
+});
+
+Then('the note without type is treated as {string} type', async function(this: ITestWorld, type: string) {
+  // Verify the note appears when filtering by the expected type
+  const filterBtn = this.page.locator(`button:has-text("${type}s"), [data-filter="${type}"]`).first();
+  await filterBtn.click();
+  await this.page.waitForTimeout(500);
+  
+  const noteCard = this.page.locator('.note-card:has-text("Note Without Type")').first();
+  await expect(noteCard).toBeVisible();
+});
+
+Then('it appears in the filtered results', async function(this: ITestWorld) {
+  const noteCard = this.page.locator('.note-card').first();
+  await expect(noteCard).toBeVisible();
+});
+
+Given('I have applied the {string} filter', async function(this: ITestWorld, filterType: string) {
+  const filterBtn = this.page.locator(`button:has-text("${filterType}s"), [data-filter="${filterType.toLowerCase()}"]`).first();
+  await filterBtn.click();
+  await this.page.waitForTimeout(500);
+});
+
+When('I switch to list view', async function(this: ITestWorld) {
+  const listViewBtn = this.page.locator('button:has-text("List"), [data-view="list"], .view-toggle:has-text("List")').first();
+  await listViewBtn.click();
+  await this.page.waitForTimeout(500);
+});
+
+Then('it is displayed in the filtered list', async function(this: ITestWorld) {
+  const noteCard = this.page.locator('.note-card, .note-item').first();
+  await expect(noteCard).toBeVisible();
+});
+

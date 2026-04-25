@@ -38,6 +38,9 @@ func (s *LinkRepositoryIntegrationTestSuite) SetupSuite() {
 		&NoteModel{},
 		&LinkModel{},
 		&NoteKeywordModel{},
+		&UserModel{},
+		&TagModel{},
+		&NoteTagModel{},
 	}
 	err := s.db.AutoMigrate(models...)
 	s.Require().NoError(err, "failed to migrate models")

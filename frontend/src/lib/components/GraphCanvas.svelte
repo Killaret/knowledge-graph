@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { filterValidLinks } from '$lib/utils/graphUtils';
+  import { graphConfig2D } from '$lib/config';
   import * as d3Force from 'd3-force';
 
   const { 
@@ -170,7 +171,7 @@
     function animate() {
       for (const node of simulation?.nodes() || []) {
         const id = node.id;
-        const type = node.type || 'star';
+        const type = node.type ?? 'star';
         let baseSpeed = 0.005; // звезда
         if (type === 'planet') baseSpeed = 0.02;
         else if (type === 'comet') baseSpeed = 0.03;
@@ -307,16 +308,16 @@
     ctx.stroke();
   }
 
-  function drawPlanet(x: number, y: number, r: number, angle: number) {
+  function drawPlanet(x: number, y: number, r: number, angle: number, color?: string) {
     if (!ctx) return;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = '#c9b37c';
+    ctx.fillStyle = color || '#c9b37c';
     ctx.fill();
     for (let i = -r/2; i <= r/2; i += r/4) {
       ctx.beginPath();
       ctx.ellipse(x, y + i, r * 0.8, r * 0.15, angle, 0, 2 * Math.PI);
-      ctx.fillStyle = '#a57c2c';
+      ctx.fillStyle = color ? 'rgba(100,100,100,0.3)' : '#a57c2c';
       ctx.fill();
     }
   }
@@ -501,47 +502,37 @@
     // Debug: count types
     const typeCounts: Record<string, number> = {};
     simulation.nodes().forEach((node: any) => {
-      const t = node.type || 'star';
+      const t = node.type ?? 'star';
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
     console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
     
     simulation.nodes().forEach((node: any) => {
-      const type = node.type || 'star';
+      const type = node.type ?? 'star';
       const angle = angles.get(node.id) || 0;
 
-      // Only enable shadows for small graphs (< 100 nodes)
-      const enableShadows = simulation.nodes().length < 100;
+      // Only enable shadows for small graphs (below threshold from config)
+      const enableShadows = simulation.nodes().length < graphConfig2D.shadows_threshold;
       
       switch (type) {
         case 'star':
-          drawStar(node.x, node.y, r, angle);
-          ctx.fillStyle = '#ffdd88';
           if (enableShadows) {
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
           }
-          ctx.fill();
+          drawStar(node.x, node.y, r, angle);
           break;
         case 'planet':
           drawPlanet(node.x, node.y, r, angle);
-          ctx.fillStyle = '#88ccff';
-          ctx.fill();
           break;
         case 'satellite':
-          drawPlanet(node.x, node.y, r * 0.6, angle);
-          ctx.fillStyle = '#cccccc';
-          ctx.fill();
+          drawPlanet(node.x, node.y, r * 0.6, angle, '#aaaaaa');
           break;
         case 'comet':
           drawComet(node.x, node.y, r, angle);
-          ctx.fillStyle = '#ffaa88';
-          ctx.fill();
           break;
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
-          ctx.fillStyle = '#aa88ff';
-          ctx.fill();
           break;
         case 'asteroid':
           drawAsteroid(node.x, node.y, r, angle);
@@ -550,9 +541,12 @@
           drawDebris(node.x, node.y, r, angle);
           break;
         default:
+          if (enableShadows) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+          }
           drawStar(node.x, node.y, r, angle);
-          ctx.fillStyle = '#cccccc';
-          ctx.fill();
+          break;
       }
       ctx.shadowBlur = 0;
 

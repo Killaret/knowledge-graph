@@ -1,5 +1,6 @@
 // API-клиент для получения данных графа (узлы и связи)
 import { api } from './client';
+import { apiConfig } from '$lib/config';
 
 // Узел графа – заметка (звезда)
 export interface GraphNode {
@@ -59,7 +60,7 @@ export async function getGraphData(noteId: string, depth: number = 2): Promise<G
 }
 
 // Запросить полный граф всех заметок и связей
-export async function getFullGraphData(limit: number = 100): Promise<GraphData> {
+export async function getFullGraphData(limit: number = apiConfig.default_limit): Promise<GraphData> {
   try {
     const response = await api.get(`graph/all?limit=${limit}`).json<GraphData>();
     return response;

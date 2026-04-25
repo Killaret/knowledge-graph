@@ -144,3 +144,26 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 
 	return result.Embedding, nil
 }
+
+// HealthCheck проверяет доступность NLP сервиса
+func (c *NLPClient) HealthCheck(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/health", nil)
+	if err != nil {
+		return fmt.Errorf("failed to create health request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("nlp health check failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("nlp health check returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}

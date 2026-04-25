@@ -8,6 +8,7 @@
   import { autoZoomToFit, centerCameraOnNode } from '$lib/three/camera/cameraUtils';
   import type { GraphData } from '$lib/api/graph';
   import { filterValidLinks } from '$lib/utils/graphUtils';
+  import { graphConfig3D } from '$lib/config';
   import * as THREE from 'three';
 
   const { 
@@ -91,9 +92,9 @@
     const currentNodes = untrack(() => data.nodes);
     const currentLinks = untrack(() => data.links);
     
-    // Ограничение для очень больших графов
-    if (currentNodes.length > 500) {
-      console.warn('[Graph3D] Large graph detected:', currentNodes.length, 'nodes. Limiting to 500 for performance.');
+    // Ограничение для очень больших графов (используем max_nodes из конфига)
+    if (currentNodes.length > graphConfig3D.max_nodes) {
+      console.warn(`[Graph3D] Large graph detected: ${currentNodes.length} nodes. Limiting to ${graphConfig3D.max_nodes} for performance.`);
     }
     
     console.log('[Graph3D] Creating simulation:', currentNodes.length, 'nodes');

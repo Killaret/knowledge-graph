@@ -132,7 +132,7 @@
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
         title: n.title || n.Title,
-        type: n.type || n.Type || 'star'
+        type: n.type ?? n.Type ?? 'star'
       }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target

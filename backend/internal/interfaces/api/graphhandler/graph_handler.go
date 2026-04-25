@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
@@ -33,14 +34,14 @@ type GraphData struct {
 type Handler struct {
 	noteRepo note.Repository
 	linkRepo link.Repository
-	maxDepth int // максимальная глубина загрузки графа
+	cfg      *config.Config
 }
 
-func New(noteRepo note.Repository, linkRepo link.Repository, maxDepth int) *Handler {
+func New(noteRepo note.Repository, linkRepo link.Repository, cfg *config.Config) *Handler {
 	return &Handler{
 		noteRepo: noteRepo,
 		linkRepo: linkRepo,
-		maxDepth: maxDepth,
+		cfg:      cfg,
 	}
 }
 
@@ -53,11 +54,11 @@ func (h *Handler) GetGraph(c *gin.Context) {
 	}
 
 	// Парсим параметр depth из query (с ограничением по maxDepth)
-	depth := h.maxDepth
+	depth := h.cfg.GraphLoadDepth
 	if d := c.Query("depth"); d != "" {
 		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
-			if parsed > h.maxDepth {
-				depth = h.maxDepth
+			if parsed > h.cfg.GraphLoadDepth {
+				depth = h.cfg.GraphLoadDepth
 			} else {
 				depth = parsed
 			}
@@ -171,36 +172,69 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	return nodes, links
 }
 
-// GetFullGraph возвращает полный граф всех заметок и связей
+// GetFullGraph возвращает полный граф всех заметок и связей с пагинацией
+// Query params:
+//   - limit: максимальное количество заметок (default: cfg.GraphDefaultLimit, max: cfg.GraphMaxLimit)
+//   - offset: смещение для пагинации (default: 0)
+//   - link_limit: максимальное количество связей (default: cfg.GraphLinkDefaultLimit, max: cfg.GraphLinkMaxLimit)
 func (h *Handler) GetFullGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Получаем лимит из query параметра (по умолчанию 0 - все заметки)
-	limit := 0
+	// Парсим параметры пагинации для заметок
+	limit := h.cfg.GraphDefaultLimit // default from config
 	if limitStr := c.Query("limit"); limitStr != "" {
-		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
-			limit = parsed
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed >= 0 {
+			// Ограничиваем максимум для защиты
+			if parsed > h.cfg.GraphMaxLimit {
+				limit = h.cfg.GraphMaxLimit
+			} else if parsed == 0 {
+				limit = 0 // все записи
+			} else {
+				limit = parsed
+			}
 		}
 	}
 
-	// Загружаем все заметки
-	notes, err := h.noteRepo.FindAll(ctx)
+	offset := 0 // default
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		if parsed, err := strconv.Atoi(offsetStr); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	// Парсим параметры пагинации для связей
+	linkLimit := h.cfg.GraphLinkDefaultLimit // default from config
+	if linkLimitStr := c.Query("link_limit"); linkLimitStr != "" {
+		if parsed, err := strconv.Atoi(linkLimitStr); err == nil && parsed >= 0 {
+			if parsed > h.cfg.GraphLinkMaxLimit {
+				linkLimit = h.cfg.GraphLinkMaxLimit
+			} else if parsed == 0 {
+				linkLimit = 0 // все записи
+			} else {
+				linkLimit = parsed
+			}
+		}
+	}
+
+	linkOffset := 0 // default
+	if linkOffsetStr := c.Query("link_offset"); linkOffsetStr != "" {
+		if parsed, err := strconv.Atoi(linkOffsetStr); err == nil && parsed >= 0 {
+			linkOffset = parsed
+		}
+	}
+
+	// Загружаем заметки с пагинацией на уровне БД
+	notes, totalNotes, err := h.noteRepo.FindAllPaginated(ctx, limit, offset)
 	if err != nil {
-		log.Printf("Error loading all notes: %v", err)
+		log.Printf("Error loading notes: %v", err)
 		c.JSON(500, gin.H{"error": "failed to load notes"})
 		return
 	}
 
-	// Применяем лимит если задан
-	if limit > 0 && len(notes) > limit {
-		notes = notes[:limit]
-		log.Printf("[GetFullGraph] Limited to %d notes (total available: more)", limit)
-	}
-
-	// Загружаем все связи
-	links, err := h.linkRepo.FindAll(ctx)
+	// Загружаем связи с пагинацией на уровне БД
+	links, totalLinks, err := h.linkRepo.FindAllPaginated(ctx, linkLimit, linkOffset)
 	if err != nil {
-		log.Printf("Error loading all links: %v", err)
+		log.Printf("Error loading links: %v", err)
 		c.JSON(500, gin.H{"error": "failed to load links"})
 		return
 	}
@@ -208,7 +242,6 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	// Формируем ответ
 	nodes := make([]GraphNode, 0, len(notes))
 	for _, n := range notes {
-		// Определяем тип небесного тела
 		nodeType := "star"
 		if metadata := n.Metadata().Value(); metadata != nil {
 			if t, ok := metadata["type"]; ok {
@@ -234,5 +267,21 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		})
 	}
 
-	c.JSON(200, GraphData{Nodes: nodes, Links: graphLinks})
+	// Возвращаем с метаданными пагинации
+	c.JSON(200, gin.H{
+		"nodes": nodes,
+		"links": graphLinks,
+		"pagination": gin.H{
+			"notes": gin.H{
+				"total":  totalNotes,
+				"limit":  limit,
+				"offset": offset,
+			},
+			"links": gin.H{
+				"total":  totalLinks,
+				"limit":  linkLimit,
+				"offset": linkOffset,
+			},
+		},
+	})
 }

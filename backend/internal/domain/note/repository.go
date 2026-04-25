@@ -19,5 +19,7 @@ type Repository interface {
 	List(ctx context.Context, limit, offset int) ([]*Note, int64, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*Note, int64, error)
 	FindAll(ctx context.Context) ([]*Note, error)
+	// FindAllPaginated возвращает все заметки с пагинацией (limit=0 для всех записей)
+	FindAllPaginated(ctx context.Context, limit, offset int) ([]*Note, int64, error)
 	// FindBySpecification — позже добавим
 }

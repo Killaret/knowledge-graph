@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
@@ -55,6 +56,11 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return args.Get(0).([]*note.Note), args.Error(1)
 }
 
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
+}
+
 type mockLinkRepo struct {
 	mock.Mock
 }
@@ -92,6 +98,11 @@ func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
 	return args.Get(0).([]*link.Link), args.Error(1)
 }
 
+func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).([]*link.Link), args.Get(1).(int64), args.Error(2)
+}
+
 func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
 	args := m.Called(ctx, sourceID)
 	return args.Error(0)
@@ -101,7 +112,14 @@ func setupGraphRouter() (*gin.Engine, *mockNoteRepo, *mockLinkRepo) {
 	gin.SetMode(gin.TestMode)
 	noteRepo := new(mockNoteRepo)
 	linkRepo := new(mockLinkRepo)
-	handler := New(noteRepo, linkRepo, 3)
+	cfg := &config.Config{
+		GraphLoadDepth:        3,
+		GraphDefaultLimit:     100,
+		GraphMaxLimit:         1000,
+		GraphLinkDefaultLimit: 500,
+		GraphLinkMaxLimit:     5000,
+	}
+	handler := New(noteRepo, linkRepo, cfg)
 	r := gin.Default()
 	r.GET("/graph/:id", handler.GetGraph)
 	r.GET("/graph", handler.GetFullGraph)
@@ -258,8 +276,8 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		linkMetadata, _ := link.NewMetadata(nil)
 		l := link.NewLink(note1ID, note2ID, linkType, weight, linkMetadata)
 
-		noteRepo.On("FindAll", mock.Anything).Return([]*note.Note{n1, n2}, nil)
-		linkRepo.On("FindAll", mock.Anything).Return([]*link.Link{l}, nil)
+		noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1, n2}, int64(2), nil)
+		linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{l}, int64(1), nil)
 
 		req := httptest.NewRequest("GET", "/graph", nil)
 		w := httptest.NewRecorder()
@@ -282,8 +300,8 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		metadata1, _ := note.NewMetadata(nil)
 		n1 := note.NewNote(title1, content1, "star", metadata1)
 
-		noteRepo.On("FindAll", mock.Anything).Return([]*note.Note{n1}, nil)
-		linkRepo.On("FindAll", mock.Anything).Return([]*link.Link{}, nil)
+		noteRepo.On("FindAllPaginated", mock.Anything, 1, 0).Return([]*note.Note{n1}, int64(1), nil)
+		linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), nil)
 
 		req := httptest.NewRequest("GET", "/graph?limit=1", nil)
 		w := httptest.NewRecorder()
@@ -300,7 +318,7 @@ func TestHandler_GetFullGraph(t *testing.T) {
 	t.Run("database error - should return 500", func(t *testing.T) {
 		r, noteRepo, _ := setupGraphRouter()
 
-		noteRepo.On("FindAll", mock.Anything).Return([]*note.Note{}, errors.New("db error"))
+		noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
 
 		req := httptest.NewRequest("GET", "/graph", nil)
 		w := httptest.NewRecorder()
@@ -313,8 +331,11 @@ func TestHandler_GetFullGraph(t *testing.T) {
 func TestNew(t *testing.T) {
 	noteRepo := new(mockNoteRepo)
 	linkRepo := new(mockLinkRepo)
+	cfg := &config.Config{
+		GraphLoadDepth: 5,
+	}
 
-	handler := New(noteRepo, linkRepo, 5)
+	handler := New(noteRepo, linkRepo, cfg)
 
 	assert.NotNil(t, handler)
 }

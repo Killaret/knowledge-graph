@@ -435,3 +435,9 @@ Then('intermediate nodes on the path are emphasized', async function(this: ITest
   const emphasized = this.page.locator('.emphasized, .path-node, [class*="emphasize"]').first();
   await expect(emphasized).toBeVisible();
 });
+
+// Missing steps for search
+Given('the note with metadata type {string} is included in results', async function(this: ITestWorld, type: string) {
+  const noteCard = this.page.locator(`.note-card[data-type="${type}"], .note-card:has-text("${type}")`).first();
+  await expect(noteCard).toBeVisible();
+});

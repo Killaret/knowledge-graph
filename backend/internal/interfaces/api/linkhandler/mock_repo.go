@@ -92,3 +92,29 @@ func (m *mockLinkRepo) List(ctx context.Context) ([]*link.Link, error) {
 func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
 	return m.List(ctx)
 }
+
+func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var allLinks []*link.Link
+	for _, l := range m.links {
+		allLinks = append(allLinks, l)
+	}
+
+	total := int64(len(allLinks))
+
+	if offset >= len(allLinks) {
+		return []*link.Link{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(allLinks) {
+		end = len(allLinks)
+	}
+	if limit == 0 {
+		end = len(allLinks)
+	}
+
+	return allLinks[offset:end], total, nil
+}
