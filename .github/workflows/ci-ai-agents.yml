@@ -55,6 +55,8 @@ jobs:
           go mod tidy
 
       - name: Run tests
+        env:
+          GOEXPERIMENT: nocoverageredesign
         run: go test -v -coverprofile=coverage.out ./...
       
       - name: Upload coverage

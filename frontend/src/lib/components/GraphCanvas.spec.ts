@@ -168,7 +168,7 @@ describe('GraphCanvas', () => {
     expect(mockState.simulationNodes.length).toBe(3);
     
     // Проверяем что у каждого узла есть координаты
-    mockState.simulationNodes.forEach((node, i) => {
+    mockState.simulationNodes.forEach((node) => {
       expect(node.x).toBeDefined();
       expect(node.y).toBeDefined();
       expect(typeof node.x).toBe('number');
@@ -311,7 +311,7 @@ describe('GraphCanvas', () => {
   });
 
   it('updates when props change', async () => {
-    const { component } = render(GraphCanvas, {
+    render(GraphCanvas, {
       props: {
         nodes: mockNodes,
         links: mockLinks
@@ -481,8 +481,6 @@ describe('GraphCanvas', () => {
     await tick();
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    const initialCenterX = 400;
-    const initialCenterY = 300;
 
     // Эмулируем изменение размеров контейнера
     const canvas = document.querySelector('canvas');

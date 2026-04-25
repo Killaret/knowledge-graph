@@ -10,7 +10,7 @@
     children?: import('svelte').Snippet;
   }
 
-  let {
+  const {
     variant = 'primary',
     type = 'button',
     disabled = false,

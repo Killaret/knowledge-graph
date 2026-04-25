@@ -5,7 +5,7 @@
   import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
   import type { Note, Suggestion } from '$lib/api/notes';
   import { goto } from '$app/navigation';
-  import { formatDate, formatDateTime } from '$lib/utils/date';
+  import { formatDateTime } from '$lib/utils/date';
   import BackButton from '$lib/components/BackButton.svelte';
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
 

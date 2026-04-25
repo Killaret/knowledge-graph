@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, beforeAll, afterEach, afterAll } from 'vitest';
 import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
 import { cleanup } from '@testing-library/svelte';
 
 // MSW server для мокирования HTTP запросов

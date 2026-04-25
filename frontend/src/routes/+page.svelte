@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';

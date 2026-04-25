@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import CreateNoteModal from './CreateNoteModal.svelte';
-import { server } from '../../../vitest-setup';
-import { http, HttpResponse } from 'msw';
 
 // Мокаем API
 vi.mock('$lib/api/notes', () => ({

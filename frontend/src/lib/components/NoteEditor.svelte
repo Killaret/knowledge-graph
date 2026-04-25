@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { createNote, updateNote, getNote } from '$lib/api/notes';
-	import { tick } from 'svelte';
 
 	interface Props {
 		noteId?: string | null;
 		onCancel?: () => void;
 	}
 
-	let { noteId = null, onCancel }: Props = $props();
+	const { noteId = null, onCancel }: Props = $props();
 
 	let title = $state('');
 	let content = $state('');
@@ -34,7 +32,7 @@
 			title = note.title;
 			content = note.content || '';
 			noteType = note.type || 'star';
-		} catch (e) {
+		} catch {
 			error = 'Failed to load note';
 		} finally {
 			isLoading = false;
@@ -69,7 +67,7 @@
 				const newNote = await createNote(noteData);
 				await goto(`/notes/${newNote.id}`);
 			}
-		} catch (e) {
+		} catch {
 			error = 'Failed to save note. Please try again.';
 		} finally {
 			isSaving = false;

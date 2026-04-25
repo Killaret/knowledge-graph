@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import Graph3D from './Graph3D.svelte';
 
@@ -212,15 +212,15 @@ describe('Graph3D', () => {
   });
 
   it('updates when data changes', async () => {
-    const { component } = render(Graph3D, {
+    render(Graph3D, {
       props: {
         data: mockData,
         centerNodeId: null
       }
     });
-    
+
     await tick();
-    
+
     // Меняем данные
     const newData = {
       nodes: [...mockData.nodes, { id: '4', title: 'Node 4', type: 'galaxy' }],
@@ -283,7 +283,7 @@ describe('Graph3D', () => {
   });
 
   it('calls camera fit function when nodes change', async () => {
-    const { component } = render(Graph3D, {
+    render(Graph3D, {
       props: {
         data: mockData,
         centerNodeId: null

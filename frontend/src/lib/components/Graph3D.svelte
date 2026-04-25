@@ -49,7 +49,7 @@
   let lastDataTimestamp = $state(0);
 
   // Храним ссылку на последние обработанные данные (обычная переменная, не state)
-  let lastProcessedData: { nodes: GraphData['nodes']; links: GraphData['links'] } = { nodes: [], links: [] };
+  const lastProcessedData: { nodes: GraphData['nodes']; links: GraphData['links'] } = { nodes: [], links: [] };
 
   // Отслеживаем изменения в данных и обновляем ключ
   $effect(() => {

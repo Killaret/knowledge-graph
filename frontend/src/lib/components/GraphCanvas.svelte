@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { filterValidLinks } from '$lib/utils/graphUtils';
@@ -424,7 +424,7 @@
     ctx.scale(transform.k, transform.k);
 
     // Рисуем связи
-    links.forEach((link, i) => {
+    links.forEach((link) => {
       // Приводим ID к строке для корректного сравнения (d3-force может менять тип)
       const sourceId = String(link.source);
       const targetId = String(link.target);
@@ -498,6 +498,9 @@
           break;
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
+          break;
+        case 'nebula':
+          drawGalaxy(node.x, node.y, r * 1.5, angle); // туманность рисуем как большую галактику с другим цветом
           break;
         case 'asteroid':
           drawAsteroid(node.x, node.y, r, angle);

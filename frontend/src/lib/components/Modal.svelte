@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable prefer-const -- Svelte 5 bindable props require let, see: https://svelte.dev/docs/svelte/$bindable */
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
 
@@ -9,6 +10,7 @@
     children?: () => any;
   }
 
+   
   let {
     open = $bindable(false),
     title,
