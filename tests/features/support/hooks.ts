@@ -1,6 +1,16 @@
 import { Before, After, BeforeAll, AfterAll } from '@cucumber/cucumber';
 import type { ITestWorld } from './world';
 
+// Track created resources for cleanup
+const createdNoteIds: string[] = [];
+
+// Helper to register created note for cleanup
+export function registerCreatedNote(noteId: string) {
+  if (!createdNoteIds.includes(noteId)) {
+    createdNoteIds.push(noteId);
+  }
+}
+
 // Global setup before all tests
 BeforeAll(async function() {
   // Any global setup - e.g., starting test server
@@ -32,6 +42,17 @@ After(async function(this: ITestWorld, scenario) {
     await this.page.screenshot({ path: screenshotPath, fullPage: true });
     console.log(`Screenshot saved to ${screenshotPath}`);
   }
+
+  // Cleanup created notes via API
+  const baseUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  for (const noteId of createdNoteIds) {
+    try {
+      await this.request.delete(`${baseUrl}/notes/${noteId}`);
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
+  }
+  createdNoteIds.length = 0; // Clear array
 
   await this.teardown();
 });

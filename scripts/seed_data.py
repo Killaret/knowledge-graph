@@ -189,6 +189,12 @@ class APIClient:
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code if e.response else None
             response_text = e.response.text if e.response else None
+            # Log detailed error for 500 errors
+            if status_code == 500:
+                print(f"\n❌ SERVER ERROR 500:")
+                print(f"   URL: {method} {url}")
+                print(f"   Response: {response_text[:500] if response_text else 'No response body'}")
+                print(f"   Request body: {kwargs.get('json', 'N/A')}")
             error = APIError(method, url, status_code, response_text, str(e))
             if raise_on_error:
                 raise error

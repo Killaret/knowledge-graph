@@ -152,7 +152,7 @@ describe('GraphCanvas', () => {
     expect(canvas).toBeInTheDocument();
   });
 
-  it.skip('renders nodes with coordinates from simulation', async () => {
+  it('renders nodes with coordinates from simulation', async () => {
     render(GraphCanvas, {
       props: {
         nodes: mockNodes,
@@ -180,7 +180,7 @@ describe('GraphCanvas', () => {
     expect(arcCalls.length).toBeGreaterThan(0);
   });
 
-  it.skip('renders correct number of nodes', async () => {
+  it('renders correct number of nodes', async () => {
     render(GraphCanvas, {
       props: {
         nodes: mockNodes,

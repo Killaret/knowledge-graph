@@ -95,13 +95,9 @@
     resizeTimer = setTimeout(() => {
       console.log('[GraphCanvas] Delayed resize check');
       resize();
-      if (nodes.length > 0 && !simulation) {
-        console.log('[GraphCanvas] Starting delayed simulation');
-        startSimulation();
-      }
     }, 100);
     
-    startSimulation();
+    // НЕ запускаем симуляцию здесь - $effect сделает это при изменении данных
     startAnimation();
     
     cleanup = () => {
@@ -457,10 +453,21 @@
     ctx.scale(transform.k, transform.k);
 
     // Рисуем связи
-    links.forEach(link => {
-      const sourceNode = simulation.nodes().find((n: any) => n.id === link.source);
-      const targetNode = simulation.nodes().find((n: any) => n.id === link.target);
-      if (!sourceNode || !targetNode) return;
+    console.log('[GraphCanvas] Drawing', links.length, 'links');
+    links.forEach((link, i) => {
+      // Приводим ID к строке для корректного сравнения (d3-force может менять тип)
+      const sourceId = String(link.source);
+      const targetId = String(link.target);
+      
+      const sourceNode = simulation.nodes().find((n: any) => String(n.id) === sourceId);
+      const targetNode = simulation.nodes().find((n: any) => String(n.id) === targetId);
+      
+      if (!sourceNode || !targetNode) {
+        if (i < 3) console.log('[GraphCanvas] Link', i, 'orphan:', sourceId, '->', targetId, 'source found:', !!sourceNode, 'target found:', !!targetNode);
+        return;
+      }
+      
+      if (i < 1) console.log('[GraphCanvas] Drawing link from', sourceId, 'to', targetId, 'at', sourceNode.x, sourceNode.y, '->', targetNode.x, targetNode.y);
       
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);

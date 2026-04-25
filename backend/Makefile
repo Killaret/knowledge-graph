@@ -11,9 +11,9 @@ db-up:
 db-down:
 	docker-compose down
 
-# Seed test data
+# Seed test data (uses Python script from root)
 seed:
-	go run scripts/seed.go
+	python ../scripts/seed_data.py
 
 # Development
 
