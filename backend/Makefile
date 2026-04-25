@@ -1,4 +1,4 @@
-.PHONY: seed db-up db-down dev test migrate-up migrate-down
+.PHONY: seed db-up db-down dev test
 
 # Load environment variables
 include .env
@@ -10,13 +10,6 @@ db-up:
 
 db-down:
 	docker-compose down
-
-# Migration commands
-migrate-up:
-	go run cmd/migrate/main.go up
-
-migrate-down:
-	go run cmd/migrate/main.go down
 
 # Seed test data
 seed:

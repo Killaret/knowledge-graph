@@ -109,7 +109,6 @@ jobs:
         env:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
-          GOTOOLCHAIN: local
         run: |
           cd ../backend
           go mod download

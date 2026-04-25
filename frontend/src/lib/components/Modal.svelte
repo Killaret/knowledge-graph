@@ -6,15 +6,17 @@
     open: boolean;
     title: string;
     onClose?: () => void;
+    children?: () => any;
   }
 
   let {
     open = $bindable(false),
     title,
-    onClose
+    onClose,
+    children
   }: Props = $props();
 
-  let modalRef: HTMLDivElement;
+  let modalRef = $state<HTMLDivElement | null>(null);
 
   // Отключаем анимации в тестовом окружении (где нет Web Animations API)
   const hasAnimations = browser && typeof Element !== 'undefined' && 
@@ -46,11 +48,11 @@
 </script>
 
 {#if open}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div
     class="modal-overlay"
     onclick={handleOverlayClick}
     class:no-transition={!hasAnimations}
+    role="presentation"
   >
     <div
       class="modal-container"
@@ -83,7 +85,7 @@
         </button>
       </div>
       <div class="modal-content">
-        <slot />
+        {@render children?.()}
       </div>
     </div>
   </div>
