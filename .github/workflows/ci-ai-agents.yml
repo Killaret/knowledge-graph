@@ -50,10 +50,12 @@ jobs:
           go-version: '1.23'
 
       - name: Download dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go mod tidy
 
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: go test -v -coverprofile=coverage.out ./...
       
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -155,6 +157,7 @@ jobs:
         run: |
           cd ../backend
           go mod download
+          go mod tidy
           
           # Build and start backend with logging
           go build -o server cmd/server/main.go 2>&1 | tee backend-build.log

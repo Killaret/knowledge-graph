@@ -112,6 +112,7 @@ jobs:
         run: |
           cd ../backend
           go mod download
+          go mod tidy
           go run cmd/server/main.go &
           BACKEND_PID=$!
           echo "Backend PID: $BACKEND_PID"
