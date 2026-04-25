@@ -59,10 +59,16 @@ func main() {
 	}()
 
 	// Принудительный сброс кэша при старте сервера (очищаем старый испорченный кэш)
+	// Проверяем количество ключей ДО сброса
+	keysBefore, _ := redisClient.DBSize(ctx).Result()
+	log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
+	
 	if err := redisClient.FlushDB(ctx).Err(); err != nil {
-		log.Printf("WARNING: failed to flush Redis cache on startup: %v", err)
+		log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
 	} else {
-		log.Println("Redis cache flushed successfully on startup")
+		// Проверяем количество ключей ПОСЛЕ сброса
+		keysAfter, _ := redisClient.DBSize(ctx).Result()
+		log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
 	}
 
 	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
