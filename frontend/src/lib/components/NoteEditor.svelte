@@ -165,12 +165,12 @@
 	.loading {
 		text-align: center;
 		padding: 2rem;
-		color: #666;
+		color: var(--color-text-secondary);
 	}
 
 	.error-message {
-		background: #fee;
-		color: #c33;
+		background: var(--color-danger-light);
+		color: var(--color-danger);
 		padding: 1rem;
 		border-radius: 4px;
 		margin-bottom: 1rem;
@@ -191,7 +191,7 @@
 	textarea {
 		width: 100%;
 		padding: 0.75rem;
-		border: 1px solid #ddd;
+		border: 1px solid var(--color-border);
 		border-radius: 4px;
 		font-size: 1rem;
 	}
@@ -200,11 +200,11 @@
 	select:focus,
 	textarea:focus {
 		outline: none;
-		border-color: #4a90d9;
+		border-color: var(--color-primary);
 	}
 
 	.field-error {
-		color: #c33;
+		color: var(--color-danger);
 		font-size: 0.875rem;
 		margin-top: 0.25rem;
 	}
@@ -230,12 +230,13 @@
 	}
 
 	.btn-primary {
-		background: #4a90d9;
+		background: var(--color-primary);
 		color: white;
 	}
 
 	.btn-secondary {
-		background: #f0f0f0;
-		color: #333;
+		background: var(--color-surface-elevated);
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
 	}
 </style>

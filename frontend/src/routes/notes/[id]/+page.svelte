@@ -5,6 +5,7 @@
   import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
   import type { Note, Suggestion } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import { formatDate, formatDateTime } from '$lib/utils/date';
   import BackButton from '$lib/components/BackButton.svelte';
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
 
@@ -54,7 +55,7 @@
   <div class="note-container">
     <BackButton href="/" />
     <h1>{note.title}</h1>
-    <div class="meta">Created: {new Date(note.created_at).toLocaleString()}</div>
+    <div class="meta">Создано: {formatDateTime(note.created_at)}</div>
     <div class="content">{note.content}</div>
     <div class="actions">
       <button onclick={() => editModalOpen = true} class="edit-btn">Edit</button>
@@ -85,24 +86,24 @@
   .actions { display: flex; gap: 1rem; margin: 1rem 0; }
   .actions button {
     padding: 0.5rem 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     cursor: pointer;
-    background: #f5f5f5;
+    background: var(--color-surface-elevated);
   }
   .actions button:hover {
-    background: #e5e5e5;
+    background: var(--color-background);
   }
   .edit-btn {
-    background: #4a90d9 !important;
+    background: var(--color-primary) !important;
     color: white;
-    border-color: #4a90d9 !important;
+    border-color: var(--color-primary) !important;
   }
   .edit-btn:hover {
-    background: #357abd !important;
+    background: var(--color-primary-hover) !important;
   }
   .suggestions li { margin-bottom: 0.5rem; }
-  .score { margin-left: 1rem; color: #666; font-size: 0.9rem; }
-  .error { color: red; }
-  .graph-link { background: #8b5cf6; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; text-decoration: none; }
+  .score { margin-left: 1rem; color: var(--color-text-secondary); font-size: 0.9rem; }
+  .error { color: var(--color-danger); }
+  .graph-link { background: var(--color-galaxy); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; text-decoration: none; }
 </style>

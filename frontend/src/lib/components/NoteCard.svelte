@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import { formatDate } from '$lib/utils/date';
 
   const { 
     note, 
