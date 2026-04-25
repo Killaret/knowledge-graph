@@ -2,6 +2,8 @@ module knowledge-graph
 
 go 1.23.0
 
+toolchain go1.23.4
+
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.9.1
@@ -111,4 +113,10 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
+)
+
+// Exclude conflicting packages
+exclude (
+	github.com/klauspost/compress v1.18.5
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 )
