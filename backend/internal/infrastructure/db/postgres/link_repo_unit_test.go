@@ -57,20 +57,19 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 		WithArgs(l.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
-	// Примечание: при uniqueIndex GORM может добавлять дополнительные проверки
+	// Ожидаем INSERT — GORM использует Exec для PostgreSQL без RETURNING
 	mock.ExpectBegin()
-	mock.ExpectQuery(`INSERT INTO "links" \("source_note_id","target_note_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`).
+	mock.ExpectExec(`INSERT INTO "links" \("id","source_note_id","target_note_id","link_type","weight","metadata","created_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\)`).
 		WithArgs(
+			sqlmock.AnyArg(), // id
 			sourceID,
 			targetID,
 			"reference",
 			0.8,
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // metadata
+			sqlmock.AnyArg(), // created_at
 		).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(l.ID()))
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
