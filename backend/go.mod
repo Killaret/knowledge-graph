@@ -12,8 +12,8 @@ require (
 	github.com/pgvector/pgvector-go v0.2.0
 	github.com/redis/go-redis/v9 v9.5.5
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.42.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
+	github.com/testcontainers/testcontainers-go v0.40.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/postgres v1.5.6
 	gorm.io/gorm v1.25.12

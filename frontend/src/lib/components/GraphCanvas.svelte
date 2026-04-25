@@ -490,6 +490,15 @@
     });
 
     const r = 24; // радиус увеличен для лучшей читаемости
+    
+    // Debug: count types
+    const typeCounts: Record<string, number> = {};
+    simulation.nodes().forEach((node: any) => {
+      const t = node.type || 'star';
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+    console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
+    
     simulation.nodes().forEach((node: any) => {
       const type = node.type || 'star';
       const angle = angles.get(node.id) || 0;

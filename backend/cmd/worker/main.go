@@ -4,10 +4,11 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/hibiken/asynq"
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
@@ -24,10 +25,8 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.Load()
-
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
-	}
+	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
+		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД
 	db.Init()
 	if db.DB == nil {
@@ -54,7 +53,7 @@ func main() {
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
-	nlpURL := os.Getenv("NLP_SERVICE_URL")
+	nlpURL := cfg.NLPServiceURL
 	if nlpURL == "" {
 		nlpURL = "http://localhost:5000"
 	}
@@ -97,8 +96,58 @@ func main() {
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
 
-	log.Println("Worker started, listening for tasks...")
-	if err := srv.Run(mux); err != nil {
-		log.Fatal(err)
+	// Setup graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Run server in a goroutine
+	errChan := make(chan error, 1)
+	go func() {
+		log.Println("Worker started, listening for tasks...")
+		if err := srv.Run(mux); err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Wait for shutdown signal or error
+	select {
+	case sig := <-sigChan:
+		log.Printf("Received signal %v, initiating graceful shutdown...", sig)
+		// Stop accepting new tasks and wait for ongoing tasks to complete
+		srv.Stop()
+		// Close resources
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing redis client: %v", err)
+		}
+		log.Println("Worker shut down gracefully")
+	case err := <-errChan:
+		log.Fatalf("Worker error: %v", err)
 	}
+}
+
+// maskURL hides sensitive info in URLs for logging
+func maskURL(url string) string {
+	if url == "" {
+		return "(empty)"
+	}
+	// Simple masking - replace password with ***
+	if idx := findSubstring(url, "://"); idx != -1 {
+		remaining := url[idx+3:]
+		if atIdx := findSubstring(remaining, "@"); atIdx != -1 {
+			// Has credentials
+			if colonIdx := findSubstring(remaining[:atIdx], ":"); colonIdx != -1 {
+				return url[:idx+3+colonIdx+1] + "***" + url[idx+3+atIdx:]
+			}
+		}
+	}
+	return url
+}
+
+func findSubstring(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
 }

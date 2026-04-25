@@ -148,8 +148,11 @@ func generateNotes(count int) []Note {
 	}{
 		{"star", starTitles},
 		{"planet", planetTitles},
+		{"satellite", planetTitles},
 		{"comet", cometTitles},
 		{"galaxy", galaxyTitles},
+		{"asteroid", cometTitles}, // Астероиды
+		{"debris", starTitles},    // Обломки
 	}
 
 	for i := 0; i < count; i++ {

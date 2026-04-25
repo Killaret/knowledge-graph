@@ -58,6 +58,7 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
+	// Примечание: при uniqueIndex GORM может добавлять дополнительные проверки
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO "links" \("source_note_id","target_note_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`).
 		WithArgs(

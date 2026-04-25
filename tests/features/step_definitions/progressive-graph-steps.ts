@@ -41,8 +41,8 @@ Given('note {string} is linked to note {string}', async function(this: ITestWorl
   if (sourceNote && targetNote) {
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: sourceNote.id,
-        targetNoteId: targetNote.id,
+        source_note_id: sourceNote.id,
+        target_note_id: targetNote.id,
         weight: 0.8,
         link_type: 'reference'
       }
@@ -225,8 +225,8 @@ Given('notes exist with connections between them', async function(this: ITestWor
     // Create link to hub
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: hubNote.id,
-        targetNoteId: targetNote.id,
+        source_note_id: hubNote.id,
+        target_note_id: targetNote.id,
         weight: 0.6 + Math.random() * 0.4,
         link_type: 'reference'
       }
@@ -249,8 +249,8 @@ Given('notes have various connection patterns', async function(this: ITestWorld)
     const satellite = await response.json();
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: hubNote.id,
-        targetNoteId: satellite.id,
+        source_note_id: hubNote.id,
+        target_note_id: satellite.id,
         weight: 0.7,
         link_type: 'reference'
       }
@@ -266,8 +266,8 @@ Given('notes have various connection patterns', async function(this: ITestWorld)
     const chainNote = await response.json();
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: prevNote.id,
-        targetNoteId: chainNote.id,
+        source_note_id: prevNote.id,
+        target_note_id: chainNote.id,
         weight: 0.5,
         link_type: 'reference'
       }
@@ -867,8 +867,8 @@ Given('{string} has {int} related notes', async function(this: ITestWorld, noteT
 
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: sourceNote.id,
-        targetNoteId: targetNote.id,
+        source_note_id: sourceNote.id,
+        target_note_id: targetNote.id,
         weight: 0.5 + Math.random() * 0.5,
         link_type: 'reference'
       }
@@ -1019,7 +1019,7 @@ Given('a link exists from {string} to {string} with weight {float}', async funct
   const targetId = this.context.noteIds?.[target];
   if (sourceId && targetId) {
     await this.request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: targetId, weight, link_type: 'reference' }
+      data: { source_note_id: sourceId, target_note_id: targetId, weight, link_type: 'reference' }
     });
   }
 });
@@ -1066,7 +1066,7 @@ Given('note {string} is linked with type {string}', async function(this: ITestWo
   const targetNote = targetData.items?.find((n: any) => n.title === targetTitle);
   if (sourceId && targetNote) {
     await this.request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: sourceId, targetNoteId: targetNote.id, weight: 0.8, link_type: linkType }
+      data: { source_note_id: sourceId, target_note_id: targetNote.id, weight: 0.8, link_type: linkType }
     });
   }
 });
@@ -1188,8 +1188,8 @@ Given('a note {string} exists with {int} related notes', async function(this: IT
     const targetNote = await response.json();
     await this.request.post('http://localhost:8080/links', {
       data: {
-        sourceNoteId: hubNote.id,
-        targetNoteId: targetNote.id,
+        source_note_id: hubNote.id,
+        target_note_id: targetNote.id,
         weight: 0.7,
         link_type: 'reference'
       }

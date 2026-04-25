@@ -1,0 +1,157 @@
+<script lang="ts">
+  import { fade, scale } from 'svelte/transition';
+  import { onMount } from 'svelte';
+
+  interface Props {
+    open: boolean;
+    title: string;
+    onClose?: () => void;
+  }
+
+  let {
+    open = $bindable(false),
+    title,
+    onClose
+  }: Props = $props();
+
+  let modalRef: HTMLDivElement;
+
+  function handleClose() {
+    open = false;
+    onClose?.();
+  }
+
+  function handleOverlayClick(e: MouseEvent) {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && open) {
+      handleClose();
+    }
+  }
+
+  onMount(() => {
+    document.addEventListener('keydown', handleKeydown);
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+    };
+  });
+</script>
+
+{#if open}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div
+    class="modal-overlay"
+    onclick={handleOverlayClick}
+    transition:fade={{ duration: 200 }}
+  >
+    <div
+      class="modal-container"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      bind:this={modalRef}
+      transition:scale={{ duration: 200, start: 0.95 }}
+    >
+      <div class="modal-header">
+        <h2 id="modal-title">{title}</h2>
+        <button
+          class="close-btn"
+          onclick={handleClose}
+          aria-label="Close"
+          type="button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <slot />
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-container {
+    background: var(--color-surface, white);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .close-btn {
+    padding: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .close-btn:hover {
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+  }
+
+  .close-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-border-focus);
+  }
+
+  .modal-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+</style>

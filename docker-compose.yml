@@ -83,5 +83,16 @@
         condition: service_started
     restart: on-failure
 
+  frontend:
+    build: ./frontend
+    container_name: kg-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:8080
+    depends_on:
+      - backend
+    restart: on-failure
+
 volumes:
   postgres_data:

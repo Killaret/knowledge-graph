@@ -25,7 +25,7 @@ seed:
 # Development
 
 dev:
-	go run cmd/api/main.go
+	go run cmd/server/main.go
 
 # Run tests
 test:
@@ -33,6 +33,9 @@ test:
 
 # Build
 build:
-	go build -o bin/api cmd/api/main.go
+	go build -o bin/server cmd/server/main.go
+
+build-worker:
+	go build -o bin/worker cmd/worker/main.go
 
 .DEFAULT_GOAL := dev
