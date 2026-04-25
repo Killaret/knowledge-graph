@@ -108,6 +108,14 @@ describe('Graph3D', () => {
     vi.clearAllMocks();
     // Сбрасываем mockState
     mockState.simulation.tick = vi.fn();
+    
+    // Mock requestAnimationFrame и cancelAnimationFrame
+    global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      return setTimeout(() => callback(performance.now()), 16) as unknown as number;
+    });
+    global.cancelAnimationFrame = vi.fn((id: number) => {
+      clearTimeout(id);
+    });
     mockState.simulation.nodes = vi.fn().mockReturnValue([]);
     mockState.simulation.alpha = vi.fn().mockReturnValue(0);
     mockState.simulation.stop = vi.fn();
