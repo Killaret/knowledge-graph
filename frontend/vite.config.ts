@@ -14,7 +14,7 @@ export default defineConfig({
       // Все запросы, начинающиеся с /api, перенаправляются на http://localhost:8080
       // Например, /api/notes → http://localhost:8080/notes
       '/api': {
-        target: 'http://localhost:8081',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         // Убираем префикс /api, чтобы не было /api/notes
         rewrite: (path) => path.replace(/^\/api/, '')

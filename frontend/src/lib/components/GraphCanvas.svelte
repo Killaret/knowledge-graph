@@ -499,13 +499,17 @@
 
     const r = 24; // радиус увеличен для лучшей читаемости
     
-    // Debug: count types
+    // Debug: count types and first node
     const typeCounts: Record<string, number> = {};
     simulation.nodes().forEach((node: any) => {
       const t = node.type ?? 'star';
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
     console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
+    if (simulation.nodes().length > 0) {
+      const firstNode = simulation.nodes()[0];
+      console.log('[GraphCanvas] First node:', { id: firstNode.id, title: firstNode.title, type: firstNode.type, x: firstNode.x, y: firstNode.y, ...firstNode });
+    }
     
     simulation.nodes().forEach((node: any) => {
       const type = node.type ?? 'star';
