@@ -51,6 +51,7 @@ export interface Config {
     };
     api: {
       default_limit: number;
+      link_limit: number;
     };
   };
   ci_cd: {

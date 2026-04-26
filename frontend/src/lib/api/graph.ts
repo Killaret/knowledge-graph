@@ -62,8 +62,9 @@ export async function getGraphData(noteId: string, depth: number = 2): Promise<G
 // Запросить полный граф всех заметок и связей
 export async function getFullGraphData(limit: number = apiConfig.default_limit): Promise<GraphData> {
   try {
-    // link_limit=0 означает загрузить все связи (без ограничения)
-    const response = await api.get(`graph/all?limit=${limit}&link_limit=0`).json<GraphData>();
+    // Используем link_limit из конфига (0 означает загрузить все связи)
+    const linkLimit = apiConfig.link_limit ?? 0;
+    const response = await api.get(`graph/all?limit=${limit}&link_limit=${linkLimit}`).json<GraphData>();
     return response;
   } catch (error) {
     return handleGraphError(error, 'Failed to load full graph');

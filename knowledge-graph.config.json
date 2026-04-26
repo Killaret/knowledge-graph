@@ -80,7 +80,8 @@
       }
     },
     "api": {
-      "default_limit": 100
+      "default_limit": 100,
+      "link_limit": 0
     }
   },
   "ci_cd": {
