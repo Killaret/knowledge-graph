@@ -129,7 +129,17 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newNote := note.NewNote(title, content, req.Type, metadata)
+	// Определяем тип: сначала из корня запроса, затем из metadata
+	noteType := req.Type
+	if noteType == "" && req.Metadata != nil {
+		if t, ok := req.Metadata["type"]; ok {
+			if ts, ok := t.(string); ok && ts != "" {
+				noteType = ts
+			}
+		}
+	}
+
+	newNote := note.NewNote(title, content, noteType, metadata)
 
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		c.JSON(500, gin.H{"error": "failed to save note"})

@@ -143,7 +143,7 @@ class APIError(Exception):
         super().__init__(self._format_message())
     
     def _format_message(self) -> str:
-        parts = [f"❌ API Error: {self.method} {self.url}"]
+        parts = [f"[ERR] API Error: {self.method} {self.url}"]
         if self.status_code:
             parts.append(f"   Status Code: {self.status_code}")
         if self.message:
@@ -191,7 +191,7 @@ class APIClient:
             response_text = e.response.text if e.response else None
             # Log detailed error for 500 errors
             if status_code == 500:
-                print(f"\n❌ SERVER ERROR 500:")
+                print(f"\n[ERR] SERVER ERROR 500:")
                 print(f"   URL: {method} {url}")
                 print(f"   Response: {response_text[:500] if response_text else 'No response body'}")
                 print(f"   Request body: {kwargs.get('json', 'N/A')}")
@@ -285,7 +285,7 @@ class APIClient:
         }
         
         try:
-            time.sleep(0.05)  # Задержка для rate limit
+            time.sleep(0.2)  # Задержка для rate limit
             result = self._request("POST", "/links", json=payload)
             if isinstance(result, dict) and "id" in result:
                 self.created_links.append(result["id"])
@@ -302,7 +302,7 @@ class APIClient:
 # ----------------------------------------------------------------------
 def clear_database(api: APIClient) -> None:
     """Получает все заметки и удаляет их."""
-    print("🧹 Очистка базы данных...")
+    print("[CLEANUP] Очистка базы данных...")
     notes = api.get_all_notes()
     if not notes:
         print("   База уже пуста.")
@@ -313,18 +313,20 @@ def clear_database(api: APIClient) -> None:
     for note in tqdm(notes, desc="Удаление заметок", unit="note"):
         if api.delete_note(note["id"]):
             success += 1
-    print(f"✅ Удалено {success} из {len(notes)} заметок.")
-    time.sleep(1)
+        time.sleep(0.1)  # Задержка для rate limit
+    print(f"[OK] Удалено {success} из {len(notes)} заметок.")
+    time.sleep(2)
 
 def cleanup_on_error(api: APIClient) -> None:
     """Очищает все созданные данные при ошибке"""
-    print("\n🧹 ОЧИСТКА: Удаление созданных данных из-за ошибки...")
+    print("\n[CLEANUP] ОЧИСТКА: Удаление созданных данных из-за ошибки...")
     
     # Удаляем созданные связи
     if api.created_links:
         print(f"   Удаление {len(api.created_links)} связей...")
         for link_id in api.created_links:
             try:
+                time.sleep(0.1)  # Задержка для rate limit
                 api._request("DELETE", f"/links/{link_id}", raise_on_error=False)
             except Exception:
                 pass
@@ -334,11 +336,13 @@ def cleanup_on_error(api: APIClient) -> None:
         print(f"   Удаление {len(api.created_notes)} заметок...")
         for note_id in api.created_notes:
             try:
+                time.sleep(0.1)  # Задержка для rate limit
                 api.delete_note(note_id, raise_on_error=False)
+                time.sleep(0.1)  # Задержка для rate limit
             except Exception:
                 pass
     
-    print("✅ Очистка завершена")
+    print("[OK] Очистка завершена")
 
 def create_notes(api: APIClient) -> Dict[str, List[str]]:
     """
@@ -347,7 +351,7 @@ def create_notes(api: APIClient) -> Dict[str, List[str]]:
     При ошибке выбрасывает SeedingError.
     """
     created_ids = {cat: [] for cat in CATEGORIES}
-    print(f"\n📝 Создание {TOTAL_NOTES} заметок...")
+    print(f"\n[NOTES] Создание {TOTAL_NOTES} заметок...")
     
     try:
         for cat in CATEGORIES:
@@ -355,11 +359,12 @@ def create_notes(api: APIClient) -> Dict[str, List[str]]:
             for i in tqdm(range(NOTES_PER_CATEGORY), desc=f"   {cat}", unit="note"):
                 payload = generate_note_payload(cat, i)
                 try:
-                    resp = api.create_note(payload)
-                    created_ids[cat].append(resp["id"])
+                    result = api.create_note(payload)
+                    if result:
+                        created_ids[cat].append(result["id"])
                 except APIError as e:
                     raise SeedingError(f"Ошибка создания заметки {i} в категории {cat}: {e}")
-                time.sleep(0.05)
+                time.sleep(0.15)
     except SeedingError:
         raise
     except Exception as e:
@@ -376,7 +381,7 @@ def create_links_between_categories(api: APIClient, ids_map: Dict[str, List[str]
     Returns:
         Количество созданных связей
     """
-    print("\n🔗 Создание межкатегорийных связей...")
+    print("\n[LINKS] Создание межкатегорийных связей...")
     total_links = 0
 
     try:
@@ -434,7 +439,7 @@ def create_links_within_category(api: APIClient, ids_map: Dict[str, List[str]]) 
     Returns:
         Количество созданных связей
     """
-    print("\n🔗 Создание внутрикатегорийных связей...")
+    print("\n[LINKS] Создание внутрикатегорийных связей...")
     total_links = 0
     
     try:
@@ -466,7 +471,7 @@ def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> 
     Returns:
         Количество созданных связей
     """
-    print(f"\n🎲 Создание {count} случайных связей...")
+    print(f"\n[LINKS] Создание {count} случайных связей...")
     created = 0
     
     try:
@@ -504,16 +509,16 @@ def main():
     args = parser.parse_args()
 
     api = APIClient(args.api_url)
-    print(f"🚀 Подключение к API: {args.api_url}")
+    print(f"[START] Подключение к API: {args.api_url}")
 
     # Проверка доступности API
     try:
         health = api._request("GET", "/health")
         if health is None:
-            print("❌ Не удалось подключиться к API. Убедитесь, что бэкенд запущен.")
+            print("[ERR] Не удалось подключиться к API. Убедитесь, что бэкенд запущен.")
             sys.exit(1)
     except APIError as e:
-        print(f"❌ Не удалось подключиться к API: {e}")
+        print(f"[ERR] Не удалось подключиться к API: {e}")
         sys.exit(1)
 
     success = False
@@ -533,29 +538,29 @@ def main():
             create_random_links(api, all_ids, count=30)
 
         success = True
-        print("\n✅ Загрузка тестовых данных завершена!")
+        print("\n[OK] Загрузка тестовых данных завершена!")
         print(f"   Всего создано заметок: {len(all_ids)}")
         print(f"   Всего создано связей: {len(api.created_links)}")
         print(f"   Категории: {', '.join(f'{k}: {len(v)}' for k, v in ids_by_category.items())}")
-        print("\n💡 Теперь можно проверить работу графа и рекомендаций через фронтенд.")
+        print("\n[INFO] Теперь можно проверить работу графа и рекомендаций через фронтенд.")
         
     except SeedingError as e:
-        print(f"\n❌ ОШИБКА ЗАГРУЗКИ: {e}")
+        print(f"\n[ERR] ОШИБКА ЗАГРУЗКИ: {e}")
         if not args.no_cleanup_on_error:
             cleanup_on_error(api)
         sys.exit(1)
     except APIError as e:
-        print(f"\n❌ ОШИБКА API: {e}")
+        print(f"\n[ERR] ОШИБКА API: {e}")
         if not args.no_cleanup_on_error:
             cleanup_on_error(api)
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\n⚠️ Прервано пользователем (Ctrl+C)")
+        print("\n\n[WARN] Прервано пользователем (Ctrl+C)")
         if not args.no_cleanup_on_error:
             cleanup_on_error(api)
         sys.exit(130)
     except Exception as e:
-        print(f"\n❌ НЕОЖИДАННАЯ ОШИБКА: {e}")
+        print(f"\n[ERR] НЕОЖИДАННАЯ ОШИБКА: {e}")
         import traceback
         traceback.print_exc()
         if not args.no_cleanup_on_error:
