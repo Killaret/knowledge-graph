@@ -19,13 +19,14 @@ function isRateLimitError(status: number, errorText: string): boolean {
 }
 
 /**
- * Extract retry_after value from error response
+ * Extract retry_after value from error response (capped for tests)
  */
 function getRetryAfter(errorText: string): number {
   try {
     const parsed = JSON.parse(errorText);
     if (parsed.retry_after) {
-      return parsed.retry_after * 1000; // Convert seconds to ms
+      // Cap at 5 seconds for tests to prevent long timeouts
+      return Math.min(parsed.retry_after * 1000, 5000);
     }
   } catch {
     // If parsing fails, use default
