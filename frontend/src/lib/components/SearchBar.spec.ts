@@ -1,25 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
-import { tick } from 'svelte';
+import userEvent from '@testing-library/user-event';
 import { goto } from '$app/navigation';
 import SearchBar from './SearchBar.svelte';
 
-// Хелпер для установки значения input с fireEvent и tick
-async function setInputValue(input: HTMLInputElement, value: string) {
-	// Properly dispatch input event for Svelte 5 bind:value
-	input.value = value;
-	input.dispatchEvent(new InputEvent('input', { bubbles: true }));
-	await tick(); // Даём Svelte время обновить состояние
-	await new Promise(resolve => setTimeout(resolve, 0));
-}
-
 describe('SearchBar', () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		vi.resetAllMocks();
 	});
 
 	afterEach(() => {
-		vi.clearAllTimers?.();
+		vi.useRealTimers();
+		vi.clearAllTimers();
 	});
 
 	it('renders with placeholder', () => {
@@ -34,8 +26,8 @@ describe('SearchBar', () => {
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
 		const button = screen.getByRole('button', { name: /search/i });
 
-		await setInputValue(input, 'test query');
-		await fireEvent.click(button);
+		await userEvent.type(input, 'test query');
+		await userEvent.click(button);
 
 		await waitFor(() => {
 			expect(goto).toHaveBeenCalledWith('/search?q=test%20query');
@@ -46,8 +38,8 @@ describe('SearchBar', () => {
 		render(SearchBar);
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
-		await setInputValue(input, 'enter query');
-		await fireEvent.keyDown(input, { key: 'Enter' });
+		await userEvent.type(input, 'enter query');
+		await userEvent.keyboard('{Enter}');
 
 		await waitFor(() => {
 			expect(goto).toHaveBeenCalledWith('/search?q=enter%20query');
@@ -60,8 +52,8 @@ describe('SearchBar', () => {
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
 		
-		// Вводим слово через хелпер
-		await setInputValue(input, 'debounce');
+		// Вводим слово
+		await userEvent.type(input, 'debounce');
 
 		// Сразу после ввода goto не должен вызываться
 		expect(goto).not.toHaveBeenCalled();
@@ -85,10 +77,10 @@ describe('SearchBar', () => {
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
 		
 		// Вводим что-то
-		await setInputValue(input, 'partial');
+		await userEvent.type(input, 'partial');
 		
 		// Не дожидаясь дебаунса, нажимаем Enter
-		await fireEvent.keyDown(input, { key: 'Enter' });
+		await userEvent.keyboard('{Enter}');
 		
 		// Должен немедленно перейти
 		await waitFor(() => {
@@ -112,8 +104,8 @@ describe('SearchBar', () => {
 		
 		// Enter с пустым полем тоже не должен переходить
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
-		await setInputValue(input, '   '); // только пробелы
-		await fireEvent.keyDown(input, { key: 'Enter' });
+		await userEvent.type(input, '   '); // только пробелы
+		await userEvent.keyboard('{Enter}');
 		
 		expect(goto).not.toHaveBeenCalled();
 	});
@@ -122,8 +114,8 @@ describe('SearchBar', () => {
 		render(SearchBar);
 		
 		const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
-		await setInputValue(input, '  trimmed  query  ');
-		await fireEvent.keyDown(input, { key: 'Enter' });
+		await userEvent.type(input, '  trimmed  query  ');
+		await userEvent.keyboard('{Enter}');
 		
 		await waitFor(() => {
 			expect(goto).toHaveBeenCalledWith('/search?q=trimmed%20%20query');

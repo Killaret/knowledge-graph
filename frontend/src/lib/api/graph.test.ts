@@ -20,11 +20,7 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost:8081/api/notes/1/graph', ({ request }) => {
-          const url = new URL(request.url);
-          if (url.searchParams.get('depth') === '2') {
-            return HttpResponse.json(mockGraphData);
-          }
+        http.get('http://localhost:8081/api/notes/1/graph', () => {
           return HttpResponse.json(mockGraphData);
         })
       );
@@ -48,9 +44,7 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost:8081/api/graph/all', ({ request }) => {
-          const url = new URL(request.url);
-          const limit = url.searchParams.get('limit');
+        http.get('http://localhost:8081/api/graph/all', () => {
           return HttpResponse.json(mockGraphData);
         })
       );
