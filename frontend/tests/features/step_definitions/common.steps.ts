@@ -48,7 +48,7 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
   this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
   
   // Create connected notes
-  const types = ['planet', 'comet', 'galaxy', 'asteroid'];
+  const types = ['planet', 'comet', 'galaxy', 'star'];
   for (let i = 0; i < 4; i++) {
     const noteData = await createNote(this.request, {
       title: `Connected Note ${i}`,
@@ -79,7 +79,7 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
 });
 
 Given('there are notes of various types in the database', async function(this: ITestWorld) {
-  const types = ['star', 'planet', 'comet', 'galaxy', 'asteroid'];
+  const types = ['star', 'planet', 'comet', 'galaxy', 'star'];
   for (let i = 0; i < 5; i++) {
     const noteData = await createNote(this.request, {
       title: `Test ${types[i]} ${Date.now()}`,
