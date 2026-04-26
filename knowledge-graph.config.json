@@ -2,7 +2,7 @@
   "backend": {
     "server": {
       "rate_limit": {
-        "enabled": true,
+        "enabled": false,
         "requests": 1000,
         "window_seconds": 60,
         "endpoints": {
