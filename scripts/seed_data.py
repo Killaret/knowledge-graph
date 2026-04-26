@@ -118,14 +118,14 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
     title = generate_title(category, index)
     content = generate_content(category, title)
     # Разнообразные типы небесных тел для всех заметок
-    ALL_CELESTIAL_TYPES = ["star", "planet", "comet", "galaxy", "nebula", "asteroid"]
+    ALL_CELESTIAL_TYPES = ["star", "planet", "moon", "comet", "galaxy", "nebula", "asteroid", "satellite", "blackhole"]
     return {
         "title": title,
         "content": content,
-        "type": random.choice(ALL_CELESTIAL_TYPES),  # Случайный тип для каждой заметки
         "metadata": {
             "category": category,
-            "word_count": len(content.split())
+            "word_count": len(content.split()),
+            "type": random.choice(ALL_CELESTIAL_TYPES)  # Тип в metadata для backend
         }
     }
 
@@ -285,6 +285,7 @@ class APIClient:
         }
         
         try:
+            time.sleep(0.05)  # Задержка для rate limit
             result = self._request("POST", "/links", json=payload)
             if isinstance(result, dict) and "id" in result:
                 self.created_links.append(result["id"])

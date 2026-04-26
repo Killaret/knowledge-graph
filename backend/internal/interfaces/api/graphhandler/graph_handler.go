@@ -241,21 +241,34 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 
 	// Формируем ответ
 	nodes := make([]GraphNode, 0, len(notes))
-	for _, n := range notes {
+	debugTypes := make(map[string]int)
+
+	// Все возможные типы узлов для разнообразия
+	celestialTypes := []string{"star", "planet", "moon", "asteroid", "nebula", "satellite", "comet", "blackhole", "galaxy"}
+
+	for i, n := range notes {
 		nodeType := "star"
+		hasTypeFromMetadata := false
 		if metadata := n.Metadata().Value(); metadata != nil {
 			if t, ok := metadata["type"]; ok {
-				if ts, ok := t.(string); ok {
+				if ts, ok := t.(string); ok && ts != "" {
 					nodeType = ts
+					hasTypeFromMetadata = true
 				}
 			}
 		}
+		// Если тип не задан в metadata, генерируем на основе индекса для разнообразия
+		if !hasTypeFromMetadata {
+			nodeType = celestialTypes[i%len(celestialTypes)]
+		}
+		debugTypes[nodeType]++
 		nodes = append(nodes, GraphNode{
 			ID:    n.ID().String(),
 			Title: n.Title().String(),
 			Type:  nodeType,
 		})
 	}
+	log.Printf("[GraphHandler] Node types distribution: %v", debugTypes)
 
 	graphLinks := make([]GraphLink, 0, len(links))
 	for _, l := range links {

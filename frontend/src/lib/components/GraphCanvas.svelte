@@ -394,6 +394,44 @@
     }
   }
 
+  function drawBlackhole(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Event horizon (black circle)
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    // Accretion disk (glowing ring)
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.3, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#ff6600';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Inner glow
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.8, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#ff3300';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function drawMoon(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Moon body (grey circle)
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = '#cccccc';
+    ctx.fill();
+    ctx.strokeStyle = '#999999';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Crater
+    ctx.beginPath();
+    ctx.arc(x - r * 0.3, y - r * 0.2, r * 0.25, 0, 2 * Math.PI);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fill();
+  }
+
   // Функция для центрирования графа в видимой области
   function resetView() {
     if (!simulation || !ctx) return;
@@ -538,6 +576,12 @@
           break;
         case 'debris':
           drawDebris(node.x, node.y, r, angle);
+          break;
+        case 'blackhole':
+          drawBlackhole(node.x, node.y, r, angle);
+          break;
+        case 'moon':
+          drawMoon(node.x, node.y, r, angle);
           break;
         default:
           if (enableShadows) {

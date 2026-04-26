@@ -3,12 +3,13 @@
     "server": {
       "rate_limit": {
         "enabled": true,
-        "requests": 100,
+        "requests": 1000,
         "window_seconds": 60,
         "endpoints": {
-          "notes_create": 30,
-          "links_create": 50,
-          "notes_update": 20
+          "notes_create": 200,
+          "links_create": 200,
+          "notes_update": 100,
+          "notes_delete": 500
         },
         "fallback_ports": ["8081", "8082"]
       }
