@@ -54,6 +54,9 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
         const secondary = await createNote(request, { title: `Secondary ${i}`, content: `Secondary content ${i}` });
         await createLink(request, linked.id, secondary.id, 0.5);
       }
+      
+      // Small delay to prevent rate limiting
+      await page.waitForTimeout(50);
     }
 
     // Navigate to 3D graph page
@@ -93,6 +96,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
         content: 'Link content'
       });
       await createLink(request, centralId, linked.id, 0.8, 'reference');
+      // Small delay to prevent rate limiting
+      await page.waitForTimeout(50);
     }
     
     // Navigate to 3D graph
@@ -185,6 +190,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     for (let i = 0; i < 8; i++) {
       const linked = await createNote(request, { title: `Loading Test Link ${i}`, content: `Content ${i}` });
       await createLink(request, centralId, linked.id, 0.6);
+      // Small delay to prevent rate limiting
+      await page.waitForTimeout(50);
     }
     
     // Navigate to 3D graph
@@ -297,11 +304,15 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     for (const type of ['planet', 'comet', 'asteroid']) {
       const note = await createNote(request, { title: `${type} Node`, content: `Type: ${type}`, type });
       linkedIds.push(note.id);
+      // Small delay to prevent rate limiting
+      await page.waitForTimeout(50);
     }
     
     // Create all links using helper
     for (const linkedId of linkedIds) {
       await createLink(request, centralId, linkedId, 0.8);
+      // Small delay to prevent rate limiting
+      await page.waitForTimeout(50);
     }
     
     // Navigate to central node's graph

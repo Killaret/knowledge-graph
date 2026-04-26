@@ -97,16 +97,21 @@ export async function createNote(
 }
 
 /**
- * Create multiple notes in batch
+ * Create multiple notes in batch with delay to prevent rate limiting
  */
 export async function createNotes(
   request: APIRequestContext,
-  notes: Partial<NoteData>[]
+  notes: Partial<NoteData>[],
+  delayMs = 100
 ): Promise<Array<{ id: string; [key: string]: unknown }>> {
   const created = [];
   for (const noteData of notes) {
     const note = await createNote(request, noteData);
     created.push(note);
+    // Small delay to prevent rate limiting
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
   }
   return created;
 }
