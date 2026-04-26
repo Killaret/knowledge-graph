@@ -1,6 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { tick } from 'svelte';
+
+// Mock requestAnimationFrame before component import to prevent errors
+global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+	return setTimeout(() => callback(performance.now()), 16) as unknown as number;
+});
+global.cancelAnimationFrame = vi.fn((id: number) => {
+	clearTimeout(id);
+});
+
 import Graph3D from './Graph3D.svelte';
 
 // Хранилище состояния моков для сброса между тестами
@@ -104,14 +113,19 @@ describe('Graph3D', () => {
     ]
   };
 
+  let rafIds: number[] = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    rafIds = [];
     // Сбрасываем mockState
     mockState.simulation.tick = vi.fn();
     
     // Mock requestAnimationFrame и cancelAnimationFrame
     global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-      return setTimeout(() => callback(performance.now()), 16) as unknown as number;
+      const id = setTimeout(() => callback(performance.now()), 16) as unknown as number;
+      rafIds.push(id);
+      return id;
     });
     global.cancelAnimationFrame = vi.fn((id: number) => {
       clearTimeout(id);
@@ -125,6 +139,13 @@ describe('Graph3D', () => {
       onfinish: vi.fn(),
       cancel: vi.fn()
     });
+  });
+
+  afterEach(() => {
+    // Clear all pending requestAnimationFrame timeouts
+    rafIds.forEach(id => clearTimeout(id));
+    rafIds = [];
+    vi.useRealTimers();
   });
 
   it('renders canvas element', async () => {
