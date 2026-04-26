@@ -120,6 +120,3 @@ huggingface_cache/
 
 # NLP service
 nlp-service/.dockerignore
-
-# Docker
-.dockerignore

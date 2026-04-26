@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"knowledge-graph/internal/application/common"
@@ -83,16 +84,32 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 }
 
 type createNoteRequest struct {
-	Title    string                 `json:"title" binding:"required"`
-	Content  string                 `json:"content"`
-	Type     string                 `json:"type"`
+	Title    string                 `json:"title" binding:"required,max=200"`
+	Content  string                 `json:"content" binding:"max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy asteroid satellite debris nebula"`
 	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// NoteValidationErrors defines human-readable error messages for note validation
+var NoteValidationErrors = map[string]string{
+	"title.required": "Title is required",
+	"title.max":      "Title must not exceed 200 characters",
+	"content.max":    "Content must not exceed 50000 characters",
+	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula",
 }
 
 func (h *Handler) Create(c *gin.Context) {
 	var req createNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		// Provide structured validation error response
+		errStr := err.Error()
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
+				return
+			}
+		}
+		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
 		return
 	}
 
@@ -112,7 +129,17 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newNote := note.NewNote(title, content, req.Type, metadata)
+	// Определяем тип: сначала из корня запроса, затем из metadata
+	noteType := req.Type
+	if noteType == "" && req.Metadata != nil {
+		if t, ok := req.Metadata["type"]; ok {
+			if ts, ok := t.(string); ok && ts != "" {
+				noteType = ts
+			}
+		}
+	}
+
+	newNote := note.NewNote(title, content, noteType, metadata)
 
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		c.JSON(500, gin.H{"error": "failed to save note"})
@@ -149,8 +176,8 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 type updateNoteRequest struct {
-	Title    string                 `json:"title"`
-	Content  string                 `json:"content"`
+	Title    string                 `json:"title" binding:"omitempty,min=1,max=200"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -174,7 +201,15 @@ func (h *Handler) Update(c *gin.Context) {
 
 	var req updateNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		// Provide structured validation error response
+		errStr := err.Error()
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
+				return
+			}
+		}
+		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
 		return
 	}
 
@@ -443,7 +478,7 @@ func (h *Handler) Search(c *gin.Context) {
 		req.Page = 1
 	}
 	if req.Size == 0 {
-		req.Size = 20
+		req.Size = h.cfg.PaginationDefaultLimit
 	}
 
 	// Perform search using repository directly (for simplicity, could use service layer)
@@ -482,14 +517,14 @@ func (h *Handler) Search(c *gin.Context) {
 // List возвращает список заметок с пагинацией
 func (h *Handler) List(c *gin.Context) {
 	// Получаем параметры пагинации из query
-	limitStr := c.DefaultQuery("limit", "20")
+	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
 
 	limit, _ := strconv.Atoi(limitStr)
 	offset, _ := strconv.Atoi(offsetStr)
 
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > h.cfg.PaginationMaxLimit {
+		limit = h.cfg.PaginationDefaultLimit
 	}
 
 	// Получаем заметки из репозитория

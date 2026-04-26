@@ -28,7 +28,7 @@ describe('notes API', () => {
       const mockResponse = { notes: [mockNote], total: 1, limit: 10, offset: 0 };
       
       server.use(
-        http.get('http://localhost/api/notes', () => HttpResponse.json(mockResponse))
+        http.get('http://localhost:8081/api/notes', () => HttpResponse.json(mockResponse))
       );
 
       const result = await getNotes();
@@ -46,7 +46,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.get('http://localhost/api/notes/1', () => HttpResponse.json(mockSingleNote))
+        http.get('http://localhost:8081/api/notes/1', () => HttpResponse.json(mockSingleNote))
       );
 
       const result = await getNote('1');
@@ -67,7 +67,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.post('http://localhost/api/notes', () => HttpResponse.json(mockResponse, { status: 201 }))
+        http.post('http://localhost:8081/api/notes', () => HttpResponse.json(mockResponse, { status: 201 }))
       );
 
       const result = await createNote(newNote);
@@ -90,7 +90,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.put('http://localhost/api/notes/1', () => HttpResponse.json(mockResponse))
+        http.put('http://localhost:8081/api/notes/1', () => HttpResponse.json(mockResponse))
       );
 
       const result = await updateNote('1', updateData);
@@ -102,7 +102,7 @@ describe('notes API', () => {
   describe('deleteNote', () => {
     it('should delete note', async () => {
       server.use(
-        http.delete('http://localhost/api/notes/1', () => new HttpResponse(null, { status: 204 }))
+        http.delete('http://localhost:8081/api/notes/1', () => new HttpResponse(null, { status: 204 }))
       );
 
       const result = await deleteNote('1');
@@ -119,7 +119,7 @@ describe('notes API', () => {
       ];
       
       server.use(
-        http.get('http://localhost/api/notes/1/suggestions', () => HttpResponse.json(mockSuggestions))
+        http.get('http://localhost:8081/api/notes/1/suggestions', () => HttpResponse.json(mockSuggestions))
       );
 
       const result = await getSuggestions('1', 5);
@@ -149,7 +149,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.get('http://localhost/api/notes/search', () => HttpResponse.json(mockResponse))
+        http.get('http://localhost:8081/api/notes/search*', () => HttpResponse.json(mockResponse))
       );
 
       const result = await searchNotes('search term', 1, 20);
@@ -162,7 +162,7 @@ describe('notes API', () => {
   describe('error handling', () => {
     it('should handle network errors', async () => {
       server.use(
-        http.get('http://localhost/api/notes/1', () => {
+        http.get('http://localhost:8081/api/notes/1', () => {
           return HttpResponse.error();
         })
       );
@@ -172,7 +172,7 @@ describe('notes API', () => {
 
     it('should handle HTTP 404 errors', async () => {
       server.use(
-        http.get('http://localhost/api/notes/999', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
+        http.get('http://localhost:8081/api/notes/999', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
       );
 
       await expect(getNote('999')).rejects.toThrow();

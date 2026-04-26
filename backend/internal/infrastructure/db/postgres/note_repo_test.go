@@ -30,12 +30,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestNoteRepository_SaveAndFind(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewNoteRepository(db)
+	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("Test")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 
 	ctx := context.Background()
 	err := repo.Save(ctx, n)
@@ -60,12 +60,12 @@ func TestNoteRepository_SaveAndFind(t *testing.T) {
 
 func TestNoteRepository_Update(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewNoteRepository(db)
+	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("Original")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 	ctx := context.Background()
 	if err := repo.Save(ctx, n); err != nil {
 		t.Fatalf("Save failed: %v", err)
@@ -86,12 +86,12 @@ func TestNoteRepository_Update(t *testing.T) {
 
 func TestNoteRepository_Delete(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewNoteRepository(db)
+	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("ToDelete")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, metadata)
+	n := note.NewNote(title, content, "star", metadata)
 	ctx := context.Background()
 	if err := repo.Save(ctx, n); err != nil {
 		t.Fatalf("Save failed: %v", err)

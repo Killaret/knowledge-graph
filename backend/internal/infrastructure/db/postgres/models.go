@@ -26,10 +26,10 @@ func (NoteModel) TableName() string {
 
 // LinkModel — связь между заметками
 type LinkModel struct {
-	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
-	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:source_id"`
-	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;index;column:target_id"`
-	LinkType     string         `gorm:"default:'reference';column:link_type"`
+	ID           uuid.UUID      `gorm:"type:uuid;primaryKey"`
+	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:source_note_id"`
+	TargetNoteID uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:target_note_id"`
+	LinkType     string         `gorm:"default:'reference';uniqueIndex:idx_links_source_target_type;column:link_type"`
 	Weight       float64        `gorm:"default:1.0;column:weight"`
 	Metadata     datatypes.JSON `gorm:"type:jsonb;column:metadata"`
 	CreatedAt    time.Time      `gorm:"column:created_at"`
@@ -68,11 +68,21 @@ func (NoteEmbeddingModel) TableName() string {
 	return "note_embeddings"
 }
 
-// NoteTagModel — теги заметки
+// TagModel — тег
+type TagModel struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Name      string    `gorm:"uniqueIndex;not null"`
+	CreatedAt time.Time
+}
+
+func (TagModel) TableName() string { return "tags" }
+
+// NoteTagModel — связь заметки с тегом (многие-ко-многим)
 type NoteTagModel struct {
 	NoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Tag    string    `gorm:"primaryKey"`
+	TagID  uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Note   NoteModel `gorm:"foreignKey:NoteID"`
+	Tag    TagModel  `gorm:"foreignKey:TagID"`
 }
 
 func (NoteTagModel) TableName() string { return "note_tags" }

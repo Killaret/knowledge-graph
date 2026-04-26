@@ -139,6 +139,10 @@ func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Not
 	return allNotes[offset:end], total, nil
 }
 
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	return m.List(ctx, limit, offset)
+}
+
 func findSubstring(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {

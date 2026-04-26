@@ -118,26 +118,68 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
     title = generate_title(category, index)
     content = generate_content(category, title)
     # Разнообразные типы небесных тел для всех заметок
-    ALL_CELESTIAL_TYPES = ["star", "planet", "comet", "galaxy", "nebula", "asteroid"]
+    ALL_CELESTIAL_TYPES = ["star", "planet", "moon", "comet", "galaxy", "nebula", "asteroid", "satellite", "blackhole"]
     return {
         "title": title,
         "content": content,
-        "type": random.choice(ALL_CELESTIAL_TYPES),  # Случайный тип для каждой заметки
         "metadata": {
             "category": category,
-            "word_count": len(content.split())
+            "word_count": len(content.split()),
+            "type": random.choice(ALL_CELESTIAL_TYPES)  # Тип в metadata для backend
         }
     }
+
+# ----------------------------------------------------------------------
+# Исключения для обработки ошибок
+# ----------------------------------------------------------------------
+class APIError(Exception):
+    """Ошибка API с подробным описанием"""
+    def __init__(self, method: str, url: str, status_code: int = None, response_text: str = None, message: str = None):
+        self.method = method
+        self.url = url
+        self.status_code = status_code
+        self.response_text = response_text
+        self.message = message
+        super().__init__(self._format_message())
+    
+    def _format_message(self) -> str:
+        parts = [f"[ERR] API Error: {self.method} {self.url}"]
+        if self.status_code:
+            parts.append(f"   Status Code: {self.status_code}")
+        if self.message:
+            parts.append(f"   Message: {self.message}")
+        if self.response_text:
+            parts.append(f"   Response: {self.response_text[:500]}")
+        return "\n".join(parts)
+
+class SeedingError(Exception):
+    """Ошибка при загрузке тестовых данных"""
+    pass
 
 # ----------------------------------------------------------------------
 # Работа с API
 # ----------------------------------------------------------------------
 class APIClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, rate_limit_delay: float = 0.0):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
+        self.created_notes: List[str] = []  # Для отслеживания созданных заметок
+        self.created_links: List[str] = []  # Для отслеживания созданных связей
+        self.rate_limit_delay = rate_limit_delay
 
-    def _request(self, method: str, path: str, **kwargs) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
+    def _request(self, method: str, path: str, raise_on_error: bool = True, **kwargs) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
+        """
+        Выполняет HTTP запрос к API.
+        
+        Args:
+            method: HTTP метод
+            path: путь URL
+            raise_on_error: если True, выбрасывает APIError при ошибке
+            **kwargs: дополнительные параметры для requests
+        
+        Returns:
+            JSON ответ или None при ошибке (если raise_on_error=False)
+        """
         url = f"{self.base_url}{path}"
         try:
             resp = self.session.request(method, url, **kwargs)
@@ -145,37 +187,83 @@ class APIClient:
             if resp.status_code == 204:
                 return {}
             return resp.json()
+        except requests.exceptions.HTTPError as e:
+            print(f"[DEBUG] HTTPError type: {type(e)}, has response: {e.response is not None}")
+            print(f"[DEBUG] Response repr: {repr(e.response)}")
+            # Используем getattr напрямую, без boolean проверки
+            status_code = getattr(e.response, 'status_code', None)
+            response_text = getattr(e.response, 'text', None) or ''
+            print(f"[DEBUG] Extracted via getattr: status_code={status_code}, response_len={len(response_text)}")
+            # Log detailed error for 500 errors
+            if status_code == 500:
+                print(f"\n[ERR] SERVER ERROR 500:")
+                print(f"   URL: {method} {url}")
+                print(f"   Response: {response_text[:500] if response_text else 'No response body'}")
+                print(f"   Request body: {kwargs.get('json', 'N/A')}")
+            error = APIError(method, url, status_code, response_text, str(e))
+            if raise_on_error:
+                raise error
+            print(str(error))
+            return None
         except requests.exceptions.RequestException as e:
-            print(f"❌ API error {method} {url}: {e}")
-            if e.response is not None:
-                print(f"   Response: {e.response.text}")
+            error = APIError(method, url, message=str(e))
+            if raise_on_error:
+                raise error
+            print(str(error))
             return None
 
-    def get_all_notes(self) -> List[Dict[str, Any]]:
-        """GET /notes"""
-        result = self._request("GET", "/notes")
-        if isinstance(result, list):
-            return result
-        return []
+    def get_all_notes(self, limit: int = 1000) -> List[Dict[str, Any]]:
+        """GET /notes с пагинацией - получает все заметки"""
+        all_notes = []
+        offset = 0
+        
+        while True:
+            result = self._request("GET", f"/notes?limit={limit}&offset={offset}")
+            if not isinstance(result, dict):
+                raise APIError("GET", f"/notes?limit={limit}&offset={offset}", 
+                              message=f"Unexpected response format: expected dict, got {type(result).__name__}")
+            
+            notes = result.get("notes", [])
+            if not isinstance(notes, list):
+                raise APIError("GET", f"/notes?limit={limit}&offset={offset}",
+                              message=f"Unexpected 'notes' field format: expected list, got {type(notes).__name__}")
+            
+            all_notes.extend(notes)
+            total = result.get("total", 0)
+            
+            # Проверяем, получили ли все заметки
+            if len(all_notes) >= total or len(notes) == 0:
+                break
+                
+            offset += len(notes)
+        
+        return all_notes
 
-    def delete_note(self, note_id: str) -> bool:
+    def delete_note(self, note_id: str, raise_on_error: bool = False) -> bool:
         """DELETE /notes/{id}"""
-        resp = self._request("DELETE", f"/notes/{note_id}")
-        return resp is not None
+        try:
+            resp = self._request("DELETE", f"/notes/{note_id}", raise_on_error=raise_on_error)
+            return resp is not None
+        except APIError:
+            if raise_on_error:
+                raise
+            return False
 
     def create_note(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """POST /notes"""
         result = self._request("POST", "/notes", json=payload)
-        if isinstance(result, dict):
+        if isinstance(result, dict) and "id" in result:
+            self.created_notes.append(result["id"])
             return result
-        return None
+        raise APIError("POST", "/notes", message=f"Invalid response format: missing 'id' field. Response: {result}")
 
-    # FIXED: Добавлен параметр link_type для явного указания типа связи
     def create_link(self, source_id: str, target_id: str, description: str = "",
-                    weight: float = 1.0, link_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+                    weight: float = 1.0, link_type: Optional[str] = None,
+                    skip_duplicate: bool = True) -> Optional[Dict[str, Any]]:
         """
         POST /links — обязателен link_type (reference/dependency/related/custom).
         Если link_type не передан, он определяется по описанию.
+        Если skip_duplicate=True, ошибка 409 (дубликат) игнорируется.
         """
         if link_type is None:
             if "экранизация" in description or "адаптация" in description:
@@ -187,6 +275,12 @@ class APIClient:
             else:
                 link_type = "related"
 
+        # Валидация link_type
+        valid_types = ["reference", "dependency", "related", "custom"]
+        if link_type not in valid_types:
+            raise APIError("POST", "/links", 
+                          message=f"Invalid link_type: '{link_type}'. Valid types: {valid_types}")
+
         payload = {
             "source_note_id": source_id,
             "target_note_id": target_id,
@@ -194,17 +288,28 @@ class APIClient:
             "weight": weight,
             "metadata": {"description": description}
         }
-        result = self._request("POST", "/links", json=payload)
-        if isinstance(result, dict):
-            return result
-        return None
+        
+        try:
+            time.sleep(self.rate_limit_delay)  # Задержка для rate limit
+            result = self._request("POST", "/links", json=payload)
+            if isinstance(result, dict) and "id" in result:
+                self.created_links.append(result["id"])
+                return result
+            raise APIError("POST", "/links", 
+                          message=f"Invalid response format: missing 'id' field. Response: {result}")
+        except APIError as e:
+            print(f"[DEBUG] create_link caught error: status_code={e.status_code} (type={type(e.status_code).__name__}), skip_duplicate={skip_duplicate}")
+            if skip_duplicate and e.status_code == 409:
+                print(f"[DEBUG] Ignoring 409 duplicate link error")
+                return None
+            raise
 
 # ----------------------------------------------------------------------
 # Логика загрузки
 # ----------------------------------------------------------------------
 def clear_database(api: APIClient) -> None:
     """Получает все заметки и удаляет их."""
-    print("🧹 Очистка базы данных...")
+    print("[CLEANUP] Очистка базы данных...")
     notes = api.get_all_notes()
     if not notes:
         print("   База уже пуста.")
@@ -215,141 +320,260 @@ def clear_database(api: APIClient) -> None:
     for note in tqdm(notes, desc="Удаление заметок", unit="note"):
         if api.delete_note(note["id"]):
             success += 1
-    print(f"✅ Удалено {success} из {len(notes)} заметок.")
-    time.sleep(1)
+        time.sleep(0.1)  # Задержка для rate limit
+    print(f"[OK] Удалено {success} из {len(notes)} заметок.")
+    time.sleep(2)
+
+def cleanup_on_error(api: APIClient) -> None:
+    """Очищает все созданные данные при ошибке"""
+    print("\n[CLEANUP] ОЧИСТКА: Удаление созданных данных из-за ошибки...")
+    
+    # Удаляем созданные связи
+    if api.created_links:
+        print(f"   Удаление {len(api.created_links)} связей...")
+        for link_id in api.created_links:
+            try:
+                time.sleep(0.3)  # Задержка для rate limit
+                api._request("DELETE", f"/links/{link_id}", raise_on_error=False)
+            except Exception:
+                pass
+    
+    # Удаляем созданные заметки
+    if api.created_notes:
+        print(f"   Удаление {len(api.created_notes)} заметок...")
+        for note_id in api.created_notes:
+            try:
+                time.sleep(0.3)  # Задержка для rate limit
+                api.delete_note(note_id, raise_on_error=False)
+                time.sleep(0.3)  # Задержка для rate limit
+            except Exception:
+                pass
+    
+    print("[OK] Очистка завершена")
 
 def create_notes(api: APIClient) -> Dict[str, List[str]]:
     """
     Создаёт заметки по категориям.
     Возвращает словарь: category -> list of note IDs.
+    При ошибке выбрасывает SeedingError.
     """
     created_ids = {cat: [] for cat in CATEGORIES}
-    print(f"\n📝 Создание {TOTAL_NOTES} заметок...")
-    for cat in CATEGORIES:
-        print(f"\n   Категория: {cat}")
-        for i in tqdm(range(NOTES_PER_CATEGORY), desc=f"   {cat}", unit="note"):
-            payload = generate_note_payload(cat, i)
-            resp = api.create_note(payload)
-            if resp:
-                created_ids[cat].append(resp["id"])
-            else:
-                print(f"❌ Не удалось создать заметку {i} в категории {cat}")
-            time.sleep(0.05)
+    print(f"\n[NOTES] Создание {TOTAL_NOTES} заметок...")
+    
+    try:
+        for cat in CATEGORIES:
+            print(f"\n   Категория: {cat}")
+            for i in tqdm(range(NOTES_PER_CATEGORY), desc=f"   {cat}", unit="note"):
+                payload = generate_note_payload(cat, i)
+                try:
+                    result = api.create_note(payload)
+                    if result:
+                        created_ids[cat].append(result["id"])
+                except APIError as e:
+                    raise SeedingError(f"Ошибка создания заметки {i} в категории {cat}: {e}")
+                time.sleep(0.5)
+    except SeedingError:
+        raise
+    except Exception as e:
+        raise SeedingError(f"Неожиданная ошибка при создании заметок: {e}")
+    
     return created_ids
 
-def create_links_between_categories(api: APIClient, ids_map: Dict[str, List[str]]) -> None:
+def create_links_between_categories(api: APIClient, ids_map: Dict[str, List[str]]) -> int:
     """
     Создаёт прямые связи между заметками разных категорий.
     Например: книга -> экранизация, манга -> аниме.
+    При ошибке выбрасывает SeedingError.
+    
+    Returns:
+        Количество созданных связей
     """
-    print("\n🔗 Создание межкатегорийных связей...")
+    print("\n[LINKS] Создание межкатегорийных связей...")
     total_links = 0
 
-    # 1. Книги -> Экранизации
-    if "book" in ids_map and "adaptation" in ids_map:
-        pairs = min(len(ids_map["book"]), len(ids_map["adaptation"])) // 2
-        for _ in range(pairs):
-            src = random.choice(ids_map["book"])
-            dst = random.choice(ids_map["adaptation"])
-            # reference тип определится автоматически по описанию
-            if api.create_link(src, dst, description="экранизация книги", weight=0.9):
-                total_links += 1
-            if api.create_link(dst, src, description="основано на книге", weight=0.8):
-                total_links += 1
+    try:
+        # 1. Книги -> Экранизации
+        if "book" in ids_map and "adaptation" in ids_map:
+            pairs = min(len(ids_map["book"]), len(ids_map["adaptation"])) // 2
+            for _ in range(pairs):
+                src = random.choice(ids_map["book"])
+                dst = random.choice(ids_map["adaptation"])
+                try:
+                    if api.create_link(src, dst, description="экранизация книги", weight=0.9):
+                        total_links += 1
+                    if api.create_link(dst, src, description="основано на книге", weight=0.8):
+                        total_links += 1
+                except APIError as e:
+                    raise SeedingError(f"Ошибка создания связи book->adaptation: {e}")
 
-    # 2. Манга -> Аниме
-    if "manga" in ids_map and "anime" in ids_map:
-        pairs = min(len(ids_map["manga"]), len(ids_map["anime"])) // 2
-        for _ in range(pairs):
-            src = random.choice(ids_map["manga"])
-            dst = random.choice(ids_map["anime"])
-            if api.create_link(src, dst, description="аниме-адаптация", weight=0.95):
-                total_links += 1
-            if api.create_link(dst, src, description="основано на манге", weight=0.85):
-                total_links += 1
+        # 2. Манга -> Аниме
+        if "manga" in ids_map and "anime" in ids_map:
+            pairs = min(len(ids_map["manga"]), len(ids_map["anime"])) // 2
+            for _ in range(pairs):
+                src = random.choice(ids_map["manga"])
+                dst = random.choice(ids_map["anime"])
+                try:
+                    if api.create_link(src, dst, description="аниме-адаптация", weight=0.95):
+                        total_links += 1
+                    if api.create_link(dst, src, description="основано на манге", weight=0.85):
+                        total_links += 1
+                except APIError as e:
+                    raise SeedingError(f"Ошибка создания связи manga->anime: {e}")
 
-    # 3. Фильмы -> Экранизации
-    if "movie" in ids_map and "adaptation" in ids_map:
-        pairs = min(len(ids_map["movie"]), len(ids_map["adaptation"])) // 3
-        for _ in range(pairs):
-            src = random.choice(ids_map["movie"])
-            dst = random.choice(ids_map["adaptation"])
-            if api.create_link(src, dst, description="ремейк/адаптация", weight=0.7):
-                total_links += 1
+        # 3. Фильмы -> Экранизации
+        if "movie" in ids_map and "adaptation" in ids_map:
+            pairs = min(len(ids_map["movie"]), len(ids_map["adaptation"])) // 3
+            for _ in range(pairs):
+                src = random.choice(ids_map["movie"])
+                dst = random.choice(ids_map["adaptation"])
+                try:
+                    if api.create_link(src, dst, description="ремейк/адаптация", weight=0.7):
+                        total_links += 1
+                except APIError as e:
+                    raise SeedingError(f"Ошибка создания связи movie->adaptation: {e}")
+    except SeedingError:
+        raise
+    except Exception as e:
+        raise SeedingError(f"Неожиданная ошибка при создании межкатегорийных связей: {e}")
 
     print(f"   Создано {total_links} межкатегорийных связей.")
+    return total_links
 
-def create_links_within_category(api: APIClient, ids_map: Dict[str, List[str]]) -> None:
-    """Создаёт связи внутри одной категории (похожие произведения)."""
-    print("\n🔗 Создание внутрикатегорийных связей...")
+def create_links_within_category(api: APIClient, ids_map: Dict[str, List[str]]) -> int:
+    """Создаёт связи внутри одной категории (похожие произведения).
+    При ошибке выбрасывает SeedingError.
+    
+    Returns:
+        Количество созданных связей
+    """
+    print("\n[LINKS] Создание внутрикатегорийных связей...")
     total_links = 0
-    for cat, ids in ids_map.items():
-        if len(ids) < 2:
-            continue
-        for i in range(0, len(ids) - 1, 2):
-            src = ids[i]
-            dst = ids[i + 1]
-            if api.create_link(src, dst, description=f"похожее {cat}", weight=0.6):
-                total_links += 1
-            if api.create_link(dst, src, description=f"похожее {cat}", weight=0.6):
-                total_links += 1
+    
+    try:
+        for cat, ids in ids_map.items():
+            if len(ids) < 2:
+                continue
+            for i in range(0, len(ids) - 1, 2):
+                src = ids[i]
+                dst = ids[i + 1]
+                try:
+                    if api.create_link(src, dst, description=f"похожее {cat}", weight=0.6, skip_duplicate=True):
+                        total_links += 1
+                    if api.create_link(dst, src, description=f"похожее {cat}", weight=0.6, skip_duplicate=True):
+                        total_links += 1
+                except APIError as e:
+                    raise SeedingError(f"Ошибка создания связи в категории {cat}: {e}")
+    except SeedingError:
+        raise
+    except Exception as e:
+        raise SeedingError(f"Неожиданная ошибка при создании внутрикатегорийных связей: {e}")
+    
     print(f"   Создано {total_links} внутрикатегорийных связей.")
+    return total_links
 
-# FIXED: Добавлено использование link_type="custom" для части случайных связей
-def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> None:
-    """Создаёт случайные связи для увеличения связности графа."""
-    print(f"\n🎲 Создание {count} случайных связей...")
+def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> int:
+    """Создаёт случайные связи для увеличения связности графа.
+    При ошибке выбрасывает SeedingError.
+    
+    Returns:
+        Количество созданных связей
+    """
+    print(f"\n[LINKS] Создание {count} случайных связей...")
     created = 0
-    for _ in tqdm(range(count), desc="Случайные связи", unit="link"):
-        src = random.choice(all_ids)
-        dst = random.choice(all_ids)
-        if src == dst:
-            continue
-        # 30% случайных связей делаем custom
-        if random.random() < 0.3:
-            link_type = "custom"
-            description = "пользовательская связь"
-        else:
-            link_type = "related"
-            description = "связано"
-        if api.create_link(src, dst, description=description, link_type=link_type, weight=0.3):
-            created += 1
+    
+    try:
+        for _ in tqdm(range(count), desc="Случайные связи", unit="link"):
+            src = random.choice(all_ids)
+            dst = random.choice(all_ids)
+            if src == dst:
+                continue
+            # 30% случайных связей делаем custom
+            if random.random() < 0.3:
+                link_type = "custom"
+                description = "пользовательская связь"
+            else:
+                link_type = "related"
+                description = "связано"
+            try:
+                if api.create_link(src, dst, description=description, link_type=link_type, weight=0.3, skip_duplicate=True):
+                    created += 1
+            except APIError as e:
+                raise SeedingError(f"Ошибка создания случайной связи: {e}")
+    except SeedingError:
+        raise
+    except Exception as e:
+        raise SeedingError(f"Неожиданная ошибка при создании случайных связей: {e}")
+    
     print(f"   Создано {created} случайных связей.")
+    return created
 
 def main():
     parser = argparse.ArgumentParser(description="Загрузка тестовых данных в Knowledge Graph")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="URL API бэкенда")
     parser.add_argument("--skip-clear", action="store_true", help="Пропустить очистку БД")
     parser.add_argument("--no-random-links", action="store_true", help="Не создавать случайные связи")
+    parser.add_argument("--no-cleanup-on-error", action="store_true", help="Не очищать созданные данные при ошибке")
+    parser.add_argument("--rate-limit-delay", type=float, default=0.0, help="Задержка между запросами (сек), 0 для отключения")
     args = parser.parse_args()
 
-    api = APIClient(args.api_url)
-    print(f"🚀 Подключение к API: {args.api_url}")
+    api = APIClient(args.api_url, rate_limit_delay=args.rate_limit_delay)
+    print(f"[START] Подключение к API: {args.api_url}")
 
     # Проверка доступности API
-    if api._request("GET", "/health") is None:
-        print("❌ Не удалось подключиться к API. Убедитесь, что бэкенд запущен.")
+    try:
+        health = api._request("GET", "/health")
+        if health is None:
+            print("[ERR] Не удалось подключиться к API. Убедитесь, что бэкенд запущен.")
+            sys.exit(1)
+    except APIError as e:
+        print(f"[ERR] Не удалось подключиться к API: {e}")
         sys.exit(1)
 
-    if not args.skip_clear:
-        clear_database(api)
+    success = False
+    try:
+        if not args.skip_clear:
+            clear_database(api)
 
-    ids_by_category = create_notes(api)
-    all_ids = [id for ids in ids_by_category.values() for id in ids]
+        ids_by_category = create_notes(api)
+        all_ids = [id for ids in ids_by_category.values() for id in ids]
 
-    if not all_ids:
-        print("❌ Не создано ни одной заметки. Выход.")
+        if not all_ids:
+            raise SeedingError("Не создано ни одной заметки")
+
+        create_links_between_categories(api, ids_by_category)
+        create_links_within_category(api, ids_by_category)
+        if not args.no_random_links:
+            create_random_links(api, all_ids, count=30)
+
+        success = True
+        print("\n[OK] Загрузка тестовых данных завершена!")
+        print(f"   Всего создано заметок: {len(all_ids)}")
+        print(f"   Всего создано связей: {len(api.created_links)}")
+        print(f"   Категории: {', '.join(f'{k}: {len(v)}' for k, v in ids_by_category.items())}")
+        print("\n[INFO] Теперь можно проверить работу графа и рекомендаций через фронтенд.")
+        
+    except SeedingError as e:
+        print(f"\n[ERR] ОШИБКА ЗАГРУЗКИ: {e}")
+        if not args.no_cleanup_on_error:
+            cleanup_on_error(api)
         sys.exit(1)
-
-    create_links_between_categories(api, ids_by_category)
-    create_links_within_category(api, ids_by_category)
-    if not args.no_random_links:
-        create_random_links(api, all_ids, count=30)
-
-    print("\n✅ Загрузка тестовых данных завершена!")
-    print(f"   Всего создано заметок: {len(all_ids)}")
-    print(f"   Категории: {', '.join(f'{k}: {len(v)}' for k, v in ids_by_category.items())}")
-    print("\n💡 Теперь можно проверить работу графа и рекомендаций через фронтенд.")
+    except APIError as e:
+        print(f"\n[ERR] ОШИБКА API: {e}")
+        if not args.no_cleanup_on_error:
+            cleanup_on_error(api)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n\n[WARN] Прервано пользователем (Ctrl+C)")
+        if not args.no_cleanup_on_error:
+            cleanup_on_error(api)
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n[ERR] НЕОЖИДАННАЯ ОШИБКА: {e}")
+        import traceback
+        traceback.print_exc()
+        if not args.no_cleanup_on_error:
+            cleanup_on_error(api)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

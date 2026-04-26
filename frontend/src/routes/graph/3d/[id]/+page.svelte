@@ -52,7 +52,7 @@
         
         // Load remaining full graph in background
         isLoadingFull = true;
-        getFullGraphData().then(fullData => {
+        getFullGraphData().then((fullData: GraphData) => {
           console.log('[3D Page] Background loaded full graph:', fullData.nodes.length, 'nodes');
           if (graphRef && fullData.nodes.length > initialData.nodes.length) {
             graphRef.addData(fullData);
@@ -66,7 +66,7 @@
         console.log('[3D Page] Phase 1 - Loaded initial graph (depth 1):', initialData.nodes.length, 'nodes');
         
         // Check if start node is in the data - backend may not include it
-        const hasStartNode = initialData.nodes.some(n => n.id === noteId);
+        const hasStartNode = initialData.nodes.some((n: { id: string }) => n.id === noteId);
         if (!hasStartNode) {
           console.log('[3D Page] Start node not in response, fetching separately...');
           try {
@@ -90,11 +90,11 @@
         isLoadingFull = true;
         console.log('[3D Page] Starting Phase 2 - loading full graph (depth 3)...');
         
-        getGraphData(noteId, 3).then(fullData => {
+        getGraphData(noteId, 3).then((fullData: GraphData) => {
           console.log('[3D Page] Phase 2 - Loaded full graph:', fullData.nodes.length, 'nodes');
           
           // Ensure start node is in the full data too
-          const hasStartNodeFull = fullData.nodes.some(n => n.id === noteId);
+          const hasStartNodeFull = fullData.nodes.some((n: { id: string }) => n.id === noteId);
           if (!hasStartNodeFull) {
             // Start node will be added when we merge, but let's verify
             console.log('[3D Page] Start node not in full data, it will be merged from current data');
@@ -105,7 +105,7 @@
             graphRef.addData(fullData);
           }
           isLoadingFull = false;
-        }).catch(e => {
+        }).catch((e: unknown) => {
           console.error('[3D Page] Failed to load full graph:', e);
           isLoadingFull = false;
         });
@@ -160,7 +160,7 @@
         bind:this={graphRef} 
         data={graphData} 
         centerNodeId={currentNoteId}
-        onNodeDoubleClick={(node) => console.log('Double-clicked node:', node.id)}
+        onNodeDoubleClick={(node: { id: string }) => console.log('Double-clicked node:', node.id)}
       />
     </div>
   {/if}

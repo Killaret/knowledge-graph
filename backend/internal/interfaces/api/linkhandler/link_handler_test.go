@@ -86,6 +86,29 @@ func (m *mockNoteRepoForLink) FindAll(ctx context.Context) ([]*note.Note, error)
 	return allNotes, nil
 }
 
+func (m *mockNoteRepoForLink) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	var allNotes []*note.Note
+	for _, n := range m.notes {
+		allNotes = append(allNotes, n)
+	}
+
+	total := int64(len(allNotes))
+
+	if offset >= len(allNotes) {
+		return []*note.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(allNotes) {
+		end = len(allNotes)
+	}
+	if limit == 0 {
+		end = len(allNotes)
+	}
+
+	return allNotes[offset:end], total, nil
+}
+
 func setupLinkRouter() (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
 	gin.SetMode(gin.TestMode)
 	linkRepo := newMockLinkRepo()

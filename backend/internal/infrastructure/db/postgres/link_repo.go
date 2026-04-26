@@ -9,9 +9,13 @@ import (
 	"knowledge-graph/internal/domain/link"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+// ErrDuplicateLink возвращается при попытке создать дубликат связи
+var ErrDuplicateLink = errors.New("link of this type already exists between these notes")
 
 type LinkRepository struct {
 	db *gorm.DB
@@ -33,6 +37,10 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
 			log.Printf("[LinkRepository.Save] Create failed: id=%s source=%s target=%s error=%v",
 				model.ID, model.SourceNoteID, model.TargetNoteID, err)
+			// Проверяем на нарушение уникального ограничения (PostgreSQL код 23505)
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+				return ErrDuplicateLink
+			}
 			return err
 		}
 		return nil
@@ -61,7 +69,7 @@ func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link
 
 func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_id = ?", sourceID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +78,7 @@ func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) (
 
 func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_id = ?", targetID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_note_id = ?", targetID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +92,7 @@ func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_id IN ?", sourceIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_note_id IN ?", sourceIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +115,7 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_id IN ?", targetIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_note_id IN ?", targetIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -128,9 +136,35 @@ func (r *LinkRepository) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
-	return r.db.WithContext(ctx).Where("source_id = ?", sourceID).Delete(&LinkModel{}).Error
+	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
+// FindAllPaginated возвращает связи с пагинацией на уровне БД
+// limit=0 означает "все записи"
+func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
+	var total int64
+
+	// Считаем общее количество
+	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Запрос с пагинацией
+	query := r.db.WithContext(ctx)
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	var models []LinkModel
+	if err := query.Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainLinks(models), total, nil
+}
+
+// FindAll возвращает все связи без пагинации
+// DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	var models []LinkModel
 	err := r.db.WithContext(ctx).Find(&models).Error

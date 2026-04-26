@@ -1,0 +1,43 @@
+:root {
+  /* Primary colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: rgba(59, 130, 246, 0.1);
+
+  /* Secondary colors */
+  --color-secondary: #6b7280;
+  --color-secondary-hover: #4b5563;
+  --color-secondary-light: rgba(107, 114, 128, 0.1);
+
+  /* Danger/error colors */
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: rgba(239, 68, 68, 0.1);
+
+  /* Surface colors */
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f9fafb;
+  --color-background: #f3f4f6;
+
+  /* Text colors */
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+
+  /* Border colors */
+  --color-border: #e5e7eb;
+  --color-border-focus: #3b82f6;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Celestial type colors */
+  --color-star: #fbbf24;
+  --color-planet: #60a5fa;
+  --color-comet: #f472b6;
+  --color-galaxy: #a78bfa;
+  --color-asteroid: #94a3b8;
+}

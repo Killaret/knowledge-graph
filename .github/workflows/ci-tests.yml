@@ -56,9 +56,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: kg_user
-          POSTGRES_PASSWORD: kg_password
-          POSTGRES_DB: knowledge_graph
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_base
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -96,7 +96,7 @@ jobs:
       
       - name: Apply database migrations
         env:
-          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
         run: |
           # Install golang-migrate
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -107,12 +107,12 @@ jobs:
       
       - name: Start backend for E2E tests
         env:
-          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
-          GOTOOLCHAIN: local
         run: |
           cd ../backend
           go mod download
+          go mod tidy
           go run cmd/server/main.go &
           BACKEND_PID=$!
           echo "Backend PID: $BACKEND_PID"

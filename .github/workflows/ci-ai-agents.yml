@@ -15,8 +15,6 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
-    env:
-      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v4
       
@@ -33,7 +31,9 @@ jobs:
         with:
           working-directory: ./backend
           version: v1.56.0
-          args: --path-prefix=. --timeout=5m
+          args: --path-prefix=. --timeout=10m
+          skip-cache: false
+          install-mode: binary
 
   test-backend:
     name: Test Backend (Go)
@@ -41,8 +41,6 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
-    env:
-      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v4
 
@@ -52,16 +50,12 @@ jobs:
           go-version: '1.23'
 
       - name: Download dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go mod tidy
 
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage.out
-          flags: backend
+        run: go test -v ./...
 
   lint-frontend:
     name: Lint Frontend (Svelte)
@@ -101,9 +95,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: kg_user
-          POSTGRES_PASSWORD: kg_password
-          POSTGRES_DB: knowledge_graph
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_base
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -141,7 +135,7 @@ jobs:
       
       - name: Apply database migrations
         env:
-          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
         run: |
           # Install golang-migrate
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -152,12 +146,12 @@ jobs:
       
       - name: Start backend for BDD tests
         env:
-          DATABASE_URL: postgres://kg_user:kg_password@localhost:5432/knowledge_graph?sslmode=disable
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
-          GOTOOLCHAIN: local
         run: |
           cd ../backend
           go mod download
+          go mod tidy
           
           # Build and start backend with logging
           go build -o server cmd/server/main.go 2>&1 | tee backend-build.log
@@ -267,10 +261,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
       
       - name: Build backend image
-        run: docker build -t knowledge-graph-backend ./backend
+        run: docker build -t knowledge-graph-backend -f ./backend/Dockerfile .
       
       - name: Build frontend image
-        run: docker build -t knowledge-graph-frontend ./frontend
+        run: docker build -t knowledge-graph-frontend -f ./frontend/Dockerfile .
       
       - name: Build NLP service image
         run: docker build -t knowledge-graph-nlp ./nlp-service

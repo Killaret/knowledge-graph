@@ -3,7 +3,7 @@ import ky from 'ky';
 
 // Определяем базовый URL в зависимости от среды
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-const prefixUrl = isTest ? 'http://localhost/api' : '/api';
+const prefixUrl = isTest ? 'http://localhost:8081/api' : '/api';
 
 // Базовый URL с прокси /api → http://localhost:8080
 export const api = ky.create({ 

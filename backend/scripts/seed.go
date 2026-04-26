@@ -148,8 +148,11 @@ func generateNotes(count int) []Note {
 	}{
 		{"star", starTitles},
 		{"planet", planetTitles},
+		{"satellite", planetTitles},
 		{"comet", cometTitles},
 		{"galaxy", galaxyTitles},
+		{"asteroid", cometTitles}, // Астероиды
+		{"debris", starTitles},    // Обломки
 	}
 
 	for i := 0; i < count; i++ {
@@ -232,9 +235,9 @@ func insertLinks(ctx context.Context, pool *pgxpool.Pool, links []Link) (int, er
 
 	for _, link := range links {
 		query := `
-			INSERT INTO links (source_note_id, target_note_id, link_type, weight, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, NOW(), NOW())
-			ON CONFLICT (source_note_id, target_note_id) DO NOTHING
+			INSERT INTO links (source_note_id, target_note_id, link_type, weight)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (source_note_id, target_note_id, link_type) DO NOTHING
 		`
 
 		result, err := pool.Exec(ctx, query, link.SourceNoteID, link.TargetNoteID, link.LinkType, link.Weight)

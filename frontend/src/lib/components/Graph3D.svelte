@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { browser } from '$app/environment';
   import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
   import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
   import { autoZoomToFit, centerCameraOnNode } from '$lib/three/camera/cameraUtils';
-  import type { GraphData } from '$lib/api/graph';
+  import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
   import { filterValidLinks } from '$lib/utils/graphUtils';
+  import { graphConfig3D } from '$lib/config';
   import * as THREE from 'three';
 
   const { 
@@ -47,15 +48,23 @@
   let dataUpdateKey = $state(0);
   let lastDataTimestamp = $state(0);
 
+  // Храним ссылку на последние обработанные данные (обычная переменная, не state)
+  const lastProcessedData: { nodes: GraphData['nodes']; links: GraphData['links'] } = { nodes: [], links: [] };
+
   // Отслеживаем изменения в данных и обновляем ключ
   $effect(() => {
-    const nodesLen = data.nodes.length;
-    const linksLen = data.links.length;
-    // Проверяем, действительно ли данные изменились (сравниваем ссылку на массив)
-    const dataChanged = data.nodes !== lastProcessedData.nodes || data.links !== lastProcessedData.links;
-    if (dataChanged) {
+    // Читаем данные без создания реактивной подписки
+    const currentNodes = untrack(() => data.nodes);
+    const currentLinks = untrack(() => data.links);
+    const nodesLen = currentNodes.length;
+    const linksLen = currentLinks.length;
+    // Проверяем, действительно ли данные изменились (сравниваем ссылки)
+    const nodesChanged = currentNodes !== lastProcessedData.nodes;
+    const linksChanged = currentLinks !== lastProcessedData.links;
+    if (nodesChanged || linksChanged) {
       lastDataTimestamp = Date.now();
-      lastProcessedData = { nodes: data.nodes, links: data.links };
+      lastProcessedData.nodes = currentNodes;
+      lastProcessedData.links = currentLinks;
     }
     // Ключ включает timestamp для гарантированного обновления при переключении режима
     const newKey = nodesLen + linksLen * 1000 + lastDataTimestamp;
@@ -64,9 +73,6 @@
       console.log('[Graph3D] Data changed:', { nodesLen, linksLen, key: newKey, timestamp: lastDataTimestamp });
     }
   });
-
-  // Храним ссылку на последние обработанные данные
-  let lastProcessedData = $state<{ nodes: any[], links: any[] }>({ nodes: [], links: [] });
 
   // Reactively update graph when data changes
   $effect(() => {
@@ -82,14 +88,18 @@
       return;
     }
     
-    // Ограничение для очень больших графов
-    if (data.nodes.length > 500) {
-      console.warn('[Graph3D] Large graph detected:', data.nodes.length, 'nodes. Limiting to 500 for performance.');
+    // Читаем данные без создания реактивной подписки
+    const currentNodes = untrack(() => data.nodes);
+    const currentLinks = untrack(() => data.links);
+    
+    // Ограничение для очень больших графов (используем max_nodes из конфига)
+    if (currentNodes.length > graphConfig3D.max_nodes) {
+      console.warn(`[Graph3D] Large graph detected: ${currentNodes.length} nodes. Limiting to ${graphConfig3D.max_nodes} for performance.`);
     }
     
-    console.log('[Graph3D] Creating simulation:', data.nodes.length, 'nodes');
+    console.log('[Graph3D] Creating simulation:', currentNodes.length, 'nodes');
     lastProcessedKey = _key;
-    createGraphSimulation();
+    createGraphSimulation(currentNodes, currentLinks);
   });
 
   function onResize() {
@@ -201,7 +211,7 @@
       // Если данные уже есть - создаем симуляцию сразу
       if (data.nodes.length > 0) {
         console.log('[Graph3D] Initial data available, creating simulation:', data.nodes.length, 'nodes');
-        createGraphSimulation();
+        createGraphSimulation(data.nodes, data.links);
         // Mark this state as processed so effect doesn't re-trigger for same data
         lastProcessedKey = dataUpdateKey;
       } else {
@@ -218,12 +228,12 @@
     }
   });
   
-  function createGraphSimulation() {
+  function createGraphSimulation(nodesData: GraphData['nodes'], linksData: GraphData['links']) {
     console.log('[Graph3D] createGraphSimulation called:', { 
       hasObjectManager: !!objectManager, 
       hasScene: !!scene,
-      nodeCount: data.nodes.length,
-      linkCount: data.links.length
+      nodeCount: nodesData.length,
+      linkCount: linksData.length
     });
     
     if (!objectManager || !scene) {
@@ -246,12 +256,12 @@
     
     // Filter links to only include those where both source and target nodes exist
     // (for local graph, API may return links to nodes outside the graph)
-    const validLinks = filterValidLinks(data.nodes, data.links);
-    if (validLinks.length !== data.links.length) {
-      console.warn(`[Graph3D] Filtered out ${data.links.length - validLinks.length} orphan links`);
+    const validLinks = filterValidLinks(nodesData, linksData);
+    if (validLinks.length !== linksData.length) {
+      console.warn(`[Graph3D] Filtered out ${linksData.length - validLinks.length} orphan links`);
     }
     const filteredData = {
-      nodes: data.nodes,
+      nodes: nodesData,
       links: validLinks
     };
     
@@ -269,7 +279,7 @@
     
     // If no links or single node, simulation won't emit 'end' (already at equilibrium)
     // Stop immediately and show the graph
-    if (filteredData.links.length === 0 || filteredData.nodes.length <= 1) {
+    if (validLinks.length === 0 || nodesData.length <= 1) {
       console.log('[Graph3D] No links or single node, clearing fog immediately');
       simulation.stop();
       isLoading = false;
@@ -429,8 +439,8 @@
     });
     
     // Filter new data to only include valid links
-    const newNodeIds = new Set(newData.nodes.map(n => n.id));
-    const validNewLinks = newData.links.filter(l => 
+    const newNodeIds = new Set(newData.nodes.map((n: GraphNode) => n.id));
+    const validNewLinks = newData.links.filter((l: GraphLink) => 
       newNodeIds.has(l.source) && newNodeIds.has(l.target)
     );
     
@@ -443,16 +453,16 @@
     addNodesToSimulation(simulation, filteredNewData, currentData, objectManager);
     
     // Update current data tracking
-    const existingNodeIds = new Set(currentData.nodes.map(n => n.id));
-    const existingLinkIds = new Set(currentData.links.map(l => `${l.source}-${l.target}`));
+    const existingNodeIds = new Set(currentData.nodes.map((n: GraphNode) => n.id));
+    const existingLinkIds = new Set(currentData.links.map((l: GraphLink) => `${l.source}-${l.target}`));
     
     const mergedNodes = [
       ...currentData.nodes,
-      ...newData.nodes.filter(n => !existingNodeIds.has(n.id))
+      ...newData.nodes.filter((n: GraphNode) => !existingNodeIds.has(n.id))
     ];
     const mergedLinks = [
       ...currentData.links,
-      ...validNewLinks.filter(l => !existingLinkIds.has(`${l.source}-${l.target}`))
+      ...validNewLinks.filter((l: GraphLink) => !existingLinkIds.has(`${l.source}-${l.target}`))
     ];
     
     currentData = { nodes: mergedNodes, links: mergedLinks };

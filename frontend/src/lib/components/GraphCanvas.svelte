@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { filterValidLinks } from '$lib/utils/graphUtils';
+  import { graphConfig2D } from '$lib/config';
+  import * as d3Force from 'd3-force';
 
   const { 
     nodes, 
@@ -13,6 +15,16 @@
     links: Array<{ source: string; target: string; weight?: number; link_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
+
+  // Debug: проверяем типы узлов при изменении
+  $effect(() => {
+    if (nodes.length > 0) {
+      const types = nodes.map(n => n.type || 'undefined');
+      const uniqueTypes = [...new Set(types)];
+      console.log('[GraphCanvas] Received nodes types:', uniqueTypes, 'Total:', nodes.length);
+      console.log('[GraphCanvas] First node:', nodes[0]);
+    }
+  });
 
   // Цвета для разных типов связей
   const linkTypeColors: Record<string, string> = {
@@ -59,110 +71,114 @@
   let width = 800;
   let height = 600;
   let animationId: number;
+  let simulation: any;
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
   const angles: Map<string, number> = new Map();
   const speeds: Map<string, number> = new Map();
-  let d3Force: typeof import('d3-force') | null = null;
 
   const transform = $state({ x: 0, y: 0, k: 1 });
   let dragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
-  let simulation: any = null;
+
+  // Для отслеживания изменений данных по содержимому (не по ссылке)
+  let lastDataKey = '';
+  let isSimulationRunning = false;
+  let simLinks: any[] = []; // Ссылки из симуляции (d3-force мутирует их)
 
   onMount(() => {
     if (!browser) return;
     
-    // Dynamic import for SSR safety
     let cleanup = () => {};
     
-    import('d3-force').then(d3 => {
-      d3Force = d3;
-      ctx = canvas.getContext('2d')!;
+    // SSR-safe: d3-force imported statically but only used in browser
+    ctx = canvas.getContext('2d')!;
+    resize();
+    
+    // Use ResizeObserver for better container size tracking
+    const resizeObserver = new ResizeObserver(() => {
       resize();
-      // Use ResizeObserver for better container size tracking
-      const resizeObserver = new ResizeObserver(() => {
-        console.log('[GraphCanvas] ResizeObserver triggered');
-        resize();
-      });
-      if (canvas.parentElement) {
-        resizeObserver.observe(canvas.parentElement);
-      }
-      
-      // Delayed resize to ensure container has settled dimensions
-      setTimeout(() => {
-        console.log('[GraphCanvas] Delayed resize check');
-        resize();
-        if (nodes.length > 0 && !simulation) {
-          console.log('[GraphCanvas] Starting delayed simulation');
-          startSimulation();
-        }
-      }, 100);
-      
-      startSimulation();
-      startAnimation();
-      
-      cleanup = () => {
-        resizeObserver.disconnect();
-        if (simulation) simulation.stop();
-        cancelAnimationFrame(animationId);
-      };
     });
+    if (canvas.parentElement) {
+      resizeObserver.observe(canvas.parentElement);
+    }
+    
+    // Delayed resize to ensure container has settled dimensions
+    resizeTimer = setTimeout(() => {
+      resize();
+    }, 100);
+    
+    // НЕ запускаем симуляцию здесь - $effect сделает это при изменении данных
+    startAnimation();
+    
+    cleanup = () => {
+      resizeObserver.disconnect();
+      if (simulation) simulation.stop();
+      cancelAnimationFrame(animationId);
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
     
     return () => cleanup();
   });
 
-  // Реактивно перезапускаем симуляцию при изменении данных
+  // Реактивно перезапускаем симуляцию при изменении данных (глубокое сравнение по содержимому)
   $effect(() => {
-    // Отслеживаем изменения в данных
-    const nodesKey = nodes.map(n => n.id).join(',');
-    const linksKey = links.map(l => `${l.source}-${l.target}`).join(',');
-    const dataKey = `${nodesKey}|${linksKey}`;
-    
-    console.log('[GraphCanvas] $effect triggered:', { nodes: nodes.length, links: links.length, dataKey: dataKey.slice(0, 50) });
-    
-    if (d3Force) {
-      if (nodes.length === 0) {
-        console.log('[GraphCanvas] No nodes to simulate, stopping simulation');
-        if (simulation) {
-          simulation.stop();
-          simulation = null;
-        }
-        // Clear canvas
-        if (ctx) {
-          ctx.clearRect(0, 0, width, height);
-        }
-        return;
-      }
-      
-      console.log('[GraphCanvas] Restarting simulation with', nodes.length, 'nodes and', links.length, 'links');
-      
-      // Останавливаем старую симуляцию
-      if (simulation) {
-        console.log('[GraphCanvas] Stopping old simulation');
-        simulation.stop();
-      }
-      
-      // Очищаем углы и скорости для новых данных
-      angles.clear();
-      speeds.clear();
-      console.log('[GraphCanvas] Cleared angles and speeds maps');
-      
-      // Запускаем новую с обновленными данными
-      startSimulation();
-      console.log('[GraphCanvas] New simulation started');
-    } else {
-      console.log('[GraphCanvas] d3Force not loaded yet, skipping simulation restart');
+    // Читаем данные для сравнения по содержимому (только количества - более стабильно)
+    const nodesCount = nodes.length;
+    const linksCount = links.length;
+
+    // Создаём ключ данных только по количеству (избегаем проблем с изменением порядка)
+    const dataKey = `${nodesCount}-${linksCount}`;
+
+    // Проверяем, изменились ли данные по содержимому
+    if (dataKey === lastDataKey && isSimulationRunning) {
+      return; // Данные не изменились и симуляция работает
     }
+
+    // Обновляем сохранённый ключ
+    lastDataKey = dataKey;
+
+
+    if (!browser) {
+      return;
+    }
+
+    if (nodes.length === 0) {
+      if (simulation) {
+        simulation.stop();
+        simulation = null;
+        isSimulationRunning = false;
+      }
+      if (ctx) {
+        ctx.clearRect(0, 0, width, height);
+      }
+      return;
+    }
+
+    // Останавливаем старую симуляцию
+    if (simulation) {
+      simulation.stop();
+      isSimulationRunning = false;
+    }
+
+    // Очищаем углы и скорости для новых данных
+    angles.clear();
+    speeds.clear();
+
+    // Запускаем новую с обновленными данными
+    startSimulation();
+    isSimulationRunning = true;
   });
 
   function startAnimation() {
     function animate() {
       for (const node of simulation?.nodes() || []) {
         const id = node.id;
-        const type = node.type || 'star';
+        const type = node.type ?? 'star';
         let baseSpeed = 0.005; // звезда
         if (type === 'planet') baseSpeed = 0.02;
         else if (type === 'comet') baseSpeed = 0.03;
         else if (type === 'galaxy') baseSpeed = 0.01;
+        else if (type === 'nebula') baseSpeed = 0.008;
         let speed = speeds.get(id);
         if (speed === undefined) {
           speed = baseSpeed * (0.7 + Math.random() * 0.6);
@@ -184,20 +200,17 @@
       height = rect.height;
       canvas.width = width;
       canvas.height = height;
-      console.log('[GraphCanvas] Resized to:', width, 'x', height);
     } else {
       // Fallback: use window size if parent not available
       width = window.innerWidth;
       height = window.innerHeight - 80; // Account for controls
       canvas.width = width;
       canvas.height = height;
-      console.log('[GraphCanvas] Fallback resize to:', width, 'x', height);
     }
   }
 
   function startSimulation() {
     if (!d3Force) {
-      console.log('[GraphCanvas] Cannot start simulation: d3Force not loaded');
       return;
     }
     
@@ -206,9 +219,18 @@
     transform.y = 0;
     transform.k = 1;
     
-    console.log('[GraphCanvas] startSimulation: creating simulation with', nodes.length, 'nodes');
     
-    const simulationNodes = nodes.map(n => ({ ...n, x: width/2, y: height/2 }));
+    // Распределяем узлы по кругу вместо одной точки (предотвращаем экстремальные координаты)
+    const simulationNodes = nodes.map((n, i) => {
+      const angle = (i / nodes.length) * 2 * Math.PI;
+      const radius = Math.min(width, height) * 0.3; // 30% от меньшего размера
+      return {
+        ...n,
+        x: width/2 + Math.cos(angle) * radius,
+        y: height/2 + Math.sin(angle) * radius
+      };
+    });
+    
     
     // Filter links to only include those where both source and target nodes exist
     const validLinks = filterValidLinks(nodes, links);
@@ -216,19 +238,39 @@
       console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
     }
     
-    const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+    
+    const edges = validLinks.map((l: { source: string; target: string; weight?: number; link_type?: string }) => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+    simLinks = edges; // Сохраняем для использования в draw()
+
+    // Stop existing simulation if any
+    if (simulation) {
+      simulation.stop();
+    }
 
     simulation = d3Force.forceSimulation(simulationNodes as any)
-      .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(150).strength(0.5))
-      .force('charge', d3Force.forceManyBody().strength(-300))
-      .force('center', d3Force.forceCenter(width/2, height/2))
-      .force('collision', d3Force.forceCollide().radius(40))
-      .alphaDecay(0.02)
-      .on('tick', () => draw());
+      .force('link', d3Force.forceLink(edges).id((d: any) => d.id).distance(100).strength(0.3))
+      .force('charge', d3Force.forceManyBody().strength(-150)) // Уменьшили силу отталкивания
+      .force('center', d3Force.forceCenter(width/2, height/2).strength(0.5))
+      .force('collision', d3Force.forceCollide().radius(30))
+      .alphaDecay(0.01) // Медленнее остывание для стабильности
+      .on('tick', () => {
+        // Убрали частый лог тика чтобы не засорять консоль
+        draw();
+      });
 
-    // Async warmup - let the simulation run naturally
+    // Warmup: run simulation synchronously for initial positioning
+    for (let i = 0; i < 50; i++) {
+      simulation.tick();
+    }
+    
+    // Вычисляем transform ДО первой отрисовки
+    resetView();
+    
+    // Initial draw с правильным transform
+    draw();
+    
+    // Then start the animation
     simulation.alpha(1).restart();
-    console.log('[GraphCanvas] Simulation initialized with async warmup');
   }
 
   function drawStar(x: number, y: number, r: number, angle: number) {
@@ -251,18 +293,24 @@
       rot += step;
     }
     ctx.closePath();
+    // Явно задаём цвет для гарантии видимости
+    ctx.fillStyle = '#ffdd88';
+    ctx.strokeStyle = '#cc9900';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
   }
 
-  function drawPlanet(x: number, y: number, r: number, angle: number) {
+  function drawPlanet(x: number, y: number, r: number, angle: number, color?: string) {
     if (!ctx) return;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = '#c9b37c';
+    ctx.fillStyle = color || '#c9b37c';
     ctx.fill();
     for (let i = -r/2; i <= r/2; i += r/4) {
       ctx.beginPath();
       ctx.ellipse(x, y + i, r * 0.8, r * 0.15, angle, 0, 2 * Math.PI);
-      ctx.fillStyle = '#a57c2c';
+      ctx.fillStyle = color ? 'rgba(100,100,100,0.3)' : '#a57c2c';
       ctx.fill();
     }
   }
@@ -294,6 +342,21 @@
       ctx.beginPath();
       ctx.ellipse(0, 0, r * (1 - i*0.2), r * 0.4, 0, 0, 2 * Math.PI);
       ctx.fillStyle = `rgba(200, 180, 255, ${0.3 - i*0.1})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawNebula(x: number, y: number, r: number, angle: number) {
+    if (!ctx) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    // Туманность - более размытая и бирюзовая
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * (1.2 - i*0.2), r * 0.5, i * 0.3, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgba(100, 220, 220, ${0.25 - i*0.05})`;
       ctx.fill();
     }
     ctx.restore();
@@ -333,18 +396,113 @@
     }
   }
 
-  function draw() {
+  function drawBlackhole(x: number, y: number, r: number, _angle: number) {
     if (!ctx) return;
+    // Event horizon (black circle)
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    // Accretion disk (glowing ring)
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.3, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#ff6600';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Inner glow
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.8, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#ff3300';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function drawMoon(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Moon body (grey circle)
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = '#cccccc';
+    ctx.fill();
+    ctx.strokeStyle = '#999999';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Crater
+    ctx.beginPath();
+    ctx.arc(x - r * 0.3, y - r * 0.2, r * 0.25, 0, 2 * Math.PI);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fill();
+  }
+
+  // Функция для центрирования графа в видимой области
+  function resetView() {
+    if (!simulation || !ctx) return;
+    
+    const simNodes = simulation.nodes();
+    if (simNodes.length === 0) return;
+    
+    // Находим границы графа
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const node of simNodes) {
+      if (node.x < minX) minX = node.x;
+      if (node.x > maxX) maxX = node.x;
+      if (node.y < minY) minY = node.y;
+      if (node.y > maxY) maxY = node.y;
+    }
+    
+    // Добавляем отступ
+    const padding = 50;
+    minX -= padding; minY -= padding;
+    maxX += padding; maxY += padding;
+    
+    const graphWidth = maxX - minX;
+    const graphHeight = maxY - minY;
+    
+    // Вычисляем масштаб чтобы вместить весь граф
+    const scaleX = width / graphWidth;
+    const scaleY = height / graphHeight;
+    transform.k = Math.min(scaleX, scaleY, 1); // Не увеличиваем больше 1:1
+    
+    // Центрируем
+    transform.x = (width - graphWidth * transform.k) / 2 - minX * transform.k;
+    transform.y = (height - graphHeight * transform.k) / 2 - minY * transform.k;
+    
+  }
+
+  function draw() {
+    if (!ctx) {
+      return;
+    }
+    if (!simulation) {
+      return;
+    }
+    
+    const simNodes = simulation.nodes();
+    
+    if (simNodes.length === 0) {
+      return;
+    }
+    
     ctx.clearRect(0, 0, width, height);
+    
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
 
-    // Рисуем связи
-    links.forEach(link => {
-      const sourceNode = simulation.nodes().find((n: any) => n.id === link.source);
-      const targetNode = simulation.nodes().find((n: any) => n.id === link.target);
-      if (!sourceNode || !targetNode) return;
+    // Рисуем связи из симуляции (d3-force заменяет ID на объекты узлов)
+    console.log('[GraphCanvas] Drawing links count:', simLinks.length);
+    let drawnLinks = 0;
+    let skippedLinks = 0;
+    simLinks.forEach((link) => {
+      // После симуляции source/target становятся объектами узлов
+      const sourceNode = typeof link.source === 'object' ? link.source : simulation.nodes().find((n: any) => String(n.id) === String(link.source));
+      const targetNode = typeof link.target === 'object' ? link.target : simulation.nodes().find((n: any) => String(n.id) === String(link.target));
+      
+      if (!sourceNode || !targetNode) {
+        skippedLinks++;
+        return;
+      }
+      
       
       ctx.beginPath();
       ctx.moveTo(sourceNode.x, sourceNode.y);
@@ -371,28 +529,43 @@
       
       ctx.stroke();
       ctx.setLineDash([]); // Сброс dash pattern
+      drawnLinks++;
     });
+    console.log('[GraphCanvas] Links stats - total:', simLinks.length, 'drawn:', drawnLinks, 'skipped:', skippedLinks);
 
     const r = 24; // радиус увеличен для лучшей читаемости
+    
+    const typeCounts: Record<string, number> = {};
     simulation.nodes().forEach((node: any) => {
-      const type = node.type || 'star';
+      const t = node.type ?? 'star';
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+    console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
+    if (simulation.nodes().length > 0) {
+      const firstNode = simulation.nodes()[0];
+      console.log('[GraphCanvas] First node:', { id: firstNode.id, title: firstNode.title, type: firstNode.type, x: firstNode.x, y: firstNode.y });
+    }
+    
+    simulation.nodes().forEach((node: any) => {
+      const type = node.type ?? 'star';
       const angle = angles.get(node.id) || 0;
 
-      // Only enable shadows for small graphs (< 100 nodes)
-      const enableShadows = simulation.nodes().length < 100;
+      // Only enable shadows for small graphs (below threshold from config)
+      const enableShadows = simulation.nodes().length < graphConfig2D.shadows_threshold;
       
       switch (type) {
         case 'star':
-          drawStar(node.x, node.y, r, angle);
-          ctx.fillStyle = '#ffdd88';
           if (enableShadows) {
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
           }
-          ctx.fill();
+          drawStar(node.x, node.y, r, angle);
           break;
         case 'planet':
           drawPlanet(node.x, node.y, r, angle);
+          break;
+        case 'satellite':
+          drawPlanet(node.x, node.y, r * 0.6, angle, '#aaaaaa');
           break;
         case 'comet':
           drawComet(node.x, node.y, r, angle);
@@ -400,16 +573,28 @@
         case 'galaxy':
           drawGalaxy(node.x, node.y, r, angle);
           break;
+        case 'nebula':
+          drawNebula(node.x, node.y, r * 1.5, angle);
+          break;
         case 'asteroid':
           drawAsteroid(node.x, node.y, r, angle);
           break;
         case 'debris':
           drawDebris(node.x, node.y, r, angle);
           break;
+        case 'blackhole':
+          drawBlackhole(node.x, node.y, r, angle);
+          break;
+        case 'moon':
+          drawMoon(node.x, node.y, r, angle);
+          break;
         default:
+          if (enableShadows) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+          }
           drawStar(node.x, node.y, r, angle);
-          ctx.fillStyle = '#cccccc';
-          ctx.fill();
+          break;
       }
       ctx.shadowBlur = 0;
 
@@ -417,7 +602,7 @@
       ctx.font = `bold ${Math.min(14, r * 0.65)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      let title = node.title;
+      let title = node.title || 'Untitled';
       if (title.length > 14) title = title.slice(0, 12) + '…';
       ctx.shadowBlur = 2;
       ctx.shadowColor = 'rgba(0,0,0,0.5)';

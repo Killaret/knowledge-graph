@@ -68,7 +68,7 @@ Given('a link exists from {string} to {string}', async function(this: ITestWorld
   expect(targetId).toBeTruthy();
 
   const link = await this.request.post('http://localhost:8080/links', {
-    data: { sourceNoteId: sourceId, targetNoteId: targetId, weight: 0.8, link_type: 'reference' }
+    data: { source_note_id: sourceId, target_note_id: targetId, weight: 0.8, link_type: 'reference' }
   });
   expect(link.status()).toBe(201);
 });
@@ -78,7 +78,7 @@ Given('a link exists from {string} to {string} with type {string}', async functi
   const targetId = this.context.noteIds?.[target];
   
   const link = await this.request.post('http://localhost:8080/links', {
-    data: { sourceNoteId: sourceId, targetNoteId: targetId, weight: 0.8, link_type: linkType }
+    data: { source_note_id: sourceId, target_note_id: targetId, weight: 0.8, link_type: linkType }
   });
   expect(link.status()).toBe(201);
 });
@@ -105,8 +105,8 @@ Given('links connect some of the notes', async function(this: ITestWorld) {
     for (let i = 0; i < Math.min(notesData.notes.length - 1, 3); i++) {
       await this.request.post('http://localhost:8080/links', {
         data: {
-          sourceNoteId: notesData.notes[i].id,
-          targetNoteId: notesData.notes[i + 1].id,
+          source_note_id: notesData.notes[i].id,
+          target_note_id: notesData.notes[i + 1].id,
           weight: 0.7,
           link_type: 'reference'
         }

@@ -1,14 +1,21 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Accept build argument for API target
+ARG VITE_API_TARGET=http://localhost:8080
+ENV VITE_API_TARGET=${VITE_API_TARGET}
+
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files from frontend/
+COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci || npm install
 
-# Copy source code
-COPY . .
+# Copy frontend source code
+COPY frontend/. .
+
+# Copy config from build context for Vite alias $config
+COPY knowledge-graph.config.json /knowledge-graph.config.json
 
 # Build the application
 RUN npm run build

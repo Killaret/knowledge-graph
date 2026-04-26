@@ -1,4 +1,4 @@
-.PHONY: seed db-up db-down dev test migrate-up migrate-down
+.PHONY: seed db-up db-down dev test
 
 # Load environment variables
 include .env
@@ -11,21 +11,14 @@ db-up:
 db-down:
 	docker-compose down
 
-# Migration commands
-migrate-up:
-	go run cmd/migrate/main.go up
-
-migrate-down:
-	go run cmd/migrate/main.go down
-
-# Seed test data
+# Seed test data (uses Python script from root)
 seed:
-	go run scripts/seed.go
+	python ../scripts/seed_data.py
 
 # Development
 
 dev:
-	go run cmd/api/main.go
+	go run cmd/server/main.go
 
 # Run tests
 test:
@@ -33,6 +26,9 @@ test:
 
 # Build
 build:
-	go build -o bin/api cmd/api/main.go
+	go build -o bin/server cmd/server/main.go
+
+build-worker:
+	go build -o bin/worker cmd/worker/main.go
 
 .DEFAULT_GOAL := dev

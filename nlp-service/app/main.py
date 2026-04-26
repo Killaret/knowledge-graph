@@ -10,7 +10,19 @@ app = FastAPI(title="NLP Service for Knowledge Graph")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    """Health check endpoint with model verification"""
+    try:
+        # Verify embedding model is loaded
+        if embedding_model is None:
+            raise HTTPException(status_code=503, detail="Embedding model not loaded")
+        return {
+            "status": "healthy",
+            "model_loaded": True,
+            "version": "1.0.0"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
 
 @app.post("/extract_keywords", response_model=ExtractKeywordsResponse)
 async def extract_keywords_endpoint(req: ExtractKeywordsRequest):

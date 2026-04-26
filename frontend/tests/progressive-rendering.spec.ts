@@ -162,8 +162,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     // Create link
     await request.post('http://localhost:8080/links', {
       data: { 
-        sourceNoteId: note1Id, 
-        targetNoteId: note2Id, 
+        source_note_id: note1Id, 
+        target_note_id: note2Id, 
         weight: 0.9,
         link_type: 'dependency'
       }
@@ -257,14 +257,14 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
       data: { title: 'Linked to First', content: 'Link' }
     });
     await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: note1Id, targetNoteId: (await linked1.json()).id, weight: 0.7 }
+      data: { source_note_id: note1Id, target_note_id: (await linked1.json()).id, weight: 0.7 }
     });
     
     const linked2 = await request.post('http://localhost:8080/notes', {
       data: { title: 'Linked to Second', content: 'Link' }
     });
     await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: note2Id, targetNoteId: (await linked2.json()).id, weight: 0.7 }
+      data: { source_note_id: note2Id, target_note_id: (await linked2.json()).id, weight: 0.7 }
     });
     
     // Navigate to first graph
@@ -439,7 +439,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
       data: { title: 'Structure Link', content: 'Link' }
     });
     await request.post('http://localhost:8080/links', {
-      data: { sourceNoteId: noteId, targetNoteId: (await linked.json()).id, weight: 0.7 }
+      data: { source_note_id: noteId, target_note_id: (await linked.json()).id, weight: 0.7 }
     });
     
     // Navigate to 3D graph

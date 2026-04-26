@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getNote, type Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import { formatDate } from '$lib/utils/date';
   
   const { nodeId, onClose, onEdit, onDelete }: { 
     nodeId: string; 
@@ -30,14 +31,6 @@
     } finally {
       loading = false;
     }
-  }
-  
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   }
   
   function getTypeIcon(type: string | undefined): string {

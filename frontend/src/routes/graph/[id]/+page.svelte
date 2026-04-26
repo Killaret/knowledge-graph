@@ -22,13 +22,12 @@
       const id = getRouteId();
       const data = await getGraphData(id);
       // Map nodes with defaults for SmartGraph compatibility
-      nodes = data.nodes.map(n => ({
+      nodes = data.nodes.map((n: GraphNode) => ({
         ...n,
         type: n.type ?? 'default',
         size: n.size ?? 5
       }));
-      // Map links with defaults
-      links = data.links.map(l => ({
+      links = data.links.map((l: GraphLink) => ({
         ...l,
         weight: l.weight ?? 1
       }));

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
+  import { formatDate } from '$lib/utils/date';
 
   const { 
     note, 
@@ -25,16 +26,6 @@
     } else {
       goto(`/notes/${note.id}`);
     }
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   }
 
   function truncateText(text: string, maxLength: number): string {

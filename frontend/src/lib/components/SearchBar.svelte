@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   // Props
   const { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
@@ -10,10 +10,11 @@
   let query = $state('');
   let inputElement: HTMLInputElement;
 
-  // Sync with URL parameter when component mounts or URL changes
+  // Sync with URL parameter when URL changes (not when query changes)
+  // Use untrack to prevent this effect from re-running when query changes
   $effect(() => {
     const q = $page.url.searchParams.get('q') || '';
-    if (q !== query) {
+    if (q !== untrack(() => query)) {
       query = q;
     }
   });
@@ -23,9 +24,8 @@
     const trimmed = query.trim();
     if (trimmed) {
       goto(`/search?q=${encodeURIComponent(trimmed)}`);
-    } else {
-      goto('/search');
     }
+    // Empty query - don't navigate
   }
 
   // Debounce for automatic search while typing (optional)
@@ -48,6 +48,9 @@
 
   onMount(() => {
     if (autoFocus) inputElement?.focus();
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   });
 </script>
 

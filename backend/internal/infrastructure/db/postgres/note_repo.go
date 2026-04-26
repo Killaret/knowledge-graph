@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -84,15 +84,41 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+// FindAllPaginated возвращает заметки с пагинацией на уровне БД
+// limit=0 означает "все записи"
+func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+	var total int64
+
+	// Считаем общее количество
+	if err := r.db.WithContext(ctx).Model(&NoteModel{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Запрос с пагинацией
+	query := r.db.WithContext(ctx).Order("created_at DESC")
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	}
+
+	var models []NoteModel
+	if err := query.Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return toDomainNotes(models), total, nil
+}
+
 // FindAll возвращает все заметки без пагинации с кэшированием в Redis
+// DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
-	// 1. Проверяем кэш Redis
+	// 1. Проверяем кэш Redis (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
 	if r.redis != nil {
 		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
 		if err == nil {
-			var notes []*note.Note
-			if err := json.Unmarshal(cached, &notes); err == nil {
-				return notes, nil
+			var models []NoteModel
+			if err := json.Unmarshal(cached, &models); err == nil {
+				// Конвертируем модели в доменные объекты
+				return toDomainNotes(models), nil
 			}
 		}
 	}
@@ -105,9 +131,9 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	}
 	notes := toDomainNotes(models)
 
-	// 3. Сохраняем в кэш
+	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
 	if r.redis != nil {
-		if data, err := json.Marshal(notes); err == nil {
+		if data, err := json.Marshal(models); err == nil {
 			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
 		}
 	}
@@ -152,10 +178,11 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 			search_vector @@ plainto_tsquery('simple', ?)
 		`, query, query)
 
-		db = db.Order(fmt.Sprintf(`
-			COALESCE(ts_rank(search_vector, plainto_tsquery('russian', '%s')), 0) +
-			COALESCE(ts_rank(search_vector, plainto_tsquery('simple', '%s')), 0) DESC
-		`, query, query))
+		// Безопасная сортировка: используем placeholder для query в ts_rank
+		db = db.Order(clause.Expr{
+			SQL:  "COALESCE(ts_rank(search_vector, plainto_tsquery('russian', ?)), 0) + COALESCE(ts_rank(search_vector, plainto_tsquery('simple', ?)), 0) DESC",
+			Vars: []interface{}{query, query},
+		})
 
 		// Count and get results
 		if err := db.Count(&total).Error; err != nil {

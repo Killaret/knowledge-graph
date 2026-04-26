@@ -145,7 +145,7 @@ func TestNoteRepository_FindByID_NotFound(t *testing.T) {
 }
 
 // TestNoteRepository_Delete тестирует удаление заметки
-func TestNoteRepository_Delete(t *testing.T) {
+func TestNoteRepository_Delete_Unit(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 

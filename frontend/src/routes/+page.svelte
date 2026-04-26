@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
   import FloatingControls from '$lib/components/FloatingControls.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
+  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
@@ -18,6 +18,8 @@
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
   let showCreateModal = $state(false);
+  let showEditModal = $state(false);
+  let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
@@ -35,8 +37,13 @@
     { id: 'all', label: 'All', emoji: '🌌' },
     { id: 'star', label: 'Stars', emoji: '⭐' },
     { id: 'planet', label: 'Planets', emoji: '🪐' },
+    { id: 'moon', label: 'Moons', emoji: '🌙' },
     { id: 'comet', label: 'Comets', emoji: '☄️' },
-    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' }
+    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' },
+    { id: 'nebula', label: 'Nebulas', emoji: '💫' },
+    { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
+    { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
+    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' }
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.
@@ -64,7 +71,7 @@
       // Load notes and graph data in parallel
       const [notesResult, graphResult] = await Promise.all([
         getNotes(),
-        getFullGraphData().catch(e => {
+        getFullGraphData().catch((e: unknown) => {
           console.error('[+page] Failed to load graph:', e);
           return null;
         })
@@ -75,8 +82,27 @@
       
       // Set graph data if successful
       if (graphResult) {
-        graphData = graphResult;
+        // Debug: check what types come from API
+        const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
+        console.log('[+page] loadDataParallel API types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
+        console.log('[+page] loadDataParallel First 3 nodes:', graphResult.nodes.slice(0, 3).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+
+        // Transform nodes to ensure correct type field
+        graphData = {
+          nodes: graphResult.nodes.map((n: any) => ({
+            id: n.id || n.Id || n.ID,
+            title: n.title || n.Title,
+            type: n.type ?? n.Type ?? 'star'
+          })),
+          links: graphResult.links.map((l: any) => ({
+            source: l.source_note_id || l.source,
+            target: l.target_note_id || l.target,
+            weight: l.weight,
+            link_type: l.link_type
+          }))
+        };
         console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+        console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
       } else {
         // Fallback: build simple graph from notes
         graphData = {
@@ -108,17 +134,40 @@
   
   async function loadGraphData() {
     if (allNotes.length === 0) {
-      console.log('[+page] No notes to load graph');
       graphData = { nodes: [], links: [] };
       return;
     }
-    
+
     graphLoading = true;
-    console.log('[+page] Loading full graph...');
     try {
       // Always load full graph on main page
-      graphData = await getFullGraphData();
-      console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      const rawData = await getFullGraphData();
+
+      // Debug: check what types come from API
+      const apiTypes = rawData.nodes.map((n: any) => n.type || n.Type || 'MISSING');
+      console.log('[+page] API node types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
+      console.log('[+page] First 5 raw nodes:', rawData.nodes.slice(0, 5).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+
+      // Transform nodes: backend might return Id/id/ID in different cases
+      const transformedNodes = rawData.nodes.map((n: any) => ({
+        id: n.id || n.Id || n.ID,
+        title: n.title || n.Title,
+        type: n.type ?? n.Type ?? 'star'
+      }));
+
+      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
+      const transformedLinks = rawData.links.map((l: any) => ({
+        source: l.source_note_id || l.source,
+        target: l.target_note_id || l.target,
+        weight: l.weight,
+        link_type: l.link_type
+      }));
+
+      graphData = {
+        nodes: transformedNodes,
+        links: transformedLinks
+      };
+
     } catch (e) {
       console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
@@ -134,7 +183,6 @@
   // Reload graph when allNotes changes (notes added/deleted)
   $effect(() => {
     if (browser && allNotes.length > 0) {
-      console.log('[+page] allNotes changed, reloading graph...');
       loadGraphData();
     }
   });
@@ -154,9 +202,9 @@
       allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
     );
     
-    const filteredNodes = graphData.nodes.filter(n => allowedNodeIds.has(n.id));
-    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-    const filteredLinks = graphData.links.filter(l => 
+    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => allowedNodeIds.has(n.id));
+    const filteredNodeIds = new Set(filteredNodes.map((n: { id: string; title: string; type?: string }) => n.id));
+    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) => 
       filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
     );
     
@@ -259,52 +307,6 @@
   function handleToggleView() {
     currentView = currentView === 'graph' ? 'list' : 'graph';
   }
-
-  // NOTE: Commented out to fix ESLint errors (unused function, undefined variable)
-  // Functionality: Handles deletion of a note from the list view
-  // - Removes the note from both allNotes and filteredNotes arrays
-  // - Clears selectedNodeId if the deleted note was selected
-  /*
-  function handleNoteDeleted(event: CustomEvent<{ id: string }>) {
-    allNotes = allNotes.filter(n => n.id !== event.detail.id);
-    filteredNotes = filteredNotes.filter(n => n.id !== event.detail.id);
-    if (selectedNodeId === event.detail.id) {
-      selectedNodeId = null;
-    }
-  }
-  */
-
-  // NOTE: Commented out to fix ESLint error (unused function)
-  // Functionality: Closes the note side panel by clearing the selected node ID
-  /*
-  function handleCloseSidebar() {
-    selectedNodeId = null;
-  }
-  */
-
-  // NOTE: Temporarily commented out to fix ESLint error (unused function)
-  // Russian pluralization helper: returns the correct plural form based on count
-  // Parameters: count (number), one (singular form), few (2-4 form), many (5+ form)
-  // Example: getPluralForm(5, 'звезда', 'звезды', 'звезд') → 'звезд'
-  /*
-  function getPluralForm(count: number, one: string, few: string, many: string): string {
-    const lastDigit = count % 10;
-    const lastTwoDigits = count % 100;
-    
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-      return many;
-    }
-    // Functionality: Russian pluralization logic - determines correct plural form
-    // based on the last digit of the count number
-    if (lastDigit === 1) {
-      return one;
-    }
-    if (lastDigit >= 2 && lastDigit <= 4) {
-      return few;
-    }
-    return many;
-  }
-  */
 </script>
 
 <!-- Main page container - root element for the page layout -->
@@ -344,7 +346,7 @@
         <GraphCanvas 
           nodes={filteredGraphData().nodes}
           links={filteredGraphData().links}
-          onNodeClick={(node) => selectedNodeId = node.id}
+          onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
         />
         <!-- Stats Overlay -->
         <div class="graph-stats-overlay" data-testid="graph-stats">
@@ -404,7 +406,7 @@
   <NoteSidePanel 
     nodeId={selectedNodeId} 
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => goto(`/notes/${id}/edit`)}
+    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
     onDelete={handleDeleteRequest}
   />
 {/if}
@@ -414,6 +416,15 @@
   bind:open={showCreateModal}
   onSuccess={handleNoteCreated}
 />
+
+<!-- Edit Note Modal -->
+{#if noteToEdit}
+  <EditNoteModal 
+    bind:open={showEditModal}
+    noteId={noteToEdit}
+    onSuccess={() => { showEditModal = false; noteToEdit = null; }}
+  />
+{/if}
 
 <!-- Confirm Modal for delete -->
 <ConfirmModal

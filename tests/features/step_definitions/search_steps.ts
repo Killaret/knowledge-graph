@@ -405,12 +405,12 @@ Given('notes {string} and {string} exist with multiple paths between them', asyn
   const idMid2 = (await mid2.json()).id;
   
   // Path 1: A -> Mid1 -> Z
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid1, weight: 1, link_type: 'reference' } });
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid1, targetNoteId: idZ, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { source_note_id: idA, target_note_id: idMid1, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { source_note_id: idMid1, target_note_id: idZ, weight: 1, link_type: 'reference' } });
   
   // Path 2: A -> Mid2 -> Z
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idA, targetNoteId: idMid2, weight: 1, link_type: 'reference' } });
-  await this.request.post('http://localhost:8080/links', { data: { sourceNoteId: idMid2, targetNoteId: idZ, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { source_note_id: idA, target_note_id: idMid2, weight: 1, link_type: 'reference' } });
+  await this.request.post('http://localhost:8080/links', { data: { source_note_id: idMid2, target_note_id: idZ, weight: 1, link_type: 'reference' } });
 });
 
 When('I select node {string} and then Shift+click node {string}', async function(this: ITestWorld, nodeA: string, nodeZ: string) {
@@ -434,4 +434,10 @@ Then('the shortest path between {string} and {string} is highlighted', async fun
 Then('intermediate nodes on the path are emphasized', async function(this: ITestWorld) {
   const emphasized = this.page.locator('.emphasized, .path-node, [class*="emphasize"]').first();
   await expect(emphasized).toBeVisible();
+});
+
+// Missing steps for search
+Given('the note with metadata type {string} is included in results', async function(this: ITestWorld, type: string) {
+  const noteCard = this.page.locator(`.note-card[data-type="${type}"], .note-card:has-text("${type}")`).first();
+  await expect(noteCard).toBeVisible();
 });

@@ -36,15 +36,12 @@ describe('ConfirmModal', () => {
 			}
 		});
 
-		const confirmButton = document.querySelector('.confirm-btn');
-
-		if (confirmButton) {
-			await fireEvent.click(confirmButton);
-			 
+		// Находим кнопку подтверждения по роли и тексту
+		const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+		await fireEvent.click(confirmButton);
+		 
 		expect(onConfirm).toHaveBeenCalled();
-			 
-			expect(onCancel).not.toHaveBeenCalled();
-		}
+		expect(onCancel).not.toHaveBeenCalled();
 	});
 
 	it('calls onCancel when cancel button clicked', async () => {
@@ -61,15 +58,12 @@ describe('ConfirmModal', () => {
 			}
 		});
 
-		const cancelButton = document.querySelector('.cancel-btn');
-
-		if (cancelButton) {
-			await fireEvent.click(cancelButton);
-			 
+		// Находим кнопку отмены по роли и тексту
+		const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+		await fireEvent.click(cancelButton);
+		 
 		expect(onCancel).toHaveBeenCalled();
-			 
-			expect(onConfirm).not.toHaveBeenCalled();
-		}
+		expect(onConfirm).not.toHaveBeenCalled();
 	});
 
 	it('does not render when open is false', () => {

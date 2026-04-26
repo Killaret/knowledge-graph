@@ -1,0 +1,43 @@
+# Git
+.git
+
+# Node
+**/node_modules
+**/dist
+**/.svelte-kit
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+**/venv311
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+
+# Logs
+*.log
+logs
+
+# Build artifacts
+*.exe
+backend/bin
+dist
+build
+
+# Test results
+test-results
+*.txt
+
+# HuggingFace
+huggingface_cache
+
+# Cache
+*.cache
+.cache

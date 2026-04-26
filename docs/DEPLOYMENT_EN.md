@@ -200,6 +200,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    # Comprehensive health check returns status of all dependencies:
+    # {"status": "healthy", "database": {"status": "healthy"}, "redis": {"status": "healthy"}, "nlp": {"status": "healthy"}}
 
   worker:
     build:
@@ -523,6 +525,65 @@ docker-compose restart worker
 - [ ] Resource limits/requests configured
 - [ ] Readiness/Liveness probes configured (K8s)
 - [ ] PDB (Pod Disruption Budget) configured (K8s)
+
+---
+
+## Health Check Monitoring
+
+### Comprehensive Health Endpoint
+
+The `/health` endpoint provides detailed status of all service dependencies:
+
+```bash
+curl http://localhost:8080/health
+```
+
+**Healthy Response (200):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-04-25T18:30:00Z",
+  "version": "1.0.0",
+  "database": {"status": "healthy"},
+  "redis": {"status": "healthy"},
+  "nlp": {"status": "healthy"}
+}
+```
+
+**Unhealthy Response (503):**
+```json
+{
+  "status": "unhealthy",
+  "database": {"status": "unhealthy", "error": "connection refused"},
+  "redis": {"status": "healthy"},
+  "nlp": {"status": "unhealthy", "error": "timeout"}
+}
+```
+
+### Individual Health Checks
+
+| Endpoint | Description | Status Codes |
+|----------|-------------|--------------|
+| `GET /health` | Comprehensive health check | 200 (healthy), 503 (unhealthy) |
+| `GET /db-check` | Database only | 200 (ok), 500 (error) |
+| `GET /health` (NLP) | NLP service health | 200 (healthy), 503 (unhealthy) |
+
+### Monitoring Integration
+
+**Prometheus-style monitoring:**
+```bash
+# Check every 30s
+while true; do
+  curl -s http://localhost:8080/health | jq -r '.status'
+  sleep 30
+done
+```
+
+**Alerting rules:**
+- 2 consecutive 503 responses → Alert
+- Database unhealthy → Critical alert
+- Redis unhealthy → Warning (cache degraded)
+- NLP unhealthy → Warning (embeddings delayed)
 
 ---
 

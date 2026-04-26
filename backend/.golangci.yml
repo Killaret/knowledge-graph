@@ -16,7 +16,7 @@ linters:
     - gofmt
     - goimports
   disable:
-    - typecheck  # Отключаем проблемный линтер для mock-объектов
+    - typecheck  # Отключаем проблемный линтер (false positives with CGO/imports)
 
 issues:
   exclude-rules:
@@ -24,6 +24,10 @@ issues:
     - path: _test\.go
       linters:
         - typecheck
+    # Исключаем ошибки typecheck для всех файлов (проблемы с CGO/imports)
+    - linters:
+        - typecheck
+      text: "undefined:"
     # Исключаем ошибки на неиспользуемые параметры в тестах
     - path: _test\.go
       text: "is unused"

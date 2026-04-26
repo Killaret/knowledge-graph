@@ -57,19 +57,19 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 		WithArgs(l.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
+	// Ожидаем INSERT — GORM использует Exec для PostgreSQL без RETURNING
 	mock.ExpectBegin()
-	mock.ExpectQuery(`INSERT INTO "links" \("source_id","target_id","link_type","weight","metadata","created_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`).
+	mock.ExpectExec(`INSERT INTO "links" \("id","source_note_id","target_note_id","link_type","weight","metadata","created_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\)`).
 		WithArgs(
+			sqlmock.AnyArg(), // id
 			sourceID,
 			targetID,
 			"reference",
 			0.8,
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // metadata
+			sqlmock.AnyArg(), // created_at
 		).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(l.ID()))
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
@@ -99,7 +99,7 @@ func TestLinkRepository_FindByID_Found(t *testing.T) {
 	// Ожидаем SELECT
 	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(id, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(id, sourceID, targetID, "reference", 0.7, `{}`, now))
 
 	ctx := context.Background()
@@ -158,7 +158,7 @@ func TestLinkRepository_FindByID_NotFound(t *testing.T) {
 }
 
 // TestLinkRepository_FindBySource тестирует поиск связей по source ID
-func TestLinkRepository_FindBySource(t *testing.T) {
+func TestLinkRepository_FindBySource_Unit(t *testing.T) {
 	db, mock, cleanup := setupMockDBForLink(t)
 	defer cleanup()
 
@@ -169,9 +169,9 @@ func TestLinkRepository_FindBySource(t *testing.T) {
 	targetID2 := uuid.New()
 	now := time.Now()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1`).
 		WithArgs(sourceID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID1, "reference", 0.8, `{}`, now).
 			AddRow(uuid.New(), sourceID, targetID2, "related", 0.6, `{}`, now))
 
@@ -201,9 +201,9 @@ func TestLinkRepository_FindByTarget(t *testing.T) {
 	sourceID := uuid.New()
 	now := time.Now()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1`).
 		WithArgs(targetID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID, "reference", 0.9, `{}`, now))
 
 	ctx := context.Background()
@@ -235,9 +235,9 @@ func TestLinkRepository_FindBySourceIDs_Batch(t *testing.T) {
 
 	sourceIDs := []uuid.UUID{sourceID1, sourceID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_id IN \(\$1,\$2\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id IN \(\$1,\$2\)`).
 		WithArgs(sourceID1, sourceID2).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID1, targetID, "reference", 0.8, `{}`, now).
 			AddRow(uuid.New(), sourceID2, targetID, "related", 0.7, `{}`, now))
 
@@ -294,9 +294,9 @@ func TestLinkRepository_FindByTargetIDs_Batch(t *testing.T) {
 
 	targetIDs := []uuid.UUID{targetID1, targetID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_id IN \(\$1,\$2\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id IN \(\$1,\$2\)`).
 		WithArgs(targetID1, targetID2).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID1, "reference", 0.8, `{}`, now).
 			AddRow(uuid.New(), sourceID, targetID2, "related", 0.7, `{}`, now))
 
@@ -343,7 +343,7 @@ func TestLinkRepository_Delete(t *testing.T) {
 }
 
 // TestLinkRepository_DeleteBySource тестирует удаление всех связей по source ID
-func TestLinkRepository_DeleteBySource(t *testing.T) {
+func TestLinkRepository_DeleteBySource_Unit(t *testing.T) {
 	db, mock, cleanup := setupMockDBForLink(t)
 	defer cleanup()
 
@@ -352,7 +352,7 @@ func TestLinkRepository_DeleteBySource(t *testing.T) {
 	sourceID := uuid.New()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM "links" WHERE source_id = \$1`).
+	mock.ExpectExec(`DELETE FROM "links" WHERE source_note_id = \$1`).
 		WithArgs(sourceID).
 		WillReturnResult(sqlmock.NewResult(0, 3)) // Удалено 3 связи
 	mock.ExpectCommit()
@@ -379,7 +379,7 @@ func TestLinkRepository_FindAll(t *testing.T) {
 	now := time.Now()
 
 	mock.ExpectQuery(`SELECT \* FROM "links"`).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), uuid.New(), uuid.New(), "reference", 0.8, `{}`, now).
 			AddRow(uuid.New(), uuid.New(), uuid.New(), "related", 0.6, `{}`, now))
 
@@ -417,7 +417,7 @@ func TestLinkRepository_Save_Update(t *testing.T) {
 	// Ожидаем запрос на проверку существования - запись найдена
 	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(l.ID(), 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(l.ID(), sourceID, targetID, "reference", 0.5, `{}`, now))
 
 	// Ожидаем UPDATE
@@ -553,7 +553,7 @@ func TestLinkRepository_FindBySource_DBError(t *testing.T) {
 
 	sourceID := uuid.New()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1`).
 		WithArgs(sourceID).
 		WillReturnError(errors.New("database connection failed"))
 
@@ -578,9 +578,9 @@ func TestLinkRepository_FindByTarget_EmptyResult(t *testing.T) {
 
 	targetID := uuid.New()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1`).
 		WithArgs(targetID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_id", "target_id", "link_type", "weight", "metadata", "created_at"}))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}))
 
 	ctx := context.Background()
 	links, err := repo.FindByTarget(ctx, targetID)

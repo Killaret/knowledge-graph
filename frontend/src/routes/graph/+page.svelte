@@ -6,6 +6,7 @@
   import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
+  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
 
   let notes: Note[] = $state([]);
@@ -14,24 +15,53 @@
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
   let showFullGraph = $state(false); // По умолчанию локальный вид
+  let showEditModal = $state(false);
+  let noteToEdit: string | null = $state(null);
 
   async function loadGraphData() {
     loading = true;
     error = '';
     try {
+      let rawData: GraphData;
       if (showFullGraph) {
         // Загружаем полный граф всех заметок
-        graphData = await getFullGraphData();
+        rawData = await getFullGraphData();
       } else {
         // Загружаем локальный граф
         notes = await getNotes();
         if (notes.length > 0) {
           const centerNote = notes[0];
-          graphData = await getGraphData(centerNote.id, 3);
+          rawData = await getGraphData(centerNote.id, 3);
         } else {
           error = 'No notes found. Create some notes first.';
+          loading = false;
+          return;
         }
       }
+
+      // Transform nodes: backend might return Id/id/ID in different cases
+      const transformedNodes = rawData.nodes.map((n: any) => ({
+        id: n.id || n.Id || n.ID,
+        title: n.title || n.Title,
+        type: n.type || n.Type || 'star'
+      }));
+
+      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
+      const transformedLinks = rawData.links.map((l: any) => ({
+        source: l.source_note_id || l.source,
+        target: l.target_note_id || l.target,
+        weight: l.weight,
+        link_type: l.link_type
+      }));
+
+      graphData = {
+        nodes: transformedNodes,
+        links: transformedLinks
+      };
+
+      console.log('[graph/+page] Graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+      console.log('[graph/+page] Sample node:', transformedNodes[0]);
+      console.log('[graph/+page] Sample link:', transformedLinks[0]);
     } catch (e) {
       console.error('Failed to load graph:', e);
       error = 'Failed to load graph data';
@@ -105,7 +135,7 @@
           <GraphCanvas 
             nodes={graphData.nodes}
             links={graphData.links}
-            onNodeClick={(node) => handleNodeSelect(node.id)}
+            onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
           />
         {/key}
       {:else}
@@ -121,12 +151,20 @@
   <NoteSidePanel 
     nodeId={selectedNodeId}
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => goto(`/notes/${id}/edit`)}
+    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
     onDelete={() => {
       selectedNodeId = null;
       // Reload graph
       window.location.reload();
     }}
+  />
+{/if}
+
+{#if noteToEdit}
+  <EditNoteModal 
+    bind:open={showEditModal}
+    noteId={noteToEdit}
+    onSuccess={() => { showEditModal = false; noteToEdit = null; window.location.reload(); }}
   />
 {/if}
 

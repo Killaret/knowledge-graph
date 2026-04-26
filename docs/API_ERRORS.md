@@ -35,7 +35,9 @@
 | **204** | No Content | Успешное удаление без тела ответа |
 | **400** | Bad Request | Невалидный запрос (валидация) |
 | **404** | Not Found | Ресурс не найден |
+| **429** | Too Many Requests | Превышен rate limit |
 | **500** | Internal Server Error | Внутренняя ошибка сервера |
+| **503** | Service Unavailable | Сервис недоступен (health check) |
 
 ---
 
@@ -352,6 +354,41 @@ if resp.StatusCode == http.StatusNotFound {
     }
     json.NewDecoder(resp.Body).Decode(&apiErr)
     return fmt.Errorf("%s: %s", apiErr.Error, apiErr.Message)
+}
+```
+
+---
+
+## Rate Limiting Errors
+
+API implements token bucket rate limiting. When limits are exceeded, API returns **429 Too Many Requests**.
+
+### Rate Limits
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| General requests | 100 | per minute |
+| POST /notes | 30 | per minute |
+| POST /links | 50 | per minute |
+| PUT /notes/{id} | 20 | per minute |
+| DELETE /notes/{id} | 20 | per minute |
+
+### 429 Too Many Requests
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Rate limit exceeded. Please try again later.",
+  "code": 429
+}
+```
+
+**Client-side handling:**
+```go
+if resp.StatusCode == http.StatusTooManyRequests {
+    // Implement exponential backoff
+    time.Sleep(time.Second * 5)
+    return retryRequest()
 }
 ```
 
