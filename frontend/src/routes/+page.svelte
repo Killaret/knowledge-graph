@@ -37,8 +37,13 @@
     { id: 'all', label: 'All', emoji: '🌌' },
     { id: 'star', label: 'Stars', emoji: '⭐' },
     { id: 'planet', label: 'Planets', emoji: '🪐' },
+    { id: 'moon', label: 'Moons', emoji: '🌙' },
     { id: 'comet', label: 'Comets', emoji: '☄️' },
-    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' }
+    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' },
+    { id: 'nebula', label: 'Nebulas', emoji: '💫' },
+    { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
+    { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
+    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' }
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.

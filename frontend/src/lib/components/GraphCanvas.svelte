@@ -83,6 +83,7 @@
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = '';
   let isSimulationRunning = false;
+  let simLinks: any[] = []; // Ссылки из симуляции (d3-force мутирует их)
 
   onMount(() => {
     if (!browser) return;
@@ -239,6 +240,7 @@
     
     
     const edges = validLinks.map((l: { source: string; target: string; weight?: number; link_type?: string }) => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+    simLinks = edges; // Сохраняем для использования в draw()
 
     // Stop existing simulation if any
     if (simulation) {
@@ -487,14 +489,11 @@
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
 
-    // Рисуем связи
-    links.forEach((link) => {
-      // Приводим ID к строке для корректного сравнения (d3-force может менять тип)
-      const sourceId = String(link.source);
-      const targetId = String(link.target);
-      
-      const sourceNode = simulation.nodes().find((n: any) => String(n.id) === sourceId);
-      const targetNode = simulation.nodes().find((n: any) => String(n.id) === targetId);
+    // Рисуем связи из симуляции (d3-force заменяет ID на объекты узлов)
+    simLinks.forEach((link) => {
+      // После симуляции source/target становятся объектами узлов
+      const sourceNode = typeof link.source === 'object' ? link.source : simulation.nodes().find((n: any) => String(n.id) === String(link.source));
+      const targetNode = typeof link.target === 'object' ? link.target : simulation.nodes().find((n: any) => String(n.id) === String(link.target));
       
       if (!sourceNode || !targetNode) {
         return;
