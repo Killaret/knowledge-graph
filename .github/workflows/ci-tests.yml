@@ -19,6 +19,29 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_base
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       
@@ -37,6 +60,31 @@ jobs:
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+          migrate -path ../backend/migrations -database "$DATABASE_URL" up
+      
+      - name: Start backend for smoke tests
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd ../backend
+          go mod download
+          go run cmd/server/main.go &
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              break
+            fi
+            echo "Waiting for backend... attempt $i/30"
+            sleep 2
+          done
       
       - name: Run smoke tests only
         run: npx playwright test --grep="@smoke"

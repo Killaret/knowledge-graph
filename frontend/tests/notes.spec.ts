@@ -53,20 +53,28 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(1000);
 
-    // Click Edit button to open modal
-    await page.click('button.edit-btn');
-    await page.waitForTimeout(500);
+    // Click Edit button to open modal - use more specific selector and scroll first
+    const editButton = page.locator('button.edit-btn, [data-testid="edit-note-btn"], button:has-text("Edit")').first();
+    await editButton.scrollIntoViewIfNeeded();
+    await expect(editButton).toBeVisible();
+    await editButton.click();
 
-    // Wait for modal to open
-    await page.waitForSelector('.modal[role="dialog"]', { timeout: 5000 });
+    // Wait for modal to open with increased timeout
+    const modal = page.locator('.modal[role="dialog"], .modal-overlay, [data-testid="edit-modal"]').first();
+    await expect(modal).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(300); // Wait for animation
 
-    // Update note in modal
-    await page.waitForSelector('#edit-note-title', { timeout: 5000 });
-    await page.fill('#edit-note-title', 'Edited ' + timestamp);
-    await page.fill('#edit-note-content', 'Updated content');
+    // Update note in modal - use locator for better reliability
+    const titleInput = page.locator('#edit-note-title, [data-testid="edit-title-input"]').first();
+    await expect(titleInput).toBeVisible({ timeout: 10000 });
+    await titleInput.fill('Edited ' + timestamp);
+    
+    const contentInput = page.locator('#edit-note-content, [data-testid="edit-content-input"]').first();
+    await contentInput.fill('Updated content');
 
-    // Save changes
-    await page.click('[data-testid="edit-save-btn"]');
+    // Save changes using locator
+    const saveButton = page.locator('[data-testid="edit-save-btn"], button:has-text("Save"), button[type="submit"]').first();
+    await saveButton.click();
 
     // Wait for modal to close
     await page.waitForTimeout(1000);

@@ -1,5 +1,38 @@
 import type { APIRequestContext } from '@playwright/test';
 
+// Retry configuration for rate limit handling
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
+/**
+ * Sleep utility for delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if error is a rate limit error (429)
+ */
+function isRateLimitError(status: number, errorText: string): boolean {
+  return status === 429 || errorText.includes('Rate limit exceeded');
+}
+
+/**
+ * Extract retry_after value from error response
+ */
+function getRetryAfter(errorText: string): number {
+  try {
+    const parsed = JSON.parse(errorText);
+    if (parsed.retry_after) {
+      return parsed.retry_after * 1000; // Convert seconds to ms
+    }
+  } catch {
+    // If parsing fails, use default
+  }
+  return BASE_DELAY_MS;
+}
+
 export interface NoteData {
   id?: string;
   title: string;
@@ -25,11 +58,12 @@ export function getBackendUrl(): string {
 }
 
 /**
- * Create a note via API
+ * Create a note via API with retry logic for rate limiting
  */
 export async function createNote(
   request: APIRequestContext,
-  data: Partial<NoteData>
+  data: Partial<NoteData>,
+  retryCount = 0
 ): Promise<{ id: string; [key: string]: unknown }> {
   const payload = {
     title: data.title || 'Test Note',
@@ -44,7 +78,17 @@ export async function createNote(
 
   if (!response.ok()) {
     const errorText = await response.text();
-    throw new Error(`Failed to create note: ${response.status()} - ${errorText}`);
+    const status = response.status();
+
+    // Handle rate limiting with retry
+    if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
+      const delay = getRetryAfter(errorText) + (retryCount * BASE_DELAY_MS);
+      console.log(`[createNote] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`);
+      await sleep(delay);
+      return createNote(request, data, retryCount + 1);
+    }
+
+    throw new Error(`Failed to create note: ${status} - ${errorText}`);
   }
 
   const result = await response.json();
@@ -53,29 +97,35 @@ export async function createNote(
 }
 
 /**
- * Create multiple notes in batch
+ * Create multiple notes in batch with delay to prevent rate limiting
  */
 export async function createNotes(
   request: APIRequestContext,
-  notes: Partial<NoteData>[]
+  notes: Partial<NoteData>[],
+  delayMs = 100
 ): Promise<Array<{ id: string; [key: string]: unknown }>> {
   const created = [];
   for (const noteData of notes) {
     const note = await createNote(request, noteData);
     created.push(note);
+    // Small delay to prevent rate limiting
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
   }
   return created;
 }
 
 /**
- * Create a link between two notes
+ * Create a link between two notes with retry logic for rate limiting
  */
 export async function createLink(
   request: APIRequestContext,
   sourceId: string,
   targetId: string,
   weight = 0.5,
-  linkType = 'related'
+  linkType = 'related',
+  retryCount = 0
 ): Promise<{ id: string; [key: string]: unknown }> {
   // Debug logging
   console.log('[createLink] Creating link:', { sourceId, targetId, weight, linkType });
@@ -109,7 +159,17 @@ export async function createLink(
 
   if (!fetchResponse.ok) {
     const errorText = await fetchResponse.text();
-    throw new Error(`Failed to create link: ${fetchResponse.status} - ${errorText}`);
+    const status = fetchResponse.status;
+
+    // Handle rate limiting with retry
+    if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
+      const delay = getRetryAfter(errorText) + (retryCount * BASE_DELAY_MS);
+      console.log(`[createLink] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`);
+      await sleep(delay);
+      return createLink(request, sourceId, targetId, weight, linkType, retryCount + 1);
+    }
+
+    throw new Error(`Failed to create link: ${status} - ${errorText}`);
   }
 
   return await fetchResponse.json();
