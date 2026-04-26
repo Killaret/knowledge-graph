@@ -160,11 +160,12 @@ class SeedingError(Exception):
 # Работа с API
 # ----------------------------------------------------------------------
 class APIClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, rate_limit_delay: float = 0.0):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.created_notes: List[str] = []  # Для отслеживания созданных заметок
         self.created_links: List[str] = []  # Для отслеживания созданных связей
+        self.rate_limit_delay = rate_limit_delay
 
     def _request(self, method: str, path: str, raise_on_error: bool = True, **kwargs) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """
@@ -187,8 +188,12 @@ class APIClient:
                 return {}
             return resp.json()
         except requests.exceptions.HTTPError as e:
-            status_code = e.response.status_code if e.response else None
-            response_text = e.response.text if e.response else None
+            print(f"[DEBUG] HTTPError type: {type(e)}, has response: {e.response is not None}")
+            print(f"[DEBUG] Response repr: {repr(e.response)}")
+            # Используем getattr напрямую, без boolean проверки
+            status_code = getattr(e.response, 'status_code', None)
+            response_text = getattr(e.response, 'text', None) or ''
+            print(f"[DEBUG] Extracted via getattr: status_code={status_code}, response_len={len(response_text)}")
             # Log detailed error for 500 errors
             if status_code == 500:
                 print(f"\n[ERR] SERVER ERROR 500:")
@@ -285,7 +290,7 @@ class APIClient:
         }
         
         try:
-            time.sleep(0.2)  # Задержка для rate limit
+            time.sleep(self.rate_limit_delay)  # Задержка для rate limit
             result = self._request("POST", "/links", json=payload)
             if isinstance(result, dict) and "id" in result:
                 self.created_links.append(result["id"])
@@ -293,7 +298,9 @@ class APIClient:
             raise APIError("POST", "/links", 
                           message=f"Invalid response format: missing 'id' field. Response: {result}")
         except APIError as e:
+            print(f"[DEBUG] create_link caught error: status_code={e.status_code} (type={type(e.status_code).__name__}), skip_duplicate={skip_duplicate}")
             if skip_duplicate and e.status_code == 409:
+                print(f"[DEBUG] Ignoring 409 duplicate link error")
                 return None
             raise
 
@@ -326,7 +333,7 @@ def cleanup_on_error(api: APIClient) -> None:
         print(f"   Удаление {len(api.created_links)} связей...")
         for link_id in api.created_links:
             try:
-                time.sleep(0.1)  # Задержка для rate limit
+                time.sleep(0.3)  # Задержка для rate limit
                 api._request("DELETE", f"/links/{link_id}", raise_on_error=False)
             except Exception:
                 pass
@@ -336,9 +343,9 @@ def cleanup_on_error(api: APIClient) -> None:
         print(f"   Удаление {len(api.created_notes)} заметок...")
         for note_id in api.created_notes:
             try:
-                time.sleep(0.1)  # Задержка для rate limit
+                time.sleep(0.3)  # Задержка для rate limit
                 api.delete_note(note_id, raise_on_error=False)
-                time.sleep(0.1)  # Задержка для rate limit
+                time.sleep(0.3)  # Задержка для rate limit
             except Exception:
                 pass
     
@@ -364,7 +371,7 @@ def create_notes(api: APIClient) -> Dict[str, List[str]]:
                         created_ids[cat].append(result["id"])
                 except APIError as e:
                     raise SeedingError(f"Ошибка создания заметки {i} в категории {cat}: {e}")
-                time.sleep(0.15)
+                time.sleep(0.5)
     except SeedingError:
         raise
     except Exception as e:
@@ -506,9 +513,10 @@ def main():
     parser.add_argument("--skip-clear", action="store_true", help="Пропустить очистку БД")
     parser.add_argument("--no-random-links", action="store_true", help="Не создавать случайные связи")
     parser.add_argument("--no-cleanup-on-error", action="store_true", help="Не очищать созданные данные при ошибке")
+    parser.add_argument("--rate-limit-delay", type=float, default=0.0, help="Задержка между запросами (сек), 0 для отключения")
     args = parser.parse_args()
 
-    api = APIClient(args.api_url)
+    api = APIClient(args.api_url, rate_limit_delay=args.rate_limit_delay)
     print(f"[START] Подключение к API: {args.api_url}")
 
     # Проверка доступности API

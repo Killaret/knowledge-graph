@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 416799
+              "duration": 848100
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1582282500
+              "duration": 120825399
             }
           },
           {
@@ -35,7 +35,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 3615347300
+              "duration": 1742310999
             }
           },
           {
@@ -47,9 +47,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:81"
             },
             "result": {
-              "status": "failed",
-              "duration": 15018974500,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1488747699
             }
           },
           {
@@ -58,11 +57,11 @@
             "line": 13,
             "name": "I should see the 2D force graph by default",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:200"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:218"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 28799199
             }
           },
           {
@@ -71,11 +70,12 @@
             "line": 14,
             "name": "I click the \"List\" toggle button in the floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:144"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:160"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 15011142499,
+              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -84,7 +84,7 @@
             "line": 15,
             "name": "I should see a grid of note cards",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:205"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:223"
             },
             "result": {
               "status": "skipped",
@@ -97,7 +97,7 @@
             "line": 16,
             "name": "the view toggle should show \"Graph\" option",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:262"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:273"
             },
             "result": {
               "status": "skipped",
@@ -110,7 +110,7 @@
             "line": 17,
             "name": "I click the \"Graph\" toggle button",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:424"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:435"
             },
             "result": {
               "status": "skipped",
@@ -123,7 +123,7 @@
             "line": 18,
             "name": "I should see the fullscreen 2D force graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:215"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:233"
             },
             "result": {
               "status": "skipped",
@@ -136,7 +136,7 @@
             "line": 19,
             "name": "the graph canvas should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:449"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:460"
             },
             "result": {
               "status": "skipped",
@@ -148,7 +148,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 121754300
+              "duration": 126658100
             }
           },
           {
@@ -156,7 +156,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 223099
+              "duration": 9556999
             }
           }
         ],
@@ -192,7 +192,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 155099
+              "duration": 296800
             }
           },
           {
@@ -200,7 +200,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 93832699
+              "duration": 63420799
             }
           },
           {
@@ -212,9 +212,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:98"
             },
             "result": {
-              "status": "failed",
-              "duration": 15014039399,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1016665799
             }
           },
           {
@@ -226,8 +225,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:81"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1388756799
             }
           },
           {
@@ -236,11 +235,12 @@
             "line": 23,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:222"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:240"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 15014353200,
+              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -249,7 +249,7 @@
             "line": 24,
             "name": "I click the \"Planet\" filter chip in floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:153"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:171"
             },
             "result": {
               "status": "skipped",
@@ -262,7 +262,7 @@
             "line": 25,
             "name": "only notes of type \"Planet\" should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:281"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:292"
             },
             "result": {
               "status": "skipped",
@@ -275,7 +275,7 @@
             "line": 26,
             "name": "the count badge should show the correct number",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:323"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:334"
             },
             "result": {
               "status": "skipped",
@@ -288,7 +288,7 @@
             "line": 27,
             "name": "I click the \"All\" filter chip",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:455"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:466"
             },
             "result": {
               "status": "skipped",
@@ -301,7 +301,7 @@
             "line": 28,
             "name": "all notes should be displayed",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:331"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:342"
             },
             "result": {
               "status": "skipped",
@@ -313,7 +313,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 10068899
+              "duration": 113527099
             }
           },
           {
@@ -321,7 +321,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 194199
+              "duration": 9433300
             }
           }
         ],
@@ -357,7 +357,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 149299
+              "duration": 142800
             }
           },
           {
@@ -365,7 +365,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59718000
+              "duration": 69128100
             }
           },
           {
@@ -377,9 +377,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:98"
             },
             "result": {
-              "status": "failed",
-              "duration": 15013127599,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1014305000
             }
           },
           {
@@ -391,8 +390,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:81"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1461854899
             }
           },
           {
@@ -401,11 +400,12 @@
             "line": 32,
             "name": "I am in list view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:222"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:240"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 15008944900,
+              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -414,7 +414,7 @@
             "line": 33,
             "name": "I type \"Test star\" in the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:161"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:179"
             },
             "result": {
               "status": "skipped",
@@ -427,7 +427,7 @@
             "line": 34,
             "name": "the list should show only notes containing \"Test star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:336"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:347"
             },
             "result": {
               "status": "skipped",
@@ -440,7 +440,7 @@
             "line": 35,
             "name": "the note cards should highlight the matching text",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:353"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:364"
             },
             "result": {
               "status": "skipped",
@@ -453,7 +453,7 @@
             "line": 36,
             "name": "I clear the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:169"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:187"
             },
             "result": {
               "status": "skipped",
@@ -466,7 +466,7 @@
             "line": 37,
             "name": "all notes should be displayed again",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:476"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:487"
             },
             "result": {
               "status": "skipped",
@@ -478,7 +478,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 10355000
+              "duration": 203414799
             }
           },
           {
@@ -486,7 +486,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 70900
+              "duration": 9111899
             }
           }
         ],
@@ -522,7 +522,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 100400
+              "duration": 179999
             }
           },
           {
@@ -530,7 +530,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 64498099
+              "duration": 69771500
             }
           },
           {
@@ -543,7 +543,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 12859357900
+              "duration": 938590100
             }
           },
           {
@@ -555,9 +555,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:81"
             },
             "result": {
-              "status": "failed",
-              "duration": 15011660300,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1624346499
             }
           },
           {
@@ -566,11 +565,11 @@
             "line": 41,
             "name": "I am in graph view",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:250"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:261"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 24996899
             }
           },
           {
@@ -579,11 +578,11 @@
             "line": 42,
             "name": "I type \"star\" in the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:161"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:179"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1150916699
             }
           },
           {
@@ -592,11 +591,11 @@
             "line": 43,
             "name": "only nodes matching \"star\" should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:484"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:495"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 15915299
             }
           },
           {
@@ -605,11 +604,11 @@
             "line": 44,
             "name": "non-matching nodes should be dimmed or hidden",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:389"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:400"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 12216800
             }
           },
           {
@@ -618,11 +617,11 @@
             "line": 45,
             "name": "I clear the search input",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:169"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:187"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 396672200
             }
           },
           {
@@ -631,11 +630,11 @@
             "line": 46,
             "name": "all nodes should be visible",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:404"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:415"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 8194200
             }
           },
           {
@@ -643,7 +642,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 12801599
+              "duration": 140652499
             }
           },
           {
@@ -651,7 +650,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 136399
+              "duration": 5034100
             }
           }
         ],
@@ -687,7 +686,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 210900
+              "duration": 93900
             }
           },
           {
@@ -695,7 +694,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 66293599
+              "duration": 59576199
             }
           },
           {
@@ -707,9 +706,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:98"
             },
             "result": {
-              "status": "failed",
-              "duration": 2403903800,
-              "error_message": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5173/\", waiting until \"load\"\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:99:19)"
+              "status": "passed",
+              "duration": 941095200
             }
           },
           {
@@ -721,8 +719,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:81"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1953625599
             }
           },
           {
@@ -731,11 +729,11 @@
             "line": 50,
             "name": "I am on the main page",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:417"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:428"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1275123300
             }
           },
           {
@@ -744,11 +742,12 @@
             "line": 51,
             "name": "I click the \"+\" button in floating controls",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:175"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:193"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "failed",
+              "duration": 15006519799,
+              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -757,7 +756,7 @@
             "line": 52,
             "name": "a create note modal should open",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:359"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:370"
             },
             "result": {
               "status": "skipped",
@@ -770,7 +769,7 @@
             "line": 53,
             "name": "I fill in the title \"Test Note\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:364"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:375"
             },
             "result": {
               "status": "skipped",
@@ -783,7 +782,7 @@
             "line": 54,
             "name": "I select type \"Star\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:369"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:380"
             },
             "result": {
               "status": "skipped",
@@ -809,7 +808,7 @@
             "line": 56,
             "name": "the modal should close",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:376"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:387"
             },
             "result": {
               "status": "skipped",
@@ -822,7 +821,7 @@
             "line": 57,
             "name": "the new note should appear in the graph",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:381"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:392"
             },
             "result": {
               "status": "skipped",
@@ -834,7 +833,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 15866799
+              "duration": 114978400
             }
           },
           {
@@ -842,7 +841,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 202899
+              "duration": 4749500
             }
           }
         ],
@@ -902,7 +901,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 174299
+              "duration": 101099
             }
           },
           {
@@ -910,7 +909,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 68787899
+              "duration": 66122800
             }
           },
           {
@@ -922,9 +921,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "failed",
-              "duration": 15012698399,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 140599699
             }
           },
           {
@@ -933,11 +931,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:104"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:120"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 2184191099
             }
           },
           {
@@ -949,8 +947,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:12"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 46969600
             }
           },
           {
@@ -962,8 +960,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:18"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 11682000
             }
           },
           {
@@ -975,8 +973,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:31"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 25002999
             }
           },
           {
@@ -988,8 +986,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:65"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 10046014899
             }
           },
           {
@@ -1001,8 +999,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:25"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 18303299
             }
           },
           {
@@ -1014,8 +1012,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:46"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 16812500
             }
           },
           {
@@ -1027,8 +1025,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:105"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 307450200
             }
           },
           {
@@ -1036,7 +1034,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 10963900
+              "duration": 117742200
             }
           },
           {
@@ -1044,7 +1042,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 115200
+              "duration": 6596899
             }
           }
         ],
@@ -1076,7 +1074,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 173600
+              "duration": 174299
             }
           },
           {
@@ -1084,7 +1082,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 82632199
+              "duration": 61684000
             }
           },
           {
@@ -1096,9 +1094,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "failed",
-              "duration": 15009168900,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 123459399
             }
           },
           {
@@ -1107,11 +1104,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:104"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:120"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1810214299
             }
           },
           {
@@ -1123,8 +1120,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:95"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 37595800
             }
           },
           {
@@ -1136,8 +1133,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:53"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 28888900
             }
           },
           {
@@ -1149,8 +1146,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:112"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 305106400
             }
           },
           {
@@ -1162,8 +1159,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:119"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 27590400
             }
           },
           {
@@ -1171,7 +1168,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8912900
+              "duration": 122133500
             }
           },
           {
@@ -1179,7 +1176,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 71200
+              "duration": 5033299
             }
           }
         ],
@@ -1211,7 +1208,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 142699
+              "duration": 197899
             }
           },
           {
@@ -1219,7 +1216,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 74624700
+              "duration": 63831200
             }
           },
           {
@@ -1231,9 +1228,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "failed",
-              "duration": 15007705499,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 115883399
             }
           },
           {
@@ -1242,11 +1238,11 @@
             "line": 9,
             "name": "I navigate to \"/graph/3d/{centerNoteId}\"",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:104"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:120"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1608745799
             }
           },
           {
@@ -1258,8 +1254,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:207"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 155129899
             }
           },
           {
@@ -1271,8 +1267,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:145"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 507719899
             }
           },
           {
@@ -1284,8 +1280,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:166"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 16666400
             }
           },
           {
@@ -1297,8 +1293,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:185"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 126379199
             }
           },
           {
@@ -1306,7 +1302,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8323199
+              "duration": 101998999
             }
           },
           {
@@ -1314,7 +1310,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 78300
+              "duration": 3165200
             }
           }
         ],
@@ -1366,7 +1362,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 131499
+              "duration": 122000
             }
           },
           {
@@ -1374,7 +1370,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59577499
+              "duration": 59268299
             }
           },
           {
@@ -1383,12 +1379,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:112"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 15008807000,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1444367799
             }
           },
           {
@@ -1400,8 +1395,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 76693400
             }
           },
           {
@@ -1413,8 +1408,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:11"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 724298800
             }
           },
           {
@@ -1426,8 +1421,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:59"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 533577099
             }
           },
           {
@@ -1439,8 +1434,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:76"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 20255000
             }
           },
           {
@@ -1452,8 +1447,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:90"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 22667799
             }
           },
           {
@@ -1461,7 +1456,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8643699
+              "duration": 43477599
             }
           },
           {
@@ -1469,7 +1464,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 89399
+              "duration": 1818399
             }
           }
         ],
@@ -1505,7 +1500,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 97800
+              "duration": 186300
             }
           },
           {
@@ -1513,7 +1508,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 56599999
+              "duration": 94372100
             }
           },
           {
@@ -1522,12 +1517,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:112"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 15012804300,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1775017500
             }
           },
           {
@@ -1539,8 +1533,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 125244800
             }
           },
           {
@@ -1552,8 +1546,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:207"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 258441500
             }
           },
           {
@@ -1565,8 +1559,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:103"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 918510599
             }
           },
           {
@@ -1578,8 +1572,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:124"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 24002599
             }
           },
           {
@@ -1591,8 +1585,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:141"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 23190300
             }
           },
           {
@@ -1600,7 +1594,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8248200
+              "duration": 50244200
             }
           },
           {
@@ -1608,7 +1602,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 98100
+              "duration": 1520199
             }
           }
         ],
@@ -1644,7 +1638,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 97099
+              "duration": 202699
             }
           },
           {
@@ -1652,7 +1646,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61834400
+              "duration": 90170200
             }
           },
           {
@@ -1661,12 +1655,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:112"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 15001322700,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1510223899
             }
           },
           {
@@ -1678,8 +1671,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 80316399
             }
           },
           {
@@ -1691,8 +1684,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:155"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 495647599
             }
           },
           {
@@ -1704,8 +1697,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:189"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1036568599
             }
           },
           {
@@ -1717,8 +1710,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:201"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 134936100
             }
           },
           {
@@ -1726,7 +1719,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8424900
+              "duration": 34362899
             }
           },
           {
@@ -1734,7 +1727,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 111700
+              "duration": 1845799
             }
           }
         ],
@@ -1770,7 +1763,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 125099
+              "duration": 505700
             }
           },
           {
@@ -1778,7 +1771,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 57679799
+              "duration": 88215599
             }
           },
           {
@@ -1787,12 +1780,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:112"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 15012215999,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1536626000
             }
           },
           {
@@ -1804,8 +1796,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 81786100
             }
           },
           {
@@ -1817,8 +1809,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:46"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 611133399
             }
           },
           {
@@ -1830,8 +1822,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:227"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 37762199
             }
           },
           {
@@ -1843,8 +1835,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:244"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 17980400
             }
           },
           {
@@ -1852,7 +1844,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 8296900
+              "duration": 36108800
             }
           },
           {
@@ -1860,7 +1852,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 75300
+              "duration": 1630199
             }
           }
         ],
@@ -1896,7 +1888,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 100999
+              "duration": 160799
             }
           },
           {
@@ -1904,7 +1896,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 57021800
+              "duration": 63967899
             }
           },
           {
@@ -1913,12 +1905,11 @@
             "line": 8,
             "name": "I am on the 3D graph page for a note with connections",
             "match": {
-              "location": "tests\\features\\step_definitions\\common.steps.ts:112"
+              "location": "tests\\features\\step_definitions\\common.steps.ts:128"
             },
             "result": {
-              "status": "failed",
-              "duration": 15014850899,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "passed",
+              "duration": 1413502200
             }
           },
           {
@@ -1930,8 +1921,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:198"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 85683600
             }
           },
           {
@@ -1943,8 +1934,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:35"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 947392599
             }
           },
           {
@@ -1956,8 +1947,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:258"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 511246699
             }
           },
           {
@@ -1969,8 +1960,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:265"
             },
             "result": {
-              "status": "skipped",
-              "duration": 0
+              "status": "passed",
+              "duration": 1024021900
             }
           },
           {
@@ -1978,7 +1969,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 7487099
+              "duration": 32392900
             }
           },
           {
@@ -1986,7 +1977,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 67099
+              "duration": 1833700
             }
           }
         ],

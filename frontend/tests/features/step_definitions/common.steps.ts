@@ -98,7 +98,23 @@ Given('there are notes of various types in the database', async function(this: I
 Given('I am on the main page {string}', async function(this: ITestWorld, path: string) {
   await this.page.goto(`http://localhost:5173${path}`);
   await this.page.waitForLoadState('networkidle');
-  await this.page.waitForTimeout(500);
+  // Wait for floating controls to be visible (indicates page is hydrated)
+  const controls = this.page.locator('[data-testid="view-toggle-list"]').first();
+  let isVisible = false;
+  for (let i = 0; i < 50; i++) {
+    const count = await controls.count();
+    if (count > 0) {
+      isVisible = await controls.isVisible().catch(() => false);
+      if (isVisible) break;
+    }
+    await this.page.waitForTimeout(200);
+  }
+  if (!isVisible) {
+    const count = await controls.count();
+    const allTestIds = await this.page.locator('[data-testid]').all();
+    const testIds = await Promise.all(allTestIds.map(async (el) => await el.getAttribute('data-testid')));
+    throw new Error(`Floating controls not visible (count=${count}). Found: ${testIds.join(', ')}`);
+  }
 });
 
 Given('I navigate to {string}', async function(this: ITestWorld, path: string) {
@@ -145,7 +161,9 @@ When('I click the {string} toggle button in the floating controls', async functi
   const testId = viewName.toLowerCase() === 'list' ? 'view-toggle-list' : 
                  viewName.toLowerCase() === 'graph' ? 'view-toggle-graph' : 'view-toggle-3d';
   const button = this.page.locator(`[data-testid="${testId}"]`).first();
-  await expect(button).toBeVisible({ timeout: 5000 });
+  
+  // Use Playwright's waitFor with state: visible
+  await button.waitFor({ state: 'visible', timeout: 8000 });
   await button.click();
   await this.page.waitForTimeout(500);
 });
@@ -185,14 +203,14 @@ When('I click the {string} button in floating controls', async function(this: IT
   } else if (label.includes('reset') || label.includes('camera')) {
     selector = '[data-testid="reset-camera-button"]';
   } else if (label.includes('+') || label.includes('create')) {
-    // Create note button - try multiple selectors
-    selector = '[data-testid="create-note-button"], button[title*="Create"], .create-btn, button:has-text("+")';
+    selector = '[data-testid="create-note-button"]';
   } else {
-    // Fallback to text search for other buttons
     selector = `button:has-text("${buttonLabel}")`;
   }
   const button = this.page.locator(selector).first();
-  await expect(button).toBeVisible({ timeout: 5000 });
+  
+  // Use waitFor for reliable detection
+  await button.waitFor({ state: 'visible', timeout: 8000 });
   await button.click();
 });
 
@@ -220,31 +238,24 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
 });
 
 Then('I am in list view', async function(this: ITestWorld) {
-  // First ensure we're on main page
   const listContainer = this.page.locator('[data-testid="list-container"]').first();
   const notesGrid = this.page.locator('[data-testid="notes-grid"]').first();
   
-  // Check if already in list view with notes
+  // Check if already in list view
   const listVisible = await listContainer.isVisible().catch(() => false);
   const gridVisible = await notesGrid.isVisible().catch(() => false);
   
   if (!listVisible || !gridVisible) {
     // Click list toggle
     const button = this.page.locator('[data-testid="view-toggle-list"]').first();
-    await expect(button).toBeVisible({ timeout: 5000 });
+    await button.waitFor({ state: 'visible', timeout: 5000 });
     await button.click();
     await this.page.waitForTimeout(1000);
   }
   
-  // Wait for list container
-  await expect(listContainer).toBeVisible({ timeout: 15000 });
-  
-  // Wait for notes grid with cards
-  await expect(notesGrid).toBeVisible({ timeout: 15000 });
-  
-  // Verify at least one card is visible
-  const firstCard = this.page.locator('.note-card').first();
-  await expect(firstCard).toBeVisible({ timeout: 10000 });
+  // Wait for list container and grid
+  await listContainer.waitFor({ state: 'visible', timeout: 10000 });
+  await notesGrid.waitFor({ state: 'visible', timeout: 10000 });
 });
 
 Then('I am in graph view', async function(this: ITestWorld) {

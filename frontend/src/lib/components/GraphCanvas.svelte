@@ -490,12 +490,16 @@
     ctx.scale(transform.k, transform.k);
 
     // Рисуем связи из симуляции (d3-force заменяет ID на объекты узлов)
+    console.log('[GraphCanvas] Drawing links count:', simLinks.length);
+    let drawnLinks = 0;
+    let skippedLinks = 0;
     simLinks.forEach((link) => {
       // После симуляции source/target становятся объектами узлов
       const sourceNode = typeof link.source === 'object' ? link.source : simulation.nodes().find((n: any) => String(n.id) === String(link.source));
       const targetNode = typeof link.target === 'object' ? link.target : simulation.nodes().find((n: any) => String(n.id) === String(link.target));
       
       if (!sourceNode || !targetNode) {
+        skippedLinks++;
         return;
       }
       
@@ -525,7 +529,9 @@
       
       ctx.stroke();
       ctx.setLineDash([]); // Сброс dash pattern
+      drawnLinks++;
     });
+    console.log('[GraphCanvas] Links stats - total:', simLinks.length, 'drawn:', drawnLinks, 'skipped:', skippedLinks);
 
     const r = 24; // радиус увеличен для лучшей читаемости
     

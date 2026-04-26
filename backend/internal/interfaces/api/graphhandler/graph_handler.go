@@ -271,7 +271,11 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	log.Printf("[GraphHandler] Node types distribution: %v", debugTypes)
 
 	graphLinks := make([]GraphLink, 0, len(links))
-	for _, l := range links {
+	log.Printf("[GraphHandler] Raw links from DB: %d, totalLinks: %d", len(links), totalLinks)
+	for i, l := range links {
+		if i < 3 {
+			log.Printf("[GraphHandler] Link %d: Source=%s, Target=%s, Type=%s", i, l.SourceNoteID().String(), l.TargetNoteID().String(), l.LinkType().String())
+		}
 		graphLinks = append(graphLinks, GraphLink{
 			Source:   l.SourceNoteID().String(),
 			Target:   l.TargetNoteID().String(),
@@ -279,6 +283,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 			LinkType: l.LinkType().String(),
 		})
 	}
+	log.Printf("[GraphHandler] Converted graphLinks: %d", len(graphLinks))
 
 	// Возвращаем с метаданными пагинации
 	c.JSON(200, gin.H{
