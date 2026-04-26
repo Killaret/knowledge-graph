@@ -18,31 +18,10 @@ afterEach(() => {
 // Останавливаем сервер после всех тестов
 afterAll(() => server.close());
 
-// Mock SvelteKit modules
-vi.mock('$app/environment', () => ({
-	browser: true,
-	dev: true,
-	building: false,
-	version: 'test'
-}));
+// Note: $app/* modules are mocked via resolve aliases in vitest.config.ts
+// pointing to src/lib/mocks/app/*.ts files
 
-vi.mock('$app/navigation', () => ({
-	goto: vi.fn(),
-	beforeNavigate: vi.fn(),
-	afterNavigate: vi.fn()
-}));
-
-vi.mock('$app/stores', () => ({
-	page: {
-		subscribe: vi.fn((fn) => {
-			fn({ url: new URL('http://localhost'), params: {} });
-			return () => {};
-		})
-	},
-	navigating: {
-		subscribe: vi.fn()
-	}
-}));
+// d3-force is mocked via src/__mocks__/d3-force.ts (auto-loaded by Vitest)
 
 // Подавляем ошибки Three.js в тестовом окружении
 vi.mock('three', async () => {

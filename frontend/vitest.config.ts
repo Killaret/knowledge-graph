@@ -16,7 +16,8 @@ export default defineConfig({
 			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/environment.ts') },
 			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/navigation.ts') },
 			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') },
-			{ find: /^\$lib/, replacement: path.resolve(__dirname, './src/lib') }
+			{ find: /^\$lib/, replacement: path.resolve(__dirname, './src/lib') },
+			{ find: /^\$config$/, replacement: path.resolve(__dirname, '../knowledge-graph.config.json') }
 		],
 		conditions: ['browser', 'default']
 	},

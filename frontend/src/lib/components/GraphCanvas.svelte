@@ -16,6 +16,16 @@
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
+  // Debug: проверяем типы узлов при изменении
+  $effect(() => {
+    if (nodes.length > 0) {
+      const types = nodes.map(n => n.type || 'undefined');
+      const uniqueTypes = [...new Set(types)];
+      console.log('[GraphCanvas] Received nodes types:', uniqueTypes, 'Total:', nodes.length);
+      console.log('[GraphCanvas] First node:', nodes[0]);
+    }
+  });
+
   // Цвета для разных типов связей
   const linkTypeColors: Record<string, string> = {
     'reference': '#3366ff',   // Синий - ссылочная связь
@@ -487,6 +497,11 @@
       const t = node.type ?? 'star';
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
+    console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
+    if (simulation.nodes().length > 0) {
+      const firstNode = simulation.nodes()[0];
+      console.log('[GraphCanvas] First node:', { id: firstNode.id, title: firstNode.title, type: firstNode.type, x: firstNode.x, y: firstNode.y });
+    }
     
     simulation.nodes().forEach((node: any) => {
       const type = node.type ?? 'star';
