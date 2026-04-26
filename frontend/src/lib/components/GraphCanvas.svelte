@@ -238,7 +238,7 @@
     }
     
     
-    const edges = validLinks.map(l => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
+    const edges = validLinks.map((l: { source: string; target: string; weight?: number; link_type?: string }) => ({ source: l.source, target: l.target, weight: l.weight ?? 1, link_type: l.link_type }));
 
     // Stop existing simulation if any
     if (simulation) {

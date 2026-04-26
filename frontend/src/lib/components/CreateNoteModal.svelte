@@ -68,8 +68,8 @@
     </div>
     
     <div class="form-group">
-      <label>Type</label>
-      <TypeSelector bind:selected={type} />
+      <label for="note-type">Type</label>
+      <TypeSelector id="note-type" bind:selected={type} />
     </div>
     
     <div class="form-group">

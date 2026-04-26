@@ -6,7 +6,7 @@
   import { createSimulation, addNodesToSimulation } from '$lib/three/simulation/forceSimulation';
   import { ObjectManager } from '$lib/three/rendering/objectManager';
   import { autoZoomToFit, centerCameraOnNode } from '$lib/three/camera/cameraUtils';
-  import type { GraphData } from '$lib/api/graph';
+  import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
   import { filterValidLinks } from '$lib/utils/graphUtils';
   import { graphConfig3D } from '$lib/config';
   import * as THREE from 'three';
@@ -439,8 +439,8 @@
     });
     
     // Filter new data to only include valid links
-    const newNodeIds = new Set(newData.nodes.map(n => n.id));
-    const validNewLinks = newData.links.filter(l => 
+    const newNodeIds = new Set(newData.nodes.map((n: GraphNode) => n.id));
+    const validNewLinks = newData.links.filter((l: GraphLink) => 
       newNodeIds.has(l.source) && newNodeIds.has(l.target)
     );
     
@@ -453,16 +453,16 @@
     addNodesToSimulation(simulation, filteredNewData, currentData, objectManager);
     
     // Update current data tracking
-    const existingNodeIds = new Set(currentData.nodes.map(n => n.id));
-    const existingLinkIds = new Set(currentData.links.map(l => `${l.source}-${l.target}`));
+    const existingNodeIds = new Set(currentData.nodes.map((n: GraphNode) => n.id));
+    const existingLinkIds = new Set(currentData.links.map((l: GraphLink) => `${l.source}-${l.target}`));
     
     const mergedNodes = [
       ...currentData.nodes,
-      ...newData.nodes.filter(n => !existingNodeIds.has(n.id))
+      ...newData.nodes.filter((n: GraphNode) => !existingNodeIds.has(n.id))
     ];
     const mergedLinks = [
       ...currentData.links,
-      ...validNewLinks.filter(l => !existingLinkIds.has(`${l.source}-${l.target}`))
+      ...validNewLinks.filter((l: GraphLink) => !existingLinkIds.has(`${l.source}-${l.target}`))
     ];
     
     currentData = { nodes: mergedNodes, links: mergedLinks };

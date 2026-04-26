@@ -11,9 +11,6 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
-		"types": ["node", "@testing-library/jest-dom"],
-		"paths": {
-			"$config": ["../knowledge-graph.config.json"]
-		}
+		"types": ["node", "@testing-library/jest-dom"]
 	}
 }

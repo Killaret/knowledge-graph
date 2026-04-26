@@ -1,7 +1,7 @@
 // Centralized configuration module
 // Imports settings from knowledge-graph.config.json at project root
 
-import configData from '$config';
+import configData from '../../../knowledge-graph.config.json';
 
 // Type definitions matching the JSON structure
 export interface Config {

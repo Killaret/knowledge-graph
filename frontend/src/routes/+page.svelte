@@ -66,7 +66,7 @@
       // Load notes and graph data in parallel
       const [notesResult, graphResult] = await Promise.all([
         getNotes(),
-        getFullGraphData().catch(e => {
+        getFullGraphData().catch((e: unknown) => {
           console.error('[+page] Failed to load graph:', e);
           return null;
         })
@@ -97,7 +97,7 @@
           }))
         };
         console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-        console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map(n => n.type))]);
+        console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
       } else {
         // Fallback: build simple graph from notes
         graphData = {
@@ -197,9 +197,9 @@
       allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
     );
     
-    const filteredNodes = graphData.nodes.filter(n => allowedNodeIds.has(n.id));
-    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-    const filteredLinks = graphData.links.filter(l => 
+    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => allowedNodeIds.has(n.id));
+    const filteredNodeIds = new Set(filteredNodes.map((n: { id: string; title: string; type?: string }) => n.id));
+    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) => 
       filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
     );
     
@@ -341,7 +341,7 @@
         <GraphCanvas 
           nodes={filteredGraphData().nodes}
           links={filteredGraphData().links}
-          onNodeClick={(node) => selectedNodeId = node.id}
+          onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
         />
         <!-- Stats Overlay -->
         <div class="graph-stats-overlay" data-testid="graph-stats">
@@ -401,7 +401,7 @@
   <NoteSidePanel 
     nodeId={selectedNodeId} 
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => { noteToEdit = id; showEditModal = true; }}
+    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
     onDelete={handleDeleteRequest}
   />
 {/if}

@@ -3,10 +3,12 @@
 
   interface Props {
     selected: CelestialType;
+    id?: string;
   }
 
   let {
-    selected = $bindable('star')
+    selected = $bindable('star'),
+    id = 'type-selector'
   }: Props = $props();
 
   const types: Array<{ value: CelestialType; label: string; emoji: string; color: string }> = [
@@ -25,7 +27,7 @@
   }
 </script>
 
-<div class="type-selector">
+<div class="type-selector" {id}>
   {#each types as type}
     <button
       type="button"

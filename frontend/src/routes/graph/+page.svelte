@@ -135,7 +135,7 @@
           <GraphCanvas 
             nodes={graphData.nodes}
             links={graphData.links}
-            onNodeClick={(node) => handleNodeSelect(node.id)}
+            onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
           />
         {/key}
       {:else}
@@ -151,7 +151,7 @@
   <NoteSidePanel 
     nodeId={selectedNodeId}
     onClose={() => selectedNodeId = null}
-    onEdit={(id) => { noteToEdit = id; showEditModal = true; }}
+    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
     onDelete={() => {
       selectedNodeId = null;
       // Reload graph

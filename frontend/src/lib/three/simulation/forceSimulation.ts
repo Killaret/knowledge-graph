@@ -1,15 +1,15 @@
 import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force-3d';
-import type { GraphData } from '$lib/api/graph';
+import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
 import type { ObjectManager } from '$lib/three/rendering/objectManager';
 
 export function createSimulation(data: GraphData, objectManager: ObjectManager) {
-  const nodes = data.nodes.map(n => ({
+  const nodes = data.nodes.map((n: GraphNode) => ({
     ...n,
     x: (n as any).x ?? (Math.random() - 0.5) * 100,
     y: (n as any).y ?? (Math.random() - 0.5) * 100,
     z: (n as any).z ?? (Math.random() - 0.5) * 100
   }));
-  const links = data.links.map(l => ({
+  const links = data.links.map((l: GraphLink) => ({
     ...l,
     source: l.source,
     target: l.target,
@@ -60,21 +60,21 @@ export function addNodesToSimulation(
   objectManager: ObjectManager
 ): void {
   // Get existing node IDs
-  const existingNodeIds = new Set(existingData.nodes.map(n => n.id));
-  const existingLinkIds = new Set(existingData.links.map(l => `${l.source}-${l.target}`));
+  const existingNodeIds = new Set(existingData.nodes.map((n: GraphNode) => n.id));
+  const existingLinkIds = new Set(existingData.links.map((l: GraphLink) => `${l.source}-${l.target}`));
   
   // Filter out only new nodes and links
-  const newNodes = newData.nodes.filter(n => !existingNodeIds.has(n.id)).map(n => ({
+  const newNodes = newData.nodes.filter((n: GraphNode) => !existingNodeIds.has(n.id)).map((n: GraphNode) => ({
     ...n,
     x: (n as any).x ?? (Math.random() - 0.5) * 100,
     y: (n as any).y ?? (Math.random() - 0.5) * 100,
     z: (n as any).z ?? (Math.random() - 0.5) * 100
   }));
   
-  const newLinks = newData.links.filter(l => {
+  const newLinks = newData.links.filter((l: GraphLink) => {
     const linkId = `${l.source}-${l.target}`;
     return !existingLinkIds.has(linkId);
-  }).map(l => ({
+  }).map((l: GraphLink) => ({
     ...l,
     source: l.source,
     target: l.target,

@@ -102,8 +102,8 @@
       </div>
 
       <div class="form-group">
-        <label>Type</label>
-        <TypeSelector bind:selected={type} />
+        <label for="edit-note-type">Type</label>
+        <TypeSelector id="edit-note-type" bind:selected={type} />
       </div>
 
       <div class="form-group">

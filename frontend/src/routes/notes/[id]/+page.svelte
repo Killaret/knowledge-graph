@@ -66,7 +66,7 @@
     <EditNoteModal
       bind:open={editModalOpen}
       noteId={note.id}
-      onSuccess={(updatedNote) => note = updatedNote}
+      onSuccess={(updatedNote: Note) => note = updatedNote}
     />
 
     {#if suggestions.length}
