@@ -43,7 +43,8 @@
     { id: 'nebula', label: 'Nebulas', emoji: '💫' },
     { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
     { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
-    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' }
+    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' },
+    { id: 'unknown', label: 'Unknown', emoji: '❓' }
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.
@@ -189,7 +190,7 @@
 
   // Helper to get note type from type field or metadata
   function getNoteType(note: Note): string {
-    return note.type ?? (note.metadata?.type as string) ?? 'star';
+    return note.type ?? (note.metadata?.type as string) ?? 'unknown';
   }
 
   // Reactive filtered graph data based on selected type
