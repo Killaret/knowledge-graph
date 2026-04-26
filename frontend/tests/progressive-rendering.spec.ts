@@ -148,26 +148,15 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should render links between connected nodes', async ({ page, request }) => {
-    // Create two connected notes
-    const note1 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Source Node', content: 'Source', type: 'star' }
-    });
-    const note1Id = (await note1.json()).id;
+    // Create two connected notes using helpers with retry logic
+    const note1 = await createNote(request, { title: 'Source Node', content: 'Source', type: 'star' });
+    const note1Id = note1.id;
     
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Target Node', content: 'Target', type: 'planet' }
-    });
-    const note2Id = (await note2.json()).id;
+    const note2 = await createNote(request, { title: 'Target Node', content: 'Target', type: 'planet' });
+    const note2Id = note2.id;
     
-    // Create link
-    await request.post('http://localhost:8080/links', {
-      data: { 
-        source_note_id: note1Id, 
-        target_note_id: note2Id, 
-        weight: 0.9,
-        link_type: 'dependency'
-      }
-    });
+    // Create link using helper with retry logic
+    await createLink(request, note1Id, note2Id, 0.9, 'dependency');
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${note1Id}`);
@@ -189,17 +178,13 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
 
   test('should show background loading indicator during progressive load', async ({ page, request }) => {
     // Create a note with multiple connections to trigger progressive loading
-    const centralNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Progressive Loading Test', content: 'Testing background loading indicator' }
-    });
-    const centralId = (await centralNote.json()).id;
+    const centralNote = await createNote(request, { title: 'Progressive Loading Test', content: 'Testing background loading indicator' });
+    const centralId = centralNote.id;
     
     // Create many linked notes to ensure progressive loading takes time
     for (let i = 0; i < 8; i++) {
-      const linked = await request.post('http://localhost:8080/notes', {
-        data: { title: `Loading Test Link ${i}`, content: `Content ${i}` }
-      });
-      await createLink(request, centralId, (await linked.json()).id, 0.6);
+      const linked = await createNote(request, { title: `Loading Test Link ${i}`, content: `Content ${i}` });
+      await createLink(request, centralId, linked.id, 0.6);
     }
     
     // Navigate to 3D graph
@@ -215,11 +200,9 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should handle camera reset function', async ({ page, request }) => {
-    // Create a note
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Camera Reset Test', content: 'Testing camera functionality' }
-    });
-    const noteId = (await note.json()).id;
+    // Create a note using helper with retry logic
+    const note = await createNote(request, { title: 'Camera Reset Test', content: 'Testing camera functionality' });
+    const noteId = note.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -241,31 +224,19 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should handle multiple note transitions correctly', async ({ page, request }) => {
-    // Create two separate notes with their own graphs
-    const note1 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'First Graph Note', content: 'First graph' }
-    });
-    const note1Id = (await note1.json()).id;
+    // Create two separate notes with their own graphs using helpers
+    const note1 = await createNote(request, { title: 'First Graph Note', content: 'First graph' });
+    const note1Id = note1.id;
     
-    const note2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Second Graph Note', content: 'Second graph' }
-    });
-    const note2Id = (await note2.json()).id;
+    const note2 = await createNote(request, { title: 'Second Graph Note', content: 'Second graph' });
+    const note2Id = note2.id;
     
     // Add links to both
-    const linked1 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Linked to First', content: 'Link' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { source_note_id: note1Id, target_note_id: (await linked1.json()).id, weight: 0.7 }
-    });
+    const linked1 = await createNote(request, { title: 'Linked to First', content: 'Link' });
+    await createLink(request, note1Id, linked1.id, 0.7);
     
-    const linked2 = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Linked to Second', content: 'Link' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { source_note_id: note2Id, target_note_id: (await linked2.json()).id, weight: 0.7 }
-    });
+    const linked2 = await createNote(request, { title: 'Linked to Second', content: 'Link' });
+    await createLink(request, note2Id, linked2.id, 0.7);
     
     // Navigate to first graph
     await page.goto(`/graph/3d/${note1Id}`);
@@ -289,11 +260,9 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should handle empty graph (no connections) gracefully', async ({ page, request }) => {
-    // Create an isolated note with no connections
-    const isolatedNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Isolated Node', content: 'No connections', type: 'asteroid' }
-    });
-    const isolatedId = (await isolatedNote.json()).id;
+    // Create an isolated note with no connections using helper
+    const isolatedNote = await createNote(request, { title: 'Isolated Node', content: 'No connections', type: 'asteroid' });
+    const isolatedId = isolatedNote.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${isolatedId}`);
@@ -319,23 +288,18 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   });
 
   test('should display correct celestial body types', async ({ page, request }) => {
-    // Create a central star node
-    const centralNote = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Central Star', content: 'Central node', type: 'star' }
-    });
-    const centralId = (await centralNote.json()).id;
+    // Create a central star node using helper
+    const centralNote = await createNote(request, { title: 'Central Star', content: 'Central node', type: 'star' });
+    const centralId = centralNote.id;
     
     // Create planet, comet, asteroid linked to central
     const linkedIds = [];
     for (const type of ['planet', 'comet', 'asteroid']) {
-      const note = await request.post('http://localhost:8080/notes', {
-        data: { title: `${type} Node`, content: `Type: ${type}`, type }
-      });
-      const noteId = (await note.json()).id;
-      linkedIds.push(noteId);
+      const note = await createNote(request, { title: `${type} Node`, content: `Type: ${type}`, type });
+      linkedIds.push(note.id);
     }
     
-    // Create all links
+    // Create all links using helper
     for (const linkedId of linkedIds) {
       await createLink(request, centralId, linkedId, 0.8);
     }
@@ -398,11 +362,9 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   });
 
   test('should verify WebGL canvas dimensions are correct', async ({ page, request }) => {
-    // Create a note
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Canvas Dimension Test', content: 'Testing canvas size' }
-    });
-    const noteId = (await note.json()).id;
+    // Create a note using helper
+    const note = await createNote(request, { title: 'Canvas Dimension Test', content: 'Testing canvas size' });
+    const noteId = note.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -429,18 +391,12 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   });
 
   test('should maintain graph container structure', async ({ page, request }) => {
-    // Create a note with connections
-    const note = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Structure Test', content: 'Testing DOM structure' }
-    });
-    const noteId = (await note.json()).id;
+    // Create a note with connections using helpers
+    const note = await createNote(request, { title: 'Structure Test', content: 'Testing DOM structure' });
+    const noteId = note.id;
     
-    const linked = await request.post('http://localhost:8080/notes', {
-      data: { title: 'Structure Link', content: 'Link' }
-    });
-    await request.post('http://localhost:8080/links', {
-      data: { source_note_id: noteId, target_note_id: (await linked.json()).id, weight: 0.7 }
-    });
+    const linked = await createNote(request, { title: 'Structure Link', content: 'Link' });
+    await createLink(request, noteId, linked.id, 0.7);
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
