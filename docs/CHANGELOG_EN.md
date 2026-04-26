@@ -36,6 +36,10 @@
 - **FindAllPaginated**: New repository methods with metadata
 - **Redis Error Handling**: Graceful degradation
 - **NLP Health Check**: Model verification endpoint
+- **Unknown Node Type**: Fallback visualization for nodes without type
+  - Displays as question mark (?) in dashed circle
+  - Represents conditional/indeterminate object of any shape
+  - Falls back to 'unknown' when node.type is null/undefined/empty
 
 ### 🔧 Changed
 - **Configuration Architecture**: Centralized all parameters in `knowledge-graph.config.json`
@@ -58,7 +62,7 @@
   - Shadows threshold: 100 nodes (2D graph)
   - `GraphNode` and `GraphLink` schemas
 - **Input Validation**: Structured validation with human-readable errors:
-  - **Notes**: title (required, max 200), content (max 50000), type (oneof: star, planet, comet, galaxy)
+  - **Notes**: title (required, max 200), content (max 50000), type (oneof: star, planet, moon, comet, galaxy, nebula, asteroid, satellite, blackhole, unknown)
   - **Links**: source/target UUID validation, link_type (oneof: reference, dependency, related, custom), weight (0-1)
   - Validation errors return structured JSON: `{"error": "validation_failed", "message": "..."}`
 - **Test Fixes**: Updated `graph_handler_test.go` for pagination support:

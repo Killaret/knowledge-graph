@@ -167,8 +167,13 @@ Slide-out panel for note details:
 Modal for creating new notes:
 - Title input
 - Content textarea (with wiki link support `[[Link]]`)
-- Type selector (Star, Planet, Comet, Galaxy)
+- Type selector (star, planet, moon, comet, galaxy, nebula, asteroid, satellite, blackhole, unknown)
 - Save/Cancel actions
+
+**Node Type Display Logic**:
+- If node has a type → display that type
+- If node has no type → display as 'unknown' (question mark in dashed circle)
+- The 'unknown' type represents a conditional/indeterminate object of any shape
 
 ### 5. ConfirmModal.svelte
 

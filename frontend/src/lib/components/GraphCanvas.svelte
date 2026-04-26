@@ -434,6 +434,27 @@
     ctx.fill();
   }
 
+  function drawUnknown(x: number, y: number, r: number, _angle: number) {
+    if (!ctx) return;
+    // Unknown type - question mark in a dashed circle (conditional shape)
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
+    ctx.fill();
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]); // dashed line for conditional/unknown
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Question mark
+    ctx.font = `bold ${Math.floor(r * 1.2)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillText('?', x, y);
+  }
+
   // Функция для центрирования графа в видимой области
   function resetView() {
     if (!simulation || !ctx) return;
@@ -537,7 +558,7 @@
     
     const typeCounts: Record<string, number> = {};
     simulation.nodes().forEach((node: any) => {
-      const t = node.type ?? 'star';
+      const t = node.type || 'unknown';
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
     console.log('[GraphCanvas] Drawing nodes by type:', typeCounts);
@@ -547,7 +568,7 @@
     }
     
     simulation.nodes().forEach((node: any) => {
-      const type = node.type ?? 'star';
+      const type = node.type || 'unknown';
       const angle = angles.get(node.id) || 0;
 
       // Only enable shadows for small graphs (below threshold from config)
@@ -587,6 +608,9 @@
           break;
         case 'moon':
           drawMoon(node.x, node.y, r, angle);
+          break;
+        case 'unknown':
+          drawUnknown(node.x, node.y, r, angle);
           break;
         default:
           if (enableShadows) {
