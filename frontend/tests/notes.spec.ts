@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
+import { clickCreateNoteButton, fillSearchInput, clickSearchButton } from './helpers/testUtils';
 
 test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
   test.beforeEach(async ({ page }) => {
@@ -12,8 +13,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await expect(page.locator('.floating-controls')).toBeVisible({ timeout: 10000 });
     
     // Click create button in floating controls
-    await expect(page.locator('.create-btn')).toBeVisible();
-    await page.click('.create-btn');
+    await clickCreateNoteButton(page);
     
     // Wait for modal to open
     await page.waitForSelector('.modal, [role="dialog"]', { timeout: 10000 });
@@ -170,8 +170,8 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(1000);
 
     // Use search in floating controls
-    await page.fill('.search-input', 'Unique search content');
-    await page.click('.search-btn');
+    await fillSearchInput(page, 'Unique search content');
+    await clickSearchButton(page);
 
     // Verify search works via API
     const searchResponse = await request.get(`${getBackendUrl()}/notes/search?q=Unique+search+content`);

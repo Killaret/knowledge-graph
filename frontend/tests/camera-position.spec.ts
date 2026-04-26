@@ -15,6 +15,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { createNote, createLink } from './helpers/testData';
+import { clickViewToggle } from './helpers/testUtils';
 
 /**
  * Tests for Camera Position and Navigation in 3D Graph
@@ -243,20 +244,17 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
-    // Find and click the 3D button
-    const button3D = page.locator('.view-button-3d, button:has-text("3D")').first();
-    if (await button3D.isVisible().catch(() => false)) {
-      await button3D.click();
-      await page.waitForTimeout(3000);
-      
-      // Should navigate to /graph/3d
-      const currentUrl = page.url();
-      expect(currentUrl).toContain('/graph/3d');
-      
-      // 3D graph should load
-      const container = page.locator('.graph-3d-container, .lazy-loading').first();
-      await expect(container).toBeVisible({ timeout: 10000 });
-    }
+    // Click the 3D toggle button
+    await clickViewToggle(page, '3d');
+    await page.waitForTimeout(3000);
+    
+    // Should navigate to /graph/3d
+    const currentUrl = page.url();
+    expect(currentUrl).toContain('/graph/3d');
+    
+    // 3D graph should load
+    const container = page.locator('.graph-3d-container, .lazy-loading').first();
+    await expect(container).toBeVisible({ timeout: 10000 });
   });
 
   test('should handle direct URL access to 3D graph routes', async ({ page, request }) => {

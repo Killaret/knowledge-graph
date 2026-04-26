@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote } from './helpers/testData';
+import { clickCreateNoteButton, clickViewToggle } from './helpers/testUtils';
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -60,7 +61,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test('should display list view when toggled from graph view', async ({ page }) => {
     // Create a note first
-    await page.click('.create-btn, button:has-text("+")');
+    await clickCreateNoteButton(page);
     await page.fill('input[name="title"]', 'List View Test Note');
     await page.fill('textarea[name="content"]', 'Content for list view test');
     await page.click('button[type="submit"]');
@@ -70,14 +71,9 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     await page.goto('/');
     await page.waitForTimeout(3000); // Wait for page to load
     
-    // Toggle to list view (using FloatingControls or view toggle)
-    const viewToggle = page.locator('button:has-text("List"), button:has-text("View"), .view-toggle').first();
-    const hasToggle = await viewToggle.isVisible().catch(() => false);
-    
-    if (hasToggle) {
-      await viewToggle.click();
-      await page.waitForTimeout(1500);
-    }
+    // Toggle to list view (using FloatingControls)
+    await clickViewToggle(page, 'list');
+    await page.waitForTimeout(1500);
     
     // Verify any content is visible (graph, list, loading, or error states)
     const content = page.locator('[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card, [data-testid="loading-overlay"], .error-overlay').first();
@@ -340,20 +336,17 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     }
     
     // Toggle to list view and check count
-    const viewToggle = page.locator('button:has-text("List")').first();
-    if (await viewToggle.isVisible().catch(() => false)) {
-      await viewToggle.click();
-      await page.waitForTimeout(1000);
-      
-      // Verify notes grid or count matches
-      const notesGrid = page.locator('.notes-grid').first();
-      const noteCards = page.locator('.note-card');
-      
-      const hasGrid = await notesGrid.isVisible().catch(() => false);
-      const cardCount = hasGrid ? await noteCards.count() : 0;
-      
-      // Card count should be reasonable (not more than total)
-      expect(cardCount).toBeLessThanOrEqual(totalNotes + 5); // +5 tolerance for newly created notes
-    }
+    await clickViewToggle(page, 'list');
+    await page.waitForTimeout(1000);
+    
+    // Verify notes grid or count matches
+    const notesGrid = page.locator('.notes-grid').first();
+    const noteCards = page.locator('.note-card');
+    
+    const hasGrid = await notesGrid.isVisible().catch(() => false);
+    const cardCount = hasGrid ? await noteCards.count() : 0;
+    
+    // Card count should be reasonable (not more than total)
+    expect(cardCount).toBeLessThanOrEqual(totalNotes + 5); // +5 tolerance for newly created notes
   });
 });

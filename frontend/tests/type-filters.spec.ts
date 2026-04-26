@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
+import { clickFilterChip, clickViewToggle } from './helpers/testUtils';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
@@ -37,20 +38,17 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // Click on Stars filter button
-    const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), button[data-filter="star"]').first();
-    if (await starsFilter.isVisible().catch(() => false)) {
-      await starsFilter.click();
-      await page.waitForTimeout(1000);
-      
-      // Verify filter is applied - stats should show filtered state
-      const statsBar = page.locator('[data-testid="graph-stats"]').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        // Should show filter indicator or specific count
-        const hasFilterIndicator = statsText?.toLowerCase().includes('filter') || 
-                                   statsText?.toLowerCase().includes('star');
-        expect(hasFilterIndicator).toBe(true);
-      }
+    await clickFilterChip(page, 'star');
+    await page.waitForTimeout(1000);
+    
+    // Verify filter is applied - stats should show filtered state
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      // Should show filter indicator or specific count
+      const hasFilterIndicator = statsText?.toLowerCase().includes('filter') || 
+                                 statsText?.toLowerCase().includes('star');
+      expect(hasFilterIndicator).toBe(true);
     }
   });
 
@@ -74,19 +72,16 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // Click on Planets filter
-    const planetsFilter = page.locator('button:has-text("🪐"), button:has-text("Planets"), button[data-filter="planet"]').first();
-    if (await planetsFilter.isVisible().catch(() => false)) {
-      await planetsFilter.click();
-      await page.waitForTimeout(1000);
-      
-      // Verify filter is active
-      const statsBar = page.locator('.stats-bar').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        const hasFilterIndicator = statsText?.toLowerCase().includes('filter') || 
-                                   statsText?.toLowerCase().includes('planet');
-        expect(hasFilterIndicator).toBe(true);
-      }
+    await clickFilterChip(page, 'planet');
+    await page.waitForTimeout(1000);
+    
+    // Verify filter is active
+    const statsBar = page.locator('.stats-bar').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      const hasFilterIndicator = statsText?.toLowerCase().includes('filter') || 
+                                 statsText?.toLowerCase().includes('planet');
+      expect(hasFilterIndicator).toBe(true);
     }
   });
 
@@ -112,16 +107,13 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // Click on Comets filter
-    const cometsFilter = page.locator('button:has-text("☄️"), button:has-text("Comets"), button[data-filter="comet"]').first();
-    if (await cometsFilter.isVisible().catch(() => false)) {
-      await cometsFilter.click();
-      await page.waitForTimeout(1000);
-      
-      const statsBar = page.locator('[data-testid="graph-stats"]').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        expect(statsText?.toLowerCase()).toMatch(/filter|comet/);
-      }
+    await clickFilterChip(page, 'comet');
+    await page.waitForTimeout(1000);
+    
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      expect(statsText?.toLowerCase()).toMatch(/filter|comet/);
     }
   });
 
@@ -139,16 +131,13 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // Click on Galaxies filter
-    const galaxiesFilter = page.locator('button:has-text("🌀"), button:has-text("Galaxies"), button[data-filter="galaxy"]').first();
-    if (await galaxiesFilter.isVisible().catch(() => false)) {
-      await galaxiesFilter.click();
-      await page.waitForTimeout(1000);
-      
-      const statsBar = page.locator('[data-testid="graph-stats"]').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        expect(statsText?.toLowerCase()).toMatch(/filter|galax/);
-      }
+    await clickFilterChip(page, 'galaxy');
+    await page.waitForTimeout(1000);
+    
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      expect(statsText?.toLowerCase()).toMatch(/filter|galax/);
     }
   });
 
@@ -176,31 +165,25 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // First filter by star
-    const starsFilter = page.locator('button:has-text("⭐"), button[data-filter="star"]').first();
-    if (await starsFilter.isVisible().catch(() => false)) {
-      await starsFilter.click();
-      await page.waitForTimeout(1000);
-    }
+    await clickFilterChip(page, 'star');
+    await page.waitForTimeout(1000);
     
     // Then click All filter
-    const allFilter = page.locator('button:has-text("🌌"), button:has-text("All"), button[data-filter="all"]').first();
-    if (await allFilter.isVisible().catch(() => false)) {
-      await allFilter.click();
-      await page.waitForTimeout(1000);
-      
-      // Stats should show total count without filter indicator
-      const statsBar = page.locator('[data-testid="graph-stats"]').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        // Should show total notes (at least 3 we just created)
-        const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
-        if (countMatch) {
-          const count = parseInt(countMatch[1], 10);
-          expect(count).toBeGreaterThanOrEqual(3);
-        }
-        // Filter indicator should not be present for "All"
-        expect(statsText?.toLowerCase()).not.toContain('filtered');
+    await clickFilterChip(page, 'all');
+    await page.waitForTimeout(1000);
+    
+    // Stats should show total count without filter indicator
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      // Should show total notes (at least 3 we just created)
+      const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
+      if (countMatch) {
+        const count = parseInt(countMatch[1], 10);
+        expect(count).toBeGreaterThanOrEqual(3);
       }
+      // Filter indicator should not be present for "All"
+      expect(statsText?.toLowerCase()).not.toContain('filtered');
     }
   });
 
@@ -228,31 +211,25 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(2000);
     
     // First filter by star
-    const starsFilter = page.locator('button:has-text("⭐"), button[data-filter="star"]').first();
-    if (await starsFilter.isVisible().catch(() => false)) {
-      await starsFilter.click();
-      await page.waitForTimeout(1000);
-    }
+    await clickFilterChip(page, 'star');
+    await page.waitForTimeout(1000);
     
     // Then click All filter
-    const allFilter = page.locator('button:has-text("🌌"), button:has-text("All"), button[data-filter="all"]').first();
-    if (await allFilter.isVisible().catch(() => false)) {
-      await allFilter.click();
-      await page.waitForTimeout(1000);
-      
-      // Stats should show total count without filter indicator
-      const statsBar = page.locator('[data-testid="graph-stats"]').first();
-      if (await statsBar.isVisible().catch(() => false)) {
-        const statsText = await statsBar.textContent();
-        // Should show total notes (at least 3 we just created)
-        const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
-        if (countMatch) {
-          const count = parseInt(countMatch[1], 10);
-          expect(count).toBeGreaterThanOrEqual(3);
-        }
-        // Filter indicator should not be present for "All"
-        expect(statsText?.toLowerCase()).not.toContain('filtered');
+    await clickFilterChip(page, 'all');
+    await page.waitForTimeout(1000);
+    
+    // Stats should show total count without filter indicator
+    const statsBar = page.locator('[data-testid="graph-stats"]').first();
+    if (await statsBar.isVisible().catch(() => false)) {
+      const statsText = await statsBar.textContent();
+      // Should show total notes (at least 3 we just created)
+      const countMatch = statsText?.match(/(\d+)\s*nodes?/i);
+      if (countMatch) {
+        const count = parseInt(countMatch[1], 10);
+        expect(count).toBeGreaterThanOrEqual(3);
       }
+      // Filter indicator should not be present for "All"
+      expect(statsText?.toLowerCase()).not.toContain('filtered');
     }
   });
 
@@ -295,15 +272,12 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     await page.waitForTimeout(3000);
     
     // Apply star filter
-    const starsFilter = page.locator('button:has-text("⭐"), button[data-filter="star"]').first();
-    if (await starsFilter.isVisible().catch(() => false)) {
-      await starsFilter.click();
-      await page.waitForTimeout(2000);
-      
-      // Graph should still be visible (filtered to show only stars)
-      const graphContainer = page.locator('.fullscreen-graph, .graph-canvas, canvas').first();
-      await expect(graphContainer).toBeVisible({ timeout: 5000 });
-    }
+    await clickFilterChip(page, 'star');
+    await page.waitForTimeout(2000);
+    
+    // Graph should still be visible (filtered to show only stars)
+    const graphContainer = page.locator('.fullscreen-graph, .graph-canvas, canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
   });
 });
 
