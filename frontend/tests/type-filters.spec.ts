@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
-import { clickFilterChip, clickViewToggle } from './helpers/testUtils';
+import { clickFilterChip } from './helpers/testUtils';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
