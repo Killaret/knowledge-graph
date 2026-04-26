@@ -34,10 +34,25 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: process.env.FRONTEND_URL || 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: process.env.CI ? 180 * 1000 : 120 * 1000, // 3min in CI
-  },
+  webServer: process.env.BACKEND_URL
+    ? {
+        command: 'npm run dev',
+        url: process.env.FRONTEND_URL || 'http://localhost:5173',
+        reuseExistingServer: !process.env.CI,
+        timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
+      }
+    : [
+        {
+          command: 'npm run dev',
+          url: process.env.FRONTEND_URL || 'http://localhost:5173',
+          reuseExistingServer: !process.env.CI,
+          timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
+        },
+        {
+          command: 'cd ../backend && go run cmd/server/main.go',
+          url: 'http://localhost:8080',
+          reuseExistingServer: !process.env.CI,
+          timeout: 60 * 1000,
+        },
+      ],
 });
