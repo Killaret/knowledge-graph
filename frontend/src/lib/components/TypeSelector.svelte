@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
   type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula';
 
   interface Props {
