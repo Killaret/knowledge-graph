@@ -27,11 +27,10 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // Click list toggle - scroll into view first to handle viewport issues
+    // Click list toggle using JavaScript to bypass viewport issues
     const listToggle = page.locator('[data-testid="view-toggle-list"]');
     if (await listToggle.isVisible().catch(() => false)) {
-      await listToggle.scrollIntoViewIfNeeded();
-      await listToggle.click({ force: true });
+      await listToggle.evaluate(el => (el as HTMLElement).click());
       await page.waitForTimeout(1000);
     }
     
@@ -45,11 +44,10 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // Click star filter - scroll into view first to handle viewport issues
+    // Click star filter using JavaScript to bypass viewport issues
     const starFilter = page.locator('[data-testid="filter-chip-star"]');
     if (await starFilter.isVisible().catch(() => false)) {
-      await starFilter.scrollIntoViewIfNeeded();
-      await starFilter.click({ force: true });
+      await starFilter.evaluate(el => (el as HTMLElement).click());
       await page.waitForTimeout(1000);
     }
     
@@ -160,10 +158,10 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // Type in search - scroll into view first to handle viewport issues
+    // Type in search - use JavaScript to ensure input is interactable
     const searchInput = page.locator('[data-testid="search-input"]');
     if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.scrollIntoViewIfNeeded();
+      await searchInput.evaluate(el => (el as HTMLElement).focus());
       await searchInput.fill('Searchable');
       await page.waitForTimeout(1000);
     }
