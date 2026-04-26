@@ -18,10 +18,10 @@ export default defineConfig({
   server: {
     proxy: {
       // Прокси для запросов к API бэкенда
-      // Все запросы, начинающиеся с /api, перенаправляются на http://localhost:8080
-      // Например, /api/notes → http://localhost:8080/notes
+      // В Docker: используем имя сервиса backend:8080
+      // Локально: используем localhost:8080 (через env VITE_API_TARGET)
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
         changeOrigin: true,
         // Убираем префикс /api, чтобы не было /api/notes
         rewrite: (path) => path.replace(/^\/api/, '')

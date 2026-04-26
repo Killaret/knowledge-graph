@@ -139,6 +139,36 @@ export function createNodeMesh(node: GraphNode): THREE.Group {
       }
       break;
     }
+    case 'satellite': {
+      // Artificial satellite - boxy shape with antenna
+      const satMat = new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.8 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(size * 1.2, size * 0.8, size * 0.6), satMat);
+      group.add(body);
+      // Solar panels
+      const panelGeo = new THREE.BoxGeometry(size * 2.5, size * 0.1, size * 1.2);
+      const panelMat = new THREE.MeshStandardMaterial({ color: 0x2244aa, roughness: 0.2, metalness: 0.5 });
+      const panel = new THREE.Mesh(panelGeo, panelMat);
+      group.add(panel);
+      // Antenna
+      const antennaGeo = new THREE.CylinderGeometry(size * 0.05, size * 0.05, size * 1.5);
+      const antenna = new THREE.Mesh(antennaGeo, satMat);
+      antenna.position.y = size * 0.8;
+      group.add(antenna);
+      break;
+    }
+    case 'nebula': {
+      // Cloud-like nebula - multiple overlapping particles
+      const nebulaMat = new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.4, roughness: 1.0 });
+      for (let i = 0; i < 15; i++) {
+        const cloudSize = size * (0.5 + Math.random() * 0.8);
+        const cloud = new THREE.Mesh(new THREE.IcosahedronGeometry(cloudSize, 1), nebulaMat.clone());
+        cloud.position.x = (Math.random() - 0.5) * size * 2.5;
+        cloud.position.y = (Math.random() - 0.5) * size * 1.5;
+        cloud.position.z = (Math.random() - 0.5) * size * 1.5;
+        group.add(cloud);
+      }
+      break;
+    }
     default: {
       const mat = new THREE.MeshStandardMaterial({ color });
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), mat);
@@ -150,11 +180,11 @@ export function createNodeMesh(node: GraphNode): THREE.Group {
 
 function getNodeSize(type?: string): number {
   // Increased sizes for better visibility (were: 1.4, 1.0, 0.9, 1.8, 0.8, 1.2)
-  const sizes: Record<string, number> = { star: 2.5, planet: 2.0, comet: 1.8, galaxy: 3.0, asteroid: 1.5, debris: 2.0 };
+  const sizes: Record<string, number> = { star: 2.5, planet: 2.0, comet: 1.8, galaxy: 3.0, asteroid: 1.5, debris: 2.0, satellite: 1.2, nebula: 4.0 };
   return sizes[type || ''] || 2.0;
 }
 
 function getNodeColor(type?: string): number {
-  const colors: Record<string, number> = { star: 0xffdd44, planet: 0x44aaff, comet: 0xaa88ff, galaxy: 0xff88cc, asteroid: 0x8b7355, debris: 0x999999 };
+  const colors: Record<string, number> = { star: 0xffdd44, planet: 0x44aaff, comet: 0xaa88ff, galaxy: 0xff88cc, asteroid: 0x8b7355, debris: 0x999999, satellite: 0xaaaaaa, nebula: 0xc084fc };
   return colors[type || ''] || 0x88aaff;
 }

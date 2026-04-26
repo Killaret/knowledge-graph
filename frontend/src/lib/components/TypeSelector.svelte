@@ -1,5 +1,5 @@
 <script lang="ts">
-  type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid';
+  type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula';
 
   interface Props {
     selected: CelestialType;
@@ -14,7 +14,10 @@
     { value: 'planet', label: 'Planet', emoji: '🪐', color: 'var(--color-planet, #60a5fa)' },
     { value: 'comet', label: 'Comet', emoji: '☄️', color: 'var(--color-comet, #f472b6)' },
     { value: 'galaxy', label: 'Galaxy', emoji: '🌀', color: 'var(--color-galaxy, #a78bfa)' },
-    { value: 'asteroid', label: 'Asteroid', emoji: '☁️', color: 'var(--color-asteroid, #94a3b8)' }
+    { value: 'asteroid', label: 'Asteroid', emoji: '☁️', color: 'var(--color-asteroid, #94a3b8)' },
+    { value: 'satellite', label: 'Satellite', emoji: '🛰️', color: 'var(--color-satellite, #a1a1aa)' },
+    { value: 'debris', label: 'Debris', emoji: '🗑️', color: 'var(--color-debris, #71717a)' },
+    { value: 'nebula', label: 'Nebula', emoji: '🌌', color: 'var(--color-nebula, #c084fc)' }
   ];
 
   function selectType(type: CelestialType) {

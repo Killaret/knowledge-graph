@@ -52,7 +52,9 @@
     restart: "no"
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: kg-backend
     ports:
       - "8080:8080"
@@ -69,7 +71,9 @@
         condition: service_started
     restart: on-failure
   worker:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: kg-worker
     command: ["./worker"]
     environment:
@@ -86,7 +90,12 @@
     restart: on-failure
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        # В Docker сети backend доступен по имени сервиса
+        VITE_API_TARGET: http://backend:8080
     container_name: kg-frontend
     ports:
       - "3000:3000"
