@@ -20,7 +20,13 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost/api/notes/1/graph', () => HttpResponse.json(mockGraphData))
+        http.get('http://localhost:8081/api/notes/1/graph', ({ request }) => {
+          const url = new URL(request.url);
+          if (url.searchParams.get('depth') === '2') {
+            return HttpResponse.json(mockGraphData);
+          }
+          return HttpResponse.json(mockGraphData);
+        })
       );
 
       const result = await getGraphData('1', 2);
@@ -42,7 +48,11 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost/api/graph/all', () => HttpResponse.json(mockGraphData))
+        http.get('http://localhost:8081/api/graph/all', ({ request }) => {
+          const url = new URL(request.url);
+          const limit = url.searchParams.get('limit');
+          return HttpResponse.json(mockGraphData);
+        })
       );
 
       const result = await getFullGraphData(50);
@@ -65,7 +75,7 @@ describe('graph API', () => {
       }));
 
       server.use(
-        http.get('http://localhost/api/graph/all', () => HttpResponse.json({ nodes: manyNodes, links: manyLinks }))
+        http.get('http://localhost:8081/api/graph/all', () => HttpResponse.json({ nodes: manyNodes, links: manyLinks }))
       );
 
       const result = await getFullGraphData(100);
@@ -78,7 +88,7 @@ describe('graph API', () => {
   describe('edge cases', () => {
     it('should handle empty graph', async () => {
       server.use(
-        http.get('http://localhost/api/notes/999/graph', () => HttpResponse.json({ nodes: [], links: [] }))
+        http.get('http://localhost:8081/api/notes/999/graph', () => HttpResponse.json({ nodes: [], links: [] }))
       );
 
       const result = await getGraphData('999', 1);
@@ -91,7 +101,7 @@ describe('graph API', () => {
   describe('error handling', () => {
     it('should handle network errors', async () => {
       server.use(
-        http.get('http://localhost/api/notes/1/graph', () => HttpResponse.error())
+        http.get('http://localhost:8081/api/notes/1/graph', () => HttpResponse.error())
       );
 
       await expect(getGraphData('1')).rejects.toThrow();
@@ -99,7 +109,7 @@ describe('graph API', () => {
 
     it('should handle HTTP 500 errors', async () => {
       server.use(
-        http.get('http://localhost/api/graph/all', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+        http.get('http://localhost:8081/api/graph/all', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getFullGraphData(1000)).rejects.toThrow();

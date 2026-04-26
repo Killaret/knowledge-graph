@@ -4,26 +4,13 @@ import { tick } from 'svelte';
 import { goto } from '$app/navigation';
 import SearchBar from './SearchBar.svelte';
 
-// Мокаем goto
-vi.mock('$app/navigation', () => ({
-	goto: vi.fn(),
-}));
-
-// Мокаем $app/stores
-vi.mock('$app/stores', () => ({
-	page: {
-		subscribe: vi.fn((cb: (v: { url: URL }) => void) => {
-			cb({ url: new URL('http://localhost/') });
-			return () => {};
-		})
-	}
-}));
-
 // Хелпер для установки значения input с fireEvent и tick
 async function setInputValue(input: HTMLInputElement, value: string) {
+	// Properly dispatch input event for Svelte 5 bind:value
 	input.value = value;
-	await fireEvent.input(input);
+	input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 	await tick(); // Даём Svelte время обновить состояние
+	await new Promise(resolve => setTimeout(resolve, 0));
 }
 
 describe('SearchBar', () => {
