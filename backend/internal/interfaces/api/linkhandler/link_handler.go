@@ -13,6 +13,7 @@ import (
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
+	apicommon "knowledge-graph/internal/interfaces/api/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -44,7 +45,6 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 
 	affected, err := h.affectedNotesSvc.GetAffectedNotes(ctx, noteID)
 	if err != nil {
-		// Log error but don't fail the request
 		return
 	}
 
@@ -82,58 +82,84 @@ var LinkValidationErrors = map[string]string{
 func (h *Handler) Create(c *gin.Context) {
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Provide structured validation error response
 		errStr := err.Error()
+		var details []apicommon.FieldError
 		for key, msg := range LinkValidationErrors {
 			if strings.Contains(errStr, key) {
-				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
-				return
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
 			}
 		}
-		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
 
 	sourceID, err := uuid.Parse(req.SourceNoteID)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid source_note_id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("source_note_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, req.SourceNoteID),
+		})
 		return
 	}
 	targetID, err := uuid.Parse(req.TargetNoteID)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid target_note_id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("target_note_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, req.TargetNoteID),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	sourceNote, err := h.noteRepo.FindByID(ctx, sourceID)
-	if err != nil || sourceNote == nil {
-		c.JSON(404, gin.H{"error": "source note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 		return
 	}
+	if sourceNote == nil {
+		apicommon.NotFound(c, apicommon.MsgSourceNotFound)
+		return
+	}
+
 	targetNote, err := h.noteRepo.FindByID(ctx, targetID)
-	if err != nil || targetNote == nil {
-		c.JSON(404, gin.H{"error": "target note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if targetNote == nil {
+		apicommon.NotFound(c, apicommon.MsgTargetNotFound)
 		return
 	}
 
 	linkType, err := link.NewLinkType(req.LinkType)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
+		})
 		return
 	}
+
 	weight := 1.0
 	if req.Weight > 0 {
 		weight = req.Weight
 	}
 	weightVO, err := link.NewWeight(weight)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("weight", apicommon.ReasonOutOfRange, err.Error(), weight),
+		})
 		return
 	}
+
 	metadata, err := link.NewMetadata(req.Metadata)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), req.Metadata),
+		})
 		return
 	}
 
@@ -142,78 +168,74 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
-		// Проверяем на дубликат связи
 		if errors.Is(err, postgres.ErrDuplicateLink) {
-			c.JSON(409, gin.H{"error": "link of this type already exists between these notes"})
+			apicommon.Conflict(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorFull("link", apicommon.ReasonAlreadyExists, apicommon.MsgDuplicateLink,
+					map[string]string{"source_note_id": req.SourceNoteID, "target_note_id": req.TargetNoteID, "link_type": req.LinkType},
+					"unique combination of source, target and type"),
+			})
 			return
 		}
-		c.JSON(500, gin.H{"error": "failed to save link", "details": err.Error()})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
 		return
 	}
 
-	c.JSON(201, gin.H{
-		"id":             newLink.ID(),
-		"source_note_id": newLink.SourceNoteID(),
-		"target_note_id": newLink.TargetNoteID(),
-		"link_type":      newLink.LinkType().String(),
-		"weight":         newLink.Weight().Value(),
-		"metadata":       newLink.Metadata().Value(),
-		"created_at":     newLink.CreatedAt(),
-	})
+	responseData := toLinkResponse(newLink)
+	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
 func (h *Handler) Get(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	l, err := h.linkRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch link"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 	if l == nil {
-		c.JSON(404, gin.H{"error": "link not found"})
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"id":             l.ID(),
-		"source_note_id": l.SourceNoteID(),
-		"target_note_id": l.TargetNoteID(),
-		"link_type":      l.LinkType().String(),
-		"weight":         l.Weight().Value(),
-		"metadata":       l.Metadata().Value(),
-		"created_at":     l.CreatedAt(),
-	})
+	apicommon.JSON(c, 200, toLinkResponse(l))
 }
 
 func (h *Handler) GetByNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	n, err := h.noteRepo.FindByID(ctx, noteID)
-	if err != nil || n == nil {
-		c.JSON(404, gin.H{"error": "note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if n == nil {
+		apicommon.NotFound(c, apicommon.MsgNoteNotFound)
 		return
 	}
 
 	outgoing, err := h.linkRepo.FindBySource(ctx, noteID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch outgoing links"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 	incoming, err := h.linkRepo.FindByTarget(ctx, noteID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch incoming links"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 
@@ -226,7 +248,7 @@ func (h *Handler) GetByNote(c *gin.Context) {
 		incomingResp = append(incomingResp, toLinkResponse(l))
 	}
 
-	c.JSON(200, gin.H{
+	apicommon.JSON(c, 200, gin.H{
 		"outgoing": outgoingResp,
 		"incoming": incomingResp,
 	})
@@ -236,36 +258,44 @@ func (h *Handler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	l, err := h.linkRepo.FindByID(ctx, id)
-	if err != nil || l == nil {
-		c.JSON(404, gin.H{"error": "link not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
+		return
+	}
+	if l == nil {
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
 		return
 	}
 
 	if err := h.linkRepo.Delete(ctx, id); err != nil {
-		c.JSON(500, gin.H{"error": "failed to delete link"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
-	c.JSON(204, nil)
+	apicommon.NoContent(c)
 }
 
 func (h *Handler) DeleteByNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	if err := h.linkRepo.DeleteBySource(ctx, noteID); err != nil {
-		c.JSON(500, gin.H{"error": "failed to delete links for note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
-	c.JSON(204, nil)
+	apicommon.NoContent(c)
 }

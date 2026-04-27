@@ -15,6 +15,7 @@ import (
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
+	apicommon "knowledge-graph/internal/interfaces/api/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -103,29 +104,41 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// Provide structured validation error response
 		errStr := err.Error()
+		var details []apicommon.FieldError
 		for key, msg := range NoteValidationErrors {
 			if strings.Contains(errStr, key) {
-				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
-				return
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
 			}
 		}
-		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
 
 	title, err := note.NewTitle(req.Title)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), req.Title),
+		})
 		return
 	}
 	content, err := note.NewContent(req.Content)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), req.Content),
+		})
 		return
 	}
 	metadata, err := note.NewMetadata(req.Metadata)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), req.Metadata),
+		})
 		return
 	}
 
@@ -142,7 +155,7 @@ func (h *Handler) Create(c *gin.Context) {
 	newNote := note.NewNote(title, content, noteType, metadata)
 
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
-		c.JSON(500, gin.H{"error": "failed to save note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
 	}
 
@@ -164,7 +177,7 @@ func (h *Handler) Create(c *gin.Context) {
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
 
-	c.JSON(201, gin.H{
+	responseData := gin.H{
 		"id":         newNote.ID(),
 		"title":      newNote.Title().String(),
 		"content":    newNote.Content().String(),
@@ -172,7 +185,8 @@ func (h *Handler) Create(c *gin.Context) {
 		"metadata":   newNote.Metadata().Value(),
 		"created_at": newNote.CreatedAt(),
 		"updated_at": newNote.UpdatedAt(),
-	})
+	}
+	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
 type updateNoteRequest struct {
@@ -185,45 +199,55 @@ func (h *Handler) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	existing, err := h.repo.FindByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 		return
 	}
 	if existing == nil {
-		c.JSON(404, gin.H{"error": "note not found"})
+		apicommon.NotFound(c, "Заметка")
 		return
 	}
 
 	var req updateNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Provide structured validation error response
 		errStr := err.Error()
+		var details []apicommon.FieldError
 		for key, msg := range NoteValidationErrors {
 			if strings.Contains(errStr, key) {
-				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
-				return
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
 			}
 		}
-		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
 
-	// Флаг, изменился ли текст (чтобы ставить задачи)
 	textChanged := false
 
 	if req.Title != "" {
 		title, err := note.NewTitle(req.Title)
 		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), req.Title),
+			})
 			return
 		}
 		if err := existing.UpdateTitle(title); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), req.Title),
+			})
 			return
 		}
 		textChanged = true
@@ -231,11 +255,15 @@ func (h *Handler) Update(c *gin.Context) {
 	if req.Content != "" {
 		content, err := note.NewContent(req.Content)
 		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), req.Content),
+			})
 			return
 		}
 		if err := existing.UpdateContent(content); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), req.Content),
+			})
 			return
 		}
 		textChanged = true
@@ -243,32 +271,33 @@ func (h *Handler) Update(c *gin.Context) {
 	if req.Metadata != nil {
 		metadata, err := note.NewMetadata(req.Metadata)
 		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), req.Metadata),
+			})
 			return
 		}
 		if err := existing.UpdateMetadata(metadata); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), req.Metadata),
+			})
 			return
 		}
-		// изменение метаданных не влияет на текст, можно не ставить задачи
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
-		c.JSON(500, gin.H{"error": "failed to update note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
 	}
 
-	// Если текст изменился, ставим задачи заново
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
 	}
 
-	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
 
-	c.JSON(200, gin.H{
+	responseData := gin.H{
 		"id":         existing.ID(),
 		"title":      existing.Title().String(),
 		"content":    existing.Content().String(),
@@ -276,7 +305,8 @@ func (h *Handler) Update(c *gin.Context) {
 		"metadata":   existing.Metadata().Value(),
 		"created_at": existing.CreatedAt(),
 		"updated_at": existing.UpdatedAt(),
-	})
+	}
+	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -322,7 +352,7 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
+	responseData := gin.H{
 		"id":         n.ID(),
 		"title":      n.Title().String(),
 		"content":    n.Content().String(),
@@ -330,7 +360,8 @@ func (h *Handler) Get(c *gin.Context) {
 		"metadata":   n.Metadata().Value(),
 		"created_at": n.CreatedAt(),
 		"updated_at": n.UpdatedAt(),
-	})
+	}
+	apicommon.JSON(c, 200, responseData)
 }
 
 // GetSuggestions returns precomputed recommendations for a note
@@ -370,12 +401,12 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 			}
 
 			// Convert to response format
-			resp := SuggestionsResponse{
+			suggestionsResp := SuggestionsResponse{
 				Suggestions: make([]Suggestion, 0, len(recs)),
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
-				resp.Suggestions = append(resp.Suggestions, Suggestion{
+				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
 					Score:  rec.Score,
 				})
@@ -385,7 +416,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 			if stale {
 				c.Header("X-Recommendations-Stale", "true")
 			}
-			c.JSON(200, resp)
+			c.JSON(200, suggestionsResp)
 			return
 		}
 	}

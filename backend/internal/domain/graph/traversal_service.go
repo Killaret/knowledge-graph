@@ -86,6 +86,9 @@ func (s *TraversalService) RunBFS(ctx context.Context, startID uuid.UUID) map[uu
 // RunBFSWeights — возвращает только веса как float64 для удобства тестов
 func (s *TraversalService) RunBFSWeights(ctx context.Context, startID uuid.UUID) map[uuid.UUID]float64 {
 	paths := runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
+	if s.normalize {
+		paths = NormalizeWeights(paths)
+	}
 	weights := make(map[uuid.UUID]float64, len(paths))
 	for id, path := range paths {
 		weights[id] = path.weight

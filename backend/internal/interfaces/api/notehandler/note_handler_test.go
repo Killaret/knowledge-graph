@@ -117,10 +117,13 @@ func TestGetNote(t *testing.T) {
 		return
 	}
 
-	if resp["title"] != "GetTest" {
-
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Error("response data is not an object")
+		return
+	}
+	if data["title"] != "GetTest" {
 		t.Error("title mismatch")
-
 	}
 
 }
@@ -164,10 +167,13 @@ func TestUpdateNote(t *testing.T) {
 		return
 	}
 
-	if resp["title"] != "Updated" {
-
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Error("response data is not an object")
+		return
+	}
+	if data["title"] != "Updated" {
 		t.Error("title not updated")
-
 	}
 
 }
