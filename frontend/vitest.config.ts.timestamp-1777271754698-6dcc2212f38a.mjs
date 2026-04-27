@@ -3,9 +3,9 @@ import { defineConfig } from "file:///D:/knowledge-graph/frontend/node_modules/v
 import { svelte } from "file:///D:/knowledge-graph/frontend/node_modules/@sveltejs/vite-plugin-svelte/src/index.js";
 import path from "path";
 import { fileURLToPath } from "url";
-var __vite_injected_original_import_meta_url = "file:///D:/knowledge-graph/frontend/vitest.config.ts";
-var __dirname = path.dirname(fileURLToPath(__vite_injected_original_import_meta_url));
-var vitest_config_default = defineConfig({
+const __vite_injected_original_import_meta_url = "file:///D:/knowledge-graph/frontend/vitest.config.ts";
+const __dirname = path.dirname(fileURLToPath(__vite_injected_original_import_meta_url));
+const vitest_config_default = defineConfig({
   plugins: [
     svelte({
       hot: !process.env.VITEST
