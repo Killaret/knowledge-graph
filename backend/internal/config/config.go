@@ -45,6 +45,7 @@ type JSONConfig struct {
 			FallbackEnabled         bool    `json:"fallback_enabled"`
 			FallbackTTLSeconds      int     `json:"fallback_ttl_seconds"`
 			FallbackSemanticEnabled bool    `json:"fallback_semantic_enabled"`
+			KeywordEnabled          bool    `json:"keyword_enabled"`
 			BFSAggregation          string  `json:"bfs_aggregation"`
 			BFSNormalize            bool    `json:"bfs_normalize"`
 		} `json:"recommendation"`
@@ -128,6 +129,7 @@ type Config struct {
 	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
 	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
 	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
+	RecommendationKeywordEnabled          bool          // Включить keyword-компонент (gamma)
 	AsynqConcurrency                      int           // Уровень параллелизма Asynq
 	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
 	AsynqQueueMaxLen                      int           // Максимальная длина очереди
@@ -241,6 +243,7 @@ func Load() *Config {
 		RecommendationFallbackEnabled:         getBoolEnv("RECOMMENDATION_FALLBACK_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackEnabled }, true)),
 		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.FallbackTTLSeconds }, 3600))) * time.Second,
 		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackSemanticEnabled }, true)),
+		RecommendationKeywordEnabled:          getBoolEnv("RECOMMENDATION_KEYWORD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.KeywordEnabled }, true)),
 		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.Concurrency }, 10)),
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),

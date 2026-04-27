@@ -381,6 +381,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				})
 			}
 
+			c.Header("X-Recommendations-Source", "table")
 			if stale {
 				c.Header("X-Recommendations-Stale", "true")
 			}
@@ -401,7 +402,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				})
 			}
 
-			c.Header("X-Recommendations-Source", "semantic-fallback")
+			c.Header("X-Recommendations-Source", "semantic")
 			c.Header("X-Recommendations-Stale", "true")
 			c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
 			h.enqueueRefreshWithDelay(noteID)
@@ -416,7 +417,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
-				c.Header("X-Recommendations-Source", "redis-fallback")
+				c.Header("X-Recommendations-Source", "redis")
 				c.Header("X-Recommendations-Stale", "true")
 				c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
 				h.enqueueRefreshWithDelay(noteID)
@@ -427,6 +428,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 
 	// 4. Nothing available - trigger background calculation and return Accepted
 	h.enqueueRefreshWithDelay(noteID)
+	c.Header("X-Recommendations-Source", "empty")
 	c.Header("X-Recommendations-Stale", "true")
 	c.JSON(202, SuggestionsResponse{Suggestions: []Suggestion{}})
 }
