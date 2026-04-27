@@ -7,6 +7,8 @@ declare const process: {
     FORCE3D?: string;
     FRONTEND_URL?: string;
     BACKEND_URL?: string;
+    DATABASE_URL?: string;
+    REDIS_URL?: string;
   };
 };
 
@@ -34,10 +36,31 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: process.env.FRONTEND_URL || 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: process.env.CI ? 180 * 1000 : 120 * 1000, // 3min in CI
-  },
+  webServer: process.env.CI || process.env.BACKEND_URL
+    ? {
+        // In CI or when BACKEND_URL is set, only start frontend
+        command: 'npm run dev',
+        url: process.env.FRONTEND_URL || 'http://localhost:5173',
+        reuseExistingServer: !process.env.CI,
+        timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
+      }
+    : [
+        // Local development: start both frontend and backend
+        {
+          command: 'npm run dev',
+          url: process.env.FRONTEND_URL || 'http://localhost:5173',
+          reuseExistingServer: true,
+          timeout: 120 * 1000,
+        },
+        {
+          command: 'cd ../backend && go run cmd/server/main.go',
+          url: 'http://localhost:8080',
+          reuseExistingServer: true,
+          timeout: 60 * 1000,
+          env: {
+            DATABASE_URL: process.env.DATABASE_URL || '',
+            REDIS_URL: process.env.REDIS_URL || '',
+          },
+        },
+      ],
 });
