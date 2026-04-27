@@ -170,6 +170,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
       "fallback_enabled": true,
       "fallback_ttl_seconds": 3600,
       "fallback_semantic_enabled": true,
+      "keyword_enabled": true,
       "bfs_aggregation": "max",
       "bfs_normalize": true
     }
@@ -187,6 +188,8 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `RECOMMENDATION_DECAY` | Weight decay for indirect links | `0.5` | 0.0 - 1.0 |
 | `RECOMMENDATION_CACHE_TTL_SECONDS` | Cache TTL | `300` | 60 - 3600 |
 | `EMBEDDING_SIMILARITY_LIMIT` | pgvector candidates limit | `30` | 10 - 100 |
+| `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` | Enable semantic fallback | `true` | - |
+| `RECOMMENDATION_KEYWORD_ENABLED` | Enable keyword component (gamma) | `true` | - |
 
 ### Detailed Description
 
@@ -331,12 +334,19 @@ These parameters are now fully integrated and loaded from `knowledge-graph.confi
 | `backend.asynq.concurrency` | Asynq concurrency level | `10` |
 | `backend.asynq.queue_default` | Default queue priority | `1` |
 | `backend.asynq.queue_max_len` | Max queue length | `10000` |
+| `backend.recommendation.keyword_enabled` | Enable keyword component (gamma) | `true` |
 
 ### Reserved Parameters Description
 
 **RECOMMENDATION_GAMMA** — Coefficient for third component:
 - Allows adding third factor to calculation (e.g., time factor or popularity)
 - `0.2` — small contribution from additional factor
+- Requires `keyword_enabled: true` to be active
+
+**RECOMMENDATION_KEYWORD_ENABLED** — Enable keyword component (gamma):
+- `true` — keyword component is included in scoring
+- `false` — keyword component disabled (fallback to alpha/beta only)
+- Allows gradual rollout or emergency disabling of keyword features
 
 **BFS_AGGREGATION** — How to aggregate weights during graph traversal:
 - `max` — use maximum path weight (recommended, noise-resistant)
@@ -404,6 +414,7 @@ RECOMMENDATION_BATCH_RATE_LIMIT=10
 RECOMMENDATION_FALLBACK_ENABLED=true
 RECOMMENDATION_FALLBACK_TTL_SECONDS=3600
 RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED=true
+RECOMMENDATION_KEYWORD_ENABLED=true
 BFS_AGGREGATION=max
 BFS_NORMALIZE=true
 
@@ -513,6 +524,11 @@ RECOMMENDATION_FALLBACK_ENABLED=false
 ### 15. Fallback Mode (slower, always returns results)
 ```env
 RECOMMENDATION_FALLBACK_ENABLED=true
+```
+
+### 16. Disable Keyword Component (gamma)
+```env
+RECOMMENDATION_KEYWORD_ENABLED=false
 ```
 
 ### How to Apply Changes

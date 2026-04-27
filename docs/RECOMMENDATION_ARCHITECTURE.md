@@ -60,7 +60,7 @@ const TypeRefreshRecommendations = "recommendation:refresh"
 // - MaxRetry(3)                    // 3 retries
 // - Timeout(30s)                   // Timeout
 // - ProcessIn(delay)              // Delay (dedup)
-// - UniqueKey("rec:{note_id}")    // Deduplication
+// - TaskID("rec:{note_id}")       // Deduplication (asynq.TaskID)
 ```
 
 ### 4. Event Logic
@@ -94,9 +94,23 @@ func GetAffectedNotes(targetNoteID) []uuid.UUID {
 ## Optimizations
 
 1. **Batch neighbor loading** — `GetNeighborsBatch` reduces SQL queries
-2. **Task deduplication** — `UniqueKey` prevents duplicates
+2. **Task deduplication** — `TaskID` prevents duplicates (unique task ID)
 3. **Cascade limiting** — `reverseCascadeDepth = 1` prevents queue explosion
 4. **Transactionality** — atomic update via `SaveBatch` + `DeleteNotInBatch`
+
+## API Response Headers
+
+The `/suggestions` endpoint returns `X-Recommendations-*` headers to indicate data source and freshness:
+
+| Header | Value | Meaning |
+|--------|-------|---------|
+| `X-Recommendations-Source` | `table` | Data from `note_recommendations` table (precomputed) |
+| `X-Recommendations-Source` | `semantic` | Fallback to pgvector semantic similarity |
+| `X-Recommendations-Source` | `redis` | Fallback to Redis cache |
+| `X-Recommendations-Source` | `empty` | No data available, background task triggered |
+| `X-Recommendations-Stale` | `true` | Data may be outdated (fallback sources always stale) |
+
+**Note:** `X-Recommendations-Stale` is only set when data is stale or from fallback sources. Fresh precomputed data has no `Stale` header.
 
 ## Migration to Pure Precomputed Scores
 

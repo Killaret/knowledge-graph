@@ -39,7 +39,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw вес
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 1)
 		// Decay не применяется на первом хопе (depth=0)
@@ -62,7 +62,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 2)
 		// Decay не применяется на первом хопе (depth=0)
@@ -88,7 +88,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 2)
 		// B: 0.8 (без decay на первом хопе)
@@ -121,7 +121,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 2)
 		// Best weight for B via C: 0.8 * 0.9 * 0.5 = 0.36
@@ -158,7 +158,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		// B: best = 0.45 (via C: 0.9*1.0*0.5), direct would be 0.4
 		assert.InDelta(t, 0.45, result[bID], 0.001)
@@ -184,7 +184,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 		// cID won't have GetNeighbors called because depth=2, and cID is at depth 2
 
 		svc := NewTraversalService(loader, 2, 0.5, "max", true) // depth = 2
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		// Should have B and C, but not D (depth limit)
 		assert.Len(t, result, 2)
@@ -201,7 +201,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 		loader.On("GetNeighbors", ctx, startID).Return([]Edge{}, nil)
 
 		svc := NewTraversalService(loader, 3, 0.5, "max", true)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 0)
 		assert.NotContains(t, result, startID)
@@ -220,7 +220,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 		loader.On("GetNeighbors", ctx, targetID).Return([]Edge{}, nil)
 
 		svc := NewTraversalService(loader, 3, 0.5, "max", true)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 1)
 		assert.Contains(t, result, targetID)
@@ -240,7 +240,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 
 		// normalize=false чтобы проверить raw вес
 		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		// Should still have result for targetID even if its neighbors failed to load
 		// Decay не применяется на первом хопе, поэтому вес = 0.8
@@ -256,7 +256,7 @@ func TestTraversalService_runBFS(t *testing.T) {
 		loader.On("GetNeighbors", ctx, startID).Return([]Edge{}, nil)
 
 		svc := NewTraversalService(loader, 3, 0.5, "max", true)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 0)
 		loader.AssertExpectations(t)
@@ -292,7 +292,7 @@ func TestTraversalService_MaxAggregation(t *testing.T) {
 	// GetNeighbors не будет вызван для dID, т.к. depth=2 и dID на глубине 2
 
 	svc := NewTraversalService(loader, 2, 0.5, "max", true)
-	result := svc.runBFS(ctx, aID)
+	result := svc.RunBFSWeights(ctx, aID)
 
 	// D должен иметь вес 0.36 (максимальный путь через B)
 	// Нормализация: максимум = 0.8 (B), D = 0.36/0.8 = 0.45
@@ -329,7 +329,7 @@ func TestTraversalService_SumAggregation(t *testing.T) {
 	// GetNeighbors не будет вызван для dID, т.к. depth=2 и dID на глубине 2
 
 	svc := NewTraversalService(loader, 2, 0.5, "sum", true)
-	result := svc.runBFS(ctx, aID)
+	result := svc.RunBFSWeights(ctx, aID)
 
 	// D должен иметь вес 0.585 (сумма путей через B и C: 0.36 + 0.225)
 	// Нормализация: максимум = 0.8 (B), D = 0.585/0.8 = 0.73125
@@ -352,7 +352,7 @@ func TestTraversalService_Normalization(t *testing.T) {
 	loader.On("GetNeighbors", ctx, target2).Return([]Edge{}, nil)
 
 	svc := NewTraversalService(loader, 3, 0.5, "max", true)
-	result := svc.runBFS(ctx, startID)
+	result := svc.RunBFSWeights(ctx, startID)
 
 	// С нормализацией: максимальный вес должен быть 1.0
 	maxVal := 0.0
@@ -381,7 +381,7 @@ func TestTraversalService_NoNormalization(t *testing.T) {
 	loader.On("GetNeighbors", ctx, target2).Return([]Edge{}, nil)
 
 	svc := NewTraversalService(loader, 3, 0.5, "max", false)
-	result := svc.runBFS(ctx, startID)
+	result := svc.RunBFSWeights(ctx, startID)
 
 	// Без нормализации: веса без изменений (decay не применяется на первом хопе)
 	assert.InDelta(t, 0.9, result[target1], 0.001) // 0.9 (без decay на depth=0)
@@ -470,7 +470,7 @@ func TestTraversalService_Configuration(t *testing.T) {
 		// depth=0, decay=1.5 (invalid) -> should use defaults (depth=1, decay=0.5)
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 0, 1.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		// With default decay 0.5, но decay не применяется на первом хопе (depth=0)
 		// Поэтому вес = 1.0 * 1.0 = 1.0
@@ -491,7 +491,7 @@ func TestTraversalService_Configuration(t *testing.T) {
 
 		// depth=1: should only get B, not C
 		svc := NewTraversalService(loader, 1, 0.5, "max", true)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		assert.Len(t, result, 1)
 		assert.Contains(t, result, bID)
@@ -509,7 +509,7 @@ func TestTraversalService_Configuration(t *testing.T) {
 		// decay=0.25
 		// normalize=false чтобы проверить raw веса
 		svc := NewTraversalService(loader, 3, 0.25, "max", false)
-		result := svc.runBFS(ctx, startID)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		// Decay не применяется на первом хопе (depth=0), поэтому вес = 1.0 * 1.0 = 1.0
 		assert.InDelta(t, 1.0, result[targetID], 0.001)

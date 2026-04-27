@@ -9,12 +9,12 @@ import (
 
 // TraversalService — сервис-оркестратор для рекомендаций
 type TraversalService struct {
-	loader        NeighborLoader
+	loader         NeighborLoader
 	keywordMatcher KeywordMatcher
-	depth         int
-	decay         float64
-	aggregation   string // "max" или "sum"
-	normalize     bool
+	depth          int
+	decay          float64
+	aggregation    string // "max" или "sum"
+	normalize      bool
 	// Веса компонентов (alpha + beta + gamma = 1.0)
 	alpha float64 // вес графового компонента
 	beta  float64 // вес семантического компонента
@@ -76,6 +76,21 @@ func NewTraversalServiceWithWeights(
 // SetKeywordMatcher — установить реализацию KeywordMatcher
 func (s *TraversalService) SetKeywordMatcher(matcher KeywordMatcher) {
 	s.keywordMatcher = matcher
+}
+
+// RunBFS — экспортируемый метод для тестов (обертка над internal runBFS)
+func (s *TraversalService) RunBFS(ctx context.Context, startID uuid.UUID) map[uuid.UUID]weightedPath {
+	return runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
+}
+
+// RunBFSWeights — возвращает только веса как float64 для удобства тестов
+func (s *TraversalService) RunBFSWeights(ctx context.Context, startID uuid.UUID) map[uuid.UUID]float64 {
+	paths := runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
+	weights := make(map[uuid.UUID]float64, len(paths))
+	for id, path := range paths {
+		weights[id] = path.weight
+	}
+	return weights
 }
 
 // GetSuggestions — основной метод получения рекомендаций
