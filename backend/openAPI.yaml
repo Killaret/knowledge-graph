@@ -1,21 +1,37 @@
 openapi: 3.1.0
 info:
   title: Knowledge Graph API
-  version: 1.0.0
+  version: 1.1.0
   description: |
-    Knowledge Graph - Notes with graph links and AI recommendations.
-    Notes = stars, Links = rays with weights.
-    Recs = BFS graph + pgvector embeddings (α=0.7 explicit, β=0.3 semantic).
-
-    ## Rate Limiting
-    API implements token bucket rate limiting:
-    - **General requests**: 100 requests per minute per IP
-    - **Write operations** (POST /notes, POST /links, PUT/DELETE /notes/{id}):
-      - POST /notes: 30 requests per minute
-      - POST /links: 50 requests per minute  
-      - PUT/DELETE /notes/{id}: 20 requests per minute
-
-    When rate limit is exceeded, API returns `429 Too Many Requests` with error message.
+    Knowledge Graph API с унифицированными REST ответами.
+    Все ответы следуют стандартному формату SuccessResponse и ErrorResponse.
+    
+    ## Формат ответов
+    
+    ### Успешный ответ (200, 201):
+    ```json
+    {
+      "data": { ... },
+      "message": "Опциональное сообщение"
+    }
+    ```
+    
+    ### Ошибка (400, 404, 409, 500):
+    ```json
+    {
+      "code": "ERROR_CODE",
+      "message": "Человекочитаемое описание",
+      "details": [
+        {
+          "field": "поле",
+          "reason": "причина",
+          "message": "описание",
+          "received": "полученное значение",
+          "expected": "ожидаемое значение"
+        }
+      ]
+    }
+    ```
 
 servers:
   - url: http://localhost:8080
@@ -23,93 +39,20 @@ servers:
 paths:
   /health:
     get:
-      summary: Comprehensive health check
-      description: |
-        Returns health status of all service dependencies:
-        - Database (PostgreSQL)
-        - Cache (Redis)
-        - NLP Service (Python microservice)
+      summary: Health check
       responses:
         '200':
           description: All services healthy
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "healthy"
-                  timestamp:
-                    type: string
-                    format: date-time
-                  version:
-                    type: string
-                    example: "1.0.0"
-                  database:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                        enum: [healthy, unhealthy]
-                  redis:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                        enum: [healthy, unhealthy, disabled]
-                  nlp:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                        enum: [healthy, unhealthy]
+                $ref: '#/components/schemas/HealthResponse'
         '503':
           description: One or more services unhealthy
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "unhealthy"
-                  database:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                      error:
-                        type: string
-                  redis:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                      error:
-                        type: string
-
-  /db-check:
-    get:
-      summary: Database health check
-      description: Check if the database connection is working
-      responses:
-        '200':
-          description: Database is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "db ok"
-        '500':
-          description: Database not reachable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/HealthResponse'
 
   /notes:
     get:
@@ -122,42 +65,26 @@ paths:
             default: 10
             minimum: 1
             maximum: 100
-          description: Maximum number of notes to return
         - name: offset
           in: query
           schema:
             type: integer
             default: 0
             minimum: 0
-          description: Number of notes to skip
       responses:
         '200':
           description: Paginated list of notes
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  notes:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Note'
-                  total:
-                    type: integer
-                    description: Total count of notes
-                  limit:
-                    type: integer
-                  offset:
-                    type: integer
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Bad request - invalid pagination parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     post:
-      summary: Create note (async keywords/embedding)
+      summary: Create note
       requestBody:
         required: true
         content:
@@ -170,45 +97,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Note'
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Bad request - invalid input or missing required fields
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /notes/{id}:
     get:
-      summary: Get note
+      summary: Get note by ID
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          description: Note
+          description: Note found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Note'
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     put:
-      summary: Update note title/content (async re-embed)
+      summary: Update note
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -221,227 +150,123 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Note'
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Bad request - invalid input or missing required fields
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     delete:
-      summary: Delete note + links
+      summary: Delete note
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '204':
           description: Deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /notes/{id}/suggestions:
     get:
-      summary: Get recommendations (graph + embeddings)
+      summary: Get recommendations for note
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: Maximum number of suggestions to return
       responses:
         '200':
           description: Suggestions
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Suggestion'
+                $ref: '#/components/schemas/SuccessResponse'
+        '202':
+          description: Recommendations being generated
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
 
   /notes/{id}/graph:
     get:
-      summary: Graph data for note (nodes/links BFS depth 3)
+      summary: Graph data for note (BFS)
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            default: 3
       responses:
         '200':
-          description: Graph JSON for d3-force
+          description: Graph data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GraphData'
-        '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /notes/search:
     get:
-      summary: Search notes by query
+      summary: Search notes
       parameters:
         - name: q
           in: query
           required: true
           schema:
             type: string
-          description: Search query string
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: Maximum number of results
         - name: offset
           in: query
           schema:
             type: integer
             default: 0
-          description: Offset for pagination
       responses:
         '200':
           description: Search results
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  notes:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Note'
-                  total:
-                    type: integer
-                    description: Total count of matching notes
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Bad request - missing query parameter
-  /graph/all:
-    get:
-      summary: Get entire graph structure with pagination
-      description: |
-        Returns nodes and links for full graph visualization with pagination support.
-        Separate pagination for notes and links to optimize large graph loading.
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 100
-            minimum: 0
-            maximum: 1000
-          description: Maximum number of notes to return (0 = all, max 1000)
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-            minimum: 0
-          description: Number of notes to skip for pagination
-        - name: link_limit
-          in: query
-          schema:
-            type: integer
-            default: 500
-            minimum: 0
-            maximum: 5000
-          description: Maximum number of links to return (0 = all, max 5000)
-        - name: link_offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-            minimum: 0
-          description: Number of links to skip for pagination
-      responses:
-        '200':
-          description: Complete graph data with pagination metadata
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  nodes:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/GraphNode'
-                  links:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/GraphLink'
-                  pagination:
-                    type: object
-                    properties:
-                      notes:
-                        type: object
-                        properties:
-                          total:
-                            type: integer
-                            description: Total count of notes in database
-                          limit:
-                            type: integer
-                          offset:
-                            type: integer
-                      links:
-                        type: object
-                        properties:
-                          total:
-                            type: integer
-                            description: Total count of links in database
-                          limit:
-                            type: integer
-                          offset:
-                            type: integer
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Rate limit exceeded. Please try again later."
+          $ref: '#/components/responses/BadRequest'
         '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InternalError'
 
   /links:
     post:
-      summary: Create link (explicit relation)
+      summary: Create link
       requestBody:
         required: true
         content:
@@ -454,42 +279,39 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Link'
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Bad request - invalid input or missing required fields
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Source or target note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /links/{id}:
     get:
-      summary: Get link
+      summary: Get link by ID
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          description: Link
+          description: Link found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Link'
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Link not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     delete:
       summary: Delete link
@@ -499,15 +321,16 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '204':
           description: Deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Link not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /notes/{id}/links:
     get:
@@ -518,21 +341,20 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          description: Links
+          description: Links for note
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Link'
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     delete:
       summary: Delete all links for note
@@ -542,78 +364,168 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '204':
           description: All links deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Note not found
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /graph/all:
+    get:
+      summary: Get full graph with pagination
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: link_limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+        - name: link_offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Full graph data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/SuccessResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          description: Response data (note, link, graph, etc.)
+        message:
+          type: string
+          description: Optional success message
+      example:
+        data:
+          id: "550e8400-e29b-41d4-a716-446655440000"
+          title: "Note Title"
+          content: "Note content"
+        message: "Ресурс успешно создан"
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          enum: [VALIDATION_ERROR, NOT_FOUND, CONFLICT, FORBIDDEN, UNAUTHORIZED, INTERNAL_ERROR]
+        message:
+          type: string
+          description: Human-readable error message (Russian)
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+      example:
+        code: "VALIDATION_ERROR"
+        message: "Некорректные входные данные"
+        details:
+          - field: "title"
+            reason: "required"
+            message: "Поле обязательно для заполнения"
+
+    FieldError:
+      type: object
+      required:
+        - field
+        - reason
+        - message
+      properties:
+        field:
+          type: string
+          description: Field name with error
+        reason:
+          type: string
+          description: Error reason code
+          enum: [required, invalid_type, invalid_format, already_exists, too_long, out_of_range, invalid_value]
+        message:
+          type: string
+          description: Human-readable error description
+        received:
+          type: any
+          description: Received value (optional)
+        expected:
+          type: string
+          description: Expected value/format (optional)
+
     Note:
       type: object
       properties:
         id:
           type: string
+          format: uuid
         title:
           type: string
         content:
           type: string
+        type:
+          type: string
+          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+        metadata:
+          type: object
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-        keywords:
-          type: array
-          items:
-            type: string
-        embedding:
-          type: array
-          items:
-            type: number
-            format: float
-        type:
-          type: string
-          description: "Категория контента (book, movie, anime, manga, adaptation и др.)"
-        metadata:
-          type: object
-          additionalProperties: true
-          description: "Дополнительные метаданные (например, celestial_type для визуализации графа)"
 
     CreateNoteRequest:
       type: object
+      required:
+        - title
       properties:
         title:
           type: string
+          maxLength: 200
         content:
           type: string
+          maxLength: 50000
         type:
           type: string
-          description: "Категория заметки"
+          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
         metadata:
           type: object
-          additionalProperties: true
-      required:
-        - title
 
     UpdateNoteRequest:
       type: object
       properties:
         title:
           type: string
+          maxLength: 200
         content:
           type: string
-        type:
-          type: string
+          maxLength: 50000
         metadata:
           type: object
-          additionalProperties: true
 
     Link:
       type: object
@@ -621,160 +533,163 @@ components:
         id:
           type: string
           format: uuid
-          description: Unique identifier for the link
         source_note_id:
           type: string
           format: uuid
-          description: ID of the source note
         target_note_id:
           type: string
           format: uuid
-          description: ID of the target note
-        weight:
-          type: number
-          format: float
-          minimum: 0.0
-          maximum: 1.0
-          description: Link weight from 0.0 to 1.0
         link_type:
           type: string
           enum: [reference, dependency, related, custom]
-          description: Type of relationship between notes
-        description:
-          type: string
-          description: Optional human-readable description of the link
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
         created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
 
     CreateLinkRequest:
       type: object
+      required:
+        - source_note_id
+        - target_note_id
+        - link_type
       properties:
         source_note_id:
           type: string
           format: uuid
-          description: ID of the source note
         target_note_id:
           type: string
           format: uuid
-          description: ID of the target note
-        weight:
-          type: number
-          format: float
-          minimum: 0.0
-          maximum: 1.0
-          default: 0.5
-          description: Link weight (0.0 to 1.0)
         link_type:
           type: string
           enum: [reference, dependency, related, custom]
-          default: reference
-          description: Type of relationship
-        description:
-          type: string
-          description: Optional human-readable description
-      required:
-        - source_note_id
-        - target_note_id
-
-    Suggestion:
-      type: object
-      properties:
-        note_id:
-          type: string
-        title:
-          type: string
-        score:
+        weight:
           type: number
-          format: float
+          minimum: 0
+          maximum: 1
+          default: 1.0
+        metadata:
+          type: object
 
     GraphNode:
       type: object
-      description: Node representing a note in the graph visualization
       properties:
         id:
           type: string
           format: uuid
-          description: Unique identifier of the note
         title:
           type: string
-          description: Title of the note
         type:
           type: string
-          enum: [star, planet, comet, galaxy]
-          description: "Celestial body type for visualization (from metadata.celestial_type)"
+          enum: [star, planet, moon, asteroid, nebula, satellite, comet, blackhole, galaxy]
 
     GraphLink:
       type: object
-      description: Link representing a connection between notes
       properties:
         source:
           type: string
           format: uuid
-          description: ID of the source note
         target:
           type: string
           format: uuid
-          description: ID of the target note
         weight:
           type: number
-          format: float
-          minimum: 0.0
-          maximum: 1.0
-          description: Connection strength (0.0 to 1.0)
+          minimum: 0
+          maximum: 1
         link_type:
           type: string
           enum: [reference, dependency, related, custom]
-          description: Type of relationship
 
-    GraphData:
+    HealthResponse:
       type: object
-      description: Graph data structure for D3.js force visualization
       properties:
-        nodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/GraphNode'
-        links:
-          type: array
-          items:
-            $ref: '#/components/schemas/GraphLink'
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        database:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [healthy, unhealthy]
+        redis:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [healthy, unhealthy, disabled]
+        nlp:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [healthy, unhealthy]
 
-    Error:
-      type: object
-      description: Standard error response
-      properties:
-        error:
-          type: string
-          description: Error type/code
-          example: "not_found"
-        message:
-          type: string
-          description: Human-readable error description
-          example: "Note with ID 'abc-123' not found"
-        detail:
-          type: string
-          description: Detailed error information (optional)
-          example: "The requested resource does not exist in the database"
-        code:
-          type: integer
-          description: HTTP status code
-          example: 404
-      required:
-        - error
-        - message
+  responses:
+    BadRequest:
+      description: Bad Request - Validation Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "VALIDATION_ERROR"
+            message: "Некорректные входные данные"
+            details:
+              - field: "title"
+                reason: "required"
+                message: "Поле обязательно для заполнения"
 
-tags:
-  - name: Health
-    description: Health check and system status
-  - name: Notes
-    description: Note management operations
-  - name: Links
-    description: Link/relationship management
-  - name: Graph
-    description: Graph visualization and traversal
-  - name: Search
-    description: Search and discovery operations
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "NOT_FOUND"
+            message: "Заметка не найдена"
+
+    Conflict:
+      description: Conflict - Duplicate or conflicting data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "CONFLICT"
+            message: "Конфликт данных"
+            details:
+              - field: "link"
+                reason: "already_exists"
+                message: "Связь уже существует"
+
+    Forbidden:
+      description: Forbidden - Reserved for future authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "FORBIDDEN"
+            message: "Доступ запрещён"
+
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "INTERNAL_ERROR"
+            message: "Внутренняя ошибка сервера"

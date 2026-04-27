@@ -26,6 +26,9 @@ import (
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/interfaces/api/notehandler"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const (
@@ -131,6 +134,16 @@ func main() {
 
 	// Роуты
 	r := gin.Default()
+
+	// Swagger UI
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("/openapi.yaml"),
+		ginSwagger.DeepLinking(true),
+		ginSwagger.DocExpansion("list"),
+	))
+
+	// Serve OpenAPI spec
+	r.StaticFile("/openapi.yaml", "./openAPI.yaml")
 
 	// CORS middleware - разрешаем запросы с frontend
 	r.Use(func(c *gin.Context) {

@@ -8,6 +8,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
+	apicommon "knowledge-graph/internal/interfaces/api/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,14 +17,14 @@ import (
 type GraphNode struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
-	Type  string `json:"type"` // "star", "planet", "comet", "galaxy"
+	Type  string `json:"type"`
 }
 
 type GraphLink struct {
 	Source   string  `json:"source"`
 	Target   string  `json:"target"`
 	Weight   float64 `json:"weight"`
-	LinkType string  `json:"link_type"` // "reference", "dependency", "related", "custom"
+	LinkType string  `json:"link_type"`
 }
 
 type GraphData struct {
@@ -49,11 +50,12 @@ func (h *Handler) GetGraph(c *gin.Context) {
 	idStr := c.Param("id")
 	centerID, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
-	// Парсим параметр depth из query (с ограничением по maxDepth)
 	depth := h.cfg.GraphLoadDepth
 	if d := c.Query("depth"); d != "" {
 		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
@@ -65,18 +67,14 @@ func (h *Handler) GetGraph(c *gin.Context) {
 		}
 	}
 
-	// BFS для загрузки графа с заданной глубиной
 	nodes, links := h.loadGraphBFS(c.Request.Context(), centerID, depth)
-
-	c.JSON(200, GraphData{Nodes: nodes, Links: links})
+	apicommon.JSON(c, 200, GraphData{Nodes: nodes, Links: links})
 }
 
-// loadGraphBFS загружает граф с помощью BFS до заданной глубины
 func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth int) ([]GraphNode, []GraphLink) {
 	nodeMap := make(map[uuid.UUID]bool)
-	linkMap := make(map[string]GraphLink) // ключ: "source->target"
+	linkMap := make(map[string]GraphLink)
 
-	// BFS очередь: [noteID, depth]
 	type queueItem struct {
 		id    uuid.UUID
 		depth int
@@ -85,7 +83,6 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	nodeMap[centerID] = true
 
 	for len(queue) > 0 {
-		// Извлекаем из очереди
 		item := queue[0]
 		queue = queue[1:]
 
@@ -93,7 +90,6 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			continue
 		}
 
-		// Загружаем исходящие связи
 		outgoing, err := h.linkRepo.FindBySource(ctx, item.id)
 		if err != nil {
 			log.Printf("Error finding outgoing links for %s: %v", item.id, err)
@@ -116,7 +112,6 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			}
 		}
 
-		// Загружаем входящие связи
 		incoming, err := h.linkRepo.FindByTarget(ctx, item.id)
 		if err != nil {
 			log.Printf("Error finding incoming links for %s: %v", item.id, err)
@@ -140,14 +135,12 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 		}
 	}
 
-	// Формируем список узлов
 	nodes := make([]GraphNode, 0, len(nodeMap))
 	for id := range nodeMap {
 		n, err := h.noteRepo.FindByID(ctx, id)
 		if err != nil || n == nil {
 			continue
 		}
-		// Определяем тип небесного тела
 		nodeType := "star"
 		if metadata := n.Metadata().Value(); metadata != nil {
 			if t, ok := metadata["type"]; ok {
@@ -163,7 +156,6 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 		})
 	}
 
-	// Формируем список связей
 	links := make([]GraphLink, 0, len(linkMap))
 	for _, link := range linkMap {
 		links = append(links, link)
@@ -172,78 +164,65 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	return nodes, links
 }
 
-// GetFullGraph возвращает полный граф всех заметок и связей с пагинацией
-// Query params:
-//   - limit: максимальное количество заметок (default: cfg.GraphDefaultLimit, max: cfg.GraphMaxLimit)
-//   - offset: смещение для пагинации (default: 0)
-//   - link_limit: максимальное количество связей (default: cfg.GraphLinkDefaultLimit, max: cfg.GraphLinkMaxLimit)
 func (h *Handler) GetFullGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Парсим параметры пагинации для заметок
-	limit := h.cfg.GraphDefaultLimit // default from config
+	limit := h.cfg.GraphDefaultLimit
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed >= 0 {
-			// Ограничиваем максимум для защиты
 			if parsed > h.cfg.GraphMaxLimit {
 				limit = h.cfg.GraphMaxLimit
 			} else if parsed == 0 {
-				limit = 0 // все записи
+				limit = 0
 			} else {
 				limit = parsed
 			}
 		}
 	}
 
-	offset := 0 // default
+	offset := 0
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if parsed, err := strconv.Atoi(offsetStr); err == nil && parsed >= 0 {
 			offset = parsed
 		}
 	}
 
-	// Парсим параметры пагинации для связей
-	linkLimit := h.cfg.GraphLinkDefaultLimit // default from config
+	linkLimit := h.cfg.GraphLinkDefaultLimit
 	if linkLimitStr := c.Query("link_limit"); linkLimitStr != "" {
 		if parsed, err := strconv.Atoi(linkLimitStr); err == nil && parsed >= 0 {
 			if parsed > h.cfg.GraphLinkMaxLimit {
 				linkLimit = h.cfg.GraphLinkMaxLimit
 			} else if parsed == 0 {
-				linkLimit = 0 // все записи
+				linkLimit = 0
 			} else {
 				linkLimit = parsed
 			}
 		}
 	}
 
-	linkOffset := 0 // default
+	linkOffset := 0
 	if linkOffsetStr := c.Query("link_offset"); linkOffsetStr != "" {
 		if parsed, err := strconv.Atoi(linkOffsetStr); err == nil && parsed >= 0 {
 			linkOffset = parsed
 		}
 	}
 
-	// Загружаем заметки с пагинацией на уровне БД
 	notes, totalNotes, err := h.noteRepo.FindAllPaginated(ctx, limit, offset)
 	if err != nil {
 		log.Printf("Error loading notes: %v", err)
-		c.JSON(500, gin.H{"error": "failed to load notes"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedLoadGraph)
 		return
 	}
 
-	// Загружаем связи с пагинацией на уровне БД
 	links, totalLinks, err := h.linkRepo.FindAllPaginated(ctx, linkLimit, linkOffset)
 	if err != nil {
 		log.Printf("Error loading links: %v", err)
-		c.JSON(500, gin.H{"error": "failed to load links"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedLoadGraph)
 		return
 	}
 
-	// Формируем ответ
 	nodes := make([]GraphNode, 0, len(notes))
 	debugTypes := make(map[string]int)
-
-	// Все возможные типы узлов для разнообразия
 	celestialTypes := []string{"star", "planet", "moon", "asteroid", "nebula", "satellite", "comet", "blackhole", "galaxy"}
 
 	for i, n := range notes {
@@ -257,7 +236,6 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 				}
 			}
 		}
-		// Если тип не задан в metadata, генерируем на основе индекса для разнообразия
 		if !hasTypeFromMetadata {
 			nodeType = celestialTypes[i%len(celestialTypes)]
 		}
@@ -285,8 +263,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	}
 	log.Printf("[GraphHandler] Converted graphLinks: %d", len(graphLinks))
 
-	// Возвращаем с метаданными пагинации
-	c.JSON(200, gin.H{
+	apicommon.JSON(c, 200, gin.H{
 		"nodes": nodes,
 		"links": graphLinks,
 		"pagination": gin.H{

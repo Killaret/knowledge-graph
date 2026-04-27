@@ -146,8 +146,12 @@ func TestHandler_GetGraph(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
+		var respMap map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &respMap)
+		assert.NoError(t, err)
+		dataBytes, _ := json.Marshal(respMap["data"])
 		var response GraphData
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err = json.Unmarshal(dataBytes, &response)
 		assert.NoError(t, err)
 		assert.Len(t, response.Nodes, 1)
 		assert.Equal(t, "Center Node", response.Nodes[0].Title)
@@ -198,8 +202,12 @@ func TestHandler_GetGraph(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
+		var respMap map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &respMap)
+		assert.NoError(t, err)
+		dataBytes, _ := json.Marshal(respMap["data"])
 		var response GraphData
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err = json.Unmarshal(dataBytes, &response)
 		assert.NoError(t, err)
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Links, 1)
@@ -285,8 +293,12 @@ func TestHandler_GetFullGraph(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
+		var respMap map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &respMap)
+		assert.NoError(t, err)
+		dataBytes, _ := json.Marshal(respMap["data"])
 		var response GraphData
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err = json.Unmarshal(dataBytes, &response)
 		assert.NoError(t, err)
 		assert.Len(t, response.Nodes, 2)
 		assert.Len(t, response.Links, 1)
@@ -309,8 +321,12 @@ func TestHandler_GetFullGraph(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
+		var respMap map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &respMap)
+		assert.NoError(t, err)
+		dataBytes, _ := json.Marshal(respMap["data"])
 		var response GraphData
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err = json.Unmarshal(dataBytes, &response)
 		assert.NoError(t, err)
 		assert.Len(t, response.Nodes, 1)
 	})

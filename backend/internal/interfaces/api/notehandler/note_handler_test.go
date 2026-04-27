@@ -72,10 +72,13 @@ func TestCreateNote(t *testing.T) {
 		return
 	}
 
-	if resp["title"] != "Test Note" {
-
-		t.Errorf("title mismatch: %v", resp["title"])
-
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Errorf("response data is not an object")
+		return
+	}
+	if data["title"] != "Test Note" {
+		t.Errorf("title mismatch: %v", data["title"])
 	}
 
 }

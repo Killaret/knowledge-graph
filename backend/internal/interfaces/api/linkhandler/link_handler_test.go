@@ -166,7 +166,11 @@ func TestCreateLink(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
-	linkIDStr, ok := resp["id"].(string)
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Fatal("response data is not an object")
+	}
+	linkIDStr, ok := data["id"].(string)
 	if !ok {
 		t.Fatal("no id in response")
 	}
