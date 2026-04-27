@@ -177,5 +177,13 @@ describe('notes API', () => {
 
       await expect(getNote('999')).rejects.toThrow();
     });
+
+    it('should handle HTTP 500 errors', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/1', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+      );
+
+      await expect(getNote('1')).rejects.toThrow();
+    });
   });
 });

@@ -77,34 +77,32 @@ cameraUtils.autoZoomToFit(nodes, padding)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Main Page (/)                               │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                 NoteListView (Primary)                     ││
-│  │     Grid of note cards with search and filters             ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│         ┌────────────────────┼────────────────────┐             │
-│         │                    │                    │             │
-│    ┌────▼────┐         ┌────▼────┐         ┌────▼────┐       │
-│    │Floating │         │  Note   │         │ Create  │       │
-│    │Controls │         │SidePanel│         │  Modal  │       │
-│    └─────────┘         └─────────┘         └─────────┘       │
-│                                                                  │
+│  App Shell (/*) - All Pages                                      │
+│  ┌─────────┬──────────────────────────────────────────────────┐  │
+│  │Sidebar  │              Main Content Area                    │  │
+│  │(CCC)    │                                                  │  │
+│  │[v2.0]   │  ┌───────────────────────────────────────────┐  │  │
+│  │width:0  │  │           Main Page (/)                    │  │  │
+│  │(hidden) │  │                                            │  │  │
+│  │         │  │  ┌─────────────────────────────────────┐   │  │  │
+│  │         │  │  │      NoteListView (Primary)         │   │  │  │
+│  │         │  │  │   Grid of note cards with search    │   │  │  │
+│  │         │  │  └─────────────────────────────────────┘   │  │  │
+│  │         │  │         │                                   │  │  │
+│  │         │  │    ┌────┴────┐        ┌────┴────┐          │  │  │
+│  │         │  │    │Floating │        │  Note   │          │  │  │
+│  │         │  │    │Controls │        │SidePanel│          │  │  │
+│  │         │  │    └─────────┘        └─────────┘          │  │  │
+│  │         │  └───────────────────────────────────────────┘  │  │
+│  │         │                                                  │  │
+│  │         │  ┌─────────────────┐  ┌─────────────────────┐   │  │
+│  │         │  │ 2D Graph View   │  │  3D Graph View      │   │  │
+│  │         │  │ /graph/:id      │  │ /graph/3d/:id       │   │  │
+│  │         │  │                 │  │                     │   │  │
+│  │         │  │ GraphCanvas     │  │ Graph3D.svelte      │   │  │
+│  │         │  └─────────────────┘  └─────────────────────┘   │  │
+│  └─────────┴──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              │                               │
-     ┌────────▼─────────┐          ┌──────────▼──────────┐
-     │  2D Graph View   │          │  3D Graph View      │
-     │  /graph/:id      │          │  /graph/3d/:id      │
-     │                  │          │                     │
-     │  GraphCanvas     │          │  Graph3D.svelte     │
-     │  ├── Nodes       │          │  ├── sceneSetup.ts  │
-     │  ├── Links       │          │  ├── forceSim       │
-     │  └── Canvas      │          │  └── Progressive    │
-     │                  │          │     Rendering       │
-     └──────────────────┘          └─────────────────────┘
 ```
 
 ## Component Hierarchy
@@ -190,7 +188,33 @@ Smart component that decides between 2D and 3D:
 - Respects user preference via URL param (`?force3d=1`)
 - Falls back to 2D on low-end devices
 
-### 7. Graph3D.svelte (3D Visualization)
+### 7. Sidebar.svelte (Context Control Center) 🆕
+
+Reserved component for the future **Context Control Center (CCC)** - a left navigation panel for advanced filtering and graph navigation.
+
+**Status**: Reserved/Stub (width: 0, hidden)
+
+**Planned Modules (v2.0)**:
+1. **Note Groups (Projects/Folders)** - Manual grouping with drag-and-drop
+2. **Dynamic Clusters** - Auto-generated groups by semantic similarity
+3. **Advanced Filters** - Type, tags, keywords, custom labels with AND/OR logic
+4. **Saved Searches** - Bookmarked filter combinations
+
+**Current Implementation**:
+- Skeleton component present in all pages via `+layout.svelte`
+- App-shell flex layout ready for 280px panel activation
+- Zero visual impact until enabled
+
+**Activation** (future):
+```css
+/* In Sidebar.svelte */
+.sidebar-placeholder {
+  width: 280px;  /* Change from 0 */
+  padding: 1rem;
+}
+```
+
+### 8. Graph3D.svelte (3D Visualization)
 
 Three.js-based 3D graph visualization with progressive loading:
 
@@ -460,7 +484,8 @@ npm run lint
 8. **Plugin System**: Third-party visualization plugins
 
 ### Long Term (v2.0)
-9. **Collaborative Editing**: WebRTC or WebSocket for real-time collaboration
-10. **Version History**: Note versioning with diff view
-11. **Advanced Analytics**: Usage statistics, most connected notes
-12. **Voice Input**: Speech-to-text for note creation
+9. **Context Control Center**: Left sidebar with groups, clusters, filters, saved searches
+10. **Collaborative Editing**: WebRTC or WebSocket for real-time collaboration
+11. **Version History**: Note versioning with diff view
+12. **Advanced Analytics**: Usage statistics, most connected notes
+13. **Voice Input**: Speech-to-text for note creation

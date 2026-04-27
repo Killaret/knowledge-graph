@@ -101,12 +101,46 @@ describe('graph API', () => {
       await expect(getGraphData('1')).rejects.toThrow();
     });
 
+    it('should handle HTTP 404 errors', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/999/graph', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
+      );
+
+      await expect(getGraphData('999')).rejects.toThrow('Граф не найден');
+    });
+
     it('should handle HTTP 500 errors', async () => {
       server.use(
         http.get('http://localhost:8081/api/graph/all', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getFullGraphData(1000)).rejects.toThrow();
+    });
+  });
+
+  describe('getFullGraphData without limit parameter', () => {
+    it('should use default limit when called without parameter', async () => {
+      const mockGraphData: GraphData = {
+        nodes: [
+          { id: '1', title: 'Node 1', type: 'star' },
+          { id: '2', title: 'Node 2', type: 'planet' },
+        ],
+        links: [{ source: '1', target: '2', weight: 1.0, link_type: 'reference' }],
+      };
+
+      server.use(
+        http.get('http://localhost:8081/api/graph/all', ({ request }) => {
+          const url = new URL(request.url);
+          const limit = url.searchParams.get('limit');
+          // Default limit from config is expected
+          expect(limit).toBeTruthy();
+          return HttpResponse.json(mockGraphData);
+        })
+      );
+
+      const result = await getFullGraphData();
+
+      expect(result.nodes).toHaveLength(2);
     });
   });
 });

@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
-// Хранилище состояния для мока
-export const mockState = {
+// Хранилище состояния для мока - используем глобальный объект для shared state
+const globalState = (globalThis as any).__D3_FORCE_MOCK_STATE__ || {
   simulationNodes: [] as any[],
   simulationLinks: [] as any[],
   tickCallback: null as (() => void) | null,
@@ -10,12 +10,18 @@ export const mockState = {
   createSimulation: null as any,
 };
 
+// Сохраняем на globalThis
+(globalThis as any).__D3_FORCE_MOCK_STATE__ = globalState;
+
+// Экспортируем ссылку на глобальный state
+export const mockState = globalState;
+
 // Инициализируем createSimulation после объявления mockState
 mockState.createSimulation = () => createMockSimulation();
 
 // Фабрика создания мок-симуляции
 export function createMockSimulation() {
-  return {
+  const sim = {
     nodes: vi.fn().mockImplementation((nodes?: any[]) => {
       if (nodes) {
         mockState.simulationNodes = nodes.map((n: any, i: number) => ({
@@ -25,6 +31,14 @@ export function createMockSimulation() {
         }));
       }
       return mockState.simulationNodes;
+    }),
+    tick: vi.fn().mockImplementation(() => {
+      mockState.simulationNodes = mockState.simulationNodes.map((n: any, i: number) => ({
+        ...n,
+        x: (n.x || 400) + i * 2,
+        y: (n.y || 300) + i * 2
+      }));
+      return sim;
     }),
     force: vi.fn().mockReturnThis(),
     alphaDecay: vi.fn().mockReturnThis(),
@@ -36,16 +50,9 @@ export function createMockSimulation() {
     }),
     alpha: vi.fn().mockReturnThis(),
     restart: vi.fn().mockImplementation(function(this: any) {
-      setTimeout(() => {
-        if (mockState.tickCallback) {
-          mockState.simulationNodes = mockState.simulationNodes.map((n: any, i: number) => ({
-            ...n,
-            x: n.x + 10 + i * 5,
-            y: n.y + 15 + i * 3
-          }));
-          mockState.tickCallback();
-        }
-      }, 10);
+      if (mockState.tickCallback) {
+        mockState.tickCallback();
+      }
       return this;
     }),
     stop: vi.fn().mockImplementation(function(this: any) {
@@ -54,13 +61,16 @@ export function createMockSimulation() {
       return this;
     })
   };
+  return sim;
 }
 
 // Экспорты модуля d3-force
 export const forceSimulation = vi.fn().mockImplementation((nodes?: any[]) => {
+  console.log('[MOCK] forceSimulation called with nodes:', nodes?.length);
   const sim = createMockSimulation();
   if (nodes) {
     sim.nodes(nodes);
+    console.log('[MOCK] simulationNodes after init:', mockState.simulationNodes.length);
   }
   return sim;
 });
@@ -69,18 +79,25 @@ export const forceLink = vi.fn().mockImplementation((links?: any[]) => {
   if (links) {
     mockState.simulationLinks = links;
   }
-  return {
-    id: vi.fn().mockReturnThis(),
-    distance: vi.fn().mockReturnThis(),
-    strength: vi.fn().mockReturnThis()
+  const linkForce: any = {
+    id: (fn?: (d: any) => string) => {
+      if (fn) return linkForce;
+      return linkForce;
+    },
+    distance: () => linkForce,
+    strength: () => linkForce,
+    links: () => mockState.simulationLinks
   };
+  return linkForce;
 });
 
 export const forceManyBody = vi.fn().mockReturnValue({
   strength: vi.fn().mockReturnThis()
 });
 
-export const forceCenter = vi.fn().mockReturnThis();
+export const forceCenter = vi.fn().mockImplementation(() => ({
+  strength: () => ({}) // Returns object with strength method
+}));
 
 export const forceCollide = vi.fn().mockReturnValue({
   radius: vi.fn().mockReturnThis()
