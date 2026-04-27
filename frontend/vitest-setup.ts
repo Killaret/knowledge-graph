@@ -58,12 +58,89 @@ if (typeof Element !== 'undefined') {
 	});
 }
 
-// Мокируем requestAnimationFrame/cancelAnimationFrame
+// Мокируем requestAnimationFrame/cancelAnimationFrame - СИНХРОННО для стабильности тестов
+const rafCallbacks = new Map<number, FrameRequestCallback>();
+let rafId = 0;
+
 global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-	return setTimeout(() => callback(performance.now()), 16) as unknown as number;
+	rafId++;
+	rafCallbacks.set(rafId, callback);
+	// Вызываем синхронно, но не рекурсивно
+	queueMicrotask(() => {
+		if (rafCallbacks.has(rafId)) {
+			callback(performance.now());
+			rafCallbacks.delete(rafId);
+		}
+	});
+	return rafId;
 });
+
 global.cancelAnimationFrame = vi.fn((id: number) => {
-	clearTimeout(id);
+	rafCallbacks.delete(id);
+});
+
+// Мок ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+};
+
+// Мок CanvasRenderingContext2D
+const mockCanvasContext = {
+	beginPath: vi.fn(),
+	arc: vi.fn(),
+	fill: vi.fn(),
+	stroke: vi.fn(),
+	moveTo: vi.fn(),
+	lineTo: vi.fn(),
+	clearRect: vi.fn(),
+	save: vi.fn(),
+	restore: vi.fn(),
+	translate: vi.fn(),
+	scale: vi.fn(),
+	rotate: vi.fn(),
+	setLineDash: vi.fn(),
+	fillText: vi.fn(),
+	strokeText: vi.fn(),
+	measureText: vi.fn().mockReturnValue({ width: 100 }),
+	closePath: vi.fn(),
+	rect: vi.fn(),
+	fillRect: vi.fn(),
+	strokeRect: vi.fn(),
+	clip: vi.fn(),
+	createLinearGradient: vi.fn().mockReturnValue({
+		addColorStop: vi.fn()
+	}),
+	createRadialGradient: vi.fn().mockReturnValue({
+		addColorStop: vi.fn()
+	}),
+	getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
+	putImageData: vi.fn(),
+	drawImage: vi.fn(),
+	fillStyle: '',
+	strokeStyle: '',
+	lineWidth: 1,
+	lineDashOffset: 0,
+	globalAlpha: 1,
+	font: '10px sans-serif',
+	textAlign: 'left',
+	textBaseline: 'alphabetic',
+	shadowColor: '',
+	shadowBlur: 0,
+	shadowOffsetX: 0,
+	shadowOffsetY: 0
+};
+
+// Мок getContext для canvas
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+	value: vi.fn((contextId: string) => {
+		if (contextId === '2d') {
+			return { ...mockCanvasContext };
+		}
+		return null;
+	}),
+	configurable: true
 });
 
 // Мокируем CSS2DRenderer и CSS2DObject из three/examples/jsm
@@ -77,4 +154,13 @@ vi.mock('three/examples/jsm/renderers/CSS2DRenderer.js', () => ({
 		element,
 		position: { set: vi.fn() }
 	}))
+}));
+
+// Мокируем GraphCanvas animation модуль
+vi.mock('$lib/components/GraphCanvas/animation.ts', () => ({
+	startAnimationLoop: vi.fn().mockReturnValue({
+		stop: vi.fn()
+	}),
+	updateNodeAngles: vi.fn(),
+	clearAnimationState: vi.fn()
 }));

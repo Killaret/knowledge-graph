@@ -46,9 +46,12 @@ go.work
 *.swo
 *~
 
-# Logs
+# Logs - allow structured logs directory, ignore loose log files
 *.log
-logs/
+*.log.*
+!logs/.gitkeep
+logs/*.log
+logs/**/*.log
 
 # Coverage
 coverage/

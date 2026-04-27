@@ -93,7 +93,7 @@ describe('graph API', () => {
   });
 
   describe('error handling', () => {
-    it('should handle network errors', async () => {
+    it('should handle network errors for getGraphData', async () => {
       server.use(
         http.get('http://localhost:8081/api/notes/1/graph', () => HttpResponse.error())
       );
@@ -101,7 +101,7 @@ describe('graph API', () => {
       await expect(getGraphData('1')).rejects.toThrow();
     });
 
-    it('should handle HTTP 404 errors', async () => {
+    it('should handle HTTP 404 errors for getGraphData', async () => {
       server.use(
         http.get('http://localhost:8081/api/notes/999/graph', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
       );
@@ -109,12 +109,58 @@ describe('graph API', () => {
       await expect(getGraphData('999')).rejects.toThrow('Граф не найден');
     });
 
-    it('should handle HTTP 500 errors', async () => {
+    it('should handle HTTP 500 errors for getGraphData', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/1/graph', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+      );
+
+      await expect(getGraphData('1')).rejects.toThrow();
+    });
+
+    it('should handle 400 for invalid depth parameter', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/1/graph', () => 
+          HttpResponse.json({ error: 'Invalid depth parameter' }, { status: 400 })
+        )
+      );
+
+      await expect(getGraphData('1', -1)).rejects.toThrow();
+    });
+
+    it('should handle network errors for getFullGraphData', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/graph/all', () => HttpResponse.error())
+      );
+
+      await expect(getFullGraphData()).rejects.toThrow();
+    });
+
+    it('should handle HTTP 500 errors for getFullGraphData', async () => {
       server.use(
         http.get('http://localhost:8081/api/graph/all', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getFullGraphData(1000)).rejects.toThrow();
+    });
+
+    it('should handle 503 when graph service is unavailable', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/1/graph', () => 
+          HttpResponse.json({ error: 'Service Unavailable' }, { status: 503 })
+        )
+      );
+
+      await expect(getGraphData('1')).rejects.toThrow();
+    });
+
+    it('should handle timeout errors', async () => {
+      server.use(
+        http.get('http://localhost:8081/api/notes/1/graph', () => 
+          HttpResponse.json({ error: 'Request timeout' }, { status: 504 })
+        )
+      );
+
+      await expect(getGraphData('1')).rejects.toThrow();
     });
   });
 

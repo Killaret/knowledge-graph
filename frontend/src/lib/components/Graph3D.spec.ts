@@ -1,15 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { tick } from 'svelte';
-
-// Mock requestAnimationFrame before component import to prevent errors
-// Используем синхронный вызов колбэка для избежания таймаутов в тестах
-global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-	callback(0);
-	return 0;
-});
-global.cancelAnimationFrame = vi.fn(() => {});
-
 import Graph3D from './Graph3D.svelte';
 
 // Хранилище состояния моков для сброса между тестами
@@ -58,7 +49,7 @@ vi.mock('$lib/three/core/sceneSetup', () => ({
   initScene: vi.fn().mockReturnValue({
     scene: { add: vi.fn() },
     camera: { position: { set: vi.fn() } },
-    controls: { update: vi.fn(), autoRotate: false },
+    controls: { update: vi.fn(), autoRotate: false, dispose: vi.fn() },
     labelRenderer: { render: vi.fn(), setSize: vi.fn() },
     renderer: { render: vi.fn(), setSize: vi.fn(), dispose: vi.fn() }
   }),
@@ -113,20 +104,10 @@ describe('Graph3D', () => {
     ]
   };
 
-  let rafIds: number[] = [];
-
   beforeEach(() => {
     vi.clearAllMocks();
-    rafIds = [];
     // Сбрасываем mockState
     mockState.simulation.tick = vi.fn();
-
-    // Mock requestAnimationFrame - вызывает колбэк синхронно для избежания таймаутов
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      cb(0);
-      return 0;
-    });
-    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     mockState.simulation.nodes = vi.fn().mockReturnValue([]);
     mockState.simulation.alpha = vi.fn().mockReturnValue(0);
     mockState.simulation.stop = vi.fn();
@@ -139,9 +120,7 @@ describe('Graph3D', () => {
   });
 
   afterEach(() => {
-    // Очищаем моки
-    rafIds = [];
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders canvas element', async () => {
@@ -292,11 +271,10 @@ describe('Graph3D', () => {
     });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Test passes if render completes without errors
     // The mock is verified by successful component initialization
-  });
+  }, 5000);
 
   it('calls camera fit function when nodes change', async () => {
     render(Graph3D, {
@@ -307,7 +285,6 @@ describe('Graph3D', () => {
     });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Создаем новые данные с измененными позициями узлов
     const newData = {
@@ -330,7 +307,7 @@ describe('Graph3D', () => {
 
     // Проверяем что компонент обновился без ошибок
     expect(document.querySelector('div')).toBeInTheDocument();
-  });
+  }, 5000);
 
   it('calculates correct bounding box from node positions', async () => {
     const nodesWithExtremePositions = [
@@ -353,9 +330,8 @@ describe('Graph3D', () => {
     });
 
     await tick();
-    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Компонент должен обработать экстремальные позиции без ошибок
     expect(document.querySelector('div')).toBeInTheDocument();
-  });
+  }, 5000);
 });

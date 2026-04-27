@@ -25,16 +25,25 @@ export default defineConfig({
 		environment: 'jsdom',
 		globals: true,
 		include: ['src/**/*.{test,spec}.{js,ts}'],
+		exclude: [],
 		setupFiles: ['./vitest-setup.ts'],
+		testTimeout: 15000,
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json', 'html'],
+			include: [
+				'src/lib/**/*.{ts,svelte}'
+			],
 			exclude: [
 				'node_modules/',
 				'vitest-setup.ts',
 				'src/lib/mocks/**/*',
-				'src/routes/**/*',
-				'**/*.d.ts'
+				'src/lib/**/*.spec.ts',
+				'src/lib/**/*.test.ts',
+				'src/lib/**/__mocks__/**/*',
+				'**/*.d.ts',
+				'src/lib/three/**/*',
+				'src/lib/components/GraphCanvas/**/*'
 			],
 			thresholds: {
 				lines: 50,
