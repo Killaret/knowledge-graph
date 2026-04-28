@@ -1,12 +1,14 @@
 /**
  * Interaction handlers for Graph3D
  */
+import * as THREE from 'three';
 import { goto } from '$app/navigation';
-import type { GraphNode } from './types';
+import type { GraphNode, NodeMeshMap, CameraController } from './types';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export interface RaycasterState {
-  raycaster: any;
-  mouse: any;
+  raycaster: THREE.Raycaster;
+  mouse: THREE.Vector2;
   hoveredNodeId: string | null;
 }
 
@@ -18,7 +20,7 @@ export interface ClickCallbacks {
 /**
  * Initialize raycaster for mouse interactions
  */
-export function initRaycaster(THREE: any): RaycasterState {
+export function initRaycaster(THREE: typeof import('three')): RaycasterState {
   return {
     raycaster: new THREE.Raycaster(),
     mouse: new THREE.Vector2(),
@@ -32,7 +34,7 @@ export function initRaycaster(THREE: any): RaycasterState {
 export function updateMouseCoordinates(
   event: MouseEvent,
   container: HTMLElement,
-  mouse: any
+  mouse: THREE.Vector2
 ): void {
   const rect = container.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -43,10 +45,10 @@ export function updateMouseCoordinates(
  * Find intersected node from mouse position
  */
 export function findIntersectedNode(
-  raycaster: any,
-  mouse: any,
-  camera: any,
-  nodeMeshes: Map<string, any>
+  raycaster: THREE.Raycaster,
+  mouse: THREE.Vector2,
+  camera: THREE.PerspectiveCamera | THREE.Camera,
+  nodeMeshes: NodeMeshMap
 ): GraphNode | null {
   raycaster.setFromCamera(mouse, camera);
 
@@ -87,7 +89,7 @@ export function handleNodeClick(
 export function handleNodeDoubleClick(
   node: GraphNode,
   callbacks: ClickCallbacks,
-  cameraController: any
+  cameraController: CameraController | null
 ): void {
   if (callbacks.onNodeDoubleClick) {
     callbacks.onNodeDoubleClick(node);
@@ -105,7 +107,7 @@ export function handleNodeDoubleClick(
 export function handleNodeHover(
   node: GraphNode | null,
   state: RaycasterState,
-  nodeMeshes: Map<string, any>,
+  nodeMeshes: NodeMeshMap,
   onHoverChange?: (nodeId: string | null) => void
 ): void {
   const previousId = state.hoveredNodeId;
@@ -140,10 +142,10 @@ export function handleNodeHover(
 export function setupInteractions(
   container: HTMLElement,
   state: RaycasterState,
-  camera: any,
-  nodeMeshes: Map<string, any>,
+  camera: THREE.PerspectiveCamera | THREE.Camera,
+  nodeMeshes: NodeMeshMap,
   callbacks: ClickCallbacks,
-  cameraController: any
+  cameraController: CameraController | null
 ): () => void {
   let clickTimeout: ReturnType<typeof setTimeout> | null = null;
   let lastClickedNode: GraphNode | null = null;

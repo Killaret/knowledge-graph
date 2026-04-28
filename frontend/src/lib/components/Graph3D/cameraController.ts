@@ -2,10 +2,12 @@
  * Camera controller module - wraps $lib/three/camera/cameraUtils
  */
 import * as THREE from 'three';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
   autoZoomToFit,
   centerCameraOnNode
 } from '$lib/three/camera/cameraUtils';
+import type { SimulationNode } from './types';
 
 export {
   autoZoomToFit,
@@ -21,8 +23,8 @@ export interface CameraState {
  * Reset camera to default position
  */
 export function resetCamera(
-  camera: any,
-  controls: any,
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
   defaultPosition: { x: number; y: number; z: number } = { x: 0, y: 0, z: 1000 }
 ): void {
   if (!camera || !controls) return;
@@ -38,7 +40,7 @@ export function resetCamera(
  * Toggle auto-rotation
  */
 export function toggleAutoRotate(
-  controls: any,
+  controls: OrbitControls,
   state: CameraState
 ): boolean {
   if (!controls) return false;
@@ -54,7 +56,7 @@ export function toggleAutoRotate(
  * Set auto-rotate speed
  */
 export function setAutoRotateSpeed(
-  controls: any,
+  controls: OrbitControls,
   speed: number
 ): void {
   if (!controls) return;
@@ -65,8 +67,8 @@ export function setAutoRotateSpeed(
  * Animate camera to position
  */
 export function animateCameraTo(
-  camera: any,
-  controls: any,
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
   targetPosition: { x: number; y: number; z: number },
   duration: number = 1000,
   onComplete?: () => void
@@ -91,7 +93,8 @@ export function animateCameraTo(
       ? 4 * progress * progress * progress
       : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-    camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+    const targetVec = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
+    camera.position.lerpVectors(startPosition, targetVec, easeProgress);
     controls.target.lerpVectors(startTarget, endTarget, easeProgress);
     controls.update();
 
@@ -118,9 +121,9 @@ export function animateCameraTo(
  * Focus camera on bounding box of all nodes
  */
 export function focusOnNodes(
-  camera: any,
-  controls: any,
-  nodes: any[],
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  nodes: SimulationNode[],
   padding: number = 1.2
 ): void {
   if (!camera || !controls || nodes.length === 0) return;

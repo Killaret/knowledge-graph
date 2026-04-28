@@ -1,7 +1,11 @@
 /**
  * Scene setup module - wraps $lib/three/core/sceneSetup
  */
+import * as THREE from 'three';
+import type { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { initScene, setFogDensity } from '$lib/three/core/sceneSetup';
+import type { ObjectManager } from '$lib/three/rendering/objectManager';
 
 export { initScene, setFogDensity };
 
@@ -9,12 +13,12 @@ export { initScene, setFogDensity };
  * Update fog density with animation
  */
 export function updateFog(
-  scene: any,
+  scene: THREE.Scene,
   targetDensity: number,
   duration: number = 1000,
   onUpdate?: (density: number) => void
 ): { stop: () => void } {
-  const startDensity = scene?.fog?.density ?? 0;
+  const startDensity = (scene?.fog as THREE.FogExp2 | null)?.density ?? 0;
   const startTime = performance.now();
   let animationId: number | null = null;
 
@@ -49,12 +53,12 @@ export function updateFog(
 /**
  * Clear scene from all objects
  */
-export function clearScene(scene: any): void {
+export function clearScene(scene: THREE.Scene): void {
   if (!scene) return;
 
   // Remove all objects except camera (which is not in scene usually)
   while (scene.children.length > 0) {
-    const object = scene.children[0];
+    const object = scene.children[0] as THREE.Mesh;
     scene.remove(object);
 
     // Dispose geometries and materials
@@ -63,9 +67,9 @@ export function clearScene(scene: any): void {
     }
     if (object.material) {
       if (Array.isArray(object.material)) {
-        object.material.forEach((m: { dispose: () => void }) => m.dispose());
+        object.material.forEach((m: THREE.Material) => m.dispose());
       } else {
-        object.material.dispose();
+        (object.material as THREE.Material).dispose();
       }
     }
   }
@@ -76,9 +80,9 @@ export function clearScene(scene: any): void {
  */
 export function resizeScene(
   container: HTMLElement,
-  camera: any,
-  renderer: any,
-  labelRenderer: any
+  camera: THREE.PerspectiveCamera,
+  renderer: THREE.WebGLRenderer,
+  labelRenderer?: CSS2DRenderer
 ): void {
   if (!container || !camera || !renderer) return;
 
@@ -100,9 +104,9 @@ export function resizeScene(
  * Dispose all Three.js resources
  */
 export function disposeScene(
-  renderer: any,
-  controls: any,
-  objectManager: any
+  renderer: THREE.WebGLRenderer,
+  controls: OrbitControls,
+  objectManager: ObjectManager
 ): void {
   if (controls) {
     controls.dispose();

@@ -1,6 +1,9 @@
 /**
  * Animation loop management for Graph3D
  */
+import * as THREE from 'three';
+import type { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export interface AnimationState {
   animationId: number | null;
@@ -18,11 +21,11 @@ export interface AnimationCallbacks {
  * Start animation loop
  */
 export function startAnimationLoop(
-  renderer: any,
-  scene: any,
-  camera: any,
-  labelRenderer: any,
-  controls: any,
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.PerspectiveCamera,
+  labelRenderer: CSS2DRenderer | null,
+  controls: OrbitControls | null,
   callbacks?: AnimationCallbacks,
   state?: AnimationState
 ): { stop: () => void } {

@@ -1,6 +1,7 @@
 /**
  * Fog manager for progressive fog animation
  */
+import * as THREE from 'three';
 import { setFogDensity } from '$lib/three/core/sceneSetup';
 
 export interface FogAnimationState {
@@ -12,12 +13,12 @@ export interface FogAnimationState {
  * Animate fog density from current to target
  */
 export function animateFogDensity(
-  scene: any,
+  scene: THREE.Scene,
   targetDensity: number,
   duration: number = 1000,
   state?: FogAnimationState
 ): { stop: () => void } {
-  const startDensity = scene?.fog?.density ?? 0;
+  const startDensity = (scene?.fog as THREE.FogExp2 | null)?.density ?? 0;
   const startTime = performance.now();
   let animationId: number | null = null;
 
@@ -72,7 +73,7 @@ export function clearFogAnimation(state: FogAnimationState): void {
  * Progressive fog clear for exploration effect
  */
 export function progressiveFogClear(
-  scene: any,
+  scene: THREE.Scene,
   maxDistance: number,
   duration: number = 2000,
   onComplete?: () => void
@@ -89,9 +90,10 @@ export function progressiveFogClear(
     const currentMaxDistance = maxDistance * easeProgress;
 
     // Update fog distance
-    if (scene?.fog) {
-      scene.fog.near = currentMaxDistance * 0.3;
-      scene.fog.far = currentMaxDistance;
+    const fog = scene?.fog as THREE.Fog | null;
+    if (fog) {
+      fog.near = currentMaxDistance * 0.3;
+      fog.far = currentMaxDistance;
     }
 
     if (progress < 1) {

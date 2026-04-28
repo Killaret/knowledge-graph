@@ -2,12 +2,9 @@
  * Simulation module - wraps $lib/three/simulation/forceSimulation
  */
 import { createSimulation } from '$lib/three/simulation/forceSimulation';
-import type { GraphNode, GraphLink } from './types';
+import type { GraphNode, GraphLink, Simulation, SimulationNode } from './types';
 
 export { createSimulation };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Simulation = any;
 
 export interface SimulationCallbacks {
   onTick?: () => void;
@@ -24,10 +21,11 @@ export function addNodesToSimulation(
   callbacks?: SimulationCallbacks
 ): void {
   if (!simulation) return;
-  
+
   // Update simulation nodes
-  simulation.nodes([...simulation.nodes(), ...nodes]);
-  
+  const currentNodes = simulation.nodes();
+  simulation.nodes([...currentNodes, ...(nodes as SimulationNode[])]);
+
   // Setup callbacks if provided
   if (callbacks?.onTick) {
     simulation.on('tick', callbacks.onTick);
@@ -41,7 +39,7 @@ export function addNodesToSimulation(
  * Setup simulation with nodes and links
  */
 export function setupSimulation(
-  simulation: any,
+  simulation: Simulation,
   nodes: GraphNode[],
   links: GraphLink[],
   callbacks?: SimulationCallbacks
@@ -65,7 +63,7 @@ export function setupSimulation(
 /**
  * Restart simulation with alpha
  */
-export function restartSimulation(simulation: any, alpha: number = 1): void {
+export function restartSimulation(simulation: Simulation, alpha: number = 1): void {
   if (!simulation) return;
   simulation.alpha(alpha).restart();
 }
@@ -73,7 +71,7 @@ export function restartSimulation(simulation: any, alpha: number = 1): void {
 /**
  * Get simulation nodes
  */
-export function getSimulationNodes(simulation: any): any[] {
+export function getSimulationNodes(simulation: Simulation): SimulationNode[] {
   if (!simulation) return [];
   return simulation.nodes() || [];
 }
@@ -82,7 +80,7 @@ export function getSimulationNodes(simulation: any): any[] {
  * Update simulation with new nodes and links
  */
 export function updateSimulation(
-  simulation: any,
+  simulation: Simulation,
   nodes: GraphNode[],
   links: GraphLink[],
   callbacks?: SimulationCallbacks
@@ -90,15 +88,16 @@ export function updateSimulation(
   if (!simulation) return;
 
   // Update nodes
-  simulation.nodes(nodes);
+  simulation.nodes(nodes as SimulationNode[]);
 
   // Update links
   simulation.force('link', null); // Remove old link force
-  simulation.force('link', (simulation: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  simulation.force('link', ((sim: unknown) => {
     // Create new link force with updated links
     // This is a simplified version - actual implementation depends on forceSimulation
-    simulation.links?.(links);
-  });
+    (sim as { links?: (links: GraphLink[]) => void }).links?.(links);
+  }) as any);
 
   // Restart simulation
   simulation.alpha(1).restart();
@@ -115,7 +114,7 @@ export function updateSimulation(
 /**
  * Stop simulation
  */
-export function stopSimulation(simulation: any): void {
+export function stopSimulation(simulation: Simulation): void {
   if (!simulation) return;
   simulation.stop();
 }
@@ -123,7 +122,7 @@ export function stopSimulation(simulation: any): void {
 /**
  * Clear simulation data
  */
-export function clearSimulation(simulation: any): void {
+export function clearSimulation(simulation: Simulation): void {
   if (!simulation) return;
   stopSimulation(simulation);
 }
