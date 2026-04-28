@@ -118,6 +118,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Create .env file from example
+        run: |
+          cp .env.example .env
+          echo "✓ .env file created from .env.example"
+      
       - name: Validate docker-compose.yml syntax
         run: |
           docker compose -f docker-compose.yml config > /dev/null
