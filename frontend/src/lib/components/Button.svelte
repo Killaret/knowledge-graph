@@ -1,5 +1,5 @@
 <script lang="ts">
-  type ButtonVariant = 'primary' | 'secondary' | 'danger';
+  type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
   type ButtonType = 'button' | 'submit' | 'reset';
 
   interface Props {
@@ -106,6 +106,31 @@
   .button.danger:active:not(.disabled) {
     transform: translateY(0);
     box-shadow: var(--shadow-sm);
+  }
+
+  /* Ghost variant - cosmic theme with backdrop blur */
+  .button.ghost {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: var(--color-text-dark, #e0e0e0);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    --focus-ring-color: rgba(255, 204, 0, 0.3);
+  }
+
+  .button.ghost:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 204, 0, 0.3);
+    box-shadow:
+      0 0 15px var(--color-glow-subtle, rgba(255, 204, 0, 0.3)),
+      inset 0 0 10px rgba(255, 204, 0, 0.05);
+    transform: translateY(-1px);
+  }
+
+  .button.ghost:active:not(.disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(0);
+    box-shadow: 0 0 10px var(--color-glow-subtle, rgba(255, 204, 0, 0.2));
   }
 
   /* Disabled state */

@@ -40,4 +40,54 @@
   --color-comet: #f472b6;
   --color-galaxy: #a78bfa;
   --color-asteroid: #94a3b8;
+
+  /* ================================
+     COSMIC THEME VARIABLES (Weltall)
+     ================================ */
+
+  /* Dark surface colors for cosmic theme */
+  --color-surface-dark: #0a0a1a;
+  --color-surface-darker: #050508;
+  --color-surface-light: #f0f2f5;
+
+  /* Text colors for dark theme */
+  --color-text-dark: #e0e0e0;
+  --color-text-light: #1f2937;
+
+  /* Glow effects */
+  --color-glow: #ffcc00;
+  --color-glow-blue: #40a9ff;
+  --color-glow-red: #ff3333;
+  --color-glow-subtle: rgba(255, 204, 0, 0.3);
+
+  /* Link/connection glow */
+  --color-link-glow: #40a9ff;
+
+  /* Nebula effect */
+  --color-nebula: rgba(20, 30, 80, 0.3);
+  --color-nebula-red: rgba(139, 0, 0, 0.15);
+
+  /* Ember effect */
+  --color-ember: rgba(255, 204, 0, 0.1);
+
+  /* Weltall accent colors (adapted for Knowledge Graph) */
+  --color-weltall-dark: #8b0000;
+  --color-weltall-red: #ff3333;
+  --color-weltall-gold: #ffcc00;
+
+  /* Cosmic gradients */
+  --gradient-cosmic-bg: radial-gradient(ellipse at 50% 100%, #1a0505 0%, #000 80%);
+  --gradient-nebula: radial-gradient(circle at 50% 50%, rgba(60, 0, 0, 0.5) 0%, transparent 70%);
+
+  /* Shadow with glow */
+  --shadow-glow: 0 0 20px rgba(255, 204, 0, 0.3);
+  --shadow-glow-blue: 0 0 20px rgba(64, 169, 255, 0.3);
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Backdrop blur */
+  --backdrop-blur: blur(12px);
 }
