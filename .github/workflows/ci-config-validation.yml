@@ -51,10 +51,10 @@ jobs:
           # Extract env var names from config.go
           grep -oP 'get[A-Za-z]+Env\("\K[^"]+' internal/config/config.go | sort | uniq > /tmp/env_vars_from_code.txt
           
-          # Check if they exist in .env.example
+          # Check if they exist in .env.example (including commented lines)
           MISSING=0
           while read var; do
-            if ! grep -q "^$var=" ../.env.example 2>/dev/null; then
+            if ! grep -qE "^#?$var=" ../.env.example 2>/dev/null; then
               echo "⚠️  $var not found in .env.example"
               MISSING=$((MISSING + 1))
             fi
