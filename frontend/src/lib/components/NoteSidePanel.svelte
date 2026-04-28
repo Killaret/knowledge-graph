@@ -82,9 +82,9 @@
   
   <div class="panel-content">
     {#if loading}
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>Loading...</p>
+      <div class="loading" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading note...</p>
       </div>
     {:else if error}
       <div class="error">{error}</div>
@@ -113,7 +113,7 @@
       {/if}
       
       <div class="panel-footer">
-        <button class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)}>
+        <button type="button" class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)} aria-label={`View full page for ${note.title}`}>
           View Full Page →
         </button>
       </div>

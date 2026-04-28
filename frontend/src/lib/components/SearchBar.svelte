@@ -65,7 +65,7 @@
     aria-label="Search"
     class="search-input"
   />
-  <button onclick={doSearch} class="search-button" aria-label="Search">
+  <button type="button" onclick={doSearch} class="search-button" aria-label="Search">
     Search
   </button>
 </div>

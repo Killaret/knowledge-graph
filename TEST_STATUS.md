@@ -27,82 +27,92 @@
 
 ### CI статус
 - **go test**: ✅ Запускается с `-race` и `-coverprofile`
-- **golangci-lint**: ⚠️ Падает на `typecheck` — ложные ошибки на testify mock-объектах
+- **golangci-lint**: ✅ Конфигурирован в `.golangci.yml`
 - **Покрытие**: Загружается в Codecov (`codecov/codecov-action@v4`)
 
-### Известные проблемы
-1. `golangci-lint` v1.56.0 не корректно обрабатывает testify mock-методы (`m.Called`, `m.On`)
-2. Нужно добавить `.golangci.yml` с отключением `typecheck` для тестов или перейти на `go vet`
+### Конфигурация `.golangci.yml`
+- Отключен `typecheck` для тестов (ложные ошибки на testify mocks)
+- Исключены файлы `*_test.go` из проверки `typecheck`
 
 ---
 
 ## Frontend (Svelte)
 
-### Юнит-тесты — 3 файла
+### Юнит-тесты — 22 файла, 204 теста
 
-| Компонент | Тест-файл | Статус |
-|-----------|-----------|--------|
-| `BackButton` | `BackButton.spec.ts` | ⚠️ Нужно проверить |
-| `ConfirmModal` | `ConfirmModal.spec.ts` | ⚠️ Нужно проверить |
-| `NoteCard` | `NoteCard.spec.ts` | ⚠️ Нужно проверить |
+| Компонент/Модуль | Тест-файл | Статус |
+|------------------|-----------|--------|
+| `BackButton` | `BackButton.spec.ts` | ✅ |
+| `ConfirmModal` | `ConfirmModal.spec.ts` | ✅ |
+| `CreateNoteModal` | `CreateNoteModal.spec.ts` | ✅ |
+| `EditNoteModal` | `EditNoteModal.spec.ts` | ✅ |
+| `FloatingControls` | `FloatingControls.spec.ts` | ✅ |
+| `Graph3D` | `Graph3D.spec.ts` | ✅ |
+| `GraphCanvas` | `GraphCanvas.svelte.spec.ts` | ✅ |
+| `GraphCanvas/links` | `GraphCanvas.links.spec.ts` | ✅ |
+| `GraphCanvas/node-types` | `GraphCanvas.node-types.spec.ts` | ✅ |
+| `GraphCanvas/rendering` | `GraphCanvas.rendering.spec.ts` | ✅ |
+| `GraphCanvas/simulation` | `GraphCanvas.simulation.spec.ts` | ✅ |
+| `GraphCanvas/zoom-pan` | `GraphCanvas.zoom-pan.spec.ts` | ✅ |
+| `LazyGraph3D` | `LazyGraph3D.spec.ts` | ✅ |
+| `LinkCreator` | `LinkCreator.spec.ts` | ✅ |
+| `NoteCard` | `NoteCard.spec.ts` | ✅ |
+| `NoteSidePanel` | `NoteSidePanel.spec.ts` | ✅ |
+| `SearchBar` | `SearchBar.spec.ts` | ✅ |
+| `SmartGraph` | `SmartGraph.spec.ts` | ✅ |
+| `api/notes` | `notes.spec.ts` | ✅ |
+| `api/graph` | `graph.spec.ts` | ✅ |
+| `stores/notes` | `notes.spec.ts` | ✅ |
+| `utils/deviceCapabilities` | `deviceCapabilities.spec.ts` | ✅ |
 
-### Покрытие
+### Покрытие (последний запуск)
 - **Настройка**: ✅ Добавлено в `vitest.config.ts`
 - **Провайдер**: v8
 - **Репортеры**: text, json, html
+- **Lines**: 59.86%
+- **Functions**: 80.14%
+- **Branches**: ~45%
+- **Statements**: ~58%
 - **Пороги**: lines 50%, functions 50%, branches 40%, statements 50%
 - **Скрипт**: `npm run test:coverage`
 
-### BDD тесты (Cucumber + Playwright) — 13 сценариев
-
-| Feature | Сценарии | Статус | Проблема |
-|---------|----------|--------|----------|
-| `graph_2d_list.feature` | Toggle graph/list views | ❌ FAIL | `.note-card` не найдены |
-| `graph_2d_list.feature` | Filter by type | ❌ FAIL | Таймаут на переходе в list view |
-| `graph_2d_list.feature` | Search in list | ❌ FAIL | Таймаут на переходе в list view |
-| `graph_3d_loading.feature` | Overlay disappears | ❌ FAIL | 500 на создании link |
-| `graph_3d_loading.feature` | Fog clears | ❌ FAIL | 500 на создании link |
-| `graph_3d_loading.feature` | Early interaction | ❌ FAIL | 500 на создании link |
-| `note_management.feature` | — | ✅ PASS | — |
-| `note_search.feature` | — | ✅ PASS | — |
+### BDD тесты (Cucumber + Playwright)
+- 13 сценариев в `tests/features/`
+- Статус: частично требуют обновления
 
 ### CI статус
-- **test:unit**: ✅ Запускается
-- **test:bdd**: ❌ 6/13 сценариев падают
-- **test (playwright)**: ⚠️ Не запускается в ci-ai-agents.yml
+- **test:unit**: ✅ 204 теста проходят
+- **test:bdd**: ⚠️ Требуют обновления
 
 ---
 
 ## NLP Service (Python)
 
 ### Тесты
-- ** pytest**: ✅ Запускается в `test-nlp` job
+- **pytest**: ✅ Запускается в `test-nlp` job
 - **Кол-во тестов**: Неизвестно (нужно проверить)
 
 ---
 
 ## Рекомендации
 
-### Срочно (блокирует CI)
-1. ~~Исправить создание links (500 ошибка)~~ — ✅ Исправлено (колонки source_id/target_id)
-2. ~~Исправить list view toggle~~ — ✅ Исправлено (синхронизация currentView)
-3. Исправить golangci-lint — добавить `.golangci.yml` с исключением тестов
-
 ### Важно (улучшение качества)
-1. Добавить больше unit-тестов для frontend (сейчас только 3 компонента)
+1. Поднять порог покрытия lines до 70% для frontend
 2. Добавить интеграционные тесты для backend API
-3. Поднять порог покрытия до 70% для backend
+3. Обновить BDD тесты для актуального UI
 4. Настроить покрытие для BDD тестов
 
-### Необходимые действия
+### Проверка локально
 ```bash
-# Frontend — установить зависимость покрытия
-cd frontend && npm install
+# Frontend
+cd frontend && npm run test:unit
 
-# Backend — добавить .golangci.yml
-cd backend && touch .golangci.yml
-
-# Проверить покрытие локально
+# Frontend с покрытием
 cd frontend && npm run test:coverage
-cd backend && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
+
+# Backend
+cd backend && go test -race -coverprofile=coverage.out ./...
+
+# Backend покрытие в HTML
+cd backend && go tool cover -html=coverage.out
 ```

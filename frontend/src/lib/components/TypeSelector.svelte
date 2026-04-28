@@ -28,7 +28,7 @@
   }
 </script>
 
-<div class="type-selector" {id}>
+<div class="type-selector" {id} role="group" aria-label="Select celestial body type">
   {#each types as type}
     <button
       type="button"

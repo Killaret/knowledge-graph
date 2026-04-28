@@ -16,6 +16,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
+	"knowledge-graph/internal/interfaces/api/common/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -313,42 +314,46 @@ func (h *Handler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	existing, err := h.repo.FindByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 		return
 	}
 	if existing == nil {
-		c.JSON(404, gin.H{"error": "note not found"})
+		apicommon.NotFound(c, "Заметка")
 		return
 	}
 
 	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
-		c.JSON(500, gin.H{"error": "failed to delete note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
 	}
-	c.JSON(204, nil)
+	apicommon.NoContent(c)
 }
 
 func (h *Handler) Get(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	n, err := h.repo.FindByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 		return
 	}
 	if n == nil {
-		c.JSON(404, gin.H{"error": "note not found"})
+		apicommon.NotFound(c, "Заметка")
 		return
 	}
 
@@ -373,7 +378,9 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 	idStr := c.Param("id")
 	noteID, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
@@ -489,6 +496,13 @@ type SearchRequest struct {
 	Size int    `form:"size"` // page size (default 20)
 }
 
+// SearchValidationErrors defines validation error messages
+var SearchValidationErrors = map[string]string{
+	"q.too_long":   "Search query too long (max 200 characters)",
+	"page.invalid": "Invalid page number",
+	"size.invalid": "Invalid page size",
+}
+
 // SearchResponse - search response structure
 type SearchResponse struct {
 	Data       []*note.Note `json:"data"`
@@ -498,11 +512,37 @@ type SearchResponse struct {
 	TotalPages int          `json:"totalPages"`
 }
 
+// validateSearchQuery validates the search query for security
+func validateSearchQuery(query string) []apicommon.FieldError {
+	var errors []apicommon.FieldError
+	maxQueryLength := 200
+
+	if len(query) > maxQueryLength {
+		errors = append(errors, apicommon.NewFieldErrorWithValue("q", apicommon.ReasonTooLong,
+			SearchValidationErrors["q.too_long"], query))
+	}
+
+	// Check for potentially dangerous characters in search query
+	sanitized := validation.SanitizeString(query)
+	if sanitized != query {
+		errors = append(errors, apicommon.NewFieldError("q", apicommon.ReasonInvalidValue,
+			"Search query contains invalid characters"))
+	}
+
+	return errors
+}
+
 // Search performs full-text search on notes
 func (h *Handler) Search(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequestSimple(c, err.Error())
+		return
+	}
+
+	// Validate search query
+	if validationErrors := validateSearchQuery(req.Q); len(validationErrors) > 0 {
+		apicommon.BadRequest(c, validationErrors)
 		return
 	}
 
@@ -514,10 +554,15 @@ func (h *Handler) Search(c *gin.Context) {
 		req.Size = h.cfg.PaginationDefaultLimit
 	}
 
+	// Validate pagination limits
+	if req.Size > h.cfg.PaginationMaxLimit {
+		req.Size = h.cfg.PaginationMaxLimit
+	}
+
 	// Perform search using repository directly (for simplicity, could use service layer)
 	notes, total, err := h.repo.Search(c.Request.Context(), req.Q, req.Size, (req.Page-1)*req.Size)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to search notes"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSearchNotes)
 		return
 	}
 
@@ -553,17 +598,23 @@ func (h *Handler) List(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
 
-	limit, _ := strconv.Atoi(limitStr)
-	offset, _ := strconv.Atoi(offsetStr)
-
-	if limit <= 0 || limit > h.cfg.PaginationMaxLimit {
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
 		limit = h.cfg.PaginationDefaultLimit
+	}
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
+
+	if limit > h.cfg.PaginationMaxLimit {
+		limit = h.cfg.PaginationMaxLimit
 	}
 
 	// Получаем заметки из репозитория
 	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch notes"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNotes)
 		return
 	}
 

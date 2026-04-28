@@ -57,7 +57,7 @@ describe('NoteSidePanel', () => {
 
     await tick();
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading note...')).toBeInTheDocument();
     expect(document.querySelector('.spinner')).toBeInTheDocument();
   });
 

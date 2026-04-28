@@ -40,6 +40,7 @@
     onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
     role="button" 
     tabindex="0"
+    aria-label={`Open note: ${note.title}`}
   >
   <div class="note-header">
     <h3 class="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>

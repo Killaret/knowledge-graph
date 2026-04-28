@@ -2,7 +2,7 @@
   import { createNote, type Note } from '$lib/api/notes';
   import { Modal, Button, TypeSelector } from './index';
 
-  /* eslint-disable prefer-const */
+  /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
     onSuccess

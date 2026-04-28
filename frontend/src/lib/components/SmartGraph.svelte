@@ -80,14 +80,14 @@
 </script>
 
 {#if isLoading}
-  <div class="graph-loading">
-    <div class="spinner"></div>
+  <div class="graph-loading" role="status" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
     <p>Loading visualization...</p>
   </div>
 {:else if use3D && Graph3DComponent}
   <div class="graph-wrapper graph-3d">
     <Graph3DComponent data={{ nodes, links }} />
-    <div class="performance-hint">3D Mode</div>
+    <div class="performance-hint" aria-hidden="true">3D Mode</div>
   </div>
 {:else if !webglSupported}
   <div class="graph-wrapper graph-2d">
@@ -96,12 +96,12 @@
       <p>Showing 2D view instead.</p>
     </div>
     <GraphCanvas {nodes} {links} />
-    <div class="performance-hint">2D Mode (WebGL not available)</div>
+    <div class="performance-hint" aria-hidden="true">2D Mode (WebGL not available)</div>
   </div>
 {:else}
   <div class="graph-wrapper graph-2d">
     <GraphCanvas {nodes} {links} />
-    <div class="performance-hint">2D Mode (optimized)</div>
+    <div class="performance-hint" aria-hidden="true">2D Mode (optimized)</div>
   </div>
 {/if}
 

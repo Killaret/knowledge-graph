@@ -53,10 +53,13 @@
   <!-- View Toggle: 2D / 3D / List -->
   <div class="view-toggle">
     <button
+      type="button"
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
       onclick={toggleView}
       title="2D Graph"
       data-testid="view-toggle-graph"
+      aria-pressed={currentView === 'graph'}
+      aria-label="Switch to 2D graph view"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3"/>
@@ -72,10 +75,12 @@
       <span class="btn-label">2D</span>
     </button>
     <button
+      type="button"
       class="toggle-btn"
       onclick={handleToggle3D}
       title={noteId ? "3D Graph for selected note" : "Full 3D Graph"}
       data-testid="view-toggle-3d"
+      aria-label={noteId ? "Open 3D graph for selected note" : "Open full 3D graph"}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -85,10 +90,13 @@
       <span class="btn-label">3D</span>
     </button>
     <button
+      type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
       onclick={toggleView}
       title="List View"
       data-testid="view-toggle-list"
+      aria-pressed={currentView === 'list'}
+      aria-label="Switch to list view"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -104,10 +112,13 @@
     <div class="type-filters">
       {#each typeFilters as filter}
         <button
+          type="button"
           class="filter-chip {selectedType === filter.id ? 'active' : ''}"
           onclick={() => handleFilter(filter.id)}
           title={filter.label}
           data-testid="filter-chip-{filter.id}"
+          aria-pressed={selectedType === filter.id}
+          aria-label={`Filter by ${filter.label}`}
         >
           <span class="filter-emoji">{filter.emoji}</span>
           <span class="filter-label">{filter.label}</span>
@@ -128,8 +139,9 @@
       onkeyup={(e) => e.key === 'Enter' && handleSearch()}
       class="search-input"
       data-testid="search-input"
+      aria-label="Search notes"
     />
-    <button class="search-btn" onclick={handleSearch} aria-label="Search">
+    <button type="button" class="search-btn" onclick={handleSearch} aria-label="Search">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -140,9 +152,13 @@
   <!-- Menu -->
   <div class="menu-container">
     <button 
+      type="button"
       class="menu-btn"
       onclick={() => showMenu = !showMenu}
       title="Menu"
+      aria-expanded={showMenu}
+      aria-haspopup="true"
+      aria-label="Open menu"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="12" x2="21" y2="12"/>
@@ -152,14 +168,14 @@
     </button>
     
     {#if showMenu}
-      <div class="dropdown-menu">
-        <button class="menu-item" onclick={() => { onImport?.(); showMenu = false; }}>
+      <div class="dropdown-menu" role="menu">
+        <button type="button" class="menu-item" role="menuitem" onclick={() => { onImport?.(); showMenu = false; }}>
           Import
         </button>
-        <button class="menu-item" onclick={() => { onExport?.(); showMenu = false; }}>
+        <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }}>
           Export
         </button>
-        <button class="menu-item" onclick={() => { handleToggle3D(); showMenu = false; }}>
+        <button type="button" class="menu-item" role="menuitem" onclick={() => { handleToggle3D(); showMenu = false; }}>
           {noteId ? '3D View for Note' : 'Full 3D View'}
         </button>
       </div>
@@ -167,7 +183,7 @@
   </div>
 
   <!-- Create Button -->
-  <button class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button">
+  <button type="button" class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button" aria-label="Create new note">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="12" y1="5" x2="12" y2="19"/>
       <line x1="5" y1="12" x2="19" y2="12"/>

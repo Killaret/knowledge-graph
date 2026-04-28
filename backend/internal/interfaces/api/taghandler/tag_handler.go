@@ -2,10 +2,13 @@ package taghandler
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	apicommon "knowledge-graph/internal/interfaces/api/common"
+	"knowledge-graph/internal/interfaces/api/common/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -42,6 +45,39 @@ type UpdateRequest struct {
 	Name string `json:"name" binding:"required,min=1,max=50"`
 }
 
+// TagValidationErrors defines human-readable error messages for tag validation
+var TagValidationErrors = map[string]string{
+	"name.required": "Tag name is required",
+	"name.min":      "Tag name must be at least 1 character",
+	"name.max":      "Tag name must not exceed 50 characters",
+}
+
+// validateTagName performs comprehensive tag name validation
+func validateTagName(name string) []apicommon.FieldError {
+	var errors []apicommon.FieldError
+
+	// Basic binding validation equivalent
+	if strings.TrimSpace(name) == "" {
+		errors = append(errors, apicommon.NewFieldError("name", apicommon.ReasonRequired, TagValidationErrors["name.required"]))
+		return errors
+	}
+
+	if len(name) > 50 {
+		errors = append(errors, apicommon.NewFieldErrorWithValue("name", apicommon.ReasonTooLong,
+			TagValidationErrors["name.max"], name))
+		return errors
+	}
+
+	// Security validation - check for safe characters
+	result := validation.IsSafeTag(name, 50)
+	if !result.Valid {
+		errors = append(errors, apicommon.NewFieldErrorWithValue("name", apicommon.ReasonInvalidValue,
+			"Tag name contains invalid characters", name))
+	}
+
+	return errors
+}
+
 // toTagResponse преобразует модель в ответ
 func toTagResponse(tag *postgres.TagModel) TagResponse {
 	return TagResponse{
@@ -55,34 +91,60 @@ func toTagResponse(tag *postgres.TagModel) TagResponse {
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range TagValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
+
+	// Additional security validation
+	if validationErrors := validateTagName(req.Name); len(validationErrors) > 0 {
+		apicommon.BadRequest(c, validationErrors)
+		return
+	}
+
+	// Sanitize the name
+	sanitizedName := validation.SanitizeString(req.Name)
+	sanitizedName = validation.TrimAndNormalize(sanitizedName)
 
 	ctx := c.Request.Context()
 
 	// Проверяем уникальность имени
-	existing, err := h.tagRepo.FindByName(ctx, req.Name)
+	existing, err := h.tagRepo.FindByName(ctx, sanitizedName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check tag existence"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось проверить существование тега")
 		return
 	}
 	if existing != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "tag with this name already exists"})
+		apicommon.Conflict(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("name", apicommon.ReasonAlreadyExists,
+				"Тег с таким именем уже существует", sanitizedName),
+		})
 		return
 	}
 
 	tag := &postgres.TagModel{
 		ID:   uuid.New(),
-		Name: req.Name,
+		Name: sanitizedName,
 	}
 
 	if err := h.tagRepo.Create(ctx, tag); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось создать тег")
 		return
 	}
 
-	c.JSON(http.StatusCreated, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusCreated, toTagResponse(tag))
 }
 
 // List возвращает список всех тегов
@@ -91,7 +153,7 @@ func (h *Handler) List(c *gin.Context) {
 
 	tags, err := h.tagRepo.FindAll(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tags"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось получить список тегов")
 		return
 	}
 
@@ -100,7 +162,7 @@ func (h *Handler) List(c *gin.Context) {
 		response[i] = toTagResponse(tag)
 	}
 
-	c.JSON(http.StatusOK, response)
+	apicommon.JSON(c, http.StatusOK, response)
 }
 
 // Get возвращает тег по ID
@@ -108,22 +170,25 @@ func (h *Handler) Get(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	tag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
 	if tag == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tag not found"})
+		apicommon.NotFound(c, "Тег")
 		return
 	}
 
-	c.JSON(http.StatusOK, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusOK, toTagResponse(tag))
 }
 
 // Update обновляет тег
@@ -131,49 +196,78 @@ func (h *Handler) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	var req UpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range TagValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
+
+	// Additional security validation
+	if validationErrors := validateTagName(req.Name); len(validationErrors) > 0 {
+		apicommon.BadRequest(c, validationErrors)
+		return
+	}
+
+	// Sanitize the name
+	sanitizedName := validation.SanitizeString(req.Name)
+	sanitizedName = validation.TrimAndNormalize(sanitizedName)
 
 	ctx := c.Request.Context()
 
 	// Проверяем существование тега
 	tag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
 	if tag == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tag not found"})
+		apicommon.NotFound(c, "Тег")
 		return
 	}
 
 	// Проверяем уникальность нового имени (если оно изменилось)
-	if req.Name != tag.Name {
-		existing, err := h.tagRepo.FindByName(ctx, req.Name)
+	if sanitizedName != tag.Name {
+		existing, err := h.tagRepo.FindByName(ctx, sanitizedName)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check tag existence"})
+			apicommon.InternalErrorWithMessage(c, "Не удалось проверить существование тега")
 			return
 		}
 		if existing != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "tag with this name already exists"})
+			apicommon.Conflict(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("name", apicommon.ReasonAlreadyExists,
+					"Тег с таким именем уже существует", sanitizedName),
+			})
 			return
 		}
 	}
 
-	tag.Name = req.Name
+	tag.Name = sanitizedName
 	if err := h.tagRepo.Update(ctx, tag); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось обновить тег")
 		return
 	}
 
-	c.JSON(http.StatusOK, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusOK, toTagResponse(tag))
 }
 
 // Delete удаляет тег
@@ -181,7 +275,10 @@ func (h *Handler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
@@ -190,20 +287,20 @@ func (h *Handler) Delete(c *gin.Context) {
 	// Проверяем существование тега
 	tag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
 	if tag == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tag not found"})
+		apicommon.NotFound(c, "Тег")
 		return
 	}
 
 	if err := h.tagRepo.Delete(ctx, id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось удалить тег")
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	apicommon.NoContent(c)
 }
 
 // AddTagToNote привязывает тег к заметке
@@ -211,7 +308,10 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
@@ -219,13 +319,18 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 		TagID string `json:"tag_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("tag_id", apicommon.ReasonRequired, "Tag ID is required"),
+		})
 		return
 	}
 
 	tagID, err := uuid.Parse(req.TagID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("tag_id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, req.TagID),
+		})
 		return
 	}
 
@@ -234,42 +339,45 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 	// Проверяем существование заметки
 	note, err := h.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check note"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось проверить заметку")
 		return
 	}
 	if note == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
+		apicommon.NotFound(c, "Заметка")
 		return
 	}
 
 	// Проверяем существование тега
 	tag, err := h.tagRepo.FindByID(ctx, tagID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось проверить тег")
 		return
 	}
 	if tag == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tag not found"})
+		apicommon.NotFound(c, "Тег")
 		return
 	}
 
 	// Проверяем, не привязан ли уже тег
 	exists, err := h.tagRepo.IsTagAssignedToNote(ctx, noteID, tagID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check assignment"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось проверить привязку тега")
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "tag already assigned to note"})
+		apicommon.Conflict(c, []apicommon.FieldError{
+			apicommon.NewFieldError("tag_id", apicommon.ReasonAlreadyExists,
+				"Тег уже привязан к этой заметке"),
+		})
 		return
 	}
 
 	if err := h.tagRepo.AddTagToNote(ctx, noteID, tagID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось привязать тег")
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	apicommon.NoContent(c)
 }
 
 // RemoveTagFromNote отвязывает тег от заметки
@@ -279,24 +387,30 @@ func (h *Handler) RemoveTagFromNote(c *gin.Context) {
 
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
 	tagID, err := uuid.Parse(tagIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("tagId", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, tagIDStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 
 	if err := h.tagRepo.RemoveTagFromNote(ctx, noteID, tagID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove tag"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось отвязать тег")
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	apicommon.NoContent(c)
 }
 
 // GetTagsByNote возвращает теги заметки
@@ -304,7 +418,10 @@ func (h *Handler) GetTagsByNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat,
+				apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
@@ -313,17 +430,17 @@ func (h *Handler) GetTagsByNote(c *gin.Context) {
 	// Проверяем существование заметки
 	note, err := h.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check note"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось проверить заметку")
 		return
 	}
 	if note == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
+		apicommon.NotFound(c, "Заметка")
 		return
 	}
 
 	tags, err := h.tagRepo.GetTagsByNoteID(ctx, noteID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tags"})
+		apicommon.InternalErrorWithMessage(c, "Не удалось получить теги")
 		return
 	}
 
@@ -332,5 +449,5 @@ func (h *Handler) GetTagsByNote(c *gin.Context) {
 		response[i] = toTagResponse(tag)
 	}
 
-	c.JSON(http.StatusOK, response)
+	apicommon.JSON(c, http.StatusOK, response)
 }

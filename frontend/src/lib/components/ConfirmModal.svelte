@@ -12,7 +12,7 @@
     onCancel: () => void;
   }
 
-  /* eslint-disable prefer-const */
+  /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
     title = 'Confirm',

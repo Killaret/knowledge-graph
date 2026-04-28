@@ -92,7 +92,7 @@ export function updateSimulation(
 
   // Update links
   simulation.force('link', null); // Remove old link force
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   simulation.force('link', ((sim: unknown) => {
     // Create new link force with updated links
     // This is a simplified version - actual implementation depends on forceSimulation

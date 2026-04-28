@@ -29,6 +29,9 @@ import (
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"knowledge-graph/internal/infrastructure/db/postgres/tagrepo"
+	"knowledge-graph/internal/interfaces/api/taghandler"
 )
 
 const (
@@ -131,9 +134,14 @@ func main() {
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg)
+	tagRepo := tagrepo.NewTagRepository(db.DB)
+	tagHandler := taghandler.New(tagRepo, noteRepo)
 
 	// Роуты
 	r := gin.Default()
+
+	// Recovery middleware - catches panics and returns 500
+	r.Use(middleware.RecoveryMiddleware())
 
 	// Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
@@ -246,6 +254,16 @@ func main() {
 
 	r.GET("/notes/:id/graph", graphHandler.GetGraph)
 	r.GET("/graph/all", graphHandler.GetFullGraph)
+
+	// Tag routes
+	r.POST("/tags", writeLimiter, tagHandler.Create)
+	r.GET("/tags", tagHandler.List)
+	r.GET("/tags/:id", tagHandler.Get)
+	r.PUT("/tags/:id", writeLimiter, tagHandler.Update)
+	r.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
+	r.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
+	r.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
+	r.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
 
 	// Create HTTP server
 	srv := &http.Server{

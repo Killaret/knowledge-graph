@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import LazyGraph3D from './LazyGraph3D.svelte';
+
+// Mock browser environment
+vi.mock('$app/environment', () => ({
+  browser: true
+}));
 
 // Mock Graph3D component
 vi.mock('./Graph3D.svelte', () => ({
@@ -14,6 +19,21 @@ vi.mock('./Graph3D.svelte', () => ({
 }));
 
 describe('LazyGraph3D', () => {
+  // Mock WebGL context
+  beforeEach(() => {
+    const mockGetContext = vi.fn((contextType: string) => {
+      if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+        return {} as WebGLRenderingContext;
+      }
+      return null;
+    });
+    
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      value: mockGetContext,
+      writable: true
+    });
+  });
+
   const mockData = {
     nodes: [
       { id: '1', title: 'Node 1', type: 'star', x: 0, y: 0, z: 0 },

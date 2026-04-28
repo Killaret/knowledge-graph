@@ -159,7 +159,95 @@ describe('notes API', () => {
     });
   });
 
-  describe('error handling', () => {
+  describe('retry behavior', () => {
+    // Note: Ky is configured with retry: { limit: 3, methods: ['get', 'post', 'put', 'patch'], statusCodes: [408, 413, 429, 500, 502, 503, 504] }
+    // This means requests will be retried up to 3 times on transient errors
+
+    it('should retry on 503 Service Unavailable and succeed on retry', async () => {
+      let attemptCount = 0;
+      server.use(
+        http.get('http://localhost:8081/api/notes/1', () => {
+          attemptCount++;
+          if (attemptCount < 3) {
+            return HttpResponse.json({ error: 'Service Unavailable' }, { status: 503 });
+          }
+          return HttpResponse.json(mockNote);
+        })
+      );
+
+      const result = await getNote('1');
+      expect(result).toEqual(mockNote);
+      expect(attemptCount).toBe(3); // Initial + 2 retries
+    });
+
+    it('should retry on 504 Gateway Timeout and succeed on retry', async () => {
+      let attemptCount = 0;
+      server.use(
+        http.get('http://localhost:8081/api/notes/1', () => {
+          attemptCount++;
+          if (attemptCount < 2) {
+            return HttpResponse.json({ error: 'Gateway Timeout' }, { status: 504 });
+          }
+          return HttpResponse.json(mockNote);
+        })
+      );
+
+      const result = await getNote('1');
+      expect(result).toEqual(mockNote);
+      expect(attemptCount).toBe(2);
+    });
+
+    it('should fail after max retries on persistent 500 errors', async () => {
+      let attemptCount = 0;
+      server.use(
+        http.get('http://localhost:8081/api/notes/1', () => {
+          attemptCount++;
+          return HttpResponse.json({ error: 'Server error' }, { status: 500 });
+        })
+      );
+
+      await expect(getNote('1')).rejects.toThrow();
+      // limit: 3 means initial + 3 retries = 4 attempts total
+      expect(attemptCount).toBe(4);
+    });
+
+    it('should retry on 502 Bad Gateway for GET requests', async () => {
+      let attemptCount = 0;
+      server.use(
+        http.get('http://localhost:8081/api/notes/1', () => {
+          attemptCount++;
+          if (attemptCount < 2) {
+            return HttpResponse.json({ error: 'Bad Gateway' }, { status: 502 });
+          }
+          return HttpResponse.json(mockNote);
+        })
+      );
+
+      const result = await getNote('1');
+      expect(result).toEqual(mockNote);
+      expect(attemptCount).toBe(2);
+    });
+
+    it('should retry on 429 Too Many Requests for POST requests', async () => {
+      let attemptCount = 0;
+      const newNote = { title: 'New Note', content: 'Content', type: 'star' };
+      server.use(
+        http.post('http://localhost:8081/api/notes', () => {
+          attemptCount++;
+          if (attemptCount < 2) {
+            return HttpResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+          }
+          return HttpResponse.json({ ...mockNote, ...newNote, id: '2' }, { status: 201 });
+        })
+      );
+
+      const result = await createNote(newNote);
+      expect(result.title).toBe('New Note');
+      expect(attemptCount).toBe(2);
+    });
+  });
+
+describe('error handling', () => {
     it('should handle network errors for getNote', async () => {
       server.use(
         http.get('http://localhost:8081/api/notes/1', () => {
