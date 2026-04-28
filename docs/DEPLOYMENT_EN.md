@@ -115,7 +115,7 @@ docker-compose logs -f nlp
 docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_URL" up
 
 # Seed test data (optional)
-docker-compose exec backend go run /app/scripts/seed.go
+docker-compose exec backend ./seed
 ```
 
 ### 5. Health Verification
