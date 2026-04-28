@@ -1,5 +1,8 @@
 name: Config & Migration Validation
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches:
@@ -34,6 +37,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache-dependency-path: backend/go.sum
       
       - name: Validate JSON syntax
         run: |
@@ -96,6 +100,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache-dependency-path: backend/go.sum
       
       - name: Check GORM AutoMigrate compatibility
         env:
