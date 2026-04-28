@@ -4,7 +4,6 @@
 import * as THREE from 'three';
 import { goto } from '$app/navigation';
 import type { GraphNode, NodeMeshMap, CameraController } from './types';
-import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export interface RaycasterState {
   raycaster: THREE.Raycaster;

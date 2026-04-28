@@ -21,7 +21,7 @@
   let isSubmitting = $state(false);
   let error = $state<string | null>(null);
   let showTypeDropdown = $state(false);
-  let isFocused = $state(false);
+  let isFocused = $state(false); // eslint-disable-line @typescript-eslint/no-unused-vars -- Reserved for future focus tracking
 
   const linkTypes = [
     { value: 'reference', label: 'Reference' },

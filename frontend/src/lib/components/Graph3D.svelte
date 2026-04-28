@@ -50,7 +50,7 @@
   // Реактивные состояния
   let isLoading = $state(true);
   let error = $state<string | null>(null);
-  let isAutoRotating = $state(true);
+  let isAutoRotating = $state(true); // eslint-disable-line @typescript-eslint/no-unused-vars -- Reserved for future auto-rotation feature
   let isInitialized = $state(false);
   let lastProcessedKey = $state(0);
   let currentData = $state<GraphData>({ nodes: [], links: [] });

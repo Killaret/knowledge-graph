@@ -2,7 +2,7 @@
  * Canvas rendering functions for GraphCanvas
  */
 import { graphConfig2D } from '$lib/config';
-import type { SimulationNode, SimulationLink, TransformState } from './types';
+import type { SimulationNode, SimulationLink } from './types';
 
 export type { SimulationNode, SimulationLink };
 
