@@ -10,13 +10,13 @@ import (
 
 // Common error messages
 const (
-	MsgInvalidUUID        = "Неверный формат UUID"
-	MsgInvalidCharacters  = "Поле содержит недопустимые символы"
-	MsgTooLong            = "Поле слишком длинное"
-	MsgTooShort           = "Поле слишком короткое"
-	MsgRequired           = "Поле обязательно для заполнения"
-	MsgOutOfRange         = "Значение вне допустимого диапазона"
-	MsgInvalidEnum        = "Недопустимое значение перечисления"
+	MsgInvalidUUID       = "Неверный формат UUID"
+	MsgInvalidCharacters = "Поле содержит недопустимые символы"
+	MsgTooLong           = "Поле слишком длинное"
+	msgTooShort          = "Поле слишком короткое" // unused, reserved for future
+	MsgRequired          = "Поле обязательно для заполнения"
+	msgOutOfRange        = "Значение вне допустимого диапазона" // unused, reserved for future
+	MsgInvalidEnum       = "Недопустимое значение перечисления"
 )
 
 // Allowed characters patterns for safe input
@@ -27,16 +27,17 @@ var (
 
 	// SafeContentPattern allows broader range for content but still blocks dangerous chars
 	// Allows unicode letters, numbers, common punctuation, spaces, newlines
-	SafeContentPattern = regexp.MustCompile(`^[\p{L}\p{N}\s\-_\.\,\!\?\;\:\(\)\[\]\{\}\"\'\`\/@#$%&*+=|<>^~\\\r\n]*$`)
+	SafeContentPattern = regexp.MustCompile(`^[\p{L}\p{N}\s\-_.,!?;:()\[\]{}"'/@#%&*+=|<>^~\r\n]*$`)
 
 	// SafeTagPattern for tag names - more restrictive
 	SafeTagPattern = regexp.MustCompile(`^[\p{L}\p{N}\-_]+$`)
 
-	// StrictIDPattern for external IDs that should be alphanumeric only
-	StrictIDPattern = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
+	// strictIDPattern for external IDs that should be alphanumeric only (unused, reserved)
+	strictIDPattern = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
 )
 
 // ValidCelestialBodyTypes contains all allowed celestial body types
+// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula
 var ValidCelestialBodyTypes = map[string]bool{
 	"star":      true,
 	"planet":    true,
@@ -46,8 +47,6 @@ var ValidCelestialBodyTypes = map[string]bool{
 	"satellite": true,
 	"debris":    true,
 	"nebula":    true,
-	"moon":      true,
-	"blackhole": true,
 }
 
 // ValidLinkTypes contains all allowed link types
@@ -112,14 +111,14 @@ func IsSafeTag(tag string, maxLength int) *ValidationResult {
 	return &ValidationResult{Valid: true}
 }
 
-// IsValidCelestialBodyType checks if the given type is valid
+// IsValidCelestialBodyType checks if the given type is valid (case-sensitive)
 func IsValidCelestialBodyType(t string) bool {
-	return ValidCelestialBodyTypes[strings.ToLower(t)]
+	return ValidCelestialBodyTypes[t]
 }
 
-// IsValidLinkType checks if the given link type is valid
+// IsValidLinkType checks if the given link type is valid (case-sensitive)
 func IsValidLinkType(t string) bool {
-	return ValidLinkTypes[strings.ToLower(t)]
+	return ValidLinkTypes[t]
 }
 
 // IsValidWeight checks if weight is in valid range [0, 1]

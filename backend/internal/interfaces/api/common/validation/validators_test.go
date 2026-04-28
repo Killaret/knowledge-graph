@@ -30,11 +30,11 @@ func TestIsValidUUID(t *testing.T) {
 
 func TestIsSafeName(t *testing.T) {
 	tests := []struct {
-		name       string
-		input      string
-		maxLength  int
-		wantValid  bool
-		wantMsg    string
+		name      string
+		input     string
+		maxLength int
+		wantValid bool
+		wantMsg   string
 	}{
 		{"valid simple name", "Test Note", 50, true, ""},
 		{"valid with hyphen", "Test-Note", 50, true, ""},
@@ -135,8 +135,9 @@ func TestIsSafeContent(t *testing.T) {
 }
 
 func TestIsValidCelestialBodyType(t *testing.T) {
-	validTypes := []string{"star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula", "moon", "blackhole"}
-	invalidTypes := []string{"invalid", "unknown", "", "STAR", "Planet"} // case-sensitive check
+	// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula
+	validTypes := []string{"star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula"}
+	invalidTypes := []string{"invalid", "unknown", "", "STAR", "Planet", "moon", "blackhole"} // case-sensitive check
 
 	for _, tt := range validTypes {
 		t.Run("valid "+tt, func(t *testing.T) {

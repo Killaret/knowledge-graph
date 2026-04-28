@@ -84,27 +84,27 @@ func Initialize(cfg Config) error {
 // New creates a new logger instance
 func New(cfg Config) (*Logger, error) {
 	var output io.Writer = cfg.Output
-	
+
 	if cfg.LogFile != "" {
 		// Ensure log directory exists
 		dir := filepath.Dir(cfg.LogFile)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
-		
+
 		file, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}
-		
+
 		// Write to both file and stdout
 		output = io.MultiWriter(os.Stdout, file)
 	}
-	
+
 	if output == nil {
 		output = os.Stdout
 	}
-	
+
 	return &Logger{
 		context:    "app",
 		level:      cfg.Level,
@@ -139,12 +139,12 @@ func (l *Logger) log(level LogLevel, message string, data map[string]interface{}
 	if level < l.level {
 		return
 	}
-	
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	
+
 	file, line := getCallerInfo()
-	
+
 	entry := LogEntry{
 		Timestamp: time.Now().Format(time.RFC3339),
 		Level:     level.String(),
@@ -154,7 +154,7 @@ func (l *Logger) log(level LogLevel, message string, data map[string]interface{}
 		Line:      line,
 		Data:      data,
 	}
-	
+
 	if l.jsonOutput {
 		jsonData, _ := json.Marshal(entry)
 		fmt.Fprintln(l.output, string(jsonData))
@@ -254,15 +254,15 @@ func Error(message string, err error, data ...map[string]interface{}) {
 	defaultLogger.Error(message, err, data...)
 }
 
-// SetOutput sets the output writer for the default logger
-func SetOutput(w io.Writer) {
+// setOutput sets the output writer for the default logger (unused, kept for future)
+func setOutput(w io.Writer) {
 	if defaultLogger != nil {
 		defaultLogger.output = w
 	}
 }
 
-// NewStandardLogger creates a standard library compatible logger
-func NewStandardLogger(context string) *log.Logger {
+// newStandardLogger creates a standard library compatible logger (unused, kept for future)
+func newStandardLogger(context string) *log.Logger {
 	return log.New(&standardLoggerAdapter{context: context}, "", 0)
 }
 

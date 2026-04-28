@@ -10,13 +10,13 @@ import (
 func DefaultConfig() Config {
 	// Get project root (assuming binary runs from backend dir)
 	logDir := "../logs/backend"
-	
+
 	// If logs dir doesn't exist relative to binary, use absolute path
 	if _, err := os.Stat(logDir); os.IsNotExist(err) {
 		// Try to create logs directory
 		_ = os.MkdirAll(logDir, 0755)
 	}
-	
+
 	return Config{
 		Level:      INFO,
 		JSONFormat: false,
@@ -32,8 +32,8 @@ func ProductionConfig() Config {
 	return cfg
 }
 
-// DevelopmentConfig returns development logger configuration
-func DevelopmentConfig() Config {
+// developmentConfig returns development logger configuration (unused, kept for future)
+func developmentConfig() Config {
 	cfg := DefaultConfig()
 	cfg.JSONFormat = false
 	cfg.Level = DEBUG
