@@ -14,7 +14,10 @@ backend/                          # Go backend
 └── cmd/checkconfig/main.go       # Config validation CLI
 
 frontend/                         # SvelteKit frontend
-├── src/lib/components/*.spec.ts  # 18 files, 204 unit tests
+├── src/lib/
+│   ├── components/*.spec.ts      # 18 files, ~200 unit tests
+│   ├── api/*.test.ts             # 3 files, API client tests
+│   └── utils/*.test.ts           # 1 file, utility tests
 ├── tests/*.spec.ts               # 10 files, Playwright E2E tests
 └── tests/features/*.feature      # 3 files, BDD scenarios
 
@@ -36,8 +39,11 @@ Unit tests follow language-specific best practices:
 - **Total: 31 files, 118 test functions**
 
 ### TypeScript (frontend/)
-- `*.spec.ts` files next to components
-- **Total: 18 component test files, 204 tests**
+- `*.spec.ts` — component tests (Vitest + Testing Library)
+- `*.test.ts` — API client and utility tests (Vitest)
+- **Total: 22 test files (~220 tests)**
+  - 18 component tests (.spec.ts)
+  - 4 API/utils tests (.test.ts)
 
 ### Python (nlp-service/)
 - `tests/*.py` directory
@@ -88,8 +94,8 @@ pytest tests/test_nlp_utils.py -v
 | Category | Files | Tests/Scenarios | Status |
 |----------|-------|-----------------|--------|
 | **Go Unit** | 31 | 118 test functions | ✅ Active |
-| **Frontend Unit** | 18 | 204 tests | ✅ Active |
+| **Frontend Unit** | 22 | ~220 tests | ✅ Active |
 | **Playwright E2E** | 10 | 48 tests | ✅ Active |
 | **BDD Features** | 14 | 111 scenarios | ✅ Active |
 | **NLP Python** | 2 | ~15 tests | ✅ Active |
-| **Total** | **75** | **~496** | ✅ |
+| **Total** | **79** | **~512** | ✅ |

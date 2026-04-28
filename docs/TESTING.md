@@ -204,31 +204,38 @@ go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
 
 ### Структура тестов
 
-**Unit тесты: 18 файлов, 204 теста**
+**Unit тесты: 22 файла, ~220 тестов**
 **E2E тесты: 10 файлов, 48 тестов**
 **BDD тесты: 3 файла, 13 сценариев**
 
 ```
 frontend/
-├── src/lib/components/                  # 18 unit test files
-│   ├── BackButton.spec.ts              # Back button component
-│   ├── ConfirmModal.spec.ts            # Confirmation modal
-│   ├── CreateNoteModal.spec.ts         # Create note modal
-│   ├── EditNoteModal.spec.ts           # Edit note modal
-│   ├── FloatingControls.spec.ts        # Floating UI controls
-│   ├── Graph3D.spec.ts                 # 3D graph component
-│   ├── GraphCanvas.interactions.spec.ts # Canvas interactions
-│   ├── GraphCanvas.links.spec.ts       # Link rendering
-│   ├── GraphCanvas.node-types.spec.ts  # Node type rendering
-│   ├── GraphCanvas.rendering.spec.ts   # Canvas rendering
-│   ├── LazyGraph3D.spec.ts             # Lazy-loaded 3D
-│   ├── LinkCreator.spec.ts             # Link creation UI
-│   ├── NoteCard.spec.ts                # Note card component
-│   ├── NoteEditor.spec.ts              # Note editor
-│   ├── NoteSidePanel.spec.ts           # Side panel
-│   ├── SearchBar.spec.ts               # Search component
-│   ├── SmartGraph.spec.ts              # Smart graph features
-│   └── TagSelector.spec.ts             # Tag selection UI
+├── src/lib/
+│   ├── components/                      # 18 component tests (.spec.ts)
+│   │   ├── BackButton.spec.ts              # Back button component
+│   │   ├── ConfirmModal.spec.ts            # Confirmation modal
+│   │   ├── CreateNoteModal.spec.ts         # Create note modal
+│   │   ├── EditNoteModal.spec.ts           # Edit note modal
+│   │   ├── FloatingControls.spec.ts        # Floating UI controls
+│   │   ├── Graph3D.spec.ts                 # 3D graph component
+│   │   ├── GraphCanvas.interactions.spec.ts # Canvas interactions
+│   │   ├── GraphCanvas.links.spec.ts       # Link rendering
+│   │   ├── GraphCanvas.node-types.spec.ts  # Node type rendering
+│   │   ├── GraphCanvas.rendering.spec.ts   # Canvas rendering
+│   │   ├── LazyGraph3D.spec.ts             # Lazy-loaded 3D
+│   │   ├── LinkCreator.spec.ts             # Link creation UI
+│   │   ├── NoteCard.spec.ts                # Note card component
+│   │   ├── NoteEditor.spec.ts              # Note editor
+│   │   ├── NoteSidePanel.spec.ts           # Side panel
+│   │   ├── SearchBar.spec.ts               # Search component
+│   │   ├── SmartGraph.spec.ts              # Smart graph features
+│   │   └── TagSelector.spec.ts             # Tag selection UI
+│   ├── api/                            # 3 API client tests (.test.ts)
+│   │   ├── notes.test.ts              # Note API client (12KB)
+│   │   ├── graph.test.ts              # Graph API client (6.5KB)
+│   │   └── links.test.ts              # Links API client (8.3KB)
+│   └── utils/                          # 1 utility test (.test.ts)
+│       └── deviceCapabilities.test.ts # Device capability detection
 ├── tests/                               # Playwright E2E tests
 │   ├── home-page.spec.ts               # Homepage tests
 │   ├── notes.spec.ts                   # Note CRUD E2E
@@ -260,11 +267,10 @@ frontend/
         └── import_export.feature        # 6 scenarios
 ```
 
-**Примечание:** Следующие тесты указаны в документации, но физически отсутствуют:
-- `src/lib/api/notes.spec.ts`
-- `src/lib/api/graph.spec.ts`
-- `src/lib/stores/notes.spec.ts`
-- `src/lib/utils/deviceCapabilities.spec.ts`
+**Конвенция именования:**
+- `.spec.ts` — тесты компонентов (Vitest + Testing Library)
+- `.test.ts` — тесты API клиентов и утилит (Vitest)
+- Сторы (`stores`) тестируются через компонентные тесты, отдельных файлов нет
 
 ### E2E тесты (Playwright)
 
@@ -729,17 +735,14 @@ npx playwright show-report
 | **Backend Application** | ~75% | 7 | ✅ Хорошо |
 | **Backend Infrastructure** | ~60% | 62 | ✅ Хорошо |
 | **Backend Interface** | ~70% | 14 | ✅ Хорошо |
-| **Frontend Unit** | ~40% | 204 | ✅ Отлично |
+| **Frontend Unit** | ~60% | ~220 | ✅ Отлично |
 | **Frontend E2E** | N/A | 48 | ✅ Отлично |
 | **BDD Scenarios** | N/A | 111 | ✅ Отлично |
 | **NLP Python** | ~80% | ~15 | ✅ Отлично |
-| **Итого** | - | **~496** | ✅ |
+| **Итого** | - | **~512** | ✅ |
 
 ### Необходимые дополнительные тесты
 
-- [ ] **API Client Unit Tests** - `api/notes.spec.ts`, `api/graph.spec.ts`
-- [ ] **Store Unit Tests** - `stores/notes.spec.ts`
-- [ ] **Utils Unit Tests** - `utils/deviceCapabilities.spec.ts`
 - [ ] **Worker Integration Tests** - Redis queue + task processing
 - [ ] **Load Tests** - k6 или Artillery для API нагрузки
 - [ ] **Security Tests** - OWASP ZAP сканирование

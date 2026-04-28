@@ -54,10 +54,12 @@
 
 ## Frontend (Svelte)
 
-### Юнит-тесты — 18 файлов, 204 теста
+### Юнит-тесты — 22 файла, ~220 тестов
 
-| Компонент/Модуль | Тест-файл | Статус |
-|------------------|-----------|--------|
+#### Component Tests (.spec.ts) — 18 файлов
+
+| Компонент | Тест-файл | Статус |
+|-----------|-----------|--------|
 | `BackButton` | `BackButton.spec.ts` | ✅ |
 | `ConfirmModal` | `ConfirmModal.spec.ts` | ✅ |
 | `CreateNoteModal` | `CreateNoteModal.spec.ts` | ✅ |
@@ -77,8 +79,16 @@
 | `SmartGraph` | `SmartGraph.spec.ts` | ✅ |
 | `TagSelector` | `TagSelector.spec.ts` | ✅ |
 
-**Примечание:** Следующие тесты из документации не найдены (возможно, не реализованы):
-- `api/notes.spec.ts`, `api/graph.spec.ts`, `stores/notes.spec.ts`, `utils/deviceCapabilities.spec.ts`
+#### API & Utils Tests (.test.ts) — 4 файла
+
+| Модуль | Тест-файл | Статус |
+|--------|-----------|--------|
+| `api/notes` | `notes.test.ts` | ✅ |
+| `api/graph` | `graph.test.ts` | ✅ |
+| `api/links` | `links.test.ts` | ✅ |
+| `utils/deviceCapabilities` | `deviceCapabilities.test.ts` | ✅ |
+
+**Примечание:** Сторы (`stores`) тестируются через компонентные тесты, отдельных файлов нет — логика живёт в компонентах.
 
 ### Playwright E2E тесты — 10 файлов, 48 тестов
 
