@@ -1,46 +1,95 @@
 # Test Structure
 
-This directory contains all integration and end-to-end tests for the Knowledge Graph project.
+This directory contains BDD/Cucumber tests and test support files for the Knowledge Graph project.
 
-## Structure
+## Actual Test Structure
 
 ```
-tests/
-├── backend/
-│   ├── integration/     # API integration tests
-│   └── e2e/            # Backend end-to-end tests
-├── frontend/
-│   └── e2e/            # Playwright E2E tests
-└── nlp/
-    └── integration/    # NLP service integration tests
+backend/                          # Go backend
+├── internal/
+│   ├── domain/*/*_test.go        # 25 tests (entities, value objects)
+│   ├── application/*/*_test.go   # 17 tests (use cases)
+│   ├── infrastructure/*/*_test.go  # 62 tests (repositories, queue, nlp)
+│   └── interfaces/api/*/*_test.go # 14 tests (HTTP handlers)
+└── cmd/checkconfig/main.go       # Config validation CLI
+
+frontend/                         # SvelteKit frontend
+├── src/lib/components/*.spec.ts  # 18 files, 204 unit tests
+├── tests/*.spec.ts               # 10 files, Playwright E2E tests
+└── tests/features/*.feature      # 3 files, BDD scenarios
+
+tests/                            # BDD tests (this directory)
+├── features/*.feature            # 11 files, 98 BDD scenarios
+├── features/step_definitions/    # 6 TypeScript files
+└── support/                      # Test support files
+
+nlp-service/                      # Python NLP service
+└── tests/*.py                    # 2 files, ~15 pytest tests
 ```
 
-## Unit Tests
+## Unit Tests Location
 
-Unit tests are located next to the source code they test (Go best practice):
+Unit tests follow language-specific best practices:
 
-- `backend/internal/domain/*/*_test.go` - Domain layer tests
-- `backend/internal/application/*/*_test.go` - Application layer tests
-- `backend/internal/infrastructure/*/*_test.go` - Infrastructure tests
-- `backend/internal/interfaces/*/*_test.go` - Interface layer tests
-- `nlp-service/tests/` - NLP service unit tests
+### Go (backend/)
+- `*_test.go` files next to source code
+- **Total: 31 files, 118 test functions**
+
+### TypeScript (frontend/)
+- `*.spec.ts` files next to components
+- **Total: 18 component test files, 204 tests**
+
+### Python (nlp-service/)
+- `tests/*.py` directory
+- **Total: 2 files, ~15 tests**
 
 ## Running Tests
 
-### Backend Integration Tests
+### Backend Unit Tests
 ```bash
-cd tests/backend/integration
-go test -v ./...
+cd backend
+go test ./... -v                    # All tests
+go test ./internal/domain/... -v     # Domain only
+go test -race -coverprofile=coverage.out ./...
 ```
 
-### Frontend E2E Tests
+### Frontend Unit Tests
 ```bash
-cd tests/frontend/e2e
-npx playwright test
+cd frontend
+npm run test:unit                   # Vitest (204 tests)
+npm run test:unit:watch            # Watch mode
+npm run test:coverage              # With coverage
 ```
 
-### NLP Integration Tests
+### Frontend E2E Tests (Playwright)
 ```bash
-cd tests/nlp/integration
-pytest ./...
+cd frontend
+npm run test                       # All E2E tests
+npm run test:smoke                 # Smoke tests only
+npm run test:headed               # With browser visible
 ```
+
+### BDD Tests (Cucumber)
+```bash
+cd frontend
+npm run test:bdd                   # or npm run test:cucumber
+```
+
+### NLP Service Tests
+```bash
+cd nlp-service
+pytest tests/ -v
+pytest tests/test_api.py -v
+pytest tests/test_nlp_utils.py -v
+```
+
+## Test Counts Summary
+
+| Category | Files | Tests/Scenarios | Status |
+|----------|-------|-----------------|--------|
+| **Go Unit** | 31 | 118 test functions | ✅ Active |
+| **Frontend Unit** | 18 | 204 tests | ✅ Active |
+| **Playwright E2E** | 10 | 48 tests | ✅ Active |
+| **BDD Features** | 14 | 111 scenarios | ✅ Active |
+| **NLP Python** | 2 | ~15 tests | ✅ Active |
+| **Total** | **75** | **~496** | ✅ |

@@ -1,8 +1,9 @@
 # Руководство по тестированию Knowledge Graph
 
-> **Версия:** 1.0  
-> **Дата:** Апрель 2026 (актуально на момент написания)  
-> **Статус:** Актуально для текущего codebase
+> **Версия:** 1.1  
+> **Дата:** 28 апреля 2026  
+> **Статус:** Актуально для текущего codebase  
+> **Всего тестов:** ~496 (118 Go + 204 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
 
 ---
 
@@ -25,24 +26,25 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    E2E Tests                                 │
-│         (Playwright + Cucumber - 48 тестов)                 │
+│     (Playwright + Cucumber - 48 + 111 = 159 тестов)       │
 ├─────────────────────────────────────────────────────────────┤
 │              Integration Tests                              │
 │     (Repository + API + Docker Compose)                    │
 ├─────────────────────────────────────────────────────────────┤
 │                 Unit Tests                                  │
-│    Backend (Go): 1100+ строк, ~25 тестовых файлов          │
-│    Frontend (TS): Three.js modules, API клиенты            │
+│    Backend (Go): 31 файлов, 118 тестовых функций           │
+│    Frontend (TS): 18 файлов, 204 теста                     │
+│    NLP (Python): 2 файла, ~15 тестов                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Тестовая пирамида
 
-| Уровень | Технологии | Покрытие | Время |
-|---------|------------|----------|-------|
-| **Unit** | Go testify, Vitest | 70% backend | < 10 сек |
-| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 мин |
-| **E2E** | Playwright + Cucumber | Полный сценарий | ~ 5 мин |
+| Уровень | Технологии | Покрытие | Время | Файлов |
+|---------|------------|----------|-------|--------|
+| **Unit** | Go testify, Vitest | 70% backend | < 10 сек | 51 |
+| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 мин | - |
+| **E2E** | Playwright + Cucumber | Полный сценарий | ~ 5 мин | 24 |
 
 ---
 
@@ -50,30 +52,61 @@
 
 ### Структура тестов
 
+**Всего: 31 файл, 118 тестовых функций**
+
 ```
 backend/
 ├── internal/
-│   ├── domain/
+│   ├── domain/                              # 6 файлов, 19 функций
 │   │   ├── note/
-│   │   │   ├── entity_test.go          # Note entity tests
-│   │   │   └── value_objects_test.go   # Title, Content validation
+│   │   │   ├── entity_test.go              # 2 теста
+│   │   │   └── value_objects_test.go       # 3 теста
 │   │   ├── link/
-│   │   │   └── entity_test.go          # Link entity tests
+│   │   │   ├── entity_test.go              # 2 теста
+│   │   │   └── value_objects_test.go       # 3 теста
 │   │   └── graph/
-│   │       └── traversal_test.go        # BFS, MAX strategy tests (447 строк)
-│   ├── application/
-│   │   └── graph/
-│   │       └── composite_loader_test.go # Weighted aggregation tests
-│   ├── infrastructure/
-│   │   └── db/postgres/
-│   │       ├── note_repo_test.go       # Note repository integration
-│   │       └── link_repo_test.go       # Link repository integration
-│   └── interfaces/
+│   │       ├── traversal_test.go           # 7 тестов
+│   │       └── traversal_integration_test.go # 2 теста
+│   ├── application/                         # 3 файла, 7 функций
+│   │   ├── graph/
+│   │   │   └── composite_loader_test.go    # 2 теста
+│   │   └── recommendation/
+│   │       ├── affected_notes_test.go      # 3 теста
+│   │       └── refresh_service_test.go     # 2 теста
+│   ├── infrastructure/                      # 14 файлов, 62 функции
+│   │   ├── db/postgres/                     # 12 файлов, 44 функции
+│   │   │   ├── embedding_repo_test.go      # 5 тестов
+│   │   │   ├── link_repo_test.go           # 3 теста
+│   │   │   ├── link_repo_unit_test.go      # 18 тестов
+│   │   │   ├── link_repo_integration_test.go # 1 тест
+│   │   │   ├── note_repo_test.go           # 3 теста
+│   │   │   ├── note_repo_unit_test.go      # 12 тестов
+│   │   │   ├── note_repo_integration_test.go # 1 тест
+│   │   │   ├── recommendation_repo_test.go # 6 тестов
+│   │   │   ├── tag_repo_integration_test.go # 1 тест
+│   │   │   └── user_repo_integration_test.go # 1 тест
+│   │   ├── nlp/
+│   │   │   └── client_test.go              # 9 тестов
+│   │   └── queue/                           # 2 файла, 6 функций
+│   │       ├── tasks_test.go               # 3 теста
+│   │       └── tasks/recommendation_test.go # 3 теста
+│   └── interfaces/                          # 6 файлов, 14 функций
 │       └── api/
+│           ├── common/validation/
+│           │   └── validators_test.go        # 9 тестов
+│           ├── graphhandler/
+│           │   ├── graph_handler_test.go     # 3 теста
+│           │   └── graph_handler_integration_test.go # 1 тест
+│           ├── linkhandler/
+│           │   ├── link_handler_test.go      # 1 тест
+│           │   └── link_handler_integration_test.go # 1 тест
 │           ├── notehandler/
-│           │   └── note_handler_test.go # HTTP handler tests (213 строк)
-│           └── linkhandler/
-│               └── link_handler_test.go # Link handler tests
+│           │   ├── note_handler_test.go      # 4 теста
+│           │   └── note_handler_integration_test.go # 1 тест
+│           └── taghandler/
+│               └── tag_handler_integration_test.go # 1 тест
+└── internal/config/
+    └── config_test.go                        # 5 тестов
 ```
 
 ### Domain Layer Tests
@@ -171,21 +204,67 @@ go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
 
 ### Структура тестов
 
+**Unit тесты: 18 файлов, 204 теста**
+**E2E тесты: 10 файлов, 48 тестов**
+**BDD тесты: 3 файла, 13 сценариев**
+
 ```
 frontend/
-├── tests/
-│   ├── e2e/
-│   │   ├── notes.spec.ts              # Note CRUD tests (196 строк)
-│   │   ├── graph-3d.spec.ts          # 3D graph tests (118 строк)
-│   │   └── progressive-rendering.spec.ts # Fog animation (483 строк)
-│   └── unit/
-│       └── graph-3d-modules.spec.ts   # Three.js module tests
-└── src/
-    └── lib/
-        └── api/
-            ├── notes.test.ts          # API client tests (опционально)
-            └── graph.test.ts
+├── src/lib/components/                  # 18 unit test files
+│   ├── BackButton.spec.ts              # Back button component
+│   ├── ConfirmModal.spec.ts            # Confirmation modal
+│   ├── CreateNoteModal.spec.ts         # Create note modal
+│   ├── EditNoteModal.spec.ts           # Edit note modal
+│   ├── FloatingControls.spec.ts        # Floating UI controls
+│   ├── Graph3D.spec.ts                 # 3D graph component
+│   ├── GraphCanvas.interactions.spec.ts # Canvas interactions
+│   ├── GraphCanvas.links.spec.ts       # Link rendering
+│   ├── GraphCanvas.node-types.spec.ts  # Node type rendering
+│   ├── GraphCanvas.rendering.spec.ts   # Canvas rendering
+│   ├── LazyGraph3D.spec.ts             # Lazy-loaded 3D
+│   ├── LinkCreator.spec.ts             # Link creation UI
+│   ├── NoteCard.spec.ts                # Note card component
+│   ├── NoteEditor.spec.ts              # Note editor
+│   ├── NoteSidePanel.spec.ts           # Side panel
+│   ├── SearchBar.spec.ts               # Search component
+│   ├── SmartGraph.spec.ts              # Smart graph features
+│   └── TagSelector.spec.ts             # Tag selection UI
+├── tests/                               # Playwright E2E tests
+│   ├── home-page.spec.ts               # Homepage tests
+│   ├── notes.spec.ts                   # Note CRUD E2E
+│   ├── graph-3d.spec.ts                 # 3D graph E2E
+│   ├── graph-3d-modules.spec.ts         # 3D module tests
+│   ├── camera-position.spec.ts          # Camera navigation
+│   ├── type-filters.spec.ts             # Type filtering
+│   ├── progressive-rendering.spec.ts  # Progressive rendering
+│   ├── performance/
+│   │   └── graph-3d-performance.spec.ts # Performance tests
+│   ├── visual/
+│   │   └── visual-regression.spec.ts    # Visual regression
+│   └── features/                        # BDD scenarios
+│       ├── graph_2d_list.feature        # 5 scenarios
+│       ├── graph_interaction.feature    # 5 scenarios
+│       └── graph_3d_loading.feature     # 3 scenarios
+└── tests/ (корень проекта)              # Общие BDD тесты
+    └── features/                        # 11 файлов, 98 сценариев
+        ├── local_3d_graph.feature       # 13 scenarios
+        ├── full_3d_graph.feature        # 12 scenarios
+        ├── camera_navigation.feature    # 10 scenarios
+        ├── type_filters.feature         # 10 scenarios
+        ├── search_and_discovery.feature # 9 scenarios
+        ├── celestial_body_types.feature # 8 scenarios
+        ├── graph_view.feature           # 8 scenarios
+        ├── link_types.feature           # 8 scenarios
+        ├── note_management.feature      # 8 scenarios
+        ├── graph_navigation.feature     # 6 scenarios
+        └── import_export.feature        # 6 scenarios
 ```
+
+**Примечание:** Следующие тесты указаны в документации, но физически отсутствуют:
+- `src/lib/api/notes.spec.ts`
+- `src/lib/api/graph.spec.ts`
+- `src/lib/stores/notes.spec.ts`
+- `src/lib/utils/deviceCapabilities.spec.ts`
 
 ### E2E тесты (Playwright)
 
@@ -384,6 +463,54 @@ npx cucumber-js --tags "@link-preservation"
 # Запуск всех 3D тестов
 npx cucumber-js features/local_3d_graph.feature features/full_3d_graph.feature
 ```
+
+---
+
+## NLP Service тестирование (Python)
+
+### Структура
+
+```
+nlp-service/
+├── tests/
+│   ├── test_api.py              # ~8 тестов (FastAPI endpoints)
+│   └── test_nlp_utils.py        # ~6 тестов (NLP функции)
+├── app/
+│   ├── main.py                  # FastAPI приложение
+│   ├── nlp_utils.py             # NLP утилиты
+│   └── models.py                # Pydantic модели
+└── requirements.txt             # Зависимости
+```
+
+### Запуск
+
+```bash
+cd nlp-service
+
+# Установка зависимостей
+pip install -r requirements.txt
+
+# Запуск всех тестов
+pytest tests/ -v
+
+# Запуск конкретного файла
+pytest tests/test_api.py -v
+pytest tests/test_nlp_utils.py -v
+
+# С покрытием
+pytest tests/ --cov=app --cov-report=html
+```
+
+### Тесты
+
+**API Tests** (`test_api.py`):
+- `TestHealthEndpoint` - Проверка health check
+- `TestKeywordsEndpoint` - Тесты извлечения ключевых слов
+- `TestEmbeddingsEndpoint` - Тесты генерации эмбеддингов
+
+**NLP Utils Tests** (`test_nlp_utils.py`):
+- `TestKeywordExtraction` - Извлечение ключевых слов
+- `TestEmbeddingModel` - Работа с эмбеддингами
 
 ---
 
@@ -598,18 +725,22 @@ npx playwright show-report
 
 | Компонент | Покрытие | Тесты | Статус |
 |-----------|----------|-------|--------|
-| **Backend Domain** | ~85% | 25+ | ✅ Отлично |
-| **Backend Application** | ~75% | 5+ | ✅ Хорошо |
-| **Backend Infrastructure** | ~60% | 4+ | ⚠️ Нужны интеграционные |
-| **Backend Interface** | ~70% | 3+ | ✅ Хорошо |
+| **Backend Domain** | ~85% | 19 | ✅ Отлично |
+| **Backend Application** | ~75% | 7 | ✅ Хорошо |
+| **Backend Infrastructure** | ~60% | 62 | ✅ Хорошо |
+| **Backend Interface** | ~70% | 14 | ✅ Хорошо |
+| **Frontend Unit** | ~40% | 204 | ✅ Отлично |
 | **Frontend E2E** | N/A | 48 | ✅ Отлично |
-| **Frontend Unit** | ~40% | 1+ | ❌ Нужно больше |
+| **BDD Scenarios** | N/A | 111 | ✅ Отлично |
+| **NLP Python** | ~80% | ~15 | ✅ Отлично |
+| **Итого** | - | **~496** | ✅ |
 
 ### Необходимые дополнительные тесты
 
-- [ ] **Svelte Component Unit Tests** - Vitest + @testing-library/svelte
+- [ ] **API Client Unit Tests** - `api/notes.spec.ts`, `api/graph.spec.ts`
+- [ ] **Store Unit Tests** - `stores/notes.spec.ts`
+- [ ] **Utils Unit Tests** - `utils/deviceCapabilities.spec.ts`
 - [ ] **Worker Integration Tests** - Redis queue + task processing
-- [ ] **NLP Service Tests** - Keyword extraction, embedding generation
 - [ ] **Load Tests** - k6 или Artillery для API нагрузки
 - [ ] **Security Tests** - OWASP ZAP сканирование
 - [ ] **Contract Tests** - Pact для API контрактов
