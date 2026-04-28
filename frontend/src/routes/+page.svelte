@@ -10,6 +10,7 @@
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
   import { getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
+  import SplashScreen from '$lib/components/SplashScreen.svelte';
 
   // State
   let allNotes: Note[] = $state([]);
@@ -316,6 +317,9 @@
   }
 </script>
 
+<!-- Splash Screen on initial load -->
+<SplashScreen />
+
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
 <div class="page-container">
@@ -451,6 +455,8 @@
     width: 100vw;
     overflow: hidden;
     position: relative;
+    background: var(--gradient-cosmic-bg);
+    color: var(--color-text-dark);
   }
 
   /* Fullscreen Graph Container */

@@ -8,6 +8,7 @@
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
+  import WeltallBackground from '$lib/components/WeltallBackground.svelte';
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -91,6 +92,9 @@
   });
 </script>
 
+<!-- Cosmic Background -->
+<WeltallBackground />
+
 <div class="graph-page">
   <BackButton href="/" />
   
@@ -172,12 +176,14 @@
 
 <style>
   .graph-page {
-    height: 100vh;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
-    color: white;
+    height: 100vh;
+    background: var(--gradient-cosmic-bg);
+    color: var(--color-text-dark);
   }
 
   h1 {

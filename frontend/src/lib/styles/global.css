@@ -91,3 +91,25 @@
   /* Backdrop blur */
   --backdrop-blur: blur(12px);
 }
+
+/* Base cosmic theme styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--gradient-cosmic-bg);
+  background-attachment: fixed;
+  color: var(--color-text-dark);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+/* Ensure all pages have dark background by default */
+#app, .app-shell, main {
+  background: transparent;
+  min-height: 100%;
+}

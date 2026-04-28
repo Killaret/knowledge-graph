@@ -28,5 +28,7 @@
     flex: 1;
     overflow-y: auto;
     min-width: 0; /* Prevent flexbox overflow issues */
+    background: var(--gradient-cosmic-bg);
+    color: var(--color-text-dark);
   }
 </style>
