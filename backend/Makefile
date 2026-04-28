@@ -1,7 +1,7 @@
-.PHONY: seed db-up db-down dev test
+.PHONY: seed db-up db-down dev test check-config check-migrations
 
 # Load environment variables
-include .env
+-include .env
 export
 
 # Database commands
@@ -30,5 +30,15 @@ build:
 
 build-worker:
 	go build -o bin/worker cmd/worker/main.go
+
+# Configuration validation
+check-config:
+	go run cmd/checkconfig/main.go
+
+# Migration drift check - compares GORM models with database schema
+check-migrations:
+	@echo "Checking migration drift..."
+	@echo "Note: This requires a running PostgreSQL instance"
+	go run cmd/checkmigrations/main.go
 
 .DEFAULT_GOAL := dev

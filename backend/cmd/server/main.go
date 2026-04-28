@@ -30,7 +30,6 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"knowledge-graph/internal/infrastructure/db/postgres/tagrepo"
 	"knowledge-graph/internal/interfaces/api/taghandler"
 )
 
@@ -134,7 +133,7 @@ func main() {
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg)
-	tagRepo := tagrepo.NewTagRepository(db.DB)
+	tagRepo := postgres.NewTagRepository(db.DB)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
 
 	// Роуты
@@ -237,7 +236,40 @@ func main() {
 		c.JSON(status, health)
 	})
 
-	// Write operations with stricter rate limiting
+	// API v1 group
+	v1 := r.Group("/api/v1")
+	{
+		// Write operations with stricter rate limiting
+		v1.POST("/notes", writeLimiter, noteHandler.Create)
+		v1.GET("/notes/:id", noteHandler.Get)
+		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
+		v1.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
+		v1.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
+		v1.GET("/notes", noteHandler.List)
+		v1.GET("/notes/search", noteHandler.Search)
+
+		v1.POST("/links", writeLimiter, linkHandler.Create)
+		v1.GET("/links/:id", linkHandler.Get)
+		v1.GET("/notes/:id/links", linkHandler.GetByNote)
+		v1.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
+		v1.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
+
+		v1.GET("/notes/:id/graph", graphHandler.GetGraph)
+		v1.GET("/graph/all", graphHandler.GetFullGraph)
+
+		// Tag routes
+		v1.POST("/tags", writeLimiter, tagHandler.Create)
+		v1.GET("/tags", tagHandler.List)
+		v1.GET("/tags/:id", tagHandler.Get)
+		v1.PUT("/tags/:id", writeLimiter, tagHandler.Update)
+		v1.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
+		v1.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
+		v1.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
+		v1.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
+	}
+
+	// Legacy routes (deprecated - kept for backward compatibility)
+	// TODO(# Issue): Remove legacy routes after all clients migrate to /api/v1
 	r.POST("/notes", writeLimiter, noteHandler.Create)
 	r.GET("/notes/:id", noteHandler.Get)
 	r.PUT("/notes/:id", writeLimiter, noteHandler.Update)

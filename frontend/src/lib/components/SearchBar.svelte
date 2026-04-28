@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
   import { onMount, untrack } from 'svelte';
+  import { addJitter } from '$lib/utils/jitter';
 
   // Props
   const { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
@@ -35,7 +36,7 @@
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       doSearch();
-    }, 500); // search after 500ms of no typing
+    }, addJitter(500)); // search after ~500ms of no typing (with jitter)
   }
 
   // Handle Enter key

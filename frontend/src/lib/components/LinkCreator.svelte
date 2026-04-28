@@ -1,6 +1,7 @@
 <script lang="ts">
   import { searchNotes } from '$lib/api/notes';
   import { createLink, type CreateLinkData } from '$lib/api/links';
+  import { addJitter } from '$lib/utils/jitter';
   
   const { 
     sourceNoteId,
@@ -56,7 +57,7 @@
   function onSearchInput() {
     clearTimeout(debounceTimer);
     selectedTarget = null;
-    debounceTimer = setTimeout(handleSearch, 300);
+    debounceTimer = setTimeout(handleSearch, addJitter(300));
   }
 
   function selectTarget(note: { id: string; title: string }) {

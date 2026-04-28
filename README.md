@@ -108,7 +108,8 @@ cd nlp-service && pytest
 - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
 - [API Errors](docs/API_ERRORS.md) — формат ошибок и коды
 - [Тесты](TEST_STATUS.md) — статус и покрытие
-- [Конфигурация](docs/CONFIGURATION_EN.md) — настраиваемые параметры
+- [Конфигурация](docs/CONFIGURATION.md) — полное руководство по настройке
+- [Конфигурация системы](docs/CONFIGURATION_EN.md) — технические параметры
 
 ## 🔧 Pre-commit Hooks
 

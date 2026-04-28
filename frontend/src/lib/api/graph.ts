@@ -52,7 +52,7 @@ function handleGraphError(error: unknown, context: string): never {
 // Запросить граф для заметки (возвращает все прямые связи и связанные заметки)
 export async function getGraphData(noteId: string, depth: number = 2): Promise<GraphData> {
   try {
-    const response = await api.get(`notes/${noteId}/graph?depth=${depth}`).json<GraphData>();
+    const response = await api.get(`api/v1/notes/${noteId}/graph?depth=${depth}`).json<GraphData>();
     return response;
   } catch (error) {
     return handleGraphError(error, `Failed to load graph for note ${noteId}`);
@@ -64,7 +64,7 @@ export async function getFullGraphData(limit: number = apiConfig.default_limit):
   try {
     // Используем link_limit из конфига (0 означает загрузить все связи)
     const linkLimit = apiConfig.link_limit ?? 0;
-    const response = await api.get(`graph/all?limit=${limit}&link_limit=${linkLimit}`).json<GraphData>();
+    const response = await api.get(`api/v1/graph/all?limit=${limit}&link_limit=${linkLimit}`).json<GraphData>();
     return response;
   } catch (error) {
     return handleGraphError(error, 'Failed to load full graph');

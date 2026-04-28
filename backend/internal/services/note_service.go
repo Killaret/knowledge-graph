@@ -6,6 +6,8 @@ import (
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
+
+	"github.com/google/uuid"
 )
 
 // NoteService provides business logic for note operations
@@ -76,12 +78,13 @@ func (s *NoteService) List(ctx context.Context, limit, offset int) ([]*note.Note
 	return s.repo.List(ctx, limit, offset)
 }
 
-// FindByID returns a note by ID (keeping existing functionality)
+// FindByID returns a note by ID
 func (s *NoteService) FindByID(ctx context.Context, id string) (*note.Note, error) {
-	// Convert string ID to UUID (you'll need to import uuid and handle conversion)
-	// For now, assuming the handler will do UUID conversion
-	// This is a placeholder - you may need to adjust based on your UUID handling
-	panic("TODO: Implement UUID conversion and FindByID")
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.FindByID(ctx, uid)
 }
 
 // Save saves a note (keeping existing functionality)
@@ -89,9 +92,11 @@ func (s *NoteService) Save(ctx context.Context, note *note.Note) error {
 	return s.repo.Save(ctx, note)
 }
 
-// Delete deletes a note (keeping existing functionality)
+// Delete deletes a note
 func (s *NoteService) Delete(ctx context.Context, id string) error {
-	// Convert string ID to UUID
-	// This is a placeholder - you may need to adjust based on your UUID handling
-	panic("TODO: Implement UUID conversion and Delete")
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return err
+	}
+	return s.repo.Delete(ctx, uid)
 }

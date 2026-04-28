@@ -22,33 +22,33 @@ export interface Suggestion {
 // Получить все заметки (GET /notes)
 // API возвращает { notes: Note[], total, limit, offset }
 export async function getNotes(): Promise<Note[]> {
-  const response = await api.get('notes', { searchParams: { limit: 10000 } }).json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+  const response = await api.get('api/v1/notes', { searchParams: { limit: 10000 } }).json<{ notes: Note[]; total: number; limit: number; offset: number }>();
   return response.notes;
 }
 
 // Получить одну заметку по ID
 export async function getNote(id: string): Promise<Note> {
-  return api.get(`notes/${id}`).json();
+  return api.get(`api/v1/notes/${id}`).json();
 }
 
 // Создать новую заметку
 export async function createNote(data: { title: string; content: string; type?: string; metadata?: any }): Promise<Note> {
-  return api.post('notes', { json: data }).json();
+  return api.post('api/v1/notes', { json: data }).json();
 }
 
 // Обновить существующую заметку
 export async function updateNote(id: string, data: Partial<Note>): Promise<Note> {
-  return api.put(`notes/${id}`, { json: data }).json();
+  return api.put(`api/v1/notes/${id}`, { json: data }).json();
 }
 
 // Удалить заметку
 export async function deleteNote(id: string): Promise<void> {
-  return api.delete(`notes/${id}`).json();
+  return api.delete(`api/v1/notes/${id}`).json();
 }
 
 // Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
-  return api.get(`notes/${id}/suggestions`, { searchParams: { limit } }).json();
+  return api.get(`api/v1/notes/${id}/suggestions`, { searchParams: { limit } }).json();
 }
 
 // Search response type
@@ -71,5 +71,5 @@ export async function searchNotes(
     page: page.toString(),
     size: size.toString(),
   });
-  return api.get(`notes/search?${searchParams}`).json();
+  return api.get(`api/v1/notes/search?${searchParams}`).json();
 }
