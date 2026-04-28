@@ -1,21 +1,40 @@
 /**
  * Simulation module - wraps $lib/three/simulation/forceSimulation
  */
-import {
-  createSimulation,
-  addNodesToSimulation
-} from '$lib/three/simulation/forceSimulation';
-
-export {
-  createSimulation,
-  addNodesToSimulation
-};
-
+import { createSimulation } from '$lib/three/simulation/forceSimulation';
 import type { GraphNode, GraphLink } from './types';
+
+export { createSimulation };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Simulation = any;
 
 export interface SimulationCallbacks {
   onTick?: () => void;
   onEnd?: () => void;
+}
+
+/**
+ * Add nodes to existing simulation
+ */
+export function addNodesToSimulation(
+  simulation: Simulation,
+  nodes: GraphNode[],
+  links?: GraphLink[],
+  callbacks?: SimulationCallbacks
+): void {
+  if (!simulation) return;
+  
+  // Update simulation nodes
+  simulation.nodes([...simulation.nodes(), ...nodes]);
+  
+  // Setup callbacks if provided
+  if (callbacks?.onTick) {
+    simulation.on('tick', callbacks.onTick);
+  }
+  if (callbacks?.onEnd) {
+    simulation.on('end', callbacks.onEnd);
+  }
 }
 
 /**

@@ -29,7 +29,6 @@ export class ObjectManager {
   }
 
   createAll(nodes: GraphNode[], links: GraphLink[]) {
-    console.log(`[ObjectManager] createAll called: ${nodes.length} nodes, ${links.length} links`);
     this.clear();
 
     nodes.forEach((node) => {
@@ -38,7 +37,6 @@ export class ObjectManager {
       mesh.userData = { type: 'node', id: node.id, nodeData: node };
       this.scene.add(mesh);
       this.nodeMap.set(node.id, mesh);
-      console.log(`[ObjectManager] Created node ${node.id} (${node.type || 'default'}) at (${mesh.position.x.toFixed(2)}, ${mesh.position.y.toFixed(2)}, ${mesh.position.z.toFixed(2)})`);
 
       const label = createLabel(node.title || node.id.substring(0, 6), () => {
         window.location.href = `/notes/${node.id}`;

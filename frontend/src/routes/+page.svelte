@@ -85,8 +85,10 @@
       if (graphResult) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
-        console.log('[+page] loadDataParallel API types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-        console.log('[+page] loadDataParallel First 3 nodes:', graphResult.nodes.slice(0, 3).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+        if (import.meta.env.DEV) {
+          console.log('[+page] loadDataParallel API types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
+          console.log('[+page] loadDataParallel First 3 nodes:', graphResult.nodes.slice(0, 3).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+        }
 
         // Transform nodes to ensure correct type field
         graphData = {
@@ -102,8 +104,10 @@
             link_type: l.link_type
           }))
         };
-        console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-        console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
+        if (import.meta.env.DEV) {
+          console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+          console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
+        }
       } else {
         // Fallback: build simple graph from notes
         graphData = {
@@ -146,8 +150,10 @@
 
       // Debug: check what types come from API
       const apiTypes = rawData.nodes.map((n: any) => n.type || n.Type || 'MISSING');
-      console.log('[+page] API node types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-      console.log('[+page] First 5 raw nodes:', rawData.nodes.slice(0, 5).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+      if (import.meta.env.DEV) {
+        console.log('[+page] API node types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
+        console.log('[+page] First 5 raw nodes:', rawData.nodes.slice(0, 5).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+      }
 
       // Transform nodes: backend might return Id/id/ID in different cases
       const transformedNodes = rawData.nodes.map((n: any) => ({
@@ -209,7 +215,7 @@
       filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
     );
     
-    console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`);
+    if (import.meta.env.DEV) { console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`) };
     
     return {
       nodes: filteredNodes,

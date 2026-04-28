@@ -146,6 +146,118 @@ curl http://localhost:5173
 
 ---
 
+## Personal Instance (Parallel Development)
+
+Run a separate personal Knowledge Graph instance alongside the development stack without conflicts.
+
+### Quick Start
+
+**Windows:**
+```powershell
+.\start-personal.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start-personal.sh
+./start-personal.sh
+```
+
+### Manual Launch
+
+```bash
+# Build and start personal services
+docker compose -f docker-compose.personal.yml up -d --build
+
+# View logs
+docker compose -f docker-compose.personal.yml logs -f
+
+# Stop services
+docker compose -f docker-compose.personal.yml stop
+
+# Remove completely
+docker compose -f docker-compose.personal.yml down
+```
+
+### Service Mapping
+
+| Service | Dev Port | Personal Port | Container Name |
+|---------|----------|---------------|----------------|
+| PostgreSQL | 5432 | **5433** | kg-postgres-personal |
+| Redis | 6379 | **6380** | kg-redis-personal |
+| Backend | 8080 | **8081** | kg-backend-personal |
+| Frontend | 3000 | **3001** | kg-frontend-personal |
+| NLP | 5000 | **5001** | kg-nlp-personal |
+
+### Access Points
+
+- **Personal Frontend**: http://localhost:3001
+- **Personal API**: http://localhost:8081
+
+### Data Isolation
+
+Personal instance uses completely separate volumes:
+- `pgdata_personal` - PostgreSQL data
+- `redisdata_personal` - Redis cache
+
+Your personal notes and dev data never overlap.
+
+### For Users (Non-Developers)
+
+If you just want to use Knowledge Graph for your notes without developing:
+
+1. **Only use the personal instance** — ignore the dev stack entirely
+2. **Single command to start:**
+   ```powershell
+   .\start-personal.ps1  # Windows
+   ```
+   ```bash
+   ./start-personal.sh   # Linux/Mac
+   ```
+3. **Open browser:** http://localhost:3001
+4. **Create your first note** — click "+" button in the sidebar
+
+No need to touch `docker-compose.yml` or port 3000 — that's for developers.
+
+### Choosing Between Ports 3000 and 3001
+
+| Scenario | Use Port | Command |
+|----------|----------|---------|
+| **I want to add features/fix bugs** | 3000 | `docker compose up -d` |
+| **I want to use it for my notes** | 3001 | `.\start-personal.ps1` |
+| **Testing experimental changes** | 3000 | Dev stack (data may break) |
+| **Daily journaling/work notes** | 3001 | Personal stack (stable) |
+
+**Key rule:** Port 3000 is for code changes. Port 3001 is for actual usage.
+
+### Initial Setup After Launch
+
+After starting the personal instance for the first time:
+
+1. **Wait for NLP service** (first launch takes 2-5 minutes to download model):
+   ```powershell
+   docker compose -f docker-compose.personal.yml logs -f nlp
+   # Wait for "Application startup complete" message
+   ```
+
+2. **Open the app:** http://localhost:3001
+
+3. **Create your first note:**
+   - Click **"+ New Note"** in the left sidebar
+   - Write anything — the graph will build automatically
+
+4. **Verify it's working:**
+   - Type some text with related concepts
+   - Save the note (Ctrl+S or click Save)
+   - Check the graph view — nodes should appear
+
+5. **(Optional) Import from Obsidian:**
+   - Go to **Settings → Import**
+   - Select your Obsidian vault folder
+   - Click **Import**
+
+---
+
 ## Production Deployment
 
 ### Option A: Docker Compose on Server

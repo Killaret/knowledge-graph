@@ -18,7 +18,6 @@ export function centerCameraOnNode(
 ) {
   const centerNode = nodes.find(n => n.id === nodeId);
   if (!centerNode) {
-    console.warn('[centerCameraOnNode] Central node not found:', nodeId);
     // Fall back to auto zoom to fit all nodes
     return autoZoomToFit(nodes, camera, controls, animate);
   }
@@ -36,12 +35,6 @@ export function centerCameraOnNode(
   
   const newPos = center.clone().add(direction.multiplyScalar(dist));
   
-  console.log('[centerCameraOnNode] Centering on node:', nodeId, 
-    'at:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`,
-    'distance:', dist.toFixed(2),
-    'animate:', animate
-  );
-
   if (animate) {
     lerpCamera(camera, controls, newPos, center, 1500);
   } else {
@@ -49,8 +42,6 @@ export function centerCameraOnNode(
     controls.target.copy(center);
     controls.update();
   }
-  
-  console.log('[centerCameraOnNode] Camera positioned to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
 }
 
 /**
@@ -119,8 +110,6 @@ export function autoZoomToFit(
   const minDistance = 30;
   const dist = Math.max(calculatedDist, minDistance);
 
-  console.log('[autoZoomToFit] center:', `(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`, 'radius:', radius.toFixed(2), 'distance:', dist.toFixed(2), 'nodes:', nodes.length, 'animate:', animate);
-
   const direction = new THREE.Vector3(1, 0.8, 1).normalize();
   const newPos = center.clone().add(direction.multiplyScalar(dist));
 
@@ -131,6 +120,4 @@ export function autoZoomToFit(
     controls.target.copy(center);
     controls.update();
   }
-
-  console.log('[autoZoomToFit] camera position set to:', `(${newPos.x.toFixed(2)}, ${newPos.y.toFixed(2)}, ${newPos.z.toFixed(2)})`);
 }

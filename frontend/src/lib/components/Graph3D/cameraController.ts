@@ -1,6 +1,7 @@
 /**
  * Camera controller module - wraps $lib/three/camera/cameraUtils
  */
+import * as THREE from 'three';
 import {
   autoZoomToFit,
   centerCameraOnNode
@@ -77,7 +78,7 @@ export function animateCameraTo(
 
   const startPosition = camera.position.clone();
   const startTarget = controls.target.clone();
-  const endTarget = new targetPosition.constructor(targetPosition.x, targetPosition.y, targetPosition.z);
+  const endTarget = new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z);
   const startTime = performance.now();
   let animationId: number | null = null;
 

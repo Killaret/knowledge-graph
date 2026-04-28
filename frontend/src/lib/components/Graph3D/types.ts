@@ -40,8 +40,8 @@ export interface HoverState {
 
 // Types from external modules (for re-export)
 import type { ObjectManager } from '$lib/three/rendering/objectManager';
-import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import type { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import * as THREE from 'three';
 
 export type { ObjectManager, OrbitControls, CSS2DRenderer, THREE };

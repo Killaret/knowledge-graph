@@ -32,13 +32,13 @@
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
   } = $props();
 
-  // Debug: проверяем типы узлов при изменении
+  // Debug: проверяем типы узлов при изменении (dev only)
   $effect(() => {
-    if (nodes.length > 0) {
+    if (import.meta.env.DEV && nodes.length > 0) {
       const types = nodes.map(n => n.type || 'undefined');
       const uniqueTypes = [...new Set(types)];
-      console.log('[GraphCanvas] Received nodes types:', uniqueTypes, 'Total:', nodes.length);
-      console.log('[GraphCanvas] First node:', nodes[0]);
+      if (import.meta.env.DEV) { console.log('[GraphCanvas] Received nodes types:', uniqueTypes, 'Total:', nodes.length) };
+      if (import.meta.env.DEV) { console.log('[GraphCanvas] First node:', nodes[0]) };
     }
   });
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import type { GraphData } from '$lib/api/graph';
   import type { Component } from 'svelte';
 
@@ -8,22 +9,42 @@
   let Graph3DComponent: Component<{ data: GraphData }> | null = $state(null);
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
+  let webglSupported = $state(true);
+
+  // Check WebGL support
+  function checkWebGL(): boolean {
+    if (!browser) return false;
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return !!gl;
+    } catch {
+      return false;
+    }
+  }
 
   onMount(async () => {
-    console.log('[LazyGraph3D] Starting dynamic import of Graph3D.svelte...');
+    // Check WebGL support first
+    webglSupported = checkWebGL();
+    
+    if (!webglSupported) {
+      loadError = 'WebGL is not supported by your browser or device. Please use a modern browser with WebGL enabled.';
+      isLoading = false;
+      return;
+    }
+
     try {
       // Dynamic import of Graph3D component
       const module = await import('./Graph3D.svelte');
-      console.log('[LazyGraph3D] Module loaded:', module);
       // Svelte 5 default export
       Graph3DComponent = (module as { default?: Component<{ data: GraphData }> }).default || null;
-      console.log('[LazyGraph3D] Graph3DComponent assigned:', Graph3DComponent ? 'success' : 'null');
     } catch (e) {
       loadError = 'Failed to load 3D visualization';
-      console.error('[LazyGraph3D] Error loading Graph3D:', e);
+      if (import.meta.env.DEV) {
+        console.error('[LazyGraph3D] Error loading Graph3D:', e);
+      }
     } finally {
       isLoading = false;
-      console.log('[LazyGraph3D] Loading complete, error:', loadError);
     }
   });
 </script>

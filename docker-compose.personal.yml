@@ -1,0 +1,117 @@
+services:
+  postgres_personal:
+    image: pgvector/pgvector:pg16
+    container_name: kg-postgres-personal
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
+      POSTGRES_PASSWORD: ${PERSONAL_POSTGRES_PASSWORD:-personal_password}
+      POSTGRES_DB: ${PERSONAL_POSTGRES_DB:-knowledge_personal}
+    volumes:
+      - pgdata_personal:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PERSONAL_POSTGRES_USER:-personal} -d ${PERSONAL_POSTGRES_DB:-knowledge_personal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis_personal:
+    image: redis:7-alpine
+    container_name: kg-redis-personal
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata_personal:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  nlp:
+    build: ./nlp-service
+    container_name: kg-nlp-personal
+    ports:
+      - "5001:5000"
+    environment:
+      - MODEL_NAME=all-MiniLM-L6-V2
+      - HF_ENDPOINT=https://hf-mirror.com
+      - SENTENCE_TRANSFORMERS_HOME=/root/.cache/torch/sentence_transformers
+    volumes:
+      - ./huggingface_cache:/root/.cache/torch/sentence_transformers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 600s
+    restart: unless-stopped
+
+  backend_personal:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: kg-backend-personal
+    ports:
+      - "8081:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp:5000}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+      nlp:
+        condition: service_started
+    restart: unless-stopped
+
+  worker_personal:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: kg-worker-personal
+    command: ["./worker"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp:5000}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+      nlp:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend_personal:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        VITE_API_TARGET: http://backend_personal:8080
+    container_name: kg-frontend-personal
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    environment:
+      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://localhost:8081}
+    depends_on:
+      - backend_personal
+    restart: unless-stopped
+
+volumes:
+  pgdata_personal:
+  redisdata_personal:

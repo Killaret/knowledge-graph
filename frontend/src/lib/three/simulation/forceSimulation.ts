@@ -36,13 +36,11 @@ export function createSimulation(data: GraphData, objectManager: ObjectManager) 
     objectManager.updatePositions(nodes);
     // Only update links every 10 ticks for performance, and log first few
     if (++tickCount % 10 === 0 || tickCount <= 3) {
-      console.log(`[forceSimulation] Tick ${tickCount}, updating ${links.length} links`);
       objectManager.updateLinks(links);
     }
   });
   
   sim.on('end', () => {
-    console.log(`[forceSimulation] Simulation ended after ${tickCount} ticks, final link update`);
     objectManager.updateLinks(links);
   });
   
@@ -82,11 +80,8 @@ export function addNodesToSimulation(
   }));
   
   if (newNodes.length === 0 && newLinks.length === 0) {
-    console.log('[addNodesToSimulation] No new nodes or links to add');
     return;
   }
-  
-  console.log(`[addNodesToSimulation] Adding ${newNodes.length} nodes and ${newLinks.length} links`);
   
   // Add new visual objects
   objectManager.addNodes(newNodes, newLinks);

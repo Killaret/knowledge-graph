@@ -33,11 +33,14 @@ coverage.out
 vendor/
 go.work
 
-# Environment files
+# Environment files - allow example templates, ignore real secrets
 .env
 .env.local
 .env.*.local
-*.env.*
+*.env.local
+.env.production
+!.env.example
+!.env.*.example
 
 # Editor/IDE files
 .vscode/

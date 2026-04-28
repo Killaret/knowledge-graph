@@ -29,6 +29,7 @@
   let use3D = $state(false);
   let isLoading = $state(true);
   let Graph3DComponent: any = $state(null);
+  let webglSupported = $state(true);
   // Allow forcing 3D mode via URL param ?force3d=1 (useful for debugging/CI)
   let isForce3D = $state(false);
 
@@ -51,16 +52,17 @@
     const shouldRender3D = shouldUse3D(deviceCaps);
     
     // Also check for WebGL support
-    let webglSupported = false;
+    let hasWebGL = false;
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      webglSupported = !!gl;
+      hasWebGL = !!gl;
     } catch {
-      webglSupported = false;
+      hasWebGL = false;
     }
+    webglSupported = hasWebGL;
 
-    use3D = isForce3D ? true : (shouldRender3D && webglSupported);
+    use3D = isForce3D ? true : (shouldRender3D && hasWebGL);
 
     // Dynamically import 3D component if needed
     if (use3D) {
@@ -86,6 +88,15 @@
   <div class="graph-wrapper graph-3d">
     <Graph3DComponent data={{ nodes, links }} />
     <div class="performance-hint">3D Mode</div>
+  </div>
+{:else if !webglSupported}
+  <div class="graph-wrapper graph-2d">
+    <div class="webgl-fallback">
+      <p>3D visualization requires WebGL, which is not supported by your browser or device.</p>
+      <p>Showing 2D view instead.</p>
+    </div>
+    <GraphCanvas {nodes} {links} />
+    <div class="performance-hint">2D Mode (WebGL not available)</div>
   </div>
 {:else}
   <div class="graph-wrapper graph-2d">
@@ -145,5 +156,29 @@
 
   .graph-2d .performance-hint {
     color: rgba(255, 200, 100, 0.7);
+  }
+
+  .webgl-fallback {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 100, 100, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-align: center;
+    z-index: 100;
+    max-width: 80%;
+  }
+
+  .webgl-fallback p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .webgl-fallback p:first-child {
+    font-weight: bold;
+    margin-bottom: 4px;
   }
 </style>

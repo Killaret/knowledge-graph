@@ -59,9 +59,11 @@
         links: transformedLinks
       };
 
-      console.log('[graph/+page] Graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-      console.log('[graph/+page] Sample node:', transformedNodes[0]);
-      console.log('[graph/+page] Sample link:', transformedLinks[0]);
+      if (import.meta.env.DEV) {
+        console.log('[graph/+page] Graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
+        console.log('[graph/+page] Sample node:', transformedNodes[0]);
+        console.log('[graph/+page] Sample link:', transformedLinks[0]);
+      }
     } catch (e) {
       console.error('Failed to load graph:', e);
       error = 'Failed to load graph data';

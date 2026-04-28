@@ -63,7 +63,7 @@ export function clearScene(scene: any): void {
     }
     if (object.material) {
       if (Array.isArray(object.material)) {
-        object.material.forEach(m => m.dispose());
+        object.material.forEach((m: { dispose: () => void }) => m.dispose());
       } else {
         object.material.dispose();
       }
