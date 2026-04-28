@@ -11,8 +11,14 @@ import (
 )
 
 func main() {
+	// Get config file path from args or use default
+	configPath := "knowledge-graph.config.json"
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
+
 	// Load JSON config
-	data, err := os.ReadFile("knowledge-graph.config.json")
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading config file: %v\n", err)
 		os.Exit(1)

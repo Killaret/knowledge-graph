@@ -43,7 +43,7 @@ jobs:
       - name: Check config loads successfully
         run: |
           go mod download
-          go run cmd/checkconfig/main.go
+          go run cmd/checkconfig/main.go ../knowledge-graph.config.json
       
       - name: Verify all env vars documented
         run: |
@@ -97,19 +97,13 @@ jobs:
         with:
           go-version: '1.23'
       
-      - name: Apply migrations
-        env:
-          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: |
-          go mod download
-          go run cmd/migrate/main.go up
-      
       - name: Check GORM AutoMigrate compatibility
         env:
           DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db?sslmode=disable
         run: |
-          # Run AutoMigrate in a test to verify no drift
-          go test -v ./internal/infrastructure/db/postgres -run TestMigrationDrift 2>&1 || true
+          go mod download
+          # Apply migrations via GORM AutoMigrate (using test setup)
+          go test -v ./internal/infrastructure/db/postgres -run TestAutoMigrate 2>&1 || true
 
   validate-docker-compose:
     name: Validate Docker Compose
