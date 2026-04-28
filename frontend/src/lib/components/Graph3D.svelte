@@ -279,7 +279,7 @@
     );
     
     const filteredNewData = { nodes: newData.nodes, links: validNewLinks };
-    addNodesToSimulation(simulation, filteredNewData, currentData, objectManager);
+    addNodesToSimulation(simulation, newData.nodes, validNewLinks);
     
     const existingNodeIds = new Set(currentData.nodes.map((n: GraphNode) => n.id));
     const existingLinkIds = new Set(currentData.links.map((l: GraphLink) => `${l.source}-${l.target}`));
