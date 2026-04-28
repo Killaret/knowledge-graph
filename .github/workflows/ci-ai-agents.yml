@@ -35,6 +35,30 @@ jobs:
           skip-cache: false
           install-mode: binary
 
+  validate-config:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run config validation
+        run: make check-config
+
+      - name: Check env var usage isolation
+        run: make check-env-usage
+
   test-backend:
     name: Test Backend (Go)
     runs-on: ubuntu-latest
@@ -252,7 +276,7 @@ jobs:
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-backend, test-backend, lint-frontend, test-frontend, test-nlp]
+    needs: [lint-backend, validate-config, test-backend, lint-frontend, test-frontend, test-nlp]
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
