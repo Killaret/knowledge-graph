@@ -3,7 +3,7 @@
   import { browser } from '$app/environment';
 
   // Parallax intensity (0 = disabled, 1 = full)
-  let parallaxIntensity = 0.3;
+  const parallaxIntensity = 0.3;
   let mouseX = $state(0.5);
   let mouseY = $state(0.5);
   let containerRef: HTMLDivElement;
@@ -26,8 +26,8 @@
   });
 
   // Calculate parallax offset
-  let offsetX = $derived((mouseX - 0.5) * parallaxIntensity * 20);
-  let offsetY = $derived((mouseY - 0.5) * parallaxIntensity * 20);
+  const offsetX = $derived((mouseX - 0.5) * parallaxIntensity * 20);
+  const offsetY = $derived((mouseY - 0.5) * parallaxIntensity * 20);
 </script>
 
 <div

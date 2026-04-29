@@ -278,7 +278,6 @@
       newNodeIds.has(l.source) && newNodeIds.has(l.target)
     );
     
-    const filteredNewData = { nodes: newData.nodes, links: validNewLinks };
     addNodesToSimulation(simulation, newData.nodes, validNewLinks);
     
     const existingNodeIds = new Set(currentData.nodes.map((n: GraphNode) => n.id));
