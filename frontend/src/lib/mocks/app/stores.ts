@@ -11,5 +11,4 @@ export const page = readable({
 	form: undefined
 });
 
-export const navigating = readable(null);
 export const updated = { subscribe: vi.fn(() => () => {}), check: vi.fn() };

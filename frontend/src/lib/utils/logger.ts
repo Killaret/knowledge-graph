@@ -15,7 +15,6 @@ class Logger {
   private context: string;
   private logBuffer: LogEntry[] = [];
   private readonly maxBufferSize = 100;
-  private readonly enableFileLogging = import.meta.env.DEV; // Только в dev режиме
 
   constructor(context: string = 'app') {
     this.context = context;

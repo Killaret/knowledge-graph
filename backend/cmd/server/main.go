@@ -83,6 +83,17 @@ func main() {
 		}
 	}()
 
+	// Graceful shutdown
+	defer func() {
+		log.Println("Server shutdown, closing database connection...")
+		if db.DB != nil {
+			sqlDB, _ := db.DB.DB()
+			if sqlDB != nil {
+				sqlDB.Close()
+			}
+		}
+	}()
+
 	// Принудительный сброс кэша при старте сервера (очищаем старый испорченный кэш)
 	// Проверяем количество ключей ДО сброса
 	keysBefore, _ := redisClient.DBSize(ctx).Result()

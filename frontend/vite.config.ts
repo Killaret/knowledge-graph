@@ -11,20 +11,12 @@ export default defineConfig({
       '$config': path.resolve(__dirname, '../knowledge-graph.config.json')
     }
   },
-  build: {
-    // Manual chunks disabled - causing conflicts with external modules
-    // rollupOptions: { output: { manualChunks: { ... } } }
-  },
+  build: {},
   server: {
     proxy: {
-      // Прокси для запросов к API бэкенда
-      // В Docker: используем имя сервиса backend:8080
-      // Локально: используем localhost:8080 (через env VITE_API_TARGET)
       '/api': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
-        changeOrigin: true,
-        // Убираем префикс /api, чтобы не было /api/notes
-        rewrite: (path) => path.replace(/^\/api/, '')
+        target: process.env.VITE_API_TARGET || 'http://localhost:8081',
+        changeOrigin: true
       }
     }
   }
