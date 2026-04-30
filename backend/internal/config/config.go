@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -184,7 +185,7 @@ func loadJSONConfig() *JSONConfig {
 // Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
 // иначе используется встроенное значение по умолчанию.
 // Для обязательных переменных (DatabaseURL) используется mustGetEnv.
-func Load() *Config {
+func Load() (*Config, error) {
 	// Загружаем JSON конфиг как источник дефолтных значений
 	jsonCfg := loadJSONConfig()
 
@@ -198,7 +199,7 @@ func Load() *Config {
 		ServerFallbackPorts:          nil, // Loaded separately below
 
 		// Database
-		DatabaseURL:               mustGetEnv("DATABASE_URL"),
+		DatabaseURL:               "", // Will be set below after error check
 		DatabaseRetryMaxAttempts:  getIntEnv("DATABASE_RETRY_MAX_ATTEMPTS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryMaxAttempts }, 3)),
 		DatabaseRetryDelaySeconds: getIntEnv("DATABASE_RETRY_DELAY_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryDelaySeconds }, 5)),
 		MigrationsFailOnError:     getBoolEnv("MIGRATIONS_FAIL_ON_ERROR", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Database.MigrationsFailOnError }, false)),
@@ -275,7 +276,14 @@ func Load() *Config {
 		}
 	}
 
-	return cfg
+	// Load required environment variable
+	dbURL, err := mustGetEnv("DATABASE_URL")
+	if err != nil {
+		return nil, err
+	}
+	cfg.DatabaseURL = dbURL
+
+	return cfg, nil
 }
 
 // Helper functions for JSON config with fallbacks
@@ -347,12 +355,12 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func mustGetEnv(key string) string {
+func mustGetEnv(key string) (string, error) {
 	value := os.Getenv(key)
 	if value == "" {
-		log.Fatalf("required environment variable %s is not set", key)
+		return "", fmt.Errorf("required environment variable %s is not set", key)
 	}
-	return value
+	return value, nil
 }
 
 func getIntEnv(key string, defaultValue int) int {

@@ -6,11 +6,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
+
+	"github.com/hibiken/asynq"
 )
 
 func main() {
@@ -23,7 +24,11 @@ func main() {
 	log.Println("=================================")
 
 	// Load configuration
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Printf("FATAL: Failed to load configuration: %v", err)
+		return
+	}
 	log.Printf("Configuration loaded: RedisURL=%s, TopN=%d, TaskDelay=%ds",
 		cfg.RedisURL, cfg.RecommendationTopN, cfg.RecommendationTaskDelaySeconds)
 

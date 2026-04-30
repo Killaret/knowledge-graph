@@ -45,7 +45,10 @@ func TestEnvVarPriority(t *testing.T) {
 		os.Setenv("RECOMMENDATION_DEPTH", "42")
 		defer os.Unsetenv("RECOMMENDATION_DEPTH")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		if cfg.RecommendationDepth != 42 {
 			t.Errorf("Expected RecommendationDepth=42 from env, got %d", cfg.RecommendationDepth)
@@ -57,7 +60,10 @@ func TestEnvVarPriority(t *testing.T) {
 		os.Setenv("RECOMMENDATION_ALPHA", "0.75")
 		defer os.Unsetenv("RECOMMENDATION_ALPHA")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		if cfg.RecommendationAlpha != 0.75 {
 			t.Errorf("Expected RecommendationAlpha=0.75 from env, got %f", cfg.RecommendationAlpha)
@@ -69,7 +75,10 @@ func TestEnvVarPriority(t *testing.T) {
 		os.Setenv("RECOMMENDATION_CACHE_TTL_SECONDS", "600")
 		defer os.Unsetenv("RECOMMENDATION_CACHE_TTL_SECONDS")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 		expected := 600 * time.Second
 
 		if cfg.RecommendationCacheTTL != expected {
@@ -82,7 +91,10 @@ func TestEnvVarPriority(t *testing.T) {
 		os.Setenv("SERVER_RATE_LIMIT_ENABLED", "false")
 		defer os.Unsetenv("SERVER_RATE_LIMIT_ENABLED")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		if cfg.ServerRateLimitEnabled != false {
 			t.Errorf("Expected ServerRateLimitEnabled=false from env, got %v", cfg.ServerRateLimitEnabled)
@@ -98,7 +110,10 @@ func TestEnvVarPriority(t *testing.T) {
 		defer os.Unsetenv("PAGINATION_DEFAULT_LIMIT")
 		defer os.Unsetenv("PAGINATION_MAX_LIMIT")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		if cfg.GraphLoadDepth != 5 {
 			t.Errorf("Expected GraphLoadDepth=5 from env, got %d", cfg.GraphLoadDepth)
@@ -116,7 +131,10 @@ func TestEnvVarPriority(t *testing.T) {
 		// Clear env vars to test JSON fallback
 		os.Unsetenv("RECOMMENDATION_DEPTH")
 
-		cfg := Load()
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		// Should have a positive value from JSON or default
 		if cfg.RecommendationDepth <= 0 {
@@ -133,7 +151,10 @@ func TestConfigValuesArePositive(t *testing.T) {
 		defer os.Unsetenv("DATABASE_URL")
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
 	tests := []struct {
 		name  string
@@ -171,7 +192,10 @@ func TestConfigLoadNeverNil(t *testing.T) {
 		defer os.Unsetenv("DATABASE_URL")
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
 	if cfg == nil {
 		t.Fatal("Load() returned nil, expected valid Config")
@@ -186,7 +210,10 @@ func TestPaginationLimitConsistency(t *testing.T) {
 		defer os.Unsetenv("DATABASE_URL")
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
 	if cfg.PaginationMaxLimit < cfg.PaginationDefaultLimit {
 		t.Errorf("PaginationMaxLimit (%d) must be >= PaginationDefaultLimit (%d)",
@@ -202,7 +229,10 @@ func TestRecommendationWeightsRange(t *testing.T) {
 		defer os.Unsetenv("DATABASE_URL")
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
 	weights := []struct {
 		name  string

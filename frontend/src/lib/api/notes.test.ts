@@ -28,7 +28,7 @@ describe('notes API', () => {
       const mockResponse = { notes: [mockNote], total: 1, limit: 10, offset: 0 };
       
       server.use(
-        http.get('http://localhost:8081/api/notes', () => HttpResponse.json(mockResponse))
+        http.get('http://localhost:8081/api/v1/notes', () => HttpResponse.json(mockResponse))
       );
 
       const result = await getNotes();
@@ -46,7 +46,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => HttpResponse.json(mockSingleNote))
+        http.get('http://localhost:8081/api/v1/notes/1', () => HttpResponse.json(mockSingleNote))
       );
 
       const result = await getNote('1');
@@ -67,7 +67,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.post('http://localhost:8081/api/notes', () => HttpResponse.json(mockResponse, { status: 201 }))
+        http.post('http://localhost:8081/api/v1/notes', () => HttpResponse.json(mockResponse, { status: 201 }))
       );
 
       const result = await createNote(newNote);
@@ -90,7 +90,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.put('http://localhost:8081/api/notes/1', () => HttpResponse.json(mockResponse))
+        http.put('http://localhost:8081/api/v1/notes/1', () => HttpResponse.json(mockResponse))
       );
 
       const result = await updateNote('1', updateData);
@@ -102,7 +102,7 @@ describe('notes API', () => {
   describe('deleteNote', () => {
     it('should delete note', async () => {
       server.use(
-        http.delete('http://localhost:8081/api/notes/1', () => new HttpResponse(null, { status: 204 }))
+        http.delete('http://localhost:8081/api/v1/notes/1', () => new HttpResponse(null, { status: 204 }))
       );
 
       const result = await deleteNote('1');
@@ -119,7 +119,7 @@ describe('notes API', () => {
       ];
       
       server.use(
-        http.get('http://localhost:8081/api/notes/1/suggestions', () => HttpResponse.json(mockSuggestions))
+        http.get('http://localhost:8081/api/v1/notes/1/suggestions', () => HttpResponse.json(mockSuggestions))
       );
 
       const result = await getSuggestions('1', 5);
@@ -149,7 +149,7 @@ describe('notes API', () => {
       };
       
       server.use(
-        http.get('http://localhost:8081/api/notes/search*', () => HttpResponse.json(mockResponse))
+        http.get('http://localhost:8081/api/v1/notes/search*', () => HttpResponse.json(mockResponse))
       );
 
       const result = await searchNotes('search term', 1, 20);
@@ -166,7 +166,7 @@ describe('notes API', () => {
     it('should retry on 503 Service Unavailable and succeed on retry', async () => {
       let attemptCount = 0;
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => {
+        http.get('http://localhost:8081/api/v1/notes/1', () => {
           attemptCount++;
           if (attemptCount < 3) {
             return HttpResponse.json({ error: 'Service Unavailable' }, { status: 503 });
@@ -183,7 +183,7 @@ describe('notes API', () => {
     it('should retry on 504 Gateway Timeout and succeed on retry', async () => {
       let attemptCount = 0;
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => {
+        http.get('http://localhost:8081/api/v1/notes/1', () => {
           attemptCount++;
           if (attemptCount < 2) {
             return HttpResponse.json({ error: 'Gateway Timeout' }, { status: 504 });
@@ -200,7 +200,7 @@ describe('notes API', () => {
     it('should fail after max retries on persistent 500 errors', async () => {
       let attemptCount = 0;
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => {
+        http.get('http://localhost:8081/api/v1/notes/1', () => {
           attemptCount++;
           return HttpResponse.json({ error: 'Server error' }, { status: 500 });
         })
@@ -214,7 +214,7 @@ describe('notes API', () => {
     it('should retry on 502 Bad Gateway for GET requests', async () => {
       let attemptCount = 0;
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => {
+        http.get('http://localhost:8081/api/v1/notes/1', () => {
           attemptCount++;
           if (attemptCount < 2) {
             return HttpResponse.json({ error: 'Bad Gateway' }, { status: 502 });
@@ -232,7 +232,7 @@ describe('notes API', () => {
       let attemptCount = 0;
       const newNote = { title: 'New Note', content: 'Content', type: 'star' };
       server.use(
-        http.post('http://localhost:8081/api/notes', () => {
+        http.post('http://localhost:8081/api/v1/notes', () => {
           attemptCount++;
           if (attemptCount < 2) {
             return HttpResponse.json({ error: 'Too Many Requests' }, { status: 429 });
@@ -250,7 +250,7 @@ describe('notes API', () => {
 describe('error handling', () => {
     it('should handle network errors for getNote', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => {
+        http.get('http://localhost:8081/api/v1/notes/1', () => {
           return HttpResponse.error();
         })
       );
@@ -260,7 +260,7 @@ describe('error handling', () => {
 
     it('should handle HTTP 404 errors for getNote', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/999', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
+        http.get('http://localhost:8081/api/v1/notes/999', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
       );
 
       await expect(getNote('999')).rejects.toThrow();
@@ -268,7 +268,7 @@ describe('error handling', () => {
 
     it('should handle HTTP 500 errors for getNote', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/1', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+        http.get('http://localhost:8081/api/v1/notes/1', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getNote('1')).rejects.toThrow();
@@ -276,7 +276,7 @@ describe('error handling', () => {
 
     it('should handle 404 for createNote when validation fails', async () => {
       server.use(
-        http.post('http://localhost:8081/api/notes', () => 
+        http.post('http://localhost:8081/api/v1/notes', () => 
           HttpResponse.json({ error: 'Validation failed', details: ['Title required'] }, { status: 400 })
         )
       );
@@ -286,7 +286,7 @@ describe('error handling', () => {
 
     it('should handle 409 conflict for createNote', async () => {
       server.use(
-        http.post('http://localhost:8081/api/notes', () => 
+        http.post('http://localhost:8081/api/v1/notes', () => 
           HttpResponse.json({ error: 'Note with this title already exists' }, { status: 409 })
         )
       );
@@ -296,7 +296,7 @@ describe('error handling', () => {
 
     it('should handle 404 for updateNote when note not found', async () => {
       server.use(
-        http.put('http://localhost:8081/api/notes/999', () => 
+        http.put('http://localhost:8081/api/v1/notes/999', () => 
           HttpResponse.json({ error: 'Note not found' }, { status: 404 })
         )
       );
@@ -306,7 +306,7 @@ describe('error handling', () => {
 
     it('should handle 500 for updateNote', async () => {
       server.use(
-        http.put('http://localhost:8081/api/notes/1', () => 
+        http.put('http://localhost:8081/api/v1/notes/1', () => 
           HttpResponse.json({ error: 'Database error' }, { status: 500 })
         )
       );
@@ -316,7 +316,7 @@ describe('error handling', () => {
 
     it('should handle 404 for deleteNote', async () => {
       server.use(
-        http.delete('http://localhost:8081/api/notes/999', () => 
+        http.delete('http://localhost:8081/api/v1/notes/999', () => 
           HttpResponse.json({ error: 'Note not found' }, { status: 404 })
         )
       );
@@ -326,7 +326,9 @@ describe('error handling', () => {
 
     it('should handle network errors for deleteNote', async () => {
       server.use(
-        http.delete('http://localhost:8081/api/notes/1', () => HttpResponse.error())
+        http.delete('http://localhost:8081/api/v1/notes/1', () => {
+          return HttpResponse.json({ error: 'Network Error' }, { status: 503 });
+        })
       );
 
       await expect(deleteNote('1')).rejects.toThrow();
@@ -334,7 +336,7 @@ describe('error handling', () => {
 
     it('should handle 404 for getSuggestions when note not found', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/999/suggestions', () => 
+        http.get('http://localhost:8081/api/v1/notes/999/suggestions', () => 
           HttpResponse.json({ error: 'Note not found' }, { status: 404 })
         )
       );
@@ -344,7 +346,7 @@ describe('error handling', () => {
 
     it('should handle 500 for getSuggestions', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/1/suggestions', () => 
+        http.get('http://localhost:8081/api/v1/notes/1/suggestions', () => 
           HttpResponse.json({ error: 'Recommendation service error' }, { status: 500 })
         )
       );
@@ -354,7 +356,7 @@ describe('error handling', () => {
 
     it('should handle 400 for searchNotes with invalid query', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/search*', () => 
+        http.get('http://localhost:8081/api/v1/notes/search*', () => 
           HttpResponse.json({ error: 'Invalid search query' }, { status: 400 })
         )
       );
@@ -364,7 +366,7 @@ describe('error handling', () => {
 
     it('should handle network errors for searchNotes', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes/search*', () => HttpResponse.error())
+        http.get('http://localhost:8081/api/v1/notes/search*', () => HttpResponse.error())
       );
 
       await expect(searchNotes('test')).rejects.toThrow();
@@ -372,7 +374,7 @@ describe('error handling', () => {
 
     it('should handle 500 for getNotes', async () => {
       server.use(
-        http.get('http://localhost:8081/api/notes', () => 
+        http.get('http://localhost:8081/api/v1/notes', () => 
           HttpResponse.json({ error: 'Database error' }, { status: 500 })
         )
       );

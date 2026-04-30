@@ -54,7 +54,11 @@ func main() {
 		os.Setenv("DATABASE_URL", "postgres://dummy@localhost/dummy")
 	}
 
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: config.Load() failed: %v\n", err)
+		os.Exit(1)
+	}
 	if cfg == nil {
 		fmt.Fprintf(os.Stderr, "Error: config.Load() returned nil\n")
 		os.Exit(1)

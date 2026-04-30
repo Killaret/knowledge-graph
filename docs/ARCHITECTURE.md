@@ -15,7 +15,7 @@
 │                              PRESENTATION LAYER                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐ │
 │  │  HTTP API    │  │  WebSocket   │  │  Static      │  │  E2E Tests         │ │
-│  │  (chi)       │  │  (optional)  │  │  (frontend)  │  │  (Cucumber)        │ │
+│  │  (Gin)       │  │  (optional)  │  │  (frontend)  │  │  (Cucumber)        │ │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └────────────────────┘ │
 │                              ↕ interfaces/api/                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -462,7 +462,7 @@ Graph Application Service
 ### Backend (go.mod)
 
 ```
-github.com/go-chi/chi/v5        # HTTP router
+github.com/gin-gonic/gin        # HTTP router
 github.com/jackc/pgx/v5         # PostgreSQL driver
 github.com/hibiken/asynq        # Task queue
 github.com/redis/go-redis/v9    # Redis client

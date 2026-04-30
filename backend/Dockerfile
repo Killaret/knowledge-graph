@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.23-alpine AS builder
 # Copy entire project (includes knowledge-graph.config.json at root)
 COPY . /app
 WORKDIR /app/backend

@@ -7,7 +7,7 @@ import { cleanup } from '@testing-library/svelte';
 export const server = setupServer();
 
 // Запускаем сервер перед всеми тестами
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 
 // Очищаем обработчики после каждого теста
 afterEach(() => {

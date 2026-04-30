@@ -40,7 +40,11 @@ const (
 
 func main() {
 	ctx := context.Background()
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Printf("FATAL: Failed to load configuration: %v", err)
+		os.Exit(1)
+	}
 
 	log.Printf("Config loaded: alpha=%.2f, beta=%.2f, depth=%d, decay=%.2f, cacheTTL=%v, embeddingLimit=%d, graphLoadDepth=%d",
 		cfg.RecommendationAlpha, cfg.RecommendationBeta,

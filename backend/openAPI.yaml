@@ -34,7 +34,8 @@ info:
     ```
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8081/api/v1
+    description: Local development server
 
 paths:
   /health:
@@ -54,7 +55,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
-  /notes:
+  /api/v1/notes:
     get:
       summary: List all notes with pagination
       parameters:
@@ -105,7 +106,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /notes/{id}:
+  /api/v1/notes/{id}:
     get:
       summary: Get note by ID
       parameters:
@@ -177,7 +178,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /notes/{id}/suggestions:
+  /api/v1/notes/{id}/suggestions:
     get:
       summary: Get recommendations for note
       parameters:
@@ -206,7 +207,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /notes/{id}/graph:
+  /api/v1/notes/{id}/graph:
     get:
       summary: Graph data for note (BFS)
       parameters:
@@ -233,7 +234,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /notes/search:
+  /api/v1/notes/search:
     get:
       summary: Search notes
       parameters:
@@ -264,7 +265,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /links:
+  /api/v1/links:
     post:
       summary: Create link
       requestBody:
@@ -289,7 +290,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /links/{id}:
+  /api/v1/links/{id}:
     get:
       summary: Get link by ID
       parameters:
@@ -332,7 +333,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /notes/{id}/links:
+  /api/v1/notes/{id}/links:
     get:
       summary: Get links for note
       parameters:
@@ -375,7 +376,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /graph/all:
+  /api/v1/graph/all:
     get:
       summary: Get full graph with pagination
       parameters:
@@ -493,10 +494,10 @@ components:
           type: object
         created_at:
           type: string
-          format: date-time
+          description: ISO 8601 timestamp with timezone
         updated_at:
           type: string
-          format: date-time
+          description: ISO 8601 timestamp with timezone
 
     CreateNoteRequest:
       type: object
@@ -550,7 +551,10 @@ components:
           type: object
         created_at:
           type: string
-          format: date-time
+          description: ISO 8601 timestamp with timezone
+        updated_at:
+          type: string
+          description: ISO 8601 timestamp with timezone
 
     CreateLinkRequest:
       type: object
