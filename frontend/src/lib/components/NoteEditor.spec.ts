@@ -108,7 +108,7 @@ describe('NoteEditor', () => {
 			await fireEvent.click(saveButton);
 
 			await waitFor(() => {
-				expect(screen.getByTestId('error-message')).toHaveTextContent('Failed to save note');
+				expect(screen.getByRole('alert')).toHaveTextContent('Failed to save note');
 			});
 
 			expect(mockGoto).not.toHaveBeenCalled();
@@ -166,7 +166,7 @@ describe('NoteEditor', () => {
 			render(NoteEditor, { props: { noteId: '456' } });
 
 			await waitFor(() => {
-				expect(screen.getByTestId('error-message')).toHaveTextContent('Failed to load note');
+				expect(screen.getByRole('alert')).toHaveTextContent('Failed to load note');
 			});
 		});
 

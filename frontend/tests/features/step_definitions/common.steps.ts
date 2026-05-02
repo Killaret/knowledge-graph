@@ -37,15 +37,15 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
     type: 'star'
   });
   
-  // Validate center note creation
-  if (!centerData || !centerData.id) {
+  // Validate center note creation - API returns { data: {...}, message: "..." }
+  if (!centerData || !centerData.data || !centerData.data.id) {
     throw new Error(`Failed to create center note: ${JSON.stringify(centerData)}`);
   }
   
-  this.centerNoteId = String(centerData.id);
+  this.centerNoteId = String(centerData.data.id);
   console.log(`[DEBUG] Created center note with ID: ${this.centerNoteId}`);
   
-  this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
+  this.testNotes.push({ id: String(centerData.data.id), title: String(centerData.data.title || ''), type: 'star' });
   
   // Create connected notes
   const types = ['planet', 'comet', 'galaxy', 'asteroid', 'satellite', 'debris', 'nebula'];
@@ -56,16 +56,16 @@ Given('I have test notes with connections', async function(this: ITestWorld) {
       type: types[i % types.length]
     });
     
-    // Validate connected note creation
-    if (!noteData || !noteData.id) {
+    // Validate connected note creation - API returns { data: {...}, message: "..." }
+    if (!noteData || !noteData.data || !noteData.data.id) {
       console.error(`[ERROR] Failed to create note ${i}:`, noteData);
       continue;
     }
     
-    const noteId = String(noteData.id);
+    const noteId = String(noteData.data.id);
     console.log(`[DEBUG] Created note ${i} with ID: ${noteId}`);
     
-    this.testNotes.push({ id: noteId, title: String(noteData.title || ''), type: types[i % types.length] });
+    this.testNotes.push({ id: noteId, title: String(noteData.data.title || ''), type: types[i % types.length] });
     
     // Validate IDs before creating link
     if (!this.centerNoteId) {
@@ -86,7 +86,7 @@ Given('there are notes of various types in the database', async function(this: I
       content: `Content for ${types[i]}`,
       type: types[i]
     });
-    this.testNotes.push({ id: String(noteData.id), title: String(noteData.title || ''), type: types[i] });
+    this.testNotes.push({ id: String(noteData.data.id), title: String(noteData.data.title || ''), type: types[i] });
   }
   // Reload page to fetch newly created notes
   await this.page.reload();
@@ -120,14 +120,14 @@ Given('I am on the 3D graph page for a note with connections', async function(th
       type: 'star'
     });
     
-    // Validate center note was created
-    if (!centerData || !centerData.id) {
+    // Validate center note was created - API returns { data: {...}, message: "..." }
+    if (!centerData || !centerData.data || !centerData.data.id) {
       throw new Error(`Failed to create center note for 3D graph: ${JSON.stringify(centerData)}`);
     }
     
-    this.centerNoteId = String(centerData.id);
+    this.centerNoteId = String(centerData.data.id);
     console.log(`[DEBUG] 3D graph page: Created center note with ID: ${this.centerNoteId}`);
-    this.testNotes.push({ id: String(centerData.id), title: String(centerData.title || ''), type: 'star' });
+    this.testNotes.push({ id: String(centerData.data.id), title: String(centerData.data.title || ''), type: 'star' });
   }
   
   // Validate we have a valid ID before navigating

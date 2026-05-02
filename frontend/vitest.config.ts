@@ -11,6 +11,13 @@ export default defineConfig({
 			hot: !process.env.VITEST
 		})
 	],
+	define: {
+		'import.meta.env.DEV': 'false',
+		'import.meta.env.PROD': 'true',
+		'import.meta.env.PUBLIC_API_URL': '"http://localhost:8080/api"',
+		'import.meta.env.VITEST': 'true',
+		'import.meta.env.MODE': '"test"'
+	},
 	resolve: {
 		alias: [
 			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/environment.ts') },
@@ -42,8 +49,7 @@ export default defineConfig({
 				'src/lib/**/*.test.ts',
 				'src/lib/**/__mocks__/**/*',
 				'**/*.d.ts',
-				'src/lib/three/**/*',
-				'src/lib/components/GraphCanvas/**/*'
+				'src/lib/three/**/*'
 			],
 			thresholds: {
 				lines: 50,

@@ -1,0 +1,307 @@
+
+> frontend@0.0.2 test:bdd
+> npm run test:cucumber
+
+
+> frontend@0.0.2 test:cucumber
+> node --import tsx node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs
+
+Cannot use 'progress-bar' formatter for output to 'stdout' as not a TTY. Switching to 'progress' formatter.
+...[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-04-30T08:41:26.147746464Z","id":"aeaa6270-376a-4ed3-b55b-7d630c586917","metadata":{},"title":"Test star 1777538486121","type":"star","updated_at":"2026-04-30T08:41:26.147746464Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-04-30T08:41:26.253645962Z","id":"026496e9-d4b4-4c1c-a2aa-2683c0d55695","metadata":{},"title":"Test planet 1777538486248","type":"planet","updated_at":"2026-04-30T08:41:26.253645962Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-04-30T08:41:26.273209438Z","id":"7aee604a-beaa-4376-923f-615b53fe7adb","metadata":{},"title":"Test comet 1777538486269","type":"comet","updated_at":"2026-04-30T08:41:26.273209438Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-04-30T08:41:26.292923397Z","id":"f08578ca-1dba-46bb-a31d-3b61ce6eaebc","metadata":{},"title":"Test galaxy 1777538486288","type":"galaxy","updated_at":"2026-04-30T08:41:26.292923397Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-04-30T08:41:26.313632476Z","id":"15340932-931b-428e-98ff-c2d55bd5a643","metadata":{},"title":"Test asteroid 1777538486308","type":"asteroid","updated_at":"2026-04-30T08:41:26.313632476Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-04-30T08:41:26.332320117Z","id":"7138263e-3e90-425b-a185-203ce914c68d","metadata":{},"title":"Test satellite 1777538486325","type":"satellite","updated_at":"2026-04-30T08:41:26.332320117Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-04-30T08:41:26.348376632Z","id":"087fd6e7-d779-41a1-b931-e1195b4837c9","metadata":{},"title":"Test debris 1777538486342","type":"debris","updated_at":"2026-04-30T08:41:26.348376632Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-04-30T08:41:26.371771133Z","id":"d228927e-387a-4aa2-9d72-d1572030cd65","metadata":{},"title":"Test nebula 1777538486366","type":"nebula","updated_at":"2026-04-30T08:41:26.371771133Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+...F----.....[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-04-30T08:41:45.84800174Z","id":"9d577d22-cd3e-4463-a933-9fa5c8d6df58","metadata":{},"title":"Test star 1777538505839","type":"star","updated_at":"2026-04-30T08:41:45.84800174Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-04-30T08:41:45.863877006Z","id":"42f35e1b-9c05-42f8-aa9f-6bf3dfbc8e52","metadata":{},"title":"Test planet 1777538505855","type":"planet","updated_at":"2026-04-30T08:41:45.863877006Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-04-30T08:41:45.883114716Z","id":"169a2af7-bf0d-4881-8f03-43b15d930b31","metadata":{},"title":"Test comet 1777538505870","type":"comet","updated_at":"2026-04-30T08:41:45.883114716Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-04-30T08:41:45.921921377Z","id":"a2779cb8-ad43-45dd-a32e-b57fd94bc26c","metadata":{},"title":"Test galaxy 1777538505911","type":"galaxy","updated_at":"2026-04-30T08:41:45.921921377Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-04-30T08:41:45.950218441Z","id":"e1403436-9b66-4caf-ba9c-130d643ee757","metadata":{},"title":"Test asteroid 1777538505938","type":"asteroid","updated_at":"2026-04-30T08:41:45.950218441Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-04-30T08:41:45.975945759Z","id":"2e0595c3-be68-404c-8e28-fc7641f7ab7d","metadata":{},"title":"Test satellite 1777538505962","type":"satellite","updated_at":"2026-04-30T08:41:45.975945759Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-04-30T08:41:46.01357921Z","id":"745e60cb-4b6d-4a5d-9eeb-97ab01a3571a","metadata":{},"title":"Test debris 1777538505999","type":"debris","updated_at":"2026-04-30T08:41:46.01357921Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-04-30T08:41:46.036457347Z","id":"7201720e-ec29-4ca0-bbea-0b81e4fda479","metadata":{},"title":"Test nebula 1777538506026","type":"nebula","updated_at":"2026-04-30T08:41:46.036457347Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+.F-----.....[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-04-30T08:42:01.180169889Z","id":"25e60b51-be09-4e2f-81b2-653066d2d25c","metadata":{},"title":"Test star 1777538521172","type":"star","updated_at":"2026-04-30T08:42:01.180169889Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-04-30T08:42:01.197830342Z","id":"eae106c3-e30a-41a5-a761-2656ab0bcb88","metadata":{},"title":"Test planet 1777538521193","type":"planet","updated_at":"2026-04-30T08:42:01.197830342Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-04-30T08:42:01.216432115Z","id":"5075d0f7-b87c-4f6e-a269-42373d1d0dd6","metadata":{},"title":"Test comet 1777538521210","type":"comet","updated_at":"2026-04-30T08:42:01.216432115Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-04-30T08:42:01.237639338Z","id":"fceb7275-ed58-4be6-b95a-e99455c16cce","metadata":{},"title":"Test galaxy 1777538521232","type":"galaxy","updated_at":"2026-04-30T08:42:01.237639338Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-04-30T08:42:01.254930033Z","id":"70917548-ab3b-4064-8ffe-0dd415d4cdeb","metadata":{},"title":"Test asteroid 1777538521250","type":"asteroid","updated_at":"2026-04-30T08:42:01.254930033Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-04-30T08:42:01.270769208Z","id":"22a0c33d-5f17-4518-b3d7-d334f03db710","metadata":{},"title":"Test satellite 1777538521266","type":"satellite","updated_at":"2026-04-30T08:42:01.270769208Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-04-30T08:42:01.291408566Z","id":"1f56713a-5acf-4042-8014-be8aa5b0a2df","metadata":{},"title":"Test debris 1777538521287","type":"debris","updated_at":"2026-04-30T08:42:01.291408566Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-04-30T08:42:01.306215825Z","id":"10c09a2c-707d-4681-876e-52b612d52fdd","metadata":{},"title":"Test nebula 1777538521302","type":"nebula","updated_at":"2026-04-30T08:42:01.306215825Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+.F-----.....[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-04-30T08:42:16.207124519Z","id":"61fa0879-54fa-4d23-9d38-196fc617ff49","metadata":{},"title":"Test star 1777538536200","type":"star","updated_at":"2026-04-30T08:42:16.207124519Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-04-30T08:42:16.224086921Z","id":"74990af7-56b2-4d60-bd6d-f64fdbaa1a1b","metadata":{},"title":"Test planet 1777538536217","type":"planet","updated_at":"2026-04-30T08:42:16.224086921Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-04-30T08:42:16.242613555Z","id":"0cc4a792-eb8a-4327-8e82-3fb05540cb7d","metadata":{},"title":"Test comet 1777538536236","type":"comet","updated_at":"2026-04-30T08:42:16.242613555Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-04-30T08:42:16.25953718Z","id":"cd142bcd-5763-40ee-9be0-016665550cbe","metadata":{},"title":"Test galaxy 1777538536253","type":"galaxy","updated_at":"2026-04-30T08:42:16.25953718Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-04-30T08:42:16.278002079Z","id":"65d679b3-d3ad-4909-b2a8-1e7f26557194","metadata":{},"title":"Test asteroid 1777538536270","type":"asteroid","updated_at":"2026-04-30T08:42:16.278002079Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-04-30T08:42:16.298618639Z","id":"d319fc24-b030-4af7-a6ec-9adf7224ae6a","metadata":{},"title":"Test satellite 1777538536289","type":"satellite","updated_at":"2026-04-30T08:42:16.298618639Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-04-30T08:42:16.316111534Z","id":"0890ac6b-b7cb-43ca-ac71-2e6e1ba662e4","metadata":{},"title":"Test debris 1777538536307","type":"debris","updated_at":"2026-04-30T08:42:16.316111534Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-04-30T08:42:16.33509871Z","id":"e506286b-c892-4f6a-b998-2a7b6d92421c","metadata":{},"title":"Test nebula 1777538536326","type":"nebula","updated_at":"2026-04-30T08:42:16.33509871Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+...F---.....[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-04-30T08:42:26.518028148Z","id":"d0030abe-d76c-4ee8-9a41-d8d59677da7e","metadata":{},"title":"Test star 1777538546514","type":"star","updated_at":"2026-04-30T08:42:26.518028148Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-04-30T08:42:26.537223134Z","id":"2b3b5d27-fffb-4473-8440-32217c5a2a00","metadata":{},"title":"Test planet 1777538546533","type":"planet","updated_at":"2026-04-30T08:42:26.537223134Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-04-30T08:42:26.555862476Z","id":"a0fdd4c5-e7b7-46fb-84c5-21d687ae33e1","metadata":{},"title":"Test comet 1777538546552","type":"comet","updated_at":"2026-04-30T08:42:26.555862476Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-04-30T08:42:26.571148562Z","id":"d597b25c-338b-4b13-b579-79dd6f1951e8","metadata":{},"title":"Test galaxy 1777538546567","type":"galaxy","updated_at":"2026-04-30T08:42:26.571148562Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-04-30T08:42:26.589352666Z","id":"236b6f63-4796-4f9b-90a1-679c997f8b95","metadata":{},"title":"Test asteroid 1777538546586","type":"asteroid","updated_at":"2026-04-30T08:42:26.589352666Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-04-30T08:42:26.609075777Z","id":"dc99d35f-2492-43bb-8c3f-e324c12ace90","metadata":{},"title":"Test satellite 1777538546605","type":"satellite","updated_at":"2026-04-30T08:42:26.609075777Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-04-30T08:42:26.626075184Z","id":"ee976f11-f5f4-46f6-8e31-374e211d2686","metadata":{},"title":"Test debris 1777538546622","type":"debris","updated_at":"2026-04-30T08:42:26.626075184Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-04-30T08:42:26.64473525Z","id":"ca837582-e626-495c-a454-99b2e670d010","metadata":{},"title":"Test nebula 1777538546639","type":"nebula","updated_at":"2026-04-30T08:42:26.64473525Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+.......F-....[createNote] API response: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.747971374Z","id":"555f3b80-f438-4af9-b798-7b9f9ba45f33","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.747971374Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F--------....[createNote] API response: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.857600634Z","id":"015d1c23-6b66-4a4d-9c4f-9c408a72a344","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.857600634Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F-----....[createNote] API response: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.990853372Z","id":"5873357d-9380-48bd-9f28-a0c9a702d9ff","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.990853372Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F-----....[createNote] API response: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.121949655Z","id":"44a8fd29-7531-4874-8386-098e92a21d2d","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.121949655Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F-----....[createNote] API response: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.29927164Z","id":"e6e89dd6-85d7-402c-a4f2-4bf7c41b01a2","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.29927164Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F-----....[createNote] API response: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.484872126Z","id":"61d19fca-02bc-4795-a09e-7177045878c7","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.484872126Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F----....[createNote] API response: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.60464469Z","id":"311637f8-6141-4a70-9f0d-dd28ca18a255","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.60464469Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F----....[createNote] API response: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.71158537Z","id":"defca78c-d03d-41d1-bd95-11445537cbd4","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.71158537Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+F----..
+
+Failures:
+
+1) Scenario: Toggle between graph and list views # tests\features\graph_2d_list.feature:12
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   тИЪ Given I am on the main page "/" # tests\features\step_definitions\common.steps.ts:98
+   тИЪ And there are notes of various types in the database # tests\features\step_definitions\common.steps.ts:81
+   тИЪ Then I should see the 2D force graph by default # tests\features\step_definitions\common.steps.ts:211
+   тИЪ When I click the "List" toggle button in the floating controls # tests\features\step_definitions\common.steps.ts:145
+   ├Ч Then I should see a grid of note cards # tests\features\step_definitions\common.steps.ts:216
+       Error: function timed out, ensure the promise resolves within 15000 milliseconds
+           at Timeout.<anonymous> (D:\knowledge-graph\frontend\node_modules\@cucumber\cucumber\src\time.ts:52:14)
+           at listOnTimeout (node:internal/timers:594:17)
+           at process.processTimers (node:internal/timers:529:7)
+   - And the view toggle should show "Graph" option # tests\features\step_definitions\common.steps.ts:268
+   - When I click the "Graph" toggle button # tests\features\step_definitions\common.steps.ts:430
+   - Then I should see the fullscreen 2D force graph # tests\features\step_definitions\common.steps.ts:226
+   - And the graph canvas should be visible # tests\features\step_definitions\common.steps.ts:461
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+2) Scenario: Filter notes by type in list view # tests\features\graph_2d_list.feature:22
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   тИЪ Given I am on the main page "/" # tests\features\step_definitions\common.steps.ts:98
+   тИЪ And there are notes of various types in the database # tests\features\step_definitions\common.steps.ts:81
+   ├Ч Given I am in list view # tests\features\step_definitions\common.steps.ts:233
+       Error: expect(locator).toBeVisible() failed
+
+       Locator: locator('[data-testid="list-container"]').first()
+       Expected: visible
+       Timeout: 10000ms
+       Error: element(s) not found
+
+       Call log:
+         - Expect "to.be.visible" with timeout 10000ms
+         - waiting for locator('[data-testid="list-container"]').first()
+
+           at Proxy.<anonymous> (D:\knowledge-graph\frontend\node_modules\playwright\lib\matchers\expect.js:213:24)
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:252:31)
+   - When I click the "Planet" filter chip in floating controls # tests\features\step_definitions\common.steps.ts:157
+   - Then only notes of type "Planet" should be displayed # tests\features\step_definitions\common.steps.ts:287
+   - And the count badge should show the correct number # tests\features\step_definitions\common.steps.ts:329
+   - When I click the "All" filter chip # tests\features\step_definitions\common.steps.ts:467
+   - Then all notes should be displayed # tests\features\step_definitions\common.steps.ts:337
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+3) Scenario: Search filters notes in list view # tests\features\graph_2d_list.feature:31
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   тИЪ Given I am on the main page "/" # tests\features\step_definitions\common.steps.ts:98
+   тИЪ And there are notes of various types in the database # tests\features\step_definitions\common.steps.ts:81
+   ├Ч Given I am in list view # tests\features\step_definitions\common.steps.ts:233
+       Error: expect(locator).toBeVisible() failed
+
+       Locator: locator('[data-testid="list-container"]').first()
+       Expected: visible
+       Timeout: 10000ms
+       Error: element(s) not found
+
+       Call log:
+         - Expect "to.be.visible" with timeout 10000ms
+         - waiting for locator('[data-testid="list-container"]').first()
+
+           at Proxy.<anonymous> (D:\knowledge-graph\frontend\node_modules\playwright\lib\matchers\expect.js:213:24)
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:252:31)
+   - When I type "Test star" in the search input # tests\features\step_definitions\common.steps.ts:165
+   - Then the list should show only notes containing "Test star" # tests\features\step_definitions\common.steps.ts:342
+   - And the note cards should highlight the matching text # tests\features\step_definitions\common.steps.ts:359
+   - When I clear the search input # tests\features\step_definitions\common.steps.ts:173
+   - Then all notes should be displayed again # tests\features\step_definitions\common.steps.ts:488
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+4) Scenario: Search filters nodes in 2D graph view # tests\features\graph_2d_list.feature:40
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   тИЪ Given I am on the main page "/" # tests\features\step_definitions\common.steps.ts:98
+   тИЪ And there are notes of various types in the database # tests\features\step_definitions\common.steps.ts:81
+   тИЪ Given I am in graph view # tests\features\step_definitions\common.steps.ts:256
+   тИЪ When I type "star" in the search input # tests\features\step_definitions\common.steps.ts:165
+   ├Ч Then only nodes matching "star" should be visible # tests\features\step_definitions\common.steps.ts:496
+       Error: expect(locator).toBeVisible() failed
+
+       Locator: locator('canvas').first()
+       Expected: visible
+       Timeout: 5000ms
+       Error: element(s) not found
+
+       Call log:
+         - Expect "to.be.visible" with timeout 5000ms
+         - waiting for locator('canvas').first()
+
+           at Proxy.<anonymous> (D:\knowledge-graph\frontend\node_modules\playwright\lib\matchers\expect.js:213:24)
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:498:24)
+   - And non-matching nodes should be dimmed or hidden # tests\features\step_definitions\common.steps.ts:395
+   - When I clear the search input # tests\features\step_definitions\common.steps.ts:173
+   - Then all nodes should be visible # tests\features\step_definitions\common.steps.ts:410
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+5) Scenario: Create note from floating controls # tests\features\graph_2d_list.feature:49
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   тИЪ Given I am on the main page "/" # tests\features\step_definitions\common.steps.ts:98
+   тИЪ And there are notes of various types in the database # tests\features\step_definitions\common.steps.ts:81
+   тИЪ Given I am on the main page # tests\features\step_definitions\common.steps.ts:423
+   тИЪ When I click the "+" button in floating controls # tests\features\step_definitions\common.steps.ts:179
+   тИЪ Then a create note modal should open # tests\features\step_definitions\common.steps.ts:365
+   тИЪ When I fill in the title "Test Note" # tests\features\step_definitions\common.steps.ts:370
+   тИЪ And I select type "Star" # tests\features\step_definitions\common.steps.ts:375
+   тИЪ And I click the "Create" button # tests\features\step_definitions\graph_interaction.steps.ts:155
+   ├Ч Then the modal should close # tests\features\step_definitions\common.steps.ts:382
+       Error: expect(locator).not.toBeVisible() failed
+
+       Locator:  locator('.modal, [role="dialog"]').first()
+       Expected: not visible
+       Received: visible
+       Timeout:  5000ms
+
+       Call log:
+         - Expect "to.be.visible" with timeout 5000ms
+         - waiting for locator('.modal, [role="dialog"]').first()
+           9 ├Ч locator resolved to <div role="dialog" aria-modal="true" aria-labelledby="modal-title" class="modal-container s-CbKqU8tqPnSX">тАж</div>
+             - unexpected value "visible"
+
+           at Proxy.<anonymous> (D:\knowledge-graph\frontend\node_modules\playwright\lib\matchers\expect.js:213:24)
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:384:27)
+   - And the new note should appear in the graph # tests\features\step_definitions\common.steps.ts:387
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+6) Scenario: Overlay disappears early while fog persists # tests\features\graph_3d_loading.feature:12
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   ├Ч Given I have test notes with connections # tests\features\step_definitions\common.steps.ts:32
+       Error: Failed to create center note: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.747971374Z","id":"555f3b80-f438-4af9-b798-7b9f9ba45f33","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.747971374Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:42:11)
+   - And I navigate to "/graph/3d/{centerNoteId}" # tests\features\step_definitions\common.steps.ts:105
+   - Then the loading overlay should be visible # tests\features\step_definitions\graph_3d_loading.steps.ts:12
+   - And the loading text should contain "universe isn't still created" # tests\features\step_definitions\graph_3d_loading.steps.ts:18
+   - And the fog density should be at least 0.005 # tests\features\step_definitions\graph_3d_loading.steps.ts:31
+   - When the simulation progresses to at least 10% nodes positioned # tests\features\step_definitions\graph_3d_loading.steps.ts:65
+   - Then the loading overlay should disappear within 2 seconds # tests\features\step_definitions\graph_3d_loading.steps.ts:25
+   - But the fog density should still be at least 0.001 # tests\features\step_definitions\graph_3d_loading.steps.ts:46
+   - And I should be able to click on the canvas # tests\features\step_definitions\graph_3d_loading.steps.ts:105
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+7) Scenario: Fog fully clears after simulation stabilizes # tests\features\graph_3d_loading.feature:22
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   ├Ч Given I have test notes with connections # tests\features\step_definitions\common.steps.ts:32
+       Error: Failed to create center note: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.857600634Z","id":"015d1c23-6b66-4a4d-9c4f-9c408a72a344","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.857600634Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:42:11)
+   - And I navigate to "/graph/3d/{centerNoteId}" # tests\features\step_definitions\common.steps.ts:105
+   - When I wait for the simulation to end # tests\features\step_definitions\graph_3d_loading.steps.ts:95
+   - Then the fog density should become less than 0.01 within 1 second # tests\features\step_definitions\graph_3d_loading.steps.ts:53
+   - And all nodes should be clickable # tests\features\step_definitions\graph_3d_loading.steps.ts:112
+   - And links should be visible with opacity based on weight # tests\features\step_definitions\graph_3d_loading.steps.ts:119
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+8) Scenario: Early interaction is not blocked by overlay # tests\features\graph_3d_loading.feature:29
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   ├Ч Given I have test notes with connections # tests\features\step_definitions\common.steps.ts:32
+       Error: Failed to create center note: {"data":{"content":"This is the center note for testing","created_at":"2026-04-30T08:42:35.990853372Z","id":"5873357d-9380-48bd-9f28-a0c9a702d9ff","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:35.990853372Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:42:11)
+   - And I navigate to "/graph/3d/{centerNoteId}" # tests\features\step_definitions\common.steps.ts:105
+   - Given the graph is still loading # tests\features\step_definitions\graph_3d_loading.steps.ts:207
+   - When I drag the canvas to rotate the view # tests\features\step_definitions\graph_3d_loading.steps.ts:145
+   - Then the camera position should change # tests\features\step_definitions\graph_3d_loading.steps.ts:166
+   - And the loading overlay should still be visible or fading # tests\features\step_definitions\graph_3d_loading.steps.ts:185
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+9) Scenario: Click on a node opens side panel # tests\features\graph_interaction.feature:12
+   тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+   тИЪ Before # tests\features\support\hooks.ts:57
+   ├Ч Given I am on the 3D graph page for a note with connections # tests\features\step_definitions\common.steps.ts:113
+       Error: Failed to create center note for 3D graph: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.121949655Z","id":"44a8fd29-7531-4874-8386-098e92a21d2d","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.121949655Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:125:13)
+   - And the graph has fully loaded # tests\features\step_definitions\graph_3d_loading.steps.ts:198
+   - When I click on a visible node # tests\features\step_definitions\graph_interaction.steps.ts:11
+   - Then a side panel should open # tests\features\step_definitions\graph_interaction.steps.ts:59
+   - And the panel should display the note title # tests\features\step_definitions\graph_interaction.steps.ts:76
+   - And the panel should contain a link to the note details # tests\features\step_definitions\graph_interaction.steps.ts:90
+   тИЪ After # tests\features\support\hooks.ts:67
+   тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+10) Scenario: Camera controls work during loading # tests\features\graph_interaction.feature:19
+    тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+    тИЪ Before # tests\features\support\hooks.ts:57
+    ├Ч Given I am on the 3D graph page for a note with connections # tests\features\step_definitions\common.steps.ts:113
+        Error: Failed to create center note for 3D graph: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.29927164Z","id":"e6e89dd6-85d7-402c-a4f2-4bf7c41b01a2","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.29927164Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+            at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:125:13)
+    - And the graph has fully loaded # tests\features\step_definitions\graph_3d_loading.steps.ts:198
+    - Given the graph is still loading # tests\features\step_definitions\graph_3d_loading.steps.ts:207
+    - When I drag to rotate the camera # tests\features\step_definitions\graph_interaction.steps.ts:103
+    - Then the view should change accordingly # tests\features\step_definitions\graph_interaction.steps.ts:124
+    - And the loading overlay should not block the interaction # tests\features\step_definitions\graph_interaction.steps.ts:141
+    тИЪ After # tests\features\support\hooks.ts:67
+    тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+11) Scenario: Camera reset button zooms to fit all nodes # tests\features\graph_interaction.feature:26
+    тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+    тИЪ Before # tests\features\support\hooks.ts:57
+    ├Ч Given I am on the 3D graph page for a note with connections # tests\features\step_definitions\common.steps.ts:113
+        Error: Failed to create center note for 3D graph: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.484872126Z","id":"61d19fca-02bc-4795-a09e-7177045878c7","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.484872126Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+            at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:125:13)
+    - And the graph has fully loaded # tests\features\step_definitions\graph_3d_loading.steps.ts:198
+    - When I click the "Reset Camera" button # tests\features\step_definitions\graph_interaction.steps.ts:155
+    - Then the camera should smoothly animate to show all nodes # tests\features\step_definitions\graph_interaction.steps.ts:189
+    - And the animation should complete within 1 second # tests\features\step_definitions\graph_interaction.steps.ts:201
+    тИЪ After # tests\features\support\hooks.ts:67
+    тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+12) Scenario: Hover over node highlights it # tests\features\graph_interaction.feature:32
+    тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+    тИЪ Before # tests\features\support\hooks.ts:57
+    ├Ч Given I am on the 3D graph page for a note with connections # tests\features\step_definitions\common.steps.ts:113
+        Error: Failed to create center note for 3D graph: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.60464469Z","id":"311637f8-6141-4a70-9f0d-dd28ca18a255","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.60464469Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+            at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:125:13)
+    - And the graph has fully loaded # tests\features\step_definitions\graph_3d_loading.steps.ts:198
+    - When I hover over a node # tests\features\step_definitions\graph_interaction.steps.ts:46
+    - Then the node should visually highlight # tests\features\step_definitions\graph_interaction.steps.ts:227
+    - And a tooltip should appear with the note title # tests\features\step_definitions\graph_interaction.steps.ts:244
+    тИЪ After # tests\features\support\hooks.ts:67
+    тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+13) Scenario: Double-click on node navigates to its local graph # tests\features\graph_interaction.feature:38
+    тИЪ Before # tests\features\step_definitions\common.steps.ts:16
+    тИЪ Before # tests\features\support\hooks.ts:57
+    ├Ч Given I am on the 3D graph page for a note with connections # tests\features\step_definitions\common.steps.ts:113
+        Error: Failed to create center note for 3D graph: {"data":{"content":"Center note","created_at":"2026-04-30T08:42:36.71158537Z","id":"defca78c-d03d-41d1-bd95-11445537cbd4","metadata":{},"title":"Center Test Note","type":"star","updated_at":"2026-04-30T08:42:36.71158537Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+            at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:125:13)
+    - And the graph has fully loaded # tests\features\step_definitions\graph_3d_loading.steps.ts:198
+    - When I double-click on a node # tests\features\step_definitions\graph_interaction.steps.ts:35
+    - Then I should navigate to "/graph/3d/{nodeId}" # tests\features\step_definitions\graph_interaction.steps.ts:258
+    - And the new graph should center on that node # tests\features\step_definitions\graph_interaction.steps.ts:265
+    тИЪ After # tests\features\support\hooks.ts:67
+    тИЪ After # tests\features\step_definitions\common.steps.ts:20
+
+13 scenarios (13 failed)
+91 steps (13 failed, 58 skipped, 20 passed)
+1m29.899s (executing steps: 1m18.787s)

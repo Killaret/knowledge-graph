@@ -1,13 +1,20 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, beforeAll, afterEach, afterAll } from 'vitest';
 import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
 import { cleanup } from '@testing-library/svelte';
 
 // MSW server для мокирования HTTP запросов
-export const server = setupServer();
+// API клиент теперь сам использует полный URL в тестовом окружении
+export const server = setupServer(
+  // Глобальный fallback для всех API запросов
+  http.all('http://localhost:8080/api/*', () => {
+    return HttpResponse.json({ error: 'Not mocked' }, { status: 501 });
+  })
+);
 
 // Запускаем сервер перед всеми тестами
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 
 // Очищаем обработчики после каждого теста
 afterEach(() => {

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { updateNote, getNote, type Note } from '$lib/api/notes';
   import { Modal, Button, TypeSelector } from './index';
+  import ApiErrorDisplay from './ApiErrorDisplay.svelte';
+  import type { ErrorResponse } from '$lib/types/errors';
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
@@ -18,7 +20,7 @@
   let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid'>('star');
   let loading = $state(false);
   let saving = $state(false);
-  let error = $state('');
+  let apiError = $state<ErrorResponse | null>(null);
 
   // Загрузка данных при открытии
   $effect(() => {
@@ -29,14 +31,14 @@
 
   async function loadNote() {
     loading = true;
-    error = '';
+    apiError = null;
     try {
       const note = await getNote(noteId);
       title = note.title;
       content = note.content || '';
       type = (note.type as typeof type) || 'star';
-    } catch {
-      error = 'Failed to load note';
+    } catch (err: any) {
+      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to load note' };
     } finally {
       loading = false;
     }
@@ -45,12 +47,12 @@
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      error = 'Title is required';
+      apiError = { code: 'VALIDATION_ERROR', message: 'Title is required' };
       return;
     }
 
     saving = true;
-    error = '';
+    apiError = null;
 
     try {
       const note = await updateNote(noteId, {
@@ -62,8 +64,8 @@
 
       onSuccess?.(note);
       close();
-    } catch {
-      error = 'Failed to update note';
+    } catch (err: any) {
+      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to update note' };
     } finally {
       saving = false;
     }
@@ -71,7 +73,7 @@
 
   function close() {
     open = false;
-    error = '';
+    apiError = null;
   }
 </script>
 
@@ -83,11 +85,7 @@
     </div>
   {:else}
     <form onsubmit={handleSubmit}>
-      {#if error}
-        <div class="error-message" role="alert">
-          {error}
-        </div>
-      {/if}
+      <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
 
       <div class="form-group">
         <label for="edit-note-title">Title *</label>
@@ -152,15 +150,6 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  .error-message {
-    background: var(--color-danger-light, #fee2e2);
-    color: var(--color-danger, #dc2626);
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
   }
 
   .form-group {

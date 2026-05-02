@@ -42,6 +42,12 @@ export interface NoteData {
   metadata?: Record<string, unknown>;
 }
 
+// API Response wrapper structure
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
+
 export interface LinkData {
   id?: string;
   source_note_id: string;
@@ -65,7 +71,7 @@ export async function createNote(
   request: APIRequestContext,
   data: Partial<NoteData>,
   retryCount = 0
-): Promise<{ id: string; [key: string]: unknown }> {
+): Promise<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>> {
   const payload = {
     title: data.title || 'Test Note',
     content: data.content || 'Test content',
@@ -104,7 +110,7 @@ export async function createNotes(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
   delayMs = 100
-): Promise<Array<{ id: string; [key: string]: unknown }>> {
+): Promise<Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>> {
   const created = [];
   for (const noteData of notes) {
     const note = await createNote(request, noteData);
@@ -185,8 +191,8 @@ export async function createStarTopology(
   surroundingNotes: Partial<NoteData>[],
   linkWeight = 0.7
 ): Promise<{
-  center: { id: string };
-  surrounding: Array<{ id: string }>;
+  center: ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>;
+  surrounding: Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>;
 }> {
   const center = await createNote(request, centerNote);
   const surrounding = [];
@@ -194,7 +200,7 @@ export async function createStarTopology(
   for (const noteData of surroundingNotes) {
     const note = await createNote(request, noteData);
     surrounding.push(note);
-    await createLink(request, center.id, note.id, linkWeight);
+    await createLink(request, center.data.id, note.data.id, linkWeight);
   }
 
   return { center, surrounding };
@@ -207,7 +213,7 @@ export async function createChainTopology(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
   linkWeight = 0.8
-): Promise<Array<{ id: string }>> {
+): Promise<Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>> {
   const created = [];
 
   for (let i = 0; i < notes.length; i++) {
@@ -216,7 +222,7 @@ export async function createChainTopology(
 
     // Link to previous note
     if (i > 0) {
-      await createLink(request, created[i - 1].id, note.id, linkWeight);
+      await createLink(request, created[i - 1].data.id, note.data.id, linkWeight);
     }
   }
 

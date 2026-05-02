@@ -259,4 +259,50 @@ describe('GraphCanvas - Rendering', () => {
       expect(Number.isNaN(node.y)).toBe(false);
     });
   });
+
+  it('cleans up resources on unmount', async () => {
+    const { unmount } = render(GraphCanvas, { props: { nodes: mockNodes, links: [] } });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    expect(mockState.tickCallback).not.toBeNull();
+
+    unmount();
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(mockState.tickCallback).toBeNull();
+  });
+
+  it('updates simulation when nodes change', async () => {
+    const { rerender } = render(GraphCanvas, { props: { nodes: mockNodes, links: [] } });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    expect(mockState.simulationNodes.length).toBe(3);
+
+    // Update with new nodes using rerender
+    const newNodes = [
+      { id: '4', title: 'New Node 4', type: 'star' },
+      { id: '5', title: 'New Node 5', type: 'planet' }
+    ];
+
+    rerender({ nodes: newNodes, links: [] });
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(mockState.simulationNodes.length).toBe(2);
+  });
+
+  it('updates simulation when links change', async () => {
+    const { rerender } = render(GraphCanvas, { props: { nodes: mockNodes, links: [] } });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const newLinks = [
+      { source: '1', target: '2', weight: 1.0, link_type: 'reference' },
+      { source: '2', target: '3', weight: 0.5, link_type: 'dependency' },
+      { source: '1', target: '3', weight: 0.3, link_type: 'related' }
+    ];
+
+    rerender({ nodes: mockNodes, links: newLinks });
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(mockState.simulationLinks.length).toBe(3);
+  });
 });

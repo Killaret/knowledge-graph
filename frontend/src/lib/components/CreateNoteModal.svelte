@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createNote, type Note } from '$lib/api/notes';
   import { Modal, Button, TypeSelector } from './index';
+  import ApiErrorDisplay from './ApiErrorDisplay.svelte';
+  import type { ErrorResponse } from '$lib/types/errors';
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
@@ -15,17 +17,17 @@
   let content = $state('');
   let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid'>('star');
   let loading = $state(false);
-  let error = $state('');
+  let apiError = $state<ErrorResponse | null>(null);
   
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      error = 'Title is required';
+      apiError = { code: 'VALIDATION_ERROR', message: 'Title is required' };
       return;
     }
     
     loading = true;
-    error = '';
+    apiError = null;
     
     try {
       const note = await createNote({ 
@@ -37,8 +39,8 @@
       
       onSuccess?.(note);
       close();
-    } catch {
-      error = 'Failed to create note';
+    } catch (err: any) {
+      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to create note' };
     } finally {
       loading = false;
     }
@@ -49,7 +51,7 @@
     title = '';
     content = '';
     type = 'star';
-    error = '';
+    apiError = null;
   }
 </script>
 
@@ -84,9 +86,7 @@
       ></textarea>
     </div>
     
-    {#if error}
-      <div class="error">{error}</div>
-    {/if}
+    <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
     
     <div class="form-actions">
       <Button variant="secondary" onClick={close} disabled={loading}>
@@ -132,15 +132,6 @@
   textarea {
     resize: vertical;
     font-family: inherit;
-  }
-
-  .error {
-    padding: 12px;
-    background: var(--color-danger-light, #fee2e2);
-    color: var(--color-danger, #dc2626);
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 20px;
   }
 
   .form-actions {

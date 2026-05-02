@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { createNote, updateNote, getNote } from '$lib/api/notes';
+	import ApiErrorDisplay from './ApiErrorDisplay.svelte';
+	import type { ErrorResponse } from '$lib/types/errors';
 
 	interface Props {
 		noteId?: string | null;
@@ -14,7 +16,7 @@
 	let noteType = $state('star');
 	let isLoading = $state(false);
 	let isSaving = $state(false);
-	let error = $state<string | null>(null);
+	let apiError = $state<ErrorResponse | null>(null);
 	let titleError = $state<string | null>(null);
 
 	// Загрузка данных при редактировании
@@ -26,14 +28,14 @@
 
 	async function loadNote(id: string) {
 		isLoading = true;
-		error = null;
+		apiError = null;
 		try {
 			const note = await getNote(id);
 			title = note.title;
 			content = note.content || '';
 			noteType = note.type || 'star';
-		} catch {
-			error = 'Failed to load note';
+		} catch (err: any) {
+			apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to load note' };
 		} finally {
 			isLoading = false;
 		}
@@ -52,7 +54,7 @@
 		if (!validate()) return;
 
 		isSaving = true;
-		error = null;
+		apiError = null;
 
 		try {
 			const noteData = {
@@ -67,8 +69,8 @@
 				const newNote = await createNote(noteData);
 				await goto(`/notes/${newNote.id}`);
 			}
-		} catch {
-			error = 'Failed to save note. Please try again.';
+		} catch (err: any) {
+			apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to save note. Please try again.' };
 		} finally {
 			isSaving = false;
 		}
@@ -87,11 +89,7 @@
 	{#if isLoading}
 		<div class="loading" data-testid="loading">Loading...</div>
 	{:else}
-		{#if error}
-			<div class="error-message" data-testid="error-message" role="alert">
-				{error}
-			</div>
-		{/if}
+		<ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
 
 		<form onsubmit={(e) => { e.preventDefault(); handleSave(); }}>
 			<div class="field">
@@ -164,14 +162,6 @@
 		text-align: center;
 		padding: 2rem;
 		color: var(--color-text-secondary);
-	}
-
-	.error-message {
-		background: var(--color-danger-light);
-		color: var(--color-danger);
-		padding: 1rem;
-		border-radius: 4px;
-		margin-bottom: 1rem;
 	}
 
 	.field {

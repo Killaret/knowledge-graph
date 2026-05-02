@@ -2,8 +2,19 @@
 import ky from 'ky';
 
 // Определяем базовый URL в зависимости от среды
-const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-const prefixUrl = isTest ? 'http://localhost:8081/api' : '/api';
+// import.meta.env доступен в Vite/SvelteKit
+const isDev = import.meta.env.DEV;
+const isProd = import.meta.env.PROD;
+
+// Проверяем тестовое окружение через process.env.VITEST
+// Vitest устанавливает эту переменную автоматически
+const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
+
+// В dev режиме (Vite) используем относительный /api (проксируется на backend)
+// В production и тестах используем полный URL к backend
+const prefixUrl = isDev && !isTest
+  ? '/api' 
+  : 'http://localhost:8080/api';
 
 // Базовый URL с прокси /api → http://localhost:8080
 // Retry настроен для устойчивости к временным сетевым сбоям:

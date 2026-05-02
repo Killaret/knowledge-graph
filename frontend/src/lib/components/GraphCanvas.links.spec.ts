@@ -176,4 +176,34 @@ describe('GraphCanvas - Link Type Rendering', () => {
     if (mockState.tickCallback) mockState.tickCallback();
     expect(ctxCalls.filter(c => c.method === 'stroke').length).toBeGreaterThan(0);
   });
+
+  it('renders related links', async () => {
+    render(GraphCanvas, { 
+      props: { 
+        nodes: mockNodes, 
+        links: [{ source: '1', target: '2', weight: 0.6, link_type: 'related' }] 
+      } 
+    });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    if (mockState.tickCallback) mockState.tickCallback();
+    expect(ctxCalls.filter(c => c.method === 'lineTo').length).toBeGreaterThan(0);
+  });
+
+  it('renders links with different weights', async () => {
+    render(GraphCanvas, { 
+      props: { 
+        nodes: mockNodes, 
+        links: [
+          { source: '1', target: '2', weight: 1.0, link_type: 'reference' },
+          { source: '2', target: '3', weight: 0.3, link_type: 'reference' }
+        ] 
+      } 
+    });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    if (mockState.tickCallback) mockState.tickCallback();
+    const lineCalls = ctxCalls.filter(c => c.method === 'lineTo');
+    expect(lineCalls.length).toBeGreaterThan(0);
+  });
 });

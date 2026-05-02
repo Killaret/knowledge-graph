@@ -1,0 +1,581 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
+
+ DEPRECATED  'basic' reporter is deprecated and will be removed in Vitest v3.
+Remove 'basic' from 'reporters' option. To match 'basic' reporter 100%, use configuration:
+{
+  "test": {
+    "reporters": [
+      [
+        "default",
+        {
+          "summary": false
+        }
+      ]
+    ]
+  }
+}
+ [32mтЬУ[39m src/lib/components/NoteSidePanel.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 485[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders canvas element
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders star nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Star'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders reference links
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mprocesses nodes and links without errors
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders planet nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'planet'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Planet'[39m, type: [32m'planet'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders nodes with coordinates from simulation
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders dependency links
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders correct number of nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders comet nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'comet'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Comet'[39m, type: [32m'comet'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.links.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 873[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders reference links [33m 530[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders dependency links [33m 332[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/CreateNoteModal.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1036[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m CreateNoteModal[2m > [22mcreates note successfully and calls onSuccess [33m 342[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders galaxy nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'galaxy'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Galaxy'[39m, type: [32m'galaxy'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders links between correct nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mapplies correct cursor style
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders asteroid nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'asteroid'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Asteroid'[39m, type: [32m'asteroid'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders all nodes within canvas bounds
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders unknown type nodes without type property
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Unknown'[39m }
+
+ [32mтЬУ[39m src/lib/components/SearchBar.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 2043[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mnavigates to search page on button click [33m 397[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mnavigates on Enter key press [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mdebounces input and navigates after timeout [33m 432[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mclears debounce timer on Enter key [33m 358[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mtrims whitespace from query [33m 344[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.rendering.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1911[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders nodes with coordinates from simulation [33m 333[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders correct number of nodes [33m 326[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders links between correct nodes [33m 322[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders all nodes within canvas bounds [33m 330[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/TagSelector.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 2476[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m TagSelector[2m > [22madds tag when trimmable spaces are present [33m 310[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m TagSelector[2m > [22mvalidates tag length (max 30 chars) [33m 453[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle network errors for getGraphData
+[Graph API] Failed to load graph for note 1: TypeError: Failed to fetch
+    at createNetworkError (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/interceptors/fetch/utils/createNetworkError.ts:2:24)
+    at Object.respondWith (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/interceptors/fetch/index.ts:108:36)
+    at RequestController.respondWith (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/RequestController.ts:83:17)
+    at InterceptorHttpNetworkFrame.respondWith (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/interceptor-source.ts:136:24)
+    at InterceptorHttpNetworkFrame.resolve (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/frames/http-frame.ts:256:10)
+    at Emitter.<anonymous> (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/define-network.ts:179:11)
+    at Emitter.emitAsPromise (file:///D:/knowledge-graph/frontend/node_modules/rettime/src/index.ts:604:27)
+    at InterceptorSource.queue (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/network-source.ts:39:5)
+    at InterceptorSource.#handleRequest (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/interceptor-source.ts:73:5)
+    at emitAsync (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/utils/emitAsync.ts:23:5) {
+  cause: Response {
+    status: 0,
+    statusText: '',
+    headers: Headers {},
+    body: null,
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'error',
+    url: ''
+  }
+}
+
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle HTTP 404 errors for getGraphData
+[Graph API] Failed to load graph for note 999: HTTPError: Request failed with status code 404 Not Found: GET http://localhost:8081/api/v1/notes/999/graph?depth=2
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:55:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:109:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 404,
+    statusText: 'Not Found',
+    headers: Headers { 'content-length': '21', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/notes/999/graph?depth=2'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/notes/999/graph?depth=2',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mfalls back to unknown for undefined type
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'No Type'[39m, type: [90mundefined[39m }
+
+ [32mтЬУ[39m src/lib/components/LinkCreator.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2494[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22mrenders with search input and link type selector [33m 303[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22msearches for notes when typing in search field [33m 402[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22mselects target note from search results [33m 350[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22msuccessfully creates link and calls onSuccess callback [33m 480[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22mhandles 409 conflict error when creating duplicate link [33m 473[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.node-types.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2489[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders star nodes with coordinates [33m 511[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders planet nodes with coordinates [33m 327[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders comet nodes with coordinates [33m 324[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders galaxy nodes with coordinates [33m 323[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders asteroid nodes with coordinates [33m 328[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders unknown type nodes without type property [33m 331[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mfalls back to unknown for undefined type [33m 334[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle HTTP 500 errors for getGraphData
+[Graph API] Failed to load graph for note 1: HTTPError: Request failed with status code 500 Internal Server Error: GET http://localhost:8081/api/v1/notes/1/graph?depth=2
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:55:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:117:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: Headers { 'content-length': '24', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle 400 for invalid depth parameter
+[Graph API] Failed to load graph for note 1: HTTPError: Request failed with status code 400 Bad Request: GET http://localhost:8081/api/v1/notes/1/graph?depth=-1
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:55:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:127:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 400,
+    statusText: 'Bad Request',
+    headers: Headers { 'content-length': '35', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=-1'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=-1',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+ [32mтЬУ[39m src/lib/components/FloatingControls.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 648[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcalls onNodeClick callback is defined
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcleans up on unmount
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.interactions.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 733[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Interactions[2m > [22mcalls onNodeClick callback is defined [33m 510[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle network errors for getFullGraphData
+[Graph API] Failed to load full graph: TypeError: Failed to fetch
+    at createNetworkError (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/interceptors/fetch/utils/createNetworkError.ts:2:24)
+    at Object.respondWith (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/interceptors/fetch/index.ts:108:36)
+    at RequestController.respondWith (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/RequestController.ts:83:17)
+    at InterceptorHttpNetworkFrame.respondWith (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/interceptor-source.ts:136:24)
+    at InterceptorHttpNetworkFrame.resolve (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/frames/http-frame.ts:256:10)
+    at Emitter.<anonymous> (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/define-network.ts:179:11)
+    at Emitter.emitAsPromise (file:///D:/knowledge-graph/frontend/node_modules/rettime/src/index.ts:604:27)
+    at InterceptorSource.queue (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/network-source.ts:39:5)
+    at InterceptorSource.#handleRequest (file:///D:/knowledge-graph/frontend/node_modules/msw/src/core/experimental/sources/interceptor-source.ts:73:5)
+    at emitAsync (file:///D:/knowledge-graph/frontend/node_modules/@mswjs/interceptors/src/utils/emitAsync.ts:23:5) {
+  cause: Response {
+    status: 0,
+    statusText: '',
+    headers: Headers {},
+    body: null,
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'error',
+    url: ''
+  }
+}
+
+ [32mтЬУ[39m src/lib/components/NoteEditor.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 631[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/BackButton.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 277[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/ConfirmModal.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 600[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m ConfirmModal[2m > [22mrenders modal with title and message when open [33m 301[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/EditNoteModal.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 2196[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m EditNoteModal[2m > [22mrenders modal when open is true [33m 656[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/Graph3D.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 484[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/NoteCard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 302[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle HTTP 500 errors for getFullGraphData
+[Graph API] Failed to load full graph: HTTPError: Request failed with status code 500 Internal Server Error: GET http://localhost:8081/api/v1/graph/all?limit=1000&link_limit=0
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getFullGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:67:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:143:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: Headers { 'content-length': '24', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/graph/all?limit=1000&link_limit=0'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/graph/all?limit=1000&link_limit=0',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+ [32mтЬУ[39m src/lib/components/LazyGraph3D.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle 503 when graph service is unavailable
+[Graph API] Failed to load graph for note 1: HTTPError: Request failed with status code 503 Service Unavailable: GET http://localhost:8081/api/v1/notes/1/graph?depth=2
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:55:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:153:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: Headers { 'content-length': '31', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+ [32mтЬУ[39m src/lib/components/SmartGraph.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32mтЬУ[39m src/lib/utils/deviceCapabilities.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle timeout errors
+[Graph API] Failed to load graph for note 1: HTTPError: Request failed with status code 504 Gateway Timeout: GET http://localhost:8081/api/v1/notes/1/graph?depth=2
+    at function_ (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:99:17)
+    at Ky.#retry (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:414:11)
+    at Promise.result.<computed> [as json] (file:///D:/knowledge-graph/frontend/node_modules/ky/source/core/Ky.ts:151:22)
+    at Module.getGraphData (D:\knowledge-graph\frontend\src\lib\api\graph.ts:55:22)
+    at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:163:7
+    at file:///D:/knowledge-graph/frontend/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  response: Response {
+    status: 504,
+    statusText: 'Gateway Timeout',
+    headers: Headers { 'content-length': '27', 'content-type': 'application/json' },
+    body: ReadableStream { locked: false, state: 'readable', supportsBYOB: true },
+    bodyUsed: false,
+    ok: false,
+    redirected: false,
+    type: 'default',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2'
+  },
+  request: Request {
+    method: 'GET',
+    url: 'http://localhost:8081/api/v1/notes/1/graph?depth=2',
+    headers: Headers { accept: 'application/json' },
+    destination: '',
+    referrer: 'about:client',
+    referrerPolicy: '',
+    mode: 'cors',
+    credentials: 'same-origin',
+    cache: 'default',
+    redirect: 'follow',
+    integrity: '',
+    keepalive: false,
+    isReloadNavigation: false,
+    isHistoryNavigation: false,
+    signal: AbortSignal {}
+  },
+  options: {
+    prefixUrl: 'http://localhost:8081/api/',
+    timeout: 30000,
+    retry: {
+      limit: 3,
+      methods: [Array],
+      statusCodes: [Array],
+      afterStatusCodes: [Array],
+      maxRetryAfter: Infinity,
+      backoffLimit: Infinity,
+      delay: [Function: delay],
+      jitter: undefined,
+      retryOnTimeout: false
+    },
+    method: 'GET',
+    headers: Headers {},
+    throwHttpErrors: true,
+    fetch: [Function: bound ] AsyncFunction,
+    context: {},
+    signal: AbortSignal {},
+    duplex: 'half'
+  }
+}
+
+ [32mтЬУ[39m src/lib/api/graph.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 13310[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getGraphData [33m 2190[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getGraphData [33m 2185[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getFullGraphData [33m 2176[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getFullGraphData [33m 2173[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle 503 when graph service is unavailable [33m 2170[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m graph API[2m > [22merror handling[2m > [22mshould handle timeout errors [33m 2165[2mms[22m[39m
+ [32mтЬУ[39m src/lib/api/links.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 15534[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mgetLinks[2m > [22mshould throw on 500 error [33m 2161[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mgetLinks[2m > [22mshould handle network errors [33m 2183[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mgetLink[2m > [22mshould throw on 500 error [33m 2185[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mcreateLink[2m > [22mshould throw on 500 error [33m 2167[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mcreateLink[2m > [22mshould handle network errors [33m 2165[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mgetNoteLinks[2m > [22mshould throw on 500 error [33m 2182[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m links API[2m > [22mgetNoteLinks[2m > [22mshould handle network errors [33m 2184[2mms[22m[39m
+ [32mтЬУ[39m src/lib/api/notes.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 17328[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22mretry behavior[2m > [22mshould retry on 503 Service Unavailable and succeed on retry [33m 950[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22mretry behavior[2m > [22mshould retry on 504 Gateway Timeout and succeed on retry [33m 324[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22mretry behavior[2m > [22mshould fail after max retries on persistent 500 errors [33m 2152[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22mretry behavior[2m > [22mshould retry on 502 Bad Gateway for GET requests [33m 325[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22mretry behavior[2m > [22mshould retry on 429 Too Many Requests for POST requests [33m 329[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for getNote [33m 2152[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getNote [33m 2151[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for updateNote [33m 2161[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getSuggestions [33m 2161[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for searchNotes [33m 2151[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getNotes [33m 2175[2mms[22m[39m
+
+
+[2m Test Files [22m [1m[32m22 passed[39m[22m[90m (22)[39m
+[2m      Tests [22m [1m[32m209 passed[39m[22m[90m (209)[39m
+[2m   Start at [22m 11:23:54
+[2m   Duration [22m 25.27s[2m (transform 6.80s, setup 53.07s, collect 13.27s, tests 66.08s, environment 53.43s, prepare 10.75s)[22m
+

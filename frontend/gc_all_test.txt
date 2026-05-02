@@ -1,0 +1,99 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
+
+[90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders reference links
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders canvas element
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcalls onNodeClick callback is defined
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders star nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Star'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mprocesses nodes and links without errors
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders nodes with coordinates from simulation
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders dependency links
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders planet nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'planet'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Planet'[39m, type: [32m'planet'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcleans up on unmount
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.interactions.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 556[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Interactions[2m > [22mcalls onNodeClick callback is defined [33m 381[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.links.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 679[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders reference links [33m 365[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders dependency links [33m 308[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders correct number of nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders comet nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'comet'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Comet'[39m, type: [32m'comet'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders links between correct nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders galaxy nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'galaxy'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Galaxy'[39m, type: [32m'galaxy'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mapplies correct cursor style
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders asteroid nodes with coordinates
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'asteroid'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Asteroid'[39m, type: [32m'asteroid'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders all nodes within canvas bounds
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders unknown type nodes without type property
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Unknown'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.rendering.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1679[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders nodes with coordinates from simulation [33m 311[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders correct number of nodes [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders links between correct nodes [33m 313[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders all nodes within canvas bounds [33m 313[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mfalls back to unknown for undefined type
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'No Type'[39m, type: [90mundefined[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.node-types.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2253[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders star nodes with coordinates [33m 381[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders planet nodes with coordinates [33m 308[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders comet nodes with coordinates [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders galaxy nodes with coordinates [33m 313[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders asteroid nodes with coordinates [33m 313[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders unknown type nodes without type property [33m 310[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mfalls back to unknown for undefined type [33m 311[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 16:49:28
+[2m   Duration [22m 6.17s[2m (transform 947ms, setup 7.84s, collect 1.03s, tests 5.17s, environment 4.25s, prepare 1.07s)[22m
+

@@ -1,0 +1,14 @@
+
+[1A[2K[WebServer] 2026/04/30 11:40:52 [Config] Loading JSON config from: D:\knowledge-graph\knowledge-graph.config.json
+[1A[2K[WebServer] 2026/04/30 11:40:52 [Config] JSON config loaded successfully
+[WebServer] 2026/04/30 11:40:52 FATAL: Failed to load configuration: required environment variable DATABASE_URL is not set
+
+
+[1A[2K[WebServer] exit status 1
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+[1A[2K
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m

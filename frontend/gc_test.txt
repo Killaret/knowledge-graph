@@ -1,0 +1,42 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders canvas element
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mprocesses nodes and links without errors
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders nodes with coordinates from simulation
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders correct number of nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders links between correct nodes
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mapplies correct cursor style
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders all nodes within canvas bounds
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.rendering.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1684[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders nodes with coordinates from simulation [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders correct number of nodes [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders links between correct nodes [33m 315[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders all nodes within canvas bounds [33m 315[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 16:44:59
+[2m   Duration [22m 5.36s[2m (transform 837ms, setup 1.77s, collect 258ms, tests 1.68s, environment 1.06s, prepare 189ms)[22m
+

@@ -1,0 +1,29 @@
+?   	knowledge-graph/cmd/checkconfig	[no test files]
+?   	knowledge-graph/cmd/checkmigrations	[no test files]
+?   	knowledge-graph/cmd/cli	[no test files]
+?   	knowledge-graph/cmd/server	[no test files]
+?   	knowledge-graph/cmd/worker	[no test files]
+?   	knowledge-graph/internal/application/common	[no test files]
+ok  	knowledge-graph/internal/application/graph	2.173s
+?   	knowledge-graph/internal/application/queries/graph	[no test files]
+ok  	knowledge-graph/internal/application/recommendation	0.571s
+ok  	knowledge-graph/internal/config	1.771s
+ok  	knowledge-graph/internal/domain/graph	2.004s
+ok  	knowledge-graph/internal/domain/link	1.819s
+ok  	knowledge-graph/internal/domain/note	1.694s
+?   	knowledge-graph/internal/infrastructure/db	[no test files]
+ok  	knowledge-graph/internal/infrastructure/db/postgres	0.693s
+?   	knowledge-graph/internal/infrastructure/logger	[no test files]
+ok  	knowledge-graph/internal/infrastructure/nlp	8.157s
+ok  	knowledge-graph/internal/infrastructure/queue	0.353s
+ok  	knowledge-graph/internal/infrastructure/queue/tasks	0.445s
+?   	knowledge-graph/internal/interfaces/api/common	[no test files]
+ok  	knowledge-graph/internal/interfaces/api/common/validation	0.862s
+ok  	knowledge-graph/internal/interfaces/api/graphhandler	0.304s
+ok  	knowledge-graph/internal/interfaces/api/linkhandler	0.308s
+?   	knowledge-graph/internal/interfaces/api/middleware	[no test files]
+ok  	knowledge-graph/internal/interfaces/api/notehandler	0.310s
+?   	knowledge-graph/internal/interfaces/api/taghandler	[no test files]
+?   	knowledge-graph/internal/services	[no test files]
+?   	knowledge-graph/internal/testutil	[no test files]
+?   	knowledge-graph/scripts	[no test files]

@@ -7,16 +7,18 @@
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
+  import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
   import { getFullGraphData, type GraphData } from '$lib/api/graph';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
+  import type { ErrorResponse } from '$lib/types/errors';
   import SplashScreen from '$lib/components/SplashScreen.svelte';
 
   // State
   let allNotes: Note[] = $state([]);
   let filteredNotes: Note[] = $state([]);
   let loading = $state(true);
-  let error = $state('');
+  let apiError = $state<ErrorResponse | null>(null);
   let selectedNodeId: string | null = $state(null);
   let showCreateModal = $state(false);
   let showEditModal = $state(false);
@@ -70,6 +72,9 @@
 
   async function loadDataParallel() {
     try {
+      // Reset error state before loading
+      apiError = null;
+      
       // Load notes and graph data in parallel
       const [notesResult, graphResult] = await Promise.all([
         getNotes(),
@@ -80,10 +85,12 @@
       ]);
       
       allNotes = notesResult;
+      console.log('[+page] Notes loaded:', allNotes.length);
       applyFiltersAndSort();
       
       // Set graph data if successful
-      if (graphResult) {
+      console.log('[+page] Graph result:', graphResult ? 'exists' : 'null', 'nodes:', graphResult?.nodes?.length, 'links:', graphResult?.links?.length);
+      if (graphResult && graphResult.nodes && Array.isArray(graphResult.nodes)) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
         if (import.meta.env.DEV) {
@@ -98,7 +105,7 @@
             title: n.title || n.Title,
             type: n.type ?? n.Type ?? 'star'
           })),
-          links: graphResult.links.map((l: any) => ({
+          links: (graphResult.links || []).map((l: any) => ({
             source: l.source_note_id || l.source,
             target: l.target_note_id || l.target,
             weight: l.weight,
@@ -116,8 +123,8 @@
           links: []
         };
       }
-    } catch (e) {
-      error = 'Failed to load notes';
+    } catch (e: any) {
+      apiError = e?.response?.data || { code: 'LOAD_ERROR', message: 'Failed to load notes' };
       console.error(e);
     } finally {
       loading = false;
@@ -130,8 +137,8 @@
       applyFiltersAndSort();
       // Also load graph data when notes are loaded
       await loadGraphData();
-    } catch (e) {
-      error = 'Failed to load notes';
+    } catch (e: any) {
+      apiError = e?.response?.data || { code: 'LOAD_ERROR', message: 'Failed to load notes' };
       console.error(e);
     } finally {
       loading = false;
@@ -149,6 +156,17 @@
       // Always load full graph on main page
       const rawData = await getFullGraphData();
 
+      // Defensive check for API response structure
+      if (!rawData || !rawData.nodes || !Array.isArray(rawData.nodes)) {
+        console.warn('[+page] Graph API returned invalid data structure:', rawData);
+        // Fallback: build simple graph from notes
+        graphData = {
+          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+          links: []
+        };
+        return;
+      }
+
       // Debug: check what types come from API
       const apiTypes = rawData.nodes.map((n: any) => n.type || n.Type || 'MISSING');
       if (import.meta.env.DEV) {
@@ -164,7 +182,7 @@
       }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = rawData.links.map((l: any) => ({
+      const transformedLinks = (rawData.links || []).map((l: any) => ({
         source: l.source_note_id || l.source,
         target: l.target_note_id || l.target,
         weight: l.weight,
@@ -344,9 +362,23 @@
         <div class="spinner"></div>
         <p>Loading notes...</p>
       </div>
-    {:else if error}
-      <p class="error">{error}</p>
+    {:else if apiError}
+      <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
+      <button onclick={() => { apiError = null; loadDataParallel(); }}>Retry</button>
     {:else if currentView === 'graph'}
+      <!-- Debug info - remove in production -->
+      {#if import.meta.env.DEV}
+        <div style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;">
+          <div>allNotes: {allNotes.length}</div>
+          <div>graphData.nodes: {graphData.nodes.length}</div>
+          <div>graphData.links: {graphData.links.length}</div>
+          <div>filtered: {filteredGraphData().nodes.length}</div>
+          <div>selectedType: {selectedType}</div>
+          <div>loading: {loading}</div>
+          <div>graphLoading: {graphLoading}</div>
+          <div>apiError: {(apiError as ErrorResponse | null)?.message ?? 'none'}</div>
+        </div>
+      {/if}
       <!-- Fullscreen 2D Graph View -->
       {#if graphLoading}
         <div class="center">
@@ -531,16 +563,6 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  .error {
-    padding: 20px;
-    background: #fee2e2;
-    color: #dc2626;
-    border-radius: 8px;
-    text-align: center;
-    margin: 20px auto;
-    max-width: 600px;
   }
 
   /* Empty State */

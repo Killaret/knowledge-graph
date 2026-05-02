@@ -35,7 +35,7 @@ describe('LinkCreator', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     
     server.use(
-      http.get('http://localhost:8081/api/v1/notes/search*', () => {
+      http.get('http://localhost:8080/api/v1/notes/search*', () => {
         return HttpResponse.json({
           data: mockSearchResults,
           total: 2,
@@ -66,7 +66,7 @@ describe('LinkCreator', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     
     server.use(
-      http.get('http://localhost:8081/api/v1/notes/search*', () => {
+      http.get('http://localhost:8080/api/v1/notes/search*', () => {
         return HttpResponse.json({
           data: mockSearchResults,
           total: 2,
@@ -119,7 +119,7 @@ describe('LinkCreator', () => {
     const onSuccess = vi.fn();
     
     server.use(
-      http.get('http://localhost:8081/api/v1/notes/search*', () => {
+      http.get('http://localhost:8080/api/v1/notes/search*', () => {
         return HttpResponse.json({
           data: mockSearchResults,
           total: 2,
@@ -128,7 +128,7 @@ describe('LinkCreator', () => {
           totalPages: 1
         });
       }),
-      http.post('http://localhost:8081/api/v1/links', () => {
+      http.post('http://localhost:8080/api/v1/links', () => {
         return HttpResponse.json({
           data: {
             id: 'new-link-123',
@@ -176,7 +176,7 @@ describe('LinkCreator', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     
     server.use(
-      http.get('http://localhost:8081/api/v1/notes/search*', () => {
+      http.get('http://localhost:8080/api/v1/notes/search*', () => {
         return HttpResponse.json({
           data: mockSearchResults,
           total: 2,
@@ -185,7 +185,7 @@ describe('LinkCreator', () => {
           totalPages: 1
         });
       }),
-      http.post('http://localhost:8081/api/v1/links', () => {
+      http.post('http://localhost:8080/api/v1/links', () => {
         return HttpResponse.json({
           error: 'Conflict',
           code: 'DUPLICATE_LINK',
@@ -242,7 +242,7 @@ describe('LinkCreator', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     
     server.use(
-      http.get('http://localhost:8081/api/v1/notes/search*', () => {
+      http.get('http://localhost:8080/api/v1/notes/search*', () => {
         return HttpResponse.json({
           data: [
             { id: sourceNoteId, title: 'Source Note', content: '', metadata: {}, created_at: '', updated_at: '' },

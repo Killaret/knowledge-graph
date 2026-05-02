@@ -1,36 +1,101 @@
 
 [1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
 
- [31mтЭп[39m src/lib/api/links.test.ts [2m([22m[2m22 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[32m 92[2mms[22m[39m
-[31m   [31m├Ч[31m links API[2m > [22mgetLinks[2m > [22mshould return array of links[39m[32m 22[2mms[22m[39m
+ DEPRECATED  'basic' reporter is deprecated and will be removed in Vitest v3.
+Remove 'basic' from 'reporters' option. To match 'basic' reporter 100%, use configuration:
+{
+  "test": {
+    "reporters": [
+      [
+        "default",
+        {
+          "summary": false
+        }
+      ]
+    ]
+  }
+}
+ [31mтЭп[39m src/lib/api/links.test.ts [2m([22m[2m22 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[32m 74[2mms[22m[39m
+[31m   [31m├Ч[31m links API[2m > [22mgetLinks[2m > [22mshould return array of links[39m[32m 19[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/links[39m
 [31m   [31m├Ч[31m links API[2m > [22mgetLinks[2m > [22mshould handle empty links array[39m[32m 3[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/links[39m
-   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould throw on 404 error[32m 6[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould throw on 500 error[32m 3[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould handle network errors[32m 3[2mms[22m[39m
-[31m   [31m├Ч[31m links API[2m > [22mgetLink[2m > [22mshould return a single link[39m[32m 4[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould throw on 404 error[32m 4[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould throw on 500 error[32m 2[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetLinks[2m > [22mshould handle network errors[32m 2[2mms[22m[39m
+[31m   [31m├Ч[31m links API[2m > [22mgetLink[2m > [22mshould return a single link[39m[32m 2[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/links/link-1[39m
-   [32mтЬУ[39m links API[2m > [22mgetLink[2m > [22mshould throw on 404 when link not found[32m 3[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mgetLink[2m > [22mshould throw on 500 error[32m 3[2mms[22m[39m
-[31m   [31m├Ч[31m links API[2m > [22mcreateLink[2m > [22mshould create and return new link[39m[32m 7[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetLink[2m > [22mshould throw on 404 when link not found[32m 2[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetLink[2m > [22mshould throw on 500 error[32m 2[2mms[22m[39m
+[31m   [31m├Ч[31m links API[2m > [22mcreateLink[2m > [22mshould create and return new link[39m[32m 3[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/links[39m
-   [32mтЬУ[39m links API[2m > [22mcreateLink[2m > [22mshould throw on 409 conflict (duplicate link)[32m 3[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mcreateLink[2m > [22mshould throw on 409 conflict (duplicate link)[32m 2[2mms[22m[39m
    [32mтЬУ[39m links API[2m > [22mcreateLink[2m > [22mshould throw on 400 bad request (invalid data)[32m 2[2mms[22m[39m
    [32mтЬУ[39m links API[2m > [22mcreateLink[2m > [22mshould throw on 500 error[32m 2[2mms[22m[39m
    [32mтЬУ[39m links API[2m > [22mcreateLink[2m > [22mshould handle network errors[32m 3[2mms[22m[39m
-[31m   [31m├Ч[31m links API[2m > [22mdeleteLink[2m > [22mshould delete link successfully[39m[32m 8[2mms[22m[39m
+[31m   [31m├Ч[31m links API[2m > [22mdeleteLink[2m > [22mshould delete link successfully[39m[32m 7[2mms[22m[39m
 [31m     тЖТ promise rejected "TypeError: Failed to parse URL from /api/тАж" instead of resolving[39m
    [32mтЬУ[39m links API[2m > [22mdeleteLink[2m > [22mshould throw on 404 when link not found[32m 2[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mdeleteLink[2m > [22mshould throw on 500 error[32m 1[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mdeleteLink[2m > [22mshould handle network errors[32m 1[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mdeleteLink[2m > [22mshould throw on 500 error[32m 2[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mdeleteLink[2m > [22mshould handle network errors[32m 2[2mms[22m[39m
 [31m   [31m├Ч[31m links API[2m > [22mgetNoteLinks[2m > [22mshould return links for a note[39m[32m 2[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/notes/note-1/links[39m
 [31m   [31m├Ч[31m links API[2m > [22mgetNoteLinks[2m > [22mshould return empty array when note has no links[39m[32m 2[2mms[22m[39m
 [31m     тЖТ Failed to parse URL from /api/v1/notes/note-1/links[39m
    [32mтЬУ[39m links API[2m > [22mgetNoteLinks[2m > [22mshould throw on 404 when note not found[32m 1[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mgetNoteLinks[2m > [22mshould throw on 500 error[32m 2[2mms[22m[39m
-   [32mтЬУ[39m links API[2m > [22mgetNoteLinks[2m > [22mshould handle network errors[32m 1[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetNoteLinks[2m > [22mshould throw on 500 error[32m 1[2mms[22m[39m
+   [32mтЬУ[39m links API[2m > [22mgetNoteLinks[2m > [22mshould handle network errors[32m 2[2mms[22m[39m
+ [31mтЭп[39m src/lib/api/notes.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m12 failed[39m[2m)[22m[32m 85[2mms[22m[39m
+[31m   [31m├Ч[31m notes API[2m > [22mgetNotes[2m > [22mshould return array of notes[39m[32m 20[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
+[31m   [31m├Ч[31m notes API[2m > [22mgetNote[2m > [22mshould return a single note[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mcreateNote[2m > [22mshould create and return new note[39m[32m 4[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
+[31m   [31m├Ч[31m notes API[2m > [22mupdateNote[2m > [22mshould update and return note[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mdeleteNote[2m > [22mshould delete note[39m[32m 3[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mgetSuggestions[2m > [22mshould return suggestions array[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1/suggestions[39m
+[31m   [31m├Ч[31m notes API[2m > [22msearchNotes[2m > [22mshould return search results[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/search?q=search+term&page=1&size=20[39m
+[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 503 Service Unavailable and succeed on retry[39m[32m 1[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 504 Gateway Timeout and succeed on retry[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould fail after max retries on persistent 500 errors[39m[32m 11[2mms[22m[39m
+[31m     тЖТ expected +0 to be 4 // Object.is equality[39m
+[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 502 Bad Gateway for GET requests[39m[32m 2[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
+[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 429 Too Many Requests for POST requests[39m[32m 3[2mms[22m[39m
+[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for getNote[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle HTTP 404 errors for getNote[32m 1[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getNote[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for createNote when validation fails[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 409 conflict for createNote[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for updateNote when note not found[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for updateNote[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for deleteNote[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for deleteNote[32m 1[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for getSuggestions when note not found[32m 1[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getSuggestions[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 400 for searchNotes with invalid query[32m 2[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for searchNotes[32m 1[2mms[22m[39m
+   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getNotes[32m 1[2mms[22m[39m
+ [31mтЭп[39m src/lib/components/ApiErrorDisplay.spec.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 231[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mrenders with error data (code and message visible)[32m 76[2mms[22m[39m
+[31m   [31m├Ч[31m ApiErrorDisplay[2m > [22mdoes not render when error is null[39m[32m 10[2mms[22m[39m
+[31m     тЖТ expected '<!---->' to be '' // Object.is equality[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdisplays details list when details are provided[32m 23[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdisplays received value in details when available[32m 9[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mcalls onClose when close button is clicked[32m 12[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mhas correct ARIA attributes[32m 74[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mclose button has correct aria-label[32m 4[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdoes not show details section when details are empty[32m 4[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdoes not show details section when details are undefined[32m 4[2mms[22m[39m
+   [32mтЬУ[39m ApiErrorDisplay[2m > [22mworks without onClose callback[32m 5[2mms[22m[39m
 stderr | src/lib/api/graph.test.ts > graph API > getGraphData > should return graph data for note
 [Graph API] Failed to load graph for note 1: TypeError: Failed to parse URL from /api/v1/notes/1/graph?depth=2
     at new Request (node:internal/deps/undici/undici:9580:19)
@@ -119,45 +184,6 @@ stderr | src/lib/api/graph.test.ts > graph API > edge cases > should handle empt
       at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:88:28
 }
 
- [31mтЭп[39m src/lib/api/notes.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m12 failed[39m[2m)[22m[32m 147[2mms[22m[39m
-[31m   [31m├Ч[31m notes API[2m > [22mgetNotes[2m > [22mshould return array of notes[39m[32m 33[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
-[31m   [31m├Ч[31m notes API[2m > [22mgetNote[2m > [22mshould return a single note[39m[32m 4[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mcreateNote[2m > [22mshould create and return new note[39m[32m 15[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
-[31m   [31m├Ч[31m notes API[2m > [22mupdateNote[2m > [22mshould update and return note[39m[32m 4[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mdeleteNote[2m > [22mshould delete note[39m[32m 4[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mgetSuggestions[2m > [22mshould return suggestions array[39m[32m 3[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1/suggestions[39m
-[31m   [31m├Ч[31m notes API[2m > [22msearchNotes[2m > [22mshould return search results[39m[32m 4[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/search?q=search+term&page=1&size=20[39m
-[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 503 Service Unavailable and succeed on retry[39m[32m 3[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 504 Gateway Timeout and succeed on retry[39m[32m 3[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould fail after max retries on persistent 500 errors[39m[32m 11[2mms[22m[39m
-[31m     тЖТ expected +0 to be 4 // Object.is equality[39m
-[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 502 Bad Gateway for GET requests[39m[32m 2[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes/1[39m
-[31m   [31m├Ч[31m notes API[2m > [22mretry behavior[2m > [22mshould retry on 429 Too Many Requests for POST requests[39m[32m 4[2mms[22m[39m
-[31m     тЖТ Failed to parse URL from /api/v1/notes[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for getNote[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle HTTP 404 errors for getNote[32m 4[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getNote[32m 3[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for createNote when validation fails[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 409 conflict for createNote[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for updateNote when note not found[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for updateNote[32m 15[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for deleteNote[32m 4[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for deleteNote[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 404 for getSuggestions when note not found[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getSuggestions[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 400 for searchNotes with invalid query[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle network errors for searchNotes[32m 2[2mms[22m[39m
-   [32mтЬУ[39m notes API[2m > [22merror handling[2m > [22mshould handle 500 for getNotes[32m 2[2mms[22m[39m
 stderr | src/lib/api/graph.test.ts > graph API > error handling > should handle network errors for getGraphData
 [Graph API] Failed to load graph for note 1: TypeError: Failed to parse URL from /api/v1/notes/1/graph?depth=2
     at new Request (node:internal/deps/undici/undici:9580:19)
@@ -356,45 +382,33 @@ stderr | src/lib/api/graph.test.ts > graph API > getFullGraphData without limit 
       at D:\knowledge-graph\frontend\src\lib\api\graph.test.ts:187:28
 }
 
- [31mтЭп[39m src/lib/api/graph.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 135[2mms[22m[39m
-[31m   [31m├Ч[31m graph API[2m > [22mgetGraphData[2m > [22mshould return graph data for note[39m[32m 31[2mms[22m[39m
+ [31mтЭп[39m src/lib/api/graph.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 125[2mms[22m[39m
+[31m   [31m├Ч[31m graph API[2m > [22mgetGraphData[2m > [22mshould return graph data for note[39m[32m 25[2mms[22m[39m
 [31m     тЖТ ╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parse URL from /api/v1/notes/1/graph?depth=2[39m
-[31m   [31m├Ч[31m graph API[2m > [22mgetFullGraphData[2m > [22mshould return full graph data[39m[32m 8[2mms[22m[39m
+[31m   [31m├Ч[31m graph API[2m > [22mgetFullGraphData[2m > [22mshould return full graph data[39m[32m 5[2mms[22m[39m
 [31m     тЖТ ╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parse URL from /api/v1/graph/all?limit=50&link_limit=0[39m
-[31m   [31m├Ч[31m graph API[2m > [22mgetFullGraphData[2m > [22mshould handle large graphs[39m[32m 5[2mms[22m[39m
+[31m   [31m├Ч[31m graph API[2m > [22mgetFullGraphData[2m > [22mshould handle large graphs[39m[32m 4[2mms[22m[39m
 [31m     тЖТ ╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parse URL from /api/v1/graph/all?limit=100&link_limit=0[39m
 [31m   [31m├Ч[31m graph API[2m > [22medge cases[2m > [22mshould handle empty graph[39m[32m 5[2mms[22m[39m
 [31m     тЖТ ╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parse URL from /api/v1/notes/999/graph?depth=1[39m
-   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getGraphData[32m 8[2mms[22m[39m
-[31m   [31m├Ч[31m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 404 errors for getGraphData[39m[32m 19[2mms[22m[39m
+   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getGraphData[32m 10[2mms[22m[39m
+[31m   [31m├Ч[31m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 404 errors for getGraphData[39m[32m 22[2mms[22m[39m
 [31m     тЖТ expected [Function] to throw error including '╨У╤А╨░╤Д ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜' but got '╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parsтАж'[39m
-   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getGraphData[32m 6[2mms[22m[39m
-   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle 400 for invalid depth parameter[32m 5[2mms[22m[39m
-   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getFullGraphData[32m 8[2mms[22m[39m
-   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getFullGraphData[32m 11[2mms[22m[39m
+   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getGraphData[32m 4[2mms[22m[39m
+   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle 400 for invalid depth parameter[32m 7[2mms[22m[39m
+   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle network errors for getFullGraphData[32m 6[2mms[22m[39m
+   [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle HTTP 500 errors for getFullGraphData[32m 6[2mms[22m[39m
    [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle 503 when graph service is unavailable[32m 4[2mms[22m[39m
    [32mтЬУ[39m graph API[2m > [22merror handling[2m > [22mshould handle timeout errors[32m 5[2mms[22m[39m
 [31m   [31m├Ч[31m graph API[2m > [22mgetFullGraphData without limit parameter[2m > [22mshould use default limit when called without parameter[39m[32m 5[2mms[22m[39m
 [31m     тЖТ ╨Ю╤И╨╕╨▒╨║╨░ ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨│╤А╨░╤Д╨░: Failed to parse URL from /api/v1/graph/all?limit=100&link_limit=0[39m
- [31mтЭп[39m src/lib/components/ApiErrorDisplay.spec.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 331[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mrenders with error data (code and message visible)[32m 71[2mms[22m[39m
-[31m   [31m├Ч[31m ApiErrorDisplay[2m > [22mdoes not render when error is null[39m[32m 16[2mms[22m[39m
-[31m     тЖТ expected '<!---->' to be '' // Object.is equality[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdisplays details list when details are provided[32m 30[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdisplays received value in details when available[32m 16[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mcalls onClose when close button is clicked[32m 35[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mhas correct ARIA attributes[32m 120[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mclose button has correct aria-label[32m 8[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdoes not show details section when details are empty[32m 7[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mdoes not show details section when details are undefined[32m 9[2mms[22m[39m
-   [32mтЬУ[39m ApiErrorDisplay[2m > [22mworks without onClose callback[32m 9[2mms[22m[39m
-[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders canvas element
-[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
-[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
-
 [90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders star nodes with coordinates
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m ] Total: [33m1[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Star'[39m, type: [32m'star'[39m }
+
+[90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders canvas element
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
 [90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mprocesses nodes and links without errors
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
@@ -424,7 +438,9 @@ stderr | src/lib/api/graph.test.ts > graph API > getFullGraphData without limit 
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
- [32mтЬУ[39m src/lib/components/CreateNoteModal.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1288[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/CreateNoteModal.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1169[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/EditNoteModal.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1407[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m EditNoteModal[2m > [22mrenders modal when open is true [33m 431[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders asteroid nodes with coordinates
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'asteroid'[39m ] Total: [33m1[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Asteroid'[39m, type: [32m'asteroid'[39m }
@@ -433,76 +449,74 @@ stderr | src/lib/api/graph.test.ts > graph API > getFullGraphData without limit 
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
- [32mтЬУ[39m src/lib/components/EditNoteModal.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1458[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m EditNoteModal[2m > [22mrenders modal when open is true [33m 482[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.rendering.spec.ts[2m > [22m[2mGraphCanvas - Rendering[2m > [22m[2mrenders all nodes within canvas bounds
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
- [32mтЬУ[39m src/lib/components/SearchBar.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 2049[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mnavigates to search page on button click [33m 389[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mdebounces input and navigates after timeout [33m 434[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mclears debounce timer on Enter key [33m 387[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mtrims whitespace from query [33m 352[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mrenders unknown type nodes without type property
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Unknown'[39m }
 
- [32mтЬУ[39m src/lib/components/GraphCanvas.rendering.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1877[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders nodes with coordinates from simulation [33m 324[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders correct number of nodes [33m 324[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders links between correct nodes [33m 328[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders all nodes within canvas bounds [33m 338[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.rendering.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1923[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders nodes with coordinates from simulation [33m 318[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders correct number of nodes [33m 327[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders links between correct nodes [33m 329[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Rendering[2m > [22mrenders all nodes within canvas bounds [33m 339[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/SearchBar.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 2146[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mnavigates to search page on button click [33m 510[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mdebounces input and navigates after timeout [33m 441[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mclears debounce timer on Enter key [33m 375[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m SearchBar[2m > [22mtrims whitespace from query [33m 322[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.node-types.spec.ts[2m > [22m[2mGraphCanvas - Node Type Rendering[2m > [22m[2mfalls back to unknown for undefined type
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'undefined'[39m ] Total: [33m1[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'No Type'[39m, type: [90mundefined[39m }
 
- [32mтЬУ[39m src/lib/components/TagSelector.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 2585[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m TagSelector[2m > [22madds new tag on Enter key [33m 414[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m TagSelector[2m > [22madds tag when trimmable spaces are present [33m 302[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m TagSelector[2m > [22mvalidates tag length (max 30 chars) [33m 368[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/GraphCanvas.node-types.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2433[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders star nodes with coordinates [33m 476[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders planet nodes with coordinates [33m 317[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/TagSelector.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 2729[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m TagSelector[2m > [22madds new tag on Enter key [33m 321[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m TagSelector[2m > [22madds tag when trimmable spaces are present [33m 367[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m TagSelector[2m > [22mvalidates tag length (max 30 chars) [33m 512[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.node-types.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2396[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders star nodes with coordinates [33m 447[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders planet nodes with coordinates [33m 326[2mms[22m[39m
    [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders comet nodes with coordinates [33m 324[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders galaxy nodes with coordinates [33m 330[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders asteroid nodes with coordinates [33m 325[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders unknown type nodes without type property [33m 324[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mfalls back to unknown for undefined type [33m 327[2mms[22m[39m
-[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcalls onNodeClick callback is defined
-[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
-[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
-
-[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcleans up on unmount
-[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
-[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
-
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders galaxy nodes with coordinates [33m 328[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders asteroid nodes with coordinates [33m 326[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mrenders unknown type nodes without type property [33m 312[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Node Type Rendering[2m > [22mfalls back to unknown for undefined type [33m 323[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders reference links
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
- [32mтЬУ[39m src/lib/components/GraphCanvas.interactions.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 705[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Interactions[2m > [22mcalls onNodeClick callback is defined [33m 512[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/NoteSidePanel.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 503[2mms[22m[39m
 [90mstdout[2m | src/lib/components/GraphCanvas.links.spec.ts[2m > [22m[2mGraphCanvas - Link Type Rendering[2m > [22m[2mrenders dependency links
 [22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
 [GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
 
- [32mтЬУ[39m src/lib/components/NoteEditor.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 535[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/GraphCanvas.links.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 841[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders reference links [33m 481[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders dependency links [33m 350[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/FloatingControls.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 515[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/Graph3D.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 428[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/NoteCard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 254[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/ConfirmModal.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 401[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/BackButton.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 211[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/LazyGraph3D.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 92[2mms[22m[39m
- [32mтЬУ[39m src/lib/utils/deviceCapabilities.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32mтЬУ[39m src/lib/components/SmartGraph.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 42[2mms[22m[39m
- [31mтЭп[39m src/lib/components/LinkCreator.spec.ts [2m([22m[2m9 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 10646[2mms[22m[39m
-   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22mrenders with search input and link type selector [33m 331[2mms[22m[39m
-[31m   [31m├Ч[31m LinkCreator[2m > [22msearches for notes when typing in search field[39m[33m 1954[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcalls onNodeClick callback is defined
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+ [32mтЬУ[39m src/lib/components/GraphCanvas.links.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 791[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders reference links [33m 455[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Link Type Rendering[2m > [22mrenders dependency links [33m 327[2mms[22m[39m
+[90mstdout[2m | src/lib/components/GraphCanvas.interactions.spec.ts[2m > [22m[2mGraphCanvas - Interactions[2m > [22m[2mcleans up on unmount
+[22m[39m[GraphCanvas] Received nodes types: [ [32m'star'[39m, [32m'planet'[39m, [32m'comet'[39m ] Total: [33m3[39m
+[GraphCanvas] First node: { id: [32m'1'[39m, title: [32m'Node 1'[39m, type: [32m'star'[39m }
+
+ [32mтЬУ[39m src/lib/components/NoteEditor.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 524[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/NoteSidePanel.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 511[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/GraphCanvas.interactions.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 664[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m GraphCanvas - Interactions[2m > [22mcalls onNodeClick callback is defined [33m 470[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/FloatingControls.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 445[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/Graph3D.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 344[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/NoteCard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/ConfirmModal.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 337[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/BackButton.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 178[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/LazyGraph3D.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 99[2mms[22m[39m
+ [32mтЬУ[39m src/lib/utils/deviceCapabilities.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mтЬУ[39m src/lib/components/SmartGraph.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [31mтЭп[39m src/lib/components/LinkCreator.spec.ts [2m([22m[2m9 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 9941[2mms[22m[39m
+   [33m[2mтЬУ[22m[39m LinkCreator[2m > [22mrenders with search input and link type selector [33m 311[2mms[22m[39m
+[31m   [31m├Ч[31m LinkCreator[2m > [22msearches for notes when typing in search field[39m[33m 1943[2mms[22m[39m
 [31m     тЖТ Unable to find an element with the text: Target Note 1. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
 Ignored nodes: comments, script, style
@@ -707,7 +721,7 @@ Ignored nodes: comments, script, style
     [36m</div>[31m
   [36m</body>[31m
 [36m</html>[31m[39m
-[31m   [31m├Ч[31m LinkCreator[2m > [22mselects target note from search results[39m[33m 2254[2mms[22m[39m
+[31m   [31m├Ч[31m LinkCreator[2m > [22mselects target note from search results[39m[33m 1963[2mms[22m[39m
 [31m     тЖТ Unable to find an element with the text: Target Note 1. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
 Ignored nodes: comments, script, style
@@ -912,8 +926,8 @@ Ignored nodes: comments, script, style
     [36m</div>[31m
   [36m</body>[31m
 [36m</html>[31m[39m
-   [32mтЬУ[39m LinkCreator[2m > [22mallows selecting different link types[32m 144[2mms[22m[39m
-[31m   [31m├Ч[31m LinkCreator[2m > [22msuccessfully creates link and calls onSuccess callback[39m[33m 2081[2mms[22m[39m
+   [32mтЬУ[39m LinkCreator[2m > [22mallows selecting different link types[32m 110[2mms[22m[39m
+[31m   [31m├Ч[31m LinkCreator[2m > [22msuccessfully creates link and calls onSuccess callback[39m[33m 1943[2mms[22m[39m
 [31m     тЖТ Unable to find an element with the text: Target Note 1. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
 Ignored nodes: comments, script, style
@@ -1118,7 +1132,7 @@ Ignored nodes: comments, script, style
     [36m</div>[31m
   [36m</body>[31m
 [36m</html>[31m[39m
-[31m   [31m├Ч[31m LinkCreator[2m > [22mhandles 409 conflict error when creating duplicate link[39m[33m 2022[2mms[22m[39m
+[31m   [31m├Ч[31m LinkCreator[2m > [22mhandles 409 conflict error when creating duplicate link[39m[33m 1822[2mms[22m[39m
 [31m     тЖТ Unable to find an element with the text: Target Note 1. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
 Ignored nodes: comments, script, style
@@ -1323,9 +1337,9 @@ Ignored nodes: comments, script, style
     [36m</div>[31m
   [36m</body>[31m
 [36m</html>[31m[39m
-   [32mтЬУ[39m LinkCreator[2m > [22mcalls onCancel when cancel button is clicked[32m 58[2mms[22m[39m
-   [32mтЬУ[39m LinkCreator[2m > [22mdisables submit button when no target is selected[32m 11[2mms[22m[39m
-[31m   [31m├Ч[31m LinkCreator[2m > [22mexcludes source note from search results[39m[33m 1782[2mms[22m[39m
+   [32mтЬУ[39m LinkCreator[2m > [22mcalls onCancel when cancel button is clicked[32m 44[2mms[22m[39m
+   [32mтЬУ[39m LinkCreator[2m > [22mdisables submit button when no target is selected[32m 14[2mms[22m[39m
+[31m   [31m├Ч[31m LinkCreator[2m > [22mexcludes source note from search results[39m[33m 1781[2mms[22m[39m
 [31m     тЖТ Unable to find an element with the text: Target Note 1. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
 Ignored nodes: comments, script, style
@@ -1530,6 +1544,7 @@ Ignored nodes: comments, script, style
     [36m</div>[31m
   [36m</body>[31m
 [36m</html>[31m[39m
+
 
 тОптОптОптОптОптОп Failed Tests 31 тОптОптОптОптОптОптОп
 
@@ -3237,6 +3252,6 @@ Ignored nodes: comments, script, style
 
 [2m Test Files [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m18 passed[39m[22m[90m (23)[39m
 [2m      Tests [22m [1m[31m31 failed[39m[22m[2m | [22m[1m[32m188 passed[39m[22m[90m (219)[39m
-[2m   Start at [22m 13:32:54
-[2m   Duration [22m 17.42s[2m (transform 5.74s, setup 55.41s, collect 10.12s, tests 27.58s, environment 47.35s, prepare 8.99s)[22m
+[2m   Start at [22m 13:29:24
+[2m   Duration [22m 16.83s[2m (transform 5.70s, setup 53.64s, collect 10.24s, tests 26.39s, environment 45.39s, prepare 9.33s)[22m
 

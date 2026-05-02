@@ -1,0 +1,32 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/knowledge-graph/frontend[39m
+
+
+тОптОптОптОптОптОп Failed Suites 1 тОптОптОптОптОптОптОп
+
+ FAIL  src/lib/components/LinkCreator.spec.ts [ src/lib/components/LinkCreator.spec.ts ]
+Error: Failed to resolve import "@testing-library/jest-env/vitest" from "vitest-setup.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: D:/knowledge-graph/frontend/vitest-setup.ts:1:0
+  28 |    clearAnimationState: vi.fn()
+  29 |  }));
+  30 |  const __vi_import_0__ = await import("@testing-library/jest-env/vitest");
+     |                                       ^
+  31 |  const __vi_import_1__ = await import("msw/node");
+  32 |  const __vi_import_2__ = await import("msw");
+ тЭп TransformPluginContext._formatError node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41
+ тЭп TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16
+ тЭп normalizeUrl node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23
+ тЭп node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+ тЭп TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7
+ тЭп PluginContainer.transform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18
+ тЭп loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27
+
+тОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОптОп[1/1]тОп
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m   Start at [22m 13:20:48
+[2m   Duration [22m 1.42s[2m (transform 33ms, setup 0ms, collect 0ms, tests 0ms, environment 858ms, prepare 204ms)[22m
+
