@@ -21,7 +21,7 @@ export default defineConfig({
   timeout: 60 * 1000, // 60s per test
   reporter: 'html',
   use: {
-    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
+    baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     actionTimeout: 15000,
     navigationTimeout: 15000,
@@ -36,31 +36,30 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: process.env.CI || process.env.BACKEND_URL
-    ? {
-        // In CI or when BACKEND_URL is set, only start frontend
-        command: 'npm run dev',
-        url: process.env.FRONTEND_URL || 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
-      }
-    : [
-        // Local development: start both frontend and backend
-        {
-          command: 'npm run dev',
-          url: process.env.FRONTEND_URL || 'http://localhost:5173',
-          reuseExistingServer: true,
-          timeout: 120 * 1000,
-        },
-        {
-          command: 'cd ../backend && go run cmd/server/main.go',
-          url: 'http://localhost:8080',
-          reuseExistingServer: true,
-          timeout: 60 * 1000,
-          env: {
-            DATABASE_URL: process.env.DATABASE_URL || '',
-            REDIS_URL: process.env.REDIS_URL || '',
-          },
-        },
-      ],
+  // webServer temporarily disabled for Docker testing
+  // webServer: process.env.CI || process.env.BACKEND_URL
+  //   ? {
+  //       command: 'npm run dev',
+  //       url: process.env.FRONTEND_URL || 'http://localhost:5173',
+  //       reuseExistingServer: !process.env.CI,
+  //       timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
+  //     }
+  //   : [
+  //       {
+  //         command: 'npm run dev',
+  //         url: process.env.FRONTEND_URL || 'http://localhost:5173',
+  //         reuseExistingServer: true,
+  //         timeout: 120 * 1000,
+  //       },
+  //       {
+  //         command: 'cd ../backend && go run cmd/server/main.go',
+  //         url: 'http://localhost:8080',
+  //         reuseExistingServer: true,
+  //         timeout: 60 * 1000,
+  //         env: {
+  //           DATABASE_URL: process.env.DATABASE_URL || '',
+  //           REDIS_URL: process.env.REDIS_URL || '',
+  //         },
+  //       },
+  //     ],
 });
