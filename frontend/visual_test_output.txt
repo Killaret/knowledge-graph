@@ -1,0 +1,62 @@
+
+Running 11 tests using 6 workers
+
+[1A[2K[1/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:14:3 тА║ Visual Regression @visual тА║ Home page - default view
+[1A[2K[2/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:77:3 тА║ Visual Regression @visual тА║ 3D Graph - with star
+[1A[2K[3/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:26:3 тА║ Visual Regression @visual тА║ Home page - list view
+[1A[2K[4/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:43:3 тА║ Visual Regression @visual тА║ Home page - with star filter
+[1A[2K[5/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:60:3 тА║ Visual Regression @visual тА║ 3D Graph - loading state
+[1A[2K[6/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:94:3 тА║ Visual Regression @visual тА║ 3D Graph - with planet
+[1A[2K[chromium] тА║ tests\visual\visual-regression.spec.ts:77:3 тА║ Visual Regression @visual тА║ 3D Graph - with star
+[createNote] API response: {"data":{"content":"Star type visualization","created_at":"2026-05-03T17:46:21.452718364Z","id":"2e1b40ea-484c-463c-86bd-ab83112093b5","metadata":{},"title":"Star Visual Test","type":"star","updated_at":"2026-05-03T17:46:21.452718364Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\visual\visual-regression.spec.ts:94:3 тА║ Visual Regression @visual тА║ 3D Graph - with planet
+[createNote] API response: {"data":{"content":"Planet type visualization","created_at":"2026-05-03T17:46:21.774373101Z","id":"8d270c94-093b-472f-8046-9a3dc6386cae","metadata":{},"title":"Planet Visual Test","type":"planet","updated_at":"2026-05-03T17:46:21.774373101Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\visual\visual-regression.spec.ts:60:3 тА║ Visual Regression @visual тА║ 3D Graph - loading state
+[createNote] API response: {"data":{"content":"Testing 3D visualization","created_at":"2026-05-03T17:46:21.774988191Z","id":"23dbfb39-5b8a-4323-b6db-cd1c7997ca94","metadata":{},"title":"Visual 3D Test","type":"star","updated_at":"2026-05-03T17:46:21.774988191Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[7/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:111:3 тА║ Visual Regression @visual тА║ 3D Graph - with connections
+[1A[2K[chromium] тА║ tests\visual\visual-regression.spec.ts:111:3 тА║ Visual Regression @visual тА║ 3D Graph - with connections
+[createNote] API response: {"data":{"content":"Center","created_at":"2026-05-03T17:46:23.781071591Z","id":"070a564e-29d7-43a2-8eaa-aa828bac9611","metadata":{},"title":"Center Node","type":"star","updated_at":"2026-05-03T17:46:23.781071591Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Satellite","created_at":"2026-05-03T17:46:23.806250488Z","id":"74215522-f6a3-431b-bcc5-1cf76d4193ab","metadata":{},"title":"Satellite Node","type":"planet","updated_at":"2026-05-03T17:46:23.806250488Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'070a564e-29d7-43a2-8eaa-aa828bac9611'[39m,
+  targetId: [32m'74215522-f6a3-431b-bcc5-1cf76d4193ab'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"070a564e-29d7-43a2-8eaa-aa828bac9611","target_note_id":"74215522-f6a3-431b-bcc5-1cf76d4193ab","weight":0.8,"link_type":"related","metadata":{}}
+
+[1A[2K[8/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:136:3 тА║ Visual Regression @visual тА║ ConfirmModal - delete confirmation
+[1A[2K[9/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:150:3 тА║ Visual Regression @visual тА║ Search - with results
+[1A[2K[10/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:175:3 тА║ Visual Regression @visual тА║ Empty state - no notes
+[1A[2K[chromium] тА║ tests\visual\visual-regression.spec.ts:150:3 тА║ Visual Regression @visual тА║ Search - with results
+[createNote] API response: {"data":{"content":"Unique content for search","created_at":"2026-05-03T17:46:25.511252674Z","id":"0117354d-b9ea-49c9-bb61-5fa7858f7f78","metadata":{},"title":"Searchable Test Note","type":"comet","updated_at":"2026-05-03T17:46:25.511252674Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[11/11] [chromium] тА║ tests\visual\visual-regression.spec.ts:187:3 тА║ Visual Regression @visual тА║ Full 3D Graph view
+[1A[2K  1) [chromium] тА║ tests\visual\visual-regression.spec.ts:60:3 тА║ Visual Regression @visual тА║ 3D Graph - loading state 
+
+    TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-testid="loading-overlay"]') to be visible[22m
+
+
+      68 |     
+      69 |     // Capture loading state
+    > 70 |     await page.waitForSelector('[data-testid="loading-overlay"]');
+         |                ^
+      71 |     await page.screenshot({ 
+      72 |       path: 'argos-screenshots/3d-loading-state.png',
+      73 |       fullPage: true 
+        at D:\knowledge-graph\frontend\tests\visual\visual-regression.spec.ts:70:16
+
+    Error Context: test-results\visual-visual-regression-V-cfa8e-al-3D-Graph---loading-state-chromium\error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] тА║ tests\visual\visual-regression.spec.ts:60:3 тА║ Visual Regression @visual тА║ 3D Graph - loading state 
+  10 passed (19.7s)

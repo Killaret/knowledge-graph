@@ -1,0 +1,596 @@
+
+Running 11 tests using 6 workers
+
+[1A[2K[1/11] [chromium] тА║ tests\progressive-rendering.spec.ts:397:3 тА║ Progressive Graph - Camera & Animation тА║ should maintain graph container structure
+[1A[2K[2/11] [chromium] тА║ tests\progressive-rendering.spec.ts:124:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display node elements in 3D space @smoke @3d @progressive
+[1A[2K[3/11] [chromium] тА║ tests\progressive-rendering.spec.ts:233:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle multiple note transitions correctly @smoke @3d @progressive
+[1A[2K[4/11] [chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[1A[2K[5/11] [chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[1A[2K[6/11] [chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:397:3 тА║ Progressive Graph - Camera & Animation тА║ should maintain graph container structure
+[createNote] API response: {"data":{"content":"Testing DOM structure","created_at":"2026-05-03T17:51:46.555254581Z","id":"8775a52d-93b7-4056-9a74-516388492155","metadata":{},"title":"Structure Test","type":"star","updated_at":"2026-05-03T17:51:46.555254581Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Link","created_at":"2026-05-03T17:51:46.667634724Z","id":"9ef8d723-d29a-4fd1-b3fd-3ff7b2770d6f","metadata":{},"title":"Structure Link","type":"star","updated_at":"2026-05-03T17:51:46.667634724Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'8775a52d-93b7-4056-9a74-516388492155'[39m,
+  targetId: [32m'9ef8d723-d29a-4fd1-b3fd-3ff7b2770d6f'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"8775a52d-93b7-4056-9a74-516388492155","target_note_id":"9ef8d723-d29a-4fd1-b3fd-3ff7b2770d6f","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:124:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display node elements in 3D space @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Testing node rendering","created_at":"2026-05-03T17:51:46.820700043Z","id":"89a54ca5-a833-45f5-8dd6-4c9efabdf71f","metadata":{},"title":"Node Display Test","type":"planet","updated_at":"2026-05-03T17:51:46.820700043Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Central node","created_at":"2026-05-03T17:51:47.232445167Z","id":"9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f","metadata":{},"title":"Central Star","type":"star","updated_at":"2026-05-03T17:51:47.232445167Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Central node for progressive loading test","created_at":"2026-05-03T17:51:47.261875582Z","id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","metadata":{},"title":"Central Progressive Test Note","type":"star","updated_at":"2026-05-03T17:51:47.261875582Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Type: planet","created_at":"2026-05-03T17:51:47.275429205Z","id":"e3a511e5-229d-4950-a5ee-ca566c81ee09","metadata":{},"title":"planet Node","type":"planet","updated_at":"2026-05-03T17:51:47.275429205Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 0","created_at":"2026-05-03T17:51:47.310163073Z","id":"df295410-8302-45fa-980c-a741e2d33821","metadata":{},"title":"Linked Note 0","type":"star","updated_at":"2026-05-03T17:51:47.310163073Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'5ab4c081-6863-49aa-8ad7-f76bb174a20b'[39m,
+  targetId: [32m'df295410-8302-45fa-980c-a741e2d33821'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","target_note_id":"df295410-8302-45fa-980c-a741e2d33821","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Type: comet","created_at":"2026-05-03T17:51:47.376492967Z","id":"5e2332cf-5ac7-48ca-817d-d57236f412b8","metadata":{},"title":"comet Node","type":"comet","updated_at":"2026-05-03T17:51:47.376492967Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Secondary content 0","created_at":"2026-05-03T17:51:47.456164957Z","id":"3c99dd8c-d9fd-4d30-8024-87386315dcb4","metadata":{},"title":"Secondary 0","type":"star","updated_at":"2026-05-03T17:51:47.456164957Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'df295410-8302-45fa-980c-a741e2d33821'[39m,
+  targetId: [32m'3c99dd8c-d9fd-4d30-8024-87386315dcb4'[39m,
+  weight: [33m0.5[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"df295410-8302-45fa-980c-a741e2d33821","target_note_id":"3c99dd8c-d9fd-4d30-8024-87386315dcb4","weight":0.5,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Type: asteroid","created_at":"2026-05-03T17:51:47.504536453Z","id":"c1502df9-bc73-4212-a889-46146869863f","metadata":{},"title":"asteroid Node","type":"asteroid","updated_at":"2026-05-03T17:51:47.504536453Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f'[39m,
+  targetId: [32m'e3a511e5-229d-4950-a5ee-ca566c81ee09'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f","target_note_id":"e3a511e5-229d-4950-a5ee-ca566c81ee09","weight":0.8,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 1","created_at":"2026-05-03T17:51:47.57734445Z","id":"a2b232e2-ad14-4924-b0b9-aeecc7975198","metadata":{},"title":"Linked Note 1","type":"star","updated_at":"2026-05-03T17:51:47.57734445Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'5ab4c081-6863-49aa-8ad7-f76bb174a20b'[39m,
+  targetId: [32m'a2b232e2-ad14-4924-b0b9-aeecc7975198'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","target_note_id":"a2b232e2-ad14-4924-b0b9-aeecc7975198","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:233:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle multiple note transitions correctly @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"First graph","created_at":"2026-05-03T17:51:47.579752016Z","id":"41da0026-50a2-4695-b8de-9ae7f5c9c348","metadata":{},"title":"First Graph Note","type":"star","updated_at":"2026-05-03T17:51:47.579752016Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Secondary content 1","created_at":"2026-05-03T17:51:47.656812499Z","id":"dc1cc309-5dd9-4fda-952e-947b9d71270f","metadata":{},"title":"Secondary 1","type":"star","updated_at":"2026-05-03T17:51:47.656812499Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a2b232e2-ad14-4924-b0b9-aeecc7975198'[39m,
+  targetId: [32m'dc1cc309-5dd9-4fda-952e-947b9d71270f'[39m,
+  weight: [33m0.5[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a2b232e2-ad14-4924-b0b9-aeecc7975198","target_note_id":"dc1cc309-5dd9-4fda-952e-947b9d71270f","weight":0.5,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Testing background loading indicator","created_at":"2026-05-03T17:51:47.674554101Z","id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","metadata":{},"title":"Progressive Loading Test","type":"star","updated_at":"2026-05-03T17:51:47.674554101Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:233:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle multiple note transitions correctly @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Second graph","created_at":"2026-05-03T17:51:47.636194971Z","id":"420bec90-6ff7-4459-81b0-313070c879a0","metadata":{},"title":"Second Graph Note","type":"star","updated_at":"2026-05-03T17:51:47.636194971Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 0","created_at":"2026-05-03T17:51:47.704626068Z","id":"cddab966-9801-4eb4-99ac-41a3d67405a5","metadata":{},"title":"Loading Test Link 0","type":"star","updated_at":"2026-05-03T17:51:47.704626068Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'cddab966-9801-4eb4-99ac-41a3d67405a5'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"cddab966-9801-4eb4-99ac-41a3d67405a5","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createLink] Creating link: {
+  sourceId: [32m'9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f'[39m,
+  targetId: [32m'5e2332cf-5ac7-48ca-817d-d57236f412b8'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f","target_note_id":"5e2332cf-5ac7-48ca-817d-d57236f412b8","weight":0.8,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 2","created_at":"2026-05-03T17:51:47.795276905Z","id":"8dbfa9af-c88f-42df-8d4c-33e33481e47a","metadata":{},"title":"Linked Note 2","type":"star","updated_at":"2026-05-03T17:51:47.795276905Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'5ab4c081-6863-49aa-8ad7-f76bb174a20b'[39m,
+  targetId: [32m'8dbfa9af-c88f-42df-8d4c-33e33481e47a'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","target_note_id":"8dbfa9af-c88f-42df-8d4c-33e33481e47a","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive
+[createLink] Creating link: {
+  sourceId: [32m'9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f'[39m,
+  targetId: [32m'c1502df9-bc73-4212-a889-46146869863f'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"9e25cd33-65cd-4d68-9aeb-a2eab3ee2c2f","target_note_id":"c1502df9-bc73-4212-a889-46146869863f","weight":0.8,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Secondary content 2","created_at":"2026-05-03T17:51:47.914202635Z","id":"b53332b2-82e6-4b3a-87b9-cc0c26635f91","metadata":{},"title":"Secondary 2","type":"star","updated_at":"2026-05-03T17:51:47.914202635Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'8dbfa9af-c88f-42df-8d4c-33e33481e47a'[39m,
+  targetId: [32m'b53332b2-82e6-4b3a-87b9-cc0c26635f91'[39m,
+  weight: [33m0.5[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"8dbfa9af-c88f-42df-8d4c-33e33481e47a","target_note_id":"b53332b2-82e6-4b3a-87b9-cc0c26635f91","weight":0.5,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 1","created_at":"2026-05-03T17:51:48.067548797Z","id":"5f5e0b19-41e7-4fbe-ba5b-3e9c97b9e41c","metadata":{},"title":"Loading Test Link 1","type":"star","updated_at":"2026-05-03T17:51:48.067548797Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'5f5e0b19-41e7-4fbe-ba5b-3e9c97b9e41c'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"5f5e0b19-41e7-4fbe-ba5b-3e9c97b9e41c","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 3","created_at":"2026-05-03T17:51:48.193884975Z","id":"3527ad6e-0e90-4937-9ba2-5135b1a305ab","metadata":{},"title":"Linked Note 3","type":"star","updated_at":"2026-05-03T17:51:48.193884975Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'5ab4c081-6863-49aa-8ad7-f76bb174a20b'[39m,
+  targetId: [32m'3527ad6e-0e90-4937-9ba2-5135b1a305ab'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","target_note_id":"3527ad6e-0e90-4937-9ba2-5135b1a305ab","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 2","created_at":"2026-05-03T17:51:48.262842147Z","id":"0ed22b8d-5db4-4e94-840c-7849ad8e93de","metadata":{},"title":"Loading Test Link 2","type":"star","updated_at":"2026-05-03T17:51:48.262842147Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'0ed22b8d-5db4-4e94-840c-7849ad8e93de'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"0ed22b8d-5db4-4e94-840c-7849ad8e93de","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 4","created_at":"2026-05-03T17:51:48.454169656Z","id":"665ddce7-69fd-4821-a759-6466f5d9ba3a","metadata":{},"title":"Linked Note 4","type":"star","updated_at":"2026-05-03T17:51:48.454169656Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'5ab4c081-6863-49aa-8ad7-f76bb174a20b'[39m,
+  targetId: [32m'665ddce7-69fd-4821-a759-6466f5d9ba3a'[39m,
+  weight: [33m0.7[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"5ab4c081-6863-49aa-8ad7-f76bb174a20b","target_note_id":"665ddce7-69fd-4821-a759-6466f5d9ba3a","weight":0.7,"link_type":"related","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Content 3","created_at":"2026-05-03T17:51:48.470724833Z","id":"00d37064-7d60-459b-a3b4-378490eefa68","metadata":{},"title":"Loading Test Link 3","type":"star","updated_at":"2026-05-03T17:51:48.470724833Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'00d37064-7d60-459b-a3b4-378490eefa68'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"00d37064-7d60-459b-a3b4-378490eefa68","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Content 4","created_at":"2026-05-03T17:51:48.66313433Z","id":"3bd02693-7723-445b-a2df-e22e646d6a2e","metadata":{},"title":"Loading Test Link 4","type":"star","updated_at":"2026-05-03T17:51:48.66313433Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'3bd02693-7723-445b-a2df-e22e646d6a2e'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"3bd02693-7723-445b-a2df-e22e646d6a2e","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Content 5","created_at":"2026-05-03T17:51:48.840145525Z","id":"3685e514-7765-4cc5-af6e-ec5394518990","metadata":{},"title":"Loading Test Link 5","type":"star","updated_at":"2026-05-03T17:51:48.840145525Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'3685e514-7765-4cc5-af6e-ec5394518990'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"3685e514-7765-4cc5-af6e-ec5394518990","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Content 6","created_at":"2026-05-03T17:51:48.944330418Z","id":"7c95a211-3b47-4493-a3a8-9ef46d1b5ac6","metadata":{},"title":"Loading Test Link 6","type":"star","updated_at":"2026-05-03T17:51:48.944330418Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'7c95a211-3b47-4493-a3a8-9ef46d1b5ac6'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"7c95a211-3b47-4493-a3a8-9ef46d1b5ac6","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Content 7","created_at":"2026-05-03T17:51:49.040847724Z","id":"8bdc77de-e9b1-4ac1-a7b2-dd3dda07cd0d","metadata":{},"title":"Loading Test Link 7","type":"star","updated_at":"2026-05-03T17:51:49.040847724Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'a0188e6f-a1cc-4f25-8127-587bc9a7c602'[39m,
+  targetId: [32m'8bdc77de-e9b1-4ac1-a7b2-dd3dda07cd0d'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"a0188e6f-a1cc-4f25-8127-587bc9a7c602","target_note_id":"8bdc77de-e9b1-4ac1-a7b2-dd3dda07cd0d","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K  1) [chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('[data-testid="graph-3d-container"]').first()
+    Expected: visible
+    Timeout: 2000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 2000ms[22m
+    [2m  - waiting for locator('[data-testid="graph-3d-container"]').first()[22m
+
+
+      66 |     // Verify graph container appears immediately
+      67 |     const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
+    > 68 |     await expect(graphContainer).toBeVisible({ timeout: 2000 });
+         |                                  ^
+      69 |     
+      70 |     // Loading overlay may appear briefly but should disappear quickly
+      71 |     const loadingOverlay = page.locator('[data-testid="loading-overlay"]');
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:68:34
+
+    Error Context: test-results\progressive-rendering-Prog-7af6b-immediately-without-spinner-chromium\error-context.md
+
+
+[1A[2K[7/11] [chromium] тА║ tests\progressive-rendering.spec.ts:83:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show dense fog initially and clear after progressive load @smoke @3d @progressive
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:83:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show dense fog initially and clear after progressive load @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Testing fog effect","created_at":"2026-05-03T17:51:54.764390788Z","id":"113ee4bc-8001-447a-8217-54c4c87a76de","metadata":{},"title":"Fog Test Note","type":"galaxy","updated_at":"2026-05-03T17:51:54.764390788Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Link content","created_at":"2026-05-03T17:51:54.791947823Z","id":"070e711e-ed7e-4100-a2b1-f4b0d7cc4dd4","metadata":{},"title":"Fog Link 0","type":"star","updated_at":"2026-05-03T17:51:54.791947823Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'113ee4bc-8001-447a-8217-54c4c87a76de'[39m,
+  targetId: [32m'070e711e-ed7e-4100-a2b1-f4b0d7cc4dd4'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'reference'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"113ee4bc-8001-447a-8217-54c4c87a76de","target_note_id":"070e711e-ed7e-4100-a2b1-f4b0d7cc4dd4","weight":0.8,"link_type":"reference","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Link content","created_at":"2026-05-03T17:51:54.933273791Z","id":"95bcbd84-d91e-45f7-85e7-d9755cc30332","metadata":{},"title":"Fog Link 1","type":"star","updated_at":"2026-05-03T17:51:54.933273791Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'113ee4bc-8001-447a-8217-54c4c87a76de'[39m,
+  targetId: [32m'95bcbd84-d91e-45f7-85e7-d9755cc30332'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'reference'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"113ee4bc-8001-447a-8217-54c4c87a76de","target_note_id":"95bcbd84-d91e-45f7-85e7-d9755cc30332","weight":0.8,"link_type":"reference","metadata":{}}
+
+[1A[2K[createNote] API response: {"data":{"content":"Link content","created_at":"2026-05-03T17:51:55.038079876Z","id":"94f17c68-b769-4884-85d1-75daa49a83f5","metadata":{},"title":"Fog Link 2","type":"star","updated_at":"2026-05-03T17:51:55.038079876Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'113ee4bc-8001-447a-8217-54c4c87a76de'[39m,
+  targetId: [32m'94f17c68-b769-4884-85d1-75daa49a83f5'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'reference'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"113ee4bc-8001-447a-8217-54c4c87a76de","target_note_id":"94f17c68-b769-4884-85d1-75daa49a83f5","weight":0.8,"link_type":"reference","metadata":{}}
+
+[1A[2K  2) [chromium] тА║ tests\progressive-rendering.spec.ts:124:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display node elements in 3D space @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('[data-testid="graph-3d-container"]').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('[data-testid="graph-3d-container"]').first()[22m
+
+
+      138 |     // Verify graph container exists
+      139 |     const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
+    > 140 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      141 |     
+      142 |     // Check that canvas is present (WebGL rendering)
+      143 |     const canvas = page.locator('canvas').first();
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:140:34
+
+    Error Context: test-results\progressive-rendering-Prog-5d5a5-y-node-elements-in-3D-space-chromium\error-context.md
+
+
+[1A[2K  3) [chromium] тА║ tests\progressive-rendering.spec.ts:397:3 тА║ Progressive Graph - Camera & Animation тА║ should maintain graph container structure 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.graph-3d-container').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.graph-3d-container').first()[22m
+
+
+      410 |     // Verify DOM structure
+      411 |     const graphContainer = page.locator('.graph-3d-container').first();
+    > 412 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      413 |     
+      414 |     // Check that container has proper styling
+      415 |     const containerStyles = await graphContainer.evaluate(el => {
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:412:34
+
+    Error Context: test-results\progressive-rendering-Prog-000f1-n-graph-container-structure-chromium\error-context.md
+
+
+[1A[2K  4) [chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.stats-bar').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.stats-bar').first()[22m
+
+
+      204 |     // Verify the stats bar is present (spinner may or may not appear)
+      205 |     const statsBar = page.locator('.stats-bar').first();
+    > 206 |     await expect(statsBar).toBeVisible();
+          |                            ^
+      207 |   });
+      208 |
+      209 |   test('should handle camera reset function', async ({ page, request }) => {
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:206:28
+
+    Error Context: test-results\progressive-rendering-Prog-06ffd-tor-during-progressive-load-chromium\error-context.md
+
+
+[1A[2K  5) [chromium] тА║ tests\progressive-rendering.spec.ts:233:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle multiple note transitions correctly @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.graph-3d-container').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.graph-3d-container').first()[22m
+
+
+      245 |     
+      246 |     const graphContainer = page.locator('.graph-3d-container').first();
+    > 247 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      248 |     
+      249 |     // Navigate to second graph
+      250 |     await page.goto(`/graph/3d/${note2Id}`);
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:247:34
+
+    Error Context: test-results\progressive-rendering-Prog-9d419--note-transitions-correctly-chromium\error-context.md
+
+
+[1A[2K[8/11] [chromium] тА║ tests\progressive-rendering.spec.ts:155:3 тА║ Progressive Graph Rendering - Fog of War тА║ should render links between connected nodes @smoke @3d @progressive
+[1A[2K[9/11] [chromium] тА║ tests\progressive-rendering.spec.ts:209:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle camera reset function @smoke @3d @progressive
+[1A[2K[10/11] [chromium] тА║ tests\progressive-rendering.spec.ts:262:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle empty graph (no connections) gracefully @smoke @3d @progressive
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:155:3 тА║ Progressive Graph Rendering - Fog of War тА║ should render links between connected nodes @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Source","created_at":"2026-05-03T17:51:59.624751146Z","id":"dde49158-0efd-4baa-8027-205e006892b0","metadata":{},"title":"Source Node","type":"star","updated_at":"2026-05-03T17:51:59.624751146Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Target","created_at":"2026-05-03T17:51:59.662827321Z","id":"a2c451ed-3695-46e0-ba09-14bf6b0cd747","metadata":{},"title":"Target Node","type":"planet","updated_at":"2026-05-03T17:51:59.662827321Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'dde49158-0efd-4baa-8027-205e006892b0'[39m,
+  targetId: [32m'a2c451ed-3695-46e0-ba09-14bf6b0cd747'[39m,
+  weight: [33m0.9[39m,
+  linkType: [32m'dependency'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"dde49158-0efd-4baa-8027-205e006892b0","target_note_id":"a2c451ed-3695-46e0-ba09-14bf6b0cd747","weight":0.9,"link_type":"dependency","metadata":{}}
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:209:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle camera reset function @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"Testing camera functionality","created_at":"2026-05-03T17:51:59.684619424Z","id":"76086653-66dd-4864-be7e-8de8569e3ad8","metadata":{},"title":"Camera Reset Test","type":"star","updated_at":"2026-05-03T17:51:59.684619424Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K  6) [chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.graph-3d-container').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.graph-3d-container').first()[22m
+
+
+      318 |     // Verify graph loaded
+      319 |     const graphContainer = page.locator('.graph-3d-container').first();
+    > 320 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      321 |     
+      322 |     // Verify stats bar shows the graph data
+      323 |     const statsBar = page.locator('.stats-bar').first();
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:320:34
+
+    Error Context: test-results\progressive-rendering-Prog-61bfb-orrect-celestial-body-types-chromium\error-context.md
+
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:262:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle empty graph (no connections) gracefully @smoke @3d @progressive
+[createNote] API response: {"data":{"content":"No connections","created_at":"2026-05-03T17:52:00.243463025Z","id":"5724b410-2846-41df-a5c0-574e724a6100","metadata":{},"title":"Isolated Node","type":"asteroid","updated_at":"2026-05-03T17:52:00.243463025Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[11/11] [chromium] тА║ tests\progressive-rendering.spec.ts:368:3 тА║ Progressive Graph - Camera & Animation тА║ should verify WebGL canvas dimensions are correct
+[1A[2K  7) [chromium] тА║ tests\progressive-rendering.spec.ts:83:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show dense fog initially and clear after progressive load @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('[data-testid="graph-3d-container"]').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('[data-testid="graph-3d-container"]').first()[22m
+
+
+      108 |     // Verify graph container is visible
+      109 |     const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
+    > 110 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      111 |     
+      112 |     // Wait for progressive loading to complete (Phase 2)
+      113 |     await page.waitForTimeout(4000);
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:110:34
+
+    Error Context: test-results\progressive-rendering-Prog-c2951-lear-after-progressive-load-chromium\error-context.md
+
+
+[1A[2K  8) [chromium] тА║ tests\progressive-rendering.spec.ts:262:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle empty graph (no connections) gracefully @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+      278 |     
+      279 |     // Should show either graph or appropriate message for single node
+    > 280 |     expect(hasGraph || hasNoData).toBe(true);
+          |                                   ^
+      281 |     
+      282 |     // Verify stats show 1 node, 0 links
+      283 |     const statsBar = page.locator('.stats-bar').first();
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:280:35
+
+    Error Context: test-results\progressive-rendering-Prog-16f68-h-no-connections-gracefully-chromium\error-context.md
+
+
+[1A[2K[chromium] тА║ tests\progressive-rendering.spec.ts:368:3 тА║ Progressive Graph - Camera & Animation тА║ should verify WebGL canvas dimensions are correct
+[createNote] API response: {"data":{"content":"Testing canvas size","created_at":"2026-05-03T17:52:03.252889134Z","id":"900afdbb-3737-4ea7-bd8d-75d228565398","metadata":{},"title":"Canvas Dimension Test","type":"star","updated_at":"2026-05-03T17:52:03.252889134Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K  9) [chromium] тА║ tests\progressive-rendering.spec.ts:209:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle camera reset function @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.graph-3d-container').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.graph-3d-container').first()[22m
+
+
+      219 |     // Verify graph loaded
+      220 |     const graphContainer = page.locator('.graph-3d-container').first();
+    > 221 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      222 |     
+      223 |     // Verify canvas exists (camera is attached to it)
+      224 |     const canvas = page.locator('canvas').first();
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:221:34
+
+    Error Context: test-results\progressive-rendering-Prog-059c3-andle-camera-reset-function-chromium\error-context.md
+
+
+[1A[2K  10) [chromium] тА║ tests\progressive-rendering.spec.ts:155:3 тА║ Progressive Graph Rendering - Fog of War тА║ should render links between connected nodes @smoke @3d @progressive 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.graph-3d-container').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.graph-3d-container').first()[22m
+
+
+      171 |     // Verify graph container is visible
+      172 |     const graphContainer = page.locator('.graph-3d-container').first();
+    > 173 |     await expect(graphContainer).toBeVisible();
+          |                                  ^
+      174 |     
+      175 |     // Verify stats show correct counts (should have 2 nodes, 1 link)
+      176 |     const statsBar = page.locator('.stats-bar').first();
+        at D:\knowledge-graph\frontend\tests\progressive-rendering.spec.ts:173:34
+
+    Error Context: test-results\progressive-rendering-Prog-45e73-nks-between-connected-nodes-chromium\error-context.md
+
+
+[1A[2K  10 failed
+    [chromium] тА║ tests\progressive-rendering.spec.ts:34:3 тА║ Progressive Graph Rendering - Fog of War тА║ should load initial graph immediately without spinner @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:83:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show dense fog initially and clear after progressive load @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:124:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display node elements in 3D space @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:155:3 тА║ Progressive Graph Rendering - Fog of War тА║ should render links between connected nodes @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:184:3 тА║ Progressive Graph Rendering - Fog of War тА║ should show background loading indicator during progressive load @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:209:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle camera reset function @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:233:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle multiple note transitions correctly @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:262:3 тА║ Progressive Graph Rendering - Fog of War тА║ should handle empty graph (no connections) gracefully @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:290:3 тА║ Progressive Graph Rendering - Fog of War тА║ should display correct celestial body types @smoke @3d @progressive 
+    [chromium] тА║ tests\progressive-rendering.spec.ts:397:3 тА║ Progressive Graph - Camera & Animation тА║ should maintain graph container structure 
+  1 passed (27.5s)

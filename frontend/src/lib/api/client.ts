@@ -10,9 +10,9 @@ const isDev = import.meta.env.DEV;
 const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
 
 // В dev режиме (Vite) используем относительный /api (проксируется на backend)
-// В production и тестах используем полный URL к backend
+// Development uses proxy, production uses direct backend URL
 const prefixUrl = isDev && !isTest
-  ? '/api' 
+  ? '' 
   : 'http://localhost:8080/api';
 
 // Базовый URL с прокси /api → http://localhost:8080

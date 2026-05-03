@@ -14,8 +14,8 @@ export default defineConfig({
   build: {},
   server: {
     proxy: {
-      '/api': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
+      '/v1': {
+        target: process.env.VITE_API_TARGET || 'http://localhost:8080/api',
         changeOrigin: true
       }
     }

@@ -312,9 +312,11 @@ class APIClient:
     def create_note(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """POST /notes"""
         result = self._request("POST", "/notes", json=payload)
-        if isinstance(result, dict) and "id" in result:
-            self.created_notes.append(result["id"])
-            return result
+        # API returns { "data": {...}, "message": "..." } format
+        data = result.get("data") if isinstance(result, dict) else None
+        if isinstance(data, dict) and "id" in data:
+            self.created_notes.append(data["id"])
+            return data
         raise APIError("POST", "/notes", message=f"Invalid response format: missing 'id' field. Response: {result}")
 
     def create_link(self, source_id: str, target_id: str, description: str = "",
@@ -352,9 +354,11 @@ class APIClient:
         try:
             time.sleep(self.rate_limit_delay)  # Задержка для rate limit
             result = self._request("POST", "/links", json=payload)
-            if isinstance(result, dict) and "id" in result:
-                self.created_links.append(result["id"])
-                return result
+            # API returns { "data": {...}, "message": "..." } format
+            data = result.get("data") if isinstance(result, dict) else None
+            if isinstance(data, dict) and "id" in data:
+                self.created_links.append(data["id"])
+                return data
             raise APIError("POST", "/links", 
                           message=f"Invalid response format: missing 'id' field. Response: {result}")
         except APIError as e:
@@ -568,6 +572,8 @@ def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> 
     return created
 
 def main():
+    global NOTES_PER_CATEGORY, TOTAL_NOTES
+
     parser = argparse.ArgumentParser(description="Загрузка тестовых данных в Knowledge Graph")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="URL API бэкенда")
     parser.add_argument("--notes-per-category", type=int, default=NOTES_PER_CATEGORY, help=f"Количество заметок на категорию (default: {NOTES_PER_CATEGORY})")
@@ -579,7 +585,6 @@ def main():
     args = parser.parse_args()
 
     # Обновляем глобальные константы если переданы через CLI
-    global NOTES_PER_CATEGORY, TOTAL_NOTES
     if args.notes_per_category != NOTES_PER_CATEGORY:
         NOTES_PER_CATEGORY = args.notes_per_category
         TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)

@@ -1,0 +1,77 @@
+
+Running 9 tests using 6 workers
+
+[1A[2K[1/9] [chromium] тА║ tests\type-filters.spec.ts:19:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by star type @smoke @filters
+[1A[2K[2/9] [chromium] тА║ tests\type-filters.spec.ts:88:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by comet type @smoke @filters
+[1A[2K[3/9] [chromium] тА║ tests\type-filters.spec.ts:55:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by planet type @smoke @filters
+[1A[2K[4/9] [chromium] тА║ tests\type-filters.spec.ts:190:3 тА║ Type Filters - Home Page Filtering тА║ should clear filter by clicking All @smoke @filters
+[1A[2K[5/9] [chromium] тА║ tests\type-filters.spec.ts:144:3 тА║ Type Filters - Home Page Filtering тА║ should show all notes when selecting All filter @smoke @filters
+[1A[2K[6/9] [chromium] тА║ tests\type-filters.spec.ts:120:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by galaxy type @smoke @filters
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:19:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by star type @smoke @filters
+[createNote] API response: {"data":{"content":"Star content","created_at":"2026-05-03T17:47:13.39293747Z","id":"72aafd8b-af8d-41a5-aad5-331d53e7f651","metadata":{},"title":"Star Filter Test 1777830433373","type":"star","updated_at":"2026-05-03T17:47:13.39293747Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Planet content","created_at":"2026-05-03T17:47:13.41586663Z","id":"a6cf69fb-d76b-4d93-9a21-68acb34aabe0","metadata":{},"title":"Planet Filter Test 1777830433373","type":"planet","updated_at":"2026-05-03T17:47:13.41586663Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:144:3 тА║ Type Filters - Home Page Filtering тА║ should show all notes when selecting All filter @smoke @filters
+[createNote] API response: {"data":{"content":"Star","created_at":"2026-05-03T17:47:13.751645071Z","id":"adaa4116-94b3-4368-a018-d0818c7e4e5f","metadata":{},"title":"All Filter Star 1777830433731","type":"star","updated_at":"2026-05-03T17:47:13.751645071Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Planet","created_at":"2026-05-03T17:47:13.772814819Z","id":"80601149-9207-4be2-9b17-cbc2e1006426","metadata":{},"title":"All Filter Planet 1777830433731","type":"planet","updated_at":"2026-05-03T17:47:13.772814819Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Comet","created_at":"2026-05-03T17:47:13.788896516Z","id":"9bb3013f-bae4-4081-8d8e-200e508b4def","metadata":{},"title":"All Filter Comet 1777830433731","type":"comet","updated_at":"2026-05-03T17:47:13.788896516Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:190:3 тА║ Type Filters - Home Page Filtering тА║ should clear filter by clicking All @smoke @filters
+[createNote] API response: {"data":{"content":"Star content","created_at":"2026-05-03T17:47:13.800805608Z","id":"afef33ca-99d5-4746-803a-cd4bc66ae204","metadata":{},"title":"Clear Filter Star 1777830433777","type":"star","updated_at":"2026-05-03T17:47:13.800805608Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Planet content","created_at":"2026-05-03T17:47:13.825646572Z","id":"62873c56-ae22-413b-8f68-ebd9368eb7e0","metadata":{},"title":"Clear Filter Planet 1777830433777","type":"planet","updated_at":"2026-05-03T17:47:13.825646572Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Comet content","created_at":"2026-05-03T17:47:13.852487451Z","id":"700cd0e2-0d36-47e3-b0c3-47b13d6dbf3c","metadata":{},"title":"Clear Filter Comet 1777830433777","type":"comet","updated_at":"2026-05-03T17:47:13.852487451Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:55:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by planet type @smoke @filters
+[createNote] API response: {"data":{"content":"Planet content","created_at":"2026-05-03T17:47:13.88157257Z","id":"3a6280e3-a2f6-453b-8aaa-3ce2e1872618","metadata":{},"title":"Planet Type 1777830433845","type":"planet","updated_at":"2026-05-03T17:47:13.88157257Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:88:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by comet type @smoke @filters
+[createNote] API response: {"data":{"content":"Comet content","created_at":"2026-05-03T17:47:13.905725576Z","id":"bb5db96f-7e0e-4876-970c-449f3ec6270d","metadata":{},"title":"Comet Filter Test 1777830433873","type":"comet","updated_at":"2026-05-03T17:47:13.905725576Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:55:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by planet type @smoke @filters
+[createNote] API response: {"data":{"content":"Comet content","created_at":"2026-05-03T17:47:13.918222277Z","id":"b14ecd9a-7183-44c3-9800-384eedda9364","metadata":{},"title":"Comet Type 1777830433845","type":"comet","updated_at":"2026-05-03T17:47:13.918222277Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:88:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by comet type @smoke @filters
+[createNote] API response: {"data":{"content":"Galaxy content","created_at":"2026-05-03T17:47:13.949058653Z","id":"979b41c0-17c5-422d-a551-f1ee50ee63ef","metadata":{},"title":"Galaxy Filter Test 1777830433873","type":"galaxy","updated_at":"2026-05-03T17:47:13.949058653Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:120:3 тА║ Type Filters - Home Page Filtering тА║ should filter notes by galaxy type @smoke @filters
+[createNote] API response: {"data":{"content":"Galaxy content","created_at":"2026-05-03T17:47:14.089358911Z","id":"1dbe6d2e-043f-42b4-8288-77c45c6fa478","metadata":{},"title":"Galaxy Filter Test 1777830434058","type":"galaxy","updated_at":"2026-05-03T17:47:14.089358911Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[7/9] [chromium] тА║ tests\type-filters.spec.ts:236:3 тА║ Type Filters - Home Page Filtering тА║ should filter graph nodes when type filter is applied @smoke @filters
+[1A[2K[8/9] [chromium] тА║ tests\type-filters.spec.ts:287:3 тА║ Type Filters - metadata.type fallback тА║ should filter notes with type in metadata field @metadata
+[1A[2K[9/9] [chromium] тА║ tests\type-filters.spec.ts:323:3 тА║ Type Filters - metadata.type fallback тА║ should fallback to star type when no type specified @metadata
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:287:3 тА║ Type Filters - metadata.type fallback тА║ should filter notes with type in metadata field @metadata
+[createNote] API response: {"data":{"content":"Star type in metadata","created_at":"2026-05-03T17:47:17.2412718Z","id":"368e1f4c-33a0-462b-b71b-e8fe80b4fb0a","metadata":{"custom_field":"value","type":"star"},"title":"Metadata Star 1777830437238","type":"star","updated_at":"2026-05-03T17:47:17.2412718Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Planet type at root","created_at":"2026-05-03T17:47:17.260443181Z","id":"d95926b7-ad6d-4d99-9bf6-2d391293b1f8","metadata":{},"title":"Root Planet 1777830437238","type":"planet","updated_at":"2026-05-03T17:47:17.260443181Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[chromium] тА║ tests\type-filters.spec.ts:236:3 тА║ Type Filters - Home Page Filtering тА║ should filter graph nodes when type filter is applied @smoke @filters
+[createNote] API response: {"data":{"content":"Star note","created_at":"2026-05-03T17:47:18.388829455Z","id":"35e881df-d8a7-4e30-8204-52cc38e6076c","metadata":{},"title":"Graph Star 1777830438386","type":"star","updated_at":"2026-05-03T17:47:18.388829455Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Planet note","created_at":"2026-05-03T17:47:18.405872116Z","id":"746c275f-c782-4857-a06b-3baf0ec88ca0","metadata":{},"title":"Graph Planet 1777830438386","type":"planet","updated_at":"2026-05-03T17:47:18.405872116Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createNote] API response: {"data":{"content":"Comet note","created_at":"2026-05-03T17:47:18.420684212Z","id":"917a722c-3361-4606-aa51-232cf81df7b8","metadata":{},"title":"Graph Comet 1777830438386","type":"comet","updated_at":"2026-05-03T17:47:18.420684212Z"},"message":"╨а╨╡╤Б╤Г╤А╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜"}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'35e881df-d8a7-4e30-8204-52cc38e6076c'[39m,
+  targetId: [32m'746c275f-c782-4857-a06b-3baf0ec88ca0'[39m,
+  weight: [33m0.8[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"35e881df-d8a7-4e30-8204-52cc38e6076c","target_note_id":"746c275f-c782-4857-a06b-3baf0ec88ca0","weight":0.8,"link_type":"related","metadata":{}}
+
+[1A[2K[createLink] Creating link: {
+  sourceId: [32m'746c275f-c782-4857-a06b-3baf0ec88ca0'[39m,
+  targetId: [32m'917a722c-3361-4606-aa51-232cf81df7b8'[39m,
+  weight: [33m0.6[39m,
+  linkType: [32m'related'[39m
+}
+
+[1A[2K[createLink] Payload: {"source_note_id":"746c275f-c782-4857-a06b-3baf0ec88ca0","target_note_id":"917a722c-3361-4606-aa51-232cf81df7b8","weight":0.6,"link_type":"related","metadata":{}}
+
+[1A[2K  9 passed (15.1s)

@@ -49,14 +49,38 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     });
     const noteId = note.data.id;
 
+    // Intercept API request to debug response
+    await page.route(`**/v1/notes/${noteId}`, async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      console.log('[API RESPONSE]', response.status(), body.substring(0, 500));
+      await route.fulfill({ response });
+    });
+
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+
+    // Listen to console messages
+    page.on('console', msg => console.log('[BROWSER]', msg.type(), msg.text()));
+    page.on('pageerror', error => console.log('[BROWSER ERROR]', error.message));
+
+    await page.waitForTimeout(5000); // Wait for client-side rendering
+
+    // Debug: save screenshot and HTML
+    await page.screenshot({ path: 'test-results/debug-note-page.png', fullPage: true });
+    const html = await page.content();
+    console.log('[DEBUG] Page HTML length:', html.length);
+    console.log('[DEBUG] Page HTML snippet:', html.substring(0, 1000));
+
+    // Wait for note content to load
+    await page.waitForSelector('h1', { timeout: 15000 });
+    await page.waitForSelector('button.edit-btn', { timeout: 15000 });
 
     // Click Edit button to open modal - use more specific selector and scroll first
-    const editButton = page.locator('button.edit-btn, [data-testid="edit-note-btn"], button:has-text("Edit")').first();
+    const editButton = page.locator('button.edit-btn, [data-testid="edit-note-btn"], [data-testid="note-edit-button"], button:has-text("Edit")').first();
+    await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.scrollIntoViewIfNeeded();
-    await expect(editButton).toBeVisible();
     await editButton.click();
 
     // Wait for modal to open with increased timeout

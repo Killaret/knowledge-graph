@@ -28,7 +28,8 @@ export async function getNotes(): Promise<Note[]> {
 
 // Получить одну заметку по ID
 export async function getNote(id: string): Promise<Note> {
-  return api.get(`v1/notes/${id}`).json();
+  const response = await api.get(`v1/notes/${id}`).json<{ data: Note }>();
+  return response.data;
 }
 
 // Создать новую заметку
