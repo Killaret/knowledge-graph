@@ -85,7 +85,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     // Verify via API that note was updated
     const updatedNote = await request.get(`${getBackendUrl()}/notes/${noteId}`);
     const noteData = await updatedNote.json();
-    expect(noteData.title).toBe('Edited ' + timestamp);
+    expect(noteData.data.title).toBe('Edited ' + timestamp);
   });
 
   test('should delete a note', async ({ page, request }) => {

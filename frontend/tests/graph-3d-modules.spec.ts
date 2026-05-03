@@ -411,8 +411,8 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     await createLink(request, notes[0], notes[1], 0.7);
     await createLink(request, notes[1], notes[2], 0.5);
 
-    // Test the /api/graph/all endpoint directly
-    const response = await request.get(`${getBackendUrl()}/api/graph/all`, { timeout: 10000 });
+    // Test the /api/v1/graph/all endpoint directly
+    const response = await request.get(`${getBackendUrl()}/api/v1/graph/all`, { timeout: 10000 });
     
     // Should return 200 OK with graph data
     expect(response.status()).toBe(200);
