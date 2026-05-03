@@ -4,7 +4,6 @@ import ky from 'ky';
 // Определяем базовый URL в зависимости от среды
 // import.meta.env доступен в Vite/SvelteKit
 const isDev = import.meta.env.DEV;
-const isProd = import.meta.env.PROD;
 
 // Проверяем тестовое окружение через process.env.VITEST
 // Vitest устанавливает эту переменную автоматически

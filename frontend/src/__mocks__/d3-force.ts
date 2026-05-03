@@ -31,9 +31,9 @@ export function createMockSimulation() {
       }
       return mockState.simulationNodes;
     }),
-    tick: vi.fn().mockImplementation((iterations?: number) => {
+    tick: vi.fn().mockImplementation((_iterations?: number) => {
       // Immediately update node positions
-      mockState.simulationNodes = mockState.simulationNodes.map((n: any, i: number) => ({
+      mockState.simulationNodes = mockState.simulationNodes.map((n: any, _i: number) => ({
         ...n,
         x: (n.x || 400) + (Math.random() - 0.5) * 10,
         y: (n.y || 300) + (Math.random() - 0.5) * 10

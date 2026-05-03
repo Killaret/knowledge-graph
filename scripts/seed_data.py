@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 """
 Скрипт для загрузки тестовых данных через API Knowledge Graph.
+
 Запуск:
-    python scripts/seed_data.py [--api-url http://localhost:8080]
+    # Интерактивный режим (запросит параметры)
+    python scripts/seed_data.py -i
+
+    # CLI аргументы
+    python scripts/seed_data.py --notes-per-category 50 --api-url http://localhost:8080
+
+    # Значения по умолчанию
+    python scripts/seed_data.py
 
 Требуется Python 3.8+ и библиотеки:
     pip install requests tqdm faker
@@ -17,6 +25,58 @@ from typing import List, Dict, Any, Optional, Union
 import requests
 from faker import Faker
 from tqdm import tqdm
+
+
+def ask_param(prompt: str, default: Any, convert_type: type = str) -> Any:
+    """Интерактивный ввод параметра с дефолтом."""
+    default_str = str(default)
+    value = input(f"{prompt} [{default_str}]: ").strip()
+    if not value:
+        return default
+    try:
+        return convert_type(value)
+    except ValueError:
+        print(f"   ⚠️ Некорректное значение, используем по умолчанию: {default}")
+        return default
+
+
+def interactive_config(args) -> argparse.Namespace:
+    """Интерактивная настройка параметров."""
+    print("\n" + "="*60)
+    print("🌱 Knowledge Graph Seeder - Настройка параметров")
+    print("="*60)
+    print("Нажмите Enter для использования значения по умолчанию\n")
+
+    # API URL
+    args.api_url = ask_param("API URL", args.api_url)
+
+    # Количество заметок на категорию
+    global NOTES_PER_CATEGORY, TOTAL_NOTES
+    notes_per_cat = ask_param("Заметок на категорию", NOTES_PER_CATEGORY, int)
+    NOTES_PER_CATEGORY = max(1, notes_per_cat)
+    TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
+
+    # Rate limit
+    delay = ask_param("Задержка между запросами (сек, 0 = без задержки)", args.rate_limit_delay, float)
+    args.rate_limit_delay = max(0.0, delay)
+
+    # Флаги
+    skip_clear_input = input("Пропустить очистку БД? [y/N]: ").strip().lower()
+    args.skip_clear = skip_clear_input in ('y', 'yes')
+
+    no_random_input = input("Не создавать случайные связи? [y/N]: ").strip().lower()
+    args.no_random_links = no_random_input in ('y', 'yes')
+
+    print("\n" + "-"*60)
+    print("📋 Итоговая конфигурация:")
+    print(f"   API URL: {args.api_url}")
+    print(f"   Заметок на категорию: {NOTES_PER_CATEGORY} (всего: {TOTAL_NOTES})")
+    print(f"   Задержка: {args.rate_limit_delay}с")
+    print(f"   Очистка БД: {'Нет' if args.skip_clear else 'Да'}")
+    print(f"   Случайные связи: {'Нет' if args.no_random_links else 'Да'}")
+    print("-"*60 + "\n")
+
+    return args
 
 # ----------------------------------------------------------------------
 # Конфигурация
@@ -510,11 +570,23 @@ def create_random_links(api: APIClient, all_ids: List[str], count: int = 20) -> 
 def main():
     parser = argparse.ArgumentParser(description="Загрузка тестовых данных в Knowledge Graph")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="URL API бэкенда")
+    parser.add_argument("--notes-per-category", type=int, default=NOTES_PER_CATEGORY, help=f"Количество заметок на категорию (default: {NOTES_PER_CATEGORY})")
     parser.add_argument("--skip-clear", action="store_true", help="Пропустить очистку БД")
     parser.add_argument("--no-random-links", action="store_true", help="Не создавать случайные связи")
     parser.add_argument("--no-cleanup-on-error", action="store_true", help="Не очищать созданные данные при ошибке")
     parser.add_argument("--rate-limit-delay", type=float, default=0.0, help="Задержка между запросами (сек), 0 для отключения")
+    parser.add_argument("--interactive", "-i", action="store_true", help="Интерактивная настройка параметров")
     args = parser.parse_args()
+
+    # Обновляем глобальные константы если переданы через CLI
+    global NOTES_PER_CATEGORY, TOTAL_NOTES
+    if args.notes_per_category != NOTES_PER_CATEGORY:
+        NOTES_PER_CATEGORY = args.notes_per_category
+        TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
+
+    # Интерактивный режим
+    if args.interactive:
+        args = interactive_config(args)
 
     api = APIClient(args.api_url, rate_limit_delay=args.rate_limit_delay)
     print(f"[START] Подключение к API: {args.api_url}")
