@@ -64,7 +64,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       type: 'star'
     });
     
-    await page.goto(`/graph/3d/${note.id}`);
+    await page.goto(`/graph/3d/${note.data.id}`);
     
     // Capture loading state
     await page.waitForSelector('[data-testid="loading-overlay"]');
@@ -81,7 +81,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       type: 'star'
     });
     
-    await page.goto(`/graph/3d/${note.id}`);
+    await page.goto(`/graph/3d/${note.data.id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000); // Wait for graph to render
     
@@ -98,7 +98,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       type: 'planet'
     });
     
-    await page.goto(`/graph/3d/${note.id}`);
+    await page.goto(`/graph/3d/${note.data.id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     
@@ -121,9 +121,9 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       type: 'planet'
     });
     
-    await createLink(request, center.id, satellite.id, 0.8, 'related');
+    await createLink(request, center.data.id, satellite.data.id, 0.8, 'related');
     
-    await page.goto(`/graph/3d/${center.id}`);
+    await page.goto(`/graph/3d/${center.data.id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(4000);
     

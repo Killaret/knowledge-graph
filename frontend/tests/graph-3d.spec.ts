@@ -20,7 +20,7 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
       title: '3D Graph Test Note',
       content: 'Test note for 3D graph'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to 3D graph page directly
     await page.goto(`/graph/3d/${noteId}`);
@@ -48,7 +48,7 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
       title: 'Styling Test Note',
       content: 'Testing 3D graph styling'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to 3D graph page
     await page.goto(`/graph/3d/${noteId}`);
@@ -83,7 +83,7 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
       title: 'Navigation Test Note',
       content: 'Testing navigation from 3D graph'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to 3D graph page
     await page.goto(`/graph/3d/${noteId}`);
@@ -103,10 +103,10 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
   test('should display stats bar with node and link counts', async ({ page, request }) => {
     // Create a note with connections using helper
     const note1 = await createNote(request, { title: 'Stats Test Node 1', content: 'Node 1' });
-    const note1Id = note1.id;
+    const note1Id = note1.data.id;
 
     const note2 = await createNote(request, { title: 'Stats Test Node 2', content: 'Node 2' });
-    const note2Id = note2.id;
+    const note2Id = note2.data.id;
 
     // Create link between notes
     await createLink(request, note1Id, note2Id, 0.8);

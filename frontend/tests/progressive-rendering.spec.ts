@@ -38,21 +38,21 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
       content: 'Central node for progressive loading test',
       type: 'star'
     });
-    const centralId = centralNote.id;
+    const centralId = centralNote.data.id;
 
     // Create multiple linked notes to ensure depth-3 loading has more nodes
     const linkedIds = [];
     for (let i = 0; i < 5; i++) {
       const linked = await createNote(request, { title: `Linked Note ${i}`, content: `Content ${i}` });
-      linkedIds.push(linked.id);
+      linkedIds.push(linked.data.id);
 
       // Link to central
-      await createLink(request, centralId, linked.id, 0.7);
+      await createLink(request, centralId, linked.data.id, 0.7);
 
       // Create secondary links (depth-2 connections)
       if (i < 3) {
         const secondary = await createNote(request, { title: `Secondary ${i}`, content: `Secondary content ${i}` });
-        await createLink(request, linked.id, secondary.id, 0.5);
+        await createLink(request, linked.data.id, secondary.data.id, 0.5);
       }
       
       // Small delay to prevent rate limiting
@@ -87,7 +87,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
       content: 'Testing fog effect',
       type: 'galaxy'
     });
-    const centralId = centralNote.id;
+    const centralId = centralNote.data.id;
     
     // Create linked notes
     for (let i = 0; i < 3; i++) {
@@ -95,7 +95,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
         title: `Fog Link ${i}`,
         content: 'Link content'
       });
-      await createLink(request, centralId, linked.id, 0.8, 'reference');
+      await createLink(request, centralId, linked.data.id, 0.8, 'reference');
       // Small delay to prevent rate limiting
       await page.waitForTimeout(50);
     }
@@ -128,7 +128,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
       content: 'Testing node rendering',
       type: 'planet'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -155,10 +155,10 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should render links between connected nodes', async ({ page, request }) => {
     // Create two connected notes using helpers with retry logic
     const note1 = await createNote(request, { title: 'Source Node', content: 'Source', type: 'star' });
-    const note1Id = note1.id;
+    const note1Id = note1.data.id;
     
     const note2 = await createNote(request, { title: 'Target Node', content: 'Target', type: 'planet' });
-    const note2Id = note2.id;
+    const note2Id = note2.data.id;
     
     // Create link using helper with retry logic
     await createLink(request, note1Id, note2Id, 0.9, 'dependency');
@@ -184,12 +184,12 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should show background loading indicator during progressive load', async ({ page, request }) => {
     // Create a note with multiple connections to trigger progressive loading
     const centralNote = await createNote(request, { title: 'Progressive Loading Test', content: 'Testing background loading indicator' });
-    const centralId = centralNote.id;
+    const centralId = centralNote.data.id;
     
     // Create many linked notes to ensure progressive loading takes time
     for (let i = 0; i < 8; i++) {
       const linked = await createNote(request, { title: `Loading Test Link ${i}`, content: `Content ${i}` });
-      await createLink(request, centralId, linked.id, 0.6);
+      await createLink(request, centralId, linked.data.id, 0.6);
       // Small delay to prevent rate limiting
       await page.waitForTimeout(50);
     }
@@ -209,7 +209,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should handle camera reset function', async ({ page, request }) => {
     // Create a note using helper with retry logic
     const note = await createNote(request, { title: 'Camera Reset Test', content: 'Testing camera functionality' });
-    const noteId = note.id;
+    const noteId = note.data.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -233,17 +233,10 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should handle multiple note transitions correctly', async ({ page, request }) => {
     // Create two separate notes with their own graphs using helpers
     const note1 = await createNote(request, { title: 'First Graph Note', content: 'First graph' });
-    const note1Id = note1.id;
+    const note1Id = note1.data.id;
     
     const note2 = await createNote(request, { title: 'Second Graph Note', content: 'Second graph' });
-    const note2Id = note2.id;
-    
-    // Add links to both
-    const linked1 = await createNote(request, { title: 'Linked to First', content: 'Link' });
-    await createLink(request, note1Id, linked1.id, 0.7);
-    
-    const linked2 = await createNote(request, { title: 'Linked to Second', content: 'Link' });
-    await createLink(request, note2Id, linked2.id, 0.7);
+    const note2Id = note2.data.id;
     
     // Navigate to first graph
     await page.goto(`/graph/3d/${note1Id}`);
@@ -269,7 +262,7 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should handle empty graph (no connections) gracefully', async ({ page, request }) => {
     // Create an isolated note with no connections using helper
     const isolatedNote = await createNote(request, { title: 'Isolated Node', content: 'No connections', type: 'asteroid' });
-    const isolatedId = isolatedNote.id;
+    const isolatedId = isolatedNote.data.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${isolatedId}`);
@@ -297,13 +290,13 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
   test('should display correct celestial body types', async ({ page, request }) => {
     // Create a central star node using helper
     const centralNote = await createNote(request, { title: 'Central Star', content: 'Central node', type: 'star' });
-    const centralId = centralNote.id;
+    const centralId = centralNote.data.id;
     
     // Create planet, comet, asteroid linked to central
     const linkedIds = [];
     for (const type of ['planet', 'comet', 'asteroid']) {
       const note = await createNote(request, { title: `${type} Node`, content: `Type: ${type}`, type });
-      linkedIds.push(note.id);
+      linkedIds.push(note.data.id);
       // Small delay to prevent rate limiting
       await page.waitForTimeout(50);
     }
@@ -375,7 +368,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   test('should verify WebGL canvas dimensions are correct', async ({ page, request }) => {
     // Create a note using helper
     const note = await createNote(request, { title: 'Canvas Dimension Test', content: 'Testing canvas size' });
-    const noteId = note.id;
+    const noteId = note.data.id;
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -404,10 +397,10 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   test('should maintain graph container structure', async ({ page, request }) => {
     // Create a note with connections using helpers
     const note = await createNote(request, { title: 'Structure Test', content: 'Testing DOM structure' });
-    const noteId = note.id;
+    const noteId = note.data.id;
     
     const linked = await createNote(request, { title: 'Structure Link', content: 'Link' });
-    await createLink(request, noteId, linked.id, 0.7);
+    await createLink(request, noteId, linked.data.id, 0.7);
     
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);

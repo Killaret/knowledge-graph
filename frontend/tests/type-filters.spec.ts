@@ -262,10 +262,10 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     
     // Create links between notes using helper
     if (starNote && planetNote) {
-      await createLink(request, starNote.id, planetNote.id, 0.8);
+      await createLink(request, starNote.data.id, planetNote.data.id, 0.8);
     }
     if (planetNote && cometNote) {
-      await createLink(request, planetNote.id, cometNote.id, 0.6);
+      await createLink(request, planetNote.data.id, cometNote.data.id, 0.6);
     }
     
     await page.reload();

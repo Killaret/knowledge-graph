@@ -212,7 +212,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
       content: 'Test content',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to specific graph page
     await page.goto(`/graph/${noteId}`);

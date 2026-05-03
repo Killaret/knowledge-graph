@@ -47,7 +47,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       content: 'Original content',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
@@ -95,7 +95,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       title: 'Delete Test ' + timestamp,
       content: 'Test content for deletion'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate directly to note page
     await page.goto(`/notes/${noteId}`);
@@ -122,8 +122,8 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     // Create two notes and a link via API using helper
     const note1 = await createNote(request, { title: 'Node A', content: 'A' });
     const note2 = await createNote(request, { title: 'Node B', content: 'B' });
-    const id1 = note1.id;
-    const id2 = note2.id;
+    const id1 = note1.data.id;
+    const id2 = note2.data.id;
     await createLink(request, id1, id2, 1.0, 'reference');
 
     // Navigate to 3D graph page directly
@@ -150,7 +150,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       title: 'Back Button Test',
       content: 'Testing back button functionality'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to note detail page
     await page.goto(`/notes/${noteId}`);
@@ -193,7 +193,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       title: 'History Test',
       content: 'Testing browser back functionality'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);

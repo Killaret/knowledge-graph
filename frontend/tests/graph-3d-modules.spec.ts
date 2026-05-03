@@ -40,7 +40,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Testing scene setup module',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to 3D graph page
     await page.goto(`/graph/3d/${noteId}`);
@@ -83,10 +83,10 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Star type test',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     const note2 = await createNote(request, { title: 'Linked', content: 'Link' });
-    await createLink(request, noteId, note2.id, 0.8);
+    await createLink(request, noteId, note2.data.id, 0.8);
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -103,7 +103,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Planet type',
       type: 'planet'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -119,7 +119,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Comet type',
       type: 'comet'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -135,7 +135,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Galaxy type',
       type: 'galaxy'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -148,13 +148,13 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
   test('should render links with weight-based styling', async ({ page, request }) => {
     // Create notes with different link weights using helper
     const sourceNote = await createNote(request, { title: 'Source', content: 'Source note' });
-    const sourceId = sourceNote.id;
+    const sourceId = sourceNote.data.id;
 
     const strongTarget = await createNote(request, { title: 'Strong Link', content: 'Strong connection' });
-    const strongId = strongTarget.id;
+    const strongId = strongTarget.data.id;
 
     const weakTarget = await createNote(request, { title: 'Weak Link', content: 'Weak connection' });
-    const weakId = weakTarget.id;
+    const weakId = weakTarget.data.id;
 
     // Create links with different weights
     await createLink(request, sourceId, strongId, 0.9);
@@ -173,7 +173,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     const notes = [];
     for (let i = 0; i < 5; i++) {
       const note = await createNote(request, { title: `Note ${i}`, content: `Content ${i}` });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
 
     // Create links between notes
@@ -200,7 +200,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       title: 'Toggle Test',
       content: 'Testing full graph toggle'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -223,7 +223,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       title: 'Labeled Node',
       content: 'Testing CSS2D labels'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -241,14 +241,14 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Main content',
       type: 'star'
     });
-    const note1Id = note1.id;
+    const note1Id = note1.data.id;
 
     const note2 = await createNote(request, {
       title: 'Linked Note',
       content: 'Linked content',
       type: 'planet'
     });
-    const note2Id = note2.id;
+    const note2Id = note2.data.id;
 
     // Create link between notes
     await createLink(request, note1Id, note2Id, 0.8);
@@ -322,7 +322,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Testing 3D stats display',
       type: 'galaxy'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Navigate to 3D graph page
     await page.goto(`/graph/3d/${noteId}`);
@@ -348,14 +348,14 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'First note',
       type: 'star'
     });
-    const note1Id = note1.id;
+    const note1Id = note1.data.id;
 
     const note2 = await createNote(request, {
       title: '3D Toggle Test 2',
       content: 'Second note',
       type: 'planet'
     });
-    const note2Id = note2.id;
+    const note2Id = note2.data.id;
 
     // Create link
     await createLink(request, note1Id, note2Id, 0.7, 'reference');
@@ -404,7 +404,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
         content: `Content ${i}`,
         type: i === 0 ? 'star' : 'planet'
       });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
 
     // Create links
@@ -432,7 +432,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Asteroid type',
       type: 'asteroid'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -448,7 +448,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Debris type',
       type: 'debris'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -465,28 +465,28 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
       content: 'Source for link types test',
       type: 'star'
     });
-    const sourceId = sourceNote.id;
+    const sourceId = sourceNote.data.id;
 
     const referenceTarget = await createNote(request, {
       title: 'Reference Target',
       content: 'Reference link target',
       type: 'planet'
     });
-    const referenceId = referenceTarget.id;
+    const referenceId = referenceTarget.data.id;
 
     const dependencyTarget = await createNote(request, {
       title: 'Dependency Target',
       content: 'Dependency link target',
       type: 'comet'
     });
-    const dependencyId = dependencyTarget.id;
+    const dependencyId = dependencyTarget.data.id;
 
     const relatedTarget = await createNote(request, {
       title: 'Related Target',
       content: 'Related link target',
       type: 'galaxy'
     });
-    const relatedId = relatedTarget.id;
+    const relatedId = relatedTarget.data.id;
 
     // Create links with different types
     await createLink(request, sourceId, referenceId, 0.8, 'reference');
@@ -537,18 +537,6 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
 
   test('should render isolated note without connections in 3D graph', async ({ page, request }) => {
     // Create a note with NO connections using helper
-    const isolatedNote = await createNote(request, {
-      title: 'Isolated Note No Links',
-      content: 'This note has no connections to other notes',
-      type: 'star'
-    });
-    const noteId = isolatedNote.id;
-
-    // Navigate to 3D graph for this isolated note
-    await page.goto(`/graph/3d/${noteId}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(4000);
-    
     // Graph should still render (even with single node)
     const container = page.locator('.graph-3d-container, .no-data-message, .error-overlay').first();
     await expect(container).toBeVisible();

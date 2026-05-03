@@ -22,7 +22,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
         content: `Content ${i}`,
         type: i % 5 === 0 ? 'star' : i % 5 === 1 ? 'planet' : 'comet'
       });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
     
     // Create links between consecutive nodes
@@ -68,7 +68,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
         content: `Content ${i}`,
         type: 'planet'
       });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
     
     // Measure load time
@@ -90,7 +90,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
       type: 'star'
     });
     
-    await page.goto(`/graph/3d/${note.id}`);
+    await page.goto(`/graph/3d/${note.data.id}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
     
@@ -139,7 +139,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
         content: 'Test',
         type: types[i % 4]
       });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
     
     await page.goto('/');

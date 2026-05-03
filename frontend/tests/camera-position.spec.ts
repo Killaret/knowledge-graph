@@ -37,14 +37,14 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'Main node for camera test',
       type: 'star'
     });
-    const centerId = centerNote.id;
+    const centerId = centerNote.data.id;
 
     const linkedNote = await createNote(request, {
       title: 'Linked Node',
       content: 'Secondary node',
       type: 'planet'
     });
-    const linkedId = linkedNote.id;
+    const linkedId = linkedNote.data.id;
 
     await createLink(request, centerId, linkedId, 0.8);
 
@@ -90,7 +90,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
         content: `Node ${i}`,
         type: i === 0 ? 'star' : 'planet'
       });
-      notes.push(note.id);
+      notes.push(note.data.id);
     }
 
     // Create some links
@@ -124,7 +124,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'Testing camera on toggle',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -174,7 +174,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'Testing route navigation',
       type: 'star'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Go to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -209,7 +209,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'Testing 2D to 3D',
       type: 'planet'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Start at 2D graph page
     await page.goto('/graph');
@@ -263,7 +263,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'Testing direct URL access',
       type: 'comet'
     });
-    const noteId = note.id;
+    const noteId = note.data.id;
 
     // Test direct access to local 3D graph
     await page.goto(`/graph/3d/${noteId}`);
@@ -319,7 +319,7 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
       content: 'No connections',
       type: 'galaxy'
     });
-    const noteId = isolatedNote.id;
+    const noteId = isolatedNote.data.id;
 
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
