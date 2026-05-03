@@ -535,7 +535,7 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     }
   });
 
-  test('should render isolated note without connections in 3D graph', async ({ page, request }) => {
+  test('should render isolated note without connections in 3D graph', async ({ page }) => {
     // Create a note with NO connections using helper
     // Graph should still render (even with single node)
     const container = page.locator('.graph-3d-container, .no-data-message, .error-overlay').first();
