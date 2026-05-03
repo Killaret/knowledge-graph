@@ -417,12 +417,14 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     // Should return 200 OK with graph data
     expect(response.status()).toBe(200);
     
-    const data = await response.json();
-    // Verify response structure
-    expect(data).toHaveProperty('nodes');
-    expect(data).toHaveProperty('links');
-    expect(Array.isArray(data.nodes)).toBe(true);
-    expect(Array.isArray(data.links)).toBe(true);
+    const responseData = await response.json();
+    // API returns wrapped response: { data: { nodes, links } }
+    expect(responseData).toHaveProperty('data');
+    const graphData = responseData.data;
+    expect(graphData).toHaveProperty('nodes');
+    expect(graphData).toHaveProperty('links');
+    expect(Array.isArray(graphData.nodes)).toBe(true);
+    expect(Array.isArray(graphData.links)).toBe(true);
   });
 
   test('should display asteroid celestial body', async ({ page, request }) => {

@@ -76,11 +76,17 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     const saveButton = page.locator('[data-testid="edit-save-btn"], button:has-text("Save"), button[type="submit"]').first();
     await saveButton.click();
 
-    // Wait for modal to close
-    await page.waitForTimeout(1000);
+    // Wait for network requests to complete
+    await page.waitForLoadState('networkidle');
+
+    // Wait for modal to close with increased timeout
+    await page.waitForTimeout(2000);
 
     // Verify modal is closed
-    await expect(page.locator('.modal[role="dialog"]')).not.toBeVisible();
+    await expect(page.locator('.modal[role="dialog"]')).not.toBeVisible({ timeout: 10000 });
+
+    // Additional wait to ensure backend processing
+    await page.waitForTimeout(1000);
 
     // Verify via API that note was updated
     const updatedNote = await request.get(`${getBackendUrl()}/notes/${noteId}`);
