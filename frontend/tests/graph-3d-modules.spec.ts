@@ -411,9 +411,8 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     await createLink(request, notes[0], notes[1], 0.7);
     await createLink(request, notes[1], notes[2], 0.5);
 
-    // Test the /api/graph/all endpoint via proxy
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const response = await request.get(`${baseUrl}/api/graph/all`, { timeout: 10000 });
+    // Test the /api/graph/all endpoint directly
+    const response = await request.get(`${getBackendUrl()}/api/graph/all`, { timeout: 10000 });
     
     // Should return 200 OK with graph data
     expect(response.status()).toBe(200);
@@ -535,8 +534,20 @@ test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modu
     }
   });
 
-  test('should render isolated note without connections in 3D graph', async ({ page }) => {
+  test('should render isolated note without connections in 3D graph', async ({ page, request }) => {
     // Create a note with NO connections using helper
+    const isolatedNote = await createNote(request, {
+      title: 'Isolated Note',
+      content: 'No connections',
+      type: 'star'
+    });
+    const isolatedId = isolatedNote.data.id;
+
+    // Navigate to 3D graph page
+    await page.goto(`/graph/3d/${isolatedId}`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
     // Graph should still render (even with single node)
     const container = page.locator('.graph-3d-container, .no-data-message, .error-overlay').first();
     await expect(container).toBeVisible();

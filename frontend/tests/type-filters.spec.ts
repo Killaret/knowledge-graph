@@ -261,11 +261,12 @@ test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'
     const cometNote = notesData.notes?.find((n: any) => n.title?.includes(`Graph Comet ${timestamp}`));
     
     // Create links between notes using helper
+    // Note: API returns notes directly without ApiResponse wrapper
     if (starNote && planetNote) {
-      await createLink(request, starNote.data.id, planetNote.data.id, 0.8);
+      await createLink(request, starNote.id, planetNote.id, 0.8);
     }
     if (planetNote && cometNote) {
-      await createLink(request, planetNote.data.id, cometNote.data.id, 0.6);
+      await createLink(request, planetNote.id, cometNote.id, 0.6);
     }
     
     await page.reload();
