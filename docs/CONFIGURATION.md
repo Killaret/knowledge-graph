@@ -55,9 +55,47 @@ Environment variables for sensitive data and deployment-specific settings.
 - `RECOMMENDATION_DEPTH` - BFS depth for recommendations
 - `RECOMMENDATION_ALPHA` - Weight for link component
 - `RECOMMENDATION_BETA` - Weight for semantic component
+- `RECOMMENDATION_GAMMA` - Weight for keyword component (default: 0.2)
+- `RECOMMENDATION_KEYWORD_SIMILARITY_METHOD` - Keyword similarity method: `jaccard`, `overlap`, `tversky`, `weighted_jaccard`, `cosine` (default: `jaccard`)
+- `RECOMMENDATION_KEYWORD_TVERSKY_ALPHA` - Alpha parameter for Tversky index (default: 0.5)
+- `RECOMMENDATION_KEYWORD_TVERSKY_BETA` - Beta parameter for Tversky index (default: 0.5)
 - And many more...
 
 See `.env.example` for complete list.
+
+### Keyword Similarity Methods
+
+The recommendation system supports multiple similarity measures for keyword-based matching:
+
+| Method | Formula | Use Case |
+|--------|---------|----------|
+| `jaccard` | \|A ∩ B\| / \|A ∪ B\| | Classic set similarity, ignores weights |
+| `overlap` | \|A ∩ B\| / min(\|A\|, \|B\|) | Good for asymmetric similarity (subset detection) |
+| `tversky` | \|A ∩ B\| / (\|A ∩ B\| + α\|A\\B\| + β\|B\\A\|) | Tunable with α/β parameters. α=β=1 → Jaccard, α=β=0.5 → Dice |
+| `weighted_jaccard` | Σmin(w₁,w₂) / Σmax(w₁,w₂) | Uses keyword weights from NLP extraction |
+| `cosine` | (A·B) / (\|A\|\|B\|) | Vector space model similarity |
+
+**Configuration Example:**
+```json
+{
+  "backend": {
+    "recommendation": {
+      "gamma": 0.2,
+      "keyword_similarity_method": "tversky",
+      "keyword_tversky_alpha": 0.5,
+      "keyword_tversky_beta": 0.5
+    }
+  }
+}
+```
+
+Or via environment variables:
+```bash
+RECOMMENDATION_GAMMA=0.2
+RECOMMENDATION_KEYWORD_SIMILARITY_METHOD=tversky
+RECOMMENDATION_KEYWORD_TVERSKY_ALPHA=0.5
+RECOMMENDATION_KEYWORD_TVERSKY_BETA=0.5
+```
 
 ## Backend Configuration (Go)
 

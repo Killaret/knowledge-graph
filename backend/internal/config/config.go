@@ -49,6 +49,9 @@ type JSONConfig struct {
 			KeywordEnabled          bool    `json:"keyword_enabled"`
 			BFSAggregation          string  `json:"bfs_aggregation"`
 			BFSNormalize            bool    `json:"bfs_normalize"`
+			KeywordSimilarityMethod string  `json:"keyword_similarity_method"`
+			KeywordTverskyAlpha     float64 `json:"keyword_tversky_alpha"`
+			KeywordTverskyBeta      float64 `json:"keyword_tversky_beta"`
 		} `json:"recommendation"`
 		Pagination struct {
 			DefaultLimit int `json:"default_limit"`
@@ -131,6 +134,9 @@ type Config struct {
 	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
 	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
 	RecommendationKeywordEnabled          bool          // Включить keyword-компонент (gamma)
+	RecommendationKeywordSimilarityMethod string        // Метод сходства ключевых слов: jaccard, overlap, tversky, weighted_jaccard, cosine
+	RecommendationKeywordTverskyAlpha   float64       // Alpha параметр для Tversky index
+	RecommendationKeywordTverskyBeta    float64       // Beta параметр для Tversky index
 	AsynqConcurrency                      int           // Уровень параллелизма Asynq
 	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
 	AsynqQueueMaxLen                      int           // Максимальная длина очереди
@@ -245,6 +251,9 @@ func Load() (*Config, error) {
 		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.FallbackTTLSeconds }, 3600))) * time.Second,
 		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackSemanticEnabled }, true)),
 		RecommendationKeywordEnabled:          getBoolEnv("RECOMMENDATION_KEYWORD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.KeywordEnabled }, true)),
+		RecommendationKeywordSimilarityMethod: getEnv("RECOMMENDATION_KEYWORD_SIMILARITY_METHOD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.KeywordSimilarityMethod }, "jaccard")),
+		RecommendationKeywordTverskyAlpha:     getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_ALPHA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyAlpha }, 0.5)),
+		RecommendationKeywordTverskyBeta:      getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_BETA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyBeta }, 0.5)),
 		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.Concurrency }, 10)),
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),

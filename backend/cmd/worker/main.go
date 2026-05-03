@@ -69,13 +69,40 @@ func main() {
 	// Graph traversal service for recommendations
 	linkRepo := postgres.NewLinkRepository(db.DB)
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
-	traversalSvc := graphDomain.NewTraversalService(
+
+	// Create keyword similarity strategy from config
+	keywordSimilarity, err := recommendation.NewKeywordSimilarity(
+		cfg.RecommendationKeywordSimilarityMethod,
+		cfg.RecommendationKeywordTverskyAlpha,
+		cfg.RecommendationKeywordTverskyBeta,
+	)
+	if err != nil {
+		log.Printf("FATAL: Invalid keyword similarity method: %v", err)
+		os.Exit(1)
+	}
+	log.Printf("Worker: Using keyword similarity method: %s", cfg.RecommendationKeywordSimilarityMethod)
+
+	// Create keyword matcher with the configured similarity
+	keywordMatcher := recommendation.NewKeywordMatcherImpl(keywordRepo, keywordSimilarity)
+
+	traversalSvc := graphDomain.NewTraversalServiceWithWeights(
 		neighborLoader,
 		cfg.RecommendationDepth,
 		cfg.RecommendationDecay,
 		cfg.BFSAggregation,
 		cfg.BFSNormalize,
+		cfg.RecommendationAlpha,
+		cfg.RecommendationBeta,
+		cfg.RecommendationGamma,
 	)
+
+	// Set keyword matcher if gamma > 0
+	if cfg.RecommendationGamma > 0 {
+		traversalSvc.SetKeywordMatcher(keywordMatcher)
+		log.Printf("Worker: Keyword component enabled (gamma=%.2f)", cfg.RecommendationGamma)
+	} else {
+		log.Printf("Worker: Keyword component disabled (gamma=%.2f)", cfg.RecommendationGamma)
+	}
 
 	// Refresh service for background recommendation calculation
 	refreshSvc := recommendation.NewRefreshService(db.DB, redisClient, traversalSvc, cfg.RecommendationTopN)

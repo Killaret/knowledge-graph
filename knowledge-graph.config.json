@@ -41,7 +41,10 @@
       "fallback_ttl_seconds": 3600,
       "fallback_semantic_enabled": true,
       "bfs_aggregation": "max",
-      "bfs_normalize": true
+      "bfs_normalize": true,
+      "keyword_similarity_method": "jaccard",
+      "keyword_tversky_alpha": 0.5,
+      "keyword_tversky_beta": 0.5
     },
     "pagination": {
       "default_limit": 100,
