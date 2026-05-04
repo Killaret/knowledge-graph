@@ -14,6 +14,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -163,7 +164,13 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newLink := link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+	// Get authenticated user ID if available and create link with creator
+	var newLink *link.Link
+	if userID, exists := middleware.GetUserID(c); exists {
+		newLink = link.NewLinkWithCreator(sourceID, targetID, userID, linkType, weightVO, metadata)
+	} else {
+		newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+	}
 
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",

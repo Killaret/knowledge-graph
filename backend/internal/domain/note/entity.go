@@ -13,6 +13,7 @@ type Note struct {
 	content   Content
 	type_     string
 	metadata  Metadata
+	creatorID *uuid.UUID
 	createdAt time.Time
 	updatedAt time.Time
 }
@@ -28,6 +29,25 @@ func NewNote(title Title, content Content, noteType string, metadata Metadata) *
 		content:   content,
 		type_:     noteType,
 		metadata:  metadata,
+		creatorID: nil,
+		createdAt: now,
+		updatedAt: now,
+	}
+}
+
+// NewNoteWithCreator creates a new note with a creator ID
+func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID) *Note {
+	now := time.Now()
+	if noteType == "" {
+		noteType = "star"
+	}
+	return &Note{
+		id:        uuid.New(),
+		title:     title,
+		content:   content,
+		type_:     noteType,
+		metadata:  metadata,
+		creatorID: &creatorID,
 		createdAt: now,
 		updatedAt: now,
 	}
@@ -44,6 +64,24 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 		content:   content,
 		type_:     noteType,
 		metadata:  metadata,
+		creatorID: nil,
+		createdAt: createdAt,
+		updatedAt: updatedAt,
+	}
+}
+
+// ReconstructNoteWithCreator восстанавливает заметку с creator ID
+func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time) *Note {
+	if noteType == "" {
+		noteType = "star"
+	}
+	return &Note{
+		id:        id,
+		title:     title,
+		content:   content,
+		type_:     noteType,
+		metadata:  metadata,
+		creatorID: creatorID,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
@@ -68,6 +106,15 @@ func (n *Note) Metadata() Metadata {
 
 func (n *Note) Type() string {
 	return n.type_
+}
+
+func (n *Note) CreatorID() *uuid.UUID {
+	return n.creatorID
+}
+
+func (n *Note) SetCreatorID(creatorID uuid.UUID) {
+	n.creatorID = &creatorID
+	n.updatedAt = time.Now()
 }
 
 func (n *Note) SetType(noteType string) {

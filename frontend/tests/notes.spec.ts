@@ -49,14 +49,6 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     });
     const noteId = note.data.id;
 
-    // Intercept API request to debug response
-    await page.route(`**/v1/notes/${noteId}`, async (route) => {
-      const response = await route.fetch();
-      const body = await response.text();
-      console.log('[API RESPONSE]', response.status(), body.substring(0, 500));
-      await route.fulfill({ response });
-    });
-
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -96,10 +88,15 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     const contentInput = page.locator('#edit-note-content, [data-testid="edit-content-input"]').first();
     await contentInput.fill('Updated content');
 
-    // Save changes using locator
+    // Save changes and wait for PUT response
     const saveButton = page.locator('[data-testid="edit-save-btn"], button:has-text("Save"), button[type="submit"]').first();
-    await saveButton.click();
-
+    
+    const [response] = await Promise.all([
+      page.waitForResponse(resp => resp.url().includes(`/v1/notes/${noteId}`) && resp.request().method() === 'PUT'),
+      saveButton.click()
+    ]);
+    console.log('[EDIT RESPONSE]', response.status());
+    
     // Wait for network requests to complete
     await page.waitForLoadState('networkidle');
 

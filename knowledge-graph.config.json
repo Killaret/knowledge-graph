@@ -65,6 +65,30 @@
       "concurrency": 10,
       "queue_default": 1,
       "queue_max_len": 10000
+    },
+    "auth": {
+      "jwt_secret": "change-me-in-production",
+      "jwt_access_ttl_seconds": 900,
+      "jwt_refresh_ttl_seconds": 604800,
+      "argon2_time": 3,
+      "argon2_memory": 65536,
+      "argon2_threads": 4,
+      "api_key_enabled": true,
+      "yandex_client_id": "",
+      "yandex_client_secret": "",
+      "pkce_enabled": true,
+      "pkce_code_challenge_length": 128,
+      "smtp_host": "",
+      "smtp_port": 587,
+      "smtp_user": "",
+      "smtp_password": "",
+      "smtp_from": "noreply@example.com",
+      "password_reset_ttl_seconds": 900,
+      "password_policy_min_length": 10,
+      "password_policy_require_upper": true,
+      "password_policy_require_lower": true,
+      "password_policy_require_digit": true,
+      "password_policy_require_special": true
     }
   },
   "frontend": {

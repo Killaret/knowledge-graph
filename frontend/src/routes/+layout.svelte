@@ -1,8 +1,38 @@
 <script lang="ts">
   import '$lib/styles/global.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+  import { initAuth, isAuthenticated, isLoading } from '$lib/stores/auth.svelte.js';
 
   const { children } = $props();
+
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/yandex/callback',
+    '/health'
+  ];
+
+  // Initialize auth on mount
+  $effect(() => {
+    initAuth();
+  });
+
+  // Route protection
+  $effect(() => {
+    const currentPath = $page.url.pathname;
+    const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
+    
+    if (!isLoading && !isPublicRoute && !isAuthenticated()) {
+      // Redirect to login with return URL
+      const returnUrl = encodeURIComponent(currentPath);
+      goto(`/auth/login?redirect=${returnUrl}`);
+    }
+  });
 </script>
 
 <!--

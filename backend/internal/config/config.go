@@ -73,6 +73,30 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Auth struct {
+			JWTSecret                    string `json:"jwt_secret"`
+			JWTAccessTTLSeconds          int    `json:"jwt_access_ttl_seconds"`
+			JWTRefreshTTLSeconds         int    `json:"jwt_refresh_ttl_seconds"`
+			Argon2Time                   uint32 `json:"argon2_time"`
+			Argon2Memory                 uint32 `json:"argon2_memory"`
+			Argon2Threads                uint8  `json:"argon2_threads"`
+			APIKeyEnabled                bool   `json:"api_key_enabled"`
+			YandexClientID               string `json:"yandex_client_id"`
+			YandexClientSecret           string `json:"yandex_client_secret"`
+			PKCEEnabled                  bool   `json:"pkce_enabled"`
+			PKCECodeChallengeLength      int    `json:"pkce_code_challenge_length"`
+			SMTPHost                     string `json:"smtp_host"`
+			SMTPPort                     int    `json:"smtp_port"`
+			SMTPUser                     string `json:"smtp_user"`
+			SMTPPassword                 string `json:"smtp_password"`
+			SMTPFrom                     string `json:"smtp_from"`
+			PasswordResetTTLSeconds      int    `json:"password_reset_ttl_seconds"`
+			PasswordPolicyMinLength      int    `json:"password_policy_min_length"`
+			PasswordPolicyRequireUpper   bool   `json:"password_policy_require_upper"`
+			PasswordPolicyRequireLower   bool   `json:"password_policy_require_lower"`
+			PasswordPolicyRequireDigit   bool   `json:"password_policy_require_digit"`
+			PasswordPolicyRequireSpecial bool   `json:"password_policy_require_special"`
+		} `json:"auth"`
 	} `json:"backend"`
 }
 
@@ -135,11 +159,35 @@ type Config struct {
 	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
 	RecommendationKeywordEnabled          bool          // Включить keyword-компонент (gamma)
 	RecommendationKeywordSimilarityMethod string        // Метод сходства ключевых слов: jaccard, overlap, tversky, weighted_jaccard, cosine
-	RecommendationKeywordTverskyAlpha   float64       // Alpha параметр для Tversky index
-	RecommendationKeywordTverskyBeta    float64       // Beta параметр для Tversky index
+	RecommendationKeywordTverskyAlpha     float64       // Alpha параметр для Tversky index
+	RecommendationKeywordTverskyBeta      float64       // Beta параметр для Tversky index
 	AsynqConcurrency                      int           // Уровень параллелизма Asynq
 	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
 	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+
+	// Auth
+	JWTSecret                    string
+	JWTAccessTTL                 time.Duration
+	JWTRefreshTTL                time.Duration
+	Argon2Time                   uint32
+	Argon2Memory                 uint32
+	Argon2Threads                uint8
+	APIKeyEnabled                bool
+	YandexClientID               string
+	YandexClientSecret           string
+	PKCEEnabled                  bool
+	PKCECodeChallengeLength      int
+	SMTPHost                     string
+	SMTPPort                     int
+	SMTPUser                     string
+	SMTPPassword                 string
+	SMTPFrom                     string
+	PasswordResetTTL             time.Duration
+	PasswordPolicyMinLength      int
+	PasswordPolicyRequireUpper   bool
+	PasswordPolicyRequireLower   bool
+	PasswordPolicyRequireDigit   bool
+	PasswordPolicyRequireSpecial bool
 }
 
 // loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
@@ -257,6 +305,30 @@ func Load() (*Config, error) {
 		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.Concurrency }, 10)),
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),
+
+		// Auth configuration
+		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "change-me-in-production")),
+		JWTAccessTTL:                 time.Duration(getIntEnv("JWT_ACCESS_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTAccessTTLSeconds }, 900))) * time.Second,
+		JWTRefreshTTL:                time.Duration(getIntEnv("JWT_REFRESH_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTRefreshTTLSeconds }, 604800))) * time.Second,
+		Argon2Time:                   getUint32Env("ARGON2_TIME", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Time }, 3)),
+		Argon2Memory:                 getUint32Env("ARGON2_MEMORY", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Memory }, 65536)),
+		Argon2Threads:                getUint8Env("ARGON2_THREADS", getJSONUint8OrDefault(jsonCfg, func(j *JSONConfig) uint8 { return j.Backend.Auth.Argon2Threads }, 4)),
+		APIKeyEnabled:                getBoolEnv("API_KEY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.APIKeyEnabled }, true)),
+		YandexClientID:               getEnv("YANDEX_CLIENT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientID }, "")),
+		YandexClientSecret:           getEnv("YANDEX_CLIENT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientSecret }, "")),
+		PKCEEnabled:                  getBoolEnv("PKCE_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PKCEEnabled }, true)),
+		PKCECodeChallengeLength:      getIntEnv("PKCE_CODE_CHALLENGE_LENGTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PKCECodeChallengeLength }, 128)),
+		SMTPHost:                     getEnv("SMTP_HOST", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPHost }, "")),
+		SMTPPort:                     getIntEnv("SMTP_PORT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.SMTPPort }, 587)),
+		SMTPUser:                     getEnv("SMTP_USER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPUser }, "")),
+		SMTPPassword:                 getEnv("SMTP_PASSWORD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPPassword }, "")),
+		SMTPFrom:                     getEnv("SMTP_FROM", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPFrom }, "noreply@example.com")),
+		PasswordResetTTL:             time.Duration(getIntEnv("PASSWORD_RESET_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PasswordResetTTLSeconds }, 900))) * time.Second,
+		PasswordPolicyMinLength:      getIntEnv("PASSWORD_POLICY_MIN_LENGTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PasswordPolicyMinLength }, 10)),
+		PasswordPolicyRequireUpper:   getBoolEnv("PASSWORD_POLICY_REQUIRE_UPPER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireUpper }, true)),
+		PasswordPolicyRequireLower:   getBoolEnv("PASSWORD_POLICY_REQUIRE_LOWER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireLower }, true)),
+		PasswordPolicyRequireDigit:   getBoolEnv("PASSWORD_POLICY_REQUIRE_DIGIT", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireDigit }, true)),
+		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
 	}
 
 	// Load complex types from JSON (no env var override for these)
@@ -397,4 +469,36 @@ func getBoolEnv(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+func getUint32Env(key string, defaultValue uint32) uint32 {
+	if str := os.Getenv(key); str != "" {
+		if val, err := strconv.ParseUint(str, 10, 32); err == nil {
+			return uint32(val)
+		}
+	}
+	return defaultValue
+}
+
+func getUint8Env(key string, defaultValue uint8) uint8 {
+	if str := os.Getenv(key); str != "" {
+		if val, err := strconv.ParseUint(str, 10, 8); err == nil {
+			return uint8(val)
+		}
+	}
+	return defaultValue
+}
+
+func getJSONUint32OrDefault(jsonCfg *JSONConfig, getter func(*JSONConfig) uint32, defaultValue uint32) uint32 {
+	if jsonCfg == nil {
+		return defaultValue
+	}
+	return getter(jsonCfg)
+}
+
+func getJSONUint8OrDefault(jsonCfg *JSONConfig, getter func(*JSONConfig) uint8, defaultValue uint8) uint8 {
+	if jsonCfg == nil {
+		return defaultValue
+	}
+	return getter(jsonCfg)
 }

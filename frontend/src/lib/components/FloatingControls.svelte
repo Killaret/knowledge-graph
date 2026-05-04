@@ -34,10 +34,10 @@
     onSearch?.(searchQuery);
   }
   
-  function handleToggle3D() {
+  async function handleToggle3D() {
     // Если есть noteId, переходим на 3D граф этой заметки, иначе на общий 3D граф
     const targetUrl = noteId ? `/graph/3d/${noteId}` : '/graph/3d';
-    goto(targetUrl);
+    await goto(targetUrl);
   }
   
   function toggleView() {

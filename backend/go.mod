@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/hibiken/asynq v0.23.0
 	github.com/jackc/pgx/v5 v5.5.5
@@ -17,6 +18,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
+	golang.org/x/crypto v0.49.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/postgres v1.5.6
 	gorm.io/gorm v1.25.12
@@ -117,7 +119,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.41.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
-	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect

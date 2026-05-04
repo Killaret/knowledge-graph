@@ -17,6 +17,7 @@ import (
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -153,7 +154,13 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 	}
 
-	newNote := note.NewNote(title, content, noteType, metadata)
+	// Get authenticated user ID if available
+	var newNote *note.Note
+	if userID, exists := middleware.GetUserID(c); exists {
+		newNote = note.NewNoteWithCreator(title, content, noteType, metadata, userID)
+	} else {
+		newNote = note.NewNote(title, content, noteType, metadata)
+	}
 
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)

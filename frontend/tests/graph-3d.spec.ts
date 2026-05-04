@@ -94,10 +94,9 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
     await page.goBack();
     await page.waitForTimeout(1000);
     
-    // Should be back on home or note page
+    // Should be back on home or note page (works with any port)
     const currentUrl = page.url();
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    expect(currentUrl).toMatch(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|/notes/.+)`));
+    expect(currentUrl).toMatch(/http:\/\/localhost:\d+(\/|\/notes\/.+)/);
   });
 
   test('should display stats bar with node and link counts', async ({ page, request }) => {

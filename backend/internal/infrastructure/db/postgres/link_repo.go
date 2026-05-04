@@ -187,6 +187,7 @@ func toGormLink(l *link.Link) (LinkModel, error) {
 		LinkType:     l.LinkType().String(),
 		Weight:       l.Weight().Value(),
 		Metadata:     datatypes.JSON(metadataJSON),
+		CreatorID:    l.CreatorID(),
 		CreatedAt:    l.CreatedAt(),
 	}, nil
 }
@@ -211,7 +212,7 @@ func toDomainLink(m *LinkModel) (*link.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	return link.ReconstructLink(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, m.CreatedAt), nil
+	return link.ReconstructLinkWithCreator(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, m.CreatorID, m.CreatedAt), nil
 }
 
 // toDomainLinks преобразует список GORM-моделей в список доменных связей

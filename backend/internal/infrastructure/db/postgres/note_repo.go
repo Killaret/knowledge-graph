@@ -244,6 +244,7 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 		Content:   n.Content().String(),
 		Type:      noteType,
 		Metadata:  datatypes.JSON(metadataJSON),
+		CreatorID: n.CreatorID(),
 		CreatedAt: n.CreatedAt(),
 		UpdatedAt: n.UpdatedAt(),
 	}, nil
@@ -273,7 +274,7 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	if noteType == "" {
 		noteType = "star"
 	}
-	return note.ReconstructNote(m.ID, title, content, noteType, metadata, m.CreatedAt, m.UpdatedAt), nil
+	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt), nil
 }
 
 // toDomainNotes преобразует список GORM-моделей в список доменных сущностей
