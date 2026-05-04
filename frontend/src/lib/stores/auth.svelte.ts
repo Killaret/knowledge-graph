@@ -5,16 +5,25 @@ import * as authApi from '$lib/api/auth';
 import * as usersApi from '$lib/api/users';
 import type { User, AuthTokens } from '$lib/types';
 
-// Global reactive state
-export let currentUser = $state<User | null>(null);
-export let accessToken = $state<string | null>(null);
-export let refreshToken = $state<string | null>(null);
-export let isInitialized = $state(false);
-export let isLoading = $state(false);
-export let error = $state<string | null>(null);
+// Global reactive state - wrapped in object for export
+const authState = $state({
+  currentUser: null as User | null,
+  accessToken: null as string | null,
+  refreshToken: null as string | null,
+  isInitialized: false,
+  isLoading: false,
+  error: null as string | null,
+  apiKey: null as string | null
+});
 
-// API Key support
-export let apiKey = $state<string | null>(null);
+// Export reactive state through getter functions
+export function currentUser(): User | null { return authState.currentUser; }
+export function accessToken(): string | null { return authState.accessToken; }
+export function refreshToken(): string | null { return authState.refreshToken; }
+export function isInitialized(): boolean { return authState.isInitialized; }
+export function isLoading(): boolean { return authState.isLoading; }
+export function error(): string | null { return authState.error; }
+export function apiKey(): string | null { return authState.apiKey; }
 
 // LocalStorage keys
 const ACCESS_TOKEN_KEY = 'access_token';
@@ -26,7 +35,7 @@ const API_KEY = 'api_key';
  */
 export async function initAuth(): Promise<void> {
   if (!browser) {
-    isInitialized = true;
+    authState.isInitialized = true;
     return;
   }
 
@@ -37,15 +46,15 @@ export async function initAuth(): Promise<void> {
     const storedApiKey = localStorage.getItem(API_KEY);
 
     if (storedApiKey) {
-      apiKey = storedApiKey;
+      authState.apiKey = storedApiKey;
     }
 
     if (storedAccessToken) {
-      accessToken = storedAccessToken;
+      authState.accessToken = storedAccessToken;
     }
 
     if (storedRefreshToken) {
-      refreshToken = storedRefreshToken;
+      authState.refreshToken = storedRefreshToken;
       
       // Try to refresh the token and get user info
       const refreshed = await refreshAccessToken();
@@ -53,7 +62,7 @@ export async function initAuth(): Promise<void> {
       if (refreshed) {
         try {
           const user = await usersApi.getMe();
-          currentUser = user;
+          authState.currentUser = user;
         } catch (e) {
           // If getting user fails, clear auth state
           clearAuthState();
@@ -64,7 +73,7 @@ export async function initAuth(): Promise<void> {
     console.error('Failed to initialize auth:', e);
     clearAuthState();
   } finally {
-    isInitialized = true;
+    authState.isInitialized = true;
   }
 }
 
@@ -72,8 +81,8 @@ export async function initAuth(): Promise<void> {
  * Login with credentials
  */
 export async function login(login: string, password: string): Promise<boolean> {
-  isLoading = true;
-  error = null;
+  authState.isLoading = true;
+  authState.error = null;
 
   try {
     const tokens = await authApi.login(login, password);
@@ -83,15 +92,15 @@ export async function login(login: string, password: string): Promise<boolean> {
     
     // Get user info
     const user = await usersApi.getMe();
-    currentUser = user;
+    authState.currentUser = user;
     
     return true;
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Login failed';
+    authState.error = e instanceof Error ? e.message : 'Login failed';
     clearAuthState();
     return false;
   } finally {
-    isLoading = false;
+    authState.isLoading = false;
   }
 }
 
@@ -99,8 +108,8 @@ export async function login(login: string, password: string): Promise<boolean> {
  * Register new user
  */
 export async function register(login: string, password: string, email?: string): Promise<boolean> {
-  isLoading = true;
-  error = null;
+  authState.isLoading = true;
+  authState.error = null;
 
   try {
     const tokens = await authApi.register(login, password, email);
@@ -110,15 +119,15 @@ export async function register(login: string, password: string, email?: string):
     
     // Get user info
     const user = await usersApi.getMe();
-    currentUser = user;
+    authState.currentUser = user;
     
     return true;
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Registration failed';
+    authState.error = e instanceof Error ? e.message : 'Registration failed';
     clearAuthState();
     return false;
   } finally {
-    isLoading = false;
+    authState.isLoading = false;
   }
 }
 
@@ -126,9 +135,9 @@ export async function register(login: string, password: string, email?: string):
  * Logout user
  */
 export async function logout(): Promise<void> {
-  if (refreshToken) {
+  if (authState.refreshToken) {
     try {
-      await authApi.logout(refreshToken);
+      await authApi.logout(authState.refreshToken);
     } catch (e) {
       // Ignore errors during logout
       console.error('Logout error:', e);
@@ -143,12 +152,12 @@ export async function logout(): Promise<void> {
  * Refresh access token
  */
 export async function refreshAccessToken(): Promise<boolean> {
-  if (!refreshToken) {
+  if (!authState.refreshToken) {
     return false;
   }
 
   try {
-    const tokens = await authApi.refreshTokens(refreshToken);
+    const tokens = await authApi.refreshTokens(authState.refreshToken);
     saveTokens(tokens);
     return true;
   } catch (e) {
@@ -162,8 +171,8 @@ export async function refreshAccessToken(): Promise<boolean> {
  * Handle Yandex OAuth callback
  */
 export async function handleYandexCallback(code: string, state: string): Promise<boolean> {
-  isLoading = true;
-  error = null;
+  authState.isLoading = true;
+  authState.error = null;
 
   try {
     const tokens = await authApi.handleYandexCallback(code, state);
@@ -173,15 +182,15 @@ export async function handleYandexCallback(code: string, state: string): Promise
     
     // Get user info
     const user = await usersApi.getMe();
-    currentUser = user;
+    authState.currentUser = user;
     
     return true;
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Yandex authentication failed';
+    authState.error = e instanceof Error ? e.message : 'Yandex authentication failed';
     clearAuthState();
     return false;
   } finally {
-    isLoading = false;
+    authState.isLoading = false;
   }
 }
 
@@ -189,30 +198,30 @@ export async function handleYandexCallback(code: string, state: string): Promise
  * Login with API Key
  */
 export async function loginWithApiKey(key: string): Promise<boolean> {
-  isLoading = true;
-  error = null;
+  authState.isLoading = true;
+  authState.error = null;
 
   try {
     // Save API key
-    apiKey = key;
+    authState.apiKey = key;
     if (browser) {
       localStorage.setItem(API_KEY, key);
     }
     
     // Try to get user info with API key
     const user = await usersApi.getMe();
-    currentUser = user;
+    authState.currentUser = user;
     
     return true;
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Invalid API key';
-    apiKey = null;
+    authState.error = e instanceof Error ? e.message : 'Invalid API key';
+    authState.apiKey = null;
     if (browser) {
       localStorage.removeItem(API_KEY);
     }
     return false;
   } finally {
-    isLoading = false;
+    authState.isLoading = false;
   }
 }
 
@@ -220,36 +229,36 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
  * Get current access token
  */
 export function getAccessToken(): string | null {
-  return accessToken;
+  return authState.accessToken;
 }
 
 /**
  * Get API key
  */
 export function getApiKey(): string | null {
-  return apiKey;
+  return authState.apiKey;
 }
 
 /**
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {
-  return !!accessToken || !!apiKey;
+  return !!authState.accessToken || !!authState.apiKey;
 }
 
 /**
  * Check if user is admin
  */
 export function isAdmin(): boolean {
-  return currentUser?.role === 'admin';
+  return authState.currentUser?.role === 'admin';
 }
 
 /**
  * Save tokens to state and localStorage
  */
 function saveTokens(tokens: AuthTokens): void {
-  accessToken = tokens.access_token;
-  refreshToken = tokens.refresh_token;
+  authState.accessToken = tokens.access_token;
+  authState.refreshToken = tokens.refresh_token;
   
   if (browser) {
     localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
@@ -261,11 +270,11 @@ function saveTokens(tokens: AuthTokens): void {
  * Clear all auth state
  */
 function clearAuthState(): void {
-  accessToken = null;
-  refreshToken = null;
-  currentUser = null;
-  apiKey = null;
-  error = null;
+  authState.accessToken = null;
+  authState.refreshToken = null;
+  authState.currentUser = null;
+  authState.apiKey = null;
+  authState.error = null;
   
   if (browser) {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -284,7 +293,7 @@ export async function updateUserInfo(): Promise<void> {
 
   try {
     const user = await usersApi.getMe();
-    currentUser = user;
+    authState.currentUser = user;
   } catch (e) {
     console.error('Failed to update user info:', e);
   }

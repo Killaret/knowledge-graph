@@ -1,4 +1,50 @@
-import type { Page } from '@playwright/test';
+import type { Page, APIRequestContext } from '@playwright/test';
+
+/**
+ * Get backend URL from environment or use default
+ */
+export function getBackendUrl(): string {
+  return process.env.BACKEND_URL || 'http://localhost:8080/api';
+}
+
+/**
+ * Create a note via API for testing
+ */
+export async function createNote(
+  request: APIRequestContext,
+  data: { title: string; content?: string; type?: string }
+): Promise<{ data: { id: string; title: string } }> {
+  const response = await request.post(`${getBackendUrl()}/v1/notes`, {
+    data: {
+      title: data.title,
+      content: data.content || 'Test content',
+      type: data.type || 'star'
+    }
+  });
+  return await response.json() as { data: { id: string; title: string } };
+}
+
+/**
+ * Create a link between notes via API for testing
+ */
+export async function createLink(
+  request: APIRequestContext,
+  data: {
+    source_note_id: string;
+    target_note_id: string;
+    link_type?: string;
+    weight?: number;
+  }
+): Promise<void> {
+  await request.post(`${getBackendUrl()}/v1/links`, {
+    data: {
+      source_note_id: data.source_note_id,
+      target_note_id: data.target_note_id,
+      link_type: data.link_type || 'related',
+      weight: data.weight ?? 0.5
+    }
+  });
+}
 
 /**
  * Click an element using JavaScript to bypass viewport checks.

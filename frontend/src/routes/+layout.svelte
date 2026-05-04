@@ -27,7 +27,7 @@
     const currentPath = $page.url.pathname;
     const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
     
-    if (!isLoading && !isPublicRoute && !isAuthenticated()) {
+    if (!isLoading() && !isPublicRoute && !isAuthenticated()) {
       // Redirect to login with return URL
       const returnUrl = encodeURIComponent(currentPath);
       goto(`/auth/login?redirect=${returnUrl}`);
