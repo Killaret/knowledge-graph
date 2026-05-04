@@ -2,6 +2,7 @@
   import { getNote, type Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   import { formatDate } from '$lib/utils/date';
+  import ShareModal from './ShareModal.svelte';
   
   const { nodeId, onClose, onEdit, onDelete }: { 
     nodeId: string; 
@@ -13,6 +14,7 @@
   let note = $state<Note | null>(null);
   let loading = $state(true);
   let error = $state('');
+  let showShareModal = $state(false);
 
   // Load note when nodeId changes
   $effect(() => {
@@ -56,6 +58,19 @@
     
     {#if !loading && note}
       <div class="actions">
+        <button 
+          class="action-btn share"
+          onclick={() => showShareModal = true}
+          aria-label="Share note"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
         <button 
           class="action-btn"
           onclick={() => onEdit?.(nodeId)}
@@ -120,6 +135,14 @@
     {/if}
   </div>
 </div>
+
+{#if showShareModal && note}
+  <ShareModal 
+    noteId={note.id} 
+    noteTitle={note.title}
+    on:close={() => showShareModal = false}
+  />
+{/if}
 
 <style>
   .side-panel {
@@ -186,6 +209,11 @@
   .action-btn.delete:hover {
     background: #fee2e2;
     color: #ef4444;
+  }
+
+  .action-btn.share:hover {
+    background: #dbeafe;
+    color: #3b82f6;
   }
 
   .panel-content {
