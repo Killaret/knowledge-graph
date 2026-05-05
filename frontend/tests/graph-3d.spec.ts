@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink } from './helpers/testData';
+import { setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Graph Visualization with Progressive Rendering
@@ -9,6 +10,9 @@ import { createNote, createLink } from './helpers/testData';
 test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '@3d', '@progressive'] }, () => {
   
   test.beforeEach(async ({ page }) => {
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
+    
     // Navigate to home page first
     await page.goto('/');
     await page.waitForLoadState('networkidle');

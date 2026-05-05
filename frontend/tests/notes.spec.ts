@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
-import { clickCreateNoteButton, fillSearchInput, clickSearchButton } from './helpers/testUtils';
+import { clickCreateNoteButton, fillSearchInput, clickSearchButton, setupSkipAuth } from './helpers/testUtils';
 
 test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
   test.beforeEach(async ({ page }) => {
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
+    
     await page.goto('/');
     await page.waitForLoadState('networkidle');
   });

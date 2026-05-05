@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, isBackendAvailable, getBackendUrl } from './helpers/testData';
+import { setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Progressive Graph Rendering (Fog of War Effect)
@@ -26,6 +27,9 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     if (!backendAvailable) {
       test.skip();
     }
+    
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
     
     await page.goto('/');
     await page.waitForLoadState('networkidle');

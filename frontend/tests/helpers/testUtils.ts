@@ -121,3 +121,25 @@ export async function clickSearchButton(page: Page): Promise<void> {
     }
   });
 }
+
+/**
+ * Setup SKIP_AUTH mode for testing
+ * Must be called before navigating to protected routes
+ */
+export async function setupSkipAuth(page: Page): Promise<void> {
+  // Navigate to any page first to get localStorage access
+  await page.goto('/auth/login');
+  
+  // Set SKIP_AUTH flag in localStorage
+  await page.evaluate(() => {
+    localStorage.setItem('__SKIP_AUTH__', 'true');
+    (window as any).__SKIP_AUTH__ = true;
+    console.log('[TEST] SKIP_AUTH enabled');
+  });
+  
+  // Also set it before each navigation via init script
+  await page.addInitScript(() => {
+    localStorage.setItem('__SKIP_AUTH__', 'true');
+    (window as any).__SKIP_AUTH__ = true;
+  });
+}

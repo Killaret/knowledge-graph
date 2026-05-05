@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
-import { clickFilterChip } from './helpers/testUtils';
+import { clickFilterChip, setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
@@ -11,6 +11,9 @@ import { clickFilterChip } from './helpers/testUtils';
 test.describe('Type Filters - Home Page Filtering', { tag: ['@smoke', '@filters'] }, () => {
 
   test.beforeEach(async ({ page }) => {
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
+    
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);

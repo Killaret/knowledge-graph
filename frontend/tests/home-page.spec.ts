@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote } from './helpers/testData';
-import { clickCreateNoteButton, clickViewToggle } from './helpers/testUtils';
+import { clickCreateNoteButton, clickViewToggle, setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -11,6 +11,9 @@ import { clickCreateNoteButton, clickViewToggle } from './helpers/testUtils';
 test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test.beforeEach(async ({ page }) => {
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
+    
     // Navigate to home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');

@@ -15,7 +15,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { createNote, createLink } from './helpers/testData';
-import { clickViewToggle } from './helpers/testUtils';
+import { clickViewToggle, setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Camera Position and Navigation in 3D Graph
@@ -25,6 +25,9 @@ import { clickViewToggle } from './helpers/testUtils';
 test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3d', '@camera'] }, () => {
   
   test.beforeEach(async ({ page }) => {
+    // Setup SKIP_AUTH for protected route
+    await setupSkipAuth(page);
+    
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
