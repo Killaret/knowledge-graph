@@ -153,20 +153,19 @@ export async function createLink(
   
   console.log('[createLink] Payload:', JSON.stringify(payload));
 
-  // Use fetch API directly with explicit JSON headers
+  // Use Playwright request API for proper cookie/auth handling
   const url = `${getBackendUrl()}/links`;
-  const fetchResponse = await fetch(url, {
-    method: 'POST',
+  const response = await request.post(url, {
+    data: payload,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-    body: JSON.stringify(payload),
   });
 
-  if (!fetchResponse.ok) {
-    const errorText = await fetchResponse.text();
-    const status = fetchResponse.status;
+  if (!response.ok()) {
+    const errorText = await response.text();
+    const status = response.status();
 
     // Handle rate limiting with retry
     if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
@@ -179,7 +178,7 @@ export async function createLink(
     throw new Error(`Failed to create link: ${status} - ${errorText}`);
   }
 
-  return await fetchResponse.json();
+  return await response.json();
 }
 
 /**
