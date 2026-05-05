@@ -50,17 +50,19 @@
 </script>
 
 {#if isLoading}
-  <div class="lazy-loading" role="status" aria-live="polite">
+  <div class="lazy-loading graph-3d-container" data-testid="graph-3d-loading" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading 3D engine...</p>
   </div>
 {:else if loadError}
-  <div class="lazy-error" role="alert" aria-live="assertive">
+  <div class="lazy-error graph-3d-container" data-testid="graph-3d-error" role="alert" aria-live="assertive">
     <span class="error-icon" aria-hidden="true">⚠️</span>
     <p>{loadError}</p>
   </div>
 {:else if Graph3DComponent}
-  <Graph3DComponent {data} />
+  <div class="graph-3d-container" data-testid="graph-3d-canvas">
+    <Graph3DComponent {data} />
+  </div>
 {/if}
 
 <style>

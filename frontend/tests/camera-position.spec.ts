@@ -24,6 +24,26 @@ import { clickViewToggle, setupSkipAuth } from './helpers/testUtils';
 
 test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3d', '@camera'] }, () => {
   
+  // Check WebGL support once before all tests
+  let webglSupported = true;
+  
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    webglSupported = await page.evaluate(() => {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        return !!gl;
+      } catch {
+        return false;
+      }
+    });
+    await page.close();
+    if (!webglSupported) {
+      console.log('[Camera Tests] WebGL not supported, some tests will be skipped');
+    }
+  });
+  
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
@@ -34,6 +54,10 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
   });
 
   test('should position camera to show start node in center for local graph', async ({ page, request }) => {
+    // Skip if WebGL not supported (headless mode)
+    if (!webglSupported) {
+      test.skip();
+    }
     // Create a note with connections using helper
     const centerNote = await createNote(request, {
       title: 'Center Node',
@@ -85,6 +109,10 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
   });
 
   test('should position camera appropriately for full 3D graph', async ({ page, request }) => {
+    // Skip if WebGL not supported
+    if (!webglSupported) {
+      test.skip();
+    }
     // Create multiple notes for full graph using helper
     const notes = [];
     for (let i = 0; i < 5; i++) {
@@ -122,6 +150,10 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
   });
 
   test('should adjust camera when toggling full graph mode', async ({ page, request }) => {
+    // Skip if WebGL not supported
+    if (!webglSupported) {
+      test.skip();
+    }
     const note = await createNote(request, {
       title: 'Toggle Camera Test',
       content: 'Testing camera on toggle',
@@ -207,6 +239,10 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
   });
 
   test('should transition from 2D to 3D graph maintaining context', async ({ page, request }) => {
+    // Skip if WebGL not supported
+    if (!webglSupported) {
+      test.skip();
+    }
     const note = await createNote(request, {
       title: '2D to 3D Transition',
       content: 'Testing 2D to 3D',
@@ -316,6 +352,10 @@ test.describe('3D Graph - Camera Position and Navigation', { tag: ['@smoke', '@3
   });
 
   test('should position camera correctly for isolated single node', async ({ page, request }) => {
+    // Skip if WebGL not supported
+    if (!webglSupported) {
+      test.skip();
+    }
     // Create note with NO connections
     const isolatedNote = await createNote(request, {
       title: 'Isolated Node',
