@@ -9,8 +9,9 @@ Backend: http://localhost:8080
 
 | Test Suite | Total | Passed | Failed | Status |
 |------------|-------|--------|--------|--------|
-| **All Playwright Tests** | 132 | 62 | 70 | ⚠️ Partial |
+| **All Playwright Tests** | 80 | 38 | 42 | ⚠️ Partial |
 | **Visual Tests** | 10 | 10 | 0 | ✅ Perfect |
+| **Type Filters** | 10 | 10 | 0 | ✅ Perfect |
 | **Home Page** | 12 | 11 | 1 | ✅ Excellent |
 | **Auth Pages** | 15 | 14 | 1 | ✅ Excellent |
 | **BDD Tests** | 13 | 5 | 8 | ⚠️ Partial |
@@ -34,18 +35,32 @@ Backend: http://localhost:8080
 
 ## Known Issues
 
-1. **Backend API 500 Errors**
-   - Link creation fails with 500
-   - Note creation works
-   - Graph data retrieval works
+1. **Backend API 500 Errors - FIXED ✅**
+   - ~~Link creation fails with 500~~
+   - **Fix**: Migration 020 added deleted_at and updated_at columns to links table
+   - Note creation works ✅
+   - Graph data retrieval works ✅
 
 2. **3D Graph Tests**
    - WebGL rendering issues in headless mode
-   - Camera position tests unstable
+   - Camera position tests unstable (7/10 failed)
 
 3. **BDD Tests**
    - Step definitions need updates for new selectors
    - 5/13 scenarios passing
+
+## Fixes Applied
+
+### 1. Fixed createLink helper
+- Changed from direct `fetch()` to Playwright `request.post()`
+- Proper cookie/auth handling for API requests
+- File: `frontend/tests/helpers/testData.ts`
+
+### 2. Fixed backend 500 error for link creation
+- Migration 020 added missing columns to links table:
+  - `deleted_at` TIMESTAMPTZ (for soft deletes)
+  - `updated_at` TIMESTAMPTZ (with auto-update trigger)
+- Files: `backend/migrations/020_add_links_deleted_at.{up,down}.sql`
 
 ## Docker Configuration
 
