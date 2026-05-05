@@ -59,6 +59,13 @@ Before(async function(this: ITestWorld) {
   this.context = await browser.newContext({
     viewport: { width: 1280, height: 720 }
   });
+  
+  // Add SKIP_AUTH init script to bypass authentication
+  await this.context.addInitScript(() => {
+    localStorage.setItem('__SKIP_AUTH__', 'true');
+    (window as any).__SKIP_AUTH__ = true;
+  });
+  
   this.page = await this.context.newPage();
   this.request = this.context.request;
   this.testNotes = [];
