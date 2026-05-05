@@ -241,7 +241,7 @@ export function getApiKey(): string | null {
 
 /**
  * Check if user is authenticated
- * SKIP_AUTH bypasses auth for testing (via window flag or localStorage)
+ * SKIP_AUTH bypasses auth for testing (via window flag, localStorage, or query param)
  */
 export function isAuthenticated(): boolean {
   if (browser) {
@@ -251,6 +251,13 @@ export function isAuthenticated(): boolean {
     }
     // Check localStorage flag (set by tests before navigation)
     if (localStorage.getItem('__SKIP_AUTH__') === 'true') {
+      return true;
+    }
+    // Check query parameter for production testing
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('skip_auth') === 'true') {
+      // Persist to localStorage for subsequent navigations
+      localStorage.setItem('__SKIP_AUTH__', 'true');
       return true;
     }
   }
