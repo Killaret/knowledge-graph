@@ -14,7 +14,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 411399
+              "duration": 1685199
             }
           },
           {
@@ -22,7 +22,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 435042500
+              "duration": 238642200
             }
           },
           {
@@ -35,7 +35,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 3186434100
+              "duration": 3532011499
             }
           },
           {
@@ -48,7 +48,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1754798800
+              "duration": 1831330799
             }
           },
           {
@@ -60,8 +60,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:211"
             },
             "result": {
-              "status": "passed",
-              "duration": 56923899
+              "status": "failed",
+              "duration": 10019609200,
+              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('[data-testid=\"graph-2d-container\"]').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 10000ms\n  - waiting for locator('[data-testid=\"graph-2d-container\"]').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:213:23)"
             }
           },
           {
@@ -73,8 +74,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:145"
             },
             "result": {
-              "status": "passed",
-              "duration": 519709899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -86,9 +87,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:216"
             },
             "result": {
-              "status": "failed",
-              "duration": 15017041000,
-              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -148,7 +148,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 157271100
+              "duration": 251647499
             }
           },
           {
@@ -156,7 +156,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 7117700
+              "duration": 15891699
             }
           }
         ],
@@ -192,7 +192,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 121699
+              "duration": 610199
             }
           },
           {
@@ -200,7 +200,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 58257499
+              "duration": 115775299
             }
           },
           {
@@ -213,7 +213,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2164255999
+              "duration": 2341816599
             }
           },
           {
@@ -226,7 +226,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1599186799
+              "duration": 1495630499
             }
           },
           {
@@ -239,8 +239,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 11051266299,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('[data-testid=\"list-container\"]').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 10000ms\n  - waiting for locator('[data-testid=\"list-container\"]').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:252:31)"
+              "duration": 122238900,
+              "error_message": "page.evaluate: Error: view-toggle-list button not found\n    at eval (eval at evaluate (:302:30), <anonymous>:1:114)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (:302:30)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:243:21)"
             }
           },
           {
@@ -313,7 +313,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 93869500
+              "duration": 214389300
             }
           },
           {
@@ -321,7 +321,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5682099
+              "duration": 23429999
             }
           }
         ],
@@ -357,7 +357,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 110000
+              "duration": 399000
             }
           },
           {
@@ -365,7 +365,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61727599
+              "duration": 110430599
             }
           },
           {
@@ -378,7 +378,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2149909200
+              "duration": 2469845000
             }
           },
           {
@@ -391,7 +391,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1655488899
+              "duration": 1559473400
             }
           },
           {
@@ -404,8 +404,8 @@
             },
             "result": {
               "status": "failed",
-              "duration": 11042978599,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('[data-testid=\"list-container\"]').first()\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 10000ms\n  - waiting for locator('[data-testid=\"list-container\"]').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:252:31)"
+              "duration": 180092199,
+              "error_message": "page.evaluate: Error: view-toggle-list button not found\n    at eval (eval at evaluate (:302:30), <anonymous>:1:114)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (:302:30)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:243:21)"
             }
           },
           {
@@ -478,7 +478,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 93505199
+              "duration": 230027499
             }
           },
           {
@@ -486,7 +486,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 6279499
+              "duration": 17187799
             }
           }
         ],
@@ -522,7 +522,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 113100
+              "duration": 273100
             }
           },
           {
@@ -530,7 +530,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63465400
+              "duration": 145483299
             }
           },
           {
@@ -543,7 +543,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2137391799
+              "duration": 2428404500
             }
           },
           {
@@ -556,7 +556,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1604285499
+              "duration": 1489867000
             }
           },
           {
@@ -568,8 +568,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:256"
             },
             "result": {
-              "status": "passed",
-              "duration": 30464599
+              "status": "failed",
+              "duration": 15016096799,
+              "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
           {
@@ -581,8 +582,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:165"
             },
             "result": {
-              "status": "passed",
-              "duration": 1227259899
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -594,9 +595,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:496"
             },
             "result": {
-              "status": "failed",
-              "duration": 5007968300,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('canvas').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('canvas').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:498:24)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -643,7 +643,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 88080100
+              "duration": 186075900
             }
           },
           {
@@ -651,7 +651,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 10572499
+              "duration": 10048399
             }
           }
         ],
@@ -687,7 +687,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 396200
+              "duration": 421399
             }
           },
           {
@@ -695,7 +695,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 61808099
+              "duration": 100502200
             }
           },
           {
@@ -708,7 +708,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 2149993600
+              "duration": 2445422299
             }
           },
           {
@@ -721,7 +721,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1602900800
+              "duration": 1521994899
             }
           },
           {
@@ -734,7 +734,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1445383399
+              "duration": 1420601399
             }
           },
           {
@@ -746,8 +746,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:179"
             },
             "result": {
-              "status": "passed",
-              "duration": 18832800
+              "status": "failed",
+              "duration": 35430999,
+              "error_message": "page.evaluate: Error: Button with data-testid=\"create-note-button\" not found\n    at eval (eval at evaluate (:302:30), <anonymous>:1:103)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (:302:30)\n    at UtilityScript.evaluate (<anonymous>:304:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:203:19)"
             }
           },
           {
@@ -759,8 +760,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:365"
             },
             "result": {
-              "status": "passed",
-              "duration": 68064500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -772,8 +773,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:370"
             },
             "result": {
-              "status": "passed",
-              "duration": 82434200
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -785,8 +786,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:375"
             },
             "result": {
-              "status": "passed",
-              "duration": 479841500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -798,8 +799,8 @@
               "location": "tests\\features\\step_definitions\\graph_interaction.steps.ts:155"
             },
             "result": {
-              "status": "passed",
-              "duration": 268251299
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -811,9 +812,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:382"
             },
             "result": {
-              "status": "failed",
-              "duration": 5013483500,
-              "error_message": "Error: expect(locator).not.toBeVisible() failed\n\nLocator:  locator('.modal, [role=\"dialog\"]').first()\nExpected: not visible\nReceived: visible\nTimeout:  5000ms\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for locator('.modal, [role=\"dialog\"]').first()\n    9 × locator resolved to <div role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\" class=\"modal-container s-CbKqU8tqPnSX\">…</div>\n      - unexpected value \"visible\"\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:384:27)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -834,7 +834,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 86613199
+              "duration": 163597500
             }
           },
           {
@@ -842,7 +842,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 6498699
+              "duration": 11275399
             }
           }
         ],
@@ -902,7 +902,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 171700
+              "duration": 180299
             }
           },
           {
@@ -910,7 +910,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63741399
+              "duration": 101134000
             }
           },
           {
@@ -922,8 +922,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "passed",
-              "duration": 171035699
+              "status": "failed",
+              "duration": 74806599,
+              "error_message": "Error: Failed to create link: 500 - {\"code\":\"INTERNAL_ERROR\",\"message\":\"Не удалось сохранить связь\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:179:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:77:5)"
             }
           },
           {
@@ -935,8 +936,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:105"
             },
             "result": {
-              "status": "passed",
-              "duration": 4809497600
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -948,9 +949,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:12"
             },
             "result": {
-              "status": "failed",
-              "duration": 1010504400,
-              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('.loading-overlay').first()\nExpected: visible\nTimeout: 1000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 1000ms\n  - waiting for locator('.loading-overlay').first()\n\n    at Proxy.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\playwright\\lib\\matchers\\expect.js:213:24)\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:15:25)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1036,7 +1036,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 73469200
+              "duration": 43291400
             }
           },
           {
@@ -1044,7 +1044,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 3691599
+              "duration": 3474699
             }
           }
         ],
@@ -1076,7 +1076,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 104099
+              "duration": 221899
             }
           },
           {
@@ -1084,7 +1084,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59793499
+              "duration": 117993900
             }
           },
           {
@@ -1096,8 +1096,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "passed",
-              "duration": 126442699
+              "status": "failed",
+              "duration": 68036399,
+              "error_message": "Error: Failed to create link: 500 - {\"code\":\"INTERNAL_ERROR\",\"message\":\"Не удалось сохранить связь\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:179:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:77:5)"
             }
           },
           {
@@ -1109,8 +1110,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:105"
             },
             "result": {
-              "status": "passed",
-              "duration": 1630658500
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1122,8 +1123,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:95"
             },
             "result": {
-              "status": "passed",
-              "duration": 21028700
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1135,9 +1136,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:53"
             },
             "result": {
-              "status": "failed",
-              "duration": 1008594199,
-              "error_message": "page.waitForFunction: Timeout 1000ms exceeded.\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:54:19)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1171,7 +1171,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 56487800
+              "duration": 53256900
             }
           },
           {
@@ -1179,7 +1179,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 4106399
+              "duration": 3361500
             }
           }
         ],
@@ -1211,7 +1211,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 136099
+              "duration": 172100
             }
           },
           {
@@ -1219,7 +1219,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 56201499
+              "duration": 105038500
             }
           },
           {
@@ -1231,8 +1231,9 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:32"
             },
             "result": {
-              "status": "passed",
-              "duration": 114331099
+              "status": "failed",
+              "duration": 57236700,
+              "error_message": "Error: Failed to create link: 500 - {\"code\":\"INTERNAL_ERROR\",\"message\":\"Не удалось сохранить связь\"}\n    at createLink (D:\\knowledge-graph\\frontend\\tests\\helpers\\testData.ts:179:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\common.steps.ts:77:5)"
             }
           },
           {
@@ -1244,8 +1245,8 @@
               "location": "tests\\features\\step_definitions\\common.steps.ts:105"
             },
             "result": {
-              "status": "passed",
-              "duration": 1589336699
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1257,9 +1258,8 @@
               "location": "tests\\features\\step_definitions\\graph_3d_loading.steps.ts:207"
             },
             "result": {
-              "status": "failed",
-              "duration": 10004302400,
-              "error_message": "page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.loading-overlay, canvas') to be visible\u001b[22m\n\n    at CustomWorld.<anonymous> (D:\\knowledge-graph\\frontend\\tests\\features\\step_definitions\\graph_3d_loading.steps.ts:209:19)"
+              "status": "skipped",
+              "duration": 0
             }
           },
           {
@@ -1306,7 +1306,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 63654599
+              "duration": 53391700
             }
           },
           {
@@ -1314,7 +1314,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 5700600
+              "duration": 1826499
             }
           }
         ],
@@ -1366,7 +1366,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 109799
+              "duration": 129800
             }
           },
           {
@@ -1374,7 +1374,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 76201000
+              "duration": 108895299
             }
           },
           {
@@ -1387,7 +1387,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1587651600
+              "duration": 2318339899
             }
           },
           {
@@ -1400,7 +1400,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 15013587199,
+              "duration": 15019679400,
               "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1461,7 +1461,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 23320100
+              "duration": 64795299
             }
           },
           {
@@ -1469,7 +1469,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 752899
+              "duration": 3048699
             }
           }
         ],
@@ -1505,7 +1505,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 99199
+              "duration": 829299
             }
           },
           {
@@ -1513,7 +1513,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60272899
+              "duration": 144881600
             }
           },
           {
@@ -1526,7 +1526,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1652455900
+              "duration": 1786801099
             }
           },
           {
@@ -1539,7 +1539,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 15009927799,
+              "duration": 15013594100,
               "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1600,7 +1600,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 20796999
+              "duration": 48436699
             }
           },
           {
@@ -1608,7 +1608,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 771500
+              "duration": 2057800
             }
           }
         ],
@@ -1644,7 +1644,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 176899
+              "duration": 253499
             }
           },
           {
@@ -1652,7 +1652,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 58909600
+              "duration": 126420299
             }
           },
           {
@@ -1665,7 +1665,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1586282399
+              "duration": 1695420299
             }
           },
           {
@@ -1678,7 +1678,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 15001399099,
+              "duration": 15011756099,
               "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1726,7 +1726,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 22886700
+              "duration": 83830600
             }
           },
           {
@@ -1734,7 +1734,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 795199
+              "duration": 2600000
             }
           }
         ],
@@ -1770,7 +1770,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 62899
+              "duration": 306299
             }
           },
           {
@@ -1778,7 +1778,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 59335499
+              "duration": 145990799
             }
           },
           {
@@ -1791,7 +1791,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1609175699
+              "duration": 1618826100
             }
           },
           {
@@ -1804,7 +1804,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 15010116600,
+              "duration": 15007650999,
               "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1852,7 +1852,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 18594700
+              "duration": 244859200
             }
           },
           {
@@ -1860,7 +1860,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1236900
+              "duration": 1494500
             }
           }
         ],
@@ -1896,7 +1896,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 74999
+              "duration": 226399
             }
           },
           {
@@ -1904,7 +1904,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 60940799
+              "duration": 77080000
             }
           },
           {
@@ -1917,7 +1917,7 @@
             },
             "result": {
               "status": "passed",
-              "duration": 1625162600
+              "duration": 1651338899
             }
           },
           {
@@ -1930,7 +1930,7 @@
             },
             "result": {
               "status": "failed",
-              "duration": 15007835099,
+              "duration": 15010520799,
               "error_message": "Error: function timed out, ensure the promise resolves within 15000 milliseconds\n    at Timeout.<anonymous> (D:\\knowledge-graph\\frontend\\node_modules\\@cucumber\\cucumber\\src\\time.ts:52:14)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)"
             }
           },
@@ -1978,7 +1978,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 26434000
+              "duration": 34130999
             }
           },
           {
@@ -1986,7 +1986,7 @@
             "hidden": true,
             "result": {
               "status": "passed",
-              "duration": 1906499
+              "duration": 1754899
             }
           }
         ],

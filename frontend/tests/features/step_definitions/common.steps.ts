@@ -15,6 +15,13 @@ interface ITestWorld extends IWorld {
 
 Before(async function(this: ITestWorld) {
   this.testNotes = [];
+  
+  // Inject SKIP_AUTH flag to bypass authentication
+  if (this.page) {
+    await this.page.addInitScript(() => {
+      (window as any).__SKIP_AUTH__ = true;
+    });
+  }
 });
 
 After(async function(this: ITestWorld) {

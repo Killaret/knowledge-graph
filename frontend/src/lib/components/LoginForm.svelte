@@ -25,7 +25,7 @@
       if (success) {
         goto('/');
       } else {
-        localError = error || 'Invalid API key';
+        localError = error() || 'Invalid API key';
       }
     } else {
       // Normal login
@@ -38,7 +38,7 @@
       if (success) {
         goto('/');
       } else {
-        localError = error || 'Invalid credentials';
+        localError = error() || 'Invalid credentials';
       }
     }
   }
@@ -112,8 +112,8 @@
     <ApiErrorDisplay error={{ message: localError, code: 'AUTH_ERROR' }} />
   {/if}
   
-  <Button type="submit" variant="primary" disabled={isLoading}>
-    {isLoading ? 'Вход...' : 'Войти'}
+  <Button type="submit" variant="primary" disabled={isLoading()}>
+    {isLoading() ? 'Вход...' : 'Войти'}
   </Button>
   
   <div class="form-links">
@@ -134,68 +134,79 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    max-width: 400px;
     width: 100%;
-    padding: 2rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
   }
   
   h2 {
     margin: 0 0 1rem;
     text-align: center;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
   
   .auth-mode-toggle {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
   
   .mode-btn {
     flex: 1;
     padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-dark, #94a3b8);
+    border-radius: var(--radius-md, 8px);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+  }
+  
+  .mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 204, 0, 0.3);
   }
   
   .mode-btn.active {
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    border-color: var(--color-primary);
+    border-color: transparent;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
   }
   
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
   
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #94a3b8);
   }
   
   input {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-background);
-    color: var(--color-text-primary);
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md, 8px);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--color-text-dark, #e0e0e0);
     font-size: 1rem;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
+  }
+  
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
   }
   
   input:focus {
     outline: none;
-    border-color: var(--color-primary);
+    border-color: rgba(255, 204, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1), 0 0 15px rgba(255, 204, 0, 0.1);
+    background: rgba(0, 0, 0, 0.3);
   }
   
   .form-links {
@@ -206,12 +217,15 @@
   }
   
   a {
-    color: var(--color-primary);
+    color: var(--color-glow-blue, #40a9ff);
     text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
   }
   
   a:hover {
-    text-decoration: underline;
+    color: var(--color-glow, #ffcc00);
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
   }
   
   .divider {
@@ -225,12 +239,12 @@
   .divider::after {
     content: '';
     flex: 1;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .divider span {
     padding: 0 0.75rem;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #64748b);
     font-size: 0.875rem;
   }
 </style>

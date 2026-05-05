@@ -9,6 +9,59 @@ import { createNote, createLink, getBackendUrl } from './helpers/testUtils';
 
 test.describe.configure({ mode: 'serial' });
 
+test.describe('GraphCanvas Isolated Node Visual Tests @visual @isolated', () => {
+  const nodeTypes = ['star', 'planet', 'comet', 'galaxy', 'asteroid'];
+
+  for (const type of nodeTypes) {
+    test(`should render ${type} node with correct visual appearance`, async ({ page }) => {
+      // Navigate to isolated node test page with longer timeout
+      await page.goto(`/test/isolated-node?type=${type}`, { timeout: 15000, waitUntil: 'networkidle' });
+      
+      // Wait for page to be fully loaded
+      await page.waitForLoadState('domcontentloaded');
+      
+      // Wait for canvas to be ready with longer timeout
+      await page.waitForSelector('canvas', { timeout: 15000 });
+      
+      // Wait for simulation to stabilize
+      await page.waitForTimeout(2000);
+      
+      // Take screenshot of the canvas
+      const canvas = page.locator('canvas').first();
+      await expect(canvas).toHaveScreenshot(`${type}-node.png`, {
+        maxDiffPixels: 200,
+        threshold: 0.3,
+        animations: 'disabled'
+      });
+    });
+  }
+});
+
+test.describe('GraphCanvas Link Visual Tests @visual @links', () => {
+  const linkTypes = ['reference', 'dependency', 'related', 'custom'];
+
+  for (const linkType of linkTypes) {
+    test(`should render ${linkType} link between nodes`, async ({ page }) => {
+      // Navigate to link pair test page
+      await page.goto(`/test/link-pair?linkType=${linkType}&sourceType=star&targetType=planet`);
+      
+      // Wait for canvas to be ready
+      await page.waitForSelector('canvas', { timeout: 10000 });
+      
+      // Wait for simulation to stabilize and lines to be drawn
+      await page.waitForTimeout(1500);
+      
+      // Take screenshot of the canvas
+      const canvas = page.locator('canvas').first();
+      await expect(canvas).toHaveScreenshot(`${linkType}-link.png`, {
+        maxDiffPixels: 200,
+        threshold: 0.3,
+        animations: 'disabled'
+      });
+    });
+  }
+});
+
 test.describe('GraphCanvas Visual Tests @visual', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the graph page

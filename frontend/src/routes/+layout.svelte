@@ -14,7 +14,8 @@
     '/auth/forgot-password',
     '/auth/reset-password',
     '/auth/yandex/callback',
-    '/health'
+    '/health',
+    '/test'  // Test routes for visual regression testing
   ];
 
   // Initialize auth on mount

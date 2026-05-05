@@ -241,8 +241,16 @@ export function getApiKey(): string | null {
 
 /**
  * Check if user is authenticated
+ * SKIP_AUTH environment variable bypasses auth for testing
  */
 export function isAuthenticated(): boolean {
+  // Skip auth for E2E testing when SKIP_AUTH is set
+  if (browser) {
+    // Check window flag injected by Playwright
+    if ((window as any).__SKIP_AUTH__ === true) {
+      return true;
+    }
+  }
   return !!authState.accessToken || !!authState.apiKey;
 }
 

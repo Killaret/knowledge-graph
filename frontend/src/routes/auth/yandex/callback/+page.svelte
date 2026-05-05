@@ -22,7 +22,7 @@
     if (success) {
       goto('/');
     } else {
-      localError = error || 'Ошибка авторизации через Яндекс';
+      localError = error() || 'Ошибка авторизации через Яндекс';
       isProcessing = false;
     }
   });
@@ -50,13 +50,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-background);
+    background: radial-gradient(ellipse at 50% 100%, #0a0a1a 0%, #000 80%);
     padding: 2rem;
   }
   
   .callback-container {
     text-align: center;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
   }
   
   .loading {
@@ -69,10 +69,12 @@
   .spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid var(--color-border);
-    border-top-color: var(--color-primary);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #40a9ff;
+    border-right-color: #ffcc00;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    box-shadow: 0 0 20px rgba(64, 169, 255, 0.3);
   }
   
   @keyframes spin {
@@ -81,24 +83,44 @@
     }
   }
   
+  .loading p {
+    color: var(--color-text-dark, #94a3b8);
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+  }
+  
   .error {
     padding: 2rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
+    background: rgba(10, 10, 26, 0.7);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 0 0 1px rgba(255, 204, 0, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.4);
   }
   
   .error p {
     margin: 0 0 1rem;
-    color: var(--color-error);
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
   }
   
   .back-link {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     text-decoration: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-md, 8px);
     font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+  
+  .back-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 25px rgba(59, 130, 246, 0.4),
+      0 0 30px rgba(64, 169, 255, 0.2);
   }
 </style>

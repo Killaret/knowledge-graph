@@ -1,7 +1,7 @@
 # Статус тестов и покрытие
 
-> **Обновлено:** 28 апреля 2026
-> **Всего тестов:** ~496 (118 Go + 204 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
+> **Обновлено:** 5 мая 2026
+> **Всего тестов:** ~634 (118 Go + 344 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
 
 ## Backend (Go)
 
@@ -68,8 +68,11 @@
 | `Graph3D` | `Graph3D.spec.ts` | ✅ |
 | `GraphCanvas/interactions` | `GraphCanvas.interactions.spec.ts` | ✅ |
 | `GraphCanvas/links` | `GraphCanvas.links.spec.ts` | ✅ |
+| `GraphCanvas/links-detailed` | `GraphCanvas.links-detailed.spec.ts` | ✅ |
 | `GraphCanvas/node-types` | `GraphCanvas.node-types.spec.ts` | ✅ |
 | `GraphCanvas/rendering` | `GraphCanvas.rendering.spec.ts` | ✅ |
+| `Three/nodeFactory` | `nodeFactory.spec.ts` | ✅ |
+| `Three/linkFactory` | `linkFactory.spec.ts` | ✅ |
 | `LazyGraph3D` | `LazyGraph3D.spec.ts` | ✅ |
 | `LinkCreator` | `LinkCreator.spec.ts` | ✅ |
 | `NoteCard` | `NoteCard.spec.ts` | ✅ |
@@ -165,11 +168,37 @@ pytest tests/ -v
 | Категория | Файлов | Тестов | Статус |
 |-----------|--------|--------|--------|
 | **Go Unit** | 31 | 118 | ✅ |
-| **Frontend Unit** | 18 | 204 | ✅ |
+| **Frontend Unit** | 22 | 344 | ✅ |
 | **Playwright E2E** | 10 | 48 | ⏭️ Требует БД |
 | **BDD Scenarios** | 14 | 111 | ⏭️ Требует БД |
 | **NLP Python** | 2 | ~15 | ✅ |
-| **Итого** | **75** | **~496** | ✅ |
+| **Итого** | **79** | **~634** | ✅ |
+
+### Пропущенные тесты (известные ограничения)
+- **5 retry тестов** в `notes.test.ts` - MSW не поддерживает Ky retry (https://github.com/mswjs/msw/issues/1406)
+- **2 CSS теста** (AuthCard, CosmicBackground) - jsdom не вычисляет backdrop-filter и позиционирование
+
+### Новые тесты визуальной корректности (май 2026)
+
+#### 2D Graph (GraphCanvas)
+- ✅ `GraphCanvas.links-detailed.spec.ts` — 10 тестов проверки координат связей и стилей
+- ✅ `GraphCanvas.node-types.spec.ts` — дополнено 6 тестов проверки цветов (star: #ffdd88, planet: #c9b37c, comet: #aaffdd, galaxy: purple, asteroid: #8b7355)
+
+#### 3D Graph (Three.js)
+- ✅ `nodeFactory.spec.ts` — 15+ тестов проверки материалов, цветов и геометрии узлов
+- ✅ `linkFactory.spec.ts` — 12 тестов проверки линий связей (цвета, dash patterns, opacity)
+
+#### Визуальные snapshot-тесты (Playwright)
+- ✅ `graph-visual.spec.ts` — 6 тестов сравнения скриншотов:
+  - star-node.png, planet-node.png, comet-node.png, galaxy-node.png, asteroid-node.png
+  - link-between-nodes.png, multiple-link-types.png
+- ✅ `graph-visual-isolated.spec.ts` — 9 тестов (требуется backend):
+  - 5 тестов изолированных узлов + 4 теста связей
+- ✅ `graph-visual-mock.spec.ts` — 9 тестов с mock данными (май 2026):
+  - 5 скриншотов узлов: star, planet, comet, galaxy, asteroid
+  - 4 скриншота связей: reference, dependency, related, custom
+  - **9 эталонов сохранены в `tests/graph-visual-mock.spec.ts-snapshots/`**
+- ✅ Тестовые маршруты: `/test/isolated-node`, `/test/link-pair`
 
 ## Рекомендации
 

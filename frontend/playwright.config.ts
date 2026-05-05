@@ -9,6 +9,7 @@ declare const process: {
     BACKEND_URL?: string;
     DATABASE_URL?: string;
     REDIS_URL?: string;
+    SKIP_AUTH?: string;
   };
 };
 
@@ -19,47 +20,44 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   timeout: 60 * 1000, // 60s per test
+  globalSetup: './tests/setup/global-setup.ts',
   reporter: 'html',
   use: {
-    baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
+    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     actionTimeout: 15000,
     navigationTimeout: 15000,
-    // Expose backend URL for API requests
-    extraHTTPHeaders: {
-      'X-BACKEND-URL': process.env.BACKEND_URL || 'http://localhost:8080',
+    // Inject SKIP_AUTH flag for testing
+    launchOptions: {
+      args: ['--disable-web-security'],
     },
   },
   projects: [
+    // Setup project for auth bypass
+    {
+      name: 'setup',
+      testMatch: '**/setup/*.setup.ts',
+    },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Inject SKIP_AUTH flag for all tests
+        launchOptions: {
+          args: ['--disable-web-security'],
+        },
+      },
+      dependencies: ['setup'],
     },
   ],
-  // webServer temporarily disabled for Docker testing
-  // webServer: process.env.CI || process.env.BACKEND_URL
-  //   ? {
-  //       command: 'npm run dev',
-  //       url: process.env.FRONTEND_URL || 'http://localhost:5173',
-  //       reuseExistingServer: !process.env.CI,
-  //       timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
-  //     }
-  //   : [
-  //       {
-  //         command: 'npm run dev',
-  //         url: process.env.FRONTEND_URL || 'http://localhost:5173',
-  //         reuseExistingServer: true,
-  //         timeout: 120 * 1000,
-  //       },
-  //       {
-  //         command: 'cd ../backend && go run cmd/server/main.go',
-  //         url: 'http://localhost:8080',
-  //         reuseExistingServer: true,
-  //         timeout: 60 * 1000,
-  //         env: {
-  //           DATABASE_URL: process.env.DATABASE_URL || '',
-  //           REDIS_URL: process.env.REDIS_URL || '',
-  //         },
-  //       },
-  //     ],
+  // Auto-start dev server for tests
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true,
+    timeout: 120 * 1000,
+    env: {
+      SKIP_AUTH: 'true',
+    },
+  },
 });

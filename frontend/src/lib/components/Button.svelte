@@ -55,22 +55,25 @@
     box-shadow: 0 0 0 3px var(--focus-ring-color);
   }
 
-  /* Primary variant */
+  /* Primary variant - cosmic glow */
   .button.primary {
-    background: var(--color-primary, #3b82f6);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    --focus-ring-color: var(--color-primary-light, rgba(59, 130, 246, 0.3));
+    --focus-ring-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
   }
 
   .button.primary:hover:not(.disabled) {
-    background: var(--color-primary-hover, #2563eb);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 8px 25px rgba(59, 130, 246, 0.4),
+      0 0 30px rgba(64, 169, 255, 0.2);
   }
 
   .button.primary:active:not(.disabled) {
     transform: translateY(0);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
   }
 
   /* Secondary variant */

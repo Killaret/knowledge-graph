@@ -68,7 +68,11 @@
   
   .yandex-login-button:hover:not(:disabled) {
     background: #E63917;
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+      0 8px 25px rgba(252, 63, 29, 0.4),
+      0 0 20px rgba(252, 63, 29, 0.3),
+      0 0 40px rgba(255, 204, 0, 0.1);
   }
   
   .yandex-login-button:disabled {

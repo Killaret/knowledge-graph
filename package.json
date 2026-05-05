@@ -27,5 +27,8 @@
     "backend/**/*.go": [
       "cd backend && golangci-lint run --new-from-rev=HEAD~1"
     ]
+  },
+  "dependencies": {
+    "thesvg": "^2.1.6"
   }
 }

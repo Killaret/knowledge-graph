@@ -37,14 +37,14 @@
     return errors;
   });
   
-  let isPasswordValid = $derived(() => passwordErrors().length === 0);
-  let passwordsMatch = $derived(() => newPassword === confirmPassword && confirmPassword.length > 0);
+  let isPasswordValid = $derived(passwordErrors().length === 0);
+  let passwordsMatch = $derived(newPassword === confirmPassword && confirmPassword.length > 0);
   
   async function handleSubmit(e: Event) {
     e.preventDefault();
     localError = null;
     
-    if (!isPasswordValid()) {
+    if (!isPasswordValid) {
       localError = 'Пароль не соответствует требованиям';
       return;
     }
@@ -114,7 +114,7 @@
         placeholder="Повторите новый пароль"
         required
       />
-      {#if confirmPassword && !passwordsMatch()}
+      {#if confirmPassword && !passwordsMatch}
         <span class="error-text">Пароли не совпадают</span>
       {/if}
     </div>
@@ -126,7 +126,7 @@
     <Button 
       type="submit" 
       variant="primary" 
-      disabled={isLoading || !isPasswordValid() || !passwordsMatch()}
+      disabled={isLoading || !isPasswordValid || !passwordsMatch}
     >
       {isLoading ? 'Сохранение...' : 'Сохранить новый пароль'}
     </Button>
@@ -138,56 +138,65 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    max-width: 400px;
     width: 100%;
-    padding: 2rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
   }
   
   h2 {
     margin: 0 0 1rem;
     text-align: center;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
   
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
   
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #94a3b8);
   }
   
   input {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-background);
-    color: var(--color-text-primary);
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md, 8px);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--color-text-dark, #e0e0e0);
     font-size: 1rem;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
+  }
+  
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
   }
   
   input:focus {
     outline: none;
-    border-color: var(--color-primary);
+    border-color: rgba(255, 204, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1), 0 0 15px rgba(255, 204, 0, 0.1);
+    background: rgba(0, 0, 0, 0.3);
   }
   
   .password-requirements {
     font-size: 0.75rem;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #94a3b8);
     margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
   
   .password-requirements p {
     margin: 0 0 0.25rem;
     font-weight: 500;
+    color: var(--color-text-dark, #e0e0e0);
   }
   
   .password-requirements ul {
@@ -196,28 +205,32 @@
   }
   
   .password-requirements li {
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.4);
+    transition: color 0.3s ease;
   }
   
   .password-requirements li.valid {
-    color: var(--color-success);
+    color: #22c55e;
+    text-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
   }
   
   .error-text {
     font-size: 0.75rem;
-    color: var(--color-error);
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
   }
   
   .success-message {
     text-align: center;
     padding: 1rem;
-    background: var(--color-success-light, rgba(34, 197, 94, 0.1));
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-success);
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
   }
   
   .success-message p {
     margin: 0.5rem 0;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
   }
 </style>

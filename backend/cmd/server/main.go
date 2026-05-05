@@ -188,6 +188,12 @@ func main() {
 		c.Next()
 	})
 
+	// SkipAuth middleware for testing (when SKIP_AUTH=true)
+	if cfg.SkipAuth {
+		r.Use(middleware.SkipAuth(middleware.DefaultSkipAuthConfig(true)))
+		log.Println("[Auth] SKIP_AUTH enabled - authentication disabled for testing")
+	}
+
 	// Rate limiting middleware (conditional)
 	var writeLimiter gin.HandlerFunc
 	if cfg.ServerRateLimitEnabled {

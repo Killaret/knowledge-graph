@@ -74,23 +74,21 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    max-width: 400px;
     width: 100%;
-    padding: 2rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
   }
   
   h2 {
     margin: 0 0 0.5rem;
     text-align: center;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
   
   .description {
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #94a3b8);
     margin: 0 0 1rem;
     font-size: 0.875rem;
   }
@@ -98,52 +96,60 @@
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
   
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-text-dark, #94a3b8);
   }
   
   input {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-background);
-    color: var(--color-text-primary);
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md, 8px);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--color-text-dark, #e0e0e0);
     font-size: 1rem;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
+  }
+  
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
   }
   
   input:focus {
     outline: none;
-    border-color: var(--color-primary);
+    border-color: rgba(255, 204, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1), 0 0 15px rgba(255, 204, 0, 0.1);
+    background: rgba(0, 0, 0, 0.3);
   }
   
   .success-message {
     text-align: center;
     padding: 1rem;
-    background: var(--color-success-light, rgba(34, 197, 94, 0.1));
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-success);
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
   }
   
   .success-message p {
     margin: 0.5rem 0;
-    color: var(--color-text-primary);
+    color: var(--color-text-dark, #e0e0e0);
   }
   
   .back-link {
     text-align: center;
-    color: var(--color-primary);
+    color: var(--color-glow, #ffcc00);
     text-decoration: none;
     font-weight: 500;
+    transition: all 0.2s ease;
   }
   
   .back-link:hover {
-    text-decoration: underline;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
   }
   
   .form-links {
@@ -153,11 +159,13 @@
   }
   
   a {
-    color: var(--color-primary);
+    color: var(--color-glow-blue, #40a9ff);
     text-decoration: none;
+    transition: all 0.2s ease;
   }
   
   a:hover {
-    text-decoration: underline;
+    color: var(--color-glow, #ffcc00);
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
   }
 </style>
