@@ -104,7 +104,7 @@ test.describe('Knowledge Graph Frontend', {
     
     // Wait for edit button using waitForFunction
     await page.waitForFunction(() => {
-      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn');
+      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn') as HTMLButtonElement;
       return editBtn && window.getComputedStyle(editBtn).display !== 'none';
     }, { timeout: 15000 });
 
@@ -112,7 +112,7 @@ test.describe('Knowledge Graph Frontend', {
     await page.waitForFunction(() => {
       const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn');
       if (editBtn && window.getComputedStyle(editBtn).display !== 'none') {
-        editBtn.click();
+        (editBtn as HTMLButtonElement).click();
         return true;
       }
       return false;
@@ -120,28 +120,28 @@ test.describe('Knowledge Graph Frontend', {
 
     // Wait for modal to open using waitForFunction for reliability
     await page.waitForFunction(() => {
-      const modal = document.querySelector('[data-testid="edit-modal"]') || document.querySelector('.modal[role="dialog"]');
+      const modal = document.querySelector('.modal-container[role="dialog"]') || document.querySelector('.modal[role="dialog"]');
       return modal && window.getComputedStyle(modal).display !== 'none';
     }, { timeout: 15000 });
     
-    const modal = page.locator('.modal[role="dialog"]').first();
+    const modal = page.locator('.modal-container[role="dialog"]').first();
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
     // Update note in modal - use waitForFunction for reliability
-    await page.waitForFunction(() => {
+    await page.waitForFunction((timestamp) => {
       const titleInput = document.querySelector('[data-testid="edit-title-input"]') || document.querySelector('.modal-content input[name="title"]');
       if (titleInput && window.getComputedStyle(titleInput).display !== 'none') {
-        titleInput.value = 'Edited ' + timestamp;
+        (titleInput as HTMLInputElement).value = 'Edited ' + timestamp;
         return true;
       }
       return false;
-    }, { timeout: 15000 });
+    }, { timeout: 15000 }, timestamp);
     
     await page.waitForFunction(() => {
       const contentInput = document.querySelector('[data-testid="edit-content-input"]') || document.querySelector('.modal-content textarea[name="content"]');
       if (contentInput && window.getComputedStyle(contentInput).display !== 'none') {
-        contentInput.value = 'Updated content';
+        (contentInput as HTMLTextAreaElement).value = 'Updated content';
         return true;
       }
       return false;
@@ -149,7 +149,7 @@ test.describe('Knowledge Graph Frontend', {
 
     // Save changes and wait for PUT response
     await page.waitForFunction(() => {
-      const saveButton = document.querySelector('[data-testid="edit-save-btn"]') || document.querySelector('.modal-content button[type="submit"]');
+      const saveButton = document.querySelector('[data-testid="edit-save-btn"]') || document.querySelector('.modal-content button[type="submit"]') as HTMLButtonElement;
       return saveButton && window.getComputedStyle(saveButton).display !== 'none';
     }, { timeout: 15000 });
     
@@ -201,7 +201,7 @@ test.describe('Knowledge Graph Frontend', {
     await page.waitForFunction(() => {
       const deleteBtn = document.querySelector('[data-testid="delete-note-btn"]') || Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('Delete'));
       if (deleteBtn && window.getComputedStyle(deleteBtn).display !== 'none') {
-        deleteBtn.click();
+        (deleteBtn as HTMLButtonElement).click();
         return true;
       }
       return false;

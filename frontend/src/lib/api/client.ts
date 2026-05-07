@@ -15,7 +15,7 @@ const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
 let backendUrl = 'http://localhost:8080';
 try {
   // @ts-ignore - Vite env vars
-  const envUrl = (import.meta as any).env?.VITE_BACKEND_URL;
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (envUrl) backendUrl = envUrl;
 } catch {
   // Fallback to default
@@ -23,7 +23,7 @@ try {
 
 // В dev режиме (Vite) используем относительный путь (проксируется на backend)
 // Production использует прямой backend URL
-const prefixUrl = isDev && !isTest
+const prefixUrl = isDev && !isTest && !backendUrl.includes('localhost:8080')
   ? '' 
   : `${backendUrl}/api`;
 
