@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { shareNote, createShareLink, revokeShare } from '$lib/api/sharing.js';
+  import { shareNote, createShareLink } from '$lib/api/sharing.js';
   import type { NoteShare, ShareLink } from '$lib/types.js';
   
   interface Props {
@@ -8,7 +8,7 @@
     noteTitle: string;
   }
   
-  let { noteId, noteTitle }: Props = $props();
+  const { noteId, noteTitle }: Props = $props();
   
   const dispatch = createEventDispatcher<{
     close: void;

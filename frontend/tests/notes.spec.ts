@@ -18,7 +18,7 @@ test.describe('Knowledge Graph Frontend', {
     if (testInfo.status !== 'passed') {
       await page.screenshot({ 
         path: `test-results/debug-${testInfo.title.replace(/\s+/g, '-').toLowerCase()}-failure.png`,
-        fullPage: true 
+        fullPage: true
       });
     }
   });
@@ -39,7 +39,7 @@ test.describe('Knowledge Graph Frontend', {
       await page.waitForSelector('[data-testid="create-note-title"]', { timeout: 15000 });
       await page.fill('[data-testid="create-note-title"]', 'Playwright Test ' + Date.now());
       await page.fill('[data-testid="create-note-content"]', 'Automated content');
-    } catch (error) {
+    } catch {
       // Fallback to class-based selectors
       console.log('[DEBUG] Falling back to class selectors for create modal');
       await page.waitForSelector('.modal-content input[name="title"]', { timeout: 15000 });
@@ -51,7 +51,7 @@ test.describe('Knowledge Graph Frontend', {
     try {
       await page.waitForSelector('[data-testid="create-note-submit"]', { timeout: 15000 });
       await page.click('[data-testid="create-note-submit"]');
-    } catch (error) {
+    } catch {
       // Fallback to class-based selectors
       console.log('[DEBUG] Falling back to class selectors for submit button');
       await page.waitForSelector('.modal-content button[type="submit"]', { timeout: 15000 });

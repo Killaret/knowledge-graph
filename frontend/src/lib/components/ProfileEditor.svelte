@@ -8,8 +8,7 @@
   
   let name = $state('');
   let email = $state('');
-  let isLoading = $state(false);
-  let isSaving = $state(false);
+    let isSaving = $state(false);
   let isDeleting = $state(false);
   let showDeleteConfirm = $state(false);
   let deletePassword = $state('');

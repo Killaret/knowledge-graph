@@ -74,7 +74,7 @@ vi.mock('d3-force', () => {
     return sim;
   });
 
-  const forceLink = vi.fn((links?: any[]) => {
+  const forceLink = vi.fn((_links?: any[]) => {
     const linkForce: any = {
       id: () => linkForce,
       distance: () => linkForce,

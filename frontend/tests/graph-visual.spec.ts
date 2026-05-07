@@ -5,7 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, getBackendUrl } from './helpers/testUtils';
+import { createNote, createLink } from './helpers/testUtils';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -73,7 +73,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
   test('should render star node with correct visual appearance', async ({ page }) => {
     // Create a star node
-    const starNote = await createNote(page.request, {
+    await createNote(page.request, {
       title: 'Test Star',
       content: 'Visual test for star rendering',
       type: 'star'
@@ -93,7 +93,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
   });
 
   test('should render planet node with correct visual appearance', async ({ page }) => {
-    const planetNote = await createNote(page.request, {
+    await createNote(page.request, {
       title: 'Test Planet',
       content: 'Visual test for planet rendering',
       type: 'planet'
@@ -111,7 +111,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
   });
 
   test('should render comet node with correct visual appearance', async ({ page }) => {
-    const cometNote = await createNote(page.request, {
+    await createNote(page.request, {
       title: 'Test Comet',
       content: 'Visual test for comet rendering',
       type: 'comet'
@@ -129,7 +129,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
   });
 
   test('should render galaxy node with correct visual appearance', async ({ page }) => {
-    const galaxyNote = await createNote(page.request, {
+    await createNote(page.request, {
       title: 'Test Galaxy',
       content: 'Visual test for galaxy rendering',
       type: 'galaxy'
@@ -147,7 +147,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
   });
 
   test('should render asteroid node with correct visual appearance', async ({ page }) => {
-    const asteroidNote = await createNote(page.request, {
+    await createNote(page.request, {
       title: 'Test Asteroid',
       content: 'Visual test for asteroid rendering',
       type: 'asteroid'

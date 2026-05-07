@@ -11,7 +11,7 @@
   let localError = $state<string | null>(null);
   
   // Password validation
-  let passwordErrors = $derived(() => {
+  const passwordErrors = $derived(() => {
     const errors: string[] = [];
     if (password.length < 10) {
       errors.push('Минимум 10 символов');
@@ -31,8 +31,8 @@
     return errors;
   });
   
-  let isPasswordValid = $derived(passwordErrors().length === 0);
-  let passwordsMatch = $derived(password === confirmPassword && confirmPassword.length > 0);
+  const isPasswordValid = $derived(passwordErrors().length === 0);
+  const passwordsMatch = $derived(password === confirmPassword && confirmPassword.length > 0);
   
   async function handleSubmit(e: Event) {
     e.preventDefault();

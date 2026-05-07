@@ -57,10 +57,10 @@ test.describe('GraphCanvas Visual - Link Types @visual @links', () => {
 
   for (const linkType of linkTypes) {
     test(`should render ${linkType} link correctly`, async ({ page, request }) => {
-      // Create two notes
+      // Create source node
       const sourceNote = await createNote(request, {
-        title: 'Source',
-        content: 'Source node',
+        title: 'Source Node',
+        content: 'Source node for link test',
         type: 'star'
       });
       const targetNote = await createNote(request, {
@@ -71,12 +71,7 @@ test.describe('GraphCanvas Visual - Link Types @visual @links', () => {
       
       try {
         // Create link
-        await createLink(request, {
-          source_note_id: sourceNote.data.id,
-          target_note_id: targetNote.data.id,
-          link_type: linkType,
-          weight: 0.8
-        });
+        await createLink(request, sourceNote.data.id, targetNote.data.id, 0.8, linkType);
         
         // Navigate to test page (public route, no auth required)
         await page.goto(`/test/link-pair?linkType=${linkType}`);

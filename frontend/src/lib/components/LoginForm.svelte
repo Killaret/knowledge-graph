@@ -43,11 +43,7 @@
     }
   }
   
-  function toggleApiKeyMode() {
-    useApiKey = !useApiKey;
-    localError = null;
-  }
-</script>
+  </script>
 
 <form class="login-form" onsubmit={handleSubmit}>
   <h2>Вход в систему</h2>

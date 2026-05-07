@@ -11,7 +11,7 @@
     children?: import('svelte').Snippet;
   }
   
-  let { title, subtitle = '', showIcon = true, children }: Props = $props();
+  const { title, subtitle = '', showIcon = true, children }: Props = $props();
 </script>
 
 <div class="auth-page">

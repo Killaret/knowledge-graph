@@ -131,7 +131,7 @@ describe('GraphCanvas - Node Type Rendering', () => {
     });
 
     it('drawPlanet uses correct default color (#c9b37c) for main body', () => {
-      let fillStyles: string[] = [];
+      const fillStyles: string[] = [];
       const ctx = {
         beginPath: vi.fn(),
         arc: vi.fn(),
@@ -208,7 +208,7 @@ describe('GraphCanvas - Node Type Rendering', () => {
 
     it('drawNode sets correct fillStyle for each node type', () => {
       function createMockCtx() {
-        let fillStyles: string[] = [];
+        const fillStyles: string[] = [];
         return {
           save: vi.fn(),
           restore: vi.fn(),

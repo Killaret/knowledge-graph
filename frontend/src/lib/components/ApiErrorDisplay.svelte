@@ -6,7 +6,7 @@
     onClose?: () => void;
   }
 
-  let { error, onClose }: Props = $props();
+  const { error, onClose }: Props = $props();
 
   function handleClose() {
     onClose?.();

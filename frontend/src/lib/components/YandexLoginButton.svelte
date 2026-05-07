@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { getYandexLoginUrl } from '$lib/api/auth.js';
+    import { getYandexLoginUrl } from '$lib/api/auth.js';
   
   let isLoading = $state(false);
   let error = $state<string | null>(null);

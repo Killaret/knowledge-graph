@@ -4,7 +4,7 @@
     class?: string;
   }
   
-  let { size = 60, class: className = '' }: Props = $props();
+  const { size = 60, class: className = '' }: Props = $props();
 </script>
 
 <svg

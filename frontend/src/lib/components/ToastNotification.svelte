@@ -10,7 +10,7 @@
     onClose?: () => void;
   }
 
-  let { 
+  const { 
     message, 
     type = 'info', 
     duration = 5000, 
@@ -18,8 +18,7 @@
     onClose = () => {} 
   }: Props = $props();
 
-  let formatter: MessageFormatter;
-  let visible = $state(false);
+    let visible = $state(false);
   let progress = $state(100);
   let intervalId: ReturnType<typeof setInterval>;
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -92,8 +91,8 @@
     }
   }
 
-  let displayIcon = $derived(useGalacticMode ? galacticIcons[type] : icons[type]);
-  let toastClass = $derived(`toast-notification ${typeClasses[type]} ${visible ? 'visible' : ''}`);
+  const displayIcon = $derived(useGalacticMode ? galacticIcons[type] : icons[type]);
+  const toastClass = $derived(`toast-notification ${typeClasses[type]} ${visible ? 'visible' : ''}`);
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />

@@ -43,7 +43,7 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     const login = `${TEST_USER_PREFIX}${uniqueId}`;
     
     // Register via API
-    const registerRes = await page.request.post(`${getBackendUrl()}/auth/register`, {
+    await page.request.post(`${getBackendUrl()}/auth/register`, {
       data: { login, password: TEST_PASSWORD }
     });
     

@@ -6,7 +6,7 @@
     class?: string;
   }
   
-  let { size = 80, class: className = '' }: Props = $props();
+  const { size = 80, class: className = '' }: Props = $props();
   
   let rotation = $state(0);
   let animationId: number;

@@ -3,8 +3,7 @@
  * These tests verify that links are rendered correctly between nodes
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { describe, it, expect, vi } from 'vitest';
 import * as renderer from './GraphCanvas/renderer';
 import type { SimulationNode, SimulationLink } from './GraphCanvas/types';
 
