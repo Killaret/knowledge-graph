@@ -11,7 +11,7 @@ const TEST_PASSWORD = 'TestPassword123!';
 
 test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
   
-  test('should register new user successfully', async ({ page, request }) => {
+  test('should register new user successfully', async ({ page }) => {
     const uniqueId = Date.now();
     const login = `${TEST_USER_PREFIX}${uniqueId}`;
     

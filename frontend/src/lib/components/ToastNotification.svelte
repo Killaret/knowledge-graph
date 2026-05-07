@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { MessageFormatter } from '$lib/utils/galactic-lexicon';
-
+  
   interface Props {
     message: string;
     type?: 'success' | 'error' | 'info' | 'warning';
