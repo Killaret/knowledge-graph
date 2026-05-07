@@ -79,7 +79,7 @@ export async function createNote(
     metadata: data.metadata || {},
   };
 
-  const response = await request.post(`${getBackendUrl()}/notes`, {
+  const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
     data: payload,
   });
 
@@ -154,7 +154,7 @@ export async function createLink(
   console.log('[createLink] Payload:', JSON.stringify(payload));
 
   // Use Playwright request API for proper cookie/auth handling
-  const url = `${getBackendUrl()}/links`;
+  const url = `${getBackendUrl()}/api/v1/links`;
   const response = await request.post(url, {
     data: payload,
     headers: {
@@ -232,7 +232,7 @@ export async function createChainTopology(
  * Delete a note via API
  */
 export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
-  const response = await request.delete(`${getBackendUrl()}/notes/${noteId}`);
+  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`);
 
   if (!response.ok() && response.status() !== 404) {
     const errorText = await response.text();
@@ -262,7 +262,7 @@ export async function cleanupTestData(
  */
 export async function isBackendAvailable(request: APIRequestContext): Promise<boolean> {
   try {
-    const response = await request.get(`${getBackendUrl()}/notes`, {
+    const response = await request.get(`${getBackendUrl()}/api/v1/notes`, {
       timeout: 5000,
     });
     return response.status() < 500;

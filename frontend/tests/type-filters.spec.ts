@@ -327,7 +327,7 @@ test.describe('Type Filters - metadata.type fallback', { tag: ['@metadata'] }, (
     const timestamp = Date.now();
     
     // Create note without any type specified
-    await request.post('http://localhost:8080/notes', {
+    await request.post('http://localhost:8080/api/v1/notes', {
       data: { 
         title: `No Type ${timestamp}`, 
         content: 'No type specified'

@@ -349,7 +349,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   
   test.beforeAll(async ({ request }) => {
     try {
-      const healthCheck = await request.get('http://localhost:8080/notes', { timeout: 5000 });
+      const healthCheck = await request.get('http://localhost:8080/api/v1/notes', { timeout: 5000 });
       backendAvailable = healthCheck.status() < 500;
     } catch {
       backendAvailable = false;
