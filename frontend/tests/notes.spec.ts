@@ -128,20 +128,19 @@ test.describe('Knowledge Graph Frontend', {
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
-    // Update note in modal - use waitForFunction for reliability
-    await page.waitForFunction((timestamp) => {
-      const titleInput = document.querySelector('[data-testid="edit-title-input"]') || document.querySelector('.modal-content input[name="title"]');
-      if (titleInput && window.getComputedStyle(titleInput).display !== 'none') {
-        (titleInput as HTMLInputElement).value = 'Edited ' + timestamp;
-        return true;
-      }
-      return false;
-    }, { timeout: 15000 }, timestamp);
+    // Update note in modal - use fill() to trigger Svelte bindings
+    await page.fill('[data-testid="edit-title-input"]', `Edited ${timestamp}`);
+    console.log('[DEBUG] Set title input to:', 'Edited ' + timestamp);
+    
+    await page.fill('[data-testid="edit-content-input"]', 'Updated content');
+    console.log('[DEBUG] Set content input to:', 'Updated content');
     
     await page.waitForFunction(() => {
       const contentInput = document.querySelector('[data-testid="edit-content-input"]') || document.querySelector('.modal-content textarea[name="content"]');
       if (contentInput && window.getComputedStyle(contentInput).display !== 'none') {
         (contentInput as HTMLTextAreaElement).value = 'Updated content';
+        console.log('[DEBUG] Set content input to:', 'Updated content');
+        console.log('[DEBUG] Content input value after set:', (contentInput as HTMLTextAreaElement).value);
         return true;
       }
       return false;
@@ -156,10 +155,20 @@ test.describe('Knowledge Graph Frontend', {
     const saveButton = page.locator('.modal-content button[type="submit"]').first();
     
     const [response] = await Promise.all([
-      page.waitForResponse(resp => resp.url().includes(`/v1/notes/${noteId}`) && resp.request().method() === 'PUT'),
+      page.waitForResponse(async resp => {
+        if (resp.url().includes(`/v1/notes/${noteId}`) && resp.request() && resp.request().method() === 'PUT') {
+          console.log('[EDIT REQUEST URL]', resp.url());
+          console.log('[EDIT REQUEST METHOD]', resp.request().method());
+          const postData = await resp.request().postData();
+          console.log('[EDIT REQUEST BODY]', postData);
+          return true;
+        }
+        return false;
+      }),
       saveButton.click()
     ]);
     console.log('[EDIT RESPONSE]', response.status());
+    console.log('[EDIT RESPONSE BODY]', await response.text());
     
     // Wait for network requests to complete
     await page.waitForLoadState('networkidle');
