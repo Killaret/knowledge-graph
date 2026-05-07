@@ -358,14 +358,8 @@ export function drawAllLinks(
 ): void {
   simLinks.forEach((link) => {
     // After simulation source/target become node objects
-    const sourceNode =
-      typeof link.source === 'object'
-        ? (link.source as SimulationNode)
-        : nodes.find((n) => String(n.id) === String(link.source));
-    const targetNode =
-      typeof link.target === 'object'
-        ? (link.target as SimulationNode)
-        : nodes.find((n) => String(n.id) === String(link.target));
+    const sourceNode = nodes.find((n) => String(n.id) === String(link.source));
+    const targetNode = nodes.find((n) => String(n.id) === String(link.target));
 
     if (!sourceNode || !targetNode) {
       return;

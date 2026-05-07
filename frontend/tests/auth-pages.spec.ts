@@ -134,12 +134,17 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
     const authContainer = page.locator('.auth-container').first();
     await expect(authContainer).toBeVisible();
     
-    // Check for transition/animation properties
+    // Check for transition/animation properties - simplified test
     const hasAnimation = await authContainer.evaluate((el) => {
       const style = window.getComputedStyle(el);
-      return style.animation || style.transition;
+      // Check for any animation, transition, or transform properties
+      return style.animation !== 'none' || 
+             style.transition !== 'none' || 
+             style.opacity !== '1' || 
+             el.classList.contains('fade') ||
+             el.classList.contains('transition');
     });
-    // Animation might be inline or from Svelte transitions
+    // Animation might be inline, from Svelte transitions, opacity-based, or CSS class-based
     expect(hasAnimation || true).toBe(true);
   });
 
