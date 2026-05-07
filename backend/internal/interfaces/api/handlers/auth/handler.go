@@ -459,10 +459,10 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 	// Build authorization URL
 	authURL := "https://oauth.yandex.com/authorize"
 	params := url.Values{
-		"client_id":     {string(h.cfg.YandexClientID)},
-		"response_type": {string("code")},
-		"state":         {string(state)},
-		"scope":         {string("login:email login:info")},
+		"client_id":     []string{string(h.cfg.YandexClientID)},
+		"response_type": []string{"code"},
+		"state":         []string{string(state)},
+		"scope":         []string{"login:email login:info"},
 	}
 
 	if h.cfg.PKCEEnabled && codeChallenge != "" {
