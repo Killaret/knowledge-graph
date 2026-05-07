@@ -189,10 +189,11 @@ describe('GraphCanvas - Link Visual Correctness', () => {
       const sourceNode: SimulationNode = { id: '1', title: 'Source', x: 100, y: 100, type: 'star' };
       const targetNode: SimulationNode = { id: '2', title: 'Target', x: 200, y: 200, type: 'planet' };
       const links: SimulationLink[] = [
-        { source: sourceNode, target: targetNode, weight: 0.5 }
+        { source: '1', target: '2', weight: 0.5 }
       ];
+      const nodes = [sourceNode, targetNode];
 
-      renderer.drawAllLinks(ctx, links, []);
+      renderer.drawAllLinks(ctx, links, nodes);
 
       expect(ctx.moveTo).toHaveBeenCalledWith(100, 100);
       expect(ctx.lineTo).toHaveBeenCalledWith(200, 200);
