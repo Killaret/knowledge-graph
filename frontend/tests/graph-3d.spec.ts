@@ -7,27 +7,11 @@ import { setupSkipAuth } from './helpers/testUtils';
  * These tests verify the new architecture with immediate loading and fog effect
  */
 
-test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '@3d', '@progressive'] }, () => {
-  
-  // Check WebGL support once before all tests
-  let webglSupported = true;
-  
-  test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
-    webglSupported = await page.evaluate(() => {
-      try {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        return !!gl;
-      } catch {
-        return false;
-      }
-    });
-    await page.close();
-    if (!webglSupported) {
-      console.log('[Graph 3D Tests] WebGL not supported, some tests will be skipped');
-    }
-  });
+test.describe('Graph Visualization - Progressive Rendering', { 
+  tag: ['@smoke', '@3d', '@progressive'],
+  // Skip all tests if running in headless mode (WebGL not available)
+  annotation: { type: 'skip', description: 'WebGL not available in headless mode' }
+}, () => {
   
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
@@ -39,10 +23,6 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
   });
 
   test('should render 3D graph immediately without spinner', async ({ page, request }) => {
-    // Skip if WebGL not supported
-    if (!webglSupported) {
-      test.skip();
-    }
     // Create a note via API using helper
     const note = await createNote(request, {
       title: '3D Graph Test Note',
@@ -71,10 +51,6 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
   });
 
   test('should show graph container with correct 3D styling', async ({ page, request }) => {
-    // Skip if WebGL not supported
-    if (!webglSupported) {
-      test.skip();
-    }
     // Create a note via API using helper
     const note = await createNote(request, {
       title: 'Styling Test Note',
@@ -132,10 +108,6 @@ test.describe('Graph Visualization - Progressive Rendering', { tag: ['@smoke', '
   });
 
   test('should display stats bar with node and link counts', async ({ page, request }) => {
-    // Skip if WebGL not supported
-    if (!webglSupported) {
-      test.skip();
-    }
     // Create a note with connections using helper
     const note1 = await createNote(request, { title: 'Stats Test Node 1', content: 'Node 1' });
     const note1Id = note1.data.id;
