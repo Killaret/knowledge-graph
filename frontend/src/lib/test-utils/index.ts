@@ -1,7 +1,7 @@
 import { render as svelteRender } from '@testing-library/svelte';
 
 // Расширенная функция render, которая автоматически подключает MSW (он уже активен глобально)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function render(component: any, props?: Record<string, unknown>) {
 	return svelteRender(component, { props });
 }
