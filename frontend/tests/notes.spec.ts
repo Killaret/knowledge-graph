@@ -22,13 +22,14 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForSelector('.modal, [role="dialog"]', { timeout: 10000 });
     await page.waitForTimeout(500);
     
-    // Fill in create modal
-    await page.waitForSelector('input[name="title"]', { timeout: 5000 });
-    await page.fill('input[name="title"]', 'Playwright Test ' + Date.now());
-    await page.fill('textarea[name="content"]', 'Automated content');
+    // Fill in create modal using data-testid
+    await page.waitForSelector('[data-testid="create-note-title"]', { timeout: 5000 });
+    await page.fill('[data-testid="create-note-title"]', 'Playwright Test ' + Date.now());
+    await page.fill('[data-testid="create-note-content"]', 'Automated content');
     
-    // Click Save button
-    await page.click('button[type="submit"]');
+    // Click Save button using data-testid
+    await page.waitForSelector('[data-testid="create-note-submit"]', { timeout: 5000 });
+    await page.click('[data-testid="create-note-submit"]');
     
     // Wait for modal to close
     await page.waitForTimeout(2000);
@@ -70,29 +71,34 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
 
     // Wait for note content to load
     await page.waitForSelector('h1', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="edit-note-btn"], button.edit-btn', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="edit-note-btn"]', { timeout: 15000 });
 
     // Click Edit button to open modal - use data-testid first
+    await page.waitForSelector('[data-testid="edit-note-btn"]', { timeout: 10000 });
     const editButton = page.locator('[data-testid="edit-note-btn"]').first();
     await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.scrollIntoViewIfNeeded();
     await editButton.click({ timeout: 5000 });
 
     // Wait for modal to open with increased timeout
+    await page.waitForSelector('[data-testid="edit-modal"], .modal[role="dialog"]', { timeout: 10000 });
     const modal = page.locator('[data-testid="edit-modal"], .modal[role="dialog"]').first();
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
     // Update note in modal - use data-testid for reliability
+    await page.waitForSelector('[data-testid="edit-title-input"]', { timeout: 10000 });
     const titleInput = page.locator('[data-testid="edit-title-input"]').first();
     await expect(titleInput).toBeVisible({ timeout: 10000 });
     await titleInput.fill('Edited ' + timestamp);
     
+    await page.waitForSelector('[data-testid="edit-content-input"]', { timeout: 10000 });
     const contentInput = page.locator('[data-testid="edit-content-input"]').first();
     await contentInput.fill('Updated content');
 
     // Save changes and wait for PUT response
-    const saveButton = page.locator('[data-testid="edit-save-btn"], button:has-text("Save"), button[type="submit"]').first();
+    await page.waitForSelector('[data-testid="edit-save-btn"]', { timeout: 10000 });
+    const saveButton = page.locator('[data-testid="edit-save-btn"]').first();
     
     const [response] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes(`/v1/notes/${noteId}`) && resp.request().method() === 'PUT'),
@@ -137,7 +143,8 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     });
     
     // Click Delete button - use data-testid first
-    await page.click('[data-testid="delete-note-btn"], button:has-text("Delete")');
+    await page.waitForSelector('[data-testid="delete-note-btn"]', { timeout: 10000 });
+    await page.click('[data-testid="delete-note-btn"]');
 
     // Wait for navigation away from note page (either redirect or URL change)
     await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 10000 });
@@ -238,6 +245,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(1000);
 
     // Verify back button is visible
+    await page.waitForSelector('.back-button', { timeout: 10000 });
     await expect(page.locator('.back-button')).toBeVisible();
 
     // Click back button - should navigate using browser history

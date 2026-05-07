@@ -15,7 +15,8 @@
     type = 'button',
     disabled = false,
     onClick,
-    children
+    children,
+    ...restProps
   }: Props = $props();
 
   function handleClick(e: MouseEvent) {
@@ -31,6 +32,7 @@
   class:disabled
   onclick={handleClick}
   {disabled}
+  {...restProps}
 >
   {@render children?.()}
 </button>

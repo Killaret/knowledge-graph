@@ -66,6 +66,7 @@
         bind:value={title}
         placeholder="Enter note title..."
         disabled={loading}
+        data-testid="create-note-title"
       />
     </div>
     
@@ -83,16 +84,17 @@
         placeholder="Enter note content..."
         rows={6}
         disabled={loading}
+        data-testid="create-note-content"
       ></textarea>
     </div>
     
     <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
     
     <div class="form-actions">
-      <Button variant="secondary" onClick={close} disabled={loading}>
+      <Button variant="secondary" onClick={close} disabled={loading} data-testid="create-note-cancel">
         Cancel
       </Button>
-      <Button variant="primary" type="submit" disabled={loading}>
+      <Button variant="primary" type="submit" disabled={loading} data-testid="create-note-submit">
         {loading ? 'Creating...' : 'Create Note'}
       </Button>
     </div>

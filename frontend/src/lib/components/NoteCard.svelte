@@ -57,7 +57,7 @@
     aria-label={`Open note: ${note.title}`}
   >
   <div class="note-header">
-    <h3 class="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>
+    <h3 class="note-title" data-testid="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>
     <div class="note-meta">
       {#if note.type}
         <span class="type-badge" data-testid="note-type">{note.type}</span>
@@ -66,7 +66,7 @@
     </div>
   </div>
 
-  <div class="note-content">
+  <div class="note-content" data-testid="note-content">
     {@html highlightQuery ? highlightText(truncateText(note.content, 200), highlightQuery) : truncateText(note.content, 200)}
   </div>
   

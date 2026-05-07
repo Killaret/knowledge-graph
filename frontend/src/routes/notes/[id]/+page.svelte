@@ -54,12 +54,12 @@
 {:else if note}
   <div class="note-container">
     <BackButton href="/" />
-    <h1>{note.title}</h1>
+    <h1 data-testid="note-detail-title">{note.title}</h1>
     <div class="meta">Создано: {formatDateTime(note.created_at)}</div>
-    <div class="content">{note.content}</div>
+    <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
-      <button onclick={() => editModalOpen = true} class="edit-btn">Edit</button>
-      <button onclick={handleDelete}>Delete</button>
+      <button onclick={() => editModalOpen = true} class="edit-btn" data-testid="edit-note-btn">Edit</button>
+      <button onclick={handleDelete} data-testid="delete-note-btn">Delete</button>
       <a href={`/graph/3d/${note.id}`} class="graph-link">✨ Show constellation</a>
     </div>
 
