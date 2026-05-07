@@ -106,7 +106,9 @@
         VITE_API_TARGET: http://backend:8080
     container_name: kg-frontend
     ports:
-      - "3000:3000"
+      - "8081:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:

@@ -31,8 +31,9 @@ WORKDIR /app
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package*.json .
 
-# Install only production dependencies
-RUN npm ci --omit=dev || npm install --omit=dev
+# Install curl for health check and production dependencies
+RUN apk add --no-cache curl && \
+    npm ci --omit=dev || npm install --omit=dev
 
 EXPOSE 3000
 

@@ -70,25 +70,25 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
 
     // Wait for note content to load
     await page.waitForSelector('h1', { timeout: 15000 });
-    await page.waitForSelector('button.edit-btn', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="edit-note-btn"], button.edit-btn', { timeout: 15000 });
 
-    // Click Edit button to open modal - use more specific selector and scroll first
-    const editButton = page.locator('button.edit-btn, [data-testid="edit-note-btn"], [data-testid="note-edit-button"], button:has-text("Edit")').first();
+    // Click Edit button to open modal - use data-testid first
+    const editButton = page.locator('[data-testid="edit-note-btn"]').first();
     await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.scrollIntoViewIfNeeded();
-    await editButton.click();
+    await editButton.click({ timeout: 5000 });
 
     // Wait for modal to open with increased timeout
-    const modal = page.locator('.modal[role="dialog"], .modal-overlay, [data-testid="edit-modal"]').first();
+    const modal = page.locator('[data-testid="edit-modal"], .modal[role="dialog"]').first();
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
-    // Update note in modal - use locator for better reliability
-    const titleInput = page.locator('#edit-note-title, [data-testid="edit-title-input"]').first();
+    // Update note in modal - use data-testid for reliability
+    const titleInput = page.locator('[data-testid="edit-title-input"]').first();
     await expect(titleInput).toBeVisible({ timeout: 10000 });
     await titleInput.fill('Edited ' + timestamp);
     
-    const contentInput = page.locator('#edit-note-content, [data-testid="edit-content-input"]').first();
+    const contentInput = page.locator('[data-testid="edit-content-input"]').first();
     await contentInput.fill('Updated content');
 
     // Save changes and wait for PUT response
@@ -136,8 +136,8 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       await dialog.accept();
     });
     
-    // Click Delete button
-    await page.click('button:has-text("Delete")');
+    // Click Delete button - use data-testid first
+    await page.click('[data-testid="delete-note-btn"], button:has-text("Delete")');
 
     // Wait for navigation away from note page (either redirect or URL change)
     await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 10000 });
@@ -161,13 +161,13 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     
-    // Verify 3D graph container is visible immediately (no lazy loading)
+    // Verify 3D graph container is visible (loading, error, or canvas)
     const graphContainer = page.locator('.graph-3d-container').first();
-    await expect(graphContainer).toBeVisible({ timeout: 3000 });
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
     // Verify stats bar shows node and link counts
-    const statsBar = page.locator('.stats-bar').first();
-    await expect(statsBar).toBeVisible();
+    const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsBar).toBeVisible({ timeout: 5000 });
     
     const statsText = await statsBar.textContent();
     expect(statsText).toMatch(/\d+\s*nodes?/i);

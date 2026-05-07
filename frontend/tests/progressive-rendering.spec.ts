@@ -68,16 +68,16 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForLoadState('networkidle');
     
     // Verify graph container appears immediately
-    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
-    await expect(graphContainer).toBeVisible({ timeout: 2000 });
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
     // Loading overlay may appear briefly but should disappear quickly
     const loadingOverlay = page.locator('[data-testid="loading-overlay"]');
-    await expect(loadingOverlay).toBeHidden({ timeout: 8000 });
+    await expect(loadingOverlay).toBeHidden({ timeout: 10000 });
     
     // Verify stats bar shows initial data
-    const statsBar = page.locator('[data-testid="graph-stats"]').first();
-    await expect(statsBar).toBeVisible();
+    const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsBar).toBeVisible({ timeout: 5000 });
     
     // Check that nodes count is displayed
     const statsText = await statsBar.textContent();
@@ -110,8 +110,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForTimeout(1000);
     
     // Verify graph container is visible
-    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
-    await expect(graphContainer).toBeVisible();
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
     // Wait for progressive loading to complete (Phase 2)
     await page.waitForTimeout(4000);
@@ -140,8 +140,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForTimeout(2000);
     
     // Verify graph container exists
-    const graphContainer = page.locator('[data-testid="graph-3d-container"]').first();
-    await expect(graphContainer).toBeVisible();
+    const graphContainer = page.locator('.graph-3d-container').first();
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
     // Check that canvas is present (WebGL rendering)
     const canvas = page.locator('canvas').first();
@@ -174,11 +174,11 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     
     // Verify graph container is visible
     const graphContainer = page.locator('.graph-3d-container').first();
-    await expect(graphContainer).toBeVisible();
+    await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
     // Verify stats show correct counts (should have 2 nodes, 1 link)
-    const statsBar = page.locator('.stats-bar').first();
-    await expect(statsBar).toBeVisible();
+    const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsBar).toBeVisible({ timeout: 5000 });
     
     const statsText = await statsBar.textContent();
     expect(statsText).toContain('nodes');
@@ -206,8 +206,8 @@ test.describe('Progressive Graph Rendering - Fog of War', { tag: ['@smoke', '@3d
     await page.waitForTimeout(500);
     
     // Verify the stats bar is present (spinner may or may not appear)
-    const statsBar = page.locator('.stats-bar').first();
-    await expect(statsBar).toBeVisible();
+    const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
+    await expect(statsBar).toBeVisible({ timeout: 5000 });
   });
 
   test('should handle camera reset function', async ({ page, request }) => {

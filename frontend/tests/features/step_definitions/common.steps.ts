@@ -103,7 +103,7 @@ Given('there are notes of various types in the database', async function(this: I
 
 // Navigation steps
 Given('I am on the main page {string}', async function(this: ITestWorld, path: string) {
-  await this.page.goto(`http://localhost:5173${path}`);
+  await this.page.goto(`http://localhost:8081${path}`);
   await this.page.waitForLoadState('networkidle');
   // Give Svelte time to hydrate the page
   await this.page.waitForTimeout(1000);
@@ -112,7 +112,7 @@ Given('I am on the main page {string}', async function(this: ITestWorld, path: s
 Given('I navigate to {string}', async function(this: ITestWorld, path: string) {
   // Replace {centerNoteId} placeholder
   const resolvedPath = path.replace('{centerNoteId}', this.centerNoteId || 'test-id');
-  await this.page.goto(`http://localhost:5173${resolvedPath}`);
+  await this.page.goto(`http://localhost:8081${resolvedPath}`);
   await this.page.waitForLoadState('networkidle');
   await this.page.waitForTimeout(500);
 });
@@ -143,7 +143,7 @@ Given('I am on the 3D graph page for a note with connections', async function(th
   }
   
   // Navigate to 3D graph
-  await this.page.goto(`http://localhost:5173/graph/3d/${this.centerNoteId}`);
+  await this.page.goto(`http://localhost:8081/graph/3d/${this.centerNoteId}`);
   await this.page.waitForLoadState('networkidle');
   await this.page.waitForTimeout(500);
 });
