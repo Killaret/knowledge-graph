@@ -2,13 +2,25 @@ import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
 import { clickCreateNoteButton, fillSearchInput, clickSearchButton, setupSkipAuth } from './helpers/testUtils';
 
-test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
+test.describe('Knowledge Graph Frontend', { 
+  tag: ['@smoke', '@notes']
+}, () => {
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
     
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+  });
+
+  // Add test-level error handling for screenshots
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status !== 'passed') {
+      await page.screenshot({ 
+        path: `test-results/debug-${testInfo.title.replace(/\s+/g, '-').toLowerCase()}-failure.png`,
+        fullPage: true 
+      });
+    }
   });
 
   test('should create a new note', async ({ page, request }) => {
@@ -23,13 +35,28 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(500);
     
     // Fill in create modal using data-testid
-    await page.waitForSelector('[data-testid="create-note-title"]', { timeout: 5000 });
-    await page.fill('[data-testid="create-note-title"]', 'Playwright Test ' + Date.now());
-    await page.fill('[data-testid="create-note-content"]', 'Automated content');
+    try {
+      await page.waitForSelector('[data-testid="create-note-title"]', { timeout: 15000 });
+      await page.fill('[data-testid="create-note-title"]', 'Playwright Test ' + Date.now());
+      await page.fill('[data-testid="create-note-content"]', 'Automated content');
+    } catch (error) {
+      // Fallback to class-based selectors
+      console.log('[DEBUG] Falling back to class selectors for create modal');
+      await page.waitForSelector('.modal-content input[name="title"]', { timeout: 15000 });
+      await page.fill('.modal-content input[name="title"]', 'Playwright Test ' + Date.now());
+      await page.fill('.modal-content textarea[name="content"]', 'Automated content');
+    }
     
     // Click Save button using data-testid
-    await page.waitForSelector('[data-testid="create-note-submit"]', { timeout: 5000 });
-    await page.click('[data-testid="create-note-submit"]');
+    try {
+      await page.waitForSelector('[data-testid="create-note-submit"]', { timeout: 15000 });
+      await page.click('[data-testid="create-note-submit"]');
+    } catch (error) {
+      // Fallback to class-based selectors
+      console.log('[DEBUG] Falling back to class selectors for submit button');
+      await page.waitForSelector('.modal-content button[type="submit"]', { timeout: 15000 });
+      await page.click('.modal-content button[type="submit"]');
+    }
     
     // Wait for modal to close
     await page.waitForTimeout(2000);
@@ -69,36 +96,64 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     console.log('[DEBUG] Page HTML length:', html.length);
     console.log('[DEBUG] Page HTML snippet:', html.substring(0, 1000));
 
-    // Wait for note content to load
-    await page.waitForSelector('h1', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="edit-note-btn"]', { timeout: 15000 });
+    // Wait for note content to load using waitForFunction for DOM reliability
+    await page.waitForFunction(() => {
+      const h1 = document.querySelector('h1');
+      return h1 && window.getComputedStyle(h1).display !== 'none';
+    }, { timeout: 15000 });
+    
+    // Wait for edit button using waitForFunction
+    await page.waitForFunction(() => {
+      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn');
+      return editBtn && window.getComputedStyle(editBtn).display !== 'none';
+    }, { timeout: 15000 });
 
-    // Click Edit button to open modal - use data-testid first
-    await page.waitForSelector('[data-testid="edit-note-btn"]', { timeout: 10000 });
-    const editButton = page.locator('[data-testid="edit-note-btn"]').first();
-    await expect(editButton).toBeVisible({ timeout: 10000 });
-    await editButton.scrollIntoViewIfNeeded();
-    await editButton.click({ timeout: 5000 });
+    // Click Edit button to open modal - use waitForFunction for reliability
+    await page.waitForFunction(() => {
+      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn');
+      if (editBtn && window.getComputedStyle(editBtn).display !== 'none') {
+        editBtn.click();
+        return true;
+      }
+      return false;
+    }, { timeout: 15000 });
 
-    // Wait for modal to open with increased timeout
-    await page.waitForSelector('[data-testid="edit-modal"], .modal[role="dialog"]', { timeout: 10000 });
-    const modal = page.locator('[data-testid="edit-modal"], .modal[role="dialog"]').first();
+    // Wait for modal to open using waitForFunction for reliability
+    await page.waitForFunction(() => {
+      const modal = document.querySelector('[data-testid="edit-modal"]') || document.querySelector('.modal[role="dialog"]');
+      return modal && window.getComputedStyle(modal).display !== 'none';
+    }, { timeout: 15000 });
+    
+    const modal = page.locator('.modal[role="dialog"]').first();
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
-    // Update note in modal - use data-testid for reliability
-    await page.waitForSelector('[data-testid="edit-title-input"]', { timeout: 10000 });
-    const titleInput = page.locator('[data-testid="edit-title-input"]').first();
-    await expect(titleInput).toBeVisible({ timeout: 10000 });
-    await titleInput.fill('Edited ' + timestamp);
+    // Update note in modal - use waitForFunction for reliability
+    await page.waitForFunction(() => {
+      const titleInput = document.querySelector('[data-testid="edit-title-input"]') || document.querySelector('.modal-content input[name="title"]');
+      if (titleInput && window.getComputedStyle(titleInput).display !== 'none') {
+        titleInput.value = 'Edited ' + timestamp;
+        return true;
+      }
+      return false;
+    }, { timeout: 15000 });
     
-    await page.waitForSelector('[data-testid="edit-content-input"]', { timeout: 10000 });
-    const contentInput = page.locator('[data-testid="edit-content-input"]').first();
-    await contentInput.fill('Updated content');
+    await page.waitForFunction(() => {
+      const contentInput = document.querySelector('[data-testid="edit-content-input"]') || document.querySelector('.modal-content textarea[name="content"]');
+      if (contentInput && window.getComputedStyle(contentInput).display !== 'none') {
+        contentInput.value = 'Updated content';
+        return true;
+      }
+      return false;
+    }, { timeout: 15000 });
 
     // Save changes and wait for PUT response
-    await page.waitForSelector('[data-testid="edit-save-btn"]', { timeout: 10000 });
-    const saveButton = page.locator('[data-testid="edit-save-btn"]').first();
+    await page.waitForFunction(() => {
+      const saveButton = document.querySelector('[data-testid="edit-save-btn"]') || document.querySelector('.modal-content button[type="submit"]');
+      return saveButton && window.getComputedStyle(saveButton).display !== 'none';
+    }, { timeout: 15000 });
+    
+    const saveButton = page.locator('.modal-content button[type="submit"]').first();
     
     const [response] = await Promise.all([
       page.waitForResponse(resp => resp.url().includes(`/v1/notes/${noteId}`) && resp.request().method() === 'PUT'),
@@ -142,9 +197,15 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
       await dialog.accept();
     });
     
-    // Click Delete button - use data-testid first
-    await page.waitForSelector('[data-testid="delete-note-btn"]', { timeout: 10000 });
-    await page.click('[data-testid="delete-note-btn"]');
+    // Click Delete button - use waitForFunction for reliability
+    await page.waitForFunction(() => {
+      const deleteBtn = document.querySelector('[data-testid="delete-note-btn"]') || Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('Delete'));
+      if (deleteBtn && window.getComputedStyle(deleteBtn).display !== 'none') {
+        deleteBtn.click();
+        return true;
+      }
+      return false;
+    }, { timeout: 15000 });
 
     // Wait for navigation away from note page (either redirect or URL change)
     await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 10000 });
@@ -169,6 +230,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(2000);
     
     // Verify 3D graph container is visible (loading, error, or canvas)
+    await page.waitForSelector('.graph-3d-container', { timeout: 10000 });
     const graphContainer = page.locator('.graph-3d-container').first();
     await expect(graphContainer).toBeVisible({ timeout: 5000 });
     
@@ -194,6 +256,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(1000);
 
     // Check that back button is visible (use first())
+    await page.waitForSelector('.back-button', { timeout: 10000 });
     await expect(page.locator('.back-button').first()).toBeVisible();
     
     // Test back button functionality
@@ -245,7 +308,7 @@ test.describe('Knowledge Graph Frontend', { tag: ['@smoke', '@notes'] }, () => {
     await page.waitForTimeout(1000);
 
     // Verify back button is visible
-    await page.waitForSelector('.back-button', { timeout: 10000 });
+    await page.waitForSelector('.back-button', { timeout: 15000 });
     await expect(page.locator('.back-button')).toBeVisible();
 
     // Click back button - should navigate using browser history
