@@ -53,23 +53,14 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 	l := link.NewLink(sourceID, targetID, linkType, weight, metadata)
 
 	// Ожидаем запрос на проверку существования
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT * FROM "links" WHERE id = $1 ORDER BY "links"."id" LIMIT $2`).
 		WithArgs(l.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT — GORM использует Exec для PostgreSQL без RETURNING
-	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "links" \("id","source_note_id","target_note_id","link_type","weight","metadata","created_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\)`).
-		WithArgs(
-			sqlmock.AnyArg(), // id
-			sourceID,
-			targetID,
-			"reference",
-			0.8,
-			sqlmock.AnyArg(), // metadata
-			sqlmock.AnyArg(), // created_at
-		).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	// Ожидаем запрос на вставку (обновлено для соответствия реальному запросу)
+	mock.ExpectExec(`INSERT INTO "links" ("id","source_note_id","target_note_id","link_type","weight","metadata","creator_id","created_at","deleted_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`).
+		WithArgs(l.ID(), sourceID, targetID, linkType, weight, metadata, nil, sqlmock.AnyArg(), nil).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
