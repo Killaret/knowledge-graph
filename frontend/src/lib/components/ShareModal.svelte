@@ -52,10 +52,7 @@
     success = null;
     
     try {
-      const share = await shareNote(noteId, {
-        shared_with_email: userEmail.trim(),
-        permission
-      });
+      const share = await shareNote(noteId, userEmail.trim(), permission === 'view' ? 'read' : 'write');
       success = `Доступ предоставлен пользователю ${userEmail}`;
       userEmail = '';
       dispatch('shared', { share });
@@ -72,11 +69,10 @@
     success = null;
     
     try {
-      const link = await createShareLink(noteId, {
-        permission: linkPermission,
-        expires_in: expiresIn,
-        max_uses: maxUses
-      });
+      const link = await createShareLink(noteId, linkPermission === 'view' ? 'read' : 'write', 
+        expiresIn ? new Date(Date.now() + expiresIn * 60 * 60 * 1000).toISOString() : undefined,
+        maxUses
+      );
       generatedLink = link;
       success = 'Ссылка для доступа создана';
       dispatch('shared', { share: link });

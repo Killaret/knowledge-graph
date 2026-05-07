@@ -91,10 +91,10 @@
     <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
     
     <div class="form-actions">
-      <Button variant="secondary" onClick={close} disabled={loading} data-testid="create-note-cancel">
+      <Button variant="secondary" onClick={close} disabled={loading}>
         Cancel
       </Button>
-      <Button variant="primary" type="submit" disabled={loading} data-testid="create-note-submit">
+      <Button variant="primary" type="submit" disabled={loading}>
         {loading ? 'Creating...' : 'Create Note'}
       </Button>
     </div>

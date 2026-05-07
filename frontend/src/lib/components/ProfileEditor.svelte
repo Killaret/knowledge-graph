@@ -17,9 +17,10 @@
   
   // Load current user data
   $effect(() => {
-    if (currentUser) {
-      name = currentUser.login || '';
-      email = currentUser.email || '';
+    const user = currentUser();
+    if (user) {
+      name = user.login || '';
+      email = user.email || '';
     }
   });
   
@@ -108,14 +109,14 @@
     <Button 
       variant="primary" 
       disabled={isSaving}
-      on:click={handleSave}
+      onClick={handleSave}
     >
       {isSaving ? 'Сохранение...' : 'Сохранить'}
     </Button>
     
     <Button 
       variant="danger" 
-      on:click={openDeleteConfirm}
+      onClick={openDeleteConfirm}
     >
       Удалить аккаунт
     </Button>
@@ -144,13 +145,13 @@
       {/if}
       
       <div class="modal-actions">
-        <Button variant="secondary" on:click={closeDeleteConfirm}>
+        <Button variant="secondary" onClick={closeDeleteConfirm}>
           Отмена
         </Button>
         <Button 
           variant="danger" 
           disabled={isDeleting || !deletePassword}
-          on:click={handleDelete}
+          onClick={handleDelete}
         >
           {isDeleting ? 'Удаление...' : 'Подтвердить удаление'}
         </Button>

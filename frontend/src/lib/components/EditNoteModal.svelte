@@ -117,10 +117,10 @@
       </div>
 
       <div class="modal-footer">
-        <Button variant="secondary" onClick={close} disabled={saving} data-testid="edit-note-cancel">
+        <Button variant="secondary" onClick={close} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="primary" type="submit" disabled={saving} data-testid="edit-save-btn">
+        <Button variant="primary" type="submit" disabled={saving}>
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>

@@ -24,7 +24,7 @@ describe('CosmicBackground', () => {
       stroke: vi.fn()
     } as unknown as CanvasRenderingContext2D;
     
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => mockContext);
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => mockContext) as any;
     
     // Mock requestAnimationFrame
     global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {

@@ -219,7 +219,7 @@ describe('GraphCanvas - Node Type Rendering', () => {
           closePath: vi.fn(),
           arc: vi.fn(),
           ellipse: vi.fn(),
-          fill: vi.fn(function() { fillStyles.push(this.fillStyle); }),
+          fill: vi.fn(function(this: any) { fillStyles.push(this.fillStyle); }),
           stroke: vi.fn(),
           moveTo: vi.fn(),
           set fillStyle(v: string) { (this as any)._fillStyle = v; },

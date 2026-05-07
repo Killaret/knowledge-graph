@@ -23,7 +23,7 @@
       <p>Управление вашим аккаунтом</p>
     </div>
     
-    {#if currentUser}
+    {#if currentUser()}
       <ProfileEditor />
     {:else}
       <div class="loading">
