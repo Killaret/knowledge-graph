@@ -11,14 +11,14 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('GraphCanvas Visual - Isolated Node Types @visual @isolated', () => {
   const nodeTypes = [
-    { type: 'star', color: '#ffdd88' },
-    { type: 'planet', color: '#c9b37c' },
-    { type: 'comet', color: '#aaffdd' },
-    { type: 'galaxy', color: 'spiral' },
-    { type: 'asteroid', color: '#8b7355' }
+    { type: 'star' },
+    { type: 'planet' },
+    { type: 'comet' },
+    { type: 'galaxy' },
+    { type: 'asteroid' }
   ];
 
-  for (const { type, color } of nodeTypes) {
+  for (const { type } of nodeTypes) {
     test(`should render ${type} node correctly`, async ({ page, request }) => {
       // Create a single note via API
       const note = await createNote(request, {

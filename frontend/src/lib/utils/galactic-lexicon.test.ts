@@ -198,7 +198,6 @@ describe('message consistency', () => {
     
     // Test that all categories have the same keys
     const successKeys = ['noteCreated', 'noteUpdated', 'noteDeleted', 'linkCreated', 'settingsSaved', 'achievementUnlocked', 'shareCreated', 'loginSuccess'];
-    const errorKeys = ['validation', 'duplicateLink', 'noteNotFound', 'unauthorized', 'serverError'];
     
     // All keys should work in both modes
     successKeys.forEach(key => {

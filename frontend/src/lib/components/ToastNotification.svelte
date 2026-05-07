@@ -48,8 +48,6 @@
   };
 
   onMount(() => {
-    formatter = new MessageFormatter(useGalacticMode);
-    
     // Animate in
     setTimeout(() => {
       visible = true;

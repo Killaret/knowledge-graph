@@ -4,10 +4,7 @@ import { createNodeMesh } from './nodeFactory';
 import type { GraphNode } from '$lib/api/graph';
 
 describe('nodeFactory - 3D Node Rendering', () => {
-  let scene: THREE.Scene;
-
   beforeEach(() => {
-    scene = new THREE.Scene();
     // Mock canvas for star sprite creation
     const mockCanvas = {
       getContext: vi.fn(() => ({

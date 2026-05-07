@@ -63,7 +63,7 @@ export async function initAuth(): Promise<void> {
         try {
           const user = await usersApi.getMe();
           authState.currentUser = user;
-        } catch (e) {
+        } catch {
           // If getting user fails, clear auth state
           clearAuthState();
         }
