@@ -5,6 +5,10 @@
 ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NOT NULL;
 
+-- 1.1. Add deleted_at to notes table for soft delete
+ALTER TABLE notes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_notes_deleted_at ON notes(deleted_at) WHERE deleted_at IS NOT NULL;
+
 -- 2. Add email column to users for password reset and notifications
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL;
@@ -220,7 +224,7 @@ SELECT
     COALESCE(ns.permission, 'owner') as permission
 FROM notes n
 LEFT JOIN note_shares ns ON n.id = ns.note_id
-WHERE n.deleted_at IS NULL OR n.deleted_at IS NOT NULL;
+WHERE n.deleted_at IS NULL;
 
 -- 15. Grant permissions (if using row-level security, enable here)
 -- Note: Row-level security can be enabled later if needed
