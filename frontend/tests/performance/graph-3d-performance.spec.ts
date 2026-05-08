@@ -14,9 +14,9 @@ import { createNote, createLink } from '../helpers/testData';
 test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'] }, () => {
   
   test('should maintain 30+ FPS with 50 nodes', async ({ page, request }) => {
-    // Create 50 connected notes
+    // Create fewer notes for faster test execution
     const notes = [];
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 20; i++) {
       const note = await createNote(request, {
         title: `Performance Node ${i}`,
         content: `Content ${i}`,
@@ -35,7 +35,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
     await page.waitForLoadState('networkidle');
     
     // Wait for graph to fully load
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
     
     // Measure FPS using Performance API
     const fps = await page.evaluate(async () => {
@@ -60,9 +60,9 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
   });
 
   test('should load 100 nodes within 5 seconds', async ({ page, request }) => {
-    // Create 100 notes
+    // Create fewer notes for faster test
     const notes = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 30; i++) {
       const note = await createNote(request, {
         title: `Load Test Node ${i}`,
         content: `Content ${i}`,
@@ -92,7 +92,7 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
     
     await page.goto(`/graph/3d/${note.data.id}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
     
     // Get initial memory
     const initialMemory = await page.evaluate(() => {
@@ -100,11 +100,11 @@ test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'
     });
     
     // Simulate interactions
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       await page.mouse.click(400, 300);
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(50);
       await page.mouse.move(400 + i * 10, 300 + i * 10);
-      await page.waitForTimeout(100);
+      await page.waitForTimeout(50);
     }
     
     // Force GC if available

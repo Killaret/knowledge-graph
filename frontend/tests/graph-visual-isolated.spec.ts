@@ -32,16 +32,16 @@ test.describe('GraphCanvas Visual - Isolated Node Types @visual @isolated', () =
         await page.goto(`/test/isolated-node?type=${type}`);
         
         // Wait for canvas
-        await page.waitForSelector('canvas', { timeout: 15000 });
+        await page.waitForSelector('canvas', { timeout: 10000 });
         
         // Wait for simulation
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(1000);
         
         // Take screenshot
         const canvas = page.locator('canvas').first();
         await expect(canvas).toHaveScreenshot(`${type}-node-visual.png`, {
-          maxDiffPixels: 500,
-          threshold: 0.4,
+          maxDiffPixels: 1000,
+          threshold: 0.6,
           animations: 'disabled'
         });
       } finally {

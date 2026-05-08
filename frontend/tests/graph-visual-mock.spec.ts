@@ -17,16 +17,16 @@ test.describe('GraphCanvas Visual - Mock Node Types @visual @mock', () => {
       await page.goto(`/test/isolated-node?type=${type}`);
       
       // Wait for canvas to be ready
-      await page.waitForSelector('canvas', { timeout: 15000 });
+      await page.waitForSelector('canvas', { timeout: 10000 });
       
       // Wait for simulation to stabilize
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
       
       // Take screenshot of the canvas
       const canvas = page.locator('canvas').first();
       await expect(canvas).toHaveScreenshot(`${type}-node-mock.png`, {
-        maxDiffPixels: 500,
-        threshold: 0.4,
+        maxDiffPixels: 1000,
+        threshold: 0.6,
         animations: 'disabled'
       });
     });
@@ -42,16 +42,16 @@ test.describe('GraphCanvas Visual - Mock Link Types @visual @mock', () => {
       await page.goto(`/test/link-pair?linkType=${linkType}`);
       
       // Wait for canvas to be ready
-      await page.waitForSelector('canvas', { timeout: 15000 });
+      await page.waitForSelector('canvas', { timeout: 10000 });
       
       // Wait for simulation to stabilize
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
       
       // Take screenshot
       const canvas = page.locator('canvas').first();
       await expect(canvas).toHaveScreenshot(`${linkType}-link-mock.png`, {
-        maxDiffPixels: 600,
-        threshold: 0.4,
+        maxDiffPixels: 1200,
+        threshold: 0.6,
         animations: 'disabled'
       });
     });

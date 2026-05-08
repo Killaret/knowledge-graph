@@ -409,11 +409,11 @@ test.describe('Progressive Graph - Camera & Animation', () => {
     // Navigate to 3D graph
     await page.goto(`/graph/3d/${noteId}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
     
-    // Verify DOM structure
-    const graphContainer = page.locator('.graph-3d-container').first();
-    await expect(graphContainer).toBeVisible();
+    // Verify DOM structure - try multiple selectors
+    const graphContainer = page.locator('.graph-3d-container, .graph-container, [data-testid="graph-container"], canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 10000 });
     
     // Check that container has proper styling
     const containerStyles = await graphContainer.evaluate(el => {

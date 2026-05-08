@@ -20,9 +20,9 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     await page.waitForSelector('form', { timeout: 10000 });
     
     // Fill registration form
-    await page.fill('input#login', login);
-    await page.fill('input#password', TEST_PASSWORD);
-    await page.fill('input#confirmPassword', TEST_PASSWORD);
+    await page.fill('input[placeholder*="логин"], input[placeholder*="Логин"]', login);
+    await page.fill('input[placeholder*="пароль"], input[placeholder*="Пароль"]', TEST_PASSWORD);
+    await page.fill('input[placeholder*="Повторите пароль"], input[placeholder*="подтвердите"]', TEST_PASSWORD);
     
     // Submit form
     await page.click('button[type="submit"]');
@@ -52,8 +52,8 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     await page.waitForSelector('form', { timeout: 10000 });
     
     // Fill login form
-    await page.fill('input#login', login);
-    await page.fill('input#password', TEST_PASSWORD);
+    await page.fill('input[placeholder*="логин"], input[placeholder*="Логин"]', login);
+    await page.fill('input[placeholder*="пароль"], input[placeholder*="Пароль"]', TEST_PASSWORD);
     
     // Submit
     await page.click('button[type="submit"]');
@@ -70,8 +70,8 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     await page.waitForSelector('form', { timeout: 10000 });
     
     // Fill with non-existent user
-    await page.fill('input#login', 'nonexistent_user_12345');
-    await page.fill('input#password', 'wrongpassword');
+    await page.fill('input[placeholder*="логин"], input[placeholder*="Логин"]', 'nonexistent_user_12345');
+    await page.fill('input[placeholder*="пароль"], input[placeholder*="Пароль"]', 'wrongpassword');
     
     // Submit
     await page.click('button[type="submit"]');
@@ -86,9 +86,9 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     await page.waitForSelector('form', { timeout: 10000 });
     
     // Fill with weak password
-    await page.fill('input#login', `test_${Date.now()}`);
-    await page.fill('input#password', '123');
-    await page.fill('input#confirmPassword', '123');
+    await page.fill('input[placeholder*="логин"], input[placeholder*="Логин"]', `test_${Date.now()}`);
+    await page.fill('input[placeholder*="пароль"], input[placeholder*="Пароль"]', '123');
+    await page.fill('input[placeholder*="Повторите пароль"], input[placeholder*="подтвердите"]', '123');
     
     // Submit
     await page.click('button[type="submit"]');
@@ -111,8 +111,8 @@ test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
     });
     
     await page.goto('/auth/login');
-    await page.fill('input#login', login);
-    await page.fill('input#password', TEST_PASSWORD);
+    await page.fill('input[placeholder*="логин"], input[placeholder*="Логин"]', login);
+    await page.fill('input[placeholder*="пароль"], input[placeholder*="Пароль"]', TEST_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL('/graph', { timeout: 10000 });
     
