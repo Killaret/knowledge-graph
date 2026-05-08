@@ -16,6 +16,7 @@ import (
 	appGraph "knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
+	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/infrastructure/db"
@@ -23,14 +24,14 @@ import (
 	"knowledge-graph/internal/infrastructure/nlp" // Восстановление импорта nlp пакета
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
+	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/interfaces/api/notehandler"
+	"knowledge-graph/internal/interfaces/api/taghandler"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	"knowledge-graph/internal/interfaces/api/taghandler"
 )
 
 const (
@@ -151,6 +152,11 @@ func main() {
 	tagRepo := postgres.NewTagRepository(db.DB)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
 
+	// Auth handler
+	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, time.Hour*24, time.Hour*24*7) // 24h access, 7d refresh
+	tokenStore := authpkg.NewRedisTokenStore(redisClient)
+	authHandler := authhandler.NewHandler(db.DB, jwtManager, tokenStore, cfg)
+
 	// Роуты
 	r := gin.Default()
 
@@ -260,6 +266,16 @@ func main() {
 	// API v1 group
 	v1 := r.Group("/api/v1")
 	{
+		// Auth routes
+		v1.POST("/auth/register", authHandler.Register)
+		v1.POST("/auth/login", authHandler.Login)
+		v1.POST("/auth/logout", authHandler.Logout)
+		v1.POST("/auth/refresh", authHandler.Refresh)
+		v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+		v1.POST("/auth/reset-password", authHandler.ResetPassword)
+		v1.GET("/auth/yandex", authHandler.YandexLogin)
+		v1.GET("/auth/yandex/callback", authHandler.YandexCallback)
+
 		// Write operations with stricter rate limiting
 		v1.POST("/notes", writeLimiter, noteHandler.Create)
 		v1.GET("/notes/:id", noteHandler.Get)
