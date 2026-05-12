@@ -9,6 +9,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -89,6 +90,9 @@ func toTagResponse(tag *postgres.TagModel) TagResponse {
 
 // Create создает новый тег
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "tags")
+	middleware.SetDBOperation(c, "create")
+
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		errStr := err.Error()
@@ -149,6 +153,9 @@ func (h *Handler) Create(c *gin.Context) {
 
 // List возвращает список всех тегов
 func (h *Handler) List(c *gin.Context) {
+	middleware.SetDBEntity(c, "tags")
+	middleware.SetDBOperation(c, "list")
+
 	ctx := c.Request.Context()
 
 	tags, err := h.tagRepo.FindAll(ctx)
@@ -167,6 +174,9 @@ func (h *Handler) List(c *gin.Context) {
 
 // Get возвращает тег по ID
 func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "tags")
+	middleware.SetDBOperation(c, "read")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -193,6 +203,9 @@ func (h *Handler) Get(c *gin.Context) {
 
 // Update обновляет тег
 func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "tags")
+	middleware.SetDBOperation(c, "update")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -272,6 +285,9 @@ func (h *Handler) Update(c *gin.Context) {
 
 // Delete удаляет тег
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "tags")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -305,6 +321,9 @@ func (h *Handler) Delete(c *gin.Context) {
 
 // AddTagToNote привязывает тег к заметке
 func (h *Handler) AddTagToNote(c *gin.Context) {
+	middleware.SetDBEntity(c, "note_tags")
+	middleware.SetDBOperation(c, "create")
+
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
@@ -382,6 +401,9 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 
 // RemoveTagFromNote отвязывает тег от заметки
 func (h *Handler) RemoveTagFromNote(c *gin.Context) {
+	middleware.SetDBEntity(c, "note_tags")
+	middleware.SetDBOperation(c, "delete")
+
 	noteIDStr := c.Param("id")
 	tagIDStr := c.Param("tagId")
 

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,11 +20,11 @@ const (
 
 // JWTConfig holds JWT middleware configuration
 type JWTConfig struct {
-	JWTManager     *auth.JWTManager
-	TokenStore     *auth.RedisTokenStore
-	SkipPaths      []string
-	HeaderName     string
-	TokenLookup    string
+	JWTManager  *auth.JWTManager
+	TokenStore  *auth.RedisTokenStore
+	SkipPaths   []string
+	HeaderName  string
+	TokenLookup string
 }
 
 // DefaultJWTConfig returns default JWT configuration
@@ -57,6 +58,14 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 				c.Next()
 				return
 			}
+		}
+
+		// Skip if user already exists in context (set by SkipAuth middleware)
+		if userID, exists := GetUserID(c); exists {
+			// Debug log to verify SkipAuth is working
+			fmt.Printf("[DEBUG] JWTAuth: SkipAuth user found in context: %s\n", userID.String())
+			c.Next()
+			return
 		}
 
 		// Extract token
@@ -95,6 +104,13 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 		c.Set(ContextRoleKey, claims.Role)
 		c.Set(ContextLoginKey, claims.Login)
 
+		// Set full claims for logging middleware
+		c.Set("token_claims", map[string]interface{}{
+			"user_id": claims.UserID,
+			"login":   claims.Login,
+			"role":    claims.Role,
+		})
+
 		c.Next()
 	}
 }
@@ -127,7 +143,7 @@ func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	if !exists {
 		return uuid.Nil, false
 	}
-	
+
 	id, ok := userID.(uuid.UUID)
 	return id, ok
 }
@@ -138,7 +154,7 @@ func GetUserRole(c *gin.Context) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	r, ok := role.(string)
 	return r, ok
 }
@@ -148,7 +164,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, exists := GetUserID(c)
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			c.Abort()
 			return
 		}

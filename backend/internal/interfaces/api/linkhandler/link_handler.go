@@ -81,6 +81,9 @@ var LinkValidationErrors = map[string]string{
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "create")
+
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		errStr := err.Error()
@@ -192,6 +195,9 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -215,6 +221,9 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) GetByNote(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read_by_note")
+
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
@@ -262,6 +271,9 @@ func (h *Handler) GetByNote(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {

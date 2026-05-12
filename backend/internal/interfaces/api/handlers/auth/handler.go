@@ -12,6 +12,7 @@ import (
 	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -100,6 +101,9 @@ type ResetPasswordRequest struct {
 
 // Register handles user registration
 func (h *Handler) Register(c *gin.Context) {
+	middleware.SetDBEntity(c, "users")
+	middleware.SetDBOperation(c, "create")
+
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -181,6 +185,9 @@ func (h *Handler) Register(c *gin.Context) {
 
 // Login handles user login
 func (h *Handler) Login(c *gin.Context) {
+	middleware.SetDBEntity(c, "users")
+	middleware.SetDBOperation(c, "read")
+
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -243,6 +250,9 @@ func (h *Handler) Login(c *gin.Context) {
 
 // Refresh handles token refresh
 func (h *Handler) Refresh(c *gin.Context) {
+	middleware.SetDBEntity(c, "refresh_tokens")
+	middleware.SetDBOperation(c, "read")
+
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -323,6 +333,9 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 // Logout handles user logout
 func (h *Handler) Logout(c *gin.Context) {
+	middleware.SetDBEntity(c, "refresh_tokens")
+	middleware.SetDBOperation(c, "delete")
+
 	// Get refresh token from request body or header
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
@@ -352,6 +365,9 @@ func (h *Handler) Logout(c *gin.Context) {
 
 // ForgotPassword handles password reset request
 func (h *Handler) ForgotPassword(c *gin.Context) {
+	middleware.SetDBEntity(c, "users")
+	middleware.SetDBOperation(c, "read")
+
 	var req ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -392,6 +408,9 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 
 // ResetPassword handles password reset
 func (h *Handler) ResetPassword(c *gin.Context) {
+	middleware.SetDBEntity(c, "users")
+	middleware.SetDBOperation(c, "update")
+
 	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

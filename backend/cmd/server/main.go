@@ -16,6 +16,7 @@ import (
 	appGraph "knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
+	"knowledge-graph/internal/auth"
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
@@ -25,6 +26,7 @@ import (
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
+	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/interfaces/api/notehandler"
@@ -157,6 +159,16 @@ func main() {
 	tokenStore := authpkg.NewRedisTokenStore(redisClient)
 	authHandler := authhandler.NewHandler(db.DB, jwtManager, tokenStore, cfg)
 
+	// User handler
+	passwordConfig := &auth.PasswordConfig{
+		Time:    3,
+		Memory:  65536,
+		Threads: 4,
+		KeyLen:  32,
+	}
+	passwordPolicy := auth.DefaultPasswordPolicy()
+	userHandler := userhandler.NewHandler(db.DB, passwordConfig, passwordPolicy)
+
 	// Роуты
 	r := gin.Default()
 
@@ -194,11 +206,22 @@ func main() {
 		c.Next()
 	})
 
+	// Structured logging middleware with token data
+	r.Use(middleware.LoggingMiddleware())
+
 	// SkipAuth middleware for testing (when SKIP_AUTH=true)
 	if cfg.SkipAuth {
 		r.Use(middleware.SkipAuth(middleware.DefaultSkipAuthConfig(true)))
 		log.Println("[Auth] SKIP_AUTH enabled - authentication disabled for testing")
 	}
+
+	// JWT middleware for authentication
+	jwtConfig := middleware.DefaultJWTConfig(jwtManager, tokenStore)
+	r.Use(middleware.JWTAuth(jwtConfig))
+
+	// API Key middleware for authentication
+	apiKeyConfig := middleware.DefaultAPIKeyConfig(db.DB, cfg.APIKeyEnabled, cfg.StaticAPIKey)
+	r.Use(middleware.APIKey(apiKeyConfig))
 
 	// Rate limiting middleware (conditional)
 	var writeLimiter gin.HandlerFunc
@@ -275,6 +298,9 @@ func main() {
 		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 		v1.GET("/auth/yandex", authHandler.YandexLogin)
 		v1.GET("/auth/yandex/callback", authHandler.YandexCallback)
+
+		// User routes
+		v1.GET("/users/me", userHandler.GetMe)
 
 		// Write operations with stricter rate limiting
 		v1.POST("/notes", writeLimiter, noteHandler.Create)

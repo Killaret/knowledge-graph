@@ -102,6 +102,9 @@ var NoteValidationErrors = map[string]string{
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create")
+
 	var req createNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// Provide structured validation error response
@@ -204,6 +207,9 @@ type updateNoteRequest struct {
 }
 
 func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "update")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -318,6 +324,9 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -345,6 +354,9 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "read")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -541,6 +553,9 @@ func validateSearchQuery(query string) []apicommon.FieldError {
 
 // Search performs full-text search on notes
 func (h *Handler) Search(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "search")
+
 	var req SearchRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		apicommon.BadRequestSimple(c, err.Error())
@@ -601,6 +616,9 @@ func (h *Handler) Search(c *gin.Context) {
 
 // List возвращает список заметок с пагинацией
 func (h *Handler) List(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "list")
+
 	// Получаем параметры пагинации из query
 	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
