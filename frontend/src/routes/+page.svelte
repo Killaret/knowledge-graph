@@ -10,6 +10,7 @@
   import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
   import { getFullGraphData, type GraphData } from '$lib/api/graph';
+  import { getGraphWithPreload, useInstantData } from '$lib/hooks/usePreloadedData';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import type { ErrorResponse } from '$lib/types/errors';
   import SplashScreen from '$lib/components/SplashScreen.svelte';
@@ -75,18 +76,38 @@
       // Reset error state before loading
       apiError = null;
       
+      // Check for instant preloaded data first
+      const instantData = useInstantData();
+      let graphResult: GraphData | null = null;
+      
+      if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
+        console.log('[+page] Using preloaded graph data for instant display');
+        graphResult = instantData.graph;
+        // Set graph data immediately for instant UI
+        graphData = graphResult;
+      }
+      
       // Load notes and graph data in parallel
-      const [notesResult, graphResult] = await Promise.all([
+      const [notesResult, freshGraphResult] = await Promise.all([
         getNotes(),
-        getFullGraphData().catch((e: unknown) => {
-          console.error('[+page] Failed to load graph:', e);
-          return null;
-        })
+        // Only load fresh graph if we don't have preloaded data or want to refresh
+        (!graphResult || !instantData.hasInstantData) 
+          ? getGraphWithPreload().catch((e: unknown) => {
+              console.error('[+page] Failed to load graph:', e);
+              return null;
+            })
+          : Promise.resolve(graphResult)
       ]);
       
       allNotes = notesResult;
       console.log('[+page] Notes loaded:', allNotes.length);
       applyFiltersAndSort();
+      
+      // Use fresh graph result or keep preloaded data
+      if (freshGraphResult && freshGraphResult !== graphResult) {
+        graphResult = freshGraphResult;
+        console.log('[+page] Using fresh graph data');
+      }
       
       // Set graph data if successful
       console.log('[+page] Graph result:', graphResult ? 'exists' : 'null', 'nodes:', graphResult?.nodes?.length, 'links:', graphResult?.links?.length);
@@ -103,7 +124,7 @@
           nodes: graphResult.nodes.map((n: any) => ({
             id: n.id || n.Id || n.ID,
             title: n.title || n.Title,
-            type: n.type ?? n.Type ?? 'star'
+            type: n.type ?? n.Type ?? 'unknown'
           })),
           links: (graphResult.links || []).map((l: any) => ({
             source: l.source_note_id || l.source,
@@ -119,7 +140,7 @@
       } else {
         // Fallback: build simple graph from notes
         graphData = {
-          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
           links: []
         };
       }
@@ -161,7 +182,7 @@
         console.warn('[+page] Graph API returned invalid data structure:', rawData);
         // Fallback: build simple graph from notes
         graphData = {
-          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
           links: []
         };
         return;
@@ -178,7 +199,7 @@
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
         title: n.title || n.Title,
-        type: n.type ?? n.Type ?? 'star'
+        type: n.type ?? n.Type ?? 'unknown'
       }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
@@ -198,7 +219,7 @@
       console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
       graphData = {
-        nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
+        nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
         links: []
       };
     } finally {
@@ -213,9 +234,9 @@
     }
   });
 
-  // Helper to get note type from type field or metadata
+  // Helper to get note type - unified with renderer.ts logic
   function getNoteType(note: Note): string {
-    return note.type ?? (note.metadata?.type as string) ?? 'unknown';
+    return note.type ?? 'unknown';
   }
 
   // Reactive filtered graph data based on selected type
@@ -352,7 +373,7 @@
     typeFilters={typeFilters}
     selectedType={selectedType}
     currentView={currentView}
-    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? allNotes.length : allNotes.filter(n => getNoteType(n) === f.id).length]))}
+    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? graphData.nodes.length : graphData.nodes.filter(n => n.type === f.id).length]))}
   />
 
   <!-- Fullscreen Graph Container -->

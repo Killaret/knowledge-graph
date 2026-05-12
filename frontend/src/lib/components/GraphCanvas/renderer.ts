@@ -293,22 +293,22 @@ export function drawUnknown(
   r: number,
   _angle: number
 ): void {
-  // Unknown type - question mark in a dashed circle
+  // Unknown type - question mark in a dashed circle (consistent style)
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
+  ctx.fillStyle = 'rgba(128, 128, 128, 0.4)';
   ctx.fill();
-  ctx.strokeStyle = '#888888';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 3]);
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 4]);
   ctx.stroke();
   ctx.setLineDash([]);
 
   // Question mark
-  ctx.font = `bold ${Math.floor(r * 1.2)}px sans-serif`;
+  ctx.font = `bold ${Math.floor(r * 1.3)}px Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#aaaaaa';
+  ctx.fillStyle = '#888888';
   ctx.fillText('?', x, y);
 }
 
@@ -349,6 +349,20 @@ export function drawLink(
 }
 
 /**
+ * Resolve a link endpoint after d3-force: `source` / `target` may be id strings
+ * or the same simulation node objects d3 mutates in place.
+ */
+function resolveLinkEndpoint(
+  ref: string | SimulationNode,
+  nodes: SimulationNode[]
+): SimulationNode | undefined {
+  if (typeof ref === 'object' && ref !== null) {
+    return ref as SimulationNode;
+  }
+  return nodes.find((n) => String(n.id) === String(ref));
+}
+
+/**
  * Draw all links
  */
 export function drawAllLinks(
@@ -356,17 +370,32 @@ export function drawAllLinks(
   simLinks: SimulationLink[],
   nodes: SimulationNode[]
 ): void {
-  simLinks.forEach((link) => {
-    // After simulation source/target become node objects
-    const sourceNode = nodes.find((n) => String(n.id) === String(link.source));
-    const targetNode = nodes.find((n) => String(n.id) === String(link.target));
+  let drawnCount = 0;
+  let skippedCount = 0;
 
-    if (!sourceNode || !targetNode) {
+  simLinks.forEach((link) => {
+    const sourceNode = resolveLinkEndpoint(link.source, nodes);
+    const targetNode = resolveLinkEndpoint(link.target, nodes);
+
+    if (
+      !sourceNode ||
+      !targetNode ||
+      sourceNode.x == null ||
+      sourceNode.y == null ||
+      targetNode.x == null ||
+      targetNode.y == null
+    ) {
+      skippedCount++;
       return;
     }
 
     drawLink(ctx, link, sourceNode, targetNode);
+    drawnCount++;
   });
+
+  if (import.meta.env.DEV && (drawnCount === 0 || skippedCount > 0)) {
+    console.log(`[drawAllLinks] Total: ${simLinks.length}, Drawn: ${drawnCount}, Skipped: ${skippedCount}`);
+  }
 }
 
 /**

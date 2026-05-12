@@ -40,6 +40,10 @@ export function startSimulation(
     };
   });
 
+  if (import.meta.env.DEV) {
+    console.log('[simulation] Initial node coordinates:', simulationNodes.slice(0, 3).map(n => ({ id: n.id, x: n.x, y: n.y })));
+  }
+
   // Filter links to only include those where both source and target nodes exist
   const validLinks = filterValidLinks(nodes, links);
   if (validLinks.length !== links.length) {
