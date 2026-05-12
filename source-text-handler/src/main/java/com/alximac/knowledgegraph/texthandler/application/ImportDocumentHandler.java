@@ -9,7 +9,9 @@ import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParserException;
 import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
+import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +21,7 @@ import static java.util.Base64.getDecoder;
 public class ImportDocumentHandler {//бизнес процесс(парсинг, нарезка, заметка, связи и т.д. . Узнаем про задачу и выполнена ли она.
 
     private final ChunkingStrategy chunkingStrategy;
-    private final DocumentParser documentParser;
+    private final ParserFactory parserFactory;
     private final LinkDetector linkDetector;
     private final NoteCreatorPort noteCreatorPort;
     private final OutboundQueuePort outboundQueuePort;
@@ -27,14 +29,14 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
     public ImportDocumentHandler(
             ChunkingStrategy chunkingStrategy,
-            DocumentParser documentParser,
+            ParserFactory parserFactory,
             LinkDetector linkDetector,
             NoteCreatorPort noteCreatorPort,
             OutboundQueuePort outboundQueuePort,
             ImportStateRepository importStateRepository) {
 
             this.chunkingStrategy = chunkingStrategy;
-            this.documentParser = documentParser;
+            this.parserFactory = parserFactory;
             this.linkDetector = linkDetector;
             this.noteCreatorPort = noteCreatorPort;
             this.outboundQueuePort = outboundQueuePort;
@@ -50,7 +52,13 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
         ImportResult result;
 
         try {
-            ParsedDocument parsedDocument = parseDocument(task);
+
+            DocumentParser parser = parserFactory.getSelectedParser(task.type());
+            ParsedDocument parsedDocument = switch (task.type()){
+                case FILE -> parser.parse(getDecoder().decode(task.content()),task.metadata());
+                case URL -> parser.parseFromUrl(task.content());
+                case TEXT -> parser.parse(task.content().getBytes(StandardCharsets.UTF_8),task.metadata());
+            };
 
             List<DocumentChunk> chunks = chunkingStrategy.chunk(parsedDocument.text(), task.importOptions());
 
@@ -135,7 +143,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
     }
 
 
-    private ParsedDocument parseDocument(ImportTask task) throws DocumentParserException {
+   /* private ParsedDocument parseDocument(ImportTask task) throws DocumentParserException {
         return switch (task.type()) {
 
             case URL -> documentParser.parseFromUrl(task.content());
@@ -144,5 +152,5 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
             case TEXT -> new ParsedDocument(task.content(), task.metadata());//не нужно парсить, текст уже контент
         };
-    }
+    }*/
 }

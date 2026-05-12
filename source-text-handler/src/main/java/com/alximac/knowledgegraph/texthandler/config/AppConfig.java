@@ -10,6 +10,9 @@ import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParserException;
 import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
+import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
+import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TextDocumentParser;
+import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TikaDocumentParser;
 import com.alximac.knowledgegraph.texthandler.infrastructure.queue.AsynqInboundAdapter;
 import com.alximac.knowledgegraph.texthandler.infrastructure.queue.AsynqOutboundAdapter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -60,17 +63,11 @@ public class AppConfig {
                 "asynq:import:document:pending",
                 objectMapper);
 
-        DocumentParser parser = new DocumentParser() {
-            @Override
-            public ParsedDocument parse(byte[] data, Map<String, Object> sourceMetadata) throws DocumentParserException {
-                return new ParsedDocument("fake text", sourceMetadata);
-            }
+        DocumentParser tikaParser = new TikaDocumentParser();
+        DocumentParser textParser = new TextDocumentParser();
+        ParserFactory parserFactory = new ParserFactory(tikaParser, textParser);
 
-            @Override
-            public ParsedDocument parseFromUrl(String url) throws DocumentParserException {
-                return new ParsedDocument("fake url", Map.of());
-            }
-        };
+
 
         ChunkingStrategy chunk = new ChunkingStrategy() {
             @Override
@@ -99,7 +96,7 @@ public class AppConfig {
                 "asynq:import:responses:pending",
                 objectMapper);
 
-        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parser, linkDetector, noteCreatorPort,
+        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreatorPort,
                 outboundQueuePort, repository);
 
         Thread worker = new Thread(() -> asynqInboundAdapter.subscribe(handler::handle));
