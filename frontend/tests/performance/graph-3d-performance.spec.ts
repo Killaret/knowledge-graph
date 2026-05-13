@@ -11,7 +11,11 @@ import { createNote, createLink } from '../helpers/testData';
  * - Memory: < 200MB increase
  */
 
-test.describe('3D Graph Performance @performance', { tag: ['@performance', '@3d'] }, () => {
+test.describe('3D Graph Performance @performance', { 
+  tag: ['@performance', '@3d'],
+  // 3D feature frozen for v1 - see CHANGELOG.md
+  annotation: { type: 'skip', description: '3D feature frozen for v1' }
+}, () => {
   
   test('should maintain 30+ FPS with 50 nodes', async ({ page, request }) => {
     // Create fewer notes for faster test execution

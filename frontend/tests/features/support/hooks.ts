@@ -75,7 +75,7 @@ After(async function(this: ITestWorld) {
   // Cleanup test notes
   for (const note of this.testNotes) {
     try {
-      await this.request.delete(`http://localhost:8080/api/v1/notes/${note.id}`);
+      await this.request.delete(`${process.env.BACKEND_URL || 'http://localhost:8080'}/api/v1/notes/${note.id}`);
     } catch {
       // Ignore cleanup errors
     }

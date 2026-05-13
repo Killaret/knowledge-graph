@@ -52,16 +52,20 @@
   const angles = new Map<string, number>();
   const speeds = new Map<string, number>();
 
+  // NOTE: transform and dragState need reactivity for Svelte bindings,
+  // but simState must NOT be $state — d3-force mutates link objects (source/target become node refs)
+  // and Svelte 5 Proxy intercepts those mutations, breaking d3 internals.
   const transform: TransformState = $state({ x: 0, y: 0, k: 1 });
   const dragState: DragState = $state({ dragging: false, dragStart: { x: 0, y: 0 } });
-  const simState: SimulationState = $state({
+  const simState: SimulationState = {
     simulation: null,
     simLinks: [],
     isRunning: false
-  });
+  };
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = '';
+  let mounted = $state(false);
 
   // Используем утилиты для resize
   const resizeState = { width, height };
@@ -102,7 +106,10 @@
       }
     );
     
+    mounted = true; // triggers $effect re-run since it's $state
+
     return () => {
+      mounted = false; // $state
       observerCleanup?.disconnect();
       resizeCleanup?.clear();
       animationLoop?.stop();
@@ -113,6 +120,7 @@
 
   // Реактивно перезапускаем симуляцию при изменении данных
   $effect(() => {
+    const _ = mounted; // track mounted state
     const nodesCount = nodes.length;
     const linksCount = links.length;
     const dataKey = `${nodesCount}-${linksCount}`;
@@ -122,7 +130,7 @@
     }
     lastDataKey = dataKey;
 
-    if (!browser) return;
+    if (!browser || !mounted) return;
 
     if (nodes.length === 0) {
       clearSimulation(simState);
@@ -161,7 +169,7 @@
 
   // Обёртки для обработчиков событий
   function onZoom(e: WheelEvent) {
-    handleZoom(e, transform, () => {
+    handleZoom(e, transform, canvas, () => {
       const simNodes = getSimulationNodes(simState);
       if (ctx && simNodes.length > 0) {
         draw(ctx, width, height, simState.simLinks, simNodes, angles, transform);

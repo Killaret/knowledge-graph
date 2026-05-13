@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { createNote } from './helpers/testData';
-import { clickCreateNoteButton, clickViewToggle, setupSkipAuth } from './helpers/testUtils';
+import { createNote, getBackendUrl } from './helpers/testData';
+import { clickViewToggle, clickCreateNoteButton, setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -251,7 +251,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test('should handle empty state when no notes exist', async ({ page, request }) => {
     // Check current notes count
-    const notesResponse = await request.get('http://localhost:8080/api/v1/notes');
+    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
     const hasNotes = notesData.total > 0 || (notesData.notes?.length > 0);
     
@@ -270,7 +270,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test('should toggle full graph mode on home page', async ({ page, request }) => {
     // Create test notes if needed
-    const notesResponse = await request.get('http://localhost:8080/api/v1/notes');
+    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
     
     if (notesData.total < 2) {
@@ -319,7 +319,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
 
   test('should display correct note count in stats', async ({ page, request }) => {
     // Get actual note count from API
-    const notesResponse = await request.get('http://localhost:8080/api/v1/notes');
+    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
     const totalNotes = notesData.total || notesData.notes?.length || 0;
     

@@ -7,18 +7,30 @@ import type { SimulationNode, TransformState, DragState } from './types';
 export type { DragState };
 
 /**
- * Handle zoom with mouse wheel
+ * Handle zoom with mouse wheel (zoom toward cursor, graph + links stay aligned)
  */
 export function handleZoom(
   e: WheelEvent,
   transform: TransformState,
+  canvas: HTMLCanvasElement,
   onDraw: () => void
 ): void {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.95 : 1.05;
   const newK = transform.k * delta;
   if (newK < 0.2 || newK > 5) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const gx = (mouseX - transform.x) / transform.k;
+  const gy = (mouseY - transform.y) / transform.k;
+
   transform.k = newK;
+  transform.x = mouseX - gx * transform.k;
+  transform.y = mouseY - gy * transform.k;
+
   onDraw();
 }
 

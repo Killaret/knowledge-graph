@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -24,6 +26,7 @@ func DefaultSkipAuthConfig(enabled bool) *SkipAuthConfig {
 // Sets test user ID for consistent note creation in test mode
 func SkipAuth(config *SkipAuthConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		fmt.Printf("[DEBUG] SkipAuth: Enabled=%t, Path=%s\n", config.Enabled, c.Request.URL.Path)
 		if !config.Enabled {
 			c.Next()
 			return
@@ -33,6 +36,7 @@ func SkipAuth(config *SkipAuthConfig) gin.HandlerFunc {
 		// Test user must exist in DB (migration 019)
 		c.Set(ContextUserIDKey, config.DefaultUserID)
 		c.Set(ContextRoleKey, "test")
+		fmt.Printf("[DEBUG] SkipAuth: Set user ID=%s\n", config.DefaultUserID.String())
 		c.Next()
 	}
 }

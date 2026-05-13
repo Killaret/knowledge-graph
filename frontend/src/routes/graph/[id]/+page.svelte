@@ -57,7 +57,7 @@
       <p class="error">{error}</p>
     </div>
   {:else}
-    <div class="graph-container">
+    <div class="graph-container graph-3d-container" data-testid="graph-container">
       <SmartGraph {nodes} {links} />
     </div>
   {/if}
@@ -101,6 +101,8 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+    min-height: 0;
+    height: 100%;
   }
 
   .loading-state,

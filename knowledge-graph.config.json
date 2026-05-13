@@ -74,6 +74,8 @@
       "argon2_memory": 65536,
       "argon2_threads": 4,
       "api_key_enabled": true,
+      "static_api_key": "kg-admin-2024-secret-key",
+      "skip_auth": true,
       "yandex_client_id": "",
       "yandex_client_secret": "",
       "pkce_enabled": true,

@@ -81,6 +81,7 @@ type JSONConfig struct {
 			Argon2Memory                 uint32 `json:"argon2_memory"`
 			Argon2Threads                uint8  `json:"argon2_threads"`
 			APIKeyEnabled                bool   `json:"api_key_enabled"`
+			StaticAPIKey                 string `json:"static_api_key"`
 			SkipAuth                     bool   `json:"skip_auth"` // Disable auth for testing
 			YandexClientID               string `json:"yandex_client_id"`
 			YandexClientSecret           string `json:"yandex_client_secret"`
@@ -174,6 +175,7 @@ type Config struct {
 	Argon2Memory                 uint32
 	Argon2Threads                uint8
 	APIKeyEnabled                bool
+	StaticAPIKey                 string
 	SkipAuth                     bool // Disable auth for testing
 	YandexClientID               string
 	YandexClientSecret           string
@@ -316,6 +318,7 @@ func Load() (*Config, error) {
 		Argon2Memory:                 getUint32Env("ARGON2_MEMORY", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Memory }, 65536)),
 		Argon2Threads:                getUint8Env("ARGON2_THREADS", getJSONUint8OrDefault(jsonCfg, func(j *JSONConfig) uint8 { return j.Backend.Auth.Argon2Threads }, 4)),
 		APIKeyEnabled:                getBoolEnv("API_KEY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.APIKeyEnabled }, true)),
+		StaticAPIKey:                 getEnv("STATIC_API_KEY", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.StaticAPIKey }, "")),
 		SkipAuth:                     getBoolEnv("SKIP_AUTH", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.SkipAuth }, false)),
 		YandexClientID:               getEnv("YANDEX_CLIENT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientID }, "")),
 		YandexClientSecret:           getEnv("YANDEX_CLIENT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientSecret }, "")),

@@ -1,3 +1,4 @@
+// 3D feature frozen for v1 - see CHANGELOG.md
 import { Given, When, Then, type IWorld } from '@cucumber/cucumber';
 import { expect, type Page } from '@playwright/test';
 

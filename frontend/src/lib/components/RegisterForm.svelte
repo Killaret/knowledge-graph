@@ -44,6 +44,11 @@
       return;
     }
     
+    if (!email.trim()) {
+      localError = 'Введите email';
+      return;
+    }
+    
     if (!isPasswordValid) {
       localError = 'Пароль не соответствует требованиям';
       return;
@@ -54,7 +59,7 @@
       return;
     }
     
-    const success = await register(login.trim(), password, email.trim() || undefined);
+    const success = await register(login.trim(), password, email.trim());
     if (success) {
       goto('/');
     } else {
@@ -79,12 +84,13 @@
   </div>
   
   <div class="form-group">
-    <label for="email">Email</label>
+    <label for="email">Email *</label>
     <input
       type="email"
       id="email"
       bind:value={email}
-      placeholder="Введите email (необязательно)"
+      placeholder="Введите email"
+      required
     />
   </div>
   

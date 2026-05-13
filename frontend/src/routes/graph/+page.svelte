@@ -135,7 +135,7 @@
       <button onclick={() => goto('/')}>Go Home</button>
     </div>
   {:else}
-    <div class="graph-container">
+    <div class="graph-container graph-3d-container" data-testid="graph-container">
       {#if graphData.nodes.length > 0}
         {#key graphData.nodes.length + '-' + graphData.links.length}
           <GraphCanvas 
@@ -251,6 +251,7 @@
     flex: 1;
     position: relative;
     min-height: 0;
+    height: 100%;
     border-radius: 12px;
     overflow: hidden;
   }

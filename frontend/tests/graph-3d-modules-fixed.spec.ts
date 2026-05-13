@@ -15,7 +15,14 @@ import { setupSkipAuth } from './helpers/testUtils';
 // Global flag to track backend availability
 let backendAvailable = false;
 
-test.describe('3D Graph - Modular Architecture', { tag: ['@smoke', '@3d', '@modules'] }, () => {
+test.describe('3D Graph Modules - Fixed Version', { 
+  tag: ['@smoke', '@3d', '@modules', '@fixed'],
+  // 3D feature frozen for v1 - see CHANGELOG.md
+  annotation: { 
+    type: 'skip', 
+    description: '3D feature frozen for v1' 
+  }
+}, () => {
   
   test.beforeAll(async ({ request }) => {
     // Check backend availability once before all tests

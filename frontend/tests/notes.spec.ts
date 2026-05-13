@@ -62,7 +62,7 @@ test.describe('Knowledge Graph Frontend', {
     await page.waitForTimeout(2000);
     
     // Verify via API that note was created
-    const notesResponse = await request.get(`${getBackendUrl()}/notes`);
+    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
     expect(notesData.total).toBeGreaterThan(0);
     
@@ -233,15 +233,15 @@ test.describe('Knowledge Graph Frontend', {
     const id2 = note2.data.id;
     await createLink(request, id1, id2, 1.0, 'reference');
 
-    // Navigate to 3D graph page directly
+    // Navigate to 3D graph page - it redirects to 2D graph
     await page.goto(`/graph/3d/${id1}`);
+    // Wait for redirect to 2D graph page
+    await page.waitForURL(`**/graph/${id1}`, { timeout: 10000 });
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
     
-    // Verify 3D graph container is visible (loading, error, or canvas)
-    await page.waitForSelector('.graph-3d-container', { timeout: 10000 });
-    const graphContainer = page.locator('.graph-3d-container').first();
-    await expect(graphContainer).toBeVisible({ timeout: 5000 });
+    // Verify 2D graph canvas is visible after redirect
+    const graphContainer = page.locator('.graph-container, canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 10000 });
     
     // Verify stats bar shows node and link counts
     const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();

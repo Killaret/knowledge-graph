@@ -64,10 +64,12 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       type: 'star'
     });
     
+    // 3D functionality frozen - should redirect to 2D
     await page.goto(`/graph/3d/${note.data.id}`);
     
-    // Capture loading state
-    await page.waitForSelector('[data-testid="loading-overlay"]');
+    // Проверяем редирект на 2D граф с увеличенным таймаутом
+    await page.waitForURL(`**/graph/${note.data.id}`, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
     await page.screenshot({ 
       path: 'argos-screenshots/3d-loading-state.png',
       fullPage: true 

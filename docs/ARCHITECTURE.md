@@ -244,12 +244,12 @@ GET    /graph/3d            → 3D graph data (hierarchical)
 
 **Core Components (46 total):**
 
-| Компонент | Технология | Назначение |
-|-----------|------------|------------|
-| `GraphCanvas.svelte` | D3.js | 2D force-directed graph |
-| `Graph3D.svelte` | Three.js | 3D celestial visualization |
-| `LazyGraph3D.svelte` | dynamic import | Ленивая загрузка 3D |
-| `SmartGraph.svelte` | D3+Svelte | Адаптивный граф (2D/3D) |
+| Компонент | Технология | Назначение | Статус |
+|-----------|------------|------------|--------|
+| `GraphCanvas.svelte` | D3.js | 2D force-directed graph | Active |
+| `Graph3D.svelte` | Three.js | 3D celestial visualization | **Frozen** |
+| `LazyGraph3D.svelte` | dynamic import | Ленивая загрузка 3D | **Frozen** |
+| `SmartGraph.svelte` | D3+Svelte | Адаптивный граф (2D/3D) | 2D only |
 | `NoteCard.svelte` | Svelte | Карточка заметки |
 | `NoteEditor.svelte` | Svelte | WYSIWYG редактор |
 | `NoteSidePanel.svelte` | Svelte | Боковая панель деталей |
@@ -273,18 +273,20 @@ GET    /graph/3d            → 3D graph data (hierarchical)
 | `links.ts` | Links API |
 | `graph.ts` | Graph data API |
 
-#### 2.4 3D Engine (`src/lib/three/`)
+#### 2.4 3D Engine (`src/lib/three/`) - **FROZEN for v1.0**
 
-| Файл | Назначение |
-|------|------------|
-| `scene.ts` | Three.js scene setup |
-| `camera.ts` | Camera controls |
-| `renderer.ts` | WebGL renderer |
-| `graph3d.ts` | 3D graph visualization logic |
-| `celestial.ts` | Celestial body rendering (stars, planets) |
-| `controls.ts` | OrbitControls wrapper |
-| `animation.ts` | Animation loop |
-| `types.ts` | TypeScript types |
+> **🚫 FROZEN FEATURE:** 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead. See CHANGELOG.md for details.
+
+| Файл | Назначение | Статус |
+|------|------------|--------|
+| `scene.ts` | Three.js scene setup | Frozen |
+| `camera.ts` | Camera controls | Frozen |
+| `renderer.ts` | WebGL renderer | Frozen |
+| `graph3d.ts` | 3D graph visualization logic | Frozen |
+| `celestial.ts` | Celestial body rendering (stars, planets) | Frozen |
+| `controls.ts` | OrbitControls wrapper | Frozen |
+| `animation.ts` | Animation loop | Frozen |
+| `types.ts` | TypeScript types | Frozen |
 
 #### 2.5 State Management (`src/lib/stores/`)
 

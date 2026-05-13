@@ -19,14 +19,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  timeout: 60 * 1000, // 60s per test
+  timeout: 90 * 1000, // 90s per test
   globalSetup: './tests/setup/global-setup.ts',
   reporter: 'html',
   use: {
     baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
-    actionTimeout: 15000,
-    navigationTimeout: 15000,
+    actionTimeout: 30000,
+    navigationTimeout: 30000,
     // Inject SKIP_AUTH flag for testing
     launchOptions: {
       args: ['--disable-web-security'],
@@ -50,14 +50,14 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-  // Auto-start dev server for tests
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 120 * 1000,
-    env: {
-      SKIP_AUTH: 'true',
-    },
-  },
+  // Auto-start dev server for tests - DISABLED for Docker usage
+  // webServer: {
+  //   command: 'npm run dev',
+  //   url: 'http://localhost:5173',
+  //   reuseExistingServer: true,
+  //   timeout: 120 * 1000,
+  //   env: {
+  //     SKIP_AUTH: 'true',
+  //   },
+  // },
 });

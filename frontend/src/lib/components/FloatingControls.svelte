@@ -34,11 +34,14 @@
     onSearch?.(searchQuery);
   }
   
+  // 3D functionality frozen for v1 - see CHANGELOG.md
+  /*
   async function handleToggle3D() {
     // Если есть noteId, переходим на 3D граф этой заметки, иначе на общий 3D граф
     const targetUrl = noteId ? `/graph/3d/${noteId}` : '/graph/3d';
     await goto(targetUrl);
   }
+  */
   
   function toggleView() {
     onToggleView?.();
@@ -74,6 +77,8 @@
       </svg>
       <span class="btn-label">2D</span>
     </button>
+    <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
+    <!--
     <button
       type="button"
       class="toggle-btn"
@@ -89,6 +94,7 @@
       </svg>
       <span class="btn-label">3D</span>
     </button>
+    -->
     <button
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
@@ -175,9 +181,12 @@
         <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }}>
           Export
         </button>
+        <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
+        <!--
         <button type="button" class="menu-item" role="menuitem" onclick={() => { handleToggle3D(); showMenu = false; }}>
           {noteId ? '3D View for Note' : 'Full 3D View'}
         </button>
+        -->
       </div>
     {/if}
   </div>

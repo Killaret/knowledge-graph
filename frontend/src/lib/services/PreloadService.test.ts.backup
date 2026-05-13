@@ -1,0 +1,342 @@
+// Unit тесты для PreloadService
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { browser } from '$app/environment';
+import { isAuthenticated } from '$lib/stores/auth.svelte';
+import { PreloadService } from './PreloadService';
+import * as graphApi from '$lib/api/graph';
+import * as usersApi from '$lib/api/users';
+import {
+  mockGraphData,
+  mockAchievementsData,
+  mockGraphError,
+  mockAchievementsError,
+  createDelayedMock,
+  createDelayedError
+} from './__mocks__/PreloadService.mocks';
+
+// Мокаем зависимости
+vi.mock('$app/environment', () => ({
+  browser: true
+}));
+
+vi.mock('$lib/stores/auth.svelte', () => ({
+  isAuthenticated: vi.fn(() => false)
+}));
+
+vi.mock('$lib/api/graph', () => ({
+  getFullGraphData: vi.fn()
+}));
+
+vi.mock('$lib/api/users', () => ({
+  getAllAchievements: vi.fn()
+}));
+
+describe('PreloadService', () => {
+  let service: typeof PreloadService;
+
+  beforeEach(() => {
+    // Сбрасываем синглтон перед каждым тестом
+    vi.clearAllMocks();
+    
+    // Полный сброс PreloadService через удаление статического свойства
+    delete (PreloadService as any).instance;
+    
+    // Получаем новый инстанс сервиса
+    service = PreloadService;
+    
+    // Принудительно очищаем все внутренние состояния
+    (service as any).preloadedGraph = null;
+    (service as any).preloadedAchievements = null;
+    (service as any).isPreloading = false;
+    (service as any).preloadPromise = null;
+    
+    // Мокаем значения по умолчанию
+    vi.mocked(isAuthenticated).mockImplementation(() => false);
+    vi.mocked(graphApi.getFullGraphData).mockResolvedValue(mockGraphData);
+    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
+  });
+
+  afterEach(() => {
+    service.clearCache();
+    vi.clearAllTimers();
+  });
+
+  describe('Singleton Pattern', () => {
+    it('should return the same instance', () => {
+      const instance1 = PreloadService;
+      const instance2 = PreloadService;
+      expect(instance1).toBe(instance2);
+    });
+  });
+
+  describe('startPreload', () => {
+    it('should not start preload if user is authenticated', async () => {
+      vi.mocked(isAuthenticated).mockImplementation(() => true);
+      
+      const spy = vi.spyOn(service as any, 'performPreload');
+      
+      await service.startPreload();
+      
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('should not start preload if already preloading', async () => {
+      const performPreloadSpy = vi.spyOn(service as any, 'performPreload');
+      performPreloadSpy.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      
+      // Запускаем первый раз
+      const promise1 = service.startPreload();
+      expect(service.isPreloadingData()).toBe(true);
+      
+      // Запускаем второй раз одновременно
+      const promise2 = service.startPreload();
+      
+      // Должен быть тот же Promise
+      expect(promise1).toBe(promise2);
+      
+      await Promise.all([promise1, promise2]);
+      
+      // performPreload должен вызваться только один раз
+      expect(performPreloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not start preload in server environment', async () => {
+      // Мокаем browser как writable
+      vi.stubGlobal('browser', false);
+      
+      const spy = vi.spyOn(service as any, 'performPreload');
+      
+      await service.startPreload();
+      
+      expect(spy).not.toHaveBeenCalled();
+      
+      // Восстанавливаем browser
+      vi.unstubAllGlobals();
+    });
+
+    it('should start preload successfully', async () => {
+      await service.startPreload();
+      
+      expect(service.isPreloadingData()).toBe(false);
+      expect(service.hasPreloadedData()).toBe(true);
+    });
+  });
+
+  describe('performPreload', () => {
+    it('should load both graph and achievements data', async () => {
+      await (service as any).performPreload();
+      
+      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(1000);
+      expect(usersApi.getAllAchievements).toHaveBeenCalled();
+      
+      expect(service.getPreloadedGraph()).toEqual(mockGraphData);
+      expect(service.getPreloadedAchievements()).toEqual(mockAchievementsData.achievements);
+    });
+
+    it('should handle graph loading error gracefully', async () => {
+      vi.mocked(graphApi.getFullGraphData).mockRejectedValue(mockGraphError);
+      
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      await (service as any).performPreload();
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[PreloadService] Failed to preload graph:',
+        mockGraphError
+      );
+      
+      // Достижения должны загрузиться несмотря на ошибку графа
+      expect(service.getPreloadedAchievements()).toEqual(mockAchievementsData.achievements);
+      expect(service.getPreloadedGraph()).toBeNull();
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle achievements loading error gracefully', async () => {
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
+      
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      await (service as any).performPreload();
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[PreloadService] Failed to preload achievements:',
+        mockAchievementsError
+      );
+      
+      // Граф должен загрузиться несмотря на ошибку достижений
+      expect(service.getPreloadedGraph()).toEqual(mockGraphData);
+      expect(service.getPreloadedAchievements()).toBeNull();
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle both loading errors', async () => {
+      vi.mocked(graphApi.getFullGraphData).mockRejectedValue(mockGraphError);
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
+      
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      await (service as any).performPreload();
+      
+      expect(service.getPreloadedGraph()).toBeNull();
+      expect(service.getPreloadedAchievements()).toBeNull();
+      
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Cache TTL', () => {
+    beforeEach(() => {
+      // Мокаем Date.now для контроля времени
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should return cached data within TTL', async () => {
+      await service.startPreload();
+      
+      // Время не прошло - данные должны быть валидны
+      const graph = service.getPreloadedGraph();
+      const achievements = service.getPreloadedAchievements();
+      
+      expect(graph).toEqual(mockGraphData);
+      expect(achievements).toEqual(mockAchievementsData.achievements);
+    });
+
+    it('should invalidate graph cache after TTL expires', async () => {
+      await service.startPreload();
+      
+      // Перемещаем время вперед на 6 минут (больше TTL графа)
+      vi.advanceTimersByTime(6 * 60 * 1000);
+      
+      const graph = service.getPreloadedGraph();
+      expect(graph).toBeNull();
+      
+      // Достижения все еще должны быть валидны (TTL 10 минут)
+      const achievements = service.getPreloadedAchievements();
+      expect(achievements).toEqual(mockAchievementsData.achievements);
+    });
+
+    it('should invalidate achievements cache after TTL expires', async () => {
+      await service.startPreload();
+      
+      // Перемещаем время вперед на 11 минут (больше TTL достижений)
+      vi.advanceTimersByTime(11 * 60 * 1000);
+      
+      const graph = service.getPreloadedGraph();
+      const achievements = service.getPreloadedAchievements();
+      
+      expect(graph).toBeNull();
+      expect(achievements).toBeNull();
+    });
+  });
+
+  describe('Cache Management', () => {
+    it('should clear all cache', async () => {
+      await service.startPreload();
+      
+      expect(service.hasPreloadedData()).toBe(true);
+      
+      service.clearCache();
+      
+      expect(service.hasPreloadedData()).toBe(false);
+      expect(service.getPreloadedGraph()).toBeNull();
+      expect(service.getPreloadedAchievements()).toBeNull();
+    });
+
+    it('should invalidate only graph cache', async () => {
+      await service.startPreload();
+      
+      service.invalidateGraphCache();
+      
+      expect(service.getPreloadedGraph()).toBeNull();
+      expect(service.getPreloadedAchievements()).toEqual(mockAchievementsData.achievements);
+    });
+
+    it('should invalidate only achievements cache', async () => {
+      await service.startPreload();
+      
+      service.invalidateAchievementsCache();
+      
+      expect(service.getPreloadedGraph()).toEqual(mockGraphData);
+      expect(service.getPreloadedAchievements()).toBeNull();
+    });
+  });
+
+  describe('Status Methods', () => {
+    it('should return correct preloading status', async () => {
+      expect(service.isPreloadingData()).toBe(false);
+      
+      const performPreloadSpy = vi.spyOn(service as any, 'performPreload');
+      performPreloadSpy.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      
+      const promise = service.startPreload();
+      expect(service.isPreloadingData()).toBe(true);
+      
+      await promise;
+      expect(service.isPreloadingData()).toBe(false);
+    });
+
+    it('should return correct data availability status', async () => {
+      expect(service.hasPreloadedData()).toBe(false);
+      
+      await service.startPreload();
+      
+      expect(service.hasPreloadedData()).toBe(true);
+    });
+
+    it('should return correct stats', async () => {
+      const stats = service.getStats();
+      
+      expect(stats).toEqual({
+        hasGraph: false,
+        hasAchievements: false,
+        graphAge: null,
+        achievementsAge: null,
+        isPreloading: false
+      });
+      
+      await service.startPreload();
+      
+      const newStats = service.getStats();
+      
+      expect(newStats.hasGraph).toBe(true);
+      expect(newStats.hasAchievements).toBe(true);
+      expect(newStats.graphAge).toBeGreaterThanOrEqual(0);
+      expect(newStats.achievementsAge).toBeGreaterThanOrEqual(0);
+      expect(newStats.isPreloading).toBe(false);
+    });
+  });
+
+  describe('Concurrent Access', () => {
+    it('should handle concurrent preload requests', async () => {
+      const promises = Array.from({ length: 5 }, () => service.startPreload());
+      
+      await Promise.all(promises);
+      
+      // API должен вызваться только один раз
+      expect(graphApi.getFullGraphData).toHaveBeenCalledTimes(1);
+      expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle concurrent cache access', async () => {
+      await service.startPreload();
+      
+      const results = await Promise.all([
+        Promise.resolve(service.getPreloadedGraph()),
+        Promise.resolve(service.getPreloadedAchievements()),
+        Promise.resolve(service.getPreloadedGraph()),
+        Promise.resolve(service.getPreloadedAchievements())
+      ]);
+      
+      expect(results[0]).toEqual(mockGraphData);
+      expect(results[1]).toEqual(mockAchievementsData.achievements);
+      expect(results[2]).toEqual(mockGraphData);
+      expect(results[3]).toEqual(mockAchievementsData.achievements);
+    });
+  });
+});

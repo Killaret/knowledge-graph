@@ -10,7 +10,18 @@
 
 ## [Unreleased]
 
-### � Unified Configuration System
+### 🚫 Feature Freezing
+- **3D Graph Frozen**: 3D graph functionality temporarily frozen for v1.0
+  - **Reason**: Improve stability and reduce maintenance overhead
+  - **Impact**: All 3D components disabled, routes redirected to 2D
+  - **Tests**: 3D tests marked as skipped with "3D feature frozen for v1" annotation
+  - **Components Affected**: `Graph3D.svelte`, `LazyGraph3D.svelte`, `SmartGraph.svelte`
+  - **Routes**: `/graph/3d` and `/graph/3d/:id` redirect to `/graph` and `/graph/:id`
+  - **UI**: 3D toggle buttons hidden in FloatingControls component
+  - **Bundle Size**: Three.js and 3D dependencies excluded from build
+  - **Future**: 3D functionality preserved in codebase for potential reactivation in future versions
+
+### ⚙️ Unified Configuration System
 - **Single Source of Truth**: New `knowledge-graph.config.json` at project root
   - All structural parameters in one place
   - Shared between backend, frontend, and NLP service

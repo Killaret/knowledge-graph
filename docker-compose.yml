@@ -59,7 +59,7 @@
       dockerfile: ./backend/Dockerfile
     container_name: kg-backend
     ports:
-      - "8080:8080"
+      - "127.0.0.1:9000:8080"
     env_file:
       - .env
     environment:
@@ -103,23 +103,35 @@
       dockerfile: ./frontend/Dockerfile
       args:
         # В Docker сети backend доступен по имени сервиса
-        VITE_API_TARGET: http://backend:8080
+        VITE_API_TARGET: http://backend:8080/api
     container_name: kg-frontend
     ports:
-      - "8081:3000"
+      - "5173:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
-      # For local Docker: use localhost. In production, use public URL or nginx proxy
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+          # For local Docker: use nginx proxy for API requests
+          VITE_API_URL: ${VITE_API_URL:-http://nginx:8080}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || curl -f http://localhost:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    depends_on:
+      - backend
+      - nginx
+    restart: on-failure
+
+  nginx:
+    image: nginx:alpine
+    container_name: kg-nginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     restart: on-failure

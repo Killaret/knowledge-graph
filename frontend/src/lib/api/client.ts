@@ -12,7 +12,7 @@ const isDev = import.meta.env.DEV;
 const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
 
 // Получаем backend URL из env (для Docker) или используем default
-let backendUrl = 'http://localhost:8080';
+let backendUrl = 'http://127.0.0.1:9000';
 try {
   const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (envUrl) backendUrl = envUrl;
@@ -22,7 +22,8 @@ try {
 
 // В dev режиме (Vite) используем относительный путь (проксируется на backend)
 // Production использует прямой backend URL
-const prefixUrl = isDev && !isTest && !backendUrl.includes('localhost:8080')
+// В Docker всегда используем прямой URL
+const prefixUrl = isDev && !isTest && !backendUrl.includes('host.docker.internal')
   ? '' 
   : `${backendUrl}/api`;
 

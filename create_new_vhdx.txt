@@ -1,0 +1,2 @@
+create vdisk file="C:\Users\89209\AppData\Local\Docker\wsl\disk\docker_data_new.vhdx" maximum=10240 type=expandable
+exit

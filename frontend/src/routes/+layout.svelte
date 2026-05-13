@@ -3,7 +3,8 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { initAuth, isAuthenticated, isLoading } from '$lib/stores/auth.svelte.js';
+  import { initAuth, isAuthenticated, isInitialized, isLoading } from '$lib/stores/auth.svelte.js';
+  import { startPreload } from '$lib/services/PreloadService';
 
   const { children } = $props();
 
@@ -21,15 +22,24 @@
   // Initialize auth on mount
   $effect(() => {
     initAuth();
+
+    // After hydration from localStorage, preload only for guests (avoids duplicate fetch + wrong UX)
+    if (isInitialized() && !isAuthenticated()) {
+      startPreload();
+    }
   });
 
-  // Route protection
+  // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
   $effect(() => {
     const currentPath = $page.url.pathname;
     const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
-    
-    if (!isLoading() && !isPublicRoute && !isAuthenticated()) {
-      // Redirect to login with return URL
+
+    if (
+      isInitialized() &&
+      !isLoading() &&
+      !isPublicRoute &&
+      !isAuthenticated()
+    ) {
       const returnUrl = encodeURIComponent(currentPath);
       goto(`/auth/login?redirect=${returnUrl}`);
     }

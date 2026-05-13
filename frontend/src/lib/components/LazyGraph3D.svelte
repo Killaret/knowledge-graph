@@ -24,6 +24,11 @@
   }
 
   onMount(async () => {
+    // 3D functionality frozen for v1 - see CHANGELOG.md
+    loadError = '3D graph functionality has been frozen for version 1.0 to improve stability and reduce maintenance overhead.';
+    isLoading = false;
+    
+    /*
     // Check WebGL support first
     webglSupported = checkWebGL();
     
@@ -46,6 +51,7 @@
     } finally {
       isLoading = false;
     }
+    */
   });
 </script>
 

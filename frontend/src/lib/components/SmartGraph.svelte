@@ -62,8 +62,10 @@
     }
     webglSupported = hasWebGL;
 
-    use3D = isForce3D ? true : (shouldRender3D && hasWebGL);
+    use3D = false; // 3D functionality frozen for v1 - see CHANGELOG.md
 
+    // 3D functionality frozen for v1 - see CHANGELOG.md
+    /*
     // Dynamically import 3D component if needed
     if (use3D) {
       try {
@@ -74,6 +76,7 @@
         use3D = false;
       }
     }
+    */
 
     isLoading = false;
   });

@@ -175,7 +175,7 @@ describe('GraphCanvas - Link Visual Correctness', () => {
       expect(ctx.stroke).not.toHaveBeenCalled();
     });
 
-    it('should draw links when source/target are node objects', () => {
+    it('should draw links when source/target ids are strings (pre-D3 shape)', () => {
       const ctx = {
         beginPath: vi.fn(),
         moveTo: vi.fn(),
@@ -190,6 +190,31 @@ describe('GraphCanvas - Link Visual Correctness', () => {
       const targetNode: SimulationNode = { id: '2', title: 'Target', x: 200, y: 200, type: 'planet' };
       const links: SimulationLink[] = [
         { source: '1', target: '2', weight: 0.5 }
+      ];
+      const nodes = [sourceNode, targetNode];
+
+      renderer.drawAllLinks(ctx, links, nodes);
+
+      expect(ctx.moveTo).toHaveBeenCalledWith(100, 100);
+      expect(ctx.lineTo).toHaveBeenCalledWith(200, 200);
+      expect(ctx.stroke).toHaveBeenCalled();
+    });
+
+    it('should draw links when source/target are node refs (post-d3-force shape)', () => {
+      const ctx = {
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        setLineDash: vi.fn(),
+        lineWidth: 1,
+        strokeStyle: '',
+      } as unknown as CanvasRenderingContext2D;
+
+      const sourceNode: SimulationNode = { id: '1', title: 'Source', x: 100, y: 100, type: 'star' };
+      const targetNode: SimulationNode = { id: '2', title: 'Target', x: 200, y: 200, type: 'planet' };
+      const links: SimulationLink[] = [
+        { source: sourceNode, target: targetNode, weight: 0.5 }
       ];
       const nodes = [sourceNode, targetNode];
 

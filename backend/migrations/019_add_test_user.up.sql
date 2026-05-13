@@ -3,11 +3,12 @@
 
 -- Insert test user for SKIP_AUTH mode
 -- This user is used when SKIP_AUTH=true for testing without authentication
+-- Password: "test" (hashed with Argon2id)
 INSERT INTO users (id, login, password_hash, created_at)
 VALUES (
     '00000000-0000-0000-0000-000000000001'::uuid,
     'test_user',
-    'test',
+    '$argon2id$v=19$m=65536,t=3,p=4$vebiVgl5UEh0+ne0/eYhAg$jHdRBsuf4mGSnUUCJ04o3OMfkW1IGF3E4mHZFvjYjSE',
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;

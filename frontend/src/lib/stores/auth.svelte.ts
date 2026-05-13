@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
 import * as usersApi from '$lib/api/users';
+import { clearPreloadCache } from '$lib/services/PreloadService';
 import type { User, AuthTokens } from '$lib/types';
 
 // Global reactive state - wrapped in object for export
@@ -143,6 +144,9 @@ export async function logout(): Promise<void> {
       console.error('Logout error:', e);
     }
   }
+  
+  // Clear preload cache on logout
+  clearPreloadCache();
   
   clearAuthState();
   goto('/auth/login');

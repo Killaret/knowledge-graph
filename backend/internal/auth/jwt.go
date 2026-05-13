@@ -32,10 +32,10 @@ type TokenClaims struct {
 
 // JWTManager handles JWT token operations
 type JWTManager struct {
-	secret        []byte
-	accessTTL     time.Duration
-	refreshTTL    time.Duration
-	issuer        string
+	secret     []byte
+	accessTTL  time.Duration
+	refreshTTL time.Duration
+	issuer     string
 }
 
 // NewJWTManager creates a new JWT manager
@@ -106,7 +106,7 @@ func (m *JWTManager) ValidateToken(tokenString string, expectedType string) (*To
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return m.secret, nil
-	})
+	}, jwt.WithLeeway(5*time.Second))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token: %w", err)

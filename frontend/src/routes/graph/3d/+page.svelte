@@ -1,42 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { getFullGraphData } from '$lib/api/graph';
-  import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
-  import type { GraphData } from '$lib/api/graph';
+  import { goto } from '$app/navigation';
 
-  let graphData: GraphData | null = $state(null);
-  let loading = $state(true);
-  let error = $state('');
-
-  onMount(async () => {
-    if (!browser) return;
-    try {
-      graphData = await getFullGraphData();
-    } catch (e) {
-      error = 'Failed to load full graph';
-      console.error(e);
-    } finally {
-      loading = false;
-    }
+  onMount(() => {
+    // 3D functionality frozen for v1 - redirecting to 2D graph
+    setTimeout(() => {
+      goto('/graph');
+    }, 500);
   });
 </script>
 
 <div class="page">
-  {#if loading}
-    <div class="center">
+  <div class="center">
+    <div class="frozen-notice">
+      <h2>3D Graph Feature Frozen</h2>
+      <p>The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.</p>
+      <p>You will be automatically redirected to the 2D graph view.</p>
       <div class="spinner"></div>
-      <p>Loading full knowledge graph...</p>
     </div>
-  {:else if error}
-    <div class="center error">{error}</div>
-  {:else if graphData}
-    <div class="stats-bar">
-      <span><strong>{graphData.nodes.length}</strong> nodes</span>
-      <span><strong>{graphData.links.length}</strong> links</span>
-    </div>
-    <LazyGraph3D data={graphData} />
-  {/if}
+  </div>
 </div>
 
 <style>

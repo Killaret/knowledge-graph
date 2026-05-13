@@ -13,18 +13,20 @@ import (
 
 // APIKeyConfig holds API key middleware configuration
 type APIKeyConfig struct {
-	DB            *gorm.DB
-	HeaderName    string
-	Enabled       bool
-	SkipPaths     []string
+	DB           *gorm.DB
+	HeaderName   string
+	Enabled      bool
+	StaticAPIKey string
+	SkipPaths    []string
 }
 
 // DefaultAPIKeyConfig returns default API key configuration
-func DefaultAPIKeyConfig(db *gorm.DB, enabled bool) *APIKeyConfig {
+func DefaultAPIKeyConfig(db *gorm.DB, enabled bool, staticAPIKey string) *APIKeyConfig {
 	return &APIKeyConfig{
-		DB:         db,
-		HeaderName: "X-API-Key",
-		Enabled:    enabled,
+		DB:           db,
+		HeaderName:   "X-API-Key",
+		Enabled:      enabled,
+		StaticAPIKey: staticAPIKey,
 		SkipPaths: []string{
 			"/api/v1/auth/*",
 			"/health",
@@ -37,11 +39,11 @@ func DefaultAPIKeyConfig(db *gorm.DB, enabled bool) *APIKeyConfig {
 // APIKeyModel represents the database model for API keys
 // This is a minimal representation for the middleware query
 type APIKeyModel struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserID     uuid.UUID `gorm:"type:uuid;not null"`
-	KeyHash    string    `gorm:"not null;index"`
-	IsActive   bool      `gorm:"default:true"`
-	ExpiresAt  *string
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null"`
+	KeyHash   string    `gorm:"not null;index"`
+	IsActive  bool      `gorm:"default:true"`
+	ExpiresAt *string
 }
 
 func (APIKeyModel) TableName() string { return "api_keys" }
@@ -85,13 +87,24 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 			return
 		}
 
+		// Check static API key first
+		if config.StaticAPIKey != "" && apiKey == config.StaticAPIKey {
+			// Static API key authenticated - set admin context
+			adminUUID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+			c.Set(ContextUserIDKey, adminUUID)
+			c.Set(ContextRoleKey, "admin")
+			c.Set("api_key_id", adminUUID)
+			c.Next()
+			return
+		}
+
 		// Hash the API key for lookup
 		hash := hashAPIKey(apiKey)
 
 		// Look up the API key in the database
 		var keyModel APIKeyModel
 		result := config.DB.Where("key_hash = ? AND is_active = ?", hash, true).First(&keyModel)
-		
+
 		if result.Error != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
 			c.Abort()
@@ -129,7 +142,7 @@ func GetAPIKeyID(c *gin.Context) (uuid.UUID, bool) {
 	if !exists {
 		return uuid.Nil, false
 	}
-	
+
 	id, ok := keyID.(uuid.UUID)
 	return id, ok
 }

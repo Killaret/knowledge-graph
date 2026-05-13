@@ -29,7 +29,9 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
       REDIS_URL: redis://redis:6379/0
@@ -47,8 +49,8 @@ services:
 
   frontend-test:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.test
+      context: .
+      dockerfile: frontend/Dockerfile
     environment:
       BACKEND_URL: http://backend:8080
       FRONTEND_URL: http://localhost:5173
@@ -68,7 +70,9 @@ services:
       "
 
   backend-test:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
       REDIS_URL: redis://redis:6379/0

@@ -9,6 +9,7 @@
     resizeScene,
     disposeScene
   } from './Graph3D';
+  import { animateFogDensity } from './Graph3D/fogManager';
   import {
     createSimulation,
     addNodesToSimulation
@@ -23,6 +24,7 @@
   import { graphConfig3D } from '$lib/config';
   import type { GraphData, GraphNode, GraphLink } from '$lib/api/graph';
   import * as THREE from 'three';
+  import { hasPreloadedData } from '$lib/services/PreloadService';
 
   const { 
     data, 
@@ -156,7 +158,18 @@
     const filteredData = { nodes: nodesData, links: validLinks };
     
     currentData = filteredData;
-    if (scene) setFogDensity(scene, 0.08);
+    
+    // Интеграция с PreloadService: если данные предзагружены, начинаем с меньшей плотности тумана
+    const hasPreloaded = hasPreloadedData();
+    const initialDensity = hasPreloaded ? 0.04 : 0.08; // Меньше тумана для предзагруженных данных
+    
+    if (scene) {
+      setFogDensity(scene, initialDensity);
+      if (import.meta.env.DEV) {
+        console.log(`[Graph3D] Starting simulation with preloaded data: ${hasPreloaded}, initial fog density: ${initialDensity}`);
+      }
+    }
+    
     isLoading = true;
     simulation = createSimulation(filteredData, objectManager);
     
@@ -198,8 +211,15 @@
       isFullyLoaded = true;
       
       if (scene) {
-        const currentDensity = (scene.fog as any)?.density ?? 0.08;
-        animateFog(currentDensity, 0.005, 800);
+        const currentDensity = (scene.fog as THREE.FogExp2)?.density ?? 0.08;
+        const fogAnimation = animateFogDensity(scene, 0.005, 800);
+        // Останавливаем анимацию при уничтожении компонента
+        fogAnimation.stop = () => {
+          if (fogAnimationFrame) {
+            cancelAnimationFrame(fogAnimationFrame);
+            fogAnimationFrame = null;
+          }
+        };
       }
       
       clearTimeout(zoomTimeout);
@@ -232,44 +252,40 @@
         }
       }
       
-      if (scene && ++lastFogUpdate % 10 === 0) {
+      // Прогрессивное рассеивание тумана на основе прогресса позиционирования узлов
+      if (scene && ++lastFogUpdate % 5 === 0) { // Обновляем чаще (каждые 5 тиков)
         const nodes = simulation.nodes();
-        const nodesWithPosition = nodes.filter((n: any) => n.x !== undefined && !isNaN(n.x)).length;
+        const nodesWithPosition = nodes.filter((n: any) => 
+          n.x !== undefined && 
+          !isNaN(n.x) && 
+          n.y !== undefined && 
+          !isNaN(n.y) && 
+          n.z !== undefined && 
+          !isNaN(n.z)
+        ).length;
+        
         const progress = Math.min(nodesWithPosition / totalNodes, 1);
         const startDensity = 0.08;
         const endDensity = 0.005;
-        const currentDensity = startDensity - (startDensity - endDensity) * progress;
         
+        // Плавное уменьшение плотности тумана
+        const currentDensity = startDensity - (startDensity - endDensity) * progress;
         setFogDensity(scene, currentDensity);
         
+        // Скрываем загрузочный overlay когда прогресс > 10%
         if (isLoading && progress > 0.1) {
           isLoading = false;
+        }
+        
+        // Логирование для отладки
+        if (import.meta.env.DEV && lastFogUpdate % 50 === 0) {
+          console.log(`[Graph3D] Fog progress: ${(progress * 100).toFixed(1)}%, density: ${currentDensity.toFixed(4)}`);
         }
       }
     });
   }
 
-  function animateFog(startDensity: number, endDensity: number, duration: number = 2000) {
-    if (!scene) return;
-    const startTime = performance.now();
-    
-    function updateFog() {
-      const elapsed = performance.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const currentDensity = startDensity + (endDensity - startDensity) * ease;
-      
-      setFogDensity(scene, currentDensity);
-      
-      if (progress < 1) {
-        fogAnimationFrame = requestAnimationFrame(updateFog);
-      }
-    }
-    
-    if (fogAnimationFrame) cancelAnimationFrame(fogAnimationFrame);
-    fogAnimationFrame = requestAnimationFrame(updateFog);
-  }
-
+  
   export function addData(newData: GraphData) {
     if (!simulation || !objectManager || !scene) return;
     
@@ -348,7 +364,20 @@
       }
     } catch (e) {
       console.error('Failed to initialize 3D graph:', e);
-      error = 'Failed to initialize 3D visualization';
+      
+      // Проверяем тип ошибки для лучшей диагностики
+      if (e instanceof Error) {
+        if (e.message.includes('WebGL')) {
+          error = 'WebGL не поддерживается. Попробуйте обновить браузер или использовать 2D режим.';
+        } else if (e.message.includes('context')) {
+          error = 'Ошибка создания контекста рендеринга. Попробуйте перезагрузить страницу.';
+        } else {
+          error = `Ошибка инициализации 3D графа: ${e.message}`;
+        }
+      } else {
+        error = 'Неизвестная ошибка при инициализации 3D графа';
+      }
+      
       isLoading = false;
     }
   });

@@ -4,7 +4,7 @@ import type { Page, APIRequestContext } from '@playwright/test';
  * Get backend URL from environment or use default
  */
 export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 'http://localhost:8080/api';
+  return process.env.BACKEND_URL || 'http://localhost:8080';
 }
 
 /**
@@ -14,7 +14,7 @@ export async function createNote(
   request: APIRequestContext,
   data: { title: string; content?: string; type?: string }
 ): Promise<{ data: { id: string; title: string } }> {
-  const response = await request.post(`${getBackendUrl()}/v1/notes`, {
+  const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
     data: {
       title: data.title,
       content: data.content || 'Test content',
@@ -36,7 +36,8 @@ export async function createLink(
     weight?: number;
   }
 ): Promise<void> {
-  await request.post(`${getBackendUrl()}/v1/links`, {
+  const url = `${getBackendUrl()}/api/v1/links`;
+  await request.post(url, {
     data: {
       source_note_id: data.source_note_id,
       target_note_id: data.target_note_id,

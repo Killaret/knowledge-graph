@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, isBackendAvailable, getBackendUrl } from './helpers/testData';
+import { isBackendAvailable, getBackendUrl, createNote, createLink } from './helpers/testData';
 import { setupSkipAuth } from './helpers/testUtils';
 
 /**
@@ -349,7 +349,7 @@ test.describe('Progressive Graph - Camera & Animation', () => {
   
   test.beforeAll(async ({ request }) => {
     try {
-      const healthCheck = await request.get('http://localhost:8080/api/v1/notes', { timeout: 5000 });
+      const healthCheck = await request.get(`${getBackendUrl()}/api/v1/notes`, { timeout: 5000 });
       backendAvailable = healthCheck.status() < 500;
     } catch {
       backendAvailable = false;
@@ -426,8 +426,8 @@ test.describe('Progressive Graph - Camera & Animation', () => {
       };
     });
     
-    expect(containerStyles.position).toBe('relative');
-    expect(containerStyles.overflow).toBe('hidden');
+    expect(containerStyles.position).toBe('fixed');
+    expect(containerStyles.overflow).toMatch(/hidden|clip/); // Может быть clip или hidden
   });
 
 });

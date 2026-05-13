@@ -1,5 +1,6 @@
-@smoke @3d-graph
-Feature: 3D Graph Progressive Loading
+# 3D feature frozen for v1 - see CHANGELOG.md
+# @smoke @3d-graph
+# Feature: 3D Graph Progressive Loading (FROZEN)
   As a user
   I want to see the graph appearing gradually with fog
   So that I can start interacting early

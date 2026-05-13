@@ -9,8 +9,8 @@ import { setupSkipAuth } from './helpers/testUtils';
 
 test.describe('Graph Visualization - Progressive Rendering', { 
   tag: ['@smoke', '@3d', '@progressive'],
-  // Skip all tests if running in headless mode (WebGL not available)
-  annotation: { type: 'skip', description: 'WebGL not available in headless mode' }
+  // 3D feature frozen for v1 - see CHANGELOG.md
+  annotation: { type: 'skip', description: '3D feature frozen for v1' }
 }, () => {
   
   test.beforeEach(async ({ page }) => {

@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мастер настройки интеграций — Avanpost</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #eef2f8;
+            padding: 32px 24px;
+            color: #1f2a3e;
+            min-height: 100vh;
+        }
+
+        .master-wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            display: flex;
+            overflow: hidden;
+            min-height: 700px;
+        }
+
+        /* Левая навигация */
+        .steps-nav {
+            width: 280px;
+            background: #f9fbfd;
+            border-right: 1px solid #e2e9f0;
+            padding: 32px 20px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #4a627a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step:hover {
+            background: #eef3ff;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #e9eef4;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .step.active {
+            background: #eef3ff;
+            color: #1e5ef7;
+        }
+        .step.active .step-number {
+            background: #1e5ef7;
+            color: white;
+        }
+        .step.completed .step-number {
+            background: #2b8c4c;
+            color: white;
+        }
+
+        /* Основная область */
+        .main-content {
+            flex: 1;
+            padding: 32px 40px;
+        }
+        h2 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .section-desc {
+            color: #5d7188;
+            margin-bottom: 28px;
+            border-left: 3px solid #1e5ef7;
+            padding-left: 14px;
+        }
+
+        /* Карточки */
+        .group-card {
+            background: #ffffff;
+            border: 1px solid #e4ebf3;
+            border-radius: 24px;
+            padding: 24px 28px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            margin-bottom: 32px;
+        }
+        .group-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #eef2f8;
+            padding-bottom: 12px;
+        }
+
+        /* Поля */
+        .field-group {
+            margin: 20px 0 16px;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 6px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbdbe6;
+            border-radius: 16px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1e5ef7;
+            box-shadow: 0 0 0 3px rgba(30,94,247,0.1);
+        }
+        input:disabled, select:disabled, textarea:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .error-border {
+            border-color: #e5484d;
+            background: #fff8f8;
+        }
+        .error-text {
+            color: #e5484d;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            background: #1e5ef7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #0a4ae8;
+        }
+        .btn-outline {
+            background: white;
+            border: 1px solid #cbdbe0;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover {
+            border-color: #1e5ef7;
+            color: #1e5ef7;
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #bdcadb;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            border-color: #1e5ef7;
+            color: #1e5ef7;
+        }
+        .btn-next {
+            background: #1e5ef7;
+            border: none;
+            padding: 10px 32px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-next:hover {
+            background: #0a4ae8;
+        }
+        .btn-next:disabled {
+            background: #b8cefc;
+            cursor: not-allowed;
+        }
+
+        /* Info rows */
+        .info-row {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin: 16px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #2c3e66;
+        }
+        .info-value {
+            font-family: monospace;
+            font-size: 13px;
+            background: #fff;
+            padding: 6px 12px;
+            border-radius: 40px;
+            word-break: break-all;
+        }
+
+        /* Auto URLs */
+        .auto-urls {
+            background: #f3f6fc;
+            border-radius: 16px;
+            padding: 12px 18px;
+            margin: 20px 0 10px;
+        }
+        .url-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        /* Tooltip */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            transition: opacity 0.3s;
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        /* Certificate textarea */
+        .certificate-field {
+            font-family: monospace;
+            font-size: 12px;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* Attributes list */
+        .attributes-list {
+            margin: 20px 0;
+        }
+        .attribute-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .attribute-info {
+            font-size: 14px;
+        }
+        .btn-delete {
+            background: #fee;
+            color: #e5484d;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-delete:hover {
+            background: #fee5e5;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Success message */
+        .success-message {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+
+        /* Checklist */
+        .checklist {
+            margin: 20px 0;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .checklist-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        /* Preset selection screen */
+        .preset-screen {
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .preset-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .preset-subtitle {
+            color: #5d7188;
+            margin-bottom: 40px;
+        }
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .preset-card {
+            background: white;
+            border: 2px solid #e4ebf3;
+            border-radius: 20px;
+            padding: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .preset-card:hover {
+            border-color: #1e5ef7;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(30,94,247,0.15);
+        }
+        .preset-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .preset-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .preset-type {
+            color: #5d7188;
+            font-size: 14px;
+        }
+
+        /* Final summary */
+        .summary-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .summary-label {
+            font-weight: 600;
+            color: #2c3e66;
+            margin-bottom: 4px;
+        }
+        .summary-value {
+            color: #5d7188;
+        }
+
+        /* Add attribute form */
+        .add-attribute-form {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+        }
+        .add-attribute-form.active {
+            display: block;
+        }
+
+        /* Steps visibility */
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+        }
+
+        /* Radio group */
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin: 12px 0;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .radio-item input[type="radio"] {
+            width: auto;
+        }
+
+        /* Password field */
+        .password-group {
+            display: flex;
+            gap: 8px;
+        }
+        .password-group input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Preset Selection Screen -->
+    <div id="presetScreen" class="master-wrapper" style="display: flex;">
+        <div class="main-content preset-screen">
+            <h1 class="preset-title">Мастер настройки интеграций</h1>
+            <p class="preset-subtitle">Выберите платформу для настройки SAML-интеграции</p>
+            <div class="preset-grid">
+                <div class="preset-card" onclick="startWizard('yandex')">
+                    <div class="preset-icon">☁️</div>
+                    <div class="preset-name">Yandex Cloud</div>
+                    <div class="preset-type">SAML</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Wizard -->
+    <div id="wizardScreen" class="master-wrapper" style="display: none;">
+        <div class="steps-nav">
+            <div class="step active" data-step="1" onclick="goToStep(1)">
+                <span class="step-number">1</span> SAML‑приложение
+            </div>
+            <div class="step" data-step="2" onclick="goToStep(2)">
+                <span class="step-number">2</span> Создание федерации
+            </div>
+            <div class="step" data-step="3" onclick="goToStep(3)">
+                <span class="step-number">3</span> Дозаполнение приложения
+            </div>
+            <div class="step" data-step="4" onclick="goToStep(4)">
+                <span class="step-number">4</span> Группа и пользователь
+            </div>
+            <div class="step" data-step="5" onclick="goToStep(5)">
+                <span class="step-number">5</span> Маппинг и проверка
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Step 1: SAML Application -->
+            <div id="step1" class="step-content active">
+                <h2>Создание SAML-приложения</h2>
+                <div class="section-desc">Настройте базовые параметры SAML-приложения для интеграции с Yandex Cloud</div>
+
+                <div class="group-card">
+                    <div class="group-title">📝 Параметры приложения</div>
+
+                    <div class="field-group">
+                        <label>Название приложения</label>
+                        <input type="text" id="appName" value="Yandex Cloud">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Entity ID (SP)</label>
+                        <input type="text" id="entityIdSp" placeholder="Будет получен автоматически после создания федерации" disabled>
+                    </div>
+
+                    <div class="field-group">
+                        <label>ACS URL</label>
+                        <input type="text" id="acsUrl" placeholder="Будет получен автоматически после создания федерации" disabled>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="tooltip-container">
+                            NameID Format
+                            <span class="tooltip-text">Требуется Яндекс Облаком</span>
+                        </label>
+                        <select id="nameIdFormat" disabled>
+                            <option value="emailAddress" selected>emailAddress</option>
+                        </select>
+                    </div>
+
+                    <div class="checkbox-group tooltip-container">
+                        <input type="checkbox" id="signAssertions" checked disabled>
+                        <label for="signAssertions">Sign Assertions</label>
+                        <span class="tooltip-text">Требуется для безопасности SAML</span>
+                    </div>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">🔐 Сертификат IdP</div>
+                    <div class="field-group">
+                        <textarea id="idpCertificate" class="certificate-field" readonly>-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0Gcz...
+(Сгенерированный сертификат для демонстрации)
+-----END CERTIFICATE-----</textarea>
+                    </div>
+                    <button class="btn-outline" id="copyCertBtn">📋 Копировать в буфер</button>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" disabled>← Назад</button>
+                    <button class="btn-next" onclick="saveAndNext(1)">Сохранить и перейти к созданию федерации →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Federation Creation -->
+            <div id="step2" class="step-content">
+                <h2>Создание федерации в Yandex Cloud</h2>
+                <div class="section-desc">Создайте SAML-федерацию в консоли Yandex Cloud и свяжите её с приложением</div>
+
+                <div class="group-card">
+                    <div class="group-title">🔐 Настройка федерации</div>
+
+                    <div class="info-row">
+                        <span class="info-label">IdP Entity ID (скопируйте для консоли):</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <code class="info-value" id="idpEntityId">https://avanpost.idp/saml2/entity/id-avanpost</code>
+                            <button class="btn-outline" onclick="copyToClipboard('idpEntityId', this)">📋 Копировать</button>
+                        </div>
+                    </div>
+
+                    <div style="margin: 12px 0 8px;">
+                        <button class="btn-primary" id="gotoCloudBtn" style="width: 100%;">🚀 Перейти в консоль Yandex Cloud</button>
+                        <p style="font-size: 12px; color: #6f8fae; margin-top: 8px;">Если переход не произошёл, откройте <a href="https://console.cloud.yandex.ru" target="_blank">https://console.cloud.yandex.ru</a> вручную</p>
+                    </div>
+
+                    <div style="background: #fafbfe; border-radius: 14px; padding: 16px; margin: 16px 0; font-size: 13px;">
+                        <strong>📘 Инструкция:</strong>
+                        <ol style="margin-left: 20px; margin-top: 8px;">
+                            <li>Перейдите в консоль Яндекс Облака</li>
+                            <li>Создайте SAML-федерацию</li>
+                            <li>Укажите IdP Entity ID (скопируйте его выше)</li>
+                            <li>Загрузите сертификат</li>
+                            <li>Скопируйте ID созданной федерации</li>
+                        </ol>
+                    </div>
+
+                    <div class="field-group">
+                        <label>ID федерации <span style="color:#e5484d;">*</span></label>
+                        <input type="text" id="fedId" placeholder="Введите ID федерации (формат UUID) из консоли Yandex Cloud">
+                        <div id="fedError" class="error-text"></div>
+                    </div>
+
+                    <div class="auto-urls">
+                        <div class="url-line"><strong>Entity ID федерации:</strong> <span id="entityIdFed">— не указан —</span></div>
+                        <div class="url-line"><strong>ACS URL:</strong> <span id="acsUrlFed">— не указан —</span></div>
+                        <div style="font-size: 12px; color: #5d7188; margin-top: 8px;">🔁 URL обновятся автоматически после ввода корректного ID</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="goToStep(1)">← Назад</button>
+                    <button class="btn-next" id="step2Next" onclick="saveAndNext(2)">Продолжить →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Complete Application -->
+            <div id="step3" class="step-content">
+                <h2>Дозаполнение приложения</h2>
+                <div class="section-desc">Заполните полученные значения из Yandex Cloud и настройте атрибуты SAML</div>
+
+                <div class="group-card">
+                    <div class="group-title">📝 Параметры SAML</div>
+
+                    <div class="field-group">
+                        <label>Entity ID (SP)</label>
+                        <input type="text" id="entityIdSpStep3">
+                    </div>
+
+                    <div class="field-group">
+                        <label>ACS URL</label>
+                        <input type="text" id="acsUrlStep3">
+                    </div>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">🏷️ Атрибуты SAML</div>
+                    <div id="attributesList" class="attributes-list">
+                        <div class="attribute-item" data-attr="email">
+                            <div class="attribute-info">
+                                <strong>email</strong> → user.email <span style="color:#e5484d;">(обязательный)</span>
+                            </div>
+                        </div>
+                        <div class="attribute-item" data-attr="first_name">
+                            <div class="attribute-info">
+                                <strong>first_name</strong> → user.given_name
+                            </div>
+                            <button class="btn-delete" onclick="deleteAttribute('first_name')">Удалить</button>
+                        </div>
+                        <div class="attribute-item" data-attr="last_name">
+                            <div class="attribute-info">
+                                <strong>last_name</strong> → user.family_name
+                            </div>
+                            <button class="btn-delete" onclick="deleteAttribute('last_name')">Удалить</button>
+                        </div>
+                    </div>
+                    <button class="btn-outline" onclick="showAddAttributeForm()">➕ Добавить атрибут</button>
+
+                    <div id="addAttributeForm" class="add-attribute-form">
+                        <div class="field-group">
+                            <label>Наименование</label>
+                            <input type="text" id="newAttrName" placeholder="Например: department">
+                        </div>
+                        <div class="field-group">
+                            <label>Name Format</label>
+                            <select id="newAttrFormat">
+                                <option value="Unspecified">Unspecified</option>
+                                <option value="emailAddress">emailAddress</option>
+                                <option value="basic">basic</option>
+                                <option value="uri">uri</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Тип значения</label>
+                            <div class="radio-group">
+                                <div class="radio-item">
+                                    <input type="radio" name="attrValueType" value="attribute" checked>
+                                    <label>Значение из атрибута</label>
+                                </div>
+                                <div class="radio-item">
+                                    <input type="radio" name="attrValueType" value="constant">
+                                    <label>Константа</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Значение</label>
+                            <select id="newAttrValue">
+                                <option value="user.group_names">user.group_names</option>
+                                <option value="user.group_ids">user.group_ids</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 16px;">
+                            <button class="btn-primary" onclick="addAttribute()">Добавить</button>
+                            <button class="btn-secondary" onclick="hideAddAttributeForm()">Отмена</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="goToStep(2)">← Назад</button>
+                    <button class="btn-next" onclick="saveAndNext(3)">Сохранить и продолжить →</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Group and User -->
+            <div id="step4" class="step-content">
+                <h2>Создание группы и тестового пользователя</h2>
+                <div class="section-desc">Создайте группу для администраторов и тестового пользователя для проверки интеграции</div>
+
+                <div class="group-card">
+                    <div class="group-title">👥 Группа</div>
+                    <div class="field-group">
+                        <label>Название группы</label>
+                        <input type="text" id="groupName" value="yandex-cloud-admins">
+                    </div>
+                    <div class="field-group">
+                        <label>Описание (опционально)</label>
+                        <input type="text" id="groupDescription" placeholder="Администраторы Yandex Cloud">
+                    </div>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">👤 Тестовый пользователь</div>
+                    <div class="field-group">
+                        <label>Логин</label>
+                        <input type="text" id="userLogin" value="testuser">
+                    </div>
+                    <div class="field-group">
+                        <label>Email <span style="color:#e5484d;">*</span></label>
+                        <input type="email" id="userEmail" placeholder="test@example.com">
+                        <div id="emailError" class="error-text"></div>
+                    </div>
+                    <div class="field-group">
+                        <label>Имя</label>
+                        <input type="text" id="userFirstName" placeholder="Иван">
+                    </div>
+                    <div class="field-group">
+                        <label>Фамилия</label>
+                        <input type="text" id="userLastName" placeholder="Иванов">
+                    </div>
+                    <div class="field-group">
+                        <label>Пароль</label>
+                        <div class="password-group">
+                            <input type="text" id="userPassword" placeholder="Сгенерировать пароль">
+                            <button class="btn-outline" onclick="generatePassword()">🎲 Сгенерировать</button>
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="addToGroup" checked>
+                        <label for="addToGroup">Добавить пользователя в группу</label>
+                        <select id="userGroupSelect" style="width: auto; margin-left: 10px;">
+                            <option value="yandex-cloud-admins">yandex-cloud-admins</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="userSuccessMessage" class="success-message" style="display: none;">
+                    ✅ Пользователь и группа созданы, права назначены
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="goToStep(3)">← Назад</button>
+                    <button class="btn-next" id="step4Next" onclick="createUserAndGroup()">Создать пользователя и группу</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Role Mapping -->
+            <div id="step5" class="step-content">
+                <h2>Маппинг ролей и проверка</h2>
+                <div class="section-desc">Настройте маппинг ролей в Yandex Cloud и проверьте интеграцию</div>
+
+                <div class="group-card">
+                    <div class="group-title">🎬 Видеоинструкция</div>
+                    <button class="btn-outline" onclick="openVideoModal()">📺 Смотреть видеоинструкцию</button>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">📋 Инструкция по маппингу ролей</div>
+                    <div style="background: #fafbfe; border-radius: 14px; padding: 16px; font-size: 13px;">
+                        <ol style="margin-left: 20px;">
+                            <li>Откройте консоль Yandex Cloud</li>
+                            <li>Перейдите в настройки федерации</li>
+                            <li>Настройте маппинг атрибутов</li>
+                            <li>Создайте маппинг ролей для группы администраторов</li>
+                            <li>Сохраните изменения</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">✅ Чек-лист проверки</div>
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check1">
+                            <label for="check1">Федерация создана и активна</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check2">
+                            <label for="check2">Сертификат загружен в федерацию</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check3">
+                            <label for="check3">Маппинг атрибутов настроен</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check4">
+                            <label for="check4">Маппинг ролей выполнен</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check5">
+                            <label for="check5">Тестовый пользователь добавлен в группу</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group-card">
+                    <div class="group-title">🔗 Проверка входа</div>
+                    <a href="#" onclick="alert('Заглушка: страница проверки входа'); return false;" style="color: #1e5ef7; text-decoration: none;">Проверить вход →</a>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="goToStep(4)">← Назад</button>
+                    <button class="btn-next" onclick="goToSummary()">Завершить настройку →</button>
+                </div>
+            </div>
+
+            <!-- Final Summary -->
+            <div id="summaryScreen" class="step-content">
+                <h2>🎉 Настройка завершена!</h2>
+                <div class="section-desc">Поздравляем! SAML-интеграция с Yandex Cloud успешно настроена</div>
+
+                <div class="group-card">
+                    <div class="group-title">📋 Резюме созданных объектов</div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">SAML-приложение</div>
+                        <div class="summary-value" id="summaryAppName">Yandex Cloud</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Федерация Yandex Cloud</div>
+                        <div class="summary-value" id="summaryFedId">—</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Группа</div>
+                        <div class="summary-value" id="summaryGroup">yandex-cloud-admins</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Тестовый пользователь</div>
+                        <div class="summary-value" id="summaryUser">testuser</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="goToStep(5)">← Вернуться к шагу 5</button>
+                    <button class="btn-next" onclick="closeWizard()">Закрыть мастер</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="videoModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Видеоинструкция по маппингу ролей</h3>
+                <button class="btn-close" onclick="closeVideoModal()">×</button>
+            </div>
+            <div style="background: #000; border-radius: 12px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; color: white;">
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🎬</div>
+                    <div>Здесь будет видеоинструкция</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let wizardState = {
+            currentStep: 1,
+            appName: 'Yandex Cloud',
+            entityIdSp: '',
+            acsUrl: '',
+            fedId: '',
+            entityIdFed: '',
+            acsUrlFed: '',
+            attributes: [
+                { name: 'email', value: 'user.email', required: true },
+                { name: 'first_name', value: 'user.given_name', required: false },
+                { name: 'last_name', value: 'user.family_name', required: false }
+            ],
+            groupName: 'yandex-cloud-admins',
+            groupDescription: '',
+            userLogin: 'testuser',
+            userEmail: '',
+            userFirstName: '',
+            userLastName: '',
+            userPassword: '',
+            userCreated: false
+        };
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('avanpostWizardState');
+            if (saved) {
+                wizardState = JSON.parse(saved);
+                restoreFormValues();
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('avanpostWizardState', JSON.stringify(wizardState));
+        }
+
+        // Restore form values from state
+        function restoreFormValues() {
+            document.getElementById('appName').value = wizardState.appName;
+            document.getElementById('entityIdSp').value = wizardState.entityIdSp || '';
+            document.getElementById('acsUrl').value = wizardState.acsUrl || '';
+            document.getElementById('fedId').value = wizardState.fedId || '';
+            document.getElementById('groupName').value = wizardState.groupName;
+            document.getElementById('groupDescription').value = wizardState.groupDescription || '';
+            document.getElementById('userLogin').value = wizardState.userLogin;
+            document.getElementById('userEmail').value = wizardState.userEmail || '';
+            document.getElementById('userFirstName').value = wizardState.userFirstName || '';
+            document.getElementById('userLastName').value = wizardState.userLastName || '';
+            document.getElementById('userPassword').value = wizardState.userPassword || '';
+            
+            if (wizardState.entityIdFed) {
+                document.getElementById('entityIdFed').textContent = wizardState.entityIdFed;
+            }
+            if (wizardState.acsUrlFed) {
+                document.getElementById('acsUrlFed').textContent = wizardState.acsUrlFed;
+            }
+            if (wizardState.entityIdSp) {
+                document.getElementById('entityIdSpStep3').value = wizardState.entityIdSp;
+            }
+            if (wizardState.acsUrl) {
+                document.getElementById('acsUrlStep3').value = wizardState.acsUrl;
+            }
+
+            if (wizardState.userCreated) {
+                document.getElementById('userSuccessMessage').style.display = 'block';
+                document.getElementById('step4Next').textContent = 'Продолжить →';
+                document.getElementById('step4Next').onclick = () => saveAndNext(4);
+            }
+
+            updateAttributesList();
+        }
+
+        // Start wizard
+        function startWizard(preset) {
+            document.getElementById('presetScreen').style.display = 'none';
+            document.getElementById('wizardScreen').style.display = 'flex';
+            loadState();
+            goToStep(wizardState.currentStep);
+        }
+
+        // Go to specific step
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            
+            // Show target step
+            if (step === 'summary') {
+                document.getElementById('summaryScreen').classList.add('active');
+                updateSummary();
+            } else {
+                document.getElementById('step' + step).classList.add('active');
+            }
+            
+            // Update navigation
+            document.querySelectorAll('.steps-nav .step').forEach(el => {
+                el.classList.remove('active', 'completed');
+                const stepNum = parseInt(el.dataset.step);
+                if (stepNum === step) {
+                    el.classList.add('active');
+                } else if (stepNum < step) {
+                    el.classList.add('completed');
+                }
+            });
+
+            wizardState.currentStep = step;
+            saveState();
+        }
+
+        // Save and go to next step
+        function saveAndNext(currentStep) {
+            // Collect form data
+            if (currentStep === 1) {
+                wizardState.appName = document.getElementById('appName').value;
+            } else if (currentStep === 2) {
+                wizardState.fedId = document.getElementById('fedId').value;
+                wizardState.entityIdFed = document.getElementById('entityIdFed').textContent;
+                wizardState.acsUrlFed = document.getElementById('acsUrlFed').textContent;
+                
+                // Auto-fill step 3 fields
+                wizardState.entityIdSp = wizardState.entityIdFed;
+                wizardState.acsUrl = wizardState.acsUrlFed;
+                document.getElementById('entityIdSpStep3').value = wizardState.entityIdSp;
+                document.getElementById('acsUrlStep3').value = wizardState.acsUrl;
+            } else if (currentStep === 3) {
+                wizardState.entityIdSp = document.getElementById('entityIdSpStep3').value;
+                wizardState.acsUrl = document.getElementById('acsUrlStep3').value;
+            } else if (currentStep === 4) {
+                wizardState.groupName = document.getElementById('groupName').value;
+                wizardState.groupDescription = document.getElementById('groupDescription').value;
+                wizardState.userLogin = document.getElementById('userLogin').value;
+                wizardState.userEmail = document.getElementById('userEmail').value;
+                wizardState.userFirstName = document.getElementById('userFirstName').value;
+                wizardState.userLastName = document.getElementById('userLastName').value;
+                wizardState.userPassword = document.getElementById('userPassword').value;
+            }
+
+            saveState();
+            goToStep(currentStep + 1);
+        }
+
+        // UUID validation
+        function isValidUUID(uuid) {
+            const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return regex.test(uuid);
+        }
+
+        // Federation ID input handler
+        document.getElementById('fedId').addEventListener('input', function() {
+            const val = this.value.trim();
+            const errorEl = document.getElementById('fedError');
+            const entityIdSpan = document.getElementById('entityIdFed');
+            const acsSpan = document.getElementById('acsUrlFed');
+            const nextBtn = document.getElementById('step2Next');
+
+            if (!val) {
+                errorEl.textContent = '';
+                this.classList.remove('error-border');
+                entityIdSpan.textContent = '— не указан —';
+                acsSpan.textContent = '— не указан —';
+                nextBtn.disabled = false;
+                return;
+            }
+
+            if (!isValidUUID(val)) {
+                errorEl.textContent = '❌ Неверный формат. Ожидается UUID (например, 550e8400-e29b-41d4-a716-446655440000)';
+                this.classList.add('error-border');
+                entityIdSpan.textContent = '— не указан —';
+                acsSpan.textContent = '— не указан —';
+            } else {
+                errorEl.textContent = '';
+                this.classList.remove('error-border');
+                entityIdSpan.textContent = `https://console.cloud.yandex.ru/federation/${val}`;
+                acsSpan.textContent = `https://auth.cloud.yandex.ru/federation/v1/saml/acs`;
+            }
+        });
+
+        // Copy to clipboard
+        function copyToClipboard(elementId, button) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✅ Скопировано!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy certificate
+        document.getElementById('copyCertBtn').addEventListener('click', function() {
+            const cert = document.getElementById('idpCertificate').value;
+            navigator.clipboard.writeText(cert).then(() => {
+                this.textContent = '✅ Скопировано!';
+                setTimeout(() => {
+                    this.textContent = '📋 Копировать в буфер';
+                }, 2000);
+            });
+        });
+
+        // Go to Yandex Cloud console
+        document.getElementById('gotoCloudBtn').addEventListener('click', function() {
+            window.open('https://console.cloud.yandex.ru', '_blank');
+        });
+
+        // Attributes management
+        function updateAttributesList() {
+            const list = document.getElementById('attributesList');
+            list.innerHTML = '';
+            
+            wizardState.attributes.forEach(attr => {
+                const item = document.createElement('div');
+                item.className = 'attribute-item';
+                item.dataset.attr = attr.name;
+                item.innerHTML = `
+                    <div class="attribute-info">
+                        <strong>${attr.name}</strong> → ${attr.value}
+                        ${attr.required ? '<span style="color:#e5484d;">(обязательный)</span>' : ''}
+                    </div>
+                    ${!attr.required ? `<button class="btn-delete" onclick="deleteAttribute('${attr.name}')">Удалить</button>` : ''}
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function deleteAttribute(name) {
+            wizardState.attributes = wizardState.attributes.filter(a => a.name !== name);
+            updateAttributesList();
+            saveState();
+        }
+
+        function showAddAttributeForm() {
+            document.getElementById('addAttributeForm').classList.add('active');
+        }
+
+        function hideAddAttributeForm() {
+            document.getElementById('addAttributeForm').classList.remove('active');
+            document.getElementById('newAttrName').value = '';
+        }
+
+        function addAttribute() {
+            const name = document.getElementById('newAttrName').value.trim();
+            const format = document.getElementById('newAttrFormat').value;
+            const valueType = document.querySelector('input[name="attrValueType"]:checked').value;
+            const value = document.getElementById('newAttrValue').value;
+
+            if (!name) {
+                alert('Введите наименование атрибута');
+                return;
+            }
+
+            wizardState.attributes.push({
+                name: name,
+                value: value,
+                required: false
+            });
+
+            updateAttributesList();
+            hideAddAttributeForm();
+            saveState();
+        }
+
+        // Password generation
+        function generatePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 16; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('userPassword').value = password;
+        }
+
+        // Email validation
+        document.getElementById('userEmail').addEventListener('input', function() {
+            const email = this.value.trim();
+            const errorEl = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (email && !emailRegex.test(email)) {
+                errorEl.textContent = '❌ Неверный формат email';
+                this.classList.add('error-border');
+            } else {
+                errorEl.textContent = '';
+                this.classList.remove('error-border');
+            }
+        });
+
+        // Create user and group
+        function createUserAndGroup() {
+            const email = document.getElementById('userEmail').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!email || !emailRegex.test(email)) {
+                alert('Пожалуйста, введите корректный email');
+                return;
+            }
+
+            // Show success message
+            document.getElementById('userSuccessMessage').style.display = 'block';
+            wizardState.userCreated = true;
+            saveState();
+
+            // Change button to continue
+            const btn = document.getElementById('step4Next');
+            btn.textContent = 'Продолжить →';
+            btn.onclick = () => saveAndNext(4);
+        }
+
+        // Video modal
+        function openVideoModal() {
+            document.getElementById('videoModal').classList.add('active');
+        }
+
+        function closeVideoModal() {
+            document.getElementById('videoModal').classList.remove('active');
+        }
+
+        // Go to summary
+        function goToSummary() {
+            goToStep('summary');
+        }
+
+        // Update summary
+        function updateSummary() {
+            document.getElementById('summaryAppName').textContent = wizardState.appName;
+            document.getElementById('summaryFedId').textContent = wizardState.fedId || '—';
+            document.getElementById('summaryGroup').textContent = wizardState.groupName;
+            document.getElementById('summaryUser').textContent = wizardState.userLogin + ' (' + wizardState.userEmail + ')';
+        }
+
+        // Close wizard
+        function closeWizard() {
+            localStorage.removeItem('avanpostWizardState');
+            document.getElementById('wizardScreen').style.display = 'none';
+            document.getElementById('presetScreen').style.display = 'flex';
+            
+            // Reset state
+            wizardState = {
+                currentStep: 1,
+                appName: 'Yandex Cloud',
+                entityIdSp: '',
+                acsUrl: '',
+                fedId: '',
+                entityIdFed: '',
+                acsUrlFed: '',
+                attributes: [
+                    { name: 'email', value: 'user.email', required: true },
+                    { name: 'first_name', value: 'user.given_name', required: false },
+                    { name: 'last_name', value: 'user.family_name', required: false }
+                ],
+                groupName: 'yandex-cloud-admins',
+                groupDescription: '',
+                userLogin: 'testuser',
+                userEmail: '',
+                userFirstName: '',
+                userLastName: '',
+                userPassword: '',
+                userCreated: false
+            };
+
+            // Reset form
+            document.getElementById('appName').value = 'Yandex Cloud';
+            document.getElementById('entityIdSp').value = '';
+            document.getElementById('acsUrl').value = '';
+            document.getElementById('fedId').value = '';
+            document.getElementById('groupName').value = 'yandex-cloud-admins';
+            document.getElementById('groupDescription').value = '';
+            document.getElementById('userLogin').value = 'testuser';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userFirstName').value = '';
+            document.getElementById('userLastName').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('entityIdFed').textContent = '— не указан —';
+            document.getElementById('acsUrlFed').textContent = '— не указан —';
+            document.getElementById('entityIdSpStep3').value = '';
+            document.getElementById('acsUrlStep3').value = '';
+            document.getElementById('userSuccessMessage').style.display = 'none';
+            document.getElementById('step4Next').textContent = 'Создать пользователя и группу';
+            document.getElementById('step4Next').onclick = createUserAndGroup;
+            
+            updateAttributesList();
+        }
+
+        // Close modal on overlay click
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVideoModal();
+            }
+        });
+    </script>
+</body>
+</html>
