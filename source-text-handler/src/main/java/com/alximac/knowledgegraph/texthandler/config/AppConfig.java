@@ -7,9 +7,10 @@ import com.alximac.knowledgegraph.texthandler.application.port.OutboundQueuePort
 import com.alximac.knowledgegraph.texthandler.domain.model.*;
 import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
-import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParserException;
 import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
+import com.alximac.knowledgegraph.texthandler.infrastructure.http.NoteCreatorHttpClient;
+import com.alximac.knowledgegraph.texthandler.infrastructure.http.ResilientNoteCreator;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TextDocumentParser;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TikaDocumentParser;
@@ -22,14 +23,19 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import io.lettuce.core.RedisClient;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class AppConfig {
-    private final long ttlSeconds = 604800;
+    private static final long TIMEOUT_DURATION = 5;
 
     private ObjectMapper buildObjectMapper () {
         return JsonMapper.builder()
@@ -46,13 +52,37 @@ public class AppConfig {
         return RedisClient.create(uri);
     }
 
+
+
     public void start() {
 
 
 
         RedisClient redisClient = createRedisClient();
         ObjectMapper objectMapper = buildObjectMapper();
+        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_DURATION)).build();
+        NoteCreatorHttpClient noteCreatorHttpClient =
+                new NoteCreatorHttpClient(httpClient,objectMapper,"http://backend:8080");
 
+        RetryConfig retryConfig = RetryConfig.custom()
+                .maxAttempts(3)
+                .waitDuration(Duration.ofSeconds(2))
+                .retryExceptions(RemoteServiceException.class)
+                .build();
+        Retry retry = Retry.of("noteRetry", retryConfig);
+
+
+        CircuitBreakerConfig breakerConfig = CircuitBreakerConfig.custom()
+                .failureRateThreshold(50)
+                .waitDurationInOpenState(Duration.ofSeconds(30))
+                .slidingWindowSize(10)
+                .build();
+        CircuitBreaker circuitBreaker = CircuitBreaker.of("noteCB",breakerConfig);
+
+        NoteCreatorPort noteCreator = new ResilientNoteCreator(noteCreatorHttpClient, retry, circuitBreaker);
+
+
+        long ttlSeconds = 604800;
         RedisImportStateRepository repository = new RedisImportStateRepository(
                 redisClient,
                 "import:event:",
@@ -69,34 +99,21 @@ public class AppConfig {
 
 
 
-        ChunkingStrategy chunk = new ChunkingStrategy() {
-            @Override
-            public List<DocumentChunk> chunk(String text, ImportOptions options) {
-                if (text == null || text.isBlank()) return List.of();
-                return List.of(new DocumentChunk(text, 0, Map.of(), null));
-            }
+        ChunkingStrategy chunk = (text, options) -> {
+            if (text == null || text.isBlank()) return List.of();
+            return List.of(new DocumentChunk(text, 0, Map.of(), null));
         };
 
         LinkDetector linkDetector = chunks -> List.of();
 
-        NoteCreatorPort noteCreatorPort = new NoteCreatorPort() {
-            @Override
-            public String createNote(DocumentChunk chunk) throws RemoteServiceException {
-                return UUID.randomUUID().toString();
-            }
 
-            @Override
-            public void createLink(Link link) throws RemoteServiceException {
-
-            }
-        };
 
         OutboundQueuePort outboundQueuePort = new AsynqOutboundAdapter(
                 redisClient,
                 "asynq:import:responses:pending",
                 objectMapper);
 
-        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreatorPort,
+        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreator,
                 outboundQueuePort, repository);
 
         Thread worker = new Thread(() -> asynqInboundAdapter.subscribe(handler::handle));
