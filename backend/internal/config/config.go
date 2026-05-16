@@ -100,6 +100,27 @@ type JSONConfig struct {
 			PasswordPolicyRequireSpecial bool   `json:"password_policy_require_special"`
 		} `json:"auth"`
 	} `json:"backend"`
+	Backup struct {
+		LocalPath string `json:"local_path"`
+		Cloud     struct {
+			Enabled  bool   `json:"enabled"`
+			Provider string `json:"provider"`
+			R2       struct {
+				AccountID       string `json:"account_id"`
+				AccessKeyID     string `json:"access_key_id"`
+				SecretAccessKey string `json:"secret_access_key"`
+				Bucket          string `json:"bucket"`
+				Region          string `json:"region"`
+			} `json:"r2"`
+		} `json:"cloud"`
+		Schedule      string `json:"schedule"`
+		RetentionDays int    `json:"retention_days"`
+		DraftTTLHours int    `json:"draft_ttl_hours"`
+	} `json:"backup"`
+	MongoDB struct {
+		URL      string `json:"url"`
+		Database string `json:"database"`
+	} `json:"mongodb"`
 }
 
 type Config struct {
@@ -166,6 +187,10 @@ type Config struct {
 	AsynqConcurrency                      int           // Уровень параллелизма Asynq
 	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
 	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+
+	// MongoDB
+	MongoDBURL      string
+	MongoDBDatabase string
 
 	// Auth
 	JWTSecret                    string
@@ -309,6 +334,10 @@ func Load() (*Config, error) {
 		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.Concurrency }, 10)),
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),
+
+		// MongoDB configuration
+		MongoDBURL:      getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017"),
+		MongoDBDatabase: getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph"),
 
 		// Auth configuration
 		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "change-me-in-production")),

@@ -43,7 +43,8 @@ The `knowledge-graph.config.json` file in the project root is the **single sourc
   "ci_cd": {
     "integration_test": { ... }
   },
-  "nlp": { ... }
+  "nlp": { ... },
+  "backup": { ... }
 }
 ```
 
@@ -67,6 +68,78 @@ cfg := config.Load()
 // cfg.RecommendationDepth
 // cfg.GraphDefaultLimit
 ```
+
+---
+
+## Backup Configuration
+
+### JSON Configuration (`backup`)
+
+```json
+{
+  "backup": {
+    "local_path": "./backups",
+    "cloud": {
+      "enabled": false,
+      "provider": "r2",
+      "r2": {
+        "account_id": "",
+        "access_key_id": "",
+        "secret_access_key": "",
+        "bucket": "",
+        "region": "auto"
+      }
+    },
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "draft_ttl_hours": 168
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BACKUP_LOCAL_PATH` | Local backup directory | `./backups` |
+| `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
+| `BACKUP_CLOUD_PROVIDER` | Cloud provider (r2) | `r2` |
+| `BACKUP_R2_ACCOUNT_ID` | Cloudflare R2 account ID | - |
+| `BACKUP_R2_ACCESS_KEY_ID` | R2 access key ID | - |
+| `BACKUP_R2_SECRET_ACCESS_KEY` | R2 secret access key | - |
+| `BACKUP_R2_BUCKET` | R2 bucket name | - |
+| `BACKUP_R2_REGION` | R2 region | `auto` |
+| `BACKUP_SCHEDULE` | Cron schedule for backups | `0 2 * * *` |
+| `BACKUP_RETENTION_DAYS` | Backup retention period | `7` |
+| `BACKUP_DRAFT_TTL_HOURS` | Draft TTL in MongoDB | `168` |
+
+### Backup Scripts
+
+**Linux/Mac:** `scripts/backup-personal.sh`
+- Performs `pg_dump` to `backups/backup-personal-YYYY-MM-DD.sql.gz`
+- Triggers cloud backup via HTTP API if enabled
+- Cleans up old backups older than retention days
+
+**Windows:** `scripts/backup-personal.ps1`
+- Same functionality for Windows
+
+---
+
+## MongoDB Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MONGO_URL` | MongoDB connection string | `mongodb://localhost:27017` |
+| `MONGO_DATABASE` | MongoDB database name | `knowledge_graph` |
+
+### MongoDB Usage
+
+MongoDB is used for storing note drafts with the following features:
+- **State Pattern**: Active, Publishing, Published, Conflict states
+- **TTL Index**: Automatic cleanup of expired drafts
+- **Draft Sync**: Asynchronous synchronization with PostgreSQL notes
 
 ---
 

@@ -29,6 +29,7 @@
 | **Backend** | Go 1.21+ | 0.5 core | 512 MB | 100 MB |
 | **Frontend** | Node 20+ | 0.5 core | 256 MB | 50 MB |
 | **PostgreSQL** | 16+ | 1 core | 1 GB | 10 GB |
+| **MongoDB** | 7+ | 0.5 core | 512 MB | 5 GB |
 | **Redis** | 7+ | 0.25 core | 256 MB | 1 GB |
 | **NLP** | Python 3.11+ | 1 core | 2 GB | 2 GB |
 
@@ -39,6 +40,7 @@
 | **Backend** | 2 cores | 2 GB | 1 GB | Scalable |
 | **Frontend** | 1 core | 512 MB | 100 MB | Static files |
 | **PostgreSQL** | 4 cores | 4 GB | 100 GB | SSD required |
+| **MongoDB** | 2 cores | 2 GB | 20 GB | For drafts |
 | **Redis** | 1 core | 1 GB | 5 GB | Persistence enabled |
 | **NLP** | 4 cores | 8 GB | 5 GB | GPU optional |
 
@@ -184,6 +186,7 @@ docker compose -f docker-compose.personal.yml down
 | Service | Dev Port | Personal Port | Container Name |
 |---------|----------|---------------|----------------|
 | PostgreSQL | 5432 | **5433** | kg-postgres-personal |
+| MongoDB | 27017 | **27018** | kg-mongo-personal |
 | Redis | 6379 | **6380** | kg-redis-personal |
 | Backend | 8080 | **8081** | kg-backend-personal |
 | Frontend | 3000 | **3001** | kg-frontend-personal |
@@ -198,6 +201,7 @@ docker compose -f docker-compose.personal.yml down
 
 Personal instance uses completely separate volumes:
 - `pgdata_personal` - PostgreSQL data
+- `mongodbdata_personal` - MongoDB data (drafts)
 - `redisdata_personal` - Redis cache
 
 Your personal notes and dev data never overlap.
@@ -365,6 +369,22 @@ services:
           cpus: '4'
           memory: 4G
 
+  mongo:
+    image: mongo:7
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-mongo_user}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
@@ -390,6 +410,7 @@ services:
 
 volumes:
   postgres_data:
+  mongo_data:
   redis_data:
   nlp_cache:
 ```
