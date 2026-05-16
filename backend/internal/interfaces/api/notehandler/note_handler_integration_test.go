@@ -106,11 +106,12 @@ func (s *NoteHandlerIntegrationTestSuite) createTestNote(title, content, noteTyp
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
-	return response["id"].(string)
+	data := wrappedResponse["data"].(map[string]interface{})
+	return data["id"].(string)
 }
 
 // TestCreateNote - создание заметки
@@ -133,13 +134,14 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateNote() {
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response["id"])
-	s.Equal("Test Note", response["title"])
-	s.Equal("Test content", response["content"])
-	s.Equal("star", response["type"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotEmpty(data["id"])
+	s.Equal("Test Note", data["title"])
+	s.Equal("Test content", data["content"])
+	s.Equal("star", data["type"])
 }
 
 // TestCreateNote_InvalidJSON - невалидный JSON
@@ -180,11 +182,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestGetNote() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(id, response["id"])
-	s.Equal("Get Me", response["title"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.Equal(id, data["id"])
+	s.Equal("Get Me", data["title"])
 }
 
 // TestGetNote_NotFound - получение несуществующей заметки
@@ -222,11 +225,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestUpdateNote() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal("Updated Title", response["title"])
-	s.Equal("Updated content", response["content"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.Equal("Updated Title", data["title"])
+	s.Equal("Updated content", data["content"])
 }
 
 // TestUpdateNote_NotFound - обновление несуществующей
@@ -283,12 +287,13 @@ func (s *NoteHandlerIntegrationTestSuite) TestListNotes() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotNil(response["notes"])
-	s.Equal(float64(3), response["total"])
-	s.Equal(float64(2), response["limit"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotNil(data["notes"])
+	s.Equal(float64(3), data["total"])
+	s.Equal(float64(2), data["limit"])
 }
 
 // TestSearchNotes - поиск заметок
@@ -312,11 +317,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestSearchNotes() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotNil(response["data"])
-	s.NotNil(response["total"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotNil(data["data"])
+	s.NotNil(data["total"])
 }
 
 // TestGetSuggestions - получение рекомендаций
@@ -366,11 +372,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateAndGet_FullFlow() {
 
 	s.Equal(201, w.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
 
-	id := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	id := createData["id"].(string)
 
 	// Получаем
 	w2 := httptest.NewRecorder()
@@ -379,11 +386,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateAndGet_FullFlow() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal("Full Flow Test", getResponse["title"])
-	s.Equal("galaxy", getResponse["type"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal("Full Flow Test", getData["title"])
+	s.Equal("galaxy", getData["type"])
 }
 
 // Запускаем тесты
