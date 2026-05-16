@@ -183,10 +183,12 @@ func (s *TagHandlerIntegrationTestSuite) TestListTags() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 3)
+	s.Len(wrappedResponse.Data, 3)
 }
 
 // TestListTags_Empty - пустой список тегов
@@ -197,10 +199,12 @@ func (s *TagHandlerIntegrationTestSuite) TestListTags_Empty() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 0)
+	s.Len(wrappedResponse.Data, 0)
 }
 
 // TestGetTag_Success - получение тега по ID
@@ -213,11 +217,13 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_Success() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), response.ID)
-	s.Equal("test-tag", response.Name)
+	s.Equal(tag.ID.String(), wrappedResponse.Data.ID)
+	s.Equal("test-tag", wrappedResponse.Data.Name)
 }
 
 // TestGetTag_NotFound - несуществующий тег
@@ -264,11 +270,13 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Success() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), response.ID)
-	s.Equal("new-name", response.Name)
+	s.Equal(tag.ID.String(), wrappedResponse.Data.ID)
+	s.Equal("new-name", wrappedResponse.Data.Name)
 }
 
 // TestUpdateTag_Duplicate - обновление на существующее имя
@@ -454,14 +462,16 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err = json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 2)
+	s.Len(wrappedResponse.Data, 2)
 
 	// Проверяем имена тегов
 	names := make(map[string]bool)
-	for _, t := range response {
+	for _, t := range wrappedResponse.Data {
 		names[t.Name] = true
 	}
 	s.True(names["important"])
@@ -487,10 +497,12 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote_Empty() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 0)
+	s.Len(wrappedResponse.Data, 0)
 }
 
 // Запускаем тесты
