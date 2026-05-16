@@ -1,6 +1,6 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
-  type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula';
+  type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula' | 'dust';
 
   interface Props {
     selected: CelestialType;
@@ -20,7 +20,8 @@
     { value: 'asteroid', label: 'Asteroid', emoji: '☁️', color: 'var(--color-asteroid, #94a3b8)' },
     { value: 'satellite', label: 'Satellite', emoji: '🛰️', color: 'var(--color-satellite, #a1a1aa)' },
     { value: 'debris', label: 'Debris', emoji: '🗑️', color: 'var(--color-debris, #71717a)' },
-    { value: 'nebula', label: 'Nebula', emoji: '🌌', color: 'var(--color-nebula, #c084fc)' }
+    { value: 'nebula', label: 'Nebula', emoji: '🌌', color: 'var(--color-nebula, #c084fc)' },
+    { value: 'dust', label: 'Cosmic Dust', emoji: '✨', color: 'var(--color-dust, #fbbf24)' }
   ];
 
   function selectType(type: CelestialType) {

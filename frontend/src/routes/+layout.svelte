@@ -1,6 +1,7 @@
 <script lang="ts">
   import '$lib/styles/global.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
+  import QuickCaptureWidget from '$lib/components/QuickCaptureWidget.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { initAuth, isAuthenticated, isInitialized, isLoading } from '$lib/stores/auth.svelte.js';
@@ -57,6 +58,8 @@
     {@render children()}
   </main>
 </div>
+
+<QuickCaptureWidget />
 
 <style>
   .app-shell {

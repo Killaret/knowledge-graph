@@ -38,6 +38,7 @@
   const sortOption = $state<string>('newest');
 
   const typeFilters = [
+    { id: 'inbox', label: 'Inbox', emoji: '📥' },
     { id: 'all', label: 'All', emoji: '🌌' },
     { id: 'star', label: 'Stars', emoji: '⭐' },
     { id: 'planet', label: 'Planets', emoji: '🪐' },
@@ -48,6 +49,7 @@
     { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
     { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
     { id: 'blackhole', label: 'Black Holes', emoji: '⚫' },
+    { id: 'dust', label: 'Cosmic Dust', emoji: '✨' },
     { id: 'unknown', label: 'Unknown', emoji: '❓' }
   ];
 

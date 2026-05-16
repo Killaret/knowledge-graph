@@ -22,8 +22,10 @@
 | **Backend** | Go 1.23 + Gin + GORM |
 | **Frontend** | Svelte 5 + TypeScript + Three.js |
 | **Database** | PostgreSQL 16 + pgvector |
+| **Draft Storage** | MongoDB 7 |
 | **Cache/Queues** | Redis 7 + asynq |
 | **NLP** | Python + FastAPI + sentence-transformers |
+| **Backup** | Cloudflare R2 (S3-compatible) |
 | **Инфраструктура** | Docker Compose |
 
 ### Архитектурные паттерны
@@ -110,6 +112,27 @@ cd nlp-service && pytest
 - [Тесты](TEST_STATUS.md) — статус и покрытие
 - [Конфигурация](docs/CONFIGURATION.md) — полное руководство по настройке
 - [Конфигурация системы](docs/CONFIGURATION_EN.md) — технические параметры
+- [Развертывание](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
+
+## ✨ Новые функции
+
+### Резервное копирование (Cloudflare R2)
+- Автоматическое локальное резервное копирование PostgreSQL
+- Облачное резервное копирование через Cloudflare R2
+- Скрипты: `scripts/backup-personal.sh` (Linux/Mac), `scripts/backup-personal.ps1` (Windows)
+- Конфигурация в `knowledge-graph.config.json` секция `backup`
+
+### Черновики (MongoDB)
+- Хранение черновиков заметок в MongoDB
+- State pattern для управления состоянием (Active, Publishing, Published, Conflict)
+- Автоматическая очистка устаревших черновиков (TTL)
+- API endpoints для синхронизации черновиков
+
+### Быстрый захват "Cosmic Dust"
+- Плавающий виджет для быстрого создания заметок
+- Создание заметок типа `dust` (космическая пыль)
+- Фильтр Inbox для быстрых заметок
+- Сочетания клавиш: Ctrl+Enter для отправки
 
 ## 🔧 Pre-commit Hooks
 
