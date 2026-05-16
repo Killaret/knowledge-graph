@@ -114,14 +114,15 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Success() {
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response["id"])
-	s.Equal(source.ID().String(), response["source_note_id"])
-	s.Equal(target.ID().String(), response["target_note_id"])
-	s.Equal("reference", response["link_type"])
-	s.Equal(0.8, response["weight"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotEmpty(data["id"])
+	s.Equal(source.ID().String(), data["source_note_id"])
+	s.Equal(target.ID().String(), data["target_note_id"])
+	s.Equal("reference", data["link_type"])
+	s.Equal(0.8, data["weight"])
 }
 
 // TestCreateLink_MissingSourceNote - несуществующая исходная заметка
@@ -192,10 +193,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var resp1 map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &resp1)
+	var wrappedResp1 map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &wrappedResp1)
 	s.NoError(err)
-	s.NotEmpty(resp1["id"])
+	data1 := wrappedResp1["data"].(map[string]interface{})
+	s.NotEmpty(data1["id"])
 
 	// Пытаемся создать дубликат - ожидаем 409 Conflict
 	w2 := httptest.NewRecorder()
@@ -206,10 +208,10 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	// После добавления unique constraint ожидаем 409 Conflict
 	s.Equal(409, w2.Code)
 
-	var resp2 map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &resp2)
+	var wrappedResp2 map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &wrappedResp2)
 	s.NoError(err)
-	s.Contains(resp2["error"], "already exists")
+	s.Contains(wrappedResp2["error"], "already exists")
 }
 
 // TestCreateLink_InvalidJSON - невалидный JSON
@@ -263,10 +265,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_Success() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
 
 	// Получаем связь
 	w2 := httptest.NewRecorder()
@@ -275,12 +278,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_Success() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal(linkID, getResponse["id"])
-	s.Equal(source.ID().String(), getResponse["source_note_id"])
-	s.Equal(target.ID().String(), getResponse["target_note_id"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal(linkID, getData["id"])
+	s.Equal(source.ID().String(), getData["source_note_id"])
+	s.Equal(target.ID().String(), getData["target_note_id"])
 }
 
 // TestGetLink_NotFound - получение несуществующей связи
@@ -330,10 +334,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestDeleteLink_Success() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
 
 	// Удаляем связь
 	w2 := httptest.NewRecorder()
@@ -403,12 +408,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLinksByNote() {
 
 	s.Equal(200, w3.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
+	data := wrappedResponse["data"].(map[string]interface{})
 
-	outgoing := response["outgoing"].([]interface{})
-	incoming := response["incoming"].([]interface{})
+	outgoing := data["outgoing"].([]interface{})
+	incoming := data["incoming"].([]interface{})
 
 	s.Len(outgoing, 1) // note1 -> note2
 	s.Len(incoming, 1) // note3 -> note1
@@ -462,11 +468,12 @@ func (s *LinkHandlerIntegrationTestSuite) TestDeleteLinksByNote() {
 	s.router.ServeHTTP(w2, req2)
 	s.Equal(200, w2.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w2.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w2.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
+	data := wrappedResponse["data"].(map[string]interface{})
 
-	outgoing := response["outgoing"].([]interface{})
+	outgoing := data["outgoing"].([]interface{})
 	s.Len(outgoing, 0)
 }
 
@@ -491,12 +498,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestFullLinkLifecycle() {
 
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
-	s.Equal("reference", createResponse["link_type"])
-	s.Equal(0.9, createResponse["weight"])
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
+	s.Equal("reference", createData["link_type"])
+	s.Equal(0.9, createData["weight"])
 
 	// 2. Получаем связь
 	w2 := httptest.NewRecorder()
@@ -505,10 +513,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestFullLinkLifecycle() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal(linkID, getResponse["id"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal(linkID, getData["id"])
 
 	// 3. Удаляем связь
 	w3 := httptest.NewRecorder()
