@@ -7,6 +7,42 @@ import type { SimulationNode, SimulationLink, SimulationState, TransformState } 
 
 export type { SimulationNode, SimulationLink, SimulationState, TransformState };
 
+// Easing function for smooth fade animation
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Initialize opacity maps with 0 for all nodes and links
+function initializeOpacityMaps(
+  nodes: SimulationNode[],
+  links: SimulationLink[],
+  state: SimulationState
+): void {
+  state.nodeOpacity = new Map();
+  state.linkOpacity = new Map();
+
+  nodes.forEach(node => {
+    state.nodeOpacity.set(node.id, 0);
+  });
+
+  links.forEach((link, index) => {
+    const linkId = `${link.source}-${link.target}-${index}`;
+    state.linkOpacity.set(linkId, 0);
+  });
+}
+
+// Interpolate opacity values towards target
+function interpolateOpacity(
+  opacityMap: Map<string, number>,
+  targetOpacity: number,
+  factor: number = 0.1
+): void {
+  opacityMap.forEach((currentOpacity, key) => {
+    const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * factor;
+    opacityMap.set(key, Math.min(Math.max(newOpacity, 0), 1));
+  });
+}
+
 /**
  * Start the force-directed graph simulation
  */
@@ -59,10 +95,20 @@ export function startSimulation(
 
   state.simLinks = edges;
 
-  // Stop existing simulation if any
+  // Stop existing simulation and fade animation if any
   if (state.simulation) {
     state.simulation.stop();
   }
+  if (state.fadeAnimationId !== null) {
+    cancelAnimationFrame(state.fadeAnimationId);
+    state.fadeAnimationId = null;
+  }
+
+  // Initialize opacity maps for fade effect
+  initializeOpacityMaps(nodes, links, state);
+
+  const totalNodes = nodes.length;
+  let tickCount = 0;
 
   state.simulation = d3Force
     .forceSimulation(simulationNodes as any)
@@ -80,6 +126,48 @@ export function startSimulation(
     .alphaDecay(0.01) // Slower cooling for stability
     .on('tick', () => {
       onTick();
+      tickCount++;
+
+      // Update fade effect every 5 ticks
+      if (tickCount % 5 === 0 && state.simulation) {
+        const currentNodes = state.simulation.nodes();
+        const nodesWithPosition = currentNodes.filter((n: any) =>
+          n.x !== undefined && !isNaN(n.x) &&
+          n.y !== undefined && !isNaN(n.y)
+        ).length;
+
+        const progress = Math.min(nodesWithPosition / totalNodes, 1);
+        const targetOpacity = easeOutCubic(progress);
+
+        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.1);
+        interpolateOpacity(state.linkOpacity, targetOpacity, 0.1);
+      }
+    })
+    .on('end', () => {
+      // Final fade animation to full opacity
+      if (state.fadeAnimationId !== null) {
+        cancelAnimationFrame(state.fadeAnimationId);
+      }
+
+      const startTime = performance.now();
+      const duration = 2400; // 2.4 seconds for final fade
+
+      const animateFinalFade = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const targetOpacity = easeOutCubic(progress);
+
+        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.15);
+        interpolateOpacity(state.linkOpacity, targetOpacity, 0.15);
+
+        if (progress < 1) {
+          state.fadeAnimationId = requestAnimationFrame(animateFinalFade);
+        } else {
+          state.fadeAnimationId = null;
+        }
+      };
+
+      state.fadeAnimationId = requestAnimationFrame(animateFinalFade);
     });
 
   // Warmup: run simulation synchronously for initial positioning
@@ -104,6 +192,11 @@ export function stopSimulation(state: SimulationState): void {
   if (state.simulation) {
     state.simulation.stop();
     state.isRunning = false;
+  }
+  // Stop fade animation if running
+  if (state.fadeAnimationId !== null) {
+    cancelAnimationFrame(state.fadeAnimationId);
+    state.fadeAnimationId = null;
   }
 }
 
@@ -132,6 +225,13 @@ export function clearSimulation(state: SimulationState): void {
     state.simulation.stop();
     state.simulation = null;
   }
+  // Stop fade animation if running
+  if (state.fadeAnimationId !== null) {
+    cancelAnimationFrame(state.fadeAnimationId);
+    state.fadeAnimationId = null;
+  }
   state.simLinks = [];
+  state.nodeOpacity = new Map();
+  state.linkOpacity = new Map();
   state.isRunning = false;
 }

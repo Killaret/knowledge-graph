@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import type { GraphDelta } from '$lib/api/graph';
   import {
     resizeCanvas,
     setupResizeObserver,
@@ -22,14 +23,16 @@
     type DragState
   } from './GraphCanvas';
 
-  const { 
-    nodes, 
+  const {
+    nodes,
     links,
-    onNodeClick
-  }: { 
+    onNodeClick,
+    delta
+  }: {
     nodes: Array<{ id: string; title: string; type?: string }>;
     links: Array<{ source: string; target: string; weight?: number; link_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+    delta?: GraphDelta;
   } = $props();
 
   // Debug: проверяем типы узлов при изменении (dev only)
@@ -60,7 +63,10 @@
   const simState: SimulationState = {
     simulation: null,
     simLinks: [],
-    isRunning: false
+    isRunning: false,
+    nodeOpacity: new Map(),
+    linkOpacity: new Map(),
+    fadeAnimationId: null
   };
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
@@ -101,7 +107,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
         }
       }
     );
@@ -155,7 +161,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
         }
       },
       () => {
@@ -167,12 +173,43 @@
     );
   });
 
+  // Применяем дельта-обновления инкрементально
+  $effect(() => {
+    if (!delta || !browser || !mounted || !simState.isRunning) {
+      return;
+    }
+
+    console.log('[GraphCanvas] Applying delta:', delta);
+
+    // Используем delta модуль для применения обновлений
+    applyDeltaToSimulation(delta, {
+      nodes,
+      links,
+      width,
+      height,
+      state: simState,
+      transform,
+      onTick: () => {
+        const simNodes = getSimulationNodes(simState);
+        if (ctx && simNodes.length > 0) {
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+        }
+      },
+      onResetView: () => {
+        const simNodes = getSimulationNodes(simState);
+        if (ctx && simNodes.length > 0) {
+          resetView(ctx, width, height, simNodes, transform);
+        }
+      }
+    });
+  });
+
   // Обёртки для обработчиков событий
   function onZoom(e: WheelEvent) {
     handleZoom(e, transform, canvas, () => {
       const simNodes = getSimulationNodes(simState);
       if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform);
+        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
       }
     });
   }
@@ -185,7 +222,7 @@
     handlePanMove(e, dragState, transform, () => {
       const simNodes = getSimulationNodes(simState);
       if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform);
+        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
       }
     });
   }

@@ -17,16 +17,17 @@ const linkTypeColors: Record<string, string> = {
 /**
  * Get link color based on weight and type
  */
-export function getLinkColor(weight: number, linkType?: string): string {
+export function getLinkColor(weight: number, linkType?: string, fadeOpacity: number = 1): string {
   const effectiveType = linkType || 'related';
   const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
-  const opacity = 0.4 + (weight ?? 0.5) * 0.4;
+  const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
+  const finalOpacity = baseOpacity * fadeOpacity;
 
   // Convert hex to rgba
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  return `rgba(${r}, ${g}, ${b}, ${finalOpacity})`;
 }
 
 /**
@@ -319,7 +320,8 @@ export function drawLink(
   ctx: CanvasRenderingContext2D,
   link: SimulationLink,
   sourceNode: SimulationNode,
-  targetNode: SimulationNode
+  targetNode: SimulationNode,
+  opacity: number = 1
 ): void {
   ctx.beginPath();
   ctx.moveTo(sourceNode.x!, sourceNode.y!);
@@ -334,7 +336,7 @@ export function drawLink(
   if (linkType === 'reference') lineWidth *= 0.8;
 
   ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = getLinkColor(weight, linkType);
+  ctx.strokeStyle = getLinkColor(weight, linkType, opacity);
 
   // Set dash pattern for dashed lines
   const dash = getLineDash(linkType, weight);
@@ -368,12 +370,13 @@ function resolveLinkEndpoint(
 export function drawAllLinks(
   ctx: CanvasRenderingContext2D,
   simLinks: SimulationLink[],
-  nodes: SimulationNode[]
+  nodes: SimulationNode[],
+  linkOpacity?: Map<string, number>
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
 
-  simLinks.forEach((link) => {
+  simLinks.forEach((link, index) => {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
     const targetNode = resolveLinkEndpoint(link.target, nodes);
 
@@ -389,7 +392,11 @@ export function drawAllLinks(
       return;
     }
 
-    drawLink(ctx, link, sourceNode, targetNode);
+    // Get opacity for this link
+    const linkId = `${link.source}-${link.target}-${index}`;
+    const opacity = linkOpacity?.get(linkId) ?? 1;
+
+    drawLink(ctx, link, sourceNode, targetNode, opacity);
     drawnCount++;
   });
 
@@ -465,7 +472,8 @@ export function drawNode(
 export function drawNodeTitle(
   ctx: CanvasRenderingContext2D,
   node: SimulationNode,
-  r: number
+  r: number,
+  opacity: number = 1
 ): void {
   ctx.font = `bold ${Math.min(14, r * 0.65)}px sans-serif`;
   ctx.textAlign = 'center';
@@ -473,8 +481,8 @@ export function drawNodeTitle(
   let title = node.title || 'Untitled';
   if (title.length > 14) title = title.slice(0, 12) + '…';
   ctx.shadowBlur = 2;
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = `rgba(0,0,0,${0.5 * opacity})`;
+  ctx.fillStyle = `rgba(255,255,255,${opacity})`;
   ctx.fillText(title, node.x!, node.y! + r + 6);
   ctx.shadowBlur = 0;
 }
@@ -486,14 +494,24 @@ export function drawAllNodes(
   ctx: CanvasRenderingContext2D,
   nodes: SimulationNode[],
   angles: Map<string, number>,
-  enableShadows: boolean
+  enableShadows: boolean,
+  nodeOpacity?: Map<string, number>
 ): void {
   const r = 24; // radius increased for better readability
 
   nodes.forEach((node) => {
     const angle = angles.get(node.id) || 0;
+    const opacity = nodeOpacity?.get(node.id) ?? 1;
+
+    // Apply opacity using globalAlpha
+    const previousAlpha = ctx.globalAlpha;
+    ctx.globalAlpha = opacity;
+
     drawNode(ctx, node, r, angle, enableShadows);
-    drawNodeTitle(ctx, node, r);
+    drawNodeTitle(ctx, node, r, opacity);
+
+    // Restore previous alpha
+    ctx.globalAlpha = previousAlpha;
   });
 }
 
@@ -507,7 +525,9 @@ export function draw(
   simLinks: SimulationLink[],
   nodes: SimulationNode[],
   angles: Map<string, number>,
-  transform: { x: number; y: number; k: number }
+  transform: { x: number; y: number; k: number },
+  nodeOpacity?: Map<string, number>,
+  linkOpacity?: Map<string, number>
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -516,11 +536,11 @@ export function draw(
   ctx.scale(transform.k, transform.k);
 
   // Draw links
-  drawAllLinks(ctx, simLinks, nodes);
+  drawAllLinks(ctx, simLinks, nodes, linkOpacity);
 
   // Draw nodes
   const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-  drawAllNodes(ctx, nodes, angles, enableShadows);
+  drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity);
 
   ctx.restore();
 }
