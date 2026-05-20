@@ -57,7 +57,7 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	s.linkRepo = postgres.NewLinkRepository(s.db)
 
 	// Создаем хендлер
-	handler := New(s.linkRepo, s.noteRepo, nil, nil, 0)
+	handler := New(s.linkRepo, s.noteRepo, nil, nil, 0, nil, nil)
 
 	// Настраиваем Gin
 	gin.SetMode(gin.TestMode)

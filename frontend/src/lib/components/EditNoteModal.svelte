@@ -3,6 +3,7 @@
   import { Modal, Button, TypeSelector } from './index';
   import ApiErrorDisplay from './ApiErrorDisplay.svelte';
   import type { ErrorResponse } from '$lib/types/errors';
+  import { getMessage, mode } from '$lib/stores/lexicon-settings';
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
@@ -21,6 +22,47 @@
   let loading = $state(false);
   let saving = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
+  
+  let modalTitle = $state('Edit Note');
+  let titleLabel = $state('Title *');
+  let typeLabel = $state('Type');
+  let contentLabel = $state('Content');
+  let cancelText = $state('Cancel');
+  let saveText = $state('Save Changes');
+  let savingText = $state('Saving...');
+  let loadingText = $state('Loading...');
+  let titlePlaceholder = $state('Enter note title');
+  let contentPlaceholder = $state('Enter note content');
+
+  // Update labels based on galactic mode
+  $effect(async () => {
+    let currentMode = 'standard';
+    mode.subscribe(m => currentMode = m)();
+    
+    if (currentMode === 'galactic') {
+      modalTitle = 'Recalibrate Orbit';
+      titleLabel = 'Star Name *';
+      typeLabel = 'Celestial Type';
+      contentLabel = 'Star Data';
+      cancelText = 'Abort Mission';
+      saveText = 'Update Orbit';
+      savingText = 'Recalibrating...';
+      loadingText = 'Scanning star...';
+      titlePlaceholder = 'Enter star name';
+      contentPlaceholder = 'Enter star data';
+    } else {
+      modalTitle = 'Edit Note';
+      titleLabel = 'Title *';
+      typeLabel = 'Type';
+      contentLabel = 'Content';
+      cancelText = 'Cancel';
+      saveText = 'Save Changes';
+      savingText = 'Saving...';
+      loadingText = 'Loading...';
+      titlePlaceholder = 'Enter note title';
+      contentPlaceholder = 'Enter note content';
+    }
+  });
 
   // Загрузка данных при открытии
   $effect(() => {
@@ -47,7 +89,8 @@
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      apiError = { code: 'VALIDATION_ERROR', message: 'Title is required' };
+      const msg = await getMessage('error', 'validation', 'title');
+      apiError = { code: 'VALIDATION_ERROR', message: msg };
       return;
     }
 
@@ -77,39 +120,39 @@
   }
 </script>
 
-<Modal bind:open title="Edit Note" onClose={close}>
+<Modal bind:open title={modalTitle} onClose={close}>
   {#if loading}
     <div class="loading-state">
       <div class="spinner"></div>
-      <span>Loading...</span>
+      <span>{loadingText}</span>
     </div>
   {:else}
     <form onsubmit={handleSubmit}>
       <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
 
       <div class="form-group">
-        <label for="edit-note-title">Title *</label>
+        <label for="edit-note-title">{titleLabel}</label>
         <input
           id="edit-note-title"
           type="text"
           bind:value={title}
-          placeholder="Enter note title"
+          placeholder={titlePlaceholder}
           disabled={saving}
           data-testid="edit-title-input"
         />
       </div>
 
       <div class="form-group">
-        <label for="edit-note-type">Type</label>
+        <label for="edit-note-type">{typeLabel}</label>
         <TypeSelector id="edit-note-type" bind:selected={type} />
       </div>
 
       <div class="form-group">
-        <label for="edit-note-content">Content</label>
+        <label for="edit-note-content">{contentLabel}</label>
         <textarea
           id="edit-note-content"
           bind:value={content}
-          placeholder="Enter note content"
+          placeholder={contentPlaceholder}
           rows="6"
           disabled={saving}
           data-testid="edit-content-input"
@@ -118,10 +161,10 @@
 
       <div class="modal-footer">
         <Button variant="secondary" onClick={close} disabled={saving}>
-          Cancel
+          {cancelText}
         </Button>
         <Button variant="primary" type="submit" disabled={saving}>
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? savingText : saveText}
         </Button>
       </div>
     </form>

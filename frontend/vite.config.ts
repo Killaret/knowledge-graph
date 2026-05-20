@@ -11,7 +11,10 @@ export default defineConfig({
       '$config': path.resolve(__dirname, '../knowledge-graph.config.json')
     }
   },
-  build: {},
+  build: {
+    sourcemap: false,
+    minify: 'esbuild'
+  },
   server: {
     port: 3000,
     proxy: {

@@ -2,9 +2,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { initAuth, login, logout, isAuthenticated } from './auth.svelte';
 import * as authApi from '../api/auth';
 import * as usersApi from '../api/users';
+
+const preloadMocks = vi.hoisted(() => ({
+  clearPreloadCache: vi.fn(),
+  hasPreloadedData: vi.fn(() => false)
+}));
 
 // Мокаем зависимости
 vi.mock('$app/environment', () => ({
@@ -25,6 +29,22 @@ vi.mock('../api/users', () => ({
   getMe: vi.fn()
 }));
 
+vi.mock('../services/PreloadService', () => ({
+  clearPreloadCache: preloadMocks.clearPreloadCache,
+  hasPreloadedData: preloadMocks.hasPreloadedData,
+  PreloadService: {
+    startPreload: vi.fn(),
+    clearCache: preloadMocks.clearPreloadCache,
+    hasPreloadedData: preloadMocks.hasPreloadedData,
+    getPreloadedGraph: vi.fn(),
+    getPreloadedAchievements: vi.fn(),
+    isPreloadingData: vi.fn(() => false)
+  }
+}));
+
+// Импортируем auth.svelte ПОСЛЕ моков
+import { initAuth, login, logout, isAuthenticated } from './auth.svelte';
+
 // Мокаем localStorage
 const localStorageMock = {
   getItem: vi.fn(),
@@ -38,29 +58,12 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 describe('Auth Store Integration with PreloadService (Simplified)', () => {
-  let clearPreloadCacheMock: ReturnType<typeof vi.fn>;
-  let hasPreloadedDataMock: ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Создаем моки для функций PreloadService
-    clearPreloadCacheMock = vi.fn();
-    hasPreloadedDataMock = vi.fn(() => false);
-    
-    // Мокаем PreloadService
-    vi.doMock('../services/PreloadService', () => ({
-      clearPreloadCache: clearPreloadCacheMock,
-      hasPreloadedData: hasPreloadedDataMock,
-      PreloadService: {
-        startPreload: vi.fn(),
-        clearCache: vi.fn(),
-        hasPreloadedData: hasPreloadedDataMock,
-        getPreloadedGraph: vi.fn(),
-        getPreloadedAchievements: vi.fn(),
-        isPreloadingData: vi.fn(() => false)
-      }
-    }));
+    // Сбрасываем моки PreloadService
+    preloadMocks.clearPreloadCache.mockReset();
+    preloadMocks.hasPreloadedData.mockReturnValue(false);
     
     // Мокаем успешные ответы API
     vi.mocked(authApi.login).mockResolvedValue({
@@ -90,13 +93,13 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
   describe('Logout Integration', () => {
     it('should clear preload cache on logout', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Выполняем выход
       await logout();
       
       // Проверяем, что clearPreloadCache был вызван
-      expect(clearPreloadCacheMock).toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalled();
       
       // Должен быть вызван редирект
       expect(vi.mocked(goto)).toHaveBeenCalledWith('/auth/login');
@@ -104,7 +107,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
 
     it('should clear preload cache even if logout API fails', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Мокаем ошибку API выхода
       vi.mocked(authApi.logout).mockRejectedValue(new Error('Logout failed'));
@@ -113,7 +116,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       await logout();
       
       // Кэш все равно должен быть очищен
-      expect(clearPreloadCacheMock).toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalled();
       
       // Редирект все равно должен произойти
       expect(vi.mocked(goto)).toHaveBeenCalledWith('/auth/login');
@@ -121,13 +124,13 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
 
     it('should handle missing refresh token gracefully', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Выходим (без refresh token)
       await logout();
       
       // Кэш должен быть очищен
-      expect(clearPreloadCacheMock).toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalled();
       
       // Редирект должен произойти
       expect(vi.mocked(goto)).toHaveBeenCalledWith('/auth/login');
@@ -137,7 +140,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
   describe('Login Flow Integration', () => {
     it('should not interfere with preload cache during login', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Выполняем вход
       const loginResult = await login('testuser', 'password');
@@ -145,7 +148,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       expect(loginResult).toBe(true);
       
       // clearPreloadCache не должен вызываться при входе
-      expect(clearPreloadCacheMock).not.toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).not.toHaveBeenCalled();
       
       // localStorage должен быть обновлен
       expect(localStorageMock.setItem).toHaveBeenCalledWith('access_token', 'test_access_token');
@@ -154,7 +157,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
 
     it('should clear cache on failed login', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Мокаем ошибку входа
       vi.mocked(authApi.login).mockRejectedValue(new Error('Invalid credentials'));
@@ -165,7 +168,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       expect(loginResult).toBe(false);
       
       // Кэш не должен очищаться при неудачном входе (только при выходе)
-      expect(clearPreloadCacheMock).not.toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).not.toHaveBeenCalled();
     });
   });
 
@@ -193,18 +196,18 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       expect(isAuthenticated()).toBe(true);
       
       // clearPreloadCache не должен вызываться при инициализации
-      expect(clearPreloadCacheMock).not.toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).not.toHaveBeenCalled();
     });
 
     it('should handle auth initialization without affecting preload cache', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Инициализируем auth (без токенов)
       await initAuth();
       
       // Кэш не должен быть затронут
-      expect(clearPreloadCacheMock).not.toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).not.toHaveBeenCalled();
       expect(isAuthenticated()).toBe(false);
     });
   });
@@ -214,12 +217,12 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       vi.stubGlobal('browser', true);
       
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       await logout();
       
       // Кэш должен быть очищен
-      expect(clearPreloadCacheMock).toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalled();
       
       vi.unstubAllGlobals();
     });
@@ -228,12 +231,12 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       vi.stubGlobal('browser', false);
       
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       await logout();
       
       // Кэш должен быть очищен
-      expect(clearPreloadCacheMock).toHaveBeenCalled();
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalled();
       
       vi.unstubAllGlobals();
     });
@@ -242,7 +245,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
   describe('Error Handling Integration', () => {
     it('should handle preload service errors gracefully', async () => {
       // Мокаем ошибку в clearPreloadCache
-      clearPreloadCacheMock.mockImplementation(() => {
+      preloadMocks.clearPreloadCache.mockImplementation(() => {
         throw new Error('PreloadService error');
       });
       
@@ -257,7 +260,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
   describe('Concurrent Operations', () => {
     it('should handle concurrent auth operations with preload', async () => {
       // Мокаем наличие предзагруженных данных
-      hasPreloadedDataMock.mockReturnValue(true);
+      preloadMocks.hasPreloadedData.mockReturnValue(true);
       
       // Запускаем несколько операций параллельно
       const operations = [
@@ -274,7 +277,7 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
       });
       
       // clearPreloadCache должен быть вызван только для logout
-      expect(clearPreloadCacheMock).toHaveBeenCalledTimes(1);
+      expect(preloadMocks.clearPreloadCache).toHaveBeenCalledTimes(1);
     });
   });
 });

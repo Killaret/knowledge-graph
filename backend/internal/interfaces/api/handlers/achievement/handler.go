@@ -1,53 +1,46 @@
-// Package achievement provides HTTP handlers for achievements
-package achievement
+package achievementhandler
 
 import (
 	"net/http"
 
-	"knowledge-graph/internal/application/achievement"
-	achievementDomain "knowledge-graph/internal/domain/achievement"
+	achievementApp "knowledge-graph/internal/application/achievement"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Handler handles achievement requests
+// Handler handles achievement API requests.
 type Handler struct {
-	service *achievement.Service
+	service *achievementApp.Service
 }
 
-// NewHandler creates a new achievement handler
-func NewHandler(service *achievement.Service) *Handler {
+// NewHandler creates a new achievement handler.
+func NewHandler(service *achievementApp.Service) *Handler {
 	return &Handler{service: service}
 }
 
-// AchievementResponse represents an achievement in API responses
+// AchievementResponse represents an achievement in API responses.
 type AchievementResponse struct {
-	ID          string `json:"id"`
-	Code        string `json:"code"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	Points      int    `json:"points"`
-	ObtainedAt  string `json:"obtained_at,omitempty"`
+	ID               string `json:"id"`
+	Code             string `json:"code"`
+	Title            string `json:"title"`
+	Description      string `json:"description"`
+	Icon             string `json:"icon"`
+	Points           int    `json:"points"`
+	UnlockedAt       string `json:"unlocked_at,omitempty"`
+	NotificationSeen bool   `json:"notification_seen"`
 }
 
-// GetMyAchievements returns all achievements earned by the current user
-func (h *Handler) GetMyAchievements(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		return
-	}
-
-	achievements, err := h.service.GetUserAchievements(c.Request.Context(), userID)
+// ListAchievements returns all available achievements.
+func (h *Handler) ListAchievements(c *gin.Context) {
+	allAchievements, err := h.service.GetAllAchievements(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load achievements"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch achievements"})
 		return
 	}
 
-	response := make([]AchievementResponse, 0, len(achievements))
-	for _, a := range achievements {
+	response := make([]AchievementResponse, 0, len(allAchievements))
+	for _, a := range allAchievements {
 		response = append(response, AchievementResponse{
 			ID:          a.ID().String(),
 			Code:        a.Code(),
@@ -55,86 +48,80 @@ func (h *Handler) GetMyAchievements(c *gin.Context) {
 			Description: a.Description(),
 			Icon:        a.Icon(),
 			Points:      a.Points(),
-			ObtainedAt:  "", // Would be populated from user_achievements table
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"achievements": response,
-		"total_points": calculateTotalPoints(achievements),
-	})
+	c.JSON(http.StatusOK, gin.H{"achievements": response})
 }
 
-// GetAllAchievements returns all available achievements in the system
-func (h *Handler) GetAllAchievements(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+// GetUserAchievements returns achievements earned by the current user.
+func (h *Handler) GetUserAchievements(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
-	allAchievements, err := h.service.GetAllAchievements(c.Request.Context())
+	achievements, err := h.service.GetUserAchievementsWithStatus(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load achievements"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user achievements"})
 		return
 	}
 
-	// Get user's earned achievements to mark them
-	var userAchievementIDs map[string]bool
-	if exists {
-		userAchievements, _ := h.service.GetUserAchievements(c.Request.Context(), userID)
-		userAchievementIDs = make(map[string]bool)
-		for _, ua := range userAchievements {
-			userAchievementIDs[ua.ID().String()] = true
-		}
-	}
-
-	response := make([]map[string]interface{}, 0, len(allAchievements))
-	for _, a := range allAchievements {
-		// Skip hidden achievements that user hasn't earned
-		if a.IsHidden() && !userAchievementIDs[a.ID().String()] {
-			continue
-		}
-
-		achievementData := map[string]interface{}{
-			"id":          a.ID().String(),
-			"code":        a.Code(),
-			"title":       a.Title(),
-			"description": a.Description(),
-			"icon":        a.Icon(),
-			"points":      a.Points(),
-			"earned":      userAchievementIDs[a.ID().String()],
-		}
-
-		response = append(response, achievementData)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"achievements": response,
-	})
-}
-
-// GetStreak returns the current login streak for the user
-func (h *Handler) GetStreak(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		return
-	}
-
-	streak, err := h.service.GetStreak(c.Request.Context(), userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get streak"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"streak":      streak,
-		"next_reward": streak >= 7,
-	})
-}
-
-// calculateTotalPoints sums up the points from all achievements
-func calculateTotalPoints(achievements []achievementDomain.Achievement) int {
-	total := 0
+	response := make([]AchievementResponse, 0, len(achievements))
 	for _, a := range achievements {
-		total += a.Points()
+		title := ""
+		if a.NameEn != nil && *a.NameEn != "" {
+			title = *a.NameEn
+		} else if a.NameRu != nil {
+			title = *a.NameRu
+		}
+
+		description := ""
+		if a.DescriptionEn != nil && *a.DescriptionEn != "" {
+			description = *a.DescriptionEn
+		} else if a.DescriptionRu != nil {
+			description = *a.DescriptionRu
+		}
+
+		icon := ""
+		if a.IconEmoji != nil {
+			icon = *a.IconEmoji
+		}
+
+		response = append(response, AchievementResponse{
+			ID:               a.ID,
+			Code:             a.Code,
+			Title:            title,
+			Description:      description,
+			Icon:             icon,
+			Points:           a.Points,
+			UnlockedAt:       a.UnlockedAt,
+			NotificationSeen: a.NotificationSeen,
+		})
 	}
-	return total
+
+	c.JSON(http.StatusOK, gin.H{"achievements": response})
+}
+
+// MarkSeen marks a user's achievement notification as seen.
+func (h *Handler) MarkSeen(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	achievementID := c.Param("id")
+	if achievementID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing achievement id"})
+		return
+	}
+
+	if err := h.service.MarkNotificationSeen(c.Request.Context(), userID, achievementID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to mark notification as seen"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

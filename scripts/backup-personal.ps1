@@ -44,8 +44,36 @@ $BackupFile = $CompressedFile
 
 Write-Host "Backup completed successfully: $BackupFile"
 
-# Optional: Trigger cloud backup if backend is running
-if ($env:CLOUD_BACKUP_ENABLED -eq "true") {
+# Optional: Upload to Yandex.Disk via WebDAV
+if ($env:BACKUP_CLOUD_ENABLED -eq "true" -and $env:BACKUP_CLOUD_PROVIDER -eq "yandex") {
+    Write-Host "Uploading to Yandex.Disk..."
+    try {
+        $Token = $env:BACKUP_YANDEX_TOKEN
+        if (-not $Token) {
+            Write-Host "Warning: BACKUP_YANDEX_TOKEN not set"
+        } else {
+            $RemotePath = "/knowledge-graph-backups/$(Split-Path $BackupFile -Leaf)"
+            $Url = "https://webdav.yandex.ru$RemotePath"
+
+            $Headers = @{
+                Authorization = "OAuth $Token"
+            }
+
+            Invoke-RestMethod -Uri $Url `
+                -Method PUT `
+                -Headers $Headers `
+                -InFile $BackupFile `
+                -ContentType "application/octet-stream"
+
+            Write-Host "Successfully uploaded to Yandex.Disk: $RemotePath"
+        }
+    } catch {
+        Write-Host "Warning: Yandex.Disk upload failed: $_"
+    }
+}
+
+# Optional: Trigger cloud backup if backend is running (for R2)
+if ($env:CLOUD_BACKUP_ENABLED -eq "true" -and $env:BACKUP_CLOUD_PROVIDER -eq "r2") {
     Write-Host "Triggering cloud backup..."
     try {
         $Body = @{

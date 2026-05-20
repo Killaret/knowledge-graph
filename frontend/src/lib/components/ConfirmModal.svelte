@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Modal, Button } from './index';
+  import { getMessage, mode } from '$lib/stores/lexicon-settings';
 
   interface Props {
     open: boolean;
@@ -25,6 +26,19 @@
   }: Props = $props();
   /* eslint-enable prefer-const */
 
+  let currentMode = $state('standard');
+  
+  // Subscribe to mode changes
+  $effect(() => {
+    const unsubscribe = mode.subscribe(m => currentMode = m);
+    return unsubscribe;
+  });
+
+  // Compute display values reactively
+  const displayTitle = $derived(currentMode === 'galactic' && title === 'Confirm' ? 'Confirm Trajectory' : title);
+  const displayConfirmText = $derived(currentMode === 'galactic' && confirmText === 'Confirm' ? 'Engage' : confirmText);
+  const displayCancelText = $derived(currentMode === 'galactic' && cancelText === 'Cancel' ? 'Abort' : cancelText);
+
   function handleConfirm() {
     onConfirm();
   }
@@ -38,14 +52,14 @@
   }
 </script>
 
-<Modal bind:open {title} onClose={handleClose}>
+<Modal bind:open title={displayTitle} onClose={handleClose}>
   <p class="modal-message">{message}</p>
   <div class="modal-actions">
     <Button variant="secondary" onClick={handleCancel}>
-      {cancelText}
+      {displayCancelText}
     </Button>
     <Button variant={danger ? 'danger' : 'primary'} onClick={handleConfirm}>
-      {confirmText}
+      {displayConfirmText}
     </Button>
   </div>
 </Modal>

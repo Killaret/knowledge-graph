@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ErrorResponse } from '$lib/types/errors';
+  import { getMessage } from '$lib/stores/lexicon-settings'
 
   interface Props {
     error: ErrorResponse | null;
@@ -7,10 +8,30 @@
   }
 
   const { error, onClose }: Props = $props();
+  let displayMessage = $state<string | null>(null)
 
   function handleClose() {
     onClose?.();
   }
+
+  const codeToLexiconKey: Record<string, { category: string; key: string; params?: any[] }> = {
+    'connection_exists': { category: 'error', key: 'connectionExists' },
+    // add mappings as needed
+  }
+
+  $effect(() => {
+    if (error) {
+      const mapped = codeToLexiconKey[error.code || '']
+      if (mapped) {
+        getMessage(mapped.category, mapped.key, ...(mapped.params || [])).then(m => displayMessage = m)
+      } else {
+        // fallback to error.message (server-provided)
+        displayMessage = error.message || 'Ошибка'
+      }
+    } else {
+      displayMessage = null
+    }
+  })
 </script>
 
 {#if error}
@@ -33,7 +54,7 @@
       <span class="error-code">Ошибка: {error.code}</span>
     </div>
     
-    <p class="error-message">{error.message}</p>
+    <p class="error-message">{displayMessage || error.message}</p>
     
     {#if error.details && error.details.length > 0}
       <div class="error-details">

@@ -9,13 +9,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 
+	"knowledge-graph/internal/application/achievement"
+	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
 	appGraph "knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
+	userApp "knowledge-graph/internal/application/user"
 	"knowledge-graph/internal/auth"
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
@@ -25,6 +29,7 @@ import (
 	"knowledge-graph/internal/infrastructure/nlp" // Восстановление импорта nlp пакета
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
+	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
 	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
@@ -97,19 +102,6 @@ func main() {
 		}
 	}()
 
-	// Принудительный сброс кэша при старте сервера (очищаем старый испорченный кэш)
-	// Проверяем количество ключей ДО сброса
-	keysBefore, _ := redisClient.DBSize(ctx).Result()
-	log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
-
-	if err := redisClient.FlushDB(ctx).Err(); err != nil {
-		log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
-	} else {
-		// Проверяем количество ключей ПОСЛЕ сброса
-		keysAfter, _ := redisClient.DBSize(ctx).Result()
-		log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
-	}
-
 	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
 	linkRepo := postgres.NewLinkRepository(db.DB)
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
@@ -147,10 +139,29 @@ func main() {
 	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
+	// Achievement service
+	achievementRepo := postgres.NewAchievementRepository(db.DB)
+	achievementEngine := achievement.NewEngine(db.DB)
+	userSettingsRepo := postgres.NewUserSettingsRepository(db.DB)
+	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
+	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)
+	achievementHandler := achievementhandler.NewHandler(achievementService)
+
+	// Graph cache
+	graphCache := cache.NewGraphCache(redisClient)
+
+	// Очистка граф кэша при старте сервера
+	log.Printf("[Cache] Clearing graph cache on startup...")
+	if err := graphCache.InvalidateAll(ctx); err != nil {
+		log.Printf("[Cache] WARNING: failed to clear graph cache on startup: %v", err)
+	} else {
+		log.Printf("[Cache] SUCCESS: Graph cache cleared on startup")
+	}
+
 	// Хендлеры с новыми параметрами
-	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg)
-	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay)
-	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg)
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
+	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
+	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(db.DB)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
 
@@ -171,6 +182,9 @@ func main() {
 
 	// Роуты
 	r := gin.Default()
+
+	// Gzip middleware - compress responses
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// Recovery middleware - catches panics and returns 500
 	r.Use(middleware.RecoveryMiddleware())
@@ -302,6 +316,11 @@ func main() {
 		// User routes
 		v1.GET("/users/me", userHandler.GetMe)
 
+		// Achievements
+		v1.GET("/achievements", achievementHandler.ListAchievements)
+		v1.GET("/users/me/achievements", achievementHandler.GetUserAchievements)
+		v1.POST("/users/me/achievements/:id/mark-seen", achievementHandler.MarkSeen)
+
 		// Write operations with stricter rate limiting
 		v1.POST("/notes", writeLimiter, noteHandler.Create)
 		v1.GET("/notes/:id", noteHandler.Get)
@@ -319,6 +338,8 @@ func main() {
 
 		v1.GET("/notes/:id/graph", graphHandler.GetGraph)
 		v1.GET("/graph/all", graphHandler.GetFullGraph)
+		v1.GET("/me/graph/cached", graphHandler.GetCachedGraph)
+		v1.GET("/me/graph/fresh", graphHandler.GetFreshGraph)
 
 		// Tag routes
 		v1.POST("/tags", writeLimiter, tagHandler.Create)

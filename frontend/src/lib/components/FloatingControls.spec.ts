@@ -2,12 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import FloatingControls from './FloatingControls.svelte';
 
-// Mock navigation
+// Mock navigation (FloatingControls imports goto; 3D entry points are commented out for v1)
 vi.mock('$app/navigation', () => ({
   goto: vi.fn()
 }));
-
-import { goto } from '$app/navigation';
 
 describe('FloatingControls', () => {
   const mockCallbacks = {
@@ -34,9 +32,8 @@ describe('FloatingControls', () => {
       props: mockCallbacks
     });
 
-    // View toggle buttons
+    // View toggles: 2D and list (3D frozen for v1 — see LazyGraph3D / FloatingControls)
     expect(screen.getByTestId('view-toggle-graph')).toBeInTheDocument();
-    expect(screen.getByTestId('view-toggle-3d')).toBeInTheDocument();
     expect(screen.getByTestId('view-toggle-list')).toBeInTheDocument();
 
     // Search input
@@ -79,26 +76,12 @@ describe('FloatingControls', () => {
     expect(mockCallbacks.onToggleView).toHaveBeenCalledTimes(1);
   });
 
-  it('navigates to 3D view when 3D button is clicked', async () => {
+  it('does not render 3D toolbar toggle while 3D is frozen', () => {
     render(FloatingControls, {
       props: mockCallbacks
     });
 
-    const btn3d = screen.getByTestId('view-toggle-3d');
-    await fireEvent.click(btn3d);
-
-    expect(goto).toHaveBeenCalledWith('/graph/3d');
-  });
-
-  it('navigates to note-specific 3D view when noteId is provided', async () => {
-    render(FloatingControls, {
-      props: { ...mockCallbacks, noteId: 'note-123' }
-    });
-
-    const btn3d = screen.getByTestId('view-toggle-3d');
-    await fireEvent.click(btn3d);
-
-    expect(goto).toHaveBeenCalledWith('/graph/3d/note-123');
+    expect(screen.queryByTestId('view-toggle-3d')).not.toBeInTheDocument();
   });
 
   it('calls onSearch when search is submitted', async () => {
@@ -181,10 +164,9 @@ describe('FloatingControls', () => {
     const menuBtn = screen.getByTitle('Menu');
     await fireEvent.click(menuBtn);
 
-    // Menu items should be visible
+    // Import / Export only (menu 3D entries frozen for v1)
     expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Export')).toBeInTheDocument();
-    expect(screen.getByText('Full 3D View')).toBeInTheDocument();
   });
 
   it('calls onImport from menu', async () => {
@@ -224,11 +206,10 @@ describe('FloatingControls', () => {
     const createBtn = screen.getByTestId('create-note-button');
     await fireEvent.click(createBtn); // Should not throw
 
-    const btn3d = screen.getByTestId('view-toggle-3d');
-    await fireEvent.click(btn3d); // Should not throw
+    expect(screen.queryByTestId('view-toggle-3d')).not.toBeInTheDocument();
   });
 
-  it('shows note-specific 3D view text when noteId is in menu', async () => {
+  it('does not show 3D menu entry while 3D is frozen', async () => {
     render(FloatingControls, {
       props: { ...mockCallbacks, noteId: 'note-123' }
     });
@@ -236,6 +217,7 @@ describe('FloatingControls', () => {
     const menuBtn = screen.getByTitle('Menu');
     await fireEvent.click(menuBtn);
 
-    expect(screen.getByText('3D View for Note')).toBeInTheDocument();
+    expect(screen.queryByText('3D View for Note')).not.toBeInTheDocument();
+    expect(screen.queryByText('Full 3D View')).not.toBeInTheDocument();
   });
 });

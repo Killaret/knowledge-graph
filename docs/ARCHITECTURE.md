@@ -100,6 +100,49 @@ type Link struct {
 }
 ```
 
+##### Achievement Domain (`domain/achievement/`)
+
+```go
+type Achievement struct {
+    id          uuid.UUID
+    code        string       // Unique identifier (e.g., "first_note")
+    title       string       // Display title
+    description string       // Description
+    icon        string       // Emoji icon
+    condition   Condition    // Unlock condition
+    points      int          // Achievement points
+    isHidden    bool         // Hide until unlocked
+}
+
+type Condition struct {
+    Type    string                 // "count" or "streak"
+    Entity  string                 // "note", "link", "search", "share"
+    Action  string                 // "create", "update", "delete"
+    Filter  map[string]interface{} // Additional filters (e.g., note type)
+    Threshold int                  // Required count
+    Days    int                    // Required streak days
+}
+```
+
+**Файлы:**
+- `entity.go` — Achievement and UserAchievement entities
+- `engine.go` — Condition evaluation logic
+- `repository.go` — Repository interface
+
+##### Link Domain (`domain/link/`)
+
+```go
+type Link struct {
+    id           uuid.UUID
+    sourceNoteID uuid.UUID    // FK → Note
+    targetNoteID uuid.UUID    // FK → Note
+    linkType     LinkType     // Value Object
+    weight       Weight       // Value Object [0..1]
+    metadata     Metadata
+    createdAt    time.Time
+}
+```
+
 **Файлы:**
 - `entity.go` — Entity с методом `UpdateWeight()`
 - `value_objects.go` — LinkType, Weight, Metadata
@@ -138,6 +181,20 @@ type Link struct {
 | `affected_notes.go` | Определение затронутых заметок |
 | `*_test.go` | Unit tests |
 
+##### Achievement Application (`application/achievement/`)
+
+| Файл | Назначение |
+|------|------------|
+| `service.go` | Achievement service with trigger checking |
+| `engine.go` | Achievement engine for condition evaluation |
+| `engine_test.go` | Unit tests for engine |
+
+**Features:**
+- `CheckTrigger` — Synchronous check for achievement unlocking on user actions
+- `CheckStreaks` — Asynchronous streak-based achievement checking
+- `TrackLogin` — Login streak tracking with Redis
+- Notification integration with user settings
+
 ##### Common (`application/common/`)
 
 - `task_queue.go` — Abstraction over task queue
@@ -160,6 +217,8 @@ type Link struct {
 | `tag_repo.go` | Tag | ✅ | Many-to-many with notes |
 | `user_repo.go` | User | ✅ | Auth data |
 | `recommendation_repo.go` | Recommendation | ✅ | Suggestions storage |
+| `achievement_repo.go` | Achievement | ✅ | User achievement tracking |
+| `user_settings_model.go` | UserSettings | ✅ | User preferences (galactic_mode, etc.) |
 
 **Models (`db/postgres/*_model.go`):**
 - `note_model.go` — GORM model для Note
@@ -218,6 +277,10 @@ DELETE /links/:id           → Delete link
 
 GET    /graph               → Get graph data (nodes + edges)
 GET    /graph/3d            → 3D graph data (hierarchical)
+
+GET    /achievements        → List all achievements
+GET    /users/me/achievements → Get user's achievements
+POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as seen
 ```
 
 ---
@@ -263,6 +326,9 @@ GET    /graph/3d            → 3D graph data (hierarchical)
 | `Modal.svelte` | Svelte | Базовый модал |
 | `Button.svelte` | Svelte | UI Button |
 | `TypeSelector.svelte` | Svelte | Выбор типа ноды (star/planet/moon) |
+| `ToastNotification.svelte` | Svelte | Ephemeral notifications with galactic mode support |
+| `ApiErrorDisplay.svelte` | Svelte | Error display with lexicon integration |
+| `ShareModal.svelte` | Svelte | Share modal with lexicon integration |
 
 #### 2.3 API Client (`src/lib/api/`)
 
@@ -272,8 +338,31 @@ GET    /graph/3d            → 3D graph data (hierarchical)
 | `notes.ts` | Notes API (CRUD + search + suggestions) |
 | `links.ts` | Links API |
 | `graph.ts` | Graph data API |
+| `achievements.ts` | Achievements API |
 
-#### 2.4 3D Engine (`src/lib/three/`) - **FROZEN for v1.0**
+#### 2.4 Utilities (`src/lib/utils/`)
+
+| Файл | Назначение |
+|------|------------|
+| `galactic-lexicon.ts` | Galactic Lexicon - themed messaging system |
+| `galactic-lexicon.test.ts` | Unit tests for Galactic Lexicon |
+
+**Galactic Lexicon:**
+- Supports two modes: `standard` (technical) and `galactic` (space-themed metaphors)
+- Categories: success, error, info, warning, achievement
+- Locales: Russian (ru) and English (en)
+- User-controlled via `galactic_mode` setting in user_settings table
+- Integrated into all UI components (modals, toasts, error displays)
+
+#### 2.5 Stores (`src/lib/stores/`)
+
+| Файл | Назначение |
+|------|------------|
+| `auth.svelte.js` | Authentication state |
+| `lexicon-settings.ts` | Lexicon locale and mode settings |
+| `achievements.ts` | Achievement polling and notification state |
+
+#### 2.6 3D Engine (`src/lib/three/`) - **FROZEN for v1.0**
 
 > **🚫 FROZEN FEATURE:** 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead. See CHANGELOG.md for details.
 

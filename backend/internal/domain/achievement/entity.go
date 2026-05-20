@@ -144,6 +144,20 @@ type UserAchievement struct {
 	metadata      json.RawMessage
 }
 
+type UserAchievementWithStatus struct {
+	ID               string    `json:"id"`
+	Code             string    `json:"code"`
+	NameRu           *string   `json:"name_ru,omitempty"`
+	NameEn           *string   `json:"name_en,omitempty"`
+	DescriptionRu    *string   `json:"description_ru,omitempty"`
+	DescriptionEn    *string   `json:"description_en,omitempty"`
+	IconEmoji        *string   `json:"icon_emoji,omitempty"`
+	Category         *string   `json:"category,omitempty"`
+	Points           int       `json:"points"`
+	UnlockedAt       time.Time `json:"unlocked_at"`
+	NotificationSeen bool      `json:"notification_seen"`
+}
+
 // NewUserAchievement creates a new user achievement
 func NewUserAchievement(userID, achievementID uuid.UUID) *UserAchievement {
 	return &UserAchievement{
@@ -184,8 +198,10 @@ type Repository interface {
 	FindAll(ctx context.Context) ([]Achievement, error)
 	FindByCode(ctx context.Context, code string) (*Achievement, error)
 	FindByUserID(ctx context.Context, userID uuid.UUID) ([]Achievement, error)
+	FindUserAchievementsWithStatus(ctx context.Context, userID uuid.UUID) ([]UserAchievementWithStatus, error)
 	SaveUserAchievement(ctx context.Context, ua UserAchievement) error
 	UserHasAchievement(ctx context.Context, userID uuid.UUID, achievementID uuid.UUID) (bool, error)
+	MarkNotificationSeen(ctx context.Context, userID uuid.UUID, achievementID uuid.UUID) error
 }
 
 // Engine defines the interface for evaluating achievement conditions

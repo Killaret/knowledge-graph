@@ -80,3 +80,42 @@ export async function getFullGraphData(limit: number = apiConfig.default_limit):
     return handleGraphError(error, 'Failed to load full graph');
   }
 }
+
+// Graph delta structure for incremental updates
+export interface GraphDelta {
+  added_nodes?: GraphNode[];
+  removed_nodes?: string[];
+  updated_nodes?: GraphNode[];
+  added_links?: GraphLink[];
+  removed_links?: GraphLink[];
+}
+
+// Fresh graph response with optional delta
+export interface FreshGraphResponse {
+  fresh: GraphData;
+  delta?: GraphDelta;
+}
+
+// Запросить кэшированный граф пользователя
+export async function getCachedGraph(): Promise<GraphData | null> {
+  try {
+    const response = await api.get('v1/me/graph/cached');
+    if (response.status === 204) {
+      return null; // No cached data
+    }
+    return await response.json<GraphData>();
+  } catch (error) {
+    console.warn('[Graph API] Failed to get cached graph:', error);
+    return null; // Return null on error, fallback to fresh
+  }
+}
+
+// Запросить свежий граф с опциональным дельта-обновлением
+export async function getFreshGraph(): Promise<FreshGraphResponse> {
+  try {
+    const response = await api.get('v1/me/graph/fresh').json<FreshGraphResponse>();
+    return response;
+  } catch (error) {
+    return handleGraphError(error, 'Failed to load fresh graph');
+  }
+}

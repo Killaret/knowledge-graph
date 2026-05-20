@@ -1,15 +1,15 @@
 // PreloadService - фоновая предзагрузка данных для ускорения первого взаимодействия после входа
 import { browser } from '$app/environment';
 import { isAuthenticated } from '$lib/stores/auth.svelte';
-import { getFullGraphData } from '$lib/api/graph';
+import { getFullGraphData, getCachedGraph, getFreshGraph, type GraphData, type GraphDelta } from '$lib/api/graph';
 import { getAllAchievements } from '$lib/api/users';
-import type { GraphData } from '$lib/api/graph';
 
 // Типы для кэшированных данных
 interface PreloadedGraphData {
   data: GraphData;
   timestamp: number;
   ttl: number; // Time to live в миллисекундах
+  delta?: GraphDelta; // Delta for incremental updates
 }
 
 interface PreloadedAchievementsData {
@@ -106,13 +106,31 @@ class PreloadServiceClass {
    */
   private async preloadGraph(): Promise<void> {
     try {
-      const graphData = await getFullGraphData(1000); // Ограничим для производительности
+      // Сначала пробуем получить кэшированный граф для мгновенного отображения
+      const cachedGraph = await getCachedGraph();
+      
+      if (cachedGraph) {
+        console.log('[PreloadService] Using cached graph for instant display');
+        this.preloadedGraph = {
+          data: cachedGraph,
+          timestamp: Date.now(),
+          ttl: this.GRAPH_TTL
+        };
+      }
+
+      // Параллельно запрашиваем свежий граф с дельта
+      const freshResponse = await getFreshGraph();
       
       this.preloadedGraph = {
-        data: graphData,
+        data: freshResponse.fresh,
         timestamp: Date.now(),
-        ttl: this.GRAPH_TTL
+        ttl: this.GRAPH_TTL,
+        delta: freshResponse.delta
       };
+
+      if (freshResponse.delta) {
+        console.log('[PreloadService] Delta available for incremental update:', freshResponse.delta);
+      }
     } catch (error) {
       console.error('[PreloadService] Error preloading graph:', error);
       throw error;

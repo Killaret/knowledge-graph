@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"knowledge-graph/internal/application/achievement"
+	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/domain/link"
@@ -21,20 +23,24 @@ import (
 )
 
 type Handler struct {
-	linkRepo         link.Repository
-	noteRepo         note.Repository
-	taskQueue        common.TaskQueue
-	affectedNotesSvc *recommendation.AffectedNotesService
-	taskDelay        time.Duration
+	linkRepo           link.Repository
+	noteRepo           note.Repository
+	taskQueue          common.TaskQueue
+	affectedNotesSvc   *recommendation.AffectedNotesService
+	taskDelay          time.Duration
+	achievementService *achievement.Service
+	graphCache         *cache.GraphCache
 }
 
-func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.TaskQueue, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration) *Handler {
+func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.TaskQueue, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
 	return &Handler{
-		linkRepo:         linkRepo,
-		noteRepo:         noteRepo,
-		taskQueue:        taskQueue,
-		affectedNotesSvc: affectedNotesSvc,
-		taskDelay:        taskDelay,
+		linkRepo:           linkRepo,
+		noteRepo:           noteRepo,
+		taskQueue:          taskQueue,
+		affectedNotesSvc:   affectedNotesSvc,
+		taskDelay:          taskDelay,
+		achievementService: achievementService,
+		graphCache:         graphCache,
 	}
 }
 
@@ -190,6 +196,23 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
+	// Check for achievements
+	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
+		go func() {
+			ctx := context.Background()
+			if err := h.achievementService.CheckTrigger(ctx, userID, "link.create"); err != nil {
+				log.Printf("[LinkHandler] Failed to check achievements: %v", err)
+			}
+		}()
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	responseData := toLinkResponse(newLink)
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
@@ -298,6 +321,14 @@ func (h *Handler) Delete(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	apicommon.NoContent(c)
 }
 

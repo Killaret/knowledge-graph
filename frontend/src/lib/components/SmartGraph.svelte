@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { detectDeviceCapabilities, shouldUse3D } from '$lib/utils/deviceCapabilities';
   import GraphCanvas from './GraphCanvas.svelte';
 
   interface GraphNode {
@@ -18,7 +16,7 @@
     link_type?: string;
   }
 
-  const { 
+  const {
     nodes = [] as GraphNode[],
     links = [] as GraphLink[]
   } = $props<{
@@ -26,58 +24,9 @@
     links: GraphLink[];
   }>();
 
-  let use3D = $state(false);
   let isLoading = $state(true);
-  let Graph3DComponent: any = $state(null);
-  let webglSupported = $state(true);
-  // Allow forcing 3D mode via URL param ?force3d=1 (useful for debugging/CI)
-  let isForce3D = $state(false);
 
-  $effect(() => {
-    if (browser) {
-      isForce3D = new URLSearchParams(window.location.search).get('force3d') === '1';
-    }
-  });
-
-  onMount(async () => {
-    if (!browser) {
-      isLoading = false;
-      return;
-    }
-
-    // Detect device capabilities
-    const deviceCaps = detectDeviceCapabilities();
-    
-    // Check if we should use 3D
-    const shouldRender3D = shouldUse3D(deviceCaps);
-    
-    // Also check for WebGL support
-    let hasWebGL = false;
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      hasWebGL = !!gl;
-    } catch {
-      hasWebGL = false;
-    }
-    webglSupported = hasWebGL;
-
-    use3D = false; // 3D functionality frozen for v1 - see CHANGELOG.md
-
-    // 3D functionality frozen for v1 - see CHANGELOG.md
-    /*
-    // Dynamically import 3D component if needed
-    if (use3D) {
-      try {
-        const module = await import('./Graph3D.svelte');
-        Graph3DComponent = module.default;
-      } catch (e) {
-        console.warn('Failed to load 3D graph component, falling back to 2D:', e);
-        use3D = false;
-      }
-    }
-    */
-
+  onMount(() => {
     isLoading = false;
   });
 </script>
@@ -86,20 +35,6 @@
   <div class="graph-loading" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading visualization...</p>
-  </div>
-{:else if use3D && Graph3DComponent}
-  <div class="graph-wrapper graph-3d">
-    <Graph3DComponent data={{ nodes, links }} />
-    <div class="performance-hint" aria-hidden="true">3D Mode</div>
-  </div>
-{:else if !webglSupported}
-  <div class="graph-wrapper graph-2d">
-    <div class="webgl-fallback">
-      <p>3D visualization requires WebGL, which is not supported by your browser or device.</p>
-      <p>Showing 2D view instead.</p>
-    </div>
-    <GraphCanvas {nodes} {links} />
-    <div class="performance-hint" aria-hidden="true">2D Mode (WebGL not available)</div>
   </div>
 {:else}
   <div class="graph-wrapper graph-2d">
@@ -138,7 +73,6 @@
     position: relative;
   }
 
-  .graph-3d,
   .graph-2d {
     width: 100%;
     height: 100%;
@@ -149,39 +83,11 @@
     bottom: 10px;
     right: 10px;
     font-size: 0.7rem;
-    color: rgba(136, 170, 204, 0.5);
+    color: rgba(255, 200, 100, 0.7);
     padding: 4px 8px;
     background: rgba(10, 26, 58, 0.6);
     border-radius: 4px;
     pointer-events: none;
     user-select: none;
-  }
-
-  .graph-2d .performance-hint {
-    color: rgba(255, 200, 100, 0.7);
-  }
-
-  .webgl-fallback {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 100, 100, 0.9);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    text-align: center;
-    z-index: 100;
-    max-width: 80%;
-  }
-
-  .webgl-fallback p {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-
-  .webgl-fallback p:first-child {
-    font-weight: bold;
-    margin-bottom: 4px;
   }
 </style>

@@ -38,7 +38,8 @@ The `knowledge-graph.config.json` file in the project root is the **single sourc
   "frontend": {
     "test": { ... },
     "graph": { "2d": { ... }, "3d": { ... } },
-    "api": { ... }
+    "api": { ... },
+    "achievements": { ... }
   },
   "ci_cd": {
     "integration_test": { ... }
@@ -51,11 +52,12 @@ The `knowledge-graph.config.json` file in the project root is the **single sourc
 ### Frontend Usage (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig } from '$lib/config';
+import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$lib/config';
 
 // Use centralized config
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
 const limit = apiConfig.default_limit;
+const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
 ### Backend Usage (Go)
@@ -68,6 +70,75 @@ cfg := config.Load()
 // cfg.RecommendationDepth
 // cfg.GraphDefaultLimit
 ```
+
+---
+
+## Galactic Lexicon & Achievements Configuration
+
+### User Settings (Database)
+
+The Galactic Lexicon and Achievements system uses user-specific settings stored in the `user_settings` table:
+
+| Setting Key | Type | Default | Description |
+|--------------|------|---------|-------------|
+| `galactic_mode` | boolean | `false` | Enable galactic (space-themed) messaging mode |
+| `show_achievement_notifications` | boolean | `true` | Show toast notifications for unlocked achievements |
+| `preferred_language` | string | `ru` | User's preferred language (ru/en) |
+
+These settings can be updated via the user settings API and are respected by the frontend components.
+
+### Frontend Configuration (`frontend.achievements`)
+
+```json
+{
+  "frontend": {
+    "achievements": {
+      "poll_interval_ms": 7000
+    }
+  }
+}
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `poll_interval_ms` | integer | `7000` | Polling interval for checking new achievements (milliseconds) |
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Achievement polling interval | `7000` |
+
+### Achievement Condition Types
+
+Achievements use JSON-based conditions stored in the `condition_json` field:
+
+**Count-based conditions:**
+```json
+{
+  "type": "count",
+  "entity": "note",
+  "action": "create",
+  "filter": { "type": "star" },
+  "threshold": 10
+}
+```
+
+**Streak-based conditions:**
+```json
+{
+  "type": "streak",
+  "days": 7
+}
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/achievements` | GET | List all available achievements |
+| `/api/v1/users/me/achievements` | GET | Get current user's achievements |
+| `/api/v1/users/me/achievements/:id/mark-seen` | POST | Mark achievement notification as seen |
 
 ---
 

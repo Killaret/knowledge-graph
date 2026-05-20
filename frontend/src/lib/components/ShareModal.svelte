@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { shareNote, createShareLink } from '$lib/api/sharing.js';
   import type { NoteShare, ShareLink } from '$lib/types.js';
+  import { mode } from '$lib/stores/lexicon-settings';
   
   interface Props {
     noteId: string;
@@ -31,6 +32,42 @@
   let maxUses = $state<number | undefined>(undefined);
   let generatedLink = $state<ShareLink | null>(null);
   
+  // Galactic mode state
+  let currentMode = $state('standard');
+  
+  // Subscribe to mode changes
+  $effect(() => {
+    const unsubscribe = mode.subscribe(m => currentMode = m);
+    return unsubscribe;
+  });
+  
+  // Computed labels based on mode
+  const modalTitle = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Поделиться заметкой');
+  const tabUsers = $derived(currentMode === 'galactic' ? 'To Traveler' : 'Пользователю');
+  const tabLink = $derived(currentMode === 'galactic' ? 'Via Wormhole' : 'По ссылке');
+  const emailLabel = $derived(currentMode === 'galactic' ? 'Traveler Email' : 'Email пользователя');
+  const emailPlaceholder = $derived(currentMode === 'galactic' ? 'traveler@cosmos.net' : 'user@example.com');
+  const accessLevelLabel = $derived(currentMode === 'galactic' ? 'Access Level' : 'Уровень доступа');
+  const viewOnlyText = $derived(currentMode === 'galactic' ? 'Observation Only' : 'Только просмотр');
+  const editText = $derived(currentMode === 'galactic' ? 'Modification' : 'Редактирование');
+  const grantAccessText = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Предоставить доступ');
+  const grantingText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Создание доступа...');
+  const expiresLabel = $derived(currentMode === 'galactic' ? 'Expires (hours)' : 'Истекает через (часы)');
+  const expiresPlaceholder = $derived(currentMode === 'galactic' ? 'Indefinite' : 'Бессрочно');
+  const maxUsesLabel = $derived(currentMode === 'galactic' ? 'Max Uses' : 'Максимум использований');
+  const maxUsesPlaceholder = $derived(currentMode === 'galactic' ? 'Unlimited' : 'Без ограничений');
+  const linkLabel = $derived(currentMode === 'galactic' ? 'Portal Link' : 'Ссылка для доступа');
+  const copyText = $derived(currentMode === 'galactic' ? 'Copy' : 'Копировать');
+  const createLinkText = $derived(currentMode === 'galactic' ? 'Create Portal' : 'Создать ссылку');
+  const createNewLinkText = $derived(currentMode === 'galactic' ? 'Create New Portal' : 'Создать новую ссылку');
+  const creatingLinkText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Создание ссылки...');
+  const accessGrantedMsg = $derived((email: string) => currentMode === 'galactic' ? `Portal opened for ${email}` : `Доступ предоставлен пользователю ${email}`);
+  const linkCreatedMsg = $derived(currentMode === 'galactic' ? 'Portal opened' : 'Ссылка для доступа создана');
+  const linkCopiedMsg = $derived(currentMode === 'galactic' ? 'Portal coordinates copied' : 'Ссылка скопирована в буфер обмена');
+  const emailRequiredMsg = $derived(currentMode === 'galactic' ? 'Enter traveler email' : 'Введите email пользователя');
+  const shareErrorMsg = $derived(currentMode === 'galactic' ? 'Portal opening failed' : 'Ошибка при предоставлении доступа');
+  const linkErrorMsg = $derived(currentMode === 'galactic' ? 'Portal creation failed' : 'Ошибка при создании ссылки');
+  
   function closeModal() {
     dispatch('close');
   }
@@ -43,7 +80,7 @@
   
   async function handleShareWithUser() {
     if (!userEmail.trim()) {
-      error = 'Введите email пользователя';
+      error = emailRequiredMsg;
       return;
     }
     
@@ -53,11 +90,11 @@
     
     try {
       const share = await shareNote(noteId, userEmail.trim(), permission === 'view' ? 'read' : 'write');
-      success = `Доступ предоставлен пользователю ${userEmail}`;
+      success = accessGrantedMsg(userEmail);
       userEmail = '';
       dispatch('shared', { share });
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Ошибка при предоставлении доступа';
+      error = err instanceof Error ? err.message : shareErrorMsg;
     } finally {
       isLoading = false;
     }
@@ -74,10 +111,10 @@
         maxUses
       );
       generatedLink = link;
-      success = 'Ссылка для доступа создана';
+      success = linkCreatedMsg;
       dispatch('shared', { share: link });
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Ошибка при создании ссылки';
+      error = err instanceof Error ? err.message : linkErrorMsg;
     } finally {
       isLoading = false;
     }
@@ -85,7 +122,7 @@
   
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
-    success = 'Ссылка скопирована в буфер обмена';
+    success = linkCopiedMsg;
   }
 </script>
 
@@ -93,7 +130,7 @@
 <div class="modal-backdrop" on:click={handleBackdropClick}>
   <div class="modal">
     <div class="modal-header">
-      <h2>Поделиться заметкой</h2>
+      <h2>{modalTitle}</h2>
       <p class="note-title">«{noteTitle}»</p>
       <button class="close-button" on:click={closeModal}>×</button>
     </div>
@@ -104,14 +141,14 @@
         class:active={activeTab === 'users'}
         on:click={() => activeTab = 'users'}
       >
-        Пользователю
+        {tabUsers}
       </button>
       <button 
         class="tab-button"
         class:active={activeTab === 'link'}
         on:click={() => activeTab = 'link'}
       >
-        По ссылке
+        {tabLink}
       </button>
     </div>
     
@@ -127,20 +164,20 @@
       {#if activeTab === 'users'}
         <div class="share-section">
           <label class="field-label">
-            Email пользователя
+            {emailLabel}
             <input
               type="email"
               bind:value={userEmail}
-              placeholder="user@example.com"
+              placeholder={emailPlaceholder}
               disabled={isLoading}
             />
           </label>
           
           <label class="field-label">
-            Уровень доступа
+            {accessLevelLabel}
             <select bind:value={permission} disabled={isLoading}>
-              <option value="view">Только просмотр</option>
-              <option value="edit">Редактирование</option>
+              <option value="view">{viewOnlyText}</option>
+              <option value="edit">{editText}</option>
             </select>
           </label>
           
@@ -149,37 +186,37 @@
             on:click={handleShareWithUser}
             disabled={isLoading || !userEmail.trim()}
           >
-            {isLoading ? 'Создание доступа...' : 'Предоставить доступ'}
+            {isLoading ? grantingText : grantAccessText}
           </button>
         </div>
       {:else}
         <div class="share-section">
           <label class="field-label">
-            Уровень доступа
+            {accessLevelLabel}
             <select bind:value={linkPermission} disabled={isLoading}>
-              <option value="view">Только просмотр</option>
-              <option value="edit">Редактирование</option>
+              <option value="view">{viewOnlyText}</option>
+              <option value="edit">{editText}</option>
             </select>
           </label>
           
           <div class="field-row">
             <label class="field-label">
-              Истекает через (часы)
+              {expiresLabel}
               <input
                 type="number"
                 bind:value={expiresIn}
-                placeholder="Бессрочно"
+                placeholder={expiresPlaceholder}
                 min="1"
                 disabled={isLoading}
               />
             </label>
             
             <label class="field-label">
-              Максимум использований
+              {maxUsesLabel}
               <input
                 type="number"
                 bind:value={maxUses}
-                placeholder="Без ограничений"
+                placeholder={maxUsesPlaceholder}
                 min="1"
                 disabled={isLoading}
               />
@@ -189,7 +226,7 @@
           {#if generatedLink}
             <div class="generated-link">
               <label class="field-label">
-                Ссылка для доступа
+                {linkLabel}
                 <div class="link-row">
                   <input
                     type="text"
@@ -200,7 +237,7 @@
                     class="copy-button"
                     on:click={() => copyToClipboard(`${window.location.origin}/shared/${generatedLink?.token}`)}
                   >
-                    Копировать
+                    {copyText}
                   </button>
                 </div>
               </label>
@@ -212,7 +249,7 @@
             on:click={handleCreateLink}
             disabled={isLoading}
           >
-            {isLoading ? 'Создание ссылки...' : generatedLink ? 'Создать новую ссылку' : 'Создать ссылку'}
+            {isLoading ? creatingLinkText : generatedLink ? createNewLinkText : createLinkText}
           </button>
         </div>
       {/if}

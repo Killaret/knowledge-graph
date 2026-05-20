@@ -150,6 +150,11 @@ func Forbidden(c *gin.Context) {
 	Error(c, 403, ErrCodeForbidden, MsgForbidden)
 }
 
+// Unauthorized sends 401
+func Unauthorized(c *gin.Context) {
+	Error(c, 401, ErrCodeUnauthorized, MsgUnauthorized)
+}
+
 // NewFieldError creates field error
 func NewFieldError(field, reason, msg string) FieldError {
 	return FieldError{Field: field, Reason: reason, Message: msg}

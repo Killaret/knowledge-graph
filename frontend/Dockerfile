@@ -22,6 +22,9 @@ COPY knowledge-graph.config.json /knowledge-graph.config.json
 # Build the application
 RUN npm run build
 
+# Remove sourcemap files to reduce size
+RUN find build -name "*.map" -type f -delete && find . -type f -name '*.map' -delete
+
 # Production stage
 FROM node:20-alpine
 

@@ -26,10 +26,10 @@ test:
 
 # Build
 build:
-	go build -o bin/server cmd/server/main.go
+	go build -ldflags="-s -w" -o bin/server cmd/server/main.go
 
 build-worker:
-	go build -o bin/worker cmd/worker/main.go
+	go build -ldflags="-s -w" -o bin/worker cmd/worker/main.go
 
 # Configuration validation
 check-config:

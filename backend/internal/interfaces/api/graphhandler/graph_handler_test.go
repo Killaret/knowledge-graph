@@ -119,7 +119,7 @@ func setupGraphRouter() (*gin.Engine, *mockNoteRepo, *mockLinkRepo) {
 		GraphLinkDefaultLimit: 500,
 		GraphLinkMaxLimit:     5000,
 	}
-	handler := New(noteRepo, linkRepo, cfg)
+	handler := New(noteRepo, linkRepo, cfg, nil)
 	r := gin.Default()
 	r.GET("/graph/:id", handler.GetGraph)
 	r.GET("/graph", handler.GetFullGraph)
@@ -351,7 +351,7 @@ func TestNew(t *testing.T) {
 		GraphLoadDepth: 5,
 	}
 
-	handler := New(noteRepo, linkRepo, cfg)
+	handler := New(noteRepo, linkRepo, cfg, nil)
 
 	assert.NotNil(t, handler)
 }

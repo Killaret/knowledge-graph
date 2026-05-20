@@ -1,3 +1,5 @@
+export type Locale = 'ru' | 'en'
+export type Mode = 'standard' | 'galactic'
 /**
  * Galactic Lexicon - Cosmic-themed messaging system
  * Transforms technical messages into galactic metaphors
@@ -177,9 +179,9 @@ export class MessageFormatter {
 }
 
 /**
- * Global galactic lexicon instance
+ * Global galactic message helper for legacy message formatting
  */
-export const GalacticLexicon = {
+export const GalacticMessageLibrary = {
   success: {
     noteCreated: (title: string, useGalactic = false) => 
       useGalactic ? galacticMessages.success.noteCreated(title) : technicalMessages.success.noteCreated(title),
@@ -237,4 +239,159 @@ export function getMessageKeys(): Record<MessageCategory, string[]> {
     info: Object.keys(technicalMessages.info),
     warning: Object.keys(technicalMessages.warning),
   };
+}
+
+/**
+ * Legacy compatibility function for lexicon-settings.ts
+ * Maps old API to new MessageFormatter system
+ */
+type LegacyCategory = 'success' | 'error' | 'info' | 'warning' | 'achievement'
+
+// Mapping from old keys to new MessageFormatter methods
+const keyToMethodMap: Record<LegacyCategory, Record<string, string>> = {
+  success: {
+    noteCreated: 'noteCreated',
+    noteUpdated: 'noteUpdated',
+    unlocked: 'achievementUnlocked',
+  },
+  error: {
+    connectionExists: 'duplicateLink',
+    generic: 'serverError',
+  },
+  info: {
+    saved: 'settingsSaved',
+  },
+  warning: {
+    unsavedChanges: 'unsavedChanges',
+  },
+  achievement: {
+    unlocked: 'achievementUnlocked',
+  },
+}
+
+export function getLexiconMessage(locale: Locale, mode: Mode, category: LegacyCategory, key: string, ...params: any[]): string {
+  const formatter = createFormatter(mode === 'galactic')
+  const methodKey = keyToMethodMap[category]?.[key] || key
+  
+  // Try to call the method dynamically
+  try {
+    const categoryObj = (formatter as any)[category]
+    if (categoryObj && typeof categoryObj[methodKey] === 'function') {
+      return categoryObj[methodKey](...params, mode === 'galactic')
+    }
+  } catch (e) {
+    // Fallback to generic message
+  }
+  
+  // Fallback messages
+  const fallbackMessages: Record<LegacyCategory, Record<string, (mode: Mode) => string>> = {
+    success: {
+      noteCreated: (m) => m === 'galactic' ? `Звезда зажжена в вашей галактике` : `Заметка создана`,
+      noteUpdated: (m) => m === 'galactic' ? `Орбита скорректирована` : `Заметка обновлена`,
+      unlocked: (m) => m === 'galactic' ? `✨ Новая звезда на карте` : `⭐ Достижение получено`,
+    },
+    error: {
+      connectionExists: (m) => m === 'galactic' ? `Гравитационный мост уже существует` : `Связь уже существует`,
+      generic: (m) => m === 'galactic' ? `Космический шторм` : `Произошла ошибка`,
+    },
+    info: {
+      saved: (m) => m === 'galactic' ? `Данные зафиксированы в созвездии` : `Сохранено`,
+    },
+    warning: {
+      unsavedChanges: (m) => m === 'galactic' ? `Коммуникация прервана` : `Есть несохранённые изменения`,
+    },
+    achievement: {
+      unlocked: (m) => m === 'galactic' ? `✨ Вы покорили новую звезду: ${params[0] || ''}` : `⭐ Достижение получено: ${params[0] || ''}`,
+    },
+  }
+  
+  return fallbackMessages[category]?.[key]?.(mode) || '...'
+}
+
+/**
+ * Legacy compatibility object for tests that expect GalacticLexicon.success.noteCreated('title', false)
+ */
+export const GalacticLexicon = {
+  success: {
+    noteCreated: (title: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.noteCreated(title) : technicalMessages.success.noteCreated(title),
+    noteUpdated: (title: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.noteUpdated(title) : technicalMessages.success.noteUpdated(title),
+    noteDeleted: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.noteDeleted() : technicalMessages.success.noteDeleted(),
+    linkCreated: (source: string, target: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.linkCreated(source, target) : technicalMessages.success.linkCreated(source, target),
+    linkDeleted: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.linkDeleted() : technicalMessages.success.linkDeleted(),
+    settingsSaved: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.settingsSaved() : technicalMessages.success.settingsSaved(),
+    achievementUnlocked: (title: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.achievementUnlocked(title) : technicalMessages.success.achievementUnlocked(title),
+    shareCreated: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.shareCreated() : technicalMessages.success.shareCreated(),
+    shareRevoked: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.shareRevoked() : technicalMessages.success.shareRevoked(),
+    loginSuccess: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.loginSuccess() : technicalMessages.success.loginSuccess(),
+    logoutSuccess: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.logoutSuccess() : technicalMessages.success.logoutSuccess(),
+    accountDeleted: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.accountDeleted() : technicalMessages.success.accountDeleted(),
+    passwordChanged: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.success.passwordChanged() : technicalMessages.success.passwordChanged(),
+  },
+  error: {
+    validation: (field: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.validation(field) : technicalMessages.error.validation(field),
+    duplicateLink: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.duplicateLink() : technicalMessages.error.duplicateLink(),
+    noteNotFound: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.noteNotFound() : technicalMessages.error.noteNotFound(),
+    linkNotFound: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.linkNotFound() : technicalMessages.error.linkNotFound(),
+    unauthorized: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.unauthorized() : technicalMessages.error.unauthorized(),
+    forbidden: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.forbidden() : technicalMessages.error.forbidden(),
+    serverError: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.serverError() : technicalMessages.error.serverError(),
+    networkError: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.networkError() : technicalMessages.error.networkError(),
+    invalidCredentials: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.invalidCredentials() : technicalMessages.error.invalidCredentials(),
+    duplicateNote: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.duplicateNote() : technicalMessages.error.duplicateNote(),
+    shareNotFound: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.shareNotFound() : technicalMessages.error.shareNotFound(),
+    maxSharesReached: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.error.maxSharesReached() : technicalMessages.error.maxSharesReached(),
+  },
+  info: {
+    emptyGraph: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.emptyGraph() : technicalMessages.info.emptyGraph(),
+    loading: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.loading() : technicalMessages.info.loading(),
+    noResults: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.noResults() : technicalMessages.info.noResults(),
+    searchHint: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.searchHint() : technicalMessages.info.searchHint(),
+    firstNoteHint: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.firstNoteHint() : technicalMessages.info.firstNoteHint(),
+    achievementProgress: (current: number, target: number, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.achievementProgress(current, target) : technicalMessages.info.achievementProgress(current, target),
+    streakActive: (days: number, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.streakActive(days) : technicalMessages.info.streakActive(days),
+    newFeature: (feature: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.info.newFeature(feature) : technicalMessages.info.newFeature(feature),
+  },
+  warning: {
+    unsavedChanges: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.warning.unsavedChanges() : technicalMessages.warning.unsavedChanges(),
+    deleteConfirm: (item: string, useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.warning.deleteConfirm(item) : technicalMessages.warning.deleteConfirm(item),
+    leavePage: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.warning.leavePage() : technicalMessages.warning.leavePage(),
+    sessionExpiring: (useGalactic: boolean = false) => 
+      useGalactic ? galacticMessages.warning.sessionExpiring() : technicalMessages.warning.sessionExpiring(),
+  },
 }

@@ -1,26 +1,25 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
+	"log"
 
-	"golang.org/x/crypto/argon2"
+	"knowledge-graph/internal/auth"
 )
 
 func main() {
-	password := []byte("test")
+	password := "test"
+	config := &auth.PasswordConfig{
+		Time:    3,
+		Memory:  65536,
+		Threads: 4,
+		KeyLen:  32,
+	}
 	
-	// Generate salt
-	salt := make([]byte, 16)
-	rand.Read(salt)
+	hash, err := auth.HashPassword(password, config)
+	if err != nil {
+		log.Fatal(err)
+	}
 	
-	// Hash with Argon2id (same parameters as in config)
-	hash := argon2.IDKey(password, salt, 3, 65536, 4, 32)
-	
-	// Format as Argon2 string
-	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
-	encodedHash := base64.RawStdEncoding.EncodeToString(hash)
-	
-	fmt.Printf("$argon2id$v=19$m=65536,t=3,p=4$%s$%s\n", encodedSalt, encodedHash)
+	fmt.Printf("Hash: %s\n", hash)
 }

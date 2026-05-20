@@ -19,3 +19,6 @@ export * from './interactions';
 
 // Animation loop
 export * from './animation';
+
+// Delta updates
+export * from './delta';

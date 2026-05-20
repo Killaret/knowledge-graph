@@ -43,8 +43,28 @@ BACKUP_FILE="${BACKUP_FILE}.gz"
 
 echo "Backup completed successfully: ${BACKUP_FILE}"
 
-# Optional: Trigger cloud backup if backend is running
-if [ "${CLOUD_BACKUP_ENABLED:-false}" = "true" ]; then
+# Optional: Upload to Yandex.Disk via WebDAV
+if [ "${BACKUP_CLOUD_ENABLED:-false}" = "true" ] && [ "${BACKUP_CLOUD_PROVIDER:-r2}" = "yandex" ]; then
+    echo "Uploading to Yandex.Disk..."
+    TOKEN="${BACKUP_YANDEX_TOKEN:-}"
+    if [ -z "$TOKEN" ]; then
+        echo "Warning: BACKUP_YANDEX_TOKEN not set"
+    else
+        REMOTE_PATH="/knowledge-graph-backups/$(basename "${BACKUP_FILE}")"
+        URL="https://webdav.yandex.ru${REMOTE_PATH}"
+
+        curl -X PUT "${URL}" \
+            -H "Authorization: OAuth ${TOKEN}" \
+            --upload-file "${BACKUP_FILE}" \
+            --connect-timeout 30 \
+            --max-time 300 \
+            && echo "Successfully uploaded to Yandex.Disk: ${REMOTE_PATH}" \
+            || echo "Warning: Yandex.Disk upload failed"
+    fi
+fi
+
+# Optional: Trigger cloud backup if backend is running (for R2)
+if [ "${CLOUD_BACKUP_ENABLED:-false}" = "true" ] && [ "${BACKUP_CLOUD_PROVIDER:-r2}" = "r2" ]; then
     echo "Triggering cloud backup..."
     curl -X POST http://localhost:8081/api/v1/admin/backup/cloud \
         -H "Content-Type: application/json" \

@@ -15,6 +15,8 @@ export default defineConfig({
 		'import.meta.env.DEV': 'false',
 		'import.meta.env.PROD': 'true',
 		'import.meta.env.PUBLIC_API_URL': '"http://localhost:8080/api"',
+		// api/client.ts reads VITE_API_URL; must match MSW handlers in vitest-setup.ts
+		'import.meta.env.VITE_API_URL': '"http://localhost:8080"',
 		'import.meta.env.VITEST': 'true',
 		'import.meta.env.MODE': '"test"'
 	},

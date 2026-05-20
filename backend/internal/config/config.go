@@ -112,6 +112,9 @@ type JSONConfig struct {
 				Bucket          string `json:"bucket"`
 				Region          string `json:"region"`
 			} `json:"r2"`
+			Yandex struct {
+				OAuthToken string `json:"oauth_token"`
+			} `json:"yandex"`
 		} `json:"cloud"`
 		Schedule      string `json:"schedule"`
 		RetentionDays int    `json:"retention_days"`
@@ -217,6 +220,19 @@ type Config struct {
 	PasswordPolicyRequireLower   bool
 	PasswordPolicyRequireDigit   bool
 	PasswordPolicyRequireSpecial bool
+
+	// Backup configuration
+	BackupCloudEnabled  bool
+	BackupCloudProvider string
+	BackupLocalPath     string
+	BackupSchedule      string
+	BackupRetentionDays int
+	BackupR2AccountID   string
+	BackupR2AccessKeyID string
+	BackupR2SecretKey   string
+	BackupR2Bucket      string
+	BackupR2Region      string
+	BackupYandexToken   string
 }
 
 // loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
@@ -364,6 +380,19 @@ func Load() (*Config, error) {
 		PasswordPolicyRequireLower:   getBoolEnv("PASSWORD_POLICY_REQUIRE_LOWER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireLower }, true)),
 		PasswordPolicyRequireDigit:   getBoolEnv("PASSWORD_POLICY_REQUIRE_DIGIT", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireDigit }, true)),
 		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
+
+		// Backup configuration
+		BackupCloudEnabled:  getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
+		BackupCloudProvider: getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
+		BackupLocalPath:     getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
+		BackupSchedule:      getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
+		BackupRetentionDays: getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
+		BackupR2AccountID:   getEnv("BACKUP_R2_ACCOUNT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.AccountID }, "")),
+		BackupR2AccessKeyID: getEnv("BACKUP_R2_ACCESS_KEY_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.AccessKeyID }, "")),
+		BackupR2SecretKey:   getEnv("BACKUP_R2_SECRET_ACCESS_KEY", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.SecretAccessKey }, "")),
+		BackupR2Bucket:      getEnv("BACKUP_R2_BUCKET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.Bucket }, "")),
+		BackupR2Region:      getEnv("BACKUP_R2_REGION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.Region }, "auto")),
+		BackupYandexToken:   getEnv("BACKUP_YANDEX_TOKEN", ""),
 	}
 
 	// Load complex types from JSON (no env var override for these)

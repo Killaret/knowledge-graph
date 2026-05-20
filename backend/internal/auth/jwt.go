@@ -36,6 +36,8 @@ type JWTManager struct {
 	accessTTL  time.Duration
 	refreshTTL time.Duration
 	issuer     string
+	// leeway extends exp/nbf validation (clock skew). Tests may set to 0 for precise expiry checks.
+	leeway time.Duration
 }
 
 // NewJWTManager creates a new JWT manager
@@ -45,6 +47,7 @@ func NewJWTManager(secret string, accessTTL, refreshTTL time.Duration) *JWTManag
 		accessTTL:  accessTTL,
 		refreshTTL: refreshTTL,
 		issuer:     "knowledge-graph",
+		leeway:     5 * time.Second,
 	}
 }
 
@@ -106,7 +109,7 @@ func (m *JWTManager) ValidateToken(tokenString string, expectedType string) (*To
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return m.secret, nil
-	}, jwt.WithLeeway(5*time.Second))
+	}, jwt.WithLeeway(m.leeway))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token: %w", err)

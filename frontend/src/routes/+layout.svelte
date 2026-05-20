@@ -2,10 +2,13 @@
   import '$lib/styles/global.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import QuickCaptureWidget from '$lib/components/QuickCaptureWidget.svelte';
+  import ToastNotification from '$lib/components/ToastNotification.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { initAuth, isAuthenticated, isInitialized, isLoading } from '$lib/stores/auth.svelte.js';
   import { startPreload } from '$lib/services/PreloadService';
+  import { achievementsStore } from '$lib/stores/achievements';
+  import { mode, getMessage } from '$lib/stores/lexicon-settings';
 
   const { children } = $props();
 
@@ -19,6 +22,12 @@
     '/health',
     '/test'  // Test routes for visual regression testing
   ];
+
+  // Toast notification state
+  let toastMessage = $state('');
+  let toastType = $state<'success' | 'error' | 'info' | 'warning'>('info');
+  let showToast = $state(false);
+  let toastGalacticMode = $state(false);
 
   // Initialize auth on mount
   $effect(() => {
@@ -45,6 +54,53 @@
       goto(`/auth/login?redirect=${returnUrl}`);
     }
   });
+
+  // Achievement notifications
+  $effect(() => {
+    if (!isAuthenticated()) return;
+
+    // Start polling for achievements when authenticated
+    achievementsStore.startPolling();
+
+    // Subscribe to new achievements
+    const unsubscribe = achievementsStore.subscribe(({ new: newAchievements }) => {
+      if (newAchievements.length > 0) {
+        // Show notification for each new achievement
+        newAchievements.forEach(achievement => {
+          showAchievementNotification(achievement);
+          // Mark as seen after showing
+          achievementsStore.dismiss(achievement.id);
+        });
+      }
+    });
+
+    return () => {
+      achievementsStore.stopPolling();
+      unsubscribe();
+    };
+  });
+
+  // Update galactic mode for toasts
+  $effect(() => {
+    let currentMode = 'standard';
+    mode.subscribe(m => currentMode = m)();
+    toastGalacticMode = currentMode === 'galactic';
+  });
+
+  async function showAchievementNotification(achievement: any) {
+    try {
+      const msg = await getMessage('achievement', 'unlocked', achievement.title || achievement.name_en || 'Achievement');
+      toastMessage = msg;
+      toastType = 'success';
+      showToast = true;
+    } catch (e) {
+      console.error('Failed to get achievement message:', e);
+    }
+  }
+
+  function closeToast() {
+    showToast = false;
+  }
 </script>
 
 <!--
@@ -60,6 +116,16 @@
 </div>
 
 <QuickCaptureWidget />
+
+{#if showToast}
+  <ToastNotification
+    message={toastMessage}
+    type={toastType}
+    useGalacticMode={toastGalacticMode}
+    onClose={closeToast}
+    duration={5000}
+  />
+{/if}
 
 <style>
   .app-shell {

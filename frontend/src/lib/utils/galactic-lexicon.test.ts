@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MessageFormatter, GalacticLexicon, createFormatter } from './galactic-lexicon';
+import { MessageFormatter, GalacticLexicon, createFormatter, getLexiconMessage, getMessageKeys } from './galactic-lexicon';
 
 describe('MessageFormatter', () => {
   describe('technical mode', () => {
@@ -211,5 +211,75 @@ describe('message consistency', () => {
       
       formatter.setGalacticMode(false);
     });
+  });
+});
+
+describe('getLexiconMessage compatibility function', () => {
+  it('should return messages for success category', () => {
+    const msg = getLexiconMessage('ru', 'standard', 'success', 'noteCreated');
+    expect(msg).toBeTruthy();
+    expect(msg).toContain('Заметка');
+  });
+
+  it('should return galactic messages when mode is galactic', () => {
+    const msg = getLexiconMessage('ru', 'galactic', 'success', 'noteCreated');
+    expect(msg).toBeTruthy();
+    expect(msg).toContain('Звезда');
+  });
+
+  it('should return messages for error category', () => {
+    const msg = getLexiconMessage('ru', 'standard', 'error', 'connectionExists');
+    expect(msg).toBeTruthy();
+  });
+
+  it('should return messages for achievement category', () => {
+    const msg = getLexiconMessage('ru', 'galactic', 'achievement', 'unlocked', 'Test Achievement');
+    expect(msg).toContain('Test Achievement');
+    expect(msg).toContain('✨');
+  });
+
+  it('should handle fallback for unknown keys', () => {
+    const msg = getLexiconMessage('ru', 'standard', 'success', 'unknownKey');
+    expect(msg).toBeTruthy();
+  });
+
+  it('should handle locale parameter', () => {
+    const msg = getLexiconMessage('ru', 'standard', 'success', 'noteCreated');
+    expect(msg).toContain('Заметка');
+  });
+});
+
+describe('getMessageKeys helper', () => {
+  it('should return all message keys', () => {
+    const keys = getMessageKeys();
+    
+    expect(keys).toHaveProperty('success');
+    expect(keys).toHaveProperty('error');
+    expect(keys).toHaveProperty('info');
+    expect(keys).toHaveProperty('warning');
+    
+    expect(Array.isArray(keys.success)).toBe(true);
+    expect(Array.isArray(keys.error)).toBe(true);
+    expect(Array.isArray(keys.info)).toBe(true);
+    expect(Array.isArray(keys.warning)).toBe(true);
+    
+    expect(keys.success.length).toBeGreaterThan(0);
+    expect(keys.error.length).toBeGreaterThan(0);
+    expect(keys.info.length).toBeGreaterThan(0);
+    expect(keys.warning.length).toBeGreaterThan(0);
+  });
+
+  it('should include expected keys in success category', () => {
+    const keys = getMessageKeys();
+    expect(keys.success).toContain('noteCreated');
+    expect(keys.success).toContain('noteUpdated');
+    expect(keys.success).toContain('achievementUnlocked');
+  });
+
+  it('should include expected keys in error category', () => {
+    const keys = getMessageKeys();
+    expect(keys.error).toContain('validation');
+    expect(keys.error).toContain('duplicateLink');
+    expect(keys.error).toContain('unauthorized');
   });
 });

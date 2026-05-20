@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"knowledge-graph/internal/application/achievement"
+	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
@@ -34,6 +36,8 @@ type Handler struct {
 	embeddingRepo      *postgres.EmbeddingRepository
 	redis              *redis.Client
 	cfg                *config.Config
+	graphCache         *cache.GraphCache
+	achievementService *achievement.Service
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -49,7 +53,7 @@ type Suggestion struct {
 	Score  float64 `json:"score"`
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo *postgres.EmbeddingRepository, redis *redis.Client, cfg *config.Config) *Handler {
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo *postgres.EmbeddingRepository, redis *redis.Client, cfg *config.Config, graphCache *cache.GraphCache, achievementService *achievement.Service) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
@@ -60,6 +64,8 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		embeddingRepo:      embeddingRepo,
 		redis:              redis,
 		cfg:                cfg,
+		graphCache:         graphCache,
+		achievementService: achievementService,
 	}
 }
 
@@ -188,6 +194,13 @@ func (h *Handler) Create(c *gin.Context) {
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
 
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	responseData := gin.H{
 		"id":         newNote.ID(),
 		"title":      newNote.Title().String(),
@@ -311,6 +324,13 @@ func (h *Handler) Update(c *gin.Context) {
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
 
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	responseData := gin.H{
 		"id":         existing.ID(),
 		"title":      existing.Title().String(),
@@ -350,6 +370,14 @@ func (h *Handler) Delete(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
 	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	apicommon.NoContent(c)
 }
 

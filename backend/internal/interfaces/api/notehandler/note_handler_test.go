@@ -7,12 +7,14 @@ import (
 
 	"encoding/json"
 
+	"fmt"
 	"net/http"
 
 	"net/http/httptest"
 
 	"testing"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +29,15 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	repo := newMockNoteRepo()
 
 	// Для тестов дополнительные зависимости не нужны, передаём nil
-	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, nil)
+	cfg := &config.Config{
+		RecommendationTopN:                    10,
+		RecommendationFallbackSemanticEnabled: false,
+		RecommendationFallbackEnabled:         false,
+		RecommendationTaskDelaySeconds:        1,
+		PaginationDefaultLimit:                20,
+		PaginationMaxLimit:                    100,
+	}
+	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, cfg, nil, nil)
 
 	r := gin.Default()
 
@@ -40,6 +50,7 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	r.DELETE("/notes/:id", handler.Delete)
 
 	r.GET("/notes/:id/suggestions", handler.GetSuggestions) // если хотите тестировать и рекомендации
+	r.GET("/notes", handler.List)
 
 	return r, repo
 
@@ -217,4 +228,95 @@ func TestDeleteNote(t *testing.T) {
 
 	}
 
+}
+
+func TestGetSuggestions_EmptyFallback(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	// Создаём заметку
+	title, _ := note.NewTitle("SugTest")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	ctx := context.Background()
+	_ = repo.Save(ctx, n)
+
+	// Запрос рекомендаций при отсутствии recRepo/embedding/redis
+	req := httptest.NewRequest("GET", "/notes/"+n.ID().String()+"/suggestions", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusAccepted {
+		t.Errorf("expected 202 Accepted, got %d", w.Code)
+	}
+
+	// Проверяем заголовки
+	if got := w.Header().Get("X-Recommendations-Source"); got != "empty" {
+		t.Errorf("expected X-Recommendations-Source=empty, got %s", got)
+	}
+	if got := w.Header().Get("X-Recommendations-Stale"); got != "true" {
+		t.Errorf("expected X-Recommendations-Stale=true, got %s", got)
+	}
+
+	// Тело ответа должно содержать пустой список suggestions
+	var resp struct {
+		Suggestions []interface{} `json:"suggestions"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if len(resp.Suggestions) != 0 {
+		t.Errorf("expected 0 suggestions, got %d", len(resp.Suggestions))
+	}
+}
+
+func TestSearchValidationTooLong(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	longQ := ""
+	for i := 0; i < 300; i++ { // longer than 200 limit
+		longQ += "a"
+	}
+
+	req := httptest.NewRequest("GET", "/notes/search?q="+longQ, nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 BadRequest, got %d", w.Code)
+	}
+}
+
+func TestListPagination(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	// create 3 notes
+	for i := 0; i < 3; i++ {
+		title, _ := note.NewTitle(fmt.Sprintf("N%d", i))
+		content, _ := note.NewContent("c")
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(title, content, "star", metadata)
+		_ = repo.Save(ctx, n)
+	}
+
+	req := httptest.NewRequest("GET", "/notes?limit=1&offset=0", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	notes, ok := resp["notes"].([]interface{})
+	if !ok {
+		t.Fatalf("notes missing or wrong type")
+	}
+	if len(notes) != 1 {
+		t.Errorf("expected 1 note, got %d", len(notes))
+	}
 }

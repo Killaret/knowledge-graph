@@ -3,6 +3,7 @@
   import { Modal, Button, TypeSelector } from './index';
   import ApiErrorDisplay from './ApiErrorDisplay.svelte';
   import type { ErrorResponse } from '$lib/types/errors';
+  import { getMessage, mode } from '$lib/stores/lexicon-settings';
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
@@ -18,11 +19,49 @@
   let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid'>('star');
   let loading = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
+  let modalTitle = $state('Create New Note');
+  let titleLabel = $state('Title *');
+  let typeLabel = $state('Type');
+  let contentLabel = $state('Content');
+  let cancelText = $state('Cancel');
+  let createText = $state('Create Note');
+  let creatingText = $state('Creating...');
+  let titlePlaceholder = $state('Enter note title...');
+  let contentPlaceholder = $state('Enter note content...');
+
+  // Update labels based on galactic mode
+  $effect(async () => {
+    let currentMode = 'standard';
+    mode.subscribe(m => currentMode = m)();
+    
+    if (currentMode === 'galactic') {
+      modalTitle = 'Ignite New Star';
+      titleLabel = 'Star Name *';
+      typeLabel = 'Celestial Type';
+      contentLabel = 'Star Data';
+      cancelText = 'Abort Mission';
+      createText = 'Ignite Star';
+      creatingText = 'Igniting...';
+      titlePlaceholder = 'Enter star name...';
+      contentPlaceholder = 'Enter star data...';
+    } else {
+      modalTitle = 'Create New Note';
+      titleLabel = 'Title *';
+      typeLabel = 'Type';
+      contentLabel = 'Content';
+      cancelText = 'Cancel';
+      createText = 'Create Note';
+      creatingText = 'Creating...';
+      titlePlaceholder = 'Enter note title...';
+      contentPlaceholder = 'Enter note content...';
+    }
+  });
   
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      apiError = { code: 'VALIDATION_ERROR', message: 'Title is required' };
+      const msg = await getMessage('error', 'validation', 'title');
+      apiError = { code: 'VALIDATION_ERROR', message: msg };
       return;
     }
     
@@ -55,33 +94,33 @@
   }
 </script>
 
-<Modal bind:open title="Create New Note" onClose={close}>
+<Modal bind:open title={modalTitle} onClose={close}>
   <form onsubmit={handleSubmit}>
     <div class="form-group">
-      <label for="note-title">Title *</label>
+      <label for="note-title">{titleLabel}</label>
       <input
         id="note-title"
         name="title"
         type="text"
         bind:value={title}
-        placeholder="Enter note title..."
+        placeholder={titlePlaceholder}
         disabled={loading}
         data-testid="create-note-title"
       />
     </div>
     
     <div class="form-group">
-      <label for="note-type">Type</label>
+      <label for="note-type">{typeLabel}</label>
       <TypeSelector id="note-type" bind:selected={type} />
     </div>
     
     <div class="form-group">
-      <label for="note-content">Content</label>
+      <label for="note-content">{contentLabel}</label>
       <textarea
         id="note-content"
         name="content"
         bind:value={content}
-        placeholder="Enter note content..."
+        placeholder={contentPlaceholder}
         rows={6}
         disabled={loading}
         data-testid="create-note-content"
@@ -92,10 +131,10 @@
     
     <div class="form-actions">
       <Button variant="secondary" onClick={close} disabled={loading}>
-        Cancel
+        {cancelText}
       </Button>
       <Button variant="primary" type="submit" disabled={loading}>
-        {loading ? 'Creating...' : 'Create Note'}
+        {loading ? creatingText : createText}
       </Button>
     </div>
   </form>

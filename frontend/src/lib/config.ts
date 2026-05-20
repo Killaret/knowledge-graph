@@ -53,6 +53,9 @@ export interface Config {
       default_limit: number;
       link_limit: number;
     };
+    achievements: {
+      poll_interval_ms: number;
+    };
   };
   ci_cd: {
     integration_test: {
@@ -75,5 +78,6 @@ export const graphConfig3D = config.frontend.graph['3d'];
 export const apiConfig = config.frontend.api;
 export const testConfig = config.frontend.test;
 export const ciCdConfig = config.ci_cd;
+export const ACHIEVEMENT_POLL_INTERVAL_MS = config.frontend.achievements.poll_interval_ms;
 
 export default config;

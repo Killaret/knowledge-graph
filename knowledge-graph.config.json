@@ -111,6 +111,9 @@
     "api": {
       "default_limit": 100,
       "link_limit": 0
+    },
+    "achievements": {
+      "poll_interval_ms": 7000
     }
   },
   "ci_cd": {
@@ -127,13 +130,16 @@
     "local_path": "./backups",
     "cloud": {
       "enabled": false,
-      "provider": "r2",
+      "provider": "yandex",
       "r2": {
         "account_id": "",
         "access_key_id": "",
         "secret_access_key": "",
         "bucket": "",
         "region": "auto"
+      },
+      "yandex": {
+        "oauth_token": ""
       }
     },
     "schedule": "0 2 * * *",

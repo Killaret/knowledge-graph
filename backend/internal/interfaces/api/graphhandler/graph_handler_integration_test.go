@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
@@ -50,7 +51,10 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 	s.linkRepo = postgres.NewLinkRepository(s.db)
 
 	// Создаем хендлер с maxDepth = 3
-	s.handler = New(s.noteRepo, s.linkRepo, 3)
+	cfg := &config.Config{
+		GraphLoadDepth: 3,
+	}
+	s.handler = New(s.noteRepo, s.linkRepo, cfg, nil)
 
 	// Настраиваем Gin
 	gin.SetMode(gin.TestMode)

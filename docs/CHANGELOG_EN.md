@@ -10,6 +10,26 @@
 
 ## [Unreleased]
 
+### 🎮 Galactic Lexicon & Achievements System
+- **Galactic Lexicon**: Themed messaging system with two modes
+  - `standard` mode: Technical, straightforward messages
+  - `galactic` mode: Space-themed metaphors (e.g., "Ignite New Star" instead of "Create Note")
+  - Categories: success, error, info, warning, achievement
+  - Locales: Russian (ru) and English (en)
+  - User-controlled via `galactic_mode` setting in user_settings table
+  - Integrated into all UI components: CreateNoteModal, EditNoteModal, ConfirmModal, ShareModal, ApiErrorDisplay, ToastNotification
+- **Achievements System**: Gamification with unlockable achievements
+  - Backend domain layer with Achievement and UserAchievement entities
+  - AchievementEngine for condition evaluation (count, streak types)
+  - AchievementService with CheckTrigger (sync) and CheckStreaks (async)
+  - API endpoints: GET /api/v1/achievements, GET /api/v1/users/me/achievements, POST /api/v1/users/me/achievements/:id/mark-seen
+  - Achievement triggers integrated with note creation and link creation
+  - ToastNotification integration for achievement unlocks
+  - Respects user setting `show_achievement_notifications`
+  - Frontend polling for new achievements (configurable via `frontend.achievements.poll_interval_ms`)
+  - Database migrations: 017_create_user_settings, 018_create_achievements, 021_create_achievements_tables
+- **Configuration**: Achievement polling interval moved to `knowledge-graph.config.json` under `frontend.achievements.poll_interval_ms` (default: 7000ms)
+
 ### 🚫 Feature Freezing
 - **3D Graph Frozen**: 3D graph functionality temporarily frozen for v1.0
   - **Reason**: Improve stability and reduce maintenance overhead

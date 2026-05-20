@@ -46,28 +46,26 @@ export async function initAuth(): Promise<void> {
     const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
     const storedApiKey = localStorage.getItem(API_KEY);
 
-    if (storedApiKey) {
-      authState.apiKey = storedApiKey;
+    authState.apiKey = storedApiKey;
+
+    authState.accessToken = storedAccessToken;
+    authState.refreshToken = storedRefreshToken;
+
+    if (!storedRefreshToken) {
+      authState.currentUser = null;
+      return;
     }
 
-    if (storedAccessToken) {
-      authState.accessToken = storedAccessToken;
-    }
+    // Try to refresh the token and get user info
+    const refreshed = await refreshAccessToken();
 
-    if (storedRefreshToken) {
-      authState.refreshToken = storedRefreshToken;
-      
-      // Try to refresh the token and get user info
-      const refreshed = await refreshAccessToken();
-      
-      if (refreshed) {
-        try {
-          const user = await usersApi.getMe();
-          authState.currentUser = user;
-        } catch {
-          // If getting user fails, clear auth state
-          clearAuthState();
-        }
+    if (refreshed) {
+      try {
+        const user = await usersApi.getMe();
+        authState.currentUser = user;
+      } catch {
+        // If getting user fails, clear auth state
+        clearAuthState();
       }
     }
   } catch (e) {
@@ -145,8 +143,12 @@ export async function logout(): Promise<void> {
     }
   }
   
-  // Clear preload cache on logout
-  clearPreloadCache();
+  // Clear preload cache on logout (never block logout if preload helpers fail)
+  try {
+    clearPreloadCache();
+  } catch (e) {
+    console.error('Failed to clear preload cache on logout:', e);
+  }
   
   clearAuthState();
   goto('/auth/login');
