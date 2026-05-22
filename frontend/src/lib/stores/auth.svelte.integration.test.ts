@@ -2,8 +2,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import * as authApi from '../api/auth';
-import * as usersApi from '../api/users';
+import * as authApi from '$lib/api/auth';
+import * as usersApi from '$lib/api/users';
 
 const preloadMocks = vi.hoisted(() => ({
   clearPreloadCache: vi.fn(),
@@ -19,18 +19,19 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn()
 }));
 
-vi.mock('../api/auth', () => ({
+vi.mock('$lib/api/auth', () => ({
   login: vi.fn(),
   logout: vi.fn(),
   refreshTokens: vi.fn()
 }));
 
-vi.mock('../api/users', () => ({
+vi.mock('$lib/api/users', () => ({
   getMe: vi.fn()
 }));
 
-vi.mock('../services/PreloadService', () => ({
+vi.mock('$lib/services/PreloadService', () => ({
   clearPreloadCache: preloadMocks.clearPreloadCache,
+  preloadAuthenticatedGraph: vi.fn(),
   hasPreloadedData: preloadMocks.hasPreloadedData,
   PreloadService: {
     startPreload: vi.fn(),
@@ -69,6 +70,13 @@ describe('Auth Store Integration with PreloadService (Simplified)', () => {
     vi.mocked(authApi.login).mockResolvedValue({
       access_token: 'test_access_token',
       refresh_token: 'test_refresh_token',
+      token_type: 'Bearer',
+      expires_at: '2024-12-31T23:59:59Z'
+    });
+    
+    vi.mocked(authApi.refreshTokens).mockResolvedValue({
+      access_token: 'new_access_token',
+      refresh_token: 'new_refresh_token',
       token_type: 'Bearer',
       expires_at: '2024-12-31T23:59:59Z'
     });

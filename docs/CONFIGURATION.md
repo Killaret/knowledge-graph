@@ -12,9 +12,26 @@ Environment Variables > knowledge-graph.config.json > Hard-coded Defaults
 
 ## Configuration Files
 
-### 1. `knowledge-graph.config.json`
+### 1. `config/` source files
 
-Central JSON configuration file located in the project root. Used by both backend and frontend.
+Editable configuration sections are stored in `config/*.json` files in the project root. These files are merged into the runtime config file `knowledge-graph.config.json`.
+
+Current source files:
+- `config/backend.json`
+- `config/frontend.json`
+- `config/backup.json`
+- `config/nlp.json`
+- `config/mongodb.json`
+- `config/ci_cd.json`
+
+To regenerate the runtime config after edits, run:
+```bash
+npm run build-config
+```
+
+### 2. `knowledge-graph.config.json`
+
+Generated runtime JSON configuration file located in the project root. Used by both backend and frontend.
 
 **Structure:**
 ```json
@@ -35,11 +52,12 @@ Central JSON configuration file located in the project root. Used by both backen
     "api": {...}
   },
   "ci_cd": {...},
-  "nlp": {...}
+  "nlp": {...},
+  "backup": {...}
 }
 ```
 
-### 2. `.env` / `.env.example`
+### 3. `.env` / `.env.example`
 
 Environment variables for sensitive data and deployment-specific settings.
 
@@ -101,9 +119,11 @@ RECOMMENDATION_KEYWORD_TVERSKY_BETA=0.5
 
 ### Loading Order
 
-1. Load `knowledge-graph.config.json` (if exists)
+1. Load `knowledge-graph.config.json` (generated from `config/*.json` when present)
 2. Check environment variables (override JSON values)
 3. Use hard-coded defaults (if neither set)
+
+If the root config file is absent, backend configuration code can fall back to reading `config/*.json` directly.
 
 ### Usage in Code
 
@@ -146,7 +166,7 @@ cfg.NewParam = getIntEnv("NEW_PARAM", getJSONIntOrDefault(jsonCfg,
     42)) // default value
 ```
 
-4. Add to `knowledge-graph.config.json`:
+4. Add to the appropriate source file under `config/`, for example `config/backend.json`:
 ```json
 {
   "backend": {
@@ -157,7 +177,12 @@ cfg.NewParam = getIntEnv("NEW_PARAM", getJSONIntOrDefault(jsonCfg,
 }
 ```
 
-5. Document in `.env.example`:
+5. Regenerate the runtime config file:
+```bash
+npm run build-config
+```
+
+6. Document in `.env.example`:
 ```bash
 # New Section
 NEW_PARAM=42
@@ -167,7 +192,7 @@ NEW_PARAM=42
 
 ### Loading
 
-Frontend imports JSON directly at build time:
+Frontend imports the generated runtime config file at build time:
 
 ```typescript
 import config from '../../../knowledge-graph.config.json';
@@ -208,6 +233,9 @@ cd backend
 make check-migrations    # Check migration drift
 
 # Manual checks
+# Regenerate config from source files
+npm run build-config
+
 # Validate JSON syntax
 cat knowledge-graph.config.json | jq . > /dev/null
 
@@ -237,8 +265,12 @@ The following checks run automatically:
 ### Config Not Loading
 
 1. Check file exists in project root: `knowledge-graph.config.json`
-2. Validate JSON syntax: `cat knowledge-graph.config.json | jq .`
-3. Check backend logs for "[Config] Loading JSON config from..."
+2. If it is missing, regenerate it from `config/*.json`:
+   ```bash
+   npm run build-config
+   ```
+3. Validate JSON syntax: `cat knowledge-graph.config.json | jq .`
+4. Check backend logs for "[Config] Loading JSON config from..."
 
 ### Environment Variables Not Applied
 

@@ -1,8 +1,9 @@
 :root {
+  /* === Основная палитра === */
   /* Primary colors */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-primary-light: rgba(59, 130, 246, 0.1);
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c3aed;
+  --color-primary-light: rgba(139, 92, 246, 0.15);
 
   /* Secondary colors */
   --color-secondary: #6b7280;
@@ -10,78 +11,71 @@
   --color-secondary-light: rgba(107, 114, 128, 0.1);
 
   /* Danger/error colors */
-  --color-danger: #ef4444;
+  --color-danger: #ff3a2f;
   --color-danger-hover: #dc2626;
-  --color-danger-light: rgba(239, 68, 68, 0.1);
+  --color-danger-light: rgba(255, 58, 47, 0.1);
+
+  /* Info colors */
+  --color-info: #2dd4bf;
+  --color-info-hover: #14b8a6;
+  --color-info-light: rgba(45, 212, 191, 0.1);
 
   /* Surface colors */
-  --color-surface: #ffffff;
-  --color-surface-elevated: #f9fafb;
-  --color-background: #f3f4f6;
+  --color-surface: #0a0a0f;
+  --color-surface-elevated: #14142b;
+  --color-background: #0a0a0f;
 
   /* Text colors */
-  --color-text: #1f2937;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
+  --color-text: #e0e0e0;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
 
   /* Border colors */
-  --color-border: #e5e7eb;
-  --color-border-focus: #3b82f6;
+  --color-border: #2d2d3a;
+  --color-border-focus: #8b5cf6;
 
   /* Shadow */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 
-  /* Celestial type colors */
-  --color-star: #fbbf24;
+  /* === Типы небесных тел === */
+  --color-star: #ffcc00;
   --color-planet: #60a5fa;
-  --color-comet: #f472b6;
-  --color-galaxy: #a78bfa;
+  --color-comet: #e879f9;
+  --color-galaxy: #c084fc;
   --color-asteroid: #94a3b8;
 
   /* ================================
-     COSMIC THEME VARIABLES (Weltall)
+     COSMIC THEME VARIABLES
      ================================ */
-
-  /* Dark surface colors for cosmic theme */
-  --color-surface-dark: #0a0a1a;
-  --color-surface-darker: #050508;
-  --color-surface-light: #f0f2f5;
-
-  /* Text colors for dark theme */
-  --color-text-dark: #e0e0e0;
-  --color-text-light: #1f2937;
 
   /* Glow effects */
   --color-glow: #ffcc00;
-  --color-glow-blue: #40a9ff;
-  --color-glow-red: #ff3333;
-  --color-glow-subtle: rgba(255, 204, 0, 0.3);
+  --color-glow-purple: #8b5cf6;
+  --color-glow-red: #ff3a2f;
+  --color-glow-cyan: #2dd4bf;
+  --color-glow-subtle: rgba(139, 92, 246, 0.3);
 
   /* Link/connection glow */
-  --color-link-glow: #40a9ff;
+  --color-link-glow: #8b5cf6;
 
   /* Nebula effect */
-  --color-nebula: rgba(20, 30, 80, 0.3);
-  --color-nebula-red: rgba(139, 0, 0, 0.15);
+  --color-nebula: rgba(139, 92, 246, 0.15);
+  --color-nebula-red: rgba(255, 58, 47, 0.12);
 
   /* Ember effect */
-  --color-ember: rgba(255, 204, 0, 0.1);
-
-  /* Weltall accent colors (adapted for Knowledge Graph) */
-  --color-weltall-dark: #8b0000;
-  --color-weltall-red: #ff3333;
-  --color-weltall-gold: #ffcc00;
+  --color-ember: rgba(255, 58, 47, 0.08);
 
   /* Cosmic gradients */
-  --gradient-cosmic-bg: radial-gradient(ellipse at 50% 100%, #1a0505 0%, #000 80%);
-  --gradient-nebula: radial-gradient(circle at 50% 50%, rgba(60, 0, 0, 0.5) 0%, transparent 70%);
+  --gradient-cosmic-bg: radial-gradient(ellipse at 50% 100%, #14142b 0%, #0a0a0f 80%);
+  --gradient-nebula: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
 
   /* Shadow with glow */
-  --shadow-glow: 0 0 20px rgba(255, 204, 0, 0.3);
-  --shadow-glow-blue: 0 0 20px rgba(64, 169, 255, 0.3);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-glow-red: 0 0 20px rgba(255, 58, 47, 0.3);
+  --shadow-glow-cyan: 0 0 20px rgba(45, 212, 191, 0.3);
 
   /* Transitions */
   --transition-fast: 0.2s ease;
@@ -103,7 +97,7 @@ html, body {
 body {
   background: var(--gradient-cosmic-bg);
   background-attachment: fixed;
-  color: var(--color-text-dark);
+  color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
 }

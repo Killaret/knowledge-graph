@@ -56,7 +56,6 @@ class PreloadServiceClass {
       return;
     }
 
-    // Если уже есть активная предзагрузка, возвращаем её Promise
     if (this.preloadPromise) {
       return this.preloadPromise;
     }
@@ -72,14 +71,33 @@ class PreloadServiceClass {
     }
   }
 
+  public async preloadAuthenticatedGraph(): Promise<void> {
+    if (!browser || this.isPreloading || !isAuthenticated()) {
+      return;
+    }
+
+    if (this.preloadPromise) {
+      return this.preloadPromise;
+    }
+
+    this.isPreloading = true;
+    this.preloadPromise = this.performAuthenticatedPreload();
+
+    try {
+      await this.preloadPromise;
+    } finally {
+      this.isPreloading = false;
+      this.preloadPromise = null;
+    }
+  }
+
   /**
-   * Выполняет фактическую предзагрузку данных
+   * Выполняет фактическую предзагрузку данных для гостя
    */
   private async performPreload(): Promise<void> {
     console.log('[PreloadService] Starting background preload...');
-    
+
     try {
-      // Параллельно загружаем граф и достижения
       const [graphData, achievementsData] = await Promise.allSettled([
         this.preloadGraph(),
         this.preloadAchievements()
@@ -102,37 +120,60 @@ class PreloadServiceClass {
   }
 
   /**
-   * Предзагружает данные графа
+   * Выполняет предзагрузку данных графа для аутентифицированного пользователя
    */
-  private async preloadGraph(): Promise<void> {
+  private async performAuthenticatedPreload(): Promise<void> {
+    console.log('[PreloadService] Starting authenticated graph preload...');
+
     try {
-      // Сначала пробуем получить кэшированный граф для мгновенного отображения
-      const cachedGraph = await getCachedGraph();
-      
-      if (cachedGraph) {
-        console.log('[PreloadService] Using cached graph for instant display');
+      const [cachedResult, freshResult] = await Promise.allSettled([
+        getCachedGraph(),
+        getFreshGraph()
+      ]);
+
+      if (cachedResult.status === 'fulfilled' && cachedResult.value) {
+        console.log('[PreloadService] Using cached authenticated graph for instant display');
         this.preloadedGraph = {
-          data: cachedGraph,
+          data: cachedResult.value,
           timestamp: Date.now(),
           ttl: this.GRAPH_TTL
         };
       }
 
-      // Параллельно запрашиваем свежий граф с дельта
-      const freshResponse = await getFreshGraph();
-      
-      this.preloadedGraph = {
-        data: freshResponse.fresh,
-        timestamp: Date.now(),
-        ttl: this.GRAPH_TTL,
-        delta: freshResponse.delta
-      };
+      if (freshResult.status === 'fulfilled') {
+        this.preloadedGraph = {
+          data: freshResult.value.fresh,
+          timestamp: Date.now(),
+          ttl: this.GRAPH_TTL,
+          delta: freshResult.value.delta
+        };
 
-      if (freshResponse.delta) {
-        console.log('[PreloadService] Delta available for incremental update:', freshResponse.delta);
+        if (freshResult.value.delta) {
+          console.log('[PreloadService] Delta available for authenticated update:', freshResult.value.delta);
+        }
+      } else {
+        console.warn('[PreloadService] Failed to preload fresh authenticated graph:', freshResult.reason);
       }
     } catch (error) {
-      console.error('[PreloadService] Error preloading graph:', error);
+      console.error('[PreloadService] Error during authenticated graph preload:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Предзагружает данные графа
+   */
+  private async preloadGraph(): Promise<void> {
+    try {
+      const graphData = await getFullGraphData();
+      this.preloadedGraph = {
+        data: graphData,
+        timestamp: Date.now(),
+        ttl: this.GRAPH_TTL
+      };
+      console.log('[PreloadService] Public graph preloaded successfully');
+    } catch (error) {
+      console.error('[PreloadService] Error preloading public graph:', error);
       throw error;
     }
   }
@@ -158,19 +199,26 @@ class PreloadServiceClass {
   /**
    * Получает предзагруженные данные графа, если они актуальны
    */
-  public getPreloadedGraph(): GraphData | null {
+  public getPreloadedGraphData(): PreloadedGraphData | null {
     if (!this.preloadedGraph) {
       return null;
     }
 
     const now = Date.now();
     if (now - this.preloadedGraph.timestamp > this.preloadedGraph.ttl) {
-      // Кэш устарел
       this.preloadedGraph = null;
       return null;
     }
 
-    return this.preloadedGraph.data;
+    return this.preloadedGraph;
+  }
+
+  public getPreloadedGraph(): GraphData | null {
+    return this.getPreloadedGraphData()?.data ?? null;
+  }
+
+  public getPreloadedGraphDelta(): GraphDelta | null {
+    return this.getPreloadedGraphData()?.delta ?? null;
   }
 
   /**
@@ -267,8 +315,20 @@ export function startPreload(): Promise<void> {
   return PreloadService.startPreload();
 }
 
+export function preloadAuthenticatedGraph(): Promise<void> {
+  return PreloadService.preloadAuthenticatedGraph();
+}
+
 export function getPreloadedGraph(): GraphData | null {
   return PreloadService.getPreloadedGraph();
+}
+
+export function getPreloadedGraphData(): PreloadedGraphData | null {
+  return PreloadService.getPreloadedGraphData();
+}
+
+export function getPreloadedGraphDelta(): GraphDelta | null {
+  return PreloadService.getPreloadedGraphDelta();
 }
 
 export function getPreloadedAchievements(): Array<{

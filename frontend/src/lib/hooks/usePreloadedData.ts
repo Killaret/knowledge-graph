@@ -1,5 +1,5 @@
 // Хуки для использования предзагруженных данных в компонентах
-import { getPreloadedGraph, getPreloadedAchievements, hasPreloadedData } from '$lib/services/PreloadService';
+import { getPreloadedGraph, getPreloadedGraphDelta, getPreloadedAchievements, hasPreloadedData } from '$lib/services/PreloadService';
 import { getFullGraphData } from '$lib/api/graph';
 import { getAllAchievements, getMyAchievements } from '$lib/api/users';
 import type { GraphData } from '$lib/api/graph';
@@ -75,10 +75,12 @@ export function usePreloadedDataStatus() {
  */
 export function useInstantData() {
   const graph = getPreloadedGraph();
+  const delta = getPreloadedGraphDelta();
   const achievements = getPreloadedAchievements();
   
   return {
     graph: graph || { nodes: [], links: [] },
+    delta,
     achievements: achievements || [],
     hasInstantData: !!(graph || achievements),
     isDataReady: hasPreloadedData()

@@ -12,6 +12,29 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
+// Compute fade progress by stable nodes (small velocity + valid position)
+function computeStableProgress(currentNodes: any[], totalNodes: number): number {
+  if (totalNodes === 0) return 1;
+
+  const stableNodes = currentNodes.filter((n: any) =>
+    n.x !== undefined && !isNaN(n.x) &&
+    n.y !== undefined && !isNaN(n.y) &&
+    Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2
+  ).length;
+
+  return Math.min(stableNodes / totalNodes, 1);
+}
+
+function anyOpacityBelowOne(state: SimulationState): boolean {
+  for (const value of state.nodeOpacity.values()) {
+    if (value < 0.999) return true;
+  }
+  for (const value of state.linkOpacity.values()) {
+    if (value < 0.999) return true;
+  }
+  return false;
+}
+
 // Initialize opacity maps with 0 for all nodes and links
 function initializeOpacityMaps(
   nodes: SimulationNode[],
@@ -41,6 +64,35 @@ function interpolateOpacity(
     const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * factor;
     opacityMap.set(key, Math.min(Math.max(newOpacity, 0), 1));
   });
+}
+
+function startFadeAnimation(state: SimulationState, totalNodes: number): void {
+  if (state.fadeAnimationId !== null) {
+    cancelAnimationFrame(state.fadeAnimationId);
+    state.fadeAnimationId = null;
+  }
+
+  const animateFade = () => {
+    if (!state.simulation) {
+      state.fadeAnimationId = null;
+      return;
+    }
+
+    const currentNodes = state.simulation.nodes();
+    const progress = computeStableProgress(currentNodes, totalNodes);
+    const targetOpacity = easeOutCubic(progress);
+
+    interpolateOpacity(state.nodeOpacity, targetOpacity, 0.12);
+    interpolateOpacity(state.linkOpacity, targetOpacity, 0.12);
+
+    if (progress < 1 || anyOpacityBelowOne(state)) {
+      state.fadeAnimationId = requestAnimationFrame(animateFade);
+    } else {
+      state.fadeAnimationId = null;
+    }
+  };
+
+  state.fadeAnimationId = requestAnimationFrame(animateFade);
 }
 
 /**
@@ -104,8 +156,8 @@ export function startSimulation(
     state.fadeAnimationId = null;
   }
 
-  // Initialize opacity maps for fade effect
-  initializeOpacityMaps(nodes, links, state);
+  // Initialize opacity maps for fade effect using filtered links
+  initializeOpacityMaps(nodes, edges, state);
 
   const totalNodes = nodes.length;
   let tickCount = 0;
@@ -128,19 +180,14 @@ export function startSimulation(
       onTick();
       tickCount++;
 
-      // Update fade effect every 5 ticks
+      // Update fade effect based on node stabilization every 5 ticks.
       if (tickCount % 5 === 0 && state.simulation) {
         const currentNodes = state.simulation.nodes();
-        const nodesWithPosition = currentNodes.filter((n: any) =>
-          n.x !== undefined && !isNaN(n.x) &&
-          n.y !== undefined && !isNaN(n.y)
-        ).length;
-
-        const progress = Math.min(nodesWithPosition / totalNodes, 1);
+        const progress = computeStableProgress(currentNodes, totalNodes);
         const targetOpacity = easeOutCubic(progress);
 
-        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.1);
-        interpolateOpacity(state.linkOpacity, targetOpacity, 0.1);
+        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.12);
+        interpolateOpacity(state.linkOpacity, targetOpacity, 0.12);
       }
     })
     .on('end', () => {
@@ -181,6 +228,7 @@ export function startSimulation(
 
     // Then start the animation
     state.simulation.alpha(1).restart();
+    startFadeAnimation(state, totalNodes);
   }
   state.isRunning = true;
 }

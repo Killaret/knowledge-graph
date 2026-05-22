@@ -343,6 +343,8 @@ func (h *Handler) GetFreshGraph(c *gin.Context) {
 			// Convert cache.GraphData to handler GraphData
 			handlerCachedData := convertFromCacheGraphData(cachedData)
 			delta = calculateDelta(handlerCachedData, freshData)
+			// Preserve cached positions in fresh data for visual stability
+			freshData = h.preserveCachedPositions(freshData, handlerCachedData)
 		}
 
 		// Cache the fresh data
@@ -551,5 +553,33 @@ func convertFromCacheGraphData(data cache.GraphData) GraphData {
 	return GraphData{
 		Nodes: handlerNodes,
 		Links: handlerLinks,
+	}
+}
+
+// preserveCachedPositions preserves node positions from cached data in fresh data
+func (h *Handler) preserveCachedPositions(fresh, cached GraphData) GraphData {
+	cachedPositionMap := make(map[string]struct{ x, y float64 })
+	for _, node := range cached.Nodes {
+		cachedPositionMap[node.ID] = struct{ x, y float64 }{x: node.X, y: node.Y}
+	}
+
+	preservedNodes := make([]GraphNode, len(fresh.Nodes))
+	for i, node := range fresh.Nodes {
+		x, y := node.X, node.Y
+		if pos, exists := cachedPositionMap[node.ID]; exists {
+			x, y = pos.x, pos.y
+		}
+		preservedNodes[i] = GraphNode{
+			ID:    node.ID,
+			Title: node.Title,
+			Type:  node.Type,
+			X:     x,
+			Y:     y,
+		}
+	}
+
+	return GraphData{
+		Nodes: preservedNodes,
+		Links: fresh.Links,
 	}
 }

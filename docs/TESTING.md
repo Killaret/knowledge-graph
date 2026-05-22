@@ -222,6 +222,7 @@ frontend/
 │   │   ├── GraphCanvas.links.spec.ts       # Link rendering
 │   │   ├── GraphCanvas.node-types.spec.ts  # Node type rendering
 │   │   ├── GraphCanvas.rendering.spec.ts   # Canvas rendering
+│   │   ├── GraphCanvas.fade.spec.ts        # GraphCanvas opacity fade animation
 │   │   ├── LazyGraph3D.spec.ts             # Lazy-loaded 3D
 │   │   ├── LinkCreator.spec.ts             # Link creation UI
 │   │   ├── NoteCard.spec.ts                # Note card component

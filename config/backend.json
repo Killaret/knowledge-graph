@@ -1,0 +1,102 @@
+{
+  "backend": {
+    "server": {
+      "rate_limit": {
+        "enabled": false,
+        "requests": 1000,
+        "window_seconds": 60,
+        "endpoints": {
+          "notes_create": 200,
+          "links_create": 200,
+          "notes_update": 100,
+          "notes_delete": 500
+        },
+        "fallback_ports": [
+          "8081",
+          "8082"
+        ]
+      }
+    },
+    "database": {
+      "retry_max_attempts": 3,
+      "retry_delay_seconds": 5,
+      "migrations_fail_on_error": false
+    },
+    "search": {
+      "fulltext_languages": [
+        "russian",
+        "simple"
+      ],
+      "ranking_weights": {
+        "russian": 1.0,
+        "simple": 1.0
+      },
+      "fallback_to_ilike": true
+    },
+    "recommendation": {
+      "depth": 3,
+      "decay": 0.5,
+      "top_n": 50,
+      "alpha": 0.5,
+      "beta": 0.5,
+      "gamma": 0.2,
+      "cache_ttl_seconds": 300,
+      "task_delay_seconds": 5,
+      "batch_rate_limit": 10,
+      "fallback_enabled": true,
+      "fallback_ttl_seconds": 3600,
+      "fallback_semantic_enabled": true,
+      "bfs_aggregation": "max",
+      "bfs_normalize": true,
+      "keyword_similarity_method": "jaccard",
+      "keyword_tversky_alpha": 0.5,
+      "keyword_tversky_beta": 0.5
+    },
+    "pagination": {
+      "default_limit": 100,
+      "max_limit": 300
+    },
+    "graph": {
+      "load_depth": 2,
+      "max_nodes": 500,
+      "default_limit": 100,
+      "max_limit": 1000,
+      "link_default_limit": 500,
+      "link_max_limit": 5000
+    },
+    "embedding": {
+      "similarity_limit": 30
+    },
+    "asynq": {
+      "concurrency": 10,
+      "queue_default": 1,
+      "queue_max_len": 10000
+    },
+    "auth": {
+      "jwt_secret": "change-me-in-production",
+      "jwt_access_ttl_seconds": 900,
+      "jwt_refresh_ttl_seconds": 604800,
+      "argon2_time": 3,
+      "argon2_memory": 65536,
+      "argon2_threads": 4,
+      "api_key_enabled": true,
+      "static_api_key": "kg-admin-2024-secret-key",
+      "skip_auth": true,
+      "yandex_client_id": "",
+      "yandex_client_secret": "",
+      "pkce_enabled": true,
+      "pkce_code_challenge_length": 128,
+      "smtp_host": "",
+      "smtp_port": 587,
+      "smtp_user": "",
+      "smtp_password": "",
+      "smtp_from": "noreply@example.com",
+      "password_reset_ttl_seconds": 900,
+      "password_policy_min_length": 10,
+      "password_policy_require_upper": true,
+      "password_policy_require_lower": true,
+      "password_policy_require_digit": true,
+      "password_policy_require_special": true
+    }
+  }
+}

@@ -114,4 +114,19 @@ describe('ApiErrorDisplay', () => {
     // Component should still be rendered
     expect(screen.getByText('Ошибка: VALIDATION_ERROR')).toBeInTheDocument();
   });
+
+  it('automatically renders a 404 illustration for NOT_FOUND errors', () => {
+    const notFoundError: ErrorResponse = {
+      code: 'NOT_FOUND',
+      message: 'Заметка не найдена'
+    };
+
+    render(ApiErrorDisplay, { props: { error: notFoundError } });
+    expect(screen.getByRole('img', { name: '404 illustration' })).toBeInTheDocument();
+  });
+
+  it('renders custom illustrationType when provided', () => {
+    render(ApiErrorDisplay, { props: { error: mockError, illustrationType: 'offline' } });
+    expect(screen.getByRole('img', { name: 'Offline illustration' })).toBeInTheDocument();
+  });
 });

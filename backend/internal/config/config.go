@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -265,7 +266,13 @@ func loadJSONConfig() *JSONConfig {
 	}
 
 	if err != nil {
-		// Файл не найден - это нормально, используем только env vars
+		// Попробуем собрать конфигурацию из отдельных файлов config/*.json
+		configDir := filepath.Join(filepath.Dir(filename), "..", "..", "..", "config")
+		if mergedConfig := loadJSONConfigParts(configDir); mergedConfig != nil {
+			log.Printf("[Config] Loaded JSON config from folder: %s", configDir)
+			return mergedConfig
+		}
+
 		log.Printf("[Config] knowledge-graph.config.json not found, using env vars only")
 		return nil
 	}
@@ -284,6 +291,73 @@ func loadJSONConfig() *JSONConfig {
 // Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
 // иначе используется встроенное значение по умолчанию.
 // Для обязательных переменных (DatabaseURL) используется mustGetEnv.
+func loadJSONConfigParts(configDir string) *JSONConfig {
+	stat, err := os.Stat(configDir)
+	if err != nil || !stat.IsDir() {
+		return nil
+	}
+
+	entries, err := os.ReadDir(configDir)
+	if err != nil {
+		log.Printf("[Config] Failed to read config dir %s: %v", configDir, err)
+		return nil
+	}
+
+	merged := map[string]any{}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+
+		filePath := filepath.Join(configDir, entry.Name())
+		raw, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Printf("[Config] Failed to read config part %s: %v", filePath, err)
+			return nil
+		}
+
+		var part map[string]any
+		if err := json.Unmarshal(raw, &part); err != nil {
+			log.Printf("[Config] Failed to parse config part %s: %v", filePath, err)
+			return nil
+		}
+
+		merged = mergeJSONObjects(merged, part)
+	}
+
+	var jsonCfg JSONConfig
+	if err := json.Unmarshal([]byte(mustJSON(merged)), &jsonCfg); err != nil {
+		log.Printf("[Config] Failed to unmarshal merged config parts: %v", err)
+		return nil
+	}
+
+	return &jsonCfg
+}
+
+func mergeJSONObjects(dst, src map[string]any) map[string]any {
+	for key, srcValue := range src {
+		if dstValue, ok := dst[key]; ok && isMap(dstValue) && isMap(srcValue) {
+			dst[key] = mergeJSONObjects(dstValue.(map[string]any), srcValue.(map[string]any))
+			continue
+		}
+		dst[key] = srcValue
+	}
+	return dst
+}
+
+func isMap(value any) bool {
+	_, ok := value.(map[string]any)
+	return ok
+}
+
+func mustJSON(value any) string {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return string(raw)
+}
+
 func Load() (*Config, error) {
 	// Загружаем JSON конфиг как источник дефолтных значений
 	jsonCfg := loadJSONConfig()

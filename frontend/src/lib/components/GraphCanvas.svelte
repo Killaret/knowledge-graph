@@ -20,20 +20,28 @@
     startAnimationLoop,
     clearAnimationState,
     type TransformState,
-    type DragState
+    type DragState,
+    applyDelta as applyDeltaToSimulation
   } from './GraphCanvas';
 
   const {
     nodes,
     links,
     onNodeClick,
-    delta
+    delta,
+    disableVariation = false
   }: {
     nodes: Array<{ id: string; title: string; type?: string }>;
     links: Array<{ source: string; target: string; weight?: number; link_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     delta?: GraphDelta;
+    disableVariation?: boolean;
   } = $props();
+
+  let stableRender = false;
+  $effect(() => {
+    stableRender = disableVariation || (browser && new URL(window.location.href).searchParams.get('stableRender') === 'true');
+  });
 
   // Debug: проверяем типы узлов при изменении (dev only)
   $effect(() => {
@@ -107,9 +115,10 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
         }
-      }
+      },
+      stableRender
     );
     
     mounted = true; // triggers $effect re-run since it's $state
@@ -161,7 +170,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
         }
       },
       () => {
@@ -192,7 +201,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
         }
       },
       onResetView: () => {
@@ -209,7 +218,7 @@
     handleZoom(e, transform, canvas, () => {
       const simNodes = getSimulationNodes(simState);
       if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
       }
     });
   }
@@ -222,7 +231,7 @@
     handlePanMove(e, dragState, transform, () => {
       const simNodes = getSimulationNodes(simState);
       if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity);
+        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
       }
     });
   }

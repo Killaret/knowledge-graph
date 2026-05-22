@@ -27,3 +27,10 @@ TL;DR — добавить opacity для узлов и связей в `GraphCa
 - `frontend/src/lib/components/GraphCanvas/renderer.ts`
 - `frontend/src/lib/components/Graph3D/fogManager.ts` (референс)
 - `frontend/src/lib/components/GraphCanvas.rendering.spec.ts`
+- `frontend/src/lib/components/GraphCanvas.fade.spec.ts`
+
+## Status
+
+- ✅ Реализовано: 2D fog veil effect теперь плавно прогрессирует от `0` до `1` вместе со стабилизацией узлов.
+- ✅ Тесты: добавлен `frontend/src/lib/components/GraphCanvas.fade.spec.ts`, утверждающий начальную нулевую непрозрачность, прогрессию и финальное приближение к `1`.
+- ✅ Валидация: целевой тестовый набор `GraphCanvas` прошёл успешно.

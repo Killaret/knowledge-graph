@@ -15,7 +15,7 @@ test.describe('GraphCanvas Isolated Node Visual Tests @visual @isolated', () => 
   for (const type of nodeTypes) {
     test(`should render ${type} node with correct visual appearance`, async ({ page }) => {
       // Navigate to isolated node test page with longer timeout
-      await page.goto(`/test/isolated-node?type=${type}`, { timeout: 15000, waitUntil: 'networkidle' });
+      await page.goto(`/test/isolated-node?type=${type}&stableRender=true`, { timeout: 15000, waitUntil: 'networkidle' });
       
       // Wait for page to be fully loaded
       await page.waitForLoadState('domcontentloaded');
@@ -43,7 +43,7 @@ test.describe('GraphCanvas Link Visual Tests @visual @links', () => {
   for (const linkType of linkTypes) {
     test(`should render ${linkType} link between nodes`, async ({ page }) => {
       // Navigate to link pair test page
-      await page.goto(`/test/link-pair?linkType=${linkType}&sourceType=star&targetType=planet`);
+      await page.goto(`/test/link-pair?linkType=${linkType}&sourceType=star&targetType=planet&stableRender=true`);
       
       // Wait for canvas to be ready
       await page.waitForSelector('canvas', { timeout: 10000 });
@@ -65,7 +65,7 @@ test.describe('GraphCanvas Link Visual Tests @visual @links', () => {
 test.describe('GraphCanvas Visual Tests @visual', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the graph page
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     // Wait for any animations to settle
     await page.waitForTimeout(500);
@@ -80,7 +80,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
     });
 
     // Refresh to see the node
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
@@ -99,7 +99,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       type: 'planet'
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
@@ -117,7 +117,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       type: 'comet'
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
@@ -135,7 +135,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       type: 'galaxy'
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
@@ -153,7 +153,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       type: 'asteroid'
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
@@ -186,7 +186,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       weight: 0.6
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1500);
 
@@ -246,7 +246,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
       weight: 0.5
     });
 
-    await page.goto('/');
+    await page.goto('/?stableRender=true');
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(1500);
 

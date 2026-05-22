@@ -1,14 +1,30 @@
 <script lang="ts">
+  import StateIllustration from './StateIllustration.svelte';
   import type { ErrorResponse } from '$lib/types/errors';
   import { getMessage } from '$lib/stores/lexicon-settings'
+
+  type IllustrationType = 'empty' | 'error' | '404' | 'offline' | 'no-links' | 'no-results';
 
   interface Props {
     error: ErrorResponse | null;
     onClose?: () => void;
+    illustrationType?: IllustrationType;
   }
 
-  const { error, onClose }: Props = $props();
+  const { error, onClose, illustrationType }: Props = $props();
   let displayMessage = $state<string | null>(null)
+  let resolvedIllustrationType = $state<IllustrationType | undefined>(undefined);
+
+  const errorIllustrationMap: Record<string, IllustrationType> = {
+    NOT_FOUND: '404',
+    VALIDATION_ERROR: 'error',
+    INTERNAL_ERROR: 'error',
+    CONFLICT: 'error'
+  };
+
+  $effect(() => {
+    resolvedIllustrationType = illustrationType ?? (error ? errorIllustrationMap[error.code] : undefined);
+  });
 
   function handleClose() {
     onClose?.();
@@ -49,6 +65,12 @@
       ×
     </button>
     
+    {#if resolvedIllustrationType}
+      <div class="error-illustration">
+        <StateIllustration type={resolvedIllustrationType} />
+      </div>
+    {/if}
+
     <div class="error-header">
       <span class="error-icon" aria-hidden="true">⚠️</span>
       <span class="error-code">Ошибка: {error.code}</span>
@@ -146,6 +168,12 @@
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  }
+
+  .error-illustration {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
   }
 
   .details-title {

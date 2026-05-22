@@ -75,6 +75,7 @@ export const config: Config = configData as Config;
 // Convenience exports for common values
 export const graphConfig2D = config.frontend.graph['2d'];
 export const graphConfig3D = config.frontend.graph['3d'];
+export const anomalyConfig = config.frontend.graph.anomaly;
 export const apiConfig = config.frontend.api;
 export const testConfig = config.frontend.test;
 export const ciCdConfig = config.ci_cd;

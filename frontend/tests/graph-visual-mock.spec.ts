@@ -14,7 +14,7 @@ test.describe('GraphCanvas Visual - Mock Node Types @visual @mock', () => {
   for (const type of nodeTypes) {
     test(`should render ${type} node correctly`, async ({ page }) => {
       // Navigate to test page with mock data
-      await page.goto(`/test/isolated-node?type=${type}`);
+      await page.goto(`/test/isolated-node?type=${type}&stableRender=true`);
       
       // Wait for canvas to be ready
       await page.waitForSelector('canvas', { timeout: 10000 });
@@ -39,7 +39,7 @@ test.describe('GraphCanvas Visual - Mock Link Types @visual @mock', () => {
   for (const linkType of linkTypes) {
     test(`should render ${linkType} link correctly`, async ({ page }) => {
       // Navigate to link test page with mock data
-      await page.goto(`/test/link-pair?linkType=${linkType}`);
+      await page.goto(`/test/link-pair?linkType=${linkType}&stableRender=true`);
       
       // Wait for canvas to be ready
       await page.waitForSelector('canvas', { timeout: 10000 });

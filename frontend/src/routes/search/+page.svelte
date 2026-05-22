@@ -4,6 +4,7 @@
   import { searchNotes, type Note } from '$lib/api/notes';
   import SearchBar from '$lib/components/SearchBar.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
+  import StateIllustration from '$lib/components/StateIllustration.svelte';
 
   let notes = $state<Note[]>([]);
   let loading = $state(false);
@@ -83,7 +84,7 @@
     <div class="error-message">{error}</div>
   {:else if $page.url.searchParams.get('q') && notes.length === 0}
     <div class="no-results">
-      <div class="no-results-icon">No results found</div>
+      <StateIllustration type="no-results" />
       <h2>No results found</h2>
       <p>No notes found for query "{$page.url.searchParams.get('q')}".</p>
       <p>Try using different keywords or check spelling.</p>
@@ -125,7 +126,7 @@
     {/if}
   {:else}
     <div class="empty-state">
-      <div class="empty-icon">Search</div>
+      <StateIllustration type="empty" />
       <h2>Search Notes</h2>
       <p>Enter keywords above to search through your notes.</p>
       <p>Search supports both Russian and English languages with automatic stemming.</p>

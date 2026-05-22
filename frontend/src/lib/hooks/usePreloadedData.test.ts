@@ -238,6 +238,7 @@ describe('usePreloadedData Hooks', () => {
       
       expect(instantData).toEqual({
         graph: { nodes: [], links: [] },
+        delta: null,
         achievements: [],
         hasInstantData: false,
         isDataReady: false

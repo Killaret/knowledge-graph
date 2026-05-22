@@ -2,6 +2,8 @@
  * Animation loop management for GraphCanvas
  */
 
+import { getVariation } from '$lib/utils/variation';
+
 export interface AnimationState {
   animationId: number;
   angles: Map<string, number>;
@@ -33,7 +35,8 @@ export function getBaseSpeed(type: string): number {
 export function updateNodeAngles(
   nodes: Array<{ id: string; type?: string }>,
   angles: Map<string, number>,
-  speeds: Map<string, number>
+  speeds: Map<string, number>,
+  disableVariation: boolean = false
 ): void {
   for (const node of nodes) {
     const id = node.id;
@@ -42,7 +45,20 @@ export function updateNodeAngles(
 
     let speed = speeds.get(id);
     if (speed === undefined) {
-      speed = baseSpeed * (0.7 + Math.random() * 0.6);
+        if (disableVariation) {
+          // In stable render mode we want deterministic, non-animated snapshots
+          // Provide a deterministic phase-based angle for visual variety, but
+          // keep speed at 0 so nothing animates during snapshot capture.
+          const variation = getVariation(id, type);
+          const initialAngle = variation.phaseShift * Math.PI * 2;
+          angles.set(id, initialAngle);
+          speed = 0;
+        } else {
+          // Get variation for this node to determine speed multiplier
+          const variation = getVariation(id, type);
+          const speedMultiplier = 0.8 + variation.phaseShift * 0.1;
+          speed = baseSpeed * speedMultiplier;
+        }
       speeds.set(id, speed);
     }
 
@@ -56,7 +72,8 @@ export function updateNodeAngles(
  */
 export function startAnimationLoop(
   getNodes: () => Array<{ id: string; type?: string }>,
-  onUpdate: () => void
+  onUpdate: () => void,
+  disableVariation: boolean = false
 ): { stop: () => void } {
   let animationId: number;
   const angles = new Map<string, number>();
@@ -64,7 +81,7 @@ export function startAnimationLoop(
 
   function animate() {
     const nodes = getNodes();
-    updateNodeAngles(nodes, angles, speeds);
+    updateNodeAngles(nodes, angles, speeds, disableVariation);
     onUpdate();
     animationId = requestAnimationFrame(animate);
   }

@@ -8,6 +8,7 @@
   import { formatDateTime } from '$lib/utils/date';
   import BackButton from '$lib/components/BackButton.svelte';
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
+  import StateIllustration from '$lib/components/StateIllustration.svelte';
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
@@ -50,7 +51,10 @@
 {#if loading}
   <p>Loading...</p>
 {:else if error}
-  <p class="error">{error}</p>
+  <div class="note-error">
+    <StateIllustration type={error === 'Заметка не найдена' ? '404' : 'error'} />
+    <p class="error">{error}</p>
+  </div>
 {:else if note}
   <div class="note-container">
     <BackButton href="/" />
@@ -93,6 +97,15 @@
   }
   .actions button:hover {
     background: var(--color-background);
+  }
+
+  .note-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
   }
   .edit-btn {
     background: var(--color-primary) !important;

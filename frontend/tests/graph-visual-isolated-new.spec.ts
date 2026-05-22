@@ -14,7 +14,7 @@ test.describe('GraphCanvas Visual - Isolated Node Types @visual @isolated', () =
   for (const type of nodeTypes) {
     test(`should render ${type} node correctly`, async ({ page }) => {
       // Navigate to test page with query param
-      await page.goto(`/test/isolated-node?type=${type}`);
+      await page.goto(`/test/isolated-node?type=${type}&stableRender=true`);
       
       // Wait for canvas to be ready
       const canvas = page.locator('canvas');
@@ -39,7 +39,7 @@ test.describe('GraphCanvas Visual - Link Types @visual @links', () => {
   for (const linkType of linkTypes) {
     test(`should render ${linkType} link correctly`, async ({ page }) => {
       // Navigate to link test page
-      await page.goto(`/test/link-pair?linkType=${linkType}`);
+      await page.goto(`/test/link-pair?linkType=${linkType}&stableRender=true`);
       
       // Wait for canvas
       const canvas = page.locator('canvas');

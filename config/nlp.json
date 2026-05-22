@@ -1,0 +1,6 @@
+{
+  "nlp": {
+    "model_name": "all-MiniLM-L6-V2",
+    "max_text_length": 10000
+  }
+}

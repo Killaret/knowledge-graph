@@ -1,0 +1,22 @@
+{
+  "backup": {
+    "local_path": "./backups",
+    "cloud": {
+      "enabled": false,
+      "provider": "yandex",
+      "r2": {
+        "account_id": "",
+        "access_key_id": "",
+        "secret_access_key": "",
+        "bucket": "",
+        "region": "auto"
+      },
+      "yandex": {
+        "oauth_token": ""
+      }
+    },
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "draft_ttl_hours": 168
+  }
+}

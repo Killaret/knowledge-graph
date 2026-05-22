@@ -8,9 +8,11 @@
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import NoteCard from '$lib/components/NoteCard.svelte';
   import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
+  import StateIllustration from '$lib/components/StateIllustration.svelte';
   import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getFullGraphData, type GraphData } from '$lib/api/graph';
+  import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$lib/api/graph';
   import { getGraphWithPreload, useInstantData } from '$lib/hooks/usePreloadedData';
+  import { isAuthenticated } from '$lib/stores/auth.svelte';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import type { ErrorResponse } from '$lib/types/errors';
   import SplashScreen from '$lib/components/SplashScreen.svelte';
@@ -30,6 +32,7 @@
   
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
+  let graphDelta: GraphDelta | null = $state(null);
   let graphLoading = $state(false);
   let searchQuery = $state('');
   
@@ -81,35 +84,47 @@
       // Check for instant preloaded data first
       const instantData = useInstantData();
       let graphResult: GraphData | null = null;
+      let graphDeltaResult: GraphDelta | null = null;
       
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
         console.log('[+page] Using preloaded graph data for instant display');
         graphResult = instantData.graph;
-        // Set graph data immediately for instant UI
+        graphDeltaResult = instantData.delta ?? null;
         graphData = graphResult;
       }
       
       // Load notes and graph data in parallel
       const [notesResult, freshGraphResult] = await Promise.all([
         getNotes(),
-        // Only load fresh graph if we don't have preloaded data or want to refresh
-        (!graphResult || !instantData.hasInstantData) 
-          ? getGraphWithPreload().catch((e: unknown) => {
+        isAuthenticated()
+          ? getFreshGraph().catch((e: unknown) => {
+              console.error('[+page] Failed to load fresh graph:', e);
+              return null;
+            })
+          : getGraphWithPreload().catch((e: unknown) => {
               console.error('[+page] Failed to load graph:', e);
               return null;
             })
-          : Promise.resolve(graphResult)
       ]);
       
       allNotes = notesResult;
       console.log('[+page] Notes loaded:', allNotes.length);
       applyFiltersAndSort();
       
-      // Use fresh graph result or keep preloaded data
-      if (freshGraphResult && freshGraphResult !== graphResult) {
-        graphResult = freshGraphResult;
-        console.log('[+page] Using fresh graph data');
+      // Apply fresh graph data when available
+      if (freshGraphResult) {
+        if (isAuthenticated() && 'fresh' in freshGraphResult) {
+          graphResult = freshGraphResult.fresh;
+          graphDeltaResult = freshGraphResult.delta ?? null;
+          console.log('[+page] Using fresh authenticated graph data');
+        } else if (!isAuthenticated()) {
+          graphResult = freshGraphResult as GraphData;
+          graphDeltaResult = null;
+          console.log('[+page] Using public graph data');
+        }
       }
+      
+      graphDelta = graphDeltaResult;
       
       // Set graph data if successful
       console.log('[+page] Graph result:', graphResult ? 'exists' : 'null', 'nodes:', graphResult?.nodes?.length, 'links:', graphResult?.links?.length);
@@ -412,6 +427,7 @@
         <GraphCanvas 
           nodes={filteredGraphData().nodes}
           links={filteredGraphData().links}
+          delta={graphDelta}
           onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
         />
         <!-- Stats Overlay -->
@@ -424,7 +440,7 @@
         </div>
       {:else}
         <div class="empty-state">
-          <div class="empty-icon">🌌</div>
+          <StateIllustration type="no-links" />
           <h2>No graph data</h2>
           <p>{selectedType === 'all' 
             ? "Create some notes to see the knowledge graph" 
@@ -438,7 +454,7 @@
       <div class="list-container" data-testid="list-container">
         {#if filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
-            <div class="empty-icon">🌌</div>
+            <StateIllustration type={selectedType === 'all' && !searchQuery ? 'empty' : 'no-results'} />
             <h2>No notes found</h2>
             <p>
               {selectedType === 'all' && !searchQuery

@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
 import * as usersApi from '$lib/api/users';
-import { clearPreloadCache } from '$lib/services/PreloadService';
+import { clearPreloadCache, preloadAuthenticatedGraph } from '$lib/services/PreloadService';
 import type { User, AuthTokens } from '$lib/types';
 
 // Global reactive state - wrapped in object for export
@@ -63,6 +63,7 @@ export async function initAuth(): Promise<void> {
       try {
         const user = await usersApi.getMe();
         authState.currentUser = user;
+        void preloadAuthenticatedGraph();
       } catch {
         // If getting user fails, clear auth state
         clearAuthState();
@@ -92,6 +93,7 @@ export async function login(login: string, password: string): Promise<boolean> {
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
+    void preloadAuthenticatedGraph();
     
     return true;
   } catch (e) {
@@ -119,6 +121,7 @@ export async function register(login: string, password: string, email?: string):
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
+    void preloadAuthenticatedGraph();
     
     return true;
   } catch (e) {
@@ -189,6 +192,7 @@ export async function handleYandexCallback(code: string, state: string): Promise
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
+    void preloadAuthenticatedGraph();
     
     return true;
   } catch (e) {

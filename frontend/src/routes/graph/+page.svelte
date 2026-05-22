@@ -9,6 +9,7 @@
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
   import BackButton from '$lib/components/BackButton.svelte';
   import WeltallBackground from '$lib/components/WeltallBackground.svelte';
+  import StateIllustration from '$lib/components/StateIllustration.svelte';
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -146,6 +147,7 @@
         {/key}
       {:else}
         <div class="empty">
+          <StateIllustration type="no-links" />
           <p>No graph data available</p>
         </div>
       {/if}

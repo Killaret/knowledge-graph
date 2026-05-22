@@ -29,7 +29,7 @@ test.describe('GraphCanvas Visual - Isolated Node Types @visual @isolated', () =
       
       try {
         // Navigate to test page (public route, no auth required)
-        await page.goto(`/test/isolated-node?type=${type}`);
+        await page.goto(`/test/isolated-node?type=${type}&stableRender=true`);
         
         // Wait for canvas
         await page.waitForSelector('canvas', { timeout: 10000 });
@@ -74,7 +74,7 @@ test.describe('GraphCanvas Visual - Link Types @visual @links', () => {
         await createLink(request, sourceNote.data.id, targetNote.data.id, 0.8, linkType);
         
         // Navigate to test page (public route, no auth required)
-        await page.goto(`/test/link-pair?linkType=${linkType}`);
+        await page.goto(`/test/link-pair?linkType=${linkType}&stableRender=true`);
         await page.waitForSelector('canvas', { timeout: 15000 });
         await page.waitForTimeout(2000);
         

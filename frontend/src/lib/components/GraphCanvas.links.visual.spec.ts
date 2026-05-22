@@ -34,22 +34,22 @@ describe('GraphCanvas - Link Visual Correctness', () => {
 
     it('should use correct colors for reference links', () => {
       const color = renderer.getLinkColor(0.5, 'reference');
-      expect(color).toContain('51, 102, 255'); // Blue reference color
+      expect(color).toContain('139, 92, 246'); // Purple reference color
     });
 
     it('should use correct colors for dependency links', () => {
       const color = renderer.getLinkColor(0.5, 'dependency');
-      expect(color).toContain('255, 102, 0'); // Orange dependency color
+      expect(color).toContain('255, 58, 47'); // Red dependency color
     });
 
     it('should use correct colors for related links', () => {
       const color = renderer.getLinkColor(0.5, 'related');
-      expect(color).toContain('153, 153, 153'); // Gray related color
+      expect(color).toContain('107, 114, 128'); // Gray related color
     });
 
     it('should use correct colors for custom links', () => {
       const color = renderer.getLinkColor(0.5, 'custom');
-      expect(color).toContain('255, 102, 255'); // Pink custom color
+      expect(color).toContain('232, 121, 249'); // Pink custom color
     });
 
     it('should apply opacity based on weight', () => {

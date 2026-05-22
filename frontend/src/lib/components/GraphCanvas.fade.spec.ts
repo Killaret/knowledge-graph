@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import GraphCanvas from './GraphCanvas.svelte';
+import { startSimulation, type SimulationState, type TransformState } from './GraphCanvas';
 
 // Shared state для мока d3-force
 const mockState = {
@@ -10,6 +11,8 @@ const mockState = {
   endCallback: null as (() => void) | null,
   stopCallback: null as (() => void) | null,
 };
+
+let animationFrameHandles: number[] = [];
 
 // Мокируем d3-force
 vi.mock('d3-force', () => {
@@ -97,6 +100,17 @@ const mockLinks = [
   { source: '2', target: '3', weight: 0.5, link_type: 'dependency' }
 ];
 
+function createSimulationState(): SimulationState {
+  return {
+    simulation: null,
+    simLinks: [],
+    isRunning: false,
+    nodeOpacity: new Map(),
+    linkOpacity: new Map(),
+    fadeAnimationId: null
+  };
+}
+
 describe('GraphCanvas - Fade Effect', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -154,14 +168,22 @@ describe('GraphCanvas - Fade Effect', () => {
       unobserve: vi.fn()
     }));
 
+    animationFrameHandles = [];
     vi.stubGlobal('requestAnimationFrame', vi.fn().mockImplementation((cb: FrameRequestCallback) => {
-      setTimeout(cb, 16);
-      return 1;
+      const handle = setTimeout(cb, 16);
+      animationFrameHandles.push(handle);
+      return handle as unknown as number;
     }));
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    vi.stubGlobal('cancelAnimationFrame', vi.fn().mockImplementation((handle: number) => {
+      clearTimeout(handle);
+      const index = animationFrameHandles.indexOf(handle);
+      if (index >= 0) animationFrameHandles.splice(index, 1);
+    }));
   });
 
   afterEach(() => {
+    animationFrameHandles.forEach((handle) => clearTimeout(handle));
+    animationFrameHandles = [];
     vi.restoreAllMocks();
   });
 
@@ -174,18 +196,27 @@ describe('GraphCanvas - Fade Effect', () => {
   });
 
   it('starts with zero opacity for nodes and links', async () => {
-    render(GraphCanvas, { props: { nodes: mockNodes, links: mockLinks } });
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const state = createSimulationState();
+    const transform: TransformState = { x: 0, y: 0, k: 1 };
 
-    // After initialization, opacity maps should be created
-    // This is tested indirectly through rendering behavior
+    startSimulation(mockNodes, mockLinks, 800, 600, state, transform, () => {}, () => {});
+
+    expect([...state.nodeOpacity.values()]).toEqual([0, 0, 0]);
+    expect([...state.linkOpacity.values()]).toEqual([0, 0]);
+
+    await new Promise(resolve => setTimeout(resolve, 120));
+
+    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(true);
+    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(true);
   });
 
   it('updates opacity during simulation ticks', async () => {
-    render(GraphCanvas, { props: { nodes: mockNodes, links: mockLinks } });
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const state = createSimulationState();
+    const transform: TransformState = { x: 0, y: 0, k: 1 };
 
-    // Simulate multiple ticks to see opacity progression
+    startSimulation(mockNodes, mockLinks, 800, 600, state, transform, () => {}, () => {});
+    await new Promise(resolve => setTimeout(resolve, 120));
+
     if (mockState.tickCallback) {
       for (let i = 0; i < 25; i++) {
         mockState.tickCallback();
@@ -193,7 +224,9 @@ describe('GraphCanvas - Fade Effect', () => {
     }
 
     await new Promise(resolve => setTimeout(resolve, 50));
-    // Opacity should have increased from 0
+
+    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(true);
+    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(true);
   });
 
   it('triggers final fade animation on simulation end', async () => {

@@ -1,9 +1,10 @@
 # Knowledge Graph Configuration
 
 System parameters can be configured via:
-1. **`knowledge-graph.config.json`** — Unified configuration file (recommended)
-2. **Environment variables** — Override specific values
-3. **`.env` file** — For local development
+1. **`config/*.json` source files** — Editable sections that are merged into `knowledge-graph.config.json`
+2. **`knowledge-graph.config.json`** — Generated runtime configuration file (recommended)
+3. **Environment variables** — Override specific values
+4. **`.env` file** — For local development
 
 For production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
 
@@ -13,13 +14,20 @@ For production, pass variables through `environment` in `docker-compose.yml` or 
 
 ## Unified Configuration File
 
-The `knowledge-graph.config.json` file in the project root is the **single source of truth** for all structural parameters. It contains settings for backend, frontend, NLP service, and CI/CD.
+The `knowledge-graph.config.json` file in the project root is the **generated runtime artifact** and the single source of truth for all structural parameters. It is created from editable source files in `config/*.json`, and contains settings for backend, frontend, NLP service, backup, and CI/CD.
+
+To regenerate the runtime config after editing source files, run:
+```bash
+npm run build-config
+```
 
 ### Priority (highest to lowest)
 
 1. **Environment variables** — Override any value from JSON
-2. **`knowledge-graph.config.json`** — Shared defaults across all components
+2. **`knowledge-graph.config.json`** — Generated runtime config shared across all components
 3. **Hardcoded defaults** — Fallback in Go/TypeScript code
+
+Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.config.json` with `npm run build-config`.
 
 ### File Structure
 

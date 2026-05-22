@@ -1,0 +1,56 @@
+{
+  "frontend": {
+    "test": {
+      "debounce_timeout_ms": 300,
+      "max_retry_count": 3,
+      "mock_goto_delay_ms": 0
+    },
+    "graph": {
+      "2d": {
+        "max_nodes": 500,
+        "shadows_threshold": 100
+      },
+      "3d": {
+        "max_nodes": 500
+      },
+      "anomaly": {
+        "reality_rift": {
+          "core_color": "#0a0a0f",
+          "glow_color": "#8b5cf6",
+          "crack_count_min": 5,
+          "crack_count_max": 8,
+          "deform_amount_min": 0.2,
+          "deform_amount_max": 0.5
+        },
+        "chromatic_maw": {
+          "tentacle_count_min": 6,
+          "tentacle_count_max": 10,
+          "hue_shift_base": 280,
+          "hue_shift_range": 60
+        },
+        "void_whisper": {
+          "particle_count_min": 20,
+          "particle_count_max": 30,
+          "hue_shift_base": 220,
+          "hue_shift_range": 40,
+          "connection_distance_threshold": 0.4
+        },
+        "cosmic_abomination": {
+          "particle_count_min": 12,
+          "particle_count_max": 15,
+          "tentacle_count_min": 3,
+          "tentacle_count_max": 4,
+          "crack_count_min": 2,
+          "crack_count_max": 3
+        }
+      }
+    },
+    "api": {
+      "default_limit": 100,
+      "link_limit": 0
+    },
+    "achievements": {
+      "poll_interval_ms": 7000
+    }
+  }
+}

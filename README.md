@@ -108,6 +108,8 @@ cd nlp-service && pytest
 ## 📚 Документация
 
 - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
+ - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
+ - Frontend patterns: [frontend/FRONTEND_PATTERNS.md](frontend/FRONTEND_PATTERNS.md)
 - [API Errors](docs/API_ERRORS.md) — формат ошибок и коды
 - [Тесты](TEST_STATUS.md) — статус и покрытие
 - [Конфигурация](docs/CONFIGURATION.md) — полное руководство по настройке
@@ -134,6 +136,12 @@ cd nlp-service && pytest
 - Фильтр Inbox для быстрых заметок
 - Сочетания клавиш: Ctrl+Enter для отправки
 
+### Ускоренная загрузка графа
+- `Redis` используется для кэша приватного графа пользователя
+- `GET /api/v1/me/graph/cached` возвращает мгновенный кэш
+- `GET /api/v1/me/graph/fresh` выдаёт актуальный граф и `delta` для инкрементальных обновлений
+- Фронтенд применяет `delta` через `GraphCanvas`, избегая полной перерисовки
+
 ## 🔧 Pre-commit Hooks
 
 Активировать проверку кода перед коммитом:
@@ -153,3 +161,74 @@ MIT License — см. [LICENSE](LICENSE)
 ---
 
 **Note:** Скрипты `start-personal.sh` и `start-personal.ps1` запускают личный инстанс на порту 3001 с персистентными данными.
+
+## 🧰 Maintenance scripts
+
+В репозитории есть утилиты для обслуживания локальной среды и оптимизации образов/дисков.
+
+- `scripts/cleanup-docker.ps1` — очистка Docker (dangling images, stopped containers, networks, volumes, builder cache). Пример запуска:
+
+```powershell
+.\scripts\cleanup-docker.ps1 -Full -WslOptimize
+```
+
+- `scripts/clean_and_compress_lunix.ps1` — поиск и сжатие локального образа/диска `lunix` (Windows). Примеры:
+
+```powershell
+# Найти и сжать найденный образ
+.\scripts\clean_and_compress_lunix.ps1 -Search -Compress
+
+# Сжать конкретный файл без запроса
+.\scripts\clean_and_compress_lunix.ps1 -ImagePath 'D:\images\lunix.vhdx' -Compress -Force
+```
+
+- `scripts/clean_and_compress_lunix.sh` — Linux/WSL версия, использует `qemu-img` для сжатия в `qcow2`:
+
+```bash
+./scripts/clean_and_compress_lunix.sh -c -p /path/to/lunix.vhdx
+```
+
+Также добавлены npm-скрипты для удобного вызова из корня проекта:
+
+```bash
+# Windows PowerShell
+npm run clean:lunix
+
+# Linux/WSL
+npm run clean:lunix:sh
+```
+
+Дополнительно поддерживается безопасный режим "dry-run" для оценки действий без внесения изменений:
+
+```powershell
+# PowerShell dry-run
+.\scripts\clean_and_compress_lunix.ps1 -Search -Compress -DryRun
+```
+
+```bash
+# Bash dry-run
+./scripts/clean_and_compress_lunix.sh --dry-run -c -p /path/to/lunix.vhdx
+```
+
+Имеется также удобная `make` цель в корне репозитория:
+
+```bash
+make clean-lunix         # запускает npm run clean:lunix
+make clean-lunix-sh      # запускает npm run clean:lunix:sh
+make clean-lunix-dry     # запускает dry-run (PowerShell)
+```
+
+CI: уведомления
+----------------
+Workflow `.github/workflows/cleanup-dryrun.yml` выполняет dry-run еженедельно и при ручном запуске. При ошибке workflow может отправлять email-уведомления.
+
+Перед включением email-уведомлений добавьте в `Settings -> Secrets` вашего репозитория следующие значения:
+
+- `SMTP_HOST` — адрес SMTP сервера
+- `SMTP_PORT` — порт (обычно 465 или 587)
+- `SMTP_USERNAME` — логин
+- `SMTP_PASSWORD` — пароль
+- `NOTIFY_EMAIL_TO` — адрес получателя уведомлений
+- `NOTIFY_EMAIL_FROM` — адрес отправителя
+
+Без этих секретов уведомления не будут отправляться, но dry-run продолжит выполняться и загружать логи как артефакты.
