@@ -108,13 +108,36 @@ cd nlp-service && pytest
 ## 📚 Документация
 
 - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
- - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
- - Frontend patterns: [frontend/FRONTEND_PATTERNS.md](frontend/FRONTEND_PATTERNS.md)
+- Frontend patterns: [frontend/FRONTEND_PATTERNS.md](frontend/FRONTEND_PATTERNS.md)
+- [Agents guide](docs/AGENTS.md) — как использовать агенты репозитория
 - [API Errors](docs/API_ERRORS.md) — формат ошибок и коды
 - [Тесты](TEST_STATUS.md) — статус и покрытие
 - [Конфигурация](docs/CONFIGURATION.md) — полное руководство по настройке
 - [Конфигурация системы](docs/CONFIGURATION_EN.md) — технические параметры
 - [Развертывание](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
+
+## 🧠 Работа с агентами и командами
+
+Этот репозиторий содержит три специальных агента, которые помогают оформить и поддержать документацию и задачи:
+
+- `knowledge-graph-frontend-svelte` — для frontend задач: анализ UI, Svelte-компонентов, тестовой инфраструктуры и frontend-доков.
+- `knowledge-graph-backend-go` — для backend/infra задач: Go-код, БД, Docker, Redis, API и backend-документации.
+- `knowledge-graph-docs-maintenance` — для создания, актуализации и оформления документации: `README.md`, `docs/`, ADR, описания изменений и сопроводительных материалов.
+
+Эти агенты — не исполняемые команды. Это метаданные, которые помогают выбрать правильный контекст при работе с репозиторием.
+
+## 🧰 Важные команды и утилиты
+
+- `npm run clean:lunix` — запускает Windows-скрипт `scripts/clean_and_compress_lunix.ps1`.
+- `npm run clean:lunix:sh` — запускает bash-версию `scripts/clean_and_compress_lunix.sh`.
+- `make clean-lunix` — alias для `npm run clean:lunix`.
+- `make clean-lunix-sh` — alias для `npm run clean:lunix:sh`.
+- `make clean-lunix-dry` — dry-run проверки без изменений.
+
+Для периодической очистки:
+
+- `scripts/register_cleanup_task.ps1` — регистрирует Scheduled Task в Windows;
+- `scripts/register_cron.sh` — добавляет запись в WSL/cron.
 
 ## ✨ Новые функции
 
