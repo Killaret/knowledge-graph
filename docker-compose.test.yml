@@ -28,6 +28,32 @@ services:
       timeout: 5s
       retries: 5
 
+  graph-service:
+    build:
+      context: .
+      dockerfile: ./services/graph-service/Dockerfile
+    container_name: kg-graph-service-test
+    ports:
+      - "9091:9091"
+    environment:
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      HTTP_PORT: 9091
+      GRPC_PORT: 9090
+      EVENT_CHANNEL: graph:events
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
+
   backend:
     build:
       context: .
@@ -45,19 +71,28 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      graph-service:
+        condition: service_healthy
     command: ["./server"]
 
   frontend-test:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_TARGET: http://backend:8080
+        VITE_GRAPH_SERVICE_URL: http://graph-service:9091
     environment:
       BACKEND_URL: http://backend:8080
       FRONTEND_URL: http://localhost:5173
       SKIP_AUTH: "true"
       CI: "true"
+      VITE_GRAPH_SERVICE_URL: http://graph-service:9091
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      graph-service:
+        condition: service_healthy
     volumes:
       - ./test-results:/app/test-results
       - ./frontend/tests:/app/tests
@@ -81,6 +116,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      graph-service:
         condition: service_healthy
     command: >
       sh -c "

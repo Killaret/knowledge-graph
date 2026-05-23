@@ -2,6 +2,13 @@
 import { api } from './client';
 import { apiConfig } from '$lib/config';
 
+function getGraphApi() {
+  const graphServiceUrl = (import.meta as any).env?.VITE_GRAPH_SERVICE_URL ?? '';
+  return graphServiceUrl
+    ? api.extend({ prefixUrl: `${graphServiceUrl.replace(/\/$/, '')}/api` })
+    : api.extend({ prefixUrl: 'graph-service/api' });
+}
+
 // Узел графа – заметка (звезда)
 export interface GraphNode {
   id: string;
@@ -59,10 +66,18 @@ interface GraphApiResponse {
   };
 }
 
+function buildQuery(params: Record<string, string | number | undefined>): string {
+  return Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== '')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join('&');
+}
+
 // Запросить граф для заметки (возвращает все прямые связи и связанные заметки)
-export async function getGraphData(noteId: string, depth: number = 2): Promise<GraphData> {
+export async function getGraphData(noteId: string, depth: number = 2, userId?: string): Promise<GraphData> {
   try {
-    const response = await api.get(`v1/notes/${noteId}/graph?depth=${depth}`).json<GraphApiResponse>();
+    const query = buildQuery({ depth, user_id: userId });
+    const response = await getGraphApi().get(`v1/graph/note/${encodeURIComponent(noteId)}${query ? `?${query}` : ''}`).json<GraphApiResponse>();
     return response.data || { nodes: [], links: [] };
   } catch (error) {
     return handleGraphError(error, `Failed to load graph for note ${noteId}`);
@@ -70,11 +85,10 @@ export async function getGraphData(noteId: string, depth: number = 2): Promise<G
 }
 
 // Запросить полный граф всех заметок и связей
-export async function getFullGraphData(limit: number = apiConfig.default_limit): Promise<GraphData> {
+export async function getFullGraphData(limit: number = apiConfig.default_limit, userId?: string): Promise<GraphData> {
   try {
-    // Используем link_limit из конфига (0 означает загрузить все связи)
-    const linkLimit = apiConfig.link_limit ?? 0;
-    const response = await api.get(`v1/graph/all?limit=${limit}&link_limit=${linkLimit}`).json<GraphApiResponse>();
+    const query = buildQuery({ limit, user_id: userId });
+    const response = await getGraphApi().get(`v1/graph/full${query ? `?${query}` : ''}`).json<GraphApiResponse>();
     return response.data || { nodes: [], links: [] };
   } catch (error) {
     return handleGraphError(error, 'Failed to load full graph');
@@ -87,7 +101,7 @@ export interface GraphDelta {
   removed_nodes?: string[];
   updated_nodes?: GraphNode[];
   added_links?: GraphLink[];
-  removed_links?: GraphLink[];
+  removed_links?: string[];
 }
 
 // Fresh graph response with optional delta
@@ -111,8 +125,14 @@ export async function getCachedGraph(): Promise<GraphData | null> {
 }
 
 // Запросить свежий граф с опциональным дельта-обновлением
-export async function getFreshGraph(): Promise<FreshGraphResponse> {
+export async function getFreshGraph(userId?: string): Promise<FreshGraphResponse> {
   try {
+    if (userId) {
+      const response = await getGraphApi().get(`v1/graph/full?${buildQuery({ user_id: userId })}`);
+      const fullGraph = await response.json<GraphData>();
+      return { fresh: fullGraph };
+    }
+
     const response = await api.get('v1/me/graph/fresh').json<FreshGraphResponse>();
     return response;
   } catch (error) {

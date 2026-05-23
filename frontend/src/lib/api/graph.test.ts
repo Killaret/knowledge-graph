@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../vitest-setup';
 import { getGraphData, getFullGraphData } from './graph';
 import type { GraphNode, GraphLink, GraphData } from './graph';
 
 describe('graph API', () => {
+  beforeEach(() => {
+    // Reset any default handlers
+    server.resetHandlers();
+  });
+
   describe('getGraphData', () => {
     it('should return graph data for note', async () => {
       const mockGraphData: GraphData = {
@@ -20,7 +25,7 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => {
+        http.get('*/api/v1/graph/note/1', () => {
           return HttpResponse.json({ data: mockGraphData });
         })
       );
@@ -44,7 +49,7 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost:8080/api/v1/graph/all', () => {
+        http.get('*/api/v1/graph/full', () => {
           return HttpResponse.json({ data: mockGraphData });
         })
       );
@@ -69,7 +74,7 @@ describe('graph API', () => {
       }));
 
       server.use(
-        http.get('http://localhost:8080/api/v1/graph/all', () => HttpResponse.json({ data: { nodes: manyNodes, links: manyLinks } }))
+        http.get('*/api/v1/graph/full', () => HttpResponse.json({ data: { nodes: manyNodes, links: manyLinks } }))
       );
 
       const result = await getFullGraphData(100);
@@ -82,7 +87,7 @@ describe('graph API', () => {
   describe('edge cases', () => {
     it('should handle empty graph', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/999/graph', () => HttpResponse.json({ nodes: [], links: [] }))
+        http.get('*/api/v1/graph/note/999', () => HttpResponse.json({ nodes: [], links: [] }))
       );
 
       const result = await getGraphData('999', 1);
@@ -95,7 +100,7 @@ describe('graph API', () => {
   describe('error handling', () => {
     it('should handle network errors for getGraphData', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => HttpResponse.error())
+        http.get('*/api/v1/graph/note/1', () => HttpResponse.error())
       );
 
       await expect(getGraphData('1')).rejects.toThrow();
@@ -103,7 +108,7 @@ describe('graph API', () => {
 
     it('should handle HTTP 404 errors for getGraphData', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/999/graph', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
+        http.get('*/api/v1/graph/note/999', () => HttpResponse.json({ error: 'Not found' }, { status: 404 }))
       );
 
       await expect(getGraphData('999')).rejects.toThrow('Граф не найден');
@@ -111,7 +116,7 @@ describe('graph API', () => {
 
     it('should handle HTTP 500 errors for getGraphData', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+        http.get('*/api/v1/graph/note/1', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getGraphData('1')).rejects.toThrow();
@@ -119,7 +124,7 @@ describe('graph API', () => {
 
     it('should handle 400 for invalid depth parameter', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => 
+        http.get('*/api/v1/graph/note/1', () => 
           HttpResponse.json({ error: 'Invalid depth parameter' }, { status: 400 })
         )
       );
@@ -129,7 +134,7 @@ describe('graph API', () => {
 
     it('should handle network errors for getFullGraphData', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/graph/all', () => HttpResponse.error())
+        http.get('*/api/v1/graph/full', () => HttpResponse.error())
       );
 
       await expect(getFullGraphData()).rejects.toThrow();
@@ -137,7 +142,7 @@ describe('graph API', () => {
 
     it('should handle HTTP 500 errors for getFullGraphData', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/graph/all', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
+        http.get('*/api/v1/graph/full', () => HttpResponse.json({ error: 'Server error' }, { status: 500 }))
       );
 
       await expect(getFullGraphData(1000)).rejects.toThrow();
@@ -145,7 +150,7 @@ describe('graph API', () => {
 
     it('should handle 503 when graph service is unavailable', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => 
+        http.get('*/api/v1/graph/note/1', () => 
           HttpResponse.json({ error: 'Service Unavailable' }, { status: 503 })
         )
       );
@@ -155,7 +160,7 @@ describe('graph API', () => {
 
     it('should handle timeout errors', async () => {
       server.use(
-        http.get('http://localhost:8080/api/v1/notes/1/graph', () => 
+        http.get('*/api/v1/graph/note/1', () => 
           HttpResponse.json({ error: 'Request timeout' }, { status: 504 })
         )
       );
@@ -175,7 +180,7 @@ describe('graph API', () => {
       };
 
       server.use(
-        http.get('http://localhost:8080/api/v1/graph/all', ({ request }) => {
+        http.get('*/api/v1/graph/full', ({ request }) => {
           const url = new URL(request.url);
           const limit = url.searchParams.get('limit');
           // Default limit from config is expected

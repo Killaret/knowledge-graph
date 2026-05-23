@@ -66,6 +66,34 @@ services:
       start_period: 600s
     restart: unless-stopped
 
+  graph-service-personal:
+    build:
+      context: .
+      dockerfile: ./services/graph-service/Dockerfile
+    container_name: kg-graph-service-personal
+    ports:
+      - "9092:9091"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      HTTP_PORT: 9091
+      GRPC_PORT: 9090
+      EVENT_CHANNEL: ${PERSONAL_EVENT_CHANNEL:-graph:events:personal}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   backend_personal:
     build:
       context: .
@@ -87,6 +115,8 @@ services:
         condition: service_healthy
       nlp:
         condition: service_started
+      graph-service-personal:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
@@ -115,6 +145,8 @@ services:
         condition: service_healthy
       nlp:
         condition: service_started
+      graph-service-personal:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend_personal:
@@ -123,6 +155,7 @@ services:
       dockerfile: ./frontend/Dockerfile
       args:
         VITE_API_TARGET: http://backend_personal:8080
+        VITE_GRAPH_SERVICE_URL: http://graph-service-personal:9091
     container_name: kg-frontend-personal
     ports:
       - "3001:3000"
@@ -130,14 +163,17 @@ services:
       - .env
     environment:
       VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://localhost:8081}
+      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://graph-service-personal:9091}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
     depends_on:
       backend_personal:
+        condition: service_healthy
+      graph-service-personal:
         condition: service_healthy
     restart: unless-stopped
 

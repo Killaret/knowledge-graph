@@ -268,10 +268,14 @@ func TestCheckTrigger_WithInvalidTrigger(t *testing.T) {
 	mockRepo := new(MockAchievementRepository)
 	mockEngine := new(MockEngine)
 
+	// Mock FindAll to return empty list (no achievements match invalid trigger)
+	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
+
 	service := NewService(mockEngine, mockRepo, nil, nil)
 
 	err := service.CheckTrigger(ctx, userID, "invalid.trigger")
-	assert.NoError(t, err) // Should return nil for invalid triggers
+	assert.Error(t, err) // Should return error for invalid triggers
+	assert.Contains(t, err.Error(), "invalid trigger key")
 
 	mockRepo.AssertExpectations(t)
 	mockEngine.AssertNotCalled(t, "Evaluate")
