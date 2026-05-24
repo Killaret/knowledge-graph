@@ -3,10 +3,8 @@ import { api } from './client';
 import { apiConfig } from '$lib/config';
 
 function getGraphApi() {
-  const graphServiceUrl = (import.meta as any).env?.VITE_GRAPH_SERVICE_URL ?? '';
-  return graphServiceUrl
-    ? api.extend({ prefixUrl: `${graphServiceUrl.replace(/\/$/, '')}/api` })
-    : api.extend({ prefixUrl: 'graph-service/api' });
+  const graphServiceUrl = (import.meta as any).env?.VITE_GRAPH_SERVICE_URL ?? 'http://localhost:9091';
+  return api.extend({ prefixUrl: `${graphServiceUrl.replace(/\/$/, '')}/api` });
 }
 
 // Узел графа – заметка (звезда)

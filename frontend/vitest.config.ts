@@ -8,7 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
 	plugins: [
 		svelte({
-			hot: !process.env.VITEST
+			compilerOptions: {
+				dev: !process.env.VITEST
+			}
 		})
 	],
 	define: {
@@ -17,6 +19,7 @@ export default defineConfig({
 		'import.meta.env.PUBLIC_API_URL': '"http://localhost:8080/api"',
 		// api/client.ts reads VITE_API_URL; must match MSW handlers in vitest-setup.ts
 		'import.meta.env.VITE_API_URL': '"http://localhost:8080"',
+		'import.meta.env.VITE_GRAPH_SERVICE_URL': '"http://localhost:9091"',
 		'import.meta.env.VITEST': 'true',
 		'import.meta.env.MODE': '"test"'
 	},

@@ -74,7 +74,7 @@ func main() {
 
 	pgClient := db.NewPostgresClient(pgPool)
 	cacheClient := cache.NewRedisCache(redisClient)
-	service := api.NewGraphServer(pgClient, cacheClient, fullLimit)
+	service := api.NewGraphService(pgClient, cacheClient, fullLimit)
 
 	// Start gRPC server
 	grpcLis, err := net.Listen("tcp", fmt.Sprintf(":%s", grpcPort))
