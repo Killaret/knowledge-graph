@@ -21,7 +21,7 @@
     { value: 'satellite', label: 'Satellite', emoji: '🛰️', color: 'var(--color-satellite, #a1a1aa)' },
     { value: 'debris', label: 'Debris', emoji: '🗑️', color: 'var(--color-debris, #71717a)' },
     { value: 'nebula', label: 'Nebula', emoji: '🌌', color: 'var(--color-nebula, #c084fc)' },
-    { value: 'dust', label: 'Cosmic Dust', emoji: '✨', color: 'var(--color-dust, #fbbf24)' }
+    { value: 'dust', label: 'Cosmic Dust', emoji: '🌫️', color: 'var(--color-dust, #a0a0a0)' }
   ];
 
   function selectType(type: CelestialType) {

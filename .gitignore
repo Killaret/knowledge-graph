@@ -129,3 +129,21 @@ nlp-service/.dockerignore
 
 # Backups
 backups/
+
+# Scripts temporary files
+scripts/*.txt
+scripts/*.log
+scripts/diskpart_*.txt
+scripts/cleanup_*.txt
+scripts/temp_*
+scripts/tmp_*
+
+# Script test artifacts
+scripts/testing/temp/
+scripts/testing/*.log
+scripts/diagnostics/*.log
+
+# Database seed files (keep structure, ignore generated data)
+scripts/database/*.db
+scripts/database/*.sqlite
+scripts/database/generated/

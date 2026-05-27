@@ -11,7 +11,7 @@ import (
 )
 
 // TypeBackupToCloud is the task type for uploading backup to cloud storage
-const TypeBackupToCloud = "backup:to_cloud"
+const TypeBackupToCloud = "backup:cloud"
 
 // BackupToCloudPayload contains the data needed for cloud backup
 type BackupToCloudPayload struct {

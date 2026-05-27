@@ -27,7 +27,9 @@
         title,
         content,
         type: 'dust',
-        metadata: {}
+        metadata: {
+          tags: ['#inbox']
+        }
       });
 
       showSuccess = true;
@@ -45,6 +47,11 @@
 
   // Handle keyboard shortcuts
   function handleKeydown(e: KeyboardEvent) {
+    // Ctrl+Shift+N to open quick capture
+    if (e.key === 'n' && e.ctrlKey && e.shiftKey && !isOpen) {
+      e.preventDefault();
+      toggle();
+    }
     if (e.key === 'Escape' && isOpen) {
       toggle();
     }

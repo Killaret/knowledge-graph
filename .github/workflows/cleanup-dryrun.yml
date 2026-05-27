@@ -1,6 +1,6 @@
 name: Cleanup Dry-Run Check
 
-on:
+"on":
   schedule:
     - cron: '0 3 * * 0' # weekly on Sunday at 03:00 UTC
   workflow_dispatch:

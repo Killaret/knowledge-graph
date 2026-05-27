@@ -54,6 +54,29 @@
   - New sections: `server`, `database`, `search`, `pagination`
   - Extended: `graph` (limits), `recommendation` (batch_rate_limit)
 
+### 🎯 Flexible Keyword Similarity in Recommendations
+- **5 Similarity Strategies**: Jaccard, Overlap, Tversky, Weighted Jaccard, Cosine
+  - Configurable via `knowledge-graph.config.json`:
+    - `keyword_similarity_method` — similarity strategy (default: "jaccard")
+    - `keyword_tversky_alpha` — alpha parameter for Tversky index (default: 0.5)
+    - `keyword_tversky_beta` — beta parameter for Tversky index (default: 0.5)
+  - Strategy implementations in `backend/internal/application/recommendation/keyword_similarity.go`
+  - Factory pattern: `NewKeywordSimilarity(method, alpha, beta)` for strategy creation
+- **Integration with TraversalService**:
+  - `KeywordMatcher` interface in domain layer (`backend/internal/domain/graph/keyword_matcher.go`)
+  - `KeywordMatcherImpl` implementation with KeywordRepository and similarity strategy
+  - Worker initialization in `backend/cmd/worker/main.go` sets up matcher based on config
+  - Keyword component enabled when `gamma > 0` in recommendation weights
+- **Weighted Scoring**:
+  - Supports both weighted and unweighted similarity strategies
+  - Weighted strategies use keyword weights from `KeywordRepositoryWithWeights`
+  - Automatic fallback to unit weights when weights unavailable
+- **Documentation Updates**:
+  - README.md: Added "Гибкое сходство ключевых слов в рекомендациях" section
+  - docs/ARCHITECTURE.md: Added keyword similarity architecture subsection
+  - docs/RECOMMENDATION_ARCHITECTURE.md: Added comprehensive keyword similarity component documentation
+
+
 ### � Security
 - **SQL Injection Fix**: Parameterized queries in note search ORDER BY clause (`note_repo.go`)
 - **Rate Limiting**: Token bucket middleware with config-driven limits
@@ -62,6 +85,15 @@
   - Conditional enable/disable via config
 
 ### 🚀 Added
+- **Yandex.Disk Backup System**: Automatic backup system for personal instance
+  - Local backup scripts: `scripts/utility/backup-personal.sh` (Linux/Mac) and `scripts/utility/backup-personal.ps1` (Windows)
+  - Go service: `backend/internal/infrastructure/cloud/yandex_backup.go` for Yandex.Disk WebDAV integration
+  - Asynq task: `TypeBackupToCloud` for async cloud backup uploads
+  - Docker service: `backup_scheduler` in `docker-compose.personal.yml` for daily scheduled backups
+  - Configuration: `knowledge-graph.config.json` section `backup` with `provider=yandex`
+  - Automatic cleanup of old backups (7 days local, 10 backups in cloud)
+  - Retry logic for failed uploads (3 attempts)
+  - Documentation: [`docs/BACKUP.md`](docs/BACKUP.md) with comprehensive setup guide
 - **Comprehensive Health Check**: `/health` endpoint now checks all dependencies
 - **Graph API Pagination**: `/graph/all` supports DB-level pagination
 - **FindAllPaginated**: New repository methods with metadata

@@ -123,6 +123,7 @@ export function drawPlanet(
   ctx.beginPath();
   ctx.arc(x, y, adjustedR, 0, 2 * Math.PI);
   // Default planet color changed to warm gold to match visual baselines
+  // Apply hueShift to both custom and default colors for visual variation
   ctx.fillStyle = color ? applyHueShift(color, hueShift) : applyHueShift('#d6aa5d', hueShift);
   ctx.fill();
   
@@ -130,7 +131,7 @@ export function drawPlanet(
     ctx.beginPath();
     ctx.ellipse(x, y + i, adjustedR * 0.8, adjustedR * 0.15, angle, 0, 2 * Math.PI);
     // Inner band color: muted darker tone for default gold planet
-    ctx.fillStyle = color ? 'rgba(100,100,100,0.3)' : applyHueShift('#b07a3a', hueShift);
+    ctx.fillStyle = color ? 'rgba(100,100,100,0.3)' : '#b07a3a';
     ctx.fill();
   }
 }
@@ -946,15 +947,23 @@ export function drawNodeTitle(
   ctx: CanvasRenderingContext2D,
   node: SimulationNode,
   r: number,
-  opacity: number = 1
+  opacity: number = 1,
+  disableVariation: boolean = false
 ): void {
-  ctx.font = `bold ${Math.min(14, r * 0.65)}px sans-serif`;
+  // Round font size for deterministic rendering in stable mode
+  const fontSize = disableVariation ? Math.round(Math.min(14, r * 0.65)) : Math.min(14, r * 0.65);
+  ctx.font = `bold ${fontSize}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   let title = node.title || 'Untitled';
   if (title.length > 14) title = title.slice(0, 12) + '…';
-  ctx.shadowBlur = 2;
-  ctx.shadowColor = `rgba(0,0,0,${0.5 * opacity})`;
+  
+  // Disable text shadows in stable render mode for deterministic rendering
+  if (!disableVariation) {
+    ctx.shadowBlur = 2;
+    ctx.shadowColor = `rgba(0,0,0,${0.5 * opacity})`;
+  }
+  
   ctx.fillStyle = `rgba(255,255,255,${opacity})`;
   const titleX = disableVariation ? Math.round(node.x!) : node.x!;
   const titleY = disableVariation ? Math.round(node.y! + r + 6) : node.y! + r + 6;
@@ -979,12 +988,7 @@ export function drawAllNodes(
   if (disableVariation) {
     for (const node of nodes) {
       if (!angles.has(node.id)) {
-        try {
-          const variation = getVariation(node.id, node.type || 'unknown');
-          angles.set(node.id, variation.phaseShift);
-        } catch (e) {
-          angles.set(node.id, 0);
-        }
+        angles.set(node.id, 0);
       }
     }
   }
@@ -998,7 +1002,7 @@ export function drawAllNodes(
     ctx.globalAlpha = opacity;
 
     drawNode(ctx, node, r, angle, enableShadows, disableVariation);
-    drawNodeTitle(ctx, node, r, opacity);
+    drawNodeTitle(ctx, node, r, opacity, disableVariation);
 
     // Restore previous alpha
     ctx.globalAlpha = previousAlpha;
@@ -1022,7 +1026,22 @@ export function draw(
 ): void {
   ctx.clearRect(0, 0, width, height);
 
+  // Stable render mode: reduce anti-aliasing sources and align to pixel grid
   ctx.save();
+  if (disableVariation) {
+    try {
+      ctx.imageSmoothingEnabled = false;
+      // some browsers support quality setting
+      // @ts-ignore
+      ctx.imageSmoothingQuality = 'low';
+    } catch (e) {}
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    // small translate to reduce subpixel AA differences
+    ctx.translate(0.5, 0.5);
+  }
   ctx.translate(transform.x, transform.y);
   ctx.scale(transform.k, transform.k);
 

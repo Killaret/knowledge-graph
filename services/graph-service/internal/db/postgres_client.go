@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -18,8 +19,15 @@ type Link struct {
 	Weight   float64
 }
 
+type Embedding struct {
+	NoteID    string
+	Vector    []float32
+	UpdatedAt time.Time
+}
+
 type PostgresClient interface {
 	GetNotes(ctx context.Context, rootID string, depth int) ([]*Note, []*Link, error)
+	GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error)
 }
 
 type postgresClient struct {
@@ -138,4 +146,33 @@ func (c *postgresClient) loadLinksByNoteIDs(ctx context.Context, ids []string) (
 		return nil, err
 	}
 	return links, nil
+}
+
+func (c *postgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
+	if len(noteIDs) == 0 {
+		return make(map[string][]float32), nil
+	}
+
+	query := `SELECT note_id, embedding, updated_at FROM note_embeddings WHERE note_id = ANY($1)`
+	rows, err := c.pool.Query(ctx, query, noteIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	embeddings := make(map[string][]float32)
+	for rows.Next() {
+		var noteID string
+		var vector []float32
+		var updatedAt time.Time
+		if err := rows.Scan(&noteID, &vector, &updatedAt); err != nil {
+			return nil, err
+		}
+		embeddings[noteID] = vector
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return embeddings, nil
 }

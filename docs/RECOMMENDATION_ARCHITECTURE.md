@@ -193,6 +193,109 @@ Future cleanup: After system proves reliability (30+ days stable), fallback code
 - [ ] Frontend handles `status: "pending"` gracefully
 - [ ] Fallback toggle tested in staging
 
+## Keyword Similarity Component
+
+### Overview
+
+The recommendation system includes a flexible keyword similarity component that can be configured to use different similarity strategies when calculating recommendations. This component is integrated into the `TraversalService` and contributes to the final recommendation score based on the `gamma` weight parameter.
+
+### Architecture
+
+**Domain Layer:**
+- `backend/internal/domain/graph/keyword_matcher.go` — Interface for keyword-based similarity matching
+
+**Application Layer:**
+- `backend/internal/application/recommendation/keyword_similarity.go` — Similarity strategy implementations
+- `backend/internal/application/recommendation/keyword_matcher_impl.go` — KeywordMatcher implementation using similarity strategies
+
+**Integration Point:**
+- `backend/cmd/worker/main.go` — Worker sets up KeywordMatcher in TraversalService
+
+### Configuration
+
+Configuration is done through `knowledge-graph.config.json` in the `backend.recommendation` section:
+
+```json
+{
+  "backend": {
+    "recommendation": {
+      "keyword_similarity_method": "jaccard",
+      "keyword_tversky_alpha": 0.5,
+      "keyword_tversky_beta": 0.5,
+      "gamma": 0.2
+    }
+  }
+}
+```
+
+**Parameters:**
+- `keyword_similarity_method` — Similarity strategy: `jaccard`, `overlap`, `tversky`, `weighted_jaccard`, `cosine` (default: `jaccard`)
+- `keyword_tversky_alpha` — Alpha parameter for Tversky index (default: 0.5)
+- `keyword_tversky_beta` — Beta parameter for Tversky index (default: 0.5)
+- `gamma` — Weight of keyword component in final score (set > 0 to enable keyword similarity)
+
+### Available Strategies
+
+| Strategy | Formula | Description | Requires Weights |
+|----------|---------|-------------|------------------|
+| **Jaccard** | |A ∩ B| / |A ∪ B| | Classic Jaccard coefficient | No |
+| **Overlap** | |A ∩ B| / min(|A|, |B|) | Overlap coefficient | No |
+| **Tversky** | |A ∩ B| / (|A ∩ B| + α|AB| + β|BA|) | Tversky index with parameters | No |
+| **Weighted Jaccard** | sum(min(w1, w2)) / sum(max(w1, w2)) | Weighted Jaccard using keyword weights | Yes |
+| **Cosine** | (A · B) / (|A| × |B|) | Cosine similarity of weight vectors | Yes |
+
+**Notes:**
+- When `gamma = 0`, the keyword component is disabled (NoOpKeywordMatcher is used)
+- When weights are not available for weighted strategies, they fall back to unit weights (cosine) or regular Jaccard (weighted_jaccard)
+- Tversky with α = β = 0.5 is equivalent to symmetric Dice coefficient
+- Tversky with α = β = 1 is equivalent to Jaccard coefficient
+
+### Integration Flow
+
+```
+1. Worker Initialization (cmd/worker/main.go)
+   ↓
+   Load config (keyword_similarity_method, tversky_alpha, tversky_beta)
+   ↓
+   Create KeywordSimilarity strategy via NewKeywordSimilarity()
+   ↓
+   Create KeywordMatcherImpl with KeywordRepository and strategy
+   ↓
+   Create TraversalServiceWithWeights(alpha, beta, gamma)
+   ↓
+   If gamma > 0: SetKeywordMatcher(keywordMatcher)
+
+2. Recommendation Calculation (TraversalService.GetSuggestions)
+   ↓
+   Run BFS to get graph component scores
+   ↓
+   If gamma > 0: Call keywordMatcher.Match(sourceID, candidateIDs)
+   ↓
+   KeywordMatcher fetches keywords via GetKeywordsBatchWithWeights()
+   ↓
+   For each candidate: Calculate similarity using configured strategy
+   ↓
+   Aggregate: score = α×graph + β×semantic + γ×keyword
+   ↓
+   Return top N suggestions
+```
+
+### Component Weights
+
+The recommendation score is a weighted combination of three components:
+
+```
+total_score = α × graph_score + β × semantic_score + γ × keyword_score
+```
+
+Where:
+- `α` (alpha) — Graph traversal component weight
+- `β` (beta) — Semantic similarity component weight
+- `γ` (gamma) — Keyword similarity component weight
+
+Weights are automatically normalized to sum to 1.0. Set `gamma > 0` to enable keyword similarity in recommendations.
+
+
 ## Monitoring
 
 ### Metrics to Track

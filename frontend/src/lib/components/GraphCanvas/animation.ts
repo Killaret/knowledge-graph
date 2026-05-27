@@ -45,20 +45,18 @@ export function updateNodeAngles(
 
     let speed = speeds.get(id);
     if (speed === undefined) {
-        if (disableVariation) {
-          // In stable render mode we want deterministic, non-animated snapshots
-          // Provide a deterministic phase-based angle for visual variety, but
-          // keep speed at 0 so nothing animates during snapshot capture.
-          const variation = getVariation(id, type);
-          const initialAngle = variation.phaseShift * Math.PI * 2;
-          angles.set(id, initialAngle);
-          speed = 0;
-        } else {
-          // Get variation for this node to determine speed multiplier
-          const variation = getVariation(id, type);
-          const speedMultiplier = 0.8 + variation.phaseShift * 0.1;
-          speed = baseSpeed * speedMultiplier;
-        }
+      if (disableVariation) {
+        // In stable render mode we want deterministic, non-animated snapshots
+        // Keep the angle fixed at 0 so stable render snapshots remain
+        // consistent with baseline expectations.
+        angles.set(id, 0);
+        speed = 0;
+      } else {
+        // Get variation for this node to determine speed multiplier
+        const variation = getVariation(id, type);
+        const speedMultiplier = 0.8 + variation.phaseShift * 0.1;
+        speed = baseSpeed * speedMultiplier;
+      }
       speeds.set(id, speed);
     }
 

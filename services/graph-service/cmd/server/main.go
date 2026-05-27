@@ -21,6 +21,7 @@ import (
 	"knowledge-graph-graph-service/internal/cache"
 	"knowledge-graph-graph-service/internal/db"
 	"knowledge-graph-graph-service/internal/subscriber"
+	graphservice "knowledge-graph-graph-service/proto"
 )
 
 func envOrDefault(key, def string) string {
@@ -82,7 +83,7 @@ func main() {
 		log.Fatalf("failed to start gRPC listener: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	api.RegisterGraphServiceServer(grpcServer, service)
+	graphservice.RegisterGraphServiceServer(grpcServer, service)
 
 	// Start HTTP fallback server
 	httpMux := http.NewServeMux()

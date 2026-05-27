@@ -201,7 +201,7 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 	}
 
-	responseData := gin.H{
+responseData := gin.H{
 		"id":         newNote.ID(),
 		"title":      newNote.Title().String(),
 		"content":    newNote.Content().String(),

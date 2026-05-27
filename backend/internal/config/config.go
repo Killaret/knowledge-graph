@@ -106,15 +106,10 @@ type JSONConfig struct {
 		Cloud     struct {
 			Enabled  bool   `json:"enabled"`
 			Provider string `json:"provider"`
-			R2       struct {
-				AccountID       string `json:"account_id"`
-				AccessKeyID     string `json:"access_key_id"`
-				SecretAccessKey string `json:"secret_access_key"`
-				Bucket          string `json:"bucket"`
-				Region          string `json:"region"`
-			} `json:"r2"`
 			Yandex struct {
-				OAuthToken string `json:"oauth_token"`
+				OAuthToken   string `json:"oauth_token"`
+				BackupFolder string `json:"backup_folder"`
+				MaxBackups   int    `json:"max_backups"`
 			} `json:"yandex"`
 		} `json:"cloud"`
 		Schedule      string `json:"schedule"`
@@ -228,12 +223,9 @@ type Config struct {
 	BackupLocalPath     string
 	BackupSchedule      string
 	BackupRetentionDays int
-	BackupR2AccountID   string
-	BackupR2AccessKeyID string
-	BackupR2SecretKey   string
-	BackupR2Bucket      string
-	BackupR2Region      string
-	BackupYandexToken   string
+	BackupYandexOAuthToken string
+	BackupYandexFolder     string
+	BackupYandexMaxBackups int
 }
 
 // loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
@@ -461,12 +453,9 @@ func Load() (*Config, error) {
 		BackupLocalPath:     getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
 		BackupSchedule:      getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
 		BackupRetentionDays: getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
-		BackupR2AccountID:   getEnv("BACKUP_R2_ACCOUNT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.AccountID }, "")),
-		BackupR2AccessKeyID: getEnv("BACKUP_R2_ACCESS_KEY_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.AccessKeyID }, "")),
-		BackupR2SecretKey:   getEnv("BACKUP_R2_SECRET_ACCESS_KEY", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.SecretAccessKey }, "")),
-		BackupR2Bucket:      getEnv("BACKUP_R2_BUCKET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.Bucket }, "")),
-		BackupR2Region:      getEnv("BACKUP_R2_REGION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.R2.Region }, "auto")),
-		BackupYandexToken:   getEnv("BACKUP_YANDEX_TOKEN", ""),
+		BackupYandexOAuthToken: getEnv("BACKUP_YANDEX_OAUTH_TOKEN", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.OAuthToken }, "")),
+		BackupYandexFolder:     getEnv("BACKUP_YANDEX_FOLDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.BackupFolder }, "/KnowledgeGraphBackups")),
+		BackupYandexMaxBackups: getIntEnv("BACKUP_YANDEX_MAX_BACKUPS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.Cloud.Yandex.MaxBackups }, 10)),
 	}
 
 	// Load complex types from JSON (no env var override for these)

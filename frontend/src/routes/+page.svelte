@@ -52,7 +52,7 @@
     { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
     { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
     { id: 'blackhole', label: 'Black Holes', emoji: '⚫' },
-    { id: 'dust', label: 'Cosmic Dust', emoji: '✨' },
+    { id: 'dust', label: 'Cosmic Dust', emoji: '🌫️' },
     { id: 'unknown', label: 'Unknown', emoji: '❓' }
   ];
 
@@ -284,7 +284,12 @@
     let result = [...allNotes];
 
     // Apply type filter
-    if (selectedType !== 'all') {
+    if (selectedType === 'inbox') {
+      // Filter notes with #inbox tag
+      result = result.filter(n => 
+        n.metadata?.tags?.some((tag: string) => tag === '#inbox')
+      );
+    } else if (selectedType !== 'all') {
       result = result.filter(n => getNoteType(n) === selectedType);
     }
 

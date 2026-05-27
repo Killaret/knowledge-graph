@@ -25,7 +25,7 @@
 | **Draft Storage** | MongoDB 7 |
 | **Cache/Queues** | Redis 7 + asynq |
 | **NLP** | Python + FastAPI + sentence-transformers |
-| **Backup** | Cloudflare R2 (S3-compatible) |
+| **Backup** | Яндекс.Диск (WebDAV) |
 | **Инфраструктура** | Docker Compose |
 
 ### Архитектурные паттерны
@@ -48,6 +48,7 @@ knowledge-graph/
 ├── frontend/         # SvelteKit frontend (3D визуализация, UI)
 ├── nlp-service/      # Python NLP сервис (эмбеддинги)
 ├── docs/             # Архитектура, ADR, UML диаграммы
+├── scripts/          # Скрипты по категориям (cleanup, diagnostics, testing, utility)
 └── tests/            # BDD тесты (Cucumber + Playwright)
 ```
 
@@ -108,8 +109,11 @@ cd nlp-service && pytest
 ## 📚 Документация
 
 - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
+- [Резервное копирование](docs/BACKUP.md) — настройка бэкапов для личного инстанса
 - Frontend patterns: [frontend/FRONTEND_PATTERNS.md](frontend/FRONTEND_PATTERNS.md)
 - [Agents guide](docs/AGENTS.md) — как использовать агенты репозитория
+- [Commands reference](COMMANDS.md) — полный справочник команд проекта
+- [Scripts reorganization](scripts/docs/SCRIPTS_REORGANIZATION.md) — структура и назначение скриптов
 - [API Errors](docs/API_ERRORS.md) — формат ошибок и коды
 - [Тесты](TEST_STATUS.md) — статус и покрытие
 - [Конфигурация](docs/CONFIGURATION.md) — полное руководство по настройке
@@ -118,34 +122,57 @@ cd nlp-service && pytest
 
 ## 🧠 Работа с агентами и командами
 
-Этот репозиторий содержит три специальных агента, которые помогают оформить и поддержать документацию и задачи:
+Этот репозиторий содержит пять специальных агентов, которые помогают выбрать правильный контекст при работе с проектом:
 
 - `knowledge-graph-frontend-svelte` — для frontend задач: анализ UI, Svelte-компонентов, тестовой инфраструктуры и frontend-доков.
 - `knowledge-graph-backend-go` — для backend/infra задач: Go-код, БД, Docker, Redis, API и backend-документации.
 - `knowledge-graph-docs-maintenance` — для создания, актуализации и оформления документации: `README.md`, `docs/`, ADR, описания изменений и сопроводительных материалов.
+- `knowledge-graph-testing` — для тестирования всех уровней: Go unit/integration, frontend Vitest/Playwright/BDD, Python pytest.
+- `knowledge-graph-integration` — для интеграции backend ↔ frontend: mapping endpoints, DTO типы данных, middleware.
 
 Эти агенты — не исполняемые команды. Это метаданные, которые помогают выбрать правильный контекст при работе с репозиторием.
 
 ## 🧰 Важные команды и утилиты
 
-- `npm run clean:lunix` — запускает Windows-скрипт `scripts/clean_and_compress_lunix.ps1`.
-- `npm run clean:lunix:sh` — запускает bash-версию `scripts/clean_and_compress_lunix.sh`.
+### Скрипты организованы по категориям в `scripts/`:
+- `cleanup/` — скрипты очистки и сжатия
+- `diagnostics/` — диагностические скрипты
+- `testing/` — тестовые скрипты
+- `utility/` — вспомогательные скрипты
+- `database/` — скрипты базы данных
+- `docs/` — документация скриптов
+
+### Команды очистки:
+- `npm run clean:lunix` — запускает Windows-скрипт с Compact.exe (оптимизация диска без Hyper-V).
+- `npm run clean:lunix:vhd` — запускает скрипт с Optimize-VHD (требует Hyper-V для VHD сжатия).
+- `npm run clean:lunix:dry` — запустить dry-run PowerShell версию.
+- `npm run clean:lunix:sh` — запускает bash-версию `scripts/cleanup/clean_and_compress_lunix.sh`.
+- `npm run clean:lunix:sh:dry` — запустить dry-run bash версию.
 - `make clean-lunix` — alias для `npm run clean:lunix`.
 - `make clean-lunix-sh` — alias для `npm run clean:lunix:sh`.
+- `npm run clean:docker:vhdx` — VHDX сжатие через DiskPart с авто-разблокировкой (требует админа).
 - `make clean-lunix-dry` — dry-run проверки без изменений.
 
 Для периодической очистки:
 
-- `scripts/register_cleanup_task.ps1` — регистрирует Scheduled Task в Windows;
-- `scripts/register_cron.sh` — добавляет запись в WSL/cron.
+- `scripts/cleanup/register_cleanup_task.ps1` — регистрирует Scheduled Task в Windows;
+- `scripts/cleanup/register_cron.sh` — добавляет запись в WSL/cron.
+
+Диагностические скрипты:
+- `scripts/diagnostics/check_all_vhdx.ps1` — проверка размеров VHDX файлов
+- `scripts/diagnostics/check_disk_lock.ps1` — проверка блокировок диска
+- `scripts/diagnostics/check_file_lock.ps1` — проверка блокировки файла
 
 ## ✨ Новые функции
 
-### Резервное копирование (Cloudflare R2)
+### Резервное копирование (Яндекс.Диск)
 - Автоматическое локальное резервное копирование PostgreSQL
-- Облачное резервное копирование через Cloudflare R2
-- Скрипты: `scripts/backup-personal.sh` (Linux/Mac), `scripts/backup-personal.ps1` (Windows)
-- Конфигурация в `knowledge-graph.config.json` секция `backup`
+- Облачное резервное копирование через Яндекс.Диск (WebDAV)
+- Скрипты: `scripts/utility/backup-personal.sh` (Linux/Mac), `scripts/utility/backup-personal.ps1` (Windows)
+- Go-сервис: `backend/internal/infrastructure/cloud/yandex_backup.go`
+- Docker сервис: `backup_scheduler` в `docker-compose.personal.yml`
+- Конфигурация в `knowledge-graph.config.json` секция `backup` с `provider=yandex`
+- Подробная документация: [`docs/BACKUP.md`](docs/BACKUP.md)
 
 ### Черновики (MongoDB)
 - Хранение черновиков заметок в MongoDB
@@ -164,6 +191,17 @@ cd nlp-service && pytest
 - `GET /api/v1/me/graph/cached` возвращает мгновенный кэш
 - `GET /api/v1/me/graph/fresh` выдаёт актуальный граф и `delta` для инкрементальных обновлений
 - Фронтенд применяет `delta` через `GraphCanvas`, избегая полной перерисовки
+
+### Гибкое сходство ключевых слов в рекомендациях
+- **5 стратегий сходства**: Jaccard, Overlap, Tversky, Weighted Jaccard, Cosine
+- Конфигурация через `knowledge-graph.config.json`:
+  - `keyword_similarity_method` — метод сходства (default: "jaccard")
+  - `keyword_tversky_alpha` — параметр alpha для Tversky (default: 0.5)
+  - `keyword_tversky_beta` — параметр beta для Tversky (default: 0.5)
+- Интеграция через `TraversalService` с использованием `KeywordMatcher`
+- Keyword component включается при `gamma > 0`
+- Архитектура: `backend/internal/application/recommendation/keyword_similarity.go`
+- Подробности: [Рекомендации](docs/RECOMMENDATION_ARCHITECTURE.md)
 
 ## 🔧 Pre-commit Hooks
 

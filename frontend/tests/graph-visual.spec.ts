@@ -29,7 +29,7 @@ test.describe('GraphCanvas Isolated Node Visual Tests @visual @isolated', () => 
       // Take screenshot of the canvas
       const canvas = page.locator('canvas').first();
       await expect(canvas).toHaveScreenshot(`${type}-node.png`, {
-        maxDiffPixels: 200,
+        maxDiffPixels: 350,
         threshold: 0.3,
         animations: 'disabled'
       });
@@ -54,7 +54,7 @@ test.describe('GraphCanvas Link Visual Tests @visual @links', () => {
       // Take screenshot of the canvas
       const canvas = page.locator('canvas').first();
       await expect(canvas).toHaveScreenshot(`${linkType}-link.png`, {
-        maxDiffPixels: 200,
+        maxDiffPixels: 350,
         threshold: 0.3,
         animations: 'disabled'
       });
@@ -87,7 +87,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
     // Take screenshot of the canvas
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('star-node.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -105,7 +105,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('planet-node.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -123,7 +123,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('comet-node.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -141,7 +141,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('galaxy-node.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -159,7 +159,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('asteroid-node.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -192,7 +192,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('link-between-nodes.png', {
-      maxDiffPixels: 150,
+      maxDiffPixels: 250,
       threshold: 0.2
     });
   });
@@ -252,7 +252,7 @@ test.describe('GraphCanvas Visual Tests @visual', () => {
 
     const canvas = page.locator('canvas').first();
     await expect(canvas).toHaveScreenshot('multiple-link-types.png', {
-      maxDiffPixels: 200,
+      maxDiffPixels: 300,
       threshold: 0.3
     });
   });

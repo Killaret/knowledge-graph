@@ -11,9 +11,9 @@ clean-lunix-sh:
 
 clean-lunix-dry:
 	@echo "Dry run (PowerShell)"
-	npm run clean:lunix --silent -- --DryRun
+	npm run clean:lunix:dry
 
 # If needed, user can call make clean-lunix-sh-dry manually using the script flags
 clean-lunix-sh-dry:
 	@echo "Dry run (bash)"
-	./scripts/clean_and_compress_lunix.sh --dry-run
+	npm run clean:lunix:sh:dry

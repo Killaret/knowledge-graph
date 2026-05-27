@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +25,7 @@ import (
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp" // Восстановление импорта nlp пакета
@@ -31,6 +33,7 @@ import (
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
+	backphandler "knowledge-graph/internal/interfaces/api/handlers/backup"
 	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -106,6 +109,8 @@ func main() {
 	linkRepo := postgres.NewLinkRepository(db.DB)
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
+		// Yandex.Disk backup service
+		var yandexBackupService *cloud.YandexBackupService
 	// Очередь
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
@@ -119,6 +124,19 @@ func main() {
 				log.Printf("Error closing asynq client: %v", err)
 			}
 		}()
+		if cfg.BackupCloudProvider == "yandex" && cfg.BackupYandexOAuthToken != "" {
+		yandexCfg := cloud.YandexConfig{
+		OAuthToken:   cfg.BackupYandexOAuthToken,
+		BackupFolder: cfg.BackupYandexFolder,
+		MaxBackups:   cfg.BackupYandexMaxBackups,
+		}
+		yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
+		if err != nil {
+		log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
+		} else {
+			log.Printf("Yandex.Disk backup service initialized successfully")
+		}
+		}
 	}
 
 	// Загрузчики графа
@@ -164,6 +182,8 @@ func main() {
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(db.DB)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
+	// Backup handler
+	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
 
 	// Auth handler
 	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, time.Hour*24, time.Hour*24*7) // 24h access, 7d refresh
@@ -188,6 +208,14 @@ func main() {
 
 	// Recovery middleware - catches panics and returns 500
 	r.Use(middleware.RecoveryMiddleware())
+
+	// Cache control middleware for static data endpoints
+	cacheControlMiddleware := func(maxAge int) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			c.Writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
+			c.Next()
+		}
+	}
 
 	// Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
@@ -323,12 +351,12 @@ func main() {
 
 		// Write operations with stricter rate limiting
 		v1.POST("/notes", writeLimiter, noteHandler.Create)
-		v1.GET("/notes/:id", noteHandler.Get)
+		v1.GET("/notes/:id", cacheControlMiddleware(60), noteHandler.Get)
 		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
 		v1.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
-		v1.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
-		v1.GET("/notes", noteHandler.List)
-		v1.GET("/notes/search", noteHandler.Search)
+		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteHandler.GetSuggestions)
+		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
+		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)
@@ -336,10 +364,10 @@ func main() {
 		v1.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
 		v1.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
 
-		v1.GET("/notes/:id/graph", graphHandler.GetGraph)
-		v1.GET("/graph/all", graphHandler.GetFullGraph)
-		v1.GET("/me/graph/cached", graphHandler.GetCachedGraph)
-		v1.GET("/me/graph/fresh", graphHandler.GetFreshGraph)
+		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), graphHandler.GetGraph)
+		v1.GET("/graph/all", cacheControlMiddleware(300), graphHandler.GetFullGraph)
+		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
+		v1.GET("/me/graph/fresh", cacheControlMiddleware(0), graphHandler.GetFreshGraph)
 
 		// Tag routes
 		v1.POST("/tags", writeLimiter, tagHandler.Create)
@@ -350,6 +378,9 @@ func main() {
 		v1.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
 		v1.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
 		v1.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
+		// Backup routes
+		v1.POST("/backup/cloud", writeLimiter, backupHandler.TriggerCloudBackup)
+		v1.GET("/backup/status", backupHandler.GetBackupStatus)
 	}
 
 	// Legacy routes (deprecated - kept for backward compatibility)

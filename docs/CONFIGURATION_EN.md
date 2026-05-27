@@ -182,25 +182,37 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 |----------|-------------|---------|
 | `BACKUP_LOCAL_PATH` | Local backup directory | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
-| `BACKUP_CLOUD_PROVIDER` | Cloud provider (r2) | `r2` |
-| `BACKUP_R2_ACCOUNT_ID` | Cloudflare R2 account ID | - |
-| `BACKUP_R2_ACCESS_KEY_ID` | R2 access key ID | - |
-| `BACKUP_R2_SECRET_ACCESS_KEY` | R2 secret access key | - |
-| `BACKUP_R2_BUCKET` | R2 bucket name | - |
-| `BACKUP_R2_REGION` | R2 region | `auto` |
+| `BACKUP_CLOUD_PROVIDER` | Cloud provider (yandex) | `yandex` |
+| `BACKUP_YANDEX_OAUTH_TOKEN` | Yandex.Disk OAuth token | - |
+| `BACKUP_YANDEX_FOLDER` | Yandex.Disk backup folder | `/KnowledgeGraphBackups` |
+| `BACKUP_YANDEX_MAX_BACKUPS` | Maximum number of backups to keep | `10` |
 | `BACKUP_SCHEDULE` | Cron schedule for backups | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Backup retention period | `7` |
 | `BACKUP_DRAFT_TTL_HOURS` | Draft TTL in MongoDB | `168` |
 
 ### Backup Scripts
 
-**Linux/Mac:** `scripts/backup-personal.sh`
+**Linux/Mac:** `scripts/utility/backup-personal.sh`
 - Performs `pg_dump` to `backups/backup-personal-YYYY-MM-DD.sql.gz`
-- Triggers cloud backup via HTTP API if enabled
+- Uploads to Yandex.Disk via WebDAV if cloud backup enabled
 - Cleans up old backups older than retention days
 
-**Windows:** `scripts/backup-personal.ps1`
+**Windows:** `scripts/utility/backup-personal.ps1`
 - Same functionality for Windows
+
+---
+
+**Backup Service (Docker):** `backup_scheduler` in `docker-compose.personal.yml`
+- Runs backup scripts automatically every 24 hours
+- Supports both local and cloud (Yandex.Disk) backup
+
+**Go Service:** `backend/internal/infrastructure/cloud/yandex_backup.go`
+- YandexBackupService for Yandex.Disk WebDAV integration
+- Methods: UploadBackup, DownloadBackup, ListBackups, DeleteBackup
+- Retry logic (3 attempts) for failed uploads
+- Automatic cleanup of old cloud backups (max_backups, default: 10)
+
+**For detailed backup setup guide, see:** [`docs/BACKUP.md`](docs/BACKUP.md)
 
 ---
 

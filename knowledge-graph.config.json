@@ -104,15 +104,10 @@
     "cloud": {
       "enabled": false,
       "provider": "yandex",
-      "r2": {
-        "account_id": "",
-        "access_key_id": "",
-        "secret_access_key": "",
-        "bucket": "",
-        "region": "auto"
-      },
       "yandex": {
-        "oauth_token": ""
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
       }
     },
     "schedule": "0 2 * * *",

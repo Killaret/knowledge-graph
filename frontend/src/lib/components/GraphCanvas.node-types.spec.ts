@@ -130,7 +130,7 @@ describe('GraphCanvas - Node Type Rendering', () => {
       expect(ctx.lineWidth).toBe(2);
     });
 
-    it('drawPlanet uses correct default color (#60a5fa) for main body', () => {
+    it('drawPlanet uses correct default color (#d6aa5d) for main body', () => {
       const fillStyles: string[] = [];
       const ctx = {
         beginPath: vi.fn(),
@@ -145,8 +145,8 @@ describe('GraphCanvas - Node Type Rendering', () => {
 
       renderer.drawPlanet(ctx, 100, 100, 20, 0);
 
-      // First fillStyle should be the main planet color #c9b37c
-      expect(fillStyles[0]).toBe('#60a5fa');
+      // First fillStyle should be the main planet color #d6aa5d
+      expect(fillStyles[0]).toBe('#d6aa5d');
     });
 
     it('drawComet uses correct color (#e879f9)', () => {

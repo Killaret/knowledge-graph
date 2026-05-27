@@ -48,7 +48,7 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Redis и кэш приватного графа
+### Redis и кэш приватного графа [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md)
 - Redis используется для кэширования приватного графа пользователя рядом с уже существующими токенами, сессиями и данными очередей.
 - Маршрут `/api/v1/me/graph/cached` возвращает мгновенный граф из Redis.
 - Маршрут `/api/v1/me/graph/fresh` вычисляет актуальный граф и может возвращать `delta` для инкрементальных обновлений UI.
@@ -106,7 +106,7 @@ type Link struct {
 }
 ```
 
-##### Achievement Domain (`domain/achievement/`)
+##### Achievement Domain (`domain/achievement/`) [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 
 ```go
 type Achievement struct {
@@ -168,6 +168,68 @@ type Link struct {
 - `traversal_test.go` — Unit tests
 - `traversal_integration_test.go` — Integration tests
 
+##### Keyword Similarity Architecture
+
+**Расположение кода:**
+- `backend/internal/application/recommendation/keyword_similarity.go` — Стратегии сходства [см. ADR 016](architecture/decisions/016-keyword-similarity-strategies.md)
+- `backend/internal/application/recommendation/keyword_matcher_impl.go` — Реализация matcher
+- `backend/internal/domain/graph/keyword_matcher.go` — Интерфейс в domain слое
+
+**Конфигурация** (`knowledge-graph.config.json`):
+```json
+{
+  "backend": {
+    "recommendation": {
+      "keyword_similarity_method": "jaccard",  // jaccard, overlap, tversky, weighted_jaccard, cosine
+      "keyword_tversky_alpha": 0.5,             // Параметр alpha для Tversky
+      "keyword_tversky_beta": 0.5,              // Параметр beta для Tversky
+      "gamma": 0.2                             // Вес keyword компонента (включает функцию при > 0)
+    }
+  }
+}
+```
+
+**Интеграция** (`backend/cmd/worker/main.go` → `TraversalService`):
+```go
+// 1. Создание стратегии из конфигурации
+keywordSimilarity, err := recommendation.NewKeywordSimilarity(
+    cfg.RecommendationKeywordSimilarityMethod,
+    cfg.RecommendationKeywordTverskyAlpha,
+    cfg.RecommendationKeywordTverskyBeta,
+)
+
+// 2. Создание matcher с репозиторием ключевых слов
+keywordMatcher := recommendation.NewKeywordMatcherImpl(keywordRepo, keywordSimilarity)
+
+// 3. Настройка TraversalService
+traversalSvc := graphDomain.NewTraversalServiceWithWeights(...)
+
+// 4. Установка matcher если gamma > 0
+if cfg.RecommendationGamma > 0 {
+    traversalSvc.SetKeywordMatcher(keywordMatcher)
+}
+```
+
+**Доступные стратегии:**
+| Стратегия | Описание | Требует веса |
+|-----------|----------|--------------|
+| `jaccard` | Классический коэффициент Жаккара: \|A ∩ B\| / \|A ∪ B\| | Нет |
+| `overlap` | Коэффициент перекрытия: \|A ∩ B\| / min(\|A\|, \|B\|) | Нет |
+| `tversky` | Индекс Тверски с параметрами alpha/beta: \|A ∩ B\| / (\|A ∩ B\| + α\|A\\B\| + β\|B\\A\|) | Нет |
+| `weighted_jaccard` | Взвешенный Жаккард: sum(min(w1, w2)) / sum(max(w1, w2)) | Да |
+| `cosine` | Косинусное сходство векторов весов | Да |
+
+**Поток данных:**
+```
+TraversalService.GetSuggestions()
+    ↓
+keywordMatcher.Match(sourceID, candidateIDs)
+    ↓
+keywordSimilarity.Similarity(sourceKeywords, targetKeywords, weights)
+    ↓
+AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
+```
+
 #### 1.3 Application Layer (`internal/application/`)
 
 ##### Graph Application (`application/graph/`)
@@ -185,9 +247,11 @@ type Link struct {
 |------|------------|
 | `refresh_service.go` | Обновление рекомендаций |
 | `affected_notes.go` | Определение затронутых заметок |
+| `keyword_similarity.go` | Стратегии сходства ключевых слов (Jaccard, Overlap, Tversky, Weighted Jaccard, Cosine) [см. ADR 016](architecture/decisions/016-keyword-similarity-strategies.md) |
+| `keyword_matcher_impl.go` | Реализация KeywordMatcher с использованием KeywordSimilarity |
 | `*_test.go` | Unit tests |
 
-##### Achievement Application (`application/achievement/`)
+##### Achievement Application (`application/achievement/`) [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 
 | Файл | Назначение |
 |------|------------|
@@ -260,6 +324,21 @@ type Link struct {
 
 **Task Types:**
 - `recommendation:refresh` — Обновление рекомендаций для ноты
+- `backup:cloud` — Загрузка бэкапа в облачное хранилище
+
+##### Cloud (`infrastructure/cloud/`)
+
+**Yandex.Disk Backup Service:**
+
+| Файл | Назначение |
+|------|------------|
+| `yandex_backup.go` | YandexBackupService для работы с Яндекс.Диск через WebDAV |
+
+**Методы:**
+- `UploadBackup()` — Загрузка бэкапа с retry логикой
+- `DownloadBackup()` — Скачивание бэкапа
+- `ListBackups()` — Список бэкапов в облаке
+- `DeleteBackup()` — Удаление бэкапа
 
 #### 1.5 Interfaces (HTTP Handlers) (`internal/interfaces/api/`)
 
@@ -463,13 +542,95 @@ users          — Пользователи
 
 #### 4.3 Docker Compose
 
-**Services:**
+**Services (dev stack):**
 1. `postgres` — pgvector (порт 5432)
 2. `redis` — Redis 7 (порт 6379)
 3. `nlp` — Python service (порт 5000)
 4. `backend` — Go API (порт 8080)
 5. `worker` — Background worker
 6. `frontend` — SvelteKit (порт 3000)
+
+**Services (personal stack):**
+1. `postgres_personal` — pgvector (порт 5433)
+2. `redis_personal` — Redis 7 (порт 6380)
+3. `mongo_personal` — MongoDB 7 (порт 27018)
+4. `nlp` — Python service (порт 5001)
+5. `graph-service-personal` — Graph service (порт 9092) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
+6. `backend_personal` — Go API (порт 8081)
+7. `worker_personal` — Background worker
+8. `nginx_personal` — Reverse proxy (порты 8082, 8083)
+9. `frontend_personal` — SvelteKit (порт 3001)
+10. `backup_scheduler` — Automatic backup service
+
+#### 4.4 Backup Service
+
+**Назначение:** Автоматическое резервное копирование базы данных PostgreSQL с поддержкой локального хранения и облачного бэкапа на Яндекс.Диск.
+
+**Компоненты:**
+
+**Скрипты бэкапа:**
+- `scripts/utility/backup-personal.sh` — Bash скрипт для Linux/Mac
+- `scripts/utility/backup-personal.ps1` — PowerShell скрипт для Windows
+
+**Go-сервис:**
+- `backend/internal/infrastructure/cloud/yandex_backup.go` — YandexBackupService для работы с Яндекс.Диск через WebDAV API
+
+**Asynq задача:**
+- `TypeBackupToCloud` — Асинхронная задача для загрузки бэкапов в облако
+
+**Docker сервис:**
+- `backup_scheduler` — Автоматический запуск бэкапов каждые 24 часа (в docker-compose.personal.yml)
+
+**Функциональность:**
+1. **Локальный бэкап:**
+   - pg_dump базы PostgreSQL
+   - Сжатие gzip
+   - Хранение в `./backups/`
+   - Автоматическая очистка старых бэкапов (по умолчанию 7 дней)
+
+2. **Облачный бэкап (Яндекс.Диск):**
+   - Загрузка через WebDAV API
+   - OAuth аутентификация
+   - Хранение в `/KnowledgeGraphBackups/`
+   - Автоматическая очистка (max_backups, по умолчанию 10)
+   - Retry логика (3 попытки)
+
+3. **Конфигурация:**
+   ```json
+   {
+     "backup": {
+       "local_path": "./backups",
+       "cloud": {
+         "enabled": true,
+         "provider": "yandex",
+         "yandex": {
+           "oauth_token": "token",
+           "backup_folder": "/KnowledgeGraphBackups",
+           "max_backups": 10
+         }
+       },
+       "schedule": "0 2 * * *",
+       "retention_days": 7
+     }
+   }
+   ```
+
+**Методы YandexBackupService:**
+- `UploadBackup(ctx, localPath, remoteKey)` — Загрузка бэкапа с retry логикой
+- `DownloadBackup(ctx, remoteKey, localPath)` — Скачивание бэкапа
+- `ListBackups(ctx, prefix)` — Список бэкапов в облаке
+- `DeleteBackup(ctx, remoteKey)` — Удаление бэкапа
+- `ensureFolder(ctx, folderURL)` — Создание папки на Яндекс.Диске
+- `cleanupOldBackups(ctx)` — Очистка старых бэкапов
+
+**Переменные окружения:**
+- `BACKUP_CLOUD_ENABLED` — Включить облачный бэкап
+- `BACKUP_YANDEX_TOKEN` — OAuth токен Яндекс.Диска
+- `BACKUP_YANDEX_FOLDER` — Папка на Яндекс.Диске
+- `BACKUP_DIR` — Локальная папка для бэкапов
+- `CLEANUP_OLD_BACKUPS` — Очистка старых бэкапов
+
+**Подробнее:** [`docs/BACKUP.md`](docs/BACKUP.md)
 
 ---
 
@@ -625,6 +786,14 @@ make dev
 - `docs/architecture/c4/` — C4 Model диаграммы
 - `docs/architecture/decisions/` — ADR (Architecture Decision Records)
 
+### Ключевые ADR (Architecture Decision Records)
+
+- **[ADR 013: Graph Service Isolation](architecture/decisions/013-graph-service-isolation.md)** — Выделение Graph Service в отдельный сервис с gRPC и прямым доступом к БД
+- **[ADR 014: Event-Driven Cache Invalidation](architecture/decisions/014-event-driven-cache-invalidation.md)** — Использование Redis Pub/Sub для инвалидации кэша
+- **[ADR 015: Galactic Lexicon and Achievements](architecture/decisions/015-galactic-lexicon-and-achievements.md)** — Единый галактический лексикон, i18n, SSE для уведомлений о достижениях
+- **[ADR 016: Keyword Similarity Strategies](architecture/decisions/016-keyword-similarity-strategies.md)** — Паттерн стратегий для метрик схожести ключевых слов с поддержкой весов
+- **[ADR 017: Color Palette Redesign](architecture/decisions/017-color-palette-redesign.md)** — Чёрно-фиолетово-красная палитра для космической темы
+
 ---
 
 ## 🗺️ Module Dependency Graph
@@ -672,3 +841,63 @@ infrastructure/
 ---
 
 *Generated with ❤️ by Cascade*
+
+## 📈 Graph Service
+
+### Overview
+
+Graph Service is an independent microservice responsible for computing 2D/3D graph layouts for the Knowledge Graph frontend. It provides high-performance graph visualization with caching, incremental updates, and event-driven invalidation.
+
+### Architecture
+
+The Graph Service consists of:
+
+- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091)
+- **Layout Engine**: 2D circular and 3D spiral layout algorithms with delta computation
+- **Cache Layer**: Redis-backed caching with configurable TTL
+- **Data Layer**: Direct PostgreSQL read access (notes, links, embeddings)
+- **Event Subscriber**: Redis Pub/Sub for cache invalidation with acknowledgment tracking
+
+### API Contracts
+
+#### gRPC API (Primary)
+
+```protobuf
+service GraphService {
+  rpc GetNoteLayout(NoteLayoutRequest) returns (LayoutResponse);
+  rpc GetFullLayout(FullLayoutRequest) returns (stream LayoutChunk);
+  rpc GetDelta(DeltaRequest) returns (DeltaResponse);
+}
+```
+
+#### HTTP Fallback (Secondary)
+
+```
+GET /api/v1/graph/note/:id?depth=2&user_id={userId}
+GET /api/v1/graph/full?limit=1000&user_id={userId}
+GET /api/v1/graph/delta?last_hash={hash}&user_id={userId}
+GET /health
+```
+
+### Event-Driven Cache Invalidation
+
+The Graph Service subscribes to Redis Pub/Sub channel `graph:events` and processes events with acknowledgment tracking:
+
+1. **Event receipt**: Records `timestamp_received` and `is_acknowledged=false`
+2. **Cache invalidation**: Invalidates affected cache keys based on event type
+3. **Event acknowledgment**: Sets `is_acknowledged=true` and `timestamp_processed`
+4. **Periodic worker**: Scans for unacknowledged events older than 5 minutes
+
+Supported events: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `LinkCreated`, `LinkUpdated`, `LinkDeleted`
+
+### Caching Strategy
+
+- `layout:note:{noteId}:depth-{depth}` - Note neighborhood layout (30 min TTL)
+- `layout:full:{userId}` - Full user graph layout (30 min TTL)
+- `layout:delta:{userId}:{lastHash}` - Delta between versions (5 min TTL)
+
+### Direct PostgreSQL Reading
+
+Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation.
+
+---

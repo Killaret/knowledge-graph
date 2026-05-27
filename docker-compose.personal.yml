@@ -149,21 +149,42 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  nginx_personal:
+    image: nginx:alpine
+    container_name: kg-nginx-personal
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+    volumes:
+      - ./nginx.personal.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend_personal:
+        condition: service_healthy
+      graph-service-personal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
   frontend_personal:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
         VITE_API_TARGET: http://backend_personal:8080
-        VITE_GRAPH_SERVICE_URL: http://graph-service-personal:9091
+        VITE_GRAPH_SERVICE_URL: http://nginx_personal:8080/graph-service
     container_name: kg-frontend-personal
     ports:
       - "3001:3000"
     env_file:
       - .env
     environment:
-      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://localhost:8081}
-      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://graph-service-personal:9091}
+      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://nginx_personal:8080}
+      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://nginx_personal:8080/graph-service}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
       interval: 30s
@@ -181,3 +202,36 @@ volumes:
   pgdata_personal:
   redisdata_personal:
   mongodbdata_personal:
+
+  backup_scheduler:
+    image: postgres:16-alpine
+    container_name: kg-backup-scheduler
+    volumes:
+      - ./backups:/backups
+      - ./scripts/utility:/scripts:ro
+      - ./knowledge-graph.config.json:/config/config.json:ro
+    environment:
+      BACKUP_DIR: /backups
+      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-false}
+      BACKUP_YANDEX_TOKEN: ${BACKUP_YANDEX_TOKEN:-}
+      BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
+      PERSONAL_POSTGRES_HOST: postgres_personal
+      PERSONAL_POSTGRES_PORT: 5432
+      PERSONAL_POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
+      PERSONAL_POSTGRES_PASSWORD: ${PERSONAL_POSTGRES_PASSWORD:-personal_password}
+      PERSONAL_POSTGRES_DB: ${PERSONAL_POSTGRES_DB:-knowledge_personal}
+    command: >
+      sh -c "
+        apk add --no-cache curl gzip &&
+        while true; do
+          echo Running scheduled backup at $$(date) &&
+          /scripts/backup-personal.sh &&
+          echo Next backup in 24 hours &&
+          sleep 86400
+        done
+      "
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+    restart: unless-stopped
+

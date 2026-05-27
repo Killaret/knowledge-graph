@@ -16,6 +16,11 @@
     import('$lib/components/GraphCanvas.svelte').then(m => {
       GraphCanvas = m.default;
     });
+    // Debug: log variation parameters for the test node in browser
+    import('$lib/utils/variation').then(mod => {
+      const v = mod.getVariation('test-node', nodeType);
+      console.log('[DEBUG][isolated-node] variation for test-node', v);
+    }).catch(()=>{});
   }
   
   // Get type from query param

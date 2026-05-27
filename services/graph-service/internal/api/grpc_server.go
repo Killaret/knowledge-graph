@@ -2,82 +2,29 @@ package api
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"log"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"knowledge-graph-graph-service/internal/cache"
 	"knowledge-graph-graph-service/internal/db"
 	"knowledge-graph-graph-service/internal/engine"
+	graphservice "knowledge-graph-graph-service/proto"
 )
-
-// GraphServiceServer defines the gRPC service interface
-type GraphServiceServer interface {
-	GetFullLayout(context.Context, *NoteLayoutRequest) (GraphService_GetFullLayoutServer, error)
-	GetDelta(context.Context, *DeltaRequest) (*ProtoDeltaResponse, error)
-}
-
-// Message definitions for protobuf
-
-type NoteLayoutRequest struct {
-	UserId string
-}
-
-type DeltaRequest struct {
-	UserId   string
-	LastHash string
-}
-
-type ProtoDeltaResponse struct {
-	AddedNodes   []*ProtoLayoutNode `json:"added_nodes,omitempty"`
-	RemovedNodes []string           `json:"removed_nodes,omitempty"`
-	UpdatedNodes []*ProtoLayoutNode `json:"updated_nodes,omitempty"`
-	AddedLinks   []*ProtoLayoutLink `json:"added_links,omitempty"`
-	RemovedLinks []*ProtoLayoutLink `json:"removed_links,omitempty"`
-	CurrentHash  string             `json:"current_hash,omitempty"`
-}
-
-type ProtoLayoutNode struct {
-	Id    string  `json:"id"`
-	Title string  `json:"title"`
-	Type  string  `json:"type"`
-	X     float64 `json:"x"`
-	Y     float64 `json:"y"`
-	Z     float64 `json:"z"`
-	Size  float64 `json:"size"`
-}
-
-type ProtoLayoutLink struct {
-	Source   string  `json:"source"`
-	Target   string  `json:"target"`
-	Weight   float64 `json:"weight"`
-	LinkType string  `json:"link_type"`
-}
-
-type LayoutChunk struct {
-	Nodes   []*ProtoLayoutNode `json:"nodes,omitempty"`
-	Links   []*ProtoLayoutLink `json:"links,omitempty"`
-	ChunkId string             `json:"chunk_id,omitempty"`
-}
-
-type GraphService_GetFullLayoutServer interface {
-	Send(*LayoutChunk) error
-	Context() context.Context
-}
 
 // graphService implements the GraphServiceServer interface
 type graphService struct {
+	graphservice.UnimplementedGraphServiceServer
 	cache     *cache.RedisCache
 	postgres  db.PostgresClient
 	fullLimit int
 }
 
 // NewGraphService creates a new graph service instance
-func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLimit int) GraphServiceServer {
+func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLimit int) graphservice.GraphServiceServer {
 	return &graphService{
 		cache:     cache,
 		postgres:  postgres,
@@ -85,50 +32,253 @@ func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLi
 	}
 }
 
-// Convert engine.LayoutNode to ProtoLayoutNode
-func convertLayoutNode(node *engine.LayoutNode) *ProtoLayoutNode {
-	return &ProtoLayoutNode{
-		Id:    node.ID,
-		Title: node.Title,
-		Type:  node.Type,
-		X:     node.X,
-		Y:     node.Y,
-		Z:     node.Z,
-		Size:  node.Size,
+// GetNoteLayout returns the layout for a specific note and its neighbors
+func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.NoteLayoutRequest) (*graphservice.LayoutResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+
+	noteID := req.NoteId
+	depth := req.Depth
+	userID := req.UserId
+
+	if userID == "" {
+		userID = "public"
+	}
+
+	if depth <= 0 {
+		depth = 2
+	}
+
+	log.Printf("[GraphService] GetNoteLayout: noteID=%s, depth=%d, userID=%s", noteID, depth, userID)
+
+	// Try cache first
+	if cached, hash, err := s.cache.LoadNoteLayout(ctx, noteID, int(depth)); err == nil && cached != nil {
+		log.Printf("[GraphService] Cache hit for note layout: %s", noteID)
+		return convertLayoutResponse(cached, hash), nil
+	}
+
+	// Load from database
+	notes, links, err := s.postgres.GetNotes(ctx, noteID, int(depth))
+	if err != nil {
+		log.Printf("[GraphService] Failed to load notes from DB: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to load graph: %v", err)
+	}
+
+	// Generate layout
+	layout := engine.Layout2D(notes, links, noteID)
+	hash := computeLayoutHash(layout)
+
+	// Cache the result
+	if err := s.cache.SaveNoteLayout(ctx, noteID, int(depth), layout, hash); err != nil {
+		log.Printf("[GraphService] Warning: failed to cache note layout: %v", err)
+	}
+
+	return convertLayoutResponse(layout, hash), nil
+}
+
+// GetFullLayout streams the full graph layout in chunks
+func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream graphservice.GraphService_GetFullLayoutServer) error {
+	if req == nil {
+		return status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+
+	ctx := stream.Context()
+	userID := req.UserId
+	limit := req.Limit
+
+	if userID == "" {
+		userID = "public"
+	}
+
+	if limit <= 0 {
+		limit = int32(s.fullLimit)
+	}
+
+	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d", userID, limit)
+
+	// Try cache first
+	if cached, hash, err := s.cache.LoadFullLayout(ctx, userID); err == nil && cached != nil {
+		log.Printf("[GraphService] Cache hit for full layout: user=%s", userID)
+		return s.streamLayout(cached, hash, stream)
+	}
+
+	// Load from database
+	notes, links, err := s.postgres.GetNotes(ctx, "", 0)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load full graph from DB: %v", err)
+		return status.Errorf(codes.Internal, "failed to load full graph: %v", err)
+	}
+
+	// Apply limit
+	if int(limit) > 0 && len(notes) > int(limit) {
+		notes = notes[:limit]
+	}
+
+	// Generate layout
+	layout := engine.Layout3D(notes, links)
+	hash := computeLayoutHash(layout)
+
+	// Cache the result
+	if err := s.cache.SaveFullLayout(ctx, userID, layout, hash); err != nil {
+		log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
+	}
+
+	return s.streamLayout(layout, hash, stream)
+}
+
+// streamLayout sends the layout in chunks
+func (s *graphService) streamLayout(layout *engine.LayoutResponse, hash string, stream graphservice.GraphService_GetFullLayoutServer) error {
+	chunkSize := 100
+	totalNodes := len(layout.Nodes)
+	totalLinks := len(layout.Links)
+
+	for i := 0; i < totalNodes; i += chunkSize {
+		end := i + chunkSize
+		if end > totalNodes {
+			end = totalNodes
+		}
+
+		chunk := &graphservice.LayoutChunk{
+			Nodes:   convertLayoutNodes(layout.Nodes[i:end]),
+			ChunkId: fmt.Sprintf("nodes-%d-%d", i, end),
+		}
+
+		if err := stream.Send(chunk); err != nil {
+			log.Printf("[GraphService] Failed to send node chunk: %v", err)
+			return err
+		}
+	}
+
+	// Send links in a separate chunk
+	linksChunk := &graphservice.LayoutChunk{
+		Links:   convertLayoutLinks(layout.Links),
+		ChunkId: "links",
+	}
+
+	if err := stream.Send(linksChunk); err != nil {
+		log.Printf("[GraphService] Failed to send links chunk: %v", err)
+		return err
+	}
+
+	// Send final chunk with hash
+	finalChunk := &graphservice.LayoutChunk{
+		ChunkId: fmt.Sprintf("hash:%s", hash),
+	}
+
+	if err := stream.Send(finalChunk); err != nil {
+		log.Printf("[GraphService] Failed to send hash chunk: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+// GetDelta returns the delta between two layout versions
+func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequest) (*graphservice.DeltaResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+
+	userID := req.UserId
+	lastHash := req.LastHash
+
+	if userID == "" {
+		userID = "public"
+	}
+
+	if lastHash == "" {
+		return nil, status.Error(codes.InvalidArgument, "last_hash is required")
+	}
+
+	log.Printf("[GraphService] GetDelta: userID=%s, lastHash=%s", userID, lastHash)
+
+	// Try to load delta from cache first
+	if delta, err := s.cache.LoadDelta(ctx, userID, lastHash); err == nil && delta != nil {
+		log.Printf("[GraphService] Cache hit for delta: %s", lastHash)
+		return convertDeltaResponse(delta), nil
+	}
+
+	// Load current layout
+	notes, links, err := s.postgres.GetNotes(ctx, "", 0)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load current layout: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to load current layout: %v", err)
+	}
+
+	current := engine.Layout3D(notes, links)
+	currentHash := computeLayoutHash(current)
+
+	// Load old layout for comparison
+	oldLayout, _, err := s.cache.LoadFullLayout(ctx, userID)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load old layout for delta: %v", err)
+		// If no old layout, return everything as added
+		return &graphservice.DeltaResponse{
+			AddedNodes:  convertLayoutNodes(current.Nodes),
+			AddedLinks:  convertLayoutLinks(current.Links),
+			CurrentHash: currentHash,
+		}, nil
+	}
+
+	// Compute delta
+	delta := engine.ComputeDelta(oldLayout, current)
+	delta.CurrentHash = currentHash
+
+	// Cache the delta
+	if err := s.cache.SaveDelta(ctx, userID, lastHash, delta); err != nil {
+		log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
+	}
+
+	// Update cached full layout
+	if err := s.cache.SaveFullLayout(ctx, userID, current, currentHash); err != nil {
+		log.Printf("[GraphService] Warning: failed to update full layout cache: %v", err)
+	}
+
+	return convertDeltaResponse(delta), nil
+}
+
+// Conversion functions
+
+func convertLayoutResponse(layout *engine.LayoutResponse, hash string) *graphservice.LayoutResponse {
+	return &graphservice.LayoutResponse{
+		Nodes: convertLayoutNodes(layout.Nodes),
+		Links: convertLayoutLinks(layout.Links),
+		Hash:  hash,
 	}
 }
 
-// Convert engine.LayoutLink to ProtoLayoutLink
-func convertLayoutLink(link *engine.LayoutLink) *ProtoLayoutLink {
-	return &ProtoLayoutLink{
-		Source:   link.Source,
-		Target:   link.Target,
-		Weight:   link.Weight,
-		LinkType: link.LinkType,
-	}
-}
-
-// Convert []*engine.LayoutNode to []*ProtoLayoutNode
-func convertLayoutNodes(nodes []*engine.LayoutNode) []*ProtoLayoutNode {
-	result := make([]*ProtoLayoutNode, len(nodes))
+func convertLayoutNodes(nodes []*engine.LayoutNode) []*graphservice.LayoutNode {
+	result := make([]*graphservice.LayoutNode, len(nodes))
 	for i, node := range nodes {
-		result[i] = convertLayoutNode(node)
+		result[i] = &graphservice.LayoutNode{
+			Id:    node.ID,
+			Title: node.Title,
+			Type:  node.Type,
+			X:     node.X,
+			Y:     node.Y,
+			Z:     node.Z,
+			Size:  node.Size,
+		}
 	}
 	return result
 }
 
-// Convert []*engine.LayoutLink to []*ProtoLayoutLink
-func convertLayoutLinks(links []*engine.LayoutLink) []*ProtoLayoutLink {
-	result := make([]*ProtoLayoutLink, len(links))
+func convertLayoutLinks(links []*engine.LayoutLink) []*graphservice.LayoutLink {
+	result := make([]*graphservice.LayoutLink, len(links))
 	for i, link := range links {
-		result[i] = convertLayoutLink(link)
+		result[i] = &graphservice.LayoutLink{
+			Source:   link.Source,
+			Target:   link.Target,
+			Weight:   link.Weight,
+			LinkType: link.LinkType,
+		}
 	}
 	return result
 }
 
-// Convert engine.DeltaResponse to ProtoDeltaResponse
-func convertDeltaResponse(delta *engine.DeltaResponse) *ProtoDeltaResponse {
-	return &ProtoDeltaResponse{
+func convertDeltaResponse(delta *engine.DeltaResponse) *graphservice.DeltaResponse {
+	return &graphservice.DeltaResponse{
 		AddedNodes:   convertLayoutNodes(delta.AddedNodes),
 		RemovedNodes: delta.RemovedNodes,
 		UpdatedNodes: convertLayoutNodes(delta.UpdatedNodes),
@@ -138,69 +288,13 @@ func convertDeltaResponse(delta *engine.DeltaResponse) *ProtoDeltaResponse {
 	}
 }
 
-// GetFullLayout streams the full graph layout
-func (s *graphService) GetFullLayout(ctx context.Context, req *NoteLayoutRequest) (GraphService_GetFullLayoutServer, error) {
-	return nil, status.Error(codes.Unimplemented, "streaming not implemented in stub")
-}
-
-// GetDelta returns the delta between two layout versions
-func (s *graphService) GetDelta(ctx context.Context, req *DeltaRequest) (*ProtoDeltaResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
-	}
-	if req.UserId == "" {
-		req.UserId = "public"
-	}
-	if req.LastHash == "" {
-		return nil, status.Error(codes.InvalidArgument, "last_hash is required")
-	}
-
-	// Try to load from cache first
-	if delta, err := s.cache.LoadDelta(ctx, req.UserId, req.LastHash); err == nil && delta != nil {
-		return convertDeltaResponse(delta), nil
-	}
-
-	// Load current layout
-	notes, links, err := s.postgres.GetNotes(ctx, "", 0)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to load current layout: %v", err)
-	}
-	current := engine.Layout3D(notes, links)
-	currentHash := computeLayoutHash(current)
-
-	// Load old layout for comparison
-	oldLayout, _, err := s.cache.LoadFullLayout(ctx, req.UserId)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to load old layout: %v", err)
-	}
-
-	// Compute delta
-	delta := engine.ComputeDelta(oldLayout, current)
-	delta.CurrentHash = currentHash
-
-	// Cache the delta
-	if err := s.cache.SaveDelta(ctx, req.UserId, req.LastHash, delta); err != nil {
-		// Log warning but don't fail
-		// log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
-	}
-
-	// Update cached full layout
-	if err := s.cache.SaveFullLayout(ctx, req.UserId, current, currentHash); err != nil {
-		// Log warning but don't fail
-		// log.Printf("[GraphService] Warning: failed to update full layout cache: %v", err)
-	}
-
-	return convertDeltaResponse(delta), nil
-}
-
-// RegisterGraphServiceServer registers the graph service with the gRPC server
-func RegisterGraphServiceServer(s *grpc.Server, srv GraphServiceServer) {
-	// TODO: Implement proper gRPC registration when protobuf is generated
-}
-
-// computeLayoutHash generates a hash for the layout
+// computeLayoutHash computes a hash of the layout for cache validation
 func computeLayoutHash(layout *engine.LayoutResponse) string {
-	payload, _ := json.Marshal(layout)
-	h := sha256.Sum256(payload)
-	return hex.EncodeToString(h[:])
+	data, _ := json.Marshal(layout)
+	return fmt.Sprintf("%x", data)[:32]
+}
+
+// RegisterGraphServiceServer is a wrapper for the generated registration function
+func RegisterGraphServiceServer(s interface{}, srv graphservice.GraphServiceServer) {
+	// This is handled by the generated code
 }

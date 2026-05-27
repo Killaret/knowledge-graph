@@ -2,30 +2,31 @@
 package backup
 
 import (
+	"context"
 	"net/http"
 	"time"
 
+	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
 )
 
 // Handler handles backup requests
 type Handler struct {
-	cfg         *config.Config
-	r2Service   *cloud.R2BackupService
-	asynqClient *asynq.Client
+	cfg           *config.Config
+	yandexService *cloud.YandexBackupService
+	taskQueue     common.TaskQueue
 }
 
 // NewHandler creates a new backup handler
-func NewHandler(cfg *config.Config, r2Service *cloud.R2BackupService, asynqClient *asynq.Client) *Handler {
+func NewHandler(cfg *config.Config, yandexService *cloud.YandexBackupService, taskQueue common.TaskQueue) *Handler {
 	return &Handler{
-		cfg:         cfg,
-		r2Service:   r2Service,
-		asynqClient: asynqClient,
+		cfg:           cfg,
+		yandexService: yandexService,
+		taskQueue:     taskQueue,
 	}
 }
 
@@ -59,10 +60,15 @@ func (h *Handler) TriggerCloudBackup(c *gin.Context) {
 		return
 	}
 
-	// Enqueue task
-	_, err = h.asynqClient.Enqueue(task)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to enqueue backup task"})
+	// Enqueue task using task queue
+	if h.taskQueue != nil {
+		err = h.taskQueue.Enqueue(context.Background(), task)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to enqueue backup task"})
+			return
+		}
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "task queue not available"})
 		return
 	}
 
@@ -81,9 +87,9 @@ func (h *Handler) GetBackupStatus(c *gin.Context) {
 		"local_path":     h.cfg.BackupLocalPath,
 		"schedule":       h.cfg.BackupSchedule,
 		"retention_days": h.cfg.BackupRetentionDays,
-		"r2_bucket":      h.cfg.BackupR2Bucket,
-		"r2_region":      h.cfg.BackupR2Region,
-		"r2_account_id":  maskSensitive(h.cfg.BackupR2AccountID),
+		"yandex_folder":  h.cfg.BackupYandexFolder,
+		"yandex_token":   maskSensitive(h.cfg.BackupYandexOAuthToken),
+		"max_backups":    h.cfg.BackupYandexMaxBackups,
 	})
 }
 

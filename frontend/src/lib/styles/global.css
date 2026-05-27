@@ -29,6 +29,8 @@
   --color-text: #e0e0e0;
   --color-text-secondary: #9ca3af;
   --color-text-muted: #6b7280;
+  --color-text-primary: #e0e0e0;
+  --color-text-dark: #e0e0e0;
 
   /* Border colors */
   --color-border: #2d2d3a;
@@ -46,6 +48,7 @@
   --color-comet: #e879f9;
   --color-galaxy: #c084fc;
   --color-asteroid: #94a3b8;
+  --color-dust: #a0a0a0;
 
   /* ================================
      COSMIC THEME VARIABLES

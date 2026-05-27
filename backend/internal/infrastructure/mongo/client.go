@@ -2,81 +2,50 @@ package mongo
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Client wraps the MongoDB client
+// Client represents MongoDB client wrapper
 type Client struct {
 	client   *mongo.Client
-	database string
-}
-
-// Config holds MongoDB configuration
-type Config struct {
-	URI      string
-	Database string
+	database *mongo.Database
 }
 
 // NewClient creates a new MongoDB client
-func NewClient(ctx context.Context, cfg Config) (*Client, error) {
-	if cfg.URI == "" {
-		return nil, fmt.Errorf("MongoDB URI is required")
-	}
-	if cfg.Database == "" {
-		return nil, fmt.Errorf("MongoDB database name is required")
-	}
+func NewClient(ctx context.Context, uri, databaseName string) (*Client, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 
-	// Create client options
-	clientOpts := options.Client().
-		ApplyURI(cfg.URI).
-		SetMaxPoolSize(100).
-		SetMinPoolSize(10).
-		SetMaxConnIdleTime(10 * time.Minute)
-
-	// Connect to MongoDB
-	client, err := mongo.Connect(ctx, clientOpts)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
+		return nil, err
 	}
 
 	// Ping the database to verify connection
 	if err := client.Ping(ctx, nil); err != nil {
-		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
+		return nil, err
 	}
-
-	log.Printf("[Mongo] Connected to MongoDB: %s", cfg.Database)
 
 	return &Client{
 		client:   client,
-		database: cfg.Database,
+		database: client.Database(databaseName),
 	}, nil
+}
+
+// GetDatabase returns the MongoDB database
+func (c *Client) GetDatabase() *mongo.Database {
+	return c.database
 }
 
 // Close closes the MongoDB connection
 func (c *Client) Close(ctx context.Context) error {
-	if err := c.client.Disconnect(ctx); err != nil {
-		return fmt.Errorf("failed to disconnect from MongoDB: %w", err)
-	}
-	log.Printf("[Mongo] Disconnected from MongoDB")
-	return nil
+	return c.client.Disconnect(ctx)
 }
 
-// Database returns the MongoDB database
-func (c *Client) Database() *mongo.Database {
-	return c.client.Database(c.database)
-}
-
-// Collection returns a MongoDB collection
-func (c *Client) Collection(name string) *mongo.Collection {
-	return c.client.Database(c.database).Collection(name)
-}
-
-// Client returns the underlying MongoDB client
-func (c *Client) Client() *mongo.Client {
-	return c.client
+// GetCollection returns a collection by name
+func (c *Client) GetCollection(name string) *mongo.Collection {
+	return c.database.Collection(name)
 }

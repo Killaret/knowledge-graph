@@ -9,8 +9,12 @@
     "format": "cd frontend && npm run format",
     "build-config": "node scripts/build-config.js",
     "test": "cd frontend && npm run test:unit",
-    "clean:lunix": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/clean_and_compress_lunix.ps1 -Search -Compress",
-    "clean:lunix:sh": "bash ./scripts/clean_and_compress_lunix.sh -c"
+    "clean:lunix": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress -UseCompact",
+    "clean:lunix:vhd": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress",
+    "clean:lunix:dry": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress -UseCompact -DryRun",
+    "clean:lunix:sh": "bash ./scripts/cleanup/clean_and_compress_lunix.sh -c",
+    "clean:lunix:sh:dry": "bash ./scripts/cleanup/clean_and_compress_lunix.sh --dry-run -c",
+    "clean:docker:vhdx": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/diskpart_compress_admin.ps1"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.8.1",
