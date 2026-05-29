@@ -4,10 +4,10 @@ import com.alximac.knowledgegraph.texthandler.application.ImportDocumentHandler;
 import com.alximac.knowledgegraph.texthandler.application.exception.RemoteServiceException;
 import com.alximac.knowledgegraph.texthandler.application.port.NoteCreatorPort;
 import com.alximac.knowledgegraph.texthandler.application.port.OutboundQueuePort;
-import com.alximac.knowledgegraph.texthandler.domain.model.*;
 import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
+import com.alximac.knowledgegraph.texthandler.infrastructure.chunking.HybridChunker;
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.NoteCreatorHttpClient;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.ResilientNoteCreator;
@@ -32,7 +32,6 @@ import io.lettuce.core.RedisClient;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 public class AppConfig {
     private static final long TIMEOUT_DURATION = 5;
@@ -99,10 +98,7 @@ public class AppConfig {
 
 
 
-        ChunkingStrategy chunk = (text, options) -> {
-            if (text == null || text.isBlank()) return List.of();
-            return List.of(new DocumentChunk(text, 0, Map.of(), null));
-        };
+        ChunkingStrategy chunk = new HybridChunker();
 
         LinkDetector linkDetector = chunks -> List.of();
 
