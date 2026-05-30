@@ -85,14 +85,7 @@ public class HybridChunker implements ChunkingStrategy {
                     chunkWords.add(wordBuffer.pollFirst());
                     currentWordCount--;
                 }
-                String chunkText = String.join(" ", chunkWords);
-                if (chunkText.length() >= minLength) {
-                    chunks.add(new DocumentChunk(chunkText, indexCounter.getAndIncrement(), Map.of(), null));
-                } else if (!chunks.isEmpty()) {
-                    // короткий чанк присоединяем к предыдущему
-                    DocumentChunk prev = chunks.remove(chunks.size() - 1);
-                    chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null));
-                }
+                addChunkOrMerge(String.join(" ", chunkWords), minLength, chunks, indexCounter);
 
                 // Возвращаем overlap слов обратно в буфер для перекрытия
                 if (overlapWords > 0 && !chunkWords.isEmpty()) {
@@ -108,14 +101,19 @@ public class HybridChunker implements ChunkingStrategy {
         // остаток буфера (меньше chunkSize) — последний чанк
         if (!wordBuffer.isEmpty()) {
             String lastText = String.join(" ", wordBuffer);
-            if (lastText.length() >= minLength) {
-                chunks.add(new DocumentChunk(lastText, indexCounter.getAndIncrement(), Map.of(), null));
-            } else if (!chunks.isEmpty()) {
-                DocumentChunk prev = chunks.remove(chunks.size() - 1);
-                chunks.add(new DocumentChunk(prev.text() + " " + lastText, prev.index(), Map.of(), null));
-            }
+            addChunkOrMerge(lastText, minLength, chunks, indexCounter);
         }
 
         return chunks;
+    }
+
+    private void addChunkOrMerge(String chunkText, int minLength, List<DocumentChunk> chunks, AtomicInteger indexCounter) {
+        if (chunkText.length() >= minLength) {
+            chunks.add(new DocumentChunk(chunkText, indexCounter.getAndIncrement(), Map.of(), null));
+        } else if (!chunks.isEmpty()) {
+            DocumentChunk prev = chunks.remove(chunks.size() - 1);
+            chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null));
+        }
+        // Если список пуст и текст короткий, чанк теряется .
     }
 }
