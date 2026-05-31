@@ -2,6 +2,8 @@ package cloud
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -156,6 +158,11 @@ func (s *YandexDiskService) UploadBackup(ctx context.Context, localPath, remoteK
 		return fmt.Errorf("upload failed after %d retries: %w", s.maxRetries, lastErr)
 	}
 
+	// Verify upload by comparing hashes
+	if err := s.verifyUpload(ctx, localPath, remoteKey); err != nil {
+		return fmt.Errorf("upload verification failed: %w", err)
+	}
+
 	return nil
 }
 
@@ -264,6 +271,52 @@ func (s *YandexDiskService) getDownloadURL(ctx context.Context, remoteKey string
 	}
 
 	return downloadResp.Href, nil
+}
+
+// computeFileHash computes SHA256 hash of a file
+func (s *YandexDiskService) computeFileHash(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file for hashing: %w", err)
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", fmt.Errorf("failed to compute hash: %w", err)
+	}
+
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+// verifyUpload verifies that the uploaded file matches the local file by comparing hashes
+func (s *YandexDiskService) verifyUpload(ctx context.Context, localPath, remoteKey string) error {
+	// Compute local hash
+	localHash, err := s.computeFileHash(localPath)
+	if err != nil {
+		return fmt.Errorf("failed to compute local hash: %w", err)
+	}
+
+	// Download remote file to temp location for verification
+	tempPath := localPath + ".verify"
+	defer os.Remove(tempPath)
+
+	if err := s.DownloadBackup(ctx, remoteKey, tempPath); err != nil {
+		return fmt.Errorf("failed to download file for verification: %w", err)
+	}
+
+	// Compute remote hash
+	remoteHash, err := s.computeFileHash(tempPath)
+	if err != nil {
+		return fmt.Errorf("failed to compute remote hash: %w", err)
+	}
+
+	// Compare hashes
+	if localHash != remoteHash {
+		return fmt.Errorf("hash mismatch: local=%s, remote=%s", localHash, remoteHash)
+	}
+
+	return nil
 }
 
 // ListBackups lists all backups in the Yandex.Disk directory via REST API

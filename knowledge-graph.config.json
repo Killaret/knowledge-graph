@@ -108,8 +108,8 @@
         "oauth_token": "y0__wgBEOepmBUYy-hCINvFkN8XMInAoaUIcTK302Zhm6oeg6zMKRPRVsOwD6w"
       }
     },
-    "schedule": "0 2 * * *",
-    "retention_days": 7,
+    "schedule": "0 23 * * 0",
+    "retention_days": 14,
     "draft_ttl_hours": 168
   },
   "ci_cd": {
