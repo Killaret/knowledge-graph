@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,41 +13,91 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-// YandexDiskService handles backup operations to Yandex.Disk via WebDAV
+// YandexDiskService handles backup operations to Yandex.Disk via REST API
 type YandexDiskService struct {
 	client     *http.Client
 	baseURL    string
-	username   string
-	password   string
+	oauthToken string
 	maxRetries int
 }
 
 // YandexDiskConfig holds Yandex.Disk configuration
 type YandexDiskConfig struct {
-	Username string // OAuth token or username
-	Password string // OAuth token (if using OAuth) or password
-	// For OAuth: use token as both username and password
+	OAuthToken string // OAuth token for REST API
 }
 
-// NewYandexDiskService creates a new Yandex.Disk backup service
+// UploadURLResponse represents the response from upload URL request
+type UploadURLResponse struct {
+	Href      string `json:"href"`
+	Method    string `json:"method"`
+	Templated bool   `json:"templated"`
+}
+
+// ResourceResponse represents the response from resource operations
+type ResourceResponse struct {
+	Path     string `json:"path"`
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Created  string `json:"created"`
+	Modified string `json:"modified"`
+	Embedded struct {
+		Items []ResourceItem `json:"items"`
+	} `json:"_embedded"`
+}
+
+// ResourceItem represents an item in the resource list
+type ResourceItem struct {
+	Path     string `json:"path"`
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Created  string `json:"created"`
+	Modified string `json:"modified"`
+	Size     int64  `json:"size"`
+}
+
+// ErrorResponse represents an error response from Yandex API
+type ErrorResponse struct {
+	Error       string `json:"error"`
+	Description string `json:"description"`
+	Message     string `json:"message"`
+}
+
+// NewYandexDiskService creates a new Yandex.Disk backup service using REST API
 func NewYandexDiskService(cfg YandexDiskConfig) (*YandexDiskService, error) {
-	if cfg.Username == "" || cfg.Password == "" {
-		return nil, fmt.Errorf("Yandex.Disk configuration is incomplete")
+	if cfg.OAuthToken == "" {
+		return nil, fmt.Errorf("Yandex.Disk OAuth token is required")
 	}
 
 	return &YandexDiskService{
 		client: &http.Client{
 			Timeout: 5 * time.Minute,
 		},
-		baseURL:    "https://webdav.yandex.ru",
-		username:   cfg.Username,
-		password:   cfg.Password,
+		baseURL:    "https://cloud-api.yandex.net/v1/disk",
+		oauthToken: cfg.OAuthToken,
 		maxRetries: 3,
 	}, nil
 }
 
-// UploadBackup uploads a local backup file to Yandex.Disk with retry logic
+// UploadBackup uploads a local backup file to Yandex.Disk via REST API
 func (s *YandexDiskService) UploadBackup(ctx context.Context, localPath, remoteKey string) error {
+	// Ensure directory exists
+	lastSlash := strings.LastIndex(remoteKey, "/")
+	var dirPath string
+	if lastSlash > 0 {
+		dirPath = remoteKey[:lastSlash]
+	}
+	if dirPath != "" && dirPath != "." {
+		if err := s.EnsureDirectory(ctx, dirPath); err != nil {
+			return fmt.Errorf("failed to ensure directory: %w", err)
+		}
+	}
+
+	// Get upload URL from Yandex API
+	uploadURL, err := s.getUploadURL(ctx, remoteKey)
+	if err != nil {
+		return fmt.Errorf("failed to get upload URL: %w", err)
+	}
+
 	// Open the local file
 	file, err := os.Open(localPath)
 	if err != nil {
@@ -60,7 +111,7 @@ func (s *YandexDiskService) UploadBackup(ctx context.Context, localPath, remoteK
 		return fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	// Create upload with retry logic
+	// Upload with retry logic
 	var lastErr error
 	operation := func() error {
 		// Reset file pointer to beginning
@@ -69,14 +120,12 @@ func (s *YandexDiskService) UploadBackup(ctx context.Context, localPath, remoteK
 			return fmt.Errorf("failed to seek file: %w", err)
 		}
 
-		// Upload to Yandex.Disk via WebDAV PUT
-		url := s.baseURL + "/" + strings.TrimPrefix(remoteKey, "/")
-		req, err := http.NewRequestWithContext(ctx, "PUT", url, file)
+		// Upload to the upload URL
+		req, err := http.NewRequestWithContext(ctx, "PUT", uploadURL, file)
 		if err != nil {
-			return fmt.Errorf("failed to create request: %w", err)
+			return fmt.Errorf("failed to create upload request: %w", err)
 		}
 
-		req.SetBasicAuth(s.username, s.password)
 		req.ContentLength = fileInfo.Size()
 
 		resp, err := s.client.Do(req)
@@ -110,15 +159,52 @@ func (s *YandexDiskService) UploadBackup(ctx context.Context, localPath, remoteK
 	return nil
 }
 
-// DownloadBackup downloads a backup file from Yandex.Disk
-func (s *YandexDiskService) DownloadBackup(ctx context.Context, remoteKey, localPath string) error {
-	url := s.baseURL + "/" + strings.TrimPrefix(remoteKey, "/")
+// getUploadURL gets the upload URL for a file from Yandex API
+func (s *YandexDiskService) getUploadURL(ctx context.Context, remoteKey string) (string, error) {
+	url := fmt.Sprintf("%s/resources/upload?path=%s&overwrite=true", s.baseURL, remoteKey)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.SetBasicAuth(s.username, s.password)
+	req.Header.Set("Authorization", "OAuth "+s.oauthToken)
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to get upload URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return "", fmt.Errorf("failed to get upload URL: %s - %s", errResp.Error, errResp.Description)
+		}
+		return "", fmt.Errorf("failed to get upload URL with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var uploadResp UploadURLResponse
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
+		return "", fmt.Errorf("failed to decode upload URL response: %w", err)
+	}
+
+	return uploadResp.Href, nil
+}
+
+// DownloadBackup downloads a backup file from Yandex.Disk via REST API
+func (s *YandexDiskService) DownloadBackup(ctx context.Context, remoteKey, localPath string) error {
+	// Get download URL from Yandex API
+	downloadURL, err := s.getDownloadURL(ctx, remoteKey)
+	if err != nil {
+		return fmt.Errorf("failed to get download URL: %w", err)
+	}
+
+	// Download from the download URL
+	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create download request: %w", err)
+	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -147,16 +233,48 @@ func (s *YandexDiskService) DownloadBackup(ctx context.Context, remoteKey, local
 	return nil
 }
 
-// ListBackups lists all backups in the Yandex.Disk directory
+// getDownloadURL gets the download URL for a file from Yandex API
+func (s *YandexDiskService) getDownloadURL(ctx context.Context, remoteKey string) (string, error) {
+	url := fmt.Sprintf("%s/resources/download?path=%s", s.baseURL, remoteKey)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "OAuth "+s.oauthToken)
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to get download URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return "", fmt.Errorf("failed to get download URL: %s - %s", errResp.Error, errResp.Description)
+		}
+		return "", fmt.Errorf("failed to get download URL with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var downloadResp UploadURLResponse
+	if err := json.NewDecoder(resp.Body).Decode(&downloadResp); err != nil {
+		return "", fmt.Errorf("failed to decode download URL response: %w", err)
+	}
+
+	return downloadResp.Href, nil
+}
+
+// ListBackups lists all backups in the Yandex.Disk directory via REST API
 func (s *YandexDiskService) ListBackups(ctx context.Context, prefix string) ([]string, error) {
-	url := s.baseURL + "/" + strings.TrimPrefix(prefix, "/")
-	req, err := http.NewRequestWithContext(ctx, "PROPFIND", url, nil)
+	url := fmt.Sprintf("%s/resources?path=%s&limit=100", s.baseURL, prefix)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.SetBasicAuth(s.username, s.password)
-	req.Header.Set("Depth", "1")
+	req.Header.Set("Authorization", "OAuth "+s.oauthToken)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -164,26 +282,39 @@ func (s *YandexDiskService) ListBackups(ctx context.Context, prefix string) ([]s
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusMultiStatus {
+	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return nil, fmt.Errorf("failed to list: %s - %s", errResp.Error, errResp.Description)
+		}
 		return nil, fmt.Errorf("list failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	// Parse WebDAV response to extract file names
-	// For simplicity, we'll return the prefix itself
-	// A full implementation would parse XML response
-	return []string{prefix}, nil
+	var resourceResp ResourceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&resourceResp); err != nil {
+		return nil, fmt.Errorf("failed to decode list response: %w", err)
+	}
+
+	var files []string
+	for _, item := range resourceResp.Embedded.Items {
+		if item.Type == "file" {
+			files = append(files, item.Name)
+		}
+	}
+
+	return files, nil
 }
 
-// DeleteBackup deletes a backup from Yandex.Disk
+// DeleteBackup deletes a backup from Yandex.Disk via REST API
 func (s *YandexDiskService) DeleteBackup(ctx context.Context, remoteKey string) error {
-	url := s.baseURL + "/" + strings.TrimPrefix(remoteKey, "/")
+	url := fmt.Sprintf("%s/resources?path=%s&permanently=true", s.baseURL, remoteKey)
 	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.SetBasicAuth(s.username, s.password)
+	req.Header.Set("Authorization", "OAuth "+s.oauthToken)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -193,21 +324,25 @@ func (s *YandexDiskService) DeleteBackup(ctx context.Context, remoteKey string) 
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return fmt.Errorf("failed to delete: %s - %s", errResp.Error, errResp.Description)
+		}
 		return fmt.Errorf("delete failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
 	return nil
 }
 
-// EnsureDirectory ensures the backup directory exists on Yandex.Disk
+// EnsureDirectory ensures the backup directory exists on Yandex.Disk via REST API
 func (s *YandexDiskService) EnsureDirectory(ctx context.Context, dirPath string) error {
-	url := s.baseURL + "/" + strings.TrimPrefix(dirPath, "/")
-	req, err := http.NewRequestWithContext(ctx, "MKCOL", url, nil)
+	url := fmt.Sprintf("%s/resources?path=%s", s.baseURL, dirPath)
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.SetBasicAuth(s.username, s.password)
+	req.Header.Set("Authorization", "OAuth "+s.oauthToken)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -215,9 +350,13 @@ func (s *YandexDiskService) EnsureDirectory(ctx context.Context, dirPath string)
 	}
 	defer resp.Body.Close()
 
-	// 405 Method Not Allowed means directory already exists
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusMethodNotAllowed {
+	// 409 Conflict means directory already exists
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 		body, _ := io.ReadAll(resp.Body)
+		var errResp ErrorResponse
+		if json.Unmarshal(body, &errResp) == nil {
+			return fmt.Errorf("failed to create directory: %s - %s", errResp.Error, errResp.Description)
+		}
 		return fmt.Errorf("create directory failed with status %d: %s", resp.StatusCode, string(body))
 	}
 

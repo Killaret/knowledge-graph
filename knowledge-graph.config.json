@@ -102,12 +102,10 @@
   "backup": {
     "local_path": "./backups",
     "cloud": {
-      "enabled": false,
+      "enabled": true,
       "provider": "yandex",
       "yandex": {
-        "oauth_token": "",
-        "backup_folder": "/KnowledgeGraphBackups",
-        "max_backups": 10
+        "oauth_token": "y0__wgBEOepmBUYy-hCINvFkN8XMInAoaUIcTK302Zhm6oeg6zMKRPRVsOwD6w"
       }
     },
     "schedule": "0 2 * * *",
@@ -182,6 +180,27 @@
   "mongodb": {
     "url": "mongodb://localhost:27017",
     "database": "knowledge_graph"
+  },
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 1000,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100.0,
+      "3d_radius": 120.0,
+      "3d_z_step": 5.0,
+      "default_node_size": 1.0
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
   },
   "nlp": {
     "model_name": "all-MiniLM-L6-V2",
