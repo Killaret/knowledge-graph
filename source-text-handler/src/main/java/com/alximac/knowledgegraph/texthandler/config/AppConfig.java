@@ -7,6 +7,7 @@ import com.alximac.knowledgegraph.texthandler.application.port.OutboundQueuePort
 import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
+import com.alximac.knowledgegraph.texthandler.infrastructure.HealthCheckService;
 import com.alximac.knowledgegraph.texthandler.infrastructure.chunking.HybridChunker;
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.NoteCreatorHttpClient;
@@ -29,6 +30,7 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.lettuce.core.RedisClient;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -53,7 +55,8 @@ public class AppConfig {
 
 
 
-    public void start() {
+
+    public void start() throws IOException {
 
 
 
@@ -62,6 +65,8 @@ public class AppConfig {
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_DURATION)).build();
         NoteCreatorHttpClient noteCreatorHttpClient =
                 new NoteCreatorHttpClient(httpClient,objectMapper,"http://backend:8080");
+        HealthCheckService healthService = new HealthCheckService(8081, redisClient);
+        healthService.start();
 
         RetryConfig retryConfig = RetryConfig.custom()
                 .maxAttempts(3)
