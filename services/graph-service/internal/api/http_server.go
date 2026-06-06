@@ -6,34 +6,39 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"knowledge-graph-graph-service/internal/cache"
 	"knowledge-graph-graph-service/internal/db"
 	"knowledge-graph-graph-service/internal/engine"
 	graphservice "knowledge-graph-graph-service/proto"
+
+	"github.com/google/uuid"
 )
 
 // HTTPServer handles HTTP requests for the graph service
 type HTTPServer struct {
-	cache    *cache.RedisCache
-	postgres db.PostgresClient
-	limit    int
+	cache        *cache.RedisCache
+	postgres     db.PostgresClient
+	limit        int
+	defaultDepth int
 }
 
 // NewHTTPServer creates a new HTTP server
-func NewHTTPServer(postgres db.PostgresClient, cache *cache.RedisCache, limit int) *HTTPServer {
+func NewHTTPServer(postgres db.PostgresClient, cache *cache.RedisCache, limit, defaultDepth int) *HTTPServer {
 	return &HTTPServer{
-		cache:    cache,
-		postgres: postgres,
-		limit:    limit,
+		cache:        cache,
+		postgres:     postgres,
+		limit:        limit,
+		defaultDepth: defaultDepth,
 	}
 }
 
 // GraphData represents the response structure
 type GraphData struct {
-	Nodes []*ProtoLayoutNode `json:"nodes"`
-	Links []*ProtoLayoutLink `json:"links"`
+	Nodes []*engine.LayoutNode `json:"nodes"`
+	Links []*engine.LayoutLink `json:"links"`
 }
 
 // GraphApiResponse wraps the graph data with metadata
@@ -51,15 +56,34 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	startTime := time.Now()
 
-	// Extract note ID from path
-	noteID := r.URL.Path[len("/api/v1/graph/note/"):]
+	// Extract note ID from path - handle /api/v1/graph/note/{id}
+	log.Printf("[GraphService] Raw URL.Path: '%s', URL.RawPath: '%s'", r.URL.Path, r.URL.RawPath)
+
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/graph/note/")
+
+	// Remove query parameters if any
+	if idx := strings.Index(path, "?"); idx != -1 {
+		path = path[:idx]
+	}
+
+	noteID := strings.TrimSpace(path)
 	if noteID == "" {
+		log.Printf("[GraphService] Empty noteID from path: '%s'", r.URL.Path)
 		http.Error(w, "Note ID is required", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("[GraphService] Extracted noteID: '%s' from path: '%s'", noteID, r.URL.Path)
+
+	// Validate UUID format
+	if _, err := uuid.Parse(noteID); err != nil {
+		log.Printf("[GraphService] Invalid UUID format: %s", noteID)
+		http.Error(w, "Invalid note ID format (must be UUID)", http.StatusBadRequest)
+		return
+	}
+
 	// Parse depth parameter
-	depth := 2
+	depth := s.defaultDepth
 	if depthStr := r.URL.Query().Get("depth"); depthStr != "" {
 		if d, err := strconv.Atoi(depthStr); err == nil && d > 0 {
 			depth = d
@@ -231,8 +255,8 @@ func (s *HTTPServer) GetDeltaHandler(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPServer) sendGraphData(w http.ResponseWriter, layout *engine.LayoutResponse, hash string) {
 	response := GraphApiResponse{
 		Data: GraphData{
-			Nodes: convertLayoutNodes(layout.Nodes),
-			Links: convertLayoutLinks(layout.Links),
+			Nodes: layout.Nodes,
+			Links: layout.Links,
 		},
 		Meta: &struct {
 			TotalNodes int    `json:"total_nodes,omitempty"`
@@ -255,7 +279,25 @@ func (s *HTTPServer) sendGraphData(w http.ResponseWriter, layout *engine.LayoutR
 
 // sendDeltaData sends the delta data as JSON response
 func (s *HTTPServer) sendDeltaData(w http.ResponseWriter, delta *engine.DeltaResponse) {
-	response := convertDeltaResponse(delta)
+	// Create a flat list of all nodes (added + updated, removed are just IDs)
+	allNodes := append([]*engine.LayoutNode{}, delta.AddedNodes...)
+	allNodes = append(allNodes, delta.UpdatedNodes...)
+
+	response := GraphApiResponse{
+		Data: GraphData{
+			Nodes: allNodes,
+			Links: append([]*engine.LayoutLink{}, delta.AddedLinks...),
+		},
+		Meta: &struct {
+			TotalNodes int    `json:"total_nodes,omitempty"`
+			TotalLinks int    `json:"total_links,omitempty"`
+			Hash       string `json:"hash,omitempty"`
+		}{
+			TotalNodes: len(allNodes),
+			TotalLinks: len(delta.AddedLinks),
+			Hash:       delta.CurrentHash,
+		},
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -267,7 +309,7 @@ func (s *HTTPServer) sendDeltaData(w http.ResponseWriter, delta *engine.DeltaRes
 // RegisterHTTPHandlers registers all HTTP handlers
 func RegisterHTTPHandlers(mux *http.ServeMux, srv graphservice.GraphServiceServer) {
 	if gs, ok := srv.(*graphService); ok {
-		httpServer := NewHTTPServer(gs.postgres, gs.cache, gs.fullLimit)
+		httpServer := NewHTTPServer(gs.postgres, gs.cache, gs.fullLimit, gs.defaultDepth)
 
 		// Health check
 		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

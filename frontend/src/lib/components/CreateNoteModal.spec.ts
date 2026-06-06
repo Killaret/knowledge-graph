@@ -8,6 +8,12 @@ vi.mock('$lib/api/notes', () => ({
   createNote: vi.fn()
 }));
 
+// Мокаем lexicon-settings для получения текстов валидации
+vi.mock('$lib/stores/lexicon-settings', () => ({
+  getMessage: vi.fn().mockResolvedValue('Title is required'),
+  mode: { subscribe: vi.fn((fn: (v: string) => void) => { fn('standard'); return () => {}; }) }
+}));
+
 import { createNote } from '$lib/api/notes';
 
 describe('CreateNoteModal', () => {

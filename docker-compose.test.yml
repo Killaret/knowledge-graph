@@ -33,14 +33,15 @@ services:
       context: .
       dockerfile: ./services/graph-service/Dockerfile
     container_name: kg-graph-service-test
-    ports:
-      - "9091:9091"
     environment:
-      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
-      REDIS_URL: redis://redis:6379/0
+      POSTGRES_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/knowledge_base?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis:6379}
       HTTP_PORT: 9091
       GRPC_PORT: 9090
-      EVENT_CHANNEL: graph:events
+      EVENT_CHANNEL: ${EVENT_CHANNEL:-graph:events}
+      GRAPH_FULL_LIMIT: 1000
+    volumes:
+      - ./knowledge-graph.config.json:/app/knowledge-graph.config.json:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -15,10 +15,27 @@ import { getBackendUrl } from './helpers/testData';
  * For SKIP_AUTH=true testing, use other E2E tests that call setupSkipAuth()
  */
 
-const TEST_USER_PREFIX = 'test_user_';
-const TEST_PASSWORD = 'TestPassword123!';
-
+// Skip these tests if SKIP_AUTH is enabled on backend
 test.describe('Auth Functional Tests', { tag: ['@auth', '@e2e'] }, () => {
+
+  const TEST_USER_PREFIX = 'test_user_';
+  const TEST_PASSWORD = 'TestPassword123!';
+  
+  // Check if SKIP_AUTH is enabled before running tests
+  test.beforeEach(async ({ page }) => {
+    // Detect if SKIP_AUTH is active on backend by checking auth bypass
+    await page.goto('/auth/login');
+    await page.waitForTimeout(500);
+    
+    const skipAuthActive = await page.evaluate(() => {
+      return (window as any).__SKIP_AUTH__ === true ||
+             localStorage.getItem('__SKIP_AUTH__') === 'true';
+    });
+    
+    if (skipAuthActive) {
+      test.skip(true, 'SKIP_AUTH is enabled — auth-functional tests require real authentication');
+    }
+  });
   
   test('should register new user successfully', async ({ page }) => {
     const uniqueId = Date.now();

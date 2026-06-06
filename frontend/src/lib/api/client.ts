@@ -23,9 +23,11 @@ try {
 // В dev режиме (Vite) используем относительный путь (проксируется на backend)
 // Production использует прямой backend URL
 // В Docker всегда используем прямой URL
-const prefixUrl = isDev && !isTest && !backendUrl.includes('host.docker.internal')
-  ? '' 
-  : `${backendUrl}/api`;
+// Если backendUrl явно задан через env, всегда используем его
+const isDockerOrProduction = backendUrl !== 'http://127.0.0.1:9000' || !isDev;
+const prefixUrl = isDockerOrProduction || isTest
+  ? `${backendUrl}/api`
+  : '';
 
 // Flag to prevent infinite refresh loops
 let isRefreshing = false;

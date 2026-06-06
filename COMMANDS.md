@@ -251,21 +251,241 @@ cd frontend && npm run test:all
 npm run test && cd backend && go test ./... && cd ../nlp-service && pytest tests/
 ```
 
-## 🤖 Команды для работы с агентами
+## 🤖 AI Помощники - Поддержка всех инструментов
+
+### 🎯 Поддерживаемые инструменты
+
+| Инструмент | Поддержка | Автоактивация | Делегирование |
+|------------|-----------|---------------|---------------|
+| **Cursor** | ✅ Полная | ✅ Да | ✅ Полное |
+| **GitHub Copilot** | ✅ Частичная | ⚠️ Контекст | ⚠️ Через контекст |
+| **Windsurf** | ✅ Частичная | ⚠️ Контекст | ⚠️ Через контекст |
+| **Koda/Agents** | ✅ Полная | ✅ Да | ✅ Полное |
+
+---
+
+### 🚀 Orchestrator Agent - Всегда активен!
+
+**Оркестратор автоматически активируется в ЛЮБОЙ сессии без исключений!**
+
+**Для Cursor:**
+```
+1. Открой проект в Cursor
+2. Начни чат с AI
+3. Оркестратор активируется автоматически (alwaysApply: true)
+4. Просто опиши задачу
+```
+
+**Для Copilot/Windsurf:**
+```
+1. Открой проект в VS Code
+2. Начни чат с AI
+3. AI использует контекст из .github/copilot-instructions.md или .windsurf/rules.md
+4. Просто опиши задачу
+```
+
+**Оркестратор анализирует любой запрос и делегирует задачи соответствующим агентам:**
+
+```bash
+# Проверка статуса оркестратора (в чате с ИИ)
+status
+# Ожидаем: Default agent: knowledge-graph-orchestrator
+
+# Список загруженных агентов (в чате с ИИ)
+list-agents
+# Ожидаем: orchestrator + 8 специализированных агентов
+```
+
+**Примеры использования:**
+
+**Простой запрос (1 агент):**
+```
+"Добавь компонент тёмной темы в header"
+→ Автоматически: knowledge-graph-frontend-svelte
+```
+
+**Сложный запрос (несколько агентов):**
+```
+"Реализуй шаринг заметок с email приглашениями"
+→ Orchestrator делит на:
+  - Backend: API endpoint, email service, БД схема
+  - Frontend: Share modal, email input
+  - Integration: API mapping, типы
+  - Tests: Unit + E2E
+  - Docs: API документация
+  - Performance: оптимизация email отправки
+→ Запускает 6 агентов параллельно
+→ Собирает результаты
+→ Возвращает готовую фичу
+```
+
+**Оптимизация (новый performance агент):**
+```
+"Оптимизируй загрузку графа для 1000+ узлов"
+→ Автоматически: knowledge-graph-performance
+   - Анализирует bottleneck
+   - Оптимизирует запросы БД
+   - Добавляет кэширование
+   - Оптимизирует 3D рендеринг
+   - Устанавливает мониторинг
+→ Результат: FPS 30→60, загрузка 5s→1s
+```
+
+**Безопасность (новый security агент):**
+```
+"Проведи аудит безопасности auth"
+→ Автоматически: knowledge-graph-security
+   - Проверяет JWT implementation
+   - Анализирует CORS config
+   - Ищет уязвимости
+   - Предлагает hardening
+→ Результат: Отчёт с рекомендациями
+```
+
+**DevOps (новый devops агент):**
+```
+"Настрой мониторинг с Prometheus"
+→ Автоматически: knowledge-graph-devops
+   - Создаёт Prometheus config
+   - Настраивает Grafana dashboards
+   - Добавляет alerting rules
+   - Пишет инструкцию
+→ Результат: Готовый мониторинг
+```
+
+---
+
+### 📁 Файлы конфигурации
+
+| Инструмент | Путь | Назначение |
+|------------|------|------------|
+| **Cursor** | `.cursor/rules/knowledge-graph-orchestrator.md` | Оркестратор + делегирование |
+| **Copilot** | `.github/copilot-instructions.md` | Контекст всех агентов |
+| **Windsurf** | `.windsurf/rules.md` | Контекст всех агентов |
+| **Koda** | `.koda/config.json` | Конфигурация Koda |
+
+**Проверка:**
+```bash
+# Проверить наличие файлов
+ls -la .cursor/rules/
+ls -la .github/copilot-instructions.md
+ls -la .windsurf/rules.md
+ls -la .koda/config.json
+```
+
+---
+
+### 🎯 Примеры для разных инструментов
+
+**Cursor (полная поддержка):**
+```
+User: "Оптимизируй загрузку графа"
+Cursor AI:
+  → Оркестратор анализирует → performance task
+  → Делегирует: knowledge-graph-performance
+  → Результат: Полная оптимизация с кодом
+```
+
+**Copilot/Windsurf (через контекст):**
+```
+User: "Оптимизируй загрузку графа"
+Copilot/Windsurf AI:
+  → Использует контекст performance agent
+  → Результат: Аналогичный совет
+```
+
+**Koda/Agents (полная поддержка):**
+```
+User: "Оптимизируй загрузку графа"
+Koda AI:
+  → Оркестратор анализирует → performance task
+  → Делегирует: knowledge-graph-performance
+  → Результат: Полная оптимизация с кодом
+```
+
+---
+
+### 📋 Все доступные агенты (8 агентов)
+
+**Примеры использования:**
+
+**Простой запрос (1 агент):**
+```
+"Добавь компонент тёмной темы в header"
+→ Автоматически: knowledge-graph-frontend-svelte
+```
+
+**Сложный запрос (несколько агентов):**
+```
+"Реализуй шаринг заметок с email приглашениями"
+→ Orchestrator делит на:
+  - Backend: API endpoint, email service, БД схема
+  - Frontend: Share modal, email input
+  - Integration: API mapping, типы
+  - Tests: Unit + E2E
+  - Docs: API документация
+→ Запускает 5 агентов параллельно
+→ Собирает результаты
+```
 
 ### Использование агентов в AI
+
+**Автоматически (рекомендуется):**
 ```
-# Автоматический выбор (рекомендуется)
-"Добавь тесты для новой функции" → Автоматически выберет knowledge-graph-testing
+Просто опишите задачу - оркестратор сам решит!
 
-# Явный выбор
-"Используя knowledge-graph-testing агент, проанализируй покрытие тестов"
+"Добавь новую функцию" → Orchestrator анализирует и делегирует
+"Оптимизируй загрузку" → Автоматически: performance агент
+"Проведи аудит безопасности" → Автоматически: security агент
+```
 
-# Упоминание файлов для контекста
+**Явно (опционально):**
+```
+"Используя knowledge-graph-performance, оптимизируй bundle"
+"Используя knowledge-graph-security, проверь auth"
+```
+
+**Контекст файлов:**
+```
 "Обнови frontend/src/lib/api/notes.ts после изменений в backend"
 ```
 
+### 📋 Все доступные агенты (8 агентов)
+
+| # | Агент | Назначение | Статус |
+|---|-------|------------|--------|
+| 0 | **knowledge-graph-orchestrator** | **Координация всех агентов** | ✅ **Всегда активен** |
+| 1 | knowledge-graph-frontend-svelte | Frontend (Svelte 5, UI/UX, Three.js) | ✅ Active |
+| 2 | knowledge-graph-backend-go | Backend (Go, API, БД, Redis) | ✅ Active |
+| 3 | knowledge-graph-docs-maintenance | Документация (README, ADR, docs) | ✅ Active |
+| 4 | knowledge-graph-testing | Тестирование (Unit/E2E/BDD) | ✅ Active |
+| 5 | knowledge-graph-integration | API интеграция (контракты, DTO) | ✅ Active |
+| 6 | **knowledge-graph-performance** | **Производительность (оптимизация)** | ✅ **NEW** |
+| 7 | **knowledge-graph-security** | **Безопасность (аудит, hardening)** | ✅ **NEW** |
+| 8 | **knowledge-graph-devops** | **DevOps (деплой, мониторинг)** | ✅ **NEW** |
+
 ### Примеры промптов по агентам
+
+**knowledge-graph-performance:**
+- "Оптимизируй загрузку графа для 1000+ узлов"
+- "Уменьши bundle size на 50%"
+- "Повысь FPS GraphCanvas с 30 до 60"
+- "Добавь кэширование для API endpoints"
+- "Проанализируй медленные SQL запросы"
+
+**knowledge-graph-security:**
+- "Проведи аудит безопасности auth"
+- "Проверь JWT implementation на уязвимости"
+- "Добавь rate limiting к sensitive endpoints"
+- "Настрой CORS для production"
+- "Сканируй зависимости на CVE"
+
+**knowledge-graph-devops:**
+- "Создай Kubernetes deployment manifests"
+- "Настрой мониторинг с Prometheus + Grafana"
+- "Оптимизируй Docker image size"
+- "Добавь CI/CD pipeline с GitHub Actions"
+- "Настрой автоматический backup БД"
 
 **knowledge-graph-testing:**
 - "Напиши unit тесты для новой функции в Note entity"
@@ -283,16 +503,19 @@ npm run test && cd backend && go test ./... && cd ../nlp-service && pytest tests
 - "Проанализируй GraphCanvas компонент"
 - "Настрой playwright для сохранения скриншотов"
 - "Добавь описание UI/UX паттернов"
+- "Создай компонент тёмной темы"
 
 **knowledge-graph-backend-go:**
 - "Проанализируй backend Go и исправь ошибки"
 - "Оцени состояние docker-окружения"
 - "Найди ошибки в note_repo.go"
+- "Создай новую миграцию БД"
 
 **knowledge-graph-docs-maintenance:**
 - "Оформи README разделом 'Как пользоваться агентами'"
 - "Создай инструкцию по новым командам"
 - "Сгенерируй changelog для изменений"
+- "Обнови ADR после архитектурных изменений"
 
 ## 📊 Мониторинг и отладка
 

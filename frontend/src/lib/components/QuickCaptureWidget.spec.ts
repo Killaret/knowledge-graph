@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import QuickCaptureWidget from './QuickCaptureWidget.svelte';
 
@@ -6,6 +6,11 @@ import QuickCaptureWidget from './QuickCaptureWidget.svelte';
 vi.mock('$lib/api/notes', () => ({
   createNote: vi.fn()
 }));
+
+// Reset mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('QuickCaptureWidget', () => {
   it('renders floating button when closed', () => {
@@ -20,29 +25,38 @@ describe('QuickCaptureWidget', () => {
     const { container } = render(QuickCaptureWidget);
     
     const button = container.querySelector('.quick-capture-btn');
-    if (button) {
-      await fireEvent.click(button);
-    }
+    expect(button).toBeInTheDocument();
     
+    await fireEvent.mouseDown(button!);
+    
+    // Wait for modal to render
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    // Check that modal is rendered
     const modal = container.querySelector('.quick-capture-modal');
-    expect(modal).toBeInTheDocument();
+    expect(modal).toBeTruthy();
   });
 
-  it('has correct keyboard shortcut Ctrl+Shift+N', () => {
+  it('has correct keyboard shortcut Ctrl+Shift+N', async () => {
     const { container } = render(QuickCaptureWidget);
     
-    // Simulate Ctrl+Shift+N keypress
+    // Press Ctrl+Shift+N
     const event = new KeyboardEvent('keydown', {
       key: 'n',
       ctrlKey: true,
-      shiftKey: true
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true
     });
     
     window.dispatchEvent(event);
     
-    // Modal should open
+    // Give it a moment to process
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    // Modal should be rendered
     const modal = container.querySelector('.quick-capture-modal');
-    expect(modal).toBeInTheDocument();
+    expect(modal).toBeTruthy();
   });
 
   it('closes modal with Escape key', async () => {
@@ -54,15 +68,23 @@ describe('QuickCaptureWidget', () => {
       await fireEvent.click(button);
     }
     
+    // Give it a moment to open
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
     // Press Escape
     const event = new KeyboardEvent('keydown', {
-      key: 'Escape'
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true
     });
     
     window.dispatchEvent(event);
     
-    // Modal should close
+    // Give it a moment to process
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    // Modal should be removed from DOM
     const modal = container.querySelector('.quick-capture-modal');
-    expect(modal).not.toBeInTheDocument();
+    expect(modal).toBeFalsy();
   });
 });

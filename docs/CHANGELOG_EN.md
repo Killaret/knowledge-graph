@@ -10,6 +10,22 @@
 
 ## [Unreleased]
 
+### 🚀 Graph Service Configuration
+
+- **Unified Configuration for graph-service**: All parameters now sourced from `knowledge-graph.config.json`
+  - New `graph_service` section with layout engine parameters
+  - Cache TTLs: note/full layouts (5 min), deltas (1 min)
+  - Layout constants: 2D radius (100), 3D radius (120), 3D Z-step (5)
+  - Streaming: chunk size (100 nodes per chunk)
+  - Event tracking: TTL (24h), retry interval (5 min)
+- **Environment Variable Overrides**: Full support for runtime configuration
+  - `GRPC_PORT`, `HTTP_PORT`, `GRAPH_FULL_LIMIT`, `GRAPH_DEFAULT_DEPTH`
+  - `CACHE_NOTE_TTL_SECONDS`, `CACHE_FULL_TTL_SECONDS`, `CACHE_DELTA_TTL_SECONDS`
+- **Docker Integration**: Updated `Dockerfile` and `docker-compose.yml` to mount config
+  - Config loaded from `/app/knowledge-graph.config.json` in container
+  - Build context changed to project root for config access
+- **Documentation**: Added Graph Service section to `docs/CONFIGURATION_EN.md` and `docs/CONFIGURATION.md`
+
 ### 🎮 Galactic Lexicon & Achievements System
 - **Galactic Lexicon**: Themed messaging system with two modes
   - `standard` mode: Technical, straightforward messages

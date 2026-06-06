@@ -38,6 +38,7 @@ export default defineConfig({
       name: 'setup',
       testMatch: '**/setup/*.setup.ts',
     },
+    // Default project: all tests EXCEPT auth-functional (auth_skipped=true)
     {
       name: 'chromium',
       use: { 
@@ -47,7 +48,24 @@ export default defineConfig({
           args: ['--disable-web-security'],
         },
       },
+      // Exclude auth-functional tests — they require real authentication
+      grepInvert: /auth-functional/,
       dependencies: ['setup'],
+    },
+    // Auth project: only auth-functional tests (auth_skipped=false)
+    {
+      name: 'chromium-auth',
+      use: {
+        ...devices['Desktop Chrome'],
+        // No SKIP_AUTH injection — real auth required
+        launchOptions: {
+          args: ['--disable-web-security'],
+        },
+      },
+      // Only auth-functional tests
+      grep: /auth-functional/,
+      // Note: this project requires backend with SKIP_AUTH=false
+      // Run separately: SKIP_AUTH=false docker compose up backend
     },
   ],
   // Auto-start dev server for tests - DISABLED for Docker usage

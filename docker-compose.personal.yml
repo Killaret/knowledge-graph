@@ -175,18 +175,19 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        VITE_API_TARGET: http://backend_personal:8080
-        VITE_GRAPH_SERVICE_URL: http://nginx_personal:8080/graph-service
+        VITE_API_URL: http://localhost:8082
+        VITE_API_TARGET: http://localhost:8082
+        VITE_GRAPH_SERVICE_URL: http://localhost:8082/graph-service
     container_name: kg-frontend-personal
     ports:
       - "3001:3000"
     env_file:
       - .env
     environment:
-      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://nginx_personal:8080}
-      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://nginx_personal:8080/graph-service}
+      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://localhost:8082}
+      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://localhost:8082/graph-service}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -198,11 +199,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-volumes:
-  pgdata_personal:
-  redisdata_personal:
-  mongodbdata_personal:
-
   backup_scheduler:
     image: postgres:16-alpine
     container_name: kg-backup-scheduler
@@ -212,8 +208,8 @@ volumes:
       - ./knowledge-graph.config.json:/config/config.json:ro
     environment:
       BACKUP_DIR: /backups
-      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-false}
-      BACKUP_YANDEX_TOKEN: ${BACKUP_YANDEX_TOKEN:-}
+      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
+      BACKUP_YANDEX_TOKEN: ${BACKUP_YANDEX_TOKEN}
       BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
       PERSONAL_POSTGRES_HOST: postgres_personal
       PERSONAL_POSTGRES_PORT: 5432
@@ -234,4 +230,9 @@ volumes:
       postgres_personal:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  pgdata_personal:
+  redisdata_personal:
+  mongodbdata_personal:
 

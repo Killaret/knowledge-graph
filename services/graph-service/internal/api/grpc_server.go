@@ -18,17 +18,21 @@ import (
 // graphService implements the GraphServiceServer interface
 type graphService struct {
 	graphservice.UnimplementedGraphServiceServer
-	cache     *cache.RedisCache
-	postgres  db.PostgresClient
-	fullLimit int
+	cache           *cache.RedisCache
+	postgres        db.PostgresClient
+	fullLimit       int
+	defaultDepth    int
+	streamChunkSize int
 }
 
 // NewGraphService creates a new graph service instance
-func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLimit int) graphservice.GraphServiceServer {
+func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLimit, defaultDepth, streamChunkSize int) graphservice.GraphServiceServer {
 	return &graphService{
-		cache:     cache,
-		postgres:  postgres,
-		fullLimit: fullLimit,
+		cache:           cache,
+		postgres:        postgres,
+		fullLimit:       fullLimit,
+		defaultDepth:    defaultDepth,
+		streamChunkSize: streamChunkSize,
 	}
 }
 
@@ -47,7 +51,7 @@ func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.Note
 	}
 
 	if depth <= 0 {
-		depth = 2
+		depth = int32(s.defaultDepth)
 	}
 
 	log.Printf("[GraphService] GetNoteLayout: noteID=%s, depth=%d, userID=%s", noteID, depth, userID)
@@ -129,9 +133,11 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 
 // streamLayout sends the layout in chunks
 func (s *graphService) streamLayout(layout *engine.LayoutResponse, hash string, stream graphservice.GraphService_GetFullLayoutServer) error {
-	chunkSize := 100
+	chunkSize := s.streamChunkSize
+	if chunkSize <= 0 {
+		chunkSize = 100
+	}
 	totalNodes := len(layout.Nodes)
-	totalLinks := len(layout.Links)
 
 	for i := 0; i < totalNodes; i += chunkSize {
 		end := i + chunkSize

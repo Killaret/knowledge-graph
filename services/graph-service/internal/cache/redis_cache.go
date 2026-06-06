@@ -5,17 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
+
+	"knowledge-graph-graph-service/internal/config"
+	"knowledge-graph-graph-service/internal/engine"
 
 	"github.com/redis/go-redis/v9"
-	"knowledge-graph-graph-service/internal/engine"
 )
 
 type RedisCache struct {
-	client *redis.Client
+	client        *redis.Client
+	noteLayoutTTL time.Duration
+	fullLayoutTTL time.Duration
+	deltaTTL      time.Duration
 }
 
 func NewRedisCache(client *redis.Client) *RedisCache {
 	return &RedisCache{client: client}
+}
+
+// NewRedisCacheWithConfig creates a cache with TTLs loaded from config.
+func NewRedisCacheWithConfig(client *redis.Client, cfg *config.Config) *RedisCache {
+	return &RedisCache{
+		client:        client,
+		noteLayoutTTL: cfg.NoteLayoutTTL,
+		fullLayoutTTL: cfg.FullLayoutTTL,
+		deltaTTL:      cfg.DeltaTTL,
+	}
 }
 
 func (c *RedisCache) cacheKey(parts ...string) string {
@@ -30,7 +46,7 @@ func (c *RedisCache) LoadNoteLayout(ctx context.Context, noteID string, depth in
 	}
 	var stored struct {
 		Layout *engine.LayoutResponse `json:"layout"`
-		Hash   string                `json:"hash"`
+		Hash   string                 `json:"hash"`
 	}
 	if err := json.Unmarshal(raw, &stored); err != nil {
 		return nil, "", err
@@ -47,7 +63,11 @@ func (c *RedisCache) SaveNoteLayout(ctx context.Context, noteID string, depth in
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, key, payload, 30*60*1e9).Err()
+	ttl := c.noteLayoutTTL
+	if ttl == 0 {
+		ttl = 5 * time.Minute
+	}
+	return c.client.Set(ctx, key, payload, ttl).Err()
 }
 
 func (c *RedisCache) LoadFullLayout(ctx context.Context, userID string) (*engine.LayoutResponse, string, error) {
@@ -58,7 +78,7 @@ func (c *RedisCache) LoadFullLayout(ctx context.Context, userID string) (*engine
 	}
 	var stored struct {
 		Layout *engine.LayoutResponse `json:"layout"`
-		Hash   string                `json:"hash"`
+		Hash   string                 `json:"hash"`
 	}
 	if err := json.Unmarshal(raw, &stored); err != nil {
 		return nil, "", err
@@ -75,7 +95,11 @@ func (c *RedisCache) SaveFullLayout(ctx context.Context, userID string, layout *
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, key, payload, 30*60*1e9).Err()
+	ttl := c.fullLayoutTTL
+	if ttl == 0 {
+		ttl = 5 * time.Minute
+	}
+	return c.client.Set(ctx, key, payload, ttl).Err()
 }
 
 func (c *RedisCache) LoadDelta(ctx context.Context, userID, lastHash string) (*engine.DeltaResponse, error) {
@@ -97,7 +121,11 @@ func (c *RedisCache) SaveDelta(ctx context.Context, userID, lastHash string, del
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, key, payload, 5*60*1e9).Err()
+	ttl := c.deltaTTL
+	if ttl == 0 {
+		ttl = 1 * time.Minute
+	}
+	return c.client.Set(ctx, key, payload, ttl).Err()
 }
 
 func (c *RedisCache) InvalidateAll(ctx context.Context) error {

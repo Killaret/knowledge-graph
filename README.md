@@ -108,7 +108,9 @@ cd nlp-service && pytest
 
 ## 📚 Документация
 
+- [🎯 Roadmap](docs/ROADMAP.md) — план развития продукта (фазы, задачи, приоритеты)
 - [Архитектура](docs/architecture/README.md) — C4 модель, UML диаграммы, ADR
+- [Architecture Roadmap](docs/ARCHITECTURE_ROADMAP.md) — план SaaS миграции
 - [Резервное копирование](docs/BACKUP.md) — настройка бэкапов для личного инстанса
 - Frontend patterns: [frontend/FRONTEND_PATTERNS.md](frontend/FRONTEND_PATTERNS.md)
 - [Agents guide](docs/AGENTS.md) — как использовать агенты репозитория
@@ -120,15 +122,105 @@ cd nlp-service && pytest
 - [Конфигурация системы](docs/CONFIGURATION_EN.md) — технические параметры
 - [Развертывание](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
 
-## 🧠 Работа с агентами и командами
+## 🔒 Безопасность
 
-Этот репозиторий содержит пять специальных агентов, которые помогают выбрать правильный контекст при работе с проектом:
+Проект использует комплексный подход к безопасности цепочки поставок и CI/CD:
 
-- `knowledge-graph-frontend-svelte` — для frontend задач: анализ UI, Svelte-компонентов, тестовой инфраструктуры и frontend-доков.
-- `knowledge-graph-backend-go` — для backend/infra задач: Go-код, БД, Docker, Redis, API и backend-документации.
-- `knowledge-graph-docs-maintenance` — для создания, актуализации и оформления документации: `README.md`, `docs/`, ADR, описания изменений и сопроводительных материалов.
-- `knowledge-graph-testing` — для тестирования всех уровней: Go unit/integration, frontend Vitest/Playwright/BDD, Python pytest.
-- `knowledge-graph-integration` — для интеграции backend ↔ frontend: mapping endpoints, DTO типы данных, middleware.
+### Защита зависимостей
+- ✅ **Только `npm ci`** в CI - никогда не используется `npm install`
+- ✅ **minimumReleaseAge=7** в `.npmrc` - блокирует пакеты моложе 7 дней
+- ✅ **npm audit** с `--audit-level=high` в CI - билд падает при критических уязвимостях
+- ✅ **package-lock.json** закоммичен и контролируется CODEOWNERS
+- ✅ **Whitelist для lifecycle scripts** - см. `frontend/NPM_SCRIPTS_WHITELIST.md`
+
+### Автоматический аудит
+- ✅ **Dependabot** - еженедельное обновление зависимостей (`.github/dependabot.yml`)
+- ✅ **Dependency Review Action** - проверка PR на вредоносные зависимости
+- ✅ **Daily security scans** - автоматический аудит уязвимостей
+
+### Защита GitHub и CI/CD
+- ✅ **CODEOWNERS** - обязательное review для изменений зависимостей
+- ✅ **Minimal permissions** - `contents: read` для GitHub Actions
+- ✅ **Branch protection** - требуется approval для main/release веток
+- ✅ **Secret scanning** и **push protection** включены
+
+### Для разработчиков
+1. Никогда не используйте `npm install` в CI - только `npm ci`
+2. Изменения в `package.json`/`package-lock.json` требуют approval maintainers
+3. Новые lifecycle scripts должны быть задокументированы в whitelist
+4. Всегда проверяйте security отчёты Dependabot PR
+## 🤖 AI AGENTS ECOSYSTEM (9 Agents)
+
+**⚠️ CRITICAL FOR AI ASSISTANTS: Read `.koda/STARTUP.md` FIRST in every new chat!**
+
+This project uses a comprehensive AI agent ecosystem for development assistance.
+
+### Agents (9 total)
+
+| Agent | Focus | Tools |
+|-------|-------|-------|
+| **Orchestrator** | Coordination of all agents | All tools |
+| **Backend Go** | Go API, DB, microservices | `backend-go-tools.md` |
+| **Frontend Svelte** | Svelte 5, UI/UX, components | `frontend-tools.md` |
+| **Python NLP** | Python FastAPI, ML models, NLP | `python-nlp-tools.md` |
+| **Integration** | API mapping, DTOs, contracts | `integration-tools.md` |
+| **Infrastructure** | Docker, K8s, monitoring | `infrastructure-tools.md` |
+| **DevOps** | CI/CD, deployment, backup | `devops-tools.md` |
+| **Performance** | Optimization, profiling | `performance-tools.md` |
+| **Security** | Security scanning, auth | `security-tools.md` |
+
+### Tools (9 total)
+
+All tools are in `.koda/tools/`:
+- `backend-go-tools.md` - REST/gRPC, PostgreSQL, Redis, JWT
+- `frontend-tools.md` - Svelte 5, Vitest, Playwright, Testing Library
+- `python-nlp-tools.md` - FastAPI, sentence-transformers, YAKE, NLTK
+- `integration-tools.md` - OpenAPI, Protocol Buffers, Contract testing
+- `infrastructure-tools.md` - Docker multi-stage, Kubernetes, Prometheus
+- `devops-tools.md` - CI/CD pipelines, backup scripts
+- `performance-tools.md` - pprof, wrk, k6 load testing
+- `testing-tools.md` - Unit, integration, E2E, BDD patterns
+- `docs-tools.md` - README, ADR, changelog generation
+
+### Rules (2 total)
+
+- `default-rules.md` - Default behavior for all agents
+- `orchestration-rules.md` - Agent interaction patterns
+
+### How AI Assistants Should Work
+
+**In every new chat, AI must:**
+
+1. Read `.koda/STARTUP.md` - Critical startup instructions
+2. Load all 9 agents via `read_skill()`
+3. Load all 9 tools via `read_file()`
+4. Apply rules from `.koda/rules/`
+5. Show status to user
+
+**Example startup:**
+```
+🤖 Knowledge Graph Agents - Auto Loaded
+
+✅ Orchestrator: ACTIVE
+✅ Backend Go Agent: LOADED
+✅ Frontend Svelte Agent: LOADED
+✅ Python NLP Agent: LOADED
+✅ Integration Agent: LOADED
+✅ Infrastructure Agent: LOADED
+✅ DevOps Agent: LOADED
+✅ Performance Agent: LOADED
+✅ Security Agent: LOADED
+
+📊 Loaded agents: 9/9
+📊 Loaded tools: 9/9
+
+Ready to work!
+```
+
+**Commands for AI:**
+- `/agents` - Show loaded agents
+- `/tools` - Show loaded tools
+- `/rules` - Show applied rules
 
 Эти агенты — не исполняемые команды. Это метаданные, которые помогают выбрать правильный контекст при работе с репозиторием.
 

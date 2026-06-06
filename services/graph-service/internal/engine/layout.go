@@ -1,8 +1,19 @@
 package engine
 
-import (
-	"knowledge-graph-graph-service/internal/db"
-	"math"
+// Layout type/node constants used by both 2D and 3D engines.
+const (
+	NodeTypeNote = "note"
+
+	DefaultNodeSize = 1.0
+
+	// Layout2DRadius is the circle radius for the 2D layout.
+	Layout2DRadius = 100.0
+
+	// Layout3DRadius is the helix radius for the 3D layout.
+	Layout3DRadius = 120.0
+
+	// Layout3DZStep is the vertical step between successive nodes in 3D.
+	Layout3DZStep = 5.0
 )
 
 type LayoutNode struct {
@@ -34,49 +45,6 @@ type DeltaResponse struct {
 	AddedLinks   []*LayoutLink `json:"added_links,omitempty"`
 	RemovedLinks []*LayoutLink `json:"removed_links,omitempty"`
 	CurrentHash  string        `json:"current_hash,omitempty"`
-}
-
-func Layout2D(notes []*db.Note, links []*db.Link, rootID string) *LayoutResponse {
-	nodes := make([]*LayoutNode, 0, len(notes))
-	count := len(notes)
-	for i, note := range notes {
-		theta := 2.0 * math.Pi * float64(i) / math.Max(1, float64(count))
-		nodes = append(nodes, &LayoutNode{
-			ID:    note.ID,
-			Title: note.Title,
-			Type:  "note",
-			X:     math.Cos(theta) * 100,
-			Y:     math.Sin(theta) * 100,
-			Z:     0,
-			Size:  1.0,
-		})
-	}
-	linksOut := make([]*LayoutLink, 0, len(links))
-	for _, link := range links {
-		linksOut = append(linksOut, &LayoutLink{Source: link.Source, Target: link.Target, Weight: link.Weight, LinkType: link.LinkType})
-	}
-	return &LayoutResponse{Nodes: nodes, Links: linksOut}
-}
-
-func Layout3D(notes []*db.Note, links []*db.Link) *LayoutResponse {
-	nodes := make([]*LayoutNode, 0, len(notes))
-	for i, note := range notes {
-		theta := 2.0 * math.Pi * float64(i) / math.Max(1, float64(len(notes)))
-		nodes = append(nodes, &LayoutNode{
-			ID:    note.ID,
-			Title: note.Title,
-			Type:  "note",
-			X:     math.Cos(theta) * 120,
-			Y:     math.Sin(theta) * 120,
-			Z:     float64(i) * 5.0,
-			Size:  1.0,
-		})
-	}
-	linksOut := make([]*LayoutLink, 0, len(links))
-	for _, link := range links {
-		linksOut = append(linksOut, &LayoutLink{Source: link.Source, Target: link.Target, Weight: link.Weight, LinkType: link.LinkType})
-	}
-	return &LayoutResponse{Nodes: nodes, Links: linksOut}
 }
 
 func ComputeDelta(oldLayout, newLayout *LayoutResponse) *DeltaResponse {

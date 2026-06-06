@@ -135,6 +135,33 @@ type Condition struct {
 - `engine.go` — Condition evaluation logic
 - `repository.go` — Repository interface
 
+##### Draft Domain (`domain/draft/`) [см. ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md)
+
+```go
+type Draft struct {
+    id        uuid.UUID
+    noteID    *uuid.UUID   // Nullable for new notes
+    userID    uuid.UUID
+    tenantID  uuid.UUID
+    content   DraftContent // Rich text content
+    metadata  Metadata
+    createdAt time.Time
+    updatedAt time.Time
+    expiresAt time.Time    // TTL for automatic cleanup
+}
+
+type DraftContent struct {
+    title   string
+    body    string
+    format  string // "markdown", "richtext"
+}
+```
+
+**Файлы:**
+- `entity.go` — Draft entity with TTL logic
+- `repository.go` — Repository interface (MongoDB implementation)
+- `service.go` — Autosave coordination service
+
 ##### Link Domain (`domain/link/`)
 
 ```go
@@ -395,7 +422,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | Компонент | Технология | Назначение | Статус |
 |-----------|------------|------------|--------|
 | `GraphCanvas.svelte` | D3.js | 2D force-directed graph | Active |
-| `Graph3D.svelte` | Three.js | 3D celestial visualization | **Frozen** |
+| `Graph3D.svelte` | Three.js | 3D celestial visualization [см. ADR 017](architecture/decisions/017-color-palette-redesign.md) | **Frozen** |
 | `LazyGraph3D.svelte` | dynamic import | Ленивая загрузка 3D | **Frozen** |
 | `SmartGraph.svelte` | D3+Svelte | Адаптивный граф (2D/3D) | 2D only |
 | `NoteCard.svelte` | Svelte | Карточка заметки |
@@ -432,7 +459,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `galactic-lexicon.ts` | Galactic Lexicon - themed messaging system |
 | `galactic-lexicon.test.ts` | Unit tests for Galactic Lexicon |
 
-**Galactic Lexicon:**
+**Galactic Lexicon:** [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 - Supports two modes: `standard` (technical) and `galactic` (space-themed metaphors)
 - Categories: success, error, info, warning, achievement
 - Locales: Russian (ru) and English (en)
@@ -457,7 +484,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `camera.ts` | Camera controls | Frozen |
 | `renderer.ts` | WebGL renderer | Frozen |
 | `graph3d.ts` | 3D graph visualization logic | Frozen |
-| `celestial.ts` | Celestial body rendering (stars, planets) | Frozen |
+| `celestial.ts` | Celestial body rendering (stars, planets) [см. ADR 017](architecture/decisions/017-color-palette-redesign.md) | Frozen |
 | `controls.ts` | OrbitControls wrapper | Frozen |
 | `animation.ts` | Animation loop | Frozen |
 | `types.ts` | TypeScript types | Frozen |
@@ -553,7 +580,7 @@ users          — Пользователи
 **Services (personal stack):**
 1. `postgres_personal` — pgvector (порт 5433)
 2. `redis_personal` — Redis 7 (порт 6380)
-3. `mongo_personal` — MongoDB 7 (порт 27018)
+3. `mongo_personal` — MongoDB 7 (порт 27018) [см. ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md) — черновики
 4. `nlp` — Python service (порт 5001)
 5. `graph-service-personal` — Graph service (порт 9092) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
 6. `backend_personal` — Go API (порт 8081)
@@ -788,6 +815,7 @@ make dev
 
 ### Ключевые ADR (Architecture Decision Records)
 
+- **[ADR 011: Drafts Autosave in MongoDB](architecture/decisions/011-drafts-autosave-mongodb.md)** — Автосохранение черновиков в MongoDB с eventual sync в PostgreSQL
 - **[ADR 013: Graph Service Isolation](architecture/decisions/013-graph-service-isolation.md)** — Выделение Graph Service в отдельный сервис с gRPC и прямым доступом к БД
 - **[ADR 014: Event-Driven Cache Invalidation](architecture/decisions/014-event-driven-cache-invalidation.md)** — Использование Redis Pub/Sub для инвалидации кэша
 - **[ADR 015: Galactic Lexicon and Achievements](architecture/decisions/015-galactic-lexicon-and-achievements.md)** — Единый галактический лексикон, i18n, SSE для уведомлений о достижениях
@@ -846,13 +874,13 @@ infrastructure/
 
 ### Overview
 
-Graph Service is an independent microservice responsible for computing 2D/3D graph layouts for the Knowledge Graph frontend. It provides high-performance graph visualization with caching, incremental updates, and event-driven invalidation.
+Graph Service is an independent microservice responsible for computing 2D/3D graph layouts for the Knowledge Graph frontend. It provides high-performance graph visualization with caching, incremental updates, and event-driven invalidation [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
 
 ### Architecture
 
 The Graph Service consists of:
 
-- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091)
+- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
 - **Layout Engine**: 2D circular and 3D spiral layout algorithms with delta computation
 - **Cache Layer**: Redis-backed caching with configurable TTL
 - **Data Layer**: Direct PostgreSQL read access (notes, links, embeddings)
@@ -860,7 +888,7 @@ The Graph Service consists of:
 
 ### API Contracts
 
-#### gRPC API (Primary)
+#### gRPC API (Primary) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
 
 ```protobuf
 service GraphService {
@@ -898,6 +926,6 @@ Supported events: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `LinkCreated`, `L
 
 ### Direct PostgreSQL Reading
 
-Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation.
+Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
 
 ---

@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 venv/
 .venv/
@@ -25,14 +25,12 @@ build/
 *.so
 *.a
 *.dylib
-
 # Go specific
 *.test
 coverage.out
 *.prof
 vendor/
 go.work
-
 # Environment files - allow example templates, ignore real secrets
 .env
 .env.local
@@ -41,41 +39,37 @@ go.work
 .env.production
 !.env.example
 !.env.*.example
-
 # Editor/IDE files
 .vscode/
 .idea/
+.devin/
 *.swp
 *.swo
 *~
-
 # Logs - allow structured logs directory, ignore loose log files
 *.log
+build.log
+build_full.log
 *.log.*
 !logs/.gitkeep
 logs/*.log
 logs/**/*.log
-
 # Coverage
 coverage/
 htmlcov/
 .coverage
-
 # Temporary files
 *.tmp
 *.temp
 *.cache
 *.bak
-
 # Database files (SQLite)
 *.db
 *.sqlite
 *.sqlite3
-
 # OS files
 .DS_Store
 Thumbs.db
-
 # Compressed files
 *.zip
 *.gz
@@ -99,7 +93,6 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
 # Test results
 frontend/test-results/
 test-results/
@@ -111,25 +104,19 @@ final-check.txt
 backend/test_results.txt
 frontend/cucumber-report.html
 frontend/cucumber-report.json
-
 # Playwright
 frontend/playwright-report/
 playwright-report/
-
 # Frontend cache
 frontend/.eslintcache
 frontend/.svelte-kit/
 .svelte2tsx-language-server-files/
-
 # HuggingFace cache
 huggingface_cache/
-
 # NLP service
 nlp-service/.dockerignore
-
 # Backups
 backups/
-
 # Scripts temporary files
 scripts/*.txt
 scripts/*.log
@@ -137,13 +124,17 @@ scripts/diskpart_*.txt
 scripts/cleanup_*.txt
 scripts/temp_*
 scripts/tmp_*
-
 # Script test artifacts
 scripts/testing/temp/
 scripts/testing/*.log
 scripts/diagnostics/*.log
-
 # Database seed files (keep structure, ignore generated data)
 scripts/database/*.db
 scripts/database/*.sqlite
 scripts/database/generated/
+# Root-generated test output and logs
+*test-results*.txt
+*.har
+*.exe
+playwright-report/
+token.json

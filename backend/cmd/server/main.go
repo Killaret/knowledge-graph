@@ -84,15 +84,22 @@ func main() {
 		log.Println("Migrations applied successfully")
 	}
 
-	// Redis
+	// Redis with connection pool settings
 	redisAddr := cfg.RedisURL
 	log.Printf("Redis address: %s", redisAddr)
-	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         redisAddr,
+		PoolSize:     10,              // Maximum number of connections
+		MinIdleConns: 3,               // Minimum number of idle connections
+		PoolTimeout:  4 * time.Second, // Timeout for getting connection from pool
+	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
 			log.Printf("Error closing redis client: %v", err)
 		}
 	}()
+
+	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, MaxConnAge=5m")
 
 	// Graceful shutdown
 	defer func() {
@@ -109,8 +116,8 @@ func main() {
 	linkRepo := postgres.NewLinkRepository(db.DB)
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
-		// Yandex.Disk backup service
-		var yandexBackupService *cloud.YandexBackupService
+	// Yandex.Disk backup service
+	var yandexBackupService *cloud.YandexBackupService
 	// Очередь
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
@@ -125,17 +132,17 @@ func main() {
 			}
 		}()
 		if cfg.BackupCloudProvider == "yandex" && cfg.BackupYandexOAuthToken != "" {
-		yandexCfg := cloud.YandexConfig{
-		OAuthToken:   cfg.BackupYandexOAuthToken,
-		BackupFolder: cfg.BackupYandexFolder,
-		MaxBackups:   cfg.BackupYandexMaxBackups,
-		}
-		yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
-		if err != nil {
-		log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
-		} else {
-			log.Printf("Yandex.Disk backup service initialized successfully")
-		}
+			yandexCfg := cloud.YandexConfig{
+				OAuthToken:   cfg.BackupYandexOAuthToken,
+				BackupFolder: cfg.BackupYandexFolder,
+				MaxBackups:   cfg.BackupYandexMaxBackups,
+			}
+			yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
+			if err != nil {
+				log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
+			} else {
+				log.Printf("Yandex.Disk backup service initialized successfully")
+			}
 		}
 	}
 
@@ -418,6 +425,31 @@ func main() {
 		Handler: r,
 	}
 
+	// Graceful shutdown channel (declared early for goroutines)
+	quit := make(chan os.Signal, 1)
+
+	// Start periodic pool statistics logging
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				stats := db.GetPoolStats()
+				log.Printf("[Connection Pool] Stats: MaxOpen=%v, Open=%v, InUse=%v, Idle=%v, WaitCount=%v, WaitDuration=%v",
+					stats["max_open_connections"],
+					stats["open_connections"],
+					stats["in_use"],
+					stats["idle"],
+					stats["wait_count"],
+					stats["wait_duration"])
+			case <-quit:
+				return
+			}
+		}
+	}()
+
 	// Start server in goroutine
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -441,7 +473,6 @@ func main() {
 	log.Printf("Server started on port %s", cfg.ServerPort)
 
 	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 

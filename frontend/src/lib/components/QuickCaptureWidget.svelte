@@ -26,7 +26,7 @@
       await createNote({
         title,
         content,
-        type: 'dust',
+        type: 'star',
         metadata: {
           tags: ['#inbox']
         }

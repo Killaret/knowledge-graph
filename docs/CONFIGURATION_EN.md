@@ -746,6 +746,183 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 
 ## Related Documentation
 
+## Graph Service (gRPC Microservice)
+
+The `graph-service` is a separate gRPC microservice for layout computation and graph streaming. It has its own configuration section in `knowledge-graph.config.json`.
+
+### JSON Configuration (`graph_service`)
+
+```json
+{
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 1000,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100.0,
+      "3d_radius": 120.0,
+      "3d_z_step": 5.0,
+      "default_node_size": 1.0
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GRPC_PORT` | gRPC server port | `9090` |
+| `HTTP_PORT` | HTTP fallback server port | `9091` |
+| `POSTGRES_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@postgres:5432/knowledge_base?sslmode=disable` |
+| `REDIS_URL` | Redis address | `redis:6379` |
+| `EVENT_CHANNEL` | Redis Pub/Sub channel | `graph:events` |
+| `GRAPH_FULL_LIMIT` | Default full graph limit | `1000` |
+| `GRAPH_DEFAULT_DEPTH` | Default depth for note layout | `2` |
+| `GRAPH_STREAM_CHUNK_SIZE` | Nodes per chunk in streaming | `100` |
+| `CACHE_NOTE_TTL_SECONDS` | Note layout cache TTL | `300` (5 min) |
+| `CACHE_FULL_TTL_SECONDS` | Full layout cache TTL | `300` (5 min) |
+| `CACHE_DELTA_TTL_SECONDS` | Delta cache TTL | `60` (1 min) |
+
+### Layout Engine Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `2d_radius` | Circle radius for 2D layout | `100.0` |
+| `3d_radius` | Helix radius for 3D layout | `120.0` |
+| `3d_z_step` | Vertical step between nodes in 3D | `5.0` |
+| `default_node_size` | Base node size | `1.0` |
+
+### Cache TTL Behavior
+
+- **Note Layout Cache** (`CACHE_NOTE_TTL_SECONDS`): Per-note cached layouts (default: 5 min)
+- **Full Layout Cache** (`CACHE_FULL_TTL_SECONDS`): Full graph cached layouts (default: 5 min)
+- **Delta Cache** (`CACHE_DELTA_TTL_SECONDS`): Delta responses (default: 1 min)
+
+Cache invalidation happens automatically via Redis Pub/Sub when notes or links are updated.
+
+### Event Tracking Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `event_tracking_ttl_hours` | How long to keep event acknowledgment records | `24` |
+| `unprocessed_event_check_interval_minutes` | Retry worker interval | `5` |
+
+### gRPC Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GetNoteLayout` | Unary | Get layout for a specific note |
+| `GetFullLayout` | Server Stream | Stream full graph in chunks |
+| `GetDelta` | Unary | Get changes since last hash |
+
+### HTTP Fallback Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/api/v1/graph/note/:id` | GET | Note layout (JSON) |
+| `/api/v1/graph/full` | GET | Full graph (JSON) |
+| `/api/v1/graph/delta` | GET | Delta (JSON) |
+
+### Usage in docker-compose.yml
+
+```yaml
+graph-service:
+  build:
+    context: .
+    dockerfile: ./services/graph-service/Dockerfile
+  environment:
+    GRPC_PORT: 9090
+    HTTP_PORT: 9091
+    POSTGRES_URL: postgresql://user:pass@postgres:5432/knowledge_base
+    REDIS_URL: redis:6379
+    GRAPH_FULL_LIMIT: 1000
+    CACHE_NOTE_TTL_SECONDS: 300
+```
+
+### How to Apply Changes
+
+#### After editing variables in `docker-compose.yml`, restart graph-service:
+
+```bash
+docker-compose restart graph-service
+```
+
+#### Check logs — you should see configuration loaded message:
+
+```bash
+docker logs kg-graph-service --tail 30
+```
+
+### Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`architecture/decisions/013-graph-service-isolation.md`](architecture/decisions/013-graph-service-isolation.md) | Graph Service architecture decision |
+| [`architecture/decisions/014-event-driven-cache-invalidation.md`](architecture/decisions/014-event-driven-cache-invalidation.md) | Event-driven cache invalidation |
+
+### How to Apply Changes
+
+#### After editing `.env` or variables in `docker-compose.yml`, restart backend:
+
+```bash
+docker-compose restart backend
+```
+
+#### Check logs — you should see configuration loaded message:
+
+```bash
+docker logs kg-backend --tail 30 | grep "Config loaded"
+```
+
+#### Example output:
+
+```
+Config loaded: alpha=0.50, beta=0.50, depth=3, decay=0.50, cacheTTL=5m0s, embeddingLimit=30, graphLoadDepth=2
+```
+
+### Final Recommendation Score Formula
+
+#### For source note A and candidate C:
+
+```
+score = α * explicit_weight(A, C) + β * content_sim(A, C)
+explicit_weight(A, C) — sum of weights of all explicit links from A to C (with decay for indirect paths starting from level 2).
+
+content_sim(A, C) — cosine similarity of embeddings, normalized to [0,1] range.
+
+α + β doesn't have to equal 1, but sum = 1 is recommended for consistent scale.
+```
+
+### Notes
+
+#### Embeddings are computed asynchronously by worker. Ensure worker (kg-worker) is running and has processed tasks for notes, otherwise content_sim will be 0.
+
+#### If beta > 0, note_embeddings table must have vectors for all notes. If not, recommendations will rely only on explicit links.
+
+#### Changing RECOMMENDATION_DEPTH above 3 may significantly increase database load and response time.
+
+#### Recommendation cache invalidates by TTL. For immediate clearing, restart backend or manually delete keys:
+
+```bash
+docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis redis-cli DEL
+```
+
+---
+
+## Related Documentation
+
 | Document | Description |
 |----------|-------------|
 | [`architecture/README.md`](architecture/README.md) | Backend architecture, DDD layers |

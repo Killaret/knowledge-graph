@@ -149,13 +149,12 @@ Accents:
 
 #### Celestial Body Colors (Note Types)
 ```
-Star (Primary):     #FFD700 (Gold) - Bright, central
-Planet (Secondary): #4CC9F0 (Blue) - Orbiting, cooler
-Nebula (Tertiary):  #9B59B6 (Purple) - Misty, mysterious
-Black Hole (Quaternary): #0A0A0F (Dark, absorbing)
-Comet (Rare):       #E94560 (Red) - Energetic, fast-moving
-Asteroid (Common):  #95A5A6 (Gray) - Common, rocky
-Galaxy (Epic):      #8E44AD (Deep Purple) - Grand, expansive
+Star (Primary):     #FFCC00 (Yellow) - Bright, central
+Planet (Secondary): #60A5FA (Light Blue) - Orbiting, cooler
+Comet (Rare):       #E879F9 (Pink/Purple) - Energetic, fast-moving
+Galaxy (Epic):      #C084FC (Light Purple) - Grand, expansive
+Asteroid (Common):  #94A3B8 (Light Gray) - Common, rocky
+Dust (Quick notes): #A0A0A0 (Gray) - Quick capture
 ```
 
 #### Semantic Colors
@@ -247,13 +246,12 @@ Info: Info Blue (#4CC9F0)
   --color-cosmic-blue: #4CC9F0;
   
   /* Celestial Body Colors */
-  --color-star: #FFD700;
-  --color-planet: #4CC9F0;
-  --color-nebula: #9B59B6;
-  --color-black-hole: #0A0A0F;
-  --color-comet: #E94560;
-  --color-asteroid: #95A5A6;
-  --color-galaxy: #8E44AD;
+  --color-star: #FFCC00;
+  --color-planet: #60A5FA;
+  --color-comet: #E879F9;
+  --color-galaxy: #C084FC;
+  --color-asteroid: #94A3B8;
+  --color-dust: #A0A0A0;
   
   /* Semantic Colors */
   --color-success: #00D26A;
@@ -271,18 +269,17 @@ Info: Info Blue (#4CC9F0)
 
 #### TypeScript Types
 ```typescript
-type CelestialType = 'star' | 'planet' | 'nebula' | 'black-hole' | 'comet' | 'asteroid' | 'galaxy';
+type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'dust';
 
 type SemanticColor = 'success' | 'warning' | 'error' | 'info';
 
 const CELESTIAL_COLORS: Record<CelestialType, string> = {
-  'star': '#FFD700',
-  'planet': '#4CC9F0',
-  'nebula': '#9B59B6',
-  'black-hole': '#0A0A0F',
-  'comet': '#E94560',
-  'asteroid': '#95A5A6',
-  'galaxy': '#8E44AD'
+  'star': '#FFCC00',
+  'planet': '#60A5FA',
+  'comet': '#E879F9',
+  'galaxy': '#C084FC',
+  'asteroid': '#94A3B8',
+  'dust': '#A0A0A0'
 };
 
 const SEMANTIC_COLORS: Record<SemanticColor, string> = {
@@ -331,10 +328,20 @@ const SEMANTIC_COLORS: Record<SemanticColor, string> = {
 #### Contrast Ratios
 ```
 White text on Deep Space Black:     21:1 (AAA)
-White text on Cosmic Purple:       14:1 (AAA)
-Energy Red on Cosmic Purple:       4.8:1 (AA)
+White text on Cosmic Purple:        14:1 (AAA)
+Energy Red on Cosmic Purple:        4.8:1 (AA)
 Starlight Gold on Deep Space Black: 16:1 (AAA)
-Gray text on Cosmic Purple:        4.2:1 (AA)
+Gray text on Cosmic Purple:         4.2:1 (AA)
+```
+
+#### Current Implementation Colors (Verified)
+```
+Star:      #FFCC00  (Yellow) - 16:1 contrast on dark background
+Planet:    #60A5FA  (Light Blue) - 12:1 contrast
+Comet:     #E879F9  (Pink/Purple) - 8:1 contrast
+Galaxy:    #C084FC  (Light Purple) - 9:1 contrast
+Asteroid:  #94A3B8  (Light Gray) - 5:1 contrast
+Dust:      #A0A0A0  (Gray) - 4.5:1 contrast (minimum AA)
 ```
 
 #### Color Blindness Simulation

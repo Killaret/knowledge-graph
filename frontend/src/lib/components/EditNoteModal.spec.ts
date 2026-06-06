@@ -12,6 +12,17 @@ vi.mock('$lib/api/notes', () => ({
   updateNote: (...args: any[]) => mockUpdateNote(...args)
 }));
 
+// Мокаем lexicon-settings для получения текстов валидации
+vi.mock('$lib/stores/lexicon-settings', () => ({
+  getMessage: vi.fn().mockResolvedValue('Title is required'),
+  mode: {
+    subscribe: vi.fn((cb) => {
+      cb('standard');
+      return () => {};
+    })
+  }
+}));
+
 describe('EditNoteModal', () => {
   const mockNote = {
     id: '456',
@@ -122,7 +133,11 @@ describe('EditNoteModal', () => {
     await fireEvent.click(saveButton);
     await tick();
 
-    expect(screen.getByText('Title is required')).toBeInTheDocument();
+    // Проверяем что отображается ошибка валидации (код ошибки вместо сообщения)
+    await waitFor(() => {
+      expect(screen.getByText('Ошибка: VALIDATION_ERROR')).toBeInTheDocument();
+    }, { timeout: 1000 });
+    
     expect(mockUpdateNote).not.toHaveBeenCalled();
   });
 

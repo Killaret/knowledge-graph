@@ -24,7 +24,7 @@ type embeddingNeighborLoader struct {
 
 // NewEmbeddingNeighborLoader создаёт загрузчик для эмбеддингов.
 // limit — сколько самых похожих заметок возвращать (рекомендуется 20-50).
-func NewEmbeddingNeighborLoader(embeddingRepo *postgres.EmbeddingRepository, limit int) graph.NeighborLoader {
+func NewEmbeddingNeighborLoader(embeddingRepo embeddingRepositoryWithBatch, limit int) graph.NeighborLoader {
 	return &embeddingNeighborLoader{
 		embeddingRepo: embeddingRepo,
 		limit:         limit,

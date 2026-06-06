@@ -1,7 +1,7 @@
 # ADR 015: Galactic Lexicon and Achievements System
 
 ## Status
-Accepted
+Accepted (with polling implementation)
 
 ## Context
 Knowledge Graph uses a space/cosmic theme throughout the UI:
@@ -18,15 +18,15 @@ As the system grew, several challenges emerged:
 
 ### Current State Analysis
 The system has:
-- Basic achievement system with hardcoded achievement definitions
+- Basic achievement system with database-backed definitions
 - Mixed terminology (note/celestial body, link/orbit, type/celestial type)
-- No internationalization support
-- Polling-based achievement checks (inefficient)
+- **Polling-based achievement checks** (7000ms interval) - SSE not yet implemented
+- Galactic lexicon message system (standard/galactic modes)
 
 Current challenges:
 - **UX inconsistency**: Users see different terms for same concepts
 - **Maintenance burden**: Adding new languages requires finding all hardcoded strings
-- **Poor engagement**: Users don't discover achievements in real-time
+- **Polling inefficiency**: 7-second polling interval instead of real-time SSE
 - **Scattered logic**: Achievement rules mixed with business logic
 
 ## Problem Statement
@@ -126,11 +126,68 @@ Combine multiple approaches:
 - ❌ Need to handle SSE reconnection
 
 ## Decision
-**Chosen Approach: Option 5 - Hybrid Approach**
+**Chosen Approach: Option 5 - Hybrid Approach (Partial Implementation)**
 
-We combine industry-standard frontend i18n (i18next) with database-backed achievements and Server-Sent Events (SSE) for real-time notifications.
+We combine frontend terminology system with database-backed achievements. **Current implementation uses polling** instead of SSE for real-time notifications.
 
-### Architecture
+### Current Implementation Status
+
+#### ✅ Implemented
+- **Database schema**: achievements and user_achievements tables
+- **Achievement engine**: Rules engine with count/streak conditions
+- **HTTP handlers**: GET /api/v1/achievements, GET /api/v1/users/me/achievements
+- **Frontend polling**: 7-second interval via PreloadService
+- **Galactic lexicon**: Message system with standard/galactic modes
+- **User settings**: galactic_mode, show_achievement_notifications, preferred_language
+
+#### ⏳ TODO (Not Yet Implemented)
+- **SSE notifications**: Server-Sent Events for real-time achievement pushes
+- **i18next integration**: Frontend internationalization library
+- **Redis streak tracking**: Real-time streak counters
+- **SSE endpoint**: /api/v1/achievements/stream
+
+### Architecture (Current - Polling)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (Svelte)                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │          PreloadService (Polling)                    │   │
+│  │  ┌───────────────────────────────────────────────┐  │   │
+│  │  │  setInterval(7000ms) → GET /api/v1/           │  │   │
+│  │  │  users/me/achievements                        │  │   │
+│  │  │  - Check for new achievements                 │  │   │
+│  │  │  - Show toast if unlocked                     │  │   │
+│  │  │  - Mark as seen                               │  │   │
+│  │  └───────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│                           │ HTTP Polling                    │
+│                           │ Every 7 seconds                 │
+└───────────────────────────┼─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                     Backend (Go)                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │            Achievement Engine                        │   │
+│  │  ┌──────────────┐  ┌──────────────┐                 │   │
+│  │  │ Rules Engine │  │ Progress     │                 │   │
+│  │  └──────┬───────┘  └──────┬───────┘                 │   │
+│  │         │                 │                          │   │
+│  │         │ Check           │ Track                    │   │
+│  │         ▼                 ▼                          │   │
+│  │  ┌──────────────┐  ┌──────────────┐                 │   │
+│  │  │ PostgreSQL   │  │ Cache       │                 │   │
+│  │  │ achievements │  │ (Optional)  │                 │   │
+│  │  │ table        │  │             │                 │   │
+│  │  └──────────────┘  └──────────────┘                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### TODO: SSE Implementation (Future)
+
+When implementing SSE, replace polling with: (Current - Polling)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -173,6 +230,48 @@ We combine industry-standard frontend i18n (i18next) with database-backed achiev
                     │ Play sound    │
                     └───────────────┘
 ```
+
+### TODO: SSE Implementation (Future)
+
+When implementing SSE, replace polling with:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (Svelte)                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         EventSource Connection                       │   │
+│  │  ┌───────────────────────────────────────────────┐  │   │
+│  │  │  SSE: /api/v1/achievements/stream              │  │   │
+│  │  │  - Auto-reconnect on disconnect               │  │   │
+│  │  │  - Listen for 'achievement' events            │  │   │
+│  │  │  - Show toast immediately                     │  │   │
+│  │  └───────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│                           │ SSE Connection (Long-lived)     │
+│                           │ Push on achievement unlocked    │
+└───────────────────────────┼─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                     Backend (Go)                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │          SSE Event Bus                               │   │
+│  │  ┌───────────────────────────────────────────────┐  │   │
+│  │  │  Publish achievement to user channel          │  │   │
+│  │  │  eventBus.Publish("achievements:{user_id}",   │  │   │
+│  │  │                   achievement)                 │  │   │
+│  │  └───────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**SSE Benefits over Polling:**
+- ✅ Real-time: Instant notifications
+- ✅ Efficient: No unnecessary requests
+- ✅ Battery-friendly: No constant polling
+- ✅ Lower server load: Push instead of pull
+
+**Implementation Priority:** Medium - polling works, but SSE improves UX
 
 ### Implementation Details
 

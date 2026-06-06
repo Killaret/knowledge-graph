@@ -19,6 +19,7 @@
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -35,6 +36,7 @@
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   mongo:
     image: mongo:7
@@ -49,6 +51,7 @@
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   nlp:
     build: ./nlp-service
@@ -57,18 +60,18 @@
     ports:
       - "5000:5000"
     environment:
-    - MODEL_NAME=all-MiniLM-L6-V2
-    - HF_ENDPOINT=https://hf-mirror.com
-    - SENTENCE_TRANSFORMERS_HOME=/root/.cache/torch/sentence_transformers   # важно!
+      - MODEL_NAME=all-MiniLM-L6-V2
+      - HF_ENDPOINT=https://hf-mirror.com
+      - SENTENCE_TRANSFORMERS_HOME=/root/.cache/torch/sentence_transformers
     volumes:
-    - ./huggingface_cache:/root/.cache/torch/sentence_transformers
+      - ./huggingface_cache:/root/.cache/torch/sentence_transformers
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 30
       start_period: 600s
-    restart: "no"
+    restart: on-failure
 
   backend:
     build:
@@ -93,6 +96,13 @@
         condition: service_healthy
       nlp:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   graph-service:
     build:
@@ -112,6 +122,8 @@
       GRPC_PORT: 9090
       EVENT_CHANNEL: ${EVENT_CHANNEL:-graph:events}
       GRAPH_FULL_LIMIT: 1000
+    volumes:
+      - ./knowledge-graph.config.json:/app/knowledge-graph.config.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,6 +136,7 @@
       retries: 5
       start_period: 10s
     restart: on-failure
+
   worker:
     build:
       context: .
@@ -178,7 +191,6 @@
         condition: service_healthy
       graph-service:
         condition: service_healthy
-      # Убрана циклическая зависимость: frontend не должен зависеть от nginx
     restart: on-failure
 
   nginx:

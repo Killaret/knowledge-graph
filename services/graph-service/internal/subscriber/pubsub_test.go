@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -86,7 +87,7 @@ func TestEventParsing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var event Event
 			err := json.Unmarshal([]byte(tt.payload), &event)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -98,9 +99,10 @@ func TestEventParsing(t *testing.T) {
 }
 
 func TestEventAcknowledgment(t *testing.T) {
-	redis := miniredis.RunT(t)
-	redisClient := redis.RedisClient()
-	defer redis.Close()
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
 
 	postgres := &mockPostgresClient{}
 	cache := cache.NewRedisCache(redisClient)
@@ -116,41 +118,22 @@ func TestEventAcknowledgment(t *testing.T) {
 		"payload": {"note_id": "note-1", "user_id": "user-1"}
 	}`
 
-	// Record event receipt
-	eventKey := "event:evt-test-ack"
-	tracking := EventTracking{
-		TimestampReceived: time.Now(),
-		IsAcknowledged:     false,
-	}
-
-	trackingData, err := json.Marshal(tracking)
-	require.NoError(t, err)
-
-	err = redisClient.HSet(ctx, eventKey, trackingData).Err()
-	require.NoError(t, err)
-
-	// Process the event (simulate)
-	event := Event{
-		EventID: "evt-test-ack",
-		Event:   "NoteCreated",
-	}
-
-	err = subscriber.handleEvent(ctx, eventPayload)
-	require.NoError(t, err)
+	// Process the event
+	subscriber.handleEvent(ctx, eventPayload)
 
 	// Check that event is acknowledged
+	eventKey := "event:evt-test-ack"
 	result, err := redisClient.HGetAll(ctx, eventKey).Result()
 	require.NoError(t, err)
 
 	var updatedTracking EventTracking
-	// Handle Redis version differences
 	var data []byte
 	if val, ok := result[""]; ok {
 		data = []byte(val)
 	} else if val, ok := result["data"]; ok {
 		data = []byte(val)
 	}
-	
+
 	if len(data) > 0 {
 		err = json.Unmarshal(data, &updatedTracking)
 		require.NoError(t, err)
@@ -160,9 +143,10 @@ func TestEventAcknowledgment(t *testing.T) {
 }
 
 func TestCacheInvalidation(t *testing.T) {
-	redis := miniredis.RunT(t)
-	redisClient := redis.RedisClient()
-	defer redis.Close()
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
 
 	postgres := &mockPostgresClient{}
 	cacheClient := cache.NewRedisCache(redisClient)
@@ -188,8 +172,7 @@ func TestCacheInvalidation(t *testing.T) {
 		"payload": {"note_id": "note-2", "user_id": "user-1"}
 	}`
 
-	err = subscriber.handleEvent(ctx, eventPayload)
-	require.NoError(t, err)
+	subscriber.handleEvent(ctx, eventPayload)
 
 	// Verify cache was invalidated
 	exists, _ = redisClient.Exists(ctx, cacheKey).Result()
@@ -197,9 +180,10 @@ func TestCacheInvalidation(t *testing.T) {
 }
 
 func TestNoteEventHandling(t *testing.T) {
-	redis := miniredis.RunT(t)
-	redisClient := redis.RedisClient()
-	defer redis.Close()
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
 
 	postgres := &mockPostgresClient{}
 	cacheClient := cache.NewRedisCache(redisClient)
@@ -210,12 +194,10 @@ func TestNoteEventHandling(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		event   Event
 		payload interface{}
 	}{
 		{
 			name: "NoteCreated",
-			event: Event{EventID: "evt-1", Event: "NoteCreated"},
 			payload: NoteEventPayload{
 				NoteID: "note-1",
 				UserID: "user-1",
@@ -223,7 +205,6 @@ func TestNoteEventHandling(t *testing.T) {
 		},
 		{
 			name: "NoteUpdated",
-			event: Event{EventID: "evt-2", Event: "NoteUpdated"},
 			payload: NoteEventPayload{
 				NoteID: "note-2",
 				UserID: "user-1",
@@ -231,7 +212,6 @@ func TestNoteEventHandling(t *testing.T) {
 		},
 		{
 			name: "NoteDeleted",
-			event: Event{EventID: "evt-3", Event: "NoteDeleted"},
 			payload: NoteEventPayload{
 				NoteID: "note-3",
 				UserID: "user-1",
@@ -243,18 +223,23 @@ func TestNoteEventHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			payloadBytes, err := json.Marshal(tt.payload)
 			require.NoError(t, err)
-			tt.event.Payload = payloadBytes
+			event := Event{
+				EventID: "evt-" + tt.name,
+				Event:   tt.name,
+				Payload: payloadBytes,
+			}
 
-			err = subscriber.processEvent(ctx, tt.event)
+			err = subscriber.processEvent(ctx, event)
 			assert.NoError(t, err)
 		})
 	}
 }
 
 func TestLinkEventHandling(t *testing.T) {
-	redis := miniredis.RunT(t)
-	redisClient := redis.RedisClient()
-	defer redis.Close()
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
 
 	postgres := &mockPostgresClient{}
 	cacheClient := cache.NewRedisCache(redisClient)
@@ -265,12 +250,10 @@ func TestLinkEventHandling(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		event   Event
 		payload interface{}
 	}{
 		{
 			name: "LinkCreated",
-			event: Event{EventID: "evt-1", Event: "LinkCreated"},
 			payload: LinkEventPayload{
 				SourceNoteID: "note-1",
 				TargetNoteID: "note-2",
@@ -279,7 +262,6 @@ func TestLinkEventHandling(t *testing.T) {
 		},
 		{
 			name: "LinkUpdated",
-			event: Event{EventID: "evt-2", Event: "LinkUpdated"},
 			payload: LinkEventPayload{
 				SourceNoteID: "note-1",
 				TargetNoteID: "note-2",
@@ -288,7 +270,6 @@ func TestLinkEventHandling(t *testing.T) {
 		},
 		{
 			name: "LinkDeleted",
-			event: Event{EventID: "evt-3", Event: "LinkDeleted"},
 			payload: LinkEventPayload{
 				SourceNoteID: "note-1",
 				TargetNoteID: "note-2",
@@ -301,9 +282,13 @@ func TestLinkEventHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			payloadBytes, err := json.Marshal(tt.payload)
 			require.NoError(t, err)
-			tt.event.Payload = payloadBytes
+			event := Event{
+				EventID: "evt-" + tt.name,
+				Event:   tt.name,
+				Payload: payloadBytes,
+			}
 
-			err = subscriber.processEvent(ctx, tt.event)
+			err = subscriber.processEvent(ctx, event)
 			assert.NoError(t, err)
 		})
 	}

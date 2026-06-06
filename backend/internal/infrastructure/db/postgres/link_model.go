@@ -18,6 +18,7 @@ type LinkModel struct {
 	CreatorID    *uuid.UUID     `gorm:"type:uuid;index"`
 	Creator      *UserModel     `gorm:"foreignKey:CreatorID"`
 	CreatedAt    time.Time      `gorm:"column:created_at"`
+	UpdatedAt    time.Time      `gorm:"column:updated_at"`
 	DeletedAt    *time.Time     `gorm:"column:deleted_at;index"`
 
 	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID"`

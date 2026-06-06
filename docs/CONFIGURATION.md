@@ -290,3 +290,131 @@ The following checks run automatically:
 - Use `.env.example` as template with dummy values
 - Store sensitive data in environment variables only
 - Rotate secrets regularly in production
+
+---
+
+## Graph Service (gRPC Microservice)
+
+`graph-service` — отдельный gRPC-микросервис для вычисления раскладок графа и потоковой передачи данных. Имеет собственный раздел конфигурации в `knowledge-graph.config.json`.
+
+### JSON Конфигурация (`graph_service`)
+
+```json
+{
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 1000,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100.0,
+      "3d_radius": 120.0,
+      "3d_z_step": 5.0,
+      "default_node_size": 1.0
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
+  }
+}
+```
+
+### Переменные Окружения
+
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `GRPC_PORT` | Порт gRPC сервера | `9090` |
+| `HTTP_PORT` | Порт HTTP fallback сервера | `9091` |
+| `POSTGRES_URL` | Строка подключения к PostgreSQL | `postgresql://postgres:postgres@postgres:5432/knowledge_base?sslmode=disable` |
+| `REDIS_URL` | Адрес Redis | `redis:6379` |
+| `EVENT_CHANNEL` | Канал Redis Pub/Sub | `graph:events` |
+| `GRAPH_FULL_LIMIT` | Лимит для полного графа | `1000` |
+| `GRAPH_DEFAULT_DEPTH` | Глубина для раскладки заметки | `2` |
+| `GRAPH_STREAM_CHUNK_SIZE` | Количество узлов в чанке потока | `100` |
+| `CACHE_NOTE_TTL_SECONDS` | TTL кэша раскладки заметки | `300` (5 мин) |
+| `CACHE_FULL_TTL_SECONDS` | TTL кэша полного графа | `300` (5 мин) |
+| `CACHE_DELTA_TTL_SECONDS` | TTL кэша дельты | `60` (1 мин) |
+
+### Параметры Движка Раскладки
+
+| Параметр | Описание | По умолчанию |
+|----------|----------|--------------|
+| `2d_radius` | Радиус круга для 2D раскладки | `100.0` |
+| `3d_radius` | Радиус спирали для 3D раскладки | `120.0` |
+| `3d_z_step` | Вертикальный шаг между узлами в 3D | `5.0` |
+| `default_node_size` | Базовый размер узла | `1.0` |
+
+### Поведение Кэширования
+
+- **Note Layout Cache** (`CACHE_NOTE_TTL_SECONDS`): Кэш раскладок по заметкам (по умолчанию: 5 мин)
+- **Full Layout Cache** (`CACHE_FULL_TTL_SECONDS`): Кэш полных графов (по умолчанию: 5 мин)
+- **Delta Cache** (`CACHE_DELTA_TTL_SECONDS`): Кэш дельт (по умолчанию: 1 мин)
+
+Инвалидация кэша происходит автоматически через Redis Pub/Sub при обновлении заметок или ссылок.
+
+### Параметры Отслеживания Событий
+
+| Параметр | Описание | По умолчанию |
+|----------|----------|--------------|
+| `event_tracking_ttl_hours` | Время хранения записей подтверждения событий | `24` |
+| `unprocessed_event_check_interval_minutes` | Интервал работы retry worker | `5` |
+
+### gRPC Эндпоинты
+
+| Эндпоинт | Метод | Описание |
+|----------|-------|----------|
+| `GetNoteLayout` | Unary | Получить раскладку для конкретной заметки |
+| `GetFullLayout` | Server Stream | Поток полного графа чанками |
+| `GetDelta` | Unary | Получить изменения с последнего хэша |
+
+### HTTP Fallback Эндпоинты
+
+| Эндпоинт | Метод | Описание |
+|----------|-------|----------|
+| `/health` | GET | Проверка здоровья |
+| `/api/v1/graph/note/:id` | GET | Раскладка заметки (JSON) |
+| `/api/v1/graph/full` | GET | Полный граф (JSON) |
+| `/api/v1/graph/delta` | GET | Дельта (JSON) |
+
+### Использование в docker-compose.yml
+
+```yaml
+graph-service:
+  build:
+    context: .
+    dockerfile: ./services/graph-service/Dockerfile
+  environment:
+    GRPC_PORT: 9090
+    HTTP_PORT: 9091
+    POSTGRES_URL: postgresql://user:pass@postgres:5432/knowledge_base
+    REDIS_URL: redis:6379
+    GRAPH_FULL_LIMIT: 1000
+    CACHE_NOTE_TTL_SECONDS: 300
+```
+
+### Применение Изменений
+
+#### После изменения переменных в `docker-compose.yml`, перезапустите graph-service:
+
+```bash
+docker-compose restart graph-service
+```
+
+#### Проверьте логи — должно появиться сообщение о загрузке конфигурации:
+
+```bash
+docker logs kg-graph-service --tail 30
+```
+
+### Связанная Документация
+
+| Документ | Описание |
+|----------|----------|
+| [`architecture/decisions/013-graph-service-isolation.md`](architecture/decisions/013-graph-service-isolation.md) | Архитектурное решение по выделению Graph Service |
+| [`architecture/decisions/014-event-driven-cache-invalidation.md`](architecture/decisions/014-event-driven-cache-invalidation.md) | Инвалидация кэша через события |

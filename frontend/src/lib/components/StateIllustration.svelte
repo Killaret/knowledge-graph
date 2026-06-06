@@ -1,6 +1,6 @@
 <script lang="ts">
   export type StateIllustrationType = 'empty' | 'error' | '404' | 'offline' | 'no-links' | 'no-results';
-  let { type = 'empty' }: { type?: StateIllustrationType } = $props();
+  const { type = 'empty' }: { type?: StateIllustrationType } = $props();
   const currentType = $derived(type);
 
   const labels: Record<StateIllustrationType, string> = {

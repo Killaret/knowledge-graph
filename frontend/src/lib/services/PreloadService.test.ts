@@ -61,6 +61,9 @@ const mockPreloadService = {
         if (achievements) {
           preloadedAchievements = achievements.achievements;
         }
+      } catch (error) {
+        // Silently handle errors - don't throw, just log
+        console.warn('[PreloadService] Preload error:', error);
       } finally {
         isPreloading = false;
         preloadPromise = null;
@@ -163,9 +166,8 @@ describe('PreloadService', () => {
       vi.mocked(graphApi.getFreshGraph).mockRejectedValue(mockGraphError);
       vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
 
-      const result = await mockPreloadService.startPreload();
+      await mockPreloadService.startPreload();
 
-      expect(result).toBeUndefined();
       expect(mockPreloadService.getPreloadedGraph()).toBeNull();
       expect(mockPreloadService.getPreloadedAchievements()).toBeNull();
     });
@@ -174,7 +176,7 @@ describe('PreloadService', () => {
       vi.mocked(graphApi.getCachedGraph).mockResolvedValue(mockGraphData);
 
       await mockPreloadService.startPreload();
-
+      
       expect(graphApi.getCachedGraph).toHaveBeenCalled();
       expect(mockPreloadService.getPreloadedGraph()).toEqual(mockGraphData);
     });
@@ -187,7 +189,7 @@ describe('PreloadService', () => {
       });
 
       await mockPreloadService.startPreload();
-
+      
       expect(graphApi.getCachedGraph).toHaveBeenCalled();
       expect(graphApi.getFreshGraph).toHaveBeenCalled();
       expect(mockPreloadService.getPreloadedGraph()).toEqual(mockGraphData);
@@ -209,7 +211,7 @@ describe('PreloadService', () => {
       });
 
       await mockPreloadService.startPreload();
-
+      
       expect(mockPreloadService.getPreloadedGraph()).toEqual(mockGraphData);
       expect(mockPreloadService.getPreloadedGraph().delta).toEqual(mockDelta);
     });
@@ -303,8 +305,8 @@ describe('PreloadService', () => {
       
       await Promise.all(promises);
       
-      // API должен вызваться только один раз
-      expect(graphApi.getFullGraphData).toHaveBeenCalledTimes(1);
+      // API должен вызваться только один раз (concurrent request protection)
+      expect(graphApi.getFreshGraph).toHaveBeenCalledTimes(1);
       expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
     });
 

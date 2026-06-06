@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"knowledge-graph-graph-service/internal/cache"
+	"knowledge-graph-graph-service/internal/config"
 	"knowledge-graph-graph-service/internal/db"
 
 	"github.com/google/uuid"
@@ -43,15 +44,41 @@ type EventTracking struct {
 }
 
 type RedisSubscriber struct {
-	redisClient *redis.Client
-	postgres    db.PostgresClient
-	cache       *cache.RedisCache
-	channel     string
-	limit       int
+	redisClient      *redis.Client
+	postgres         db.PostgresClient
+	cache            *cache.RedisCache
+	channel          string
+	limit            int
+	eventTrackingTTL time.Duration
+	checkInterval    time.Duration
+	retryThreshold   time.Duration
 }
 
 func NewRedisSubscriber(redisClient *redis.Client, postgres db.PostgresClient, cache *cache.RedisCache, channel string, limit int) *RedisSubscriber {
-	return &RedisSubscriber{redisClient: redisClient, postgres: postgres, cache: cache, channel: channel, limit: limit}
+	return &RedisSubscriber{
+		redisClient:      redisClient,
+		postgres:         postgres,
+		cache:            cache,
+		channel:          channel,
+		limit:            limit,
+		eventTrackingTTL: 24 * time.Hour,
+		checkInterval:    5 * time.Minute,
+		retryThreshold:   5 * time.Minute,
+	}
+}
+
+// NewRedisSubscriberWithConfig creates a subscriber with config-driven TTLs and intervals.
+func NewRedisSubscriberWithConfig(redisClient *redis.Client, postgres db.PostgresClient, cache *cache.RedisCache, cfg *config.Config) *RedisSubscriber {
+	return &RedisSubscriber{
+		redisClient:      redisClient,
+		postgres:         postgres,
+		cache:            cache,
+		channel:          cfg.EventChannel,
+		limit:            cfg.FullLimit,
+		eventTrackingTTL: cfg.EventTrackingTTL,
+		checkInterval:    cfg.UnprocessedEventCheckInterval,
+		retryThreshold:   cfg.UnprocessedEventRetryThreshold,
+	}
 }
 
 func (s *RedisSubscriber) Start(ctx context.Context) error {
@@ -108,8 +135,8 @@ func (s *RedisSubscriber) handleEvent(ctx context.Context, payload string) {
 		log.Printf("[GraphService] Failed to record event receipt: %v", err)
 	}
 
-	// Set TTL for event tracking (24 hours)
-	s.redisClient.Expire(ctx, eventKey, 24*time.Hour)
+	// Set TTL for event tracking
+	s.redisClient.Expire(ctx, eventKey, s.eventTrackingTTL)
 
 	// Process the event
 	if err := s.processEvent(ctx, event); err != nil {
@@ -217,7 +244,7 @@ func (s *RedisSubscriber) invalidatePattern(ctx context.Context, pattern string)
 
 // processUnprocessedEvents periodically checks for events that were not acknowledged
 func (s *RedisSubscriber) processUnprocessedEvents(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(s.checkInterval)
 	defer ticker.Stop()
 
 	for {
@@ -260,8 +287,8 @@ func (s *RedisSubscriber) scanAndRetryEvents(ctx context.Context) {
 
 		if len(trackingData) > 0 {
 			if err := json.Unmarshal(trackingData, &tracking); err == nil {
-				// Check if event is unacknowledged and older than 5 minutes
-				if !tracking.IsAcknowledged && time.Since(tracking.TimestampReceived) > 5*time.Minute {
+				// Check if event is unacknowledged and older than retry threshold
+				if !tracking.IsAcknowledged && time.Since(tracking.TimestampReceived) > s.retryThreshold {
 					log.Printf("[GraphService] Retrying unacknowledged event: %s", eventKey)
 					// In a real implementation, we would need to replay the event
 					// For now, we just log it

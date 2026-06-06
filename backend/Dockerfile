@@ -1,8 +1,7 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 # Copy entire project (includes knowledge-graph.config.json at root)
 COPY . /app
 WORKDIR /app/backend
-ENV GOTOOLCHAIN=auto
 RUN go mod download
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/server
 RUN go build -ldflags="-s -w" -o /app/worker ./cmd/worker
