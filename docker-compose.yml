@@ -61,9 +61,10 @@
       - "5000:5000"
     environment:
       - MODEL_NAME=all-MiniLM-L6-V2
-      - SENTENCE_TRANSFORMERS_HOME=/root/.cache/torch/sentence_transformers
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_DISABLE_TELEMETRY=1
     volumes:
-      - ./huggingface_cache:/root/.cache/torch/sentence_transformers
+      - ./huggingface_cache:/root/.cache/huggingface
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s

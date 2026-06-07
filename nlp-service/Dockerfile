@@ -12,13 +12,20 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir --no-deps sentence-transformers==2.2.2
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir transformers tqdm scikit-learn scipy sentencepiece huggingface-hub
+RUN pip install --no-cache-dir transformers tqdm scikit-learn scipy sentencepiece
 
-# Pre-download model during build to avoid runtime issues
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-V2')"
+# Set environment variables for HuggingFace
+ENV HF_HUB_DISABLE_TELEMETRY=1
+ENV HF_HUB_ENABLE_HF_TRANSFER=0
 
+# Download NLTK data during build
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
 COPY . .
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
