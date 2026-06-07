@@ -1,15 +1,21 @@
 # Recommendation API Specification
 
-## GET /api/v1/notes/{id}/suggestions
+## GET /notes/{id}/suggestions
 
 Returns precomputed recommendations for a specific note.
 
 ### Request
 
 ```http
-GET /api/v1/notes/{note_id}/suggestions
+GET /notes/{note_id}/suggestions?limit=20
 Accept: application/json
 ```
+
+**Query parameters:**
+
+| Param | Default | Notes |
+|-------|---------|-------|
+| `limit` | `RECOMMENDATION_TOP_N` (20) | Clamped to 1..100; invalid values are ignored and the default is used |
 
 ### Response Logic
 
@@ -21,64 +27,66 @@ Accept: application/json
 
 ### Success Response (200 OK)
 
+The response body is a flat list under `suggestions`. Each item has `note_id`, `title`, and `score`. Source/staleness are communicated via headers (see below), **not** body fields.
+
 ```json
 {
-  "note_id": "a0000000-0000-0000-0000-000000000001",
-  "recommendations": [
+  "suggestions": [
     {
       "note_id": "a0000000-0000-0000-0000-000000000002",
       "title": "Related Note Title",
-      "score": 0.95,
-      "reason": "Common neighbors: 3"
+      "score": 0.95
     }
   ],
-  "source": "precomputed",
   "generated_at": "2024-01-15T10:30:00Z"
 }
 ```
 
+> Source shape: `backend/internal/interfaces/api/notehandler/note_handler.go` (`SuggestionsResponse` / `Suggestion`).
+
 ### Response Headers
 
 ```http
-X-Recommendations-Stale: true           # Data is stale
-X-Recommendations-Source: semantic-fallback
-X-Recommendations-Source: redis-fallback
-X-Recommendations-Count: 5
+X-Recommendations-Stale: true                 # Precomputed data is stale; a refresh was enqueued
+X-Recommendations-Source: semantic-fallback   # Result came from the pgvector semantic fallback
+X-Recommendations-Source: redis-fallback      # Result came from the Redis cache fallback
 ```
 
-### Fallback Response (202 Accepted)
+No `X-Recommendations-Source` header is set when the result comes from the precomputed `note_recommendations` table.
 
-Returned when no recommendations are available and background calculation is triggered:
+### Pending Response (202 Accepted)
+
+Returned when no recommendations are available yet. A background calculation is enqueued and the body is an **empty suggestions list** (same schema as the 200 response):
 
 ```json
 {
-  "status": "calculating",
-  "message": "Recommendations are being calculated in the background",
-  "retry_after_seconds": 5
+  "suggestions": []
 }
 ```
+
+`X-Recommendations-Stale: true` is also set. Clients should retry shortly after.
+
+> Planned change (Roadmap P0-04, not yet implemented): add a `status: "ready" | "pending"` field to the body. Until then, distinguish pending from ready by the **202 vs 200** status code.
 
 ### Error Responses
 
-#### 404 Not Found
+#### 400 Bad Request
+
+Returned when the note ID is not a valid UUID:
+
 ```json
 {
-  "error": "note_not_found",
-  "message": "Note with specified ID does not exist"
+  "error": "invalid id"
 }
 ```
 
-#### 500 Internal Server Error
-```json
-{
-  "error": "recommendation_service_error",
-  "message": "Failed to retrieve recommendations"
-}
-```
+> Note: this endpoint does not return `404` for a non-existent note — an unknown ID falls through to the `202` pending path with an empty list.
 
 ## Configuration
 
 ### Environment Variables
+
+> Canonical reference for all environment variables: [`CONFIGURATION_EN.md`](CONFIGURATION_EN.md). The subset below is the recommendation-specific config.
 
 ```bash
 # Number of recommendations to return

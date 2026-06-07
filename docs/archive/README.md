@@ -21,11 +21,11 @@
 | `API_VERIFICATION_REPORT_2026-04-13.md` | 13 апреля | Проблемы из отчёта исправлены в коде |
 | `FINAL_TEST_REPORT_2026-04-13.md` | 13 апреля | Устарел (9/12 → 48 тестов) |
 | `TEST_FIXES_REPORT_2026-04-13.md` | 13 апреля | Исправления уже в main branch |
-| `IMPLEMENTATION_SUMMARY_2026-04-13.md` | 13 апреля | Дублирует CHANGELOG.md |
+| `IMPLEMENTATION_SUMMARY.md` | 13 апреля | Дублирует `../CHANGELOG_EN.md` |
 
 **Актуальная документация по тестированию:**
 - `../TESTING.md` — Полное руководство по тестированию
-- `../CHANGELOG.md` — История изменений с результатами тестов
+- `../CHANGELOG_EN.md` — История изменений с результатами тестов
 
 ---
 
@@ -33,15 +33,14 @@
 
 ```
 📁 docs/
-├── DEPLOYMENT.md          ← Развёртывание (Docker, K8s)
-├── TESTING.md             ← Тестирование (Go, Playwright)
-├── CONFIGURATION.md       ← Env переменные
-├── CHANGELOG.md           ← История v1.0.0
-├── API_ERRORS.md          ← Ошибки API
-├── FRONTEND_ARCHITECTURE.md ← Three.js, Progressive Rendering
-├── architecture/          ← C4 Model, ADR, UML
-├── COPILOT_DOCS/         ← AI-ассистенты
-└── archive/             ← 📦 Вы здесь
+├── DEPLOYMENT_EN.md           ← Развёртывание (Docker, K8s)
+├── TESTING.md                 ← Тестирование (Go, Playwright)
+├── CONFIGURATION_EN.md        ← Env переменные
+├── CHANGELOG_EN.md            ← История v1.0.0
+├── API_ERRORS.md              ← Ошибки API
+├── FRONTEND_ARCHITECTURE_EN.md ← Three.js, Progressive Rendering
+├── architecture/             ← C4 Model, ADR, UML
+└── archive/                  ← 📦 Вы здесь
 ```
 
 ---
