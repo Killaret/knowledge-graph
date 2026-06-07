@@ -8,9 +8,10 @@ BEGIN;
 DROP TABLE IF EXISTS note_tags CASCADE;
 
 -- Recreate with correct structure (many-to-many: notes <-> tags)
+-- Note: tags table is created in migration 023
 CREATE TABLE note_tags (
     note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL,
     PRIMARY KEY (note_id, tag_id)
 );
 
