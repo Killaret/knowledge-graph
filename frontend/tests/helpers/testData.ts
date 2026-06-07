@@ -61,7 +61,7 @@ export interface LinkData {
  * Get backend base URL from environment or default
  */
 export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 'http://localhost:8080';
+  return process.env.BACKEND_URL || 'http://127.0.0.1:9000';
 }
 
 /**
