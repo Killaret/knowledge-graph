@@ -80,6 +80,13 @@ test.describe('Knowledge Graph Frontend', {
     });
     const noteId = note.data.id;
 
+    // Wait for note to be available in GET endpoint
+    await page.waitForTimeout(2000);
+
+    // Verify note exists via API before navigating
+    const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+    expect(verifyResponse.status()).toBe(200);
+
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
     await page.waitForLoadState('networkidle');
@@ -168,10 +175,17 @@ test.describe('Knowledge Graph Frontend', {
     });
     const noteId = note.data.id;
 
+    // Wait for note to be available
+    await page.waitForTimeout(2000);
+    
+    // Verify note exists via API before navigating
+    const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+    expect(verifyResponse.status()).toBe(200);
+
     // Navigate directly to note page
     await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(7000);
-    
+
     // Setup dialog handler before click
     page.on('dialog', async dialog => {
       await dialog.accept();
@@ -225,6 +239,13 @@ test.describe('Knowledge Graph Frontend', {
     });
     const noteId = note.data.id;
 
+    // Wait for note to be available
+    await page.waitForTimeout(2000);
+    
+    // Verify note exists via API before navigating
+    const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+    expect(verifyResponse.status()).toBe(200);
+
     // Navigate to note detail page
     await page.goto(`/notes/${noteId}`);
     await page.waitForTimeout(7000);
@@ -247,6 +268,9 @@ test.describe('Knowledge Graph Frontend', {
       type: 'star'
     });
 
+    // Wait for note to be available
+    await page.waitForTimeout(2000);
+    
     // Navigate to home
     await page.goto('/');
     await page.waitForTimeout(1000);
@@ -268,6 +292,13 @@ test.describe('Knowledge Graph Frontend', {
       content: 'Testing browser back functionality'
     });
     const noteId = note.data.id;
+
+    // Wait for note to be available
+    await page.waitForTimeout(2000);
+    
+    // Verify note exists via API before navigating
+    const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+    expect(verifyResponse.status()).toBe(200);
 
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
