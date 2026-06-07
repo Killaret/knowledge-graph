@@ -148,3 +148,8 @@ test_data.sql
 check_user_data.sql
 TEST_STATUS.md
 coverage
+
+# Backup files
+*.backup
+*.backup.old
+*.old
