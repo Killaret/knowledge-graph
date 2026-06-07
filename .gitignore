@@ -138,3 +138,13 @@ scripts/database/generated/
 *.exe
 playwright-report/
 token.json
+
+# Misc artifacts
+*.html
+!frontend/**/*.html
+*.bat
+*.ps1
+test_data.sql
+check_user_data.sql
+TEST_STATUS.md
+coverage
