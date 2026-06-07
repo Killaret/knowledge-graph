@@ -38,31 +38,31 @@ func (r *NoteRepository) invalidateCache(ctx context.Context) {
 }
 
 func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
-	var existing NoteModel
-	// Use separate transaction for each DB operation to prevent transaction abort propagation
-	err := r.db.WithContext(ctx).Where("id = ?", n.ID()).First(&existing).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	// Use explicit transaction to ensure clean state
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var existing NoteModel
+		err := tx.Where("id = ?", n.ID()).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			model, err := toGormNote(n)
+			if err != nil {
+				return err
+			}
+			if err := tx.Create(&model).Error; err != nil {
+				return err
+			}
+			// Инвалидация кэша при создании новой заметки
+			r.invalidateCache(ctx)
+			return nil
+		}
+		if err != nil {
+			return err
+		}
 		model, err := toGormNote(n)
 		if err != nil {
 			return err
 		}
-		// Use new transaction for Create
-		if err := r.db.WithContext(ctx).Session(&gorm.Session{}).Create(&model).Error; err != nil {
-			return err
-		}
-		// Инвалидация кэша при создании новой заметки
-		r.invalidateCache(ctx)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	model, err := toGormNote(n)
-	if err != nil {
-		return err
-	}
-	// Use new transaction for Update
-	return r.db.WithContext(ctx).Session(&gorm.Session{}).Model(&existing).Updates(model).Error
+		return tx.Model(&existing).Updates(model).Error
+	})
 }
 
 func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
@@ -149,16 +149,20 @@ func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.N
 	var models []NoteModel
 	var total int64
 
-	// Use separate transaction for Count and Find to prevent transaction abort propagation
-	db := r.db.WithContext(ctx).Session(&gorm.Session{}).Model(&NoteModel{})
+	// Use explicit transaction to ensure clean state
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Count total
+		if err := tx.Model(&NoteModel{}).Count(&total).Error; err != nil {
+			return err
+		}
 
-	// Count total
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Get paginated results
-	err := db.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
+		// Get paginated results
+		err := tx.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, 0, err
 	}
