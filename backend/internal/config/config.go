@@ -106,7 +106,7 @@ type JSONConfig struct {
 		Cloud     struct {
 			Enabled  bool   `json:"enabled"`
 			Provider string `json:"provider"`
-			Yandex struct {
+			Yandex   struct {
 				OAuthToken   string `json:"oauth_token"`
 				BackupFolder string `json:"backup_folder"`
 				MaxBackups   int    `json:"max_backups"`
@@ -123,7 +123,7 @@ type JSONConfig struct {
 }
 
 type Config struct {
-	// Сервер
+	// Server
 	ServerPort                   string
 	ServerRateLimitEnabled       bool
 	ServerRateLimitRequests      int
@@ -131,7 +131,7 @@ type Config struct {
 	ServerRateLimitEndpoints     map[string]int
 	ServerFallbackPorts          []string
 
-	// База данных
+	// Database
 	DatabaseURL               string
 	DatabaseRetryMaxAttempts  int
 	DatabaseRetryDelaySeconds int
@@ -148,7 +148,7 @@ type Config struct {
 	SearchRankingWeights    map[string]float64
 	SearchFallbackToILike   bool
 
-	// Рекомендации (граф)
+	// Recommendations (graph)
 	RecommendationAlpha      float64
 	RecommendationBeta       float64
 	RecommendationDepth      int
@@ -156,8 +156,8 @@ type Config struct {
 	RecommendationCacheTTL   time.Duration
 	EmbeddingSimilarityLimit int
 
-	// Загрузка графа (визуализация)
-	GraphLoadDepth int // Глубина загрузки графа для визуализации
+	// Graph loading (visualization)
+	GraphLoadDepth int // Depth of graph loading for visualization
 
 	// Pagination
 	PaginationDefaultLimit int
@@ -169,23 +169,23 @@ type Config struct {
 	GraphLinkDefaultLimit int
 	GraphLinkMaxLimit     int
 
-	// Новые параметры для улучшения алгоритма рекомендаций
-	RecommendationGamma                   float64       // Коэффициент для дополнительного компонента
-	BFSAggregation                        string        // Метод агрегации BFS: "max", "sum", "avg"
-	BFSNormalize                          bool          // Нормализация весов в BFS
-	RecommendationTopN                    int           // Количество рекомендаций для сохранения
-	RecommendationTaskDelaySeconds        int           // Задержка перед выполнением задачи (dedup)
-	RecommendationBatchRateLimit          int           // Rate limit для batch обработки
-	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
-	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
-	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
-	RecommendationKeywordEnabled          bool          // Включить keyword-компонент (gamma)
-	RecommendationKeywordSimilarityMethod string        // Метод сходства ключевых слов: jaccard, overlap, tversky, weighted_jaccard, cosine
-	RecommendationKeywordTverskyAlpha     float64       // Alpha параметр для Tversky index
-	RecommendationKeywordTverskyBeta      float64       // Beta параметр для Tversky index
-	AsynqConcurrency                      int           // Уровень параллелизма Asynq
-	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
-	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+	// New parameters for improved recommendation algorithm
+	RecommendationGamma                   float64       // Coefficient for additional component
+	BFSAggregation                        string        // BFS aggregation method: "max", "sum", "avg"
+	BFSNormalize                          bool          // Normalize weights in BFS
+	RecommendationTopN                    int           // Number of recommendations to save
+	RecommendationTaskDelaySeconds        int           // Delay before task execution (dedup)
+	RecommendationBatchRateLimit          int           // Rate limit for batch processing
+	RecommendationFallbackEnabled         bool          // Enable fallback to Redis
+	RecommendationFallbackTTL             time.Duration // TTL for fallback cache
+	RecommendationFallbackSemanticEnabled bool          // Enable fallback for semantic neighbors
+	RecommendationKeywordEnabled          bool          // Enable keyword component (gamma)
+	RecommendationKeywordSimilarityMethod string        // Keyword similarity method: jaccard, overlap, tversky, weighted_jaccard, cosine
+	RecommendationKeywordTverskyAlpha     float64       // Alpha parameter for Tversky index
+	RecommendationKeywordTverskyBeta      float64       // Beta parameter for Tversky index
+	AsynqConcurrency                      int           // Asynq concurrency level
+	AsynqQueueDefault                     int           // Asynq default queue priority
+	AsynqQueueMaxLen                      int           // Maximum queue length
 
 	// MongoDB
 	MongoDBURL      string
@@ -218,29 +218,29 @@ type Config struct {
 	PasswordPolicyRequireSpecial bool
 
 	// Backup configuration
-	BackupCloudEnabled  bool
-	BackupCloudProvider string
-	BackupLocalPath     string
-	BackupSchedule      string
-	BackupRetentionDays int
+	BackupCloudEnabled     bool
+	BackupCloudProvider    string
+	BackupLocalPath        string
+	BackupSchedule         string
+	BackupRetentionDays    int
 	BackupYandexOAuthToken string
 	BackupYandexFolder     string
 	BackupYandexMaxBackups int
 }
 
-// loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
-// Возвращает nil если файл не существует или не может быть прочитан
+// loadJSONConfig loads configuration from knowledge-graph.config.json
+// Returns nil if file doesn't exist or cannot be read
 func loadJSONConfig() *JSONConfig {
-	// Определяем путь к корню проекта (где находится knowledge-graph.config.json)
-	// Пробуем несколько вариантов поиска файла
+	// Determine path to project root (where knowledge-graph.config.json is located)
+	// Try several possible file locations
 	possiblePaths := []string{
-		"knowledge-graph.config.json", // текущая директория
+		"knowledge-graph.config.json", // current directory
 	}
 
-	// Добавляем путь относительно расположения этого файла (backend/internal/config)
+	// Add path relative to this file location (backend/internal/config)
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
-		// От корня проекта: backend/internal/config -> ../../../knowledge-graph.config.json
+		// From project root: backend/internal/config -> ../../../knowledge-graph.config.json
 		configDir := filepath.Dir(filename)
 		projectRoot := filepath.Join(configDir, "..", "..", "..")
 		possiblePaths = append(possiblePaths, filepath.Join(projectRoot, "knowledge-graph.config.json"))
@@ -258,7 +258,7 @@ func loadJSONConfig() *JSONConfig {
 	}
 
 	if err != nil {
-		// Попробуем собрать конфигурацию из отдельных файлов config/*.json
+		// Try to load configuration from separate config/*.json files
 		configDir := filepath.Join(filepath.Dir(filename), "..", "..", "..", "config")
 		if mergedConfig := loadJSONConfigParts(configDir); mergedConfig != nil {
 			log.Printf("[Config] Loaded JSON config from folder: %s", configDir)
@@ -279,10 +279,10 @@ func loadJSONConfig() *JSONConfig {
 	return &jsonCfg
 }
 
-// Load загружает конфигурацию из переменных окружения.
-// Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
-// иначе используется встроенное значение по умолчанию.
-// Для обязательных переменных (DatabaseURL) используется mustGetEnv.
+// Load loads configuration from environment variables.
+// If a variable is not set, the default value from JSON config is used (if available),
+// otherwise the built-in default value is used.
+// For required variables (DatabaseURL), mustGetEnv is used.
 func loadJSONConfigParts(configDir string) *JSONConfig {
 	stat, err := os.Stat(configDir)
 	if err != nil || !stat.IsDir() {
@@ -351,7 +351,7 @@ func mustJSON(value any) string {
 }
 
 func Load() (*Config, error) {
-	// Загружаем JSON конфиг как источник дефолтных значений
+	// Load JSON config as source of default values
 	jsonCfg := loadJSONConfig()
 
 	cfg := &Config{
@@ -386,7 +386,7 @@ func Load() (*Config, error) {
 		RecommendationCacheTTL:   time.Duration(getIntEnv("RECOMMENDATION_CACHE_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.CacheTTLSeconds }, 300))) * time.Second,
 		EmbeddingSimilarityLimit: getIntEnv("EMBEDDING_SIMILARITY_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Embedding.SimilarityLimit }, 30)),
 
-		// Загрузка графа
+		// Graph loading
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LoadDepth }, 2)),
 
 		// Pagination
@@ -399,7 +399,7 @@ func Load() (*Config, error) {
 		GraphLinkDefaultLimit: getIntEnv("GRAPH_LINK_DEFAULT_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkDefaultLimit }, 500)),
 		GraphLinkMaxLimit:     getIntEnv("GRAPH_LINK_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkMaxLimit }, 5000)),
 
-		// Новые параметры
+		// New parameters
 		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Gamma }, 0.2)),
 		BFSAggregation:                        getEnv("BFS_AGGREGATION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.BFSAggregation }, "max")),
 		BFSNormalize:                          getBoolEnv("BFS_NORMALIZE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.BFSNormalize }, true)),
@@ -448,11 +448,11 @@ func Load() (*Config, error) {
 		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
 
 		// Backup configuration
-		BackupCloudEnabled:  getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
-		BackupCloudProvider: getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
-		BackupLocalPath:     getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
-		BackupSchedule:      getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
-		BackupRetentionDays: getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
+		BackupCloudEnabled:     getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
+		BackupCloudProvider:    getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
+		BackupLocalPath:        getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
+		BackupSchedule:         getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
+		BackupRetentionDays:    getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
 		BackupYandexOAuthToken: getEnv("BACKUP_YANDEX_OAUTH_TOKEN", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.OAuthToken }, "")),
 		BackupYandexFolder:     getEnv("BACKUP_YANDEX_FOLDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.BackupFolder }, "/KnowledgeGraphBackups")),
 		BackupYandexMaxBackups: getIntEnv("BACKUP_YANDEX_MAX_BACKUPS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.Cloud.Yandex.MaxBackups }, 10)),
