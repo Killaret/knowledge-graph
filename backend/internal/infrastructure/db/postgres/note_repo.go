@@ -39,13 +39,15 @@ func (r *NoteRepository) invalidateCache(ctx context.Context) {
 
 func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 	var existing NoteModel
+	// Use separate transaction for each DB operation to prevent transaction abort propagation
 	err := r.db.WithContext(ctx).Where("id = ?", n.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		model, err := toGormNote(n)
 		if err != nil {
 			return err
 		}
-		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
+		// Use new transaction for Create
+		if err := r.db.WithContext(ctx).Session(&gorm.Session{}).Create(&model).Error; err != nil {
 			return err
 		}
 		// Инвалидация кэша при создании новой заметки
@@ -59,7 +61,8 @@ func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 	if err != nil {
 		return err
 	}
-	return r.db.WithContext(ctx).Model(&existing).Updates(model).Error
+	// Use new transaction for Update
+	return r.db.WithContext(ctx).Session(&gorm.Session{}).Model(&existing).Updates(model).Error
 }
 
 func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
@@ -146,7 +149,8 @@ func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.N
 	var models []NoteModel
 	var total int64
 
-	db := r.db.WithContext(ctx).Model(&NoteModel{})
+	// Use separate transaction for Count and Find to prevent transaction abort propagation
+	db := r.db.WithContext(ctx).Session(&gorm.Session{}).Model(&NoteModel{})
 
 	// Count total
 	if err := db.Count(&total).Error; err != nil {
