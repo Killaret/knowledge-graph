@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/achievement"
@@ -28,7 +25,6 @@ import (
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
-	"knowledge-graph/internal/infrastructure/nlp" // Восстановление импорта nlp пакета
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
@@ -39,9 +35,6 @@ import (
 	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/interfaces/api/notehandler"
 	"knowledge-graph/internal/interfaces/api/taghandler"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const (
@@ -75,7 +68,7 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
-	// Применяем миграции
+	// Apply migrations
 	migrationsDir := defaultMigrationsDir
 	if err := postgres.RunMigrations(db.DB, migrationsDir); err != nil {
 		log.Printf("ERROR: Failed to run migrations: %v", err)
@@ -118,7 +111,7 @@ func main() {
 
 	// Yandex.Disk backup service
 	var yandexBackupService *cloud.YandexBackupService
-	// Очередь
+	// Task queue
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
 	if err != nil {
@@ -146,7 +139,7 @@ func main() {
 		}
 	}
 
-	// Загрузчики графа
+	// Graph loaders
 	linkLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
 	embeddingLoader := appGraph.NewEmbeddingNeighborLoader(embeddingRepo, cfg.EmbeddingSimilarityLimit)
 
@@ -175,7 +168,7 @@ func main() {
 	// Graph cache
 	graphCache := cache.NewGraphCache(redisClient)
 
-	// Очистка граф кэша при старте сервера
+	// Clear graph cache on startup
 	log.Printf("[Cache] Clearing graph cache on startup...")
 	if err := graphCache.InvalidateAll(ctx); err != nil {
 		log.Printf("[Cache] WARNING: failed to clear graph cache on startup: %v", err)
@@ -183,7 +176,7 @@ func main() {
 		log.Printf("[Cache] SUCCESS: Graph cache cleared on startup")
 	}
 
-	// Хендлеры с новыми параметрами
+	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
@@ -207,217 +200,29 @@ func main() {
 	passwordPolicy := auth.DefaultPasswordPolicy()
 	userHandler := userhandler.NewHandler(db.DB, passwordConfig, passwordPolicy)
 
-	// Роуты
-	r := gin.Default()
+	// Router setup with all middleware and routes
+	writeLimiter := newWriteLimiter(cfg)
+	jwtConfig := newJWTConfig(jwtManager, tokenStore)
+	apiKeyConfig := newAPIKeyConfig(db.DB, cfg.APIKeyEnabled, cfg.StaticAPIKey)
+	skipAuthConfig := &middleware.SkipAuthConfig{Enabled: cfg.SkipAuth}
 
-	// Gzip middleware - compress responses
-	r.Use(gzip.Gzip(gzip.DefaultCompression))
-
-	// Recovery middleware - catches panics and returns 500
-	r.Use(middleware.RecoveryMiddleware())
-
-	// Cache control middleware for static data endpoints
-	cacheControlMiddleware := func(maxAge int) gin.HandlerFunc {
-		return func(c *gin.Context) {
-			c.Writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
-			c.Next()
-		}
-	}
-
-	// Swagger UI
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
-		ginSwagger.URL("/openapi.yaml"),
-		ginSwagger.DeepLinking(true),
-		ginSwagger.DocExpansion("list"),
-	))
-
-	// Serve OpenAPI spec
-	r.StaticFile("/openapi.yaml", "./openAPI.yaml")
-
-	// CORS middleware - разрешаем запросы с frontend
-	r.Use(func(c *gin.Context) {
-		origin := c.Request.Header.Get("Origin")
-		if origin == "" {
-			origin = "*"
-		}
-		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Backend-Url")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
-		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
-		c.Writer.Header().Set("Vary", "Origin")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
-
-	// Structured logging middleware with token data
-	r.Use(middleware.LoggingMiddleware())
-
-	// SkipAuth middleware for testing (when SKIP_AUTH=true)
-	if cfg.SkipAuth {
-		r.Use(middleware.SkipAuth(middleware.DefaultSkipAuthConfig(true)))
-		log.Println("[Auth] SKIP_AUTH enabled - authentication disabled for testing")
-	}
-
-	// JWT middleware for authentication
-	jwtConfig := middleware.DefaultJWTConfig(jwtManager, tokenStore)
-	r.Use(middleware.JWTAuth(jwtConfig))
-
-	// API Key middleware for authentication
-	apiKeyConfig := middleware.DefaultAPIKeyConfig(db.DB, cfg.APIKeyEnabled, cfg.StaticAPIKey)
-	r.Use(middleware.APIKey(apiKeyConfig))
-
-	// Rate limiting middleware (conditional)
-	var writeLimiter gin.HandlerFunc
-	if cfg.ServerRateLimitEnabled {
-		rateWindow := time.Duration(cfg.ServerRateLimitWindowSeconds) * time.Second
-		r.Use(middleware.RateLimitMiddleware(cfg.ServerRateLimitRequests, rateWindow))
-
-		// Stricter rate limiting for write operations - build endpoint map from config
-		endpointLimits := map[string]int{
-			"/notes":     cfg.ServerRateLimitEndpoints["notes_create"],
-			"/links":     cfg.ServerRateLimitEndpoints["links_create"],
-			"/notes/:id": cfg.ServerRateLimitEndpoints["notes_update"],
-		}
-		writeLimiter = middleware.RateLimitByEndpoint(endpointLimits, cfg.ServerRateLimitRequests, rateWindow)
-	} else {
-		// No-op handler when rate limiting is disabled
-		writeLimiter = func(c *gin.Context) { c.Next() }
-	}
-
-	// Comprehensive health check with all dependencies
-	r.GET("/health", func(c *gin.Context) {
-		health := gin.H{
-			"status":    "healthy",
-			"timestamp": time.Now().UTC(),
-			"version":   "1.0.0",
-		}
-		status := http.StatusOK
-
-		// Check database
-		sqlDB, err := db.DB.DB()
-		if err != nil {
-			health["database"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			status = http.StatusServiceUnavailable
-		} else if err := sqlDB.Ping(); err != nil {
-			health["database"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			status = http.StatusServiceUnavailable
-		} else {
-			health["database"] = gin.H{"status": "healthy"}
-		}
-
-		// Check Redis
-		if redisClient != nil {
-			if err := redisClient.Ping(ctx).Err(); err != nil {
-				health["redis"] = gin.H{"status": "unhealthy", "error": err.Error()}
-				status = http.StatusServiceUnavailable
-			} else {
-				health["redis"] = gin.H{"status": "healthy"}
-			}
-		} else {
-			health["redis"] = gin.H{"status": "disabled"}
-		}
-
-		// Check NLP service
-		nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, redisClient, cfg.RecommendationCacheTTL)
-		if err := nlpClient.HealthCheck(ctx); err != nil {
-			health["nlp"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			// Don't mark as unhealthy if NLP is optional
-		} else {
-			health["nlp"] = gin.H{"status": "healthy"}
-		}
-
-		c.JSON(status, health)
-	})
-
-	// API v1 group
-	v1 := r.Group("/api/v1")
-	{
-		// Auth routes
-		v1.POST("/auth/register", authHandler.Register)
-		v1.POST("/auth/login", authHandler.Login)
-		v1.POST("/auth/logout", authHandler.Logout)
-		v1.POST("/auth/refresh", authHandler.Refresh)
-		v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
-		v1.POST("/auth/reset-password", authHandler.ResetPassword)
-		v1.GET("/auth/yandex", authHandler.YandexLogin)
-		v1.GET("/auth/yandex/callback", authHandler.YandexCallback)
-
-		// User routes
-		v1.GET("/users/me", userHandler.GetMe)
-
-		// Achievements
-		v1.GET("/achievements", achievementHandler.ListAchievements)
-		v1.GET("/users/me/achievements", achievementHandler.GetUserAchievements)
-		v1.POST("/users/me/achievements/:id/mark-seen", achievementHandler.MarkSeen)
-
-		// Write operations with stricter rate limiting
-		v1.POST("/notes", writeLimiter, noteHandler.Create)
-		v1.GET("/notes/:id", cacheControlMiddleware(60), noteHandler.Get)
-		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
-		v1.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
-		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteHandler.GetSuggestions)
-		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
-		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
-
-		v1.POST("/links", writeLimiter, linkHandler.Create)
-		v1.GET("/links/:id", linkHandler.Get)
-		v1.GET("/notes/:id/links", linkHandler.GetByNote)
-		v1.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
-		v1.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
-
-		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), graphHandler.GetGraph)
-		v1.GET("/graph/all", cacheControlMiddleware(300), graphHandler.GetFullGraph)
-		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
-		v1.GET("/me/graph/fresh", cacheControlMiddleware(0), graphHandler.GetFreshGraph)
-
-		// Tag routes
-		v1.POST("/tags", writeLimiter, tagHandler.Create)
-		v1.GET("/tags", tagHandler.List)
-		v1.GET("/tags/:id", tagHandler.Get)
-		v1.PUT("/tags/:id", writeLimiter, tagHandler.Update)
-		v1.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
-		v1.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
-		v1.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
-		v1.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
-		// Backup routes
-		v1.POST("/backup/cloud", writeLimiter, backupHandler.TriggerCloudBackup)
-		v1.GET("/backup/status", backupHandler.GetBackupStatus)
-	}
-
-	// Legacy routes (deprecated - kept for backward compatibility)
-	// TODO(# Issue): Remove legacy routes after all clients migrate to /api/v1
-	r.POST("/notes", writeLimiter, noteHandler.Create)
-	r.GET("/notes/:id", noteHandler.Get)
-	r.PUT("/notes/:id", writeLimiter, noteHandler.Update)
-	r.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
-	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
-	r.GET("/notes", noteHandler.List)
-	r.GET("/notes/search", noteHandler.Search)
-
-	r.POST("/links", writeLimiter, linkHandler.Create)
-	r.GET("/links/:id", linkHandler.Get)
-	r.GET("/notes/:id/links", linkHandler.GetByNote)
-	r.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
-	r.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
-
-	r.GET("/notes/:id/graph", graphHandler.GetGraph)
-	r.GET("/graph/all", graphHandler.GetFullGraph)
-
-	// Tag routes
-	r.POST("/tags", writeLimiter, tagHandler.Create)
-	r.GET("/tags", tagHandler.List)
-	r.GET("/tags/:id", tagHandler.Get)
-	r.PUT("/tags/:id", writeLimiter, tagHandler.Update)
-	r.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
-	r.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
-	r.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
-	r.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
+	r := setupRouter(
+		noteHandler,
+		linkHandler,
+		graphHandler,
+		tagHandler,
+		achievementHandler,
+		authHandler,
+		userHandler,
+		backupHandler,
+		cfg,
+		db.DB,
+		redisClient,
+		writeLimiter,
+		jwtConfig,
+		apiKeyConfig,
+		skipAuthConfig,
+	)
 
 	// Create HTTP server
 	srv := &http.Server{
