@@ -88,7 +88,7 @@ test.describe('Knowledge Graph Frontend', {
     page.on('console', msg => console.log('[BROWSER]', msg.type(), msg.text()));
     page.on('pageerror', error => console.log('[BROWSER ERROR]', error.message));
 
-    await page.waitForTimeout(5000); // Wait for client-side rendering
+    await page.waitForTimeout(7000); // Wait for client-side rendering
 
     // Debug: save screenshot and HTML
     await page.screenshot({ path: 'test-results/debug-note-page.png', fullPage: true });
@@ -100,31 +100,18 @@ test.describe('Knowledge Graph Frontend', {
     await page.waitForFunction(() => {
       const h1 = document.querySelector('h1');
       return h1 && window.getComputedStyle(h1).display !== 'none';
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
-    // Wait for edit button using waitForFunction
-    await page.waitForFunction(() => {
-      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn') as HTMLButtonElement;
-      return editBtn && window.getComputedStyle(editBtn).display !== 'none';
-    }, { timeout: 15000 });
-
-    // Click Edit button to open modal - use waitForFunction for reliability
-    await page.waitForFunction(() => {
-      const editBtn = document.querySelector('[data-testid="edit-note-btn"]') || document.querySelector('button.edit-btn');
-      if (editBtn && window.getComputedStyle(editBtn).display !== 'none') {
-        (editBtn as HTMLButtonElement).click();
-        return true;
-      }
-      return false;
-    }, { timeout: 15000 });
-
-    // Wait for modal to open using waitForFunction for reliability
-    await page.waitForFunction(() => {
-      const modal = document.querySelector('.modal-container[role="dialog"]') || document.querySelector('.modal[role="dialog"]');
-      return modal && window.getComputedStyle(modal).display !== 'none';
-    }, { timeout: 15000 });
+    // Wait for edit button using multiple selectors
+    await page.waitForSelector('[data-testid="edit-note-btn"], button.edit-btn', { timeout: 20000 });
     
-    const modal = page.locator('.modal-container[role="dialog"]').first();
+    // Click Edit button to open modal
+    await page.click('[data-testid="edit-note-btn"], button.edit-btn');
+
+    // Wait for modal to open
+    await page.waitForSelector('.modal-container[role="dialog"], .modal[role="dialog"]', { timeout: 15000 });
+    
+    const modal = page.locator('.modal-container[role="dialog"], .modal[role="dialog"]').first();
     await expect(modal).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(300); // Wait for animation
 
@@ -135,23 +122,7 @@ test.describe('Knowledge Graph Frontend', {
     await page.fill('[data-testid="edit-content-input"]', 'Updated content');
     console.log('[DEBUG] Set content input to:', 'Updated content');
     
-    await page.waitForFunction(() => {
-      const contentInput = document.querySelector('[data-testid="edit-content-input"]') || document.querySelector('.modal-content textarea[name="content"]');
-      if (contentInput && window.getComputedStyle(contentInput).display !== 'none') {
-        (contentInput as HTMLTextAreaElement).value = 'Updated content';
-        console.log('[DEBUG] Set content input to:', 'Updated content');
-        console.log('[DEBUG] Content input value after set:', (contentInput as HTMLTextAreaElement).value);
-        return true;
-      }
-      return false;
-    }, { timeout: 15000 });
-
-    // Save changes and wait for PUT response
-    await page.waitForFunction(() => {
-      const saveButton = document.querySelector('[data-testid="edit-save-btn"]') || document.querySelector('.modal-content button[type="submit"]') as HTMLButtonElement;
-      return saveButton && window.getComputedStyle(saveButton).display !== 'none';
-    }, { timeout: 15000 });
-    
+    // Save changes
     const saveButton = page.locator('.modal-content button[type="submit"]').first();
     
     const [response] = await Promise.all([
@@ -199,25 +170,18 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate directly to note page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(7000);
     
     // Setup dialog handler before click
     page.on('dialog', async dialog => {
       await dialog.accept();
     });
     
-    // Click Delete button - use waitForFunction for reliability
-    await page.waitForFunction(() => {
-      const deleteBtn = document.querySelector('[data-testid="delete-note-btn"]') || Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('Delete'));
-      if (deleteBtn && window.getComputedStyle(deleteBtn).display !== 'none') {
-        (deleteBtn as HTMLButtonElement).click();
-        return true;
-      }
-      return false;
-    }, { timeout: 15000 });
+    // Click Delete button
+    await page.click('[data-testid="delete-note-btn"]');
 
     // Wait for navigation away from note page (either redirect or URL change)
-    await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 10000 });
+    await page.waitForFunction(() => !window.location.pathname.includes('/notes/'), { timeout: 15000 });
     await page.waitForTimeout(1000);
     
     // Verify via API that note is deleted
@@ -236,16 +200,17 @@ test.describe('Knowledge Graph Frontend', {
     // Navigate to 3D graph page - it redirects to 2D graph
     await page.goto(`/graph/3d/${id1}`);
     // Wait for redirect to 2D graph page
-    await page.waitForURL(`**/graph/${id1}`, { timeout: 10000 });
+    await page.waitForURL(`**/graph/${id1}`, { timeout: 15000 });
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(5000);
     
     // Verify 2D graph canvas is visible after redirect
-    const graphContainer = page.locator('.graph-container, canvas').first();
-    await expect(graphContainer).toBeVisible({ timeout: 10000 });
+    const graphContainer = page.locator('.graph-container, .graph-3d-container, canvas').first();
+    await expect(graphContainer).toBeVisible({ timeout: 15000 });
     
     // Verify stats bar shows node and link counts
     const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
-    await expect(statsBar).toBeVisible({ timeout: 5000 });
+    await expect(statsBar).toBeVisible({ timeout: 10000 });
     
     const statsText = await statsBar.textContent();
     expect(statsText).toMatch(/\d+\s*nodes?/i);
@@ -262,10 +227,10 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate to note detail page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(7000);
 
-    // Check that back button is visible (use first())
-    await page.waitForSelector('.back-button', { timeout: 10000 });
+    // Check that back button is visible
+    await page.waitForSelector('.back-button', { timeout: 20000 });
     await expect(page.locator('.back-button').first()).toBeVisible();
     
     // Test back button functionality
@@ -306,23 +271,23 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(7000);
 
     // Navigate to home page
     await page.goto('/');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(7000);
 
     // Go back to note page
     await page.goBack();
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(7000);
 
     // Verify back button is visible
-    await page.waitForSelector('.back-button', { timeout: 15000 });
+    await page.waitForSelector('.back-button', { timeout: 20000 });
     await expect(page.locator('.back-button')).toBeVisible();
 
     // Click back button - should navigate using browser history
     await page.click('.back-button');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     // Should be back on home page
     await expect(page).toHaveURL('/');

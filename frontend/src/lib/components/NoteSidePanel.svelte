@@ -49,7 +49,7 @@
 
 <div class="side-panel" class:open={true}>
   <div class="panel-header">
-    <button class="close-btn" onclick={onClose} aria-label="Close panel">
+    <button class="close-btn" onclick={onClose} aria-label="Close panel" data-testid="sidepanel-close-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"/>
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -75,6 +75,7 @@
           class="action-btn"
           onclick={() => onEdit?.(nodeId)}
           aria-label="Edit note"
+          data-testid="sidepanel-edit-btn"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -85,6 +86,7 @@
           class="action-btn delete"
           onclick={() => onDelete?.(nodeId)}
           aria-label="Delete note"
+          data-testid="sidepanel-delete-btn"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>

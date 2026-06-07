@@ -38,7 +38,7 @@ export default defineConfig({
       name: 'setup',
       testMatch: '**/setup/*.setup.ts',
     },
-    // Default project: all tests EXCEPT auth-functional (auth_skipped=true)
+    // Default project: all tests (auth-functional will auto-skip if backend has SKIP_AUTH)
     {
       name: 'chromium',
       use: { 
@@ -48,8 +48,7 @@ export default defineConfig({
           args: ['--disable-web-security'],
         },
       },
-      // Exclude auth-functional tests — they require real authentication
-      grepInvert: /auth-functional/,
+      // Note: auth-functional tests will auto-skip if backend has SKIP_AUTH enabled
       // Skip 3D tests in CI (WebGL not available in headless)
       grepInvert: /@3d/,
       dependencies: ['setup'],
