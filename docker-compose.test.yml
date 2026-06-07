@@ -62,6 +62,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
       REDIS_URL: redis://redis:6379/0
+      REDIS_FLUSH_ON_STARTUP: "true"
       JWT_SECRET: test-secret-key-for-ci-cd-only
       SKIP_AUTH: "true"
       LOG_LEVEL: debug
