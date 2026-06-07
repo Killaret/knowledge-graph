@@ -2,7 +2,7 @@ package graph
 
 import "github.com/google/uuid"
 
-// NormalizeWeights — нормализация весов по максимальному значению
+// NormalizeWeights — normalize weights by maximum value
 func NormalizeWeights(weights map[uuid.UUID]weightedPath) map[uuid.UUID]weightedPath {
 	maxW := 0.0
 	for _, wp := range weights {
@@ -26,7 +26,7 @@ func NormalizeWeights(weights map[uuid.UUID]weightedPath) map[uuid.UUID]weighted
 	return normalized
 }
 
-// NormalizeMap — нормализация простой мапы float64
+// NormalizeMap — normalize a simple float64 map
 func NormalizeMap(scores map[uuid.UUID]float64) map[uuid.UUID]float64 {
 	maxScore := 0.0
 	for _, score := range scores {

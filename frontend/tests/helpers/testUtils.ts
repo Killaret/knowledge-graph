@@ -1,31 +1,42 @@
 import type { Page, APIRequestContext } from '@playwright/test';
+import {
+  createNote as createNoteAdvanced,
+  createLink as createLinkAdvanced,
+  deleteNote as deleteNoteAdvanced,
+  isBackendAvailable as isBackendAvailableAdvanced,
+  getBackendUrl,
+} from './testData';
 
 /**
- * Get backend URL from environment or use default
+ * Get frontend URL from environment or use default
  */
-export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 'http://localhost:8080';
+export function getFrontendUrl(): string {
+  return process.env.FRONTEND_URL || 'http://localhost:5173';
 }
 
 /**
- * Create a note via API for testing
+ * Re-export from testData.ts for backward compatibility
+ */
+export { getBackendUrl };
+
+/**
+ * Re-export createNote from testData.ts with simplified signature
  */
 export async function createNote(
   request: APIRequestContext,
-  data: { title: string; content?: string; type?: string }
+  data: { title: string; content?: string; type?: string; email?: string }
 ): Promise<{ data: { id: string; title: string } }> {
-  const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
-    data: {
-      title: data.title,
-      content: data.content || 'Test content',
-      type: data.type || 'star'
-    }
+  const result = await createNoteAdvanced(request, {
+    title: data.title,
+    content: data.content,
+    type: data.type,
+    metadata: data.email ? { email: data.email } : undefined
   });
-  return await response.json() as { data: { id: string; title: string } };
+  return { data: { id: result.data.id, title: result.data.title } };
 }
 
 /**
- * Create a link between notes via API for testing
+ * Re-export createLink from testData.ts
  */
 export async function createLink(
   request: APIRequestContext,
@@ -36,16 +47,24 @@ export async function createLink(
     weight?: number;
   }
 ): Promise<void> {
-  const url = `${getBackendUrl()}/api/v1/links`;
-  await request.post(url, {
-    data: {
-      source_note_id: data.source_note_id,
-      target_note_id: data.target_note_id,
-      link_type: data.link_type || 'related',
-      weight: data.weight ?? 0.5
-    }
-  });
+  await createLinkAdvanced(
+    request,
+    data.source_note_id,
+    data.target_note_id,
+    data.weight ?? 0.5,
+    data.link_type ?? 'related'
+  );
 }
+
+/**
+ * Re-export deleteNote from testData.ts
+ */
+export { deleteNote as deleteNoteSimple } from './testData';
+
+/**
+ * Re-export isBackendAvailable from testData.ts
+ */
+export { isBackendAvailable } from './testData';
 
 /**
  * Click an element using JavaScript to bypass viewport checks.
@@ -132,7 +151,7 @@ export async function clickSearchButton(page: Page): Promise<void> {
 export async function setupSkipAuth(page: Page): Promise<void> {
   // Navigate to login page with skip_auth query param (for production)
   // This will set localStorage and persist across navigations
-  await page.goto('/auth/login?skip_auth=true');
+  await page.goto('/auth/login?skip_auth=true', { timeout: 60000 });
   await page.waitForTimeout(500);
   
   // Also set it directly for dev server

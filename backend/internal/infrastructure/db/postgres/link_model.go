@@ -7,7 +7,7 @@ import (
 	"gorm.io/datatypes"
 )
 
-// LinkModel — связь между заметками с привязкой к создателю
+// LinkModel — link between notes with creator binding
 type LinkModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:source_note_id"`

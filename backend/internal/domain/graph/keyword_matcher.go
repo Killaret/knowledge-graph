@@ -6,16 +6,16 @@ import (
 	"github.com/google/uuid"
 )
 
-// KeywordMatcher — интерфейс для keyword-based similarity
-// Будет реализован через JaccardSimilarity на основе NoteKeywordRepository
+// KeywordMatcher — interface for keyword-based similarity
+// Will be implemented via JaccardSimilarity based on NoteKeywordRepository
 type KeywordMatcher interface {
-	// Match возвращает similarity scores между sourceID и candidateIDs
+	// Match returns similarity scores between sourceID and candidateIDs
 	// based on keyword overlap (Jaccard index)
 	Match(ctx context.Context, sourceID uuid.UUID, candidateIDs []uuid.UUID) (map[uuid.UUID]float64, error)
 }
 
-// NoOpKeywordMatcher — заглушка, возвращающая пустую мапу
-// Используется когда keyword-компонент отключен (gamma = 0)
+// NoOpKeywordMatcher — stub that returns an empty map
+// Used when the keyword component is disabled (gamma = 0)
 type NoOpKeywordMatcher struct{}
 
 // Match implements KeywordMatcher

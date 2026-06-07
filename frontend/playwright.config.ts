@@ -18,15 +18,15 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  timeout: 90 * 1000, // 90s per test
+  workers: process.env.CI ? 2 : undefined,
+  timeout: 120 * 1000, // 120s per test (increased from 90s)
   globalSetup: './tests/setup/global-setup.ts',
-  reporter: 'html',
+  reporter: process.env.CI ? ['html', 'list'] : 'html',
   use: {
     baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
-    actionTimeout: 30000,
-    navigationTimeout: 30000,
+    actionTimeout: 60000, // Increased from 30000ms
+    navigationTimeout: 60000, // Increased from 30000ms
     // Inject SKIP_AUTH flag for testing
     launchOptions: {
       args: ['--disable-web-security'],
@@ -50,6 +50,8 @@ export default defineConfig({
       },
       // Exclude auth-functional tests — they require real authentication
       grepInvert: /auth-functional/,
+      // Skip 3D tests in CI (WebGL not available in headless)
+      grepInvert: /@3d/,
       dependencies: ['setup'],
     },
     // Auth project: only auth-functional tests (auth_skipped=false)

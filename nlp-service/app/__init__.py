@@ -1,5 +1,6 @@
 import nltk
 import yake
+import os
 from sentence_transformers import SentenceTransformer
 import logging
 
@@ -17,9 +18,28 @@ except LookupError:
 
 stop_words = set(nltk.corpus.stopwords.words('russian') + nltk.corpus.stopwords.words('english'))
 
-# Модель эмбеддингов
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-logger.info("Embedding model loaded")
+# Модель эмбеддингов с обработкой ошибок
+embedding_model = None
+try:
+    # Try loading with cache folder first
+    cache_dir = os.environ.get('SENTENCE_TRANSFORMERS_HOME', '/root/.cache/torch/sentence_transformers')
+    model_name = 'all-MiniLM-L6-v2'
+    
+    # Disable ETag check for mirror compatibility
+    os.environ['HF_HUB_DISABLE_SYMLINKS'] = '1'
+    os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
+    
+    embedding_model = SentenceTransformer(model_name, cache_folder=cache_dir)
+    logger.info("Embedding model loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load embedding model: {e}")
+    # Try without cache folder as fallback
+    try:
+        embedding_model = SentenceTransformer(model_name)
+        logger.info("Embedding model loaded without cache folder")
+    except Exception as e2:
+        logger.error(f"Failed to load embedding model without cache: {e2}")
+        raise
 
 # Экстрактор ключевых слов YAKE
 kw_extractor = yake.KeywordExtractor(lan="ru", top=20, stopwords=stop_words)

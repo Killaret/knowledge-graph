@@ -7,7 +7,7 @@ import (
 	"gorm.io/datatypes"
 )
 
-// NoteModel — модель заметки с привязкой к создателю
+// NoteModel — note model with creator binding
 type NoteModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title        string         `gorm:"not null"`

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// ShareLinkModel — публичные ссылки для шаринга заметок
+// ShareLinkModel — public links for sharing notes
 type ShareLinkModel struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	NoteID         uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -14,7 +14,7 @@ type ShareLinkModel struct {
 	SharedByUserID uuid.UUID `gorm:"type:uuid;not null;index"`
 	SharedBy       UserModel `gorm:"foreignKey:SharedByUserID"`
 	Token          string    `gorm:"uniqueIndex;not null;index"`
-	Permission     string    `gorm:"not null;default:'read'"` // 'read' или 'write'
+	Permission     string    `gorm:"not null;default:'read'"` // 'read' or 'write'
 	CreatedAt      time.Time
 	ExpiresAt      *time.Time `gorm:"index"`
 	MaxUses        *int

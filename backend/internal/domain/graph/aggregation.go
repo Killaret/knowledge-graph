@@ -1,6 +1,6 @@
 package graph
 
-// AggregateMax — стратегия максимального веса пути
+// AggregateMax — maximum path weight strategy
 func AggregateMax(currentWeight, newWeight float64) float64 {
 	if newWeight > currentWeight {
 		return newWeight
@@ -8,15 +8,15 @@ func AggregateMax(currentWeight, newWeight float64) float64 {
 	return currentWeight
 }
 
-// AggregateSum — стратегия суммирования весов
+// AggregateSum — weight summation strategy
 func AggregateSum(currentWeight, newWeight float64) float64 {
 	return currentWeight + newWeight
 }
 
-// AggregateWeighted — комбинированный скор из трёх компонентов
-// alpha — вес графового компонента
-// beta — вес семантического компонента  
-// gamma — вес keyword компонента
+// AggregateWeighted — combined score from three components
+// alpha — graph component weight
+// beta — semantic component weight
+// gamma — keyword component weight
 func AggregateWeighted(graphWeight, semanticWeight, keywordWeight, alpha, beta, gamma float64) (total float64, components SuggestionComponents) {
 	components = SuggestionComponents{
 		Graph:    graphWeight,
@@ -24,12 +24,12 @@ func AggregateWeighted(graphWeight, semanticWeight, keywordWeight, alpha, beta, 
 		Keyword:  keywordWeight,
 	}
 
-	// Нормализация весов (если сумма > 0)
+	// Normalize weights (if sum > 0)
 	totalWeight := alpha + beta + gamma
 	if totalWeight > 0 {
 		total = (alpha*graphWeight + beta*semanticWeight + gamma*keywordWeight) / totalWeight
 	} else {
-		total = graphWeight // fallback на графовый скор
+		total = graphWeight // fallback to graph score
 	}
 
 	return total, components

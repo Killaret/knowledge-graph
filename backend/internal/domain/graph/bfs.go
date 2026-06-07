@@ -6,20 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// weightedPath — результат BFS с весом и глубиной
+// weightedPath — BFS result with weight and depth
 type weightedPath struct {
 	weight float64
 	depth  int
 }
 
-// bfsItem — элемент очереди BFS
+// bfsItem — BFS queue item
 type bfsItem struct {
 	nodeID uuid.UUID
 	weight float64
 	depth  int
 }
 
-// runBFS — алгоритм обхода в ширину для графовых рекомендаций
+// runBFS — breadth-first search algorithm for graph recommendations
 func runBFS(ctx context.Context, startID uuid.UUID, loader NeighborLoader, depth int, decay float64, aggregation string) map[uuid.UUID]weightedPath {
 	if depth < 1 {
 		depth = 1
@@ -32,7 +32,7 @@ func runBFS(ctx context.Context, startID uuid.UUID, loader NeighborLoader, depth
 	queue := []bfsItem{{nodeID: startID, weight: 1.0, depth: 0}}
 	bestWeight[startID] = weightedPath{weight: 1.0, depth: 0}
 
-	// Для sum-агрегации отслеживаем visited, чтобы не обрабатывать узлы повторно
+	// For sum-aggregation, track visited to avoid processing nodes repeatedly
 	var visited map[uuid.UUID]bool
 	if aggregation == "sum" {
 		visited = make(map[uuid.UUID]bool)
@@ -43,7 +43,7 @@ func runBFS(ctx context.Context, startID uuid.UUID, loader NeighborLoader, depth
 		current := queue[0]
 		queue = queue[1:]
 
-		// Для max-агрегации: пропускаем, если нашли лучший путь
+		// For max-aggregation: skip if we found a better path
 		if aggregation == "max" {
 			if current.weight < bestWeight[current.nodeID].weight {
 				continue

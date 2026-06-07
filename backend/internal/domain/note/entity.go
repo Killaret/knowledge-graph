@@ -53,7 +53,7 @@ func NewNoteWithCreator(title Title, content Content, noteType string, metadata 
 	}
 }
 
-// ReconstructNote восстанавливает заметку из сохранённых данных (используется репозиторием)
+// ReconstructNote reconstructs a note from saved data (used by repository)
 func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time) *Note {
 	if noteType == "" {
 		noteType = "star"
@@ -70,7 +70,7 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 	}
 }
 
-// ReconstructNoteWithCreator восстанавливает заметку с creator ID
+// ReconstructNoteWithCreator reconstructs a note with creator ID
 func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time) *Note {
 	if noteType == "" {
 		noteType = "star"
@@ -87,7 +87,7 @@ func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, note
 	}
 }
 
-// Геттеры
+// Getters
 func (n *Note) ID() uuid.UUID {
 	return n.id
 }
@@ -132,7 +132,7 @@ func (n *Note) UpdatedAt() time.Time {
 	return n.updatedAt
 }
 
-// Методы изменения с валидацией
+// Mutation methods with validation
 func (n *Note) UpdateTitle(newTitle Title) error {
 	if newTitle.String() == "" {
 		return fmt.Errorf("cannot update with empty title")
