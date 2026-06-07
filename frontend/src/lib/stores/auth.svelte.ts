@@ -26,6 +26,14 @@ export function isLoading(): boolean { return authState.isLoading; }
 export function error(): string | null { return authState.error; }
 export function apiKey(): string | null { return authState.apiKey; }
 
+/**
+ * Check if SKIP_AUTH mode is enabled
+ */
+export function skipAuthMode(): boolean {
+  if (!browser) return false;
+  return localStorage.getItem('__SKIP_AUTH__') === 'true';
+}
+
 // LocalStorage keys
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -41,6 +49,14 @@ export async function initAuth(): Promise<void> {
   }
 
   try {
+    // Check for SKIP_AUTH mode from query parameter on first load
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('skip_auth') === 'true') {
+      // Persist SKIP_AUTH to localStorage
+      localStorage.setItem('__SKIP_AUTH__', 'true');
+      console.log('[Auth] SKIP_AUTH mode enabled via query param');
+    }
+    
     // Try to load tokens from localStorage
     const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
     const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
