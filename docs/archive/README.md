@@ -21,7 +21,7 @@
 | `API_VERIFICATION_REPORT_2026-04-13.md` | 13 апреля | Проблемы из отчёта исправлены в коде |
 | `FINAL_TEST_REPORT_2026-04-13.md` | 13 апреля | Устарел (9/12 → 48 тестов) |
 | `TEST_FIXES_REPORT_2026-04-13.md` | 13 апреля | Исправления уже в main branch |
-| `IMPLEMENTATION_SUMMARY_2026-04-13.md` | 13 апреля | Дублирует CHANGELOG.md |
+| `IMPLEMENTATION_SUMMARY.md` | 13 апреля | Дублирует `../CHANGELOG_EN.md` |
 
 **Актуальная документация по тестированию:**
 - `../TESTING.md` — Полное руководство по тестированию
