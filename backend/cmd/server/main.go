@@ -93,6 +93,20 @@ func main() {
 
 	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, MaxConnAge=5m")
 
+	// Redis flush on startup if configured
+	if cfg.RedisFlushOnStartup {
+		keysBefore, _ := redisClient.DBSize(ctx).Result()
+		log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
+		if err := redisClient.FlushDB(ctx).Err(); err != nil {
+			log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
+		} else {
+			keysAfter, _ := redisClient.DBSize(ctx).Result()
+			log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
+		}
+	} else {
+		log.Printf("[Cache] Redis flush on startup is disabled")
+	}
+
 	// Graceful shutdown
 	defer func() {
 		log.Println("Server shutdown, closing database connection...")
