@@ -55,22 +55,21 @@ func main() {
 		cfg.RecommendationDepth, cfg.RecommendationDecay,
 		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit, cfg.GraphLoadDepth)
 
-	db.Init()
-	if db.DB == nil {
+	database, err := db.Connect(cfg.DatabaseURL)
+	if err != nil {
 		retryDelay := cfg.DatabaseRetryDelaySeconds
-		log.Printf("CRITICAL: database connection is nil, retrying in %ds...", retryDelay)
+		log.Printf("CRITICAL: database connection failed: %v, retrying in %ds...", err, retryDelay)
 		time.Sleep(time.Duration(retryDelay) * time.Second)
-		db.Init()
-		if db.DB == nil {
-			log.Printf("FATAL: database connection failed after retry")
-			os.Exit(1)
+		database, err = db.Connect(cfg.DatabaseURL)
+		if err != nil {
+			log.Fatalf("FATAL: database connection failed after retry: %v", err)
 		}
 	}
 	log.Println("Connected to PostgreSQL")
 
 	// Apply migrations
 	migrationsDir := defaultMigrationsDir
-	if err := postgres.RunMigrations(db.DB, migrationsDir); err != nil {
+	if err := postgres.RunMigrations(database, migrationsDir); err != nil {
 		log.Printf("ERROR: Failed to run migrations: %v", err)
 		log.Printf("WARNING: Continuing without migrations - database may be inconsistent")
 	} else {
@@ -97,17 +96,17 @@ func main() {
 	// Graceful shutdown
 	defer func() {
 		log.Println("Server shutdown, closing database connection...")
-		if db.DB != nil {
-			sqlDB, _ := db.DB.DB()
+		if database != nil {
+			sqlDB, _ := database.DB()
 			if sqlDB != nil {
 				sqlDB.Close()
 			}
 		}
 	}()
 
-	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
-	linkRepo := postgres.NewLinkRepository(db.DB)
-	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
+	noteRepo := postgres.NewNoteRepository(database, redisClient)
+	linkRepo := postgres.NewLinkRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database)
 
 	// Yandex.Disk backup service
 	var yandexBackupService *cloud.YandexBackupService
@@ -153,14 +152,14 @@ func main() {
 	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
 
 	// Recommendation repository and affected notes service
-	recRepo := postgres.NewRecommendationRepository(db.DB)
+	recRepo := postgres.NewRecommendationRepository(database)
 	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
 	// Achievement service
-	achievementRepo := postgres.NewAchievementRepository(db.DB)
-	achievementEngine := achievement.NewEngine(db.DB)
-	userSettingsRepo := postgres.NewUserSettingsRepository(db.DB)
+	achievementRepo := postgres.NewAchievementRepository(database)
+	achievementEngine := achievement.NewEngine(database)
+	userSettingsRepo := postgres.NewUserSettingsRepository(database)
 	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
 	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)
 	achievementHandler := achievementhandler.NewHandler(achievementService)
@@ -180,7 +179,7 @@ func main() {
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
-	tagRepo := postgres.NewTagRepository(db.DB)
+	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
 	// Backup handler
 	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
@@ -188,7 +187,7 @@ func main() {
 	// Auth handler
 	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, time.Hour*24, time.Hour*24*7) // 24h access, 7d refresh
 	tokenStore := authpkg.NewRedisTokenStore(redisClient)
-	authHandler := authhandler.NewHandler(db.DB, jwtManager, tokenStore, cfg)
+	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
 
 	// User handler
 	passwordConfig := &auth.PasswordConfig{
@@ -198,12 +197,12 @@ func main() {
 		KeyLen:  32,
 	}
 	passwordPolicy := auth.DefaultPasswordPolicy()
-	userHandler := userhandler.NewHandler(db.DB, passwordConfig, passwordPolicy)
+	userHandler := userhandler.NewHandler(database, passwordConfig, passwordPolicy)
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
 	jwtConfig := newJWTConfig(jwtManager, tokenStore)
-	apiKeyConfig := newAPIKeyConfig(db.DB, cfg.APIKeyEnabled, cfg.StaticAPIKey)
+	apiKeyConfig := newAPIKeyConfig(database, cfg.APIKeyEnabled, cfg.StaticAPIKey)
 	skipAuthConfig := &middleware.SkipAuthConfig{Enabled: cfg.SkipAuth}
 
 	r := setupRouter(
@@ -216,7 +215,7 @@ func main() {
 		userHandler,
 		backupHandler,
 		cfg,
-		db.DB,
+		database,
 		redisClient,
 		writeLimiter,
 		jwtConfig,
@@ -241,7 +240,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				stats := db.GetPoolStats()
+				stats := db.GetPoolStats(database)
 				log.Printf("[Connection Pool] Stats: MaxOpen=%v, Open=%v, InUse=%v, Idle=%v, WaitCount=%v, WaitDuration=%v",
 					stats["max_open_connections"],
 					stats["open_connections"],

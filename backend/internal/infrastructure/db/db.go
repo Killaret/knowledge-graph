@@ -1,32 +1,28 @@
 package db
 
 import (
-	"log"
-	"os"
+	"fmt"
 	"time"
 
 	pgdriver "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
-
-func Init() {
-	dsn := os.Getenv("DATABASE_URL")
+// Connect creates a PostgreSQL connection and returns *gorm.DB.
+// DSN is passed explicitly, not read from env.
+func Connect(dsn string) (*gorm.DB, error) {
 	if dsn == "" {
-		log.Fatal("DATABASE_URL is not set")
+		return nil, fmt.Errorf("database DSN is empty")
 	}
-
-	var err error
-	DB, err = gorm.Open(pgdriver.Open(dsn), &gorm.Config{})
+	database, err := gorm.Open(pgdriver.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect to database:", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Configure connection pool
-	sqlDB, err := DB.DB()
+	sqlDB, err := database.DB()
 	if err != nil {
-		log.Fatal("failed to get database connection:", err)
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
 	// Connection pool settings for main backend
@@ -35,14 +31,12 @@ func Init() {
 	sqlDB.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection
 	sqlDB.SetConnMaxIdleTime(1 * time.Minute) // Maximum idle time of a connection
 
-	log.Println("Connected to PostgreSQL with connection pool")
-	log.Println("Pool settings: MaxOpen=25, MaxIdle=5, MaxLifetime=5m, MaxIdleTime=1m")
-	log.Println("Note: Database migrations should be applied via SQL files in migrations/ directory")
+	return database, nil
 }
 
 // GetPoolStats returns connection pool statistics for monitoring
-func GetPoolStats() map[string]interface{} {
-	sqlDB, err := DB.DB()
+func GetPoolStats(database *gorm.DB) map[string]interface{} {
+	sqlDB, err := database.DB()
 	if err != nil {
 		return map[string]interface{}{"error": err.Error()}
 	}

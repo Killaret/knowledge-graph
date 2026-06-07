@@ -61,7 +61,6 @@
       - "5000:5000"
     environment:
       - MODEL_NAME=all-MiniLM-L6-V2
-      - HF_ENDPOINT=https://hf-mirror.com
       - SENTENCE_TRANSFORMERS_HOME=/root/.cache/torch/sentence_transformers
     volumes:
       - ./huggingface_cache:/root/.cache/torch/sentence_transformers
@@ -87,6 +86,7 @@
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-kb_user}:${POSTGRES_PASSWORD:-kb_password}@postgres:5432/${POSTGRES_DB:-knowledge_base}?sslmode=disable}
       REDIS_URL: ${REDIS_URL:-redis:6379}
+      REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp:5000}
       SKIP_AUTH: ${SKIP_AUTH:-false}  # Set to 'true' for testing without auth
     depends_on:
@@ -149,6 +149,7 @@
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-kb_user}:${POSTGRES_PASSWORD:-kb_password}@postgres:5432/${POSTGRES_DB:-knowledge_base}?sslmode=disable}
       REDIS_URL: ${REDIS_URL:-redis:6379}
+      REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp:5000}
     depends_on:
       postgres:

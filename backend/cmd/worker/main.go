@@ -32,9 +32,9 @@ func main() {
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД
-	db.Init()
-	if db.DB == nil {
-		log.Fatal("database connection is nil")
+	database, err := db.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
 	}
 	log.Println("Worker: Connected to PostgreSQL")
 
@@ -52,9 +52,9 @@ func main() {
 	}()
 
 	// Репозитории
-	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
-	keywordRepo := postgres.NewKeywordRepository(db.DB)
-	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
+	noteRepo := postgres.NewNoteRepository(database, redisClient)
+	keywordRepo := postgres.NewKeywordRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
 	nlpURL := cfg.NLPServiceURL
@@ -67,7 +67,7 @@ func main() {
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient)
 
 	// Graph traversal service for recommendations
-	linkRepo := postgres.NewLinkRepository(db.DB)
+	linkRepo := postgres.NewLinkRepository(database)
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
 
 	// Create keyword similarity strategy from config
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	// Refresh service for background recommendation calculation
-	refreshSvc := recommendation.NewRefreshService(db.DB, redisClient, traversalSvc, cfg.RecommendationTopN)
+	refreshSvc := recommendation.NewRefreshService(database, redisClient, traversalSvc, cfg.RecommendationTopN)
 
 	// Asynq сервер с конфигурацией
 	srv := asynq.NewServer(

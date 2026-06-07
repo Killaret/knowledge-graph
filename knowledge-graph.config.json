@@ -72,6 +72,9 @@
       "queue_default": 1,
       "queue_max_len": 10000
     },
+    "redis": {
+      "flush_on_startup": false
+    },
     "auth": {
       "jwt_secret": "change-me-in-production",
       "jwt_access_ttl_seconds": 900,

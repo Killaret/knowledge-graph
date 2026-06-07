@@ -74,6 +74,9 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Redis struct {
+			FlushOnStartup bool `json:"flush_on_startup"`
+		} `json:"redis"`
 		Auth struct {
 			JWTSecret                    string `json:"jwt_secret"`
 			JWTAccessTTLSeconds          int    `json:"jwt_access_ttl_seconds"`
@@ -138,7 +141,8 @@ type Config struct {
 	MigrationsFailOnError     bool
 
 	// Redis
-	RedisURL string
+	RedisURL            string
+	RedisFlushOnStartup bool
 
 	// NLP
 	NLPServiceURL string
@@ -370,8 +374,9 @@ func Load() (*Config, error) {
 		MigrationsFailOnError:     getBoolEnv("MIGRATIONS_FAIL_ON_ERROR", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Database.MigrationsFailOnError }, false)),
 
 		// Redis & NLP
-		RedisURL:      getEnv("REDIS_URL", "localhost:6379"),
-		NLPServiceURL: getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
+		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, []string{"russian", "simple"}),

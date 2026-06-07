@@ -33,14 +33,14 @@ func main() {
 		cfg.RedisURL, cfg.RecommendationTopN, cfg.RecommendationTaskDelaySeconds)
 
 	// Initialize database
-	db.Init()
-	if db.DB == nil {
-		log.Fatal("Database connection failed")
+	database, err := db.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
 	}
 	log.Println("Database connected successfully")
 
 	// Create repositories
-	noteRepo := postgres.NewNoteRepository(db.DB, nil)
+	noteRepo := postgres.NewNoteRepository(database, nil)
 	ctx := context.Background()
 
 	// Fetch all notes

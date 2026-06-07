@@ -24,12 +24,18 @@ func TestConnectionLeak(t *testing.T) {
 	}
 
 	// Initialize database connection
-	Init()
-	if DB == nil {
-		t.Fatal("Database connection is nil")
+	database, err := Connect(dsn)
+	if err != nil {
+		t.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer func() {
+		sqlDB, _ := database.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}()
 
-	sqlDB, err := DB.DB()
+	sqlDB, err := database.DB()
 	if err != nil {
 		t.Fatalf("Failed to get sql.DB: %v", err)
 	}
@@ -126,12 +132,18 @@ func TestConnectionPoolStress(t *testing.T) {
 		t.Skip("Skipping connection pool stress test because DATABASE_URL is not set")
 	}
 
-	Init()
-	if DB == nil {
-		t.Fatal("Database connection is nil")
+	database, err := Connect(dsn)
+	if err != nil {
+		t.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer func() {
+		sqlDB, _ := database.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}()
 
-	sqlDB, err := DB.DB()
+	sqlDB, err := database.DB()
 	if err != nil {
 		t.Fatalf("Failed to get sql.DB: %v", err)
 	}
