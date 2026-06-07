@@ -25,7 +25,7 @@
 
 **Актуальная документация по тестированию:**
 - `../TESTING.md` — Полное руководство по тестированию
-- `../CHANGELOG.md` — История изменений с результатами тестов
+- `../CHANGELOG_EN.md` — История изменений с результатами тестов
 
 ---
 
@@ -33,15 +33,14 @@
 
 ```
 📁 docs/
-├── DEPLOYMENT.md          ← Развёртывание (Docker, K8s)
-├── TESTING.md             ← Тестирование (Go, Playwright)
-├── CONFIGURATION.md       ← Env переменные
-├── CHANGELOG.md           ← История v1.0.0
-├── API_ERRORS.md          ← Ошибки API
-├── FRONTEND_ARCHITECTURE.md ← Three.js, Progressive Rendering
-├── architecture/          ← C4 Model, ADR, UML
-├── COPILOT_DOCS/         ← AI-ассистенты
-└── archive/             ← 📦 Вы здесь
+├── DEPLOYMENT_EN.md           ← Развёртывание (Docker, K8s)
+├── TESTING.md                 ← Тестирование (Go, Playwright)
+├── CONFIGURATION_EN.md        ← Env переменные
+├── CHANGELOG_EN.md            ← История v1.0.0
+├── API_ERRORS.md              ← Ошибки API
+├── FRONTEND_ARCHITECTURE_EN.md ← Three.js, Progressive Rendering
+├── architecture/             ← C4 Model, ADR, UML
+└── archive/                  ← 📦 Вы здесь
 ```
 
 ---

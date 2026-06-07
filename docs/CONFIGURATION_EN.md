@@ -218,8 +218,10 @@ score = α × explicit_score + β × semantic_score
 - Higher = more accurate, but slower
 
 **RECOMMENDATION_FALLBACK_ENABLED** — Synchronous fallback toggle:
-- `false` (default): Use only precomputed recommendations from `note_recommendations` table. Fastest, but new notes may temporarily have no recommendations.
-- `true`: Enable synchronous pgvector and Redis cache fallbacks. Slower, but always returns results.
+- `true` (current default): Enable synchronous pgvector and Redis cache fallbacks. Slower, but always returns results.
+- `false`: Use only precomputed recommendations from `note_recommendations` table. Fastest, but new notes may temporarily have no recommendations.
+
+> The code default is `true` (`backend/internal/config/config.go`). Switching the default to `false` is planned in the roadmap (P0-02, "Pure Precomputed") but not yet shipped.
 
 When `false`:
 - API reads only from `note_recommendations` (single indexed SELECT)

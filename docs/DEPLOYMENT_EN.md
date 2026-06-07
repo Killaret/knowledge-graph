@@ -73,7 +73,7 @@ cp .env.example .env
 
 ```env
 # === Required ===
-DATABASE_URL=postgresql://kg_user:kg_password@postgres:5432/knowledge_graph?sslmode=disable
+DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
 
 # === Optional ===
 SERVER_PORT=8080
@@ -238,9 +238,9 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      - POSTGRES_USER=${DB_USER:-kg_user}
+      - POSTGRES_USER=${DB_USER:-kb_user}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME:-knowledge_graph}
+      - POSTGRES_DB=${DB_NAME:-knowledge_base}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
@@ -379,7 +379,7 @@ kubectl autoscale deployment backend --min=2 --max=10 --cpu-percent=70
 
 ```bash
 # 1. Backup database
-docker-compose exec postgres pg_dump -U kg_user knowledge_graph > backup_$(date +%Y%m%d).sql
+docker-compose exec postgres pg_dump -U kb_user knowledge_base > backup_$(date +%Y%m%d).sql
 
 # 2. Pull new images
 docker-compose pull
@@ -415,7 +415,7 @@ kubectl rollout undo deployment/backend
 
 ```bash
 # Restore from backup
-docker-compose exec postgres psql -U kg_user -d knowledge_graph < backup_20250415.sql
+docker-compose exec postgres psql -U kb_user -d knowledge_base < backup_20250415.sql
 
 # Rollback to previous version
 git checkout v1.0.0
