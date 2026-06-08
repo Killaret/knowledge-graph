@@ -1,49 +1,45 @@
-# AI Инструменты для Knowledge Graph
+# AI Tools for Knowledge Graph
 
-## Компактные правила (Рекомендуется)
+## Single Source of Truth
 
-Для работы с проектом используйте **[.koda/compact-rules.md](.koda/compact-rules.md)** - это сжатые практические правила, которые охватывают:
+**Read:** AI_RULES.md (116 lines)
 
-- Стек проекта (Go, Svelte 5, Python FastAPI, Docker)
-- Ключевые правила для AI (тесты, конвенции, безопасность)
-- Частые команды для backend/frontend/Docker
-- Структуру проекта
-- AI-специфичные подсказки
+This replaces the outdated 11000+ line .koda/ system.
 
-Этот файл более эффективен чем громоздкая система агентов .koda/ (11000+ строк) и содержит только практическую информацию без лишней "оркестрации".
-
-## Универсальный файл (для всех AI инструментов)
-
-**[.ai/PROJECT.md](.ai/PROJECT.md)** - универсальный файл инструкций для всех AI инструментов (Cursor, Copilot, Devin, Continue и т.д.). Содержит:
-- Quick Start с приоритетом на компактные правила
-- Навигацию по всем файлам правил
-- Как разные AI инструменты загружают правила
-- Быстрые команды
-- Краткое описание проекта
-
-## Интеграция с IDE
+## IDE Integration
 
 ### Cursor IDE
-- ✅ Автоматически загружает `.cursorrules` (обновлен для указания на compact-rules)
-- ✅ Автоматически загружает `.cursor/rules/*.md` (детальные правила)
-- ✅ Приоритет: compact-rules.md → детальные правила
+- Automatically loads `.cursorrules`
+- Points to AI_RULES.md
+- Works out of the box
 
 ### GitHub Copilot
-- ✅ Автоматически загружает `.github/copilot/copilot-instructions.md`
-- ✅ Обновлен для указания на compact-rules.md
+- Automatically loads `.github/copilot/copilot-instructions.md`
+- Points to AI_RULES.md
+- Works out of the box
 
-### Другие AI инструменты
-- Читайте `.ai/PROJECT.md` для навигации
-- Читайте `.koda/compact-rules.md` для практических правил
+### Other AI Tools
+- Read AI_RULES.md directly
+- No configuration needed
+- Single file for all tools
 
-## Система агентов .koda/
+## Quick Commands
 
-Полная документация по агентам находится в [docs/AGENTS.md](docs/AGENTS.md), но она в основном используется для справки. Для реальной работы используйте compact-rules.md.
+```bash
+# Backend
+cd backend && go test ./...
+cd backend && go build ./cmd/server
 
-## Отчет о работе
+# Frontend
+cd frontend && npm run test:unit
+cd frontend && npm run test
 
-Отчет о выполненных изменениях находится в [WORK_REPORT.md](WORK_REPORT.md).
+# Docker
+docker compose up -d
+docker compose -f docker-compose.personal.yml up -d
+```
 
-## Конфигурация редактора
+## Configuration
 
-`.editorconfig` в корне проекта обеспечивает единообразное форматирование кода для всех редакторов и AI инструментов.
+- `.editorconfig` - consistent code formatting
+- `.gitignore` - excludes .koda/, .devin/ (local configs)

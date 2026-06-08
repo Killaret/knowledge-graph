@@ -1,23 +1,11 @@
 # Knowledge Graph - Cursor AI Rules
 
-## Compact Rules (Primary)
-Используйте компактные правила проекта: **.koda/compact-rules.md**
-Это 116 строк практических правил вместо 11000+ строк документации.
+**Read:** AI_RULES.md (single source of truth)
 
-## Detailed Rules (Secondary)
-Полные правила по сферам находятся в:
-- .cursor/rules/knowledge-graph-backend-go.md
-- .cursor/rules/knowledge-graph-frontend-svelte.md
-- .cursor/rules/knowledge-graph-testing.md
-- .cursor/rules/knowledge-graph-integration.md
-- .cursor/rules/knowledge-graph-infrastructure.md
-- .cursor/rules/knowledge-graph-security.md
-- .cursor/rules/knowledge-graph-devops.md
-- .cursor/rules/knowledge-graph-orchestrator.md
-- .cursor/rules/knowledge-graph-performance.md
+This file contains all project rules in 116 lines instead of 11000+ lines of outdated documentation.
 
-## Quick Reference
+**Quick Reference:**
 - Backend: Go 1.23+, Clean Architecture, DDD
 - Frontend: Svelte 5, Vitest, Playwright
-- Infra: Docker, PostgreSQL, Redis
-- Tests: Coverage >60%, обязательно после изменений
+- Tests: Always run after changes, coverage >60%
+- Docker: Multi-stage builds, health checks, volumes

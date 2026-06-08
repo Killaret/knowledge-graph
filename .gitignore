@@ -43,6 +43,7 @@ go.work
 .vscode/
 .idea/
 .devin/
+.koda/
 *.swp
 *.swo
 *~
@@ -86,13 +87,13 @@ Thumbs.db
 *.arj
 *.rpm
 *.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+.Z
+.lz
+.lzo
+.tar.gz
+.tar.bz2
+.tar.xz
+.tar.zst
 # Test results
 frontend/test-results/
 test-results/
