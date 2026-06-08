@@ -1,10 +1,10 @@
+<script lang="ts">
   import '$lib/styles/global.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import QuickCaptureWidget from '$lib/components/QuickCaptureWidget.svelte';
   import ToastNotification from '$lib/components/ToastNotification.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { initAuth, isAuthenticated, isInitialized, isLoading } from '$lib/stores/auth.svelte.js';
   import { initAuth, isAuthenticated, isInitialized, isLoading, skipAuthMode } from '$lib/stores/auth.svelte.js';
   import { startPreload } from '$lib/services/PreloadService';
   import { achievementsStore } from '$lib/stores/achievements';
@@ -25,43 +25,15 @@
 
   // Toast notification state
   let toastMessage = $state('');
-  let toastType = $state<'success' | 'error' | 'info' | 'warning'>('info');
+  let toastType: 'success' | 'error' | 'info' | 'warning' = $state('info');
   let showToast = $state(false);
   let toastGalacticMode = $state(false);
 
-  // Initialize auth on mount
   // Check if we're in SKIP_AUTH mode
   let isSkipAuth = $state(false);
-  $effect(() => {
-    initAuth();
-
-    // After hydration from localStorage, preload only for guests (avoids duplicate fetch + wrong UX)
-    if (isInitialized() && !isAuthenticated()) {
-      startPreload();
-    }
-  });
-
-  // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
-    isSkipAuth = skipAuthMode();
-  });
 
   // Initialize auth on mount
   $effect(() => {
-    const currentPath = $page.url.pathname;
-    const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
-
-    if (
-      isInitialized() &&
-      !isLoading() &&
-      !isPublicRoute &&
-      !isAuthenticated()
-    ) {
-      const returnUrl = encodeURIComponent(currentPath);
-      goto(`/auth/login?redirect=${returnUrl}`);
-    }
-  });
-
-  // Achievement notifications
     initAuth();
 
     // After hydration from localStorage, preload only for guests (avoids duplicate fetch + wrong UX)
@@ -70,32 +42,15 @@
     }
   });
 
-  // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
+  // Update isSkipAuth when initialized
   $effect(() => {
-    if (!isAuthenticated()) return;
-
-    // Start polling for achievements when authenticated
-    achievementsStore.startPolling();
-
-    // Subscribe to new achievements
-    const unsubscribe = achievementsStore.subscribe(({ new: newAchievements }) => {
-      if (newAchievements.length > 0) {
-        // Show notification for each new achievement
-        newAchievements.forEach(achievement => {
-          showAchievementNotification(achievement);
-          // Mark as seen after showing
-          achievementsStore.dismiss(achievement.id);
-        });
-      }
-    });
-
-    return () => {
-      achievementsStore.stopPolling();
-      unsubscribe();
-    };
+    if (isInitialized()) {
+      isSkipAuth = skipAuthMode();
+    }
   });
 
-  // Update galactic mode for toasts
+  // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
+  $effect(() => {
     const currentPath = $page.url.pathname;
     const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
 
@@ -113,9 +68,6 @@
 
   // Achievement notifications
   $effect(() => {
-    let currentMode = 'standard';
-    mode.subscribe(m => currentMode = m)();
-    toastGalacticMode = currentMode === 'galactic';
     if (!isAuthenticated()) return;
 
     // Start polling for achievements when authenticated
@@ -168,7 +120,6 @@
   Пока скрыт (width: 0), но готов к активации
 -->
 <div class="app-shell">
-  <!-- SKIP_AUTH Indicator -->
   {#if isSkipAuth}
     <div class="skip-auth-badge" title="Auth is disabled for testing (SKIP_AUTH=true)">
       🔑 SKIP_AUTH
@@ -209,7 +160,6 @@
     color: var(--color-text-dark);
   }
 
-  /* SKIP_AUTH Badge */
   .skip-auth-badge {
     position: fixed;
     top: 10px;
@@ -226,13 +176,7 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.05);
-    }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
   }
 </style>
