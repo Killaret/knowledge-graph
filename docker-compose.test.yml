@@ -61,13 +61,13 @@ services:
       dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis:6379/0
       REDIS_FLUSH_ON_STARTUP: "true"
       JWT_SECRET: test-secret-key-for-ci-cd-only
       SKIP_AUTH: "true"
       LOG_LEVEL: debug
     ports:
-      - "18080:8080"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,7 +133,7 @@ services:
       dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/knowledge_graph_test?sslmode=disable
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis:6379/0
       SKIP_AUTH: "true"
     depends_on:
       postgres:
