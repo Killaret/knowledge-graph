@@ -228,7 +228,7 @@ export async function getNotes(): Promise<Note[]> {
   return response.notes;
 }
 
-export async function createNote(data: { title: string; content: string }): Promise<Note> {
+export async function createNote(data: { title: string; content?: string; type?: string; email?: string }): Promise<Note> {
   return api.post('v1/notes', { json: data }).json();
 }
 ```
@@ -356,13 +356,13 @@ server.use(
 | Настройка Playwright/Vitest | `knowledge-graph-frontend-svelte` / `knowledge-graph-testing` |
 | Backend Go разработка | `knowledge-graph-backend-go` |
 | Docker/инфраструктура | `knowledge-graph-backend-go` |
-- Обновление README | `knowledge-graph-docs-maintenance` |
-- Создание ADR | `knowledge-graph-docs-maintenance` |
-- Написание тестов | `knowledge-graph-testing` |
-- Отладка падающих тестов | `knowledge-graph-testing` |
-- Добавление API endpoint | `knowledge-graph-integration` |
-- Синхронизация DTO типов | `knowledge-graph-integration` |
-- Настройка CORS/auth middleware | `knowledge-graph-integration` |
+| Обновление README | `knowledge-graph-docs-maintenance` |
+| Создание ADR | `knowledge-graph-docs-maintenance` |
+| Написание тестов | `knowledge-graph-testing` |
+| Отладка падающих тестов | `knowledge-graph-testing` |
+| Добавление API endpoint | `knowledge-graph-integration` |
+| Синхронизация DTO типов | `knowledge-graph-integration` |
+| Настройка CORS/auth middleware | `knowledge-graph-integration` |
 
 ## Команды для быстрого запуска
 

@@ -30,11 +30,6 @@
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
   
-  // Debug: Track currentView changes
-  $effect(() => {
-    console.log('[+page.svelte] currentView changed to:', currentView);
-  });
-
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphDelta: GraphDelta | undefined = $state(undefined);

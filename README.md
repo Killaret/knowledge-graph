@@ -249,8 +249,25 @@ This project uses a comprehensive AI agent ecosystem:
 | **Performance** | Optimization | `performance-tools.md` |
 | **Security** | Security, auth | `security-tools.md` |
 
-### Primary AI Assistant
-**[Devin](https://cli.devin.ai/docs)** by Cognition — main AI development assistant with full tool access for autonomous coding, debugging, and CI/CD integration.
+
+---
+
+## 🤖 AI Agents
+
+This project uses a comprehensive AI agent ecosystem:
+
+### Available Agents (9)
+| Agent | Focus | Tools |
+|-------|-------|-------|
+| **Orchestrator** | Coordination | All tools |
+| **Backend Go** | Go API, DB | `backend-go-tools.md` |
+| **Frontend Svelte** | Svelte 5, UI | `frontend-tools.md` |
+| **Python NLP** | Python, ML | `python-nlp-tools.md` |
+| **Integration** | API contracts | `integration-tools.md` |
+| **Infrastructure** | Docker, K8s | `infrastructure-tools.md` |
+| **DevOps** | CI/CD, backup | `devops-tools.md` |
+| **Performance** | Optimization | `performance-tools.md` |
+| **Security** | Security, auth | `security-tools.md` |
 
 ---
 
@@ -441,7 +458,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - **Gin** for Go web framework
 - **PostgreSQL + pgvector** for vector similarity search
 - **sentence-transformers** for NLP embeddings
-- **Devin AI** for AI-assisted development
 
 ---
 
@@ -455,8 +471,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <div align="center">
-
-**Built with ❤️ using Devin AI**
 
 ![Star](https://img.shields.io/github/stars/Killaret/knowledge-graph?style=social)
 ![Fork](https://img.shields.io/github/forks/Killaret/knowledge-graph?style=social)

@@ -72,9 +72,6 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
   });
 
   test('should display list view when toggled from graph view', async ({ page }) => {
-    // SKIP: FloatingControls component not rendering - see issue with view toggle
-    test.skip(true, 'FloatingControls not rendering on home page - view toggle broken');
-    
     // Create a note first
     await clickCreateNoteButton(page);
     await page.fill('input[name="title"]', 'List View Test Note');
@@ -227,9 +224,6 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
   });
 
   test('should navigate to graph view for specific note', async ({ page, request }) => {
-    // SKIP: 3D graph routes redirect to main page - graph per note not implemented
-    test.skip(true, 'Individual note graph view not implemented - redirects to main graph');
-    
     // Create a note using helper
     const timestamp = Date.now();
     const note = await createNote(request, {

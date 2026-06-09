@@ -4,7 +4,7 @@
   import LoginForm from '$lib/components/LoginForm.svelte';
   import AuthCard from '$lib/components/AuthCard.svelte';
   import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
-  import { startPreload } from '$lib/services/PreloadService';
+  import { startPreload, hasPreloadedData } from '$lib/services/PreloadService';
   
   // Redirect if already authenticated
   $effect(() => {
