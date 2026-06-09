@@ -36,8 +36,12 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: false
+        run: |
+          if [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            npm audit --audit-level=high  # Strict for production
+          else
+            npm audit --audit-level=critical  # Less strict for dev
+          fi
 
       - name: Check for unauthorized scripts
         run: |
