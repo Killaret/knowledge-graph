@@ -21,7 +21,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   timeout: 120 * 1000, // 120s per test (increased from 90s)
   globalSetup: './tests/setup/global-setup.ts',
-  reporter: process.env.CI ? ['html', 'list'] : 'html',
+  reporter: process.env.CI ? ['html', 'list'] : ['html'],
   use: {
     baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',

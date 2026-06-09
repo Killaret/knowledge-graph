@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -29,7 +30,7 @@ func NewDraftRepository(client *Client) *DraftRepository {
 func (r *DraftRepository) ensureIndex(ctx context.Context) error {
 	// Create TTL index on updated_at field (7 days = 604800 seconds)
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "updated_at", Value: 1}},
+		Keys:    bson.D{primitive.E{Key: "updated_at", Value: 1}},
 		Options: options.Index().SetExpireAfterSeconds(604800),
 	}
 
@@ -40,7 +41,7 @@ func (r *DraftRepository) ensureIndex(ctx context.Context) error {
 
 	// Create compound index on note_id and user_id for faster lookups
 	compoundIndex := mongo.IndexModel{
-		Keys:    bson.D{{Key: "note_id", Value: 1}, {Key: "user_id", Value: 1}},
+		Keys:    bson.D{primitive.E{Key: "note_id", Value: 1}, primitive.E{Key: "user_id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}
 
@@ -93,10 +94,9 @@ func (r *DraftRepository) Save(ctx context.Context, draft *note.Draft) error {
 		return err
 	}
 
-	model := draftToModel(draft)
-	filter := bson.D{{Key: "_id", Value: draft.ID()}}
+	filter := bson.D{primitive.E{Key: "_id", Value: draft.ID()}}
 	update := bson.D{
-		{Key: "$set", Value: model},
+		{Key: "$set", Value: draftToModel(draft)},
 	}
 
 	opts := options.Update().SetUpsert(true)
@@ -107,8 +107,8 @@ func (r *DraftRepository) Save(ctx context.Context, draft *note.Draft) error {
 // FindByNoteAndUser finds a draft by note ID and user ID
 func (r *DraftRepository) FindByNoteAndUser(ctx context.Context, noteID, userID uuid.UUID) (*note.Draft, error) {
 	filter := bson.D{
-		{Key: "note_id", Value: noteID},
-		{Key: "user_id", Value: userID},
+		primitive.E{Key: "note_id", Value: noteID},
+		primitive.E{Key: "user_id", Value: userID},
 	}
 
 	var model draftModel
@@ -126,8 +126,8 @@ func (r *DraftRepository) FindByNoteAndUser(ctx context.Context, noteID, userID 
 // FindActiveByUser finds all active drafts for a user
 func (r *DraftRepository) FindActiveByUser(ctx context.Context, userID uuid.UUID) ([]*note.Draft, error) {
 	filter := bson.D{
-		{Key: "user_id", Value: userID},
-		{Key: "state", Value: note.DraftStateActive},
+		primitive.E{Key: "user_id", Value: userID},
+		primitive.E{Key: "state", Value: note.DraftStateActive},
 	}
 
 	cursor, err := r.collection.Find(ctx, filter)
@@ -151,7 +151,7 @@ func (r *DraftRepository) FindActiveByUser(ctx context.Context, userID uuid.UUID
 
 // FindByID finds a draft by its ID
 func (r *DraftRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Draft, error) {
-	filter := bson.D{{Key: "_id", Value: id}}
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 
 	var model draftModel
 	err := r.collection.FindOne(ctx, filter).Decode(&model)
@@ -167,7 +167,7 @@ func (r *DraftRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Dra
 
 // DeleteByID deletes a draft by its ID
 func (r *DraftRepository) DeleteByID(ctx context.Context, id uuid.UUID) error {
-	filter := bson.D{{Key: "_id", Value: id}}
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	_, err := r.collection.DeleteOne(ctx, filter)
 	return err
 }
@@ -175,8 +175,8 @@ func (r *DraftRepository) DeleteByID(ctx context.Context, id uuid.UUID) error {
 // DeleteExpired deletes drafts that haven't been updated since the given time
 func (r *DraftRepository) DeleteExpired(ctx context.Context, before time.Time) (int, error) {
 	filter := bson.D{
-		{Key: "updated_at", Value: bson.D{{Key: "$lt", Value: before}}},
-		{Key: "state", Value: bson.D{{Key: "$ne", Value: note.DraftStatePublished}}},
+		primitive.E{Key: "updated_at", Value: bson.D{primitive.E{Key: "$lt", Value: before}}},
+		primitive.E{Key: "state", Value: bson.D{primitive.E{Key: "$ne", Value: note.DraftStatePublished}}},
 	}
 
 	result, err := r.collection.DeleteMany(ctx, filter)
@@ -189,9 +189,8 @@ func (r *DraftRepository) DeleteExpired(ctx context.Context, before time.Time) (
 
 // Update updates an existing draft
 func (r *DraftRepository) Update(ctx context.Context, draft *note.Draft) error {
-	model := draftToModel(draft)
-	filter := bson.D{{Key: "_id", Value: draft.ID()}}
-	update := bson.D{{Key: "$set", Value: model}}
+	filter := bson.D{primitive.E{Key: "_id", Value: draft.ID()}}
+	update := bson.D{primitive.E{Key: "$set", Value: draftToModel(draft)}}
 
 	_, err := r.collection.UpdateOne(ctx, filter, update)
 	return err
