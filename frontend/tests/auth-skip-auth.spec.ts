@@ -102,7 +102,7 @@ test.describe('SKIP_AUTH Mode Tests', { tag: ['@auth', '@skip-auth', '@e2e'] }, 
     await expect(profileContent).toBeVisible({ timeout: 5000 });
   });
 
-  test('should handle concurrent requests as test_user', async ({ page, request }) => {
+  test('should handle concurrent requests as test_user', async ({ request }) => {
     // Create multiple notes concurrently
     const timestamp = Date.now();
     const promises = [];
