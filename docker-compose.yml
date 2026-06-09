@@ -138,6 +138,23 @@
       start_period: 10s
     restart: on-failure
 
+  source-text-handler:
+    build:
+      context: ./source-text-handler
+      dockerfile: ./Dockerfile
+    container_name: kg-source-text-handler
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_URI: ${SOURCE_TEXT_HANDLER_REDIS_URI:-redis://redis:6379/0}
+      BACKEND_URL: ${SOURCE_TEXT_HANDLER_BACKEND_URL:-http://backend:8080}
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   worker:
     build:
       context: .

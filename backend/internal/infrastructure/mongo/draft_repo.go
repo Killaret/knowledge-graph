@@ -96,7 +96,7 @@ func (r *DraftRepository) Save(ctx context.Context, draft *note.Draft) error {
 
 	filter := bson.D{primitive.E{Key: "_id", Value: draft.ID()}}
 	update := bson.D{
-		{Key: "$set", Value: draftToModel(draft)},
+		primitive.E{Key: "$set", Value: draftToModel(draft)},
 	}
 
 	opts := options.Update().SetUpsert(true)
