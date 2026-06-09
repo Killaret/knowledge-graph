@@ -415,8 +415,8 @@ describe('GraphCanvas - Visual Node Type Correctness', () => {
       const fillStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_fillStyle');
 
       // Moon has body (light grey) and crater (darker grey)
-      expect(fillStyleCalls.some((c) => c.value.startsWith('#') && ['d', 'c', 'b'].includes(c.value[1]))).toBe(true);
-      expect(fillStyleCalls.some((c) => c.value.startsWith('#') && ['b', 'a', '9'].includes(c.value[1]))).toBe(true);
+      expect(fillStyleCalls.some((c) => typeof c.value === 'string' && c.value.startsWith('#') && ['d', 'c', 'b'].includes(c.value[1]))).toBe(true);
+      expect(fillStyleCalls.some((c) => typeof c.value === 'string' && c.value.startsWith('#') && ['b', 'a', '9'].includes(c.value[1]))).toBe(true);
     });
   });
 

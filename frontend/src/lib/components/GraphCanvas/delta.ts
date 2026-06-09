@@ -112,7 +112,7 @@ export function applyDelta(
   options: DeltaUpdateOptions
 ): boolean {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodes, links, width, height, state } = options;
+  const { nodes, links, width, height, state, onTick, onResetView } = options;
 
   // Вычисляем общее количество изменений
   const totalChanges = 
@@ -141,7 +141,7 @@ function applyFullRestart(
   options: DeltaUpdateOptions
 ): boolean {
    
-  const { nodes, links, width, height, state } = options;
+  const { nodes, links, width, height, state, onTick, onResetView } = options;
 
   console.log('[Delta] Full simulation restart');
 
@@ -306,7 +306,7 @@ function applyIncremental(
   options: DeltaUpdateOptions
 ): boolean {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodes, links, width, height, state } = options;
+  const { nodes, links, width, height, state, onTick, onResetView } = options;
   
   console.log('[Delta] Incremental update');
   

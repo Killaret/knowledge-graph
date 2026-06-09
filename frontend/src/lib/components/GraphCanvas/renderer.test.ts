@@ -166,10 +166,10 @@ describe('renderer anomaly functions', () => {
       vi.clearAllMocks();
       
       drawUnknown(mockCtx, 100, 100, 30, 0, nodeId);
-      const firstCallCount = mockCtx.save.mock.calls.length;
+      const firstCallCount = (mockCtx.save as any).mock.calls.length;
       
       drawUnknown(mockCtx, 100, 100, 30, 0, nodeId);
-      const secondCallCount = mockCtx.save.mock.calls.length;
+      const secondCallCount = (mockCtx.save as any).mock.calls.length;
       
       // Both calls should have been made
       expect(secondCallCount).toBe(firstCallCount + 1);

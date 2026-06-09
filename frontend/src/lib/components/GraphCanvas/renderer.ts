@@ -1030,7 +1030,6 @@ export function draw(
   if (disableVariation) {
     ctx.imageSmoothingEnabled = false;
     // some browsers support quality setting
-    // @ts-expect-error - imageSmoothingQuality is not in standard TypeScript types
     ctx.imageSmoothingQuality = 'low';
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';

@@ -99,7 +99,7 @@ export interface GraphDelta {
   removed_nodes?: string[];
   updated_nodes?: GraphNode[];
   added_links?: GraphLink[];
-  removed_links?: string[];
+  removed_links?: GraphLink[];
 }
 
 // Fresh graph response with optional delta

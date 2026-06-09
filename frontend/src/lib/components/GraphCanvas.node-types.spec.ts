@@ -351,6 +351,10 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
     } as unknown as CanvasRenderingContext2D;
 
     const params = {
+      
+      
+      seedBase: 123,
+      
       crackCount: 6,
       tentacleCount: 8,
       particleCount: 25,
@@ -395,6 +399,9 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
     } as unknown as CanvasRenderingContext2D;
 
     const params = {
+      
+      
+      seedBase: 789,
       crackCount: 5,
       tentacleCount: 7,
       particleCount: 22,
@@ -432,6 +439,9 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
     } as unknown as CanvasRenderingContext2D;
 
     const params = {
+      
+      
+      seedBase: 789,
       crackCount: 5,
       tentacleCount: 6,
       particleCount: 25,
@@ -476,6 +486,9 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
     } as unknown as CanvasRenderingContext2D;
 
     const params = {
+      
+      
+      seedBase: 789,
       crackCount: 5,
       tentacleCount: 8,
       particleCount: 28,

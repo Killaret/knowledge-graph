@@ -3,7 +3,7 @@
 
 BEGIN;
 
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     color VARCHAR(7) DEFAULT '#808080',
@@ -11,6 +11,6 @@ CREATE TABLE tags (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_tags_name ON tags(name);
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
 
 COMMIT;

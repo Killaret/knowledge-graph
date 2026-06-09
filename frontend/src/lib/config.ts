@@ -48,6 +48,37 @@ export interface Config {
       '3d': {
         max_nodes: number;
       };
+      anomaly: {
+        reality_rift: {
+          core_color: string;
+          glow_color: string;
+          crack_count_min: number;
+          crack_count_max: number;
+          deform_amount_min: number;
+          deform_amount_max: number;
+        };
+        chromatic_maw: {
+          tentacle_count_min: number;
+          tentacle_count_max: number;
+          hue_shift_base: number;
+          hue_shift_range: number;
+        };
+        void_whisper: {
+          particle_count_min: number;
+          particle_count_max: number;
+          hue_shift_base: number;
+          hue_shift_range: number;
+          connection_distance_threshold: number;
+        };
+        cosmic_abomination: {
+          particle_count_min: number;
+          particle_count_max: number;
+          tentacle_count_min: number;
+          tentacle_count_max: number;
+          crack_count_min: number;
+          crack_count_max: number;
+        };
+      };
     };
     api: {
       default_limit: number;

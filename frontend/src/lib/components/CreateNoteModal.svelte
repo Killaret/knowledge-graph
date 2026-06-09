@@ -30,7 +30,7 @@
   let contentPlaceholder = $state('Enter note content...');
 
   // Update labels based on galactic mode
-  $effect(async () => {
+  $effect(() => {
     let currentMode = 'standard';
     mode.subscribe(m => currentMode = m)();
     

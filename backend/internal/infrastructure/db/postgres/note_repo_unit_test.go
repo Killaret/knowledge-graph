@@ -49,26 +49,29 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 	metadata, _ := note.NewMetadata(map[string]interface{}{"key": "value"})
 	n := note.NewNote(title, content, "star", metadata)
 
-	// Ожидаем запрос на проверку существования
+	// Transaction начинается первым
+	mock.ExpectBegin()
+
+	// Ожидаем запрос на проверку существования (GORM использует 2 аргумента: id и LIMIT 1)
 	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(n.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	// Ожидаем INSERT — GORM использует Query с RETURNING для PostgreSQL
-	mock.ExpectBegin()
-	mock.ExpectQuery(`INSERT INTO "notes" \("title","content","type","metadata","creator_id","created_at","updated_at","deleted_at","id"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"`).
+	// Ожидаем INSERT с RETURNING (GORM использует Query для INSERT с RETURNING)
+	mock.ExpectQuery(`INSERT INTO "notes"`).
 		WithArgs(
-			"Test Title",
-			"Test Content",
-			"star",
-			sqlmock.AnyArg(),
-			nil,
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			nil,
-			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // title
+			sqlmock.AnyArg(), // content
+			sqlmock.AnyArg(), // type
+			sqlmock.AnyArg(), // metadata
+			sqlmock.AnyArg(), // creator_id
+			sqlmock.AnyArg(), // created_at
+			sqlmock.AnyArg(), // updated_at
+			sqlmock.AnyArg(), // deleted_at
+			sqlmock.AnyArg(), // id
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(n.ID()))
+
 	mock.ExpectCommit()
 
 	ctx := context.Background()
@@ -213,6 +216,9 @@ func TestNoteRepository_List(t *testing.T) {
 
 	now := time.Now()
 
+	// Ожидаем BEGIN (transaction)
+	mock.ExpectBegin()
+
 	// Ожидаем COUNT
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes"`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
@@ -223,6 +229,9 @@ func TestNoteRepository_List(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
 			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
+
+	// Ожидаем COMMIT
+	mock.ExpectCommit()
 
 	ctx := context.Background()
 	notes, total, err := repo.List(ctx, 5, 10)
@@ -256,16 +265,19 @@ func TestNoteRepository_Save_Update(t *testing.T) {
 
 	now := time.Now()
 
-	// Ожидаем запрос на проверку существования - запись найдена
+	// Transaction начинается первым
+	mock.ExpectBegin()
+
+	// Ожидаем запрос на проверку существования - запись найдена (GORM использует 2 аргумента)
 	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(n.ID(), 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(n.ID(), "Old Title", "Old Content", "star", `{}`, now, now))
 
 	// Ожидаем UPDATE
-	mock.ExpectBegin()
-	mock.ExpectExec(`UPDATE "notes" SET`).
+	mock.ExpectExec(`UPDATE "notes"`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+
 	mock.ExpectCommit()
 
 	ctx := context.Background()

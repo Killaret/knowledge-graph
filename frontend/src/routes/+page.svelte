@@ -37,7 +37,7 @@
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
-  let graphDelta: GraphDelta | null = $state(null);
+  let graphDelta: GraphDelta | undefined = $state(undefined);
   let graphLoading = $state(false);
   let searchQuery = $state('');
   
@@ -89,12 +89,12 @@
       // Check for instant preloaded data first
       const instantData = useInstantData();
       let graphResult: GraphData | null = null;
-      let graphDeltaResult: GraphDelta | null = null;
+      let graphDeltaResult: GraphDelta | undefined = undefined;
       
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
         console.log('[+page] Using preloaded graph data for instant display');
         graphResult = instantData.graph;
-        graphDeltaResult = instantData.delta ?? null;
+        graphDeltaResult = instantData.delta ?? undefined;
         graphData = graphResult;
       }
       
@@ -120,11 +120,11 @@
       if (freshGraphResult) {
         if (isAuthenticated() && 'fresh' in freshGraphResult) {
           graphResult = freshGraphResult.fresh;
-          graphDeltaResult = freshGraphResult.delta ?? null;
+          graphDeltaResult = freshGraphResult.delta ?? undefined;
           console.log('[+page] Using fresh authenticated graph data');
         } else if (!isAuthenticated()) {
           graphResult = freshGraphResult as GraphData;
-          graphDeltaResult = null;
+          graphDeltaResult = undefined;
           console.log('[+page] Using public graph data');
         }
       }
