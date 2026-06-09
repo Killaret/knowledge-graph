@@ -4,7 +4,7 @@
   import LoginForm from '$lib/components/LoginForm.svelte';
   import AuthCard from '$lib/components/AuthCard.svelte';
   import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
-  import { startPreload, hasPreloadedData } from '$lib/services/PreloadService';
+  import { startPreload } from '$lib/services/PreloadService';
   
   // Redirect if already authenticated
   $effect(() => {
@@ -27,7 +27,7 @@
 
 <AuthCard 
   title="Knowledge Graph" 
-  subtitle="Ваша персональная вселенная знаний"
+  subtitle="Your personal multiverse of knowledge"
   showIcon={true}
 >
   <LoginForm />

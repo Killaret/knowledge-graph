@@ -44,7 +44,7 @@ test.describe('SKIP_AUTH Mode Tests', { tag: ['@auth', '@skip-auth', '@e2e'] }, 
     }
   });
 
-  test('should work with API requests as test_user', async ({ page, request }) => {
+  test('should work with API requests as test_user', async ({ _page, request }) => {
     // Create note via API - should work without auth
     const timestamp = Date.now();
     const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
@@ -102,7 +102,7 @@ test.describe('SKIP_AUTH Mode Tests', { tag: ['@auth', '@skip-auth', '@e2e'] }, 
     await expect(profileContent).toBeVisible({ timeout: 5000 });
   });
 
-  test('should handle concurrent requests as test_user', async ({ page, request }) => {
+  test('should handle concurrent requests as test_user', async ({ _page, request }) => {
     // Create multiple notes concurrently
     const timestamp = Date.now();
     const promises = [];
@@ -161,7 +161,7 @@ test.describe('SKIP_AUTH Mode Tests', { tag: ['@auth', '@skip-auth', '@e2e'] }, 
     expect(skipAuthFlag).toBe(true);
   });
 
-  test('should handle API errors gracefully in SKIP_AUTH mode', async ({ page, request }) => {
+  test('should handle API errors gracefully in SKIP_AUTH mode', async ({ _page, request }) => {
     // Try to access non-existent note
     const response = await request.get(`${getBackendUrl()}/api/v1/notes/non-existent-id`);
     
