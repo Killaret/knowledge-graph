@@ -224,7 +224,129 @@ Ready to work!
 
 Эти агенты — не исполняемые команды. Это метаданные, которые помогают выбрать правильный контекст при работе с репозиторием.
 
-## 🧰 Важные команды и утилиты
+## � Devin AI - Development Assistant
+
+**Primary AI Agent:** [Devin](https://cli.devin.ai/docs) by Cognition
+
+Devin is used as the main AI development assistant for this project, providing autonomous coding capabilities with full tool access.
+
+### Devin's Capabilities
+
+- **Full Repository Access:** Read, write, and execute any file in the project
+- **Tool Ecosystem:** Access to grep, file operations, shell commands, git, and more
+- **Autonomous Problem Solving:** Can debug, implement features, and run tests independently
+- **Multi-step Planning:** Uses todo lists to track complex tasks across files
+- **CI/CD Integration:** Can run builds, tests, and push changes
+
+### Best Practices for Devin
+
+#### 1. Task Breakdown
+- Use `todo_write` tool for complex tasks (3+ steps)
+- Mark todos as `in_progress` when starting, `completed` when done
+- Only keep ONE todo in progress at a time
+
+#### 2. Code Exploration
+- Use `grep` for searching code patterns (not file names)
+- Use `find_file_by_name` for finding files by pattern
+- Use `read` to understand file contents before editing
+- Batch independent file reads for performance
+
+#### 3. Code Changes
+- Follow existing code patterns and conventions
+- Check dependencies before adding new packages (use `package.json`, `go.mod`)
+- Run `npm add` or `go get` instead of editing files directly
+- Use existing libraries and utilities
+- Follow security best practices (no secrets in code)
+
+#### 4. Testing & Verification
+- Run project-specific tests after changes
+- Check lint/typecheck/build commands
+- Look for verification steps in project rules (AGENTS.md)
+- Self-critique changes before marking complete
+
+#### 5. Git Operations
+- Run `git status`, `git diff`, `git log` in parallel before committing
+- Draft commit messages focusing on "why" not "what"
+- Use the standard commit format with Devin attribution:
+  ```bash
+  git commit -m "type: description
+
+  Generated with [Devin](https://cli.devin.ai/docs)
+
+  Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
+  ```
+- **NEVER push** unless explicitly requested by user
+
+#### 6. Error Recovery
+- Try different approaches when encountering errors
+- Search codebase for similar issues/patterns
+- Only ask user for help as last resort (except auth/permissions)
+- Keep trying reasonable options before giving up
+
+### Devin's Toolbelt
+
+| Tool | Purpose | Example Usage |
+|------|---------|--------------|
+| `grep` | Search code patterns | Find function usage, type definitions |
+| `find_file_by_name` | Find files by pattern | Locate `*.go`, `**/*.svelte` files |
+| `read` | Read file contents | Understand implementation before editing |
+| `exec` | Execute shell commands | Run tests, builds, git operations |
+| `todo_write` | Track tasks | Break down complex features |
+| `edit` | Edit files | Make code changes |
+| `write` | Write/create files | New components, configuration |
+| `git` operations | Version control | Status, diff, commit, push |
+
+### Project-Specific Commands for Devin
+
+**Backend (Go):**
+```bash
+cd backend && go test ./...           # Run tests
+cd backend && go build ./cmd/server   # Build server
+cd backend && golangci-lint run       # Lint
+```
+
+**Frontend (Svelte):**
+```bash
+cd frontend && npm run test:unit      # Unit tests
+cd frontend && npm run test           # E2E tests (Playwright)
+cd frontend && npm run check          # svelte-check
+cd frontend && npm run lint           # ESLint
+```
+
+**Docker:**
+```bash
+docker-compose up -d                   # Start services
+docker-compose -f docker-compose.test.yml up -d  # CI testing
+```
+
+### Configuration Files
+
+- `.devin/config.json` - Devin-specific configuration
+- `.devin/skills/knowledge-graph/SKILL.md` - Project-specific Devin skill
+- `AGENTS.md` - Project rules and verification commands
+- `.cursorrules` - Code style and conventions
+
+### Example Devin Workflow
+
+1. **Receive Task:** "Fix failing tests and add new feature"
+2. **Plan:** Create todo list with 5 items
+3. **Explore:** Use grep/read to understand codebase
+4. **Implement:** Make changes following existing patterns
+5. **Verify:** Run tests, lint, typecheck
+6. **Commit:** Stage files and commit with standard message
+7. **Report:** Update todo list, mark complete
+
+### Recent Devin Contributions
+
+- ✅ Fixed Playwright test errors (_page → page)
+- ✅ Resolved 27 svelte-check errors (type fixes, config updates)
+- ✅ Updated GraphDelta types (string[] → GraphLink[])
+- ✅ Added anomaly configuration types
+- ✅ Fixed docker-compose configurations
+- ✅ Resolved linting errors (golangci-lint, eslint)
+- ✅ Updated npm dependencies for security
+
+## �🧰 Важные команды и утилиты
 
 ### Скрипты организованы по категориям в `scripts/`:
 - `cleanup/` — скрипты очистки и сжатия
