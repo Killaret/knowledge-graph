@@ -1,4 +1,5 @@
 <script lang="ts">
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   import { goto } from '$app/navigation';
   
   const {
@@ -8,6 +9,7 @@
     onFilter,
     onImport,
     onExport,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     noteId = '',
     typeFilters = [],
     selectedType = 'all',
@@ -16,7 +18,7 @@
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
-    onToggleView?: () => void;
+    onToggleView?: (view: 'graph' | 'list') => void;
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
@@ -26,6 +28,11 @@
     typeCounts?: Record<string, number>;
     currentView?: 'graph' | 'list';
   } = $props();
+  
+  console.log('[FloatingControls] Props received:', {
+    hasOnToggleView: typeof onToggleView === 'function',
+    currentView
+  });
   
   let searchQuery = $state('');
   let showMenu = $state(false);
@@ -43,8 +50,10 @@
   }
   */
   
-  function toggleView() {
-    onToggleView?.();
+  function toggleView(targetView: 'graph' | 'list') {
+    console.log('[FloatingControls] toggleView called, targetView:', targetView, 'currentView:', currentView);
+    onToggleView?.(targetView);
+    console.log('[FloatingControls] onToggleView callback invoked with:', targetView);
   }
 
   function handleFilter(typeId: string) {
@@ -58,7 +67,7 @@
     <button
       type="button"
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
-      onclick={toggleView}
+      onclick={() => toggleView('graph')}
       title="2D Graph"
       data-testid="view-toggle-graph"
       aria-pressed={currentView === 'graph'}
@@ -98,7 +107,7 @@
     <button
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
-      onclick={toggleView}
+      onclick={() => toggleView('list')}
       title="List View"
       data-testid="view-toggle-list"
       aria-pressed={currentView === 'list'}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Modal, Button } from './index';
-  import { getMessage, mode } from '$lib/stores/lexicon-settings';
+  import { mode } from '$lib/stores/lexicon-settings';
 
   interface Props {
     open: boolean;

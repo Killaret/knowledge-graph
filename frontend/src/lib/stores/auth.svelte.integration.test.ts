@@ -1,6 +1,5 @@
 // Интеграционные тесты для authStore с PreloadService (более надежные)
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import * as authApi from '$lib/api/auth';
 import * as usersApi from '$lib/api/users';

@@ -111,7 +111,8 @@ export function applyDelta(
   delta: GraphDelta,
   options: DeltaUpdateOptions
 ): boolean {
-  const { nodes, links, width, height, state, transform, onTick, onResetView } = options;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { nodes, links, width, height, state } = options;
 
   // Вычисляем общее количество изменений
   const totalChanges = 
@@ -139,7 +140,8 @@ function applyFullRestart(
   delta: GraphDelta,
   options: DeltaUpdateOptions
 ): boolean {
-  const { nodes, links, width, height, state, transform, onTick, onResetView } = options;
+   
+  const { nodes, links, width, height, state } = options;
 
   console.log('[Delta] Full simulation restart');
 
@@ -303,7 +305,8 @@ function applyIncremental(
   delta: GraphDelta,
   options: DeltaUpdateOptions
 ): boolean {
-  const { nodes, links, width, height, state, transform, onTick, onResetView } = options;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { nodes, links, width, height, state } = options;
   
   console.log('[Delta] Incremental update');
   

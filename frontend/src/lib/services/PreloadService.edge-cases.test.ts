@@ -1,15 +1,12 @@
 // Тесты для edge cases и пограничных сценариев PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { browser } from '$app/environment';
 import { isAuthenticated } from '$lib/stores/auth.svelte';
 import * as graphApi from '$lib/api/graph';
 import * as usersApi from '$lib/api/users';
 import type { GraphData } from '$lib/api/graph';
 import {
   mockGraphData,
-  mockAchievementsData,
-  createDelayedMock,
-  createDelayedError
+  mockAchievementsData
 } from './__mocks__/PreloadService.mocks';
 
 // Мокаем зависимости
@@ -137,7 +134,7 @@ describe.skip('PreloadService Edge Cases', () => {
           z: 0,
           size: Math.random() * 20
         })),
-        links: Array.from({ length: 20000 }, (_, i) => ({
+        links: Array.from({ length: 20000 }, (_, _i) => ({
           source: `node-${Math.floor(Math.random() * 10000)}`,
           target: `node-${Math.floor(Math.random() * 10000)}`,
           weight: Math.random(),

@@ -135,6 +135,7 @@
 
   // Реактивно перезапускаем симуляцию при изменении данных
   $effect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _ = mounted; // track mounted state
     const nodesCount = nodes.length;
     const linksCount = links.length;

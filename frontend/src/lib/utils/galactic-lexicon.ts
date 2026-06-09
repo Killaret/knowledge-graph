@@ -279,7 +279,7 @@ export function getLexiconMessage(locale: Locale, mode: Mode, category: LegacyCa
     if (categoryObj && typeof categoryObj[methodKey] === 'function') {
       return categoryObj[methodKey](...params, mode === 'galactic')
     }
-  } catch (e) {
+  } catch {
     // Fallback to generic message
   }
   

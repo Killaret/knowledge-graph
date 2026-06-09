@@ -1,6 +1,5 @@
 // Интеграционные тесты для authStore с PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { initAuth, login, logout, isAuthenticated } from './auth.svelte';
 import { clearPreloadCache, hasPreloadedData } from '../services/PreloadService';

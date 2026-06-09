@@ -638,7 +638,6 @@ export function drawCosmicAbomination(
   const rr = anomalyConfig.reality_rift;
   const cm = anomalyConfig.chromatic_maw;
   const vw = anomalyConfig.void_whisper;
-  const ca = anomalyConfig.cosmic_abomination;
   
   ctx.save();
   ctx.translate(x, y);
@@ -1029,12 +1028,10 @@ export function draw(
   // Stable render mode: reduce anti-aliasing sources and align to pixel grid
   ctx.save();
   if (disableVariation) {
-    try {
-      ctx.imageSmoothingEnabled = false;
-      // some browsers support quality setting
-      // @ts-ignore
-      ctx.imageSmoothingQuality = 'low';
-    } catch (e) {}
+    ctx.imageSmoothingEnabled = false;
+    // some browsers support quality setting
+    // @ts-expect-error - imageSmoothingQuality is not in standard TypeScript types
+    ctx.imageSmoothingQuality = 'low';
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
     ctx.lineJoin = 'round';

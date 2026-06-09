@@ -136,7 +136,8 @@ test.describe('PreloadService Full Cycle E2E', () => {
     await page.waitForURL('/auth/login');
     
     // Проверяем, что кэш очищен (через localStorage)
-    const cacheExists = await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _cacheExists = await page.evaluate(() => {
       return localStorage.getItem('preload_cache') !== null;
     });
     
@@ -275,7 +276,8 @@ test.describe('PreloadService Full Cycle E2E', () => {
       // Для админа могут быть дополнительные элементы
       if (role === 'admin') {
         // Проверяем наличие админских элементов (если они есть)
-        const adminElements = testPage.locator('[data-testid*="admin"]');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _adminElements = testPage.locator('[data-testid*="admin"]');
         // Не ждем их наличия, просто проверяем что нет ошибок
       }
       

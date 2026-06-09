@@ -115,8 +115,7 @@ export async function loadAppData(options: {
 }> {
   const {
     limit = 1000,
-    usePersonalAchievements = false,
-    fallbackToServer = true
+    usePersonalAchievements = false
   } = options;
   
   // Загружаем граф и достижения параллельно

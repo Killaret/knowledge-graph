@@ -4,7 +4,7 @@ import * as svc from '../services/achievements'
 import { ACHIEVEMENT_POLL_INTERVAL_MS } from '../config'
 
 function createAchievementsStore() {
-  const { subscribe, set, update } = writable<{ all: Achievement[]; new: Achievement[] }>({ all: [], new: [] })
+  const { subscribe, set } = writable<{ all: Achievement[]; new: Achievement[] }>({ all: [], new: [] })
   let timer: any = null
 
   async function refresh() {

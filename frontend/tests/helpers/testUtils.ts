@@ -2,8 +2,6 @@ import type { Page, APIRequestContext } from '@playwright/test';
 import {
   createNote as createNoteAdvanced,
   createLink as createLinkAdvanced,
-  deleteNote as deleteNoteAdvanced,
-  isBackendAvailable as isBackendAvailableAdvanced,
   getBackendUrl,
 } from './testData';
 

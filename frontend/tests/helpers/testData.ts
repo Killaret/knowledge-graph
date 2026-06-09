@@ -270,3 +270,69 @@ export async function isBackendAvailable(request: APIRequestContext): Promise<bo
     return false;
   }
 }
+
+/**
+ * Test user credentials for E2E tests
+ */
+export const TEST_USER = {
+  login: 'e2e_test_user',
+  email: 'e2e@test.example.com',
+  password: 'TestPassword123!',
+};
+
+/**
+ * Register or get existing test user
+ */
+export async function getOrCreateTestUser(request: APIRequestContext) {
+  try {
+    // Try to register
+    const response = await request.post(`${getBackendUrl()}/api/v1/auth/register`, {
+      data: {
+        login: TEST_USER.login,
+        email: TEST_USER.email,
+        password: TEST_USER.password,
+      },
+    });
+    
+    if (response.ok()) {
+      const result = await response.json();
+      console.log('[TestUser] Registered new user:', TEST_USER.login);
+      return { user: result.data, isNew: true };
+    }
+    
+    // User might already exist
+    console.log('[TestUser] Registration returned:', response.status());
+    return { user: null, isNew: false };
+  } catch (e) {
+    console.log('[TestUser] Registration error:', e);
+    return { user: null, isNew: false };
+  }
+}
+
+/**
+ * Login with test user and return auth headers
+ */
+export async function loginAsTestUser(request: APIRequestContext) {
+  const response = await request.post(`${getBackendUrl()}/api/v1/auth/login`, {
+    data: {
+      login: TEST_USER.login,
+      password: TEST_USER.password,
+    },
+  });
+  
+  if (!response.ok()) {
+    throw new Error(`Login failed: ${response.status()}`);
+  }
+  
+  const result = await response.json();
+  console.log('[TestUser] Login successful, token received');
+  
+  return {
+    token: result.data.access_token,
+    headers: {
+      'Authorization': `Bearer ${result.data.access_token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  };
+}

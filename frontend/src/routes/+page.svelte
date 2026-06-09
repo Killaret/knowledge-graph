@@ -30,6 +30,11 @@
   let noteToDelete: string | null = $state(null);
   let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
   
+  // Debug: Track currentView changes
+  $effect(() => {
+    console.log('[+page.svelte] currentView changed to:', currentView);
+  });
+
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphDelta: GraphDelta | null = $state(null);
@@ -182,7 +187,7 @@
       loading = false;
     }
   }
-  
+
   async function loadGraphData() {
     if (allNotes.length === 0) {
       graphData = { nodes: [], links: [] };
@@ -373,8 +378,10 @@
     loadNotes();
   }
 
-  function handleToggleView() {
-    currentView = currentView === 'graph' ? 'list' : 'graph';
+  function handleToggleView(view: 'graph' | 'list') {
+    console.log('[+page.svelte] handleToggleView called with view:', view, 'currentView before:', currentView);
+    currentView = view;
+    console.log('[+page.svelte] currentView after:', currentView);
   }
 </script>
 

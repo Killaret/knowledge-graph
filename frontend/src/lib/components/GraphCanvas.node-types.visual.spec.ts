@@ -233,7 +233,9 @@ describe('GraphCanvas - Visual Node Type Correctness', () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const fillStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_fillStyle');
-      const strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
+       
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
 
       // Comet should use cyan/aqua colors (with hue shift variation)
       expect(fillStyleCalls.some((c: CanvasCall) => {
@@ -286,7 +288,9 @@ describe('GraphCanvas - Visual Node Type Correctness', () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const fillStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_fillStyle');
-      const strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
+       
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
 
       // Asteroid should use brown/grey rocky colors (with hue shift variation)
       expect(fillStyleCalls.some((c) => {
@@ -370,7 +374,8 @@ describe('GraphCanvas - Visual Node Type Correctness', () => {
       render(GraphCanvas, { props: { nodes: [{ id: '1', title: 'Black Hole', type: 'blackhole' }], links: [] } });
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
 
       // Accretion disk uses orange glow rings
       expect(strokeStyleCalls.some((c) => c.value === '#ff6600' || c.value === '#ff3300')).toBe(true);
@@ -393,7 +398,9 @@ describe('GraphCanvas - Visual Node Type Correctness', () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const fillStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_fillStyle');
-      const strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
+       
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _strokeStyleCalls = mockCanvasCalls.filter((c) => c.method === 'set_strokeStyle');
 
       // Moon body is light grey
       expect(fillStyleCalls.some((c) => c.value === '#cccccc')).toBe(true);

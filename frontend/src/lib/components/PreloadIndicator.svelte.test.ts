@@ -1,5 +1,4 @@
 // Тесты для компонента PreloadIndicator (если он существует)
-import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { hasPreloadedData } from '../services/PreloadService';
 

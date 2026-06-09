@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createNote, createLink, getBackendUrl } from './helpers/testData';
-import { clickFilterChip, fillSearchInput, clickSearchButton, setupSkipAuth } from './helpers/testUtils';
+import { clickFilterChip, setupSkipAuth } from './helpers/testUtils';
 
 /**
  * Tests for Type Filtering with metadata.type fallback
@@ -327,7 +327,8 @@ test.describe('Type Filters - metadata.type fallback', { tag: ['@metadata'] }, (
     const timestamp = Date.now();
     
     // Create note without any type specified
-    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     await request.post(`${getBackendUrl()}/api/v1/notes`, {
       data: { 
         title: `No Type ${timestamp}`, 

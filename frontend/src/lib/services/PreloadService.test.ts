@@ -1,6 +1,5 @@
 // Unit тесты для PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { browser } from '$app/environment';
 import { isAuthenticated } from '$lib/stores/auth.svelte';
 import * as graphApi from '$lib/api/graph';
 import * as usersApi from '$lib/api/users';
@@ -8,9 +7,7 @@ import {
   mockGraphData,
   mockAchievementsData,
   mockGraphError,
-  mockAchievementsError,
-  createDelayedMock,
-  createDelayedError
+  mockAchievementsError
 } from './__mocks__/PreloadService.mocks';
 
 // Мокаем зависимости
