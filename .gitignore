@@ -108,6 +108,11 @@ frontend/cucumber-report.json
 # Playwright
 frontend/playwright-report/
 playwright-report/
+frontend/test-results/
+frontend/test-results/*.png
+frontend/test-results/*.jpg
+frontend/test-results/*.webp
+test-results/
 # Frontend cache
 frontend/.eslintcache
 frontend/.svelte-kit/
