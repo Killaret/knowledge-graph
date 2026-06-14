@@ -145,23 +145,20 @@ export async function clickSearchButton(page: Page): Promise<void> {
  * Must be called before navigating to protected routes
  * 
  * Works with both dev server (localStorage) and production build (query param)
+ * Simplified version that doesn't navigate to auth page
  */
 export async function setupSkipAuth(page: Page): Promise<void> {
-  // Navigate to login page with skip_auth query param (for production)
-  // This will set localStorage and persist across navigations
-  await page.goto('/auth/login?skip_auth=true', { timeout: 60000 });
-  await page.waitForTimeout(500);
-  
-  // Also set it directly for dev server
-  await page.evaluate(() => {
-    localStorage.setItem('__SKIP_AUTH__', 'true');
-    (window as any).__SKIP_AUTH__ = true;
-    console.log('[TEST] SKIP_AUTH enabled');
-  });
-  
-  // Set init script for subsequent navigations
+  // Set SKIP_AUTH flag directly without navigating to auth page
+  // Use addInitScript only - evaluate might fail due to localStorage restrictions
   await page.addInitScript(() => {
-    localStorage.setItem('__SKIP_AUTH__', 'true');
+    try {
+      localStorage.setItem('__SKIP_AUTH__', 'true');
+    } catch {
+      // localStorage might not be available in some contexts
+      console.log('[TEST] localStorage not available, using window flag');
+    }
     (window as any).__SKIP_AUTH__ = true;
+    console.log('[TEST] SKIP_AUTH enabled via initScript');
   });
 }
+  
