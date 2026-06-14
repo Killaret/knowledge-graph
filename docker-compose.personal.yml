@@ -56,6 +56,7 @@ services:
       - MODEL_NAME=all-MiniLM-L6-V2
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
+      - HF_HUB_OFFLINE=1
     volumes:
       - ./huggingface_cache:/root/.cache/huggingface
     healthcheck:
