@@ -152,7 +152,11 @@ token.json
 *.html
 !frontend/**/*.html
 *.bat
+!start-personal.bat
 *.ps1
+!docker-push.ps1
+!start-personal.ps1
+!scripts/**/*.ps1
 test_data.sql
 check_user_data.sql
 TEST_STATUS.md
