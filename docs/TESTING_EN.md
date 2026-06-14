@@ -1,133 +1,133 @@
-# Руководство по тестированию Knowledge Graph
+# Knowledge Graph Testing Guide
 
-> **Версия:** 1.1  
-> **Дата:** 28 апреля 2026  
-> **Статус:** Актуально для текущего codebase  
-> **Всего тестов:** ~496 (118 Go + 204 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
-
----
-
-## 📋 Содержание
-
-1. [Обзор тестовой стратегии](#обзор-тестовой-стратегии)
-2. [Backend тестирование](#backend-тестирование)
-3. [Frontend тестирование](#frontend-тестирование)
-4. [Интеграционное тестирование](#интеграционное-тестирование)
-5. [E2E тестирование](#e2e-тестирование)
-6. [Запуск тестов](#запуск-тестов)
-7. [Отчёты и покрытие](#отчёты-и-покрытие)
+> **Version:** 1.1  
+> **Date:** April 28, 2026  
+> **Status:** Current for current codebase  
+> **Total tests:** ~496 (118 Go + 204 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
 
 ---
 
-## Обзор тестовой стратегии
+## Table of Contents
 
-### Уровни тестирования
+1. [Test Strategy Overview](#test-strategy-overview)
+2. [Backend Testing](#backend-testing)
+3. [Frontend Testing](#frontend-testing)
+4. [Integration Testing](#integration-testing)
+5. [E2E Testing](#e2e-testing)
+6. [Running Tests](#running-tests)
+7. [Reports and Coverage](#reports-and-coverage)
+
+---
+
+## Test Strategy Overview
+
+### Testing Levels
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    E2E Tests                                 │
-│     (Playwright + Cucumber - 48 + 111 = 159 тестов)       │
+│     (Playwright + Cucumber - 48 + 111 = 159 tests)        │
 ├─────────────────────────────────────────────────────────────┤
 │              Integration Tests                              │
 │     (Repository + API + Docker Compose)                    │
 ├─────────────────────────────────────────────────────────────┤
 │                 Unit Tests                                  │
-│    Backend (Go): 31 файлов, 118 тестовых функций           │
-│    Frontend (TS): 18 файлов, 204 теста                     │
-│    NLP (Python): 2 файла, ~15 тестов                     │
+│    Backend (Go): 31 files, 118 test functions              │
+│    Frontend (TS): 18 files, 204 tests                      │
+│    NLP (Python): 2 files, ~15 tests                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Тестовая пирамида
+### Testing Pyramid
 
-| Уровень | Технологии | Покрытие | Время | Файлов |
-|---------|------------|----------|-------|--------|
-| **Unit** | Go testify, Vitest | 70% backend | < 10 сек | 51 |
-| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 мин | - |
-| **E2E** | Playwright + Cucumber | Полный сценарий | ~ 5 мин | 24 |
+| Level | Technologies | Coverage | Time | Files |
+|-------|--------------|----------|------|-------|
+| **Unit** | Go testify, Vitest | 70% backend | < 10 sec | 51 |
+| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 min | - |
+| **E2E** | Playwright + Cucumber | Full scenario | ~ 5 min | 24 |
 
 ---
 
-## Backend тестирование
+## Backend Testing
 
-### Структура тестов
+### Test Structure
 
-**Всего: 31 файл, 118 тестовых функций**
+**Total: 31 files, 118 test functions**
 
 ```
 backend/
 ├── internal/
-│   ├── domain/                              # 6 файлов, 19 функций
+│   ├── domain/                              # 6 files, 19 functions
 │   │   ├── note/
-│   │   │   ├── entity_test.go              # 2 теста
-│   │   │   └── value_objects_test.go       # 3 теста
+│   │   │   ├── entity_test.go              # 2 tests
+│   │   │   └── value_objects_test.go       # 3 tests
 │   │   ├── link/
-│   │   │   ├── entity_test.go              # 2 теста
-│   │   │   └── value_objects_test.go       # 3 теста
+│   │   │   ├── entity_test.go              # 2 tests
+│   │   │   └── value_objects_test.go       # 3 tests
 │   │   └── graph/
-│   │       ├── traversal_test.go           # 7 тестов
-│   │       └── traversal_integration_test.go # 2 теста
-│   ├── application/                         # 3 файла, 7 функций
+│   │       ├── traversal_test.go           # 7 tests
+│   │       └── traversal_integration_test.go # 2 tests
+│   ├── application/                         # 3 files, 7 functions
 │   │   ├── graph/
-│   │   │   └── composite_loader_test.go    # 2 теста
+│   │   │   └── composite_loader_test.go    # 2 tests
 │   │   └── recommendation/
-│   │       ├── affected_notes_test.go      # 3 теста
-│   │       └── refresh_service_test.go     # 2 теста
-│   ├── infrastructure/                      # 14 файлов, 62 функции
-│   │   ├── db/postgres/                     # 12 файлов, 44 функции
-│   │   │   ├── embedding_repo_test.go      # 5 тестов
-│   │   │   ├── link_repo_test.go           # 3 теста
-│   │   │   ├── link_repo_unit_test.go      # 18 тестов
-│   │   │   ├── link_repo_integration_test.go # 1 тест
-│   │   │   ├── note_repo_test.go           # 3 теста
-│   │   │   ├── note_repo_unit_test.go      # 12 тестов
-│   │   │   ├── note_repo_integration_test.go # 1 тест
-│   │   │   ├── recommendation_repo_test.go # 6 тестов
-│   │   │   ├── tag_repo_integration_test.go # 1 тест
-│   │   │   └── user_repo_integration_test.go # 1 тест
+│   │       ├── affected_notes_test.go      # 3 tests
+│   │       └── refresh_service_test.go     # 2 tests
+│   ├── infrastructure/                      # 14 files, 62 functions
+│   │   ├── db/postgres/                     # 12 files, 44 functions
+│   │   │   ├── embedding_repo_test.go      # 5 tests
+│   │   │   ├── link_repo_test.go           # 3 tests
+│   │   │   ├── link_repo_unit_test.go      # 18 tests
+│   │   │   ├── link_repo_integration_test.go # 1 test
+│   │   │   ├── note_repo_test.go           # 3 tests
+│   │   │   ├── note_repo_unit_test.go      # 12 tests
+│   │   │   ├── note_repo_integration_test.go # 1 test
+│   │   │   ├── recommendation_repo_test.go # 6 tests
+│   │   │   ├── tag_repo_integration_test.go # 1 test
+│   │   │   └── user_repo_integration_test.go # 1 test
 │   │   ├── nlp/
-│   │   │   └── client_test.go              # 9 тестов
-│   │   └── queue/                           # 2 файла, 6 функций
-│   │       ├── tasks_test.go               # 3 теста
-│   │       └── tasks/recommendation_test.go # 3 теста
-│   └── interfaces/                          # 6 файлов, 14 функций
+│   │   │   └── client_test.go              # 9 tests
+│   │   └── queue/                           # 2 files, 6 functions
+│   │       ├── tasks_test.go               # 3 tests
+│   │       └── tasks/recommendation_test.go # 3 tests
+│   └── interfaces/                          # 6 files, 14 functions
 │       └── api/
 │           ├── common/validation/
-│           │   └── validators_test.go        # 9 тестов
+│           │   └── validators_test.go        # 9 tests
 │           ├── graphhandler/
-│           │   ├── graph_handler_test.go     # 3 теста
-│           │   └── graph_handler_integration_test.go # 1 тест
+│           │   ├── graph_handler_test.go     # 3 tests
+│           │   └── graph_handler_integration_test.go # 1 test
 │           ├── linkhandler/
-│           │   ├── link_handler_test.go      # 1 тест
-│           │   └── link_handler_integration_test.go # 1 тест
+│           │   ├── link_handler_test.go      # 1 test
+│           │   └── link_handler_integration_test.go # 1 test
 │           ├── notehandler/
-│           │   ├── note_handler_test.go      # 4 теста
-│           │   └── note_handler_integration_test.go # 1 тест
+│           │   ├── note_handler_test.go      # 4 tests
+│           │   └── note_handler_integration_test.go # 1 test
 │           └── taghandler/
-│               └── tag_handler_integration_test.go # 1 тест
+│               └── tag_handler_integration_test.go # 1 test
 └── internal/config/
-    └── config_test.go                        # 5 тестов
+    └── config_test.go                        # 5 tests
 ```
 
 ### Domain Layer Tests
 
-#### Запуск
+#### Running
 
 ```bash
 cd backend
 
-# Все unit тесты
+# All unit tests
 go test ./internal/domain/... -v
 
-# Конкретный пакет
+# Specific package
 go test ./internal/domain/note -v
 
-# С покрытием
+# With coverage
 go test ./internal/domain/... -cover -coverprofile=coverage.out
 go tool cover -html=coverage.out -o coverage.html
 ```
 
-#### Примеры тестов
+#### Test Examples
 
 **Note Entity** (`entity_test.go`):
 ```go
@@ -178,12 +178,12 @@ func TestCompositeLoader_Combine(t *testing.T) {
 
 ### Infrastructure Layer Tests
 
-**Repository Integration** (требует PostgreSQL):
+**Repository Integration** (requires PostgreSQL):
 ```bash
-# Запуск с Docker Compose
+# Run with Docker Compose
 docker-compose up -d postgres
 
-# Интеграционные тесты
+# Integration tests
 go test ./internal/infrastructure/db/postgres/... -v -tags=integration
 ```
 
@@ -194,19 +194,19 @@ go test ./internal/infrastructure/db/postgres/... -v -tags=integration
 # Handler tests
 go test ./internal/interfaces/api/... -v
 
-# С моками репозиториев
+# With repository mocks
 go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
 ```
 
 ---
 
-## Frontend тестирование
+## Frontend Testing
 
-### Структура тестов
+### Test Structure
 
-**Unit тесты: 22 файла, ~220 тестов**
-**E2E тесты: 10 файлов, 48 тестов**
-**BDD тесты: 3 файла, 13 сценариев**
+**Unit tests: 22 files, ~220 tests**
+**E2E tests: 10 files, 48 tests**
+**BDD tests: 3 files, 13 scenarios**
 
 ```
 frontend/
@@ -253,8 +253,8 @@ frontend/
 │       ├── graph_2d_list.feature        # 5 scenarios
 │       ├── graph_interaction.feature    # 5 scenarios
 │       └── graph_3d_loading.feature     # 3 scenarios
-└── tests/ (корень проекта)              # Общие BDD тесты
-    └── features/                        # 11 файлов, 98 сценариев
+└── tests/ (project root)                # Common BDD tests
+    └── features/                        # 11 files, 98 scenarios
         ├── local_3d_graph.feature       # 13 scenarios
         ├── full_3d_graph.feature        # 12 scenarios
         ├── camera_navigation.feature    # 10 scenarios
@@ -268,35 +268,35 @@ frontend/
         └── import_export.feature        # 6 scenarios
 ```
 
-**Конвенция именования:**
-- `.spec.ts` — тесты компонентов (Vitest + Testing Library)
-- `.test.ts` — тесты API клиентов и утилит (Vitest)
-- Сторы (`stores`) тестируются через компонентные тесты, отдельных файлов нет
+**Naming Convention:**
+- `.spec.ts` — component tests (Vitest + Testing Library)
+- `.test.ts` — API client and utility tests (Vitest)
+- Stores are tested via component tests, no separate files
 
-### E2E тесты (Playwright)
+### E2E Tests (Playwright)
 
-#### Запуск
+#### Running
 
 ```bash
 cd frontend
 
-# Установка браузеров
+# Install browsers
 npx playwright install chromium
 
-# Все тесты
+# All tests
 npm run test
 
-# Только UI режим
+# UI mode only
 npx playwright test --ui
 
-# Определённый файл
+# Specific file
 npx playwright test notes.spec.ts
 
-# Отладка
+# Debug
 npx playwright test --debug
 ```
 
-#### Тестовые файлы
+#### Test Files
 
 **Note CRUD** (`notes.spec.ts`):
 ```typescript
@@ -351,16 +351,16 @@ test('fog animation completes', async ({ page }) => {
 });
 ```
 
-### Unit тесты (Vitest + jsdom)
+### Unit Tests (Vitest + jsdom)
 
 ```bash
-# Установка
+# Install
 npm install -D vitest @testing-library/svelte jsdom
 
-# Запуск
+# Run
 npx vitest
 
-# С покрытием
+# With coverage
 npx vitest run --coverage
 ```
 
@@ -378,13 +378,13 @@ describe('sceneSetup', () => {
 });
 ```
 
-### Тесты сохранения связей (Link Preservation)
+### Link Preservation Tests
 
-Тесты проверяют, что связи между заметками корректно отображаются и не теряются при различных операциях с 3D графом.
+Tests verify that connections between notes are correctly displayed and not lost during various 3D graph operations.
 
-#### Сценарии тестирования
+#### Test Scenarios
 
-**1. Сохранение связей при переключении режимов просмотра**
+**1. Link preservation when switching view modes**
 ```gherkin
 Scenario: Links remain visible when switching from local to full graph
   Given a note "Hub Note" has 3 related notes
@@ -394,7 +394,7 @@ Scenario: Links remain visible when switching from local to full graph
   And the stats bar shows link count greater than 0
 ```
 
-**2. Сохранение связей при зуме камеры**
+**2. Link preservation during camera zoom**
 ```gherkin
 Scenario: Links persist during camera zoom operations
   Given a note "Zoom Test" has 2 related notes
@@ -404,7 +404,7 @@ Scenario: Links persist during camera zoom operations
   And no links appear disconnected or floating
 ```
 
-**3. Сохранение связей при вращении камеры**
+**3. Link preservation during camera rotation**
 ```gherkin
 Scenario: Links persist during camera rotation
   Given a note "Rotate Test" has 2 related notes
@@ -414,7 +414,7 @@ Scenario: Links persist during camera rotation
   And the links rotate with the nodes
 ```
 
-**4. Проверка на дублирование связей**
+**4. Check for link duplication**
 ```gherkin
 Scenario: Links are not duplicated when switching views multiple times
   Given a note "Switch Test" has 2 related notes
@@ -425,9 +425,9 @@ Scenario: Links are not duplicated when switching views multiple times
   And no duplicate links are present in the graph
 ```
 
-#### Реализация тестов
+#### Test Implementation
 
-Файл: `tests/features/step_definitions/progressive-graph-steps.ts`
+File: `tests/features/step_definitions/progressive-graph-steps.ts`
 
 ```typescript
 // Camera zoom steps
@@ -460,83 +460,83 @@ Then('no links appear disconnected or floating', async function(this: ITestWorld
 });
 ```
 
-#### Запуск тестов
+#### Running Tests
 
 ```bash
-# Запуск тестов связей
+# Run link tests
 cd tests
 npx cucumber-js --tags "@link-preservation"
 
-# Запуск всех 3D тестов
+# Run all 3D tests
 npx cucumber-js features/local_3d_graph.feature features/full_3d_graph.feature
 ```
 
 ---
 
-## NLP Service тестирование (Python)
+## NLP Service Testing (Python)
 
-### Структура
+### Structure
 
 ```
 nlp-service/
 ├── tests/
-│   ├── test_api.py              # ~8 тестов (FastAPI endpoints)
-│   └── test_nlp_utils.py        # ~6 тестов (NLP функции)
+│   ├── test_api.py              # ~8 tests (FastAPI endpoints)
+│   └── test_nlp_utils.py        # ~6 tests (NLP functions)
 ├── app/
-│   ├── main.py                  # FastAPI приложение
-│   ├── nlp_utils.py             # NLP утилиты
-│   └── models.py                # Pydantic модели
-└── requirements.txt             # Зависимости
+│   ├── main.py                  # FastAPI application
+│   ├── nlp_utils.py             # NLP utilities
+│   └── models.py                # Pydantic models
+└── requirements.txt             # Dependencies
 ```
 
-### Запуск
+### Running
 
 ```bash
 cd nlp-service
 
-# Установка зависимостей
+# Install dependencies
 pip install -r requirements.txt
 
-# Запуск всех тестов
+# Run all tests
 pytest tests/ -v
 
-# Запуск конкретного файла
+# Run specific file
 pytest tests/test_api.py -v
 pytest tests/test_nlp_utils.py -v
 
-# С покрытием
+# With coverage
 pytest tests/ --cov=app --cov-report=html
 ```
 
-### Тесты
+### Tests
 
 **API Tests** (`test_api.py`):
-- `TestHealthEndpoint` - Проверка health check
-- `TestKeywordsEndpoint` - Тесты извлечения ключевых слов
-- `TestEmbeddingsEndpoint` - Тесты генерации эмбеддингов
+- `TestHealthEndpoint` - Health check verification
+- `TestKeywordsEndpoint` - Keyword extraction tests
+- `TestEmbeddingsEndpoint` - Embedding generation tests
 
 **NLP Utils Tests** (`test_nlp_utils.py`):
-- `TestKeywordExtraction` - Извлечение ключевых слов
-- `TestEmbeddingModel` - Работа с эмбеддингами
+- `TestKeywordExtraction` - Keyword extraction
+- `TestEmbeddingModel` - Embedding model operation
 
 ---
 
-## Интеграционное тестирование
+## Integration Testing
 
 ### Docker Compose Integration
 
 ```bash
-# Полный стек для тестирования
+# Full stack for testing
 docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
 
-# Запуск интеграционных тестов
+# Run integration tests
 cd backend && go test ./... -tags=integration -v
 ```
 
 ### API Contract Testing
 
 ```bash
-# Проверка OpenAPI спецификации
+# Check OpenAPI specification
 npm install -D @redocly/cli
 
 npx @redocly/cli lint backend/openAPI.yaml
@@ -545,66 +545,66 @@ npx @redocly/cli stats backend/openAPI.yaml
 
 ---
 
-## E2E тестирование (Cucumber BDD)
+## E2E Testing (Cucumber BDD)
 
-### Структура
+### Structure
 
 ```
 tests/
 ├── features/
-│   ├── graph_navigation.feature      # Навигация по графу
-│   ├── graph_view.feature            # 2D/3D режимы
-│   ├── full_3d_graph.feature         # Полный 3D граф (все заметки)
-│   ├── local_3d_graph.feature        # Локальный 3D граф (одна заметка + связи)
-│   ├── note_management.feature       # CRUD операции
-│   ├── search_and_discovery.feature   # Поиск
-│   └── import_export.feature          # Импорт/экспорт
+│   ├── graph_navigation.feature      # Graph navigation
+│   ├── graph_view.feature            # 2D/3D modes
+│   ├── full_3d_graph.feature         # Full 3D graph (all notes)
+│   ├── local_3d_graph.feature        # Local 3D graph (one note + links)
+│   ├── note_management.feature       # CRUD operations
+│   ├── search_and_discovery.feature   # Search
+│   └── import_export.feature          # Import/export
 │
 └── features/step_definitions/
-    ├── graph_steps.ts                # Шаги для графа
-    ├── progressive-graph-steps.ts    # Шаги для 3D графа (fog, camera, links)
-    ├── note_steps.ts                 # Шаги для заметок
-    └── common_steps.ts               # Общие шаги
+    ├── graph_steps.ts                # Graph steps
+    ├── progressive-graph-steps.ts    # 3D graph steps (fog, camera, links)
+    ├── note_steps.ts                 # Note steps
+    └── common_steps.ts               # Common steps
 ```
 
-### Feature-файлы 3D графа
+### 3D Graph Feature Files
 
-**`full_3d_graph.feature`** (9 сценариев):
-- Переход на полный 3D граф с главной страницы
-- Отображение всех заметок
-- Загрузка без спиннера (progressive loading)
-- Туманность при загрузке
-- Центрирование камеры
-- **Сохранение связей при зуме**
-- **Сохранение связей при вращении**
-- Корректное отображение связей с множеством узлов
+**`full_3d_graph.feature`** (9 scenarios):
+- Navigate to full 3D graph from homepage
+- Display all notes
+- Loading without spinner (progressive loading)
+- Fog during loading
+- Camera centering
+- **Link preservation during zoom**
+- **Link preservation during rotation**
+- Correct link display with many nodes
 
-**`local_3d_graph.feature`** (13 сценариев):
-- Переход из деталей заметки в 3D
-- Переход с главной при выделении
-- Одиночная заметка с туманом
-- Прогрессивная загрузка
-- Переключатель "Показать все заметки"
-- **Сохранение связей при переключении режимов**
-- **Сохранение связей при зуме камеры**
-- **Сохранение связей при вращении камеры**
-- **Проверка на дублирование связей**
-- **Корректность связей после прогрессивной загрузки**
+**`local_3d_graph.feature`** (13 scenarios):
+- Navigate from note details to 3D
+- Navigate from homepage on selection
+- Single note with fog
+- Progressive loading
+- "Show all notes" toggle
+- **Link preservation when switching modes**
+- **Link preservation during camera zoom**
+- **Link preservation during camera rotation**
+- **Check for link duplication**
+- **Link correctness after progressive loading**
 
-### Запуск Cucumber
+### Running Cucumber
 
 ```bash
-# Все BDD тесты
+# All BDD tests
 npm run test:cucumber
 
-# С определённым тегом
+# With specific tag
 CUCUMBER_TAGS="@smoke" npm run test:cucumber
 
-# HTML отчёт
+# HTML report
 npm run test:cucumber:report
 ```
 
-### Пример Feature
+### Feature Example
 
 ```gherkin
 Feature: Note Management
@@ -631,9 +631,9 @@ Feature: Note Management
 
 ---
 
-## Запуск тестов
+## Running Tests
 
-### Полная проверка (все уровни)
+### Full Check (all levels)
 
 ```bash
 # 1. Backend unit tests
@@ -698,73 +698,73 @@ jobs:
 
 ---
 
-## Отчёты и покрытие
+## Reports and Coverage
 
-### Backend покрытие
+### Backend Coverage
 
 ```bash
 cd backend
 
-# Генерация отчёта
+# Generate report
 go test ./... -coverprofile=coverage.out
 go tool cover -html=coverage.out -o coverage.html
 
-# Просмотр
+# View
 open coverage.html
 
-# Проверка порога (минимум 70%)
+# Check threshold (minimum 70%)
 go-test-coverage -coverprofile=coverage.out -threshold=70
 ```
 
-### Frontend покрытие
+### Frontend Coverage
 
 ```bash
 cd frontend
 
-# E2E покрытие (через Playwright trace)
+# E2E coverage (via Playwright trace)
 npx playwright test --trace on
 
-# Открытие отчёта
+# Open report
 npx playwright show-report
 ```
 
-### Текущее покрытие (апрель 2026)
+### Current Coverage (April 2026)
 
-| Компонент | Покрытие | Тесты | Статус |
+| Component | Coverage | Tests | Status |
 |-----------|----------|-------|--------|
-| **Backend Domain** | ~85% | 19 | ✅ Отлично |
-| **Backend Application** | ~75% | 7 | ✅ Хорошо |
-| **Backend Infrastructure** | ~60% | 62 | ✅ Хорошо |
-| **Backend Interface** | ~70% | 14 | ✅ Хорошо |
-| **Frontend Unit** | ~60% | ~220 | ✅ Отлично |
-| **Frontend E2E** | N/A | 48 | ✅ Отлично |
-| **BDD Scenarios** | N/A | 111 | ✅ Отлично |
-| **NLP Python** | ~80% | ~15 | ✅ Отлично |
-| **Итого** | - | **~512** | ✅ |
+| **Backend Domain** | ~85% | 19 | ✅ Excellent |
+| **Backend Application** | ~75% | 7 | ✅ Good |
+| **Backend Infrastructure** | ~60% | 62 | ✅ Good |
+| **Backend Interface** | ~70% | 14 | ✅ Good |
+| **Frontend Unit** | ~60% | ~220 | ✅ Excellent |
+| **Frontend E2E** | N/A | 48 | ✅ Excellent |
+| **BDD Scenarios** | N/A | 111 | ✅ Excellent |
+| **NLP Python** | ~80% | ~15 | ✅ Excellent |
+| **Total** | - | **~512** | ✅ |
 
-### Необходимые дополнительные тесты
+### Additional Tests Needed
 
 - [ ] **Worker Integration Tests** - Redis queue + task processing
-- [ ] **Load Tests** - k6 или Artillery для API нагрузки
-- [ ] **Security Tests** - OWASP ZAP сканирование
-- [ ] **Contract Tests** - Pact для API контрактов
+- [ ] **Load Tests** - k6 or Artillery for API load
+- [ ] **Security Tests** - OWASP ZAP scanning
+- [ ] **Contract Tests** - Pact for API contracts
 
 ---
 
-## Полезные команды
+## Useful Commands
 
 ```bash
-# Быстрый чек
-make test              # Все тесты
-make test-backend      # Только backend
-make test-frontend     # Только frontend E2E
-make test-cucumber     # Только BDD
+# Quick check
+make test              # All tests
+make test-backend      # Backend only
+make test-frontend     # Frontend E2E only
+make test-cucumber     # BDD only
 
-# Отладка
-make test-debug        # С отладочной информацией
+# Debug
+make test-debug        # With debug info
 make test-watch        # Watch mode
 
-# Отчёты
-make coverage          # Покрытие
-make report            # HTML отчёт
+# Reports
+make coverage          # Coverage
+make report            # HTML report
 ```

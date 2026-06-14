@@ -234,40 +234,22 @@ knowledge-graph/
 
 ## 🤖 AI Agents
 
-This project uses a comprehensive AI agent ecosystem:
+This project uses **9 specialized AI agents** for development:
 
-### Available Agents (9)
-| Agent | Focus | Tools |
-|-------|-------|-------|
-| **Orchestrator** | Coordination | All tools |
-| **Backend Go** | Go API, DB | `backend-go-tools.md` |
-| **Frontend Svelte** | Svelte 5, UI | `frontend-tools.md` |
-| **Python NLP** | Python, ML | `python-nlp-tools.md` |
-| **Integration** | API contracts | `integration-tools.md` |
-| **Infrastructure** | Docker, K8s | `infrastructure-tools.md` |
-| **DevOps** | CI/CD, backup | `devops-tools.md` |
-| **Performance** | Optimization | `performance-tools.md` |
-| **Security** | Security, auth | `security-tools.md` |
+### Available Agents
+| Agent | Focus |
+|-------|-------|
+| **Orchestrator** | Task routing & coordination |
+| **Backend Go** | Go API, PostgreSQL, Redis |
+| **Frontend Svelte** | Svelte 5, TypeScript, UI/UX |
+| **Integration** | API contracts, DTOs, OpenAPI |
+| **Infrastructure** | Docker, containers, monitoring |
+| **DevOps** | CI/CD, deployment, backups |
+| **Performance** | Profiling, optimization, caching |
+| **Security** | Security audit, Auth/AuthZ |
+| **Testing** | Unit, integration, E2E tests |
 
-
----
-
-## 🤖 AI Agents
-
-This project uses a comprehensive AI agent ecosystem:
-
-### Available Agents (9)
-| Agent | Focus | Tools |
-|-------|-------|-------|
-| **Orchestrator** | Coordination | All tools |
-| **Backend Go** | Go API, DB | `backend-go-tools.md` |
-| **Frontend Svelte** | Svelte 5, UI | `frontend-tools.md` |
-| **Python NLP** | Python, ML | `python-nlp-tools.md` |
-| **Integration** | API contracts | `integration-tools.md` |
-| **Infrastructure** | Docker, K8s | `infrastructure-tools.md` |
-| **DevOps** | CI/CD, backup | `devops-tools.md` |
-| **Performance** | Optimization | `performance-tools.md` |
-| **Security** | Security, auth | `security-tools.md` |
+**Documentation:** See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed agent descriptions and guidelines.
 
 ---
 
@@ -422,7 +404,7 @@ Follow conventional commits:
 - **Testing:** >60% coverage required
 - **Security:** Never commit secrets, use environment variables
 
-See [`AGENTS.md`](docs/AGENTS.md) for detailed development guidelines.
+See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 
 ---
 

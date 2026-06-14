@@ -8,7 +8,7 @@ System parameters can be configured via:
 
 For production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
 
-🌐 **Languages**: [English](CONFIGURATION_EN.md) | [Русский](CONFIGURATION.md)
+🌐 **Language:** English
 
 ---
 

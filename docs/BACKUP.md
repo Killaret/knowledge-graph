@@ -1,52 +1,50 @@
-# Резервное копирование Knowledge Graph
+# Knowledge Graph Backup System
 
-Система резервного копирования для личного инстанса Knowledge Graph с поддержкой локального хранения и облачного бэкапа на Яндекс.Диск.
+Backup system for personal Knowledge Graph instance with support for local storage and cloud backup to Yandex.Disk.
 
-## 📋 Обзор системы
+## 📋 System Overview
 
-Система бэкапа включает:
+The backup system includes:
 
-- **Локальные скрипты**: `scripts/utility/backup-personal.sh` (Linux/Mac) и `scripts/utility/backup-personal.ps1` (Windows)
-- **Go-сервис**: `backend/internal/infrastructure/cloud/yandex_backup.go` для работы с Яндекс.Диск через WebDAV
-- **Asynq задача**: `TypeBackupToCloud` для асинхронной загрузки бэкапов
-- **Docker сервис**: `backup_scheduler` в `docker-compose.personal.yml` для автоматического бэкапа
-- **Конфигурация**: `knowledge-graph.config.json` секция `backup`
+- **Local scripts**: `scripts/utility/backup-personal.sh` (Linux/Mac) and `scripts/utility/backup-personal.ps1` (Windows)
+- **Go service**: `backend/internal/infrastructure/cloud/yandex_backup.go` for Yandex.Disk WebDAV integration
+- **Asynq task**: `TypeBackupToCloud` for asynchronous backup uploads
+- **Docker service**: `backup_scheduler` in `docker-compose.personal.yml` for automated backups
+- **Configuration**: `knowledge-graph.config.json` backup section
 
-### Архитектура бэкапа
+### Backup Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   Backup Scheduler (Docker)                   │
-│              - Ежедневный запуск по расписанию               │
-│              - Выполнение backup-personal.sh                 │
+│              - Daily scheduled execution                      │
+│              - Executes backup-personal.sh                    │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Backup Script (backup-personal.sh/ps1)          │
-│              - pg_dump базы PostgreSQL                        │
-│              - Сжатие gzip                                   │
-│              - Загрузка на Яндекс.Диск (опционально)          │
+│              - PostgreSQL pg_dump                             │
+│              - Gzip compression                               │
+│              - Upload to Yandex.Disk (optional)               │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               Локальное хранение                             │
+│               Local Storage                                   │
 │               ./backups/backup-personal-YYYY-MM-DD.sql.gz    │
 └────────────────────────┬────────────────────────────────────┘
                          │
-                         ▼ (если включен облачный бэкап)
+                         ▼ (if cloud backup enabled)
 ┌─────────────────────────────────────────────────────────────┐
-│               Яндекс.Диск (WebDAV)                          │
-│               /KnowledgeGraphBackups/                       │
+│               Yandex.Disk (WebDAV)                           │
+│               /KnowledgeGraphBackups/                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## ⚙️ Настройка бэкапов
+## ⚙️ Backup Configuration
 
-### Шаг 1: Настройка конфигурации
-
-Отредактируйте файл `knowledge-graph.config.json`:
+### Step 1: Configure `knowledge-graph.config.json`
 
 ```json
 {
@@ -68,47 +66,47 @@
 }
 ```
 
-**Параметры конфигурации:**
+**Configuration Parameters:**
 
-- `local_path` — локальная папка для хранения бэкапов
-- `cloud.enabled` — включить облачный бэкап
-- `cloud.provider` — провайдер облачного хранилища (только `yandex`)
-- `cloud.yandex.oauth_token` — OAuth токен Яндекс.Диска
-- `cloud.yandex.backup_folder` — папка на Яндекс.Диске для бэкапов
-- `cloud.yandex.max_backups` — максимальное количество бэкапов в облаке
-- `schedule` — расписание в формате cron (по умолчанию `0 2 * * *` — каждый день в 2:00)
-- `retention_days` — количество дней для хранения локальных бэкапов
-- `draft_ttl_hours` — время жизни черновиков в часах
+- `local_path` — local directory for backup storage
+- `cloud.enabled` — enable cloud backup
+- `cloud.provider` — cloud storage provider (only `yandex`)
+- `cloud.yandex.oauth_token` — Yandex.Disk OAuth token
+- `cloud.yandex.backup_folder` — folder on Yandex.Disk for backups
+- `cloud.yandex.max_backups` — maximum number of backups to keep in cloud
+- `schedule` — cron schedule (default `0 2 * * *` — daily at 2:00 AM)
+- `retention_days` — number of days to keep local backups
+- `draft_ttl_hours` — draft TTL in MongoDB in hours
 
-### Шаг 2: Получение OAuth токена Яндекс.Диска
+### Step 2: Get Yandex.Disk OAuth Token
 
-#### Создание приложения
+#### Creating the Application
 
-1. Перейдите на [Yandex OAuth](https://oauth.yandex.ru/client/new)
-2. Заполните форму:
-   - **Название приложения**: Knowledge Graph Backup
-   - **Описание**: Резервное копирование базы данных
-   - **Ссылки на сайт**: `http://localhost`
+1. Go to [Yandex OAuth](https://oauth.yandex.ru/client/new)
+2. Fill out the form:
+   - **Application Name**: Knowledge Graph Backup
+   - **Description**: Database backup system
+   - **Website URL**: `http://localhost`
    - **Redirect URI**: `https://oauth.yandex.ru/verification_code`
-   - **Разрешения (DLS)**: выберите "Яндекс.Диск WebDAV API"
-3. Получите **Client ID**
+   - **Permissions (DLS)**: Select "Yandex.Disk WebDAV API"
+3. Get your **Client ID**
 
-#### Получение токена через браузер
+#### Getting Token via Browser
 
-1. Откройте в браузере:
+1. Open in browser:
    ```
    https://oauth.yandex.ru/authorize?response_type=token&client_id=YOUR_CLIENT_ID
    ```
-   Замените `YOUR_CLIENT_ID` на ваш Client ID
-2. Авторизуйтесь в Яндекс
-3. Разрешите доступ к Яндекс.Диску
-4. В URL после перенаправления будет токен в формате:
+   Replace `YOUR_CLIENT_ID` with your Client ID
+2. Log in to Yandex
+3. Grant access to Yandex.Disk
+4. The token will be in the URL after redirect:
    ```
    https://oauth.yandex.ru/verification_code#access_token=YOUR_TOKEN&...
    ```
-5. Скопируйте токен (часть после `access_token=`)
+5. Copy the token (part after `access_token=`)
 
-#### Получение токена через curl
+#### Getting Token via curl
 
 ```bash
 curl -X POST "https://oauth.yandex.ru/token" \
@@ -118,68 +116,68 @@ curl -X POST "https://oauth.yandex.ru/token" \
   -d "client_secret=YOUR_CLIENT_SECRET"
 ```
 
-### Шаг 3: Настройка переменных окружения (опционально)
+### Step 3: Set Environment Variables (Optional)
 
-Добавьте в файл `.env`:
+Add to `.env` file:
 
 ```bash
-# Включить облачный бэкап
+# Enable cloud backup
 BACKUP_CLOUD_ENABLED=true
 
-# OAuth токен Яндекс.Диска
+# Yandex.Disk OAuth token
 BACKUP_YANDEX_TOKEN=your_oauth_token_here
 
-# Папка на Яндекс.Диске
+# Folder on Yandex.Disk
 BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups
 
-# Локальная папка для бэкапов
+# Local backup directory
 BACKUP_DIR=./backups
 
-# Очистка старых бэкапов (true/false)
+# Clean old backups (true/false)
 CLEANUP_OLD_BACKUPS=true
 ```
 
-## 🚀 Ручной запуск бэкапа
+## 🚀 Manual Backup Execution
 
 ### Windows (PowerShell)
 
 ```powershell
-# Установите переменные окружения
+# Set environment variables
 $env:BACKUP_CLOUD_ENABLED = "true"
 $env:BACKUP_YANDEX_TOKEN = "your_oauth_token_here"
 $env:BACKUP_YANDEX_FOLDER = "/KnowledgeGraphBackups"
 
-# Запустите скрипт бэкапа
+# Run backup script
 .\scripts\utility\backup-personal.ps1
 ```
 
 ### Linux/Mac
 
 ```bash
-# Установите переменные окружения
+# Set environment variables
 export BACKUP_CLOUD_ENABLED=true
 export BACKUP_YANDEX_TOKEN="your_oauth_token_here"
 export BACKUP_YANDEX_FOLDER="/KnowledgeGraphBackups"
 
-# Запустите скрипт бэкапа
+# Run backup script
 ./scripts/utility/backup-personal.sh
 ```
 
-### Через Docker Compose (личный инстанс)
+### Via Docker Compose (personal instance)
 
 ```bash
-# Запуск backup_scheduler сервиса
+# Start backup_scheduler service
 docker-compose -f docker-compose.personal.yml up backup_scheduler
 
-# Или единоразовый запуск бэкапа
+# Or one-time backup execution
 docker-compose -f docker-compose.personal.yml run --rm backup_scheduler
 ```
 
-## 📅 Автоматические бэкапы
+## 📅 Automatic Backups
 
-### Через Docker Compose (рекомендуется)
+### Via Docker Compose (Recommended)
 
-Сервис `backup_scheduler` в `docker-compose.personal.yml` автоматически запускает бэкап каждые 24 часа:
+The `backup_scheduler` service in `docker-compose.personal.yml` automatically runs backups every 24 hours:
 
 ```yaml
 backup_scheduler:
@@ -215,18 +213,18 @@ backup_scheduler:
   restart: unless-stopped
 ```
 
-### Через cron (Linux/Mac)
+### Via cron (Linux/Mac)
 
-Добавьте в crontab (`crontab -e`):
+Add to crontab (`crontab -e`):
 
 ```bash
-# Ежедневный бэкап в 2:00 ночи
+# Daily backup at 2:00 AM
 0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_TOKEN=your_token ./scripts/utility/backup-personal.sh >> /var/log/kg-backup.log 2>&1
 ```
 
-### Через Task Scheduler (Windows)
+### Via Task Scheduler (Windows)
 
-1. Откройте Task Scheduler
+1. Open Task Scheduler
 2. Create Task → Triggers → Daily at 2:00 AM
 3. Action: Start a program
    - Program: `powershell.exe`
@@ -236,20 +234,20 @@ backup_scheduler:
      - `BACKUP_YANDEX_TOKEN=your_token`
      - `BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups`
 
-## 🔄 Восстановление из бэкапа
+## 🔄 Backup Restoration
 
-### Шаг 1: Скачивание бэкапа
+### Step 1: Download Backup
 
-**С Яндекс.Диска (веб-интерфейс):**
+**From Yandex.Disk (web interface):**
 
-1. Откройте [Яндекс.Диск](https://disk.yandex.ru)
-2. Перейдите в папку `KnowledgeGraphBackups`
-3. Скачайте нужный бэкап: `backup-personal-YYYY-MM-DD.sql.gz`
+1. Open [Yandex.Disk](https://disk.yandex.ru)
+2. Navigate to `KnowledgeGraphBackups` folder
+3. Download the desired backup: `backup-personal-YYYY-MM-DD.sql.gz`
 
-**С Яндекс.Диска (через WebDAV):**
+**From Yandex.Disk (via WebDAV):**
 
 ```bash
-# Скачивание через curl
+# Download via curl
 TOKEN="your_oauth_token"
 BACKUP_DATE="2024-05-17"
 curl -X GET "https://webdav.yandex.ru/KnowledgeGraphBackups/backup-personal-${BACKUP_DATE}.sql.gz" \
@@ -257,97 +255,97 @@ curl -X GET "https://webdav.yandex.ru/KnowledgeGraphBackups/backup-personal-${BA
   --output backup-personal-${BACKUP_DATE}.sql.gz
 ```
 
-**Из локального хранилища:**
+**From local storage:**
 
 ```bash
-# Бэкапы находятся в папке ./backups/
+# Backups are in ./backups/ folder
 ls ./backups/
 ```
 
-### Шаг 2: Распаковка бэкапа
+### Step 2: Extract Backup
 
 ```bash
 gunzip backup-personal-2024-05-17.sql.gz
 ```
 
-### Шаг 3: Восстановление в PostgreSQL
+### Step 3: Restore to PostgreSQL
 
 ```bash
-# Восстановление в базу personal
+# Restore to personal database
 psql -h localhost -p 5433 -U personal -d knowledge_personal < backup-personal-2024-05-17.sql
 
-# Или через Docker
+# Or via Docker
 docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal < backup-personal-2024-05-17.sql
 ```
 
-### Шаг 4: Проверка восстановления
+### Step 4: Verify Restoration
 
 ```bash
-# Подключитесь к базе и проверьте данные
+# Connect to database and verify data
 docker exec -it kg-postgres-personal psql -U personal -d knowledge_personal
 
-# Внутри psql
+# Inside psql
 SELECT COUNT(*) FROM notes;
 SELECT COUNT(*) FROM links;
 \q
 ```
 
-## 📊 Управление бэкапами
+## 📊 Backup Management
 
-### Просмотр списка бэкапов
+### View Backup List
 
-**Локальные бэкапы:**
+**Local backups:**
 
 ```bash
 ls -lh ./backups/
 ```
 
-**Бэкапы на Яндекс.Диске (веб-интерфейс):**
+**Yandex.Disk backups (web interface):**
 
-1. Откройте [Яндекс.Диск](https://disk.yandex.ru)
-2. Перейдите в папку `KnowledgeGraphBackups`
+1. Open [Yandex.Disk](https://disk.yandex.ru)
+2. Navigate to `KnowledgeGraphBackups` folder
 
-**Бэкапы на Яндекс.Диске (через API):**
+**Yandex.Disk backups (via API):**
 
-Go-сервис `YandexBackupService` поддерживает метод `ListBackups` для получения списка файлов:
+Go service `YandexBackupService` supports `ListBackups` method to get file list:
 
 ```go
 files, err := service.ListBackups(ctx, "")
-// files содержит список имен файлов бэкапов
+// files contains list of backup filenames
 ```
 
-### Удаление старых бэкапов
+### Delete Old Backups
 
-**Автоматическая очистка:**
+**Automatic cleanup:**
 
-Скрипты бэкапа автоматически удаляют локальные бэкапы старше 7 дней (настраивается через `CLEANUP_OLD_BACKUPS` и `retention_days`).
+Backup scripts automatically delete local backups older than 7 days (configurable via `CLEANUP_OLD_BACKUPS` and `retention_days`).
 
-**Ручное удаление локальных бэкапов:**
+**Manual deletion of local backups:**
 
 ```bash
-# Удаление бэкапов старше 30 дней
+# Delete backups older than 30 days
 find ./backups -name "backup-personal-*.sql.gz" -mtime +30 -delete
 ```
 
-**Удаление бэкапов с Яндекс.Диска:**
+**Delete backups from Yandex.Disk:**
 
-1. Откройте [Яндекс.Диск](https://disk.yandex.ru)
-2. Перейдите в папку `KnowledgeGraphBackups`
-3. Удалите ненужные файлы
+1. Open [Yandex.Disk](https://disk.yandex.ru)
+2. Navigate to `KnowledgeGraphBackups` folder
+3. Delete unwanted files
 
-Go-сервис поддерживает метод `DeleteBackup` для программного удаления:
+Go service supports `DeleteBackup` method for programmatic deletion:
 
 ```go
 err := service.DeleteBackup(ctx, "backup-personal-2024-05-17.sql.gz")
 ```
 
-## 🔍 Устранение проблем
+## 🔍 Troubleshooting
 
-### Ошибка "BACKUP_YANDEX_TOKEN not set"
+### Error "BACKUP_YANDEX_TOKEN not set"
 
-**Причина:** Переменная окружения `BACKUP_YANDEX_TOKEN` не установлена.
+**Cause:** Environment variable `BACKUP_YANDEX_TOKEN` is not set.
 
-**Решение:**
+**Solution:**
 
 ```bash
 # Linux/Mac
@@ -359,30 +357,30 @@ $env:BACKUP_YANDEX_TOKEN = "your_token"
 echo $env:BACKUP_YANDEX_TOKEN
 ```
 
-### Ошибка "Yandex.Disk upload failed"
+### Error "Yandex.Disk upload failed"
 
-**Возможные причины:**
+**Possible causes:**
 
-1. Токен неверный или истек
-2. Недостаточно места на Яндекс.Диске
-3. Проблемы с подключением к интернету
-4. Неверная папка на Яндекс.Диске
+1. Token is invalid or expired
+2. Not enough space on Yandex.Disk
+3. Internet connection issues
+4. Incorrect folder path on Yandex.Disk
 
-**Решение:**
+**Solution:**
 
-1. Проверьте токен и получите новый при необходимости
-2. Проверьте свободное место на Яндекс.Диске (бесплатный тариф — 10 ГБ)
-3. Проверьте подключение к интернету
-4. Убедитесь, что папка `KnowledgeGraphBackups` существует или может быть создана
+1. Check token and get new one if necessary
+2. Check available space on Yandex.Disk (free tier - 10 GB)
+3. Check internet connection
+4. Ensure `KnowledgeGraphBackups` folder exists or can be created
 
-### Ошибка "pg_dump: command not found"
+### Error "pg_dump: command not found"
 
-**Причина:** Утилита `pg_dump` не установлена или не доступна в PATH.
+**Cause:** `pg_dump` utility is not installed or not in PATH.
 
-**Решение:**
+**Solution:**
 
 ```bash
-# Установка PostgreSQL (включает pg_dump)
+# Install PostgreSQL (includes pg_dump)
 # Ubuntu/Debian
 sudo apt-get install postgresql-client
 
@@ -390,101 +388,100 @@ sudo apt-get install postgresql-client
 brew install postgresql
 
 # Windows
-# Скачайте PostgreSQL с https://www.postgresql.org/download/windows/
+# Download PostgreSQL from https://www.postgresql.org/download/windows/
 ```
 
-### Ошибка "Permission denied" при записи бэкапа
+### Error "Permission denied" when writing backup
 
-**Причина:** Недостаточно прав для записи в папку бэкапов.
+**Cause:** Insufficient permissions to write to backup directory.
 
-**Решение:**
+**Solution:**
 
 ```bash
-# Создайте папку бэкапов с нужными правами
+# Create backup directory with proper permissions
 mkdir -p ./backups
 chmod 755 ./backups
 ```
 
-### Ошибка 401 Unauthorized при загрузке на Яндекс.Диск
+### Error 401 Unauthorized when uploading to Yandex.Disk
 
-**Причина:** Токен неверный или истек.
+**Cause:** Token is invalid or expired.
 
-**Решение:**
+**Solution:**
 
-1. Получите новый OAuth токен по инструкции выше
-2. Обновите `BACKUP_YANDEX_TOKEN` в `.env` файле
-3. Перезапустите сервис бэкапа
+1. Get new OAuth token following instructions above
+2. Update `BACKUP_YANDEX_TOKEN` in `.env` file
+3. Restart backup service
 
-### Бэкап создается локально, но не загружается в облако
+### Backup created locally but not uploaded to cloud
 
-**Причина:** Облачный бэкап отключен или настроен неправильно.
+**Cause:** Cloud backup is disabled or misconfigured.
 
-**Решение:**
+**Solution:**
 
 ```bash
-# Проверьте, что облачный бэкап включен
-echo $BACKUP_CLOUD_ENABLED  # должно быть "true"
+# Check if cloud backup is enabled
+echo $BACKUP_CLOUD_ENABLED  # should be "true"
 
-# Проверьте токен
+# Check token
 echo $BACKUP_YANDEX_TOKEN
 
-# Проверьте конфигурацию в knowledge-graph.config.json
+# Check configuration in knowledge-graph.config.json
 cat knowledge-graph.config.json | grep -A 10 backup
 ```
 
-## 🔒 Безопасность
+## 🔒 Security
 
-- **Никогда не коммитьте** `.env` файл с реальными токенами
-- Храните токен в безопасном месте (менеджер паролей)
-- Регулярно обновляйте OAuth токен
-- Ограничьте права приложения только к Яндекс.Диску
-- Используйте отдельные токены для разных окружений (dev, staging, prod)
-- Шифруйте бэкапы при хранении в чувствительных окружениях
-- Регулярно тестируйте восстановление из бэкапов
+- **Never commit** `.env` file with real tokens
+- Store token in a secure location (password manager)
+- Regularly rotate OAuth token
+- Limit application permissions to Yandex.Disk only
+- Use separate tokens for different environments (dev, staging, prod)
+- Encrypt backups when storing in sensitive environments
+- Regularly test backup restoration
 
-## 📈 Мониторинг и логирование
+## 📈 Monitoring & Logging
 
-### Просмотр логов бэкапа
+### View Backup Logs
 
-**Docker сервис:**
+**Docker service:**
 
 ```bash
 docker logs kg-backup-scheduler
 ```
 
-**Локальный запуск:**
+**Local execution:**
 
 ```bash
-# Перенаправление вывода в файл
+# Redirect output to file
 ./scripts/utility/backup-personal.sh >> /var/log/kg-backup.log 2>&1
 
-# Просмотр логов
+# View logs
 tail -f /var/log/kg-backup.log
 ```
 
-### Метрики бэкапа
+### Backup Metrics
 
-Рекомендуется отслеживать:
+Recommended to monitor:
 
-- Частоту успешных бэкапов
-- Размер бэкапов
-- Время выполнения бэкапа
-- Свободное место на Яндекс.Диске
-- Количество хранимых бэкапов
+- Frequency of successful backups
+- Backup size
+- Backup execution time
+- Available space on Yandex.Disk
+- Number of stored backups
 
+## 📚 Additional Documentation
 
-## 📚 Дополнительная документация
+- [Yandex.Disk Backup Setup (detailed)](docs/YANDEX_DISK_BACKUP.md) — detailed Yandex.Disk configuration guide
+- [Cloud Backup Setup](docs/CLOUD_BACKUP_SETUP.md) — general cloud backup information
+- [System Configuration](docs/CONFIGURATION_EN.md) — complete configuration guide
+- [Architecture](docs/ARCHITECTURE.md) — backup system architecture
 
-- [Настройка Яндекс.Диск бэкапа (детально)](docs/YANDEX_DISK_BACKUP.md) — подробная инструкция по настройке Яндекс.Диска
-- [Настройка облачного бэкапа](docs/CLOUD_BACKUP_SETUP.md) — общая информация о облачных бэкапах
-- [Конфигурация системы](docs/CONFIGURATION.md) — полное руководство по настройке
-- [Архитектура](docs/ARCHITECTURE.md) — архитектура системы бэкапа
+## 🆘 Support
 
-## 🆘 Поддержка
+If you encounter issues with backup system setup or usage:
 
-Если вы столкнулись с проблемами при настройке или использовании системы бэкапа:
-
-1. Проверьте этот документ на наличие решения
-2. Изучите [docs/YANDEX_DISK_BACKUP.md](docs/YANDEX_DISK_BACKUP.md)
-3. Проверьте логи системы
-4. Создайте issue в репозитории проекта с описанием проблемы
+1. Check this document for solutions
+2. Review [docs/YANDEX_DISK_BACKUP.md](docs/YANDEX_DISK_BACKUP.md)
+3. Check system logs
+4. Create issue in project repository with problem description

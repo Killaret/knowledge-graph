@@ -4,7 +4,7 @@
 > 
 > Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-🌐 **Languages**: [English](CHANGELOG_EN.md) | [Русский](CHANGELOG.md)
+🌐 **Language:** English
 
 ---
 

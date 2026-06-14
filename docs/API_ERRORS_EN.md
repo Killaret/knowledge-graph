@@ -1,88 +1,88 @@
-# API Errors Documentation
+да# API Errors Documentation
 
-> **Версия:** 1.1  
-> **Дата:** Апрель 2026  
-> **Статус:** Актуально для Backend API v1.1.0 (Unified REST API)
+> **Version:** 1.1  
+> **Date:** April 2026  
+> **Status:** Current for Backend API v1.1.0 (Unified REST API)
 
 ---
 
-## Общий формат ответов
+## General Response Format
 
-### Успешный ответ (200, 201)
+### Success Response (200, 201)
 
 ```json
 {
   "data": { ... },
-  "message": "Опциональное сообщение"
+  "message": "Optional message"
 }
 ```
 
-### Ошибка (400, 404, 409, 500)
+### Error Response (400, 404, 409, 500)
 
-Все ошибки возвращаются в едином формате:
+All errors are returned in a unified format:
 
 ```json
 {
   "code": "ERROR_CODE",
-  "message": "Человекочитаемое описание",
+  "message": "Human-readable description",
   "details": [
     {
-      "field": "имя_поля",
-      "reason": "причина",
-      "message": "описание ошибки",
-      "received": "полученное значение",
-      "expected": "ожидаемое значение"
+      "field": "field_name",
+      "reason": "reason",
+      "message": "error description",
+      "received": "received value",
+      "expected": "expected value"
     }
   ]
 }
 ```
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `code` | string | Код ошибки (UPPER_SNAKE_CASE) |
-| `message` | string | Человекочитаемое описание на русском |
-| `details` | array | Детализация по полям (опционально) |
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | string | Error code (UPPER_SNAKE_CASE) |
+| `message` | string | Human-readable description |
+| `details` | array | Field-level details (optional) |
 
 ---
 
 ## HTTP Status Codes
 
-| Код | Описание | Когда возникает |
-|-----|----------|-----------------|
-| **200** | OK | Успешный запрос |
-| **201** | Created | Успешное создание ресурса |
-| **204** | No Content | Успешное удаление без тела ответа |
-| **400** | Bad Request | Ошибка валидации |
-| **403** | Forbidden | Доступ запрещён (зарезервировано для будущей аутентификации) |
-| **404** | Not Found | Ресурс не найден |
-| **409** | Conflict | Конфликт данных (дубликат) |
-| **500** | Internal Server Error | Внутренняя ошибка сервера |
+| Code | Description | When Occurs |
+|------|-------------|-------------|
+| **200** | OK | Successful request |
+| **201** | Created | Successful resource creation |
+| **204** | No Content | Successful deletion without response body |
+| **400** | Bad Request | Validation error |
+| **403** | Forbidden | Access denied (reserved for future authentication) |
+| **404** | Not Found | Resource not found |
+| **409** | Conflict | Data conflict (duplicate) |
+| **500** | Internal Server Error | Internal server error |
 
 ---
 
-## Коды ошибок
+## Error Codes
 
 ### VALIDATION_ERROR (400)
-Ошибка валидации входных данных
+Input validation error
 
 ### NOT_FOUND (404)
-Ресурс не найден
+Resource not found
 
 ### CONFLICT (409)
-Конфликт данных (например, дубликат связи)
+Data conflict (e.g., duplicate link)
 
 ### FORBIDDEN (403)
-Доступ запрещён (зарезервировано)
+Access denied (reserved)
 
 ### UNAUTHORIZED (401)
-Требуется аутентификация (зарезервировано)
+Authentication required (reserved)
 
 ### INTERNAL_ERROR (500)
-Внутренняя ошибка сервера
+Internal server error
 
 ---
 
-## Ошибки Notes API
+## Notes API Errors
 
 ### POST /notes
 
@@ -90,7 +90,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "title",
@@ -105,7 +105,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "title",
@@ -122,7 +122,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "type",
@@ -138,7 +138,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось сохранить заметку"
+  "message": "Failed to save note"
 }
 ```
 
@@ -150,12 +150,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID",
+      "message": "Invalid UUID format",
       "received": "not-a-uuid"
     }
   ]
@@ -166,7 +166,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
@@ -174,7 +174,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось получить заметку"
+  "message": "Failed to retrieve note"
 }
 ```
 
@@ -186,12 +186,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID",
+      "message": "Invalid UUID format",
       "received": "not-a-uuid"
     }
   ]
@@ -202,7 +202,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
@@ -210,7 +210,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "title",
@@ -226,7 +226,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось обновить заметку"
+  "message": "Failed to update note"
 }
 ```
 
@@ -238,12 +238,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -253,7 +253,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
@@ -261,13 +261,13 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось удалить заметку"
+  "message": "Failed to delete note"
 }
 ```
 
 ---
 
-## Ошибки Links API
+## Links API Errors
 
 ### POST /links
 
@@ -275,7 +275,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "source_note_id",
@@ -295,12 +295,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "source_note_id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID",
+      "message": "Invalid UUID format",
       "received": "invalid-uuid"
     }
   ]
@@ -311,7 +311,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Исходная заметка не найдена"
+  "message": "Source note not found"
 }
 ```
 
@@ -319,7 +319,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Целевая заметка не найдена"
+  "message": "Target note not found"
 }
 ```
 
@@ -327,12 +327,12 @@
 ```json
 {
   "code": "CONFLICT",
-  "message": "Конфликт данных",
+  "message": "Data conflict",
   "details": [
     {
       "field": "link",
       "reason": "already_exists",
-      "message": "Связь уже существует",
+      "message": "Link already exists",
       "received": {
         "source_note_id": "uuid-1",
         "target_note_id": "uuid-2",
@@ -348,7 +348,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "weight",
@@ -365,7 +365,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось сохранить связь"
+  "message": "Failed to save link"
 }
 ```
 
@@ -377,12 +377,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -392,7 +392,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Связь не найдена"
+  "message": "Link not found"
 }
 ```
 
@@ -400,7 +400,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось получить связь"
+  "message": "Failed to retrieve link"
 }
 ```
 
@@ -412,12 +412,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -427,7 +427,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Связь не найдена"
+  "message": "Link not found"
 }
 ```
 
@@ -435,7 +435,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось удалить связь"
+  "message": "Failed to delete link"
 }
 ```
 
@@ -447,12 +447,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -462,7 +462,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
@@ -470,7 +470,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось получить связь"
+  "message": "Failed to retrieve links"
 }
 ```
 
@@ -482,12 +482,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -497,7 +497,7 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
@@ -505,13 +505,13 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось удалить связь"
+  "message": "Failed to delete link"
 }
 ```
 
 ---
 
-## Ошибки Search API
+## Search API Errors
 
 ### GET /notes/search
 
@@ -519,7 +519,7 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "q",
@@ -534,13 +534,13 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось выполнить поиск"
+  "message": "Failed to perform search"
 }
 ```
 
 ---
 
-## Ошибки Graph API
+## Graph API Errors
 
 ### GET /notes/{id}/graph
 
@@ -548,12 +548,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -563,7 +563,7 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось загрузить граф"
+  "message": "Failed to load graph"
 }
 ```
 
@@ -575,13 +575,13 @@
 ```json
 {
   "code": "INTERNAL_ERROR",
-  "message": "Не удалось загрузить граф"
+  "message": "Failed to load graph"
 }
 ```
 
 ---
 
-## Ошибки Suggestions API
+## Suggestions API Errors
 
 ### GET /notes/{id}/suggestions
 
@@ -589,12 +589,12 @@
 ```json
 {
   "code": "VALIDATION_ERROR",
-  "message": "Некорректные входные данные",
+  "message": "Invalid input data",
   "details": [
     {
       "field": "id",
       "reason": "invalid_format",
-      "message": "Неверный формат UUID"
+      "message": "Invalid UUID format"
     }
   ]
 }
@@ -604,11 +604,11 @@
 ```json
 {
   "code": "NOT_FOUND",
-  "message": "Заметка не найдена"
+  "message": "Note not found"
 }
 ```
 
-**202 Accepted** (рекомендации генерируются)
+**202 Accepted** (recommendations being generated)
 ```json
 {
   "suggestions": [],
@@ -618,9 +618,9 @@
 
 ---
 
-## Обработка ошибок на клиенте
+## Client-Side Error Handling
 
-### JavaScript/TypeScript пример
+### JavaScript/TypeScript Example
 
 ```typescript
 interface FieldError {
@@ -647,20 +647,20 @@ async function handleApiCall() {
       switch (error.code) {
         case 'NOT_FOUND':
           console.error(`Resource not found: ${error.message}`);
-          showUserMessage('Заметка не найдена');
+          showUserMessage('Note not found');
           break;
         case 'VALIDATION_ERROR':
           console.error(`Validation error:`, error.details);
           const fieldErrors = error.details?.map(d => d.message).join(', ');
-          showUserMessage(`Ошибки: ${fieldErrors}`);
+          showUserMessage(`Errors: ${fieldErrors}`);
           break;
         case 'CONFLICT':
           console.error(`Conflict: ${error.message}`);
-          showUserMessage('Конфликт данных. Возможно, ресурс уже существует.');
+          showUserMessage('Data conflict. Resource may already exist.');
           break;
         case 'INTERNAL_ERROR':
           console.error(`Server error: ${error.message}`);
-          showUserMessage('Произошла ошибка сервера. Попробуйте позже.');
+          showUserMessage('Server error occurred. Please try again later.');
           break;
         default:
           console.error(`Unknown error: ${error.message}`);
@@ -670,10 +670,10 @@ async function handleApiCall() {
     }
     
     const success = await response.json();
-    return success.data; // Данные в поле data
+    return success.data; // Data in data field
   } catch (networkError) {
     console.error('Network error:', networkError);
-    showUserMessage('Нет подключения к серверу');
+    showUserMessage('No connection to server');
     return null;
   }
 }
@@ -681,7 +681,7 @@ async function handleApiCall() {
 
 ---
 
-### Go пример
+### Go Example
 
 ```go
 package main
@@ -739,7 +739,7 @@ func handleResponse(resp *http.Response) error {
         return fmt.Errorf("failed to decode success: %w", err)
     }
     
-    // Работа с success.Data
+    // Work with success.Data
     return nil
 }
 ```
@@ -748,13 +748,13 @@ func handleResponse(resp *http.Response) error {
 
 ## Rate Limiting
 
-API реализует rate limiting через middleware. При превышении лимитов возвращается **429 Too Many Requests**.
+API implements rate limiting via middleware. When limits are exceeded, **429 Too Many Requests** is returned.
 
-### Лимиты
+### Limits
 
 | Endpoint | Limit | Window |
 |----------|-------|--------|
-| Общие запросы | 100 | per minute |
+| General requests | 100 | per minute |
 | POST /notes | 30 | per minute |
 | POST /links | 50 | per minute |
 | PUT /notes/{id} | 20 | per minute |
@@ -782,13 +782,13 @@ if resp.StatusCode == http.StatusTooManyRequests {
 
 ## Swagger UI
 
-Интерактивная документация API доступна по адресу:
+Interactive API documentation is available at:
 
 ```
 http://localhost:8080/swagger/index.html
 ```
 
-OpenAPI спецификация доступна по:
+OpenAPI specification is available at:
 
 ```
 http://localhost:8080/openapi.yaml
@@ -796,20 +796,20 @@ http://localhost:8080/openapi.yaml
 
 ---
 
-## Логирование ошибок
+## Error Logging
 
-Все ошибки логируются с:
-- HTTP методом и URL
-- Кодом ошибки и сообщением
-- Деталями полей (при валидации)
-- Request ID (для трассировки)
-- Временной меткой
+All errors are logged with:
+- HTTP method and URL
+- Error code and message
+- Field details (on validation)
+- Request ID (for tracing)
+- Timestamp
 
-Пример лога:
+Example log:
 ```
 [2026-04-27 22:30:45] ERROR: VALIDATION_ERROR
   Request: POST /api/notes
-  Message: Некорректные входные данные
+  Message: Invalid input data
   Details: [{"field": "title", "reason": "required", "message": "Title is required"}]
   RequestID: req-abc-123-xyz
 ```

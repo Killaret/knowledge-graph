@@ -2,248 +2,248 @@
 
 ## 🎯 Product Development Strategy
 
-Этот план сосредоточен на превращении Knowledge Graph в надёжный и полезный продукт для реального использования, в отличие от архитектурного плана SaaS-миграции (см. `ARCHITECTURE_ROADMAP.md`).
+This plan focuses on turning Knowledge Graph into a reliable and useful product for real-world use, as opposed to the architectural SaaS migration plan (see `ARCHITECTURE_ROADMAP.md`).
 
 ---
 
-## 🎯 Фаза 1: Стабильность и личное использование (1–2 дня)
-**Цель:** Превращаем систему в надёжный личный инструмент
+## 🎯 Phase 1: Stability & Personal Use (1–2 days)
+**Goal:** Turn the system into a reliable personal tool
 
-### Задачи
+### Tasks
 
-#### 🔧 Аудит и фикс багов
-- [ ] Запустить полный аудит состояния системы (уже выполнено, найдены критические проблемы)
-- [ ] **CRITICAL:** Исправить компиляционные ошибки backend
-  - Обновить API redis client v9 (MaxConnAge → ConnMaxIdleTime, IdleTimeout → ConnMaxLifetime)
-  - Исправить неопределённую функцию `quit` → `Quit`
-  - Обновить API sql.DBStats (MaxIdleConns field removed)
-- [ ] **CRITICAL:** Удалить реальный OAuth токен из кода
-  - Отозвать токен в Яндекс OAuth
-  - Заменить на placeholder в knowledge-graph.config.json
-  - Добавить .env переменную BACKUP_YANDEX_OAUTH_TOKEN
-- [ ] Исправить моки в frontend тестах (getCachedGraph, getFreshGraph)
-- [ ] Исправить типы моков в backend тестах
+#### 🔧 Audit & Bug Fixes
+- [ ] Run full system audit (already done, critical issues found)
+- [ ] **CRITICAL:** Fix backend compilation errors
+  - Update redis client v9 API (MaxConnAge → ConnMaxIdleTime, IdleTimeout → ConnMaxLifetime)
+  - Fix undefined function `quit` → `Quit`
+  - Update sql.DBStats API (MaxIdleConns field removed)
+- [ ] **CRITICAL:** Remove real OAuth token from code
+  - Revoke token in Yandex OAuth
+  - Replace with placeholder in knowledge-graph.config.json
+  - Add .env variable BACKUP_YANDEX_OAUTH_TOKEN
+- [ ] Fix mocks in frontend tests (getCachedGraph, getFreshGraph)
+- [ ] Fix mock types in backend tests
 
-#### 💾 Проверка бэкапов
-- [ ] Убедиться, что схема резервного копирования на Яндекс.Диск работает
-- [ ] Проверить восстановление из бэкапа
-- [ ] Тестировать автоматические бэкапы по расписанию
-- [ ] Верифицировать целостность данных после восстановления
+#### 💾 Backup Verification
+- [ ] Ensure Yandex.Disk backup scheme works
+- [ ] Test backup restoration
+- [ ] Test scheduled automatic backups
+- [ ] Verify data integrity after restoration
 
-#### 📝 Начать вести заметки
-- [ ] Создать личный дневник проекта в Knowledge Graph
-- [ ] Ежедневное использование для выявления UX-проблем
-- [ ] Документирование шероховатостей интерфейса
-- [ ] Сбор фидбека о производительности и юзабилити
+#### 📝 Start Using Notes
+- [ ] Create personal project diary in Knowledge Graph
+- [ ] Daily usage to identify UX issues
+- [ ] Document interface rough spots
+- [ ] Collect performance and usability feedback
 
 ### Definition of Done
-- [ ] Все критические баги исправлены
-- [ ] Система успешно компилируется и запускается
-- [ ] Бэкапы проверены и работают автоматически
-- [ ] Личное использование начато, собран первичный фидбек
+- [ ] All critical bugs fixed
+- [ ] System compiles and runs successfully
+- [ ] Backups verified and working automatically
+- [ ] Personal use started, initial feedback collected
 
 ---
 
-## 🚀 Фаза 2: «Поделиться» — MVP для внешнего пользователя (3–5 дней)
-**Цель:** Сделать проект доступным для других пользователей
+## 🚀 Phase 2: "Share" — MVP for External Users (3–5 days)
+**Goal:** Make the project accessible to other users
 
-### Задачи
+### Tasks
 
-#### 🌐 Публичный пул заметок
-- [ ] Реализовать публичную шаринг-систему
-  - Генерация публичных ссылок на заметки
-  - Просмотр публичных заметок без авторизации
-  - Лайки и закладки для публичных контента
-  - Копирование публичных заметок к себе
-- [ ] Поиск по публичному пулу заметок
-- [ ] Профили публичных пользователей
-- [ ] Модерация контента (флаги, жалобы)
+#### 🌐 Public Notes Pool
+- [ ] Implement public sharing system
+  - Generate public links to notes
+  - View public notes without authentication
+  - Likes and bookmarks for public content
+  - Copy public notes to your own
+- [ ] Search in public notes pool
+- [ ] Public user profiles
+- [ ] Content moderation (flags, reports)
 
-#### 📚 Инструкция по развёртыванию
-- [ ] Написать понятный `docs/DEPLOY.md`
-  - Требования к системе
-  - Docker Compose развёртывание одной командой
-  - Конфигурация переменных окружения
-  - Troubleshooting распространённых проблем
-- [ ] Обновить `README.md` с быстрым стартом
-- [ ] Добавить секцию FAQ
-- [ ] Создать видео-туториал (опционально)
+#### 📚 Deployment Instructions
+- [ ] Write clear `docs/DEPLOY.md`
+  - System requirements
+  - Docker Compose one-command deployment
+  - Environment variable configuration
+  - Troubleshooting common issues
+- [ ] Update `README.md` with quick start
+- [ ] Add FAQ section
+- [ ] Create video tutorial (optional)
 
-#### 🧪 Тестирование деплоя
-- [ ] Развернуть проект на чистой машине/VPS
-- [ ] Проверить весь функционал в свежем окружении
-- [ ] Тестировать установку с нуля
-- [ ] Проверить production конфигурацию
-- [ ] Load testing базового функционала
+#### 🧪 Deployment Testing
+- [ ] Deploy project on clean machine/VPS
+- [ ] Test all functionality in fresh environment
+- [ ] Test fresh installation
+- [ ] Check production configuration
+- [ ] Load testing basic functionality
 
 #### 👶 Onboarding
-- [ ] Добавить приветственные "пылинки" (быстрые заметки)
-  - "Добро пожаловать в Knowledge Graph"
-  - "Как начать пользоваться"
-  - "Примеры графов"
-- [ ] Создать интерактивный тур по интерфейсу
-- [ ] Добавить подсказки и tooltips
-- [ ] Создать примеры заметок разных типов
-- [ ] Контекстная помощь при первом использовании
+- [ ] Add welcome "dust particles" (quick notes)
+  - "Welcome to Knowledge Graph"
+  - "How to get started"
+  - "Graph examples"
+- [ ] Create interactive UI tour
+- [ ] Add hints and tooltips
+- [ ] Create example notes of different types
+- [ ] Contextual help for first-time users
 
 ### Definition of Done
-- [ ] Публичный шаринг функционал полностью работает
-- [ ] Любой разработчик может развернуть проект одной командой
-- [ ] Деплой проверен на чистой машине
-- [ ] Новые пользователи могут быстро освоиться с onboarding
+- [ ] Public sharing functionality fully works
+- [ ] Any developer can deploy with one command
+- [ ] Deployment tested on clean machine
+- [ ] New users can quickly onboard
 
 ---
 
-## 💎 Фаза 3: Killer Features для роста (1–2 недели)
-**Цель:** Добавить функции, которые привлекут новую аудиторию
+## 💎 Phase 3: Killer Features for Growth (1–2 weeks)
+**Goal:** Add features that will attract new audience
 
-### Задачи
+### Tasks
 
-#### 📥 Импорт из Obsidian
-- [ ] Поддержка Obsidian Markdown формат
-- [ ] Импорт связей (wikilinks)
-- [ ] Конвертация Obsidian графов в Knowledge Graph формат
-- [ ] Сохранение метаданных и тегов
-- [ ] Batch импорт целых хранилищ
-- [ ] Видео-инструкция по импорту
+#### 📥 Obsidian Import
+- [ ] Support Obsidian Markdown format
+- [ ] Import links (wikilinks)
+- [ ] Convert Obsidian graphs to Knowledge Graph format
+- [ ] Preserve metadata and tags
+- [ ] Batch import entire vaults
+- [ ] Video tutorial for import
 
-#### 🌐 Landing Page и SEO
-- [ ] Создать красивую landing page
-  - Описание проекта
-  - Скриншоты и демо
-  - Features и преимущества
+#### 🌐 Landing Page & SEO
+- [ ] Create beautiful landing page
+  - Project description
+  - Screenshots and demos
+  - Features and benefits
   - Call-to-action
-- [ ] SEO оптимизация
+- [ ] SEO optimization
   - Meta tags, Open Graph
-  - Структурированные данные
+  - Structured data
   - Sitemap.xml
   - Robots.txt
-- [ ] Аналитика посещаемости
-- [ ] A/B тестирование landing page
+- [ ] Traffic analytics
+- [ ] A/B testing landing page
 
-#### 🔗 Базовые интеграции
-- [ ] Telegram бот для быстрого создания заметок
-  - /new команда для создания заметки
-  - Автоматическое извлечение ключевых слов
-  - Отправка в личный граф
-- [ ] Webhook для интеграций
-  - Zapier/Make интеграции
-  - GitHub issues → заметки
-  - Email → заметки
-- [ ] Браузер extension
-  - Сохранение страниц как заметок
-  - Выделение текста → новая заметка
+#### 🔗 Basic Integrations
+- [ ] Telegram bot for quick note creation
+  - /new command to create note
+  - Automatic keyword extraction
+  - Send to personal graph
+- [ ] Webhook for integrations
+  - Zapier/Make integrations
+  - GitHub issues → notes
+  - Email → notes
+- [ ] Browser extension
+  - Save pages as notes
+  - Text selection → new note
 
 ### Definition of Done
-- [ ] Импорт из Obsidian работает безупречно
-- [ ] Landing page привлекает трафик
-- [ ] Telegram бот функционален и документирован
-- [ ] Базовые интеграции доступны
+- [ ] Obsidian import works flawlessly
+- [ ] Landing page attracts traffic
+- [ ] Telegram bot functional and documented
+- [ ] Basic integrations available
 
 ---
 
-## 📋 Бэклог (когда-нибудь потом)
+## 📋 Backlog (someday)
 
-### Мультиарендность (SaaS)
-- [ ] Полная SaaS архитектура (см. `ARCHITECTURE_ROADMAP.md`)
-- [ ] Единый вход для команд
-- [ ] Управление правами доступа
-- [ ] Billing и подписки
+### Multi-tenancy (SaaS)
+- [ ] Full SaaS architecture (see `ARCHITECTURE_ROADMAP.md`)
+- [ ] Single sign-on for teams
+- [ ] Access control management
+- [ ] Billing and subscriptions
 
-### Мобильная версия
-- [ ] React Native приложение
-- [ ] Офлайн режим
-- [ ] Push уведомления
-- [ ] Синхронизация с desktop
+### Mobile Version
+- [ ] React Native app
+- [ ] Offline mode
+- [ ] Push notifications
+- [ ] Desktop synchronization
 
-### Возврат 3D-графа
-- [ ] Оптимизация 3D рендеринга
-- [ ] VR/AR поддержка
-- [ ] Интерактивные 3D сцены
+### 3D Graph Return
+- [ ] 3D rendering optimization
+- [ ] VR/AR support
+- [ ] Interactive 3D scenes
 - [ ] Performance improvements
 
 ### AI Features
-- [ ] Автоматическое суммирование заметок
-- [ ] Генерация идей и связей
-- [ ] Voice-to-text для заметок
-- [ ] Image recognition для визуального контента
+- [ ] Automatic note summarization
+- [ ] Idea and connection generation
+- [ ] Voice-to-text for notes
+- [ ] Image recognition for visual content
 
 ### Collaboration
-- [ ] Редактирование заметок в реальном времени
-- [ ] Комментарии и обсуждения
-- [ ] Version history с diff
+- [ ] Real-time note editing
+- [ ] Comments and discussions
+- [ ] Version history with diff
 - [ ] Activity streams
 
 ---
 
-## 💎 Самое важное прямо сейчас
+## 💎 Most Important Right Now
 
-### Приоритетные действия на сегодня:
+### Priority Actions for Today:
 
-1. **Начать вести свой дневник в Knowledge Graph**
-   - Это лучший способ найти UX-проблемы
-   - Ежедневное использование выявит реальные потребности
-   - Собрать фидбек о производительности
+1. **Start keeping your diary in Knowledge Graph**
+   - This is the best way to find UX issues
+   - Daily usage will reveal real needs
+   - Collect performance feedback
 
-2. **Исправить критические баги**
-   - Компиляционные ошибки (блокируют использование)
-   - Уязвимость безопасности (OAuth токен)
-   - Тесты для стабильности
+2. **Fix critical bugs**
+   - Compilation errors (blocking usage)
+   - Security vulnerability (OAuth token)
+   - Tests for stability
 
-3. **Проверить бэкапы**
-   - Убедиться, что данные в безопасности
-   - Тестировать восстановление
-   - Автоматизировать бэкапы
+3. **Verify backups**
+   - Ensure data is safe
+   - Test restoration
+   - Automate backups
 
 ### Success Metrics
 
-**Фаза 1 (1-2 дня):**
-- ✅ Система стабильно работает для личного использования
-- ✅ Бэкапы проверены и надёжны
-- ✅ Собран список UX-проблем из личного опыта
+**Phase 1 (1-2 days):**
+- ✅ System works stably for personal use
+- ✅ Backups verified and reliable
+- ✅ List of UX issues collected from personal experience
 
-**Фаза 2 (3-5 дней):**
-- ✅ Другие пользователи могут пользоваться системой
-- ✅ Деплой документирован и автоматизирован
-- ✅ Onboarding помогает новым пользователям
+**Phase 2 (3-5 days):**
+- ✅ Other users can use the system
+- ✅ Deployment documented and automated
+- ✅ Onboarding helps new users
 
-**Фаза 3 (1-2 недели):**
-- ✅ Новые функции привлекают аудиторию
-- ✅ Интеграции расширяют возможности
-- ✅ Проект растёт и развивается
+**Phase 3 (1-2 weeks):**
+- ✅ New features attract audience
+- ✅ Integrations expand capabilities
+- ✅ Project grows and develops
 
 ---
 
 ## 📊 Progress Tracking
 
-### Текущий статус: **Фаза 1 - В процессе**
+### Current Status: **Phase 1 - In Progress**
 
-| Фаза | Статус | Прогресс | Приоритет |
-|------|--------|----------|-----------|
-| Фаза 1: Стабильность | 🔄 В процессе | 20% | 🔴 Critical |
-| Фаза 2: MVP для пользователей | ⏸️ Ожидание | 0% | 🟡 High |
-| Фаза 3: Killer Features | ⏸️ Ожидание | 0% | 🟢 Medium |
-| Бэклог | ⏸️ Ожидание | 0% | 🔵 Low |
+| Phase | Status | Progress | Priority |
+|-------|--------|----------|----------|
+| Phase 1: Stability | 🔄 In Progress | 20% | 🔴 Critical |
+| Phase 2: MVP for Users | ⏸️ Waiting | 0% | 🟡 High |
+| Phase 3: Killer Features | ⏸️ Waiting | 0% | 🟢 Medium |
+| Backlog | ⏸️ Waiting | 0% | 🔵 Low |
 
-### Ближайшие цели (следующие 7 дней):
+### Near-term Goals (next 7 days):
 
-1. **Исправить критические баги** (день 1-2)
-2. **Настроить надёжные бэкапы** (день 2-3)
-3. **Начать личное использование** (день 1-7, непрерывно)
-4. **Собрать UX feedback** (день 3-7)
+1. **Fix critical bugs** (day 1-2)
+2. **Set up reliable backups** (day 2-3)
+3. **Start personal use** (day 1-7, continuous)
+4. **Collect UX feedback** (day 3-7)
 
-### Долгосрочные цели (следующие 30 дней):
+### Long-term Goals (next 30 days):
 
-1. **Завершить Фазу 1** (день 1-2)
-2. **Запустить Фазу 2** (день 3-7)
-3. **Начать Фазу 3** (день 8-21)
-4. **Первые публичные пользователи** (день 14-30)
+1. **Complete Phase 1** (day 1-2)
+2. **Launch Phase 2** (day 3-7)
+3. **Start Phase 3** (day 8-21)
+4. **First public users** (day 14-30)
 
 ---
 
-## 🔄 Регулярное обновление
+## 🔄 Regular Updates
 
-Этот roadmap будет обновляться по мере выполнения задач и изменения приоритетов. Обновления будут публиковаться в CHANGELOG.md.
+This roadmap will be updated as tasks are completed and priorities change. Updates will be published in CHANGELOG.md.
 
-**Последнее обновление:** 2026-05-31
-**Следующий обзор:** 2026-06-07
+**Last updated:** 2026-05-31
+**Next review:** 2026-06-07

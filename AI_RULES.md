@@ -43,9 +43,12 @@ Knowledge Graph - система управления заметками с гр
 - CORS configured correctly
 
 ### 6. NLP Service
-- Models are cached in huggingface_cache volume
-- Use HF_HOME for HuggingFace cache
-- Sentence-transformers cached in /root/.cache/huggingface/hub/
+- Lazy load: embedding model loads on first request (not at import)
+- Offline-first: HF_HUB_OFFLINE=1 for local-only operation
+- Models cached in huggingface_cache volume via HF_HOME
+- Health check triggers model load, ensures service readiness
+- Use get_embedding_model() and ensure_model_loaded() API
+- Uvicorn starts in ~1s, model loads in ~15s from cache
 
 ### 7. Configuration
 - knowledge-graph.config.json - main configuration

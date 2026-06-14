@@ -1,14 +1,14 @@
 # Knowledge Graph — Architecture Documentation
 
-> **Актуальность:** Auto-generated via @codemaps:  
-> **Дата:** 2026-04-27  
-> **Стек:** Go + SvelteKit + Python (FastAPI) + PostgreSQL + Redis
+> **Relevance:** Auto-generated via @codemaps:  
+> **Date:** 2026-04-27  
+> **Stack:** Go + SvelteKit + Python (FastAPI) + PostgreSQL + Redis
 
 ---
 
-## 📊 Общая Архитектура
+## 📊 Overall Architecture
 
-Система построена на **Clean Architecture** с разделением на 4 слоя:
+The system is built on **Clean Architecture** with 4 layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -48,25 +48,25 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Redis и кэш приватного графа [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md)
-- Redis используется для кэширования приватного графа пользователя рядом с уже существующими токенами, сессиями и данными очередей.
-- Маршрут `/api/v1/me/graph/cached` возвращает мгновенный граф из Redis.
-- Маршрут `/api/v1/me/graph/fresh` вычисляет актуальный граф и может возвращать `delta` для инкрементальных обновлений UI.
-- Фронтенд гарантирует мгновенное отображение через кеш и плавное обновление Canvas без полной перерисовки.
+### Redis and Private Graph Cache [see ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md)
+- Redis is used for caching user's private graph alongside existing tokens, sessions, and queue data.
+- Route `/api/v1/me/graph/cached` returns instant graph from Redis.
+- Route `/api/v1/me/graph/fresh` computes fresh graph and can return `delta` for incremental UI updates.
+- Frontend guarantees instant display via cache and smooth Canvas updates without full redraw.
 
 ---
 
-## 🎯 Компоненты Системы
+## 🎯 System Components
 
 ### 1. Backend (Go)
 
-**Расположение:** `backend/`
+**Location:** `backend/`
 
 #### 1.1 Entry Points (`cmd/`)
 
-| Команда | Файл | Назначение | Порт |
-|---------|------|------------|------|
-| `server` | `cmd/server/main.go` | HTTP API сервер | 8080 |
+| Command | File | Purpose | Port |
+|---------|------|---------|------|
+| `server` | `cmd/server/main.go` | HTTP API server | 8080 |
 | `worker` | `cmd/worker/main.go` | Background job processor | — |
 | `cli` | `cmd/cli/main.go` | Admin CLI | — |
 
@@ -86,8 +86,8 @@ type Note struct {
 }
 ```
 
-**Файлы:**
-- `entity.go` — Aggregate root с бизнес-логикой
+**Files:**
+- `entity.go` — Aggregate root with business logic
 - `value_objects.go` — Title, Content, Metadata
 - `repository.go` — Repository interface
 - `entity_test.go`, `value_objects_test.go` — Unit tests
@@ -106,7 +106,7 @@ type Link struct {
 }
 ```
 
-##### Achievement Domain (`domain/achievement/`) [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
+##### Achievement Domain (`domain/achievement/`) [see ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 
 ```go
 type Achievement struct {
@@ -130,12 +130,12 @@ type Condition struct {
 }
 ```
 
-**Файлы:**
+**Files:**
 - `entity.go` — Achievement and UserAchievement entities
 - `engine.go` — Condition evaluation logic
 - `repository.go` — Repository interface
 
-##### Draft Domain (`domain/draft/`) [см. ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md)
+##### Draft Domain (`domain/draft/`) [see ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md)
 
 ```go
 type Draft struct {
@@ -157,96 +157,77 @@ type DraftContent struct {
 }
 ```
 
-**Файлы:**
+**Files:**
 - `entity.go` — Draft entity with TTL logic
 - `repository.go` — Repository interface (MongoDB implementation)
 - `service.go` — Autosave coordination service
 
-##### Link Domain (`domain/link/`)
-
-```go
-type Link struct {
-    id           uuid.UUID
-    sourceNoteID uuid.UUID    // FK → Note
-    targetNoteID uuid.UUID    // FK → Note
-    linkType     LinkType     // Value Object
-    weight       Weight       // Value Object [0..1]
-    metadata     Metadata
-    createdAt    time.Time
-}
-```
-
-**Файлы:**
-- `entity.go` — Entity с методом `UpdateWeight()`
-- `value_objects.go` — LinkType, Weight, Metadata
-- `repository.go` — Repository interface
-
 ##### Graph Domain (`domain/graph/`)
 
-**Алгоритмы обхода графа:**
+**Graph Traversal Algorithms:**
 - `bfs.go` — Breadth-First Search
-- `neighbor_loader.go` — Загрузка соседей узла
-- `keyword_matcher.go` — Сопоставление по ключевым словам
-- `traversal_service.go` — Сервис обхода с интеграцией репозиториев
-- `normalizer.go` — Нормализация весов связей
-- `aggregation.go` — Агрегация результатов обхода
+- `neighbor_loader.go` — Node neighbor loader
+- `keyword_matcher.go` — Keyword matching
+- `traversal_service.go` — Traversal service with repository integration
+- `normalizer.go` — Link weight normalization
+- `aggregation.go` — Traversal result aggregation
 
-**Тесты:**
+**Tests:**
 - `traversal_test.go` — Unit tests
 - `traversal_integration_test.go` — Integration tests
 
 ##### Keyword Similarity Architecture
 
-**Расположение кода:**
-- `backend/internal/application/recommendation/keyword_similarity.go` — Стратегии сходства [см. ADR 016](architecture/decisions/016-keyword-similarity-strategies.md)
-- `backend/internal/application/recommendation/keyword_matcher_impl.go` — Реализация matcher
-- `backend/internal/domain/graph/keyword_matcher.go` — Интерфейс в domain слое
+**Code location:**
+- `backend/internal/application/recommendation/keyword_similarity.go` — Similarity strategies [see ADR 016](architecture/decisions/016-keyword-similarity-strategies.md)
+- `backend/internal/application/recommendation/keyword_matcher_impl.go` — Matcher implementation
+- `backend/internal/domain/graph/keyword_matcher.go` — Interface in domain layer
 
-**Конфигурация** (`knowledge-graph.config.json`):
+**Configuration** (`knowledge-graph.config.json`):
 ```json
 {
   "backend": {
     "recommendation": {
       "keyword_similarity_method": "jaccard",  // jaccard, overlap, tversky, weighted_jaccard, cosine
-      "keyword_tversky_alpha": 0.5,             // Параметр alpha для Tversky
-      "keyword_tversky_beta": 0.5,              // Параметр beta для Tversky
-      "gamma": 0.2                             // Вес keyword компонента (включает функцию при > 0)
+      "keyword_tversky_alpha": 0.5,             // Alpha parameter for Tversky
+      "keyword_tversky_beta": 0.5,              // Beta parameter for Tversky
+      "gamma": 0.2                             // Weight of keyword component (enables function when > 0)
     }
   }
 }
 ```
 
-**Интеграция** (`backend/cmd/worker/main.go` → `TraversalService`):
+**Integration** (`backend/cmd/worker/main.go` → `TraversalService`):
 ```go
-// 1. Создание стратегии из конфигурации
+// 1. Create strategy from config
 keywordSimilarity, err := recommendation.NewKeywordSimilarity(
     cfg.RecommendationKeywordSimilarityMethod,
     cfg.RecommendationKeywordTverskyAlpha,
     cfg.RecommendationKeywordTverskyBeta,
 )
 
-// 2. Создание matcher с репозиторием ключевых слов
+// 2. Create matcher with keyword repository
 keywordMatcher := recommendation.NewKeywordMatcherImpl(keywordRepo, keywordSimilarity)
 
-// 3. Настройка TraversalService
+// 3. Configure TraversalService
 traversalSvc := graphDomain.NewTraversalServiceWithWeights(...)
 
-// 4. Установка matcher если gamma > 0
+// 4. Set matcher if gamma > 0
 if cfg.RecommendationGamma > 0 {
     traversalSvc.SetKeywordMatcher(keywordMatcher)
 }
 ```
 
-**Доступные стратегии:**
-| Стратегия | Описание | Требует веса |
-|-----------|----------|--------------|
-| `jaccard` | Классический коэффициент Жаккара: \|A ∩ B\| / \|A ∪ B\| | Нет |
-| `overlap` | Коэффициент перекрытия: \|A ∩ B\| / min(\|A\|, \|B\|) | Нет |
-| `tversky` | Индекс Тверски с параметрами alpha/beta: \|A ∩ B\| / (\|A ∩ B\| + α\|A\\B\| + β\|B\\A\|) | Нет |
-| `weighted_jaccard` | Взвешенный Жаккард: sum(min(w1, w2)) / sum(max(w1, w2)) | Да |
-| `cosine` | Косинусное сходство векторов весов | Да |
+**Available Strategies:**
+| Strategy | Description | Requires Weight |
+|----------|-------------|-----------------|
+| `jaccard` | Classic Jaccard coefficient: |A ∩ B| / |A ∪ B| | No |
+| `overlap` | Overlap coefficient: |A ∩ B| / min(|A|, |B|) | No |
+| `tversky` | Tversky index with alpha/beta parameters: |A ∩ B| / (|A ∩ B| + α|A\B| + β|B\A|) | No |
+| `weighted_jaccard` | Weighted Jaccard: sum(min(w1, w2)) / sum(max(w1, w2)) | Yes |
+| `cosine` | Cosine similarity of weight vectors | Yes |
 
-**Поток данных:**
+**Data Flow:**
 ```
 TraversalService.GetSuggestions()
     ↓
@@ -261,27 +242,27 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 ##### Graph Application (`application/graph/`)
 
-| Файл | Назначение |
-|------|------------|
-| `composite_loader.go` | Композитный загрузчик (ключевые слова + эмбеддинги) |
-| `embedding_loader.go` | Загрузка по векторной близости |
-| `neighbor_loader.go` | Загрузка соседей через связи |
+| File | Purpose |
+|------|---------|
+| `composite_loader.go` | Composite loader (keywords + embeddings) |
+| `embedding_loader.go` | Vector proximity loading |
+| `neighbor_loader.go` | Neighbor loading via links |
 | `composite_loader_test.go` | Tests |
 
 ##### Recommendation Application (`application/recommendation/`)
 
-| Файл | Назначение |
-|------|------------|
-| `refresh_service.go` | Обновление рекомендаций |
-| `affected_notes.go` | Определение затронутых заметок |
-| `keyword_similarity.go` | Стратегии сходства ключевых слов (Jaccard, Overlap, Tversky, Weighted Jaccard, Cosine) [см. ADR 016](architecture/decisions/016-keyword-similarity-strategies.md) |
-| `keyword_matcher_impl.go` | Реализация KeywordMatcher с использованием KeywordSimilarity |
+| File | Purpose |
+|------|---------|
+| `refresh_service.go` | Recommendation refresh service |
+| `affected_notes.go` | Identify affected notes |
+| `keyword_similarity.go` | Keyword similarity strategies (Jaccard, Overlap, Tversky, Weighted Jaccard, Cosine) [see ADR 016](architecture/decisions/016-keyword-similarity-strategies.md) |
+| `keyword_matcher_impl.go` | KeywordMatcher implementation using KeywordSimilarity |
 | `*_test.go` | Unit tests |
 
-##### Achievement Application (`application/achievement/`) [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
+##### Achievement Application (`application/achievement/`) [see ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 
-| Файл | Назначение |
-|------|------------|
+| File | Purpose |
+|------|---------|
 | `service.go` | Achievement service with trigger checking |
 | `engine.go` | Achievement engine for condition evaluation |
 | `engine_test.go` | Unit tests for engine |
@@ -298,7 +279,7 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 ##### Queries (`application/queries/graph/`)
 
-- `get_suggestions.go` — Query handler для получения рекомендаций
+- `get_suggestions.go` — Query handler for getting suggestions
 
 #### 1.4 Infrastructure Layer (`internal/infrastructure/`)
 
@@ -306,8 +287,8 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 **PostgreSQL Repositories (`db/postgres/`):**
 
-| Файл | Сущность | CRUD | Специфика |
-|------|----------|------|-----------|
+| File | Entity | CRUD | Specifics |
+|------|--------|------|-----------|
 | `note_repo.go` | Note | ✅ | Full-text search, pagination |
 | `link_repo.go` | Link | ✅ | Cascade delete by source |
 | `embedding_repo.go` | Embedding | ✅ | pgvector similarity search |
@@ -318,20 +299,20 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 | `user_settings_model.go` | UserSettings | ✅ | User preferences (galactic_mode, etc.) |
 
 **Models (`db/postgres/*_model.go`):**
-- `note_model.go` — GORM model для Note
-- `note_embedding_model.go` — Векторные эмбеддинги (pgvector)
-- `note_keyword_model.go` — Извлечённые ключевые слова
-- `link_model.go` — GORM model для Link
+- `note_model.go` — GORM model for Note
+- `note_embedding_model.go` — Vector embeddings (pgvector)
+- `note_keyword_model.go` — Extracted keywords
+- `link_model.go` — GORM model for Link
 - `tag_model.go`, `note_tag_model.go` — Tagging system
-- `recommendation_model.go` — Предвычисленные рекомендации
+- `recommendation_model.go` — Precomputed recommendations
 
 **Migrations:**
 - `migrations.go` — Migration runner
-- `../../migrations/` — 27 SQL файлов миграций
+- `../../migrations/` — 27 SQL migration files
 
 ##### NLP Client (`infrastructure/nlp/`)
 
-- `client.go` — HTTP client для NLP Service
+- `client.go` — HTTP client for NLP Service
 - `client_test.go` — Tests with mocks
 
 **Endpoints:**
@@ -342,30 +323,30 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 **Asynq (Redis-based task queue):**
 
-| Файл | Назначение |
-|------|------------|
-| `asynq_client.go` | Client для enqueue задач |
-| `worker.go` | Worker процессор |
+| File | Purpose |
+|------|---------|
+| `asynq_client.go` | Client for enqueuing tasks |
+| `worker.go` | Worker processor |
 | `tasks.go` | Task definitions |
 | `tasks/recommendation.go` | Recommendation refresh task |
 
 **Task Types:**
-- `recommendation:refresh` — Обновление рекомендаций для ноты
-- `backup:cloud` — Загрузка бэкапа в облачное хранилище
+- `recommendation:refresh` — Refresh recommendations for note
+- `backup:cloud` — Upload backup to cloud storage
 
 ##### Cloud (`infrastructure/cloud/`)
 
 **Yandex.Disk Backup Service:**
 
-| Файл | Назначение |
-|------|------------|
-| `yandex_backup.go` | YandexBackupService для работы с Яндекс.Диск через WebDAV |
+| File | Purpose |
+|------|---------|
+| `yandex_backup.go` | YandexBackupService for Yandex.Disk via WebDAV |
 
-**Методы:**
-- `UploadBackup()` — Загрузка бэкапа с retry логикой
-- `DownloadBackup()` — Скачивание бэкапа
-- `ListBackups()` — Список бэкапов в облаке
-- `DeleteBackup()` — Удаление бэкапа
+**Methods:**
+- `UploadBackup()` — Upload backup with retry logic
+- `DownloadBackup()` — Download backup
+- `ListBackups()` — List backups in cloud
+- `DeleteBackup()` — Delete backup
 
 #### 1.5 Interfaces (HTTP Handlers) (`internal/interfaces/api/`)
 
@@ -399,54 +380,54 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 ### 2. Frontend (SvelteKit)
 
-**Расположение:** `frontend/`
+**Location:** `frontend/`
 
 #### 2.1 Routes (`src/routes/`)
 
-| Route | Файл | Назначение |
-|-------|------|------------|
-| `/` | `+page.svelte` | Главная страница со списком заметок |
-| `/graph` | `graph/+page.svelte` | 2D интерактивный граф (D3.js) |
-| `/graph/3d` | `graph/3d/+page.svelte` | 3D граф (Three.js) |
-| `/graph/3d/:id` | `graph/3d/[id]/+page.svelte` | 3D граф с фокусом на ноте |
-| `/graph/:id` | `graph/[id]/+page.svelte` | 2D граф с фокусом |
-| `/notes/:id` | `notes/[id]/+page.svelte` | Просмотр заметки |
-| `/notes/:id/edit` | `notes/[id]/edit/+page.svelte` | Редактирование |
-| `/notes/new` | `notes/new/+page.svelte` | Создание заметки |
-| `/search` | `search/+page.svelte` | Полнотекстовый поиск |
+| Route | File | Purpose |
+|-------|------|---------|
+| `/` | `+page.svelte` | Main page with note list |
+| `/graph` | `graph/+page.svelte` | 2D interactive graph (D3.js) |
+| `/graph/3d` | `graph/3d/+page.svelte` | 3D graph (Three.js) |
+| `/graph/3d/:id` | `graph/3d/[id]/+page.svelte` | 3D graph focused on note |
+| `/graph/:id` | `graph/[id]/+page.svelte` | 2D graph focused |
+| `/notes/:id` | `notes/[id]/+page.svelte` | View note |
+| `/notes/:id/edit` | `notes/[id]/edit/+page.svelte` | Edit note |
+| `/notes/new` | `notes/new/+page.svelte` | Create note |
+| `/search` | `search/+page.svelte` | Full-text search |
 
 #### 2.2 Components (`src/lib/components/`)
 
 **Core Components (46 total):**
 
-| Компонент | Технология | Назначение | Статус |
-|-----------|------------|------------|--------|
+| Component | Technology | Purpose | Status |
+|-----------|------------|---------|--------|
 | `GraphCanvas.svelte` | D3.js | 2D force-directed graph | Active |
-| `Graph3D.svelte` | Three.js | 3D celestial visualization [см. ADR 017](architecture/decisions/017-color-palette-redesign.md) | **Frozen** |
-| `LazyGraph3D.svelte` | dynamic import | Ленивая загрузка 3D | **Frozen** |
-| `SmartGraph.svelte` | D3+Svelte | Адаптивный граф (2D/3D) | 2D only |
-| `NoteCard.svelte` | Svelte | Карточка заметки |
-| `NoteEditor.svelte` | Svelte | WYSIWYG редактор |
-| `NoteSidePanel.svelte` | Svelte | Боковая панель деталей |
-| `CreateNoteModal.svelte` | Svelte | Модал создания |
-| `EditNoteModal.svelte` | Svelte | Модал редактирования |
-| `SearchBar.svelte` | Svelte | Поисковая строка |
-| `Sidebar.svelte` | Svelte | Навигация |
-| `FloatingControls.svelte` | Svelte | Плавающие кнопки управления |
-| `BackButton.svelte` | Svelte | Навигация назад |
-| `ConfirmModal.svelte` | Svelte | Подтверждение действий |
-| `Modal.svelte` | Svelte | Базовый модал |
-| `Button.svelte` | Svelte | UI Button |
-| `TypeSelector.svelte` | Svelte | Выбор типа ноды (star/planet/moon) |
-| `ToastNotification.svelte` | Svelte | Ephemeral notifications with galactic mode support |
-| `ApiErrorDisplay.svelte` | Svelte | Error display with lexicon integration |
-| `ShareModal.svelte` | Svelte | Share modal with lexicon integration |
+| `Graph3D.svelte` | Three.js | 3D celestial visualization [see ADR 017](architecture/decisions/017-color-palette-redesign.md) | **Frozen** |
+| `LazyGraph3D.svelte` | dynamic import | Lazy loading 3D | **Frozen** |
+| `SmartGraph.svelte` | D3+Svelte | Adaptive graph (2D/3D) | 2D only |
+| `NoteCard.svelte` | Svelte | Note card | Active |
+| `NoteEditor.svelte` | Svelte | WYSIWYG editor | Active |
+| `NoteSidePanel.svelte` | Svelte | Side panel details | Active |
+| `CreateNoteModal.svelte` | Svelte | Create modal | Active |
+| `EditNoteModal.svelte` | Svelte | Edit modal | Active |
+| `SearchBar.svelte` | Svelte | Search bar | Active |
+| `Sidebar.svelte` | Svelte | Navigation | Active |
+| `FloatingControls.svelte` | Svelte | Floating control buttons | Active |
+| `BackButton.svelte` | Svelte | Back navigation | Active |
+| `ConfirmModal.svelte` | Svelte | Action confirmation | Active |
+| `Modal.svelte` | Svelte | Base modal | Active |
+| `Button.svelte` | Svelte | UI Button | Active |
+| `TypeSelector.svelte` | Svelte | Node type selector (star/planet/moon) | Active |
+| `ToastNotification.svelte` | Svelte | Ephemeral notifications with galactic mode support | Active |
+| `ApiErrorDisplay.svelte` | Svelte | Error display with lexicon integration | Active |
+| `ShareModal.svelte` | Svelte | Share modal with lexicon integration | Active |
 
 #### 2.3 API Client (`src/lib/api/`)
 
-| Файл | Назначение |
-|------|------------|
-| `client.ts` | ky instance конфигурация |
+| File | Purpose |
+|------|---------|
+| `client.ts` | ky instance configuration |
 | `notes.ts` | Notes API (CRUD + search + suggestions) |
 | `links.ts` | Links API |
 | `graph.ts` | Graph data API |
@@ -454,12 +435,12 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 #### 2.4 Utilities (`src/lib/utils/`)
 
-| Файл | Назначение |
-|------|------------|
+| File | Purpose |
+|------|---------|
 | `galactic-lexicon.ts` | Galactic Lexicon - themed messaging system |
 | `galactic-lexicon.test.ts` | Unit tests for Galactic Lexicon |
 
-**Galactic Lexicon:** [см. ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
+**Galactic Lexicon:** [see ADR 015](architecture/decisions/015-galactic-lexicon-and-achievements.md)
 - Supports two modes: `standard` (technical) and `galactic` (space-themed metaphors)
 - Categories: success, error, info, warning, achievement
 - Locales: Russian (ru) and English (en)
@@ -468,8 +449,8 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 #### 2.5 Stores (`src/lib/stores/`)
 
-| Файл | Назначение |
-|------|------------|
+| File | Purpose |
+|------|---------|
 | `auth.svelte.js` | Authentication state |
 | `lexicon-settings.ts` | Lexicon locale and mode settings |
 | `achievements.ts` | Achievement polling and notification state |
@@ -478,28 +459,28 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 > **🚫 FROZEN FEATURE:** 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead. See CHANGELOG.md for details.
 
-| Файл | Назначение | Статус |
-|------|------------|--------|
+| File | Purpose | Status |
+|------|---------|--------|
 | `scene.ts` | Three.js scene setup | Frozen |
 | `camera.ts` | Camera controls | Frozen |
 | `renderer.ts` | WebGL renderer | Frozen |
 | `graph3d.ts` | 3D graph visualization logic | Frozen |
-| `celestial.ts` | Celestial body rendering (stars, planets) [см. ADR 017](architecture/decisions/017-color-palette-redesign.md) | Frozen |
+| `celestial.ts` | Celestial body rendering (stars, planets) [see ADR 017](architecture/decisions/017-color-palette-redesign.md) | Frozen |
 | `controls.ts` | OrbitControls wrapper | Frozen |
 | `animation.ts` | Animation loop | Frozen |
 | `types.ts` | TypeScript types | Frozen |
 
 #### 2.5 State Management (`src/lib/stores/`)
 
-- `notes.ts` — Svelte store для нот
-- `graph.ts` — Store состояния графа
-- `ui.ts` — UI state (модалы, выбор)
+- `notes.ts` — Svelte store for notes
+- `graph.ts` — Graph state store
+- `ui.ts` — UI state (modals, selection)
 
 ---
 
 ### 3. NLP Service (Python)
 
-**Расположение:** `nlp-service/`
+**Location:** `nlp-service/`
 
 **Stack:** FastAPI + spaCy + sentence-transformers + YAKE + NLTK
 
@@ -522,10 +503,10 @@ EmbedResponse:         {embedding: float[]}
 
 #### 3.3 NLP Utils (`app/nlp_utils.py`)
 
-| Функция | Библиотека | Назначение |
-|---------|------------|------------|
-| `extract_keywords()` | YAKE | Извлечение ключевых слов (RU/EN) |
-| `embedding_model.encode()` | sentence-transformers | Векторизация текста |
+| Function | Library | Purpose |
+|----------|---------|---------|
+| `extract_keywords()` | YAKE | Keyword extraction (RU/EN) |
+| `embedding_model.encode()` | sentence-transformers | Text vectorization |
 
 **Model:** `all-MiniLM-L6-v2` (384 dimensions)
 
@@ -542,87 +523,87 @@ EmbedResponse:         {embedding: float[]}
 
 **Docker:** `pgvector/pgvector:pg16`
 
-**База:** `knowledge_base`
+**Database:** `knowledge_base`
 **User:** `kb_user`
 
 **Extensions:**
-- `pgvector` — Векторные операции
+- `pgvector` — Vector operations
 - `pg_trgm` — Trigram search
 
-**Таблицы:**
+**Tables:**
 ```sql
-notes          — Заметки
-links          — Связи между заметками
-note_embeddings — Векторы (384 dim)
-keywords       — Ключевые слова
-tags           — Теги
+notes          — Notes
+links          — Links between notes
+note_embeddings — Vectors (384 dim)
+keywords       — Keywords
+tags           — Tags
 note_tags      — Many-to-many
-recommendations — Предвычисленные рекомендации
-users          — Пользователи
+recommendations — Precomputed recommendations
+users          — Users
 ```
 
 #### 4.2 Redis
 
-**Назначение:**
+**Purpose:**
 - Task queue backend (Asynq)
-- Cache layer (опционально)
+- Cache layer (optional)
 
 #### 4.3 Docker Compose
 
 **Services (dev stack):**
-1. `postgres` — pgvector (порт 5432)
-2. `redis` — Redis 7 (порт 6379)
-3. `nlp` — Python service (порт 5000)
-4. `backend` — Go API (порт 8080)
+1. `postgres` — pgvector (port 5432)
+2. `redis` — Redis 7 (port 6379)
+3. `nlp` — Python service (port 5000)
+4. `backend` — Go API (port 8080)
 5. `worker` — Background worker
-6. `frontend` — SvelteKit (порт 3000)
+6. `frontend` — SvelteKit (port 3000)
 
 **Services (personal stack):**
-1. `postgres_personal` — pgvector (порт 5433)
-2. `redis_personal` — Redis 7 (порт 6380)
-3. `mongo_personal` — MongoDB 7 (порт 27018) [см. ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md) — черновики
-4. `nlp` — Python service (порт 5001)
-5. `graph-service-personal` — Graph service (порт 9092) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
-6. `backend_personal` — Go API (порт 8081)
+1. `postgres_personal` — pgvector (port 5433)
+2. `redis_personal` — Redis 7 (port 6380)
+3. `mongo_personal` — MongoDB 7 (port 27018) [see ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md) — drafts
+4. `nlp` — Python service (port 5001)
+5. `graph-service-personal` — Graph service (port 9092) [see ADR 013](architecture/decisions/013-graph-service-isolation.md)
+6. `backend_personal` — Go API (port 8081)
 7. `worker_personal` — Background worker
-8. `nginx_personal` — Reverse proxy (порты 8082, 8083)
-9. `frontend_personal` — SvelteKit (порт 3001)
+8. `nginx_personal` — Reverse proxy (ports 8082, 8083)
+9. `frontend_personal` — SvelteKit (port 3001)
 10. `backup_scheduler` — Automatic backup service
 
 #### 4.4 Backup Service
 
-**Назначение:** Автоматическое резервное копирование базы данных PostgreSQL с поддержкой локального хранения и облачного бэкапа на Яндекс.Диск.
+**Purpose:** Automatic PostgreSQL database backup with local storage and Yandex.Disk cloud backup support.
 
-**Компоненты:**
+**Components:**
 
-**Скрипты бэкапа:**
-- `scripts/utility/backup-personal.sh` — Bash скрипт для Linux/Mac
-- `scripts/utility/backup-personal.ps1` — PowerShell скрипт для Windows
+**Backup scripts:**
+- `scripts/utility/backup-personal.sh` — Bash script for Linux/Mac
+- `scripts/utility/backup-personal.ps1` — PowerShell script for Windows
 
-**Go-сервис:**
-- `backend/internal/infrastructure/cloud/yandex_backup.go` — YandexBackupService для работы с Яндекс.Диск через WebDAV API
+**Go-service:**
+- `backend/internal/infrastructure/cloud/yandex_backup.go` — YandexBackupService for Yandex.Disk via WebDAV API
 
-**Asynq задача:**
-- `TypeBackupToCloud` — Асинхронная задача для загрузки бэкапов в облако
+**Asynq task:**
+- `TypeBackupToCloud` — Async task for uploading backups to cloud
 
-**Docker сервис:**
-- `backup_scheduler` — Автоматический запуск бэкапов каждые 24 часа (в docker-compose.personal.yml)
+**Docker service:**
+- `backup_scheduler` — Automatic backup execution every 24 hours (in docker-compose.personal.yml)
 
-**Функциональность:**
-1. **Локальный бэкап:**
-   - pg_dump базы PostgreSQL
-   - Сжатие gzip
-   - Хранение в `./backups/`
-   - Автоматическая очистка старых бэкапов (по умолчанию 7 дней)
+**Functionality:**
+1. **Local backup:**
+   - pg_dump PostgreSQL database
+   - gzip compression
+   - Storage in `./backups/`
+   - Automatic cleanup of old backups (default 7 days)
 
-2. **Облачный бэкап (Яндекс.Диск):**
-   - Загрузка через WebDAV API
-   - OAuth аутентификация
-   - Хранение в `/KnowledgeGraphBackups/`
-   - Автоматическая очистка (max_backups, по умолчанию 10)
-   - Retry логика (3 попытки)
+2. **Cloud backup (Yandex.Disk):**
+   - Upload via WebDAV API
+   - OAuth authentication
+   - Storage in `/KnowledgeGraphBackups/`
+   - Automatic cleanup (max_backups, default 10)
+   - Retry logic (3 attempts)
 
-3. **Конфигурация:**
+3. **Configuration:**
    ```json
    {
      "backup": {
@@ -642,33 +623,33 @@ users          — Пользователи
    }
    ```
 
-**Методы YandexBackupService:**
-- `UploadBackup(ctx, localPath, remoteKey)` — Загрузка бэкапа с retry логикой
-- `DownloadBackup(ctx, remoteKey, localPath)` — Скачивание бэкапа
-- `ListBackups(ctx, prefix)` — Список бэкапов в облаке
-- `DeleteBackup(ctx, remoteKey)` — Удаление бэкапа
-- `ensureFolder(ctx, folderURL)` — Создание папки на Яндекс.Диске
-- `cleanupOldBackups(ctx)` — Очистка старых бэкапов
+**YandexBackupService Methods:**
+- `UploadBackup(ctx, localPath, remoteKey)` — Upload backup with retry logic
+- `DownloadBackup(ctx, remoteKey, localPath)` — Download backup
+- `ListBackups(ctx, prefix)` — List backups in cloud
+- `DeleteBackup(ctx, remoteKey)` — Delete backup
+- `ensureFolder(ctx, folderURL)` — Create folder on Yandex.Disk
+- `cleanupOldBackups(ctx)` — Cleanup old backups
 
-**Переменные окружения:**
-- `BACKUP_CLOUD_ENABLED` — Включить облачный бэкап
-- `BACKUP_YANDEX_TOKEN` — OAuth токен Яндекс.Диска
-- `BACKUP_YANDEX_FOLDER` — Папка на Яндекс.Диске
-- `BACKUP_DIR` — Локальная папка для бэкапов
-- `CLEANUP_OLD_BACKUPS` — Очистка старых бэкапов
+**Environment Variables:**
+- `BACKUP_CLOUD_ENABLED` — Enable cloud backup
+- `BACKUP_YANDEX_TOKEN` — Yandex.Disk OAuth token
+- `BACKUP_YANDEX_FOLDER` — Folder on Yandex.Disk
+- `BACKUP_DIR` — Local backup folder
+- `CLEANUP_OLD_BACKUPS` — Cleanup old backups
 
-**Подробнее:** [`docs/BACKUP.md`](docs/BACKUP.md)
+**More details:** [`docs/BACKUP.md`](docs/BACKUP.md)
 
 ---
 
 ## 🔄 Data Flow
 
-### Создание заметки с рекомендациями
+### Creating note with recommendations
 
 ```
-1. User создаёт заметку (Frontend)
+1. User creates note (Frontend)
    ↓ POST /notes
-2. HTTP Handler принимает запрос
+2. HTTP Handler receives request
    ↓
 3. Application Service: CreateNote
    ├─ Validate input
@@ -689,7 +670,7 @@ users          — Пользователи
    └─ Save recommendations
 ```
 
-### Запрос рекомендаций
+### Requesting recommendations
 
 ```
 GET /notes/:id/suggestions
@@ -700,7 +681,7 @@ Query Handler: GetSuggestions
    └─ Return top-N suggestions
 ```
 
-### Поиск по графу
+### Graph search
 
 ```
 GET /graph?center=:id&depth=2
@@ -719,24 +700,24 @@ Graph Application Service
 
 ### Backend Tests
 
-| Тип | Локация | Фреймворк |
-|-----|---------|-----------|
-| Unit | `*_test.go` (рядом с кодом) | Go testing |
+| Type | Location | Framework |
+|------|----------|-----------|
+| Unit | `*_test.go` (next to code) | Go testing |
 | Integration | `*_integration_test.go` | Go testing + testcontainers |
 | E2E | `tests/features/` | Cucumber + Playwright |
 
 ### Frontend Tests
 
-| Тип | Локация | Фреймворк |
-|-----|---------|-----------|
+| Type | Location | Framework |
+|------|----------|-----------|
 | Unit | `*.test.ts` | Vitest |
 | Component | `*.spec.ts` | Testing Library |
 | E2E | `tests/` | Playwright |
 
 ### NLP Tests
 
-| Тип | Локация | Фреймворк |
-|-----|---------|-----------|
+| Type | Location | Framework |
+|------|----------|-----------|
 | Unit | `tests/test_nlp_utils.py` | pytest |
 | API | `tests/test_api.py` | pytest + FastAPI TestClient |
 
@@ -782,17 +763,17 @@ nltk                            # Text processing
 
 ```bash
 docker-compose up -d
-# Или:
+# Or:
 make dev
 ```
 
 ### Production Considerations
 
 - **Database:** Connection pooling (pgx pool)
-- **Cache:** Redis cluster для high availability
+- **Cache:** Redis cluster for high availability
 - **Queue:** Horizontal scaling workers
-- **NLP:** GPU instances для embeddings
-- **Frontend:** CDN для static assets
+- **NLP:** GPU instances for embeddings
+- **Frontend:** CDN for static assets
 
 ---
 
@@ -801,26 +782,26 @@ make dev
 - **CORS:** Configured for frontend origin
 - **SQL Injection:** GORM + parameterized queries
 - **XSS:** Svelte auto-escaping
-- **Input Validation:** Validator на всех слоях
+- **Input Validation:** Validator at all layers
 
 ---
 
-## 📚 Дополнительная Документация
+## 📚 Additional Documentation
 
-- `API_ERRORS.md` — Ошибки API и коды
-- `ARCHITECTURE_ROADMAP.md` — Планы развития
-- `WEIGHTS_CALCULATION.md` — Логика расчёта весов связей
-- `docs/architecture/c4/` — C4 Model диаграммы
+- `API_ERRORS.md` — API errors and codes
+- `ARCHITECTURE_ROADMAP.md` — Development plans
+- `WEIGHTS_CALCULATION.md` — Link weight calculation logic
+- `docs/architecture/c4/` — C4 Model diagrams
 - `docs/architecture/decisions/` — ADR (Architecture Decision Records)
 
-### Ключевые ADR (Architecture Decision Records)
+### Key ADR (Architecture Decision Records)
 
-- **[ADR 011: Drafts Autosave in MongoDB](architecture/decisions/011-drafts-autosave-mongodb.md)** — Автосохранение черновиков в MongoDB с eventual sync в PostgreSQL
-- **[ADR 013: Graph Service Isolation](architecture/decisions/013-graph-service-isolation.md)** — Выделение Graph Service в отдельный сервис с gRPC и прямым доступом к БД
-- **[ADR 014: Event-Driven Cache Invalidation](architecture/decisions/014-event-driven-cache-invalidation.md)** — Использование Redis Pub/Sub для инвалидации кэша
-- **[ADR 015: Galactic Lexicon and Achievements](architecture/decisions/015-galactic-lexicon-and-achievements.md)** — Единый галактический лексикон, i18n, SSE для уведомлений о достижениях
-- **[ADR 016: Keyword Similarity Strategies](architecture/decisions/016-keyword-similarity-strategies.md)** — Паттерн стратегий для метрик схожести ключевых слов с поддержкой весов
-- **[ADR 017: Color Palette Redesign](architecture/decisions/017-color-palette-redesign.md)** — Чёрно-фиолетово-красная палитра для космической темы
+- **[ADR 011: Drafts Autosave in MongoDB](architecture/decisions/011-drafts-autosave-mongodb.md)** — Autosave drafts in MongoDB with eventual sync to PostgreSQL
+- **[ADR 013: Graph Service Isolation](architecture/decisions/013-graph-service-isolation.md)** — Extract Graph Service as separate microservice with gRPC and direct DB access
+- **[ADR 014: Event-Driven Cache Invalidation](architecture/decisions/014-event-driven-cache-invalidation.md)** — Use Redis Pub/Sub for cache invalidation
+- **[ADR 015: Galactic Lexicon and Achievements](architecture/decisions/015-galactic-lexicon-and-achievements.md)** — Unified galactic lexicon, i18n, SSE for achievement notifications
+- **[ADR 016: Keyword Similarity Strategies](architecture/decisions/016-keyword-similarity-strategies.md)** — Strategy pattern for keyword similarity metrics with weight support
+- **[ADR 017: Color Palette Redesign](architecture/decisions/017-color-palette-redesign.md)** — Black-purple-red color palette for space theme
 
 ---
 
@@ -857,30 +838,28 @@ infrastructure/
 
 ## 📊 Code Statistics
 
-| Компонент | Файлы | Сложность |
-|-----------|-------|-----------|
-| Domain | 19 | Низкая (бизнес-логика) |
-| Application | 10 | Средняя (оркестрация) |
-| Infrastructure | 38 | Высокая (технические детали) |
-| Interfaces | 16 | Средняя (HTTP) |
-| Frontend | 46 | Средняя (UI) |
-| NLP | 4 | Низкая (модели) |
+| Component | Files | Complexity |
+|-----------|-------|------------|
+| Domain | 19 | Low (business logic) |
+| Application | 10 | Medium (orchestration) |
+| Infrastructure | 38 | High (technical details) |
+| Interfaces | 16 | Medium (HTTP) |
+| Frontend | 46 | Medium (UI) |
+| NLP | 4 | Low (models) |
 
 ---
-
-*Generated with ❤️ by Cascade*
 
 ## 📈 Graph Service
 
 ### Overview
 
-Graph Service is an independent microservice responsible for computing 2D/3D graph layouts for the Knowledge Graph frontend. It provides high-performance graph visualization with caching, incremental updates, and event-driven invalidation [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
+Graph Service is an independent microservice responsible for computing 2D/3D graph layouts for the Knowledge Graph frontend. It provides high-performance graph visualization with caching, incremental updates, and event-driven invalidation [see ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
 
 ### Architecture
 
 The Graph Service consists of:
 
-- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
+- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091) [see ADR 013](architecture/decisions/013-graph-service-isolation.md)
 - **Layout Engine**: 2D circular and 3D spiral layout algorithms with delta computation
 - **Cache Layer**: Redis-backed caching with configurable TTL
 - **Data Layer**: Direct PostgreSQL read access (notes, links, embeddings)
@@ -888,7 +867,7 @@ The Graph Service consists of:
 
 ### API Contracts
 
-#### gRPC API (Primary) [см. ADR 013](architecture/decisions/013-graph-service-isolation.md)
+#### gRPC API (Primary) [see ADR 013](architecture/decisions/013-graph-service-isolation.md)
 
 ```protobuf
 service GraphService {
@@ -926,6 +905,8 @@ Supported events: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `LinkCreated`, `L
 
 ### Direct PostgreSQL Reading
 
-Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation [см. ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
+Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation [see ADR 014](architecture/decisions/014-event-driven-cache-invalidation.md).
 
 ---
+
+*Generated with ❤️ by Cascade*
