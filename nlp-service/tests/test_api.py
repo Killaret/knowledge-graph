@@ -15,7 +15,8 @@ client = TestClient(app)
 
 
 class TestHealthEndpoint:
-    def test_health_endpoint(self):
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_health_endpoint(self, _mock_loaded):
         """Test the health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
@@ -117,56 +118,53 @@ class TestKeywordsEndpoint:
 
 
 class TestEmbedEndpoint:
-    @patch('app.main.embedding_model')
-    def test_embed_success(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_success(self, mock_get_model):
         """Test successful embedding generation"""
-        # Mock the embedding model
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_embedding = [0.1, 0.2, 0.3, 0.4]
         mock_model.encode.return_value = MagicMock()
         mock_model.encode.return_value.tolist.return_value = mock_embedding
-        
-        request_data = {
-            "text": "Test sentence"
-        }
-        
+
+        request_data = {"text": "Test sentence"}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "embedding" in data
         assert data["embedding"] == mock_embedding
-        
-        # Verify the mock was called
         mock_model.encode.assert_called_once_with("Test sentence")
 
-    @patch('app.main.embedding_model')
-    def test_embed_empty_text(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_empty_text(self, mock_get_model):
         """Test embedding generation with empty text"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_embedding = [0.0, 0.0, 0.0]
         mock_model.encode.return_value = MagicMock()
         mock_model.encode.return_value.tolist.return_value = mock_embedding
-        
-        request_data = {
-            "text": ""
-        }
-        
+
+        request_data = {"text": ""}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["embedding"] == mock_embedding
 
-    @patch('app.main.embedding_model')
-    def test_embed_error_handling(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_error_handling(self, mock_get_model):
         """Test error handling in embedding generation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_model.encode.side_effect = Exception("Model error")
-        
-        request_data = {
-            "text": "Test text"
-        }
-        
+
+        request_data = {"text": "Test text"}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 500
         assert "Model error" in response.json()["detail"]
 
@@ -182,7 +180,8 @@ class TestEmbedEndpoint:
 class TestAPIIntegration:
     """Integration tests for the API endpoints"""
     
-    def test_api_structure(self):
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_api_structure(self, _mock_loaded):
         """Test that API has correct structure"""
         # Test that endpoints exist and return correct status codes
         health_response = client.get("/health")

@@ -5,8 +5,28 @@ import os
 # Add the parent directory to the path to import app modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.nlp_utils import extract_keywords, embedding_model
+import app.nlp_utils as nlp_utils
+from app.nlp_utils import extract_keywords
 from app.models import ExtractKeywordsRequest, ExtractKeywordsResponse, Keyword, EmbedRequest, EmbedResponse
+
+
+@pytest.fixture(scope="module")
+def embedding_model():
+    """Load model once for integration tests; skip if unavailable."""
+    nlp_utils._embedding_model = None
+    nlp_utils._model_load_error = None
+    prev_offline = os.environ.get("HF_HUB_OFFLINE")
+    os.environ["HF_HUB_OFFLINE"] = "0"
+    try:
+        model = get_embedding_model()
+    except Exception as exc:
+        pytest.skip(f"Embedding model unavailable: {exc}")
+    finally:
+        if prev_offline is None:
+            os.environ.pop("HF_HUB_OFFLINE", None)
+        else:
+            os.environ["HF_HUB_OFFLINE"] = prev_offline
+    return model
 
 
 class TestKeywordExtraction:
@@ -72,16 +92,16 @@ class TestKeywordExtraction:
 
 
 class TestEmbeddingModel:
-    def test_embedding_model_loaded(self):
+    def test_embedding_model_loaded(self, embedding_model):
         """Test that embedding model is properly loaded"""
         assert embedding_model is not None
-        assert hasattr(embedding_model, 'encode')
+        assert hasattr(embedding_model, "encode")
 
-    def test_embedding_generation(self):
+    def test_embedding_generation(self, embedding_model):
         """Test embedding generation for text"""
         text = "This is a test sentence for embedding generation."
         embedding = embedding_model.encode(text)
-        
+
         assert isinstance(embedding, type(embedding_model.encode("test")))
         assert len(embedding) > 0
         # Handle numpy array conversion
@@ -92,16 +112,16 @@ class TestEmbeddingModel:
             embedding_list = list(embedding)
         assert all(isinstance(x, (int, float, np.floating)) for x in embedding_list)
 
-    def test_embedding_empty_text(self):
+    def test_embedding_empty_text(self, embedding_model):
         """Test embedding generation with empty text"""
         embedding = embedding_model.encode("")
         assert len(embedding) > 0
 
-    def test_embedding_different_texts(self):
+    def test_embedding_different_texts(self, embedding_model):
         """Test that different texts produce different embeddings"""
         text1 = "Machine learning is great"
         text2 = "Natural language processing is different"
-        
+
         emb1 = embedding_model.encode(text1)
         emb2 = embedding_model.encode(text2)
         
@@ -165,7 +185,7 @@ class TestIntegration:
         assert isinstance(response, ExtractKeywordsResponse)
         assert len(response.keywords) <= 3
 
-    def test_embedding_integration(self):
+    def test_embedding_integration(self, embedding_model):
         """Integration test for embedding workflow"""
         text = "Test sentence for embedding."
         embedding_vector = embedding_model.encode(text).tolist()
