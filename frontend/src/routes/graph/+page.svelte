@@ -183,7 +183,8 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    flex: 1;
+    min-height: 100%;
     background: var(--gradient-cosmic-bg);
     color: var(--color-text-dark);
   }

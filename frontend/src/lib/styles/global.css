@@ -110,3 +110,9 @@ body {
   background: transparent;
   min-height: 100%;
 }
+
+
+/* Global box-sizing for better responsive behavior */
+*, *::before, *::after {
+  box-sizing: border-box;
+}

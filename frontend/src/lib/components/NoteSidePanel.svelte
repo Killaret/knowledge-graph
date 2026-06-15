@@ -152,7 +152,7 @@
     top: 0;
     right: -400px;
     width: 400px;
-    height: 100vh;
+    max-height: 100vh;
     background: white;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
     z-index: 200;
