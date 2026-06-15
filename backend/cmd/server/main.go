@@ -217,7 +217,7 @@ func main() {
 	writeLimiter := newWriteLimiter(cfg)
 	jwtConfig := newJWTConfig(jwtManager, tokenStore)
 	apiKeyConfig := newAPIKeyConfig(database, cfg.APIKeyEnabled, cfg.StaticAPIKey)
-	skipAuthConfig := &middleware.SkipAuthConfig{Enabled: cfg.SkipAuth}
+	skipAuthConfig := middleware.DefaultSkipAuthConfig(cfg.SkipAuth)
 
 	r := setupRouter(
 		noteHandler,

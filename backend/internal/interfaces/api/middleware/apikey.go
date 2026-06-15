@@ -90,7 +90,7 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 		// Check static API key first
 		if config.StaticAPIKey != "" && apiKey == config.StaticAPIKey {
 			// Static API key authenticated - set admin context
-			adminUUID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+			adminUUID := uuid.MustParse("00000000-0000-0000-0000-000000000000") // Test user (matches migration 019)
 			c.Set(ContextUserIDKey, adminUUID)
 			c.Set(ContextRoleKey, "admin")
 			c.Set("api_key_id", adminUUID)

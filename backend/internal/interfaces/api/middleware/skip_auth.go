@@ -18,7 +18,7 @@ type SkipAuthConfig struct {
 func DefaultSkipAuthConfig(enabled bool) *SkipAuthConfig {
 	return &SkipAuthConfig{
 		Enabled:       enabled,
-		DefaultUserID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), // System/test user
+		DefaultUserID: uuid.MustParse("00000000-0000-0000-0000-000000000000"), // System/test user (matches migration 019)
 	}
 }
 
