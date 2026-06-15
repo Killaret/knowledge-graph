@@ -244,7 +244,52 @@
   function onClick(e: MouseEvent) {
     handleClick(e, canvas, transform, getSimulationNodes(simState), onNodeClick);
   }
-</script>
+
+
+  // Double-tap zoom handler
+  function handleTouchStart(e: TouchEvent) {
+    if (!browser) return; // Skip in server-side rendering
+
+    if (e.touches.length === 1) {
+      const now = Date.now();
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - lastTouchPos.x);
+      const dy = Math.abs(touch.clientY - lastTouchPos.y);
+
+      if (now - lastTouchTime < 300 && dx < 30 && dy < 30) {
+        tapCount++;
+        handleDoubleTap(touch.clientX, touch.clientY);
+        e.preventDefault();
+      } else {
+        tapCount = 0;
+      }
+
+      lastTouchTime = now;
+      lastTouchPos = { x: touch.clientX, y: touch.clientY };
+    }
+  }
+
+  function handleDoubleTap(clientX: number, clientY: number) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left - transform.x) / transform.k;
+    const y = (clientY - rect.top - transform.y) / transform.k;
+
+    if (tapCount === 1) {
+      const newScale = transform.k * 2;
+      const centerX = x * newScale;
+      const centerY = y * newScale;
+
+      transform.x = clientX - rect.left - centerX;
+      transform.y = clientY - rect.top - centerY;
+      transform.k = newScale;
+    } else if (tapCount === 2) {
+      const simNodes = getSimulationNodes(simState);
+      if (ctx && simNodes.length > 0) {
+        resetView(ctx, width, height, simNodes, transform);
+        tapCount = 0;
+      }
+    }
+  }</script>
 
 <canvas
   bind:this={canvas}
