@@ -930,3 +930,48 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 | [`DEPLOYMENT_EN.md`](DEPLOYMENT_EN.md) | Deployment, configuration verification |
 | [`TESTING.md`](TESTING.md) | Testing, parameter verification |
 | [`backend/openAPI.yaml`](../backend/openAPI.yaml) | API specification |
+
+
+---
+
+## Personal Environment Authentication
+
+### Overview
+
+The personal environment (\docker-compose.personal.yml\) is designed for local development without authentication.
+
+### Configuration
+
+**Environment Variable (.env):**
+\\\ash
+SKIP_AUTH=true  # Disables authentication for personal environment
+\\\
+
+**Behavior:**
+- All requests are allowed without authentication
+- Notes are created with \creator_id = 00000000-0000-0000-0000-000000000000\ (test user)
+- Test user is created by migration \ 19_add_test_user.up.sql\
+
+### Authentication Fix (2026-06-15)
+
+**Issues Fixed:**
+1. Corrected \main.go\ to use \DefaultSkipAuthConfig\ instead of manual configuration
+2. Changed default user ID from \ 0000000-0000-0000-0000-000000000001\ to \ 0000000-0000-0000-0000-000000000000\ (matches migration)
+3. Fixed \pikey.go\ admin UUID to match migration
+
+**Current Status:**
+- ✅ \id_creator\ is properly assigned: \ 0000000-0000-0000-0000-000000000000\
+- ✅ All notes have proper owner (test user)
+- ✅ Consistent with migration 019
+
+### Differences Between Environments
+
+| Environment | Authentication | creator_id | Purpose |
+|-------------|----------------|------------|---------|
+| **Dev** | Enabled | Real user ID | Development with auth |
+| **Personal** | Disabled (SKIP_AUTH=true) | Test user ID (all zeros) | Local testing without auth |
+
+### Security Note
+
+This is intentional for local development. For production or shared environments, authentication should always be enabled.
+

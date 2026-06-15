@@ -297,3 +297,85 @@ gpg --symmetric --cipher-algo AES256 backup-personal-2024-05-17.sql.gz
 # Р Р°СЃС€РёС„СЂРѕРІРєР° РїРѕСЃР»Рµ СЃРєР°С‡РёРІР°РЅРёСЏ
 gpg --decrypt backup-personal-2024-05-17.sql.gz.gpg > backup-personal-2024-05-17.sql.gz
 ```
+
+## ?? Текущий статус системы бэкапов
+
+### Проверка от 2026-06-15
+
+#### Локальный бэкап ?
+- **Статус**: РАБОТАЕТ
+- **Расположение**: ./backups/backup-personal-YYYY-MM-DD.sql.gz
+- **Периодичность**: Каждые 24 часа (автоматически через Docker)
+- **Очистка**: Автоматически удаляет бэкапы старше 7 дней
+- **Существующие бэкапы**:
+  - ackup-personal-2026-06-01.sql
+  - ackup-personal-2026-06-02.sql
+  - ackup-personal-2026-06-07.sql
+  - ackup-personal-2026-06-08.sql.gz
+  - ackup-personal-2026-06-15.sql.gz (актуальный)
+
+#### Яндекс.Диск бэкап ?
+- **Статус**: Требует настройки
+- **Проблема**: BACKUP_YANDEX_TOKEN не задан
+- **Конфигурация контейнера**:
+  `ash
+  BACKUP_CLOUD_ENABLED=true              # ? Включен
+  BACKUP_YANDEX_TOKEN=                   # ? Пустой
+  BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups  # ? Папка задана
+  `
+- **Логи контейнера**:
+  `
+  Backup completed successfully: /backups/backup-personal-2026-06-15.sql.gz
+  Uploading to Yandex.Disk...
+  Warning: BACKUP_YANDEX_TOKEN not set
+  Cleaning up old backups (keeping last 7 days)...
+  Backup process completed.
+  `
+
+#### Docker сервис backup_scheduler ?
+- **Статус**: РАБОТАЕТ
+- **Контейнер**: kg-backup-scheduler
+- **Периодичность**: Каждые 24 часа
+- **Скрипт**: /scripts/backup-personal.sh
+- **Формат скриптов**: Исправлен (CRLF > LF) для корректной работы в Linux контейнерах
+
+### Необходимые действия для активации Яндекс.Диск бэкапа
+
+1. **Получить OAuth токен**:
+   `
+   https://oauth.yandex.ru/authorize?response_type=token&client_id=c0ebe342af7d48fbbbfcf2d2eedb8f9e
+   `
+
+2. **Установить токен** (один из способов):
+   `powershell
+   # PowerShell:
+    =  ваш_токен
+   docker-compose -f docker-compose.personal.yml restart backup_scheduler
+   `
+
+   Или в .env файле:
+   `ash
+   BACKUP_YANDEX_TOKEN=ваш_токен
+   `
+
+3. **Перезапустить контейнер**:
+   `ash
+   docker-compose -f docker-compose.personal.yml restart backup_scheduler
+   `
+
+### Мониторинг
+
+**Проверить логи бэкапа:**
+`ash
+docker logs kg-backup-scheduler --tail 20
+`
+
+**Проверить переменные окружения в контейнере:**
+`ash
+docker inspect kg-backup-scheduler --format='{{range .Config.Env}}{{println .}}{{end}}' | findstr BACKUP
+`
+
+**Проверить существующие локальные бэкапы:**
+`ash
+dir backups
+`
