@@ -84,6 +84,11 @@
   // Используем утилиты для resize
   const resizeState = { width, height };
 
+  // Double-tap zoom state
+  let lastTouchTime = 0;
+  let lastTouchPos = { x: 0, y: 0 };
+  let tapCount = 0;
+
   onMount(() => {
     if (!browser) return;
     
@@ -297,6 +302,7 @@
   onmousemove={onPanMove}
   onmouseup={onPanEnd}
   onclick={onClick}
+  ontouchstart={handleTouchStart}
   onwheel={onZoom}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>
