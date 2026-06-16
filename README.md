@@ -195,7 +195,7 @@ knowledge-graph/
 - [🔐 Authentication](backend/internal/auth/README.md) — система авторизации
 - [🎯 Achievements](backend/internal/application/achievement/) — геймификация
 - [💾 Backup](docs/BACKUP.md) — резервное копирование
-- [🔍 NLP Integration](docs/RECOMMENDATION_ARCHITECTURE.md) — рекомендации
+- [🔍 NLP Integration](docs/RECOMMENDATION_ARCHITECTURE.md) — рекомендации\n- [📱 Frontend Features](docs/FRONTEND_FEATURES.md) — double-tap zoom, responsive design\n- [🧪 Visual Regression Testing](docs/ARGOS.md) — Argos visual testing
 
 ### Developer Guides
 - [🤖 AI Agents](docs/AGENTS.md) — использование AI агентов
