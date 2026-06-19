@@ -179,12 +179,13 @@
 <style>
   .graph-page {
     padding: 20px;
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 100%;
+    min-height: 100vh;
     background: var(--gradient-cosmic-bg);
     color: var(--color-text-dark);
   }

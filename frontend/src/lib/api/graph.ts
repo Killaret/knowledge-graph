@@ -3,8 +3,9 @@ import { api } from './client';
 import { apiConfig } from '$lib/config';
 
 function getGraphApi() {
-  const graphServiceUrl = (import.meta as any).env?.VITE_GRAPH_SERVICE_URL ?? 'http://localhost:9091';
-  return api.extend({ prefixUrl: `${graphServiceUrl.replace(/\/$/, '')}/api` });
+  // Используем graph service через прокси в SvelteKit hooks
+  // Прокси перенаправляет /graph-service/api/* -> http://localhost:9091/api/*
+  return api.extend({ prefixUrl: '/graph-service/api' });
 }
 
 // Узел графа – заметка (звезда)

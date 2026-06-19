@@ -3,8 +3,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import path from 'path';
 
-const graphServiceProxyTarget = (process.env.VITE_GRAPH_SERVICE_URL || 'http://127.0.0.1:9091').replace(/\/graph-service$/, '');
-
 export default defineConfig({
   plugins: [sveltekit()],
   resolve: {
@@ -18,14 +16,13 @@ export default defineConfig({
     minify: 'esbuild'
   },
   server: {
-    port: 3000,
     proxy: {
       '/api/v1': {
         target: process.env.VITE_API_TARGET || 'http://127.0.0.1:9000',
         changeOrigin: true
       },
       '/graph-service/api': {
-        target: graphServiceProxyTarget,
+        target: process.env.VITE_GRAPH_SERVICE_URL || 'http://127.0.0.1:9091',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/graph-service/, '')
       }
