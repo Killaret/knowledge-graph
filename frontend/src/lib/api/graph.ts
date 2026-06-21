@@ -5,7 +5,13 @@ import { apiConfig } from '$lib/config';
 function getGraphApi() {
   // Используем graph service через прокси в SvelteKit hooks
   // Прокси перенаправляет /graph-service/api/* -> http://localhost:9091/api/*
-  const baseUrl = import.meta.env.DEV
+  
+  // В тестовом окружении (Vitest) используем полный URL напрямую
+  const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
+  
+  const baseUrl = isTest
+    ? 'http://localhost:9091/api'
+    : import.meta.env.DEV
     ? '/graph-service/api'
     : (import.meta.env.VITE_GRAPH_SERVICE_URL || 'http://graph-service:9091/api');
 
