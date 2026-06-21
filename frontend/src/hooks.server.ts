@@ -24,7 +24,7 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
 			// Block: cookie, authorization, hop-by-hop headers
 			const safeHeaders: Record<string, string> = {};
 			const allowedHeaders = ['accept', 'content-type', 'x-request-id'];
-			const blockedHeaders = ['cookie', 'authorization', 'host', 'connection', 'proxy-', 'transfer-encoding', 'keep-alive', 'upgrade', 'te'];
+			const blockedHeaders = ['cookie', 'authorization', 'connection', 'proxy-', 'transfer-encoding', 'keep-alive', 'upgrade', 'te'];
 			
 			for (const [key, value] of event.request.headers.entries()) {
 				const headerName = key.toLowerCase();

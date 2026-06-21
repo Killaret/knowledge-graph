@@ -14,18 +14,5 @@ export default defineConfig({
   build: {
     sourcemap: false,
     minify: 'esbuild'
-  },
-  server: {
-    proxy: {
-      '/api/v1': {
-        target: process.env.VITE_API_TARGET || 'http://127.0.0.1:9000',
-        changeOrigin: true
-      },
-      '/graph-service/api': {
-        target: process.env.VITE_GRAPH_SERVICE_URL || 'http://127.0.0.1:9091',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/graph-service/, '')
-      }
-    }
   }
 });
