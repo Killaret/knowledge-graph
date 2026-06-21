@@ -49,6 +49,7 @@
 
 <div 
     class="note-card" 
+    data-testid="note-card" 
     style="--type-color: {getTypeColor(note.type)}"
     onclick={handleClick}
     onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}

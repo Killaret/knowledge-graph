@@ -298,6 +298,7 @@
 
 <canvas
   bind:this={canvas}
+  data-testid="graph-canvas"
   onmousedown={onPanStart}
   onmousemove={onPanMove}
   onmouseup={onPanEnd}

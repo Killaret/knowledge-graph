@@ -103,7 +103,7 @@
   
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} />
+      <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
       <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
     </label>
   </div>
@@ -126,7 +126,7 @@
   {/if}
   
   {#if loading}
-    <div class="center">
+    <div class="center" data-testid="loading-overlay">
       <div class="spinner"></div>
       <p>Loading graph...</p>
     </div>
