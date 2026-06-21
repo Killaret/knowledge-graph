@@ -27,10 +27,11 @@ export function error(): string | null { return authState.error; }
 export function apiKey(): string | null { return authState.apiKey; }
 
 /**
- * Check if SKIP_AUTH mode is enabled
+ * Check if SKIP_AUTH mode is enabled (dev mode only)
  */
 export function skipAuthMode(): boolean {
   if (!browser) return false;
+  if (!import.meta.env.DEV) return false; // Disabled in production
   return localStorage.getItem('__SKIP_AUTH__') === 'true';
 }
 
@@ -49,12 +50,14 @@ export async function initAuth(): Promise<void> {
   }
 
   try {
-    // Check for SKIP_AUTH mode from query parameter on first load
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('skip_auth') === 'true') {
-      // Persist SKIP_AUTH to localStorage
-      localStorage.setItem('__SKIP_AUTH__', 'true');
-      console.log('[Auth] SKIP_AUTH mode enabled via query param');
+    // Check for SKIP_AUTH mode from query parameter on first load (dev only)
+    if (import.meta.env.DEV) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('skip_auth') === 'true') {
+        // Persist SKIP_AUTH to localStorage
+        localStorage.setItem('__SKIP_AUTH__', 'true');
+        console.log('[Auth] SKIP_AUTH mode enabled via query param');
+      }
     }
     
     // Try to load tokens from localStorage
@@ -267,19 +270,19 @@ export function getApiKey(): string | null {
 
 /**
  * Check if user is authenticated
- * SKIP_AUTH bypasses auth for testing (via window flag, localStorage, or query param)
+ * SKIP_AUTH bypasses auth for testing (dev mode only - via window flag, localStorage, or query param)
  */
 export function isAuthenticated(): boolean {
-  if (browser) {
-    // Check window flag injected by Playwright
+  if (browser && import.meta.env.DEV) {
+    // Check window flag injected by Playwright (dev only)
     if ((window as any).__SKIP_AUTH__ === true) {
       return true;
     }
-    // Check localStorage flag (set by tests before navigation)
+    // Check localStorage flag (set by tests before navigation, dev only)
     if (localStorage.getItem('__SKIP_AUTH__') === 'true') {
       return true;
     }
-    // Check query parameter for production testing
+    // Check query parameter for testing (dev only)
     const url = new URL(window.location.href);
     if (url.searchParams.get('skip_auth') === 'true') {
       // Persist to localStorage for subsequent navigations
