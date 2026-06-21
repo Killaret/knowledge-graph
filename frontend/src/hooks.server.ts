@@ -19,13 +19,34 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
 		const targetUrl = `${graphServiceUrl}${targetPath}${url.search}`;
 
 		try {
+			// Security: Only forward safe headers to prevent data leakage
+			// Allowlist: accept, content-type, x-request-id
+			// Block: cookie, authorization, hop-by-hop headers
+			const safeHeaders: Record<string, string> = {};
+			const allowedHeaders = ['accept', 'content-type', 'x-request-id'];
+			const blockedHeaders = ['cookie', 'authorization', 'host', 'connection', 'proxy-', 'transfer-encoding', 'keep-alive', 'upgrade', 'te'];
+			
+			for (const [key, value] of event.request.headers.entries()) {
+				const headerName = key.toLowerCase();
+				// Check if header is allowed and not blocked
+				if (allowedHeaders.includes(headerName) && !blockedHeaders.some(blocked => headerName.startsWith(blocked))) {
+					safeHeaders[key] = value;
+				}
+			}
+			
+			// Add internal authentication header if configured
+			const internalAuthToken = process.env.GRAPH_SERVICE_INTERNAL_TOKEN;
+			if (internalAuthToken) {
+				safeHeaders['x-internal-auth'] = internalAuthToken;
+			}
+			
+			// Override host header for proper proxying
+			safeHeaders['host'] = new URL(graphServiceUrl).host;
+			
 			// Forward the request to graph service
 			const response = await fetch(targetUrl, {
 				method: event.request.method,
-				headers: {
-					...Object.fromEntries(event.request.headers),
-					host: new URL(graphServiceUrl).host,
-				},
+				headers: safeHeaders,
 				body: event.request.method !== 'GET' && event.request.method !== 'HEAD'
 					? await event.request.blob()
 					: undefined,

@@ -201,6 +201,8 @@
           VITE_GRAPH_SERVICE_URL: ${VITE_GRAPH_SERVICE_URL:-http://nginx:8080/graph-service}
           # For SSR hooks.server.ts: direct access to graph service
           GRAPH_SERVICE_URL: ${GRAPH_SERVICE_URL:-http://graph-service:9091}
+          # Internal authentication token for graph service (optional)
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${GRAPH_SERVICE_INTERNAL_TOKEN:-}
     healthcheck:
       # Проверяем, что фронтенд отрабатывает (доступен на внутр. порту 3000)
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
