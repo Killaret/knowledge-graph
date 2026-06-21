@@ -3,24 +3,28 @@ import type { Handle } from '@sveltejs/kit';
 
 /**
  * Graph service proxy middleware
- * Proxies requests from /graph-service/api/* to graph service at localhost:9091
+ * Proxies requests from /graph-service/api/* to graph service
+ * Uses environment variable GRAPH_SERVICE_URL or defaults to Docker service name
  */
 const graphServiceProxy: Handle = async ({ event, resolve }) => {
 	const url = event.url;
-	
+
+	// Get graph service URL from environment or use Docker service name
+	const graphServiceUrl = process.env.GRAPH_SERVICE_URL || process.env.VITE_GRAPH_SERVICE_URL || 'http://graph-service:9091';
+
 	// Check if this is a graph service request
 	if (url.pathname.startsWith('/graph-service/api/')) {
 		// Remove /graph-service prefix to get the actual path
 		const targetPath = url.pathname.replace('/graph-service', '');
-		const targetUrl = `http://localhost:9091${targetPath}${url.search}`;
-		
+		const targetUrl = `${graphServiceUrl}${targetPath}${url.search}`;
+
 		try {
 			// Forward the request to graph service
 			const response = await fetch(targetUrl, {
 				method: event.request.method,
 				headers: {
 					...Object.fromEntries(event.request.headers),
-					host: 'localhost:9091',
+					host: new URL(graphServiceUrl).host,
 				},
 				body: event.request.method !== 'GET' && event.request.method !== 'HEAD'
 					? await event.request.blob()
@@ -28,15 +32,15 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
 			});
 			
 			// Return the response from graph service
+			const headers = new Headers(response.headers);
+			// Remove hop-by-hop headers
+			headers.delete('transfer-encoding');
+			headers.delete('connection');
+			headers.delete('keep-alive');
+			
 			return new Response(response.body, {
 				status: response.status,
-				headers: {
-					...Object.fromEntries(response.headers.entries()),
-					// Remove hop-by-hop headers
-					'transfer-encoding': undefined,
-					'connection': undefined,
-					'keep-alive': undefined,
-				},
+				headers: headers,
 			});
 		} catch (error) {
 			console.error('[Graph Service Proxy] Error:', error);

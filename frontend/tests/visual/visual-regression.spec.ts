@@ -49,7 +49,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
         await listButton.click();
         await page.waitForTimeout(3000);
       }
-    } catch (e) {
+    } catch {
       console.log('List toggle not found, skipping');
     }
     
@@ -71,7 +71,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
         await filterButton.click();
         await page.waitForTimeout(3000);
       }
-    } catch (e) {
+    } catch {
       console.log('Filter button not found, skipping');
     }
     
@@ -109,7 +109,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
         // Wait for full graph data to load with links
         await page.waitForTimeout(8000);
       }
-    } catch (e) {
+    } catch {
       console.log('Full graph toggle not found, may already be enabled');
     }
     

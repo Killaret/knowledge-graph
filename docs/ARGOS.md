@@ -11,7 +11,8 @@ This project uses [Argos](https://www.argos-ci.com/) for automated visual regres
 - **Repository**: `Killaret/knowledge-graph`
 - **Visibility**: Public ✅
 - **Argos Plan**: Free tier (available for public repos)
-- **Token**: `arp_grf4tj2faxgijlzrdpqzh6b6x9r3msqbq8uh`
+- **Project Token**: `argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8`
+- **GitHub Secret**: `ARGOS_TOKEN` (configured in repository settings)
 
 ### Configuration
 
@@ -63,9 +64,24 @@ This project uses [Argos](https://www.argos-ci.com/) for automated visual regres
 
 ### Running Tests Locally
 
+**Dev Mode (Local):**
 ```bash
 cd frontend
 npm run test:visual
+```
+
+**Docker Mode:**
+```bash
+# Start dev stack
+docker-compose up -d postgres redis backend graph-service frontend nginx
+
+# Run tests (they use Docker frontend at http://localhost:5173)
+cd frontend
+npm run test:visual
+
+# Upload screenshots to Argos
+cd frontend
+npx argos upload argos-screenshots/ --token argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8
 ```
 
 ### CI/CD Pipeline
@@ -85,12 +101,13 @@ The Argos integration is configured in `.github/workflows/main.yml`:
 
 ## Test Data
 
-Visual tests use the test helper `tests/helpers/testData.ts` which:
+Visual tests use the test helper `tests/setup/skip-auth.setup.ts` which:
 
-- Uses backend URL: `http://127.0.0.1:9000`
-- Creates test notes via API before screenshot capture
-- Implements SKIP_AUTH mode for test authentication
-- Generates consistent test data for reliable screenshots
+- **Authentication**: Uses `__SKIP_AUTH__` flag injected via beforeEach hook to bypass authentication
+- **Data Loading**: Loads graph data through nginx proxy (http://localhost:8080/graph-service/api/v1/graph/full)
+- **Backend URL**: Dev mode uses `http://localhost:9000`, Docker uses nginx proxy `http://localhost:8080`
+- **Graph Mode**: Tests enable "Full Graph" toggle to ensure links are rendered
+- **Timing**: Uses increased timeouts (8000ms) to ensure links are fully rendered before screenshot capture
 
 ## Troubleshooting
 
@@ -98,18 +115,34 @@ Visual tests use the test helper `tests/helpers/testData.ts` which:
 
 If screenshots appear stuck on login page or show no data:
 
-1. **Check Backend Status:**
+1. **Check Docker Services:**
    ```bash
-   curl http://localhost:8080/health
+   docker-compose ps
+   # Verify backend, graph-service, nginx are healthy
    ```
 
-2. **Verify SKIP_AUTH Mode:**
-   - Check `tests/setup/global-setup.ts` sets `process.env.SKIP_AUTH = 'true'`
-   - Verify backend SkipAuth middleware is configured
+2. **Check Nginx Proxy:**
+   ```bash
+   curl http://localhost:8080/health
+   curl http://localhost:8080/graph-service/api/v1/graph/full
+   ```
 
-3. **Test Data Creation:**
-   - Ensure test notes are created successfully before screenshots
-   - Check API connectivity: `http://127.0.0.1:9000`
+3. **Verify SKIP_AUTH Mode:**
+   - Check `tests/setup/skip-auth.setup.ts` injects `__SKIP_AUTH__` flag
+   - Verify backend SkipAuth middleware is configured
+   - Check frontend .env or backend .env for `SKIP_AUTH=true`
+
+4. **Check Graph Service:**
+   ```bash
+   docker logs kg-graph-service
+   curl http://localhost:9091/health
+   curl http://localhost:9091/api/v1/graph/full
+   ```
+
+5. **Test Data Loading:**
+   - Ensure "Full Graph" toggle is enabled in tests
+   - Check increased timeouts are sufficient for link rendering
+   - Verify graph service returns nodes with links data
 
 ### Argos Upload Failures
 

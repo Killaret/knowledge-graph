@@ -199,6 +199,8 @@
           # For local Docker: use nginx proxy for API requests
           VITE_API_URL: ${VITE_API_URL:-http://nginx:8080}
           VITE_GRAPH_SERVICE_URL: ${VITE_GRAPH_SERVICE_URL:-http://nginx:8080/graph-service}
+          # For SSR hooks.server.ts: direct access to graph service
+          GRAPH_SERVICE_URL: ${GRAPH_SERVICE_URL:-http://graph-service:9091}
     healthcheck:
       # Проверяем, что фронтенд отрабатывает (доступен на внутр. порту 3000)
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]

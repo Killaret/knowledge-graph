@@ -5,7 +5,11 @@ import { apiConfig } from '$lib/config';
 function getGraphApi() {
   // Используем graph service через прокси в SvelteKit hooks
   // Прокси перенаправляет /graph-service/api/* -> http://localhost:9091/api/*
-  return api.extend({ prefixUrl: '/graph-service/api' });
+  const baseUrl = import.meta.env.DEV
+    ? '/graph-service/api'
+    : (import.meta.env.VITE_GRAPH_SERVICE_URL || 'http://graph-service:9091/api');
+
+  return api.extend({ prefixUrl: baseUrl });
 }
 
 // Узел графа – заметка (звезда)

@@ -46,11 +46,13 @@
 # Full stack with Docker
 docker-compose up -d
 
-# Personal instance on port 3001
+# Personal instance (different ports)
 docker-compose -f docker-compose.personal.yml up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+**Access services:**
+- **Dev Stack**: Frontend http://localhost:5173, API Gateway http://localhost:8080
+- **Personal Stack**: API Gateway http://localhost:8082, Backend http://localhost:8085
 
 ### Development Mode
 
@@ -99,14 +101,14 @@ cd source-text-handler && mvn spring-boot:run
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Frontend  │    │   Backend   │    │  NLP Service│
-│  (Svelte 5) │◄──►│  (Go 1.23)  │◄──►│  (Python)    │
+│   Frontend  │    │   Backend   │    │ Graph Service│
+│  (Svelte 5) │◄──►│  (Go 1.23)  │◄──►│  (Go 1.24)  │
 └─────────────┘    └─────────────┘    └─────────────┘
        │                   │                   │
        ▼                   ▼                   ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Browser   │    │ PostgreSQL  │    │   MongoDB   │
-│  (3D Three.js)│   │ + pgvector  │    │   (Drafts)  │
+│  Nginx API   │    │ PostgreSQL  │    │   Redis     │
+│  Gateway    │    │ + pgvector  │    │ (Cache/Queue)│
 └─────────────┘    └─────────────┘    └─────────────┘
                           │
                           ▼
@@ -127,6 +129,7 @@ cd source-text-handler && mvn spring-boot:run
 - **Cache/Queue:** Redis 7 + asynq
 - **Auth:** JWT, OAuth2 (Yandex), API Keys
 - **Graph Service:** gRPC (microservice)
+- **Nginx:** Reverse proxy & API gateway
 
 ### Frontend
 - **Framework:** SvelteKit (Svelte 5)
@@ -151,6 +154,18 @@ cd source-text-handler && mvn spring-boot:run
 - **Reverse Proxy:** Nginx
 - **Monitoring:** Prometheus (planned)
 - **Backup:** Яндекс.Диск WebDAV
+
+### Proxy Architecture
+
+**Docker Environment:**
+- **Nginx** (port 8080): API gateway
+  - `/api/*` → Backend (localhost:8080)
+  - `/graph-service/api/*` → Graph Service (localhost:9091)
+
+**Development Environment:**
+- **Vite Proxy** (vite.config.ts): Dev mode proxy
+  - `/api/v1` → Backend (localhost:9000)
+  - `/graph-service/api` → Graph Service (localhost:9091)
 
 ---
 
@@ -190,6 +205,7 @@ knowledge-graph/
 - [📐 Architecture](docs/architecture/README.md) — C4 модель, UML, ADR
 - [🚀 Deployment](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
 - [⚙️ Configuration](docs/CONFIGURATION.md) — настройка системы
+- [🐳 Docker](docs/DOCKER.md) — Docker деплой и архитектура контейнеров
 
 ### Feature Documentation
 - [🔐 Authentication](backend/internal/auth/README.md) — система авторизации
