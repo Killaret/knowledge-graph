@@ -232,6 +232,21 @@
         links: transformedLinks
       };
 
+      if (import.meta.env.DEV) {
+        console.log('[+page] Transformed links:', transformedLinks.length, 'links');
+        console.log('[+page] First 3 transformed links:', transformedLinks.slice(0, 3));
+        
+        // Check if links match node IDs
+        const nodeIds = new Set(transformedNodes.map(n => n.id));
+        const validLinks = transformedLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+        console.log('[+page] Node IDs:', Array.from(nodeIds).slice(0, 5));
+        console.log('[+page] Valid links (matching node IDs):', validLinks.length, 'of', transformedLinks.length);
+        
+        if (validLinks.length < transformedLinks.length) {
+          console.warn('[+page] Some links have invalid node IDs:', transformedLinks.filter(l => !nodeIds.has(l.source) || !nodeIds.has(l.target)));
+        }
+      }
+
     } catch (e) {
       console.error('[+page] Failed to load graph:', e);
       // Fallback: build simple graph from notes
@@ -540,12 +555,12 @@
   /* Fullscreen Graph Container */
   .fullscreen-graph {
     position: fixed;
-    top: 80px; /* Space for floating controls */
+    top: 60px; /* Space for floating controls (56px + margin) */
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 60px);
   }
 
   .fullscreen-graph :global(canvas) {
@@ -556,8 +571,8 @@
   /* Stats Overlay on Graph */
   .graph-stats-overlay {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 16px;
+    left: 16px;
     display: flex;
     gap: 16px;
     padding: 10px 16px;
@@ -584,7 +599,7 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 60px);
     overflow-y: auto;
   }
 
@@ -666,12 +681,13 @@
 
   @media (max-width: 768px) {
     .fullscreen-graph {
-      top: 70px;
-      height: calc(100vh - 70px);
+      top: 50px;
+      height: calc(100vh - 50px);
     }
 
     .list-container {
       padding: 16px;
+      height: calc(100vh - 50px);
     }
 
     .graph-stats-overlay {

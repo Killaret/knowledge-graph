@@ -39,6 +39,7 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 		&postgres.LinkModel{},
 		&postgres.NoteKeywordModel{},
 		&postgres.UserModel{},
+		&postgres.UserRoleModel{},
 		&postgres.TagModel{},
 		&postgres.NoteTagModel{},
 	}
@@ -63,6 +64,8 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 			RecommendationFallbackEnabled:         false,
 			RecommendationFallbackSemanticEnabled: false,
 		},
+		nil, // graphCache
+		nil, // achievementService
 	)
 
 	// Настраиваем Gin

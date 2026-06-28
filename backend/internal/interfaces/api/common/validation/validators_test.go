@@ -135,9 +135,9 @@ func TestIsSafeContent(t *testing.T) {
 }
 
 func TestIsValidCelestialBodyType(t *testing.T) {
-	// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula
-	validTypes := []string{"star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula"}
-	invalidTypes := []string{"invalid", "unknown", "", "STAR", "Planet", "moon", "blackhole"} // case-sensitive check
+	// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula dust unknown blackhole
+	validTypes := []string{"star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula", "dust", "unknown", "blackhole"}
+	invalidTypes := []string{"invalid", "unknown_type", "", "STAR", "Planet", "moon", "black_hole"} // case-sensitive check
 
 	for _, tt := range validTypes {
 		t.Run("valid "+tt, func(t *testing.T) {

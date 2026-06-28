@@ -195,19 +195,27 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        VITE_API_URL: http://localhost:8082
-        VITE_API_TARGET: http://localhost:8082
-        VITE_GRAPH_SERVICE_URL: http://localhost:8082/graph-service
+        # В Docker сети backend доступен по имени сервиса
+        VITE_API_TARGET: http://backend_personal:8080/api
+        VITE_GRAPH_SERVICE_URL: http://nginx_personal:8080/graph-service
     container_name: kg-frontend-personal
     ports:
       - "3001:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
-      VITE_API_URL: ${PERSONAL_VITE_API_URL:-http://localhost:8082}
-      VITE_GRAPH_SERVICE_URL: ${PERSONAL_VITE_GRAPH_SERVICE_URL:-http://localhost:8082/graph-service}
+          # For local Docker: use nginx proxy for API requests
+          VITE_API_URL: http://nginx_personal:8080
+          VITE_GRAPH_SERVICE_URL: http://nginx_personal:8080/graph-service
+          # For SSR hooks.server.ts: direct access to graph service
+          GRAPH_SERVICE_URL: http://graph-service-personal:9091
+          # Internal authentication token for graph service (optional)
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${GRAPH_SERVICE_INTERNAL_TOKEN:-}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      # Проверяем, что фронтенд отрабатывает (доступен на внутр. порту 3000)
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

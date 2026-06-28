@@ -212,18 +212,30 @@
 <style>
   .floating-controls {
     position: fixed;
-    top: 20px;
+    top: 16px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
+    gap: 8px;
+    padding: 10px 16px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 50px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     z-index: 100;
+    width: clamp(320px, 90vw, 900px);
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none; /* Firefox */
+    scrollbar-height: none;
+    /* prevent layout reflow when content changes */
+    height: 56px;
+    box-sizing: border-box;
+  }
+
+  .floating-controls::-webkit-scrollbar {
+    display: none;
   }
 
   .view-toggle {
@@ -232,6 +244,7 @@
     padding: 4px;
     background: #f1f5f9;
     border-radius: 25px;
+    flex-shrink: 0;
   }
 
   .toggle-btn {
@@ -265,19 +278,22 @@
   .search-container {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 4px 4px 16px;
+    gap: 6px;
+    padding: 4px 8px 4px 14px;
     background: #f8fafc;
     border-radius: 25px;
     border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+    height: 38px;
+    box-sizing: border-box;
   }
 
   .search-input {
     border: none;
     background: transparent;
     outline: none;
-    font-size: 14px;
-    width: 180px;
+    font-size: 13px;
+    width: clamp(100px, 15vw, 180px);
     color: #334155;
   }
 
@@ -286,13 +302,16 @@
   }
 
   .search-btn {
-    padding: 8px;
+    padding: 6px;
     border: none;
     background: transparent;
     cursor: pointer;
     color: #64748b;
     border-radius: 50%;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .search-btn:hover {
@@ -302,16 +321,20 @@
 
   .menu-container {
     position: relative;
+    flex-shrink: 0;
   }
 
   .menu-btn {
-    padding: 10px;
+    padding: 8px;
     border: none;
     background: transparent;
     cursor: pointer;
     color: #64748b;
     border-radius: 50%;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .menu-btn:hover {
@@ -321,14 +344,14 @@
 
   .dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     right: 0;
-    margin-top: 8px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     padding: 8px;
     min-width: 140px;
+    z-index: 101;
   }
 
   .menu-item {
@@ -350,7 +373,7 @@
   }
 
   .create-btn {
-    padding: 12px;
+    padding: 10px;
     border: none;
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
@@ -358,6 +381,10 @@
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .create-btn:hover {
@@ -365,11 +392,22 @@
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
   }
 
-  /* Type Filters */
+  /* Type Filters — scrollable row */
   .type-filters {
     display: flex;
     gap: 6px;
     align-items: center;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding: 2px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .type-filters::-webkit-scrollbar {
+    display: none;
   }
 
   .filter-chip {
@@ -384,11 +422,13 @@
     transition: all 0.2s;
     font-size: 12px;
     color: #64748b;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .filter-chip:hover {
     background: #f8fafc;
-    border-color: #cbd5e1;
+    border-color: #cbd5e0;
   }
 
   .filter-chip.active {
@@ -416,5 +456,90 @@
 
   .filter-chip.active .filter-count {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Tablet */
+  @media (max-width: 1024px) {
+    .floating-controls {
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 40px;
+      width: clamp(280px, 92vw, 700px);
+    }
+  }
+
+  /* Mobile — hide labels, show only emojis */
+  @media (max-width: 768px) {
+    .floating-controls {
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: clamp(260px, 95vw, 600px);
+      padding: 8px 10px;
+      gap: 6px;
+      border-radius: 40px;
+      height: 50px;
+    }
+
+    .search-container {
+      display: none;
+    }
+
+    .btn-label {
+      display: none;
+    }
+
+    .toggle-btn {
+      padding: 8px;
+    }
+
+    .filter-label {
+      display: none;
+    }
+
+    .filter-chip {
+      padding: 6px 8px;
+    }
+
+    .filter-count {
+      display: none;
+    }
+
+    .create-btn {
+      padding: 9px;
+    }
+  }
+
+  /* Very small mobile — hide view toggle, compact filters */
+  @media (max-width: 480px) {
+    .floating-controls {
+      gap: 4px;
+      padding: 6px 8px;
+      border-radius: 30px;
+      top: 10px;
+      height: 46px;
+    }
+
+    .view-toggle {
+      display: none;
+    }
+
+    .filter-chip {
+      padding: 5px 6px;
+      font-size: 11px;
+    }
+
+    .filter-emoji {
+      font-size: 12px;
+    }
+
+    .menu-btn, .create-btn {
+      padding: 7px;
+    }
+
+    .menu-btn svg, .create-btn svg {
+      width: 18px;
+      height: 18px;
+    }
   }
 </style>

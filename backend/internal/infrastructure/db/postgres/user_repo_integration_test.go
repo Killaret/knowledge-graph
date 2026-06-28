@@ -34,6 +34,7 @@ func (s *UserRepositoryIntegrationTestSuite) SetupSuite() {
 		&LinkModel{},
 		&NoteKeywordModel{},
 		&UserModel{},
+		&UserRoleModel{},
 		&TagModel{},
 		&NoteTagModel{},
 	}
@@ -60,7 +61,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestCreate() {
 		ID:           uuid.New(),
 		Login:        "testuser",
 		PasswordHash: "hashed_password_123",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -73,7 +74,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestCreate() {
 	s.NotNil(found)
 	s.Equal("testuser", found.Login)
 	s.Equal("hashed_password_123", found.PasswordHash)
-	s.Equal("user", found.Role)
+	s.Nil(found.Role)
 }
 
 // TestFindByID - поиск по ID
@@ -82,7 +83,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestFindByID() {
 		ID:           uuid.New(),
 		Login:        "findbyid_user",
 		PasswordHash: "hash123",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -110,7 +111,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestFindByLogin() {
 		ID:           uuid.New(),
 		Login:        "john_doe",
 		PasswordHash: "secure_hash",
-		Role:         "admin",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -123,7 +124,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestFindByLogin() {
 	s.NotNil(found)
 	s.Equal(user.ID, found.ID)
 	s.Equal("john_doe", found.Login)
-	s.Equal("admin", found.Role)
+	s.Nil(found.Role)
 }
 
 // TestFindByLogin_NotFound - поиск несуществующего логина
@@ -139,7 +140,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestDuplicateLogin() {
 		ID:           uuid.New(),
 		Login:        "unique_user",
 		PasswordHash: "hash1",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -151,7 +152,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestDuplicateLogin() {
 		ID:           uuid.New(),
 		Login:        "unique_user",
 		PasswordHash: "hash2",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -166,7 +167,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestUpdate() {
 		ID:           uuid.New(),
 		Login:        "update_me",
 		PasswordHash: "old_hash",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -184,7 +185,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestUpdate() {
 	found, err := s.repo.FindByID(s.ctx, user.ID)
 	s.NoError(err)
 	s.Equal("new_hash", found.PasswordHash)
-	s.Equal("admin", found.Role)
+	s.Nil(found.Role)
 	// Логин не должен измениться
 	s.Equal("update_me", found.Login)
 }
@@ -195,7 +196,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestDelete() {
 		ID:           uuid.New(),
 		Login:        "delete_me",
 		PasswordHash: "hash",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -228,7 +229,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestExists() {
 		ID:           uuid.New(),
 		Login:        "exists_test",
 		PasswordHash: "hash",
-		Role:         "user",
+		Role:         nil,
 		CreatedAt:    time.Now(),
 	}
 
@@ -254,7 +255,7 @@ func (s *UserRepositoryIntegrationTestSuite) TestMultipleUsers() {
 			ID:           uuid.New(),
 			Login:        "multi_user_" + string(rune('a'+i)),
 			PasswordHash: "hash",
-			Role:         "user",
+			Role:         nil,
 			CreatedAt:    time.Now(),
 		}
 		err := s.repo.Create(s.ctx, user)

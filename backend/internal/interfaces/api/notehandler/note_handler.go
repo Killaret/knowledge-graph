@@ -95,8 +95,23 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
 	Content  string                 `json:"content" binding:"max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy asteroid satellite debris nebula"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy asteroid satellite debris nebula dust unknown blackhole"`
 	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type noteResponse struct {
+	ID       string                 `json:"id"`
+	Title    string                 `json:"title"`
+	Content  string                 `json:"content"`
+	Type     string                 `json:"type"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+var noteValidationMessages = map[string]string{
+	"title.required": "Title is required",
+	"title.max":      "Title must not exceed 200 characters",
+	"content.max":    "Content must not exceed 50000 characters",
+	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula, dust, unknown, blackhole",
 }
 
 // NoteValidationErrors defines human-readable error messages for note validation
@@ -201,7 +216,7 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 	}
 
-responseData := gin.H{
+	responseData := gin.H{
 		"id":         newNote.ID(),
 		"title":      newNote.Title().String(),
 		"content":    newNote.Content().String(),

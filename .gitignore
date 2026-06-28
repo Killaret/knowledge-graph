@@ -166,3 +166,4 @@ coverage
 *.backup
 *.backup.old
 *.old
+.kilo/kilo.jsonc

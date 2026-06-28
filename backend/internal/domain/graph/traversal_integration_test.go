@@ -1,40 +1,96 @@
 //go:build integration
 // +build integration
 
-package graph
+package graph_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
-	"knowledge-graph/internal/application/graph"
+	graphapp "knowledge-graph/internal/application/graph"
+	"knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/link"
+	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	pgdriver "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// TestIntegration_BFSWithRealRepository тестирует BFS с реальными репозиториями
-func TestIntegration_BFSWithRealRepository(t *testing.T) {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgres://kb_user:kb_pass@localhost:5432/knowledge_base?sslmode=disable"
+// setupTestGraph создает тестовые данные для графа через GORM
+func setupTestGraph(t *testing.T, db *gorm.DB, linkRepo link.Repository, noteRepo note.Repository) context.Context {
+	ctx := context.Background()
+
+	// Создаем заметки напрямую через GORM
+	idA := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
+	idB := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
+	idC := uuid.MustParse("a0000000-0000-0000-0000-000000000003")
+	idD := uuid.MustParse("a0000000-0000-0000-0000-000000000004")
+
+	userID := uuid.New()
+
+	// Создаем пользователя
+	user := &postgres.UserModel{
+		ID:           userID,
+		Login:        "testuser",
+		PasswordHash: "hash",
+		Role:         nil,
+	}
+	require.NoError(t, db.Create(user).Error)
+
+	notes := []*postgres.NoteModel{
+		{ID: idA, Title: "Note A", Content: "Test content", Type: "star", CreatorID: &userID},
+		{ID: idB, Title: "Note B", Content: "Test content", Type: "star", CreatorID: &userID},
+		{ID: idC, Title: "Note C", Content: "Test content", Type: "star", CreatorID: &userID},
+		{ID: idD, Title: "Note D", Content: "Test content", Type: "star", CreatorID: &userID},
 	}
 
-	db, err := gorm.Open(pgdriver.Open(dsn), &gorm.Config{})
+	for _, n := range notes {
+		require.NoError(t, db.Create(n).Error)
+	}
+
+	// Создаем связи напрямую через GORM
+	links := []*postgres.LinkModel{
+		{ID: uuid.New(), SourceNoteID: idA, TargetNoteID: idB, Weight: 0.8, LinkType: "reference"},
+		{ID: uuid.New(), SourceNoteID: idA, TargetNoteID: idC, Weight: 0.5, LinkType: "reference"},
+		{ID: uuid.New(), SourceNoteID: idB, TargetNoteID: idD, Weight: 0.9, LinkType: "reference"},
+		{ID: uuid.New(), SourceNoteID: idC, TargetNoteID: idD, Weight: 0.9, LinkType: "reference"},
+	}
+
+	for _, l := range links {
+		require.NoError(t, db.Create(l).Error)
+	}
+
+	return ctx
+}
+
+// TestIntegration_BFSWithRealRepository тестирует BFS с реальными репозиториями
+func TestIntegration_BFSWithRealRepository(t *testing.T) {
+	db, cleanup := testutil.SetupTestDB(t)
+	defer cleanup()
+
+	// Миграция моделей
+	err := db.AutoMigrate(
+		&postgres.UserModel{},
+		&postgres.NoteModel{},
+		&postgres.LinkModel{},
+	)
 	require.NoError(t, err)
 
-	ctx := context.Background()
+	var ctx context.Context
 
 	// Создаем реальные репозитории
 	linkRepo := postgres.NewLinkRepository(db)
-	
+	noteRepo := postgres.NewNoteRepository(db, nil)
+
 	// Создаем загрузчик
-	loader := graph.NewNeighborLoader(linkRepo)
+	loader := graphapp.NewNeighborLoader(linkRepo, noteRepo)
+
+	// Создаем тестовые данные
+	ctx = setupTestGraph(t, db, linkRepo, noteRepo)
 
 	// Тестовый граф:
 	// A (a0000000-0000-0000-0000-000000000001)
@@ -47,8 +103,8 @@ func TestIntegration_BFSWithRealRepository(t *testing.T) {
 	targetD := uuid.MustParse("a0000000-0000-0000-0000-000000000004")
 
 	t.Run("MAX aggregation with real repository", func(t *testing.T) {
-		svc := NewTraversalService(loader, 3, 0.5, "max", false)
-		result := svc.runBFS(ctx, startID)
+		svc := graph.NewTraversalService(loader, 3, 0.5, "max", false)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		t.Logf("MAX aggregation results: %v", result)
 
@@ -60,8 +116,8 @@ func TestIntegration_BFSWithRealRepository(t *testing.T) {
 	})
 
 	t.Run("SUM aggregation with real repository", func(t *testing.T) {
-		svc := NewTraversalService(loader, 3, 0.5, "sum", false)
-		result := svc.runBFS(ctx, startID)
+		svc := graph.NewTraversalService(loader, 3, 0.5, "sum", false)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		t.Logf("SUM aggregation results: %v", result)
 
@@ -74,8 +130,8 @@ func TestIntegration_BFSWithRealRepository(t *testing.T) {
 	})
 
 	t.Run("MAX with normalization", func(t *testing.T) {
-		svc := NewTraversalService(loader, 3, 0.5, "max", true)
-		result := svc.runBFS(ctx, startID)
+		svc := graph.NewTraversalService(loader, 3, 0.5, "max", true)
+		result := svc.RunBFSWeights(ctx, startID)
 
 		t.Logf("MAX with normalization results: %v", result)
 
@@ -96,18 +152,25 @@ func TestIntegration_BFSWithRealRepository(t *testing.T) {
 
 // TestIntegration_BatchLoading проверяет batch-загрузку соседей
 func TestIntegration_BatchLoading(t *testing.T) {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgres://kb_user:kb_pass@localhost:5432/knowledge_base?sslmode=disable"
-	}
+	db, cleanup := testutil.SetupTestDB(t)
+	defer cleanup()
 
-	db, err := gorm.Open(pgdriver.Open(dsn), &gorm.Config{})
+	// Миграция моделей
+	err := db.AutoMigrate(
+		&postgres.UserModel{},
+		&postgres.NoteModel{},
+		&postgres.LinkModel{},
+	)
 	require.NoError(t, err)
 
-	ctx := context.Background()
+	var ctx context.Context
 
 	linkRepo := postgres.NewLinkRepository(db)
-	loader := graph.NewNeighborLoader(linkRepo)
+	noteRepo := postgres.NewNoteRepository(db, nil)
+	loader := graphapp.NewNeighborLoader(linkRepo, noteRepo)
+
+	// Создаем тестовые данные
+	ctx = setupTestGraph(t, db, linkRepo, noteRepo)
 
 	// Тестируем batch-загрузку
 	nodeIDs := []uuid.UUID{

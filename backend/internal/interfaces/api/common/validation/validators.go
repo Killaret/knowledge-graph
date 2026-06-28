@@ -37,16 +37,19 @@ var (
 )
 
 // ValidCelestialBodyTypes contains all allowed celestial body types
-// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula
+// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula dust unknown blackhole
 var ValidCelestialBodyTypes = map[string]bool{
-	"star":      true,
-	"planet":    true,
-	"comet":     true,
-	"galaxy":    true,
-	"asteroid":  true,
-	"satellite": true,
-	"debris":    true,
-	"nebula":    true,
+	"star":       true,
+	"planet":     true,
+	"comet":      true,
+	"galaxy":     true,
+	"asteroid":   true,
+	"satellite":  true,
+	"debris":     true,
+	"nebula":     true,
+	"dust":       true,
+	"unknown":    true,
+	"blackhole":  true,
 }
 
 // ValidLinkTypes contains all allowed link types

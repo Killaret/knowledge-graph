@@ -832,9 +832,21 @@ export function drawAllLinks(
   let drawnCount = 0;
   let skippedCount = 0;
 
+  if (import.meta.env.DEV) {
+    console.log(`[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`);
+    console.log('[drawAllLinks] First 3 links:', simLinks.slice(0, 3));
+    console.log('[drawAllLinks] First 3 nodes:', nodes.slice(0, 3).map(n => ({ id: n.id, x: n.x, y: n.y })));
+  }
+
   simLinks.forEach((link, index) => {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
     const targetNode = resolveLinkEndpoint(link.target, nodes);
+
+    if (import.meta.env.DEV && index < 3) {
+      console.log(`[drawAllLinks] Link ${index}: source=${link.source}, target=${link.target}`);
+      console.log(`[drawAllLinks] Resolved sourceNode:`, sourceNode ? { id: sourceNode.id, x: sourceNode.x, y: sourceNode.y } : 'NULL');
+      console.log(`[drawAllLinks] Resolved targetNode:`, targetNode ? { id: targetNode.id, x: targetNode.x, y: targetNode.y } : 'NULL');
+    }
 
     if (
       !sourceNode ||

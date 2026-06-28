@@ -27,13 +27,13 @@ import (
 // NoteHandlerCacheIntegrationTestSuite - интеграционные тесты для кэша графов в NoteHandler
 type NoteHandlerCacheIntegrationTestSuite struct {
 	suite.Suite
-	db         *gorm.DB
-	repo       *postgres.NoteRepository
-	router     *gin.Engine
-	cleanup    func()
-	redis      *miniredis.Miniredis
+	db          *gorm.DB
+	repo        *postgres.NoteRepository
+	router      *gin.Engine
+	cleanup     func()
+	redis       *miniredis.Miniredis
 	redisClient *redis.Client
-	graphCache *cache.GraphCache
+	graphCache  *cache.GraphCache
 }
 
 func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
@@ -46,6 +46,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 		&postgres.LinkModel{},
 		&postgres.NoteKeywordModel{},
 		&postgres.UserModel{},
+		&postgres.UserRoleModel{},
 		&postgres.TagModel{},
 		&postgres.NoteTagModel{},
 	}
@@ -82,6 +83,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 			RecommendationFallbackSemanticEnabled: false,
 		},
 		s.graphCache,
+		nil, // achievementService
 	)
 
 	// Настраиваем Gin
@@ -129,9 +131,9 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 
 	// Создаем заметку через API (симулируем аутентифицированного пользователя)
 	reqBody := map[string]interface{}{
-		"title":   "Test Note",
-		"content": "Test content",
-		"type":    "star",
+		"title":    "Test Note",
+		"content":  "Test content",
+		"type":     "star",
 		"metadata": map[string]interface{}{},
 	}
 	jsonBody, _ := json.Marshal(reqBody)
@@ -139,17 +141,17 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	// Устанавливаем user ID в контекст (обычно это делает middleware)
 	req.Header.Set("X-User-ID", userID)
-	
+
 	// Создаем middleware для установки user ID в контекст
 	testRouter := gin.New()
 	testRouter.Use(func(c *gin.Context) {
 		c.Set("user_id", uuid.MustParse(userID))
 		c.Next()
 	})
-	
+
 	// Пересоздаем хендлер с middleware
 	handler := New(
 		s.repo,
@@ -166,6 +168,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 			RecommendationFallbackSemanticEnabled: false,
 		},
 		s.graphCache,
+		nil, // achievementService
 	)
 	testRouter.POST("/notes", handler.Create)
 	testRouter.ServeHTTP(w, req)
@@ -224,6 +227,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 		s.redisClient,
 		&config.Config{},
 		s.graphCache,
+		nil, // achievementService
 	)
 
 	testRouter := gin.New()
@@ -287,6 +291,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 		s.redisClient,
 		&config.Config{},
 		s.graphCache,
+		nil, // achievementService
 	)
 
 	testRouter := gin.New()

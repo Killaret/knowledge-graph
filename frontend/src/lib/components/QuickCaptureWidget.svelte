@@ -16,7 +16,7 @@
     }
   }
 
-  // Submit quick capture
+  // Submit quick capture — always type 'dust' per documentation
   async function submitCapture() {
     if (!content.trim()) return;
 
@@ -26,10 +26,7 @@
       await createNote({
         title,
         content,
-        type: 'star',
-        metadata: {
-          tags: ['#inbox']
-        }
+        type: 'dust'
       });
 
       showSuccess = true;
@@ -60,6 +57,13 @@
       submitCapture();
     }
   }
+
+  // Close modal when clicking outside
+  function handleBackdropClick(e: MouseEvent) {
+    if ((e.target as HTMLElement).classList.contains('quick-capture-modal')) {
+      toggle();
+    }
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -67,31 +71,34 @@
 <!-- Floating button -->
 <div class="quick-capture-container">
   {#if isOpen}
-    <div class="quick-capture-modal">
-      <div class="modal-header">
-        <h3>✨ Quick Capture</h3>
-        <button class="close-btn" onmousedown={toggle}>×</button>
-      </div>
-      <div class="modal-body">
-        <textarea
-          bind:value={content}
-          placeholder="Capture your thought... (Ctrl+Enter to submit)"
-          disabled={isSubmitting}
-        ></textarea>
-        {#if showSuccess}
-          <div class="success-message">✓ Saved!</div>
-        {/if}
-      </div>
-      <div class="modal-footer">
-        <button class="cancel-btn" onmousedown={toggle} disabled={isSubmitting}>Cancel</button>
-        <button class="submit-btn" onmousedown={submitCapture} disabled={isSubmitting || !content.trim()}>
-          {isSubmitting ? 'Saving...' : 'Save'}
-        </button>
+    <div class="quick-capture-backdrop" on:mousedown={handleBackdropClick}>
+      <div class="quick-capture-modal">
+        <div class="modal-header">
+          <h3>✨ Quick Capture</h3>
+          <button class="close-btn" on:mousedown={toggle} aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <textarea
+            bind:value={content}
+            placeholder="Capture your thought... (Ctrl+Enter to submit)"
+            disabled={isSubmitting}
+            autofocus
+          ></textarea>
+          {#if showSuccess}
+            <div class="success-message">✓ Saved!</div>
+          {/if}
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" on:mousedown={toggle} disabled={isSubmitting}>Cancel</button>
+          <button class="submit-btn" on:mousedown={submitCapture} disabled={isSubmitting || !content.trim()}>
+            {isSubmitting ? 'Saving...' : 'Save'}
+          </button>
+        </div>
       </div>
     </div>
   {/if}
 
-  <button class="quick-capture-btn" onmousedown={toggle} title="Quick Capture (Ctrl+Shift+N)">
+  <button class="quick-capture-btn" on:mousedown={toggle} title="Quick Capture (Ctrl+Shift+N)">
     ✨
   </button>
 </div>
@@ -125,27 +132,45 @@
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
   }
 
+  /* Backdrop overlay */
+  .quick-capture-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+  }
+
   .quick-capture-modal {
-    position: absolute;
-    bottom: 80px;
-    right: 0;
-    width: 400px;
+    width: min(420px, calc(100vw - 40px));
+    max-height: calc(100vh - 100px);
     background: white;
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
-    animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.25s ease;
   }
 
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(20px) scale(0.97);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .modal-header {
@@ -155,6 +180,7 @@
     padding: 16px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    flex-shrink: 0;
   }
 
   .modal-header h3 {
@@ -185,11 +211,14 @@
 
   .modal-body {
     padding: 20px;
+    overflow-y: auto;
+    flex: 1;
   }
 
   .modal-body textarea {
     width: 100%;
-    min-height: 120px;
+    min-height: 140px;
+    max-height: 60vh;
     padding: 12px;
     border: 2px solid #e2e8f0;
     border-radius: 8px;
@@ -197,6 +226,7 @@
     font-family: inherit;
     resize: vertical;
     transition: border-color 0.2s;
+    box-sizing: border-box;
   }
 
   .modal-body textarea:focus {
@@ -216,21 +246,13 @@
     animation: fadeIn 0.3s ease;
   }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
   .modal-footer {
     display: flex;
     gap: 10px;
     padding: 16px 20px;
     background: #f7fafc;
     border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
   }
 
   .modal-footer button {
@@ -268,5 +290,41 @@
   .modal-footer button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .quick-capture-container {
+      bottom: 20px;
+      right: 20px;
+    }
+
+    .quick-capture-btn {
+      width: 52px;
+      height: 52px;
+      font-size: 24px;
+    }
+
+    .quick-capture-modal {
+      width: calc(100vw - 24px);
+      max-height: calc(100vh - 60px);
+      border-radius: 12px;
+    }
+
+    .modal-header {
+      padding: 14px 16px;
+    }
+
+    .modal-header h3 {
+      font-size: 16px;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+    }
   }
 </style>

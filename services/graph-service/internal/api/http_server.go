@@ -168,6 +168,22 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 		notes = notes[:limit]
 	}
 
+	// Filter links to only include those between the limited nodes
+	if limit > 0 && len(notes) < len(links) {
+		limitedNodeIDs := make(map[string]bool)
+		for _, note := range notes {
+			limitedNodeIDs[note.ID] = true
+		}
+
+		filteredLinks := make([]*db.Link, 0)
+		for _, link := range links {
+			if limitedNodeIDs[link.Source] && limitedNodeIDs[link.Target] {
+				filteredLinks = append(filteredLinks, link)
+			}
+		}
+		links = filteredLinks
+	}
+
 	// Generate layout
 	layout := engine.Layout3D(notes, links)
 	hash := computeLayoutHash(layout)

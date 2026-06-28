@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Links</title>
+</head>
+<body>
+    <h1>Link Debug Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Test data transformation logic
+        const rawLinks = [
+            { source_note_id: '1', target_note_id: '2', weight: 0.5, link_type: 'reference' },
+            { source: '2', target: '3', weight: 0.3, link_type: 'related' }
+        ];
+        
+        const transformedLinks = rawLinks.map(l => ({
+            source: l.source_note_id || l.source,
+            target: l.target_note_id || l.target,
+            weight: l.weight,
+            link_type: l.link_type
+        }));
+        
+        console.log('Raw links:', rawLinks);
+        console.log('Transformed links:', transformedLinks);
+        
+        document.getElementById('output').innerHTML = `
+            <h2>Raw Links</h2>
+            <pre>${JSON.stringify(rawLinks, null, 2)}</pre>
+            <h2>Transformed Links</h2>
+            <pre>${JSON.stringify(transformedLinks, null, 2)}</pre>
+        `;
+    </script>
+</body>
+</html>
