@@ -6,6 +6,7 @@ RUN go mod download
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/server
 RUN go build -ldflags="-s -w" -o /app/worker ./cmd/worker
 RUN go build -ldflags="-s -w" -o /app/seed ./scripts/seed.go
+RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 
 FROM alpine:latest AS base
 RUN apk --no-cache add ca-certificates curl
@@ -27,3 +28,8 @@ FROM base AS seed
 COPY --from=builder /app/seed .
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 CMD ["./seed"]
+
+FROM base AS cli
+COPY --from=builder /app/cli .
+COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
+CMD ["./cli"]

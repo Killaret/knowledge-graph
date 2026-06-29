@@ -7,6 +7,11 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn()
 }));
 
+// Mock auth store
+vi.mock('$lib/stores/auth.svelte', () => ({
+  isAuthenticated: vi.fn()
+}));
+
 describe('FloatingControls', () => {
   const mockCallbacks = {
     onCreate: vi.fn(),
@@ -219,5 +224,80 @@ describe('FloatingControls', () => {
 
     expect(screen.queryByText('3D View for Note')).not.toBeInTheDocument();
     expect(screen.queryByText('Full 3D View')).not.toBeInTheDocument();
+  });
+});
+
+describe('Login Button', () => {
+  let isAuthenticated: any;
+  let goto: any;
+  
+  const mockCallbacks = {
+    onCreate: vi.fn(),
+    onSearch: vi.fn(),
+    onToggleView: vi.fn(),
+    onFilter: vi.fn(),
+    onImport: vi.fn(),
+    onExport: vi.fn()
+  };
+
+  beforeAll(async () => {
+    const auth = await import('$lib/stores/auth.svelte');
+    const nav = await import('$app/navigation');
+    isAuthenticated = auth.isAuthenticated;
+    goto = nav.goto;
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows Login button when user is not authenticated', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle('Menu');
+    await fireEvent.click(menuBtn);
+
+    const loginBtn = screen.getByTestId('menu-login');
+    expect(loginBtn).toBeInTheDocument();
+    expect(loginBtn).toHaveTextContent('🔑 Login');
+  });
+
+  it('hides Login button when user is authenticated', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle('Menu');
+    await fireEvent.click(menuBtn);
+
+    const loginBtn = screen.queryByTestId('menu-login');
+    expect(loginBtn).not.toBeInTheDocument();
+  });
+
+  it('navigates to login page when Login is clicked', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle('Menu');
+    await fireEvent.click(menuBtn);
+
+    const loginBtn = screen.getByTestId('menu-login');
+    await fireEvent.click(loginBtn);
+
+    expect(goto).toHaveBeenCalledWith('/auth/login');
+  });
+
+  it('closes menu after clicking Login', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle('Menu');
+    await fireEvent.click(menuBtn);
+
+    const loginBtn = screen.getByTestId('menu-login');
+    await fireEvent.click(loginBtn);
+
+    // Menu should be closed
+    expect(screen.queryByText('Import')).not.toBeInTheDocument();
   });
 });

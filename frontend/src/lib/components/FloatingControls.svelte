@@ -1,6 +1,6 @@
 <script lang="ts">
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   import { goto } from '$app/navigation';
+  import { isAuthenticated } from '$lib/stores/auth.svelte';
   
   const {
     onCreate,
@@ -29,11 +29,6 @@
     currentView?: 'graph' | 'list';
   } = $props();
   
-  console.log('[FloatingControls] Props received:', {
-    hasOnToggleView: typeof onToggleView === 'function',
-    currentView
-  });
-  
   let searchQuery = $state('');
   let showMenu = $state(false);
   
@@ -41,23 +36,17 @@
     onSearch?.(searchQuery);
   }
   
-  // 3D functionality frozen for v1 - see CHANGELOG.md
-  /*
-  async function handleToggle3D() {
-    // Если есть noteId, переходим на 3D граф этой заметки, иначе на общий 3D граф
-    const targetUrl = noteId ? `/graph/3d/${noteId}` : '/graph/3d';
-    await goto(targetUrl);
-  }
-  */
-  
   function toggleView(targetView: 'graph' | 'list') {
-    console.log('[FloatingControls] toggleView called, targetView:', targetView, 'currentView:', currentView);
     onToggleView?.(targetView);
-    console.log('[FloatingControls] onToggleView callback invoked with:', targetView);
   }
 
   function handleFilter(typeId: string) {
     onFilter?.(typeId);
+  }
+  
+  function handleLogin() {
+    goto('/auth/login');
+    showMenu = false;
   }
 </script>
 
@@ -184,18 +173,17 @@
     
     {#if showMenu}
       <div class="dropdown-menu" role="menu">
-        <button type="button" class="menu-item" role="menuitem" onclick={() => { onImport?.(); showMenu = false; }}>
+        {#if !isAuthenticated()}
+          <button type="button" class="menu-item" role="menuitem" onclick={handleLogin} data-testid="menu-login">
+            🔑 Login
+          </button>
+        {/if}
+        <button type="button" class="menu-item" role="menuitem" onclick={() => { onImport?.(); showMenu = false; }} data-testid="menu-import">
           Import
         </button>
-        <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }}>
+        <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }} data-testid="menu-export">
           Export
         </button>
-        <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
-        <!--
-        <button type="button" class="menu-item" role="menuitem" onclick={() => { handleToggle3D(); showMenu = false; }}>
-          {noteId ? '3D View for Note' : 'Full 3D View'}
-        </button>
-        -->
       </div>
     {/if}
   </div>

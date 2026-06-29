@@ -114,7 +114,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.knowledgegraph.sth.App</mainClass>
+                            <mainClass>com.alximac.knowledgegraph.texthandler.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
