@@ -419,6 +419,7 @@ Follow conventional commits:
 - **Infrastructure:** Docker multi-stage builds, health checks
 - **Testing:** >60% coverage required
 - **Security:** Never commit secrets, use environment variables
+- **🌐 Language:** All notes, annotations, comments, UI strings, and user-facing content MUST be in English
 
 See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 

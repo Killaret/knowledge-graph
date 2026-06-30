@@ -1,11 +1,11 @@
 # Cursor Rule: knowledge-graph-security
 
-Agent Security отвечает за:
-- Security audit и vulnerability scanning
-- Auth/AuthZ, шифрование, compliance
-- Защиту данных и обработку утечек
+Agent Security is responsible for:
+- Security audit and vulnerability scanning
+- Auth/AuthZ, encryption, compliance
+- Data protection and breach handling
 
-Команды:
-- «Проведи аудит безопасности»
-- «Проверь аутентификацию и авторизацию»
-- «Предложи улучшения безопасности»
+Commands:
+- "Conduct security audit"
+- "Check authentication and authorization"
+- "Suggest security improvements"

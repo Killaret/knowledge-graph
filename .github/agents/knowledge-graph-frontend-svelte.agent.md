@@ -48,9 +48,9 @@ UI/UX паттерны и рекомендации (чтобы задокуме�
 
 Примеры промптов для этого агента
 
-- "Проанализируй `frontend/src/components/GraphCanvas` и предложи упрощения для Svelte 5." 
-- "Добавь в docs описание паттернов UI/UX и policy для хранения временных тест-артефактов." 
-- "Настрой playwright, чтобы сохранять скриншоты в `frontend/test-results/temp/screenshots` и откатывал анимации в тестах."
+- "Analyze `frontend/src/components/GraphCanvas` and suggest simplifications for Svelte 5."
+- "Add docs description of UI/UX patterns and policy for storing temporary test artifacts."
+- "Configure playwright to save screenshots in `frontend/test-results/temp/screenshots` and disable animations in tests."
 
 Ограничения и поведение агента
 

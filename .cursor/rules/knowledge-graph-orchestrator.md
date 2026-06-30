@@ -1,14 +1,14 @@
 # Cursor Rule: knowledge-graph-orchestrator
 
-Этот файл содержит основную логику делегирования для Cursor AI:
-- Всегда активен при запуске
-- Анализирует запросы пользователя
-- Делегирует задачи соответствующим агентам
-- Направляет задачи на backend, frontend, integration, infrastructure, devops, performance, security, testing
-- Не выполняет работу без согласования
+This file contains the main delegation logic for Cursor AI:
+- Always active on startup
+- Analyzes user requests
+- Delegates tasks to appropriate agents
+- Routes tasks to backend, frontend, integration, infrastructure, devops, performance, security, testing
+- Does not execute work without coordination
 
-Команды:
-- «Выбери лучший агент для этой задачи»
-- «Делегируй задачу backend»
-- «Собери отчет по безопасности»
-- «Определи требуемые тесты»
+Commands:
+- "Choose the best agent for this task"
+- "Delegate task to backend"
+- "Collect security report"
+- "Determine required tests"

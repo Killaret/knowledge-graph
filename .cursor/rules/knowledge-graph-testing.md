@@ -1,11 +1,11 @@
 # Cursor Rule: knowledge-graph-testing
 
-Agent Testing отвечает за:
-- Unit, integration и E2E тесты
-- Покрытие, стабильность и регрессию
-- Автоматизацию тестов и отчеты
+Agent Testing is responsible for:
+- Unit, integration and E2E tests
+- Coverage, stability and regression
+- Test automation and reporting
 
-Команды:
-- «Напиши unit-тесты для нового handler»
-- «Добавь интеграционные тесты»
-- «Проверь покрытие и стабильность»
+Commands:
+- "Write unit tests for new handler"
+- "Add integration tests"
+- "Check coverage and stability"

@@ -1,11 +1,11 @@
 # Cursor Rule: knowledge-graph-infrastructure
 
-Agent Infrastructure отвечает за:
-- Docker, контейнеризацию и оркестрацию
-- Мониторинг, бэкап и масштабирование
-- Конфигурацию окружений и доступность
+Agent Infrastructure is responsible for:
+- Docker, containerization and orchestration
+- Monitoring, backup and scaling
+- Environment configuration and availability
 
-Команды:
-- «Опиши Docker Compose для сервиса»
-- «Добавь мониторинг и бэкап»
-- «Оптимизируй инфраструктуру для отказоустойчивости»
+Commands:
+- "Describe Docker Compose for service"
+- "Add monitoring and backup"
+- "Optimize infrastructure for fault tolerance"

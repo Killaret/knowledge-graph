@@ -25,10 +25,10 @@ applyTo:
 
 Рекомендуемые задачи для агента:
 
-- "Оформи README.md разделом 'Как пользоваться агентами и командами' для новых участников." 
-- "Проверь и обнови документацию по запуску periodic cleanup и уведомлениям." 
-- "Создай краткую инструкцию по использованию новых Makefile и npm-скриптов." 
-- "Сгенерируй понятный changelog-запись для последних изменений и добавленных агентов." 
+- "Document README.md with an 'How to use agents and commands' section for new contributors."
+- "Check and update documentation for periodic cleanup and notifications."
+- "Create a brief guide for using new Makefile and npm scripts."
+- "Generate a clear changelog entry for recent changes and added agents."
 
 Ограничения:
 

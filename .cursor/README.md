@@ -1,14 +1,14 @@
 # Cursor Agent Configuration
 
-Этот каталог содержит правила для Cursor AI.
+This directory contains rules for Cursor AI.
 
-## Что важно
-- Cursor должен читать все файлы в `.cursor/rules/`
-- Оркестратор должен быть активен первым
-- Каждый агент имеет свою роль и командный набор
-- Не удаляйте этот каталог и файлы
+## Important
+- Cursor must read all files in `.cursor/rules/`
+- Orchestrator must be active first
+- Each agent has its own role and command set
+- Do not delete this directory and files
 
-## Структура
+## Structure
 - `.cursor/rules/knowledge-graph-orchestrator.md`
 - `.cursor/rules/knowledge-graph-backend-go.md`
 - `.cursor/rules/knowledge-graph-frontend-svelte.md`
@@ -19,5 +19,16 @@
 - `.cursor/rules/knowledge-graph-security.md`
 - `.cursor/rules/knowledge-graph-testing.md`
 
-## Использование
-Cursor AI должен читать эти файлы перед выполнением задач.
+## Usage
+Cursor AI must read these files before executing tasks.
+
+## Language Policy
+
+All user-facing content MUST be in English:
+- Note titles and content
+- UI strings (buttons, labels, placeholders, errors)
+- Toast messages and tooltips
+- Code comments in public documentation
+- Commit messages
+
+**Exceptions:** Internal code comments (brief explanations in any language OK)

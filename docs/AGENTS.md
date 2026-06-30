@@ -87,3 +87,29 @@ curl http://localhost:8092/health
 
 This file is kept as a redirect to AGENTS_EN.md for historical reference.
 
+---
+
+## 🌐 Language Policy
+
+**All user-facing content MUST be in English:**
+
+- ✅ **Заметки** — заголовки и содержимое
+- ✅ **Аннотации** — любые текстовые поля для пользователя
+- ✅ **UI-строки** — кнопки, лейблы, плейсхолдеры, сообщения об ошибках
+- ✅ **Тултипы и тосты** — сообщения GalacticLexicon
+- ✅ **Commit-сообщения** — понятные, на английском
+
+**Исключения:**
+- Внутренние комментарии в коде — краткие пояснения на любом языке
+- Имена переменных/функций — следуйте соглашениям проекта
+
+### Examples:
+
+```typescript
+// ✅ Good
+toast.success("Note created successfully");
+
+// ❌ Bad
+toast.success("Заметка создана успешно");
+```
+

@@ -24,9 +24,9 @@ Use this agent instead of the default for tasks that involve:
 
 Example prompts to use with this agent:
 
-- "Проанализируй backend Go этого проекта и исправь актуальные ошибки в репозитории и инфраструктуре."
-- "Оцени состояние кода и docker-окружения, затем обнови документацию по запуску и миграциям."
-- "Найди и поправь ошибки в `backend/internal/infrastructure/db/postgres/note_repo.go`, затем синхронизируй изменения с архитектурной документацией."
-- "Обнови описания проекта так, чтобы они отражали текущую архитектуру backend, БД и сервисов в `docs/` и `README.md`."
+- "Analyze backend Go in this project and fix current errors in the repository and infrastructure."
+- "Evaluate code and docker environment state, then update documentation for running and migrations."
+- "Find and fix errors in `backend/internal/infrastructure/db/postgres/note_repo.go`, then synchronize changes with architectural documentation."
+- "Update project descriptions to reflect current backend architecture, DB and services in `docs/` and `README.md`."
 
 When using this agent, prioritize repository-specific context and avoid unrelated frontend or external tool instructions unless they directly impact the Go backend or infra documentation.

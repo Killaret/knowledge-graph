@@ -142,6 +142,40 @@ This plan focuses on turning Knowledge Graph into a reliable and useful product 
 
 ---
 
+## 🚀 Phase 4: Explorer Update (feature/explorer-update)
+**Goal:** Add gamification, navigation, and data portability
+
+#### 🚀 Космический Навигатор (Spaceship Navigator)
+- [ ] Создать `SpaceshipNavigator.svelte` (SVG, анимация двигателей, ~40x40px)
+- [ ] Реализовать 3 режима: FOLLOW_CURSOR, POINT_AT_NODE, IDLE_DRIFT
+- [ ] Интеграция с GraphCanvas (координаты мыши, клики по узлам)
+- [ ] Тултипы от GalacticLexicon (создание заметок, связей, достижений)
+- [ ] Эффект загрузки: патрульный облёт, камера 0.5→1.0
+- [ ] Сегментированная загрузка узлов (волны 0-200ms, 200-500ms, 500-800ms)
+- [ ] Unit-тест на переключение режимов
+- [ ] Визуальный тест (скриншот графа с корабликом)
+
+#### 🏆 Система очков и кастомизации
+- [ ] Миграции БД: `user_points`, `point_transactions`, `user_cosmetics`
+- [ ] API: `GET /users/me/points`, `GET /cosmetics`, `POST /cosmetics/buy`, `GET /users/me/cosmetics`
+- [ ] Начисление очков: CreateNote(+1), CreateLink(+2), QuickCapture(+1), PublishNote(+5)
+- [ ] Ежедневные бонусы (Asynq): streak 2-й день +2, 7-й день +10
+- [ ] Компонент `CosmeticsShop.svelte` (Modal, Button, ApiErrorDisplay)
+- [ ] Применение скинов в SpaceshipNavigator (user_cosmetics)
+- [ ] Unit-тест на PointService
+- [ ] Интеграционный тест: покупка предмета
+
+#### 📥 Импорт/Экспорт заметок
+- [ ] Сервис `ImportExportService` (JSON, Markdown, CSV)
+- [ ] API: `POST /import`, `GET /export?format=json|markdown|csv`, `GET /notes/{id}/export?format=md`
+- [ ] Markdown-формат (Obsidian-совместимость): YAML frontmatter, [[wikilinks]]
+- [ ] UI: кнопки Импорт/Экспорт в профиле/левой панели
+- [ ] Unit-тест на ImportFromJSON
+- [ ] Unit-тест на ExportToMarkdown
+- [ ] Интеграционный тест: экспорт → импорт → сравнение
+
+---
+
 ## 📋 Backlog (someday)
 
 ### Multi-tenancy (SaaS)
@@ -223,6 +257,7 @@ This plan focuses on turning Knowledge Graph into a reliable and useful product 
 | Phase 1: Stability | 🔄 In Progress | 20% | 🔴 Critical |
 | Phase 2: MVP for Users | ⏸️ Waiting | 0% | 🟡 High |
 | Phase 3: Killer Features | ⏸️ Waiting | 0% | 🟢 Medium |
+| Phase 4: Explorer Update | ⏸️ Planned | 0% | 🟡 High |
 | Backlog | ⏸️ Waiting | 0% | 🔵 Low |
 
 ### Near-term Goals (next 7 days):
@@ -245,5 +280,5 @@ This plan focuses on turning Knowledge Graph into a reliable and useful product 
 
 This roadmap will be updated as tasks are completed and priorities change. Updates will be published in CHANGELOG.md.
 
-**Last updated:** 2026-05-31
-**Next review:** 2026-06-07
+**Last updated:** 2026-06-30
+**Next review:** 2026-07-07

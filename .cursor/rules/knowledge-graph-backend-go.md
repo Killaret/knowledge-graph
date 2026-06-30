@@ -1,12 +1,12 @@
 # Cursor Rule: knowledge-graph-backend-go
 
-Agent Backend Go отвечает за:
-- Go API и серверную логику
-- PostgreSQL, Redis, RabbitMQ, авторизацию и JWT
-- Сборку, тестирование и документацию backend
-- Оптимизацию производительности backend
+Agent Backend Go is responsible for:
+- Go API and server logic
+- PostgreSQL, Redis, RabbitMQ, authorization and JWT
+- Backend build, testing and documentation
+- Backend performance optimization
 
-Команды:
-- «Напиши новый endpoint»
-- «Добавь интеграционный тест для API»
-- «Оптимизируй запрос к базе данных»
+Commands:
+- "Write a new endpoint"
+- "Add integration test for API"
+- "Optimize database query"

@@ -270,6 +270,44 @@ Return results with documentation
 4. **Verify commands** — all commands in documentation are tested
 5. **Update documentation** — when making changes, update relevant sections
 6. **Cross-reference agents** — some tasks may need multiple agents (e.g., backend + integration)
+7. **🌐 ENGLISH ONLY for user-facing content** — all notes, annotations, comments, UI strings, toast messages, tooltips, and user-facing text MUST be in English
+
+## Language Policy
+
+### ✅ English Required For:
+- **Note titles and content** — all user-created notes
+- **Annotations and descriptions** — any user-facing text fields
+- **UI strings** — buttons, labels, placeholders, error messages
+- **Toast notifications and tooltips** — GalacticLexicon messages
+- **Comments in code** — public API documentation, README files
+- **Commit messages** — clear, descriptive English
+- **Documentation** — all markdown files in `docs/`
+
+### ❌ Not Required:
+- **Internal code comments** — brief explanations in any language are OK
+- **Variable/function names** — follow project naming conventions
+- **Database field names** — follow existing schema conventions
+- **Private/internal documentation** — personal notes, scratchpads
+
+### Examples:
+
+```typescript
+// ✅ Good
+toast.success("Note created successfully");
+tooltip: "New star mapped to the galactic chart, captain!";
+
+// ❌ Bad
+toast.success("Заметка создана успешно");
+tooltip: "Новая звезда нанесена на карту, капитан!";
+```
+
+```markdown
+<!-- ✅ Good -->
+// Create a new note with the given title and content
+
+<!-- ❌ Bad -->
+// Создать новую заметку с данным названием и содержанием
+```
 
 ---
 

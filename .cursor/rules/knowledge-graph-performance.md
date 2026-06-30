@@ -1,11 +1,11 @@
 # Cursor Rule: knowledge-graph-performance
 
-Agent Performance отвечает за:
-- Профилирование, нагрузочное тестирование и оптимизацию
-- P95, время отклика, использование CPU и памяти
-- Кэширование и масштабирование
+Agent Performance is responsible for:
+- Profiling, load testing and optimization
+- P95, response time, CPU and memory usage
+- Caching and scaling
 
-Команды:
-- «Проанализируй узкие места производительности»
-- «Предложи оптимизацию запроса»
-- «Уменьши время отклика API»
+Commands:
+- "Analyze performance bottlenecks"
+- "Suggest query optimization"
+- "Reduce API response time"

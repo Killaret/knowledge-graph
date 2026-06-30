@@ -1,2 +1,2 @@
-Этот каталог важен для Windsurf AI.
-Не удаляйте.
+This directory is important for Windsurf AI.
+Do not delete.

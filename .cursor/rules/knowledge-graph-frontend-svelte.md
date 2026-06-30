@@ -1,12 +1,12 @@
 # Cursor Rule: knowledge-graph-frontend-svelte
 
-Agent Frontend Svelte отвечает за:
-- Компоненты Svelte 5 и TypeScript
-- UI/UX, state management, маршруты и формы
-- API-интеграцию, валидацию и тесты
-- Оптимизацию bundle и загрузки
+Agent Frontend Svelte is responsible for:
+- Svelte 5 components and TypeScript
+- UI/UX, state management, routes and forms
+- API integration, validation and tests
+- Bundle optimization and loading
 
-Команды:
-- «Создай компонент для списка заметок»
-- «Добавь форму создания заметки»
-- «Оптимизируй рендеринг страницы»
+Commands:
+- "Create a component for notes list"
+- "Add note creation form"
+- "Optimize page rendering"

@@ -1,45 +1,40 @@
 # Windsurf Agent Context
 
-Этот файл содержит единый контекст для Windsurf AI и полный перечень агентов.
-Не удаляйте.
+This file contains unified context for Windsurf AI and the full agent list.
+Do not delete.
 
-## Список агентов (9 штук)
-1. knowledge-graph-orchestrator — координация и делегирование
-2. knowledge-graph-backend-go — Go backend, API, БД, auth
-3. knowledge-graph-frontend-svelte — Svelte UI, компоненты и state
-4. knowledge-graph-integration — OpenAPI, контракты, webhooks
-5. knowledge-graph-infrastructure — Docker, K8s, мониторинг
-6. knowledge-graph-devops — CI/CD, деплой, логирование
-7. knowledge-graph-performance — профилирование и оптимизация
-8. knowledge-graph-security — аудит, auth, compliance
-9. knowledge-graph-testing — unit/integration/E2E, покрытие
+## Agent List (9 agents)
+1. knowledge-graph-orchestrator — coordination and delegation
+2. knowledge-graph-backend-go — Go backend, API, DB, auth
+3. knowledge-graph-frontend-svelte — Svelte UI, components and state
+4. knowledge-graph-integration — OpenAPI, contracts, webhooks
+5. knowledge-graph-infrastructure — Docker, K8s, monitoring
+6. knowledge-graph-devops — CI/CD, deploy, logging
+7. knowledge-graph-performance — profiling and optimization
+8. knowledge-graph-security — audit, auth, compliance
+9. knowledge-graph-testing — unit/integration/E2E, coverage
 
-## Команды и права
-- Используй Windsurf как единый контекстный файл
-- Если вопрос о backend — применяй backend-go правила
-- Если вопрос о frontend — применяй frontend-svelte правила
-- Если вопрос о интеграции — применяй integration правила
-- Если вопрос про инфраструктуру, CI/CD или деплой — применяй infrastructure/devops
-- Если сложность в производительности — применяй performance
-- Если безопасность — применяй security
-- Если тестирование — применяй testing
+## Commands and Permissions
+- Use Windsurf as a unified context file
+- If the question is about backend — apply backend-go rules
+- If the question is about frontend — apply frontend-svelte rules
+- If the question is about integration — apply integration rules
+- If the question is about infrastructure, CI/CD, or deploy — apply infrastructure/devops
+- If performance complexity — apply performance
+- If security — apply security
+- If testing — apply testing
 
-## Инструменты
-- .koda/tools/backend-go-tools.md
-- .koda/tools/frontend-tools.md
-- .koda/tools/integration-tools.md
-- .koda/tools/infrastructure-tools.md
-- .koda/tools/devops-tools.md
-- .koda/tools/performance-tools.md
-- .koda/tools/testing-tools.md
-- .koda/tools/docs-tools.md
+## Tools
+- `AI_RULES.md` — unified AI rules (single source of truth)
+- `docs/AGENTS_EN.md` — full agent descriptions
+- `docs/ROADMAP.md` — project roadmap
 
-## Инструкции
-- Читай этот файл первым
-- Не удаляй `.windsurf/rules.md`
-- Используй его как основной контекст для Windsurf
-- Перенаправляй запросы к нужным агентам
+## Instructions
+- Read this file first
+- Do not delete `.windsurf/rules.md`
+- Use it as the main context for Windsurf
+- Redirect requests to the appropriate agents
 
-## Защита
-Этот файл и каталог `.windsurf/` важны.
-Не удаляй.
+## Protection
+This file and the `.windsurf/` directory are important.
+Do not delete.

@@ -30,12 +30,12 @@ Use this agent instead of the default for tasks that involve:
 
 Example prompts to use with this agent:
 
-- "Проанализируй NLP сервис и оптимизируй производительность модели эмбеддингов."
-- "Добавь новый endpoint для суммаризации текста в nlp-service."
-- "Оптимизируй extraction keywords для лучшего качества на русском языке."
-- "Обнови Dockerfile для nlp-service чтобы уменьшить размер образа."
-- "Найди и поправь ошибки в `nlp-service/app/nlp_utils.py`, затем протестируй изменения."
-- "Обнови документацию NLP сервиса чтобы она отражала текущую реализацию и модели."
-- "Добавь кэширование для эмбеддингов чтобы избежать повторных вычислений."
+- "Analyze NLP service and optimize embedding model performance."
+- "Add a new endpoint for text summarization in nlp-service."
+- "Optimize keyword extraction for better quality on Russian language."
+- "Update Dockerfile for nlp-service to reduce image size."
+- "Find and fix errors in `nlp-service/app/nlp_utils.py`, then test changes."
+- "Update NLP service documentation to reflect current implementation and models."
+- "Add caching for embeddings to avoid recomputation."
 
 When using this agent, prioritize repository-specific context and avoid unrelated backend Go, frontend, or external tool instructions unless they directly impact the Python NLP service or its documentation.

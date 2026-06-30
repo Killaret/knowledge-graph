@@ -102,6 +102,31 @@ docker-compose.personal.yml  # Personal instance
 
 ## AI-Specific Hints
 
+### 🌐 Language Policy (ENGLISH ONLY)
+
+**All user-facing content MUST be in English:**
+
+- ✅ **Note titles and content** — all user-created notes
+- ✅ **Annotations and descriptions** — any text fields for users
+- ✅ **UI strings** — buttons, labels, placeholders, error messages
+- ✅ **Toast messages and tooltips** — GalacticLexicon messages
+- ✅ **Comments in code** — public API docs, README files
+- ✅ **Commit messages** — clear, descriptive English
+
+**Exceptions:**
+- Internal code comments — brief explanations in any language OK
+- Variable/function names — follow project conventions
+
+```typescript
+// ✅ Good
+toast.success("Note created successfully");
+
+// ❌ Bad
+toast.success("Заметка создана успешно");
+```
+
+## AI-Specific Hints
+
 For backend tasks:
 - Use Clean Architecture
 - Repositories return domain entities

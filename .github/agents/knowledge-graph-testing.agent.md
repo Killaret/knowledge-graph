@@ -84,12 +84,12 @@ Then I should see the notes displayed as celestial bodies
 
 Примеры промптов для этого агента
 
-- "Добавь unit тесты для новой функции в Note entity"
-- "Исправь падающие Playwright тесты в frontend/tests/graph.spec.ts"
-- "Напиши BDD сценарий для новой фильтрации по типам заметок"
-- "Проанализируй покрытие тестов и предложи где добавить тесты"
-- "Настрой интеграционные тесты для нового handler"
-- "Исправь тесты после рефакторинга API endpoints"
+- "Add unit tests for new function in Note entity"
+- "Fix failing Playwright tests in frontend/tests/graph.spec.ts"
+- "Write BDD scenario for new note type filtering"
+- "Analyze test coverage and suggest where to add tests"
+- "Configure integration tests for new handler"
+- "Fix tests after API endpoints refactoring"
 
 Интеграционные паттерны для тестов
 

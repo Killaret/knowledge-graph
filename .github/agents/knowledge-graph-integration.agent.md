@@ -138,12 +138,12 @@ server.use(
 
 Примеры промптов для этого агента
 
-- "Добавь новый endpoint для создания тегов и обнови frontend API client"
-- "Обнови DTO в Note response после добавления нового поля"
-- "Настрой CORS для нового домена frontend"
-- "Исправь несоответствие типов между backend и frontend"
-- "Добавь интеграционный тест для нового graph endpoint"
-- "Обнови документацию API после изменений в handlers"
+- "Add a new endpoint for creating tags and update frontend API client"
+- "Update DTO in Note response after adding a new field"
+- "Configure CORS for a new frontend domain"
+- "Fix type mismatch between backend and frontend"
+- "Add integration test for new graph endpoint"
+- "Update API documentation after handler changes"
 
 API документация
 

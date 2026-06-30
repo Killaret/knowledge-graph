@@ -43,4 +43,23 @@
 
 ---
 
-Если нужно, могу автоматически вставить ссылку на `FRONTEND_PATTERNS.md` в `frontend/README.md`.
+## 🌐 Language Policy
+
+**All user-facing content MUST be in English:**
+
+- ✅ **Note titles and content** — all user-created notes
+- ✅ **Annotations and descriptions** — any text fields for users
+- ✅ **UI strings** — buttons, labels, placeholders, error messages
+- ✅ **Toast messages and tooltips** — GalacticLexicon messages
+- ✅ **Comments in code** — public API docs, README files
+
+**Exceptions:**
+- Internal code comments — brief explanations in any language OK
+
+```typescript
+// ✅ Good
+toast.success("Note created successfully");
+
+// ❌ Bad
+toast.success("Заметка создана успешно");
+```

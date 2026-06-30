@@ -154,6 +154,29 @@
 - Node grouping in visualization
 - Keyboard shortcuts for graph
 
+### 🚀 Phase 4: Explorer Update (feature/explorer-update)
+
+#### 🚀 Spaceship Navigator
+- **Interactive starship** (~40x40px SVG) that follows cursor, points at nodes, drifts idly
+- **3 modes**: FOLLOW_CURSOR (0.3s delay), POINT_AT_NODE (near active node), IDLE_DRIFT (random movement)
+- **GalacticLexicon tooltips**: "Новая звезда нанесена на карту, капитан!" (note), "Гравитационный луч установлен!" (link), "Кодекс исследователя пополнен!" (achievement)
+- **Loading animation**: Patrol orbit on empty space, camera zoom 0.5→1.0
+- **Segmented node loading**: Waves (0-200ms, 200-500ms, 500-800ms) with ship flying between appearing nodes
+
+#### 🏆 Points & Cosmetics System
+- **Points for actions**: CreateNote(+1), CreateLink(+2), QuickCapture(+1), PublishNote(+5)
+- **Daily bonus streaks**: 2-day +2, 7-day +10 (Asynq task)
+- **Cosmetics shop**: Spaceship skins, engines, trails, satellites
+- **Database**: `user_points`, `point_transactions`, `user_cosmetics` tables
+- **API**: `GET /users/me/points`, `GET /cosmetics`, `POST /cosmetics/buy`, `GET /users/me/cosmetics`
+
+#### 📥 Import/Export Notes
+- **ImportFromJSON**: Parse JSON, create notes and links
+- **ExportToJSON**: All user notes in JSON format
+- **ExportToMarkdown**: Obsidian-compatible .zip (YAML frontmatter + [[wikilinks]])
+- **ExportToCSV**: CSV with id, title, type, created_at, links_count
+- **API**: `POST /import`, `GET /export?format=json|markdown|csv`, `GET /notes/{id}/export?format=md`
+
 ---
 
 ## [1.0.0] - 2026-04-15
