@@ -38,7 +38,7 @@ import java.util.List;
 public class AppConfig {
     private static final long TIMEOUT_DURATION = 5;
 
-    private ObjectMapper buildObjectMapper () {
+    private ObjectMapper buildObjectMapper() {
         return JsonMapper.builder()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
@@ -48,23 +48,20 @@ public class AppConfig {
                 .build();
     }
 
-    private RedisClient createRedisClient () {
+    private RedisClient createRedisClient() {
         String uri = System.getenv().getOrDefault("REDIS_URI", "redis://localhost:6379/0");//change redis://localhost:6379/0 later
         return RedisClient.create(uri);
     }
 
 
-
-
     public void start() throws IOException {
-
 
 
         RedisClient redisClient = createRedisClient();
         ObjectMapper objectMapper = buildObjectMapper();
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_DURATION)).build();
         NoteCreatorHttpClient noteCreatorHttpClient =
-                new NoteCreatorHttpClient(httpClient,objectMapper,"http://backend:8080");
+                new NoteCreatorHttpClient(httpClient, objectMapper, "http://backend:8080");
         HealthCheckService healthService = new HealthCheckService(8081, redisClient);
         healthService.start();
 
@@ -81,7 +78,7 @@ public class AppConfig {
                 .waitDurationInOpenState(Duration.ofSeconds(30))
                 .slidingWindowSize(10)
                 .build();
-        CircuitBreaker circuitBreaker = CircuitBreaker.of("noteCB",breakerConfig);
+        CircuitBreaker circuitBreaker = CircuitBreaker.of("noteCB", breakerConfig);
 
         NoteCreatorPort noteCreator = new ResilientNoteCreator(noteCreatorHttpClient, retry, circuitBreaker);
 
@@ -102,11 +99,9 @@ public class AppConfig {
         ParserFactory parserFactory = new ParserFactory(tikaParser, textParser);
 
 
-
         ChunkingStrategy chunk = new HybridChunker();
 
         LinkDetector linkDetector = chunks -> List.of();
-
 
 
         OutboundQueuePort outboundQueuePort = new AsynqOutboundAdapter(
@@ -117,12 +112,42 @@ public class AppConfig {
         ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreator,
                 outboundQueuePort, repository);
 
+
         Thread worker = new Thread(() -> asynqInboundAdapter.subscribe(handler::handle));
+        worker.setName("async-worker");
         worker.setDaemon(false);
         worker.start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Graceful shutdown initiated...");
+            asynqInboundAdapter.shutdown();   //  флаг + закрытие сокета
+
+            // 30 секунд на завершение текущей задачи и выход из BLPOP
+            try {
+                worker.join(30_000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Если поток всё ещё жив — что-то зависло, принудительно прерываем
+            if (worker.isAlive()) {
+                System.err.println("Worker stuck, interrupting...");
+                worker.interrupt();
+                try {
+                    worker.join(5_000);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            if (healthService != null) {
+                healthService.stop();
+            }
+            System.out.println("Shutdown complete.");
+        }));
+        // Главный поток ждёт завершения воркера, а не висит бесконечно
         try {
-            Thread.currentThread().join();
+            worker.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

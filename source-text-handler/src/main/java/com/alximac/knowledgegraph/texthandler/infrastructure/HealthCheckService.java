@@ -12,26 +12,34 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 public class HealthCheckService {
+
     private final HttpServer httpServer;
 
     public HealthCheckService(int port, RedisClient redisClient) throws IOException {
-
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
 
-
-        httpServer.createContext("/health/liveliness", exchange -> {
-            sendResponse(exchange, 200, "{\"status\":\"UP\"}");
+        // Регистрируем контексты
+        httpServer.createContext("/health/liveness", exchange -> {
+            try {
+                sendResponse(exchange, 200, "{\"status\":\"UP\"}");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
-        // проверяет Redis
         httpServer.createContext("/health/readiness", exchange -> {
-            boolean redisOk = checkRedis(redisClient);
-            int code = redisOk ? 200 : 503;
-            String body = redisOk ? "{\"status\":\"UP\"}" : "{\"status\":\"DOWN\",\"reason\":\"Redis unavailable\"}";
-            sendResponse(exchange, code, body);
+            try {
+                boolean redisOk = checkRedis(redisClient);
+                int code = redisOk ? 200 : 503;
+                String body = redisOk ? "{\"status\":\"UP\"}" : "{\"status\":\"DOWN\",\"reason\":\"Redis unavailable\"}";
+                sendResponse(exchange, code, body);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
         httpServer.setExecutor(Executors.newSingleThreadExecutor());
+        System.out.println("HealthCheckService created on port " + port);
     }
 
     private boolean checkRedis(RedisClient redisClient) {
@@ -44,15 +52,17 @@ public class HealthCheckService {
     }
 
     private void sendResponse(HttpExchange exchange, int code, String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(code, body.getBytes(StandardCharsets.UTF_8).length);
+        exchange.sendResponseHeaders(code, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(body.getBytes(StandardCharsets.UTF_8));
+            os.write(bytes);
         }
     }
 
     public void start() {
         httpServer.start();
+        System.out.println("HealthCheckService started and listening");
     }
 
     public void stop() {
