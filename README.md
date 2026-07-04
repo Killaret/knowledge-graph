@@ -65,9 +65,6 @@ cd frontend && npm run dev
 
 # NLP Service (Python)
 cd nlp-service && uvicorn app.main:app --reload
-
-# Source Text Handler (Java)
-cd source-text-handler && mvn spring-boot:run
 ```
 
 ---
@@ -143,12 +140,6 @@ cd source-text-handler && mvn spring-boot:run
 - **Framework:** FastAPI
 - **ML:** sentence-transformers, YAKE, NLTK
 
-### Source Text Handler
-- **Language:** Java 17+
-- **Framework:** Spring Boot
-- **Build:** Maven
-- **Features:** Document parsing, chunking, retry + circuit breaker
-
 ### Infrastructure
 - **Containerization:** Docker Compose
 - **Reverse Proxy:** Nginx
@@ -188,7 +179,6 @@ knowledge-graph/
 │   │   └── routes/        # SvelteKit pages
 │   └── tests/             # Playwright E2E tests
 ├── nlp-service/           # Python NLP service (embeddings)
-├── source-text-handler/   # Java document processing
 ├── services/
 │   └── graph-service/     # gRPC graph layout service
 ├── docs/                  # Architecture, ADR, UML diagrams
@@ -220,7 +210,6 @@ knowledge-graph/
 - [🎨 Frontend Patterns](frontend/FRONTEND_PATTERNS.md) — паттерны фронтенда
 
 ### Service Documentation
-- [📄 Source Text Handler](source-text-handler/README.md) — обработка документов
 - [🔄 API Errors](docs/API_ERRORS.md) — формат ошибок API
 - [🗄️ Database Schema](docs/SaaS_DATABASE_SCHEMA.md) — схема БД
 
@@ -282,7 +271,6 @@ cd knowledge-graph
 cd backend && go mod download
 cd ../frontend && npm install
 cd ../nlp-service && pip install -r requirements.txt
-cd ../source-text-handler && mvn clean install
 ```
 
 ### Local Development
@@ -300,9 +288,6 @@ cd frontend && npm run dev
 
 # NLP Service
 cd nlp-service && uvicorn app.main:app --reload
-
-# Source Text Handler
-cd source-text-handler && mvn spring-boot:run
 ```
 
 ### Code Quality
@@ -440,7 +425,6 @@ See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 - 🚀 Performance optimization for graph rendering
 - 🔐 Enhanced authentication and authorization
 - 🎯 Achievement system implementation
-- 📄 Document processing pipeline (Java)
 - 🌐 Multi-language support improvements
 
 ---
