@@ -25,7 +25,8 @@ export function getGlowIntensity(nodeId: string, time: number, nodeCount: number
   const t = (time + phase * period) % period;
   const normalizedT = t / period;
 
-  return 0.3 + 0.7 * Math.sin(normalizedT * Math.PI * 2);
+  // Sine wave from 0.3 to 1.0 (absolute value to ensure positive)
+  return 0.3 + 0.7 * Math.abs(Math.sin(normalizedT * Math.PI * 2));
 }
 
 /**
@@ -517,8 +518,6 @@ export function drawAsteroid(
   ctx.shadowBlur = 0;
   ctx.shadowColor = 'transparent';
 }
-  ctx.stroke();
-}
 
 /**
  * Draw a debris node
@@ -585,11 +584,6 @@ export function drawBlackhole(
   // Reset shadow
   ctx.shadowBlur = 0;
   ctx.shadowColor = 'transparent';
-}
-  ctx.arc(x, y, r * 0.8, 0, 2 * Math.PI);
-  ctx.strokeStyle = '#ff3300';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 }
 
 /**
@@ -1165,42 +1159,6 @@ export function drawUnknown(
 }
 
 /**
- * Draw a link between two nodes
- */
-export function drawLink(
-  ctx: CanvasRenderingContext2D,
-  link: SimulationLink,
-  sourceNode: SimulationNode,
-  targetNode: SimulationNode,
-  opacity: number = 1
-): void {
-  ctx.beginPath();
-  ctx.moveTo(sourceNode.x!, sourceNode.y!);
-  ctx.lineTo(targetNode.x!, targetNode.y!);
-
-  const weight = link.weight ?? 0.5;
-  const linkType = link.link_type;
-
-  // Line thickness per specification: Math.max(1, weight * 4)
-  // No type-based multipliers - thickness depends only on weight
-  const lineWidth = Math.max(1, weight * 4);
-
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = getLinkColor(weight, linkType, opacity);
-
-  // Set dash pattern for dashed lines
-  const dash = getLineDash(linkType, weight);
-  if (dash.length > 0) {
-    ctx.setLineDash(dash);
-  } else {
-    ctx.setLineDash([]);
-  }
-
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-/**
  * Resolve a link endpoint after d3-force: `source` / `target` may be id strings
  * or the same simulation node objects d3 mutates in place.
  */
@@ -1212,26 +1170,6 @@ function resolveLinkEndpoint(
     return ref as SimulationNode;
   }
   return nodes.find((n) => String(n.id) === String(ref));
-}
-
-/**
- * Get color for a node type
- */
-function getNodeColor(type: string): string {
-  const colors: Record<string, string> = {
-    star: '#ffcc00',
-    planet: '#d6aa5d',
-    comet: '#e879f9',
-    galaxy: '#8b5cf6',
-    asteroid: '#94a3b8',
-    blackhole: '#000000',
-    moon: '#cccccc',
-    nebula: '#2dd4bf',
-    dust: '#a1a1aa',
-    inbox: '#fbbf24',
-    unknown: '#94a3b8'
-  };
-  return colors[type] || colors.unknown;
 }
 
 /**
@@ -1397,7 +1335,7 @@ export function drawNodeTitle(
 /**
  * Get color for a node type
  */
-function getNodeColor(type: string): string {
+export function getNodeColor(type: string): string {
   const colors: Record<string, string> = {
     star: '#ffcc00',
     planet: '#d6aa5d',

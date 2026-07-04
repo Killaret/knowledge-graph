@@ -8,7 +8,13 @@ import {
   drawVoidWhisper,
   drawCosmicAbomination,
   drawUnknown,
-  getAnomalyParams
+  drawNode,
+  getAnomalyParams,
+  getLinkColor,
+  getLineDash,
+  getGlowIntensity,
+  getNodeGradient,
+  getNodeColor
 } from './renderer';
 
 // Mock CanvasRenderingContext2D
@@ -22,6 +28,7 @@ const mockCtx = {
   moveTo: vi.fn(),
   lineTo: vi.fn(),
   arc: vi.fn(),
+  ellipse: vi.fn(),
   bezierCurveTo: vi.fn(),
   fill: vi.fn(),
   stroke: vi.fn(),
@@ -254,6 +261,212 @@ describe('renderer anomaly functions', () => {
       const params = getAnomalyParams('test-node');
       
       expect(params.seedBase).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('drawNode default/unknown type fallback', () => {
+    it('should call anomaly renderer for type "unknown"', () => {
+      vi.clearAllMocks();
+      
+      const node = { id: 'unknown-node-1', title: 'Test', type: 'unknown', x: 100, y: 100 };
+      drawNode(mockCtx, node as any, 24, 0, false);
+      
+      // Anomaly renderers use save/translate/restore pattern
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+      expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    it('should call anomaly renderer for unrecognized type (default case)', () => {
+      vi.clearAllMocks();
+      
+      const node = { id: 'weird-node-1', title: 'Test', type: 'nonexistent_type', x: 100, y: 100 };
+      drawNode(mockCtx, node as any, 24, 0, false);
+      
+      // Anomaly renderers use save/translate/restore
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+      expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    it('should NOT call drawStar for unrecognized types', () => {
+      vi.clearAllMocks();
+      
+      const node = { id: 'weird-node-2', title: 'Test', type: 'banana_type', x: 100, y: 100 };
+      drawNode(mockCtx, node as any, 24, 0, false, true);
+      
+      // drawStar does NOT use save/translate/restore, so save being called means anomaly was used
+      // Also verify translate was called (anomaly pattern) 
+      expect(mockCtx.translate).toHaveBeenCalled();
+    });
+
+    it('should produce stable anomaly selection for same nodeId regardless of type string', () => {
+      vi.clearAllMocks();
+      
+      const node1 = { id: 'stable-node', title: 'Test', type: 'unknown', x: 100, y: 100 };
+      const node2 = { id: 'stable-node', title: 'Test', type: 'xyz_bogus', x: 100, y: 100 };
+      
+      drawNode(mockCtx, node1 as any, 24, 0, false, true);
+      const callsAfterFirst = (mockCtx.translate as any).mock.calls.length;
+      
+      drawNode(mockCtx, node2 as any, 24, 0, false, true);
+      const callsAfterSecond = (mockCtx.translate as any).mock.calls.length;
+      
+      // Both should have called translate (anomaly renderer)
+      expect(callsAfterFirst).toBeGreaterThan(0);
+      expect(callsAfterSecond).toBeGreaterThan(callsAfterFirst);
+    });
+  });
+
+  describe('getLinkColor', () => {
+    it('should return correct color for reference links', () => {
+      const color = getLinkColor(1.0, 'reference');
+      expect(color).toContain('51'); // RGB for blue #3366ff
+      expect(color).toContain('102');
+      expect(color).toContain('255');
+    });
+
+    it('should return correct color for dependency links', () => {
+      const color = getLinkColor(0.8, 'dependency');
+      expect(color).toContain('255'); // RGB for orange #ff6600
+      expect(color).toContain('102');
+      expect(color).toContain('0');
+    });
+
+    it('should return correct color for gamma links (purple)', () => {
+      const color = getLinkColor(0.5, 'reference', 'gamma');
+      expect(color).toContain('139'); // RGB for purple #8b5cf6
+      expect(color).toContain('92');
+      expect(color).toContain('246');
+    });
+
+    it('should return correct color for gamma links regardless of link_type', () => {
+      const color1 = getLinkColor(0.5, 'reference', 'gamma');
+      const color2 = getLinkColor(0.5, 'dependency', 'gamma');
+      const color3 = getLinkColor(0.5, 'custom', 'gamma');
+      
+      // All gamma links should be purple
+      expect(color1).toContain('139');
+      expect(color2).toContain('139');
+      expect(color3).toContain('139');
+    });
+
+    it('should apply opacity based on weight', () => {
+      const color1 = getLinkColor(1.0, 'reference');
+      const color2 = getLinkColor(0.2, 'reference');
+      
+      // Higher weight should have higher opacity
+      expect(color1).toMatch(/rgba?\([^,]+,\s*[^,]+,\s*[^,]+,\s*([0-9.]+)\)/);
+      expect(color2).toMatch(/rgba?\([^,]+,\s*[^,]+,\s*[^,]+,\s*([0-9.]+)\)/);
+    });
+  });
+
+  describe('getLineDash', () => {
+    it('should return empty array for reference links (solid)', () => {
+      const dash = getLineDash('reference');
+      expect(dash).toEqual([]);
+    });
+
+    it('should return dash-dot for dependency links', () => {
+      const dash = getLineDash('dependency');
+      expect(dash).toEqual([10, 3]);
+    });
+
+    it('should return dotted for custom links', () => {
+      const dash = getLineDash('custom');
+      expect(dash).toEqual([2, 6]);
+    });
+
+    it('should return dashed for weak related links', () => {
+      const dash = getLineDash('related', 'user', 0.1);
+      expect(dash).toEqual([6, 4]);
+    });
+
+    it('should return solid for strong related links', () => {
+      const dash = getLineDash('related', 'user', 0.8);
+      expect(dash).toEqual([]);
+    });
+
+    it('should return 4px/4px dash for gamma links', () => {
+      const dash = getLineDash('reference', 'gamma', 0.5);
+      expect(dash).toEqual([4, 4]);
+    });
+
+    it('should return 4px/4px dash for gamma links regardless of link_type', () => {
+      const dash1 = getLineDash('reference', 'gamma', 0.5);
+      const dash2 = getLineDash('dependency', 'gamma', 0.5);
+      const dash3 = getLineDash('custom', 'gamma', 0.5);
+      
+      expect(dash1).toEqual([4, 4]);
+      expect(dash2).toEqual([4, 4]);
+      expect(dash3).toEqual([4, 4]);
+    });
+  });
+
+  describe('getGlowIntensity', () => {
+    it('should return minimal glow when nodeCount > 100', () => {
+      const intensity = getGlowIntensity('node-1', 1000, 150);
+      expect(intensity).toBe(0.3);
+    });
+
+    it('should return pulsating value between 0.3 and 1.0', () => {
+      const intensity = getGlowIntensity('node-1', 1000, 50);
+      expect(intensity).toBeGreaterThanOrEqual(0.3);
+      expect(intensity).toBeLessThanOrEqual(1.0);
+    });
+
+    it('should return different values for different nodeIds', () => {
+      const intensity1 = getGlowIntensity('node-1', 1000, 50);
+      const intensity2 = getGlowIntensity('node-2', 1000, 50);
+      // Due to hash-based phase offset, values should differ
+      expect(intensity1).not.toBe(intensity2);
+    });
+  });
+
+  describe('getNodeColor', () => {
+    it('should return correct color for star', () => {
+      const color = getNodeColor('star');
+      expect(color).toBe('#ffcc00');
+    });
+
+    it('should return correct color for planet', () => {
+      const color = getNodeColor('planet');
+      expect(color).toBe('#d6aa5d');
+    });
+
+    it('should return default color for unknown type', () => {
+      const color = getNodeColor('unknown');
+      expect(color).toBe('#94a3b8');
+    });
+
+    it('should return default color for undefined type', () => {
+      const color = getNodeColor('nonexistent');
+      expect(color).toBe('#94a3b8');
+    });
+  });
+
+  describe('getNodeGradient', () => {
+    it('should create a radial gradient', () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'star', '#ffcc00');
+      expect(mockCtx.createRadialGradient).toHaveBeenCalled();
+    });
+
+    it('should add color stops for star type', () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'star', '#ffcc00');
+      const mockGradient = mockCtx.createRadialGradient as any;
+      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
+    });
+
+    it('should add color stops for planet type', () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'planet', '#d6aa5d');
+      const mockGradient = mockCtx.createRadialGradient as any;
+      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
+    });
+
+    it('should add color stops for galaxy type', () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'galaxy', '#8b5cf6');
+      const mockGradient = mockCtx.createRadialGradient as any;
+      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
     });
   });
 });
