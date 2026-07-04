@@ -1,10 +1,10 @@
 #!/usr/bin/env pwsh
-# Проверка доступности frontend и backend
+# Verify frontend and backend availability
 
 Write-Host "=== Knowledge Graph - Test Verification ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Проверка backend
+# Check backend
 Write-Host "1. Checking Backend (http://localhost:9000)..." -ForegroundColor Yellow
 try {
     $backendResp = Invoke-RestMethod -Uri "http://localhost:9000/health" -Method GET -TimeoutSec 5
@@ -14,7 +14,7 @@ try {
     exit 1
 }
 
-# Проверка frontend
+# Check frontend
 Write-Host "2. Checking Frontend (http://localhost:5173)..." -ForegroundColor Yellow
 try {
     $frontendResp = Invoke-WebRequest -Uri "http://localhost:5173" -UseBasicParsing -TimeoutSec 5
@@ -24,7 +24,7 @@ try {
     exit 1
 }
 
-# Проверка количества заметок
+# Check note count
 Write-Host "3. Checking Database..." -ForegroundColor Yellow
 try {
     $notesResp = Invoke-RestMethod -Uri "http://localhost:9000/notes?limit=1" -Method GET -TimeoutSec 5

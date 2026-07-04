@@ -18,16 +18,16 @@ public class HybridChunker implements ChunkingStrategy {
 
         for (String paragraph : paragraphs) {
             if (countWords(paragraph) <= options.chunkSize()) {
-                // короткий параграф — сразу чанк, если не короче minChunkLength
+                // short paragraph → immediate chunk, if not shorter than minChunkLength
                 if (paragraph.length() >= options.minChunkLength()) {
                     result.add(new DocumentChunk(paragraph, chunkIndex.getAndIncrement(), Map.of(), null));
                 } else if (!result.isEmpty()) {
-                    // слишком короткий — присоединяем к предыдущему чанку
+                    // too short → merge with previous chunk
                     DocumentChunk prev = result.remove(result.size() - 1);
                     result.add(new DocumentChunk(prev.text() + " " + paragraph, prev.index(), Map.of(), null));
                 }
             } else {
-                // длинный параграф — sliding window по предложениям
+                // long paragraph → sliding window by sentences
                 List<String> sentences = splitIntoSentences(paragraph);
                 result.addAll(chunkParagraph(sentences, options, chunkIndex));
             }
@@ -35,18 +35,18 @@ public class HybridChunker implements ChunkingStrategy {
         return result;
     }
 
-    // разбивает текст по 2+ переводам строки
+    // splits text by 2+ newlines
     private List<String> splitIntoParagraphs(String text) {
         return List.of(text.split("\\n\\s*\\n"));
     }
 
-    // количество слов (непустых токенов)
+    // word count (non-empty tokens)
     private int countWords(String s) {
         if (s.isBlank()) return 0;
         return s.trim().split("\\s+").length;
     }
 
-    // разбитие текста на предложения
+    // text splitting into sentences
     private List<String> splitIntoSentences(String text) {
         List<String> sentences = new ArrayList<>();
         BreakIterator bi = BreakIterator.getSentenceInstance(Locale.getDefault());
@@ -58,14 +58,14 @@ public class HybridChunker implements ChunkingStrategy {
         return sentences;
     }
 
-    // sliding window для списка предложений
+    // sliding window for a list of sentences
     private List<DocumentChunk> chunkParagraph(List<String> sentences, ImportOptions opts, AtomicInteger indexCounter) {
         List<DocumentChunk> chunks = new ArrayList<>();
         int chunkSizeWords = opts.chunkSize();
         int overlapWords = opts.overlap();
         int minLength = opts.minChunkLength();
 
-        LinkedList<String> wordBuffer = new LinkedList<>(); // текущий буфер слов
+        LinkedList<String> wordBuffer = new LinkedList<>(); // current word buffer
         int currentWordCount = 0;
 
         for (String sentence : sentences) {
@@ -77,9 +77,9 @@ public class HybridChunker implements ChunkingStrategy {
                 }
             }
 
-            // когда буфер наполнился или предложение закончилось, формируем чанк(и)
+            // when buffer is full or sentence ends, form chunk(s)
             while (currentWordCount >= chunkSizeWords) {
-                // берём chunkSizeWords из буфера
+                // take chunkSizeWords from buffer
                 List<String> chunkWords = new ArrayList<>();
                 for (int i = 0; i < chunkSizeWords && !wordBuffer.isEmpty(); i++) {
                     chunkWords.add(wordBuffer.pollFirst());
@@ -87,9 +87,9 @@ public class HybridChunker implements ChunkingStrategy {
                 }
                 addChunkOrMerge(String.join(" ", chunkWords), minLength, chunks, indexCounter);
 
-                // Возвращаем overlap слов обратно в буфер для перекрытия
+                // Return overlap words back to buffer for overlap
                 if (overlapWords > 0 && !chunkWords.isEmpty()) {
-                    // Берём последние overlap слов из chunkWords
+                    // Take last overlap words from chunkWords
                     int overlapStart = Math.max(0, chunkWords.size() - overlapWords);
                     List<String> overlapList = chunkWords.subList(overlapStart, chunkWords.size());
                     wordBuffer.addAll(0, overlapList);
@@ -98,7 +98,7 @@ public class HybridChunker implements ChunkingStrategy {
             }
         }
 
-        // остаток буфера (меньше chunkSize) — последний чанк
+        // remaining buffer (less than chunkSize) → last chunk
         if (!wordBuffer.isEmpty()) {
             String lastText = String.join(" ", wordBuffer);
             addChunkOrMerge(lastText, minLength, chunks, indexCounter);
@@ -114,6 +114,6 @@ public class HybridChunker implements ChunkingStrategy {
             DocumentChunk prev = chunks.remove(chunks.size() - 1);
             chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null));
         }
-        // Если список пуст и текст короткий, чанк теряется .
+        // If list is empty and text is short, chunk is lost.
     }
 }

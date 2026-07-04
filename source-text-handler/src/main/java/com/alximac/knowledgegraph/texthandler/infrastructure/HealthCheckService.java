@@ -23,7 +23,7 @@ public class HealthCheckService {
             sendResponse(exchange, 200, "{\"status\":\"UP\"}");
         });
 
-        // проверяет Redis
+        // checks Redis
         httpServer.createContext("/health/readiness", exchange -> {
             boolean redisOk = checkRedis(redisClient);
             int code = redisOk ? 200 : 503;

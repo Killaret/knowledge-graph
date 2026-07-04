@@ -4,6 +4,7 @@ FROM node:20-alpine AS builder
 # Accept build argument for API target
 ARG VITE_API_URL=http://localhost:8080
 ENV VITE_API_URL=${VITE_API_URL}
+ARG VITE_API_TARGET=http://localhost:8080
 ENV VITE_API_TARGET=${VITE_API_TARGET}
 ARG VITE_BACKEND_URL=http://localhost:8080
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}

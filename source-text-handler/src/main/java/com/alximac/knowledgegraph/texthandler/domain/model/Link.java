@@ -3,7 +3,7 @@ package com.alximac.knowledgegraph.texthandler.domain.model;
 public record Link(
         String sourceNoteId,
         String targetNoteId,
-        double weight //сила связи
+        double weight // link strength
 ) {
     public Link{
         if (sourceNoteId == null || sourceNoteId.isBlank())

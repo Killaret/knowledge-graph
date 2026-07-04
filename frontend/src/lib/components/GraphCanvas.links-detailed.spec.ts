@@ -103,7 +103,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
   });
 
   describe('Link Type Styles', () => {
-    it('reference link uses solid purple line (#8b5cf6)', () => {
+    it('reference link uses solid blue line (#3366ff)', () => {
       const sourceNode: SimulationNode = { id: '1', x: 100, y: 100, title: 'Source', type: 'star' };
       const targetNode: SimulationNode = { id: '2', x: 300, y: 200, title: 'Target', type: 'planet' };
       const link: SimulationLink = { source: '1', target: '2', weight: 0.8, link_type: 'reference' };
@@ -112,7 +112,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
 
       const strokeCall = ctxCalls.find(c => c.method === 'stroke');
       expect(strokeCall).toBeDefined();
-      expect(strokeCall?.strokeStyle).toContain('139, 92, 246'); // rgba(139, 92, 246, opacity) - purple
+      expect(strokeCall?.strokeStyle).toContain('51, 102, 255'); // rgba(51, 102, 255, opacity) - blue
 
       // Check dash is empty (solid line)
       const dashCall = ctxCalls.find(c => c.method === 'setLineDash');
@@ -121,7 +121,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
       }
     });
 
-    it('dependency link uses dashed red line (#ff3a2f)', () => {
+    it('dependency link uses dashed orange line (#ff6600)', () => {
       const sourceNode: SimulationNode = { id: '1', x: 100, y: 100, title: 'Source', type: 'star' };
       const targetNode: SimulationNode = { id: '2', x: 300, y: 200, title: 'Target', type: 'planet' };
       const link: SimulationLink = { source: '1', target: '2', weight: 0.8, link_type: 'dependency' };
@@ -130,7 +130,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
 
       const strokeCall = ctxCalls.find(c => c.method === 'stroke');
       expect(strokeCall).toBeDefined();
-      expect(strokeCall?.strokeStyle).toContain('255, 58, 47'); // rgba with red component
+      expect(strokeCall?.strokeStyle).toContain('255, 102, 0'); // rgba(255, 102, 0, opacity) - orange
 
       // Check for dash pattern
       const dashCall = ctxCalls.find(c => c.method === 'setLineDash');
@@ -147,7 +147,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
 
       const strokeCall = ctxCalls.find(c => c.method === 'stroke');
       expect(strokeCall).toBeDefined();
-      expect(strokeCall?.strokeStyle).toContain('107, 114, 128'); // gray
+      expect(strokeCall?.strokeStyle).toContain('153, 153, 153'); // gray
     });
 
     it('related link with weak weight uses dashed gray line', () => {
@@ -166,7 +166,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
       expect(dashCall?.args[0]).toEqual([6, 4]);
     });
 
-    it('custom link uses dotted bright purple line (#e879f9)', () => {
+    it('custom link uses dotted pink line (#ff66ff)', () => {
       const sourceNode: SimulationNode = { id: '1', x: 100, y: 100, title: 'Source', type: 'star' };
       const targetNode: SimulationNode = { id: '2', x: 300, y: 200, title: 'Target', type: 'planet' };
       const link: SimulationLink = { source: '1', target: '2', weight: 0.8, link_type: 'custom' };
@@ -175,7 +175,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
 
       const strokeCall = ctxCalls.find(c => c.method === 'stroke');
       expect(strokeCall).toBeDefined();
-      expect(strokeCall?.strokeStyle).toContain('232, 121, 249'); // bright purple
+      expect(strokeCall?.strokeStyle).toContain('255, 102, 255'); // pink
 
       // Check for dotted pattern
       const dashCall = ctxCalls.find(c => c.method === 'setLineDash');
@@ -205,7 +205,7 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
       expect(weakStroke?.lineWidth).toBeLessThan(strongStroke?.lineWidth || 3);
     });
 
-    it('dependency links have thicker lines', () => {
+    it('line width is consistent for same weight across types', () => {
       const sourceNode: SimulationNode = { id: '1', x: 100, y: 100, title: 'Source', type: 'star' };
       const targetNode: SimulationNode = { id: '2', x: 300, y: 200, title: 'Target', type: 'planet' };
 
@@ -222,23 +222,24 @@ describe('GraphCanvas - Link Rendering Detailed', () => {
       renderer.drawLink(ctx, refLink, sourceNode, targetNode);
       const refStroke = ctxCalls.find(c => c.method === 'stroke');
 
-      expect(depStroke?.lineWidth).toBeGreaterThan(refStroke?.lineWidth || 1);
+      // Line width depends only on weight, not on type
+      expect(depStroke?.lineWidth).toBe(refStroke?.lineWidth);
     });
   });
 
   describe('Link Colors Helper Functions', () => {
     it('getLinkColor returns correct color for each type', () => {
       const referenceColor = renderer.getLinkColor(0.8, 'reference');
-      expect(referenceColor).toContain('rgba(139, 92, 246');
+      expect(referenceColor).toContain('rgba(51, 102, 255');
 
       const dependencyColor = renderer.getLinkColor(0.8, 'dependency');
-      expect(dependencyColor).toContain('rgba(255, 58, 47');
+      expect(dependencyColor).toContain('rgba(255, 102, 0');
 
       const relatedColor = renderer.getLinkColor(0.8, 'related');
-      expect(relatedColor).toContain('rgba(107, 114, 128');
+      expect(relatedColor).toContain('rgba(153, 153, 153');
 
       const customColor = renderer.getLinkColor(0.8, 'custom');
-      expect(customColor).toContain('rgba(232, 121, 249');
+      expect(customColor).toContain('rgba(255, 102, 255');
     });
 
     it('getLineDash returns correct patterns for each type', () => {

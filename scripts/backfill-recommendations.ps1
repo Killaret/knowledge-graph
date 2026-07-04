@@ -1,6 +1,7 @@
+
 #!/usr/bin/env pwsh
-# Backfill recommendations для personal stack
-# Запускает CLI для массового пересчёта рекомендаций
+# Backfill recommendations for personal stack
+# Runs CLI for mass recalculation of recommendations
 
 param(
     [switch]$DryRun
@@ -11,10 +12,10 @@ Write-Host "Backfill Recommendations - Personal Stack" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 
 if ($DryRun) {
-    Write-Host "`nDRY RUN MODE - задачи не будут созданы" -ForegroundColor Yellow
+    Write-Host "`nDRY RUN MODE - tasks will not be created" -ForegroundColor Yellow
 }
 
-# Пересобираем образ с CLI
+# Rebuild image with CLI
 Write-Host "`n[1/3] Rebuilding backend image with CLI..." -ForegroundColor Green
 docker compose -f docker-compose.personal.yml build backend_personal
 
@@ -23,7 +24,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Запускаем CLI
+# Run CLI
 Write-Host "`n[2/3] Running CLI..." -ForegroundColor Green
 $cliArgs = @("-f", "docker-compose.personal.yml", "run", "--rm")
 if ($DryRun) {

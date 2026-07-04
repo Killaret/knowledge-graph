@@ -28,15 +28,15 @@ public class AsynqInboundAdapter implements InboundQueuePort {
             RedisCommands<String, String> sync = connection.sync();
             while (!Thread.currentThread().isInterrupted()) {
                 var result = sync.blpop(5, queueKey);
-                if (result == null) continue; // таймаут, идём дальше
+                if (result == null) continue; // timeout, continue
                 try {
 
 
-                    String envelopeJson = result.getValue();//читаем envelope
-                    AsynqTaskEnvelope envelope = objectMapper.readValue(envelopeJson, AsynqTaskEnvelope.class);//cтруктурируем по AsynqTaskEnvelope рекорд классу
-                    String payloadJson = envelope.payload();//Переводим в строку
+                    String envelopeJson = result.getValue(); // read envelope
+                    AsynqTaskEnvelope envelope = objectMapper.readValue(envelopeJson, AsynqTaskEnvelope.class); // structure by AsynqTaskEnvelope record class
+                    String payloadJson = envelope.payload(); // convert to string
 
-                    ImportTask task = objectMapper.readValue(payloadJson, ImportTask.class);//структурируем по ImportTask рекорду
+                    ImportTask task = objectMapper.readValue(payloadJson, ImportTask.class); // structure by ImportTask record
                     handler.accept(task);
                 } catch (Exception e) {
                     System.err.println("Error while processing message " + e.getMessage());

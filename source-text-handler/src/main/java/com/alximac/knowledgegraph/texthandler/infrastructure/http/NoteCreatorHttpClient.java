@@ -37,7 +37,7 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
                 chunk.text(),
                 chunk.metadata());
 
-        String json = toJson(request);   // сериализация с обработкой ошибки
+        String json = toJson(request);   // serialization with error handling
         HttpResponse<String> response = executePost(notesUrl, json);
         CreateNoteResponse noteResponse = fromJson(response.body(), CreateNoteResponse.class);
         return noteResponse.id();
@@ -52,7 +52,7 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
                 link.weight());
 
         String json = toJson(request);
-        executePost(linksUrl, json);   // ответ не важен
+        executePost(linksUrl, json);   // response not important
     }
 
     private HttpResponse<String> executePost(String url, String json) throws RemoteServiceException {
@@ -94,7 +94,7 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
 
     private String generateTitle(DocumentChunk chunk) {
         String text = chunk.text();
-        // заголовок делается
+        // title is generated
         return text.length() > 100 ? text.substring(0, 100) : text;
     }
 }

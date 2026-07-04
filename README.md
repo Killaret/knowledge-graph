@@ -430,10 +430,11 @@ See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 ### Recent Updates
 - ✅ Fixed Playwright and svelte-check errors
 - ✅ Updated GraphDelta types for incremental updates
-- ✅ Added anomaly configuration types
+- ✅ Activated anomaly rendering for unknown node types
 - ✅ Enhanced CI/CD pipeline security
 - ✅ Improved docker-compose configurations
 - ✅ Added comprehensive AI agent documentation
+- ✅ Added anomaly types documentation
 
 ### Current Focus
 - 🚀 Performance optimization for graph rendering

@@ -1,6 +1,7 @@
 package com.alximac.knowledgegraph.texthandler.domain.model;
-//параметры обработки (размер чанка, перекрытие, минимальная длина, число ретраев, создавать ли связи).
-// Гарантирует свои инварианты.
+
+// Processing parameters (chunk size, overlap, minimum length, retry count, link creation).
+// Guarantees its own invariants.
 public record ImportOptions(
         int chunkSize,
         int overlap,

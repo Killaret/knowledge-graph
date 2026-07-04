@@ -3,7 +3,7 @@ package com.alximac.knowledgegraph.texthandler.domain.model;
 import java.util.Collections;
 import java.util.Map;
 
-public record ImportTask( //входящая задача из очереди. Переносит событие от Go-бэкенда.
+public record ImportTask { // incoming task from queue. Transfers event from Go backend.
         String eventId,
         String correlationId,
         TaskType type,

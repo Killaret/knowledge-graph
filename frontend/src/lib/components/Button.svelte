@@ -8,6 +8,8 @@
     disabled?: boolean;
     onClick?: (e: MouseEvent) => void;
     children?: import('svelte').Snippet;
+    'data-testid'?: string;
+    'aria-label'?: string;
   }
 
   const {

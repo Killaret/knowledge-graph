@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Скрипт для загрузки тестовых данных через API Knowledge Graph.
+Script for loading test data via Knowledge Graph API.
 
-Запуск:
-    # Интерактивный режим (запросит параметры)
-    python scripts/seed_data.py -i
+Run:
+    # Interactive mode (will prompt for parameters)
+    python scripts/database/seed_data.py -i
 
-    # CLI аргументы
-    python scripts/seed_data.py --notes-per-category 50 --api-url http://localhost:8080
+    # CLI arguments
+    python scripts/database/seed_data.py --notes-per-category 50 --api-url http://localhost:8080
 
-    # Значения по умолчанию
-    python scripts/seed_data.py
+    # Default values
+    python scripts/database/seed_data.py
 
-Требуется Python 3.8+ и библиотеки:
+Requires Python 3.8+ and libraries:
     pip install requests tqdm faker
 """
 
@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 
 def ask_param(prompt: str, default: Any, convert_type: type = str) -> Any:
-    """Интерактивный ввод параметра с дефолтом."""
+    """Interactive parameter input with default value."""
     default_str = str(default)
     value = input(f"{prompt} [{default_str}]: ").strip()
     if not value:
@@ -36,50 +36,50 @@ def ask_param(prompt: str, default: Any, convert_type: type = str) -> Any:
     try:
         return convert_type(value)
     except ValueError:
-        print(f"   ⚠️ Некорректное значение, используем по умолчанию: {default}")
+        print(f"   ⚠️ Invalid value, using default: {default}")
         return default
 
 
 def interactive_config(args) -> argparse.Namespace:
-    """Интерактивная настройка параметров."""
+    """Interactive parameter configuration."""
     print("\n" + "="*60)
-    print("🌱 Knowledge Graph Seeder - Настройка параметров")
+    print("🌱 Knowledge Graph Seeder - Configuration")
     print("="*60)
-    print("Нажмите Enter для использования значения по умолчанию\n")
+    print("Press Enter to use default value\n")
 
     # API URL
     args.api_url = ask_param("API URL", args.api_url)
 
-    # Количество заметок на категорию
+    # Number of notes per category
     global NOTES_PER_CATEGORY, TOTAL_NOTES
-    notes_per_cat = ask_param("Заметок на категорию", NOTES_PER_CATEGORY, int)
+    notes_per_cat = ask_param("Notes per category", NOTES_PER_CATEGORY, int)
     NOTES_PER_CATEGORY = max(1, notes_per_cat)
     TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
 
     # Rate limit
-    delay = ask_param("Задержка между запросами (сек, 0 = без задержки)", args.rate_limit_delay, float)
+    delay = ask_param("Delay between requests (sec, 0 = no delay)", args.rate_limit_delay, float)
     args.rate_limit_delay = max(0.0, delay)
 
-    # Флаги
-    skip_clear_input = input("Пропустить очистку БД? [y/N]: ").strip().lower()
+    # Flags
+    skip_clear_input = input("Skip database clear? [y/N]: ").strip().lower()
     args.skip_clear = skip_clear_input in ('y', 'yes')
 
-    no_random_input = input("Не создавать случайные связи? [y/N]: ").strip().lower()
+    no_random_input = input("Don't create random links? [y/N]: ").strip().lower()
     args.no_random_links = no_random_input in ('y', 'yes')
 
     print("\n" + "-"*60)
-    print("📋 Итоговая конфигурация:")
+    print("📋 Final configuration:")
     print(f"   API URL: {args.api_url}")
-    print(f"   Заметок на категорию: {NOTES_PER_CATEGORY} (всего: {TOTAL_NOTES})")
-    print(f"   Задержка: {args.rate_limit_delay}с")
-    print(f"   Очистка БД: {'Нет' if args.skip_clear else 'Да'}")
-    print(f"   Случайные связи: {'Нет' if args.no_random_links else 'Да'}")
+    print(f"   Notes per category: {NOTES_PER_CATEGORY} (total: {TOTAL_NOTES})")
+    print(f"   Delay: {args.rate_limit_delay}s")
+    print(f"   Database clear: {'No' if args.skip_clear else 'Yes'}")
+    print(f"   Random links: {'No' if args.no_random_links else 'Yes'}")
     print("-"*60 + "\n")
 
     return args
 
 # ----------------------------------------------------------------------
-# Конфигурация
+# Configuration
 # ----------------------------------------------------------------------
 DEFAULT_API_URL = "http://localhost:8080"
 CATEGORIES = ["book", "movie", "anime", "manga", "adaptation"]
@@ -87,33 +87,33 @@ NOTES_PER_CATEGORY = 30
 TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)
 
 # ----------------------------------------------------------------------
-# Типы связей в Knowledge Graph
+# Link types in Knowledge Graph
 # ----------------------------------------------------------------------
-# link_type   | Описание                    | Рекомендуемый вес
-# ------------|-----------------------------|------------------
-# reference   | Прямая ссылка/цитирование   | 0.7 – 1.0
-# dependency  | Зависимость                 | 0.5 – 0.9
-# related     | Общая ассоциация            | 0.3 – 0.6
-# custom      | Пользовательская связь      | 0.1 – 1.0
+# link_type   | Description                   | Recommended weight
+# ------------|-------------------------------|------------------
+# reference   | Direct link/citation          | 0.7 – 1.0
+# dependency  | Dependency                    | 0.5 – 0.9
+# related     | General association           | 0.3 – 0.6
+# custom      | Custom user link              | 0.1 – 1.0
 # ----------------------------------------------------------------------
 LINK_TYPES = {
-    "reference": (0.7, 1.0),   # Прямая ссылка/цитирование
-    "dependency": (0.5, 0.9),  # Зависимость
-    "related": (0.3, 0.6),     # Общая ассоциация
-    "custom": (0.1, 1.0),      # Пользовательская связь
+    "reference": (0.7, 1.0),   # Direct link/citation
+    "dependency": (0.5, 0.9),  # Dependency
+    "related": (0.3, 0.6),     # General association
+    "custom": (0.1, 1.0),      # Custom user link
 }
 
 fake = Faker('ru_RU')
 
 # ----------------------------------------------------------------------
-# Шаблоны контента (~500 слов)
+# Content templates (~500 words)
 # ----------------------------------------------------------------------
 CONTENT_TEMPLATES = {
-    "book": """Роман «{title}» — это глубокое философское произведение, исследующее темы любви, потери и искупления. Главный герой, {hero}, оказывается втянут в череду загадочных событий после получения таинственного письма. Действие разворачивается в {location}, где каждый персонаж хранит свои секреты. Автор мастерски плетёт интригу, заставляя читателя гадать до последней страницы. В книге поднимаются вопросы морального выбора, цены успеха и истинной дружбы. Второстепенные линии добавляют глубины: история юной {heroine}, её борьба за независимость, и старый профессор {mentor}, чьи советы меняют судьбу героя. Описания природы и городских пейзажей создают неповторимую атмосферу. Критики отмечают неожиданную развязку и сильный эмоциональный финал. Произведение уже сравнивают с классикой жанра, а экранизация по книге находится в разработке. Читатели по всему миру обсуждают скрытые символы и аллюзии на современное общество. Эта книга обязательна к прочтению для всех ценителей умной прозы.
+    "book": """The novel "{title}" is a deep philosophical work exploring themes of love, loss, and redemption. The main character, {hero}, gets caught up in a series of mysterious events after receivия таинственного письма. Действие разворачивается в {location}, где каждый персонаж хранит свои секреты. Автор мастерски плетёт интригу, заставляя читателя гадать до последней страницы. В книге поднимаются вопросы морального выбора, цены успеха и истинной дружбы. Второстепенные линии добавляют глубины: история юной {heroine}, её борьба за независимость, и старый профессор {mentor}, чьи советы меняют судьбу героя. Описания природы и городских пейзажей создают неповторимую атмосферу. Критики отмечают неожиданную развязку и сильный эмоциональный финал. Произведение уже сравнивают с классикой жанра, а экранизация по книге находится в разработке. Читатели по всему миру обсуждают скрытые символы и аллюзии на современное общество. Эта книга обязательна к прочтению для всех ценителей умной прозы.
 
-Дополнительные детали сюжета: {hero} встречает таинственного незнакомца, который раскрывает ему секрет древнего артефакта. В поисках правды герой отправляется в путешествие, полное опасностей и открытий. Каждая глава добавляет новые слои к характерам персонажей, а диалоги наполнены скрытым смыслом. Роман получил престижную литературную премию и был переведён на двадцать языков. Критики называют его «прорывом десятилетия» и предрекают долгую жизнь на полках книжных магазинов.""",
+Дополнительные детали сюжета: {hero} meets a mysterious stranger who reveals to him the secret of an ancient artifact. In search of truth, the hero embий. Каждая глава добавляет новые слои к характерам персонажей, а диалоги наполнены скрытым смыслом. Роман получил престижную литературную премию и был переведён на двадцать языков. Критики называют его «прорывом десятилетия» и предрекают долгую жизнь на полках книжных магазинов.""",
 
-    "movie": """Фильм «{title}» режиссёра {director} — это визуальный шедевр, который держит в напряжении от первых кадров до финальных титров. В центре сюжета — {hero}, чья размеренная жизнь рушится после случайной встречи с загадочной незнакомкой. События разворачиваются в {location}, где переплетаются судьбы нескольких персонажей. Операторская работа завораживает: каждый кадр можно ставить на паузу и рассматривать как картину. Музыкальное сопровождение усиливает эмоциональное воздействие, а актёрский состав подобран безупречно. Критики особо выделяют игру {actor}, исполнившего роль второго плана. Сценарий полон неожиданных поворотов, а диалоги остроумны и реалистичны. Фильм уже собрал несколько наград на международных фестивалях и претендует на «Оскар». Зрители отмечают, что после просмотра хочется немедленно обсудить увиденное с друзьями. Это тот редкий случай, когда блокбастер сочетает зрелищность с глубоким смыслом. Настоятельно рекомендуется к просмотру на большом экране.
+    "movie": """The film "{title}" directed by {director} is a visual masterpiece that keeps you on the edge of your seat from the first frames to the final credits. At the center of the plot is {hero}, whose routine life is destroyed после случайной встречи с загадочной незнакомкой. События разворачиваются в {location}, где переплетаются судьбы нескольких персонажей. Операторская работа завораживает: каждый кадр можно ставить на паузу и рассматривать как картину. Музыкальное сопровождение усиливает эмоциональное воздействие, а актёрский состав подобран безупречно. Критики особо выделяют игру {actor}, исполнившего роль второго плана. Сценарий полон неожиданных поворотов, а диалоги остроумны и реалистичны. Фильм уже собрал несколько наград на международных фестивалях и претендует на «Оскар». Зрители отмечают, что после просмотра хочется немедленно обсудить увиденное с друзьями. Это тот редкий случай, когда блокбастер сочетает зрелищность с глубоким смыслом. Настоятельно рекомендуется к просмотру на большом экране.
 
 В фильме также затрагиваются темы предательства и искупления. Персонаж {heroine} добавляет романтическую линию, которая органично вплетена в основной сюжет. Спецэффекты выполнены на высочайшем уровне, а экшн-сцены сняты с использованием новейших технологий. Бюджет картины составил более ста миллионов долларов, и каждый цент виден на экране. После премьеры фильм возглавил прокат в тридцати странах и получил восторженные отзывы как от зрителей, так и от профессиональных критиков.""",
 
@@ -131,26 +131,26 @@ CONTENT_TEMPLATES = {
 }
 
 # ----------------------------------------------------------------------
-# Генераторы данных
+# Data generators
 # ----------------------------------------------------------------------
 def generate_title(category: str, index: int) -> str:
-    """Генерирует правдоподобное название для категории."""
+    """Generates a plausible title for the category."""
     if category == "book":
         return f"{fake.catch_phrase()} — {fake.word().capitalize()} {fake.word().capitalize()}"
     elif category == "movie":
         return f"{fake.bs().title()} {random.randint(2, 5)}"
     elif category == "anime":
-        suffixes = [": Хроники", ": Перерождение", "!!", "~", " Zero", " Kai"]
+        suffixes = [": Chronicles", ": Rebirth", "!!", "~", " Zero", " Kai"]
         return f"{fake.word().capitalize()} {fake.word().capitalize()}{random.choice(suffixes)}"
     elif category == "manga":
         return f"{fake.word().capitalize()} no {fake.word().capitalize()}"
     else:  # adaptation
-        return f"{fake.catch_phrase()} (Экранизация)"
+        return f"{fake.catch_phrase()} (Adaptation)"
 
 def generate_content(category: str, title: str) -> str:
-    """Генерирует контент ~500 слов на основе шаблона."""
+    """Generates ~500 words of content based on template."""
     template = CONTENT_TEMPLATES[category]
-    # Подстановки для разнообразия
+    # Substitutions for variety
     subs = {
         "title": title,
         "hero": fake.name(),
@@ -162,22 +162,22 @@ def generate_content(category: str, title: str) -> str:
         "studio": random.choice(["Kyoto Animation", "MAPPA", "Bones", "Ufotable", "Madhouse"]),
         "composer": fake.name(),
         "author": fake.name(),
-        "profession": random.choice(["воином", "магом", "детективом", "поваром", "пилотом"]),
-        "source_type": random.choice(["роману", "манге", "комиксу", "повести"]),
+        "profession": random.choice(["warrior", "mage", "detective", "chef", "pilot"]),
+        "source_type": random.choice(["novel", "manga", "comic", "short story"]),
         "source_title": fake.sentence(nb_words=4).rstrip('.'),
     }
     content = template.format(**subs)
-    # Добавляем ещё немного текста, если вдруг меньше 500 слов
+    # Add more text if somehow less than 500 words
     if len(content.split()) < 450:
         extra = "\n\n" + fake.paragraph(nb_sentences=10)
         content += extra
     return content
 
 def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
-    """Создаёт payload для POST /notes."""
+    """Creates payload for POST /notes."""
     title = generate_title(category, index)
     content = generate_content(category, title)
-    # Разнообразные типы небесных тел для всех заметок
+    # Diverse celestial types for all notes
     ALL_CELESTIAL_TYPES = ["star", "planet", "moon", "comet", "galaxy", "nebula", "asteroid", "satellite", "blackhole"]
     return {
         "title": title,
@@ -185,15 +185,15 @@ def generate_note_payload(category: str, index: int) -> Dict[str, Any]:
         "metadata": {
             "category": category,
             "word_count": len(content.split()),
-            "type": random.choice(ALL_CELESTIAL_TYPES)  # Тип в metadata для backend
+            "type": random.choice(ALL_CELESTIAL_TYPES)  # Type in metadata for backend
         }
     }
 
 # ----------------------------------------------------------------------
-# Исключения для обработки ошибок
+# Error handling exceptions
 # ----------------------------------------------------------------------
 class APIError(Exception):
-    """Ошибка API с подробным описанием"""
+    """API error with detailed description"""
     def __init__(self, method: str, url: str, status_code: int = None, response_text: str = None, message: str = None):
         self.method = method
         self.url = url

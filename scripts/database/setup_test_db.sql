@@ -1,2 +1,2 @@
--- Создаём тестовую базу данных
+-- Create test database
 CREATE DATABASE knowledge_base_test;

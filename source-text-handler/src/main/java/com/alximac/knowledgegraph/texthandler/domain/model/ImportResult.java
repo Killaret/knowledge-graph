@@ -2,8 +2,9 @@ package com.alximac.knowledgegraph.texthandler.domain.model;
 
 import java.time.Instant;
 import java.util.List;
-//итог работы всей задачи: статус (COMPLETED, FAILED, PARTIAL),
-// списки созданных noteIds и связей, список ошибок, время завершения. Именно этот объект летит в ответную очередь.
+// Result of the entire task: status (COMPLETED, FAILED, PARTIAL),
+// list of created noteIds and links, list of errors, completion time.
+// This object goes to the response queue.
 public record ImportResult(
         String correlationId,
         Status status,

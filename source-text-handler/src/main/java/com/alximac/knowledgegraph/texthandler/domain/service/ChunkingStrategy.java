@@ -4,8 +4,8 @@ import com.alximac.knowledgegraph.texthandler.domain.model.DocumentChunk;
 import com.alximac.knowledgegraph.texthandler.domain.model.ImportOptions;
 import java.util.List;
 
-//нарезает текст на DocumentChunk с учётом ImportOptions.
-// Отвечает за структурный чанкинг, fallback, фильтрацию по minChunkLength ->ImportOptions.
+// Cuts text into DocumentChunk considering ImportOptions.
+// Responsible for structural chunking, fallback, filtering by minChunkLength -> ImportOptions.
 
 public interface ChunkingStrategy {
 

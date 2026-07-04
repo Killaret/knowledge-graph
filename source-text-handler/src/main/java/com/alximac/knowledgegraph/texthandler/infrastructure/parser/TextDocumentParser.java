@@ -16,7 +16,7 @@ public class TextDocumentParser implements DocumentParser {
     }
 
     @Override
-    public ParsedDocument parseFromUrl(String url) throws DocumentParserException {//заглушка по сути
+    public ParsedDocument parseFromUrl(String url) throws DocumentParserException { // stub for now
         throw new DocumentParserException("TextDocumentParser doesn't support links ");
     }
 }

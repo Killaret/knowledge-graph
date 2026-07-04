@@ -27,7 +27,7 @@ public class AsynqOutboundAdapter implements OutboundQueuePort {
         try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
             RedisCommands<String, String> sync = connection.sync();
 
-            String jsonResultString = objectMapper.writeValueAsString(result);//сериализуем result в json строку
+            String jsonResultString = objectMapper.writeValueAsString(result); // serialize result to JSON string
             AsynqResultEnvelope envelope = new AsynqResultEnvelope(
                     UUID.randomUUID().toString(), // id
                     "import:responses",          // queue

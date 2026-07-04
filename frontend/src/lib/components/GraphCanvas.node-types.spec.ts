@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 import * as renderer from './GraphCanvas/renderer';
+import type { SimulationNode } from './GraphCanvas/types';
 
 const mockState = {
   simulationNodes: [] as any[],
@@ -534,6 +535,44 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
     ].filter((spy) => spy.mock.calls.length > 0);
 
     expect(calledSpies).toHaveLength(1);
+  });
+
+  it('drawNode dispatches to drawUnknown for unknown type', () => {
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 0,
+      shadowBlur: 0,
+      shadowColor: '',
+    } as unknown as CanvasRenderingContext2D;
+    
+    const unknownNode = {
+      id: 'test-unknown-node',
+      title: 'Unknown Node',
+      type: 'unknown',
+      x: 100,
+      y: 100
+    } as SimulationNode;
+
+    // Call drawNode with unknown type
+    renderer.drawNode(mockCtx, unknownNode, 20, 0, false, true);
+
+    // Verify that drawUnknown was called by checking the save/restore calls
+    // drawUnknown always calls save() and restore()
+    expect(mockCtx.save).toHaveBeenCalled();
+    expect(mockCtx.restore).toHaveBeenCalled();
   });
 
   it('drawUnknown is deterministic for the same nodeId', () => {

@@ -233,6 +233,8 @@ services:
           # For local Docker: use nginx proxy for API requests
           VITE_API_URL: /api
           VITE_GRAPH_SERVICE_URL: /graph-service
+          # For SSR hooks.server.ts: direct access to backend (no /api suffix)
+          VITE_API_TARGET: ${VITE_API_TARGET:-http://backend_personal:8080}
           # For SSR hooks.server.ts: direct access to graph service
           GRAPH_SERVICE_URL: http://graph-service-personal:9091
           # Internal authentication token for graph service (optional)

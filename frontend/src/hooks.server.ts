@@ -11,17 +11,19 @@ const backendApiProxy: Handle = async ({ event, resolve }) => {
 
 	// Get backend API URL from environment or use Docker service name
 	// Note: Base URL should NOT include /api suffix - pathname handles that
-	const backendApiUrl = process.env.VITE_API_TARGET || 'http://backend_personal:8080';
+	const backendApiUrl = process.env.VITE_API_TARGET || 'http://backend:8080';
 
 	// Check if this is an API request
 	if (url.pathname.startsWith('/api/v1')) {
 		const targetUrl = `${backendApiUrl}${url.pathname}${url.search}`;
 
 		try {
-			// Security: Only forward safe headers to prevent data leakage
-			const safeHeaders: Record<string, string> = {};
-			const allowedHeaders = ['accept', 'content-type', 'authorization', 'x-request-id'];
-			const blockedHeaders = ['cookie', 'connection', 'proxy-', 'transfer-encoding', 'keep-alive', 'upgrade', 'te', 'host'];
+		// Security: Only forward safe headers to prevent data leakage
+		// Note: cookie and authorization are intentionally excluded
+		// Auth tokens are managed client-side and added by API client
+		const safeHeaders: Record<string, string> = {};
+		const allowedHeaders = ['accept', 'content-type', 'x-request-id'];
+		const blockedHeaders = ['cookie', 'authorization', 'connection', 'proxy-', 'transfer-encoding', 'keep-alive', 'upgrade', 'te', 'host'];
 			
 			for (const [key, value] of event.request.headers.entries()) {
 				const headerName = key.toLowerCase();

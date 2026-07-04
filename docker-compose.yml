@@ -184,9 +184,8 @@
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        # В Docker сети backend доступен по имени сервиса
-        VITE_API_TARGET: http://backend:8080/api
-        VITE_GRAPH_SERVICE_URL: http://nginx:8080/graph-service
+        # Browser-accessible graph service URL (baked into client bundle)
+        VITE_GRAPH_SERVICE_URL: http://localhost:8080/graph-service
     container_name: kg-frontend
     
     ports:
@@ -196,9 +195,11 @@
     env_file:
       - .env
     environment:
-          # For local Docker: use nginx proxy for API requests
-          VITE_API_URL: ${VITE_API_URL:-http://nginx:8080}
-          VITE_GRAPH_SERVICE_URL: ${VITE_GRAPH_SERVICE_URL:-http://nginx:8080/graph-service}
+          # For browser: use nginx exposed on host port 8080 (NOT the Docker network hostname)
+          VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+          VITE_GRAPH_SERVICE_URL: ${VITE_GRAPH_SERVICE_URL:-http://localhost:8080/graph-service}
+          # For SSR hooks.server.ts: direct access to backend (no /api suffix)
+          VITE_API_TARGET: ${VITE_API_TARGET:-http://backend:8080}
           # For SSR hooks.server.ts: direct access to graph service
           GRAPH_SERVICE_URL: ${GRAPH_SERVICE_URL:-http://graph-service:9091}
           # Internal authentication token for graph service (optional)
@@ -214,6 +215,8 @@
       backend:
         condition: service_healthy
       graph-service:
+        condition: service_healthy
+      nginx:
         condition: service_healthy
     restart: on-failure
 

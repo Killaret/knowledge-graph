@@ -4,7 +4,8 @@ import com.alximac.knowledgegraph.texthandler.domain.model.ParsedDocument;
 
 
 import java.util.Map;
-// извлекает текст и метаданные из бинарников/URL.
+
+// Extracts text and metadata from binaries/URLs.
 public interface DocumentParser {
     ParsedDocument parse(byte[] data, Map<String, Object> sourceMetadata) throws DocumentParserException;
     ParsedDocument parseFromUrl(String url) throws DocumentParserException;

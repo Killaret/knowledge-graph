@@ -126,33 +126,18 @@ class PreloadServiceClass {
     console.log('[PreloadService] Starting authenticated graph preload...');
 
     try {
-      const [cachedResult, freshResult] = await Promise.allSettled([
-        getCachedGraph(),
-        getFreshGraph()
-      ]);
+      // Получаем только свежий граф (cached не нужен, так как fresh перезапишет)
+      const freshResult = await getFreshGraph();
+      
+      this.preloadedGraph = {
+        data: freshResult.fresh,
+        timestamp: Date.now(),
+        ttl: this.GRAPH_TTL,
+        delta: freshResult.delta
+      };
 
-      if (cachedResult.status === 'fulfilled' && cachedResult.value) {
-        console.log('[PreloadService] Using cached authenticated graph for instant display');
-        this.preloadedGraph = {
-          data: cachedResult.value,
-          timestamp: Date.now(),
-          ttl: this.GRAPH_TTL
-        };
-      }
-
-      if (freshResult.status === 'fulfilled') {
-        this.preloadedGraph = {
-          data: freshResult.value.fresh,
-          timestamp: Date.now(),
-          ttl: this.GRAPH_TTL,
-          delta: freshResult.value.delta
-        };
-
-        if (freshResult.value.delta) {
-          console.log('[PreloadService] Delta available for authenticated update:', freshResult.value.delta);
-        }
-      } else {
-        console.warn('[PreloadService] Failed to preload fresh authenticated graph:', freshResult.reason);
+      if (freshResult.delta) {
+        console.log('[PreloadService] Delta available for authenticated update');
       }
     } catch (error) {
       console.error('[PreloadService] Error during authenticated graph preload:', error);
@@ -244,7 +229,7 @@ class PreloadServiceClass {
       this.preloadedAchievements = null;
       return null;
     }
-
+    
     return this.preloadedAchievements.achievements;
   }
 

@@ -20,12 +20,12 @@ function stringHash(str: string): number {
   return Math.abs(hash);
 }
 
-// Colors for different link types
+// Colors for different link types (per specification)
 const linkTypeColors: Record<string, string> = {
-  reference: '#8b5cf6', // Purple - reference link
-  dependency: '#ff3a2f', // Red - dependency
-  related: '#6b7280', // Gray - related topic (default)
-  custom: '#e879f9' // Bright purple - custom
+  reference: '#3366ff', // Blue - default direct link
+  dependency: '#ff6600', // Orange - dependency
+  related: '#999999', // Gray - related topic (default)
+  custom: '#ff66ff' // Pink - custom
 };
 
 /**
@@ -786,10 +786,9 @@ export function drawLink(
   const weight = link.weight ?? 0.5;
   const linkType = link.link_type;
 
-  // Line thickness depends on type and weight
-  let lineWidth = Math.max(1, weight * 4);
-  if (linkType === 'dependency') lineWidth *= 1.5;
-  if (linkType === 'reference') lineWidth *= 0.8;
+  // Line thickness per specification: Math.max(1, weight * 4)
+  // No type-based multipliers - thickness depends only on weight
+  const lineWidth = Math.max(1, weight * 4);
 
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = getLinkColor(weight, linkType, opacity);

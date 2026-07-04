@@ -5,7 +5,8 @@ import com.alximac.knowledgegraph.texthandler.domain.model.Link;
 
 import java.util.List;
 
-//находит связи между чанками. В MVP будет NoOpLinkDetector (не создаёт связей), позже можно подложить умный детектор.
+// Finds links between chunks. In MVP this is NoOpLinkDetector (creates no links),
+// later can be replaced with a smart detector.
 public interface LinkDetector {
 
     List<Link> detectLinks(List<DocumentChunk> chunks);

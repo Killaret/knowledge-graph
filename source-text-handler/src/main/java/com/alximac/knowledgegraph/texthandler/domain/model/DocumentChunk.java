@@ -2,7 +2,7 @@ package com.alximac.knowledgegraph.texthandler.domain.model;
 
 import java.util.Collections;
 import java.util.Map;
-// один смысловой фрагмент текста. Хранит текст, индекс, метаданные и noteId (после создания заметки).
+// One semantic text fragment. Stores text, index, metadata, and noteId (after note creation).
 public record DocumentChunk(
         String text,
         int index,//index of chunk
