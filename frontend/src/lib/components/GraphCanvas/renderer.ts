@@ -7,6 +7,82 @@ import { getVariation, applyHueShift } from '$lib/utils/variation';
 
 export type { SimulationNode, SimulationLink };
 
+// Performance thresholds
+const PERFORMANCE_THRESHOLD_NODES = 100;
+const PERFORMANCE_THRESHOLD_LINKS = 50;
+
+/**
+ * Get glow intensity based on time and node ID (pulsating effect)
+ */
+export function getGlowIntensity(nodeId: string, time: number, nodeCount: number): number {
+  if (nodeCount > PERFORMANCE_THRESHOLD_NODES) {
+    return 0.3; // Minimal glow for stars only
+  }
+
+  const hash = stringHash(nodeId);
+  const phase = (hash % 1000) / 1000;
+  const period = 2000 + (hash % 1000);
+  const t = (time + phase * period) % period;
+  const normalizedT = t / period;
+
+  return 0.3 + 0.7 * Math.sin(normalizedT * Math.PI * 2);
+}
+
+/**
+ * Get radial gradient for a node
+ */
+export function getNodeGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  type: string,
+  color: string
+): CanvasGradient {
+  const gradient = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
+
+  switch (type) {
+    case 'star':
+      gradient.addColorStop(0, '#ffffcc');
+      gradient.addColorStop(0.5, '#ffcc00');
+      gradient.addColorStop(1, '#ff9900');
+      break;
+    case 'planet':
+      gradient.addColorStop(0, lightenColor(color, 30));
+      gradient.addColorStop(0.7, color);
+      gradient.addColorStop(1, darkenColor(color, 20));
+      break;
+    case 'galaxy':
+      gradient.addColorStop(0, '#8b5cf6');
+      gradient.addColorStop(0.5, '#6d28d9');
+      gradient.addColorStop(1, 'rgba(109, 40, 217, 0)');
+      break;
+    default:
+      gradient.addColorStop(0, lightenColor(color, 20));
+      gradient.addColorStop(1, color);
+  }
+
+  return gradient;
+}
+
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+  const B = Math.min(255, (num & 0x0000ff) + amt);
+  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+}
+
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, (num >> 16) - amt);
+  const G = Math.max(0, ((num >> 8) & 0x00ff) - amt);
+  const B = Math.max(0, (num & 0x0000ff) - amt);
+  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+}
+
 /**
  * Simple hash function for strings (local copy for anomaly generation)
  */
@@ -66,7 +142,7 @@ export function getLineDash(linkType?: string, weight?: number): number[] {
 }
 
 /**
- * Draw a star node
+ * Draw a star node with glow, gradient and corona
  */
 export function drawStar(
   ctx: CanvasRenderingContext2D,
@@ -74,7 +150,10 @@ export function drawStar(
   y: number,
   r: number,
   angle: number,
-  variation?: { sizeMultiplier: number; hueShift: number }
+  variation?: { sizeMultiplier: number; hueShift: number },
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
   const points = 5;
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
@@ -82,6 +161,33 @@ export function drawStar(
   const innerRadius = r * 0.4 * sizeMultiplier;
   let rot = angle;
   const step = Math.PI / points;
+
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 20 * glowIntensity;
+    ctx.shadowColor = '#ffcc00';
+  }
+
+  // Draw corona (rays)
+  if (time && nodeCount !== undefined && nodeCount <= 50) {
+    const rayCount = 8;
+    const rayLength = outerRadius * 0.5;
+    for (let i = 0; i < rayCount; i++) {
+      const rayAngle = (i / rayCount) * Math.PI * 2 + (time ? time / 1000 : 0);
+      const startX = x + Math.cos(rayAngle) * outerRadius;
+      const startY = y + Math.sin(rayAngle) * outerRadius;
+      const endX = x + Math.cos(rayAngle) * (outerRadius + rayLength);
+      const endY = y + Math.sin(rayAngle) * (outerRadius + rayLength);
+      
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = `rgba(255, 204, 0, ${0.3 + 0.2 * Math.sin(time / 500 + i)})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
 
   ctx.beginPath();
   for (let i = 0; i < points; i++) {
@@ -95,17 +201,23 @@ export function drawStar(
     rot += step;
   }
   ctx.closePath();
-  
+
+  // Use gradient instead of solid fill
+  const gradient = getNodeGradient(ctx, x, y, outerRadius, 'star', '#ffcc00');
   const hueShift = variation?.hueShift ?? 0;
-  ctx.fillStyle = applyHueShift('#ffcc00', hueShift);
+  ctx.fillStyle = applyHueShift(gradient.toString(), hueShift);
   ctx.strokeStyle = applyHueShift('#cc9900', hueShift);
   ctx.lineWidth = 2;
   ctx.fill();
   ctx.stroke();
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 }
 
 /**
- * Draw a planet node
+ * Draw a planet node with glow, gradient and rings
  */
 export function drawPlanet(
   ctx: CanvasRenderingContext2D,
@@ -114,30 +226,72 @@ export function drawPlanet(
   r: number,
   angle: number,
   color?: string,
-  variation?: { sizeMultiplier: number; hueShift: number }
+  variation?: { sizeMultiplier: number; hueShift: number },
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const adjustedR = r * sizeMultiplier;
   const hueShift = variation?.hueShift ?? 0;
-  
+  const planetColor = color ? applyHueShift(color, hueShift) : applyHueShift('#d6aa5d', hueShift);
+
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 15 * glowIntensity;
+    ctx.shadowColor = planetColor;
+  }
+
   ctx.beginPath();
   ctx.arc(x, y, adjustedR, 0, 2 * Math.PI);
-  // Default planet color changed to warm gold to match visual baselines
-  // Apply hueShift to both custom and default colors for visual variation
-  ctx.fillStyle = color ? applyHueShift(color, hueShift) : applyHueShift('#d6aa5d', hueShift);
-  ctx.fill();
   
+  // Use gradient instead of solid fill
+  const gradient = getNodeGradient(ctx, x, y, adjustedR, 'planet', planetColor);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw bands
   for (let i = -adjustedR / 2; i <= adjustedR / 2; i += adjustedR / 4) {
     ctx.beginPath();
     ctx.ellipse(x, y + i, adjustedR * 0.8, adjustedR * 0.15, angle, 0, 2 * Math.PI);
-    // Inner band color: muted darker tone for default gold planet
     ctx.fillStyle = color ? 'rgba(100,100,100,0.3)' : '#b07a3a';
     ctx.fill();
   }
+
+  // Draw rings (Saturn-like)
+  if (nodeCount !== undefined && nodeCount <= 50) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 6);
+    
+    // Outer ring
+    ctx.beginPath();
+    ctx.ellipse(0, 0, adjustedR * 1.6, adjustedR * 0.3, 0, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(200, 180, 150, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Inner ring
+    ctx.beginPath();
+    ctx.ellipse(0, 0, adjustedR * 1.3, adjustedR * 0.2, 0, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(180, 160, 130, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 }
 
 /**
  * Draw a comet node
+ */
+/**
+ * Draw a comet node with glow and gradient
  */
 export function drawComet(
   ctx: CanvasRenderingContext2D,
@@ -145,28 +299,48 @@ export function drawComet(
   y: number,
   r: number,
   angle: number,
-  variation?: { sizeMultiplier: number; hueShift: number }
+  variation?: { sizeMultiplier: number; hueShift: number },
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const adjustedR = r * sizeMultiplier;
   const hueShift = variation?.hueShift ?? 0;
-  
+  const cometColor = applyHueShift('#e879f9', hueShift);
+
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 12 * glowIntensity;
+    ctx.shadowColor = cometColor;
+  }
+
   ctx.beginPath();
   ctx.arc(x, y, adjustedR, 0, 2 * Math.PI);
-  ctx.fillStyle = applyHueShift('#e879f9', hueShift);
+  ctx.fillStyle = cometColor;
   ctx.fill();
-  
-  const tailLength = 40 * sizeMultiplier;
+
+  // Longer tail (up to 60px)
+  const tailLength = 60 * sizeMultiplier;
   const tailAngle = angle;
   const tipX = x + Math.cos(tailAngle) * tailLength;
   const tipY = y + Math.sin(tailAngle) * tailLength;
-  
+
+  // Curved tail using quadratic curve
   ctx.beginPath();
   ctx.moveTo(x, y);
-  ctx.lineTo(tipX, tipY);
+  const midX = x + Math.cos(tailAngle) * (tailLength * 0.5);
+  const midY = y + Math.sin(tailAngle) * (tailLength * 0.5);
+  const curveOffset = 15 * Math.sin(time ? time / 500 : 0);
+  ctx.quadraticCurveTo(midX + curveOffset, midY + curveOffset, tipX, tipY);
   ctx.lineWidth = 4 * sizeMultiplier;
   ctx.strokeStyle = `rgba(${applyHueShiftToRGBA(232, 121, 249, hueShift)}, 0.6)`;
   ctx.stroke();
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 }
 
 /**
@@ -192,7 +366,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 /**
- * Draw a galaxy node
+ * Draw a galaxy node with glow, gradient and spiral arms
  */
 export function drawGalaxy(
   ctx: CanvasRenderingContext2D,
@@ -200,25 +374,59 @@ export function drawGalaxy(
   y: number,
   r: number,
   angle: number,
-  variation?: { sizeMultiplier: number; hueShift: number }
+  variation?: { sizeMultiplier: number; hueShift: number },
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const hueShift = variation?.hueShift ?? 0;
   const adjustedR = r * sizeMultiplier;
-  
+
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 25 * glowIntensity;
+    ctx.shadowColor = '#8b5cf6';
+  }
+
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  
-  for (let i = 0; i < 3; i++) {
+
+  // Spiral arms with gradient
+  for (let arm = 0; arm < 4; arm++) {
+    const armAngle = (arm * Math.PI) / 2;
     ctx.beginPath();
-    ctx.ellipse(0, 0, adjustedR * (1 - i * 0.2), adjustedR * 0.4, 0, 0, 2 * Math.PI);
-    const baseColor = applyHueShiftToRGBA(192, 132, 252, hueShift);
-    ctx.fillStyle = `rgba(${baseColor}, ${0.3 - i * 0.1})`;
-    ctx.fill();
+    ctx.moveTo(0, 0);
+    
+    for (let i = 0; i < 20; i++) {
+      const t = i / 20;
+      const spiralAngle = armAngle + t * Math.PI * 2;
+      const radius = t * adjustedR;
+      const px = Math.cos(spiralAngle) * radius;
+      const py = Math.sin(spiralAngle) * radius;
+      ctx.lineTo(px, py);
+    }
+    
+    const baseColor = applyHueShiftToRGBA(139, 92, 246, hueShift);
+    ctx.strokeStyle = `rgba(${baseColor}, ${0.6 - arm * 0.1})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
   }
-  
+
+  // Center gradient
+  const gradient = getNodeGradient(ctx, x, y, adjustedR, 'galaxy', '#8b5cf6');
+  ctx.beginPath();
+  ctx.arc(0, 0, adjustedR * 0.3, 0, 2 * Math.PI);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
   ctx.restore();
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 }
 
 /**
@@ -245,7 +453,7 @@ export function drawNebula(
 }
 
 /**
- * Draw an asteroid node
+ * Draw an asteroid node with glow and craters
  */
 export function drawAsteroid(
   ctx: CanvasRenderingContext2D,
@@ -254,12 +462,23 @@ export function drawAsteroid(
   r: number,
   _angle: number,
   variation?: { sizeMultiplier: number; hueShift: number },
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const hueShift = variation?.hueShift ?? 0;
   const adjustedR = r * sizeMultiplier;
-  
+  const asteroidColor = applyHueShift('#94a3b8', hueShift);
+
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 10 * glowIntensity;
+    ctx.shadowColor = asteroidColor;
+  }
+
   // Irregular rocky shape
   ctx.beginPath();
   const points = 7;
@@ -272,11 +491,32 @@ export function drawAsteroid(
     else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  
-  ctx.fillStyle = applyHueShift('#94a3b8', hueShift);
+
+  ctx.fillStyle = asteroidColor;
   ctx.fill();
   ctx.strokeStyle = applyHueShift('#64748b', hueShift);
   ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Add craters (dark spots)
+  const craterCount = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < craterCount; i++) {
+    const craterAngle = Math.random() * Math.PI * 2;
+    const craterDist = Math.random() * adjustedR * 0.6;
+    const craterX = x + Math.cos(craterAngle) * craterDist;
+    const craterY = y + Math.sin(craterAngle) * craterDist;
+    const craterR = adjustedR * 0.15 * (0.5 + Math.random() * 0.5);
+    
+    ctx.beginPath();
+    ctx.arc(craterX, craterY, craterR, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fill();
+  }
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
+}
   ctx.stroke();
 }
 
@@ -303,28 +543,49 @@ export function drawDebris(
 }
 
 /**
- * Draw a black hole node
+ * Draw a black hole node with glow
  */
 export function drawBlackhole(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   r: number,
-  _angle: number
+  _angle: number,
+  nodeId?: string,
+  nodeCount?: number,
+  time?: number
 ): void {
+  // Apply glow effect
+  if (time && nodeId && nodeCount !== undefined) {
+    const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
+    ctx.shadowBlur = 30 * glowIntensity;
+    ctx.shadowColor = '#ff6600';
+  }
+
   // Event horizon (black circle)
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
   ctx.fillStyle = '#000000';
   ctx.fill();
+
   // Accretion disk (glowing ring)
   ctx.beginPath();
   ctx.arc(x, y, r * 1.3, 0, 2 * Math.PI);
   ctx.strokeStyle = '#ff6600';
   ctx.lineWidth = 3;
   ctx.stroke();
+
   // Inner glow
   ctx.beginPath();
+  ctx.arc(x, y, r * 1.1, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(255, 102, 0, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
+}
   ctx.arc(x, y, r * 0.8, 0, 2 * Math.PI);
   ctx.strokeStyle = '#ff3300';
   ctx.lineWidth = 2;
@@ -332,7 +593,141 @@ export function drawBlackhole(
 }
 
 /**
- * Draw a moon node
+ * Draw background grid or nebula
+ */
+export function drawBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  nodes: SimulationNode[],
+  time: number
+): void {
+  // Draw subtle grid
+  const gridSize = 100;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.lineWidth = 1;
+
+  for (let x = 0; x <= width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+
+  // Draw nebula (large blurred ellipses)
+  if (nodes.length <= 50) {
+    const nebulaCount = 3;
+    for (let i = 0; i < nebulaCount; i++) {
+      const nebulaX = (width / nebulaCount) * (i + 0.5);
+      const nebulaY = height / 2;
+      const nebulaRadius = 200 + Math.sin(time / 5000 + i) * 50;
+
+      const gradient = ctx.createRadialGradient(nebulaX, nebulaY, 0, nebulaX, nebulaY, nebulaRadius);
+      gradient.addColorStop(0, 'rgba(139, 92, 246, 0.05)');
+      gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.03)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+  }
+}
+
+/**
+ * Draw animated link with moving dots
+ */
+export function drawAnimatedLink(
+  ctx: CanvasRenderingContext2D,
+  link: SimulationLink,
+  nodes: Map<string, SimulationNode>,
+  time: number,
+  linkCount: number,
+  hoveredNodeId?: string | null
+): void {
+  if (linkCount > PERFORMANCE_THRESHOLD_LINKS) {
+    // Fallback to static link for performance
+    const source = nodes.get(link.source);
+    const target = nodes.get(link.target);
+    if (source && target) {
+      drawLink(ctx, link, source, target, hoveredNodeId);
+    }
+    return;
+  }
+
+  const source = nodes.get(link.source);
+  const target = nodes.get(link.target);
+  if (!source || !target) return;
+
+  // Check if this link should be highlighted
+  const isHighlighted = hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
+  const opacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : 1;
+
+  const color = getLinkColor(link.weight ?? 0.5, link.link_type, opacity);
+  const dashArray = getLineDash(link.link_type, link.weight);
+
+  // Draw base line
+  ctx.beginPath();
+  ctx.moveTo(source.x, source.y);
+  ctx.lineTo(target.x, target.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash(dashArray);
+  ctx.stroke();
+
+  // Animate dash offset for moving dots effect
+  const speed = 0.5 + (link.weight ?? 0.5) * 0.5;
+  const offset = (time * speed) % 20;
+  ctx.lineDashOffset = -offset;
+  ctx.stroke();
+
+  // Reset line dash
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+}
+
+/**
+ * Draw a static link (fallback)
+ */
+export function drawLink(
+  ctx: CanvasRenderingContext2D,
+  link: SimulationLink,
+  sourceNode: SimulationNode,
+  targetNode: SimulationNode,
+  opacity: number = 1,
+  hoveredNodeId?: string | null
+): void {
+  // Check if this link should be highlighted
+  const isHighlighted = hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
+  const finalOpacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : opacity;
+
+  ctx.beginPath();
+  ctx.moveTo(sourceNode.x!, sourceNode.y!);
+  ctx.lineTo(targetNode.x!, targetNode.y!);
+
+  const weight = link.weight ?? 0.5;
+  const linkType = link.link_type;
+
+  const lineWidth = Math.max(1, weight * 4);
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = getLinkColor(weight, linkType, finalOpacity);
+
+  const dash = getLineDash(linkType, weight);
+  if (dash.length > 0) {
+    ctx.setLineDash(dash);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/**
+ * Draw a moon node with glow
  */
 export function drawMoon(
   ctx: CanvasRenderingContext2D,

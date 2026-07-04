@@ -37,7 +37,8 @@
   "dependencies": {
     "d3-force": "^3.0.0",
     "ky": "^1.14.3",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "tippy.js": "^6.3.7"
   },
   "devDependencies": {
     "@argos-ci/cli": "^5.0.5",
