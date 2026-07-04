@@ -109,7 +109,7 @@ services:
       DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
-      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp-personal:5000}
+      NLP_SERVICE_URL: http://nlp-personal:5000
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -124,7 +124,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
 
   worker_personal:
@@ -140,7 +140,7 @@ services:
       DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
-      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp-personal:5000}
+      NLP_SERVICE_URL: http://nlp-personal:5000
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -166,7 +166,7 @@ services:
       DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
-      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp-personal:5000}
+      NLP_SERVICE_URL: http://nlp-personal:5000
       RECOMMENDATION_TOP_N: ${RECOMMENDATION_TOP_N:-50}
       RECOMMENDATION_TASK_DELAY_SECONDS: ${RECOMMENDATION_TASK_DELAY_SECONDS:-5}
     depends_on:
