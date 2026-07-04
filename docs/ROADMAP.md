@@ -1,4 +1,27 @@
-# Knowledge Graph Roadmap
+# Knowledge Graph Roadmap v2.0
+
+## 📋 Единый Roadmap
+
+| Приоритет | Фаза | Задачи | Статус |
+|-----------|------|--------|--------|
+| 🔴 Critical | Стабилизация Personal | Исправить проксирование, идентичные данные dev/personal, сравнить отрисовку графа, бэкапы в Яндекс.Диск | 🔄 В процессе |
+| 🔴 Critical | Интеграционные тесты | Исправить циклический импорт, ошибки типов, конструкторы handler'ов | ⏳ Промт готов |
+| 🔴 High | Импорт/Экспорт | JSON/Markdown/CSV импорт и экспорт, Obsidian-совместимость | ⏳ Промт готов |
+| 🔴 High | Космический Навигатор | SVG-звездолёт, режимы следования за курсором, сегментированная загрузка узлов, тултипы из лексикона | ⏳ Промт готов |
+| 🟡 Medium | Очки и Кастомизация | Таблицы user_points, user_cosmetics, магазин скинов, ежедневные бонусы | ⏳ Промт готов |
+| 🟡 Medium | Активация Аномалий | Подключить drawRealityRift, drawChromaticMaw, drawVoidWhisper, drawCosmicAbomination для типа unknown | ⏳ Микро-промт готов |
+| 🟡 Medium | Мягкое внедрение FSD | Выделить shared/, entities/, настроить алиасы, обновить импорты, документировать | ⏳ План готов |
+| 🟢 Low | Улучшение Связей | Тултипы при наведении на связь, цветовое кодирование gamma-связей, анимация появления связей | ⏳ Промт готов |
+| 🟢 Low | Публичный Пул | Публикация заметок, лайки, закладки, форк | ⏳ Промт готов |
+| 🟢 Low | Обработчик Пылинкок | Асинхронная NLP-обработка dust-заметок, предложение типа и тегов, DustInboxPanel | ⏳ Промт готов |
+| 🟢 Low | Галактический Лексикон + Достижения | i18n, SSE-уведомления, seed-достижений | ⏳ Промт готов |
+| 🟢 Low | Импорт из Obsidian | Парсинг Markdown, YAML frontmatter, [[wikilinks]] → связи | ⏳ Промт готов |
+| 🟢 Low | Hierarchical Clustering | Multi-level keyword clustering, spatial precomputation, zoom-aware rendering | ⏳ План в ARCHITECTURE_ROADMAP.md |
+| 🟢 Low | Мультиарендность (SaaS) | RLS, tenants, RBAC, миграция данных | ⏳ План в ARCHITECTURE_SUMMARY.md |
+| 🟢 Low | Мобильная версия / PWA | Адаптивная вёрстка, offline-режим | ⏳ Бэклог |
+| 🟢 Low | Интеграция с внешними API | Pocket, Readwise, Twitter | ⏳ Бэклог |
+
+---
 
 ## 🎯 Product Development Strategy
 
@@ -280,5 +303,9 @@ This plan focuses on turning Knowledge Graph into a reliable and useful product 
 
 This roadmap will be updated as tasks are completed and priorities change. Updates will be published in CHANGELOG.md.
 
-**Last updated:** 2026-06-30
-**Next review:** 2026-07-07
+**Last updated:** 2026-07-04
+**Next review:** 2026-07-11
+
+---
+
+*Roadmap v2.0 — объединённый трекер задач с приоритетами и статусами*

@@ -127,23 +127,6 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  source-text-handler-personal:
-    build:
-      context: ./source-text-handler
-      dockerfile: ./Dockerfile
-    container_name: kg-source-text-handler-personal
-    ports:
-      - "8084:8081"
-    environment:
-      REDIS_URI: ${PERSONAL_SOURCE_TEXT_HANDLER_REDIS_URI:-redis://redis_personal:6379/0}
-      BACKEND_URL: ${PERSONAL_SOURCE_TEXT_HANDLER_BACKEND_URL:-http://backend_personal:8080}
-    depends_on:
-      redis_personal:
-        condition: service_healthy
-      backend_personal:
-        condition: service_healthy
-    restart: unless-stopped
-
   worker_personal:
     build:
       context: .
