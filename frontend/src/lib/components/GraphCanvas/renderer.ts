@@ -1215,32 +1215,46 @@ function resolveLinkEndpoint(
 }
 
 /**
- * Draw all links
+ * Get color for a node type
+ */
+function getNodeColor(type: string): string {
+  const colors: Record<string, string> = {
+    star: '#ffcc00',
+    planet: '#d6aa5d',
+    comet: '#e879f9',
+    galaxy: '#8b5cf6',
+    asteroid: '#94a3b8',
+    blackhole: '#000000',
+    moon: '#cccccc',
+    nebula: '#2dd4bf',
+    dust: '#a1a1aa',
+    inbox: '#fbbf24',
+    unknown: '#94a3b8'
+  };
+  return colors[type] || colors.unknown;
+}
+
+/**
+ * Draw all links with animation and hover effects
  */
 export function drawAllLinks(
   ctx: CanvasRenderingContext2D,
   simLinks: SimulationLink[],
   nodes: SimulationNode[],
-  linkOpacity?: Map<string, number>
+  linkOpacity?: Map<string, number>,
+  animationTime: number = 0,
+  hoveredNodeId: string | null = null
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
 
   if (import.meta.env.DEV) {
     console.log(`[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`);
-    console.log('[drawAllLinks] First 3 links:', simLinks.slice(0, 3));
-    console.log('[drawAllLinks] First 3 nodes:', nodes.slice(0, 3).map(n => ({ id: n.id, x: n.x, y: n.y })));
   }
 
   simLinks.forEach((link, index) => {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
     const targetNode = resolveLinkEndpoint(link.target, nodes);
-
-    if (import.meta.env.DEV && index < 3) {
-      console.log(`[drawAllLinks] Link ${index}: source=${link.source}, target=${link.target}`);
-      console.log(`[drawAllLinks] Resolved sourceNode:`, sourceNode ? { id: sourceNode.id, x: sourceNode.x, y: sourceNode.y } : 'NULL');
-      console.log(`[drawAllLinks] Resolved targetNode:`, targetNode ? { id: targetNode.id, x: targetNode.x, y: targetNode.y } : 'NULL');
-    }
 
     if (
       !sourceNode ||
@@ -1258,7 +1272,8 @@ export function drawAllLinks(
     const linkId = `${link.source}-${link.target}-${index}`;
     const opacity = linkOpacity?.get(linkId) ?? 1;
 
-    drawLink(ctx, link, sourceNode, targetNode, opacity);
+    // Use animated link drawing
+    drawLink(ctx, link, sourceNode, targetNode, opacity, hoveredNodeId);
     drawnCount++;
   });
 
@@ -1276,7 +1291,10 @@ export function drawNode(
   r: number,
   angle: number,
   enableShadows: boolean,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
+  nodeId?: string,
+  nodeCount?: number,
+  animationTime?: number
 ): void {
   const type = node.type || 'unknown';
   
@@ -1302,31 +1320,31 @@ export function drawNode(
         ctx.shadowBlur = 10;
         ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
       }
-      drawStar(ctx, x, y, r, angle, variation);
+      drawStar(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
       break;
     case 'planet':
-      drawPlanet(ctx, x, y, r, angle, undefined, variation);
+      drawPlanet(ctx, x, y, r, angle, undefined, variation, node.id, nodeCount, animationTime);
       break;
     case 'satellite':
-      drawPlanet(ctx, x, y, r * 0.6, angle, '#aaaaaa', variation);
+      drawPlanet(ctx, x, y, r * 0.6, angle, '#aaaaaa', variation, node.id, nodeCount, animationTime);
       break;
     case 'comet':
-      drawComet(ctx, x, y, r, angle, variation);
+      drawComet(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
       break;
     case 'galaxy':
-      drawGalaxy(ctx, x, y, r, angle, variation);
+      drawGalaxy(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
       break;
     case 'nebula':
       drawNebula(ctx, x, y, r * 1.5, angle);
       break;
     case 'asteroid':
-      drawAsteroid(ctx, x, y, r, angle, variation, disableVariation);
+      drawAsteroid(ctx, x, y, r, angle, variation, disableVariation, node.id, nodeCount, animationTime);
       break;
     case 'debris':
       drawDebris(ctx, x, y, r, angle, disableVariation);
       break;
     case 'blackhole':
-      drawBlackhole(ctx, x, y, r, angle);
+      drawBlackhole(ctx, x, y, r, angle, node.id, nodeCount, animationTime);
       break;
     case 'moon':
       drawMoon(ctx, x, y, r, angle);
@@ -1339,7 +1357,7 @@ export function drawNode(
         ctx.shadowBlur = 10;
         ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
       }
-      drawStar(ctx, x, y, r, angle, variation);
+      drawPlanet(ctx, x, y, r, angle, '#94a3b8', variation, node.id, nodeCount, animationTime);
       break;
   }
   ctx.shadowBlur = 0;
@@ -1377,6 +1395,26 @@ export function drawNodeTitle(
 }
 
 /**
+ * Get color for a node type
+ */
+function getNodeColor(type: string): string {
+  const colors: Record<string, string> = {
+    star: '#ffcc00',
+    planet: '#d6aa5d',
+    comet: '#e879f9',
+    galaxy: '#8b5cf6',
+    asteroid: '#94a3b8',
+    blackhole: '#000000',
+    moon: '#cccccc',
+    nebula: '#2dd4bf',
+    dust: '#a1a1aa',
+    inbox: '#fbbf24',
+    unknown: '#94a3b8'
+  };
+  return colors[type] || colors.unknown;
+}
+
+/**
  * Draw all nodes
  */
 export function drawAllNodes(
@@ -1385,11 +1423,14 @@ export function drawAllNodes(
   angles: Map<string, number>,
   enableShadows: boolean,
   nodeOpacity?: Map<string, number>,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
+  animationTime: number = 0,
+  hoveredNodeId: string | null = null,
+  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null
 ): void {
-  const r = 24; // radius increased for better readability
+  const r = 24;
+  const nodeCount = nodes.length;
 
-  // Ensure deterministic initial angles for stable render mode before any drawing
   if (disableVariation) {
     for (const node of nodes) {
       if (!angles.has(node.id)) {
@@ -1398,18 +1439,29 @@ export function drawAllNodes(
     }
   }
 
+  if (particleSystem?.isEnabled()) {
+    for (const node of nodes) {
+      particleSystem.initParticles(node.id, node.x || 0, node.y || 0, getNodeColor(node.type));
+    }
+  }
+
   nodes.forEach((node) => {
     const angle = angles.get(node.id) || 0;
     const opacity = nodeOpacity?.get(node.id) ?? 1;
+    const isHovered = hoveredNodeId === node.id;
+    const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
 
-    // Apply opacity using globalAlpha
     const previousAlpha = ctx.globalAlpha;
-    ctx.globalAlpha = opacity;
+    ctx.globalAlpha = finalOpacity;
 
-    drawNode(ctx, node, r, angle, enableShadows, disableVariation);
-    drawNodeTitle(ctx, node, r, opacity, disableVariation);
+    drawNode(ctx, node, r, angle, enableShadows, disableVariation, node.id, nodeCount, animationTime);
+    drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
-    // Restore previous alpha
+    if (particleSystem?.isEnabled() && node.x && node.y) {
+      particleSystem.update(node.id, node.x, node.y);
+      particleSystem.draw(ctx, node.id);
+    }
+
     ctx.globalAlpha = previousAlpha;
   });
 }
@@ -1427,7 +1479,10 @@ export function draw(
   transform: { x: number; y: number; k: number },
   nodeOpacity?: Map<string, number>,
   linkOpacity?: Map<string, number>,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
+  animationTime: number = 0,
+  hoveredNodeId: string | null = null,
+  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -1435,24 +1490,22 @@ export function draw(
   ctx.save();
   if (disableVariation) {
     ctx.imageSmoothingEnabled = false;
-    // some browsers support quality setting
     ctx.imageSmoothingQuality = 'low';
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    // small translate to reduce subpixel AA differences
     ctx.translate(0.5, 0.5);
   }
   ctx.translate(transform.x, transform.y);
   ctx.scale(transform.k, transform.k);
 
-  // Draw links
-  drawAllLinks(ctx, simLinks, nodes, linkOpacity);
+  // Draw links with animation
+  drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId);
 
-  // Draw nodes
+  // Draw nodes with new effects
   const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-  drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation);
+  drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation, animationTime, hoveredNodeId, particleSystem);
 
   ctx.restore();
 }
