@@ -207,7 +207,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem);
         }
       },
       () => {
@@ -238,7 +238,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem);
         }
       },
       onResetView: () => {
@@ -280,6 +280,24 @@
 
       const simNodes = getSimulationNodes(simState);
       const hovered = findLinkAtPosition(mouseX, mouseY, simState.simLinks, simNodes, transform);
+
+      // Node hover detection
+      let foundHoveredNode = false;
+      for (const node of simNodes) {
+        if (node.x && node.y) {
+          const dx = mouseX - node.x;
+          const dy = mouseY - node.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 30) { // Node radius + margin
+            hoveredNodeId = node.id;
+            foundHoveredNode = true;
+            break;
+          }
+        }
+      }
+      if (!foundHoveredNode) {
+        hoveredNodeId = null;
+      }
 
       if (hovered) {
         const sourceNode = typeof hovered.source === 'string'
@@ -402,6 +420,13 @@
   onwheel={onZoom}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>
+
+{#if hoveredNodeId}
+  {@const hoveredNode = nodes.find(n => n.id === hoveredNodeId)}
+  {#if hoveredNode}
+    <GraphTooltip target={canvas} />
+  {/if}
+{/if}
 
 {#if hoveredLink}
   {@const sourceNode = nodes.find(n => n.id === hoveredLink.source)}
