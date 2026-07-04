@@ -129,3 +129,8 @@ nlp-service/.dockerignore
 test_data.sql
 TEST_STATUS.md
 coverage
+
+# Backup files
+*.backup
+*.backup.old
+*.old
