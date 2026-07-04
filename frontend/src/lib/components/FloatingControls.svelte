@@ -1,7 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { isAuthenticated } from '$lib/stores/auth.svelte';
-  
+
+  console.log('[FloatingControls] Component loaded');
+
   const {
     onCreate,
     onSearch,
@@ -28,6 +30,20 @@
     typeCounts?: Record<string, number>;
     currentView?: 'graph' | 'list';
   } = $props();
+
+  console.log('[FloatingControls] Props:', {
+    onCreate: !!onCreate,
+    onSearch: !!onSearch,
+    onToggleView: !!onToggleView,
+    onFilter: !!onFilter,
+    onImport: !!onImport,
+    onExport: !!onExport,
+    noteId,
+    typeFiltersCount: typeFilters.length,
+    selectedType,
+    typeCounts,
+    currentView
+  });
   
   let searchQuery = $state('');
   let showMenu = $state(false);
@@ -152,6 +168,24 @@
       </svg>
     </button>
   </div>
+
+  <!-- Login Button (visible when not authenticated) -->
+  {#if !isAuthenticated()}
+    <button
+      type="button"
+      class="login-btn"
+      onclick={handleLogin}
+      title="Login"
+      data-testid="floating-login-button"
+      aria-label="Login to your account"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+    </button>
+  {/if}
 
   <!-- Menu -->
   <div class="menu-container">
@@ -378,6 +412,26 @@
   .create-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+  }
+
+  .login-btn {
+    padding: 10px;
+    border: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .login-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
   }
 
   /* Type Filters — scrollable row */

@@ -44,10 +44,37 @@ function initializeOpacityMaps(
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
 
+  // Calculate center of the graph for distance-based wave animation
+  let centerX = 0, centerY = 0;
+  if (nodes.length > 0) {
+    const validNodes = nodes.filter(n => n.x !== undefined && n.y !== undefined);
+    if (validNodes.length > 0) {
+      centerX = validNodes.reduce((sum, n) => sum + n.x!, 0) / validNodes.length;
+      centerY = validNodes.reduce((sum, n) => sum + n.y!, 0) / validNodes.length;
+    }
+  }
+
+  // Calculate max distance for normalization
+  let maxDistance = 0;
+  const nodeDistances = new Map<string, number>();
+
   nodes.forEach(node => {
+    if (node.x !== undefined && node.y !== undefined) {
+      const distance = Math.hypot(node.x - centerX, node.y - centerY);
+      nodeDistances.set(node.id, distance);
+      if (distance > maxDistance) maxDistance = distance;
+    }
+  });
+
+  // Initialize node opacity based on distance (wave effect)
+  nodes.forEach(node => {
+    const distance = nodeDistances.get(node.id) || 0;
+    const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0;
+    // Start at 0, will fade in based on distance delay
     state.nodeOpacity.set(node.id, 0);
   });
 
+  // Initialize link opacity (links fade in after their source/target nodes)
   links.forEach((link, index) => {
     const linkId = `${link.source}-${link.target}-${index}`;
     state.linkOpacity.set(linkId, 0);
@@ -72,7 +99,29 @@ function startFadeAnimation(state: SimulationState, totalNodes: number): void {
     state.fadeAnimationId = null;
   }
 
-  const animateFade = () => {
+  // Calculate center and max distance for wave animation
+  let centerX = 0, centerY = 0, maxDistance = 0;
+  const nodeDistances = new Map<string, number>();
+
+  if (state.simulation) {
+    const currentNodes = state.simulation.nodes();
+    const validNodes = currentNodes.filter((n: any) => n.x !== undefined && n.y !== undefined);
+    if (validNodes.length > 0) {
+      centerX = validNodes.reduce((sum: number, n: any) => sum + n.x, 0) / validNodes.length;
+      centerY = validNodes.reduce((sum: number, n: any) => sum + n.y, 0) / validNodes.length;
+
+      validNodes.forEach((n: any) => {
+        const distance = Math.hypot(n.x - centerX, n.y - centerY);
+        nodeDistances.set(n.id, distance);
+        if (distance > maxDistance) maxDistance = distance;
+      });
+    }
+  }
+
+  const animationStartTime = performance.now();
+  const WAVE_DURATION = 100; // ms for full wave animation (instant fade-in)
+
+  const animateFade = (timestamp: number) => {
     if (!state.simulation) {
       state.fadeAnimationId = null;
       return;
@@ -80,15 +129,34 @@ function startFadeAnimation(state: SimulationState, totalNodes: number): void {
 
     const currentNodes = state.simulation.nodes();
     const progress = computeStableProgress(currentNodes, totalNodes);
-    const targetOpacity = easeOutCubic(progress);
+    const elapsedTime = timestamp - animationStartTime;
+    const waveProgress = Math.min(elapsedTime / WAVE_DURATION, 1);
 
-    interpolateOpacity(state.nodeOpacity, targetOpacity, 0.12);
-    interpolateOpacity(state.linkOpacity, targetOpacity, 0.12);
+    // Update node opacity based on distance-based wave
+    state.nodeOpacity.forEach((currentOpacity, nodeId) => {
+      const distance = nodeDistances.get(nodeId) || 0;
+      const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0;
+      // No delay - instant fade-in for all nodes
+      const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
+      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
+    });
 
-    if (progress < 1 || anyOpacityBelowOne(state)) {
+    // Update link opacity (links fade in after nodes)
+    state.linkOpacity.forEach((currentOpacity, linkId) => {
+      const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
+      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
+    });
+
+    if (waveProgress < 1 || anyOpacityBelowOne(state)) {
       state.fadeAnimationId = requestAnimationFrame(animateFade);
     } else {
       state.fadeAnimationId = null;
+      // Stop simulation after fade-in to prevent jitter
+      if (state.simulation) {
+        state.simulation.stop();
+      }
     }
   };
 
@@ -170,56 +238,25 @@ export function startSimulation(
         .forceLink(edges)
         .id((d: any) => d.id)
         .distance(100)
-        .strength(0.3)
+        .strength(0.2)
     )
-    .force('charge', d3Force.forceManyBody().strength(-150)) // Reduced repulsion
-    .force('center', d3Force.forceCenter(width / 2, height / 2).strength(0.5))
-    .force('collision', d3Force.forceCollide().radius(30))
-    .alphaDecay(0.01) // Slower cooling for stability
+    .force('charge', d3Force.forceManyBody().strength(-100)) // Further reduced repulsion
+    .force('center', d3Force.forceCenter(width / 2, height / 2).strength(0.3))
+    .force('collision', d3Force.forceCollide().radius(25))
+    .alphaDecay(0.1) // Even faster cooling
     .on('tick', () => {
       onTick();
       tickCount++;
-
-      // Update fade effect based on node stabilization every 5 ticks.
-      if (tickCount % 5 === 0 && state.simulation) {
-        const currentNodes = state.simulation.nodes();
-        const progress = computeStableProgress(currentNodes, totalNodes);
-        const targetOpacity = easeOutCubic(progress);
-
-        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.12);
-        interpolateOpacity(state.linkOpacity, targetOpacity, 0.12);
-      }
     })
     .on('end', () => {
-      // Final fade animation to full opacity
-      if (state.fadeAnimationId !== null) {
-        cancelAnimationFrame(state.fadeAnimationId);
-      }
-
-      const startTime = performance.now();
-      const duration = 2400; // 2.4 seconds for final fade
-
-      const animateFinalFade = (currentTime: number) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const targetOpacity = easeOutCubic(progress);
-
-        interpolateOpacity(state.nodeOpacity, targetOpacity, 0.15);
-        interpolateOpacity(state.linkOpacity, targetOpacity, 0.15);
-
-        if (progress < 1) {
-          state.fadeAnimationId = requestAnimationFrame(animateFinalFade);
-        } else {
-          state.fadeAnimationId = null;
-        }
-      };
-
-      state.fadeAnimationId = requestAnimationFrame(animateFinalFade);
+      // Simulation ended - nodes are stable
+      // No additional fade animation needed (already handled in startFadeAnimation)
+      state.fadeAnimationId = null;
     });
 
   // Warmup: run simulation synchronously for initial positioning
   if (state.simulation) {
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 200; i++) {
       state.simulation.tick();
     }
 

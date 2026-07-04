@@ -110,6 +110,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: "true"
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -122,9 +123,9 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
-      start_period: 15s
+      start_period: 30s
     restart: unless-stopped
 
   worker_personal:
@@ -141,6 +142,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: "true"
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -167,6 +169,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: "true"
       RECOMMENDATION_TOP_N: ${RECOMMENDATION_TOP_N:-50}
       RECOMMENDATION_TASK_DELAY_SECONDS: ${RECOMMENDATION_TASK_DELAY_SECONDS:-5}
     depends_on:

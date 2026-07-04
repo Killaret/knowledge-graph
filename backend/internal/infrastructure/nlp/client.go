@@ -44,6 +44,19 @@ func NewNLPClient(baseURL string, redisClient *redis.Client, cacheTTL time.Durat
 	}
 }
 
+// NewMockNLPClient создаёт mock клиент для тестирования
+// Возвращает предопределенные keywords и embedding без HTTP запросов
+func NewMockNLPClient() *NLPClient {
+	return &NLPClient{
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+		baseURL:    "mock://nlp",
+		redis:      nil,
+		cacheTTL:   0,
+		maxRetries: 0,
+		retryDelay: 0,
+	}
+}
+
 // requestBuilder создаёт новый HTTP запрос с заданным телом
 type requestBuilder func() (*http.Request, error)
 

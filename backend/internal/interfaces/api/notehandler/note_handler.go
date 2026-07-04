@@ -253,7 +253,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	if existing == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -377,7 +377,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 	if existing == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -415,7 +415,7 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 	if n == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 

@@ -29,6 +29,13 @@ func main() {
 		log.Printf("FATAL: Failed to load configuration: %v", err)
 		os.Exit(1)
 	}
+
+	// Override NLP URL from environment (environment has priority over config)
+	if nlpServiceURL := os.Getenv("NLP_SERVICE_URL"); nlpServiceURL != "" {
+		cfg.NLPServiceURL = nlpServiceURL
+		log.Printf("NLP_SERVICE_URL from environment: %s", nlpServiceURL)
+	}
+
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД

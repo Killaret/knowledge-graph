@@ -412,13 +412,13 @@
     typeFilters={typeFilters}
     selectedType={selectedType}
     currentView={currentView}
-    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? graphData.nodes.length : graphData.nodes.filter(n => n.type === f.id).length]))}
+    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? allNotes.length : allNotes.filter(n => n.type === f.id).length]))}
   />
 
   <!-- Fullscreen Graph Container -->
   <div class="fullscreen-graph" data-testid="graph-2d-container">
     {#if loading}
-      <div class="center">
+      <div class="loading-overlay">
         <div class="spinner"></div>
         <p>Loading notes...</p>
       </div>
@@ -601,6 +601,22 @@
     padding: 24px;
     height: calc(100vh - 60px);
     overflow-y: auto;
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 1000;
+    color: white;
   }
 
   .center {
