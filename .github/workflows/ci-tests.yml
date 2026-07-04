@@ -76,7 +76,7 @@ jobs:
         run: |
           cd ../backend
           go mod download
-          go run cmd/server/main.go &
+          go run ./cmd/server &
           for i in {1..30}; do
             if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✅ Backend is ready!"
@@ -161,7 +161,7 @@ jobs:
           cd ../backend
           go mod download
           go mod tidy
-          go run cmd/server/main.go &
+          go run ./cmd/server &
           BACKEND_PID=$!
           echo "Backend PID: $BACKEND_PID"
           
@@ -282,7 +282,7 @@ jobs:
         run: |
           cd ../backend
           go mod download
-          go run cmd/server/main.go &
+          go run ./cmd/server &
           sleep 10
           curl http://localhost:8080/health || echo "Backend not ready"
       
