@@ -303,7 +303,7 @@ jobs:
       - name: Run Lighthouse CI
         run: |
           npm install -g @lhci/cli
-          lhci autorun --config=lighthouserc.js
+          lhci autorun --config=lighthouserc.cjs
 
       - name: Run FPS performance tests
         run: npx playwright test tests/performance/ --project=chromium

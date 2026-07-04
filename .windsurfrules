@@ -1,0 +1,329 @@
+# Knowledge Graph — Windsurf/Cascade Rules
+
+This file is automatically loaded by Windsurf/Cascade in every chat session.
+Single source of truth for all AI-assisted development in this project.
+
+---
+
+## Project Overview
+
+**Knowledge Graph** — note management system with graph relationships and NLP-powered analysis.
+
+**Module:** `knowledge-graph` (Go), `frontend` (SvelteKit)
+**Environments:** Dev stack (docker-compose.yml) + Personal stack (docker-compose.personal.yml)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go 1.25, Gin v1.12, GORM v1.25 |
+| Database | PostgreSQL (pgx/v5), Redis (go-redis/v9), MongoDB |
+| Auth | golang-jwt/jwt/v5 |
+| Async | asynq v0.23 |
+| Vector | pgvector-go v0.2 |
+| Frontend | Svelte 5, TypeScript strict, SvelteKit |
+| HTTP client | ky v1.14 |
+| Visualization | D3-force v3, Three.js v0.184 |
+| NLP | Python FastAPI, sentence-transformers, HuggingFace |
+| Testing (BE) | testify v1.11, testcontainers-go v0.40, miniredis v2.38 |
+| Testing (FE) | Vitest v3, Playwright v1.59, @testing-library/svelte v5 |
+| BDD | @cucumber/cucumber v12 |
+| Infra | Docker multi-stage, nginx gateway |
+
+---
+
+## Architecture Rules
+
+### Backend — Clean Architecture (MANDATORY)
+
+Layers (inner → outer, no reverse imports):
+```
+domain/          → Entities, Value Objects, Aggregates (pure Go, no frameworks)
+application/     → Use cases, orchestration
+infrastructure/  → DB (GORM), Redis, MongoDB, external APIs
+interfaces/api/  → Gin handlers, middleware, DTOs
+```
+
+**✅ Good:**
+```go
+// domain/note.go — pure domain entity
+type Note struct {
+    id      uuid.UUID
+    title   string
+    content string
+}
+
+func NewNote(title, content string) (*Note, error) {
+    if title == "" {
+        return nil, errors.New("title is required")
+    }
+    return &Note{id: uuid.New(), title: title, content: content}, nil
+}
+```
+
+**❌ Bad — global variable:**
+```go
+var db *gorm.DB  // NEVER do this
+
+// ✅ Good — dependency injection
+type NoteRepository struct {
+    db *gorm.DB
+}
+func NewNoteRepository(db *gorm.DB) *NoteRepository {
+    return &NoteRepository{db: db}
+}
+```
+
+**❌ Bad — panic in business logic:**
+```go
+func (r *NoteRepo) FindByID(id uuid.UUID) *Note {
+    // NEVER panic — return error
+    panic("not found")
+}
+// ✅ Good
+func (r *NoteRepo) FindByID(id uuid.UUID) (*Note, error) {
+    return note, fmt.Errorf("finding note %s: %w", id, err)
+}
+```
+
+### Frontend — Svelte 5 Runes (MANDATORY)
+
+**✅ Svelte 5 runes ONLY:**
+```svelte
+<script lang="ts">
+    let count = $state(0);
+    let doubled = $derived(count * 2);
+    $effect(() => { console.log(count); });
+
+    interface Props { title: string; }
+    let { title }: Props = $props();
+</script>
+```
+
+**❌ Svelte 4 — NEVER use:**
+```svelte
+<script>
+    import { writable } from 'svelte/store'; // ❌ outdated
+    const count = writable(0);               // ❌ use $state instead
+</script>
+```
+
+**Atomic Design (mandatory component structure):**
+```
+frontend/src/components/
+├── atoms/          # Button, Input, Badge, Icon — single responsibility
+├── molecules/      # NoteCard, SearchBar, TagList — composed atoms
+└── organisms/      # GraphCanvas, NotePanel, Sidebar — complex sections
+```
+
+---
+
+## Redis — go-redis/v9 API (CRITICAL)
+
+**❌ v8 API (WRONG — will break):**
+```go
+redis.Options{ MaxConnAge: 30 * time.Minute, IdleTimeout: 5 * time.Minute }
+```
+
+**✅ v9 API (CORRECT):**
+```go
+redis.Options{
+    ConnMaxLifetime: 30 * time.Minute,
+    ConnMaxIdleTime: 5 * time.Minute,
+}
+```
+
+---
+
+## NLP Service — Lazy Loading Pattern (MANDATORY)
+
+**✅ Correct — lazy load:**
+```python
+# nlp_utils.py
+_model = None
+
+def get_embedding_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer("model-name")
+    return _model
+
+def ensure_model_loaded() -> bool:
+    try:
+        get_embedding_model()
+        return True
+    except Exception:
+        return False
+```
+
+**❌ Wrong — load at import:**
+```python
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
+```
+
+**Environment:**
+- `HF_HUB_OFFLINE=1` — offline-first mode (no internet required)
+- `HF_HOME=/path/to/cache` — local model cache path
+- Uvicorn starts in ~1s, model loads in ~15s from cache
+
+---
+
+## Testing Requirements
+
+| Layer | Command | Tool | Min Coverage |
+|-------|---------|------|-------------|
+| Go backend | `cd backend && go test ./...` | testify + testcontainers | >60% |
+| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | >60% |
+| E2E | `cd frontend && npm run test` | Playwright | - |
+| BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
+| NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |
+
+**Go table-driven tests (mandatory pattern):**
+```go
+func TestCreateNote(t *testing.T) {
+    tests := []struct {
+        name    string
+        title   string
+        wantErr bool
+    }{
+        {"valid note", "My Note", false},
+        {"empty title", "", true},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            note, err := NewNote(tt.title, "content")
+            if tt.wantErr {
+                require.Error(t, err)
+            } else {
+                require.NoError(t, err)
+                require.Equal(t, tt.title, note.Title())
+            }
+        })
+    }
+}
+```
+
+---
+
+## Security Rules (NON-NEGOTIABLE)
+
+- **NEVER** commit secrets: `.env`, tokens, OAuth keys, passwords
+- **NEVER** put JWT validation in handlers — use middleware
+- Rate limiting **required** on all write endpoints (POST/PUT/DELETE)
+- All secrets via environment variables only
+- Input validation with go-playground/validator
+
+```go
+// ✅ JWT in middleware, not handler
+func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        // validate...
+        c.Next()
+    }
+}
+```
+
+---
+
+## Language Policy — ENGLISH ONLY
+
+**All user-facing content MUST be in English:**
+
+```typescript
+// ✅ Good
+toast.success("Note created successfully");
+placeholder="Search your knowledge graph..."
+errorMessage = "Failed to load notes. Please try again."
+
+// ❌ Bad
+toast.success("Заметка создана успешно");
+```
+
+**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content, commit messages, documentation.
+**Exceptions:** Internal code comments (any language OK).
+
+---
+
+## Docker & Infrastructure
+
+**Multi-stage build pattern (mandatory):**
+```dockerfile
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -o server ./cmd/server
+
+FROM alpine:3.19 AS runtime
+COPY --from=builder /app/server /server
+EXPOSE 9000
+HEALTHCHECK CMD wget -q -O- http://localhost:9000/health || exit 1
+CMD ["/server"]
+```
+
+**All services must have `/health` endpoint.**
+
+**Port mapping:**
+- Dev: nginx:8080, backend:9000, graph-service:9091
+- Personal: backend:8085, gateway:8082, graph-service:8092
+
+**Volume names:** `postgres_data`, `redis_data`, `huggingface_cache`
+
+---
+
+## Common Commands
+
+```bash
+# Backend
+cd backend && go test ./...                          # Unit tests
+cd backend && go test -tags=integration ./...        # Integration tests
+cd backend && go build ./cmd/server                  # Build
+
+# Frontend
+cd frontend && npm run test:unit                     # Vitest
+cd frontend && npm run test                          # Playwright
+cd frontend && npm run build                         # Build
+
+# Docker
+docker compose up -d                                 # Dev stack
+docker compose -f docker-compose.personal.yml up -d  # Personal stack
+docker compose logs -f backend                       # Logs
+
+# Health checks
+curl http://localhost:8080/health
+curl http://localhost:9000/health
+```
+
+---
+
+## AI Agents (11 total)
+
+Use the right agent for each task:
+
+| Task Type | Agent |
+|-----------|-------|
+| Go API, endpoints | `knowledge-graph-backend-go` |
+| PostgreSQL, Redis, MongoDB | `knowledge-graph-backend-go` |
+| Svelte 5 components, UI | `knowledge-graph-frontend-svelte` |
+| D3-force, Three.js graph | `knowledge-graph-frontend-svelte` |
+| OpenAPI spec, DTOs | `knowledge-graph-integration` |
+| Docker, nginx | `knowledge-graph-infrastructure` |
+| CI/CD, deployment | `knowledge-graph-devops` |
+| Redis caching, P95, asynq | `knowledge-graph-performance` |
+| JWT, auth audit, CORS | `knowledge-graph-security` |
+| Unit/E2E/BDD tests | `knowledge-graph-testing` |
+| Python FastAPI, NLP, embeddings | `knowledge-graph-nlp` |
+| DB migrations, pgvector, schemas | `knowledge-graph-data` |
+| Task routing | `knowledge-graph-orchestrator` |
+
+**Agent rules locations:**
+- Cursor AI: `.cursor/rules/*.md`
+- Koda VSCode: `.continue/rules/*.md`
+- Devin: `.devin/skills/knowledge-graph/SKILL.md`
+
+**Full docs:** `docs/AGENTS_EN.md`

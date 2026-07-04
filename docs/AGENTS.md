@@ -1,32 +1,44 @@
 # Agents in Knowledge Graph
 
-**Updated:** June 2026  
-**Status:** See [AGENTS_EN.md](AGENTS_EN.md) for current agent documentation in English
+**Updated:** July 2026
+**Status:** See [AGENTS_EN.md](AGENTS_EN.md) for full documentation (11 agents)
 
 ---
 
 ## Quick Reference
 
-The project now uses **9 specialized AI agents** located in .cursor/rules/:
+The project uses **11 specialized AI agents** defined across multiple AI tools:
 
 | Agent | Focus |
 |-------|-------|
 | knowledge-graph-orchestrator | Task routing & delegation |
-| knowledge-graph-backend-go | Backend API & Go development |
-| knowledge-graph-frontend-svelte | Frontend UI & Svelte 5 |
-| knowledge-graph-integration | API contracts & DTOs |
-| knowledge-graph-infrastructure | Docker & containers |
-| knowledge-graph-devops | CI/CD & deployment |
-| knowledge-graph-performance | Profiling & optimization |
-| knowledge-graph-security | Security audit & Auth |
-| knowledge-graph-testing | Unit/E2E tests |
+| knowledge-graph-backend-go | Go API, PostgreSQL, Redis, MongoDB, JWT |
+| knowledge-graph-frontend-svelte | Svelte 5, TypeScript, UI/UX |
+| knowledge-graph-integration | OpenAPI, DTOs, API contracts |
+| knowledge-graph-infrastructure | Docker, nginx, monitoring |
+| knowledge-graph-devops | CI/CD, deployment |
+| knowledge-graph-performance | Profiling, caching, P95 |
+| knowledge-graph-security | Auth/AuthZ, audit, encryption |
+| knowledge-graph-testing | Unit/integration/E2E/BDD |
+| knowledge-graph-nlp | Python FastAPI, NLP, HuggingFace *(NEW)* |
+| knowledge-graph-data | DB migrations, pgvector, schemas *(NEW)* |
+
+---
+
+## AI Tool Configuration
+
+| Tool | Rules Location |
+|------|---------------|
+| Cursor AI | `.cursor/rules/*.md` |
+| Koda VSCode (koda-base/koda-pro) | `.continue/rules/*.md` |
+| Windsurf/Cascade | `.windsurfrules` |
+| Devin | `.devin/skills/knowledge-graph/SKILL.md` |
 
 ---
 
 ## Full Documentation
 
-For complete agent descriptions, responsibilities, and examples, see:
-- **[AGENTS_EN.md](AGENTS_EN.md)** � Full English documentation
+- **[AGENTS_EN.md](AGENTS_EN.md)** — Full English documentation, agent descriptions, selection matrix
 
 ---
 
@@ -34,76 +46,32 @@ For complete agent descriptions, responsibilities, and examples, see:
 
 ### Dev Stack (docker-compose.yml)
 
-**Health Check Script:**
 ```bash
-# Check all containers
-docker ps
-
-# Check nginx gateway
-curl http://localhost:8080/health
-
-# Check backend health
-curl http://localhost:9000/health
-
-# Check graph service health
-curl http://localhost:9091/health
-
-# Check API endpoints through nginx
-curl http://localhost:8080/api/v1/notes
-curl http://localhost:8080/graph-service/api/v1/graph/full
+curl http://localhost:8080/health           # Nginx gateway
+curl http://localhost:9000/health           # Backend
+curl http://localhost:9091/health           # Graph service
+curl http://localhost:8080/api/v1/notes     # Notes API
 ```
 
 ### Personal Stack (docker-compose.personal.yml)
 
-**Health Check Script:**
 ```bash
-# Check personal backend
-curl http://localhost:8085/health
-
-# Check personal API gateway
-curl http://localhost:8082/health
-
-# Check personal graph service
-curl http://localhost:8092/health
+curl http://localhost:8085/health           # Personal backend
+curl http://localhost:8082/health           # Personal API gateway
+curl http://localhost:8092/health           # Personal graph service
 ```
 
-### Proxy Architecture
-
-**Docker Environment:**
-- Nginx (8080): Single API gateway
-  - `/api/*` → Backend (8080)
-  - `/graph-service/api/*` → Graph Service (9091)
-- Frontend (5173): Production build with adapter-node
-  - Uses nginx for microservice communication
-
-**Dev Environment:**
-- Vite Proxy (vite.config.ts): Local development
-  - `/api/v1` → Backend (9000)
-  - `/graph-service/api` → Graph Service (9091)
-
 ---
 
-## Maintenance
-
-This file is kept as a redirect to AGENTS_EN.md for historical reference.
-
----
-
-## 🌐 Language Policy
+## Language Policy
 
 **All user-facing content MUST be in English:**
+- UI strings (buttons, labels, placeholders, errors)
+- Toast messages and tooltips (GalacticLexicon)
+- Note titles and content
+- Commit messages
 
-- ✅ **Заметки** — заголовки и содержимое
-- ✅ **Аннотации** — любые текстовые поля для пользователя
-- ✅ **UI-строки** — кнопки, лейблы, плейсхолдеры, сообщения об ошибках
-- ✅ **Тултипы и тосты** — сообщения GalacticLexicon
-- ✅ **Commit-сообщения** — понятные, на английском
-
-**Исключения:**
-- Внутренние комментарии в коде — краткие пояснения на любом языке
-- Имена переменных/функций — следуйте соглашениям проекта
-
-### Examples:
+**Exceptions:** Internal code comments (any language OK)
 
 ```typescript
 // ✅ Good
@@ -112,4 +80,3 @@ toast.success("Note created successfully");
 // ❌ Bad
 toast.success("Заметка создана успешно");
 ```
-

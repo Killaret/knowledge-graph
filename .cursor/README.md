@@ -1,34 +1,45 @@
 # Cursor Agent Configuration
 
-This directory contains rules for Cursor AI.
+This directory contains rules for Cursor AI agents.
 
 ## Important
-- Cursor must read all files in `.cursor/rules/`
-- Orchestrator must be active first
-- Each agent has its own role and command set
-- Do not delete this directory and files
+- Cursor reads all files in `.cursor/rules/` automatically
+- Orchestrator analyzes and routes tasks to specialized agents
+- Each agent has its own domain, rules, and code examples
+- Do not delete this directory
 
-## Structure
-- `.cursor/rules/knowledge-graph-orchestrator.md`
-- `.cursor/rules/knowledge-graph-backend-go.md`
-- `.cursor/rules/knowledge-graph-frontend-svelte.md`
-- `.cursor/rules/knowledge-graph-integration.md`
-- `.cursor/rules/knowledge-graph-infrastructure.md`
-- `.cursor/rules/knowledge-graph-devops.md`
-- `.cursor/rules/knowledge-graph-performance.md`
-- `.cursor/rules/knowledge-graph-security.md`
-- `.cursor/rules/knowledge-graph-testing.md`
+## Agent Files (11 total)
 
-## Usage
-Cursor AI must read these files before executing tasks.
+| File | Agent | Domain |
+|------|-------|--------|
+| `knowledge-graph-orchestrator.md` | Orchestrator | Task routing |
+| `knowledge-graph-backend-go.md` | Backend Go | Go, PostgreSQL, Redis, MongoDB |
+| `knowledge-graph-frontend-svelte.md` | Frontend Svelte | Svelte 5, TypeScript, UI/UX |
+| `knowledge-graph-integration.md` | Integration | OpenAPI, DTOs, nginx |
+| `knowledge-graph-infrastructure.md` | Infrastructure | Docker, monitoring |
+| `knowledge-graph-devops.md` | DevOps | CI/CD, deployment |
+| `knowledge-graph-performance.md` | Performance | Profiling, caching |
+| `knowledge-graph-security.md` | Security | Auth, audit |
+| `knowledge-graph-testing.md` | Testing | Unit/E2E/BDD |
+| `knowledge-graph-nlp.md` | NLP | Python FastAPI, HuggingFace |
+| `knowledge-graph-data.md` | Data | Migrations, pgvector, schemas |
+
+## Other AI Tool Configurations
+
+- **Koda VSCode (koda-base/koda-pro):** `.continue/rules/*.md`
+- **Windsurf/Cascade:** `.windsurfrules`
+- **Devin:** `.devin/skills/knowledge-graph/SKILL.md`
+
+## Full Documentation
+
+See `docs/AGENTS_EN.md` for complete agent descriptions, selection matrix, and examples.
 
 ## Language Policy
 
 All user-facing content MUST be in English:
-- Note titles and content
 - UI strings (buttons, labels, placeholders, errors)
 - Toast messages and tooltips
-- Code comments in public documentation
+- Note titles and content
 - Commit messages
 
 **Exceptions:** Internal code comments (brief explanations in any language OK)
