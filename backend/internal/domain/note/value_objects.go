@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Title — заголовок заметки (не может быть пустым, макс 200 символов)
+// Title is the note title (cannot be empty, max 200 characters)
 type Title struct {
 	value string
 }
@@ -25,13 +25,13 @@ func (t Title) String() string {
 	return t.value
 }
 
-// Content — содержимое заметки (простой текст)
+// Content is the note body (plain text)
 type Content struct {
 	value string
 }
 
 func NewContent(value string) (Content, error) {
-	// Можно добавить ограничения, например, не больше 10000 символов
+	// Constraints could be added here, e.g. no more than 10000 characters
 	if len(value) > 10000 {
 		return Content{}, errors.New("content too long (max 10000 characters)")
 	}
@@ -42,13 +42,13 @@ func (c Content) String() string {
 	return c.value
 }
 
-// Metadata — дополнительные данные заметки (теги, статус и т.п.)
+// Metadata holds additional note data (tags, status, etc.)
 type Metadata struct {
 	value map[string]interface{}
 }
 
 func NewMetadata(value map[string]interface{}) (Metadata, error) {
-	// Можно добавить валидацию, но пока оставляем как есть
+	// Validation could be added here, but for now we leave it as is
 	return Metadata{value: value}, nil
 }
 

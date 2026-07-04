@@ -9,13 +9,13 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-// AsynqClient реализует интерфейс common.TaskQueue
+// AsynqClient implements the common.TaskQueue interface
 type AsynqClient struct {
 	client *asynq.Client
 }
 
-// NewAsynqClient создаёт новый клиент asynq.
-// redisAddr — адрес Redis, например "localhost:6379".
+// NewAsynqClient creates a new asynq client.
+// redisAddr is the Redis address, e.g. "localhost:6379".
 func NewAsynqClient(redisAddr string) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
@@ -61,7 +61,7 @@ func (c *AsynqClient) EnqueueComputeEmbedding(ctx context.Context, noteID string
 	return err
 }
 
-// Close закрывает клиент.
+// Close closes the client.
 func (c *AsynqClient) Close() error {
 	return c.client.Close()
 }

@@ -52,7 +52,7 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
-	// Применяем миграции
+	// Apply migrations
 	migrationsDir := defaultMigrationsDir
 	if err := postgres.RunMigrations(db.DB, migrationsDir); err != nil {
 		log.Printf("ERROR: Failed to run migrations: %v", err)
@@ -71,15 +71,15 @@ func main() {
 		}
 	}()
 
-	// Принудительный сброс кэша при старте сервера (очищаем старый испорченный кэш)
-	// Проверяем количество ключей ДО сброса
+	// Force flush cache on startup (clear old corrupted cache)
+	// Check the number of keys BEFORE flushing
 	keysBefore, _ := redisClient.DBSize(ctx).Result()
 	log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
 
 	if err := redisClient.FlushDB(ctx).Err(); err != nil {
 		log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
 	} else {
-		// Проверяем количество ключей ПОСЛЕ сброса
+		// Check the number of keys AFTER flushing
 		keysAfter, _ := redisClient.DBSize(ctx).Result()
 		log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
 	}
@@ -88,7 +88,7 @@ func main() {
 	linkRepo := postgres.NewLinkRepository(db.DB)
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
-	// Очередь
+	// Task queue
 	var taskQueue common.TaskQueue
 	asynqClient, err := queue.NewAsynqClient(redisAddr)
 	if err != nil {
@@ -103,7 +103,7 @@ func main() {
 		}()
 	}
 
-	// Загрузчики графа
+	// Graph loaders
 	linkLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
 	embeddingLoader := appGraph.NewEmbeddingNeighborLoader(embeddingRepo, cfg.EmbeddingSimilarityLimit)
 
@@ -121,7 +121,7 @@ func main() {
 	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
-	// Хендлеры с новыми параметрами
+	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg)

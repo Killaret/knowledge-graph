@@ -8,22 +8,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRepository — репозиторий для работы с пользователями
+// UserRepository is the repository for working with users
 type UserRepository struct {
 	db *gorm.DB
 }
 
-// NewUserRepository создает новый репозиторий
+// NewUserRepository creates a new repository
 func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// Create сохраняет нового пользователя
+// Create saves a new user
 func (r *UserRepository) Create(ctx context.Context, user *UserModel) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
-// FindByID ищет пользователя по ID
+// FindByID looks up a user by ID
 func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*UserModel, error) {
 	var user UserModel
 	err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error
@@ -36,7 +36,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*UserModel
 	return &user, nil
 }
 
-// FindByLogin ищет пользователя по логину (используем Login вместо Email)
+// FindByLogin looks up a user by login (we use Login instead of Email)
 func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*UserModel, error) {
 	var user UserModel
 	err := r.db.WithContext(ctx).First(&user, "login = ?", login).Error
@@ -49,17 +49,17 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*UserMo
 	return &user, nil
 }
 
-// Update обновляет данные пользователя
+// Update updates user data
 func (r *UserRepository) Update(ctx context.Context, user *UserModel) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }
 
-// Delete мягко удаляет пользователя (если есть DeletedAt) или полностью
+// Delete soft-deletes a user (if DeletedAt exists) or removes it entirely
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&UserModel{}, "id = ?", id).Error
 }
 
-// Exists проверяет существование пользователя
+// Exists checks whether a user exists
 func (r *UserRepository) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&UserModel{}).Where("id = ?", id).Count(&count).Error

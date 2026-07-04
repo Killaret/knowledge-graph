@@ -27,14 +27,14 @@ func main() {
 	cfg := config.Load()
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
-	// Инициализация БД
+	// Initialize the database
 	db.Init()
 	if db.DB == nil {
 		log.Fatal("database connection is nil")
 	}
 	log.Println("Worker: Connected to PostgreSQL")
 
-	// Redis для кэша
+	// Redis for caching
 	redisAddr := cfg.RedisURL
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
@@ -47,19 +47,19 @@ func main() {
 		}
 	}()
 
-	// Репозитории
+	// Repositories
 	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
 	keywordRepo := postgres.NewKeywordRepository(db.DB)
 	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
 
-	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
+	// URL of the Python service (inside Docker: nlp:5000, locally: localhost:5000)
 	nlpURL := cfg.NLPServiceURL
 	if nlpURL == "" {
 		nlpURL = "http://localhost:5000"
 	}
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
-	// Воркер (обработчик задач)
+	// Worker (task processor)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient)
 
 	// Graph traversal service for recommendations
@@ -76,7 +76,7 @@ func main() {
 	// Refresh service for background recommendation calculation
 	refreshSvc := recommendation.NewRefreshService(db.DB, redisClient, traversalSvc, cfg.RecommendationTopN)
 
-	// Asynq сервер с конфигурацией
+	// Asynq server with configuration
 	srv := asynq.NewServer(
 		asynq.RedisClientOpt{Addr: redisAddr},
 		asynq.Config{

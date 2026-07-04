@@ -60,7 +60,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 
 	text := n.Title().String() + " " + n.Content().String()
 	if text == "" {
-		// Удаляем ключевые слова
+		// Delete the keywords
 		return w.keywordRepo.DeleteAll(ctx, noteID)
 	}
 
@@ -83,7 +83,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 	}
 	log.Printf("HandleExtractKeywords: extracted %d keywords for note %s", len(keywords), p.NoteID)
 
-	// Преобразуем в модели GORM
+	// Convert into GORM models
 	models := make([]postgres.NoteKeywordModel, 0, len(keywords))
 	for _, kw := range keywords {
 		models = append(models, postgres.NoteKeywordModel{
@@ -128,7 +128,7 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 
 	text := n.Title().String() + " " + n.Content().String()
 	if text == "" {
-		// Удаляем эмбеддинг
+		// Delete the embedding
 		return w.embeddingRepo.Delete(ctx, noteID)
 	}
 
@@ -139,7 +139,7 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 	}
 	log.Printf("HandleComputeEmbedding: computed embedding for note %s (size=%d)", noteID, len(embedding))
 
-	// Преобразуем в pgvector.Vector
+	// Convert into pgvector.Vector
 	vec := pgvector.NewVector(embedding)
 	err = w.embeddingRepo.Upsert(ctx, noteID, vec)
 	if err != nil {

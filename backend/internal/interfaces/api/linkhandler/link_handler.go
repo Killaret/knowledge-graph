@@ -142,7 +142,7 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
-		// Проверяем на дубликат связи
+		// Check for a duplicate link
 		if errors.Is(err, postgres.ErrDuplicateLink) {
 			c.JSON(409, gin.H{"error": "link of this type already exists between these notes"})
 			return

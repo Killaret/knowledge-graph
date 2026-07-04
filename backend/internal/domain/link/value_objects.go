@@ -34,14 +34,14 @@ func (w Weight) Value() float64 {
 	return w.value
 }
 
-// Metadata — дополнительные данные связи (тип связи, описание и т.п.)
+// Metadata holds additional link data (link type, description, etc.)
 type Metadata struct {
 	value map[string]interface{}
 }
 
 func NewMetadata(value map[string]interface{}) (Metadata, error) {
-	// Можно добавить валидацию, например, что поле "description" — строка и т.д.
-	// Пока оставляем простую обёртку.
+	// Validation could be added here, e.g. that the "description" field is a string, etc.
+	// For now we keep a simple wrapper.
 	return Metadata{value: value}, nil
 }
 

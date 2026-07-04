@@ -1,19 +1,19 @@
 package queue
 
 const (
-	// TypeExtractKeywords — тип задачи для извлечения ключевых слов
+	// TypeExtractKeywords is the task type for keyword extraction
 	TypeExtractKeywords = "extract:keywords"
-	// TypeComputeEmbedding — тип задачи для вычисления эмбеддинга
+	// TypeComputeEmbedding is the task type for embedding computation
 	TypeComputeEmbedding = "compute:embedding"
 )
 
-// ExtractKeywordsTaskPayload содержит данные для задачи извлечения ключевых слов
+// ExtractKeywordsTaskPayload holds the data for a keyword extraction task
 type ExtractKeywordsTaskPayload struct {
 	NoteID string `json:"note_id"`
 	TopN   int    `json:"top_n"`
 }
 
-// ComputeEmbeddingTaskPayload содержит данные для задачи вычисления эмбеддинга
+// ComputeEmbeddingTaskPayload holds the data for an embedding computation task
 type ComputeEmbeddingTaskPayload struct {
 	NoteID string `json:"note_id"`
 }

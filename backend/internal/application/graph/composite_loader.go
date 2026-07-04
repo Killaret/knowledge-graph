@@ -11,14 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// compositeNeighborLoader объединяет несколько загрузчиков и применяет веса к их рёбрам.
+// compositeNeighborLoader combines several loaders and applies weights to their edges.
 type compositeNeighborLoader struct {
 	loaders []graph.NeighborLoader
-	weights []float64 // веса для каждого загрузчика (должны совпадать по длине)
+	weights []float64 // weights for each loader (must match in length)
 }
 
-// NewCompositeNeighborLoaderWithWeights создаёт композитный загрузчик с весами.
-// Пример: loaders = [linkLoader, embeddingLoader], weights = [0.7, 0.3]
+// NewCompositeNeighborLoaderWithWeights creates a composite loader with weights.
+// Example: loaders = [linkLoader, embeddingLoader], weights = [0.7, 0.3]
 func NewCompositeNeighborLoaderWithWeights(loaders []graph.NeighborLoader, weights []float64) graph.NeighborLoader {
 	return &compositeNeighborLoader{
 		loaders: loaders,
@@ -26,9 +26,9 @@ func NewCompositeNeighborLoaderWithWeights(loaders []graph.NeighborLoader, weigh
 	}
 }
 
-// GetNeighbors опрашивает все внутренние загрузчики, умножает веса их рёбер на соответствующие коэффициенты
-// и объединяет результаты. Если хотя бы один загрузчик успешно вернул результат — возвращаем объединённый список.
-// Если все загрузчики завершились с ошибкой — возвращаем агрегированную ошибку.
+// GetNeighbors queries all inner loaders, multiplies their edge weights by the corresponding coefficients
+// and merges the results. If at least one loader succeeds, the merged list is returned.
+// If all loaders fail, an aggregated error is returned.
 func (c *compositeNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]graph.Edge, error) {
 	var allEdges []graph.Edge
 	var errs []string
@@ -61,13 +61,13 @@ func (c *compositeNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.
 	return allEdges, nil
 }
 
-// GetNeighborsBatch возвращает соседей для нескольких узлов, объединяя результаты внутренних загрузчиков
+// GetNeighborsBatch returns neighbors for multiple nodes by merging the results of the inner loaders
 func (c *compositeNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
 	result := make(map[uuid.UUID][]graph.Edge)
 	var errs []string
 	anySuccess := false
 
-	// Инициализируем пустые срезы для всех nodeIDs
+	// Initialize empty slices for all nodeIDs
 	for _, nodeID := range nodeIDs {
 		result[nodeID] = []graph.Edge{}
 	}
@@ -87,7 +87,7 @@ func (c *compositeNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs
 			weight = c.weights[i]
 		}
 
-		// Объединяем результаты с применением веса
+		// Merge results applying the weight
 		for nodeID, edges := range batchResult {
 			for _, e := range edges {
 				e.Weight *= weight

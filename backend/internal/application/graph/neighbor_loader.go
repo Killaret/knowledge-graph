@@ -10,15 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
-// neighborLoader — структура, которая реализует интерфейс graph.NeighborLoader.
-// Она знает, как загрузить соседей заметки из базы данных через репозитории.
+// neighborLoader is a struct that implements the graph.NeighborLoader interface.
+// It knows how to load a note's neighbors from the database via repositories.
 type neighborLoader struct {
-	linkRepo link.Repository // репозиторий для работы со связями
-	noteRepo note.Repository // репозиторий для заметок (здесь не используется, но может пригодиться)
+	linkRepo link.Repository // repository for working with links
+	noteRepo note.Repository // repository for notes (not used here, but may be useful)
 }
 
-// NewNeighborLoader — конструктор, возвращает реализацию интерфейса graph.NeighborLoader.
-// Принимает репозитории (зависимости), которые нужны для загрузки данных.
+// NewNeighborLoader is the constructor; it returns an implementation of the graph.NeighborLoader interface.
+// It accepts the repositories (dependencies) needed to load data.
 func NewNeighborLoader(linkRepo link.Repository, noteRepo note.Repository) graph.NeighborLoader {
 	return &neighborLoader{
 		linkRepo: linkRepo,
@@ -26,69 +26,69 @@ func NewNeighborLoader(linkRepo link.Repository, noteRepo note.Repository) graph
 	}
 }
 
-// linkRepositoryWithBatch — интерфейс, который расширяет link.Repository batch-методами
+// linkRepositoryWithBatch is an interface that extends link.Repository with batch methods
 type linkRepositoryWithBatch interface {
 	link.Repository
 	FindBySourceIDs(ctx context.Context, sourceIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error)
 	FindByTargetIDs(ctx context.Context, targetIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error)
 }
 
-// GetNeighbors — метод, который для заданной заметки (nodeID) возвращает список рёбер (связей) к соседним заметкам.
-// В рамках рекомендаций мы делаем граф неориентированным: учитываем как исходящие, так и входящие связи.
-// Каждое ребро содержит:
-//   - From: ID исходной заметки (всегда nodeID, но для входящих связей мы разворачиваем направление)
-//   - To:   ID соседней заметки
-//   - Weight: вес связи (уже рассчитанный и сохранённый в БД)
+// GetNeighbors returns, for a given note (nodeID), the list of edges (links) to neighboring notes.
+// For recommendations we treat the graph as undirected: both outgoing and incoming links are considered.
+// Each edge contains:
+//   - From: ID of the source note (always nodeID, but for incoming links we reverse the direction)
+//   - To:   ID of the neighboring note
+//   - Weight: the link weight (already computed and stored in the database)
 func (l *neighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]graph.Edge, error) {
-	// 1. Получаем исходящие связи: где наша заметка является источником (source)
+	// 1. Get outgoing links: where our note is the source
 	outgoing, err := l.linkRepo.FindBySource(ctx, nodeID)
 	if err != nil {
-		// Если ошибка при запросе к БД – возвращаем её, чтобы вышестоящий слой мог обработать
+		// On a database query error, return it so the upper layer can handle it
 		return nil, err
 	}
 
-	// 2. Получаем входящие связи: где наша заметка является целью (target)
+	// 2. Get incoming links: where our note is the target
 	incoming, err := l.linkRepo.FindByTarget(ctx, nodeID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Подготавливаем срез для рёбер (примерный размер = сумма исходящих и входящих)
+	// 3. Prepare a slice for the edges (approximate size = outgoing + incoming)
 	edges := make([]graph.Edge, 0, len(outgoing)+len(incoming))
 
-	// 4. Добавляем исходящие связи как есть (направление от nodeID к target)
+	// 4. Add outgoing links as is (direction from nodeID to target)
 	for _, ln := range outgoing {
 		edges = append(edges, graph.Edge{
-			From:   ln.SourceNoteID(), // это nodeID
+			From:   ln.SourceNoteID(), // this is nodeID
 			To:     ln.TargetNoteID(),
-			Weight: ln.Weight().Value(), // вес хранится во Value Object Weight, берём float64
+			Weight: ln.Weight().Value(), // the weight is stored in the Weight value object; take the float64
 		})
 	}
 
-	// 5. Добавляем входящие связи, но разворачиваем направление (чтобы граф был неориентированным)
-	//    Для рекомендаций не важно, кто на кого ссылается – важна сама связь.
+	// 5. Add incoming links but reverse the direction (so the graph is undirected)
+	//    For recommendations it does not matter who references whom — only the link itself matters.
 	for _, ln := range incoming {
 		edges = append(edges, graph.Edge{
-			From:   ln.TargetNoteID(), // в развёрнутом виде: от целевой заметки к источнику
+			From:   ln.TargetNoteID(), // reversed: from the target note to the source
 			To:     ln.SourceNoteID(),
 			Weight: ln.Weight().Value(),
 		})
 	}
 
-	// 6. Возвращаем список рёбер
+	// 6. Return the list of edges
 	return edges, nil
 }
 
-// GetNeighborsBatch возвращает соседей для нескольких узлов (batch-запрос)
+// GetNeighborsBatch returns neighbors for multiple nodes (batch query)
 func (l *neighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
 	if len(nodeIDs) == 0 {
 		return make(map[uuid.UUID][]graph.Edge), nil
 	}
 
-	// Пробуем привести linkRepo к интерфейсу с batch-методами
+	// Try to assert linkRepo to the interface with batch methods
 	batchRepo, ok := l.linkRepo.(linkRepositoryWithBatch)
 	if !ok {
-		// Если batch-методы недоступны, fallback на последовательные запросы
+		// If batch methods are unavailable, fall back to sequential queries
 		result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
 		for _, nodeID := range nodeIDs {
 			edges, err := l.GetNeighbors(ctx, nodeID)
@@ -100,7 +100,7 @@ func (l *neighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.U
 		return result, nil
 	}
 
-	// Batch-запросы для outgoing и incoming связей
+	// Batch queries for outgoing and incoming links
 	outgoingMap, err := batchRepo.FindBySourceIDs(ctx, nodeIDs)
 	if err != nil {
 		outgoingMap = make(map[uuid.UUID][]*link.Link)
@@ -111,12 +111,12 @@ func (l *neighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.U
 		incomingMap = make(map[uuid.UUID][]*link.Link)
 	}
 
-	// Объединяем результаты
+	// Merge the results
 	result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
 	for _, nodeID := range nodeIDs {
 		edges := make([]graph.Edge, 0)
 
-		// Исходящие связи
+		// Outgoing links
 		if outgoing, ok := outgoingMap[nodeID]; ok {
 			for _, ln := range outgoing {
 				edges = append(edges, graph.Edge{
@@ -127,7 +127,7 @@ func (l *neighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.U
 			}
 		}
 
-		// Входящие связи (разворачиваем направление)
+		// Incoming links (reverse the direction)
 		if incoming, ok := incomingMap[nodeID]; ok {
 			for _, ln := range incoming {
 				edges = append(edges, graph.Edge{

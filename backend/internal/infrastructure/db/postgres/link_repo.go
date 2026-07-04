@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ErrDuplicateLink возвращается при попытке создать дубликат связи
+// ErrDuplicateLink is returned when attempting to create a duplicate link
 var ErrDuplicateLink = errors.New("link of this type already exists between these notes")
 
 type LinkRepository struct {
@@ -37,7 +37,7 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
 			log.Printf("[LinkRepository.Save] Create failed: id=%s source=%s target=%s error=%v",
 				model.ID, model.SourceNoteID, model.TargetNoteID, err)
-			// Проверяем на нарушение уникального ограничения (PostgreSQL код 23505)
+			// Check for a unique constraint violation (PostgreSQL code 23505)
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 				return ErrDuplicateLink
 			}
@@ -85,7 +85,7 @@ func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) (
 	return toDomainLinks(models), nil
 }
 
-// FindBySourceIDs возвращает связи для нескольких source note ID (batch-запрос)
+// FindBySourceIDs returns links for multiple source note IDs (batch query)
 func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error) {
 	if len(sourceIDs) == 0 {
 		return make(map[uuid.UUID][]*link.Link), nil
@@ -108,7 +108,7 @@ func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.U
 	return result, nil
 }
 
-// FindByTargetIDs возвращает связи для нескольких target note ID (batch-запрос)
+// FindByTargetIDs returns links for multiple target note IDs (batch query)
 func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error) {
 	if len(targetIDs) == 0 {
 		return make(map[uuid.UUID][]*link.Link), nil
@@ -139,17 +139,17 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
-// FindAllPaginated возвращает связи с пагинацией на уровне БД
-// limit=0 означает "все записи"
+// FindAllPaginated returns links with pagination at the database level
+// limit=0 means "all records"
 func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
 	var total int64
 
-	// Считаем общее количество
+	// Count the total number
 	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Запрос с пагинацией
+	// Paginated query
 	query := r.db.WithContext(ctx)
 	if limit > 0 {
 		query = query.Limit(limit).Offset(offset)
@@ -163,8 +163,8 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	return toDomainLinks(models), total, nil
 }
 
-// FindAll возвращает все связи без пагинации
-// DEPRECATED: используйте FindAllPaginated для больших наборов данных
+// FindAll returns all links without pagination
+// DEPRECATED: use FindAllPaginated for large data sets
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	var models []LinkModel
 	err := r.db.WithContext(ctx).Find(&models).Error
@@ -174,7 +174,7 @@ func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	return toDomainLinks(models), nil
 }
 
-// toGormLink преобразует доменную связь в GORM-модель
+// toGormLink converts a domain link into a GORM model
 func toGormLink(l *link.Link) (LinkModel, error) {
 	metadataJSON, err := json.Marshal(l.Metadata().Value())
 	if err != nil {
@@ -191,7 +191,7 @@ func toGormLink(l *link.Link) (LinkModel, error) {
 	}, nil
 }
 
-// toDomainLink преобразует GORM-модель в доменную связь
+// toDomainLink converts a GORM model into a domain link
 func toDomainLink(m *LinkModel) (*link.Link, error) {
 	linkType, err := link.NewLinkType(m.LinkType)
 	if err != nil {
@@ -214,7 +214,7 @@ func toDomainLink(m *LinkModel) (*link.Link, error) {
 	return link.ReconstructLink(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, m.CreatedAt), nil
 }
 
-// toDomainLinks преобразует список GORM-моделей в список доменных связей
+// toDomainLinks converts a list of GORM models into a list of domain links
 func toDomainLinks(models []LinkModel) []*link.Link {
 	result := make([]*link.Link, 0, len(models))
 	for _, m := range models {

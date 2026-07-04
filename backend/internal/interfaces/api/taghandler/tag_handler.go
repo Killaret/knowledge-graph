@@ -11,13 +11,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// Handler — HTTP-хендлер для работы с тегами
+// Handler is the HTTP handler for working with tags
 type Handler struct {
 	tagRepo  *postgres.TagRepository
 	noteRepo note.Repository
 }
 
-// New создает новый хендлер тегов
+// New creates a new tag handler
 func New(tagRepo *postgres.TagRepository, noteRepo note.Repository) *Handler {
 	return &Handler{
 		tagRepo:  tagRepo,
@@ -25,24 +25,24 @@ func New(tagRepo *postgres.TagRepository, noteRepo note.Repository) *Handler {
 	}
 }
 
-// TagResponse — структура ответа с тегом
+// TagResponse is the response structure for a tag
 type TagResponse struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// CreateRequest — запрос на создание тега
+// CreateRequest is the request to create a tag
 type CreateRequest struct {
 	Name string `json:"name" binding:"required,min=1,max=50"`
 }
 
-// UpdateRequest — запрос на обновление тега
+// UpdateRequest is the request to update a tag
 type UpdateRequest struct {
 	Name string `json:"name" binding:"required,min=1,max=50"`
 }
 
-// toTagResponse преобразует модель в ответ
+// toTagResponse converts a model into a response
 func toTagResponse(tag *postgres.TagModel) TagResponse {
 	return TagResponse{
 		ID:        tag.ID.String(),
@@ -51,7 +51,7 @@ func toTagResponse(tag *postgres.TagModel) TagResponse {
 	}
 }
 
-// Create создает новый тег
+// Create creates a new tag
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,7 +61,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Проверяем уникальность имени
+	// Check name uniqueness
 	existing, err := h.tagRepo.FindByName(ctx, req.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check tag existence"})
@@ -85,7 +85,7 @@ func (h *Handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, toTagResponse(tag))
 }
 
-// List возвращает список всех тегов
+// List returns the list of all tags
 func (h *Handler) List(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -103,7 +103,7 @@ func (h *Handler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// Get возвращает тег по ID
+// Get returns a tag by ID
 func (h *Handler) Get(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -126,7 +126,7 @@ func (h *Handler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, toTagResponse(tag))
 }
 
-// Update обновляет тег
+// Update updates a tag
 func (h *Handler) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -143,7 +143,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Проверяем существование тега
+	// Check that the tag exists
 	tag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag"})
@@ -154,7 +154,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	// Проверяем уникальность нового имени (если оно изменилось)
+	// Check uniqueness of the new name (if it changed)
 	if req.Name != tag.Name {
 		existing, err := h.tagRepo.FindByName(ctx, req.Name)
 		if err != nil {
@@ -176,7 +176,7 @@ func (h *Handler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, toTagResponse(tag))
 }
 
-// Delete удаляет тег
+// Delete removes a tag
 func (h *Handler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -187,7 +187,7 @@ func (h *Handler) Delete(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Проверяем существование тега
+	// Check that the tag exists
 	tag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag"})
@@ -206,7 +206,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// AddTagToNote привязывает тег к заметке
+// AddTagToNote attaches a tag to a note
 func (h *Handler) AddTagToNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
@@ -231,7 +231,7 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Проверяем существование заметки
+	// Check that the note exists
 	note, err := h.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check note"})
@@ -242,7 +242,7 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 		return
 	}
 
-	// Проверяем существование тега
+	// Check that the tag exists
 	tag, err := h.tagRepo.FindByID(ctx, tagID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check tag"})
@@ -253,7 +253,7 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 		return
 	}
 
-	// Проверяем, не привязан ли уже тег
+	// Check whether the tag is already attached
 	exists, err := h.tagRepo.IsTagAssignedToNote(ctx, noteID, tagID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check assignment"})
@@ -272,7 +272,7 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-// RemoveTagFromNote отвязывает тег от заметки
+// RemoveTagFromNote detaches a tag from a note
 func (h *Handler) RemoveTagFromNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	tagIDStr := c.Param("tagId")
@@ -299,7 +299,7 @@ func (h *Handler) RemoveTagFromNote(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// GetTagsByNote возвращает теги заметки
+// GetTagsByNote returns a note's tags
 func (h *Handler) GetTagsByNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
@@ -310,7 +310,7 @@ func (h *Handler) GetTagsByNote(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Проверяем существование заметки
+	// Check that the note exists
 	note, err := h.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check note"})

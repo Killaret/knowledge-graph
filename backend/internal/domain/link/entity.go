@@ -28,7 +28,7 @@ func NewLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, met
 	}
 }
 
-// ReconstructLink восстанавливает связь из сохранённых данных
+// ReconstructLink rebuilds a link from persisted data
 func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, createdAt time.Time) *Link {
 	return &Link{
 		id:           id,
@@ -41,7 +41,7 @@ func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkTy
 	}
 }
 
-// Геттеры
+// Getters
 func (l *Link) ID() uuid.UUID {
 	return l.id
 }
@@ -70,7 +70,7 @@ func (l *Link) CreatedAt() time.Time {
 	return l.createdAt
 }
 
-// UpdateWeight обновляет вес связи
+// UpdateWeight updates the link weight
 func (l *Link) UpdateWeight(newWeight Weight) {
 	l.weight = newWeight
 }

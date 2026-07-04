@@ -15,14 +15,14 @@ func NewKeywordRepository(db *gorm.DB) *KeywordRepository {
 	return &KeywordRepository{db: db}
 }
 
-// SaveAll сохраняет ключевые слова для заметки (удаляет старые, вставляет новые)
+// SaveAll saves keywords for a note (deletes old ones, inserts new ones)
 func (r *KeywordRepository) SaveAll(ctx context.Context, noteID uuid.UUID, keywords []NoteKeywordModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Удаляем старые
+		// Delete the old ones
 		if err := tx.Where("note_id = ?", noteID).Delete(&NoteKeywordModel{}).Error; err != nil {
 			return err
 		}
-		// Вставляем новые
+		// Insert the new ones
 		if len(keywords) > 0 {
 			return tx.Create(&keywords).Error
 		}
@@ -30,7 +30,7 @@ func (r *KeywordRepository) SaveAll(ctx context.Context, noteID uuid.UUID, keywo
 	})
 }
 
-// DeleteAll удаляет все ключевые слова заметки
+// DeleteAll removes all keywords of a note
 func (r *KeywordRepository) DeleteAll(ctx context.Context, noteID uuid.UUID) error {
 	return r.db.WithContext(ctx).Where("note_id = ?", noteID).Delete(&NoteKeywordModel{}).Error
 }

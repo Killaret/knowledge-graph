@@ -129,7 +129,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Определяем тип: сначала из корня запроса, затем из metadata
+	// Determine the type: first from the request root, then from metadata
 	noteType := req.Type
 	if noteType == "" && req.Metadata != nil {
 		if t, ok := req.Metadata["type"]; ok {
@@ -146,7 +146,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Ставим задачи в очередь
+	// Enqueue the tasks
 	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
 	if h.taskQueue != nil {
 		noteID := newNote.ID().String()
@@ -213,7 +213,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	// Флаг, изменился ли текст (чтобы ставить задачи)
+	// Flag whether the text changed (to decide whether to enqueue tasks)
 	textChanged := false
 
 	if req.Title != "" {
@@ -250,7 +250,7 @@ func (h *Handler) Update(c *gin.Context) {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		// изменение метаданных не влияет на текст, можно не ставить задачи
+		// metadata changes don't affect the text, so tasks can be skipped
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
@@ -258,7 +258,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	// Если текст изменился, ставим задачи заново
+	// If the text changed, enqueue the tasks again
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
@@ -488,7 +488,7 @@ func (h *Handler) Search(c *gin.Context) {
 		return
 	}
 
-	// Convert domain notes to JSON-структуры (как в методе List)
+	// Convert domain notes to JSON structures (as in the List method)
 	responseNotes := make([]gin.H, len(notes))
 	for i, n := range notes {
 		responseNotes[i] = gin.H{
@@ -514,9 +514,9 @@ func (h *Handler) Search(c *gin.Context) {
 	})
 }
 
-// List возвращает список заметок с пагинацией
+// List returns a paginated list of notes
 func (h *Handler) List(c *gin.Context) {
-	// Получаем параметры пагинации из query
+	// Get pagination parameters from the query
 	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
 
@@ -527,14 +527,14 @@ func (h *Handler) List(c *gin.Context) {
 		limit = h.cfg.PaginationDefaultLimit
 	}
 
-	// Получаем заметки из репозитория
+	// Get notes from the repository
 	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch notes"})
 		return
 	}
 
-	// Преобразуем доменные модели в JSON-структуры
+	// Convert domain models into JSON structures
 	responseNotes := make([]gin.H, len(notes))
 	for i, n := range notes {
 		responseNotes[i] = gin.H{

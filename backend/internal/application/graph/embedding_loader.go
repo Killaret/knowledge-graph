@@ -10,20 +10,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// embeddingRepositoryWithBatch — интерфейс для batch-загрузки эмбеддингов
+// embeddingRepositoryWithBatch is an interface for batch loading of embeddings
 type embeddingRepositoryWithBatch interface {
 	FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]postgres.SimilarNote, error)
 	FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error)
 }
 
-// embeddingNeighborLoader загружает соседей на основе семантического сходства эмбеддингов.
+// embeddingNeighborLoader loads neighbors based on semantic similarity of embeddings.
 type embeddingNeighborLoader struct {
 	embeddingRepo embeddingRepositoryWithBatch
 	limit         int
 }
 
-// NewEmbeddingNeighborLoader создаёт загрузчик для эмбеддингов.
-// limit — сколько самых похожих заметок возвращать (рекомендуется 20-50).
+// NewEmbeddingNeighborLoader creates a loader for embeddings.
+// limit is how many of the most similar notes to return (20-50 recommended).
 func NewEmbeddingNeighborLoader(embeddingRepo *postgres.EmbeddingRepository, limit int) graph.NeighborLoader {
 	return &embeddingNeighborLoader{
 		embeddingRepo: embeddingRepo,
@@ -31,8 +31,8 @@ func NewEmbeddingNeighborLoader(embeddingRepo *postgres.EmbeddingRepository, lim
 	}
 }
 
-// GetNeighbors возвращает рёбра к семантически похожим заметкам.
-// Вес ребра = косинусное сходство эмбеддингов (от 0 до 1).
+// GetNeighbors returns edges to semantically similar notes.
+// The edge weight is the cosine similarity of the embeddings (from 0 to 1).
 func (l *embeddingNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.UUID) ([]graph.Edge, error) {
 	similar, err := l.embeddingRepo.FindSimilarNotes(ctx, nodeID, l.limit)
 	if err != nil {
@@ -51,19 +51,19 @@ func (l *embeddingNeighborLoader) GetNeighbors(ctx context.Context, nodeID uuid.
 	return edges, nil
 }
 
-// GetNeighborsBatch возвращает соседей для нескольких узлов на основе эмбеддингов (batch-запрос)
+// GetNeighborsBatch returns neighbors for multiple nodes based on embeddings (batch query)
 func (l *embeddingNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs []uuid.UUID) (map[uuid.UUID][]graph.Edge, error) {
 	if len(nodeIDs) == 0 {
 		return make(map[uuid.UUID][]graph.Edge), nil
 	}
 
-	// Пробуем привести репозиторий к интерфейсу с batch-методом
+	// Try to assert the repository to the interface with a batch method
 	batchRepo, ok := l.embeddingRepo.(interface {
 		FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error)
 	})
 
 	if !ok {
-		// Fallback на последовательные запросы
+		// Fall back to sequential queries
 		result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
 		for _, nodeID := range nodeIDs {
 			edges, err := l.GetNeighbors(ctx, nodeID)
@@ -75,10 +75,10 @@ func (l *embeddingNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs
 		return result, nil
 	}
 
-	// Batch-запрос
+	// Batch query
 	similarMap, err := batchRepo.FindSimilarNotesBatch(ctx, nodeIDs, l.limit)
 	if err != nil {
-		// Fallback на последовательные запросы при ошибке
+		// Fall back to sequential queries on error
 		result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
 		for _, nodeID := range nodeIDs {
 			edges, err := l.GetNeighbors(ctx, nodeID)
@@ -90,7 +90,7 @@ func (l *embeddingNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs
 		return result, nil
 	}
 
-	// Преобразуем результат в Edge
+	// Convert the result into an Edge
 	result := make(map[uuid.UUID][]graph.Edge, len(nodeIDs))
 	for nodeID, similar := range similarMap {
 		edges := make([]graph.Edge, len(similar))
@@ -104,7 +104,7 @@ func (l *embeddingNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs
 		result[nodeID] = edges
 	}
 
-	// Убеждаемся, что все запрошенные узлы есть в результате (даже если пустые)
+	// Ensure that all requested nodes are present in the result (even if empty)
 	for _, nodeID := range nodeIDs {
 		if _, ok := result[nodeID]; !ok {
 			result[nodeID] = []graph.Edge{}

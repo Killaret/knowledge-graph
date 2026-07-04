@@ -18,7 +18,7 @@ func NewEmbeddingRepository(db *gorm.DB) *EmbeddingRepository {
 	return &EmbeddingRepository{db: db}
 }
 
-// Upsert создаёт или обновляет эмбеддинг для заметки
+// Upsert creates or updates the embedding for a note
 func (r *EmbeddingRepository) Upsert(ctx context.Context, noteID uuid.UUID, embedding pgvector.Vector) error {
 	return r.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "note_id"}},
@@ -30,18 +30,18 @@ func (r *EmbeddingRepository) Upsert(ctx context.Context, noteID uuid.UUID, embe
 	}).Error
 }
 
-// Delete удаляет эмбеддинг для заметки
+// Delete removes the embedding for a note
 func (r *EmbeddingRepository) Delete(ctx context.Context, noteID uuid.UUID) error {
 	return r.db.WithContext(ctx).Where("note_id = ?", noteID).Delete(&NoteEmbeddingModel{}).Error
 }
 
-// SimilarNote — структура для результата поиска похожих заметок
+// SimilarNote is the result structure for a similar-notes search
 type SimilarNote struct {
 	NoteID uuid.UUID `gorm:"column:note_id"`
 	Score  float64   `gorm:"column:similarity"`
 }
 
-// FindSimilarNotes возвращает до limit заметок, семантически похожих на данную.
+// FindSimilarNotes returns up to limit notes semantically similar to the given one.
 func (r *EmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]SimilarNote, error) {
 	var results []SimilarNote
 
@@ -60,14 +60,14 @@ func (r *EmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.
 	return results, nil
 }
 
-// BatchSimilarNote представляет похожую заметку в batch-запросе
+// BatchSimilarNote represents a similar note in a batch query
 type BatchSimilarNote struct {
 	SourceID uuid.UUID `gorm:"column:source_id"`
 	NoteID   uuid.UUID `gorm:"column:note_id"`
 	Score    float64   `gorm:"column:similarity"`
 }
 
-// FindSimilarNotesBatch возвращает похожие заметки для нескольких note ID (batch-запрос)
+// FindSimilarNotesBatch returns similar notes for multiple note IDs (batch query)
 func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]SimilarNote, error) {
 	if len(noteIDs) == 0 {
 		return make(map[uuid.UUID][]SimilarNote), nil
@@ -75,7 +75,7 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
 
 	var results []BatchSimilarNote
 
-	// Используем DISTINCT ON для получения топ-N для каждого source_id
+	// Use DISTINCT ON to get the top-N for each source_id
 	err := r.db.WithContext(ctx).Raw(`
         SELECT DISTINCT ON (e1.note_id, e2.note_id) 
             e1.note_id as source_id,
@@ -91,10 +91,10 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
 		return nil, err
 	}
 
-	// Группируем результаты по source_id
+	// Group results by source_id
 	grouped := make(map[uuid.UUID][]SimilarNote)
 	for _, r := range results {
-		// Ограничиваем количество результатов для каждого source
+		// Limit the number of results for each source
 		if len(grouped[r.SourceID]) < limit {
 			grouped[r.SourceID] = append(grouped[r.SourceID], SimilarNote{
 				NoteID: r.NoteID,

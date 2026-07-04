@@ -8,7 +8,7 @@ import (
 	"gorm.io/datatypes"
 )
 
-// NoteModel — модель заметки
+// NoteModel is the note model
 type NoteModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title        string         `gorm:"not null"`
@@ -24,7 +24,7 @@ func (NoteModel) TableName() string {
 	return "notes"
 }
 
-// LinkModel — связь между заметками
+// LinkModel is a link between notes
 type LinkModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	SourceNoteID uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:source_note_id"`
@@ -42,7 +42,7 @@ func (LinkModel) TableName() string {
 	return "links"
 }
 
-// NoteKeywordModel — ключевые слова заметки
+// NoteKeywordModel holds a note's keywords
 type NoteKeywordModel struct {
 	NoteID  uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Keyword string    `gorm:"primaryKey"`
@@ -55,7 +55,7 @@ func (NoteKeywordModel) TableName() string {
 	return "note_keywords"
 }
 
-// NoteEmbeddingModel — векторное представление заметки
+// NoteEmbeddingModel is the vector representation of a note
 type NoteEmbeddingModel struct {
 	NoteID    uuid.UUID       `gorm:"type:uuid;primaryKey"`
 	Embedding pgvector.Vector `gorm:"type:vector(384)"`
@@ -68,7 +68,7 @@ func (NoteEmbeddingModel) TableName() string {
 	return "note_embeddings"
 }
 
-// TagModel — тег
+// TagModel is a tag
 type TagModel struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name      string    `gorm:"uniqueIndex;not null"`
@@ -77,7 +77,7 @@ type TagModel struct {
 
 func (TagModel) TableName() string { return "tags" }
 
-// NoteTagModel — связь заметки с тегом (многие-ко-многим)
+// NoteTagModel is a note-to-tag relation (many-to-many)
 type NoteTagModel struct {
 	NoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
 	TagID  uuid.UUID `gorm:"type:uuid;primaryKey"`
@@ -87,7 +87,7 @@ type NoteTagModel struct {
 
 func (NoteTagModel) TableName() string { return "note_tags" }
 
-// UserModel — пользователь
+// UserModel is a user
 type UserModel struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Login        string    `gorm:"uniqueIndex;not null"`
@@ -98,7 +98,7 @@ type UserModel struct {
 
 func (UserModel) TableName() string { return "users" }
 
-// NoteLikeModel — лайк/дизлайк
+// NoteLikeModel is a like/dislike
 type NoteLikeModel struct {
 	UserID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	NoteID    uuid.UUID `gorm:"type:uuid;primaryKey"`
@@ -110,7 +110,7 @@ type NoteLikeModel struct {
 
 func (NoteLikeModel) TableName() string { return "note_likes" }
 
-// SuggestionFeedbackModel — обратная связь
+// SuggestionFeedbackModel is feedback
 type SuggestionFeedbackModel struct {
 	UserID          uuid.UUID `gorm:"type:uuid;primaryKey"`
 	SourceNoteID    uuid.UUID `gorm:"type:uuid;primaryKey"`
@@ -124,7 +124,7 @@ type SuggestionFeedbackModel struct {
 
 func (SuggestionFeedbackModel) TableName() string { return "suggestion_feedback" }
 
-// ShareLinkModel — расшаривание
+// ShareLinkModel is a share link
 type ShareLinkModel struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	NoteID         uuid.UUID `gorm:"type:uuid;not null;index"`

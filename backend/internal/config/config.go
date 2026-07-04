@@ -72,7 +72,7 @@ type JSONConfig struct {
 }
 
 type Config struct {
-	// Сервер
+	// Server
 	ServerPort                   string
 	ServerRateLimitEnabled       bool
 	ServerRateLimitRequests      int
@@ -80,7 +80,7 @@ type Config struct {
 	ServerRateLimitEndpoints     map[string]int
 	ServerFallbackPorts          []string
 
-	// База данных
+	// Database
 	DatabaseURL               string
 	DatabaseRetryMaxAttempts  int
 	DatabaseRetryDelaySeconds int
@@ -97,7 +97,7 @@ type Config struct {
 	SearchRankingWeights    map[string]float64
 	SearchFallbackToILike   bool
 
-	// Рекомендации (граф)
+	// Recommendations (graph)
 	RecommendationAlpha      float64
 	RecommendationBeta       float64
 	RecommendationDepth      int
@@ -105,8 +105,8 @@ type Config struct {
 	RecommendationCacheTTL   time.Duration
 	EmbeddingSimilarityLimit int
 
-	// Загрузка графа (визуализация)
-	GraphLoadDepth int // Глубина загрузки графа для визуализации
+	// Graph loading (visualization)
+	GraphLoadDepth int // Graph load depth for visualization
 
 	// Pagination
 	PaginationDefaultLimit int
@@ -118,34 +118,34 @@ type Config struct {
 	GraphLinkDefaultLimit int
 	GraphLinkMaxLimit     int
 
-	// Новые параметры для улучшения алгоритма рекомендаций
-	RecommendationGamma                   float64       // Коэффициент для дополнительного компонента
-	BFSAggregation                        string        // Метод агрегации BFS: "max", "sum", "avg"
-	BFSNormalize                          bool          // Нормализация весов в BFS
-	RecommendationTopN                    int           // Количество рекомендаций для сохранения
-	RecommendationTaskDelaySeconds        int           // Задержка перед выполнением задачи (dedup)
-	RecommendationBatchRateLimit          int           // Rate limit для batch обработки
-	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
-	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
-	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
-	AsynqConcurrency                      int           // Уровень параллелизма Asynq
-	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
-	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+	// New parameters to improve the recommendation algorithm
+	RecommendationGamma                   float64       // Coefficient for the additional component
+	BFSAggregation                        string        // BFS aggregation method: "max", "sum", "avg"
+	BFSNormalize                          bool          // Normalize weights in BFS
+	RecommendationTopN                    int           // Number of recommendations to store
+	RecommendationTaskDelaySeconds        int           // Delay before executing the task (dedup)
+	RecommendationBatchRateLimit          int           // Rate limit for batch processing
+	RecommendationFallbackEnabled         bool          // Enable fallback to Redis
+	RecommendationFallbackTTL             time.Duration // TTL for the fallback cache
+	RecommendationFallbackSemanticEnabled bool          // Enable fallback to semantic neighbors
+	AsynqConcurrency                      int           // Asynq concurrency level
+	AsynqQueueDefault                     int           // Priority of the default Asynq queue
+	AsynqQueueMaxLen                      int           // Maximum queue length
 }
 
-// loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
-// Возвращает nil если файл не существует или не может быть прочитан
+// loadJSONConfig loads the configuration from knowledge-graph.config.json
+// Returns nil if the file does not exist or cannot be read
 func loadJSONConfig() *JSONConfig {
-	// Определяем путь к корню проекта (где находится knowledge-graph.config.json)
-	// Пробуем несколько вариантов поиска файла
+	// Determine the path to the project root (where knowledge-graph.config.json lives)
+	// Try several ways of locating the file
 	possiblePaths := []string{
-		"knowledge-graph.config.json", // текущая директория
+		"knowledge-graph.config.json", // current directory
 	}
 
-	// Добавляем путь относительно расположения этого файла (backend/internal/config)
+	// Add a path relative to this file's location (backend/internal/config)
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
-		// От корня проекта: backend/internal/config -> ../../../knowledge-graph.config.json
+		// From the project root: backend/internal/config -> ../../../knowledge-graph.config.json
 		configDir := filepath.Dir(filename)
 		projectRoot := filepath.Join(configDir, "..", "..", "..")
 		possiblePaths = append(possiblePaths, filepath.Join(projectRoot, "knowledge-graph.config.json"))
@@ -163,7 +163,7 @@ func loadJSONConfig() *JSONConfig {
 	}
 
 	if err != nil {
-		// Файл не найден - это нормально, используем только env vars
+		// File not found — that's fine, we use only env vars
 		log.Printf("[Config] knowledge-graph.config.json not found, using env vars only")
 		return nil
 	}
@@ -178,12 +178,12 @@ func loadJSONConfig() *JSONConfig {
 	return &jsonCfg
 }
 
-// Load загружает конфигурацию из переменных окружения.
-// Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
-// иначе используется встроенное значение по умолчанию.
-// Для обязательных переменных (DatabaseURL) используется mustGetEnv.
+// Load loads the configuration from environment variables.
+// If a variable is not set, the default value from the JSON config (if present) is used,
+// otherwise the built-in default value is used.
+// For required variables (DatabaseURL), mustGetEnv is used.
 func Load() *Config {
-	// Загружаем JSON конфиг как источник дефолтных значений
+	// Load the JSON config as the source of default values
 	jsonCfg := loadJSONConfig()
 
 	cfg := &Config{
@@ -218,7 +218,7 @@ func Load() *Config {
 		RecommendationCacheTTL:   time.Duration(getIntEnv("RECOMMENDATION_CACHE_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.CacheTTLSeconds }, 300))) * time.Second,
 		EmbeddingSimilarityLimit: getIntEnv("EMBEDDING_SIMILARITY_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Embedding.SimilarityLimit }, 30)),
 
-		// Загрузка графа
+		// Graph loading
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LoadDepth }, 2)),
 
 		// Pagination
@@ -231,7 +231,7 @@ func Load() *Config {
 		GraphLinkDefaultLimit: getIntEnv("GRAPH_LINK_DEFAULT_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkDefaultLimit }, 500)),
 		GraphLinkMaxLimit:     getIntEnv("GRAPH_LINK_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkMaxLimit }, 5000)),
 
-		// Новые параметры
+		// New parameters
 		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Gamma }, 0.2)),
 		BFSAggregation:                        getEnv("BFS_AGGREGATION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.BFSAggregation }, "max")),
 		BFSNormalize:                          getBoolEnv("BFS_NORMALIZE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.BFSNormalize }, true)),

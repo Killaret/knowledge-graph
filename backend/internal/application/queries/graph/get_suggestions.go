@@ -46,7 +46,7 @@ func NewGetSuggestionsHandler(
 }
 
 func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestionsQuery) ([]SuggestionDTO, error) {
-	// 1. Проверяем кэш
+	// 1. Check the cache
 	cacheKey := fmt.Sprintf("suggestions:%s:%d", query.NoteID.String(), query.Limit)
 	if h.cache != nil {
 		cached, err := h.cache.Get(ctx, cacheKey).Bytes()
@@ -58,13 +58,13 @@ func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestions
 		}
 	}
 
-	// 2. Получаем рекомендации через доменный сервис (глубина 3, затухание 0.5, берём с запасом)
+	// 2. Get recommendations via the domain service (depth 3, decay 0.5, fetch extra as a buffer)
 	suggestions, err := h.traversalSvc.GetSuggestions(ctx, query.NoteID, query.Limit*2)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Загружаем заголовки заметок (можно оптимизировать, загружая все сразу)
+	// 3. Load note titles (could be optimized by loading all at once)
 	result := make([]SuggestionDTO, 0, len(suggestions))
 	for _, s := range suggestions {
 		noteEntity, err := h.noteRepo.FindByID(ctx, s.NodeID)
@@ -81,7 +81,7 @@ func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestions
 		}
 	}
 
-	// 4. Сохраняем в кэш
+	// 4. Store in the cache
 	if h.cache != nil && len(result) > 0 {
 		data, _ := json.Marshal(result)
 		h.cache.Set(ctx, cacheKey, data, h.cacheTTL)

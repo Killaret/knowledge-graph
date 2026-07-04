@@ -6,12 +6,12 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-// TaskQueue интерфейс для постановки асинхронных задач.
+// TaskQueue is the interface for enqueuing asynchronous tasks.
 type TaskQueue interface {
-	// Enqueue ставит произвольную задачу в очередь.
+	// Enqueue puts an arbitrary task into the queue.
 	Enqueue(ctx context.Context, task *asynq.Task) error
-	// EnqueueExtractKeywords ставит задачу извлечения ключевых слов для заметки.
+	// EnqueueExtractKeywords enqueues a keyword extraction task for a note.
 	EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error
-	// EnqueueComputeEmbedding ставит задачу вычисления эмбеддинга для заметки.
+	// EnqueueComputeEmbedding enqueues an embedding computation task for a note.
 	EnqueueComputeEmbedding(ctx context.Context, noteID string) error
 }

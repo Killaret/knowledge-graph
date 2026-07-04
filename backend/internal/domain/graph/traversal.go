@@ -26,7 +26,7 @@ type TraversalService struct {
 	loader      NeighborLoader
 	depth       int
 	decay       float64
-	aggregation string // "max" или "sum"
+	aggregation string // "max" or "sum"
 	normalize   bool
 }
 
@@ -68,7 +68,7 @@ func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uu
 	queue := []bfsItem{{nodeID: startID, weight: 1.0, depth: 0}}
 	bestWeight[startID] = 1.0
 
-	// Для sum-агрегации отслеживаем visited, чтобы не обрабатывать узлы повторно
+	// For sum aggregation, track visited nodes to avoid processing them repeatedly
 	var visited map[uuid.UUID]bool
 	if s.aggregation == "sum" {
 		visited = make(map[uuid.UUID]bool)
@@ -79,7 +79,7 @@ func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uu
 		current := queue[0]
 		queue = queue[1:]
 
-		// Для max-агрегации: пропускаем, если нашли лучший путь
+		// For max aggregation: skip if a better path was already found
 		if s.aggregation == "max" && current.weight < bestWeight[current.nodeID] {
 			continue
 		}
@@ -120,7 +120,7 @@ func (s *TraversalService) runBFS(ctx context.Context, startID uuid.UUID) map[uu
 
 	delete(bestWeight, startID)
 
-	// Нормализация
+	// Normalization
 	if s.normalize {
 		maxW := 0.0
 		for _, w := range bestWeight {

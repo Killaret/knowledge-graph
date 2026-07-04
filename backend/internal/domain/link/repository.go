@@ -14,6 +14,6 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	DeleteBySource(ctx context.Context, sourceID uuid.UUID) error
 	FindAll(ctx context.Context) ([]*Link, error)
-	// FindAllPaginated возвращает все связи с пагинацией (limit=0 для всех записей)
+	// FindAllPaginated returns all links with pagination (limit=0 for all records)
 	FindAllPaginated(ctx context.Context, limit, offset int) ([]*Link, int64, error)
 }

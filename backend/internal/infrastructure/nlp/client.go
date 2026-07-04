@@ -14,13 +14,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Keyword представляет одно ключевое слово с весом
+// Keyword represents a single keyword with a weight
 type Keyword struct {
 	Keyword string  `json:"keyword"`
 	Weight  float64 `json:"weight"`
 }
 
-// NLPClient — клиент для вызова Python-микросервиса
+// NLPClient is the client for calling the Python microservice
 type NLPClient struct {
 	httpClient *http.Client
 	baseURL    string
@@ -28,8 +28,8 @@ type NLPClient struct {
 	cacheTTL   time.Duration
 }
 
-// NewNLPClient создаёт новый клиент
-// redisClient может быть nil, тогда кэширование отключено
+// NewNLPClient creates a new client
+// redisClient may be nil, in which case caching is disabled
 func NewNLPClient(baseURL string, redisClient *redis.Client, cacheTTL time.Duration) *NLPClient {
 	return &NLPClient{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
@@ -39,7 +39,7 @@ func NewNLPClient(baseURL string, redisClient *redis.Client, cacheTTL time.Durat
 	}
 }
 
-// ExtractKeywords вызывает /extract_keywords и возвращает список ключевых слов
+// ExtractKeywords calls /extract_keywords and returns the list of keywords
 func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) ([]Keyword, error) {
 	reqBody := map[string]interface{}{
 		"text":  text,
@@ -81,21 +81,21 @@ func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) 
 	return result.Keywords, nil
 }
 
-// Embed вызывает /embed и возвращает вектор ([]float32)
-// Результат кэшируется в Redis (если redisClient передан)
+// Embed calls /embed and returns the vector ([]float32)
+// The result is cached in Redis (if redisClient is provided)
 func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
-	// Проверяем кэш
+	// Check the cache
 	if c.redis != nil {
 		hash := sha256.Sum256([]byte(text))
 		key := "embed:" + hex.EncodeToString(hash[:])
 		cached, err := c.redis.Get(ctx, key).Bytes()
 		if err == nil {
-			// десериализуем из JSON
+			// deserialize from JSON
 			var embedding []float32
 			if err := json.Unmarshal(cached, &embedding); err == nil {
 				return embedding, nil
 			}
-			// если ошибка декодирования, просто продолжаем
+			// on a decoding error, just continue
 		}
 	}
 
@@ -134,18 +134,18 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	// Сохраняем в кэш
+	// Store in the cache
 	if c.redis != nil && len(result.Embedding) > 0 {
 		hash := sha256.Sum256([]byte(text))
 		key := "embed:" + hex.EncodeToString(hash[:])
 		data, _ := json.Marshal(result.Embedding)
-		_ = c.redis.Set(ctx, key, data, c.cacheTTL).Err() // ошибку игнорируем
+		_ = c.redis.Set(ctx, key, data, c.cacheTTL).Err() // ignore the error
 	}
 
 	return result.Embedding, nil
 }
 
-// HealthCheck проверяет доступность NLP сервиса
+// HealthCheck checks the availability of the NLP service
 func (c *NLPClient) HealthCheck(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

@@ -30,7 +30,7 @@ func NewNoteRepository(db *gorm.DB, redis *redis.Client) *NoteRepository {
 	return &NoteRepository{db: db, redis: redis}
 }
 
-// invalidateCache удаляет кэш списка заметок
+// invalidateCache removes the notes-list cache
 func (r *NoteRepository) invalidateCache(ctx context.Context) {
 	if r.redis != nil {
 		r.redis.Del(ctx, notesCacheKey)
@@ -48,7 +48,7 @@ func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
 			return err
 		}
-		// Инвалидация кэша при создании новой заметки
+		// Invalidate the cache when a new note is created
 		r.invalidateCache(ctx)
 		return nil
 	}
@@ -79,22 +79,22 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error; err != nil {
 		return err
 	}
-	// Инвалидация кэша при удалении заметки
+	// Invalidate the cache when a note is deleted
 	r.invalidateCache(ctx)
 	return nil
 }
 
-// FindAllPaginated возвращает заметки с пагинацией на уровне БД
-// limit=0 означает "все записи"
+// FindAllPaginated returns notes with pagination at the database level
+// limit=0 means "all records"
 func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	var total int64
 
-	// Считаем общее количество
+	// Count the total number
 	if err := r.db.WithContext(ctx).Model(&NoteModel{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Запрос с пагинацией
+	// Paginated query
 	query := r.db.WithContext(ctx).Order("created_at DESC")
 	if limit > 0 {
 		query = query.Limit(limit).Offset(offset)
@@ -108,22 +108,22 @@ func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	return toDomainNotes(models), total, nil
 }
 
-// FindAll возвращает все заметки без пагинации с кэшированием в Redis
-// DEPRECATED: используйте FindAllPaginated для больших наборов данных
+// FindAll returns all notes without pagination, cached in Redis
+// DEPRECATED: use FindAllPaginated for large data sets
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
-	// 1. Проверяем кэш Redis (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
+	// 1. Check the Redis cache (we cache NoteModel, not Note, because Note has unexported fields)
 	if r.redis != nil {
 		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
 		if err == nil {
 			var models []NoteModel
 			if err := json.Unmarshal(cached, &models); err == nil {
-				// Конвертируем модели в доменные объекты
+				// Convert models into domain objects
 				return toDomainNotes(models), nil
 			}
 		}
 	}
 
-	// 2. Получаем из БД
+	// 2. Fetch from the database
 	var models []NoteModel
 	err := r.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error
 	if err != nil {
@@ -131,7 +131,7 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	}
 	notes := toDomainNotes(models)
 
-	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
+	// 3. Store in the cache (NoteModel with exported fields)
 	if r.redis != nil {
 		if data, err := json.Marshal(models); err == nil {
 			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
@@ -141,7 +141,7 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return notes, nil
 }
 
-// List возвращает заметки с пагинацией
+// List returns notes with pagination
 func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
 	var total int64
@@ -178,7 +178,7 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 			search_vector @@ plainto_tsquery('simple', ?)
 		`, query, query)
 
-		// Безопасная сортировка: используем placeholder для query в ts_rank
+		// Safe sorting: use a placeholder for the query in ts_rank
 		db = db.Order(clause.Expr{
 			SQL:  "COALESCE(ts_rank(search_vector, plainto_tsquery('russian', ?)), 0) + COALESCE(ts_rank(search_vector, plainto_tsquery('simple', ?)), 0) DESC",
 			Vars: []interface{}{query, query},
@@ -228,7 +228,7 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 	return toDomainNotes(models), total, nil
 }
 
-// toGormNote преобразует доменную заметку в GORM-модель
+// toGormNote converts a domain note into a GORM model
 func toGormNote(n *note.Note) (NoteModel, error) {
 	metadataJSON, err := json.Marshal(n.Metadata().Value())
 	if err != nil {
@@ -249,7 +249,7 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 	}, nil
 }
 
-// toDomainNote преобразует GORM-модель в доменную заметку
+// toDomainNote converts a GORM model into a domain note
 func toDomainNote(m *NoteModel) (*note.Note, error) {
 	title, err := note.NewTitle(m.Title)
 	if err != nil {
@@ -276,13 +276,13 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	return note.ReconstructNote(m.ID, title, content, noteType, metadata, m.CreatedAt, m.UpdatedAt), nil
 }
 
-// toDomainNotes преобразует список GORM-моделей в список доменных сущностей
+// toDomainNotes converts a list of GORM models into a list of domain entities
 func toDomainNotes(models []NoteModel) []*note.Note {
 	result := make([]*note.Note, 0, len(models))
 	for _, m := range models {
 		n, err := toDomainNote(&m)
 		if err != nil {
-			// Логируем ошибку, но продолжаем (пропускаем битые записи)
+			// Log the error but continue (skip broken records)
 			continue
 		}
 		result = append(result, n)

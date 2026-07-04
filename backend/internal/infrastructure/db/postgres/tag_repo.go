@@ -8,22 +8,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// TagRepository — репозиторий для работы с тегами
+// TagRepository is the repository for working with tags
 type TagRepository struct {
 	db *gorm.DB
 }
 
-// NewTagRepository создает новый репозиторий
+// NewTagRepository creates a new repository
 func NewTagRepository(db *gorm.DB) *TagRepository {
 	return &TagRepository{db: db}
 }
 
-// Create сохраняет новый тег
+// Create saves a new tag
 func (r *TagRepository) Create(ctx context.Context, tag *TagModel) error {
 	return r.db.WithContext(ctx).Create(tag).Error
 }
 
-// FindByID ищет тег по ID
+// FindByID looks up a tag by ID
 func (r *TagRepository) FindByID(ctx context.Context, id uuid.UUID) (*TagModel, error) {
 	var tag TagModel
 	err := r.db.WithContext(ctx).First(&tag, "id = ?", id).Error
@@ -36,7 +36,7 @@ func (r *TagRepository) FindByID(ctx context.Context, id uuid.UUID) (*TagModel, 
 	return &tag, nil
 }
 
-// FindByName ищет тег по имени
+// FindByName looks up a tag by name
 func (r *TagRepository) FindByName(ctx context.Context, name string) (*TagModel, error) {
 	var tag TagModel
 	err := r.db.WithContext(ctx).First(&tag, "name = ?", name).Error
@@ -49,17 +49,17 @@ func (r *TagRepository) FindByName(ctx context.Context, name string) (*TagModel,
 	return &tag, nil
 }
 
-// Update обновляет тег
+// Update updates a tag
 func (r *TagRepository) Update(ctx context.Context, tag *TagModel) error {
 	return r.db.WithContext(ctx).Save(tag).Error
 }
 
-// Delete удаляет тег
+// Delete removes a tag
 func (r *TagRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&TagModel{}, "id = ?", id).Error
 }
 
-// AddTagToNote добавляет тег к заметке
+// AddTagToNote adds a tag to a note
 func (r *TagRepository) AddTagToNote(ctx context.Context, noteID, tagID uuid.UUID) error {
 	noteTag := &NoteTagModel{
 		NoteID: noteID,
@@ -68,14 +68,14 @@ func (r *TagRepository) AddTagToNote(ctx context.Context, noteID, tagID uuid.UUI
 	return r.db.WithContext(ctx).Create(noteTag).Error
 }
 
-// RemoveTagFromNote удаляет тег от заметки
+// RemoveTagFromNote removes a tag from a note
 func (r *TagRepository) RemoveTagFromNote(ctx context.Context, noteID, tagID uuid.UUID) error {
 	return r.db.WithContext(ctx).
 		Where("note_id = ? AND tag_id = ?", noteID, tagID).
 		Delete(&NoteTagModel{}).Error
 }
 
-// GetTagsForNote возвращает все теги заметки
+// GetTagsForNote returns all tags of a note
 func (r *TagRepository) GetTagsForNote(ctx context.Context, noteID uuid.UUID) ([]*TagModel, error) {
 	var tags []*TagModel
 	err := r.db.WithContext(ctx).
@@ -87,7 +87,7 @@ func (r *TagRepository) GetTagsForNote(ctx context.Context, noteID uuid.UUID) ([
 	return tags, err
 }
 
-// GetNotesForTag возвращает все заметки с тегом
+// GetNotesForTag returns all notes that have the tag
 func (r *TagRepository) GetNotesForTag(ctx context.Context, tagID uuid.UUID) ([]*NoteModel, error) {
 	var notes []*NoteModel
 	err := r.db.WithContext(ctx).
@@ -99,21 +99,21 @@ func (r *TagRepository) GetNotesForTag(ctx context.Context, tagID uuid.UUID) ([]
 	return notes, err
 }
 
-// Exists проверяет существование тега
+// Exists checks whether a tag exists
 func (r *TagRepository) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&TagModel{}).Where("id = ?", id).Count(&count).Error
 	return count > 0, err
 }
 
-// FindAll возвращает все теги
+// FindAll returns all tags
 func (r *TagRepository) FindAll(ctx context.Context) ([]*TagModel, error) {
 	var tags []*TagModel
 	err := r.db.WithContext(ctx).Find(&tags).Error
 	return tags, err
 }
 
-// IsTagAssignedToNote проверяет, привязан ли тег к заметке
+// IsTagAssignedToNote checks whether a tag is assigned to a note
 func (r *TagRepository) IsTagAssignedToNote(ctx context.Context, noteID, tagID uuid.UUID) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
@@ -123,7 +123,7 @@ func (r *TagRepository) IsTagAssignedToNote(ctx context.Context, noteID, tagID u
 	return count > 0, err
 }
 
-// GetTagsByNoteID возвращает теги заметки (алиас для GetTagsForNote)
+// GetTagsByNoteID returns a note's tags (alias for GetTagsForNote)
 func (r *TagRepository) GetTagsByNoteID(ctx context.Context, noteID uuid.UUID) ([]*TagModel, error) {
 	return r.GetTagsForNote(ctx, noteID)
 }

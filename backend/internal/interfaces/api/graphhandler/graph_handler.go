@@ -53,7 +53,7 @@ func (h *Handler) GetGraph(c *gin.Context) {
 		return
 	}
 
-	// Парсим параметр depth из query (с ограничением по maxDepth)
+	// Parse the depth parameter from the query (bounded by maxDepth)
 	depth := h.cfg.GraphLoadDepth
 	if d := c.Query("depth"); d != "" {
 		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
@@ -65,18 +65,18 @@ func (h *Handler) GetGraph(c *gin.Context) {
 		}
 	}
 
-	// BFS для загрузки графа с заданной глубиной
+	// BFS to load the graph up to the given depth
 	nodes, links := h.loadGraphBFS(c.Request.Context(), centerID, depth)
 
 	c.JSON(200, GraphData{Nodes: nodes, Links: links})
 }
 
-// loadGraphBFS загружает граф с помощью BFS до заданной глубины
+// loadGraphBFS loads the graph via BFS up to the given depth
 func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth int) ([]GraphNode, []GraphLink) {
 	nodeMap := make(map[uuid.UUID]bool)
-	linkMap := make(map[string]GraphLink) // ключ: "source->target"
+	linkMap := make(map[string]GraphLink) // key: "source->target"
 
-	// BFS очередь: [noteID, depth]
+	// BFS queue: [noteID, depth]
 	type queueItem struct {
 		id    uuid.UUID
 		depth int
@@ -85,7 +85,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	nodeMap[centerID] = true
 
 	for len(queue) > 0 {
-		// Извлекаем из очереди
+		// Pop from the queue
 		item := queue[0]
 		queue = queue[1:]
 
@@ -93,7 +93,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			continue
 		}
 
-		// Загружаем исходящие связи
+		// Load outgoing links
 		outgoing, err := h.linkRepo.FindBySource(ctx, item.id)
 		if err != nil {
 			log.Printf("Error finding outgoing links for %s: %v", item.id, err)
@@ -116,7 +116,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			}
 		}
 
-		// Загружаем входящие связи
+		// Load incoming links
 		incoming, err := h.linkRepo.FindByTarget(ctx, item.id)
 		if err != nil {
 			log.Printf("Error finding incoming links for %s: %v", item.id, err)
@@ -140,14 +140,14 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 		}
 	}
 
-	// Формируем список узлов
+	// Build the list of nodes
 	nodes := make([]GraphNode, 0, len(nodeMap))
 	for id := range nodeMap {
 		n, err := h.noteRepo.FindByID(ctx, id)
 		if err != nil || n == nil {
 			continue
 		}
-		// Определяем тип небесного тела
+		// Determine the celestial body type
 		nodeType := "star"
 		if metadata := n.Metadata().Value(); metadata != nil {
 			if t, ok := metadata["type"]; ok {
@@ -163,7 +163,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 		})
 	}
 
-	// Формируем список связей
+	// Build the list of links
 	links := make([]GraphLink, 0, len(linkMap))
 	for _, link := range linkMap {
 		links = append(links, link)
@@ -172,23 +172,23 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	return nodes, links
 }
 
-// GetFullGraph возвращает полный граф всех заметок и связей с пагинацией
+// GetFullGraph returns the full graph of all notes and links with pagination
 // Query params:
-//   - limit: максимальное количество заметок (default: cfg.GraphDefaultLimit, max: cfg.GraphMaxLimit)
-//   - offset: смещение для пагинации (default: 0)
-//   - link_limit: максимальное количество связей (default: cfg.GraphLinkDefaultLimit, max: cfg.GraphLinkMaxLimit)
+//   - limit: maximum number of notes (default: cfg.GraphDefaultLimit, max: cfg.GraphMaxLimit)
+//   - offset: pagination offset (default: 0)
+//   - link_limit: maximum number of links (default: cfg.GraphLinkDefaultLimit, max: cfg.GraphLinkMaxLimit)
 func (h *Handler) GetFullGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Парсим параметры пагинации для заметок
+	// Parse pagination parameters for notes
 	limit := h.cfg.GraphDefaultLimit // default from config
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed >= 0 {
-			// Ограничиваем максимум для защиты
+			// Cap the maximum for protection
 			if parsed > h.cfg.GraphMaxLimit {
 				limit = h.cfg.GraphMaxLimit
 			} else if parsed == 0 {
-				limit = 0 // все записи
+				limit = 0 // all records
 			} else {
 				limit = parsed
 			}
@@ -202,14 +202,14 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		}
 	}
 
-	// Парсим параметры пагинации для связей
+	// Parse pagination parameters for links
 	linkLimit := h.cfg.GraphLinkDefaultLimit // default from config
 	if linkLimitStr := c.Query("link_limit"); linkLimitStr != "" {
 		if parsed, err := strconv.Atoi(linkLimitStr); err == nil && parsed >= 0 {
 			if parsed > h.cfg.GraphLinkMaxLimit {
 				linkLimit = h.cfg.GraphLinkMaxLimit
 			} else if parsed == 0 {
-				linkLimit = 0 // все записи
+				linkLimit = 0 // all records
 			} else {
 				linkLimit = parsed
 			}
@@ -223,7 +223,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		}
 	}
 
-	// Загружаем заметки с пагинацией на уровне БД
+	// Load notes with pagination at the database level
 	notes, totalNotes, err := h.noteRepo.FindAllPaginated(ctx, limit, offset)
 	if err != nil {
 		log.Printf("Error loading notes: %v", err)
@@ -231,7 +231,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		return
 	}
 
-	// Загружаем связи с пагинацией на уровне БД
+	// Load links with pagination at the database level
 	links, totalLinks, err := h.linkRepo.FindAllPaginated(ctx, linkLimit, linkOffset)
 	if err != nil {
 		log.Printf("Error loading links: %v", err)
@@ -239,11 +239,11 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		return
 	}
 
-	// Формируем ответ
+	// Build the response
 	nodes := make([]GraphNode, 0, len(notes))
 	debugTypes := make(map[string]int)
 
-	// Все возможные типы узлов для разнообразия
+	// All possible node types for variety
 	celestialTypes := []string{"star", "planet", "moon", "asteroid", "nebula", "satellite", "comet", "blackhole", "galaxy"}
 
 	for i, n := range notes {
@@ -257,7 +257,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 				}
 			}
 		}
-		// Если тип не задан в metadata, генерируем на основе индекса для разнообразия
+		// If the type is not set in metadata, generate one from the index for variety
 		if !hasTypeFromMetadata {
 			nodeType = celestialTypes[i%len(celestialTypes)]
 		}
@@ -285,7 +285,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	}
 	log.Printf("[GraphHandler] Converted graphLinks: %d", len(graphLinks))
 
-	// Возвращаем с метаданными пагинации
+	// Return with pagination metadata
 	c.JSON(200, gin.H{
 		"nodes": nodes,
 		"links": graphLinks,
