@@ -194,5 +194,6 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Iteration 1 completed.
 - Iteration 2 completed.
 - Iteration 3 completed (keyboard shortcuts, bulk actions menu, visual feedback).
-- Iteration 4 in progress (hotkeys added, two-stage undo toast implemented).
+- Iteration 4 in progress (hotkeys added, two-stage undo toast implemented, Delete all links button added).
+- GraphCanvas FSD refactoring: attempted but paused due to SvelteKit alias configuration issues. Structure created in commits 5addc3c-95b060f, reverted to 068714f for stability.
 
