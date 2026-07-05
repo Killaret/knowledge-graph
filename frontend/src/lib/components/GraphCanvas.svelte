@@ -16,11 +16,9 @@
     type SimulationState,
     draw,
     resetView,
-    handleZoom,
     findLinkAtPosition,
     startAnimationLoop,
     clearAnimationState,
-    drawPreviewLink,
     type TransformState,
     type DragState,
     type SimulationNode,
@@ -39,6 +37,50 @@
   } from './GraphCanvas';
   import { createGhostNode } from './GraphCanvas/ghost-node';
   import { createGravitySystem } from './GraphCanvas/gravity-system';
+  
+  // FSD imports
+  import {
+    createDragDropState,
+    getMouseWorldPosition,
+    findNodeAtPosition,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleClick,
+    type DragDropState
+  } from '$features/graph-interaction/drag-and-drop';
+  import {
+    createHotkeysState,
+    handleKeyDownEvent,
+    updateSearch as updateSearchUtil,
+    focusNextSearchMatch as focusNextSearchMatchUtil,
+    resetInactivityTimer,
+    updateActivity,
+    showRandomTip as showRandomTipUtil,
+    type HotkeysState
+  } from '$features/graph-interaction/hotkeys';
+  import {
+    createZoomPanState,
+    handleZoom as handleZoomPan,
+    handleTouchStart,
+    resetViewToCenter,
+    type ZoomPanState
+  } from '$features/graph-interaction/zoom-pan';
+  import {
+    createNoteFormState,
+    openNoteForm,
+    closeNoteForm as closeNoteFormUtil,
+    createNote as createNoteUtil,
+    type NoteFormState
+  } from '$features/graph-forms/note-form';
+  import {
+    createLinkFormState,
+    openLinkForm,
+    closeLinkForm as closeLinkFormUtil,
+    createLink as createLinkUtil,
+    isDuplicateLink,
+    type LinkFormState
+  } from '$features/graph-forms/link-form';
 
   const {
     nodes,
@@ -114,10 +156,8 @@
   // Используем утилиты для resize
   const resizeState = { width, height };
 
-  // Double-tap zoom state
-  let lastTouchTime = 0;
-  let lastTouchPos = { x: 0, y: 0 };
-  let tapCount = 0;
+  // Double-tap zoom state (FSD)
+  const zoomPanState: ZoomPanState = $state(createZoomPanState());
 
   // Link tooltip state
   let hoveredLink: { source: string; target: string; link_type: string; weight: number; source_type: string } | null = $state(null);
@@ -140,39 +180,23 @@
     ghostNode = createGhostNode(width, height, nodes);
   });
 
-  // Drag-and-drop state
-  let draggedNodeId: string | null = $state(null);
-  let dragStartPosition = $state({ x: 0, y: 0 });
-  let isDraggingForLink = $state(false);
-  let linkSourceNodeId: string | null = $state(null);
-  let linkTargetNodeId: string | null = $state(null);
-  let mouseWorldPosition = $state({ x: 0, y: 0 });
-  let linkPreviewTarget: { sourceId: string; targetId: string } | null = $state(null);
+  // Drag-and-drop state (FSD)
+  const dragDropState: DragDropState = $state(createDragDropState());
 
   // Selection state for keyboard delete
   let selectedNodeId: string | null = $state(null);
 
-  // Note creation form state
-  let showNoteForm = $state(false);
-  let noteFormPosition = $state({ x: 0, y: 0 });
-  let newNoteTitle = $state('');
-  let newNoteContent = $state('');
-  let newNoteType = $state('planet');
+  // Note creation form state (FSD)
+  const noteFormState: NoteFormState = $state(createNoteFormState());
 
-  // Link creation form state
-  let showLinkForm = $state(false);
-  let linkFormPosition = $state({ x: 0, y: 0 });
-  let newLinkType = $state('related');
-  let newLinkWeight = $state(0.5);
+  // Link creation form state (FSD)
+  const linkFormState: LinkFormState = $state(createLinkFormState());
 
   // Focus mode: hides decorative effects when true
   let focusMode = $state(false);
 
-  // Node search state
-  let showSearchBox = $state(false);
-  let searchQuery = $state('');
-  let searchMatchIds: string[] = $state([]);
-  let searchCurrentIndex = $state(0);
+  // Hotkeys state (FSD)
+  const hotkeysState: HotkeysState = $state(createHotkeysState());
   let searchInput: HTMLInputElement | null = null;
 
   // Duplicate link warning state
@@ -180,14 +204,6 @@
   let duplicateWarningTimeout: ReturnType<typeof setTimeout> | null = null;
   let highlightedLinkId: string | null = $state(null);
   let highlightedLinkTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  // Help / Knowledge Core tooltip state
-  let showHelpModal = $state(false);
-  let showHelpTooltip = $state(false);
-  let helpTooltipPosition = $state({ x: 0, y: 0 });
-  let helpTooltipMessage = $state('');
-  let inactivityTimeout: ReturnType<typeof setTimeout> | null = null;
-  let lastActivityTime = $state(0);
 
   onMount(() => {
     if (!browser) return;
@@ -241,7 +257,7 @@
           }
           
           // Draw the full graph with all effects
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
         }
       },
       stableRender
@@ -249,7 +265,7 @@
     
     mounted = true; // triggers $effect re-run since it's $state
 
-    resetInactivityTimer();
+    resetInactivityTimer(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
 
     return () => {
       mounted = false; // $state
@@ -259,7 +275,7 @@
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
-      if (inactivityTimeout) clearTimeout(inactivityTimeout);
+      if (hotkeysState.inactivityTimeout) clearTimeout(hotkeysState.inactivityTimeout);
     };
   });
 
@@ -304,7 +320,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
         }
       },
       () => {
@@ -335,7 +351,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
         }
       },
       onResetView: () => {
@@ -349,86 +365,51 @@
 
 
 
-  function getMouseWorldPosition(e: MouseEvent): { x: number; y: number } {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left - transform.x) / transform.k,
-      y: (e.clientY - rect.top - transform.y) / transform.k
-    };
-  }
-
-  function findNodeAtPosition(x: number, y: number): SimulationNode | undefined {
-    const simNodes = getSimulationNodes(simState);
-    for (const node of simNodes) {
-      if (node.x == null || node.y == null) continue;
-      const dx = node.x - x;
-      const dy = node.y - y;
-      if (Math.sqrt(dx * dx + dy * dy) < 30) {
-        return node;
-      }
-    }
-    return undefined;
-  }
-
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
-      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
+      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
     }
   }
 
   function onZoom(e: WheelEvent) {
-    updateActivity();
-    handleZoom(e, transform, canvas, redraw);
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    handleZoomPan(e, transform, canvas, redraw);
   }
 
   function onMouseDown(e: MouseEvent) {
-    updateActivity();
-    const pos = getMouseWorldPosition(e);
-    mouseWorldPosition = pos;
-
-    // Ghost node click -> create note form
-    if (isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform)) {
-      showNoteForm = true;
-      noteFormPosition = { x: e.clientX, y: e.clientY };
-      e.preventDefault();
-      return;
-    }
-
-    // Node click -> start dragging for link/move/delete
-    const node = findNodeAtPosition(pos.x, pos.y);
-    if (node) {
-      if (isTechnicalNode(node.id)) {
-        // Technical nodes are not draggable
-        e.preventDefault();
-        return;
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    handleMouseDown(
+      e,
+      canvas,
+      transform,
+      dragState,
+      dragDropState,
+      getSimulationNodes(simState),
+      ghostNode,
+      isTechnicalNode,
+      {
+        onNodeDragStart: (nodeId) => {
+          if (nodeId === 'ghost') {
+            openNoteForm(noteFormState, e.clientX, e.clientY);
+          }
+        }
       }
-      draggedNodeId = node.id;
-      dragStartPosition = { x: node.x!, y: node.y! };
-      dragState.dragging = true;
-      canvas.style.cursor = 'grabbing';
-      e.preventDefault();
-      return;
-    }
-
-    // Empty space -> pan
-    dragState.dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-    dragState.dragging = true;
-    canvas.style.cursor = 'grabbing';
+    );
   }
 
   function onMouseMove(e: MouseEvent) {
-    updateActivity();
-    const pos = getMouseWorldPosition(e);
-    mouseWorldPosition = pos;
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    const pos = getMouseWorldPosition(e, canvas, transform);
+    dragDropState.mouseWorldPosition = pos;
 
     // Update hover states for interactive elements
     blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, transform);
     ghostNode.hovered = isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform);
 
     // Dragging a node
-    if (draggedNodeId && dragState.dragging) {
-      const node = getSimulationNodes(simState).find((n) => n.id === draggedNodeId);
+    if (dragDropState.draggedNodeId && dragState.dragging) {
+      const node = getSimulationNodes(simState).find((n) => n.id === dragDropState.draggedNodeId);
       if (node && node.x != null && node.y != null) {
         node.x = pos.x;
         node.y = pos.y;
@@ -439,15 +420,15 @@
         blackHole.hovered = isNodeOverBlackHole(node, blackHole);
 
         // Check if over another node for link creation
-        const targetNode = findNodeAtPosition(pos.x, pos.y);
-        if (targetNode && targetNode.id !== draggedNodeId && !isTechnicalNode(targetNode.id)) {
-          isDraggingForLink = true;
-          linkTargetNodeId = targetNode.id;
-          linkPreviewTarget = { sourceId: draggedNodeId, targetId: targetNode.id };
+        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
+        if (targetNode && targetNode.id !== dragDropState.draggedNodeId && !isTechnicalNode(targetNode.id)) {
+          dragDropState.isDraggingForLink = true;
+          dragDropState.linkTargetNodeId = targetNode.id;
+          dragDropState.linkPreviewTarget = { sourceId: dragDropState.draggedNodeId, targetId: targetNode.id };
         } else {
-          isDraggingForLink = false;
-          linkTargetNodeId = null;
-          linkPreviewTarget = null;
+          dragDropState.isDraggingForLink = false;
+          dragDropState.linkTargetNodeId = null;
+          dragDropState.linkPreviewTarget = null;
         }
       }
       redraw();
@@ -487,11 +468,11 @@
     }
 
     if (hoveredTechnicalNode) {
-      helpTooltipMessage = 'Click to open help, or press ?';
-      helpTooltipPosition = { x: e.clientX, y: e.clientY - 10 };
-      showHelpTooltip = true;
-    } else if (showHelpTooltip && helpTooltipMessage === 'Click to open help, or press ?') {
-      showHelpTooltip = false;
+      hotkeysState.helpTooltipMessage = 'Click to open help, or press ?';
+      hotkeysState.helpTooltipPosition = { x: e.clientX, y: e.clientY - 10 };
+      hotkeysState.showHelpTooltip = true;
+    } else if (hotkeysState.showHelpTooltip && hotkeysState.helpTooltipMessage === 'Click to open help, or press ?') {
+      hotkeysState.showHelpTooltip = false;
     }
 
     if (hovered) {
@@ -523,12 +504,12 @@
   }
 
   function onMouseUp(e: MouseEvent) {
-    updateActivity();
-    const pos = getMouseWorldPosition(e);
-    const wasDraggingNode = draggedNodeId !== null;
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    const pos = getMouseWorldPosition(e, canvas, transform);
+    const wasDraggingNode = dragDropState.draggedNodeId !== null;
 
-    if (draggedNodeId) {
-      const node = getSimulationNodes(simState).find((n) => n.id === draggedNodeId);
+    if (dragDropState.draggedNodeId) {
+      const node = getSimulationNodes(simState).find((n) => n.id === dragDropState.draggedNodeId);
       if (node) {
         // Check if dropped over black hole -> delete
         if (isNodeOverBlackHole(node, blackHole)) {
@@ -540,15 +521,12 @@
           });
         } else {
           // Check if dropped over another node -> create link
-          const targetNode = findNodeAtPosition(pos.x, pos.y);
-          if (targetNode && targetNode.id !== draggedNodeId && !isTechnicalNode(targetNode.id)) {
-            linkSourceNodeId = draggedNodeId;
-            linkTargetNodeId = targetNode.id;
-            showLinkForm = true;
-            linkFormPosition = { x: e.clientX, y: e.clientY };
+          const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
+          if (targetNode && targetNode.id !== dragDropState.draggedNodeId && !isTechnicalNode(targetNode.id)) {
+            openLinkForm(linkFormState, dragDropState.draggedNodeId, targetNode.id, e.clientX, e.clientY);
 
             // Spring-back source node to original position
-            animateSpringBack(node, dragStartPosition);
+            animateSpringBack(node, dragDropState.dragStartPosition);
           } else {
             // Release fixed position
             node.fx = undefined;
@@ -556,9 +534,9 @@
           }
         }
       }
-      draggedNodeId = null;
-      isDraggingForLink = false;
-      linkPreviewTarget = null;
+      dragDropState.draggedNodeId = null;
+      dragDropState.isDraggingForLink = false;
+      dragDropState.linkPreviewTarget = null;
     }
 
     dragState.dragging = false;
@@ -567,7 +545,7 @@
 
     // Ghost node click up (without drag) - already handled in mousedown
     if (!wasDraggingNode && !ghostNode.hovered) {
-      const clickedNode = findNodeAtPosition(pos.x, pos.y);
+      const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
       if (!clickedNode) {
         hoveredLink = null;
       }
@@ -575,9 +553,9 @@
   }
 
   function onClick(e: MouseEvent) {
-    updateActivity();
-    const pos = getMouseWorldPosition(e);
-    const clickedNode = findNodeAtPosition(pos.x, pos.y);
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    const pos = getMouseWorldPosition(e, canvas, transform);
+    const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
     if (clickedNode) {
       if (isTechnicalNode(clickedNode.id)) {
         openHelpModal();
@@ -650,50 +628,43 @@
     requestAnimationFrame(step);
   }
 
-  function createNote() {
-    if (newNoteTitle.trim() && onNoteCreate) {
-      onNoteCreate({
-        title: newNoteTitle.trim(),
-        content: newNoteContent.trim(),
-        type: newNoteType
-      });
-    }
-    closeNoteForm();
-  }
-
-  function closeNoteForm() {
-    showNoteForm = false;
-    newNoteTitle = '';
-    newNoteContent = '';
-    newNoteType = 'planet';
-  }
-
-  function createLink() {
-    if (linkSourceNodeId && linkTargetNodeId) {
-      const linkType = newLinkType;
-      if (isDuplicateLink(linkSourceNodeId, linkTargetNodeId, linkType)) {
-        showDuplicateWarning(linkSourceNodeId, linkTargetNodeId, linkType, linkFormPosition.x, linkFormPosition.y);
-        closeLinkForm();
-        return;
+  function handleCreateNote() {
+    createNoteUtil(noteFormState, {
+      onNoteCreate: (data) => {
+        if (onNoteCreate) {
+          onNoteCreate(data);
+        }
+      },
+      onFormClose: () => {
+        redraw();
       }
-      if (onLinkCreate) {
-        onLinkCreate({
-          source: linkSourceNodeId,
-          target: linkTargetNodeId,
-          link_type: linkType,
-          weight: newLinkWeight
-        });
-      }
-    }
-    closeLinkForm();
+    });
   }
 
-  function closeLinkForm() {
-    showLinkForm = false;
-    linkSourceNodeId = null;
-    linkTargetNodeId = null;
-    newLinkType = 'related';
-    newLinkWeight = 0.5;
+  function handleNoteFormClose() {
+    closeNoteFormUtil(noteFormState);
+    redraw();
+  }
+
+  function handleCreateLink() {
+    createLinkUtil(linkFormState, links, {
+      onLinkCreate: (link) => {
+        if (onLinkCreate) {
+          onLinkCreate(link);
+        }
+      },
+      onFormClose: () => {
+        redraw();
+      },
+      onDuplicateWarning: (source, target, linkType, x, y) => {
+        showDuplicateWarning(source, target, linkType, x, y);
+      }
+    });
+  }
+
+  function handleLinkFormClose() {
+    closeLinkFormUtil(linkFormState);
+    redraw();
   }
 
   function handleLinkEdit() {
@@ -721,181 +692,78 @@
 
 
   // Double-tap zoom handler
-  function handleTouchStart(e: TouchEvent) {
+  function onTouchStart(e: TouchEvent) {
     if (!browser) return; // Skip in server-side rendering
-    updateActivity();
-
-    if (e.touches.length === 1) {
-      const now = Date.now();
-      const touch = e.touches[0];
-      const dx = Math.abs(touch.clientX - lastTouchPos.x);
-      const dy = Math.abs(touch.clientY - lastTouchPos.y);
-
-      if (now - lastTouchTime < 300 && dx < 30 && dy < 30) {
-        tapCount++;
-        handleDoubleTap(touch.clientX, touch.clientY);
-        e.preventDefault();
-      } else {
-        tapCount = 0;
-      }
-
-      lastTouchTime = now;
-      lastTouchPos = { x: touch.clientX, y: touch.clientY };
-    }
-  }
-
-  function handleDoubleTap(clientX: number, clientY: number) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left - transform.x) / transform.k;
-    const y = (clientY - rect.top - transform.y) / transform.k;
-
-    if (tapCount === 1) {
-      const newScale = transform.k * 2;
-      const centerX = x * newScale;
-      const centerY = y * newScale;
-
-      transform.x = clientX - rect.left - centerX;
-      transform.y = clientY - rect.top - centerY;
-      transform.k = newScale;
-    } else if (tapCount === 2) {
-      const simNodes = getSimulationNodes(simState);
-      if (ctx && simNodes.length > 0) {
-        resetView(ctx, width, height, simNodes, transform);
-        tapCount = 0;
-      }
-    }
+    updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
+    handleTouchStart(e, zoomPanState, transform, canvas, getSimulationNodes(simState), ctx, width, height);
   }
 
   // Keyboard shortcuts: Esc toggles focus mode, F opens search, ? opens help, N for ghost node, Del/Backspace for delete, Ctrl+Z for undo
   function handleKeyDown(e: KeyboardEvent) {
-    // Ignore hotkeys when typing in a form or search input
-    const active = document.activeElement;
-    const isTyping = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
-
-    if (e.key === 'Escape') {
-      if (showHelpModal) {
-        showHelpModal = false;
-      } else if (showSearchBox) {
-        closeSearch();
-      } else if (showNoteForm || showLinkForm) {
-        // Let form close first; focus mode toggles only when no forms are open
-        return;
-      } else {
-        focusMode = !focusMode;
-        redraw();
+    handleKeyDownEvent(
+      e,
+      hotkeysState,
+      canvas,
+      transform,
+      getSimulationNodes(simState),
+      ghostNode,
+      selectedNodeId,
+      noteFormState.showNoteForm,
+      linkFormState.showLinkForm,
+      searchInput,
+      {
+        onFocusModeToggle: () => {
+          focusMode = !focusMode;
+          redraw();
+        },
+        onSearchOpen: () => {
+          hotkeysState.showSearchBox = true;
+          hotkeysState.searchQuery = '';
+          hotkeysState.searchMatchIds = [];
+          hotkeysState.searchCurrentIndex = 0;
+        },
+        onSearchClose: () => {
+          hotkeysState.showSearchBox = false;
+          hotkeysState.searchQuery = '';
+          hotkeysState.searchMatchIds = [];
+          hotkeysState.searchCurrentIndex = 0;
+          redraw();
+        },
+        onHelpToggle: () => {
+          hotkeysState.showHelpModal = !hotkeysState.showHelpModal;
+        },
+        onGhostNodeCreate: () => {
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const centerX = (rect.width / 2 - transform.x) / transform.k;
+            const centerY = (rect.height / 2 - transform.y) / transform.k;
+            ghostNode = createGhostNode(centerX, centerY);
+            openNoteForm(noteFormState, e.clientX, e.clientY);
+            redraw();
+          }
+        },
+        onNodeDelete: (nodeId) => {
+          if (onNoteDelete) {
+            onNoteDelete(nodeId);
+            selectedNodeId = null;
+            redraw();
+          }
+        },
+        onUndo: () => {
+          console.log('[GraphCanvas] Undo not yet implemented');
+        }
       }
-      e.preventDefault();
-      return;
-    }
-
-    if (isTyping && !showSearchBox) {
-      return;
-    }
-
-    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-      e.preventDefault();
-      showSearchBox = true;
-      searchQuery = '';
-      searchMatchIds = [];
-      searchCurrentIndex = 0;
-      requestAnimationFrame(() => searchInput?.focus());
-      return;
-    }
-
-    if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      e.preventDefault();
-      showHelpModal = !showHelpModal;
-      return;
-    }
-
-    if (e.key === 'Enter' && showSearchBox) {
-      e.preventDefault();
-      focusNextSearchMatch();
-      return;
-    }
-
-    // N - Create ghost node
-    if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-      e.preventDefault();
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect();
-        const centerX = (rect.width / 2 - transform.x) / transform.k;
-        const centerY = (rect.height / 2 - transform.y) / transform.k;
-        ghostNode = createGhostNode(centerX, centerY);
-        showNoteForm = true;
-        redraw();
-      }
-      return;
-    }
-
-    // Delete/Backspace - Delete selected node (if not typing)
-    if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
-      e.preventDefault();
-      if (selectedNodeId && onNoteDelete) {
-        onNoteDelete(selectedNodeId);
-        selectedNodeId = null;
-        redraw();
-      }
-      return;
-    }
-
-    // Ctrl+Z - Undo (placeholder for now)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      // TODO: Implement undo functionality
-      console.log('[GraphCanvas] Undo not yet implemented');
-      return;
-    }
+    );
   }
 
-  function closeSearch() {
-    showSearchBox = false;
-    searchQuery = '';
-    searchMatchIds = [];
-    searchCurrentIndex = 0;
+  function handleUpdateSearch() {
+    updateSearchUtil(hotkeysState, getSimulationNodes(simState));
     redraw();
   }
 
-  function updateSearch() {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      searchMatchIds = [];
-      searchCurrentIndex = 0;
-      redraw();
-      return;
-    }
-
-    const simNodes = getSimulationNodes(simState);
-    searchMatchIds = simNodes
-      .filter((node) => node.title.toLowerCase().includes(query))
-      .map((node) => node.id);
-    searchCurrentIndex = 0;
+  function handleFocusNextSearchMatch() {
+    focusNextSearchMatchUtil(hotkeysState, transform, getSimulationNodes(simState), canvas);
     redraw();
-  }
-
-  function focusNextSearchMatch() {
-    if (searchMatchIds.length === 0) return;
-    searchCurrentIndex = (searchCurrentIndex + 1) % searchMatchIds.length;
-    const nodeId = searchMatchIds[searchCurrentIndex];
-    const simNodes = getSimulationNodes(simState);
-    const node = simNodes.find((n) => n.id === nodeId);
-    if (node && node.x != null && node.y != null && canvas) {
-      const rect = canvas.getBoundingClientRect();
-      transform.k = Math.max(transform.k, 1.2);
-      transform.x = rect.width / 2 - node.x * transform.k;
-      transform.y = rect.height / 2 - node.y * transform.k;
-      redraw();
-    }
-  }
-
-  // Duplicate link detection
-  function isDuplicateLink(source: string, target: string, linkType: string): boolean {
-    return links.some((link: any) => {
-      const s = typeof link.source === 'string' ? link.source : link.source?.id;
-      const t = typeof link.target === 'string' ? link.target : link.target?.id;
-      return (s === source && t === target && (link.link_type || 'related') === linkType) ||
-             (s === target && t === source && (link.link_type || 'related') === linkType);
-    });
   }
 
   function showDuplicateWarning(source: string, target: string, linkType: string, x: number, y: number) {
@@ -1004,36 +872,28 @@
   ];
 
   function openHelpModal() {
-    showHelpModal = true;
-    showHelpTooltip = false;
+    hotkeysState.showHelpModal = true;
+    hotkeysState.showHelpTooltip = false;
   }
 
   function closeHelpModal() {
-    showHelpModal = false;
+    hotkeysState.showHelpModal = false;
   }
 
-  function showRandomTip() {
-    if (showHelpModal || showSearchBox || showNoteForm || showLinkForm) return;
+  function handleShowRandomTip() {
+    if (hotkeysState.showHelpModal || hotkeysState.showSearchBox || noteFormState.showNoteForm || linkFormState.showLinkForm) return;
     const tip = randomTips[Math.floor(Math.random() * randomTips.length)];
-    helpTooltipMessage = tip;
-    helpTooltipPosition = { x: width * 0.5, y: height * 0.85 };
-    showHelpTooltip = true;
+    hotkeysState.helpTooltipMessage = tip;
+    hotkeysState.helpTooltipPosition = { x: width * 0.5, y: height * 0.85 };
+    hotkeysState.showHelpTooltip = true;
     setTimeout(() => {
-      showHelpTooltip = false;
+      hotkeysState.showHelpTooltip = false;
     }, 4000);
   }
 
-  function resetInactivityTimer() {
-    if (inactivityTimeout) clearTimeout(inactivityTimeout);
-    inactivityTimeout = setTimeout(() => {
-      showRandomTip();
-    }, 10000);
-  }
-
-  function updateActivity() {
-    lastActivityTime = Date.now();
-    showHelpTooltip = false;
-    resetInactivityTimer();
+  function handleCloseSearch() {
+    hotkeysState.showSearchBox = false;
+    redraw();
   }</script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -1045,7 +905,7 @@
   onmousemove={onMouseMove}
   onmouseup={onMouseUp}
   onclick={onClick}
-  ontouchstart={handleTouchStart}
+  ontouchstart={onTouchStart}
   onwheel={onZoom}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>
@@ -1075,15 +935,15 @@
   />
 {/if}
 
-{#if showNoteForm}
+{#if noteFormState.showNoteForm}
   <div
     class="note-form"
-    style="position: absolute; left: {noteFormPosition.x}px; top: {noteFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
+    style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState.noteFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
       <h3 style="margin: 0; color: #a78bfa; font-size: 16px; font-weight: 600;">Create New Note</h3>
       <button
-        onclick={closeNoteForm}
+        onclick={handleNoteFormClose}
         style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
         aria-label="Close"
       >
@@ -1093,17 +953,17 @@
     <input
       type="text"
       placeholder="Title"
-      bind:value={newNoteTitle}
+      bind:value={noteFormState.newNoteTitle}
       style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; font-size: 14px; transition: border-color 0.2s;"
-      onkeydown={(e) => e.key === 'Enter' && createNote()}
+      onkeydown={(e) => e.key === 'Enter' && handleCreateNote()}
     />
     <textarea
       placeholder="Content (optional)"
-      bind:value={newNoteContent}
+      bind:value={noteFormState.newNoteContent}
       style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; min-height: 100px; box-sizing: border-box; font-size: 14px; resize: vertical; transition: border-color 0.2s;"
     ></textarea>
     <select
-      bind:value={newNoteType}
+      bind:value={noteFormState.newNoteType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
       <option value="star">⭐ Star</option>
@@ -1114,13 +974,13 @@
     </select>
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
       <button 
-        onclick={closeNoteForm} 
+        onclick={handleNoteFormClose} 
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
         Cancel
       </button>
       <button 
-        onclick={createNote} 
+        onclick={handleCreateNote} 
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
       >
         Create
@@ -1129,15 +989,15 @@
   </div>
 {/if}
 
-{#if showLinkForm}
+{#if linkFormState.showLinkForm}
   <div
     class="link-form"
-    style="position: absolute; left: {linkFormPosition.x}px; top: {linkFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
+    style="position: absolute; left: {linkFormState.linkFormPosition.x}px; top: {linkFormState.linkFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
       <h3 style="margin: 0; color: #fbbf24; font-size: 16px; font-weight: 600;">Create Link</h3>
       <button
-        onclick={closeLinkForm}
+        onclick={handleLinkFormClose}
         style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
         aria-label="Close"
       >
@@ -1145,7 +1005,7 @@
       </button>
     </div>
     <select
-      bind:value={newLinkType}
+      bind:value={linkFormState.newLinkType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
       <option value="reference">📖 Reference</option>
@@ -1153,24 +1013,24 @@
       <option value="related">🔀 Related</option>
       <option value="custom">✨ Custom</option>
     </select>
-    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Strength: {newLinkWeight.toFixed(1)}</label>
+    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Strength: {linkFormState.newLinkWeight.toFixed(1)}</label>
     <input
       type="range"
       min="0.1"
       max="1.0"
       step="0.1"
-      bind:value={newLinkWeight}
+      bind:value={linkFormState.newLinkWeight}
       style="width: 100%; margin-bottom: 16px; accent-color: #fbbf24;"
     />
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
       <button 
-        onclick={closeLinkForm} 
+        onclick={handleLinkFormClose} 
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
         Cancel
       </button>
       <button 
-        onclick={createLink} 
+        onclick={handleCreateLink} 
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);"
       >
         Create Link
@@ -1179,7 +1039,7 @@
   </div>
 {/if}
 
-{#if showSearchBox}
+{#if hotkeysState.showSearchBox}
   <div
     class="search-box"
     style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 100; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);"
@@ -1192,14 +1052,14 @@
       bind:this={searchInput}
       type="text"
       placeholder="Search nodes..."
-      bind:value={searchQuery}
-      oninput={updateSearch}
+      bind:value={hotkeysState.searchQuery}
+      oninput={handleUpdateSearch}
       style="background: transparent; border: none; color: white; outline: none; min-width: 200px; font-size: 14px;"
     />
-    {#if searchMatchIds.length > 0}
-      <span style="color: rgba(255,255,255,0.6); font-size: 12px;">{searchCurrentIndex + 1}/{searchMatchIds.length}</span>
+    {#if hotkeysState.searchMatchIds.length > 0}
+      <span style="color: rgba(255,255,255,0.6); font-size: 12px;">{hotkeysState.searchCurrentIndex + 1}/{hotkeysState.searchMatchIds.length}</span>
     {/if}
-    <button onclick={closeSearch} style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px;">×</button>
+    <button onclick={handleCloseSearch} style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px;">×</button>
   </div>
 {/if}
 
@@ -1254,10 +1114,10 @@
   </div>
 {/if}
 
-{#if showHelpTooltip}
+{#if hotkeysState.showHelpTooltip}
   <div
     class="help-tooltip"
-    style="position: fixed; left: {helpTooltipPosition.x}px; top: {helpTooltipPosition.y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
+    style="position: fixed; left: {hotkeysState.helpTooltipPosition.x}px; top: {hotkeysState.helpTooltipPosition.y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
   >
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #a78bfa; font-weight: 600; font-size: 12px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1267,11 +1127,11 @@
       </svg>
       Knowledge Core
     </div>
-    {helpTooltipMessage}
+    {hotkeysState.helpTooltipMessage}
   </div>
 {/if}
 
-{#if showHelpModal}
+{#if hotkeysState.showHelpModal}
   <HelpHotkeysModal
     hotkeyLines={hotkeyLines}
     helpContent={helpContent}
