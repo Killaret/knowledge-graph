@@ -6,17 +6,17 @@ import type { SimulationNode, SimulationLink } from './types';
 import { getVariation, applyHueShift } from '$lib/utils/variation';
 import {
   drawBlackHole,
-  drawBlackHoleTooltip,
-  type BlackHoleState
+  drawBlackHoleTooltip
 } from './black-hole';
 import {
   drawGhostNode,
-  drawGhostNodeTooltip,
-  type GhostNodeState
+  drawGhostNodeTooltip
 } from './ghost-node';
 import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
 
 export type { SimulationNode, SimulationLink };
+export type { BlackHoleState } from './black-hole';
+export type { GhostNodeState } from './ghost-node';
 export type { BlackHoleState } from './black-hole';
 export type { GhostNodeState } from './ghost-node';
 export type { BlackHoleState } from './black-hole';
