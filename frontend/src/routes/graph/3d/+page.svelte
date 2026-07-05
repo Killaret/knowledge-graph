@@ -40,10 +40,6 @@
     gap: 16px;
   }
 
-  .error {
-    color: #ff6666;
-  }
-
   .spinner {
     width: 40px;
     height: 40px;

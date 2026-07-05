@@ -135,7 +135,32 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Update empty state with English galactic lexicon text.
 - Add integration tests for batch delete and undo.
 
-### Iteration 3 — Canvas improvements
+### Iteration 3 — List view enhancements
+
+**Keyboard shortcuts**
+- Add `Ctrl+A` to select all notes in list view
+- Add `Delete`/`Backspace` to batch delete selected notes
+- Add `Escape` to clear selection or close side panel
+
+**Bulk actions menu**
+- Add "Actions" button to floating batch panel
+- Add dropdown menu with options:
+  - Move to type (placeholder)
+  - Add tags (placeholder)
+  - Export notes (placeholder)
+
+**Visual feedback**
+- Add selection count badge in floating panel
+- Add confirmation dialog for batch delete
+- Improve visual styling for bulk actions menu
+
+**Acceptance criteria**
+- Keyboard shortcuts work in list view
+- Bulk actions menu displays correctly
+- Confirmation dialog appears before batch delete
+- English UI strings only
+
+### Iteration 4 — Canvas improvements
 
 - Add hotkeys: `N` (ghost node), `Del`/`Backspace` (delete selected), `Ctrl+Z` (undo).
 - Improve ghost node creation flow with tippy form.
@@ -163,5 +188,7 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Update documentation with final hotkey list and UX guidelines.
 
 ### Current status
-- Iteration 1 in progress.
+- Iteration 1 completed.
+- Iteration 2 completed.
+- Iteration 3 in progress (keyboard shortcuts, bulk actions menu, visual feedback implemented).
 

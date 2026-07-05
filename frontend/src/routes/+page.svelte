@@ -44,6 +44,7 @@
   let lastDeletedNote: Note | null = $state(null);
   let showUndoToast = $state(false);
   let undoToastStage = $state<'done' | 'restore'>('done');
+  let showBulkActionsMenu = $state(false);
 
   const typeFilters = [
     { id: 'inbox', label: 'Inbox', emoji: '📥' },
@@ -416,6 +417,12 @@
   async function handleBatchDelete() {
     if (selectedNoteIds.size === 0) return;
 
+    // Confirmation dialog
+    if (browser) {
+      const confirmed = confirm(`Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? 's' : ''}? This action cannot be undone.`);
+      if (!confirmed) return;
+    }
+
     try {
       await deleteNotesBatch(Array.from(selectedNoteIds));
       // Remove deleted notes from local arrays
@@ -423,6 +430,7 @@
       filteredNotes = filteredNotes.filter(n => !selectedNoteIds.has(n.id));
       selectedNoteIds.clear();
       selectionMode = false;
+      showBulkActionsMenu = false;
       // Reload to ensure sync
       await loadNotes();
     } catch {
@@ -637,6 +645,13 @@
         <div class="batch-panel">
           <span class="batch-count">{selectedNoteIds.size} selected</span>
           <button
+            class="batch-btn batch-btn--actions"
+            onclick={() => showBulkActionsMenu = !showBulkActionsMenu}
+            aria-label="Bulk actions"
+          >
+            Actions
+          </button>
+          <button
             class="batch-btn batch-btn--delete"
             onclick={handleBatchDelete}
             aria-label="Delete selected notes"
@@ -651,6 +666,36 @@
             Cancel
           </button>
         </div>
+
+        <!-- Bulk actions menu -->
+        {#if showBulkActionsMenu}
+          <div class="bulk-actions-menu">
+            <button
+              class="bulk-action-item"
+              onclick={() => { showBulkActionsMenu = false; }}
+              aria-label="Move to type"
+            >
+              <span class="bulk-action-icon">📂</span>
+              Move to type
+            </button>
+            <button
+              class="bulk-action-item"
+              onclick={() => { showBulkActionsMenu = false; }}
+              aria-label="Add tags"
+            >
+              <span class="bulk-action-icon">🏷️</span>
+              Add tags
+            </button>
+            <button
+              class="bulk-action-item"
+              onclick={() => { showBulkActionsMenu = false; }}
+              aria-label="Export notes"
+            >
+              <span class="bulk-action-icon">📤</span>
+              Export notes
+            </button>
+          </div>
+        {/if}
       {/if}
     {/if}
   </div>
@@ -887,6 +932,53 @@
   .batch-btn--cancel {
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.85);
+  }
+
+  .batch-btn--actions {
+    background: var(--color-primary, #8b5cf6);
+    color: white;
+  }
+
+  .bulk-actions-menu {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+    animation: slide-up 0.3s ease;
+    min-width: 200px;
+  }
+
+  .bulk-action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+  }
+
+  .bulk-action-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .bulk-action-icon {
+    font-size: 1.1rem;
   }
 
   .undo-toast {
