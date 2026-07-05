@@ -95,8 +95,12 @@
     </div>
 
     <div class="notes-grid">
-      {#each notes as note}
-        <NoteCard {note} highlightQuery={$page.url.searchParams.get('q') || ''} />
+      {#each notes as note, index (note.id)}
+        <NoteCard
+          {note}
+          animationIndex={index}
+          highlightQuery={$page.url.searchParams.get('q') || ''}
+        />
       {/each}
     </div>
 

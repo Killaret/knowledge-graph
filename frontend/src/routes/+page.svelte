@@ -9,7 +9,7 @@
   import NoteCard from '$lib/components/NoteCard.svelte';
   import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
   import StateIllustration from '$lib/components/StateIllustration.svelte';
-  import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
+  import { getNotes, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$lib/api/notes';
   import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$lib/api/graph';
   import { getGraphWithPreload, useInstantData } from '$lib/hooks/usePreloadedData';
   import { isAuthenticated } from '$lib/stores/auth.svelte';
@@ -38,7 +38,12 @@
   
   // Filter and sort state
   let selectedType = $state<string>('all');
-  const sortOption = $state<string>('newest');
+  let sortBy = $state<'created' | 'updated' | 'type'>('created');
+  let selectedNoteIds = $state<Set<string>>(new Set());
+  let selectionMode = $state(false);
+  let lastDeletedNote: Note | null = $state(null);
+  let showUndoToast = $state(false);
+  let undoToastStage = $state<'done' | 'restore'>('done');
 
   const typeFilters = [
     { id: 'inbox', label: 'Inbox', emoji: '📥' },
@@ -54,6 +59,12 @@
     { id: 'blackhole', label: 'Black Holes', emoji: '⚫' },
     { id: 'dust', label: 'Cosmic Dust', emoji: '🌫️' },
     { id: 'unknown', label: 'Unknown', emoji: '❓' }
+  ];
+
+  const sortOptions = [
+    { id: 'created', label: 'Created (newest first)' },
+    { id: 'updated', label: 'Updated (recent first)' },
+    { id: 'type', label: 'Type (alphabetical)' }
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.
@@ -323,18 +334,15 @@
     }
 
     // Apply sorting
-    switch (sortOption) {
-      case 'newest':
+    switch (sortBy) {
+      case 'created':
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      case 'updated':
+        result.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
         break;
-      case 'az':
-        result.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'za':
-        result.sort((a, b) => b.title.localeCompare(a.title));
+      case 'type':
+        result.sort((a, b) => (a.type || 'unknown').localeCompare(b.type || 'unknown'));
         break;
     }
 
@@ -379,6 +387,84 @@
     } finally {
       noteToDelete = null;
       showConfirmDelete = false;
+    }
+  }
+
+  function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    if (!selectionMode) {
+      selectedNoteIds.clear();
+    }
+  }
+
+  function toggleSelectAll() {
+    if (selectedNoteIds.size === filteredNotes.length) {
+      selectedNoteIds.clear();
+    } else {
+      filteredNotes.forEach(n => selectedNoteIds.add(n.id));
+    }
+  }
+
+  function handleNoteSelect(note: Note, selected: boolean) {
+    if (selected) {
+      selectedNoteIds.add(note.id);
+    } else {
+      selectedNoteIds.delete(note.id);
+    }
+  }
+
+  async function handleBatchDelete() {
+    if (selectedNoteIds.size === 0) return;
+
+    try {
+      await deleteNotesBatch(Array.from(selectedNoteIds));
+      // Remove deleted notes from local arrays
+      allNotes = allNotes.filter(n => !selectedNoteIds.has(n.id));
+      filteredNotes = filteredNotes.filter(n => !selectedNoteIds.has(n.id));
+      selectedNoteIds.clear();
+      selectionMode = false;
+      // Reload to ensure sync
+      await loadNotes();
+    } catch {
+      if (browser) {
+        alert('Failed to delete selected notes');
+      }
+    }
+  }
+
+  async function handleNoteEdit(note: Note) {
+    noteToEdit = note.id;
+    showEditModal = true;
+  }
+
+  async function handleNoteDelete(note: Note) {
+    lastDeletedNote = note;
+    await deleteNote(note.id);
+    allNotes = allNotes.filter(n => n.id !== note.id);
+    filteredNotes = filteredNotes.filter(n => n.id !== note.id);
+    await loadNotes();
+    showUndoToast = true;
+    undoToastStage = 'done';
+    setTimeout(() => {
+      undoToastStage = 'restore';
+    }, 1500);
+    setTimeout(() => {
+      showUndoToast = false;
+      lastDeletedNote = null;
+    }, 6500);
+  }
+
+  async function handleUndoRestore() {
+    if (!lastDeletedNote) return;
+    try {
+      await restoreNote(lastDeletedNote.id);
+      showUndoToast = false;
+      lastDeletedNote = null;
+      await loadNotes();
+    } catch {
+      if (browser) {
+        alert('Failed to restore note');
+      }
     }
   }
 
@@ -474,16 +560,54 @@
     {:else if currentView === 'list'}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
+        <div class="list-header">
+          <div class="list-controls">
+            <button
+              class="list-control-btn"
+              onclick={toggleSelectionMode}
+              aria-label="Toggle selection mode"
+            >
+              {selectionMode ? 'Cancel selection' : 'Select'}
+            </button>
+            {#if selectionMode}
+              <button
+                class="list-control-btn"
+                onclick={toggleSelectAll}
+                aria-label="Select all notes"
+              >
+                {selectedNoteIds.size === filteredNotes.length ? 'Clear selection' : 'Select all'}
+              </button>
+            {/if}
+          </div>
+          <div class="list-sort">
+            <label for="sort-select" class="sort-label">Sort by:</label>
+            <select
+              id="sort-select"
+              class="sort-select"
+              bind:value={sortBy}
+              aria-label="Sort notes"
+            >
+              {#each sortOptions as opt}
+                <option value={opt.id}>{opt.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+
         {#if filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
             <StateIllustration type={selectedType === 'all' && !searchQuery ? 'empty' : 'no-results'} />
-            <h2>No notes found</h2>
+            <h2>
+              {selectedType === 'all' && !searchQuery
+                ? 'Your star chart is empty'
+                : 'No cosmic objects found'}
+            </h2>
             <p>
               {selectedType === 'all' && !searchQuery
-                ? "You haven't created any notes yet."
+                ? 'Ignite your first star to begin your knowledge galaxy.'
                 : searchQuery
-                  ? `No notes match "${searchQuery}".`
-                  : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
+                  ? `No objects match "${searchQuery}". Try different coordinates.`
+                  : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found in this sector.`}
             </p>
             <button class="new-note-button" onclick={() => showCreateModal = true}>
               Create your first note
@@ -491,9 +615,15 @@
           </div>
         {:else}
           <div class="notes-grid" data-testid="notes-grid">
-            {#each filteredNotes as note (note.id)}
+            {#each filteredNotes as note, index (note.id)}
               <NoteCard
                 {note}
+                animationIndex={index}
+                selected={selectedNoteIds.has(note.id)}
+                selectMode={selectionMode}
+                onSelect={handleNoteSelect}
+                onEdit={handleNoteEdit}
+                onDelete={handleNoteDelete}
                 onClick={() => selectedNodeId = note.id}
                 highlightQuery={searchQuery}
               />
@@ -501,6 +631,27 @@
           </div>
         {/if}
       </div>
+
+      <!-- Floating batch delete panel -->
+      {#if selectionMode && selectedNoteIds.size > 0}
+        <div class="batch-panel">
+          <span class="batch-count">{selectedNoteIds.size} selected</span>
+          <button
+            class="batch-btn batch-btn--delete"
+            onclick={handleBatchDelete}
+            aria-label="Delete selected notes"
+          >
+            Delete selected
+          </button>
+          <button
+            class="batch-btn batch-btn--cancel"
+            onclick={() => { selectedNoteIds.clear(); selectionMode = false; }}
+            aria-label="Cancel selection"
+          >
+            Cancel
+          </button>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
@@ -541,6 +692,27 @@
   onConfirm={handleDeleteConfirm}
   onCancel={() => { showConfirmDelete = false; noteToDelete = null; }}
 />
+
+<!-- Undo toast -->
+{#if showUndoToast}
+  <div
+    class="undo-toast"
+    class:undo-toast--restore={undoToastStage === 'restore'}
+  >
+    {#if undoToastStage === 'done'}
+      <span class="undo-toast-message">Done</span>
+    {:else}
+      <span class="undo-toast-message">Note deleted.</span>
+      <button
+        class="undo-toast-btn"
+        onclick={handleUndoRestore}
+        aria-label="Restore deleted note"
+      >
+        Restore
+      </button>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .page-container {
@@ -601,6 +773,167 @@
     padding: 24px;
     height: calc(100vh - 60px);
     overflow-y: auto;
+  }
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+
+  .list-controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .list-control-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .list-control-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .list-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sort-label {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .sort-select {
+    padding: 0.4rem 0.75rem;
+    background: rgba(10, 14, 35, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .sort-select option {
+    background: rgba(10, 14, 35, 0.95);
+    color: white;
+  }
+
+  .batch-panel {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    animation: slide-up 0.3s ease;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .batch-count {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+  }
+
+  .batch-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .batch-btn:hover {
+    opacity: 0.85;
+  }
+
+  .batch-btn--delete {
+    background: rgba(239, 68, 68, 0.85);
+    color: white;
+  }
+
+  .batch-btn--cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .undo-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    animation: slide-in 0.3s ease;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .undo-toast-message {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .undo-toast-btn {
+    padding: 0.4rem 0.8rem;
+    background: var(--color-primary, #8b5cf6);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .undo-toast-btn:hover {
+    opacity: 0.85;
   }
 
   .loading-overlay {
@@ -690,12 +1023,17 @@
 
   .notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-    padding: 16px 0;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
   }
 
   @media (max-width: 768px) {
+    .notes-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 16px 0;
+    }
+
     .fullscreen-graph {
       top: 50px;
       height: calc(100vh - 50px);
