@@ -48,6 +48,7 @@
     onLinkCreate,
     onNoteDelete,
     onNoteRestore,
+    helpContent,
     delta,
     disableVariation = false
   }: {
@@ -60,6 +61,7 @@
     onLinkCreate?: (link: { source: string; target: string; link_type: string; weight: number }) => void;
     onNoteDelete?: (nodeId: string) => void;
     onNoteRestore?: (nodeId: string) => void;
+    helpContent?: string;
     delta?: GraphDelta;
     disableVariation?: boolean;
   } = $props();
@@ -168,6 +170,14 @@
   let highlightedLinkId: string | null = $state(null);
   let highlightedLinkTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // Help / Knowledge Core tooltip state
+  let showHelpModal = $state(false);
+  let showHelpTooltip = $state(false);
+  let helpTooltipPosition = $state({ x: 0, y: 0 });
+  let helpTooltipMessage = $state('');
+  let inactivityTimeout: ReturnType<typeof setTimeout> | null = null;
+  let lastActivityTime = $state(0);
+
   onMount(() => {
     if (!browser) return;
     
@@ -228,6 +238,8 @@
     
     mounted = true; // triggers $effect re-run since it's $state
 
+    resetInactivityTimer();
+
     return () => {
       mounted = false; // $state
       observerCleanup?.disconnect();
@@ -236,6 +248,7 @@
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
+      if (inactivityTimeout) clearTimeout(inactivityTimeout);
     };
   });
 
@@ -266,9 +279,12 @@
     clearAnimationState(angles, speeds);
     clearSimulation(simState);
 
+    // Pin technical nodes (e.g. Knowledge Core) to fixed screen positions
+    const pinnedNodes = pinTechnicalNodes(nodes);
+
     // Запускаем новую симуляцию
     startSimulation(
-      nodes,
+      pinnedNodes,
       links,
       width,
       height,
@@ -351,10 +367,12 @@
   }
 
   function onZoom(e: WheelEvent) {
+    updateActivity();
     handleZoom(e, transform, canvas, redraw);
   }
 
   function onMouseDown(e: MouseEvent) {
+    updateActivity();
     const pos = getMouseWorldPosition(e);
     mouseWorldPosition = pos;
 
@@ -369,6 +387,11 @@
     // Node click -> start dragging for link/move/delete
     const node = findNodeAtPosition(pos.x, pos.y);
     if (node) {
+      if (isTechnicalNode(node.id)) {
+        // Technical nodes are not draggable
+        e.preventDefault();
+        return;
+      }
       draggedNodeId = node.id;
       dragStartPosition = { x: node.x!, y: node.y! };
       dragState.dragging = true;
@@ -384,6 +407,7 @@
   }
 
   function onMouseMove(e: MouseEvent) {
+    updateActivity();
     const pos = getMouseWorldPosition(e);
     mouseWorldPosition = pos;
 
@@ -419,6 +443,7 @@
     const hovered = findLinkAtPosition(pos.x, pos.y, simState.simLinks, getSimulationNodes(simState), transform);
 
     let foundHoveredNode = false;
+    let hoveredTechnicalNode = null;
     const simNodes = getSimulationNodes(simState);
     for (const node of simNodes) {
       if (node.x && node.y) {
@@ -427,12 +452,23 @@
         if (Math.sqrt(dx * dx + dy * dy) < 30) {
           hoveredNodeId = node.id;
           foundHoveredNode = true;
+          if (node.type === 'technical') {
+            hoveredTechnicalNode = node;
+          }
           break;
         }
       }
     }
     if (!foundHoveredNode) {
       hoveredNodeId = null;
+    }
+
+    if (hoveredTechnicalNode) {
+      helpTooltipMessage = 'Click to open help, or press ?';
+      helpTooltipPosition = { x: e.clientX, y: e.clientY - 10 };
+      showHelpTooltip = true;
+    } else if (showHelpTooltip && helpTooltipMessage === 'Click to open help, or press ?') {
+      showHelpTooltip = false;
     }
 
     if (hovered) {
@@ -464,6 +500,7 @@
   }
 
   function onMouseUp(e: MouseEvent) {
+    updateActivity();
     const pos = getMouseWorldPosition(e);
     const wasDraggingNode = draggedNodeId !== null;
 
@@ -481,7 +518,7 @@
         } else {
           // Check if dropped over another node -> create link
           const targetNode = findNodeAtPosition(pos.x, pos.y);
-          if (targetNode && targetNode.id !== draggedNodeId) {
+          if (targetNode && targetNode.id !== draggedNodeId && !isTechnicalNode(targetNode.id)) {
             linkSourceNodeId = draggedNodeId;
             linkTargetNodeId = targetNode.id;
             showLinkForm = true;
@@ -513,10 +550,17 @@
   }
 
   function onClick(e: MouseEvent) {
+    updateActivity();
     const pos = getMouseWorldPosition(e);
     const clickedNode = findNodeAtPosition(pos.x, pos.y);
-    if (clickedNode && onNodeClick) {
-      onNodeClick({ id: clickedNode.id, title: clickedNode.title, type: clickedNode.type });
+    if (clickedNode) {
+      if (isTechnicalNode(clickedNode.id)) {
+        openHelpModal();
+        return;
+      }
+      if (onNodeClick) {
+        onNodeClick({ id: clickedNode.id, title: clickedNode.title, type: clickedNode.type });
+      }
     }
   }
 
@@ -650,6 +694,7 @@
   // Double-tap zoom handler
   function handleTouchStart(e: TouchEvent) {
     if (!browser) return; // Skip in server-side rendering
+    updateActivity();
 
     if (e.touches.length === 1) {
       const now = Date.now();
@@ -692,10 +737,16 @@
     }
   }
 
-  // Keyboard shortcuts: Esc toggles focus mode, Ctrl+F opens search
+  // Keyboard shortcuts: Esc toggles focus mode, F opens search, ? opens help
   function handleKeyDown(e: KeyboardEvent) {
+    // Ignore hotkeys when typing in a form or search input
+    const active = document.activeElement;
+    const isTyping = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
+
     if (e.key === 'Escape') {
-      if (showSearchBox) {
+      if (showHelpModal) {
+        showHelpModal = false;
+      } else if (showSearchBox) {
         closeSearch();
       } else if (showNoteForm || showLinkForm) {
         // Let form close first; focus mode toggles only when no forms are open
@@ -705,15 +756,27 @@
         redraw();
       }
       e.preventDefault();
+      return;
     }
 
-    if (e.key === 'f' && e.ctrlKey) {
+    if (isTyping && !showSearchBox) {
+      return;
+    }
+
+    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
       e.preventDefault();
       showSearchBox = true;
       searchQuery = '';
       searchMatchIds = [];
       searchCurrentIndex = 0;
       requestAnimationFrame(() => searchInput?.focus());
+      return;
+    }
+
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      showHelpModal = !showHelpModal;
+      return;
     }
 
     if (e.key === 'Enter' && showSearchBox) {
@@ -816,6 +879,82 @@
   function cancelUndo() {
     showUndoToast = false;
     lastDeletedNodeId = null;
+  }
+
+  function isTechnicalNode(nodeId: string): boolean {
+    return nodes.some((n) => n.id === nodeId && n.type === 'technical');
+  }
+
+  function pinTechnicalNodes(
+    nodeList: Array<{ id: string; title: string; type?: string; createdAt?: string; created_at?: string }>
+  ): Array<{ id: string; title: string; type?: string; createdAt?: string; created_at?: string; x?: number; y?: number; fx?: number; fy?: number }> {
+    return nodeList.map((n) => {
+      if (n.type === 'technical') {
+        const padding = 60;
+        return {
+          ...n,
+          x: padding,
+          y: padding,
+          fx: padding,
+          fy: padding
+        };
+      }
+      return n;
+    });
+  }
+
+  // Help content and inactivity tips
+  const hotkeyLines = [
+    'F — search nodes by name',
+    'Esc — toggle focus mode (hide effects)',
+    '? — show/hide this help',
+    'Ctrl+Shift+N — quick capture a new note',
+    'Drag node to another node — create a link',
+    'Drag node to black hole — delete note',
+    'Double-click empty space — create new note',
+    'Mouse wheel — zoom in/out'
+  ];
+
+  const randomTips = [
+    'Press F to quickly find a node by name.',
+    'Press Esc to enter focus mode and reduce visual noise.',
+    'Press ? to see all keyboard shortcuts and gestures.',
+    'Drag a node into the black hole to delete it.',
+    'Drag a node onto another node to create a link.',
+    'Double-tap empty space to add a new note.'
+  ];
+
+  function openHelpModal() {
+    showHelpModal = true;
+    showHelpTooltip = false;
+  }
+
+  function closeHelpModal() {
+    showHelpModal = false;
+  }
+
+  function showRandomTip() {
+    if (showHelpModal || showSearchBox || showNoteForm || showLinkForm) return;
+    const tip = randomTips[Math.floor(Math.random() * randomTips.length)];
+    helpTooltipMessage = tip;
+    helpTooltipPosition = { x: width * 0.5, y: height * 0.85 };
+    showHelpTooltip = true;
+    setTimeout(() => {
+      showHelpTooltip = false;
+    }, 4000);
+  }
+
+  function resetInactivityTimer() {
+    if (inactivityTimeout) clearTimeout(inactivityTimeout);
+    inactivityTimeout = setTimeout(() => {
+      showRandomTip();
+    }, 10000);
+  }
+
+  function updateActivity() {
+    lastActivityTime = Date.now();
+    showHelpTooltip = false;
+    resetInactivityTimer();
   }</script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -989,6 +1128,74 @@
       >
         ×
       </button>
+    </div>
+  </div>
+{/if}
+
+{#if showHelpTooltip}
+  <div
+    class="help-tooltip"
+    style="position: fixed; left: {helpTooltipPosition.x}px; top: {helpTooltipPosition.y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
+  >
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #a78bfa; font-weight: 600; font-size: 12px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      Knowledge Core
+    </div>
+    {helpTooltipMessage}
+  </div>
+{/if}
+
+{#if showHelpModal}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div
+    class="help-modal-backdrop"
+    style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 1100; display: flex; align-items: center; justify-content: center;"
+    onclick={(e) => { if (e.target === e.currentTarget) closeHelpModal(); }}
+  >
+    <div
+      class="help-modal"
+      style="background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 16px; padding: 24px; max-width: 520px; max-height: 80vh; overflow-y: auto; color: white; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"
+    >
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h2 style="margin: 0; font-size: 20px; color: #a78bfa;">Knowledge Core — Help</h2>
+        <button
+          onclick={closeHelpModal}
+          style="background: none; border: none; color: rgba(255,255,255,0.7); font-size: 24px; cursor: pointer;"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">Keyboard Shortcuts</h3>
+        <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7;">
+          {#each hotkeyLines as line}
+            <li>{line}</li>
+          {/each}
+        </ul>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">Canvas Gestures</h3>
+        <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7;">
+          <li>Click and drag empty space to pan the view.</li>
+          <li>Scroll or pinch to zoom.</li>
+          <li>Click a node to open its details.</li>
+          <li>Drag a node to reposition it temporarily.</li>
+        </ul>
+      </div>
+
+      {#if helpContent}
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">From the Knowledge Core</h3>
+          <div style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">{helpContent}</div>
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

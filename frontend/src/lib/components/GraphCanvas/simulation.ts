@@ -186,7 +186,11 @@ export function startSimulation(
   transform.k = 1;
 
   // Distribute nodes in a circle instead of single point (prevents extreme coordinates)
+  // Preserve fixed-position nodes (e.g. Knowledge Core) that already have x/y/fx/fy.
   const simulationNodes = nodes.map((n, i) => {
+    if (n.fx != null && n.fy != null && n.x != null && n.y != null) {
+      return { ...n };
+    }
     const angle = (i / nodes.length) * 2 * Math.PI;
     const radius = Math.min(width, height) * 0.3; // 30% of smaller dimension
     return {

@@ -2,8 +2,10 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { getNotes, createNote, deleteNote, restoreNote, type Note } from '$lib/api/notes';
+  import { getNotes, getNote, createNote, deleteNote, restoreNote, type Note } from '$lib/api/notes';
   import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
+
+  const KNOWLEDGE_CORE_ID = '00000000-0000-0000-0000-000000000001';
   import { createLink } from '$lib/api/links';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
@@ -14,6 +16,7 @@
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
+  let knowledgeCore: Note | null = $state(null);
   let loading = $state(true);
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
@@ -48,6 +51,14 @@
         }
       }
 
+      // Fetch the Knowledge Core system note for in-app help
+      try {
+        knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
+      } catch (e) {
+        console.log('[graph/+page] Knowledge Core not found, help content will be empty');
+        knowledgeCore = null;
+      }
+
       // Transform nodes: backend might return Id/id/ID in different cases
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
@@ -55,6 +66,16 @@
         type: n.type || n.Type || 'star',
         createdAt: n.created_at || n.createdAt || n.CreatedAt
       }));
+
+      // Ensure the Knowledge Core is always present on the canvas
+      if (knowledgeCore && !transformedNodes.some((n) => n.id === knowledgeCore?.id)) {
+        transformedNodes.push({
+          id: knowledgeCore.id,
+          title: knowledgeCore.title,
+          type: 'technical',
+          createdAt: knowledgeCore.created_at
+        });
+      }
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
       const transformedLinks = rawData.links.map((l: any) => ({
@@ -206,6 +227,7 @@
             onNoteRestore={handleNoteRestore}
             onNoteCreate={handleNoteCreate}
             onLinkCreate={handleLinkCreate}
+            helpContent={knowledgeCore?.content}
           />
         {/key}
       {:else}
