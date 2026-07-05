@@ -1211,54 +1211,11 @@
 {/if}
 
 {#if showHelpModal}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div
-    class="help-modal-backdrop"
-    style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 1100; display: flex; align-items: center; justify-content: center;"
-    onclick={(e) => { if (e.target === e.currentTarget) closeHelpModal(); }}
-  >
-    <div
-      class="help-modal"
-      style="background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 16px; padding: 24px; max-width: 520px; max-height: 80vh; overflow-y: auto; color: white; box-shadow: 0 20px 60px rgba(0,0,0,0.5);"
-    >
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-        <h2 style="margin: 0; font-size: 20px; color: #a78bfa;">Knowledge Core — Help</h2>
-        <button
-          onclick={closeHelpModal}
-          style="background: none; border: none; color: rgba(255,255,255,0.7); font-size: 24px; cursor: pointer;"
-          aria-label="Close"
-        >
-          ×
-        </button>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">Keyboard Shortcuts</h3>
-        <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7;">
-          {#each hotkeyLines as line}
-            <li>{line}</li>
-          {/each}
-        </ul>
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">Canvas Gestures</h3>
-        <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7;">
-          <li>Click and drag empty space to pan the view.</li>
-          <li>Scroll or pinch to zoom.</li>
-          <li>Click a node to open its details.</li>
-          <li>Drag a node to reposition it temporarily.</li>
-        </ul>
-      </div>
-
-      {#if helpContent}
-        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.8);">From the Knowledge Core</h3>
-          <div style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">{helpContent}</div>
-        </div>
-      {/if}
-    </div>
-  </div>
+  <HelpHotkeysModal
+    hotkeyLines={hotkeyLines}
+    helpContent={helpContent}
+    onClose={closeHelpModal}
+  />
 {/if}
 
 <style>
