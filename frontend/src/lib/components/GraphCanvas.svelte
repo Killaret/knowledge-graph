@@ -19,6 +19,7 @@
     findLinkAtPosition,
     startAnimationLoop,
     clearAnimationState,
+    drawPreviewLink,
     type TransformState,
     type DragState,
     type SimulationNode,
@@ -140,6 +141,7 @@
   let linkSourceNodeId: string | null = $state(null);
   let linkTargetNodeId: string | null = $state(null);
   let mouseWorldPosition = $state({ x: 0, y: 0 });
+  let linkPreviewTarget: { sourceId: string; targetId: string } | null = $state(null);
 
   // Selection state for keyboard delete
   let selectedNodeId: string | null = $state(null);
@@ -233,7 +235,7 @@
           }
           
           // Draw the full graph with all effects
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
         }
       },
       stableRender
@@ -296,7 +298,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
         }
       },
       () => {
@@ -327,7 +329,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
         }
       },
       onResetView: () => {
@@ -365,7 +367,7 @@
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
-      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
+      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId, linkPreviewTarget);
     }
   }
 
@@ -429,6 +431,18 @@
 
         // Check if over black hole
         blackHole.hovered = isNodeOverBlackHole(node, blackHole);
+
+        // Check if over another node for link creation
+        const targetNode = findNodeAtPosition(pos.x, pos.y);
+        if (targetNode && targetNode.id !== draggedNodeId && !isTechnicalNode(targetNode.id)) {
+          isDraggingForLink = true;
+          linkTargetNodeId = targetNode.id;
+          linkPreviewTarget = { sourceId: draggedNodeId, targetId: targetNode.id };
+        } else {
+          isDraggingForLink = false;
+          linkTargetNodeId = null;
+          linkPreviewTarget = null;
+        }
       }
       redraw();
       return;
@@ -537,6 +551,8 @@
         }
       }
       draggedNodeId = null;
+      isDraggingForLink = false;
+      linkPreviewTarget = null;
     }
 
     dragState.dragging = false;
@@ -1056,33 +1072,53 @@
 {#if showNoteForm}
   <div
     class="note-form"
-    style="position: absolute; left: {noteFormPosition.x}px; top: {noteFormPosition.y}px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 16px; min-width: 280px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); z-index: 100;"
+    style="position: absolute; left: {noteFormPosition.x}px; top: {noteFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
-    <h3 style="margin: 0 0 12px 0; color: white; font-size: 14px;">Create New Note</h3>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <h3 style="margin: 0; color: #a78bfa; font-size: 16px; font-weight: 600;">Create New Note</h3>
+      <button
+        onclick={closeNoteForm}
+        style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>
     <input
       type="text"
       placeholder="Title"
       bind:value={newNoteTitle}
-      style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white; box-sizing: border-box;"
+      style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; font-size: 14px; transition: border-color 0.2s;"
+      onkeydown={(e) => e.key === 'Enter' && createNote()}
     />
     <textarea
       placeholder="Content (optional)"
       bind:value={newNoteContent}
-      style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white; min-height: 80px; box-sizing: border-box;"
+      style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; min-height: 100px; box-sizing: border-box; font-size: 14px; resize: vertical; transition: border-color 0.2s;"
     ></textarea>
     <select
       bind:value={newNoteType}
-      style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white;"
+      style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
-      <option value="star">Star</option>
-      <option value="planet">Planet</option>
-      <option value="comet">Comet</option>
-      <option value="galaxy">Galaxy</option>
-      <option value="asteroid">Asteroid</option>
+      <option value="star">⭐ Star</option>
+      <option value="planet">🪐 Planet</option>
+      <option value="comet">☄️ Comet</option>
+      <option value="galaxy">🌀 Galaxy</option>
+      <option value="asteroid">🌑 Asteroid</option>
     </select>
-    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-      <button onclick={closeNoteForm} style="padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: transparent; color: white; cursor: pointer;">Cancel</button>
-      <button onclick={createNote} style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer;">Create</button>
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button 
+        onclick={closeNoteForm} 
+        style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+      >
+        Cancel
+      </button>
+      <button 
+        onclick={createNote} 
+        style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
+      >
+        Create
+      </button>
     </div>
   </div>
 {/if}
@@ -1090,30 +1126,49 @@
 {#if showLinkForm}
   <div
     class="link-form"
-    style="position: absolute; left: {linkFormPosition.x}px; top: {linkFormPosition.y}px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(255, 204, 0, 0.5); border-radius: 8px; padding: 16px; min-width: 260px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); z-index: 100;"
+    style="position: absolute; left: {linkFormPosition.x}px; top: {linkFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
-    <h3 style="margin: 0 0 12px 0; color: white; font-size: 14px;">Create Link</h3>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <h3 style="margin: 0; color: #fbbf24; font-size: 16px; font-weight: 600;">Create Link</h3>
+      <button
+        onclick={closeLinkForm}
+        style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>
     <select
       bind:value={newLinkType}
-      style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white;"
+      style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
-      <option value="reference">Reference</option>
-      <option value="dependency">Dependency</option>
-      <option value="related">Related</option>
-      <option value="custom">Custom</option>
+      <option value="reference">📖 Reference</option>
+      <option value="dependency">🔗 Dependency</option>
+      <option value="related">🔀 Related</option>
+      <option value="custom">✨ Custom</option>
     </select>
-    <label style="display: block; color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Weight: {newLinkWeight.toFixed(1)}</label>
+    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Strength: {newLinkWeight.toFixed(1)}</label>
     <input
       type="range"
       min="0.1"
       max="1.0"
       step="0.1"
       bind:value={newLinkWeight}
-      style="width: 100%; margin-bottom: 12px;"
+      style="width: 100%; margin-bottom: 16px; accent-color: #fbbf24;"
     />
-    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-      <button onclick={closeLinkForm} style="padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: transparent; color: white; cursor: pointer;">Cancel</button>
-      <button onclick={createLink} style="padding: 6px 12px; border: none; border-radius: 4px; background: #ffcc00; color: #000; cursor: pointer;">Create</button>
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button 
+        onclick={closeLinkForm} 
+        style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+      >
+        Cancel
+      </button>
+      <button 
+        onclick={createLink} 
+        style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);"
+      >
+        Create Link
+      </button>
     </div>
   </div>
 {/if}

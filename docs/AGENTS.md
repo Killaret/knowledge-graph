@@ -167,11 +167,11 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Improve black hole deletion animation and two-stage undo toast (Done → Restore stages).
 - Add "Delete all links" button in note side panel link management with confirmation modal.
 - Extract shared `HelpHotkeysModal` component and integrate into GraphCanvas.
+- Reuse `HelpHotkeysModal` on list page with menu integration.
+- Improve ghost node creation flow with enhanced modal design (backdrop blur, gradients, improved styling).
+- Improve drag-and-drop link creation UX with visual preview link and enhanced link form styling.
 
 **Pending:**
-- Improve ghost node creation flow with tippy form.
-- Improve drag-and-drop link creation UX.
-- Reuse `HelpHotkeysModal` on list page.
 - Update visual and integration tests.
 
 ### Iteration 4 — Multilingual lexicon
@@ -195,6 +195,6 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Iteration 1 completed.
 - Iteration 2 completed.
 - Iteration 3 completed (keyboard shortcuts, bulk actions menu, visual feedback).
-- Iteration 4 in progress (hotkeys added, two-stage undo toast implemented, Delete all links button added, HelpHotkeysModal component extracted).
+- Iteration 4 nearly completed (hotkeys added, two-stage undo toast implemented, Delete all links button added, HelpHotkeysModal component extracted, ghost node form enhanced, drag-and-drop link creation UX improved). Pending: visual and integration tests.
 - GraphCanvas FSD refactoring: attempted but paused due to SvelteKit alias configuration issues. Structure created in commits 5addc3c-95b060f, reverted to 068714f for stability.
 

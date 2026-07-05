@@ -1516,6 +1516,40 @@ function isNewNode(node: SimulationNode): boolean {
 }
 
 /**
+ * Draw a preview link during drag-and-drop
+ */
+export function drawPreviewLink(
+  ctx: CanvasRenderingContext2D,
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  opacity: number = 0.6
+): void {
+  ctx.beginPath();
+  ctx.moveTo(sourceX, sourceY);
+  ctx.lineTo(targetX, targetY);
+  
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = `rgba(255, 204, 0, ${opacity})`;
+  ctx.setLineDash([5, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // Draw target indicator
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 15, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(255, 204, 0, ${opacity})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 8, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(255, 204, 0, ${opacity})`;
+  ctx.fill();
+}
+
+/**
  * Main draw function
  */
 export function draw(
@@ -1537,7 +1571,8 @@ export function draw(
   gravitySystem?: { applyAttraction: (nodes: SimulationNode[]) => void; getDistortion: (x: number, y: number, nodes: SimulationNode[], maxDistance?: number) => { dx: number; dy: number }; isEnabled: (nodeCount: number) => boolean } | null,
   focusMode: boolean = false,
   searchMatchIds?: string[],
-  highlightedLinkId?: string | null
+  highlightedLinkId?: string | null,
+  linkPreviewTarget?: { sourceId: string; targetId: string } | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -1565,6 +1600,15 @@ export function draw(
 
   // Draw links with animation
   drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId, highlightedLinkId);
+
+  // Draw link preview if dragging for link creation
+  if (linkPreviewTarget) {
+    const sourceNode = nodes.find((n) => n.id === linkPreviewTarget.sourceId);
+    const targetNode = nodes.find((n) => n.id === linkPreviewTarget.targetId);
+    if (sourceNode && targetNode && sourceNode.x != null && sourceNode.y != null && targetNode.x != null && targetNode.y != null) {
+      drawPreviewLink(ctx, sourceNode.x, sourceNode.y, targetNode.x, targetNode.y, 0.6);
+    }
+  }
 
   // Draw nodes with new effects
   const enableShadows = !focusMode && nodes.length < graphConfig2D.shadows_threshold;
