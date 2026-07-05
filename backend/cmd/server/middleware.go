@@ -11,19 +11,38 @@ import (
 	"knowledge-graph/internal/interfaces/api/middleware"
 )
 
-// corsMiddleware returns CORS middleware that allows requests from frontend
+// corsMiddleware returns CORS middleware that allows requests from whitelisted origins.
+// In development, localhost origins are allowed. In production, only configured origins are allowed.
 func corsMiddleware() gin.HandlerFunc {
+	// Whitelist of allowed origins
+	allowedOrigins := map[string]bool{
+		"http://localhost:3000":  true,
+		"http://localhost:3001":  true,
+		"http://localhost:5173":  true,
+		"http://localhost:8080":  true,
+		"http://localhost:8081":  true,
+		"http://localhost:8082":  true,
+		"http://localhost:8083":  true,
+		"http://127.0.0.1:3000":  true,
+		"http://127.0.0.1:3001":  true,
+		"http://127.0.0.1:5173":  true,
+		"http://127.0.0.1:8080":  true,
+		"http://127.0.0.1:8082":  true,
+	}
+
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		if origin == "" {
-			origin = "*"
+
+		// Only set CORS headers if origin is in whitelist
+		if origin != "" && allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Backend-Url")
+			c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+			c.Writer.Header().Set("Vary", "Origin")
 		}
-		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With, X-Backend-Url")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
-		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
-		c.Writer.Header().Set("Vary", "Origin")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)

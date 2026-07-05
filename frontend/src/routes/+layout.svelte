@@ -14,6 +14,8 @@
 
   // Public routes that don't require authentication
   const publicRoutes = [
+    '/', // Main page - accessible for guests
+    '/graph', // Graph page - accessible for guests
     '/auth/login',
     '/auth/register',
     '/auth/forgot-password',

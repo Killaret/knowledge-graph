@@ -48,3 +48,34 @@ func NewMetadata(value map[string]interface{}) (Metadata, error) {
 func (m Metadata) Value() map[string]interface{} {
 	return m.value
 }
+
+// SourceType — тип источника связи (user-created vs gamma/recommended)
+type SourceType struct {
+	value string
+}
+
+func NewSourceType(value string) (SourceType, error) {
+	switch value {
+	case "user", "gamma":
+		return SourceType{value: value}, nil
+	default:
+		return SourceType{}, errors.New("invalid source type: must be 'user' or 'gamma'")
+	}
+}
+
+func (s SourceType) String() string {
+	return s.value
+}
+
+func (s SourceType) IsGamma() bool {
+	return s.value == "gamma"
+}
+
+func (s SourceType) IsUser() bool {
+	return s.value == "user"
+}
+
+// DefaultSourceType returns the default source type (user)
+func DefaultSourceType() SourceType {
+	return SourceType{value: "user"}
+}

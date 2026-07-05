@@ -156,7 +156,7 @@ The migration `016_add_auth_and_sharing.sql` creates:
 
 3. **PKCE for OAuth**
    - Prevents authorization code interception
-   - Plain method for simplicity (can be upgraded to S256)
+   - S256 method (RFC 7636) for enhanced security
 
 4. **Rate Limiting**
    - Apply rate limiting to auth endpoints

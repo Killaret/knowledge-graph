@@ -13,6 +13,7 @@ type Link struct {
 	linkType     LinkType
 	weight       Weight
 	metadata     Metadata
+	sourceType   SourceType
 	creatorID    *uuid.UUID
 	createdAt    time.Time
 }
@@ -25,6 +26,7 @@ func NewLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, met
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
+		sourceType:   DefaultSourceType(),
 		creatorID:    nil,
 		createdAt:    time.Now(),
 	}
@@ -38,13 +40,30 @@ func NewLinkWithCreator(sourceID, targetID, creatorID uuid.UUID, linkType LinkTy
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
+		sourceType:   DefaultSourceType(),
 		creatorID:    &creatorID,
 		createdAt:    time.Now(),
 	}
 }
 
+// NewGammaLink creates a link from recommendations (gamma source type)
+func NewGammaLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata) *Link {
+	sourceType, _ := NewSourceType("gamma")
+	return &Link{
+		id:           uuid.New(),
+		sourceNoteID: sourceID,
+		targetNoteID: targetID,
+		linkType:     linkType,
+		weight:       weight,
+		metadata:     metadata,
+		sourceType:   sourceType,
+		creatorID:    nil,
+		createdAt:    time.Now(),
+	}
+}
+
 // ReconstructLink reconstructs a link from saved data
-func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, createdAt time.Time) *Link {
+func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, sourceType SourceType, createdAt time.Time) *Link {
 	return &Link{
 		id:           id,
 		sourceNoteID: sourceID,
@@ -52,12 +71,13 @@ func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkTy
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
+		sourceType:   sourceType,
 		creatorID:    nil,
 		createdAt:    createdAt,
 	}
 }
 
-func ReconstructLinkWithCreator(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, creatorID *uuid.UUID, createdAt time.Time) *Link {
+func ReconstructLinkWithCreator(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, sourceType SourceType, creatorID *uuid.UUID, createdAt time.Time) *Link {
 	return &Link{
 		id:           id,
 		sourceNoteID: sourceID,
@@ -65,6 +85,7 @@ func ReconstructLinkWithCreator(id uuid.UUID, sourceID, targetID uuid.UUID, link
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
+		sourceType:   sourceType,
 		creatorID:    creatorID,
 		createdAt:    createdAt,
 	}
@@ -105,6 +126,14 @@ func (l *Link) CreatorID() *uuid.UUID {
 
 func (l *Link) SetCreatorID(creatorID uuid.UUID) {
 	l.creatorID = &creatorID
+}
+
+func (l *Link) SourceType() SourceType {
+	return l.sourceType
+}
+
+func (l *Link) SetSourceType(sourceType SourceType) {
+	l.sourceType = sourceType
 }
 
 // UpdateWeight updates the link weight

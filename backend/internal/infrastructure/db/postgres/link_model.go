@@ -15,6 +15,7 @@ type LinkModel struct {
 	LinkType     string         `gorm:"default:'reference';uniqueIndex:idx_links_source_target_type;column:link_type"`
 	Weight       float64        `gorm:"default:1.0;column:weight"`
 	Metadata     datatypes.JSON `gorm:"type:jsonb;column:metadata"`
+	SourceType   string         `gorm:"default:'user';column:source_type;index"`
 	CreatorID    *uuid.UUID     `gorm:"type:uuid;index"`
 	Creator      *UserModel     `gorm:"foreignKey:CreatorID"`
 	CreatedAt    time.Time      `gorm:"column:created_at"`

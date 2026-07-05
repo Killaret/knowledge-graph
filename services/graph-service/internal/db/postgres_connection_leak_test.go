@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -14,6 +15,10 @@ import (
 func TestConnectionLeak(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping connection leak test in short mode")
+	}
+
+	if os.Getenv("GRAPH_SERVICE_INTEGRATION") == "" {
+		t.Skip("Skipping integration test: set GRAPH_SERVICE_INTEGRATION to enable")
 	}
 
 	ctx := context.Background()
@@ -71,13 +76,13 @@ func TestConnectionLeak(t *testing.T) {
 				var id string
 				var title string
 				if err := rows.Scan(&id, &title); err != nil {
-					t.Logf("Goroutine %d: Scan failed: %v", id, err)
+					t.Logf("Goroutine %d: Scan failed: %v", i, err)
 					return
 				}
 			}
 
 			if err := rows.Err(); err != nil {
-				t.Logf("Goroutine %d: Rows error: %v", id, err)
+				t.Logf("Goroutine %d: Rows error: %v", i, err)
 			}
 		}(i)
 	}
@@ -114,6 +119,10 @@ func TestConnectionLeak(t *testing.T) {
 func TestPoolStress(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
+	}
+
+	if os.Getenv("GRAPH_SERVICE_INTEGRATION") == "" {
+		t.Skip("Skipping integration test: set GRAPH_SERVICE_INTEGRATION to enable")
 	}
 
 	ctx := context.Background()

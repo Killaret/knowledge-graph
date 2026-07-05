@@ -98,9 +98,13 @@ describe('GraphCanvas - Interactions', () => {
     
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
       clearRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(),
-      beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn(), fill: vi.fn(),
-      closePath: vi.fn(), arc: vi.fn(), ellipse: vi.fn(), rotate: vi.fn(), fillRect: vi.fn(),
-      strokeRect: vi.fn(), setLineDash: vi.fn(), fillText: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+      beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), quadraticCurveTo: vi.fn(),
+      stroke: vi.fn(), fill: vi.fn(), closePath: vi.fn(), arc: vi.fn(), ellipse: vi.fn(),
+      rotate: vi.fn(), fillRect: vi.fn(), strokeRect: vi.fn(), setLineDash: vi.fn(),
+      fillText: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      roundRect: vi.fn(),
       fillStyle: '', strokeStyle: '', font: '', textAlign: 'center', textBaseline: 'middle',
       lineWidth: 1, shadowBlur: 0, shadowColor: ''
     });

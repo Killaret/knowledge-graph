@@ -16,18 +16,27 @@
     draw,
     resetView,
     handleZoom,
-    handlePanStart,
-    handlePanMove,
-    handlePanEnd,
-    handleClick,
     findLinkAtPosition,
     startAnimationLoop,
     clearAnimationState,
     type TransformState,
     type DragState,
-    applyDelta as applyDeltaToSimulation
+    type SimulationNode,
+    applyDelta as applyDeltaToSimulation,
+    createBlackHole,
+    updateBlackHolePosition,
+    updateBlackHolePulse,
+    isNodeOverBlackHole,
+    isPointOverBlackHole,
+    type BlackHoleState,
+    createGhostNode,
+    updateGhostNodePosition,
+    updateGhostNodePulse,
+    isPointOverGhostNode,
+    type GhostNodeState,
+    createGravitySystem,
+    type GravitySystem
   } from './GraphCanvas';
-  import { drawBackground, drawAnimatedLink } from './GraphCanvas/renderer';
 
   const {
     nodes,
@@ -35,6 +44,9 @@
     onNodeClick,
     onLinkEdit,
     onLinkDelete,
+    onNoteCreate,
+    onLinkCreate,
+    onNoteDelete,
     delta,
     disableVariation = false
   }: {
@@ -43,6 +55,9 @@
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onLinkEdit?: (link: { source: string; target: string; link_type: string; weight: number }) => void;
     onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void;
+    onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
+    onLinkCreate?: (link: { source: string; target: string; link_type: string; weight: number }) => void;
+    onNoteDelete?: (nodeId: string) => void;
     delta?: GraphDelta;
     disableVariation?: boolean;
   } = $props();
@@ -109,6 +124,32 @@
   // Time for animations
   let animationTime = $state(0);
 
+  // Interactive canvas elements
+  let blackHole: BlackHoleState = $state(createBlackHole(width, height));
+  let ghostNode: GhostNodeState = $state(createGhostNode(width, height, nodes));
+  let gravitySystem: GravitySystem = $state(createGravitySystem());
+
+  // Drag-and-drop state
+  let draggedNodeId: string | null = $state(null);
+  let dragStartPosition = $state({ x: 0, y: 0 });
+  let isDraggingForLink = $state(false);
+  let linkSourceNodeId: string | null = $state(null);
+  let linkTargetNodeId: string | null = $state(null);
+  let mouseWorldPosition = $state({ x: 0, y: 0 });
+
+  // Note creation form state
+  let showNoteForm = $state(false);
+  let noteFormPosition = $state({ x: 0, y: 0 });
+  let newNoteTitle = $state('');
+  let newNoteContent = $state('');
+  let newNoteType = $state('planet');
+
+  // Link creation form state
+  let showLinkForm = $state(false);
+  let linkFormPosition = $state({ x: 0, y: 0 });
+  let newLinkType = $state('related');
+  let newLinkWeight = $state(0.5);
+
   onMount(() => {
     if (!browser) return;
     
@@ -120,8 +161,11 @@
     width = resizeState.width;
     height = resizeState.height;
     
-    // Initialize particle system
+    // Initialize interactive systems
     particleSystem = new ParticleSystem(nodes.length);
+    blackHole = createBlackHole(width, height);
+    ghostNode = createGhostNode(width, height, nodes);
+    gravitySystem = createGravitySystem();
     
     // ResizeObserver для отслеживания размера контейнера
     observerCleanup = setupResizeObserver(canvas, () => {
@@ -142,15 +186,23 @@
       () => getSimulationNodes(simState),
       () => {
         const simNodes = getSimulationNodes(simState);
-        if (ctx && simNodes.length > 0) {
+        if (ctx) {
           // Update animation time
           animationTime = performance.now();
           
-          // Draw background
-          drawBackground(ctx, width, height, simNodes, animationTime);
+          // Update interactive element positions and pulses
+          updateBlackHolePosition(blackHole, width, height);
+          updateBlackHolePulse(blackHole, animationTime);
+          updateGhostNodePosition(ghostNode, width, height, nodes);
+          updateGhostNodePulse(ghostNode, animationTime);
+
+          // Apply subtle gravity attraction
+          if (gravitySystem.isEnabled(simNodes.length)) {
+            gravitySystem.applyAttraction(simNodes);
+          }
           
-          // Draw with new effects
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem);
+          // Draw the full graph with all effects
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
         }
       },
       stableRender
@@ -207,7 +259,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
         }
       },
       () => {
@@ -238,7 +290,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
         }
       },
       onResetView: () => {
@@ -250,94 +302,298 @@
     });
   });
 
-  // Обёртки для обработчиков событий
+
+
+  function getMouseWorldPosition(e: MouseEvent): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left - transform.x) / transform.k,
+      y: (e.clientY - rect.top - transform.y) / transform.k
+    };
+  }
+
+  function findNodeAtPosition(x: number, y: number): SimulationNode | undefined {
+    const simNodes = getSimulationNodes(simState);
+    for (const node of simNodes) {
+      if (node.x == null || node.y == null) continue;
+      const dx = node.x - x;
+      const dy = node.y - y;
+      if (Math.sqrt(dx * dx + dy * dy) < 30) {
+        return node;
+      }
+    }
+    return undefined;
+  }
+
+  function redraw() {
+    const simNodes = getSimulationNodes(simState);
+    if (ctx) {
+      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
+    }
+  }
+
   function onZoom(e: WheelEvent) {
-    handleZoom(e, transform, canvas, () => {
-      const simNodes = getSimulationNodes(simState);
-      if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
-      }
-    });
+    handleZoom(e, transform, canvas, redraw);
   }
 
-  function onPanStart(e: MouseEvent) {
-    handlePanStart(e, dragState, transform, canvas);
+  function onMouseDown(e: MouseEvent) {
+    const pos = getMouseWorldPosition(e);
+    mouseWorldPosition = pos;
+
+    // Ghost node click -> create note form
+    if (isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform)) {
+      showNoteForm = true;
+      noteFormPosition = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+      return;
+    }
+
+    // Node click -> start dragging for link/move/delete
+    const node = findNodeAtPosition(pos.x, pos.y);
+    if (node) {
+      draggedNodeId = node.id;
+      dragStartPosition = { x: node.x!, y: node.y! };
+      dragState.dragging = true;
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+      return;
+    }
+
+    // Empty space -> pan
+    dragState.dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+    dragState.dragging = true;
+    canvas.style.cursor = 'grabbing';
   }
 
-  function onPanMove(e: MouseEvent) {
-    handlePanMove(e, dragState, transform, () => {
-      const simNodes = getSimulationNodes(simState);
-      if (ctx && simNodes.length > 0) {
-        draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender);
+  function onMouseMove(e: MouseEvent) {
+    const pos = getMouseWorldPosition(e);
+    mouseWorldPosition = pos;
+
+    // Update hover states for interactive elements
+    blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, transform);
+    ghostNode.hovered = isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform);
+
+    // Dragging a node
+    if (draggedNodeId && dragState.dragging) {
+      const node = getSimulationNodes(simState).find((n) => n.id === draggedNodeId);
+      if (node && node.x != null && node.y != null) {
+        node.x = pos.x;
+        node.y = pos.y;
+        node.fx = pos.x;
+        node.fy = pos.y;
+
+        // Check if over black hole
+        blackHole.hovered = isNodeOverBlackHole(node, blackHole);
       }
-    });
+      redraw();
+      return;
+    }
 
-    // Link hover detection (only when not dragging)
-    if (!dragState.dragging) {
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
-      const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
+    // Panning
+    if (dragState.dragging) {
+      transform.x = e.clientX - dragState.dragStart.x;
+      transform.y = e.clientY - dragState.dragStart.y;
+      redraw();
+      return;
+    }
 
-      const simNodes = getSimulationNodes(simState);
-      const hovered = findLinkAtPosition(mouseX, mouseY, simState.simLinks, simNodes, transform);
+    // Hover detection (only when not dragging)
+    const hovered = findLinkAtPosition(pos.x, pos.y, simState.simLinks, getSimulationNodes(simState), transform);
 
-      // Node hover detection
-      let foundHoveredNode = false;
-      for (const node of simNodes) {
-        if (node.x && node.y) {
-          const dx = mouseX - node.x;
-          const dy = mouseY - node.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 30) { // Node radius + margin
-            hoveredNodeId = node.id;
-            foundHoveredNode = true;
-            break;
+    let foundHoveredNode = false;
+    const simNodes = getSimulationNodes(simState);
+    for (const node of simNodes) {
+      if (node.x && node.y) {
+        const dx = pos.x - node.x;
+        const dy = pos.y - node.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 30) {
+          hoveredNodeId = node.id;
+          foundHoveredNode = true;
+          break;
+        }
+      }
+    }
+    if (!foundHoveredNode) {
+      hoveredNodeId = null;
+    }
+
+    if (hovered) {
+      const sourceNode = typeof hovered.source === 'string'
+        ? simNodes.find((n) => n.id === hovered.source)
+        : hovered.source;
+      const targetNode = typeof hovered.target === 'string'
+        ? simNodes.find((n) => n.id === hovered.target)
+        : hovered.target;
+
+      if (sourceNode && targetNode) {
+        hoveredLink = {
+          source: typeof hovered.source === 'string' ? hovered.source : (hovered.source as any).id,
+          target: typeof hovered.target === 'string' ? hovered.target : (hovered.target as any).id,
+          link_type: hovered.link_type || 'related',
+          weight: hovered.weight ?? 0.5,
+          source_type: (hovered as any).source_type || 'user'
+        };
+        const centerX = (sourceNode.x! + targetNode.x!) / 2;
+        const centerY = (sourceNode.y! + targetNode.y!) / 2;
+        tooltipPosition = {
+          x: centerX * transform.k + transform.x + 10,
+          y: centerY * transform.k + transform.y + 10
+        };
+      }
+    } else {
+      hoveredLink = null;
+    }
+  }
+
+  function onMouseUp(e: MouseEvent) {
+    const pos = getMouseWorldPosition(e);
+    const wasDraggingNode = draggedNodeId !== null;
+
+    if (draggedNodeId) {
+      const node = getSimulationNodes(simState).find((n) => n.id === draggedNodeId);
+      if (node) {
+        // Check if dropped over black hole -> delete
+        if (isNodeOverBlackHole(node, blackHole)) {
+          animateNodeDeletion(node, () => {
+            if (onNoteDelete) {
+              onNoteDelete(node.id);
+            }
+          });
+        } else {
+          // Check if dropped over another node -> create link
+          const targetNode = findNodeAtPosition(pos.x, pos.y);
+          if (targetNode && targetNode.id !== draggedNodeId) {
+            linkSourceNodeId = draggedNodeId;
+            linkTargetNodeId = targetNode.id;
+            showLinkForm = true;
+            linkFormPosition = { x: e.clientX, y: e.clientY };
+
+            // Spring-back source node to original position
+            animateSpringBack(node, dragStartPosition);
+          } else {
+            // Release fixed position
+            node.fx = undefined;
+            node.fy = undefined;
           }
         }
       }
-      if (!foundHoveredNode) {
-        hoveredNodeId = null;
-      }
+      draggedNodeId = null;
+    }
 
-      if (hovered) {
-        const sourceNode = typeof hovered.source === 'string'
-          ? simNodes.find((n) => n.id === hovered.source)
-          : hovered.source;
-        const targetNode = typeof hovered.target === 'string'
-          ? simNodes.find((n) => n.id === hovered.target)
-          : hovered.target;
+    dragState.dragging = false;
+    canvas.style.cursor = 'grab';
+    blackHole.hovered = false;
 
-        if (sourceNode && targetNode) {
-          hoveredLink = {
-            source: typeof hovered.source === 'string' ? hovered.source : (hovered.source as any).id,
-            target: typeof hovered.target === 'string' ? hovered.target : (hovered.target as any).id,
-            link_type: hovered.link_type || 'related',
-            weight: hovered.weight ?? 0.5,
-            source_type: (hovered as any).source_type || 'user'
-          };
-
-          // Position tooltip near the center of the link
-          const centerX = (sourceNode.x! + targetNode.x!) / 2;
-          const centerY = (sourceNode.y! + targetNode.y!) / 2;
-          tooltipPosition = {
-            x: centerX * transform.k + transform.x + 10,
-            y: centerY * transform.k + transform.y + 10
-          };
-        }
-      } else {
+    // Ghost node click up (without drag) - already handled in mousedown
+    if (!wasDraggingNode && !ghostNode.hovered) {
+      const clickedNode = findNodeAtPosition(pos.x, pos.y);
+      if (!clickedNode) {
         hoveredLink = null;
       }
     }
   }
 
-  function onPanEnd() {
-    handlePanEnd(dragState, canvas);
-    hoveredLink = null;
+  function onClick(e: MouseEvent) {
+    const pos = getMouseWorldPosition(e);
+    const clickedNode = findNodeAtPosition(pos.x, pos.y);
+    if (clickedNode && onNodeClick) {
+      onNodeClick({ id: clickedNode.id, title: clickedNode.title, type: clickedNode.type });
+    }
   }
 
-  function onClick(e: MouseEvent) {
-    handleClick(e, canvas, transform, getSimulationNodes(simState), onNodeClick);
-    hoveredLink = null;
+  function animateNodeDeletion(node: SimulationNode, onComplete: () => void) {
+    const startX = node.x!;
+    const startY = node.y!;
+    const startTime = performance.now();
+    const duration = 300;
+
+    function step() {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const ease = t * t; // accelerate toward center
+
+      node.x = startX + (blackHole.x - startX) * ease;
+      node.y = startY + (blackHole.y - startY) * ease;
+      node.scale = 1 - ease;
+      node.opacity = 1 - ease;
+
+      redraw();
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        onComplete();
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function animateSpringBack(node: SimulationNode, target: { x: number; y: number }) {
+    const startX = node.x!;
+    const startY = node.y!;
+    const startTime = performance.now();
+    const duration = 300;
+
+    function step() {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+
+      node.x = startX + (target.x - startX) * ease;
+      node.y = startY + (target.y - startY) * ease;
+      node.fx = node.x;
+      node.fy = node.y;
+
+      redraw();
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        node.fx = undefined;
+        node.fy = undefined;
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function createNote() {
+    if (newNoteTitle.trim() && onNoteCreate) {
+      onNoteCreate({
+        title: newNoteTitle.trim(),
+        content: newNoteContent.trim(),
+        type: newNoteType
+      });
+    }
+    closeNoteForm();
+  }
+
+  function closeNoteForm() {
+    showNoteForm = false;
+    newNoteTitle = '';
+    newNoteContent = '';
+    newNoteType = 'planet';
+  }
+
+  function createLink() {
+    if (linkSourceNodeId && linkTargetNodeId && onLinkCreate) {
+      onLinkCreate({
+        source: linkSourceNodeId,
+        target: linkTargetNodeId,
+        link_type: newLinkType,
+        weight: newLinkWeight
+      });
+    }
+    closeLinkForm();
+  }
+
+  function closeLinkForm() {
+    showLinkForm = false;
+    linkSourceNodeId = null;
+    linkTargetNodeId = null;
+    newLinkType = 'related';
+    newLinkWeight = 0.5;
   }
 
   function handleLinkEdit() {
@@ -412,9 +668,9 @@
 <canvas
   bind:this={canvas}
   data-testid="graph-canvas"
-  onmousedown={onPanStart}
-  onmousemove={onPanMove}
-  onmouseup={onPanEnd}
+  onmousedown={onMouseDown}
+  onmousemove={onMouseMove}
+  onmouseup={onMouseUp}
   onclick={onClick}
   ontouchstart={handleTouchStart}
   onwheel={onZoom}
@@ -429,18 +685,84 @@
 {/if}
 
 {#if hoveredLink}
-  {@const sourceNode = nodes.find(n => n.id === hoveredLink.source)}
-  {@const targetNode = nodes.find(n => n.id === hoveredLink.target)}
+  {@const currentLink = hoveredLink}
+  {@const sourceNode = nodes.find(n => n.id === currentLink.source)}
+  {@const targetNode = nodes.find(n => n.id === currentLink.target)}
   <LinkTooltip
     visible={true}
     x={tooltipPosition.x}
     y={tooltipPosition.y}
-    linkType={hoveredLink.link_type}
-    weight={hoveredLink.weight}
-    sourceType={hoveredLink.source_type}
+    linkType={currentLink.link_type}
+    weight={currentLink.weight}
+    sourceType={currentLink.source_type}
     sourceTitle={sourceNode?.title || 'Unknown'}
     targetTitle={targetNode?.title || 'Unknown'}
     onEdit={onLinkEdit ? handleLinkEdit : undefined}
     onDelete={onLinkDelete ? handleLinkDelete : undefined}
   />
+{/if}
+
+{#if showNoteForm}
+  <div
+    class="note-form"
+    style="position: absolute; left: {noteFormPosition.x}px; top: {noteFormPosition.y}px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 16px; min-width: 280px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); z-index: 100;"
+  >
+    <h3 style="margin: 0 0 12px 0; color: white; font-size: 14px;">Create New Note</h3>
+    <input
+      type="text"
+      placeholder="Title"
+      bind:value={newNoteTitle}
+      style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white; box-sizing: border-box;"
+    />
+    <textarea
+      placeholder="Content (optional)"
+      bind:value={newNoteContent}
+      style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white; min-height: 80px; box-sizing: border-box;"
+    ></textarea>
+    <select
+      bind:value={newNoteType}
+      style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white;"
+    >
+      <option value="star">Star</option>
+      <option value="planet">Planet</option>
+      <option value="comet">Comet</option>
+      <option value="galaxy">Galaxy</option>
+      <option value="asteroid">Asteroid</option>
+    </select>
+    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button onclick={closeNoteForm} style="padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: transparent; color: white; cursor: pointer;">Cancel</button>
+      <button onclick={createNote} style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer;">Create</button>
+    </div>
+  </div>
+{/if}
+
+{#if showLinkForm}
+  <div
+    class="link-form"
+    style="position: absolute; left: {linkFormPosition.x}px; top: {linkFormPosition.y}px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(255, 204, 0, 0.5); border-radius: 8px; padding: 16px; min-width: 260px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); z-index: 100;"
+  >
+    <h3 style="margin: 0 0 12px 0; color: white; font-size: 14px;">Create Link</h3>
+    <select
+      bind:value={newLinkType}
+      style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); color: white;"
+    >
+      <option value="reference">Reference</option>
+      <option value="dependency">Dependency</option>
+      <option value="related">Related</option>
+      <option value="custom">Custom</option>
+    </select>
+    <label style="display: block; color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Weight: {newLinkWeight.toFixed(1)}</label>
+    <input
+      type="range"
+      min="0.1"
+      max="1.0"
+      step="0.1"
+      bind:value={newLinkWeight}
+      style="width: 100%; margin-bottom: 12px;"
+    />
+    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button onclick={closeLinkForm} style="padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: transparent; color: white; cursor: pointer;">Cancel</button>
+      <button onclick={createLink} style="padding: 6px 12px; border: none; border-radius: 4px; background: #ffcc00; color: #000; cursor: pointer;">Create</button>
+    </div>
+  </div>
 {/if}

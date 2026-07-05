@@ -22,3 +22,10 @@ export * from './animation';
 
 // Delta updates
 export * from './delta';
+
+// Interactive elements
+export * from './black-hole';
+export * from './ghost-node';
+
+// Gravity and lens distortion
+export * from './gravity-system';

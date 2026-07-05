@@ -4,6 +4,17 @@
 import { graphConfig2D, anomalyConfig } from '$lib/config';
 import type { SimulationNode, SimulationLink } from './types';
 import { getVariation, applyHueShift } from '$lib/utils/variation';
+import {
+  drawBlackHole,
+  drawBlackHoleTooltip,
+  type BlackHoleState
+} from './black-hole';
+import {
+  drawGhostNode,
+  drawGhostNodeTooltip,
+  type GhostNodeState
+} from './ghost-node';
+import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
 
 export type { SimulationNode, SimulationLink };
 
@@ -206,7 +217,7 @@ export function drawStar(
   // Use gradient instead of solid fill
   const gradient = getNodeGradient(ctx, x, y, outerRadius, 'star', '#ffcc00');
   const hueShift = variation?.hueShift ?? 0;
-  ctx.fillStyle = applyHueShift(gradient.toString(), hueShift);
+  ctx.fillStyle = gradient;
   ctx.strokeStyle = applyHueShift('#cc9900', hueShift);
   ctx.lineWidth = 2;
   ctx.fill();
@@ -645,22 +656,23 @@ export function drawAnimatedLink(
   linkCount: number,
   hoveredNodeId?: string | null
 ): void {
-  if (linkCount > PERFORMANCE_THRESHOLD_LINKS) {
-    // Fallback to static link for performance
-    const source = nodes.get(link.source);
-    const target = nodes.get(link.target);
-    if (source && target) {
-      drawLink(ctx, link, source, target, hoveredNodeId);
-    }
+  const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+  const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+
+  const source = nodes.get(sourceId);
+  const target = nodes.get(targetId);
+  if (!source || !target || source.x == null || source.y == null || target.x == null || target.y == null) {
     return;
   }
 
-  const source = nodes.get(link.source);
-  const target = nodes.get(link.target);
-  if (!source || !target) return;
+  if (linkCount > PERFORMANCE_THRESHOLD_LINKS) {
+    // Fallback to static link for performance
+    drawLink(ctx, link, source, target, 1, hoveredNodeId);
+    return;
+  }
 
   // Check if this link should be highlighted
-  const isHighlighted = hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
+  const isHighlighted = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
   const opacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : 1;
 
   const color = getLinkColor(link.weight ?? 0.5, link.link_type, opacity);
@@ -1291,11 +1303,7 @@ export function drawNode(
       drawUnknown(ctx, x, y, r, angle, node.id);
       break;
     default:
-      if (enableShadows) {
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
-      }
-      drawPlanet(ctx, x, y, r, angle, '#94a3b8', variation, node.id, nodeCount, animationTime);
+      drawUnknown(ctx, x, y, r, angle, node.id);
       break;
   }
   ctx.shadowBlur = 0;
@@ -1335,7 +1343,7 @@ export function drawNodeTitle(
 /**
  * Get color for a node type
  */
-export function getNodeColor(type: string): string {
+export function getNodeColor(type: string | undefined): string {
   const colors: Record<string, string> = {
     star: '#ffcc00',
     planet: '#d6aa5d',
@@ -1349,7 +1357,7 @@ export function getNodeColor(type: string): string {
     inbox: '#fbbf24',
     unknown: '#94a3b8'
   };
-  return colors[type] || colors.unknown;
+  return colors[type || 'unknown'] || colors.unknown;
 }
 
 /**
@@ -1420,9 +1428,18 @@ export function draw(
   disableVariation: boolean = false,
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
-  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null
+  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null,
+  blackHole?: { x: number; y: number; radius: number; pulsePhase: number; hovered: boolean } | null,
+  ghostNode?: { x: number; y: number; radius: number; hovered: boolean; pulsePhase: number; active: boolean } | null,
+  gravitySystem?: { applyAttraction: (nodes: SimulationNode[]) => void; getDistortion: (x: number, y: number, nodes: SimulationNode[], maxDistance?: number) => { dx: number; dy: number }; isEnabled: (nodeCount: number) => boolean } | null
 ): void {
   ctx.clearRect(0, 0, width, height);
+
+  // Draw background with gravity lens distortion
+  drawBackground(ctx, width, height, nodes, animationTime);
+  if (gravitySystem?.isEnabled(nodes.length)) {
+    drawDistortedBackgroundGrid(ctx, width, height, nodes, animationTime);
+  }
 
   // Stable render mode: reduce anti-aliasing sources and align to pixel grid
   ctx.save();
@@ -1444,6 +1461,21 @@ export function draw(
   // Draw nodes with new effects
   const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
   drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation, animationTime, hoveredNodeId, particleSystem);
+
+  // Draw interactive UI elements in world coordinates
+  if (blackHole) {
+    drawBlackHole(ctx, blackHole, animationTime);
+    if (blackHole.hovered) {
+      drawBlackHoleTooltip(ctx, blackHole);
+    }
+  }
+
+  if (ghostNode?.active) {
+    drawGhostNode(ctx, ghostNode, animationTime);
+    if (ghostNode.hovered) {
+      drawGhostNodeTooltip(ctx, ghostNode);
+    }
+  }
 
   ctx.restore();
 }

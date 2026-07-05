@@ -12,6 +12,7 @@ type linkResponse struct {
 	TargetNoteID string                 `json:"target_note_id"`
 	LinkType     string                 `json:"link_type"`
 	Weight       float64                `json:"weight"`
+	SourceType   string                 `json:"source_type"`
 	Metadata     map[string]interface{} `json:"metadata"`
 	CreatedAt    time.Time              `json:"created_at"`
 }
@@ -23,6 +24,7 @@ func toLinkResponse(l *link.Link) linkResponse {
 		TargetNoteID: l.TargetNoteID().String(),
 		LinkType:     l.LinkType().String(),
 		Weight:       l.Weight().Value(),
+		SourceType:   l.SourceType().String(),
 		Metadata:     l.Metadata().Value(),
 		CreatedAt:    l.CreatedAt(),
 	}

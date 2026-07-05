@@ -8,6 +8,10 @@ export interface SimulationNode {
   type?: string;
   x?: number;
   y?: number;
+  fx?: number;
+  fy?: number;
+  scale?: number;
+  opacity?: number;
 }
 
 export interface SimulationLink {
@@ -15,6 +19,7 @@ export interface SimulationLink {
   target: string | SimulationNode;
   weight?: number;
   link_type?: string;
+  source_type?: string; // 'user' or 'gamma'
 }
 
 export interface SimulationState {

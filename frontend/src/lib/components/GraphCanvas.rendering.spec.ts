@@ -104,6 +104,7 @@ const createMockContext = () => {
     beginPath: vi.fn(() => ctxCalls.push({ method: 'beginPath', args: [], fillStyle: lastFillStyle })),
     moveTo: vi.fn((...args) => ctxCalls.push({ method: 'moveTo', args })),
     lineTo: vi.fn((...args) => ctxCalls.push({ method: 'lineTo', args })),
+    quadraticCurveTo: vi.fn((...args) => ctxCalls.push({ method: 'quadraticCurveTo', args })),
     stroke: vi.fn(() => ctxCalls.push({ method: 'stroke', args: [], strokeStyle: lastStrokeStyle })),
     fill: vi.fn(() => ctxCalls.push({ method: 'fill', args: [], fillStyle: lastFillStyle })),
     closePath: vi.fn(() => ctxCalls.push({ method: 'closePath', args: [] })),
@@ -115,6 +116,9 @@ const createMockContext = () => {
     setLineDash: vi.fn((...args) => ctxCalls.push({ method: 'setLineDash', args })),
     fillText: vi.fn((text, x, y) => ctxCalls.push({ method: 'fillText', args: [text, x, y], fillStyle: lastFillStyle })),
     measureText: vi.fn(() => ({ width: 50 })),
+    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    roundRect: vi.fn((...args) => ctxCalls.push({ method: 'roundRect', args })),
     set fillStyle(value: string) { lastFillStyle = value; },
     get fillStyle() { return lastFillStyle; },
     set strokeStyle(value: string) { lastStrokeStyle = value; },
@@ -264,7 +268,7 @@ describe('GraphCanvas - Rendering', () => {
     const { unmount } = render(GraphCanvas, { props: { nodes: mockNodes, links: [] } });
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    expect(mockState.tickCallback).not.toBeNull();
+    expect(mockState.simulationNodes.length).toBe(mockNodes.length);
 
     unmount();
 

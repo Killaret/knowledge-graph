@@ -130,6 +130,7 @@ describe('GraphCanvas - Fade Effect', () => {
       beginPath: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
       stroke: vi.fn(),
       fill: vi.fn(),
       closePath: vi.fn(),
@@ -141,6 +142,9 @@ describe('GraphCanvas - Fade Effect', () => {
       setLineDash: vi.fn(),
       fillText: vi.fn(),
       measureText: vi.fn(() => ({ width: 50 })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      roundRect: vi.fn(),
       set fillStyle(value: string) { },
       get fillStyle() { return ''; },
       set strokeStyle(value: string) { },
@@ -169,8 +173,11 @@ describe('GraphCanvas - Fade Effect', () => {
     }));
 
     animationFrameHandles = [];
+    let animationTime = 0;
+    vi.stubGlobal('performance', { now: () => animationTime });
     vi.stubGlobal('requestAnimationFrame', vi.fn().mockImplementation((cb: FrameRequestCallback) => {
-      const handle = setTimeout(cb, 16);
+      animationTime += 16;
+      const handle = setTimeout(() => cb(animationTime), 16);
       animationFrameHandles.push(handle);
       return handle as unknown as number;
     }));

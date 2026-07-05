@@ -2,9 +2,91 @@
  * Interaction handlers for GraphCanvas
  */
 import { goto } from '$app/navigation';
-import type { SimulationNode, TransformState, DragState } from './types';
+import type { SimulationNode, SimulationLink, TransformState, DragState } from './types';
 
 export type { DragState };
+
+/**
+ * Calculate distance from point to line segment
+ * Used for link hit detection
+ */
+function pointToLineDistance(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): number {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+
+  if (lenSq !== 0) {
+    param = dot / lenSq;
+  }
+
+  let xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  } else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  } else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  const dx = px - xx;
+  const dy = py - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Find link under cursor
+ * Returns the link if within tolerance distance, null otherwise
+ */
+export function findLinkAtPosition(
+  mouseX: number,
+  mouseY: number,
+  links: SimulationLink[],
+  nodes: SimulationNode[],
+  transform: TransformState,
+  tolerance: number = 8
+): SimulationLink | null {
+  for (const link of links) {
+    const sourceNode = typeof link.source === 'string'
+      ? nodes.find((n) => n.id === link.source)
+      : link.source;
+    const targetNode = typeof link.target === 'string'
+      ? nodes.find((n) => n.id === link.target)
+      : link.target;
+
+    if (!sourceNode || !targetNode) continue;
+    if (sourceNode.x == null || sourceNode.y == null || targetNode.x == null || targetNode.y == null) continue;
+
+    const distance = pointToLineDistance(
+      mouseX,
+      mouseY,
+      sourceNode.x,
+      sourceNode.y,
+      targetNode.x,
+      targetNode.y
+    );
+
+    if (distance <= tolerance) {
+      return link;
+    }
+  }
+  return null;
+}
 
 /**
  * Handle zoom with mouse wheel (zoom toward cursor, graph + links stay aligned)

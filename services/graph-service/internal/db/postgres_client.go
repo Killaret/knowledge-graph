@@ -10,13 +10,15 @@ import (
 type Note struct {
 	ID    string
 	Title string
+	Type  string
 }
 
 type Link struct {
-	Source   string
-	Target   string
-	LinkType string
-	Weight   float64
+	Source     string
+	Target     string
+	LinkType   string
+	Weight     float64
+	SourceType string
 }
 
 type Embedding struct {
@@ -44,17 +46,17 @@ func (c *postgresClient) GetNotes(ctx context.Context, rootID string, depth int)
 	}
 
 	query := `WITH RECURSIVE nodes AS (
-    SELECT id, title, 1 AS level
+    SELECT id, title, type, 1 AS level
     FROM notes
-    WHERE id = $1
+    WHERE id = $1 AND deleted_at IS NULL
   UNION ALL
-    SELECT n.id, n.title, nodes.level + 1
+    SELECT n.id, n.title, n.type, nodes.level + 1
     FROM links l
-    JOIN notes n ON n.id = l.target_note_id
+    JOIN notes n ON n.id = l.target_note_id AND n.deleted_at IS NULL
     JOIN nodes ON l.source_note_id = nodes.id
-    WHERE nodes.level < $2
+    WHERE nodes.level < $2 AND l.deleted_at IS NULL
   )
-  SELECT id, title FROM nodes;`
+  SELECT id, title, type FROM nodes;`
 
 	rows, err := c.pool.Query(ctx, query, rootID, depth)
 	if err != nil {
@@ -65,7 +67,7 @@ func (c *postgresClient) GetNotes(ctx context.Context, rootID string, depth int)
 	notes := make([]*Note, 0)
 	for rows.Next() {
 		var note Note
-		if err := rows.Scan(&note.ID, &note.Title); err != nil {
+		if err := rows.Scan(&note.ID, &note.Title, &note.Type); err != nil {
 			return nil, nil, err
 		}
 		notes = append(notes, &note)
@@ -87,7 +89,7 @@ func (c *postgresClient) GetNotes(ctx context.Context, rootID string, depth int)
 }
 
 func (c *postgresClient) loadAll(ctx context.Context) ([]*Note, []*Link, error) {
-	notesRows, err := c.pool.Query(ctx, `SELECT id, title FROM notes`)
+	notesRows, err := c.pool.Query(ctx, `SELECT id, title, type FROM notes WHERE deleted_at IS NULL`)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,7 +98,7 @@ func (c *postgresClient) loadAll(ctx context.Context) ([]*Note, []*Link, error) 
 	notes := make([]*Note, 0)
 	for notesRows.Next() {
 		var note Note
-		if err := notesRows.Scan(&note.ID, &note.Title); err != nil {
+		if err := notesRows.Scan(&note.ID, &note.Title, &note.Type); err != nil {
 			return nil, nil, err
 		}
 		notes = append(notes, &note)
@@ -105,7 +107,7 @@ func (c *postgresClient) loadAll(ctx context.Context) ([]*Note, []*Link, error) 
 		return nil, nil, notesRows.Err()
 	}
 
-	linksRows, err := c.pool.Query(ctx, `SELECT source_note_id, target_note_id, link_type, weight FROM links`)
+	linksRows, err := c.pool.Query(ctx, `SELECT source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user') FROM links WHERE deleted_at IS NULL`)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -114,7 +116,7 @@ func (c *postgresClient) loadAll(ctx context.Context) ([]*Note, []*Link, error) 
 	links := make([]*Link, 0)
 	for linksRows.Next() {
 		var link Link
-		if err := linksRows.Scan(&link.Source, &link.Target, &link.LinkType, &link.Weight); err != nil {
+		if err := linksRows.Scan(&link.Source, &link.Target, &link.LinkType, &link.Weight, &link.SourceType); err != nil {
 			return nil, nil, err
 		}
 		links = append(links, &link)
@@ -127,7 +129,7 @@ func (c *postgresClient) loadAll(ctx context.Context) ([]*Note, []*Link, error) 
 }
 
 func (c *postgresClient) loadLinksByNoteIDs(ctx context.Context, ids []string) ([]*Link, error) {
-	query := `SELECT source_note_id, target_note_id, link_type, weight FROM links WHERE source_note_id = ANY($1) OR target_note_id = ANY($1)`
+	query := `SELECT source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user') FROM links WHERE deleted_at IS NULL AND (source_note_id = ANY($1) OR target_note_id = ANY($1))`
 	rows, err := c.pool.Query(ctx, query, ids)
 	if err != nil {
 		return nil, err
@@ -137,7 +139,7 @@ func (c *postgresClient) loadLinksByNoteIDs(ctx context.Context, ids []string) (
 	links := make([]*Link, 0)
 	for rows.Next() {
 		var link Link
-		if err := rows.Scan(&link.Source, &link.Target, &link.LinkType, &link.Weight); err != nil {
+		if err := rows.Scan(&link.Source, &link.Target, &link.LinkType, &link.Weight, &link.SourceType); err != nil {
 			return nil, err
 		}
 		links = append(links, &link)

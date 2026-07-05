@@ -30,14 +30,20 @@
         rawData = await getFullGraphData();
       } else {
         // Загружаем локальный граф
-        notes = await getNotes();
+        try {
+          notes = await getNotes();
+        } catch (e) {
+          console.log('[graph/+page] No user notes, trying public notes');
+          notes = [];
+        }
+        
         if (notes.length > 0) {
           const centerNote = notes[0];
           rawData = await getGraphData(centerNote.id, 3);
         } else {
-          error = 'No notes found. Create some notes first.';
-          loading = false;
-          return;
+          // Если нет заметок, загружаем полный граф (публичные заметки)
+          console.log('[graph/+page] No notes found, loading full graph as fallback');
+          rawData = await getFullGraphData();
         }
       }
 
@@ -53,7 +59,8 @@
         source: l.source_note_id || l.source,
         target: l.target_note_id || l.target,
         weight: l.weight,
-        link_type: l.link_type
+        link_type: l.link_type,
+        source_type: l.source_type || 'user'
       }));
 
       graphData = {
@@ -99,6 +106,16 @@
 <div class="graph-page">
   <BackButton href="/" />
   
+  <div class="top-right-controls">
+    <button class="login-btn" onclick={() => goto('/auth/login')} title="Login">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+    </button>
+  </div>
+  
   <h1>Knowledge Graph</h1>
   
   <div class="controls">
@@ -126,7 +143,7 @@
   {/if}
   
   {#if loading}
-    <div class="center" data-testid="loading-overlay">
+    <div class="loading-overlay" data-testid="loading-overlay">
       <div class="spinner"></div>
       <p>Loading graph...</p>
     </div>
@@ -188,6 +205,32 @@
     min-height: 100vh;
     background: var(--gradient-cosmic-bg);
     color: var(--color-text-dark);
+  }
+
+  .top-right-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+
+  .login-btn {
+    padding: 10px;
+    border: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
   }
 
   h1 {
@@ -258,6 +301,22 @@
     height: 100%;
     border-radius: 12px;
     overflow: hidden;
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 1000;
+    color: white;
   }
 
   .center {

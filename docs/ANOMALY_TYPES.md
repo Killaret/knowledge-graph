@@ -72,10 +72,8 @@ export function drawNode(
       break;
     // ... other types
     case 'unknown':
-      drawUnknown(ctx, x, y, r, angle, node.id);
-      break;
     default:
-      drawStar(ctx, x, y, r, angle, variation);
+      drawUnknown(ctx, x, y, r, angle, node.id);
       break;
   }
 }

@@ -24,6 +24,7 @@ message LayoutLink {
   string target = 2;
   double weight = 3;
   string link_type = 4;
+  string source_type = 5;
 }
 
 message LayoutResponse {

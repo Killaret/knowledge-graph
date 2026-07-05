@@ -14,10 +14,14 @@ func Layout2D(notes []*db.Note, links []*db.Link, rootID string) *LayoutResponse
 	count := len(notes)
 	for i, note := range notes {
 		theta := 2.0 * math.Pi * float64(i) / math.Max(1, float64(count))
+		nodeType := note.Type
+		if nodeType == "" {
+			nodeType = NodeTypeNote
+		}
 		nodes = append(nodes, &LayoutNode{
 			ID:    note.ID,
 			Title: note.Title,
-			Type:  NodeTypeNote,
+			Type:  nodeType,
 			X:     math.Cos(theta) * Layout2DRadius,
 			Y:     math.Sin(theta) * Layout2DRadius,
 			Z:     0,
@@ -28,10 +32,11 @@ func Layout2D(notes []*db.Note, links []*db.Link, rootID string) *LayoutResponse
 	linksOut := make([]*LayoutLink, 0, len(links))
 	for _, link := range links {
 		linksOut = append(linksOut, &LayoutLink{
-			Source:   link.Source,
-			Target:   link.Target,
-			Weight:   link.Weight,
-			LinkType: link.LinkType,
+			Source:     link.Source,
+			Target:     link.Target,
+			Weight:     link.Weight,
+			LinkType:   link.LinkType,
+			SourceType: link.SourceType,
 		})
 	}
 

@@ -333,24 +333,6 @@ describe('renderer anomaly functions', () => {
       expect(color).toContain('0');
     });
 
-    it('should return correct color for gamma links (purple)', () => {
-      const color = getLinkColor(0.5, 'reference', 'gamma');
-      expect(color).toContain('139'); // RGB for purple #8b5cf6
-      expect(color).toContain('92');
-      expect(color).toContain('246');
-    });
-
-    it('should return correct color for gamma links regardless of link_type', () => {
-      const color1 = getLinkColor(0.5, 'reference', 'gamma');
-      const color2 = getLinkColor(0.5, 'dependency', 'gamma');
-      const color3 = getLinkColor(0.5, 'custom', 'gamma');
-      
-      // All gamma links should be purple
-      expect(color1).toContain('139');
-      expect(color2).toContain('139');
-      expect(color3).toContain('139');
-    });
-
     it('should apply opacity based on weight', () => {
       const color1 = getLinkColor(1.0, 'reference');
       const color2 = getLinkColor(0.2, 'reference');
@@ -378,28 +360,13 @@ describe('renderer anomaly functions', () => {
     });
 
     it('should return dashed for weak related links', () => {
-      const dash = getLineDash('related', 'user', 0.1);
+      const dash = getLineDash('related', 0.1);
       expect(dash).toEqual([6, 4]);
     });
 
     it('should return solid for strong related links', () => {
-      const dash = getLineDash('related', 'user', 0.8);
+      const dash = getLineDash('related', 0.8);
       expect(dash).toEqual([]);
-    });
-
-    it('should return 4px/4px dash for gamma links', () => {
-      const dash = getLineDash('reference', 'gamma', 0.5);
-      expect(dash).toEqual([4, 4]);
-    });
-
-    it('should return 4px/4px dash for gamma links regardless of link_type', () => {
-      const dash1 = getLineDash('reference', 'gamma', 0.5);
-      const dash2 = getLineDash('dependency', 'gamma', 0.5);
-      const dash3 = getLineDash('custom', 'gamma', 0.5);
-      
-      expect(dash1).toEqual([4, 4]);
-      expect(dash2).toEqual([4, 4]);
-      expect(dash3).toEqual([4, 4]);
     });
   });
 
@@ -449,24 +416,22 @@ describe('renderer anomaly functions', () => {
     it('should create a radial gradient', () => {
       const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'star', '#ffcc00');
       expect(mockCtx.createRadialGradient).toHaveBeenCalled();
+      expect(gradient).toBeDefined();
     });
 
     it('should add color stops for star type', () => {
       const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'star', '#ffcc00');
-      const mockGradient = mockCtx.createRadialGradient as any;
-      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
 
     it('should add color stops for planet type', () => {
       const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'planet', '#d6aa5d');
-      const mockGradient = mockCtx.createRadialGradient as any;
-      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
 
     it('should add color stops for galaxy type', () => {
       const gradient = getNodeGradient(mockCtx, 100, 100, 30, 'galaxy', '#8b5cf6');
-      const mockGradient = mockCtx.createRadialGradient as any;
-      expect(mockGradient.addColorStop).toHaveBeenCalledTimes(3);
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
   });
 });

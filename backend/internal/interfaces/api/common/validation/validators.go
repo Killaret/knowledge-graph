@@ -10,13 +10,13 @@ import (
 
 // Common error messages
 const (
-	MsgInvalidUUID       = "Неверный формат UUID"
-	MsgInvalidCharacters = "Поле содержит недопустимые символы"
-	MsgTooLong           = "Поле слишком длинное"
-	msgTooShort          = "Поле слишком короткое" // unused, reserved for future
-	MsgRequired          = "Поле обязательно для заполнения"
-	msgOutOfRange        = "Значение вне допустимого диапазона" // unused, reserved for future
-	MsgInvalidEnum       = "Недопустимое значение перечисления"
+	MsgInvalidUUID       = "Invalid UUID format"
+	MsgInvalidCharacters = "Field contains invalid characters"
+	MsgTooLong           = "Field is too long"
+	msgTooShort          = "Field is too short" // unused, reserved for future
+	MsgRequired          = "Field is required"
+	msgOutOfRange        = "Value is out of range" // unused, reserved for future
+	MsgInvalidEnum       = "Invalid enum value"
 )
 
 // Allowed characters patterns for safe input

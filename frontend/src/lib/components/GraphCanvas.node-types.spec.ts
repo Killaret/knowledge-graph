@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 import * as renderer from './GraphCanvas/renderer';
 import type { SimulationNode } from './GraphCanvas/types';
+import { createMockCanvasContext } from './GraphCanvas/test-canvas-mock';
 
 const mockState = {
   simulationNodes: [] as any[],
@@ -89,9 +90,13 @@ describe('GraphCanvas - Node Type Rendering', () => {
     
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
       clearRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(),
-      beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn(), fill: vi.fn(),
-      closePath: vi.fn(), arc: vi.fn(), ellipse: vi.fn(), rotate: vi.fn(), fillRect: vi.fn(),
-      strokeRect: vi.fn(), setLineDash: vi.fn(), fillText: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+      beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), quadraticCurveTo: vi.fn(),
+      stroke: vi.fn(), fill: vi.fn(), closePath: vi.fn(), arc: vi.fn(), ellipse: vi.fn(),
+      rotate: vi.fn(), fillRect: vi.fn(), strokeRect: vi.fn(), setLineDash: vi.fn(),
+      fillText: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      roundRect: vi.fn(),
       fillStyle: '', strokeStyle: '', font: '', textAlign: 'center', textBaseline: 'middle',
       lineWidth: 1, shadowBlur: 0, shadowColor: ''
     });
@@ -113,55 +118,28 @@ describe('GraphCanvas - Node Type Rendering', () => {
 
   describe('Node Type Colors and Styles', () => {
     it('drawStar uses correct colors (#ffcc00 fill, #cc9900 stroke)', () => {
-      const ctx = {
-        beginPath: vi.fn(),
-        lineTo: vi.fn(),
-        closePath: vi.fn(),
-        fill: vi.fn(),
-        stroke: vi.fn(),
-        fillStyle: '',
-        strokeStyle: '',
-        lineWidth: 0,
-      } as unknown as CanvasRenderingContext2D;
+      const ctx = createMockCanvasContext();
 
       renderer.drawStar(ctx, 100, 100, 20, 0);
 
-      expect(ctx.fillStyle).toBe('#ffcc00');
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
       expect(ctx.strokeStyle).toBe('#cc9900');
       expect(ctx.lineWidth).toBe(2);
     });
 
     it('drawPlanet uses correct default color (#d6aa5d) for main body', () => {
-      const fillStyles: string[] = [];
-      const ctx = {
-        beginPath: vi.fn(),
-        arc: vi.fn(),
-        ellipse: vi.fn(),
-        fill: vi.fn(() => {
-          fillStyles.push((ctx as any).fillStyle);
-        }),
-        set fillStyle(value: string) { (ctx as any)._fillStyle = value; },
-        get fillStyle() { return (ctx as any)._fillStyle || ''; },
-      } as unknown as CanvasRenderingContext2D & { _fillStyle: string };
+      const ctx = createMockCanvasContext();
 
       renderer.drawPlanet(ctx, 100, 100, 20, 0);
 
-      // First fillStyle should be the main planet color #d6aa5d
-      expect(fillStyles[0]).toBe('#d6aa5d');
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+      const gradient = ctx.createRadialGradient.mock.results[0].value;
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
+      expect(colors).toContain('#d6aa5d');
     });
 
     it('drawComet uses correct color (#e879f9)', () => {
-      const ctx = {
-        beginPath: vi.fn(),
-        arc: vi.fn(),
-        moveTo: vi.fn(),
-        lineTo: vi.fn(),
-        stroke: vi.fn(),
-        fill: vi.fn(),
-        fillStyle: '',
-        strokeStyle: '',
-        lineWidth: 0,
-      } as unknown as CanvasRenderingContext2D;
+      const ctx = createMockCanvasContext();
 
       renderer.drawComet(ctx, 100, 100, 20, 0);
 
@@ -171,98 +149,48 @@ describe('GraphCanvas - Node Type Rendering', () => {
     });
 
     it('drawGalaxy uses purple spiral colors', () => {
-      const ctx = {
-        save: vi.fn(),
-        restore: vi.fn(),
-        translate: vi.fn(),
-        rotate: vi.fn(),
-        beginPath: vi.fn(),
-        ellipse: vi.fn(),
-        fill: vi.fn(),
-        fillStyle: '',
-      } as unknown as CanvasRenderingContext2D;
+      const ctx = createMockCanvasContext();
 
       renderer.drawGalaxy(ctx, 100, 100, 20, 0);
 
-      // Galaxy uses rgba with purple/white colors
-      expect(ctx.fillStyle).toContain('rgba(192, 132, 252');
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+      const gradient = ctx.createRadialGradient.mock.results[0].value;
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
+      expect(colors.some((color: string) => color.includes('192, 132, 252') || color === '#8b5cf6')).toBe(true);
     });
 
     it('drawAsteroid uses correct rocky color (#94a3b8)', () => {
-      const ctx = {
-        beginPath: vi.fn(),
-        moveTo: vi.fn(),
-        lineTo: vi.fn(),
-        closePath: vi.fn(),
-        fill: vi.fn(),
-        stroke: vi.fn(),
-        fillStyle: '',
-        strokeStyle: '',
-        lineWidth: 0,
-      } as unknown as CanvasRenderingContext2D;
+      const ctx = createMockCanvasContext();
 
       renderer.drawAsteroid(ctx, 100, 100, 20, 0);
 
-      expect(ctx.fillStyle).toBe('#94a3b8');
+      expect(ctx.getFillStyles()[0]).toBe('#94a3b8');
       expect(ctx.strokeStyle).toBe('#64748b');
     });
 
     it('drawNode sets correct fillStyle for each node type', () => {
-      function createMockCtx() {
-        const fillStyles: string[] = [];
-        return {
-          save: vi.fn(),
-          restore: vi.fn(),
-          translate: vi.fn(),
-          rotate: vi.fn(),
-          beginPath: vi.fn(),
-          lineTo: vi.fn(),
-          closePath: vi.fn(),
-          arc: vi.fn(),
-          ellipse: vi.fn(),
-          fill: vi.fn(function(this: any) { fillStyles.push(this.fillStyle); }),
-          stroke: vi.fn(),
-          moveTo: vi.fn(),
-          set fillStyle(v: string) { (this as any)._fillStyle = v; },
-          get fillStyle() { return (this as any)._fillStyle || ''; },
-          strokeStyle: '',
-          lineWidth: 0,
-          shadowBlur: 0,
-          shadowColor: '',
-          font: '',
-          textAlign: 'center',
-          textBaseline: 'middle',
-          fillText: vi.fn(),
-          measureText: vi.fn(() => ({ width: 50 })),
-          getFillStyles: () => fillStyles,
-        } as unknown as CanvasRenderingContext2D & { getFillStyles: () => string[] };
-      }
-
-      // Test star sets correct color
-      const starCtx = createMockCtx();
+      // Test star creates a radial gradient
+      const starCtx = createMockCanvasContext();
       renderer.drawNode(starCtx, { id: '1', x: 100, y: 100, title: 'Star', type: 'star' }, 20, 0, false);
-      // Color should be close to the base color (with hue shift variation)
-      expect(starCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
-      // The color should start with 'f' (golden/yellow range)
+      expect(starCtx.createRadialGradient).toHaveBeenCalled();
 
-
-      // Test planet sets correct color (first fill is main body)
-      const planetCtx = createMockCtx();
+      // Test planet creates a radial gradient
+      const planetCtx = createMockCanvasContext();
       renderer.drawNode(planetCtx, { id: '2', x: 100, y: 100, title: 'Planet', type: 'planet' }, 20, 0, false);
-      expect(planetCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(planetCtx.createRadialGradient).toHaveBeenCalled();
 
       // Test comet sets correct color
-      const cometCtx = createMockCtx();
+      const cometCtx = createMockCanvasContext();
       renderer.drawNode(cometCtx, { id: '3', x: 100, y: 100, title: 'Comet', type: 'comet' }, 20, 0, false);
       expect(cometCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
 
-      // Test galaxy sets correct color
-      const galaxyCtx = createMockCtx();
+      // Test galaxy creates a radial gradient
+      const galaxyCtx = createMockCanvasContext();
       renderer.drawNode(galaxyCtx, { id: '4', x: 100, y: 100, title: 'Galaxy', type: 'galaxy' }, 20, 0, false);
-      expect(galaxyCtx.getFillStyles()[0]).toContain('rgba');
+      expect(galaxyCtx.createRadialGradient).toHaveBeenCalled();
 
       // Test asteroid sets correct color
-      const asteroidCtx = createMockCtx();
+      const asteroidCtx = createMockCanvasContext();
       renderer.drawNode(asteroidCtx, { id: '5', x: 100, y: 100, title: 'Asteroid', type: 'asteroid' }, 20, 0, false);
       expect(asteroidCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
     });

@@ -11,7 +11,7 @@
 | 🟡 Medium | Очки и Кастомизация | Таблицы user_points, user_cosmetics, магазин скинов, ежедневные бонусы | ⏳ Промт готов |
 | 🟡 Medium | Активация Аномалий | Подключить drawRealityRift, drawChromaticMaw, drawVoidWhisper, drawCosmicAbomination для типа unknown | ⏳ Микро-промт готов |
 | 🟡 Medium | Мягкое внедрение FSD | Выделить shared/, entities/, настроить алиасы, обновить импорты, документировать | ⏳ План готов |
-| 🟢 Low | Улучшение Связей | Тултипы при наведении на связь, цветовое кодирование gamma-связей, анимация появления связей | ⏳ Промт готов |
+| 🟢 Low | Улучшение Связей | Тултипы при наведении на связь, цветовое кодирование gamma-связей, анимация появления связей | ✅ Готово |
 | 🟢 Low | Публичный Пул | Публикация заметок, лайки, закладки, форк | ⏳ Промт готов |
 | 🟢 Low | Обработчик Пылинкок | Асинхронная NLP-обработка dust-заметок, предложение типа и тегов, DustInboxPanel | ⏳ Промт готов |
 | 🟢 Low | Галактический Лексикон + Достижения | i18n, SSE-уведомления, seed-достижений | ⏳ Промт готов |
@@ -273,14 +273,14 @@ This plan focuses on turning Knowledge Graph into a reliable and useful product 
 
 ## 📊 Progress Tracking
 
-### Current Status: **Phase 1 - In Progress**
+### Current Status: **Phase 1 - 40% Complete, Phase 2 - 30% Complete**
 
 | Phase | Status | Progress | Priority |
 |-------|--------|----------|----------|
-| Phase 1: Stability | 🔄 In Progress | 20% | 🔴 Critical |
-| Phase 2: MVP for Users | ⏸️ Waiting | 0% | 🟡 High |
+| Phase 1: Stability | 🔄 In Progress | 40% | 🔴 Critical |
+| Phase 2: MVP for Users | 🔄 In Progress | 30% | 🟡 High |
 | Phase 3: Killer Features | ⏸️ Waiting | 0% | 🟢 Medium |
-| Phase 4: Explorer Update | ⏸️ Planned | 0% | 🟡 High |
+| Phase 4: Explorer Update | 🔄 In Progress | 10% | 🟡 High |
 | Backlog | ⏸️ Waiting | 0% | 🔵 Low |
 
 ### Near-term Goals (next 7 days):

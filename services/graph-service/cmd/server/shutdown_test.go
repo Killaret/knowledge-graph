@@ -61,17 +61,28 @@ func TestGracefulShutdownIntegration(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
+	// This integration test requires a running PostgreSQL and Redis.
+	if os.Getenv("GRAPH_SERVICE_INTEGRATION") == "" {
+		t.Skip("Skipping integration test: set GRAPH_SERVICE_INTEGRATION to enable")
+	}
+
+	tmpFile, err := os.CreateTemp("", "graph-service-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	tmpFile.Close()
+	defer os.Remove(tmpFile.Name())
+
 	// Build the graph-service binary
-	buildCmd := exec.Command("go", "build", "-o", "/tmp/graph-service-test", "./cmd/server/main.go")
-	buildCmd.Dir = "../../../"
+	buildCmd := exec.Command("go", "build", "-o", tmpFile.Name(), "./cmd/server/main.go")
+	buildCmd.Dir = "../../"
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("Failed to build graph-service: %v", err)
 	}
-	defer os.Remove("/tmp/graph-service-test")
 
 	// Start the server
-	cmd := exec.Command("/tmp/graph-service-test")
-	cmd.Dir = "../../../"
+	cmd := exec.Command(tmpFile.Name())
+	cmd.Dir = "../../"
 	cmd.Env = append(os.Environ(),
 		"POSTGRES_URL=postgres://postgres:postgres@localhost:5432/knowledge_base?sslmode=disable",
 		"REDIS_URL=redis:localhost:6379",

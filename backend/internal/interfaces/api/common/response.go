@@ -39,34 +39,34 @@ const (
 	ErrCodeInvalidRequest  = "INVALID_REQUEST"
 )
 
-// Error messages in Russian
+// Error messages in English
 const (
-	MsgValidationError   = "Некорректные входные данные"
-	MsgNotFound          = "Сущность не найдена"
-	MsgConflict          = "Конфликт данных"
-	MsgForbidden         = "Доступ запрещён"
-	MsgUnauthorized      = "Требуется аутентификация"
-	MsgInternalError     = "Внутренняя ошибка сервера"
-	MsgDuplicateLink     = "Связь уже существует"
-	MsgInvalidUUID       = "Неверный формат UUID"
-	MsgInvalidRequest    = "Неверный запрос"
-	MsgResourceCreated   = "Ресурс успешно создан"
-	MsgResourceUpdated   = "Ресурс успешно обновлён"
-	MsgResourceDeleted   = "Ресурс успешно удалён"
-	MsgNoteNotFound      = "Заметка не найдена"
-	MsgLinkNotFound      = "Связь не найдена"
-	MsgSourceNotFound    = "Исходная заметка не найдена"
-	MsgTargetNotFound    = "Целевая заметка не найдена"
-	MsgFailedSaveNote    = "Не удалось сохранить заметку"
-	MsgFailedUpdateNote  = "Не удалось обновить заметку"
-	MsgFailedDeleteNote  = "Не удалось удалить заметку"
-	MsgFailedFetchNote   = "Не удалось получить заметку"
-	MsgFailedSaveLink    = "Не удалось сохранить связь"
-	MsgFailedDeleteLink  = "Не удалось удалить связь"
-	MsgFailedFetchLink   = "Не удалось получить связь"
-	MsgFailedFetchNotes  = "Не удалось получить список заметок"
-	MsgFailedSearchNotes = "Не удалось выполнить поиск"
-	MsgFailedLoadGraph   = "Не удалось загрузить граф"
+	MsgValidationError   = "Invalid input data"
+	MsgNotFound          = "Entity not found"
+	MsgConflict          = "Data conflict"
+	MsgForbidden         = "Access forbidden"
+	MsgUnauthorized      = "Authentication required"
+	MsgInternalError     = "Internal server error"
+	MsgDuplicateLink     = "Link already exists"
+	MsgInvalidUUID       = "Invalid UUID format"
+	MsgInvalidRequest    = "Invalid request"
+	MsgResourceCreated   = "Resource created successfully"
+	MsgResourceUpdated   = "Resource updated successfully"
+	MsgResourceDeleted   = "Resource deleted successfully"
+	MsgNoteNotFound      = "Note not found"
+	MsgLinkNotFound      = "Link not found"
+	MsgSourceNotFound    = "Source note not found"
+	MsgTargetNotFound    = "Target note not found"
+	MsgFailedSaveNote    = "Failed to save note"
+	MsgFailedUpdateNote  = "Failed to update note"
+	MsgFailedDeleteNote  = "Failed to delete note"
+	MsgFailedFetchNote   = "Failed to fetch note"
+	MsgFailedSaveLink    = "Failed to save link"
+	MsgFailedDeleteLink  = "Failed to delete link"
+	MsgFailedFetchLink   = "Failed to fetch link"
+	MsgFailedFetchNotes  = "Failed to fetch notes"
+	MsgFailedSearchNotes = "Failed to search notes"
+	MsgFailedLoadGraph   = "Failed to load graph"
 )
 
 // Validation reasons
@@ -120,7 +120,7 @@ func BadRequestSimple(c *gin.Context, msg string) {
 func NotFound(c *gin.Context, entity string) {
 	m := MsgNotFound
 	if entity != "" {
-		m = entity + " не найден(а)"
+		m = entity + " not found"
 	}
 	Error(c, 404, ErrCodeNotFound, m)
 }

@@ -3,6 +3,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -151,7 +152,7 @@ type PKCE struct {
 	CodeVerifier        string `json:"code_verifier"`
 }
 
-// GeneratePKCE generates PKCE parameters
+// GeneratePKCE generates PKCE parameters using S256 method (RFC 7636)
 func GeneratePKCE(length int) (*PKCE, error) {
 	// Generate code verifier (random string)
 	verifier, err := GenerateRandomToken(length)
@@ -159,11 +160,13 @@ func GeneratePKCE(length int) (*PKCE, error) {
 		return nil, fmt.Errorf("failed to generate code verifier: %w", err)
 	}
 
-	// For simplicity, we use plain method (in production, use S256)
-	// S256 would require SHA256 hashing of the verifier
+	// S256 method: code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
+	hash := sha256.Sum256([]byte(verifier))
+	codeChallenge := base64.RawURLEncoding.EncodeToString(hash[:])
+
 	return &PKCE{
-		CodeChallenge:       verifier,
-		CodeChallengeMethod: "plain",
+		CodeChallenge:       codeChallenge,
+		CodeChallengeMethod: "S256",
 		CodeVerifier:        verifier,
 	}, nil
 }

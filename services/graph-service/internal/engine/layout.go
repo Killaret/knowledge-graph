@@ -27,10 +27,11 @@ type LayoutNode struct {
 }
 
 type LayoutLink struct {
-	Source   string  `json:"source"`
-	Target   string  `json:"target"`
-	Weight   float64 `json:"weight"`
-	LinkType string  `json:"link_type"`
+	Source     string  `json:"source"`
+	Target     string  `json:"target"`
+	Weight     float64 `json:"weight"`
+	LinkType   string  `json:"link_type"`
+	SourceType string  `json:"source_type"`
 }
 
 type LayoutResponse struct {
