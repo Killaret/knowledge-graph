@@ -97,6 +97,67 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
     await page.waitForLoadState('networkidle');
     
     // Wait for graph to load (canvas-based)
+    await page.waitForTimeout(2000);
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/2d-full-view.png',
+      fullPage: true 
+    });
+  });
+
+  test('2D Graph - ghost node creation form', async ({ page }) => {
+    await page.goto('/graph');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Press N to create ghost node
+    await page.keyboard.press('N');
+    await page.waitForTimeout(500);
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/2d-ghost-node-form.png',
+      fullPage: true 
+    });
+  });
+
+  test('2D Graph - help modal', async ({ page }) => {
+    await page.goto('/graph');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Press ? to open help modal
+    await page.keyboard.press('?');
+    await page.waitForTimeout(500);
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/2d-help-modal.png',
+      fullPage: true 
+    });
+  });
+
+  test('Home page - help modal', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Click menu and help button
+    try {
+      const menuButton = page.locator('.menu-btn');
+      await menuButton.click();
+      await page.waitForTimeout(200);
+      
+      const helpButton = page.locator('[data-testid="menu-help"]');
+      await helpButton.click();
+      await page.waitForTimeout(500);
+    } catch {
+      console.log('Help button not available, skipping');
+    }
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/home-help-modal.png',
+      fullPage: true 
+    });
+  });
     await page.waitForFunction(() => {
       const canvas = document.querySelector('canvas');
       return canvas !== null;

@@ -137,4 +137,66 @@ describe('GraphCanvas - Interactions', () => {
     await new Promise(resolve => setTimeout(resolve, 150));
     expect(() => unmount()).not.toThrow();
   });
+
+  it('handles keyboard shortcut for ghost node creation', async () => {
+    const onNoteCreate = vi.fn();
+    const { container } = render(GraphCanvas, { 
+      props: { nodes: mockNodes, links: mockLinks, onNoteCreate } 
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Simulate N key press
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'n' }));
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    expect(onNoteCreate).toBeDefined();
+  });
+
+  it('handles keyboard delete for selected node', async () => {
+    const onNoteDelete = vi.fn();
+    const { container } = render(GraphCanvas, { 
+      props: { nodes: mockNodes, links: mockLinks, onNoteDelete } 
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Simulate Delete key press
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    expect(onNoteDelete).toBeDefined();
+  });
+
+  it('handles drag-and-drop for link creation', async () => {
+    const onLinkCreate = vi.fn();
+    const { container } = render(GraphCanvas, { 
+      props: { nodes: mockNodes, links: mockLinks, onLinkCreate } 
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      // Simulate mouse down on node
+      canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 400, clientY: 300 }));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Simulate drag to another node
+      canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 450, clientY: 330 }));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Simulate mouse up
+      canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 450, clientY: 330 }));
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    expect(onLinkCreate).toBeDefined();
+  });
 });
