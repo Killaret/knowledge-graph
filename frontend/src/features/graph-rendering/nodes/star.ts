@@ -1,5 +1,9 @@
-import type { SimulationNode } from '$lib/components/GraphCanvas/types';
-import { getGlowIntensity } from '$shared/lib/graph/animations';
+/**
+ * Star node renderer
+ */
+import { getGlowIntensity } from '../utils';
+import { getNodeGradient } from '../utils';
+import { applyHueShift } from '$lib/utils/variation';
 
 /**
  * Draw a star node with glow, gradient and corona
@@ -49,25 +53,27 @@ export function drawStar(
     }
   }
 
-  // Draw star shape
   ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-    const px = x + Math.cos(rot) * radius;
-    const py = y + Math.sin(rot) * radius;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
+  for (let i = 0; i < points; i++) {
+    const x1 = x + Math.cos(rot) * outerRadius;
+    const y1 = y + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x1, y1);
+    rot += step;
+    const x2 = x + Math.cos(rot) * innerRadius;
+    const y2 = y + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x2, y2);
     rot += step;
   }
   ctx.closePath();
 
-  // Apply gradient
-  const gradient = ctx.createRadialGradient(x, y, 0, x, y, outerRadius);
-  gradient.addColorStop(0, '#ffffcc');
-  gradient.addColorStop(0.5, '#ffcc00');
-  gradient.addColorStop(1, '#ff9900');
+  // Use gradient instead of solid fill
+  const gradient = getNodeGradient(ctx, x, y, outerRadius, 'star', '#ffcc00');
+  const hueShift = variation?.hueShift ?? 0;
   ctx.fillStyle = gradient;
+  ctx.strokeStyle = applyHueShift('#cc9900', hueShift);
+  ctx.lineWidth = 2;
   ctx.fill();
+  ctx.stroke();
 
   // Reset shadow
   ctx.shadowBlur = 0;
