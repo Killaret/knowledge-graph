@@ -177,12 +177,17 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 
 ### Iteration 4 — Multilingual lexicon
 
-- Refactor `frontend/src/lib/utils/galactic-lexicon.ts` to `{ ru: string, en: string }` structure.
-- Add `formatMessage(key, lang, params)` helper.
-- Add `frontend.language` to `knowledge-graph.config.json` (default `en`).
-- Add language toggle in user settings UI (saved to `user_settings`).
-- Replace all UI strings with `formatMessage` calls.
-- Add unit tests for `formatMessage`.
+**Completed:**
+- Created new i18n.ts with formatMessage helper
+- Added en/ru message dictionary with common UI strings
+- Added formatMessage, getCurrentLocale, setLocale functions
+- Added frontend.language to knowledge-graph.config.json (default: en)
+- Added language toggle in ProfileEditor component
+- Replaced UI strings in ProfileEditor with formatMessage calls
+- Added unit tests for i18n functions (16 tests passing)
+
+**Pending:**
+- None - Iteration 4 Multilingual complete.
 
 ### Iteration 5 — Tests and documentation
 
@@ -197,5 +202,6 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Iteration 2 completed.
 - Iteration 3 completed (keyboard shortcuts, bulk actions menu, visual feedback).
 - Iteration 4 completed (hotkeys added, two-stage undo toast implemented, Delete all links button added, HelpHotkeysModal component extracted, ghost node form enhanced, drag-and-drop link creation UX improved, tests updated).
+- Iteration 4 Multilingual completed (i18n infrastructure created, language toggle added, ProfileEditor internationalized).
 - GraphCanvas FSD refactoring: attempted but paused due to SvelteKit alias configuration issues. Structure created in commits 5addc3c-95b060f, reverted to 068714f for stability.
 
