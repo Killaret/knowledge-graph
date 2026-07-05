@@ -141,6 +141,9 @@
   let linkTargetNodeId: string | null = $state(null);
   let mouseWorldPosition = $state({ x: 0, y: 0 });
 
+  // Selection state for keyboard delete
+  let selectedNodeId: string | null = $state(null);
+
   // Note creation form state
   let showNoteForm = $state(false);
   let noteFormPosition = $state({ x: 0, y: 0 });
@@ -558,9 +561,13 @@
         openHelpModal();
         return;
       }
+      selectedNodeId = clickedNode.id;
       if (onNodeClick) {
         onNodeClick({ id: clickedNode.id, title: clickedNode.title, type: clickedNode.type });
       }
+    } else {
+      // Deselect when clicking on empty space
+      selectedNodeId = null;
     }
   }
 
@@ -737,7 +744,7 @@
     }
   }
 
-  // Keyboard shortcuts: Esc toggles focus mode, F opens search, ? opens help
+  // Keyboard shortcuts: Esc toggles focus mode, F opens search, ? opens help, N for ghost node, Del/Backspace for delete, Ctrl+Z for undo
   function handleKeyDown(e: KeyboardEvent) {
     // Ignore hotkeys when typing in a form or search input
     const active = document.activeElement;
@@ -782,6 +789,40 @@
     if (e.key === 'Enter' && showSearchBox) {
       e.preventDefault();
       focusNextSearchMatch();
+      return;
+    }
+
+    // N - Create ghost node
+    if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const centerX = (rect.width / 2 - transform.x) / transform.k;
+        const centerY = (rect.height / 2 - transform.y) / transform.k;
+        ghostNode = createGhostNode(centerX, centerY);
+        showNoteForm = true;
+        redraw();
+      }
+      return;
+    }
+
+    // Delete/Backspace - Delete selected node (if not typing)
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
+      e.preventDefault();
+      if (selectedNodeId && onNoteDelete) {
+        onNoteDelete(selectedNodeId);
+        selectedNodeId = null;
+        redraw();
+      }
+      return;
+    }
+
+    // Ctrl+Z - Undo (placeholder for now)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      // TODO: Implement undo functionality
+      console.log('[GraphCanvas] Undo not yet implemented');
+      return;
     }
   }
 
@@ -908,6 +949,9 @@
     'F — search nodes by name',
     'Esc — toggle focus mode (hide effects)',
     '? — show/hide this help',
+    'N — create ghost node at center',
+    'Delete/Backspace — delete selected node',
+    'Ctrl+Z — undo (coming soon)',
     'Ctrl+Shift+N — quick capture a new note',
     'Drag node to another node — create a link',
     'Drag node to black hole — delete note',
