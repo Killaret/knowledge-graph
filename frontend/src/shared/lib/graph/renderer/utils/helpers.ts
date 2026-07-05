@@ -1,6 +1,7 @@
 /**
  * Helper functions for renderer utilities
  */
+import { applyHueShift } from '$lib/utils/variation';
 
 /**
  * Lighten a hex color by a percentage
@@ -48,4 +49,16 @@ export function hexToRgba(hex: string, alpha: number): string {
   const G = (num >> 8) & 255;
   const B = num & 255;
   return `rgba(${R}, ${G}, ${B}, ${alpha})`;
+}
+
+/**
+ * Helper function to apply hue shift to RGBA values
+ */
+export function applyHueShiftToRGBA(r: number, g: number, b: number, hueShift: number): string {
+  const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  const shifted = applyHueShift(hex, hueShift);
+  const r2 = parseInt(shifted.slice(1, 3), 16);
+  const g2 = parseInt(shifted.slice(3, 5), 16);
+  const b2 = parseInt(shifted.slice(5, 7), 16);
+  return `${r2}, ${g2}, ${b2}`;
 }
