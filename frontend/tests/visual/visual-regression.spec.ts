@@ -158,22 +158,6 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       fullPage: true 
     });
   });
-      const menuButton = page.locator('.menu-btn');
-      await menuButton.click();
-      await page.waitForTimeout(200);
-      
-      const helpButton = page.locator('[data-testid="menu-help"]');
-      await helpButton.click();
-      await page.waitForTimeout(500);
-    } catch {
-      console.log('Help button not available, skipping');
-    }
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/home-help-modal.png',
-      fullPage: true 
-    });
-  });
 
   test('3D Graph - frozen notice (redirects to 2D)', async ({ page }) => {
     await page.goto('/graph/3d');
