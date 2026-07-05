@@ -52,6 +52,7 @@
     updateSearch as updateSearchUtil,
     resetInactivityTimer,
     updateActivity,
+    showRandomTip as showRandomTipUtil,
     type HotkeysState
   } from '$features/graph-interaction/hotkeys';
   import {
@@ -848,15 +849,6 @@
     'Drag node to black hole — delete note',
     'Double-click empty space — create new note',
     'Mouse wheel — zoom in/out'
-  ];
-
-  const randomTips = [
-    'Press F to quickly find a node by name.',
-    'Press Esc to enter focus mode and reduce visual noise.',
-    'Press ? to see all keyboard shortcuts and gestures.',
-    'Drag a node into the black hole to delete it.',
-    'Drag a node onto another node to create a link.',
-    'Double-tap empty space to add a new note.'
   ];
 
   function openHelpModal() {
