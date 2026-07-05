@@ -159,6 +159,54 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
     });
   });
 
+  test('NoteCard - with indicators', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Switch to list view
+    try {
+      const listButton = page.locator('[data-testid="view-toggle-list"]');
+      await listButton.click();
+      await page.waitForTimeout(1000);
+    } catch {
+      console.log('List toggle not available, using current view');
+    }
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/notecard-indicators.png',
+      fullPage: true 
+    });
+  });
+
+  test('NoteCard - selected state', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+    
+    // Switch to list view and select a note
+    try {
+      const listButton = page.locator('[data-testid="view-toggle-list"]');
+      await listButton.click();
+      await page.waitForTimeout(1000);
+      
+      const selectButton = page.locator('[data-testid="select-mode-toggle"]');
+      await selectButton.click();
+      await page.waitForTimeout(500);
+      
+      const firstNote = page.locator('[data-testid^="note-card-"]').first();
+      await firstNote.click();
+      await page.waitForTimeout(500);
+    } catch {
+      console.log('Selection not available, skipping');
+    }
+    
+    await page.screenshot({ 
+      path: 'argos-screenshots/notecard-selected.png',
+      fullPage: true 
+    });
+  });
+
   test('3D Graph - frozen notice (redirects to 2D)', async ({ page }) => {
     await page.goto('/graph/3d');
     
