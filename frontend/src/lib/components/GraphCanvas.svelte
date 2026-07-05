@@ -44,26 +44,20 @@
     getMouseWorldPosition,
     findNodeAtPosition,
     handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleClick,
     type DragDropState
   } from '$features/graph-interaction/drag-and-drop';
   import {
     createHotkeysState,
     handleKeyDownEvent,
     updateSearch as updateSearchUtil,
-    focusNextSearchMatch as focusNextSearchMatchUtil,
     resetInactivityTimer,
     updateActivity,
-    showRandomTip as showRandomTipUtil,
     type HotkeysState
   } from '$features/graph-interaction/hotkeys';
   import {
     createZoomPanState,
     handleZoom as handleZoomPan,
     handleTouchStart,
-    resetViewToCenter,
     type ZoomPanState
   } from '$features/graph-interaction/zoom-pan';
   import {
@@ -78,7 +72,6 @@
     openLinkForm,
     closeLinkForm as closeLinkFormUtil,
     createLink as createLinkUtil,
-    isDuplicateLink,
     type LinkFormState
   } from '$features/graph-forms/link-form';
 
@@ -761,11 +754,6 @@
     redraw();
   }
 
-  function handleFocusNextSearchMatch() {
-    focusNextSearchMatchUtil(hotkeysState, transform, getSimulationNodes(simState), canvas);
-    redraw();
-  }
-
   function showDuplicateWarning(source: string, target: string, linkType: string, x: number, y: number) {
     const stableLinkId = `${source}-${target}-${linkType}`;
     highlightedLinkId = stableLinkId;
@@ -878,17 +866,6 @@
 
   function closeHelpModal() {
     hotkeysState.showHelpModal = false;
-  }
-
-  function handleShowRandomTip() {
-    if (hotkeysState.showHelpModal || hotkeysState.showSearchBox || noteFormState.showNoteForm || linkFormState.showLinkForm) return;
-    const tip = randomTips[Math.floor(Math.random() * randomTips.length)];
-    hotkeysState.helpTooltipMessage = tip;
-    hotkeysState.helpTooltipPosition = { x: width * 0.5, y: height * 0.85 };
-    hotkeysState.showHelpTooltip = true;
-    setTimeout(() => {
-      hotkeysState.showHelpTooltip = false;
-    }, 4000);
   }
 
   function handleCloseSearch() {
