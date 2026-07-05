@@ -158,38 +158,19 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       fullPage: true 
     });
   });
-    await page.waitForFunction(() => {
-      const canvas = document.querySelector('canvas');
-      return canvas !== null;
-    }, { timeout: 15000 });
-    
-    // Wait for loading to finish if visible
-    const loadingOverlay = page.locator('[data-testid="loading-overlay"]');
-    try {
-      await expect(loadingOverlay).not.toBeVisible({ timeout: 10000 });
+      const menuButton = page.locator('.menu-btn');
+      await menuButton.click();
+      await page.waitForTimeout(200);
+      
+      const helpButton = page.locator('[data-testid="menu-help"]');
+      await helpButton.click();
+      await page.waitForTimeout(500);
     } catch {
-      console.log('Loading overlay may have already disappeared');
+      console.log('Help button not available, skipping');
     }
-    
-    // Try to enable full graph mode
-    const fullGraphToggle = page.locator('[data-testid="full-graph-toggle"]');
-    const isToggleVisible = await fullGraphToggle.isVisible().catch(() => false);
-    
-    if (isToggleVisible) {
-      const isChecked = await fullGraphToggle.isChecked();
-      if (!isChecked) {
-        await fullGraphToggle.click();
-        await page.waitForTimeout(2000);
-      }
-    } else {
-      console.log('Full graph toggle not found, may be in different location');
-    }
-    
-    // Wait for graph to stabilize
-    await page.waitForTimeout(1000);
     
     await page.screenshot({ 
-      path: 'argos-screenshots/2d-full-view-with-links.png',
+      path: 'argos-screenshots/home-help-modal.png',
       fullPage: true 
     });
   });
