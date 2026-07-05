@@ -50,3 +50,8 @@ export async function getNoteLinks(noteId: string): Promise<Link[]> {
   const response = await api.get(`v1/notes/${noteId}/links`).json<{ data: Link[] }>();
   return response.data;
 }
+
+// Delete all links for a note
+export async function deleteAllNoteLinks(noteId: string): Promise<void> {
+  await api.delete(`v1/notes/${noteId}/links`);
+}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getNote, type Note } from '$lib/api/notes';
+  import { getNoteLinks, deleteAllNoteLinks, type Link } from '$lib/api/links';
   import { goto } from '$app/navigation';
   import { formatDate } from '$lib/utils/date';
   import ShareModal from './ShareModal.svelte';
@@ -12,14 +13,18 @@
   } = $props();
   
   let note = $state<Note | null>(null);
+  let links = $state<Link[]>([]);
   let loading = $state(true);
   let error = $state('');
   let showShareModal = $state(false);
+  let showDeleteLinksConfirm = $state(false);
+  let deletingLinks = $state(false);
 
   // Load note when nodeId changes
   $effect(() => {
     const id = nodeId; // track dependency
     loadNote(id);
+    loadLinks(id);
   });
 
   async function loadNote(id: string) {
@@ -32,6 +37,27 @@
       note = null;
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadLinks(id: string) {
+    try {
+      links = await getNoteLinks(id);
+    } catch {
+      links = [];
+    }
+  }
+  
+  async function handleDeleteAllLinks() {
+    deletingLinks = true;
+    try {
+      await deleteAllNoteLinks(nodeId);
+      links = [];
+      showDeleteLinksConfirm = false;
+    } catch {
+      error = 'Failed to delete links';
+    } finally {
+      deletingLinks = false;
     }
   }
   
@@ -129,6 +155,33 @@
         </div>
       {/if}
       
+      <div class="links-section">
+        <div class="links-header">
+          <h3>Links ({links.length})</h3>
+          {#if links.length > 0}
+            <button 
+              class="delete-all-links-btn"
+              onclick={() => showDeleteLinksConfirm = true}
+              aria-label="Delete all links"
+            >
+              Delete All
+            </button>
+          {/if}
+        </div>
+        {#if links.length === 0}
+          <p class="no-links">No links yet</p>
+        {:else}
+          <div class="links-list">
+            {#each links as link}
+              <div class="link-item">
+                <span class="link-type">{link.link_type}</span>
+                <span class="link-weight">Weight: {link.weight.toFixed(1)}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      
       <div class="panel-footer">
         <button type="button" class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)} aria-label={`View full page for ${note.title}`}>
           View Full Page →
@@ -144,6 +197,31 @@
     noteTitle={note.title}
     on:close={() => showShareModal = false}
   />
+{/if}
+
+{#if showDeleteLinksConfirm}
+  <div class="modal-overlay" onclick={() => showDeleteLinksConfirm = false}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
+      <h3>Delete All Links?</h3>
+      <p>This will remove all {links.length} links from this note. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button 
+          class="modal-btn cancel"
+          onclick={() => showDeleteLinksConfirm = false}
+          disabled={deletingLinks}
+        >
+          Cancel
+        </button>
+        <button 
+          class="modal-btn delete"
+          onclick={handleDeleteAllLinks}
+          disabled={deletingLinks}
+        >
+          {deletingLinks ? 'Deleting...' : 'Delete All'}
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}
 
 <style>
@@ -343,6 +421,145 @@
   .view-full-btn:hover {
     background: #f8fafc;
     border-color: #3b82f6;
+  }
+
+  .links-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .links-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .links-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .delete-all-links-btn {
+    padding: 4px 8px;
+    border: 1px solid #fee2e2;
+    background: #fef2f2;
+    color: #ef4444;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .delete-all-links-btn:hover {
+    background: #fee2e2;
+  }
+
+  .no-links {
+    color: #94a3b8;
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .link-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .link-type {
+    font-weight: 500;
+    color: #334155;
+  }
+
+  .link-weight {
+    color: #64748b;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    color: #1e293b;
+  }
+
+  .modal p {
+    margin: 0 0 20px 0;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  .modal-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-btn.cancel {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .modal-btn.cancel:hover {
+    background: #e2e8f0;
+  }
+
+  .modal-btn.delete {
+    background: #ef4444;
+    color: white;
+  }
+
+  .modal-btn.delete:hover {
+    background: #dc2626;
+  }
+
+  .modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   @media (max-width: 768px) {

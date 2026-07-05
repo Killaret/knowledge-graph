@@ -165,11 +165,11 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 **Completed:**
 - Add hotkeys: `N` (ghost node), `Del`/`Backspace` (delete selected), `Ctrl+Z` (undo placeholder).
 - Improve black hole deletion animation and two-stage undo toast (Done → Restore stages).
+- Add "Delete all links" button in note side panel link management with confirmation modal.
 
 **Pending:**
 - Improve ghost node creation flow with tippy form.
 - Improve drag-and-drop link creation UX.
-- Add "Delete all links" button in note side panel link management.
 - Extract shared `HelpHotkeysModal` component and reuse on graph + list pages.
 - Update visual and integration tests.
 
