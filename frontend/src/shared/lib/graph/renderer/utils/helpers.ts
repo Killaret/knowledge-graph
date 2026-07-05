@@ -41,6 +41,14 @@ export function stringHash(str: string): number {
 }
 
 /**
+ * Seeded random number generator for deterministic anomaly parameters
+ */
+export function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+/**
  * Convert hex to rgba
  */
 export function hexToRgba(hex: string, alpha: number): string {

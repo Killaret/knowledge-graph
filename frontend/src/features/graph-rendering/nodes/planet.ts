@@ -1,8 +1,7 @@
 /**
  * Planet node renderer
  */
-import { getGlowIntensity } from '../utils';
-import { getNodeGradient } from '../utils';
+import { getGlowIntensity, getNodeGradient } from '$shared/lib/graph/renderer/utils';
 import { applyHueShift } from '$lib/utils/variation';
 
 /**

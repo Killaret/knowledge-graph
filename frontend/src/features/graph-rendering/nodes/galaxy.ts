@@ -1,9 +1,8 @@
 /**
  * Galaxy node renderer
  */
-import { getGlowIntensity, getNodeGradient } from '../utils';
-import { applyHueShift } from '$shared/utils/variation';
-import { applyHueShiftToRGBA } from '../utils/helpers';
+import { getGlowIntensity, getNodeGradient, applyHueShiftToRGBA } from '$shared/lib/graph/renderer/utils';
+import { applyHueShift } from '$lib/utils/variation';
 
 /**
  * Draw a galaxy node with glow, gradient and spiral arms

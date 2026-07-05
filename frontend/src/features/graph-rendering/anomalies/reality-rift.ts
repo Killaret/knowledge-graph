@@ -1,8 +1,7 @@
 /**
  * Reality Rift anomaly renderer
  */
-import { hexToRgba } from '../utils';
-import { seededRandom } from './helpers';
+import { hexToRgba, seededRandom } from '$shared/lib/graph/renderer/utils';
 
 /**
  * Draw a Reality Rift anomaly - dark core + jagged cracks + amoebic contour

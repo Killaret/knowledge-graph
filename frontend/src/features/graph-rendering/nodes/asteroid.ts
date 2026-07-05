@@ -1,7 +1,7 @@
 /**
  * Asteroid node renderer
  */
-import { getGlowIntensity } from '../utils';
+import { getGlowIntensity } from '$shared/lib/graph/renderer/utils';
 import { applyHueShift } from '$lib/utils/variation';
 
 /**

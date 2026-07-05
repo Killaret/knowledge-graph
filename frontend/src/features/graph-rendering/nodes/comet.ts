@@ -1,9 +1,8 @@
 /**
  * Comet node renderer
  */
-import { getGlowIntensity } from '../utils';
-import { applyHueShift } from '$shared/utils/variation';
-import { applyHueShiftToRGBA } from '../utils/helpers';
+import { getGlowIntensity, applyHueShiftToRGBA } from '$shared/lib/graph/renderer/utils';
+import { applyHueShift } from '$lib/utils/variation';
 
 /**
  * Draw a comet node with glow and gradient

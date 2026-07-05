@@ -1,7 +1,7 @@
 /**
  * Helper functions for renderer utilities
  */
-import { applyHueShift } from '$shared/utils/variation';
+import { applyHueShift } from '$lib/utils/variation';
 
 /**
  * Lighten a hex color by a percentage

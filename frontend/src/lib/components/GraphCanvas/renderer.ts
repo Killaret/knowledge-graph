@@ -13,6 +13,13 @@ import {
   drawGhostNodeTooltip
 } from './ghost-node';
 import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
+import { getGlowIntensity } from '$shared/lib/graph/glow-intensity';
+import * as nodeRenderers from '$features/graph-rendering/nodes';
+import { drawRealityRift } from '$features/graph-rendering/anomalies/reality-rift';
+import { getLinkColor } from '$shared/lib/graph/link-color';
+import { getLineDash } from '$shared/lib/graph/line-dash';
+import { getNodeColor } from '$shared/lib/graph/node-color';
+import { getNodeGradient } from '$shared/lib/graph/node-gradient';
 
 export type { SimulationNode, SimulationLink };
 export type { BlackHoleState } from './black-hole';
@@ -21,79 +28,6 @@ export type { GhostNodeState } from './ghost-node';
 // Performance thresholds
 const PERFORMANCE_THRESHOLD_NODES = 100;
 const PERFORMANCE_THRESHOLD_LINKS = 50;
-
-/**
- * Get glow intensity based on time and node ID (pulsating effect)
- */
-export function getGlowIntensity(nodeId: string, time: number, nodeCount: number): number {
-  if (nodeCount > PERFORMANCE_THRESHOLD_NODES) {
-    return 0.3; // Minimal glow for stars only
-  }
-
-  const hash = stringHash(nodeId);
-  const phase = (hash % 1000) / 1000;
-  const period = 2000 + (hash % 1000);
-  const t = (time + phase * period) % period;
-  const normalizedT = t / period;
-
-  // Sine wave from 0.3 to 1.0 (absolute value to ensure positive)
-  return 0.3 + 0.7 * Math.abs(Math.sin(normalizedT * Math.PI * 2));
-}
-
-/**
- * Get radial gradient for a node
- */
-export function getNodeGradient(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  type: string,
-  color: string
-): CanvasGradient {
-  const gradient = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
-
-  switch (type) {
-    case 'star':
-      gradient.addColorStop(0, '#ffffcc');
-      gradient.addColorStop(0.5, '#ffcc00');
-      gradient.addColorStop(1, '#ff9900');
-      break;
-    case 'planet':
-      gradient.addColorStop(0, lightenColor(color, 30));
-      gradient.addColorStop(0.7, color);
-      gradient.addColorStop(1, darkenColor(color, 20));
-      break;
-    case 'galaxy':
-      gradient.addColorStop(0, '#8b5cf6');
-      gradient.addColorStop(0.5, '#6d28d9');
-      gradient.addColorStop(1, 'rgba(109, 40, 217, 0)');
-      break;
-    default:
-      gradient.addColorStop(0, lightenColor(color, 20));
-      gradient.addColorStop(1, color);
-  }
-
-  return gradient;
-}
-
-function lightenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.min(255, (num >> 16) + amt);
-  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-  const B = Math.min(255, (num & 0x0000ff) + amt);
-  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
-}
-
-function darkenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.max(0, (num >> 16) - amt);
-  const G = Math.max(0, ((num >> 8) & 0x00ff) - amt);
-  const B = Math.max(0, (num & 0x0000ff) - amt);
-  return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
-}
 
 /**
  * Simple hash function for strings (local copy for anomaly generation)
@@ -106,51 +40,6 @@ function stringHash(str: string): number {
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
-}
-
-// Colors for different link types (per specification)
-const linkTypeColors: Record<string, string> = {
-  reference: '#3366ff', // Blue - default direct link
-  dependency: '#ff6600', // Orange - dependency
-  related: '#999999', // Gray - related topic (default)
-  custom: '#ff66ff' // Pink - custom
-};
-
-/**
- * Get link color based on weight and type
- */
-export function getLinkColor(weight: number, linkType?: string, fadeOpacity: number = 1): string {
-  const effectiveType = linkType || 'related';
-  const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
-  const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
-  const finalOpacity = baseOpacity * fadeOpacity;
-
-  // Convert hex to rgba
-  const r = parseInt(color.slice(1, 3), 16);
-  const g = parseInt(color.slice(3, 5), 16);
-  const b = parseInt(color.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${finalOpacity})`;
-}
-
-/**
- * Get line dash pattern based on link type and weight
- */
-export function getLineDash(linkType?: string, weight?: number): number[] {
-  const effectiveType = linkType || 'related';
-
-  switch (effectiveType) {
-    case 'reference':
-      return []; // Solid
-    case 'dependency':
-      return [10, 3]; // Dash-dot
-    case 'related':
-      // Dash only for weak weight
-      return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
-    case 'custom':
-      return [2, 6]; // Dotted
-    default:
-      return (weight ?? 0.5) < 0.3 ? [6, 4] : [];
-  }
 }
 
 /**
@@ -370,12 +259,6 @@ function applyHueShiftToRGBA(r: number, g: number, b: number, hueShift: number):
 /**
  * Convert hex color to rgba string
  */
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 /**
  * Draw a galaxy node with glow, gradient and spiral arms
@@ -813,387 +696,26 @@ export function drawMoon(
 /**
  * Seeded random number generator for deterministic anomaly parameters
  */
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
 
 /**
  * Generate deterministic parameters for anomaly visualization
  */
-interface AnomalyParams {
-  crackCount: number;
-  tentacleCount: number;
-  particleCount: number;
-  colorShift1: number;
-  colorShift2: number;
-  deformAmount: number;
-  rotationOffset: number;
-  seedBase: number;
-}
-
-type AnomalyRenderer = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  params: AnomalyParams
-) => void;
-
-export function getAnomalyParams(nodeId: string): AnomalyParams {
-  const hash = stringHash(nodeId);
-  
-  // Use different parts of hash for different parameters
-  const hash1 = hash % 1000;
-  const hash2 = (hash >> 10) % 1000;
-  const hash3 = (hash >> 20) % 1000;
-  const hash4 = (hash >> 25) % 1000;
-  const hash5 = (hash >> 30) % 1000;
-  
-  const rr = anomalyConfig.reality_rift;
-  const cm = anomalyConfig.chromatic_maw;
-  const vw = anomalyConfig.void_whisper;
-  const ca = anomalyConfig.cosmic_abomination;
-  
-  return {
-    crackCount: ca.crack_count_min + Math.floor((hash1 / 1000) * (ca.crack_count_max - ca.crack_count_min)),
-    tentacleCount: ca.tentacle_count_min + Math.floor((hash2 / 1000) * (ca.tentacle_count_max - ca.tentacle_count_min)),
-    particleCount: ca.particle_count_min + Math.floor((hash3 / 1000) * (ca.particle_count_max - ca.particle_count_min)),
-    colorShift1: (hash4 / 1000) * cm.hue_shift_range,
-    colorShift2: (hash5 / 1000) * vw.hue_shift_range,
-    deformAmount: rr.deform_amount_min + (hash1 / 1000) * (rr.deform_amount_max - rr.deform_amount_min),
-    rotationOffset: (hash2 / 1000) * Math.PI * 2,
-    seedBase: hash,
-  };
-}
 
 /**
  * Draw a Reality Rift anomaly - dark core + jagged cracks + amoebic contour
  */
-export function drawRealityRift(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  params: AnomalyParams
-): void {
-  const { crackCount, deformAmount, rotationOffset } = params;
-  const rr = anomalyConfig.reality_rift;
-  
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotationOffset);
-  
-  // Dark core with purple glow
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.3, 0, 2 * Math.PI);
-  ctx.fillStyle = rr.core_color;
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = rr.glow_color;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  
-  // Amoebic outer contour
-  ctx.beginPath();
-  const points = 24;
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI;
-    const deformation = 1 + deformAmount * Math.sin(angle * 5 + rotationOffset * 2);
-    const radius = r * deformation;
-    const px = Math.cos(angle) * radius;
-    const py = Math.sin(angle) * radius;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.strokeStyle = hexToRgba(rr.glow_color, 0.6);
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = hexToRgba(rr.core_color, 0.7);
-  ctx.fill();
-  
-  const seedBase = params.seedBase;
-
-  // Jagged cracks radiating from center
-  for (let i = 0; i < crackCount; i++) {
-    const angle = (i / crackCount) * 2 * Math.PI + rotationOffset;
-    const crackLength = r * (0.5 + seededRandom(seedBase + i * 31 + 13) * 0.4);
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    
-    // Create jagged path
-    const segments = 3;
-    for (let j = 0; j < segments; j++) {
-      const segProgress = (j + 1) / segments;
-      const segAngle = angle + (seededRandom(seedBase + i * 17 + j * 23 + 7) - 0.5) * 0.3;
-      const segRadius = crackLength * segProgress;
-      ctx.lineTo(Math.cos(segAngle) * segRadius, Math.sin(segAngle) * segRadius);
-    }
-    
-    ctx.strokeStyle = hexToRgba(rr.glow_color, 0.4);
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  
-  ctx.restore();
-}
 
 /**
  * Draw a Chromatic Maw anomaly - tentacles + gradient core
  */
-export function drawChromaticMaw(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  params: AnomalyParams
-): void {
-  const { tentacleCount, colorShift1, rotationOffset } = params;
-  const cm = anomalyConfig.chromatic_maw;
-  
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotationOffset);
-  
-  // Gradient core
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.4);
-  gradient.addColorStop(0, `hsl(${cm.hue_shift_base + colorShift1}, 100%, 70%)`);
-  gradient.addColorStop(0.5, `hsl(${cm.hue_shift_base - 100 + colorShift1}, 100%, 60%)`);
-  gradient.addColorStop(1, `hsl(${cm.hue_shift_base - 280 + colorShift1}, 100%, 50%)`);
-  
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.4, 0, 2 * Math.PI);
-  ctx.fillStyle = gradient;
-  ctx.shadowBlur = 25;
-  ctx.shadowColor = `hsl(${cm.hue_shift_base + colorShift1}, 100%, 50%)`;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  
-  const seedBase = params.seedBase;
-
-  // Organic tentacles
-  for (let i = 0; i < tentacleCount; i++) {
-    const baseAngle = (i / tentacleCount) * 2 * Math.PI;
-    const tentacleLength = r * (1.2 + seededRandom(seedBase + i * 29 + 11) * 0.4);
-    const controlOffset = seededRandom(seedBase + i * 19 + 17) * r * 0.5;
-    const endAngle = baseAngle + (seededRandom(seedBase + i * 23 + 31) - 0.5) * 0.5;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    
-    // Bezier curve for organic tentacle
-    const cp1x = Math.cos(baseAngle) * r * 0.3;
-    const cp1y = Math.sin(baseAngle) * r * 0.3;
-    const cp2x = Math.cos(baseAngle + controlOffset) * r * 0.7;
-    const cp2y = Math.sin(baseAngle + controlOffset) * r * 0.7;
-    const endX = Math.cos(endAngle) * tentacleLength;
-    const endY = Math.sin(endAngle) * tentacleLength;
-    
-    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
-    
-    // Gradient along tentacle
-    const tentacleGradient = ctx.createLinearGradient(0, 0, endX, endY);
-    tentacleGradient.addColorStop(0, `hsla(${cm.hue_shift_base + colorShift1}, 100%, 60%, 0.8)`);
-    tentacleGradient.addColorStop(0.5, `hsla(${cm.hue_shift_base - 100 + colorShift1}, 100%, 50%, 0.6)`);
-    tentacleGradient.addColorStop(1, `hsla(${cm.hue_shift_base - 280 + colorShift1}, 100%, 40%, 0.3)`);
-    
-    ctx.strokeStyle = tentacleGradient;
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
-  
-  ctx.restore();
-}
 
 /**
  * Draw a Void Whisper anomaly - particles + lines + snow effect
  */
-export function drawVoidWhisper(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  params: AnomalyParams
-): void {
-  const { particleCount, colorShift2, rotationOffset } = params;
-  const vw = anomalyConfig.void_whisper;
-  
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotationOffset);
-  
-  // Generate deterministic particle positions
-  const particles: Array<{ x: number; y: number; opacity: number }> = [];
-  const seedBase = params.seedBase;
-
-  for (let i = 0; i < particleCount; i++) {
-    const angle = seededRandom(seedBase + i * 13 + 3) * 2 * Math.PI;
-    const distance = r * (0.5 + seededRandom(seedBase + i * 17 + 7) * 0.8);
-    const px = Math.cos(angle) * distance;
-    const py = Math.sin(angle) * distance;
-    const opacity = 0.3 + seededRandom(seedBase + i * 19 + 11) * 0.5;
-    particles.push({ x: px, y: py, opacity });
-  }
-  
-  // Draw connections between nearby particles
-  ctx.strokeStyle = `hsla(${vw.hue_shift_base + colorShift2}, 80%, 70%, 0.2)`;
-  ctx.lineWidth = 0.5;
-  
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance < r * vw.connection_distance_threshold) {
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.stroke();
-      }
-    }
-  }
-  
-  // Draw particles with twinkling effect
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i];
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI);
-    ctx.fillStyle = `hsla(${vw.hue_shift_base + colorShift2}, 80%, 80%, ${p.opacity})`;
-    ctx.fill();
-  }
-  
-  // Central faint glow
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-  gradient.addColorStop(0, `hsla(${vw.hue_shift_base + colorShift2}, 80%, 60%, 0.3)`);
-  gradient.addColorStop(1, 'transparent');
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, 2 * Math.PI);
-  ctx.fillStyle = gradient;
-  ctx.fill();
-  
-  ctx.restore();
-}
 
 /**
  * Draw a Cosmic Abomination - combines all three anomaly types
  */
-export function drawCosmicAbomination(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  params: AnomalyParams
-): void {
-  // Dark core from Reality Rift
-  const { crackCount, tentacleCount, particleCount, deformAmount, rotationOffset, colorShift1, colorShift2 } = params;
-  const rr = anomalyConfig.reality_rift;
-  const cm = anomalyConfig.chromatic_maw;
-  const vw = anomalyConfig.void_whisper;
-  
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotationOffset);
-  
-  // Dark core
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.25, 0, 2 * Math.PI);
-  ctx.fillStyle = rr.core_color;
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = hexToRgba(rr.glow_color, 0.6);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  
-  // Amoebic contour (simplified)
-  ctx.beginPath();
-  const points = 20;
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI;
-    const deformation = 1 + deformAmount * 0.5 * Math.sin(angle * 4);
-    const radius = r * 0.6 * deformation;
-    const px = Math.cos(angle) * radius;
-    const py = Math.sin(angle) * radius;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.strokeStyle = `hsla(${cm.hue_shift_base + colorShift1}, 80%, 60%, 0.5)`;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  
-  const seedBase = params.seedBase;
-
-  // Fewer tentacles (3-4)
-  for (let i = 0; i < tentacleCount; i++) {
-    const baseAngle = (i / tentacleCount) * 2 * Math.PI;
-    const tentacleLength = r * (1.0 + seededRandom(seedBase + i * 23 + 5) * 0.3);
-    const controlOffset = seededRandom(seedBase + i * 17 + 13) * r * 0.4;
-    const endAngle = baseAngle + (seededRandom(seedBase + i * 19 + 29) - 0.5) * 0.4;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    const cp1x = Math.cos(baseAngle) * r * 0.2;
-    const cp1y = Math.sin(baseAngle) * r * 0.2;
-    const cp2x = Math.cos(baseAngle + controlOffset) * r * 0.5;
-    const cp2y = Math.sin(baseAngle + controlOffset) * r * 0.5;
-    const endX = Math.cos(endAngle) * tentacleLength;
-    const endY = Math.sin(endAngle) * tentacleLength;
-    
-    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
-    
-    const tentacleGradient = ctx.createLinearGradient(0, 0, endX, endY);
-    tentacleGradient.addColorStop(0, `hsla(${cm.hue_shift_base + colorShift1}, 100%, 50%, 0.7)`);
-    tentacleGradient.addColorStop(1, `hsla(${cm.hue_shift_base - 280 + colorShift1}, 100%, 40%, 0.2)`);
-    
-    ctx.strokeStyle = tentacleGradient;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
-  
-  // Fewer particles (12-15)
-  const particles: Array<{ x: number; y: number; opacity: number }> = [];
-  for (let i = 0; i < particleCount; i++) {
-    const angle = seededRandom(seedBase + i * 17 + 19) * 2 * Math.PI;
-    const distance = r * (0.7 + seededRandom(seedBase + i * 23 + 7) * 0.5);
-    const px = Math.cos(angle) * distance;
-    const py = Math.sin(angle) * distance;
-    const opacity = 0.4 + seededRandom(seedBase + i * 19 + 11) * 0.4;
-    particles.push({ x: px, y: py, opacity });
-  }
-  
-  // Draw particles
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i];
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 1, 0, 2 * Math.PI);
-    ctx.fillStyle = `hsla(${vw.hue_shift_base + colorShift2}, 80%, 70%, ${p.opacity})`;
-    ctx.fill();
-  }
-  
-  // Subtle cracks (2-3)
-  for (let i = 0; i < crackCount; i++) {
-    const angle = (i / crackCount) * Math.PI + rotationOffset;
-    const crackLength = r * 0.4;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    const segments = 2;
-    for (let j = 0; j < segments; j++) {
-      const segProgress = (j + 1) / segments;
-      const segAngle = angle + (seededRandom(seedBase + i * 13 + j * 19 + 23) - 0.5) * 0.2;
-      const segRadius = crackLength * segProgress;
-      ctx.lineTo(Math.cos(segAngle) * segRadius, Math.sin(segAngle) * segRadius);
-    }
-    ctx.strokeStyle = `hsla(${cm.hue_shift_base + colorShift1}, 60%, 40%, 0.3)`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  
-  ctx.restore();
-}
 
 /**
  * Draw an unknown type node - dispatcher for anomaly types
@@ -1408,22 +930,6 @@ export function drawNodeTitle(
 /**
  * Get color for a node type
  */
-export function getNodeColor(type: string | undefined): string {
-  const colors: Record<string, string> = {
-    star: '#ffcc00',
-    planet: '#d6aa5d',
-    comet: '#e879f9',
-    galaxy: '#8b5cf6',
-    asteroid: '#94a3b8',
-    blackhole: '#000000',
-    moon: '#cccccc',
-    nebula: '#2dd4bf',
-    dust: '#a1a1aa',
-    inbox: '#fbbf24',
-    unknown: '#94a3b8'
-  };
-  return colors[type || 'unknown'] || colors.unknown;
-}
 
 /**
  * Draw all nodes

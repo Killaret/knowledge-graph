@@ -1,7 +1,7 @@
 /**
  * Black hole node renderer
  */
-import { getGlowIntensity } from '../utils';
+import { getGlowIntensity } from '$shared/lib/graph/renderer/utils';
 
 /**
  * Draw a black hole node with glow
