@@ -93,6 +93,11 @@ func (m *MockNoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockNoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func (m *MockNoteRepository) List(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	args := m.Called(ctx, limit, offset)
 	if args.Get(0) == nil {

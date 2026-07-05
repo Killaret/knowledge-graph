@@ -12,6 +12,7 @@ export interface SimulationNode {
   fy?: number;
   scale?: number;
   opacity?: number;
+  createdAt?: string;
 }
 
 export interface SimulationLink {

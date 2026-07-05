@@ -47,10 +47,11 @@
     onNoteCreate,
     onLinkCreate,
     onNoteDelete,
+    onNoteRestore,
     delta,
     disableVariation = false
   }: {
-    nodes: Array<{ id: string; title: string; type?: string }>;
+    nodes: Array<{ id: string; title: string; type?: string; createdAt?: string; created_at?: string }>;
     links: Array<{ source: string; target: string; weight?: number; link_type?: string; source_type?: string }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onLinkEdit?: (link: { source: string; target: string; link_type: string; weight: number }) => void;
@@ -58,6 +59,7 @@
     onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
     onLinkCreate?: (link: { source: string; target: string; link_type: string; weight: number }) => void;
     onNoteDelete?: (nodeId: string) => void;
+    onNoteRestore?: (nodeId: string) => void;
     delta?: GraphDelta;
     disableVariation?: boolean;
   } = $props();
@@ -150,6 +152,22 @@
   let newLinkType = $state('related');
   let newLinkWeight = $state(0.5);
 
+  // Focus mode: hides decorative effects when true
+  let focusMode = $state(false);
+
+  // Node search state
+  let showSearchBox = $state(false);
+  let searchQuery = $state('');
+  let searchMatchIds: string[] = $state([]);
+  let searchCurrentIndex = $state(0);
+  let searchInput: HTMLInputElement | null = null;
+
+  // Duplicate link warning state
+  let duplicateWarning = $state<{ message: string; x: number; y: number; linkId: string } | null>(null);
+  let duplicateWarningTimeout: ReturnType<typeof setTimeout> | null = null;
+  let highlightedLinkId: string | null = $state(null);
+  let highlightedLinkTimeout: ReturnType<typeof setTimeout> | null = null;
+
   onMount(() => {
     if (!browser) return;
     
@@ -202,7 +220,7 @@
           }
           
           // Draw the full graph with all effects
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
         }
       },
       stableRender
@@ -259,7 +277,7 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
         }
       },
       () => {
@@ -290,7 +308,7 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
         }
       },
       onResetView: () => {
@@ -328,7 +346,7 @@
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
-      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem);
+      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, searchMatchIds, highlightedLinkId);
     }
   }
 
@@ -458,6 +476,7 @@
             if (onNoteDelete) {
               onNoteDelete(node.id);
             }
+            showUndoToastFor(node.id);
           });
         } else {
           // Check if dropped over another node -> create link
@@ -577,13 +596,21 @@
   }
 
   function createLink() {
-    if (linkSourceNodeId && linkTargetNodeId && onLinkCreate) {
-      onLinkCreate({
-        source: linkSourceNodeId,
-        target: linkTargetNodeId,
-        link_type: newLinkType,
-        weight: newLinkWeight
-      });
+    if (linkSourceNodeId && linkTargetNodeId) {
+      const linkType = newLinkType;
+      if (isDuplicateLink(linkSourceNodeId, linkTargetNodeId, linkType)) {
+        showDuplicateWarning(linkSourceNodeId, linkTargetNodeId, linkType, linkFormPosition.x, linkFormPosition.y);
+        closeLinkForm();
+        return;
+      }
+      if (onLinkCreate) {
+        onLinkCreate({
+          source: linkSourceNodeId,
+          target: linkTargetNodeId,
+          link_type: linkType,
+          weight: newLinkWeight
+        });
+      }
     }
     closeLinkForm();
   }
@@ -663,7 +690,135 @@
         tapCount = 0;
       }
     }
+  }
+
+  // Keyboard shortcuts: Esc toggles focus mode, Ctrl+F opens search
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      if (showSearchBox) {
+        closeSearch();
+      } else if (showNoteForm || showLinkForm) {
+        // Let form close first; focus mode toggles only when no forms are open
+        return;
+      } else {
+        focusMode = !focusMode;
+        redraw();
+      }
+      e.preventDefault();
+    }
+
+    if (e.key === 'f' && e.ctrlKey) {
+      e.preventDefault();
+      showSearchBox = true;
+      searchQuery = '';
+      searchMatchIds = [];
+      searchCurrentIndex = 0;
+      requestAnimationFrame(() => searchInput?.focus());
+    }
+
+    if (e.key === 'Enter' && showSearchBox) {
+      e.preventDefault();
+      focusNextSearchMatch();
+    }
+  }
+
+  function closeSearch() {
+    showSearchBox = false;
+    searchQuery = '';
+    searchMatchIds = [];
+    searchCurrentIndex = 0;
+    redraw();
+  }
+
+  function updateSearch() {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      searchMatchIds = [];
+      searchCurrentIndex = 0;
+      redraw();
+      return;
+    }
+
+    const simNodes = getSimulationNodes(simState);
+    searchMatchIds = simNodes
+      .filter((node) => node.title.toLowerCase().includes(query))
+      .map((node) => node.id);
+    searchCurrentIndex = 0;
+    redraw();
+  }
+
+  function focusNextSearchMatch() {
+    if (searchMatchIds.length === 0) return;
+    searchCurrentIndex = (searchCurrentIndex + 1) % searchMatchIds.length;
+    const nodeId = searchMatchIds[searchCurrentIndex];
+    const simNodes = getSimulationNodes(simState);
+    const node = simNodes.find((n) => n.id === nodeId);
+    if (node && node.x != null && node.y != null && canvas) {
+      const rect = canvas.getBoundingClientRect();
+      transform.k = Math.max(transform.k, 1.2);
+      transform.x = rect.width / 2 - node.x * transform.k;
+      transform.y = rect.height / 2 - node.y * transform.k;
+      redraw();
+    }
+  }
+
+  // Duplicate link detection
+  function isDuplicateLink(source: string, target: string, linkType: string): boolean {
+    return links.some((link) => {
+      const s = typeof link.source === 'string' ? link.source : link.source.id;
+      const t = typeof link.target === 'string' ? link.target : link.target.id;
+      return (s === source && t === target && (link.link_type || 'related') === linkType) ||
+             (s === target && t === source && (link.link_type || 'related') === linkType);
+    });
+  }
+
+  function showDuplicateWarning(source: string, target: string, linkType: string, x: number, y: number) {
+    const stableLinkId = `${source}-${target}-${linkType}`;
+    highlightedLinkId = stableLinkId;
+    duplicateWarning = { message: 'This link already exists', x, y, linkId: stableLinkId };
+
+    if (duplicateWarningTimeout) clearTimeout(duplicateWarningTimeout);
+    if (highlightedLinkTimeout) clearTimeout(highlightedLinkTimeout);
+
+    duplicateWarningTimeout = setTimeout(() => {
+      duplicateWarning = null;
+    }, 2000);
+
+    highlightedLinkTimeout = setTimeout(() => {
+      highlightedLinkId = null;
+      redraw();
+    }, 1000);
+  }
+
+  // Undo deletion integration
+  let lastDeletedNodeId: string | null = $state(null);
+  let showUndoToast = $state(false);
+  let undoToastTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function showUndoToastFor(nodeId: string) {
+    lastDeletedNodeId = nodeId;
+    showUndoToast = true;
+    if (undoToastTimeout) clearTimeout(undoToastTimeout);
+    undoToastTimeout = setTimeout(() => {
+      showUndoToast = false;
+      lastDeletedNodeId = null;
+    }, 5000);
+  }
+
+  function restoreDeletedNode() {
+    if (lastDeletedNodeId && onNoteRestore) {
+      onNoteRestore(lastDeletedNodeId);
+    }
+    showUndoToast = false;
+    lastDeletedNodeId = null;
+  }
+
+  function cancelUndo() {
+    showUndoToast = false;
+    lastDeletedNodeId = null;
   }</script>
+
+<svelte:window onkeydown={handleKeyDown} />
 
 <canvas
   bind:this={canvas}
@@ -763,6 +918,77 @@
     <div style="display: flex; gap: 8px; justify-content: flex-end;">
       <button onclick={closeLinkForm} style="padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: transparent; color: white; cursor: pointer;">Cancel</button>
       <button onclick={createLink} style="padding: 6px 12px; border: none; border-radius: 4px; background: #ffcc00; color: #000; cursor: pointer;">Create</button>
+    </div>
+  </div>
+{/if}
+
+{#if showSearchBox}
+  <div
+    class="search-box"
+    style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 100; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+    <input
+      bind:this={searchInput}
+      type="text"
+      placeholder="Search nodes..."
+      bind:value={searchQuery}
+      oninput={updateSearch}
+      style="background: transparent; border: none; color: white; outline: none; min-width: 200px; font-size: 14px;"
+    />
+    {#if searchMatchIds.length > 0}
+      <span style="color: rgba(255,255,255,0.6); font-size: 12px;">{searchCurrentIndex + 1}/{searchMatchIds.length}</span>
+    {/if}
+    <button onclick={closeSearch} style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px;">×</button>
+  </div>
+{/if}
+
+{#if duplicateWarning}
+  <div
+    class="duplicate-warning"
+    style="position: absolute; left: {duplicateWarning.x}px; top: {duplicateWarning.y}px; background: rgba(255, 204, 0, 0.95); color: #000; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; z-index: 100; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
+  >
+    {duplicateWarning.message}
+  </div>
+{/if}
+
+{#if focusMode}
+  <div
+    class="focus-mode-indicator"
+    style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px; color: white; z-index: 50; display: flex; align-items: center; gap: 4px; font-size: 12px;"
+    title="Focus mode is active. Press Esc to restore effects."
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+    Focus
+  </div>
+{/if}
+
+{#if showUndoToast}
+  <div
+    class="undo-toast"
+    style="position: fixed; bottom: 20px; right: 20px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 12px; padding: 16px; min-width: 300px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: white;"
+  >
+    <span style="font-size: 14px;">Note deleted.</span>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button
+        onclick={restoreDeletedNode}
+        style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer; font-size: 13px; font-weight: 600;"
+      >
+        Restore
+      </button>
+      <button
+        onclick={cancelUndo}
+        style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 18px; line-height: 1;"
+        aria-label="Close"
+      >
+        ×
+      </button>
     </div>
   </div>
 {/if}

@@ -47,6 +47,11 @@ export async function deleteNote(id: string): Promise<void> {
   return api.delete(`v1/notes/${id}`).json();
 }
 
+// Восстановить удалённую заметку
+export async function restoreNote(id: string): Promise<void> {
+  await api.post(`v1/notes/${id}/restore`);
+}
+
 // Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
   return api.get(`v1/notes/${id}/suggestions`, { searchParams: { limit } }).json();

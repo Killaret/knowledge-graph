@@ -87,6 +87,23 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+// Restore recovers a soft-deleted note by clearing its deleted_at timestamp.
+func (r *NoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
+	result := r.db.WithContext(ctx).Unscoped().
+		Model(&NoteModel{}).
+		Where("id = ?", id).
+		Update("deleted_at", nil)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	// Инвалидация кэша при восстановлении заметки
+	r.invalidateCache(ctx)
+	return nil
+}
+
 // FindAllPaginated возвращает заметки с пагинацией на уровне БД
 // limit=0 означает "все записи"
 func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {

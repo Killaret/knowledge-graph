@@ -3,6 +3,7 @@ package notehandler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -383,6 +385,38 @@ func (h *Handler) Delete(c *gin.Context) {
 
 	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
+		return
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.NoContent(c)
+}
+
+func (h *Handler) Restore(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "restore")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	if err := h.repo.Restore(c.Request.Context(), id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			apicommon.NotFound(c, "Note")
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
 	}
 

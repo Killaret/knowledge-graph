@@ -2,8 +2,9 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { getNotes, type Note } from '$lib/api/notes';
+  import { getNotes, createNote, deleteNote, restoreNote, type Note } from '$lib/api/notes';
   import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
+  import { createLink } from '$lib/api/links';
   import GraphCanvas from '$lib/components/GraphCanvas.svelte';
   import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
   import EditNoteModal from '$lib/components/EditNoteModal.svelte';
@@ -51,7 +52,8 @@
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
         title: n.title || n.Title,
-        type: n.type || n.Type || 'star'
+        type: n.type || n.Type || 'star',
+        createdAt: n.created_at || n.createdAt || n.CreatedAt
       }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
@@ -88,6 +90,46 @@
 
   function handleNodeSelect(nodeId: string) {
     selectedNodeId = nodeId;
+  }
+
+  async function handleNoteDelete(nodeId: string) {
+    try {
+      await deleteNote(nodeId);
+    } catch (e) {
+      console.error('Failed to delete note:', e);
+    }
+  }
+
+  async function handleNoteRestore(nodeId: string) {
+    try {
+      await restoreNote(nodeId);
+      await loadGraphData();
+    } catch (e) {
+      console.error('Failed to restore note:', e);
+    }
+  }
+
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+    try {
+      await createNote(data);
+      await loadGraphData();
+    } catch (e) {
+      console.error('Failed to create note:', e);
+    }
+  }
+
+  async function handleLinkCreate(link: { source: string; target: string; link_type: string; weight: number }) {
+    try {
+      await createLink({
+        source_note_id: link.source,
+        target_note_id: link.target,
+        link_type: link.link_type,
+        weight: link.weight
+      });
+      await loadGraphData();
+    } catch (e) {
+      console.error('Failed to create link:', e);
+    }
   }
 
   // Отслеживаем изменение showFullGraph и загружаем данные
@@ -160,6 +202,10 @@
             nodes={graphData.nodes}
             links={graphData.links}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+            onNoteDelete={handleNoteDelete}
+            onNoteRestore={handleNoteRestore}
+            onNoteCreate={handleNoteCreate}
+            onLinkCreate={handleLinkCreate}
           />
         {/key}
       {:else}

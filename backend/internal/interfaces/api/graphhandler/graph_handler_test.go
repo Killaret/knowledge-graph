@@ -41,6 +41,11 @@ func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	args := m.Called(ctx, limit, offset)
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)

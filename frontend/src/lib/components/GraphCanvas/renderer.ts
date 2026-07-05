@@ -707,11 +707,12 @@ export function drawLink(
   sourceNode: SimulationNode,
   targetNode: SimulationNode,
   opacity: number = 1,
-  hoveredNodeId?: string | null
+  hoveredNodeId?: string | null,
+  isDuplicateHighlighted?: boolean
 ): void {
   // Check if this link should be highlighted
-  const isHighlighted = hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
-  const finalOpacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : opacity;
+  const isHovered = hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
+  const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
 
   ctx.beginPath();
   ctx.moveTo(sourceNode.x!, sourceNode.y!);
@@ -720,9 +721,14 @@ export function drawLink(
   const weight = link.weight ?? 0.5;
   const linkType = link.link_type;
 
-  const lineWidth = Math.max(1, weight * 4);
+  const lineWidth = Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
   ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = getLinkColor(weight, linkType, finalOpacity);
+  ctx.strokeStyle = isDuplicateHighlighted ? `rgba(255, 204, 0, ${finalOpacity})` : getLinkColor(weight, linkType, finalOpacity);
+
+  if (isDuplicateHighlighted) {
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = 'rgba(255, 204, 0, 0.8)';
+  }
 
   const dash = getLineDash(linkType, weight);
   if (dash.length > 0) {
@@ -730,6 +736,8 @@ export function drawLink(
   }
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 }
 
 /**
@@ -1193,7 +1201,8 @@ export function drawAllLinks(
   nodes: SimulationNode[],
   linkOpacity?: Map<string, number>,
   animationTime: number = 0,
-  hoveredNodeId: string | null = null
+  hoveredNodeId: string | null = null,
+  highlightedLinkId?: string | null
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
@@ -1222,8 +1231,13 @@ export function drawAllLinks(
     const linkId = `${link.source}-${link.target}-${index}`;
     const opacity = linkOpacity?.get(linkId) ?? 1;
 
+    // Highlight duplicate links with a yellow pulse
+    const stableLinkId = `${link.source}-${link.target}-${link.link_type || 'related'}`;
+    const isHighlighted = highlightedLinkId === stableLinkId;
+    const pulseOpacity = isHighlighted ? 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 150)) : 1;
+
     // Use animated link drawing
-    drawLink(ctx, link, sourceNode, targetNode, opacity, hoveredNodeId);
+    drawLink(ctx, link, sourceNode, targetNode, opacity * pulseOpacity, hoveredNodeId, isHighlighted);
     drawnCount++;
   });
 
@@ -1244,57 +1258,60 @@ export function drawNode(
   disableVariation: boolean = false,
   nodeId?: string,
   nodeCount?: number,
-  animationTime?: number
+  animationTime?: number,
+  focusMode: boolean = false
 ): void {
   const type = node.type || 'unknown';
-  
+
   // Get deterministic variation for this node (used for hue/size/phase).
   // We still apply variation in stable render mode so color/size remain deterministic,
   // but other random jitter/animation is suppressed via `disableVariation` flags.
   const variation = ['blackhole', 'debris', 'unknown'].includes(type) ? undefined : getVariation(node.id, type);
-  
-  // Apply micro-jitter to position (±1px) for "alive" feel unless stable rendering is requested
-  let x = node.x! + (disableVariation ? 0 : (Math.random() - 0.5) * 2);
-  let y = node.y! + (disableVariation ? 0 : (Math.random() - 0.5) * 2);
+
+  // Apply micro-jitter to position (±1px) for "alive" feel unless stable rendering or focus mode is requested
+  let x = node.x! + (disableVariation || focusMode ? 0 : (Math.random() - 0.5) * 2);
+  let y = node.y! + (disableVariation || focusMode ? 0 : (Math.random() - 0.5) * 2);
 
   // For stable render mode snap to integer pixel positions to avoid
   // subpixel anti-aliasing differences between runs/environments.
-  if (disableVariation) {
+  if (disableVariation || focusMode) {
     x = Math.round(x);
     y = Math.round(y);
   }
 
+  const effectiveEnableShadows = enableShadows && !focusMode;
+
   switch (type) {
     case 'star':
-      if (enableShadows) {
+      if (effectiveEnableShadows) {
         ctx.shadowBlur = 10;
         ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
       }
-      drawStar(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
+      drawStar(ctx, x, y, r, angle, variation, node.id, focusMode ? 0 : nodeCount, focusMode ? 0 : animationTime);
       break;
     case 'planet':
-      drawPlanet(ctx, x, y, r, angle, undefined, variation, node.id, nodeCount, animationTime);
+      drawPlanet(ctx, x, y, r, angle, undefined, variation, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'satellite':
-      drawPlanet(ctx, x, y, r * 0.6, angle, '#aaaaaa', variation, node.id, nodeCount, animationTime);
+      drawPlanet(ctx, x, y, r * 0.6, angle, '#aaaaaa', variation, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'comet':
-      drawComet(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
+      drawComet(ctx, x, y, r, angle, variation, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'galaxy':
-      drawGalaxy(ctx, x, y, r, angle, variation, node.id, nodeCount, animationTime);
+      drawGalaxy(ctx, x, y, r, angle, variation, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'nebula':
       drawNebula(ctx, x, y, r * 1.5, angle);
       break;
     case 'asteroid':
-      drawAsteroid(ctx, x, y, r, angle, variation, disableVariation, node.id, nodeCount, animationTime);
+      drawAsteroid(ctx, x, y, r, angle, variation, disableVariation || focusMode, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'debris':
-      drawDebris(ctx, x, y, r, angle, disableVariation);
+      drawDebris(ctx, x, y, r, angle, disableVariation || focusMode);
       break;
     case 'blackhole':
-      drawBlackhole(ctx, x, y, r, angle, node.id, nodeCount, animationTime);
+      drawBlackhole(ctx, x, y, r, angle, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'moon':
       drawMoon(ctx, x, y, r, angle);
@@ -1372,7 +1389,9 @@ export function drawAllNodes(
   disableVariation: boolean = false,
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
-  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null
+  particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null,
+  focusMode: boolean = false,
+  searchMatchIds?: string[]
 ): void {
   const r = 24;
   const nodeCount = nodes.length;
@@ -1395,21 +1414,57 @@ export function drawAllNodes(
     const angle = angles.get(node.id) || 0;
     const opacity = nodeOpacity?.get(node.id) ?? 1;
     const isHovered = hoveredNodeId === node.id;
+    const isSearchMatch = searchMatchIds?.includes(node.id) ?? false;
     const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
 
     const previousAlpha = ctx.globalAlpha;
     ctx.globalAlpha = finalOpacity;
 
-    drawNode(ctx, node, r, angle, enableShadows, disableVariation, node.id, nodeCount, animationTime);
+    drawNode(ctx, node, r, angle, enableShadows, disableVariation, node.id, nodeCount, animationTime, focusMode);
     drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
-    if (particleSystem?.isEnabled() && node.x && node.y) {
+    // Search match outline
+    if (isSearchMatch && node.x != null && node.y != null) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r + 6, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(255, 204, 0, 0.9)';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = 'rgba(255, 204, 0, 0.6)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // New note indicator (pulsing turquoise outline for 24 hours)
+    if (!focusMode && isNewNode(node) && node.x != null && node.y != null) {
+      const pulse = 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 1000));
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r + 10, 0, 2 * Math.PI);
+      ctx.strokeStyle = `rgba(45, 212, 191, ${pulse})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (!focusMode && particleSystem?.isEnabled() && node.x && node.y) {
       particleSystem.update(node.id, node.x, node.y);
       particleSystem.draw(ctx, node.id);
     }
 
     ctx.globalAlpha = previousAlpha;
   });
+}
+
+/**
+ * Check if a node was created within the last 24 hours.
+ */
+function isNewNode(node: SimulationNode): boolean {
+  if (!node.createdAt) return false;
+  const created = new Date(node.createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created < 24 * 60 * 60 * 1000;
 }
 
 /**
@@ -1431,19 +1486,24 @@ export function draw(
   particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null,
   blackHole?: { x: number; y: number; radius: number; pulsePhase: number; hovered: boolean } | null,
   ghostNode?: { x: number; y: number; radius: number; hovered: boolean; pulsePhase: number; active: boolean } | null,
-  gravitySystem?: { applyAttraction: (nodes: SimulationNode[]) => void; getDistortion: (x: number, y: number, nodes: SimulationNode[], maxDistance?: number) => { dx: number; dy: number }; isEnabled: (nodeCount: number) => boolean } | null
+  gravitySystem?: { applyAttraction: (nodes: SimulationNode[]) => void; getDistortion: (x: number, y: number, nodes: SimulationNode[], maxDistance?: number) => { dx: number; dy: number }; isEnabled: (nodeCount: number) => boolean } | null,
+  focusMode: boolean = false,
+  searchMatchIds?: string[],
+  highlightedLinkId?: string | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
-  // Draw background with gravity lens distortion
-  drawBackground(ctx, width, height, nodes, animationTime);
-  if (gravitySystem?.isEnabled(nodes.length)) {
-    drawDistortedBackgroundGrid(ctx, width, height, nodes, animationTime);
+  // Draw background with gravity lens distortion (skipped in focus mode)
+  if (!focusMode) {
+    drawBackground(ctx, width, height, nodes, animationTime);
+    if (gravitySystem?.isEnabled(nodes.length)) {
+      drawDistortedBackgroundGrid(ctx, width, height, nodes, animationTime);
+    }
   }
 
   // Stable render mode: reduce anti-aliasing sources and align to pixel grid
   ctx.save();
-  if (disableVariation) {
+  if (disableVariation || focusMode) {
     ctx.imageSmoothingEnabled = false;
     ctx.imageSmoothingQuality = 'low';
     ctx.shadowBlur = 0;
@@ -1456,21 +1516,21 @@ export function draw(
   ctx.scale(transform.k, transform.k);
 
   // Draw links with animation
-  drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId);
+  drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId, highlightedLinkId);
 
   // Draw nodes with new effects
-  const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-  drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation, animationTime, hoveredNodeId, particleSystem);
+  const enableShadows = !focusMode && nodes.length < graphConfig2D.shadows_threshold;
+  drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation, animationTime, hoveredNodeId, particleSystem, focusMode, searchMatchIds);
 
-  // Draw interactive UI elements in world coordinates
-  if (blackHole) {
+  // Draw interactive UI elements in world coordinates (hidden in focus mode)
+  if (!focusMode && blackHole) {
     drawBlackHole(ctx, blackHole, animationTime);
     if (blackHole.hovered) {
       drawBlackHoleTooltip(ctx, blackHole);
     }
   }
 
-  if (ghostNode?.active) {
+  if (!focusMode && ghostNode?.active) {
     drawGhostNode(ctx, ghostNode, animationTime);
     if (ghostNode.hovered) {
       drawGhostNodeTooltip(ctx, ghostNode);
