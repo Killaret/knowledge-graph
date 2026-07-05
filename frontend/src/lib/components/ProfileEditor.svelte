@@ -5,9 +5,11 @@
   import Modal from './Modal.svelte';
   import { currentUser, updateUserInfo, logout } from '$lib/stores/auth.svelte.js';
   import * as usersApi from '$lib/api/users';
+  import { getCurrentLocale, setLocale, type Locale } from '$lib/utils/i18n';
   
   let name = $state('');
   let email = $state('');
+  let selectedLocale = $state<Locale>('en');
     let isSaving = $state(false);
   let isDeleting = $state(false);
   let showDeleteConfirm = $state(false);
@@ -15,13 +17,14 @@
   let localError = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
   
-  // Load current user data
+  // Load current user data and locale
   $effect(() => {
     const user = currentUser();
     if (user) {
       name = user.login || '';
       email = user.email || '';
     }
+    selectedLocale = getCurrentLocale();
   });
   
   async function handleSave() {
@@ -70,6 +73,13 @@
     deletePassword = '';
     localError = null;
   }
+
+  function handleLocaleChange(locale: Locale) {
+    selectedLocale = locale;
+    setLocale(locale);
+    // Reload page to apply new locale
+    window.location.reload();
+  }
 </script>
 
 <div class="profile-editor">
@@ -99,6 +109,19 @@
       bind:value={email}
       placeholder="Введите ваш email"
     />
+  </div>
+  
+  <div class="form-group">
+    <label for="locale">Language / Язык</label>
+    <select
+      id="locale"
+      bind:value={selectedLocale}
+      onchange={(e) => handleLocaleChange(e.target.value as Locale)}
+    >
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+    </select>
+    <span class="hint">Select your preferred language / Выберите предпочитаемый язык</span>
   </div>
   
   {#if localError}
