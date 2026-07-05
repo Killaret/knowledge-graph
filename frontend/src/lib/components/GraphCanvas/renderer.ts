@@ -21,6 +21,8 @@ export type { BlackHoleState } from './black-hole';
 export type { GhostNodeState } from './ghost-node';
 export type { BlackHoleState } from './black-hole';
 export type { GhostNodeState } from './ghost-node';
+export type { BlackHoleState } from './black-hole';
+export type { GhostNodeState } from './ghost-node';
 export { createGravitySystem } from './gravity-system';
 
 // Performance thresholds
