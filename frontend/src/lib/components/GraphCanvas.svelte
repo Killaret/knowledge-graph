@@ -4,6 +4,7 @@
   import type { GraphDelta } from '$lib/api/graph';
   import LinkTooltip from '$lib/components/LinkTooltip.svelte';
   import GraphTooltip from '$lib/components/GraphTooltip.svelte';
+  import HelpHotkeysModal from '$lib/components/HelpHotkeysModal.svelte';
   import { ParticleSystem } from './GraphCanvas/particle-system';
   import {
     resizeCanvas,
@@ -30,14 +31,14 @@
     isNodeOverBlackHole,
     isPointOverBlackHole,
     type BlackHoleState,
-    createGhostNode,
     updateGhostNodePosition,
     updateGhostNodePulse,
     isPointOverGhostNode,
     type GhostNodeState,
-    createGravitySystem,
     type GravitySystem
   } from './GraphCanvas';
+  import { createGhostNode } from './GraphCanvas/ghost-node';
+  import { createGravitySystem } from './GraphCanvas/gravity-system';
 
   const {
     nodes,
@@ -82,8 +83,8 @@
     }
   });
 
-  let canvas: HTMLCanvasElement;
-  let ctx: CanvasRenderingContext2D;
+  let canvas: HTMLCanvasElement | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
   let width = 800;
   let height = 600;
   let animationLoop: { stop: () => void } | null = null;
@@ -131,8 +132,13 @@
 
   // Interactive canvas elements
   let blackHole: BlackHoleState = $state(createBlackHole(width, height));
-  let ghostNode: GhostNodeState = $state(createGhostNode(width, height, nodes));
+  let ghostNode: GhostNodeState = $state(createGhostNode(width, height, []));
   let gravitySystem: GravitySystem = $state(createGravitySystem());
+
+  // Update ghost node when nodes change
+  $effect(() => {
+    ghostNode = createGhostNode(width, height, nodes);
+  });
 
   // Drag-and-drop state
   let draggedNodeId: string | null = $state(null);
@@ -884,9 +890,9 @@
 
   // Duplicate link detection
   function isDuplicateLink(source: string, target: string, linkType: string): boolean {
-    return links.some((link) => {
-      const s = typeof link.source === 'string' ? link.source : link.source.id;
-      const t = typeof link.target === 'string' ? link.target : link.target.id;
+    return links.some((link: any) => {
+      const s = typeof link.source === 'string' ? link.source : link.source?.id;
+      const t = typeof link.target === 'string' ? link.target : link.target?.id;
       return (s === source && t === target && (link.link_type || 'related') === linkType) ||
              (s === target && t === source && (link.link_type || 'related') === linkType);
     });

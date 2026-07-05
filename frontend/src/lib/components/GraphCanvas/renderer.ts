@@ -17,6 +17,11 @@ import {
 import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
 
 export type { SimulationNode, SimulationLink };
+export type { BlackHoleState } from './black-hole';
+export type { GhostNodeState } from './ghost-node';
+export type { BlackHoleState } from './black-hole';
+export type { GhostNodeState } from './ghost-node';
+export { createGravitySystem } from './gravity-system';
 
 // Performance thresholds
 const PERFORMANCE_THRESHOLD_NODES = 100;
@@ -1566,8 +1571,8 @@ export function draw(
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
   particleSystem?: { initParticles: (id: string, x: number, y: number, color: string) => void; update: (id: string, x: number, y: number) => void; draw: (ctx: CanvasRenderingContext2D, id: string) => void; isEnabled: () => boolean } | null,
-  blackHole?: { x: number; y: number; radius: number; pulsePhase: number; hovered: boolean } | null,
-  ghostNode?: { x: number; y: number; radius: number; hovered: boolean; pulsePhase: number; active: boolean } | null,
+  blackHole?: BlackHoleState | null,
+  ghostNode?: GhostNodeState | null,
   gravitySystem?: { applyAttraction: (nodes: SimulationNode[]) => void; getDistortion: (x: number, y: number, nodes: SimulationNode[], maxDistance?: number) => { dx: number; dy: number }; isEnabled: (nodeCount: number) => boolean } | null,
   focusMode: boolean = false,
   searchMatchIds?: string[],
