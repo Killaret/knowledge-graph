@@ -17,13 +17,6 @@ import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-syst
 export type { SimulationNode, SimulationLink };
 export type { BlackHoleState } from './black-hole';
 export type { GhostNodeState } from './ghost-node';
-export type { BlackHoleState } from './black-hole';
-export type { GhostNodeState } from './ghost-node';
-export type { BlackHoleState } from './black-hole';
-export type { GhostNodeState } from './ghost-node';
-export type { BlackHoleState } from './black-hole';
-export type { GhostNodeState } from './ghost-node';
-export { createGravitySystem } from './gravity-system';
 
 // Performance thresholds
 const PERFORMANCE_THRESHOLD_NODES = 100;
