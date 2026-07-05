@@ -20,7 +20,7 @@ scripts/
 - `diskpart_compress_admin.ps1` - VHDX сжатие через DiskPart (основной)
 - `clean_and_compress_lunix.ps1` - Сжатие lunix образов
 - `cleanup_and_compress.ps1` - Полная очистка и сжатие
-- `cleanup-docker.ps1` - Очистка Docker
+- `cleanup-docker.ps1` - Очистка Docker + опциональное сжатие VHD через diskpart (без Hyper-V)
 
 **Diagnostics скрипты:**
 - `check_all_vhdx.ps1` - Проверка размеров VHDX файлов
@@ -615,12 +615,15 @@ npm run clean:lunix:dry
 ### Сжатие VHDX Docker WSL2 (рекомендуемый метод)
 Для максимальной экономии дискового пространства используйте **DiskPart VHDX сжатие**:
 
-**🎉 Результаты:** Сжатие docker_data.vhdx с 16.67GB до 3.09GB (**13.58GB экономия, 81.4% reduction**)
+**🎉 Результаты:** Сжатие docker_data.vhdx с 38.98GB до 7.80GB (**31.18GB экономия, 80% reduction**)
 
 **Автоматический скрипт с разблокировкой:**
 ```bash
 # С автоматической остановкой WSL и разблокировкой файла (требует админа)
 .\scripts\cleanup\diskpart_compress_admin.ps1
+
+# Или через единый cleanup-скрипт (очистка Docker + сжатие VHD в одном):
+.\scripts\cleanup\cleanup-docker.ps1 -Full -WslOptimize
 ```
 
 **Или через npm:**
@@ -654,20 +657,24 @@ wsl
 
 **Оптимальный workflow для максимального эффекта:**
 ```bash
-# 1. Запустить Docker
-# (если не запущен)
+# Единая команда (требует права админа, Hyper-V НЕ нужен):
+.\scripts\cleanup\cleanup-docker.ps1 -Full -WslOptimize
+#   - останавливает контейнеры
+#   - очищает dangling images, build cache, unused volumes
+#   - удаляет ВСЕ неиспользуемые образы (system prune -af --volumes)
+#   - останавливает WSL и убивает leftover процессы
+#   - находит самый большой .vhdx и сжимает через diskpart
+#   - перезапускает WSL
 
+# Или по шагам:
+# 1. Запустить Docker (если не запущен)
 # 2. Очистка Docker (без volumes)
 docker system prune -a --force
-
 # 3. Остановить контейнеры
 docker-compose down
-
 # 4. Полностью остановить Docker Desktop
-
 # 5. Запустить сжатие
 .\scripts\cleanup\diskpart_compress_admin.ps1
-
 # 6. Перезапустить Docker Desktop
 ```
 

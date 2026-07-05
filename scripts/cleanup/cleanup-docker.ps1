@@ -2,6 +2,7 @@
 # Removes dangling images, stopped containers, unused networks, and build cache
 # Optionally compresses WSL2 disk for efficient storage
 # Usage: .\cleanup-docker.ps1 [-Full] [-WslOptimize]
+# Note: -WslOptimize requires admin rights (diskpart). Hyper-V is NOT required.
 
 param(
     [switch]$Full = $false,
@@ -101,57 +102,74 @@ if ($Full) {
 }
 
 # 8. WSL2 optimization (optional)
+# Uses diskpart to compact the VHD - requires admin rights, but NOT Hyper-V.
 if ($WslOptimize) {
     Write-Host "`n8️⃣ Optimizing WSL2 disk..." -ForegroundColor Cyan
-    
+
     $wsl_check = wsl --list 2>$null
     if ($wsl_check) {
         Write-Status "Shutting down WSL..." "INFO"
         wsl --shutdown 2>$null
-        Start-Sleep -Seconds 3
+        Start-Sleep -Seconds 5
+        # Force kill any leftover WSL/Docker processes that may lock the VHD
+        $wslProcs = Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.ProcessName -like "*vmmem*" -or $_.ProcessName -like "*docker*" }
+        if ($wslProcs) {
+            Write-Status "Stopping leftover WSL/Docker processes..." "INFO"
+            $wslProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 3
+        }
         Write-Status "WSL shut down successfully" "SUCCESS"
-        
-        $searchPaths = @(
-            Join-Path $env:LOCALAPPDATA 'Packages\CanonicalGroupLimited.Ubuntu*\LocalState\ext4.vhdx'
-            Join-Path $env:LOCALAPPDATA 'Docker\wsl\data\ext4.vhdx'
-            Join-Path $env:LOCALAPPDATA 'Docker\wsl\main\ext4.vhdx'
-            Join-Path $env:LOCALAPPDATA 'Docker\wsl\disk\docker_data.vhdx'
-        )
 
-        $vhdx_file = $null
-        foreach ($path in $searchPaths) {
-            $candidate = Get-Item $path -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($candidate) {
-                $vhdx_file = $candidate
-                break
-            }
-        }
-
-        if (-not $vhdx_file) {
-            $vhdx_file = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Docker\wsl') -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-        }
+        # Find ALL VHDs and pick the largest one (docker_data.vhdx is the real target,
+        # not the small main\ext4.vhdx utility disk)
+        $allVhds = @()
+        $allVhds += Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Docker\wsl') -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue
+        $allVhds += Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'ext4.vhdx' -Recurse -ErrorAction SilentlyContinue
+        $vhdx_file = $allVhds | Sort-Object Length -Descending | Select-Object -First 1
 
         if ($vhdx_file) {
             $old_size = [math]::Round($vhdx_file.Length / 1GB, 2)
             Write-Status "Found WSL2 disk: $($vhdx_file.FullName) ($old_size GB)" "INFO"
-            
-            if ((Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V -ErrorAction SilentlyContinue).State -eq "Enabled") {
+
+            # Verify file is not locked before diskpart runs
+            $fileLocked = $true
+            try {
+                $stream = [System.IO.File]::Open($vhdx_file.FullName, 'Open', 'ReadWrite', 'None')
+                $stream.Close()
+                $fileLocked = $false
+            } catch {
+                Write-Status "VHD is still locked: $($_.Exception.Message)" "ERROR"
+            }
+
+            if (-not $fileLocked) {
+                $diskpartScript = @"
+select vdisk file="$($vhdx_file.FullName)"
+attach vdisk readonly
+compact vdisk
+detach vdisk
+exit
+"@
+                $scriptPath = Join-Path $env:TEMP 'kg_diskpart_compress.txt'
+                $diskpartScript | Out-File -FilePath $scriptPath -Encoding ASCII
+                Write-Status "Compacting VHD via diskpart..." "INFO"
                 try {
-                    Write-Status "Compressing VHD file..." "INFO"
-                    Optimize-VHD -Path $vhdx_file.FullName -Mode Full -ErrorAction Stop | Out-Null
+                    & diskpart /s $scriptPath 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
                     $new_size = [math]::Round((Get-Item $vhdx_file.FullName).Length / 1GB, 2)
                     $saved = [math]::Round($old_size - $new_size, 2)
-                    Write-Status "VHD compressed: $old_size GB → $new_size GB (saved: $saved GB)" "SUCCESS"
+                    if ($saved -gt 0) {
+                        Write-Status "VHD compressed: $old_size GB -> $new_size GB (saved: $saved GB)" "SUCCESS"
+                    } else {
+                        Write-Status "VHD already optimized: $old_size GB -> $new_size GB" "INFO"
+                    }
                 } catch {
-                    Write-Status "VHD compression failed (Hyper-V required or path locked)" "WARNING"
+                    Write-Status "diskpart failed: $($_.Exception.Message)" "ERROR"
                 }
-            } else {
-                Write-Status "Hyper-V not enabled. Cannot compress VHD." "WARNING"
+                Remove-Item $scriptPath -ErrorAction SilentlyContinue
             }
         } else {
             Write-Status "WSL2 VHD file not found" "WARNING"
         }
-        
+
         Write-Status "Restarting WSL..." "INFO"
         wsl -e ls /home 2>$null | Out-Null
         Write-Status "WSL restarted" "SUCCESS"
