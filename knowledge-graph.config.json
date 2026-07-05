@@ -127,6 +127,7 @@
     }
   },
   "frontend": {
+    "language": "en",
     "test": {
       "debounce_timeout_ms": 300,
       "max_retry_count": 3,
