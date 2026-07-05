@@ -894,19 +894,28 @@
     }, 1000);
   }
 
-  // Undo deletion integration
+  // Undo deletion integration - two-stage toast
   let lastDeletedNodeId: string | null = $state(null);
   let showUndoToast = $state(false);
+  let undoToastStage = $state<'done' | 'restore'>('done');
   let undoToastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function showUndoToastFor(nodeId: string) {
     lastDeletedNodeId = nodeId;
     showUndoToast = true;
+    undoToastStage = 'done';
     if (undoToastTimeout) clearTimeout(undoToastTimeout);
+
+    // Stage 1: "Done" for 1.5s
     undoToastTimeout = setTimeout(() => {
-      showUndoToast = false;
-      lastDeletedNodeId = null;
-    }, 5000);
+      undoToastStage = 'restore';
+      // Stage 2: "Restore" for 5s
+      undoToastTimeout = setTimeout(() => {
+        showUndoToast = false;
+        lastDeletedNodeId = null;
+        undoToastStage = 'done';
+      }, 5000);
+    }, 1500);
   }
 
   function restoreDeletedNode() {
@@ -915,11 +924,15 @@
     }
     showUndoToast = false;
     lastDeletedNodeId = null;
+    undoToastStage = 'done';
+    if (undoToastTimeout) clearTimeout(undoToastTimeout);
   }
 
   function cancelUndo() {
     showUndoToast = false;
     lastDeletedNodeId = null;
+    undoToastStage = 'done';
+    if (undoToastTimeout) clearTimeout(undoToastTimeout);
   }
 
   function isTechnicalNode(nodeId: string): boolean {
@@ -1155,24 +1168,28 @@
 {#if showUndoToast}
   <div
     class="undo-toast"
-    style="position: fixed; bottom: 20px; right: 20px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 12px; padding: 16px; min-width: 300px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: white;"
+    style="position: fixed; bottom: 20px; right: 20px; background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 12px; padding: 16px; min-width: 300px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: white; animation: slide-up 0.3s ease;"
   >
-    <span style="font-size: 14px;">Note deleted.</span>
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <button
-        onclick={restoreDeletedNode}
-        style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer; font-size: 13px; font-weight: 600;"
-      >
-        Restore
-      </button>
-      <button
-        onclick={cancelUndo}
-        style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 18px; line-height: 1;"
-        aria-label="Close"
-      >
-        ×
-      </button>
-    </div>
+    {#if undoToastStage === 'done'}
+      <span style="font-size: 14px; color: rgba(255,255,255,0.9);">Note deleted.</span>
+    {:else}
+      <span style="font-size: 14px;">Note deleted.</span>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button
+          onclick={restoreDeletedNode}
+          style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer; font-size: 13px; font-weight: 600;"
+        >
+          Restore
+        </button>
+        <button
+          onclick={cancelUndo}
+          style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 18px; line-height: 1;"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -1243,3 +1260,16 @@
     </div>
   </div>
 {/if}
+
+<style>
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
