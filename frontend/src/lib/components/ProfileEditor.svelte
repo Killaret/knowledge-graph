@@ -5,7 +5,7 @@
   import Modal from './Modal.svelte';
   import { currentUser, updateUserInfo, logout } from '$lib/stores/auth.svelte.js';
   import * as usersApi from '$lib/api/users';
-  import { getCurrentLocale, setLocale, type Locale } from '$lib/utils/i18n';
+  import { getCurrentLocale, setLocale, formatMessage, type Locale } from '$lib/utils/i18n';
   
   let name = $state('');
   let email = $state('');
@@ -35,9 +35,9 @@
     try {
       await usersApi.updateMe({ email: email || undefined });
       await updateUserInfo();
-      successMessage = 'Профиль обновлен';
+      successMessage = formatMessage('settings.saved', selectedLocale);
     } catch (e) {
-      localError = e instanceof Error ? e.message : 'Failed to update profile';
+      localError = e instanceof Error ? e.message : formatMessage('server.error', selectedLocale);
     } finally {
       isSaving = false;
     }
@@ -45,7 +45,7 @@
   
   async function handleDelete() {
     if (!deletePassword) {
-      localError = 'Введите пароль для подтверждения';
+      localError = formatMessage('password.confirm', selectedLocale);
       return;
     }
     
@@ -57,7 +57,7 @@
       await logout();
       goto('/auth/login');
     } catch (e) {
-      localError = e instanceof Error ? e.message : 'Failed to delete account';
+      localError = e instanceof Error ? e.message : formatMessage('server.error', selectedLocale);
       isDeleting = false;
     }
   }
@@ -83,14 +83,14 @@
 </script>
 
 <div class="profile-editor">
-  <h2>Редактирование профиля</h2>
+  <h2>{formatMessage('edit.note', selectedLocale)}</h2>
   
   {#if successMessage}
     <div class="success-message">{successMessage}</div>
   {/if}
   
   <div class="form-group">
-    <label for="name">Логин (только чтение)</label>
+    <label for="name">{formatMessage('title', selectedLocale)} ({formatMessage('readonly', selectedLocale)})</label>
     <input
       type="text"
       id="name"
@@ -98,7 +98,7 @@
       readonly
       disabled
     />
-    <span class="hint">Логин нельзя изменить</span>
+    <span class="hint">{formatMessage('login.readonly', selectedLocale)}</span>
   </div>
   
   <div class="form-group">
@@ -107,7 +107,7 @@
       type="email"
       id="email"
       bind:value={email}
-      placeholder="Введите ваш email"
+      placeholder={formatMessage('email.placeholder', selectedLocale)}
     />
   </div>
   
@@ -134,32 +134,32 @@
       disabled={isSaving}
       onClick={handleSave}
     >
-      {isSaving ? 'Сохранение...' : 'Сохранить'}
+      {isSaving ? formatMessage('loading', selectedLocale) : formatMessage('save', selectedLocale)}
     </Button>
     
     <Button 
       variant="danger" 
       onClick={openDeleteConfirm}
     >
-      Удалить аккаунт
+      {formatMessage('delete.account', selectedLocale)}
     </Button>
   </div>
 </div>
 
 {#if showDeleteConfirm}
-  <Modal title="Подтверждение удаления" open={showDeleteConfirm} onClose={closeDeleteConfirm}>
+  <Modal title={formatMessage('delete.confirm', selectedLocale, { item: 'account' })} open={showDeleteConfirm} onClose={closeDeleteConfirm}>
     <div class="delete-confirm">
       <p class="warning">
-        ⚠️ Внимание! Это действие необратимо. Все ваши данные будут удалены.
+        ⚠️ {selectedLocale === 'en' ? 'Warning! This action is irreversible. All your data will be deleted.' : 'Внимание! Это действие необратимо. Все ваши данные будут удалены.'}
       </p>
       
       <div class="form-group">
-        <label for="delete-password">Введите пароль для подтверждения</label>
+        <label for="delete-password">{formatMessage('password.confirm', selectedLocale)}</label>
         <input
           type="password"
           id="delete-password"
           bind:value={deletePassword}
-          placeholder="Ваш пароль"
+          placeholder={selectedLocale === 'en' ? 'Your password' : 'Ваш пароль'}
         />
       </div>
       
@@ -169,14 +169,14 @@
       
       <div class="modal-actions">
         <Button variant="secondary" onClick={closeDeleteConfirm}>
-          Отмена
+          {formatMessage('cancel', selectedLocale)}
         </Button>
         <Button 
           variant="danger" 
           disabled={isDeleting || !deletePassword}
           onClick={handleDelete}
         >
-          {isDeleting ? 'Удаление...' : 'Подтвердить удаление'}
+          {isDeleting ? formatMessage('loading', selectedLocale) : formatMessage('confirm.delete', selectedLocale)}
         </Button>
       </div>
     </div>

@@ -44,7 +44,7 @@ const messages: Record<Locale, Record<string, string>> = {
     
     // UI labels
     'create.note': 'Create Note',
-    'edit.note': 'Edit Note',
+    'edit.note': 'Edit Profile',
     'delete.note': 'Delete Note',
     'cancel': 'Cancel',
     'save': 'Save',
@@ -59,6 +59,12 @@ const messages: Record<Locale, Record<string, string>> = {
     'settings': 'Settings',
     'help': 'Help',
     'close': 'Close',
+    'readonly': 'Read only',
+    'login.readonly': 'Login cannot be changed',
+    'email.placeholder': 'Enter your email',
+    'password.confirm': 'Please enter your password for confirmation',
+    'confirm.delete': 'Confirm Delete',
+    'delete.account': 'Delete Account',
   },
   ru: {
     // Success messages
@@ -73,6 +79,7 @@ const messages: Record<Locale, Record<string, string>> = {
     
     // Error messages
     'validation.error': 'Неверное значение в поле "{{field}}".',
+    'field.password': 'пароль',
     'duplicate.link': 'Такая связь уже существует.',
     'note.notFound': 'Заметка не найдена.',
     'link.notFound': 'Связь не найдена.',
@@ -96,7 +103,7 @@ const messages: Record<Locale, Record<string, string>> = {
     
     // UI labels
     'create.note': 'Создать заметку',
-    'edit.note': 'Редактировать заметку',
+    'edit.note': 'Редактировать профиль',
     'delete.note': 'Удалить заметку',
     'cancel': 'Отмена',
     'save': 'Сохранить',
@@ -111,6 +118,12 @@ const messages: Record<Locale, Record<string, string>> = {
     'settings': 'Настройки',
     'help': 'Справка',
     'close': 'Закрыть',
+    'readonly': 'Только чтение',
+    'login.readonly': 'Логин нельзя изменить',
+    'email.placeholder': 'Введите ваш email',
+    'password.confirm': 'Введите пароль для подтверждения',
+    'confirm.delete': 'Подтвердить удаление',
+    'delete.account': 'Удалить аккаунт',
   },
 };
 
