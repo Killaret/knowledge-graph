@@ -7,6 +7,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  deleteNotesBatch,
   getSuggestions,
   searchNotes,
 } from './notes';
@@ -107,8 +108,18 @@ describe('notes API', () => {
       );
 
       const result = await deleteNote('1');
-      // deleteNote возвращает пустую строку при 204 No Content
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('deleteNotesBatch', () => {
+    it('should delete multiple notes', async () => {
+      server.use(
+        http.post('http://localhost:8080/api/v1/notes/batch', () => new HttpResponse(null, { status: 204 }))
+      );
+
+      const result = await deleteNotesBatch(['1', '2', '3']);
+      expect(result).toBeUndefined();
     });
   });
 

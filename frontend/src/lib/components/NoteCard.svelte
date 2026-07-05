@@ -2,22 +2,108 @@
   import type { Note } from '$lib/api/notes';
   import { goto } from '$app/navigation';
   import { formatDate } from '$lib/utils/date';
+  import { onMount, onDestroy } from 'svelte';
+  import tippy from 'tippy.js';
+  import type { Instance } from 'tippy.js';
+  import 'tippy.js/dist/tippy.css';
 
-  const { 
-    note, 
+  const HOUR_MS = 60 * 60 * 1000;
+  const DAY_MS = 24 * HOUR_MS;
+
+  const typeEmoji: Record<string, string> = {
+    star: '⭐',
+    planet: '🪐',
+    comet: '☄️',
+    galaxy: '🌀',
+    asteroid: '🌑',
+    moon: '🌙',
+    nebula: '💫',
+    satellite: '🛰️',
+    blackhole: '⚫',
+    debris: '🌌',
+    dust: '🌫️',
+    unknown: '❓'
+  };
+
+  const typeColorVar: Record<string, string> = {
+    star: '--color-star',
+    planet: '--color-planet',
+    comet: '--color-comet',
+    galaxy: '--color-galaxy',
+    asteroid: '--color-asteroid',
+    moon: '--color-moon',
+    nebula: '--color-nebula',
+    satellite: '--color-satellite',
+    blackhole: '--color-blackhole',
+    debris: '--color-debris',
+    dust: '--color-dust',
+    unknown: '--color-unknown'
+  };
+
+  const {
+    note,
     highlightQuery = '',
-    onClick
-  }: { 
-    note: Note; 
+    selected = false,
+    selectMode = false,
+    animationIndex = 0,
+    keywords = [],
+    linkCount = 0,
+    onClick,
+    onSelect,
+    onEdit,
+    onDelete
+  }: {
+    note: Note;
     highlightQuery?: string;
+    selected?: boolean;
+    selectMode?: boolean;
+    animationIndex?: number;
+    keywords?: string[];
+    linkCount?: number;
     onClick?: (note: Note) => void;
+    onSelect?: (note: Note, selected: boolean) => void;
+    onEdit?: (note: Note) => void;
+    onDelete?: (note: Note) => void;
   } = $props();
+
+  let cardRef: HTMLElement | null = $state(null);
+  let tippyInstance: Instance | null = $state(null);
+  let isExiting = $state(false);
 
   function highlightText(text: string, query: string): string {
     if (!query.trim()) return text;
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
+  }
+
+  function truncateText(text: string, maxLength: number): string {
+    if (!text || text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  }
+
+  function getTypeColor(type?: string): string {
+    const varName = typeColorVar[type?.toLowerCase() || 'unknown'];
+    return `var(${varName}, var(--color-asteroid, #94a3b8))`;
+  }
+
+  function getTypeEmoji(type?: string): string {
+    return typeEmoji[type?.toLowerCase() || 'unknown'] || typeEmoji.unknown;
+  }
+
+  function isNew(): boolean {
+    const created = new Date(note.created_at).getTime();
+    return Date.now() - created < DAY_MS;
+  }
+
+  function isRecentlyUpdated(): boolean {
+    const created = new Date(note.created_at).getTime();
+    const updated = new Date(note.updated_at).getTime();
+    return updated !== created && Date.now() - updated < HOUR_MS;
+  }
+
+  function isDust(): boolean {
+    return note.type?.toLowerCase() === 'dust';
   }
 
   function handleClick() {
@@ -28,180 +114,413 @@
     }
   }
 
-  function truncateText(text: string, maxLength: number): string {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
   }
 
-  // Get type color for the left border indicator
-  function getTypeColor(type?: string): string {
-    if (!type) return '#94a3b8'; // asteroid gray default
-    const colors: Record<string, string> = {
-      'star': '#fbbf24',      // yellow
-      'planet': '#60a5fa',    // blue
-      'comet': '#f472b6',     // pink
-      'galaxy': '#a78bfa',    // purple
-      'asteroid': '#94a3b8'   // gray
-    };
-    return colors[type.toLowerCase()] || colors['asteroid'];
+  function handleSelectToggle(e: Event) {
+    e.stopPropagation();
+    const target = e.target as HTMLInputElement;
+    onSelect?.(note, target.checked);
   }
+
+  function handleEdit(e: MouseEvent) {
+    e.stopPropagation();
+    onEdit?.(note);
+    tippyInstance?.hide();
+  }
+
+  function handleDelete(e: MouseEvent) {
+    e.stopPropagation();
+    onDelete?.(note);
+    tippyInstance?.hide();
+  }
+
+  function buildTooltipContent(): string {
+    const emoji = getTypeEmoji(note.type);
+    const title = truncateText(note.title, 60);
+    const keywordChips = keywords
+      .slice(0, 3)
+      .map((k) => `<span class="nc-tooltip-keyword">${k}</span>`)
+      .join('');
+
+    return `
+      <div class="nc-tooltip" role="tooltip">
+        <div class="nc-tooltip-header">
+          <span class="nc-tooltip-emoji">${emoji}</span>
+          <span class="nc-tooltip-title">${title}</span>
+        </div>
+        <div class="nc-tooltip-meta">
+          <span class="nc-tooltip-links">Links: ${linkCount}</span>
+          ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ''}
+        </div>
+        <div class="nc-tooltip-actions">
+          <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="Edit note">Edit</button>
+          <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="Delete note">Delete</button>
+        </div>
+      </div>
+    `;
+  }
+
+  onMount(() => {
+    if (!cardRef) return;
+
+    tippyInstance = tippy(cardRef, {
+      content: buildTooltipContent(),
+      placement: 'right',
+      animation: 'fade',
+      duration: 200,
+      arrow: true,
+      theme: 'translucent',
+      hideOnClick: false,
+      interactive: true,
+      allowHTML: true,
+      appendTo: document.body,
+      onShown: (instance) => {
+        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
+        const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
+        editBtn?.addEventListener('click', handleEdit as EventListener);
+        deleteBtn?.addEventListener('click', handleDelete as EventListener);
+      },
+      onHidden: (instance) => {
+        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
+        const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
+        editBtn?.removeEventListener('click', handleEdit as EventListener);
+        deleteBtn?.removeEventListener('click', handleDelete as EventListener);
+      }
+    });
+  });
+
+  onDestroy(() => {
+    tippyInstance?.destroy();
+  });
 </script>
 
-<div 
-    class="note-card" 
-    data-testid="note-card" 
-    style="--type-color: {getTypeColor(note.type)}"
-    onclick={handleClick}
-    onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
-    role="button" 
-    tabindex="0"
-    aria-label={`Open note: ${note.title}`}
-  >
-  <div class="note-header">
-    <h3 class="note-title" data-testid="note-title">{@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}</h3>
-    <div class="note-meta">
-      {#if note.type}
-        <span class="type-badge" data-testid="note-type">{note.type}</span>
-      {/if}
-      <div class="note-date">{formatDate(note.created_at)}</div>
-    </div>
-  </div>
+<article
+  bind:this={cardRef}
+  class="note-card"
+  class:dust={isDust()}
+  class:selected
+  class:exiting={isExiting}
+  data-testid="note-card"
+  data-note-id={note.id}
+  data-note-type={note.type || 'unknown'}
+  style="--type-color: {getTypeColor(note.type)}; --stagger-delay: {animationIndex * 50}ms"
+  onclick={handleClick}
+  onkeydown={handleKeyDown}
+  tabindex="0"
+  role="article"
+  aria-label="Open note: {note.title}"
+>
+  <div class="note-card__stripe" aria-hidden="true"></div>
 
-  <div class="note-content" data-testid="note-content">
-    {@html highlightQuery ? highlightText(truncateText(note.content, 200), highlightQuery) : truncateText(note.content, 200)}
-  </div>
-  
-  {#if note.metadata && Object.keys(note.metadata).length > 0}
-    <div class="note-metadata">
-      {#each Object.entries(note.metadata) as [key, value]}
-        <span class="metadata-item">
-          {key}: {typeof value === 'string' ? value : JSON.stringify(value)}
-        </span>
-      {/each}
+  <div class="note-card__content">
+    <div class="note-card__header">
+      <div class="note-card__type" aria-hidden="true">
+        <span class="note-card__emoji">{getTypeEmoji(note.type)}</span>
+        {#if isNew()}
+          <span class="note-card__indicator note-card__indicator--new" aria-label="New note"></span>
+        {:else if isRecentlyUpdated()}
+          <span class="note-card__indicator note-card__indicator--updated" aria-label="Recently updated"></span>
+        {/if}
+      </div>
+
+      <div class="note-card__select" class:visible={selectMode || selected}>
+        <input
+          type="checkbox"
+          class="note-card__checkbox"
+          checked={selected}
+          aria-checked={selected}
+          aria-label="Select note {note.title}"
+          onclick={handleSelectToggle}
+        />
+      </div>
     </div>
-  {/if}
-</div>
+
+    <h3 class="note-card__title" data-testid="note-title">
+      {@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}
+    </h3>
+
+    <div class="note-card__body" data-testid="note-content">
+      {@html highlightQuery ? highlightText(truncateText(note.content, 180), highlightQuery) : truncateText(note.content, 180)}
+    </div>
+
+    <div class="note-card__footer">
+      <span class="note-card__date" data-testid="note-date">
+        Star lit: {formatDate(note.created_at)}
+      </span>
+      {#if isRecentlyUpdated()}
+        <span class="note-card__date note-card__date--updated" data-testid="note-updated-date">
+          Orbit corrected: {formatDate(note.updated_at)}
+        </span>
+      {/if}
+    </div>
+  </div>
+</article>
 
 <style>
   .note-card {
-    background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%),
-      rgba(10, 10, 26, 0.8);
+    position: relative;
+    display: flex;
+    background: var(--color-surface-elevated, rgba(20, 24, 45, 0.85));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 3px solid var(--type-color, #94a3b8);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
+    border-radius: 12px;
+    overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.3),
-      inset 0 0 20px rgba(255, 255, 255, 0.02);
-    position: relative;
-    overflow: hidden;
+      inset 0 0 24px rgba(255, 255, 255, 0.02);
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease,
+      opacity 0.2s ease;
+    animation: note-card-enter 0.4s ease forwards;
+    animation-delay: var(--stagger-delay, 0ms);
+    opacity: 0;
   }
 
-  /* Nebula glow effect overlay */
   .note-card::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    inset: 0;
     background: radial-gradient(
-      circle at var(--type-color, #94a3b8) 50% 50%,
-      rgba(255, 255, 255, 0.03) 0%,
-      transparent 50%
+      circle at 20% 30%,
+      rgba(255, 255, 255, 0.04) 0%,
+      transparent 60%
     );
-    opacity: 0;
-    transition: opacity 0.3s ease;
     pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.25s ease;
   }
 
-  .note-card:hover {
-    border-color: rgba(255, 204, 0, 0.3);
-    border-left-color: var(--type-color, #94a3b8);
-    box-shadow:
-      0 8px 25px rgba(0, 0, 0, 0.4),
-      0 0 30px rgba(255, 204, 0, 0.1),
-      inset 0 0 30px rgba(255, 255, 255, 0.03);
+  .note-card:hover,
+  .note-card:focus {
     transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--type-color) 40%, transparent);
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.45),
+      0 0 28px color-mix(in srgb, var(--type-color) 18%, transparent),
+      inset 0 0 32px rgba(255, 255, 255, 0.03);
+    outline: none;
   }
 
-  .note-card:hover::before {
+  .note-card:hover::before,
+  .note-card:focus::before {
     opacity: 1;
   }
 
-  .note-card:focus {
-    outline: none;
-    border-color: rgba(255, 204, 0, 0.5);
+  .note-card.selected {
+    border-color: color-mix(in srgb, var(--type-color) 70%, transparent);
     box-shadow:
-      0 0 0 3px rgba(255, 204, 0, 0.1),
-      0 8px 25px rgba(0, 0, 0, 0.4);
+      0 0 0 2px color-mix(in srgb, var(--type-color) 30%, transparent),
+      0 8px 28px rgba(0, 0, 0, 0.45),
+      0 0 28px color-mix(in srgb, var(--type-color) 18%, transparent);
   }
 
-  .note-header {
+  .note-card.exiting {
+    animation: note-card-exit 0.2s ease forwards;
+  }
+
+  .note-card.dust {
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: color-mix(in srgb, var(--color-surface-elevated, rgba(20, 24, 45, 0.85)) 95%, transparent);
+  }
+
+  .note-card.dust::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.01) 0px,
+      rgba(255, 255, 255, 0.01) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .note-card__stripe {
+    width: 4px;
+    flex-shrink: 0;
+    background: var(--type-color);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--type-color) 60%, transparent);
+  }
+
+  .note-card__content {
+    flex: 1;
+    padding: 1rem 1.25rem 1rem 1rem;
+    min-width: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .note-title {
-    margin: 0;
+  .note-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .note-card__type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .note-card__emoji {
     font-size: 1.25rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
+  }
+
+  .note-card__indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .note-card__indicator--new {
+    background: var(--color-star, #fbbf24);
+    box-shadow: 0 0 8px var(--color-star, #fbbf24);
+    animation: pulse-new 1.5s ease-in-out infinite;
+  }
+
+  .note-card__indicator--updated {
+    background: var(--color-info, #22d3ee);
+    box-shadow: 0 0 8px var(--color-info, #22d3ee);
+  }
+
+  .note-card__select {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .note-card:hover .note-card__select,
+  .note-card:focus .note-card__select,
+  .note-card__select.visible {
+    opacity: 1;
+  }
+
+  .note-card__checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary, #8b5cf6);
+    cursor: pointer;
+  }
+
+  .note-card__title {
+    margin: 0;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-dark, #e0e0e0);
     line-height: 1.4;
-    flex: 1;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    word-break: break-word;
   }
 
-  .note-date {
+  .note-card__body {
+    color: rgba(255, 255, 255, 0.62);
     font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.5);
-    white-space: nowrap;
-  }
-
-  .note-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-  }
-
-  .type-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--type-color, #94a3b8);
-    text-transform: capitalize;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-shadow: 0 0 5px var(--type-color, rgba(255, 255, 255, 0.3));
-  }
-
-  .note-content {
-    color: rgba(255, 255, 255, 0.6);
     line-height: 1.6;
-    margin-bottom: 1rem;
+    word-break: break-word;
   }
 
-  .note-metadata {
+  .note-card__footer {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    gap: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.45);
   }
 
-  .metadata-item {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.5);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+  .note-card__date--updated {
+    color: var(--color-info, #22d3ee);
+  }
+
+  :global(.nc-tooltip) {
+    background: rgba(10, 14, 35, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 12px;
+    color: white;
+    min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  :global(.nc-tooltip-header) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  :global(.nc-tooltip-emoji) {
+    font-size: 1.1rem;
+  }
+
+  :global(.nc-tooltip-title) {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  :global(.nc-tooltip-meta) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  :global(.nc-tooltip-keywords) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  :global(.nc-tooltip-keyword) {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
     font-size: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  :global(.nc-tooltip-actions) {
+    display: flex;
+    gap: 8px;
+  }
+
+  :global(.nc-tooltip-btn) {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  :global(.nc-tooltip-btn:hover) {
+    opacity: 0.85;
+  }
+
+  :global(.nc-tooltip-btn--edit) {
+    background: var(--color-primary, #8b5cf6);
+    color: white;
+  }
+
+  :global(.nc-tooltip-btn--delete) {
+    background: rgba(239, 68, 68, 0.85);
+    color: white;
   }
 
   :global(mark) {
@@ -210,6 +529,49 @@
     padding: 0.1em 0.2em;
     border-radius: 0.2em;
     font-weight: 600;
-    box-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+  }
+
+  @keyframes note-card-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes note-card-exit {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  @keyframes pulse-new {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.2);
+    }
+  }
+
+  /* Tippy translucent theme overrides for dark canvas */
+  :global(.tippy-box[data-theme~='translucent']) {
+    background: rgba(10, 14, 35, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  :global(.tippy-box[data-theme~='translucent'] .tippy-arrow) {
+    color: rgba(10, 14, 35, 0.96);
   }
 </style>

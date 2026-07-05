@@ -34,8 +34,9 @@ func (m *mockNoteRepoForLink) FindByID(ctx context.Context, id uuid.UUID) (*note
 	}
 	return n, nil
 }
-func (m *mockNoteRepoForLink) Delete(ctx context.Context, id uuid.UUID) error  { return nil }
-func (m *mockNoteRepoForLink) Restore(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *mockNoteRepoForLink) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
+func (m *mockNoteRepoForLink) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
+func (m *mockNoteRepoForLink) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
 func (m *mockNoteRepoForLink) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	var allNotes []*note.Note
 	for _, n := range m.notes {

@@ -42,12 +42,17 @@ export async function updateNote(id: string, data: Partial<Note>): Promise<Note>
   return api.put(`v1/notes/${id}`, { json: data }).json();
 }
 
-// Удалить заметку
+// Delete a single note
 export async function deleteNote(id: string): Promise<void> {
-  return api.delete(`v1/notes/${id}`).json();
+  await api.delete(`v1/notes/${id}`);
 }
 
-// Восстановить удалённую заметку
+// Delete multiple notes in a single batch request
+export async function deleteNotesBatch(ids: string[]): Promise<void> {
+  await api.post('v1/notes/batch', { json: { ids } });
+}
+
+// Restore a deleted note
 export async function restoreNote(id: string): Promise<void> {
   await api.post(`v1/notes/${id}/restore`);
 }

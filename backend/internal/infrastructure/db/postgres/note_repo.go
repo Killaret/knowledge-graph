@@ -87,6 +87,19 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+// DeleteBatch soft-deletes multiple notes by ID in a single transaction.
+func (r *NoteRepository) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id IN ?", ids).Error; err != nil {
+		return err
+	}
+	// Инвалидация кэша при удалении заметок
+	r.invalidateCache(ctx)
+	return nil
+}
+
 // Restore recovers a soft-deleted note by clearing its deleted_at timestamp.
 func (r *NoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
 	result := r.db.WithContext(ctx).Unscoped().

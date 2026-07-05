@@ -101,6 +101,10 @@ type createNoteRequest struct {
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
+type deleteBatchRequest struct {
+	IDs []string `json:"ids" binding:"required,dive,uuid"`
+}
+
 type noteResponse struct {
 	ID       string                 `json:"id"`
 	Title    string                 `json:"title"`
@@ -384,6 +388,52 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
+		return
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.NoContent(c)
+}
+
+func (h *Handler) DeleteBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "delete_batch")
+
+	var req deleteBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("ids", apicommon.ReasonInvalidValue, "ids must be a non-empty array of valid UUIDs", req.IDs),
+		})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("ids", apicommon.ReasonInvalidValue, "ids must be a non-empty array of valid UUIDs"),
+		})
+		return
+	}
+
+	ids := make([]uuid.UUID, 0, len(req.IDs))
+	for _, idStr := range req.IDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("ids", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+			})
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	if err := h.repo.DeleteBatch(c.Request.Context(), ids); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
 	}

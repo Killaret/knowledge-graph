@@ -45,6 +45,15 @@ func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+func (m *mockNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, id := range ids {
+		delete(m.notes, id)
+	}
+	return nil
+}
+
 func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -49,6 +49,8 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 
 	r.DELETE("/notes/:id", handler.Delete)
 
+	r.POST("/notes/batch", handler.DeleteBatch)
+
 	r.GET("/notes/:id/suggestions", handler.GetSuggestions) // если хотите тестировать и рекомендации
 	r.GET("/notes", handler.List)
 
@@ -268,6 +270,64 @@ func TestGetSuggestions_EmptyFallback(t *testing.T) {
 	if len(resp.Suggestions) != 0 {
 		t.Errorf("expected 0 suggestions, got %d", len(resp.Suggestions))
 	}
+}
+
+func TestDeleteBatchNotes(t *testing.T) {
+
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+
+	title1, _ := note.NewTitle("ToDelete1")
+	content1, _ := note.NewContent("Content1")
+	metadata1, _ := note.NewMetadata(nil)
+	n1 := note.NewNote(title1, content1, "star", metadata1)
+
+	title2, _ := note.NewTitle("ToDelete2")
+	content2, _ := note.NewContent("Content2")
+	metadata2, _ := note.NewMetadata(nil)
+	n2 := note.NewNote(title2, content2, "planet", metadata2)
+
+	_ = repo.Save(ctx, n1)
+	_ = repo.Save(ctx, n2)
+
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n1.ID().String(), n2.ID().String())
+
+	req := httptest.NewRequest("POST", "/notes/batch", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Errorf("expected 204, got %d", w.Code)
+	}
+
+	found1, _ := repo.FindByID(ctx, n1.ID())
+	found2, _ := repo.FindByID(ctx, n2.ID())
+
+	if found1 != nil || found2 != nil {
+		t.Error("notes still exist after batch delete")
+	}
+
+}
+
+func TestDeleteBatchNotes_EmptyBody(t *testing.T) {
+
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("POST", "/notes/batch", bytes.NewBufferString(`{"ids":[]}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+
 }
 
 func TestSearchValidationTooLong(t *testing.T) {
