@@ -105,3 +105,50 @@ func performRequest(router *gin.Engine, method, path string, body string) *httpt
 	router.ServeHTTP(w, req)
 	return w
 }
+
+func TestRecoveryMiddlewareNilPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(RecoveryMiddleware())
+	router.GET("/test", func(c *gin.Context) {
+		panic(nil)
+	})
+
+	w := performRequest(router, "GET", "/test", "")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRecoveryMiddlewareIntPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(RecoveryMiddleware())
+	router.GET("/test", func(c *gin.Context) {
+		panic(123)
+	})
+
+	w := performRequest(router, "GET", "/test", "")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRecoveryMiddlewareStructPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(RecoveryMiddleware())
+	router.GET("/test", func(c *gin.Context) {
+		panic(struct{ error }{fmt.Errorf("struct panic")})
+	})
+
+	w := performRequest(router, "GET", "/test", "")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestSafeHandlerNilPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/test", SafeHandler(func(c *gin.Context) {
+		panic(nil)
+	}))
+
+	w := performRequest(router, "GET", "/test", "")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}

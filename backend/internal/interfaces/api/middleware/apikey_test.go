@@ -308,3 +308,115 @@ func TestAPIKeyEmptyStaticKey(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code) // Continues to next auth method
 }
+
+func TestAPIKeySkipPathWildcard(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:   true,
+		SkipPaths: []string{"/api/v1/auth/*"},
+	}
+
+	tests := []struct {
+		name       string
+		path       string
+		wantStatus int
+	}{
+		{
+			name:       "skip wildcard path",
+			path:       "/api/v1/auth/login",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "skip wildcard path deep",
+			path:       "/api/v1/auth/register",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "protected path",
+			path:       "/api/v1/notes",
+			wantStatus: http.StatusOK, // Continues to next auth method
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.Use(APIKey(config))
+			router.GET(tt.path, func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "ok"})
+			})
+
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestAPIKeyStaticKeyWithWhitespace(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:      true,
+		StaticAPIKey: "test-key",
+		SkipPaths:    []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		userID, _ := GetUserID(c)
+		role, _ := GetUserRole(c)
+		c.JSON(http.StatusOK, gin.H{
+			"user_id": userID,
+			"role":    role,
+		})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", " test-key ") // With whitespace
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAPIKeyHashConsistency(t *testing.T) {
+	key := "test-api-key"
+	hash1 := hashAPIKey(key)
+	hash2 := hashAPIKey(key)
+
+	assert.Equal(t, hash1, hash2)
+	assert.Len(t, hash1, 64) // SHA256 hex length
+}
+
+func TestAPIKeyDifferentKeysDifferentHashes(t *testing.T) {
+	key1 := "test-api-key-1"
+	key2 := "test-api-key-2"
+
+	hash1 := hashAPIKey(key1)
+	hash2 := hashAPIKey(key2)
+
+	assert.NotEqual(t, hash1, hash2)
+}
+
+func TestAPIKeyEmptyKeyHash(t *testing.T) {
+	key := ""
+	hash := hashAPIKey(key)
+
+	assert.NotEmpty(t, hash)
+	assert.Len(t, hash, 64)
+}
+
+func TestAPIKeySpecialCharacters(t *testing.T) {
+	key := "test-@#$%^&*()_+-=[]{}|;':,.<>?/~`"
+	hash := hashAPIKey(key)
+
+	assert.NotEmpty(t, hash)
+	assert.Len(t, hash, 64)
+}

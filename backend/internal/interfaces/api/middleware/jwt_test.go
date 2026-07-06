@@ -383,3 +383,122 @@ func TestJWTAuthEdgeCases(t *testing.T) {
 		})
 	}
 }
+
+func TestJWTAuthWithTokenStore(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := DefaultJWTConfig(jwtManager, nil)
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	testID := uuid.New()
+	token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	// Should pass since token is not blacklisted
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestJWTAuthAlreadyAuthenticated(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := DefaultJWTConfig(jwtManager, nil)
+
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		// Simulate SkipAuth setting user in context
+		testID := uuid.New()
+		c.Set(ContextUserIDKey, testID)
+		c.Set(ContextRoleKey, "admin")
+		c.Next()
+	})
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		userID, _ := GetUserID(c)
+		role, _ := GetUserRole(c)
+		c.JSON(http.StatusOK, gin.H{
+			"user_id": userID,
+			"role":    role,
+		})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestJWTAuthCustomSkipPaths(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{"/custom/skip"},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/custom/skip", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "skipped"})
+	})
+	router.GET("/protected", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "protected"})
+	})
+
+	// Test skip path
+	req1 := httptest.NewRequest(http.MethodGet, "/custom/skip", nil)
+	w1 := httptest.NewRecorder()
+	router.ServeHTTP(w1, req1)
+	assert.Equal(t, http.StatusOK, w1.Code)
+
+	// Test protected path without token
+	req2 := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+	assert.Equal(t, http.StatusUnauthorized, w2.Code)
+}
+
+func TestJWTAuthCustomHeaderName(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "X-Custom-Auth",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	testID := uuid.New()
+	token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-Custom-Auth", token.AccessToken)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
