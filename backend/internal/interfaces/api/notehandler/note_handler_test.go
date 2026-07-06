@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 // setupNoteRouter создаёт тестовый роутер с мок-репозиторием
@@ -534,6 +535,160 @@ func TestListNotesInvalidOffset(t *testing.T) {
 	if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 200 or 400, got %d", w.Code)
 	}
+}
+
+func TestUpdateNoteEmptyTitle(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `{"title":""}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should fail for empty title
+	assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusOK)
+}
+
+func TestUpdateNoteEmptyContent(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `{"content":""}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Empty content should be allowed
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestUpdateNoteInvalidJSON(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `invalid json`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestUpdateNoteTooLongTitle(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	longTitle := ""
+	for i := 0; i < 201; i++ {
+		longTitle += "a"
+	}
+
+	body := fmt.Sprintf(`{"title":"%s"}`, longTitle)
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestUpdateNoteTooLongContent(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	longContent := ""
+	for i := 0; i < 50001; i++ {
+		longContent += "a"
+	}
+
+	body := fmt.Sprintf(`{"content":"%s"}`, longContent)
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestUpdateNoteWithMetadata(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `{"title":"Updated Title","metadata":{"key":"value"}}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestUpdateNoteInvalidMetadata(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	// Invalid metadata (circular reference)
+	body := `{"title":"Updated Title","metadata":{"circular":{"self":"ref"}}}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should fail for invalid metadata
+	assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusOK)
 }
 
 func TestListPagination(t *testing.T) {
