@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -445,6 +446,66 @@ func TestRegisterEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			body, _ := json.Marshal(tt.request)
 			req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestLoginEdgeCases(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+
+	tests := []struct {
+		name       string
+		request    LoginRequest
+		wantStatus int
+	}{
+		{
+			name: "empty login",
+			request: LoginRequest{
+				Login:    "",
+				Password: "TestPass123!",
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "empty password",
+			request: LoginRequest{
+				Login:    "testuser",
+				Password: "",
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "login too short",
+			request: LoginRequest{
+				Login:    "ab",
+				Password: "TestPass123!",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "login too long",
+			request: LoginRequest{
+				Login:    strings.Repeat("a", 51),
+				Password: "TestPass123!",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.POST("/login", handler.Login)
+
+			body, _ := json.Marshal(tt.request)
+			req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 

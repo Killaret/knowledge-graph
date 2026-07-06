@@ -236,3 +236,75 @@ func TestAPIKeyModelTableName(t *testing.T) {
 	model := APIKeyModel{}
 	assert.Equal(t, "api_keys", model.TableName())
 }
+
+func TestAPIKeyInvalidStaticKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:      true,
+		StaticAPIKey: "test-static-key",
+		SkipPaths:    []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", "wrong-static-key")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code) // Continues to next auth method
+}
+
+func TestAPIKeyCustomHeaderName(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:      true,
+		StaticAPIKey: "test-static-key",
+		HeaderName:   "X-Custom-API-Key",
+		SkipPaths:    []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-Custom-API-Key", "test-static-key")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAPIKeyEmptyStaticKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:      true,
+		StaticAPIKey: "",
+		SkipPaths:    []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code) // Continues to next auth method
+}

@@ -159,6 +159,7 @@ func TestCreateLink(t *testing.T) {
 	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
+
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -246,6 +247,7 @@ func TestCreateLinkMissingFields(t *testing.T) {
 			req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
+
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
@@ -315,6 +317,7 @@ func TestGetLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/links/"+tt.linkID, nil)
 			w := httptest.NewRecorder()
+
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
@@ -367,6 +370,7 @@ func TestDeleteLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", "/links/"+tt.linkID, nil)
 			w := httptest.NewRecorder()
+
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
@@ -412,6 +416,53 @@ func TestGetLinksByNote(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/notes/"+tt.noteID+"/links", nil)
 			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestDeleteByNote(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	tests := []struct {
+		name       string
+		noteID     string
+		wantStatus int
+	}{
+		{
+			name:       "invalid uuid",
+			noteID:     "invalid-uuid",
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", "/notes/"+tt.noteID+"/links", nil)
+			w := httptest.NewRecorder()
+
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
