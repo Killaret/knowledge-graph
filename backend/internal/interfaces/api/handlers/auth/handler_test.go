@@ -765,3 +765,95 @@ func TestLoginNonexistentUser(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestRefreshInvalidToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/refresh", handler.Refresh)
+
+	body := map[string]string{
+		"refresh_token": "invalid-token",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestRefreshEmptyToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/refresh", handler.Refresh)
+
+	body := map[string]string{
+		"refresh_token": "",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestForgotPasswordNonexistentEmail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/forgot-password", handler.ForgotPassword)
+
+	body := map[string]string{
+		"email": "nonexistent@example.com",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/forgot-password", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	// Should return success even for nonexistent email (security best practice)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestForgotPasswordEmptyEmail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/forgot-password", handler.ForgotPassword)
+
+	body := map[string]string{
+		"email": "",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/forgot-password", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestYandexLoginNotConfigured(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.GET("/auth/yandex/login", handler.YandexLogin)
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/yandex/login", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	// Should return not implemented since Yandex is not configured
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+}

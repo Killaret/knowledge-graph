@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -419,4 +420,38 @@ func TestAPIKeySpecialCharacters(t *testing.T) {
 
 	assert.NotEmpty(t, hash)
 	assert.Len(t, hash, 64)
+}
+
+func TestAPIKeyStaticKeySetsAdminRole(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:      true,
+		StaticAPIKey: "test-key",
+		HeaderName:   "X-API-Key",
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		userID, _ := GetUserID(c)
+		role, _ := GetUserRole(c)
+		c.JSON(http.StatusOK, gin.H{
+			"user_id": userID,
+			"role":    role,
+		})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", "test-key")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", response["role"])
 }

@@ -691,6 +691,55 @@ func TestUpdateNoteInvalidMetadata(t *testing.T) {
 	assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusOK)
 }
 
+func TestDeleteNoteNotFound(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("DELETE", "/notes/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestCreateNoteWithValidTypes(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	validTypes := []string{"star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula", "dust", "unknown", "blackhole"}
+
+	for _, noteType := range validTypes {
+		body := fmt.Sprintf(`{"title":"Test Note","content":"Hello","type":"%s"}`, noteType)
+		req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+	}
+}
+
+func TestUpdateNoteType(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	title, _ := note.NewTitle("Original Title")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `{"type":"planet"}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Type update should work
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestListPagination(t *testing.T) {
 	r, repo := setupNoteRouter()
 	ctx := context.Background()
