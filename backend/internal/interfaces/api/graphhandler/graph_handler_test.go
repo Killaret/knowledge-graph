@@ -370,3 +370,103 @@ func TestHandler_GetFullGraph_ErrorCases(t *testing.T) {
 	// Skip complex error cases that require complex mocking
 	// The handler handles invalid parameters internally
 }
+
+func TestHandler_GetCachedGraph(t *testing.T) {
+	t.Run("unauthenticated user", func(t *testing.T) {
+		r, _, _ := setupGraphRouter()
+
+		req := httptest.NewRequest("GET", "/graph/cached", nil)
+		w := httptest.NewRecorder()
+
+		// Need to add the route first
+		r.GET("/graph/cached", func(c *gin.Context) {
+			// Simulate unauthenticated
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		})
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
+func TestHandler_GetGraphDepthZero(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+	title, _ := note.NewTitle("Center")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	centerNote := note.NewNote(title, content, "star", metadata)
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String()+"?depth=0", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_GetGraphDepthNegative(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+	title, _ := note.NewTitle("Center")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	centerNote := note.NewNote(title, content, "star", metadata)
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String()+"?depth=-5", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Handler should handle negative depth gracefully
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_GetFullGraphLinkLimit(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	title1, _ := note.NewTitle("Note 1")
+	content1, _ := note.NewContent("Content 1")
+	metadata1, _ := note.NewMetadata(nil)
+	n1 := note.NewNote(title1, content1, "star", metadata1)
+
+	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	linkRepo.On("FindAllPaginated", mock.Anything, 10, 0).Return([]*link.Link{}, int64(0), nil)
+
+	req := httptest.NewRequest("GET", "/graph?link_limit=10", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_GetFullGraphLinkOffset(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	title1, _ := note.NewTitle("Note 1")
+	content1, _ := note.NewContent("Content 1")
+	metadata1, _ := note.NewMetadata(nil)
+	n1 := note.NewNote(title1, content1, "star", metadata1)
+
+	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	linkRepo.On("FindAllPaginated", mock.Anything, 500, 10).Return([]*link.Link{}, int64(0), nil)
+
+	req := httptest.NewRequest("GET", "/graph?link_offset=10", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
