@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // setupNoteRouter создаёт тестовый роутер с мок-репозиторием
@@ -344,6 +345,194 @@ func TestSearchValidationTooLong(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 BadRequest, got %d", w.Code)
+	}
+}
+
+func TestCreateNoteInvalidType(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"title":"Test Note","content":"Hello","type":"invalid_type"}`
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestCreateNoteTooLongTitle(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	longTitle := ""
+	for i := 0; i < 201; i++ {
+		longTitle += "a"
+	}
+
+	body := fmt.Sprintf(`{"title":"%s","content":"Hello"}`, longTitle)
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestCreateNoteTooLongContent(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	longContent := ""
+	for i := 0; i < 50001; i++ {
+		longContent += "a"
+	}
+
+	body := fmt.Sprintf(`{"title":"Test","content":"%s"}`, longContent)
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestCreateNoteMissingTitle(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"content":"Hello"}`
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestCreateNoteInvalidJSON(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `invalid json`
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestUpdateNoteNotFound(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"title":"Updated","content":"Updated content"}`
+	req := httptest.NewRequest("PUT", "/notes/"+uuid.New().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+}
+
+func TestUpdateNoteInvalidUUID(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"title":"Updated","content":"Updated content"}`
+	req := httptest.NewRequest("PUT", "/notes/invalid-uuid", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestGetNoteInvalidUUID(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("GET", "/notes/invalid-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestDeleteNoteInvalidUUID(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("DELETE", "/notes/invalid-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+func TestListNotesPagination(t *testing.T) {
+	r, repo := setupNoteRouter()
+
+	ctx := context.Background()
+	for i := 0; i < 25; i++ {
+		title, _ := note.NewTitle(fmt.Sprintf("Note %d", i))
+		content, _ := note.NewContent(fmt.Sprintf("Content %d", i))
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(title, content, "star", metadata)
+		_ = repo.Save(ctx, n)
+	}
+
+	req := httptest.NewRequest("GET", "/notes?limit=10&offset=0", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+}
+
+func TestListNotesInvalidLimit(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("GET", "/notes?limit=999", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Handler may accept high limit and cap it internally
+	if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 200 or 400, got %d", w.Code)
+	}
+}
+
+func TestListNotesInvalidOffset(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("GET", "/notes?offset=-1", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Handler may handle negative offset
+	if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 200 or 400, got %d", w.Code)
 	}
 }
 
