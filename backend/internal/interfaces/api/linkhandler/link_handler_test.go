@@ -800,3 +800,69 @@ func TestCreateLinkInvalidTargetUUID(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+func TestGetLinkInvalidUUID(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("GET", "/links/invalid-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetByNote(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	noteID := uuid.New()
+
+	// Создаём заметку
+	title, _ := note.NewTitle("Test Note")
+	content, _ := note.NewContent("Test content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	n = note.ReconstructNote(noteID, title, content, "star", metadata, n.CreatedAt(), n.UpdatedAt())
+
+	noteRepo.notes[noteID] = n
+
+	req := httptest.NewRequest("GET", "/notes/"+noteID.String()+"/links", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetByNoteInvalidUUID(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("GET", "/notes/invalid-uuid/links", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetByNoteNotFound(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("GET", "/notes/"+uuid.New().String()+"/links", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestDeleteLinkInvalidUUID(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("DELETE", "/links/invalid-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}

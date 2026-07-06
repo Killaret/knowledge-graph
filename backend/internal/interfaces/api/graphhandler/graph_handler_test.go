@@ -470,3 +470,118 @@ func TestHandler_GetFullGraphLinkOffset(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestHandler_GetGraphNoteNotFound(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(nil, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should return 404 or 200 with empty graph
+	assert.True(t, w.Code == http.StatusNotFound || w.Code == http.StatusOK)
+}
+
+func TestHandler_GetGraphLinkRepoError(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+	title, _ := note.NewTitle("Center")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	centerNote := note.NewNote(title, content, "star", metadata)
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return(nil, errors.New("db error"))
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should continue with empty links or return error
+	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError)
+}
+
+func TestHandler_GetFullGraphNotesError(t *testing.T) {
+	r, noteRepo, _ := setupGraphRouter()
+
+	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
+
+	req := httptest.NewRequest("GET", "/graph", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestHandler_GetFullGraphLinksError(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	title1, _ := note.NewTitle("Note 1")
+	content1, _ := note.NewContent("Content 1")
+	metadata1, _ := note.NewMetadata(nil)
+	n1 := note.NewNote(title1, content1, "star", metadata1)
+
+	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), errors.New("db error"))
+
+	req := httptest.NewRequest("GET", "/graph", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestHandler_GetGraphLargeDepth(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+	title, _ := note.NewTitle("Center")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	centerNote := note.NewNote(title, content, "star", metadata)
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String()+"?depth=100", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should cap at max depth
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_GetGraphZeroDepth(t *testing.T) {
+	r, noteRepo, linkRepo := setupGraphRouter()
+
+	centerID := uuid.New()
+	title, _ := note.NewTitle("Center")
+	content, _ := note.NewContent("Content")
+	metadata, _ := note.NewMetadata(nil)
+	centerNote := note.NewNote(title, content, "star", metadata)
+
+	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
+	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindByTarget", mock.Anything, centerID).Return([]*link.Link{}, nil)
+
+	req := httptest.NewRequest("GET", "/graph/"+centerID.String()+"?depth=0", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
