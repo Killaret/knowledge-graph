@@ -502,3 +502,264 @@ func TestJWTAuthCustomHeaderName(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestGetLogin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name       string
+		setupCtx   func(*gin.Context)
+		wantLogin  string
+		wantExists bool
+	}{
+		{
+			name: "login exists in context",
+			setupCtx: func(c *gin.Context) {
+				c.Set(ContextLoginKey, "testuser")
+			},
+			wantLogin:  "testuser",
+			wantExists: true,
+		},
+		{
+			name:       "login not in context",
+			setupCtx:   func(c *gin.Context) {},
+			wantLogin:  "",
+			wantExists: false,
+		},
+		{
+			name: "invalid type in context",
+			setupCtx: func(c *gin.Context) {
+				c.Set(ContextLoginKey, 123)
+			},
+			wantLogin:  "",
+			wantExists: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &gin.Context{}
+			tt.setupCtx(c)
+
+			login, exists := GetLogin(c)
+
+			assert.Equal(t, tt.wantExists, exists)
+			assert.Equal(t, tt.wantLogin, login)
+		})
+	}
+}
+
+func TestExtractTokenBearerCaseInsensitive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &JWTConfig{
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	tests := []struct {
+		name       string
+		authHeader string
+		wantToken  string
+	}{
+		{
+			name:       "Bearer lowercase",
+			authHeader: "bearer token123",
+			wantToken:  "token123",
+		},
+		{
+			name:       "Bearer uppercase",
+			authHeader: "BEARER token123",
+			wantToken:  "token123",
+		},
+		{
+			name:       "Bearer mixed case",
+			authHeader: "BeArEr token123",
+			wantToken:  "token123",
+		},
+		{
+			name:       "no Bearer prefix",
+			authHeader: "token123",
+			wantToken:  "token123",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			req.Header.Set("Authorization", tt.authHeader)
+
+			c := &gin.Context{Request: req}
+			token, _ := extractToken(c, config)
+
+			assert.Equal(t, tt.wantToken, token)
+		})
+	}
+}
+
+func TestJWTAuthTokenLookupQuery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "query",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	testID := uuid.New()
+	token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
+	req := httptest.NewRequest(http.MethodGet, "/test?token="+token.AccessToken, nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestJWTAuthTokenLookupMixed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	testID := uuid.New()
+	token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
+	// Try query parameter as fallback
+	req := httptest.NewRequest(http.MethodGet, "/test?token="+token.AccessToken, nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	// Should work since extractToken tries query parameter
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestJWTAuthMissingToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestJWTAuthMalformedToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer malformed-token")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestJWTAuthWrongSecret(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager1 := auth.NewJWTManager("secret1", 24*3600, 7*24*3600)
+	jwtManager2 := auth.NewJWTManager("secret2", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager2, // Different secret
+		TokenStore:  nil,
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	testID := uuid.New()
+	token, _ := jwtManager1.GenerateTokenPair(testID, "testuser", "user")
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestJWTAuthSwaggerWildcard(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  nil,
+		SkipPaths:   []string{"/swagger/*any"},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/swagger/index.html", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "swagger"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/swagger/index.html", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}

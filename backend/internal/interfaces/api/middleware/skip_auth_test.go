@@ -140,3 +140,73 @@ func TestSkipAuthCustomDefaultUserID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, customID.String(), response["user_id"])
 }
+
+func TestSkipAuthNilConfig(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(SkipAuth(nil))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	// Should handle nil config gracefully
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestSkipAuthCustomDefaultRole(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := DefaultSkipAuthConfig(true)
+	config.DefaultRole = "superuser"
+
+	router := gin.New()
+	router.Use(SkipAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		role, _ := GetUserRole(c)
+		c.JSON(http.StatusOK, gin.H{"role": role})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "superuser", response["role"])
+}
+
+func TestSkipAuthWithLogin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := DefaultSkipAuthConfig(true)
+	config.DefaultLogin = "customuser"
+
+	router := gin.New()
+	router.Use(SkipAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		login, _ := GetLogin(c)
+		c.JSON(http.StatusOK, gin.H{"login": login})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "customuser", response["login"])
+}

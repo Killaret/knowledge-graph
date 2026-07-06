@@ -583,3 +583,185 @@ func TestForgotPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestRegisterDuplicateLogin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/register", handler.Register)
+
+	// Register first user
+	body1 := map[string]string{
+		"login":    "testuser",
+		"email":    "test1@example.com",
+		"password": "TestPass123!",
+	}
+	jsonBody1, _ := json.Marshal(body1)
+	req1 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody1))
+	req1.Header.Set("Content-Type", "application/json")
+	w1 := httptest.NewRecorder()
+	router.ServeHTTP(w1, req1)
+
+	assert.Equal(t, http.StatusCreated, w1.Code)
+
+	// Try to register with same login
+	body2 := map[string]string{
+		"login":    "testuser",
+		"email":    "test2@example.com",
+		"password": "TestPass123!",
+	}
+	jsonBody2, _ := json.Marshal(body2)
+	req2 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusConflict, w2.Code)
+}
+
+func TestRegisterDuplicateEmail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/register", handler.Register)
+
+	// Register first user
+	body1 := map[string]string{
+		"login":    "testuser1",
+		"email":    "test@example.com",
+		"password": "TestPass123!",
+	}
+	jsonBody1, _ := json.Marshal(body1)
+	req1 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody1))
+	req1.Header.Set("Content-Type", "application/json")
+	w1 := httptest.NewRecorder()
+	router.ServeHTTP(w1, req1)
+
+	assert.Equal(t, http.StatusCreated, w1.Code)
+
+	// Try to register with same email
+	body2 := map[string]string{
+		"login":    "testuser2",
+		"email":    "test@example.com",
+		"password": "TestPass123!",
+	}
+	jsonBody2, _ := json.Marshal(body2)
+	req2 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusConflict, w2.Code)
+}
+
+func TestRegisterPasswordPolicy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/register", handler.Register)
+
+	tests := []struct {
+		name       string
+		password   string
+		wantStatus int
+	}{
+		{
+			name:       "too short",
+			password:   "Short1!",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "no uppercase",
+			password:   "testpass123!",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "no lowercase",
+			password:   "TESTPASS123!",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "no digit",
+			password:   "TestPass!!",
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "no special",
+			password:   "TestPass123",
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := map[string]string{
+				"login":    "testuser" + tt.name,
+				"email":    tt.name + "@example.com",
+				"password": tt.password,
+			}
+			jsonBody, _ := json.Marshal(body)
+			req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestLoginWrongPassword(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/register", handler.Register)
+	router.POST("/login", handler.Login)
+
+	// Register a user
+	body1 := map[string]string{
+		"login":    "testuser",
+		"email":    "test@example.com",
+		"password": "TestPass123!",
+	}
+	jsonBody1, _ := json.Marshal(body1)
+	req1 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody1))
+	req1.Header.Set("Content-Type", "application/json")
+	w1 := httptest.NewRecorder()
+	router.ServeHTTP(w1, req1)
+
+	assert.Equal(t, http.StatusCreated, w1.Code)
+
+	// Try to login with wrong password
+	body2 := map[string]string{
+		"login":    "testuser",
+		"password": "WrongPass123!",
+	}
+	jsonBody2, _ := json.Marshal(body2)
+	req2 := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonBody2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusUnauthorized, w2.Code)
+}
+
+func TestLoginNonexistentUser(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := setupTestHandler(t)
+	router := gin.New()
+	router.POST("/login", handler.Login)
+
+	body := map[string]string{
+		"login":    "nonexistent",
+		"password": "TestPass123!",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}

@@ -159,6 +159,17 @@ func GetUserRole(c *gin.Context) (string, bool) {
 	return r, ok
 }
 
+// GetLogin extracts user login from context
+func GetLogin(c *gin.Context) (string, bool) {
+	login, exists := c.Get(ContextLoginKey)
+	if !exists {
+		return "", false
+	}
+
+	l, ok := login.(string)
+	return l, ok
+}
+
 // RequireAuth middleware ensures user is authenticated
 func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
