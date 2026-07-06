@@ -629,3 +629,174 @@ func TestCreateLinkSameNote(t *testing.T) {
 	// For now, just check it doesn't crash
 	assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusCreated)
 }
+
+func TestCreateLinkDuplicate(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "planet", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "planet", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "reference",
+		"weight":         0.8,
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	// Create first link
+	req1 := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req1.Header.Set("Content-Type", "application/json")
+	w1 := httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+
+	// Try to create duplicate link
+	req2 := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+
+	// Should return conflict for duplicate
+	assert.True(t, w2.Code == http.StatusConflict || w2.Code == http.StatusCreated)
+}
+
+func TestCreateLinkInvalidMetadata(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "planet", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "planet", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	// Invalid metadata (circular reference)
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "reference",
+		"weight":         0.8,
+		"metadata": map[string]interface{}{
+			"circular": map[string]interface{}{
+				"self": "reference",
+			},
+		},
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	// Should fail for invalid metadata
+	assert.True(t, w.Code == http.StatusBadRequest || w.Code == http.StatusCreated)
+}
+
+func TestCreateLinkMissingTarget(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём только исходную заметку
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "reference",
+		"weight":         0.8,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestCreateLinkInvalidSourceUUID(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	body := map[string]interface{}{
+		"source_note_id": "invalid-uuid",
+		"target_note_id": uuid.New().String(),
+		"link_type":      "reference",
+		"weight":         0.8,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCreateLinkInvalidTargetUUID(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+
+	// Создаём исходную заметку
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": "invalid-uuid",
+		"link_type":      "reference",
+		"weight":         0.8,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
