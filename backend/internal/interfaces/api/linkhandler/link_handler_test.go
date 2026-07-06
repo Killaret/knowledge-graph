@@ -13,6 +13,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockNoteRepo для linkHandler (упрощённый, только FindByID)
@@ -190,5 +192,229 @@ func TestCreateLink(t *testing.T) {
 	}
 	if saved.TargetNoteID() != targetID {
 		t.Error("target note id mismatch")
+	}
+}
+
+func TestCreateLinkMissingFields(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	tests := []struct {
+		name       string
+		body       map[string]interface{}
+		wantStatus int
+	}{
+		{
+			name: "missing source note id",
+			body: map[string]interface{}{
+				"target_note_id": targetID.String(),
+				"link_type":      "reference",
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "missing target note id",
+			body: map[string]interface{}{
+				"source_note_id": sourceID.String(),
+				"link_type":      "reference",
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			jsonBody, _ := json.Marshal(tt.body)
+			req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestGetLink(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	// Создаём связь через API
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "reference",
+		"weight":         0.8,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	data := resp["data"].(map[string]interface{})
+	linkIDStr := data["id"].(string)
+	linkID, _ := uuid.Parse(linkIDStr)
+
+	tests := []struct {
+		name       string
+		linkID     string
+		wantStatus int
+	}{
+		{
+			name:       "valid link",
+			linkID:     linkID.String(),
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "invalid uuid",
+			linkID:     "invalid-uuid",
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/links/"+tt.linkID, nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+
+			if tt.wantStatus == http.StatusOK {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				require.NoError(t, err)
+				assert.Contains(t, resp, "data")
+			}
+		})
+	}
+}
+
+func TestDeleteLink(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	tests := []struct {
+		name       string
+		linkID     string
+		wantStatus int
+	}{
+		{
+			name:       "invalid uuid",
+			linkID:     "invalid-uuid",
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", "/links/"+tt.linkID, nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+}
+
+func TestGetLinksByNote(t *testing.T) {
+	r, _, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	// Создаём заметки
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	tests := []struct {
+		name       string
+		noteID     string
+		wantStatus int
+	}{
+		{
+			name:       "invalid uuid",
+			noteID:     "invalid-uuid",
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/notes/"+tt.noteID+"/links", nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
 	}
 }

@@ -118,3 +118,15 @@ func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) 
 
 	return allLinks[offset:end], total, nil
 }
+
+// Create is a convenience method for tests
+func (m *mockLinkRepo) Create(ctx context.Context, sourceID, targetID uuid.UUID, linkType string, weight float64, metadata map[string]interface{}, sourceType string) *link.Link {
+	// Convert types to domain types
+	linkTypeDomain, _ := link.NewLinkType(linkType)
+	weightDomain, _ := link.NewWeight(weight)
+	metadataDomain, _ := link.NewMetadata(metadata)
+
+	newLink := link.NewLink(sourceID, targetID, linkTypeDomain, weightDomain, metadataDomain)
+	m.Save(ctx, newLink)
+	return newLink
+}
