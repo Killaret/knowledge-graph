@@ -44,6 +44,7 @@ cd frontend
 npm run test:unit                      # Vitest
 npm run test:unit:watch               # Watch mode
 npm run test:coverage                 # With coverage
+npx svelte-check --tsconfig ./tsconfig.json  # Svelte/TypeScript check
 ```
 
 ### Frontend E2E Tests (Playwright)
@@ -55,10 +56,10 @@ npm run test:headed                    # With browser visible
 ```
 
 ### BDD Tests (Cucumber)
+Run from the project root; the `cucumber.mjs` config uses paths relative to the project root.
 ```bash
-cd frontend
-npm run test:cucumber                  # or from project root:
-# node --import ./frontend/node_modules/tsx/dist/loader.mjs ./frontend/node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs
+cd /d:/knowledge-graph
+node --import ./frontend/node_modules/tsx/dist/loader.mjs ./frontend/node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs
 ```
 
 ### NLP Service Tests
@@ -73,16 +74,21 @@ pytest tests/ -v
 | Category | Files | Tests/Scenarios | Latest Result |
 |----------|-------|-------------------|---------------|
 | **Go Unit** | 31 | ~118 test functions | ✅ pass |
-| **Go Integration** | 5+ | repository/handler suites | ⚠️ requires clean Docker testcontainers (reaper conflicts on current host) |
-| **Frontend Unit** | 52 | 526 tests | ✅ pass (43 skipped) |
-| **Playwright E2E** | 18 | 89 tests | ⚠️ 74 passed, 14 failed, 1 skipped |
+| **Go Race** | - | - | ⚠️ skipped (CGO_ENABLED=0 on Windows) |
+| **Go Integration** | 5+ | repository/handler suites | ❌ fail (Docker testcontainers PostgreSQL startup timeout) |
+| **Frontend Unit** | 52 | 526 tests | ✅ pass (37 skipped) |
+| **Frontend svelte-check** | - | - | ✅ 0 errors, 46 warnings |
+| **Frontend Build** | - | - | ✅ success |
+| **Playwright E2E** | 18 | 89 tests | ⚠️ 77 passed, 11 failed, 1 skipped |
 | **BDD Features** | 1 | 5 scenarios | ⚠️ 2 passed, 3 failed |
 | **NLP Python** | 2 | 33 collected | ✅ 28 passed, 5 skipped |
 
-> **Note:** Go integration tests are resource-intensive and failed on this run due to Docker testcontainers reaper/container-name conflicts and Docker Engine instability. They should be run on a clean Docker environment for accurate results.
+> **Note:** Go integration tests are resource-intensive and failed on this run because PostgreSQL testcontainers could not reach the ready state within the startup timeout. They should be run on a clean Docker environment with adequate CPU/memory for accurate results.
 
 ## Known Issues
 
-1. **BDD runner:** `npm run test:cucumber` in `frontend/` exits with 0 scenarios because the `cucumber.mjs` config uses paths relative to the project root. Run from the project root with the loader path shown above.
-2. **E2E failures:** Several failures are in `preload-full-cycle.spec.ts` (login form selectors) and `auth-skip-auth.spec.ts` (`page` undefined / profile content visibility), indicating outdated selectors or test environment drift.
-3. **Go integration tests:** require Docker Desktop to be stable and free of stale testcontainers reaper containers.
+1. **E2E failures:** Failures are concentrated in `preload-full-cycle.spec.ts` (login form selectors) and `auth-skip-auth.spec.ts` / `home-page.spec.ts` / `notes.spec.ts` / `skip-auth-check.spec.ts` (graph canvas/profile content visibility), indicating outdated selectors or test environment drift.
+2. **BDD failures:** `Search notes from list view`, `Filter notes by star type`, and `Create note from floating controls` fail on selector/timing issues.
+3. **Go integration tests:** require a stable Docker Desktop setup with sufficient resources and no stale testcontainers reaper containers.
+4. **Swagger UI:** `http://localhost:8080/swagger/` returns 404 because the `gin-swagger` handler requires a `swag init` generated `docs` package, which is not produced during the Docker build.
+5. **OpenAPI spec:** `backend/openAPI.yaml` does not yet cover auth, users, achievements, tags, backup, batch/restore notes, or cached/fresh graph endpoints. See `docs/TEST_EXECUTION_REPORT.md` for the full audit.

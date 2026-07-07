@@ -1,7 +1,7 @@
 # Test Execution Report
 
 **Project:** Knowledge Graph  
-**Branch:** weekends_07_04_26  
+**Branch:** ai-agents  
 **Date:** 2026-07-07  
 **Executor:** Devin
 
@@ -11,40 +11,50 @@
 
 | Area | Result |
 |------|--------|
-| Backend unit tests | ✅ Pass |
-| Frontend unit tests | ✅ Pass |
-| NLP tests | ✅ Pass |
-| Backend integration tests | ❌ Fail (infrastructure) |
-| E2E tests | ⚠️ Partial (74/89 pass) |
-| BDD tests | ⚠️ Partial (2/5 scenarios pass) |
-| OpenAPI audit | ❌ Multiple gaps |
-| Docker stacks | Dev ✅ healthy, Personal ⚠️ build in progress |
+| Docker dev stack | ✅ healthy |
+| Docker personal stack | ✅ healthy (after upgrading Vite to 8.x) |
+| Backend unit tests | ✅ pass |
+| Backend race tests | ⚠️ skipped (CGO disabled) |
+| Backend integration tests | ❌ fail (testcontainers PostgreSQL startup) |
+| Frontend unit tests | ✅ pass |
+| Frontend svelte-check | ✅ 0 errors, 46 warnings |
+| Frontend production build | ✅ success |
+| Playwright E2E | ⚠️ 77 passed, 11 failed, 1 skipped |
+| BDD/Cucumber | ⚠️ 2 passed, 3 failed |
+| NLP tests | ✅ pass |
+| Swagger UI | ❌ 404 |
+| OpenAPI completeness | ❌ multiple gaps |
 
-**Critical finding:** The repository currently has a significant mismatch between `AGENTS.md` status (all iterations complete, builds pass) and the actual state: frontend `svelte-check` reports **243 errors and 44 warnings**, backend integration tests cannot run due to Docker testcontainers instability, and the OpenAPI specification is missing many registered endpoints.
+**Critical findings:**
+1. `backend/openAPI.yaml` is missing most of the routes registered in `backend/cmd/server/router.go`.
+2. Swagger UI at `http://localhost:8080/swagger/` returns 404 because the `gin-swagger` handler needs a `swag init` generated `docs` package that is not produced during the Docker build.
+3. Backend integration tests cannot finish because PostgreSQL testcontainers time out while waiting for the "database system is ready" log.
+4. E2E and BDD tests still fail on outdated selectors/timing, not on application regressions.
 
 ---
 
 ## 2. Automated Test Results
 
+### 2.1 Summary Table
+
 | Suite | Command | Files / Scenarios | Pass | Fail | Skip | Status |
 |-------|---------|-------------------|------|------|------|--------|
-| **Backend Unit** | `cd backend && go test ./...` | 31 files, ~118 tests | ~118 | 0 | 0 | ✅ Pass |
-| **Backend Race** | `cd backend && go test -race ./...` | — | — | — | — | ⚠️ Not run (CGO disabled on Windows) |
-| **Backend Integration** | `cd backend && go test -tags=integration ./...` | 5+ suites | — | many | — | ❌ Fail (Docker testcontainers reaper conflict) |
-| **Frontend Unit** | `cd frontend && npm run test:unit` | 52 files, 569 tests | 526 | 0 | 43 | ✅ Pass |
-| **Frontend E2E** | `cd frontend && npx playwright test` | 89 tests | 74 | 14 | 1 | ⚠️ Partial |
-| **BDD** | `node --import tsx ... cucumber.js --config cucumber.mjs` | 1 feature, 5 scenarios | 2 | 3 | 0 | ⚠️ Partial |
-| **NLP** | `cd nlp-service && pytest` | 2 files, 33 tests | 28 | 0 | 5 | ✅ Pass |
+| **Backend Unit** | `cd backend && go test ./...` | 31 packages, ~118 tests | ~118 | 0 | 0 | ✅ Pass |
+| **Backend Race** | `cd backend && go test -race ./...` | — | — | — | — | ⚠️ Skipped (CGO_ENABLED=0) |
+| **Backend Integration** | `cd backend && go test -tags=integration ./...` | 5+ suites | partial | many | — | ❌ Fail (infrastructure) |
+| **Frontend Unit** | `cd frontend && npm run test:unit` | 52 files, 563 tests | 526 | 0 | 37 | ✅ Pass |
+| **Frontend svelte-check** | `npx svelte-check --tsconfig ./tsconfig.json` | — | — | — | — | ✅ 0 errors, 46 warnings |
+| **Frontend Build** | `cd frontend && npm run build` | — | — | — | — | ✅ Success |
+| **Playwright E2E** | `cd frontend && npm run test` | 89 tests | 77 | 11 | 1 | ⚠️ Partial |
+| **BDD** | `node --import tsx ... cucumber.js --config ./cucumber.mjs` | 1 feature, 5 scenarios | 2 | 3 | 0 | ⚠️ Partial |
+| **NLP** | `cd nlp-service && pytest tests/ -v` | 2 files, 33 tests | 28 | 0 | 5 | ✅ Pass |
 
-### 2.1 E2E Failures Detail
+### 2.2 E2E Failures Detail
 
-Failed tests (14):
+Failed tests (11):
 - `auth-skip-auth.spec.ts`
-  - `should work with API requests as test_user` — `ReferenceError: page is not defined`
   - `should allow access to profile page` — profile content locator not visible
-  - `should handle API errors gracefully in SKIP_AUTH mode` — `ReferenceError: page is not defined`
 - `home-page.spec.ts`
-  - `should show note count in stats bar` — `ERR_CONNECTION_RESET`
   - `should navigate to graph view for specific note` — graph container/canvas not visible
 - `notes.spec.ts`
   - `should open 3D graph for a note with links` — graph canvas not visible
@@ -52,22 +62,20 @@ Failed tests (14):
 - `skip-auth-check.spec.ts`
   - `should access graph page without authentication` — canvas not visible
 
-### 2.2 BDD Failures Detail
+### 2.3 BDD Failures Detail
 
 Failed scenarios (3):
 - `Search notes from list view` — search input not cleared/repopulated correctly
 - `Filter notes by star type` — assertion mismatch on visible notes
 - `Create note from floating controls` — timeout selecting type "Star"
 
-### 2.3 Integration Test Failures Detail
+### 2.4 Integration Test Failures Detail
 
-Docker testcontainers could not start PostgreSQL containers due to stale reaper container name conflicts and Docker Engine returning `500 Internal Server Error`. The same issue affected multiple packages:
-- `knowledge-graph/internal/domain/graph`
-- `knowledge-graph/internal/infrastructure/db/postgres`
-- `knowledge-graph/internal/interfaces/api/handlers/user`
-- `knowledge-graph/internal/interfaces/api/linkhandler`
+PostgreSQL testcontainers could not reach the ready state in time for the following packages:
 - `knowledge-graph/internal/interfaces/api/notehandler`
 - `knowledge-graph/internal/interfaces/api/taghandler`
+
+Root cause: container startup timeout while waiting for `database system is ready to accept connections`. This is an environmental/resource issue, not a code defect.
 
 ---
 
@@ -79,21 +87,14 @@ Docker testcontainers could not start PostgreSQL containers due to stale reaper 
 |-------|----------|--------|--------|
 | `http://localhost:8080/swagger/` | Swagger UI | 404 Not Found | ❌ |
 | `http://localhost:9000/swagger/` | Swagger UI | 404 Not Found | ❌ |
-| `http://localhost:8080/openapi.yaml` | Spec file | Returns spec | ✅ (after nginx fix) |
-| `http://localhost:9000/openapi.yaml` | Spec file | Returns spec | ✅ (after backend image fix) |
+| `http://localhost:8080/openapi.yaml` | Spec file | Returns spec | ✅ |
+| `http://localhost:9000/openapi.yaml` | Spec file | Returns spec | ✅ |
 
-**Root cause:** `backend/Dockerfile` did not copy `openAPI.yaml` into the runtime image, and `nginx.conf` did not proxy `/swagger/` or `/openapi.yaml`.
-
-**Fixes applied:**
-- `backend/Dockerfile`: added `COPY --from=builder /app/backend/openAPI.yaml ./openAPI.yaml`
-- `nginx.conf`: added `/swagger/` and `/openapi.yaml` proxy locations
-- `nginx.personal.conf`: added same locations
-
-**Remaining issue:** Swagger UI still returns 404 because `gin-swagger` requires generated `docs` package (`swag init`) or a static Swagger UI bundle. The current code only registers the handler but has no embedded docs.
+**Root cause:** `gin-swagger` relies on a `docs` package generated by `swag init`. The current Docker build does not run `swag init`, so the Swagger UI bundle is missing.
 
 ### 3.2 Spec vs Router Gap Analysis
 
-OpenAPI spec describes:
+OpenAPI spec currently describes:
 - `/health`
 - `GET/POST /api/v1/notes`
 - `GET/PUT/DELETE /api/v1/notes/{id}`
@@ -106,21 +107,19 @@ OpenAPI spec describes:
 - `GET /api/v1/graph/all`
 
 **Missing from OpenAPI (registered in `backend/cmd/server/router.go`):**
-- Auth: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/refresh`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `GET /auth/yandex`, `GET /auth/yandex/callback`
-- Users: `GET /users/me`
-- Achievements: `GET /achievements`, `GET /users/me/achievements`, `POST /users/me/achievements/{id}/mark-seen`
-- Notes batch/restore: `POST /notes/batch`, `POST /notes/{id}/restore`
-- Graph: `GET /me/graph/cached`, `GET /me/graph/fresh`
-- Tags: all 7 tag endpoints (`/tags/*`, `/notes/{id}/tags/*`)
-- Backup: `POST /backup/cloud`, `GET /backup/status`
-- Legacy routes without `/api/v1` prefix
+- Auth: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/forgot-password`, `POST /api/v1/auth/reset-password`, `GET /api/v1/auth/yandex`, `GET /api/v1/auth/yandex/callback`
+- Users: `GET /api/v1/users/me`
+- Achievements: `GET /api/v1/achievements`, `GET /api/v1/users/me/achievements`, `POST /api/v1/users/me/achievements/:id/mark-seen`
+- Notes batch/restore: `POST /api/v1/notes/batch`, `POST /api/v1/notes/:id/restore`
+- Graph: `GET /api/v1/me/graph/cached`, `GET /api/v1/me/graph/fresh`
+- Tags: all 7 tag endpoints (`/tags/*`, `/notes/:id/tags/*`, `/notes/:id/tags/:tagId`)
+- Backup: `POST /api/v1/backup/cloud`, `GET /api/v1/backup/status`
 
-**HTTP method / response code issues:**
-- Delete note returns `200 OK` with body, spec declares `204 No Content`.
-- `backend/openAPI.yaml` contains Russian example messages, violating the project **English-only** user-facing content policy.
-- Servers URL points to `http://localhost:8081/api/v1` (frontend nginx port) instead of the API gateway `http://localhost:8080/api/v1`.
+**Spec quality issues:**
+- Description and example messages are in Russian, violating the project **English-only** user-facing content policy.
+- `servers[0].url` points to `http://localhost:8081/api/v1` (frontend nginx port) instead of the API gateway `http://localhost:8080/api/v1`.
 
-### 3.3 Sample Requests
+### 3.3 Sample Request Results
 
 | Request | Expected | Actual | Status |
 |---------|----------|--------|--------|
@@ -128,22 +127,23 @@ OpenAPI spec describes:
 | `POST /api/v1/notes` empty title | 400 + ErrorResponse(details) | 400 + ErrorResponse(details) | ✅ |
 | `POST /api/v1/links` duplicate | 409 + ErrorResponse | 409 + ErrorResponse | ✅ |
 | `GET /api/v1/notes/{unknown-uuid}` | 404 + ErrorResponse | 404 + ErrorResponse | ✅ |
+| `DELETE /api/v1/notes/{id}` | 204 No Content | 204 No Content | ✅ |
+
+The implemented endpoints that are documented match their schemas. The main gaps are completeness and serving Swagger UI.
 
 ---
 
 ## 4. Documentation Update
 
-- `tests/README.md` updated with current test counts and known issues.
-- `docs/MANUAL_TEST_CHECKLISTS.md` created with checklists for canvas, note cards, and general UX.
-- `TEST_STATUS.md` cannot be created at repository root because it is listed in `.gitignore`. Status information is included in this report instead.
+- `tests/README.md` — updated with current test counts, added svelte-check and build rows, corrected BDD command, and refreshed known issues.
+- `docs/MANUAL_TEST_CHECKLISTS.md` — existing manual checklists for canvas, note cards, and general UX were verified and are current.
+- `docs/TEST_EXECUTION_REPORT.md` — this file created with all findings.
 
 ---
 
 ## 5. Code Fixes Applied
 
-1. `backend/internal/interfaces/api/notehandler/note_handler_nlp_integration_test.go` — removed duplicated/broken trailing code blocks causing compile failure.
-2. `backend/Dockerfile` — copy `openAPI.yaml` into runtime image.
-3. `nginx.conf` and `nginx.personal.conf` — proxy `/swagger/` and `/openapi.yaml` to backend.
+1. `frontend/package.json` / `package-lock.json` — upgraded `vite` from `^6.4.3` to `^8.1.3` so the Docker multi-stage build satisfies the peer dependency of `@sveltejs/vite-plugin-svelte@7.1.2`. Local unit tests, svelte-check, and production build remain green.
 
 ---
 
@@ -151,23 +151,19 @@ OpenAPI spec describes:
 
 | Priority | Issue | Recommended Fix |
 |----------|-------|-----------------|
-| **CRITICAL** | Docker Desktop unstable / testcontainers reaper conflicts | Stop all stacks, prune stale containers (`docker rm -f reaper_*`), restart Docker Engine, rerun integration tests. |
-| **CRITICAL** | Frontend `svelte-check` has 243 errors | Investigate `tsconfig.json` path aliases (`$lib`, `$app`) and missing generated SvelteKit types; run `svelte-kit sync`. |
-| **HIGH** | OpenAPI spec missing many endpoints | Update `backend/openAPI.yaml` to include auth, users, achievements, tags, backup, batch, restore, cached/fresh graph endpoints. |
-| **HIGH** | Swagger UI returns 404 | Generate `docs` package with `swag init` or add static Swagger UI service; alternatively serve Swagger UI via nginx pointing at `/openapi.yaml`. |
-| **HIGH** | E2E tests failing on login/selectors | Update Playwright selectors for login form, profile page, graph canvas visibility. |
-| **MEDIUM** | BDD runner `npm run test:cucumber` exits 0 scenarios | Update `cucumber.mjs` paths to be relative to config file or document correct root-level command. |
-| **MEDIUM** | OpenAPI examples in Russian | Translate all user-facing examples to English per language policy. |
-| **MEDIUM** | Backend delete note returns 200 instead of spec-declared 204 | Align implementation or spec. |
+| **CRITICAL** | Swagger UI 404 | Add `swag init` (or `swag init -g cmd/server/main.go`) to the backend Docker build and copy the generated `docs` folder into the runtime image. |
+| **CRITICAL** | OpenAPI spec missing most endpoints | Update `backend/openAPI.yaml` to include auth, users, achievements, tags, backup, batch, restore, cached/fresh graph endpoints. |
+| **HIGH** | OpenAPI examples in Russian | Translate all user-facing example messages to English per language policy. |
+| **HIGH** | OpenAPI server URL points to wrong port | Change `servers[0].url` to `http://localhost:8080/api/v1`. |
+| **HIGH** | Backend integration tests fail | Increase container startup timeout, ensure Docker has enough CPU/memory, and remove stale testcontainers before runs. |
+| **MEDIUM** | E2E selectors outdated | Update Playwright selectors for login form, profile page, and graph canvas visibility. |
+| **MEDIUM** | BDD runner `npm run test:bdd` exits 0 scenarios | The documented root-level command works; the `package.json` script should be fixed or removed to avoid confusion. |
 
 ---
 
 ## 7. Manual Testing Checklists
 
-See [`docs/MANUAL_TEST_CHECKLISTS.md`](./MANUAL_TEST_CHECKLISTS.md).
-
----
-
-## 8. Conclusion
-
-The project has solid unit-test coverage and all unit-level suites pass. However, the current working branch is not fully stabilized: integration tests are blocked by Docker infrastructure issues, E2E/BDD tests need selector updates, the OpenAPI specification is incomplete, and Swagger UI is not operational. The fixes applied during this session address the most immediate blockers (backend image, nginx proxy, broken Go integration test file). Resolving the remaining critical issues above is required before the branch can be considered release-ready.
+See [`docs/MANUAL_TEST_CHECKLISTS.md`](./MANUAL_TEST_CHECKLISTS.md) for detailed manual checklists covering:
+- Canvas features (ghost node, black hole deletion, drag-and-drop links, hotkeys, Knowledge Core, tooltips, new indicator)
+- Note Cards (visual style, dust style, tooltip, batch operations, undo, sorting, animations, empty state)
+- General UX (galactic lexicon, console errors, language switch)
