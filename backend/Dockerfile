@@ -15,6 +15,7 @@ WORKDIR /root/
 FROM base AS server
 COPY --from=builder /app/server .
 COPY --from=builder /app/backend/migrations ./migrations
+COPY --from=builder /app/backend/openAPI.yaml ./openAPI.yaml
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 EXPOSE 8080
 CMD ["./server"]

@@ -7,95 +7,82 @@ This directory contains BDD/Cucumber tests and test support files for the Knowle
 ```
 backend/                          # Go backend
 ├── internal/
-│   ├── domain/*/*_test.go        # 25 tests (entities, value objects)
-│   ├── application/*/*_test.go   # 17 tests (use cases)
-│   ├── infrastructure/*/*_test.go  # 62 tests (repositories, queue, nlp)
-│   └── interfaces/api/*/*_test.go # 14 tests (HTTP handlers)
+│   ├── domain/*/*_test.go        # Domain entities & value objects
+│   ├── application/*/*_test.go   # Use cases
+│   ├── infrastructure/*/*_test.go  # Repositories, queue, nlp, db
+│   └── interfaces/api/*/*_test.go # HTTP handlers & middleware
 └── cmd/checkconfig/main.go       # Config validation CLI
 
 frontend/                         # SvelteKit frontend
 ├── src/lib/
-│   ├── components/*.spec.ts      # 18 files, ~200 unit tests
-│   ├── api/*.test.ts             # 3 files, API client tests
-│   └── utils/*.test.ts           # 1 file, utility tests
-├── tests/*.spec.ts               # 10 files, Playwright E2E tests
-└── tests/features/*.feature      # 3 files, BDD scenarios
-
-tests/                            # BDD tests (this directory)
-├── features/*.feature            # 11 files, 98 BDD scenarios
-├── features/step_definitions/    # 6 TypeScript files
-└── support/                      # Test support files
+│   ├── components/*.spec.ts      # Component unit tests (Vitest)
+│   ├── api/*.test.ts             # API client tests
+│   ├── services/*.test.ts        # Service tests
+│   ├── stores/*.test.ts          # Svelte store tests
+│   └── utils/*.test.ts           # Utility tests
+├── tests/*.spec.ts               # Playwright E2E tests
+└── tests/features/*.feature      # BDD scenarios
 
 nlp-service/                      # Python NLP service
-└── tests/*.py                    # 2 files, ~15 pytest tests
+└── tests/*.py                     # pytest tests
 ```
-
-## Unit Tests Location
-
-Unit tests follow language-specific best practices:
-
-### Go (backend/)
-- `*_test.go` files next to source code
-- **Total: 31 files, 118 test functions**
-
-### TypeScript (frontend/)
-- `*.spec.ts` — component tests (Vitest + Testing Library)
-- `*.test.ts` — API client and utility tests (Vitest)
-- **Total: 22 test files (~220 tests)**
-  - 18 component tests (.spec.ts)
-  - 4 API/utils tests (.test.ts)
-
-### Python (nlp-service/)
-- `tests/*.py` directory
-- **Total: 2 files, ~15 tests**
 
 ## Running Tests
 
 ### Backend Unit Tests
 ```bash
 cd backend
-go test ./... -v                    # All tests
-go test ./internal/domain/... -v     # Domain only
-go test -race -coverprofile=coverage.out ./...
+go test ./...                         # All unit tests
+go test -race ./...                  # Race detection (requires CGO_ENABLED=1)
+go test -tags=integration ./...      # Integration tests with testcontainers
+go test -coverprofile=coverage.out ./...
 ```
 
 ### Frontend Unit Tests
 ```bash
 cd frontend
-npm run test:unit                   # Vitest (204 tests)
-npm run test:unit:watch            # Watch mode
-npm run test:coverage              # With coverage
+npm run test:unit                      # Vitest
+npm run test:unit:watch               # Watch mode
+npm run test:coverage                 # With coverage
 ```
 
 ### Frontend E2E Tests (Playwright)
 ```bash
 cd frontend
-npm run test                       # All E2E tests
-npm run test:smoke                 # Smoke tests only
-npm run test:headed               # With browser visible
+npx playwright test                    # All E2E tests
+npm run test:smoke                     # Smoke tests only
+npm run test:headed                    # With browser visible
 ```
 
 ### BDD Tests (Cucumber)
 ```bash
 cd frontend
-npm run test:bdd                   # or npm run test:cucumber
+npm run test:cucumber                  # or from project root:
+# node --import ./frontend/node_modules/tsx/dist/loader.mjs ./frontend/node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs
 ```
 
 ### NLP Service Tests
 ```bash
 cd nlp-service
+pytest
 pytest tests/ -v
-pytest tests/test_api.py -v
-pytest tests/test_nlp_utils.py -v
 ```
 
 ## Test Counts Summary
 
-| Category | Files | Tests/Scenarios | Status |
-|----------|-------|-----------------|--------|
-| **Go Unit** | 31 | 118 test functions | ✅ Active |
-| **Frontend Unit** | 22 | ~220 tests | ✅ Active |
-| **Playwright E2E** | 10 | 48 tests | ✅ Active |
-| **BDD Features** | 14 | 111 scenarios | ✅ Active |
-| **NLP Python** | 2 | ~15 tests | ✅ Active |
-| **Total** | **79** | **~512** | ✅ |
+| Category | Files | Tests/Scenarios | Latest Result |
+|----------|-------|-------------------|---------------|
+| **Go Unit** | 31 | ~118 test functions | ✅ pass |
+| **Go Integration** | 5+ | repository/handler suites | ⚠️ requires clean Docker testcontainers (reaper conflicts on current host) |
+| **Frontend Unit** | 52 | 526 tests | ✅ pass (43 skipped) |
+| **Playwright E2E** | 18 | 89 tests | ⚠️ 74 passed, 14 failed, 1 skipped |
+| **BDD Features** | 1 | 5 scenarios | ⚠️ 2 passed, 3 failed |
+| **NLP Python** | 2 | 33 collected | ✅ 28 passed, 5 skipped |
+
+> **Note:** Go integration tests are resource-intensive and failed on this run due to Docker testcontainers reaper/container-name conflicts and Docker Engine instability. They should be run on a clean Docker environment for accurate results.
+
+## Known Issues
+
+1. **BDD runner:** `npm run test:cucumber` in `frontend/` exits with 0 scenarios because the `cucumber.mjs` config uses paths relative to the project root. Run from the project root with the loader path shown above.
+2. **E2E failures:** Several failures are in `preload-full-cycle.spec.ts` (login form selectors) and `auth-skip-auth.spec.ts` (`page` undefined / profile content visibility), indicating outdated selectors or test environment drift.
+3. **Go integration tests:** require Docker Desktop to be stable and free of stale testcontainers reaper containers.

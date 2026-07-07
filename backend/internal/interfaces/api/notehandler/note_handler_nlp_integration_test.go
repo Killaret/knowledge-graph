@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db/postgres"
@@ -21,9 +22,9 @@ import (
 // NoteHandlerNLPIntegrationTestSuite - интеграционные тесты для NLP обогащения заметок
 type NoteHandlerNLPIntegrationTestSuite struct {
 	suite.Suite
-	db     *gorm.DB
-	repo   *postgres.NoteRepository
-	router *gin.Engine
+	db      *gorm.DB
+	repo    *postgres.NoteRepository
+	router  *gin.Engine
 	cleanup func()
 }
 
@@ -171,9 +172,6 @@ func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_EmptyContent() {
 	s.Equal(201, w.Code)
 }
 
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
 func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_MultipleNotes() {
 	// Создаем первую заметку
 	reqBody1 := map[string]interface{}{
@@ -227,377 +225,8 @@ func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_MultipleNotes() 
 	} else if notesField, ok := wrappedResponse3["notes"].([]interface{}); ok {
 		notes = notesField
 	}
-	
+
 	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_MultipleNotes() {
-	// Создаем первую заметку
-	reqBody1 := map[string]interface{}{
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы через GET /notes
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3, ok := wrappedResponse3["data"].(map[string]interface{})
-	s.True(ok, "response should have data field")
-	
-	notes, ok := data3["notes"].([]interface{})
-	s.True(ok, "data should have notes field")
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_MultipleNotes() {
-	// Создаем первую заметку
-	reqBody1 := map[string]interface{}{
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3 := wrappedResponse3["data"].(map[string]interface{})
-	notes := data3["notes"].([]interface{})
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-	// Создаем первую заметку
-	reqBody1 := map[string]interface{}{
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3 := wrappedResponse3["data"].(map[string]interface{})
-	notes := data3["notes"].([]interface{})
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3 := wrappedResponse3["data"].(map[string]interface{})
-	notes := data3["notes"].([]interface{})
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-	reqBody1 := map[string]interface{}{
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3 := wrappedResponse3["data"].(map[string]interface{})
-	notes := data3["notes"].([]interface{})
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-	// Создаем первую заметку
-	reqBody1 := map[string]interface{}{
-		"title":   "First Dust Note",
-		"content": "First dust note content",
-		"type":    "dust",
-	}
-	jsonBody1, _ := json.Marshal(reqBody1)
-
-	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody1))
-	req1.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w1, req1)
-
-	s.Equal(201, w1.Code)
-
-	// Создаем вторую заметку
-	reqBody2 := map[string]interface{}{
-		"title":   "Second Dust Note",
-		"content": "Second dust note content",
-		"type":    "dust",
-	}
-	jsonBody2, _ := json.Marshal(reqBody2)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody2))
-	req2.Header.Set("Content-Type", "application/json")
-	s.router.ServeHTTP(w2, req2)
-
-	s.Equal(201, w2.Code)
-
-	// Проверяем, что обе заметки созданы
-	time.Sleep(100 * time.Millisecond)
-
-	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("GET", "/notes", nil)
-	s.router.ServeHTTP(w3, req3)
-
-	s.Equal(200, w3.Code)
-
-	var wrappedResponse3 map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse3)
-	s.NoError(err)
-
-	data3 := wrappedResponse3["data"].(map[string]interface{})
-	notes := data3["notes"].([]interface{})
-	s.GreaterOrEqual(len(notes), 2, "should have at least 2 notes")
-}
-
-func TestNoteHandlerNLPIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(NoteHandlerNLPIntegrationTestSuite))
-}
-	reqBody := map[string]interface{}{
-		"title":   "Test Tasks",
-		"content": "Testing task creation for NLP enrichment",
-		"type":    "dust",
-	}
-	jsonBody, _ := json.Marshal(reqBody)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-
-	s.router.ServeHTTP(w, req)
-
-	s.Equal(201, w.Code)
-
-	var wrappedResponse map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
-	s.NoError(err)
-
-	data := wrappedResponse["data"].(map[string]interface{})
-	noteID := data["id"].(string)
-
-	// Проверяем, что задачи созданы в Redis
-	inspector := asynq.NewInspector(asynq.RedisClientOpt{Addr: testutil.TestRedisAddr})
-	
-	// Получаем все задачи в очереди
-	tasks, err := inspector.GetQueueInfo(asynq.DefaultQueueName)
-	s.NoError(err)
-	
-	// Должны быть задачи для keywords и embedding
-	s.GreaterOrEqual(tasks.Pending, 2, "should have at least 2 pending tasks (keywords + embedding)")
-
-	// Проверяем типы задач
-	taskList, err := inspector.ListTask(asynq.DefaultQueueName, asynq.TaskStatePending, 10)
-	s.NoError(err)
-	
-	var hasKeywordsTask, hasEmbeddingTask bool
-	for _, task := range taskList {
-		if task.Type == tasks.TypeExtractKeywords {
-			var payload tasks.ExtractKeywordsTaskPayload
-			err := json.Unmarshal(task.Payload, &payload)
-			s.NoError(err)
-			s.Equal(noteID, payload.NoteID)
-			hasKeywordsTask = true
-		}
-		if task.Type == tasks.TypeComputeEmbedding {
-			var payload tasks.ComputeEmbeddingTaskPayload
-			err := json.Unmarshal(task.Payload, &payload)
-			s.NoError(err)
-			s.Equal(noteID, payload.NoteID)
-			hasEmbeddingTask = true
-		}
-	}
-	
-	s.True(hasKeywordsTask, "should have extract keywords task")
-	s.True(hasEmbeddingTask, "should have compute embedding task")
 }
 
 // TestCreateDustNote_WithExistingNotes - проверка создания links с существующими заметками
@@ -620,7 +249,7 @@ func (s *NoteHandlerNLPIntegrationTestSuite) TestCreateDustNote_WithExistingNote
 	var wrappedResponse1 map[string]interface{}
 	err := json.Unmarshal(w1.Body.Bytes(), &wrappedResponse1)
 	s.NoError(err)
-	existingNoteID := wrappedResponse1["data"].(map[string]interface{})["id"].(string)
+	_ = wrappedResponse1["data"].(map[string]interface{})["id"].(string)
 
 	// Ждем обработки первой заметки
 	time.Sleep(2 * time.Second)
