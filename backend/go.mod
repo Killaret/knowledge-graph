@@ -25,6 +25,7 @@ require (
 	golang.org/x/crypto v0.49.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/postgres v1.5.6
+	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gorm v1.25.12
 )
 
@@ -88,6 +89,7 @@ require (
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.2.0 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect

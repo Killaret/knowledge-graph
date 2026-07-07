@@ -220,6 +220,37 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 **Pending:**
 - None - Iteration 5 complete.
 
+### Iteration 6 — FSD Refactoring (Feature-Sliced Design)
+
+**Completed:**
+- Configured SvelteKit alias (svelte.config.js) and TypeScript paths (tsconfig.json) for FSD
+- Created FSD folder structure:
+  - `features/graph-rendering/nodes/` - Node rendering logic
+  - `features/graph-rendering/anomalies/` - Black holes, ghost nodes
+  - `features/graph-interaction/` - Drag-and-drop, hotkeys, zoom-pan
+  - `features/graph-forms/` - Note form, link form
+  - `shared/lib/graph/` - Renderer, animations, types
+  - `widgets/graph-canvas/` - GraphCanvas component
+- Refactored renderer.ts from 1540 KB to 35 KB (97% reduction)
+  - Extracted node drawing functions to `features/graph-rendering/nodes/`
+  - Extracted anomaly functions to `features/graph-rendering/anomalies/`
+  - Extracted helper functions to `shared/lib/graph/`
+  - Removed duplicate functions
+  - Updated imports to use FSD path aliases
+- Refactored GraphCanvas.svelte from 45 KB to 41.7 KB (7.3% reduction)
+  - Extracted drag-and-drop logic to `features/graph-interaction/drag-and-drop.ts`
+  - Extracted hotkeys logic to `features/graph-interaction/hotkeys.ts`
+  - Extracted zoom-pan logic to `features/graph-interaction/zoom-pan.ts`
+  - Extracted form logic to `features/graph-forms/note-form.ts` and `link-form.ts`
+  - Updated imports to use FSD path aliases
+  - Fixed all lint errors
+- Legacy `GraphCanvas/` structure preserved for backward compatibility
+- All builds pass successfully
+- All changes committed and pushed (commits 985d32f, 656b0c0, 5b7f0a8, 2237904)
+
+**Pending:**
+- None - Iteration 6 complete.
+
 ### Current status
 - Iteration 1 completed.
 - Iteration 2 completed.
@@ -227,5 +258,5 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Iteration 4 completed (hotkeys added, two-stage undo toast implemented, Delete all links button added, HelpHotkeysModal component extracted, ghost node form enhanced, drag-and-drop link creation UX improved, tests updated).
 - Iteration 4 Multilingual completed (i18n infrastructure created, language toggle added, ProfileEditor internationalized).
 - Iteration 5 completed (visual screenshots updated, unit tests added, integration tests verified, documentation updated with hotkey list and UX guidelines).
-- GraphCanvas FSD refactoring: attempted but paused due to SvelteKit alias configuration issues. Structure created in commits 5addc3c-95b060f, reverted to 068714f for stability.
+- Iteration 6 completed (FSD refactoring: renderer.ts reduced 97%, GraphCanvas.svelte reduced 7.3%, FSD structure created, build passes).
 

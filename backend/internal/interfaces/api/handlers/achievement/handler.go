@@ -1,22 +1,37 @@
 package achievementhandler
 
 import (
+	"context"
 	"net/http"
 
 	achievementApp "knowledge-graph/internal/application/achievement"
+	achievementDomain "knowledge-graph/internal/domain/achievement"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+// AchievementService defines the interface for achievement service operations
+type AchievementService interface {
+	GetAllAchievements(ctx context.Context) ([]achievementDomain.Achievement, error)
+	GetUserAchievementsWithStatus(ctx context.Context, userID uuid.UUID) ([]achievementApp.UserAchievementWithStatus, error)
+	MarkNotificationSeen(ctx context.Context, userID uuid.UUID, achievementID string) error
+}
 
 // Handler handles achievement API requests.
 type Handler struct {
-	service *achievementApp.Service
+	service AchievementService
 }
 
 // NewHandler creates a new achievement handler.
 func NewHandler(service *achievementApp.Service) *Handler {
 	return &Handler{service: service}
+}
+
+// SetService sets the service (used for testing)
+func (h *Handler) SetService(service AchievementService) {
+	h.service = service
 }
 
 // AchievementResponse represents an achievement in API responses.
