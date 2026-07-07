@@ -13,9 +13,17 @@ import {
   drawGhostNodeTooltip
 } from './ghost-node';
 import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
-import { getGlowIntensity } from '$shared/lib/graph/glow-intensity';
+import type { BlackHoleState } from './black-hole';
+import type { GhostNodeState } from './ghost-node';
+import { getGlowIntensity } from '$shared/lib/graph/animation-utils.js';
+import { getAnomalyParams } from '$shared/lib/graph/renderer/anomalies/helpers';
+import type { AnomalyRenderer } from '$features/graph-rendering/anomalies/helpers';
 import * as nodeRenderers from '$features/graph-rendering/nodes';
 import { drawRealityRift } from '$features/graph-rendering/anomalies/reality-rift';
+import { drawChromaticMaw } from '$shared/lib/graph/renderer/anomalies/chromatic-maw';
+import { drawVoidWhisper } from '$shared/lib/graph/renderer/anomalies/void-whisper';
+import { drawCosmicAbomination } from '$shared/lib/graph/renderer/anomalies/cosmic-abomination';
+export { drawChromaticMaw, drawVoidWhisper, drawCosmicAbomination };
 import { getLinkColor } from '$shared/lib/graph/link-color';
 import { getLineDash } from '$shared/lib/graph/line-dash';
 import { getNodeColor } from '$shared/lib/graph/node-color';

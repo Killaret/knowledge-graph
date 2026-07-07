@@ -82,11 +82,11 @@ export function isDuplicateLink(
   source: string,
   target: string,
   linkType: string,
-  links: Array<{ source: string; target: string; link_type?: string }>
+  links: Array<{ source: string | { id: string }; target: string | { id: string }; link_type?: string }>
 ): boolean {
   return links.some((link) => {
-    const s = typeof link.source === 'string' ? link.source : link.source?.id;
-    const t = typeof link.target === 'string' ? link.target : link.target?.id;
+    const s = typeof link.source === 'string' ? link.source : link.source.id;
+    const t = typeof link.target === 'string' ? link.target : link.target.id;
     return (
       (s === source && t === target && link.link_type === linkType) ||
       (s === target && t === source && link.link_type === linkType)

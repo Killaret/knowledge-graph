@@ -3,6 +3,14 @@
  */
 import { graphConfig2D } from '$lib/config';
 import type { SimulationNode, SimulationLink } from '$lib/components/GraphCanvas/types';
+import {
+  getAnomalyParams,
+  drawRealityRift,
+  drawChromaticMaw,
+  drawVoidWhisper,
+  drawCosmicAbomination,
+  type AnomalyRenderer
+} from './anomalies';
 
 // Re-export types
 export type { SimulationNode, SimulationLink };
@@ -97,16 +105,15 @@ export function drawUnknown(
   r: number,
   angle: number,
   nodeId: string,
-  customRenderers?: Record<number, import('./anomalies').AnomalyRenderer>
+  customRenderers?: Record<number, AnomalyRenderer>
 ): void {
-  const { getAnomalyParams } = import('./anomalies');
   const params = getAnomalyParams(nodeId);
   const renderers = customRenderers ?? {
-    0: import('./anomalies').drawRealityRift,
-    1: import('./anomalies').drawChromaticMaw,
-    2: import('./anomalies').drawVoidWhisper,
-    3: import('./anomalies').drawCosmicAbomination,
-  } as Record<number, import('./anomalies').AnomalyRenderer>;
+    0: drawRealityRift,
+    1: drawChromaticMaw,
+    2: drawVoidWhisper,
+    3: drawCosmicAbomination,
+  } as Record<number, AnomalyRenderer>;
 
   const hash = (globalThis as any).stringHash ? (globalThis as any).stringHash(nodeId) : 0;
   const anomalyType = hash % 4;

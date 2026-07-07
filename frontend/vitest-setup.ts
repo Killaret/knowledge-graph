@@ -1,5 +1,19 @@
+import './vitest-polyfills';
 import '@testing-library/jest-dom/vitest';
 import { vi, beforeAll, afterEach, afterAll } from 'vitest';
+
+// Polyfills for vmThreads environment
+if (typeof globalThis.BroadcastChannel === 'undefined') {
+  globalThis.BroadcastChannel = class BroadcastChannel {
+    name: string;
+    constructor(name: string) { this.name = name; }
+    postMessage() {}
+    close() {}
+    addEventListener() {}
+    removeEventListener() {}
+    onmessage = null;
+  } as any;
+}
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { cleanup } from '@testing-library/svelte';

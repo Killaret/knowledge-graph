@@ -7,6 +7,11 @@ export default defineConfig({
   plugins: [sveltekit()],
   resolve: {
     alias: {
+      // FSD aliases (must match svelte.config.js)
+      '$shared': path.resolve(__dirname, 'src/shared'),
+      '$entities': path.resolve(__dirname, 'src/entities'),
+      '$features': path.resolve(__dirname, 'src/features'),
+      '$widgets': path.resolve(__dirname, 'src/widgets'),
       // Алиас для проекта (корневой knowledge-graph.config.json)
       '$config': path.resolve(__dirname, '../knowledge-graph.config.json')
     }

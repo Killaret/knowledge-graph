@@ -200,13 +200,13 @@
   let highlightedLinkTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(() => {
-    if (!browser) return;
+    if (!browser || !canvas) return;
     
     // SSR-safe: получаем контекст canvas
     ctx = canvas.getContext('2d')!;
     
     // Начальный resize
-    resizeCanvas(canvas, resizeState);
+    resizeCanvas(canvas!, resizeState);
     width = resizeState.width;
     height = resizeState.height;
     
@@ -217,15 +217,15 @@
     gravitySystem = createGravitySystem();
     
     // ResizeObserver для отслеживания размера контейнера
-    observerCleanup = setupResizeObserver(canvas, () => {
-      resizeCanvas(canvas, resizeState);
+    observerCleanup = setupResizeObserver(canvas!, () => {
+      resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
     });
     
     // Отложенный resize для стабильных размеров
     resizeCleanup = scheduleDelayedResize(() => {
-      resizeCanvas(canvas, resizeState);
+      resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
     }, 100);
@@ -368,14 +368,14 @@
 
   function onZoom(e: WheelEvent) {
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
-    handleZoomPan(e, transform, canvas, redraw);
+    handleZoomPan(e, transform, canvas!, redraw);
   }
 
   function onMouseDown(e: MouseEvent) {
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
     handleMouseDown(
       e,
-      canvas,
+      canvas!,
       transform,
       dragState,
       dragDropState,
@@ -394,7 +394,7 @@
 
   function onMouseMove(e: MouseEvent) {
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
-    const pos = getMouseWorldPosition(e, canvas, transform);
+    const pos = getMouseWorldPosition(e, canvas!, transform);
     dragDropState.mouseWorldPosition = pos;
 
     // Update hover states for interactive elements
@@ -499,7 +499,7 @@
 
   function onMouseUp(e: MouseEvent) {
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
-    const pos = getMouseWorldPosition(e, canvas, transform);
+    const pos = getMouseWorldPosition(e, canvas!, transform);
     const wasDraggingNode = dragDropState.draggedNodeId !== null;
 
     if (dragDropState.draggedNodeId) {
@@ -534,7 +534,7 @@
     }
 
     dragState.dragging = false;
-    canvas.style.cursor = 'grab';
+    canvas!.style.cursor = 'grab';
     blackHole.hovered = false;
 
     // Ghost node click up (without drag) - already handled in mousedown
@@ -548,7 +548,7 @@
 
   function onClick(e: MouseEvent) {
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
-    const pos = getMouseWorldPosition(e, canvas, transform);
+    const pos = getMouseWorldPosition(e, canvas!, transform);
     const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
     if (clickedNode) {
       if (isTechnicalNode(clickedNode.id)) {
@@ -689,7 +689,7 @@
   function onTouchStart(e: TouchEvent) {
     if (!browser) return; // Skip in server-side rendering
     updateActivity(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
-    handleTouchStart(e, zoomPanState, transform, canvas, getSimulationNodes(simState), ctx, width, height);
+    handleTouchStart(e, zoomPanState, transform, canvas!, getSimulationNodes(simState), ctx, width, height);
   }
 
   // Keyboard shortcuts: Esc toggles focus mode, F opens search, ? opens help, N for ghost node, Del/Backspace for delete, Ctrl+Z for undo
@@ -731,8 +731,8 @@
             const rect = canvas.getBoundingClientRect();
             const centerX = (rect.width / 2 - transform.x) / transform.k;
             const centerY = (rect.height / 2 - transform.y) / transform.k;
-            ghostNode = createGhostNode(centerX, centerY);
-            openNoteForm(noteFormState, e.clientX, e.clientY);
+            ghostNode = createGhostNode(rect.width, rect.height, getSimulationNodes(simState));
+            openNoteForm(noteFormState, centerX, centerY);
             redraw();
           }
         },

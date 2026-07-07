@@ -12,7 +12,7 @@ const mockState = {
   stopCallback: null as (() => void) | null,
 };
 
-let animationFrameHandles: number[] = [];
+let animationFrameHandles: ReturnType<typeof setTimeout>[] = [];
 
 // Мокируем d3-force
 vi.mock('d3-force', () => {
@@ -182,8 +182,8 @@ describe('GraphCanvas - Fade Effect', () => {
       return handle as unknown as number;
     }));
     vi.stubGlobal('cancelAnimationFrame', vi.fn().mockImplementation((handle: number) => {
-      clearTimeout(handle);
-      const index = animationFrameHandles.indexOf(handle);
+      clearTimeout(handle as unknown as ReturnType<typeof setTimeout>);
+      const index = animationFrameHandles.indexOf(handle as unknown as ReturnType<typeof setTimeout>);
       if (index >= 0) animationFrameHandles.splice(index, 1);
     }));
   });

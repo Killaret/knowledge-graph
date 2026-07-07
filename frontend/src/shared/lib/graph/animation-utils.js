@@ -4,8 +4,12 @@
 
 /**
  * Get glow intensity based on time and node ID (pulsating effect)
+ * @param {string} nodeId
+ * @param {number} time
+ * @param {number} nodeCount
+ * @returns {number}
  */
-export function getGlowIntensity(nodeId: string, time: number, nodeCount: number): number {
+export function getGlowIntensity(nodeId, time, nodeCount) {
   const PERFORMANCE_THRESHOLD_NODES = 100;
   
   if (nodeCount > PERFORMANCE_THRESHOLD_NODES) {
@@ -24,8 +28,10 @@ export function getGlowIntensity(nodeId: string, time: number, nodeCount: number
 
 /**
  * String hash function for deterministic animations
+ * @param {string} str
+ * @returns {number}
  */
-function stringHash(str: string): number {
+function stringHash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);

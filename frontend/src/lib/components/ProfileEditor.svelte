@@ -116,7 +116,7 @@
     <select
       id="locale"
       bind:value={selectedLocale}
-      onchange={(e) => handleLocaleChange(e.target.value as Locale)}
+      onchange={(e) => handleLocaleChange(e.currentTarget.value as Locale)}
     >
       <option value="en">English</option>
       <option value="ru">Русский</option>

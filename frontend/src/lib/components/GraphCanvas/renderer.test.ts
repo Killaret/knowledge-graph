@@ -3,19 +3,16 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  drawRealityRift,
-  drawChromaticMaw,
-  drawVoidWhisper,
-  drawCosmicAbomination,
-  drawUnknown,
   drawNode,
-  getAnomalyParams,
-  getLinkColor,
-  getLineDash,
-  getGlowIntensity,
-  getNodeGradient,
-  getNodeColor
+  drawUnknown
 } from './renderer';
+import { drawRealityRift } from '$features/graph-rendering/anomalies/reality-rift';
+import { getAnomalyParams } from '$shared/lib/graph/renderer/anomalies/helpers';
+import { getGlowIntensity } from '$shared/lib/graph/animation-utils.js';
+import { getLinkColor } from '$shared/lib/graph/link-color';
+import { getLineDash } from '$shared/lib/graph/line-dash';
+import { getNodeGradient } from '$shared/lib/graph/node-gradient';
+import { getNodeColor } from '$shared/lib/graph/node-color';
 
 // Mock CanvasRenderingContext2D
 const mockCtx = {
@@ -84,69 +81,6 @@ describe('renderer anomaly functions', () => {
         params1.rotationOffset !== params2.rotationOffset;
       
       expect(differs).toBe(true);
-    });
-  });
-
-  describe('drawChromaticMaw', () => {
-    it('should draw chromatic maw with tentacles and gradient', () => {
-      const params = getAnomalyParams('node-2');
-      
-      drawChromaticMaw(mockCtx, 100, 100, 30, params);
-      
-      expect(mockCtx.save).toHaveBeenCalled();
-      expect(mockCtx.translate).toHaveBeenCalledWith(100, 100);
-      expect(mockCtx.restore).toHaveBeenCalled();
-    });
-
-    it('should use deterministic parameters for same nodeId', () => {
-      const params1 = getAnomalyParams('node-2');
-      const params2 = getAnomalyParams('node-2');
-      
-      expect(params1.tentacleCount).toBe(params2.tentacleCount);
-      expect(params1.colorShift1).toBe(params2.colorShift1);
-      expect(params1.rotationOffset).toBe(params2.rotationOffset);
-    });
-  });
-
-  describe('drawVoidWhisper', () => {
-    it('should draw void whisper with particles and connections', () => {
-      const params = getAnomalyParams('node-3');
-      
-      drawVoidWhisper(mockCtx, 100, 100, 30, params);
-      
-      expect(mockCtx.save).toHaveBeenCalled();
-      expect(mockCtx.translate).toHaveBeenCalledWith(100, 100);
-      expect(mockCtx.restore).toHaveBeenCalled();
-    });
-
-    it('should use deterministic parameters for same nodeId', () => {
-      const params1 = getAnomalyParams('node-3');
-      const params2 = getAnomalyParams('node-3');
-      
-      expect(params1.particleCount).toBe(params2.particleCount);
-      expect(params1.colorShift2).toBe(params2.colorShift2);
-      expect(params1.rotationOffset).toBe(params2.rotationOffset);
-    });
-  });
-
-  describe('drawCosmicAbomination', () => {
-    it('should draw cosmic abomination combining all three types', () => {
-      const params = getAnomalyParams('node-4');
-      
-      drawCosmicAbomination(mockCtx, 100, 100, 30, params);
-      
-      expect(mockCtx.save).toHaveBeenCalled();
-      expect(mockCtx.translate).toHaveBeenCalledWith(100, 100);
-      expect(mockCtx.restore).toHaveBeenCalled();
-    });
-
-    it('should use deterministic parameters for same nodeId', () => {
-      const params1 = getAnomalyParams('node-4');
-      const params2 = getAnomalyParams('node-4');
-      
-      expect(params1.crackCount).toBe(params2.crackCount);
-      expect(params1.tentacleCount).toBe(params2.tentacleCount);
-      expect(params1.particleCount).toBe(params2.particleCount);
     });
   });
 

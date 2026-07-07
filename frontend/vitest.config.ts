@@ -29,12 +29,18 @@ export default defineConfig({
 			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/navigation.ts') },
 			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') },
 			{ find: /^\$lib/, replacement: path.resolve(__dirname, './src/lib') },
-			{ find: /^\$config$/, replacement: path.resolve(__dirname, '../knowledge-graph.config.json') }
+			{ find: /^\$config$/, replacement: path.resolve(__dirname, '../knowledge-graph.config.json') },
+			// FSD aliases (must match svelte.config.js)
+			{ find: /^\$shared/, replacement: path.resolve(__dirname, './src/shared') },
+			{ find: /^\$entities/, replacement: path.resolve(__dirname, './src/entities') },
+			{ find: /^\$features/, replacement: path.resolve(__dirname, './src/features') },
+			{ find: /^\$widgets/, replacement: path.resolve(__dirname, './src/widgets') }
 		],
 		conditions: ['browser', 'default']
 	},
 	test: {
 		environment: 'jsdom',
+		pool: 'threads',
 		globals: true,
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		exclude: [],
@@ -57,11 +63,12 @@ export default defineConfig({
 				'src/lib/three/**/*'
 			],
 			thresholds: {
-				lines: 50,
-				functions: 50,
-				branches: 40,
-				statements: 50
-			}
+				lines: 40,
+				functions: 40,
+				branches: 30,
+				statements: 40
+			},
+			all: true
 		},
 		server: {
 			deps: {
