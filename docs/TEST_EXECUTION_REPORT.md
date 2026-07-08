@@ -822,3 +822,103 @@ Note # frontend\tests\features\step_definitions\common.steps.ts:432
 
 **How to run:**
 cd frontend && npm run test:bdd
+
+---
+
+## 10. BDD Selector Fixes (Latest)
+
+**Status:** 3/5 scenarios passing (60%)
+
+**Committed:** 5bc386d
+
+**Changes:**
+- Fixed I am in list view strict mode violation by checking visibility individually instead of .or()
+- Fixed I select type selector to use .type-btn .label instead of .type-selector button
+- Fixed only notes of type should be displayed to check visible DOM cards instead of window.filteredNotes
+- Changed waitForLoadState('networkidle') to waitForLoadState('domcontentloaded') for faster tests
+
+**Remaining failures:**
+1. Toggle between graph and list views — List button click doesn't switch view (toggle button selector may need update)
+2. Filter notes by type in list view — count badge not found (filter-count selector may need update)
+
+**How to run:**
+
+> frontend@0.0.2 test:bdd
+> node scripts/run-bdd.cjs
+
+[BDD] Ensuring dev server is ready...
+[BDD] Dev server ready
+...[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-07-08T07:19:52.793785424Z","id":"45773d96-37a6-4b19-b70f-d91813059ab6","metadata":{},"title":"Test star 1783495192772","type":"star","updated_at":"2026-07-08T07:19:52.793785424Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-07-08T07:19:52.830640931Z","id":"0234a94d-e013-4bde-aebb-fecb8f55354e","metadata":{},"title":"Test planet 1783495192823","type":"planet","updated_at":"2026-07-08T07:19:52.830640931Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-07-08T07:19:52.857088825Z","id":"34f97521-a79a-4ba3-907e-f335401cd3e7","metadata":{},"title":"Test comet 1783495192848","type":"comet","updated_at":"2026-07-08T07:19:52.857088825Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-07-08T07:19:52.879767218Z","id":"2616274b-91e6-453c-8799-29ea2638f5d8","metadata":{},"title":"Test galaxy 1783495192874","type":"galaxy","updated_at":"2026-07-08T07:19:52.879767218Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-07-08T07:19:52.901729061Z","id":"32e8f5a0-d9a4-4682-98fb-9fe9de59f160","metadata":{},"title":"Test asteroid 1783495192896","type":"asteroid","updated_at":"2026-07-08T07:19:52.901729061Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-07-08T07:19:52.921260717Z","id":"313cef4e-7ed3-45a2-be27-0989887442da","metadata":{},"title":"Test satellite 1783495192914","type":"satellite","updated_at":"2026-07-08T07:19:52.921260717Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-07-08T07:19:52.940916737Z","id":"62b417c1-6f21-4398-995c-b2ee4284913c","metadata":{},"title":"Test debris 1783495192934","type":"debris","updated_at":"2026-07-08T07:19:52.940916737Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-07-08T07:19:52.963004976Z","id":"139b3a81-8eee-4593-8cf6-c011cd6bea13","metadata":{},"title":"Test nebula 1783495192957","type":"nebula","updated_at":"2026-07-08T07:19:52.963004976Z"},"message":"Resource created successfully"}
+...[TEST] Current view state: {
+  listContainerExists: true,
+  graphContainerExists: true,
+  listBtnActive: true,
+  graphBtnActive: false
+}
+..........[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-07-08T07:20:04.211223145Z","id":"792786ea-f0bb-4918-9093-8f5d4a94fc29","metadata":{},"title":"Test star 1783495204208","type":"star","updated_at":"2026-07-08T07:20:04.211223145Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-07-08T07:20:04.239676485Z","id":"28988b12-abda-420f-8638-260bd424afe0","metadata":{},"title":"Test planet 1783495204235","type":"planet","updated_at":"2026-07-08T07:20:04.239676485Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-07-08T07:20:04.259317837Z","id":"0347f2ae-0b5e-4c19-a5de-68cfb7475a7c","metadata":{},"title":"Test comet 1783495204256","type":"comet","updated_at":"2026-07-08T07:20:04.259317837Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-07-08T07:20:04.278367353Z","id":"0ae7fe13-ee08-4f17-990e-d59d9e185d9e","metadata":{},"title":"Test galaxy 1783495204275","type":"galaxy","updated_at":"2026-07-08T07:20:04.278367353Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-07-08T07:20:04.296310913Z","id":"3bcb4532-5a00-4ed2-822b-e040d6f5cf61","metadata":{},"title":"Test asteroid 1783495204293","type":"asteroid","updated_at":"2026-07-08T07:20:04.296310913Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-07-08T07:20:04.312798087Z","id":"9ffb6494-fcb7-446b-8c0a-acbe1afdde87","metadata":{},"title":"Test satellite 1783495204310","type":"satellite","updated_at":"2026-07-08T07:20:04.312798087Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-07-08T07:20:04.330372515Z","id":"4d26a2a3-1ea7-48f7-aa2c-87bc2c109f7d","metadata":{},"title":"Test debris 1783495204327","type":"debris","updated_at":"2026-07-08T07:20:04.330372515Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-07-08T07:20:04.34778718Z","id":"12bd5b6f-4ca1-48e4-bbce-7287792362e7","metadata":{},"title":"Test nebula 1783495204345","type":"nebula","updated_at":"2026-07-08T07:20:04.34778718Z"},"message":"Resource created successfully"}
+...[TEST] Filter "Planet": checked 10 of 47 visible cards, all match
+.F--.....[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-07-08T07:20:14.567700731Z","id":"03aa4cbc-0360-4582-8319-98243cb331d0","metadata":{},"title":"Test star 1783495214562","type":"star","updated_at":"2026-07-08T07:20:14.567700731Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-07-08T07:20:14.589328459Z","id":"763f5157-2691-4150-8cc6-d47df8eb98b4","metadata":{},"title":"Test planet 1783495214584","type":"planet","updated_at":"2026-07-08T07:20:14.589328459Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-07-08T07:20:14.609450039Z","id":"e00a1e53-9d0f-450a-858a-a0e739484d2b","metadata":{},"title":"Test comet 1783495214605","type":"comet","updated_at":"2026-07-08T07:20:14.609450039Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-07-08T07:20:14.629154947Z","id":"666cf015-ca70-4425-a107-d3af96b96199","metadata":{},"title":"Test galaxy 1783495214624","type":"galaxy","updated_at":"2026-07-08T07:20:14.629154947Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-07-08T07:20:14.647627024Z","id":"8e1d7f17-a077-48a7-9fb9-65a3bd662242","metadata":{},"title":"Test asteroid 1783495214643","type":"asteroid","updated_at":"2026-07-08T07:20:14.647627024Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-07-08T07:20:14.664337886Z","id":"0d6cb1d8-2ca9-4457-a702-97ba545e3ddd","metadata":{},"title":"Test satellite 1783495214660","type":"satellite","updated_at":"2026-07-08T07:20:14.664337886Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-07-08T07:20:14.681394545Z","id":"6fc1caac-31bf-4bc9-9ae9-5fc90bd01d28","metadata":{},"title":"Test debris 1783495214678","type":"debris","updated_at":"2026-07-08T07:20:14.681394545Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-07-08T07:20:14.71312632Z","id":"79ae83df-35cc-4f8e-8d38-b12a2bd9f1a7","metadata":{},"title":"Test nebula 1783495214708","type":"nebula","updated_at":"2026-07-08T07:20:14.71312632Z"},"message":"Resource created successfully"}
+............[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-07-08T07:20:23.867733497Z","id":"04314ea5-1ef4-452d-8770-0384d8b560ea","metadata":{},"title":"Test star 1783495223861","type":"star","updated_at":"2026-07-08T07:20:23.867733497Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-07-08T07:20:23.892278976Z","id":"12ee5019-14ea-4537-a050-a25d14d9f1ee","metadata":{},"title":"Test planet 1783495223886","type":"planet","updated_at":"2026-07-08T07:20:23.892278976Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-07-08T07:20:23.913374974Z","id":"0a7b2ab5-b778-4b73-aaf5-8bda7d17a5db","metadata":{},"title":"Test comet 1783495223908","type":"comet","updated_at":"2026-07-08T07:20:23.913374974Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-07-08T07:20:23.9346105Z","id":"bf13ed04-babd-439a-b374-d0bafec97ab2","metadata":{},"title":"Test galaxy 1783495223929","type":"galaxy","updated_at":"2026-07-08T07:20:23.9346105Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-07-08T07:20:23.955081881Z","id":"0710b2e2-4566-411d-8e8a-451da699bf52","metadata":{},"title":"Test asteroid 1783495223948","type":"asteroid","updated_at":"2026-07-08T07:20:23.955081881Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-07-08T07:20:23.984781409Z","id":"f427a336-0e62-4f11-90f4-a0f75b2ab53f","metadata":{},"title":"Test satellite 1783495223978","type":"satellite","updated_at":"2026-07-08T07:20:23.984781409Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-07-08T07:20:24.008907388Z","id":"be3cd94f-476b-42b3-9e06-616df19031a0","metadata":{},"title":"Test debris 1783495224002","type":"debris","updated_at":"2026-07-08T07:20:24.008907388Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-07-08T07:20:24.035960917Z","id":"deaa0960-ca50-49f1-ac3a-495d1de92e38","metadata":{},"title":"Test nebula 1783495224029","type":"nebula","updated_at":"2026-07-08T07:20:24.035960917Z"},"message":"Resource created successfully"}
+............[createNote] API response: {"data":{"content":"Content for star","created_at":"2026-07-08T07:20:30.004449531Z","id":"c021668f-6d28-447f-8378-a25ea6c377db","metadata":{},"title":"Test star 1783495229996","type":"star","updated_at":"2026-07-08T07:20:30.004449531Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for planet","created_at":"2026-07-08T07:20:30.025941387Z","id":"d0b46653-53bb-4227-81e5-2cba900ebbe0","metadata":{},"title":"Test planet 1783495230022","type":"planet","updated_at":"2026-07-08T07:20:30.025941387Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for comet","created_at":"2026-07-08T07:20:30.04443Z","id":"c8649724-2b61-42aa-81d1-7fc87acf7e9d","metadata":{},"title":"Test comet 1783495230041","type":"comet","updated_at":"2026-07-08T07:20:30.04443Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for galaxy","created_at":"2026-07-08T07:20:30.06176864Z","id":"399a2239-4d29-4045-9337-4d9073b7f90f","metadata":{},"title":"Test galaxy 1783495230058","type":"galaxy","updated_at":"2026-07-08T07:20:30.06176864Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for asteroid","created_at":"2026-07-08T07:20:30.077629634Z","id":"e70b8a5a-e84b-4d8a-bd9a-cf5ece534480","metadata":{},"title":"Test asteroid 1783495230074","type":"asteroid","updated_at":"2026-07-08T07:20:30.077629634Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for satellite","created_at":"2026-07-08T07:20:30.094700262Z","id":"8a85912d-3673-44cd-9889-0e6f1497f89b","metadata":{},"title":"Test satellite 1783495230091","type":"satellite","updated_at":"2026-07-08T07:20:30.094700262Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for debris","created_at":"2026-07-08T07:20:30.110883686Z","id":"98dad667-8ba9-4a26-a898-176ce98bd170","metadata":{},"title":"Test debris 1783495230108","type":"debris","updated_at":"2026-07-08T07:20:30.110883686Z"},"message":"Resource created successfully"}
+[createNote] API response: {"data":{"content":"Content for nebula","created_at":"2026-07-08T07:20:30.126604896Z","id":"3aad2497-749b-4d1d-8085-89cc5d8f2564","metadata":{},"title":"Test nebula 1783495230124","type":"nebula","updated_at":"2026-07-08T07:20:30.126604896Z"},"message":"Resource created successfully"}
+...........
+
+Failures:
+
+1) Scenario: Filter notes by type in list view # frontend\tests\features\graph_2d_list.feature:22
+   √ Before # frontend\tests\features\support\hooks.ts:57
+   √ Before # frontend\tests\features\step_definitions\common.steps.ts:16
+   √ Given I am on the main page "/" # frontend\tests\features\step_definitions\common.steps.ts:105
+   √ And there are notes of various types in the database # frontend\tests\features\step_definitions\common.steps.ts:88
+   √ Given I am in list view # frontend\tests\features\step_definitions\common.steps.ts:297
+   √ When I click the "Planet" filter chip in floating controls # frontend\tests\features\step_definitions\common.steps.ts:173
+   √ Then only notes of type "Planet" should be displayed # frontend\tests\features\step_definitions\common.steps.ts:355
+   × And the count badge should show the correct number # frontend\tests\features\step_definitions\common.steps.ts:380
+       Error: expect(received).toBeGreaterThan(expected)
+
+       Expected: > 0
+       Received:   0
+           at Proxy.<anonymous> (D:\knowledge-graph\frontend\node_modules\playwright\lib\matchers\expect.js:213:24)
+           at CustomWorld.<anonymous> (D:\knowledge-graph\frontend\tests\features\step_definitions\common.steps.ts:385:34)
+   - When I click the "All" filter chip # frontend\tests\features\step_definitions\common.steps.ts:525
+   - Then all notes should be displayed # frontend\tests\features\step_definitions\common.steps.ts:388
+   √ After # frontend\tests\features\step_definitions\common.steps.ts:27
+   √ After # frontend\tests\features\support\hooks.ts:74
+
+5 scenarios (1 failed, 4 passed)
+43 steps (1 failed, 2 skipped, 40 passed)
+0m46.545s (executing steps: 0m45.858s)

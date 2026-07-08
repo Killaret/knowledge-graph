@@ -156,18 +156,18 @@ When('I click the {string} toggle button in the floating controls', async functi
   const testId = viewName.toLowerCase() === 'list' ? 'view-toggle-list' : 
                  viewName.toLowerCase() === 'graph' ? 'view-toggle-graph' : 'view-toggle-3d';
   
-  // Use JavaScript click to bypass viewport checks for fixed positioned elements
-  await this.page.evaluate((id) => {
-    const btn = document.querySelector(`[data-testid="${id}"]`);
-    if (btn) {
-      (btn as HTMLElement).click();
-    } else {
-      throw new Error(`Button with data-testid="${id}" not found`);
-    }
-  }, testId);
+  const button = this.page.locator(`[data-testid="${testId}"]`).first();
+  await expect(button).toBeVisible({ timeout: 5000 });
   
-  // Wait for view to switch and render - increased timeout
-  await this.page.waitForTimeout(4000);
+  // Click the button
+  await button.click();
+  
+  // Wait for aria-pressed to change
+  const expectedPressed = viewName.toLowerCase() === 'list' ? 'true' : 'false';
+  await expect(button).toHaveAttribute('aria-pressed', expectedPressed, { timeout: 5000 });
+  
+  // Additional wait for view to render
+  await this.page.waitForTimeout(3000);
 });
   
 When('I click the {string} filter chip in floating controls', async function(this: ITestWorld, filterName: string) {
@@ -378,10 +378,14 @@ Then('only notes of type {string} should be displayed', async function(this: ITe
 });
 
 Then('the count badge should show the correct number', async function(this: ITestWorld) {
-  // Count badge has data-testid="filter-count-{type}" - use starts-with selector
-  const badge = this.page.locator('.filter-count, [data-testid^="filter-count-"]').first();
-  await expect(badge).toBeVisible({ timeout: 5000 });
+  // Count badge is inside the active filter chip
+  const activeChip = this.page.locator('.filter-chip.active').first();
+  await expect(activeChip).toBeVisible({ timeout: 5000 });
+  
+  const badge = activeChip.locator('.filter-count');
   const count = await badge.textContent();
+  
+  console.log(`[TEST] Count badge shows: ${count}`);
   expect(parseInt(count || '0')).toBeGreaterThan(0);
 });
 
