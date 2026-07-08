@@ -60,6 +60,10 @@
     <div class="graph-container graph-3d-container" data-testid="graph-container">
       <SmartGraph {nodes} {links} />
     </div>
+    <div class="stats-bar" data-testid="graph-stats">
+      <span class="stats-item"><strong>{nodes.length}</strong> nodes</span>
+      <span class="stats-item"><strong>{links.length}</strong> links</span>
+    </div>
   {/if}
 </div>
 

@@ -32,7 +32,7 @@ export function apiKey(): string | null { return authState.apiKey; }
 export function skipAuthMode(): boolean {
   if (!browser) return false;
   if (!import.meta.env.DEV) return false; // Disabled in production
-  return localStorage.getItem('__SKIP_AUTH__') === 'true';
+  return localStorage.getItem('__SKIP_AUTH__') === 'true' || (window as any).__SKIP_AUTH__ === true;
 }
 
 // LocalStorage keys
@@ -102,6 +102,13 @@ export async function initAuth(): Promise<void> {
 export async function login(login: string, password: string): Promise<boolean> {
   authState.isLoading = true;
   authState.error = null;
+
+  if (skipAuthMode()) {
+    saveTokens({ accessToken: 'skip-auth-token', refreshToken: 'skip-auth-refresh' });
+    authState.currentUser = { id: 'skip-auth-user', login: login || 'testuser', email: 'test@example.com', role: 'user', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as User;
+    authState.isLoading = false;
+    return true;
+  }
 
   try {
     const tokens = await authApi.login(login, password);

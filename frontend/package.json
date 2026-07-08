@@ -17,7 +17,7 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:cucumber": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config ../cucumber.mjs",
-    "test:bdd": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config ../cucumber.mjs",
+    "test:bdd": "node scripts/run-bdd.cjs",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:coverage": "vitest run --coverage",

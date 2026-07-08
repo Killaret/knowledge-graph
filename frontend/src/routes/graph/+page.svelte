@@ -184,13 +184,13 @@
   <div class="controls">
     <label class="toggle">
       <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
-      <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
+      <span>Show all notes ({showFullGraph ? 'enabled' : 'disabled'})</span>
     </label>
   </div>
   
   <!-- Stats -->
   {#if !loading && !error}
-    <div class="stats-bar">
+    <div class="stats-bar" data-testid="graph-stats">
       <span class="stats-item">
         <strong>{graphData.nodes.length}</strong> nodes
       </span>
