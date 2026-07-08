@@ -204,3 +204,20 @@ See [`docs/MANUAL_TEST_CHECKLISTS.md`](./MANUAL_TEST_CHECKLISTS.md) for detailed
 1. Enable the commented webServer block in frontend/playwright.config.ts when running tests locally, or stop the Docker frontend container and start npm run dev with SKIP_AUTH=true.
 2. Audit E2E selectors against the current Svelte 5 components and update assertions to use data-testid attributes where possible.
 3. Add data-testid attributes to GraphCanvas root and graph page container for stable canvas visibility checks.
+
+---
+
+## 9. E2E / BDD Environment Fixes
+
+| Issue | Status | Commit |
+|-------|--------|--------|
+| Playwright uses production build on 5173 | **Fixed** | 84c18f1 |
+| SKIP_AUTH login bypass missing | **Fixed** | 84c18f1 |
+| 3D graph stats bar missing | **Fixed** | 84c18f1 |
+| BDD runner not starting dev server | **Fixed** | 84c18f1 |
+
+**How to run tests now:**
+- E2E: cd frontend && PLAYWRIGHT_DEV_SERVER=true npm run test
+- BDD: cd frontend && npm run test:bdd
+
+**Note:** BDD scenarios now start and execute, but some steps may still need selector tuning or timeout adjustments due to recent Svelte 5 UI changes. The dev server and SKIP_AUTH setup are now automatic.
