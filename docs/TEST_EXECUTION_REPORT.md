@@ -801,3 +801,24 @@ Note # frontend\tests\features\step_definitions\common.steps.ts:432
 1m06.804s (executing steps: 1m06.060s)
 
 **Note:** BDD scenarios now start and execute, but some steps may still need selector tuning or timeout adjustments due to recent Svelte 5 UI changes. The dev server and SKIP_AUTH setup are now automatic.
+
+---
+
+## 10. BDD Selector Fixes (Latest)
+
+**Status:** 3/5 scenarios passing (60%)
+
+**Committed:** 5bc386d
+
+**Changes:**
+- Fixed I am in list view strict mode violation by checking visibility individually
+- Fixed I select type selector to use .type-btn .label
+- Fixed only notes of type should be displayed to check visible DOM cards
+- Changed waitForLoadState to domcontentloaded for faster tests
+
+**Remaining failures:**
+1. Toggle between graph and list views - List button click does not switch view
+2. Filter notes by type in list view - count badge not found
+
+**How to run:**
+cd frontend && npm run test:bdd
