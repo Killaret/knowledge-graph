@@ -69,15 +69,15 @@ export default defineConfig({
       // Run separately: SKIP_AUTH=false docker compose up backend
     },
   ],
-  // Auto-start dev server for tests - DISABLED for Docker usage
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:5173',
-  //   reuseExistingServer: true,
-  //   timeout: 120 * 1000,
-  //   env: {
-  //     SKIP_AUTH: 'true',
-  //   },
-  // },
+  // Auto-start dev server for tests - enable with PLAYWRIGHT_DEV_SERVER=true
+  webServer: process.env.PLAYWRIGHT_DEV_SERVER === 'true' ? {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true,
+    timeout: 120 * 1000,
+    env: {
+      SKIP_AUTH: 'true',
+    },
+  } : undefined,
 });
 
