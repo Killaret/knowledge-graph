@@ -167,3 +167,40 @@ See [`docs/MANUAL_TEST_CHECKLISTS.md`](./MANUAL_TEST_CHECKLISTS.md) for detailed
 - Canvas features (ghost node, black hole deletion, drag-and-drop links, hotkeys, Knowledge Core, tooltips, new indicator)
 - Note Cards (visual style, dust style, tooltip, batch operations, undo, sorting, animations, empty state)
 - General UX (galactic lexicon, console errors, language switch)
+
+---
+
+## 8. Fixes Applied After Initial Report
+
+### 8.1 Swagger UI and OpenAPI
+
+| Issue | Status | Commit |
+|-------|--------|--------|
+| Swagger UI returning 404 | **Fixed** | b9c36f0 |
+| OpenAPI spec missing endpoints | **Fixed** | a7c0ca8 |
+| OpenAPI examples in Russian | **Fixed** | a7c0ca8 |
+| OpenAPI server URL pointing to 8081 | **Fixed** | a7c0ca8 |
+
+**Changes:**
+- Added swag init to backend/Dockerfile and copied the generated docs package into the runtime image.
+- Added blank import _ "knowledge-graph/docs" to backend/cmd/server/main.go so gin-swagger serves the UI bundle.
+- Updated nginx.conf and nginx.personal.conf to proxy /swagger/ and /swagger correctly.
+- Rewrote backend/openAPI.yaml to include all registered endpoints: auth, users, achievements, notes batch/restore, graph cached/fresh, tags, and backup.
+- Translated all user-facing OpenAPI examples and descriptions to English.
+- Changed the server URL to http://localhost:8080/api/v1.
+
+### 8.2 E2E / BDD Selectors and UI
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| Login form missing name attributes | **Fixed** | d298453 |
+| Login form labels in Russian | **Fixed** | d298453 |
+| Profile page missing test id | **Fixed** | d298453 |
+| Profile page header in Russian | **Fixed** | d298453 |
+| Remaining E2E failures (profile access, graph canvas, preload) | **Pending** | Requires frontend dev server (npm run dev) with SKIP_AUTH=true or enabling Playwright webServer to run tests in dev mode. The current Docker stack serves the production build, which ignores __SKIP_AUTH__. |
+| BDD failures | **Pending** | Same root cause: tests run against the production build. |
+
+**Remaining recommended actions:**
+1. Enable the commented webServer block in frontend/playwright.config.ts when running tests locally, or stop the Docker frontend container and start npm run dev with SKIP_AUTH=true.
+2. Audit E2E selectors against the current Svelte 5 components and update assertions to use data-testid attributes where possible.
+3. Add data-testid attributes to GraphCanvas root and graph page container for stable canvas visibility checks.
