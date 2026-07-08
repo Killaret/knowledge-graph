@@ -97,7 +97,7 @@ Given('there are notes of various types in the database', async function(this: I
   }
   // Reload page to fetch newly created notes
   await this.page.reload();
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(500);
 });
 
@@ -105,7 +105,7 @@ Given('there are notes of various types in the database', async function(this: I
 Given('I am on the main page {string}', async function(this: ITestWorld, path: string) {
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   await this.page.goto(`${baseUrl}${path}`);
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   // Give Svelte time to hydrate the page
   await this.page.waitForTimeout(1000);
 });
@@ -115,7 +115,7 @@ Given('I navigate to {string}', async function(this: ITestWorld, path: string) {
   const resolvedPath = path.replace('{centerNoteId}', this.centerNoteId || 'test-id');
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   await this.page.goto(`${baseUrl}${resolvedPath}`);
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(500);
 });
 
@@ -147,7 +147,7 @@ Given('I am on the 3D graph page for a note with connections', async function(th
   // Navigate to 3D graph
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   await this.page.goto(`${baseUrl}/graph/3d/${this.centerNoteId}`);
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(500);
 });
 
@@ -297,7 +297,7 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
 Then('I am in list view', async function(this: ITestWorld) {
   // First ensure we're on main page
   await this.page.goto('http://localhost:5173/', { timeout: 60000 });
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(2000);
   
   // Click the list view toggle button
@@ -310,9 +310,15 @@ Then('I am in list view', async function(this: ITestWorld) {
   const listContainer = this.page.locator('[data-testid="list-container"]').first();
   const notesGrid = this.page.locator('[data-testid="notes-grid"]').first();
   const noteCards = this.page.locator('.note-card').first();
-  
+
   // Any of these should be visible in list view
-  await expect(listContainer.or(notesGrid).or(noteCards)).toBeVisible({ timeout: 10000 });
+  const isListVisible = await listContainer.isVisible().catch(() => false);
+  const isGridVisible = await notesGrid.isVisible().catch(() => false);
+  const isCardVisible = await noteCards.isVisible().catch(() => false);
+
+  if (!isListVisible && !isGridVisible && !isCardVisible) {
+    throw new Error('List view not visible: no list container, notes grid, or note cards found');
+  }
 });
 
 Then('I am in graph view', async function(this: ITestWorld) {
@@ -349,43 +355,26 @@ Then('the view toggle should show {string} option', async function(this: ITestWo
 Then('only notes of type {string} should be displayed', async function(this: ITestWorld, type: string) {
   // Wait for list to update after filter
   await this.page.waitForTimeout(1500);
-  
-  // Check filtered notes via window since VirtualList only renders visible items
-  const filteredData = await this.page.evaluate((filterType: string) => {
-    const filteredNotes = (window as any).filteredNotes || [];
-    const filteredCount = filteredNotes.filter((n: any) => 
-      (n.type || n.metadata?.type || 'star').toLowerCase() === filterType.toLowerCase()
-    ).length;
-    return { total: filteredNotes.length, matching: filteredCount };
-  }, type);
-  
-  console.log(`[TEST] Filter "${type}": ${filteredData.matching} of ${filteredData.total} notes match`);
-  
-  // If no matching notes, check if empty state is shown
-  if (filteredData.matching === 0) {
-    const emptyState = this.page.locator('.empty-state').first();
-    const isEmptyVisible = await emptyState.isVisible().catch(() => false);
-    if (isEmptyVisible) {
-      console.log(`[TEST] Empty state shown for type "${type}"`);
-      return; // Valid - no notes of this type
+
+  // Check visible note cards in DOM
+  const noteCards = this.page.locator('.note-card');
+  const count = await noteCards.count();
+
+  if (count === 0) {
+    throw new Error(`No note cards visible after filtering by ${type}`);
+  }
+
+  // Check that all visible cards have the correct type
+  const typeLower = type.toLowerCase();
+  for (let i = 0; i < Math.min(count, 10); i++) {
+    const card = noteCards.nth(i);
+    const cardType = await card.getAttribute('data-note-type');
+    if (cardType !== typeLower) {
+      throw new Error(`Note card ${i} has type ${cardType}, expected ${typeLower}`);
     }
   }
-  
-  expect(filteredData.matching).toBeGreaterThan(0);
-  
-  // Scroll to make first item visible and check its type
-  await this.page.evaluate(() => {
-    const container = document.querySelector('.virtual-list-container');
-    if (container) container.scrollTop = 0;
-  });
-  await this.page.waitForTimeout(200);
-  
-  // Check first visible card has correct type
-  const firstCard = this.page.locator('.note-card').first();
-  await expect(firstCard).toBeVisible({ timeout: 5000 });
-  const typeBadge = firstCard.locator('[data-testid="note-type"]').first();
-  const cardType = await typeBadge.textContent();
-  expect(cardType?.toLowerCase()).toContain(type.toLowerCase());
+
+  console.log(`[TEST] Filter "${type}": checked ${Math.min(count, 10)} of ${count} visible cards, all match`);
 });
 
 Then('the count badge should show the correct number', async function(this: ITestWorld) {
@@ -435,14 +424,12 @@ When('I fill in the title {string}', async function(this: ITestWorld, title: str
 });
 
 When('I select type {string}', async function(this: ITestWorld, type: string) {
-  // Type selector uses buttons in modal
-  // Try multiple selectors to find the type button
+  // Type selector uses .type-btn with .label inside
   const typeButton = this.page
-    .locator(`.type-selector button:has-text("${type}")`)
+    .locator(`.type-btn .label:has-text("${type}")`)
     .or(this.page.locator(`.type-btn:has-text("${type}")`))
-    .or(this.page.locator(`button[aria-label*="${type}"]`))
     .first();
-  
+
   await expect(typeButton).toBeVisible({ timeout: 5000 });
   await typeButton.click();
   await this.page.waitForTimeout(500);
@@ -493,7 +480,7 @@ Then('all nodes should be visible', async function(this: ITestWorld) {
 // Alternative "I am on the main page" without parameter
 Given('I am on the main page', async function(this: ITestWorld) {
   await this.page.goto('http://localhost:5173/');
-  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(500);
 });
 
