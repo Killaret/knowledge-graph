@@ -181,6 +181,17 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 | BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |
 
+**Test Stack (MANDATORY for E2E/BDD testing):**
+- **ALWAYS** use isolated test stack for E2E and BDD tests
+- Never run E2E/BDD tests against dev or personal stacks
+- Start test stack: `.\scripts\start-test.ps1`
+- Seed test data: `.\scripts\seed-test-data.ps1`
+- Stop and destroy: `.\scripts\stop-test.ps1` (removes all data with `-v`)
+- Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Test database: `knowledge_test` (separate from dev/personal)
+- Test stack completely isolated with unique container names (`kg-test-*`)
+- See `docs/TESTING_EN.md` for complete test stack documentation
+
 **Go table-driven tests (mandatory pattern):**
 ```go
 func TestCreateNote(t *testing.T) {
@@ -271,8 +282,20 @@ CMD ["/server"]
 **Port mapping:**
 - Dev: nginx:8080, backend:9000, graph-service:9091
 - Personal: backend:8085, gateway:8082, graph-service:8092
+- Test: frontend:3002, backend:8083, graph-service:9095, postgres:5434, redis:6381
 
-**Volume names:** `postgres_data`, `redis_data`, `huggingface_cache`
+**Volume names:**
+- Dev: `postgres_data`, `redis_data`, `huggingface_cache`
+- Personal: `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`
+- Test: `pgdata_test`, `mongodbdata_test` (destroyed after use)
+
+**Test Stack (MANDATORY for testing):**
+- Use `docker-compose.test.yml` for all E2E/BDD testing
+- Completely isolated from dev/personal environments
+- Unique container names: `kg-test-*`
+- Test database: `knowledge_test` with test credentials
+- Scripts: `.\scripts\start-test.ps1`, `.\scripts\stop-test.ps1`, `.\scripts\seed-test-data.ps1`
+- Always destroy with `down -v` to remove test data
 
 ---
 
@@ -294,9 +317,17 @@ docker compose up -d                                 # Dev stack
 docker compose -f docker-compose.personal.yml up -d  # Personal stack
 docker compose logs -f backend                       # Logs
 
+# Test Stack (for E2E/BDD testing)
+.\scripts\start-test.ps1                            # Start test stack
+.\scripts\stop-test.ps1                             # Destroy test stack
+.\scripts\seed-test-data.ps1                        # Seed test data
+docker compose -f docker-compose.test.yml up -d --build  # Manual start
+docker compose -f docker-compose.test.yml down -v            # Manual cleanup
+
 # Health checks
 curl http://localhost:8080/health
 curl http://localhost:9000/health
+curl http://localhost:8083/health                   # Test stack backend
 ```
 
 ---

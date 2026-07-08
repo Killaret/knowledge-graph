@@ -2,6 +2,34 @@
 
 This document contains checklists for manually verifying new Knowledge Graph functionality.
 
+## Pre-Testing Setup
+
+### Check Stacks Health
+- [ ] Run `scripts/check-stacks-health.ps1` (Windows) or `scripts/check-stacks-health.sh` (Linux/Mac)
+- [ ] Verify dev stack is healthy (http://localhost:8080/health)
+- [ ] Verify personal stack is healthy (http://localhost:8082/health)
+- [ ] Verify dev API is accessible (http://localhost:8080/api/v1/notes?limit=1)
+- [ ] Verify personal API is accessible (http://localhost:8082/api/v1/notes?limit=1)
+- [ ] If any checks fail, start the affected stack before proceeding
+
+### Start Test Stack
+- [ ] Run `scripts/start-test.ps1` (Windows) or `scripts/start-test.sh` (Linux/Mac)
+- [ ] Wait for all test containers to be healthy
+- [ ] Verify test stack is ready (http://localhost:13002)
+- [ ] Verify test backend API is accessible (http://localhost:18083)
+
+### Seed Test Data
+- [ ] Run `scripts/seed-test-data.ps1` (Windows) or `scripts/seed-test-data.sh` (Linux/Mac)
+- [ ] Verify test user is registered (login: testuser, password: TestPassword123!)
+- [ ] Verify 5 test notes are created (star, planet, comet, galaxy, asteroid)
+- [ ] Verify 2 test links are created between notes
+
+### Quick Start (Full Cycle)
+- [ ] Run `scripts/run-full-test-cycle.ps1` (Windows) or `scripts/run-full-test-cycle.sh` (Linux/Mac)
+- [ ] This will automatically: check stacks health, start test stack, seed data, wait for manual testing, destroy test stack, verify stacks health again
+
+---
+
 ## Canvas Features
 
 ### Ghost Node Creation
@@ -122,6 +150,26 @@ This document contains checklists for manually verifying new Knowledge Graph fun
 - [ ] Change the language toggle.
 - [ ] Verify UI labels, placeholders, and toast messages switch language.
 - [ ] Verify the selected language persists after reload.
+
+---
+
+## Post-Testing Cleanup
+
+### Stop Test Stack
+- [ ] Run `scripts/stop-test.ps1` (Windows) or `scripts/stop-test.sh` (Linux/Mac)
+- [ ] Verify test stack is destroyed (containers stopped and volumes removed)
+- [ ] Verify no test containers are running (`docker ps --filter "name=kg-test"`)
+
+### Verify Stacks Health
+- [ ] Run `scripts/check-stacks-health.ps1` (Windows) or `scripts/check-stacks-health.sh` (Linux/Mac)
+- [ ] Verify dev stack is still healthy after testing
+- [ ] Verify personal stack is still healthy after testing
+- [ ] Verify no data leakage from test stack to dev/personal stacks
+
+### Cleanup Test Data (if needed)
+- [ ] If test data was created in dev/personal stacks, manually delete test notes
+- [ ] Delete test user if created in dev/personal stacks
+- [ ] Verify no test artifacts remain in production stacks
 
 ---
 

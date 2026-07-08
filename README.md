@@ -43,16 +43,24 @@
 ### One-Command Start
 
 ```bash
-# Full stack with Docker
+# Full stack with Docker (Development)
 docker-compose up -d
 
 # Personal instance (different ports)
 docker-compose -f docker-compose.personal.yml up -d
+
+# Test stack (isolated testing environment)
+docker-compose -f docker-compose.test.yml up -d --build
+# Or use convenience scripts:
+.\scripts\start-test.ps1    # Start test stack
+.\scripts\stop-test.ps1     # Stop and destroy test stack
+.\scripts\seed-test-data.ps1  # Populate with test data
 ```
 
 **Access services:**
 - **Dev Stack**: Frontend http://localhost:5173, API Gateway http://localhost:8080
 - **Personal Stack**: API Gateway http://localhost:8082, Backend http://localhost:8085
+- **Test Stack**: Frontend http://localhost:3002, Backend http://localhost:8083 (isolated, destroyed after use)
 
 ### Development Mode
 
@@ -326,12 +334,39 @@ cd nlp-service && pytest
 # Backend integration
 cd backend && go test -tags=integration ./...
 
-# Frontend E2E
+# Frontend E2E (requires running stack)
 cd frontend && npm run test
 
 # BDD tests
 cd tests && npm run test:bdd
 ```
+
+### Test Stack (Isolated Testing Environment)
+
+For automated testing, use the dedicated test stack that is completely isolated from development and personal data:
+
+```bash
+# Start test stack
+.\scripts\start-test.ps1
+
+# Seed test data (optional)
+.\scripts\seed-test-data.ps1
+
+# Run tests against test stack
+cd frontend && npm run test
+
+# Destroy test stack (removes all data)
+.\scripts\stop-test.ps1
+```
+
+**Test Stack Details:**
+- **Ports:** Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- **Database:** Separate `knowledge_test` database
+- **Volumes:** Isolated `pgdata_test`, `mongodbdata_test` (destroyed after use)
+- **Auth:** SKIP_AUTH enabled for testing
+- **Cleanup:** All data removed on `stop-test.ps1 -v`
+
+See [docs/TESTING_EN.md](docs/TESTING_EN.md) for complete testing documentation.
 
 ### Test Coverage
 - **Backend:** >85% coverage required

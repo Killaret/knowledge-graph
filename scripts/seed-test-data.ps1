@@ -1,123 +1,96 @@
-# Seed Test Data for Knowledge Graph Test Stack
-# This script populates the test database with sample data
+# Seed Test Data - Windows PowerShell
+# This script registers a test user and creates test notes and links
 
-$ErrorActionPreference = "Stop"
+$apiUrl = "http://localhost:18083/api/v1"
 
-$baseUrl = "http://localhost:8083/api/v1"
+Write-Host "Seeding test data..." -ForegroundColor Cyan
 
-Write-Host "Seeding test data into Knowledge Graph Test Stack..." -ForegroundColor Green
+# Test user credentials
+$testUser = @{
+    login = "testuser"
+    email = "testuser@example.com"
+    password = "TestPassword123!"
+}
 
-# Check if backend is available
-Write-Host "Checking backend availability..." -ForegroundColor Yellow
+# Register test user
+Write-Host "Registering test user..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "$baseUrl/health" -UseBasicParsing -TimeoutSec 5
-    Write-Host "Backend is healthy" -ForegroundColor Green
+    $registerResponse = Invoke-RestMethod -Uri "$apiUrl/auth/register" -Method Post -Body ($testUser | ConvertTo-Json) -ContentType "application/json"
+    Write-Host "Test user registered successfully" -ForegroundColor Green
 } catch {
-    Write-Host "Backend is not available. Please start the test stack first." -ForegroundColor Red
+    Write-Host "User might already exist or registration failed: $_" -ForegroundColor Yellow
+}
+
+# Login to get token
+Write-Host "Logging in test user..." -ForegroundColor Yellow
+try {
+    $loginResponse = Invoke-RestMethod -Uri "$apiUrl/auth/login" -Method Post -Body (@{login = $testUser.login; password = $testUser.password} | ConvertTo-Json) -ContentType "application/json"
+    $token = $loginResponse.data.token
+    Write-Host "Login successful" -ForegroundColor Green
+} catch {
+    Write-Host "Login failed: $_" -ForegroundColor Red
     exit 1
 }
 
-# Create test user
-Write-Host "Creating test user..." -ForegroundColor Yellow
-try {
-    $userResponse = Invoke-RestMethod -Uri "$baseUrl/auth/register" -Method Post -ContentType "application/json" -Body @{
-        login = "testuser"
-        password = "Test123!"
-        name = "Test User"
-    } | ConvertTo-Json
-    Write-Host "Test user created successfully" -ForegroundColor Green
-    $token = $userResponse.token
-} catch {
-    Write-Host "User might already exist or error occurred. Trying to login..." -ForegroundColor Yellow
-    try {
-        $loginResponse = Invoke-RestMethod -Uri "$baseUrl/auth/login" -Method Post -ContentType "application/json" -Body @{
-            login = "testuser"
-            password = "Test123!"
-        } | ConvertTo-Json
-        $token = $loginResponse.token
-        Write-Host "Logged in successfully" -ForegroundColor Green
-    } catch {
-        Write-Host "Failed to create or login test user" -ForegroundColor Red
-        exit 1
-    }
-}
-
 $headers = @{
-    "Authorization" = "Bearer $token"
+    Authorization = "Bearer $token"
 }
 
 # Create test notes
 Write-Host "Creating test notes..." -ForegroundColor Yellow
-$testNotes = @(
-    @{
-        title = "Test Star Note"
-        content = "This is a test star note for testing purposes"
-        type = "star"
-    },
-    @{
-        title = "Test Planet Note"
-        content = "This is a test planet note for testing purposes"
-        type = "planet"
-    },
-    @{
-        title = "Test Galaxy Note"
-        content = "This is a test galaxy note for testing purposes"
-        type = "galaxy"
-    },
-    @{
-        title = "Test Nebula Note"
-        content = "This is a test nebula note for testing purposes"
-        type = "nebula"
-    },
-    @{
-        title = "Test Black Hole Note"
-        content = "This is a test black hole note for testing purposes"
-        type = "blackhole"
-    }
-)
+$noteTypes = @("star", "planet", "comet", "galaxy", "asteroid")
+$noteIds = @()
 
-foreach ($note in $testNotes) {
+foreach ($type in $noteTypes) {
+    $note = @{
+        title = "Test $type Note"
+        content = "This is a test note of type $type"
+        type = $type
+    }
+    
     try {
-        $noteResponse = Invoke-RestMethod -Uri "$baseUrl/notes" -Method Post -ContentType "application/json" -Headers $headers -Body ($note | ConvertTo-Json)
-        Write-Host "Created note: $($note.title)" -ForegroundColor Green
+        $noteResponse = Invoke-RestMethod -Uri "$apiUrl/notes" -Method Post -Body ($note | ConvertTo-Json) -ContentType "application/json" -Headers $headers
+        $noteIds += $noteResponse.data.id
+        Write-Host "Created note: $($note.title) (ID: $($noteResponse.data.id))" -ForegroundColor Green
     } catch {
-        Write-Host "Failed to create note: $($note.title)" -ForegroundColor Red
+        Write-Host "Failed to create note: $_" -ForegroundColor Red
     }
 }
 
-# Create test tags
-Write-Host "Creating test tags..." -ForegroundColor Yellow
-$testTags = @("test", "automation", "qa", "e2e", "sample")
-
-foreach ($tag in $testTags) {
-    try {
-        $tagResponse = Invoke-RestMethod -Uri "$baseUrl/tags" -Method Post -ContentType "application/json" -Headers $headers -Body @{
-            name = $tag
-            color = "#FF5733"
-        } | ConvertTo-Json
-        Write-Host "Created tag: $tag" -ForegroundColor Green
-    } catch {
-        Write-Host "Failed to create tag: $tag" -ForegroundColor Yellow
+# Create test links
+Write-Host "Creating test links..." -ForegroundColor Yellow
+if ($noteIds.Count -ge 2) {
+    $link = @{
+        source_id = $noteIds[0]
+        target_id = $noteIds[1]
+        type = "related"
+        weight = 1.0
     }
-}
-
-# Create test connections between notes
-Write-Host "Creating test connections..." -ForegroundColor Yellow
-try {
-    $notes = Invoke-RestMethod -Uri "$baseUrl/notes" -Method Get -Headers $headers
-    if ($notes.Count -ge 2) {
-        $connection = @{
-            from_note_id = $notes[0].id
-            to_note_id = $notes[1].id
-            relationship_type = "related"
+    
+    try {
+        $linkResponse = Invoke-RestMethod -Uri "$apiUrl/links" -Method Post -Body ($link | ConvertTo-Json) -ContentType "application/json" -Headers $headers
+        Write-Host "Created link between $($noteIds[0]) and $($noteIds[1])" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to create link: $_" -ForegroundColor Red
+    }
+    
+    # Create second link
+    if ($noteIds.Count -ge 3) {
+        $link2 = @{
+            source_id = $noteIds[1]
+            target_id = $noteIds[2]
+            type = "dependency"
+            weight = 0.5
         }
-        $connResponse = Invoke-RestMethod -Uri "$baseUrl/connections" -Method Post -ContentType "application/json" -Headers $headers -Body ($connection | ConvertTo-Json)
-        Write-Host "Created connection between notes" -ForegroundColor Green
+        
+        try {
+            $linkResponse2 = Invoke-RestMethod -Uri "$apiUrl/links" -Method Post -Body ($link2 | ConvertTo-Json) -ContentType "application/json" -Headers $headers
+            Write-Host "Created link between $($noteIds[1]) and $($noteIds[2])" -ForegroundColor Green
+        } catch {
+            Write-Host "Failed to create second link: $_" -ForegroundColor Red
+        }
     }
-} catch {
-    Write-Host "Failed to create connection" -ForegroundColor Yellow
 }
 
-Write-Host ""
-Write-Host "Test data seeding completed!" -ForegroundColor Green
-Write-Host "Created 5 test notes, 5 test tags, and sample connections" -ForegroundColor Cyan
+Write-Host "`nTest data seeded successfully!" -ForegroundColor Green
+Write-Host "Created $($noteIds.Count) notes and 2 links" -ForegroundColor Green

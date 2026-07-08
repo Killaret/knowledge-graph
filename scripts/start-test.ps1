@@ -1,29 +1,39 @@
-# Start Knowledge Graph Test Stack
-# This script launches a completely isolated test environment
+# Start Test Stack - Windows PowerShell
+# This script stops any existing test stack, then starts a fresh test stack
 
-Write-Host "Starting Knowledge Graph Test Stack..." -ForegroundColor Green
+Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 
-# Stop and remove any existing test stack
-Write-Host "Cleaning up any existing test stack..." -ForegroundColor Yellow
-docker compose -f docker-compose.test.yml down -v 2>$null
+# Stop and remove previous test stack
+Write-Host "Stopping previous test stack..." -ForegroundColor Yellow
+docker compose -f docker-compose.test.yml down -v
 
-# Build and start the test stack
-Write-Host "Building and starting test stack..." -ForegroundColor Yellow
-docker compose -f docker-compose.test.yml up -d --build
+# Start test stack
+Write-Host "Starting test stack..." -ForegroundColor Yellow
+docker compose -f docker-compose.test.yml up -d --build --wait
 
-# Wait for services to be healthy
-Write-Host "Waiting for services to be healthy..." -ForegroundColor Yellow
-Start-Sleep -Seconds 30
+# Wait for all containers to be healthy
+Write-Host "Waiting for containers to be healthy..." -ForegroundColor Yellow
+$timeout = 120 # 2 minutes
+$startTime = Get-Date
 
-# Check service status
-Write-Host "Checking service status..." -ForegroundColor Yellow
-docker compose -f docker-compose.test.yml ps
+while ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+    $healthy = docker compose -f docker-compose.test.yml ps --format json | ConvertFrom-Json | Where-Object { $_.State -eq "running" -and $_.Health -eq "healthy" }
+    $total = docker compose -f docker-compose.test.yml ps --format json | ConvertFrom-Json | Where-Object { $_.State -eq "running" } | Measure-Object | Select-Object -ExpandProperty Count
+    
+    if ($healthy.Count -eq $total) {
+        Write-Host "All containers are healthy!" -ForegroundColor Green
+        break
+    }
+    
+    Write-Host "Healthy: $($healthy.Count)/$total containers" -ForegroundColor Gray
+    Start-Sleep -Seconds 5
+}
 
-Write-Host ""
-Write-Host "Test stack ready!" -ForegroundColor Green
-Write-Host "Frontend: http://localhost:3002" -ForegroundColor Cyan
-Write-Host "Backend API: http://localhost:8083" -ForegroundColor Cyan
-Write-Host "Graph Service: http://localhost:8083/graph-service" -ForegroundColor Cyan
-Write-Host "NLP Service: http://localhost:5002" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "To stop the test stack, run: .\scripts\stop-test.ps1" -ForegroundColor Yellow
+# Final check
+$finalCheck = docker compose -f docker-compose.test.yml ps
+Write-Host "`nTest stack status:" -ForegroundColor Cyan
+Write-Host $finalCheck
+
+Write-Host "`nTest stack ready: http://localhost:3002" -ForegroundColor Green
+Write-Host "Backend API: http://localhost:18083" -ForegroundColor Green
+Write-Host "Frontend: http://localhost:13002" -ForegroundColor Green

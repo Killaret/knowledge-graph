@@ -205,13 +205,26 @@ This document describes the 11 AI agent roles used across Cursor AI, Koda (Conti
 - Playwright E2E tests
 - BDD/Cucumber tests (cucumber.mjs config)
 - Coverage enforcement: `go test -coverprofile`, `vitest --coverage`
+- **Test Stack management:** Use isolated test environment for all E2E/BDD testing
+
+**Test Stack (MANDATORY for E2E/BDD):**
+- **ALWAYS** use `docker-compose.test.yml` for E2E and BDD tests
+- Never run E2E/BDD against dev or personal stacks
+- Start test stack: `.\scripts\start-test.ps1`
+- Seed test data: `.\scripts\seed-test-data.ps1`
+- Stop and destroy: `.\scripts\stop-test.ps1` (removes all data with `-v`)
+- Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Test database: `knowledge_test` (separate from dev/personal)
+- Test stack completely isolated with unique container names (`kg-test-*`)
+- See `docs/TESTING_EN.md` for complete test stack documentation
 
 **Coverage requirement: >60% for all modules**
 
 **Example Prompts:**
 - "Write table-driven unit tests for note handler"
 - "Add integration test with testcontainers-go"
-- "Create Playwright E2E test for graph view"
+- "Create Playwright E2E test for graph view using test stack"
+- "Set up test stack for BDD testing"
 
 ---
 
@@ -328,6 +341,23 @@ docker compose up -d                                    # Dev stack
 docker compose -f docker-compose.personal.yml up -d    # Personal stack
 docker compose logs -f backend                         # Backend logs
 ```
+
+### Test Stack (for E2E/BDD testing)
+```bash
+.\scripts\start-test.ps1                               # Start isolated test stack
+.\scripts\seed-test-data.ps1                           # Populate test database
+.\scripts\stop-test.ps1                                # Destroy test stack (removes all data)
+docker compose -f docker-compose.test.yml up -d --build # Manual start
+docker compose -f docker-compose.test.yml down -v       # Manual cleanup
+```
+
+**Test Stack Details:**
+- Ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Database: `knowledge_test` (separate from dev/personal)
+- Containers: `kg-test-*` (unique names)
+- Volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
+- Auth: SKIP_AUTH enabled for testing
+- See `docs/TESTING_EN.md` for complete documentation
 
 ### Health Checks
 ```bash

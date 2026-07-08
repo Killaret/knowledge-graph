@@ -1,9 +1,12 @@
-# Stop Test Stack - Windows PowerShell
+#!/bin/bash
+# Stop Test Stack - Linux/Mac
 # This script stops and destroys the test stack including volumes
 
-Write-Host "Stopping test stack..." -ForegroundColor Yellow
+set -e
+
+echo "Stopping test stack..."
 
 # Stop and remove test stack with volumes
 docker compose -f docker-compose.test.yml down -v
 
-Write-Host "Test stack destroyed" -ForegroundColor Green
+echo "Test stack destroyed"
