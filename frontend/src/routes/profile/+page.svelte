@@ -17,10 +17,10 @@
 </script>
 
 <div class="profile-page">
-  <div class="profile-container">
+  <div class="profile-container" data-testid="profile-content">
     <div class="header">
-      <h1>Профиль</h1>
-      <p>Управление вашим аккаунтом</p>
+      <h1>Profile</h1>
+      <p>Manage your account</p>
     </div>
     
     {#if currentUser()}
@@ -28,7 +28,7 @@
     {:else}
       <div class="loading">
         <div class="spinner"></div>
-        <p>Загрузка профиля...</p>
+        <p>Loading profile...</p>
       </div>
     {/if}
   </div>

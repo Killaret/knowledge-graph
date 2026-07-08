@@ -46,7 +46,7 @@
   </script>
 
 <form class="login-form" onsubmit={handleSubmit}>
-  <h2>Вход в систему</h2>
+  <h2>Sign in</h2>
   
   {#if apiKeyEnabled}
     <div class="auth-mode-toggle">
@@ -56,7 +56,7 @@
         class:active={!useApiKey}
         onclick={() => useApiKey = false}
       >
-        Логин / Пароль
+        Login / Password
       </button>
       <button 
         type="button" 
@@ -76,29 +76,31 @@
         type="password"
         id="api-key"
         bind:value={apiKeyValue}
-        placeholder="Введите ваш API ключ"
+        placeholder="Enter your API key"
         required
       />
     </div>
   {:else}
     <div class="form-group">
-      <label for="login">Логин</label>
+      <label for="login">Login</label>
       <input
         type="text"
         id="login"
+        name="login"
         bind:value={loginValue}
-        placeholder="Введите логин"
+        placeholder="Enter login"
         required
       />
     </div>
     
     <div class="form-group">
-      <label for="password">Пароль</label>
+      <label for="password">Password</label>
       <input
         type="password"
         id="password"
+        name="password"
         bind:value={password}
-        placeholder="Введите пароль"
+        placeholder="Enter password"
         required
       />
     </div>
@@ -109,17 +111,17 @@
   {/if}
   
   <Button type="submit" variant="primary" disabled={isLoading()}>
-    {isLoading() ? 'Вход...' : 'Войти'}
+    {isLoading() ? 'Signing in...' : 'Sign in'}
   </Button>
   
   <div class="form-links">
-    <a href="/auth/register">Регистрация</a>
-    <a href="/auth/forgot-password">Забыли пароль?</a>
+    <a href="/auth/register">Register</a>
+    <a href="/auth/forgot-password">Forgot password?</a>
   </div>
   
   {#if yandexEnabled && !useApiKey}
     <div class="divider">
-      <span>или</span>
+      <span>or</span>
     </div>
     <YandexLoginButton />
   {/if}
