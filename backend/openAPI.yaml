@@ -3,39 +3,39 @@ info:
   title: Knowledge Graph API
   version: 1.1.0
   description: |
-    Knowledge Graph API с унифицированными REST ответами.
-    Все ответы следуют стандартному формату SuccessResponse и ErrorResponse.
-    
-    ## Формат ответов
-    
-    ### Успешный ответ (200, 201):
+    Knowledge Graph API with unified REST responses.
+    All responses follow the standard SuccessResponse and ErrorResponse formats.
+
+    ## Response format
+
+    ### Success (200, 201):
     ```json
     {
       "data": { ... },
-      "message": "Опциональное сообщение"
+      "message": "Optional success message"
     }
     ```
-    
-    ### Ошибка (400, 404, 409, 500):
+
+    ### Error (400, 401, 403, 404, 409, 500):
     ```json
     {
       "code": "ERROR_CODE",
-      "message": "Человекочитаемое описание",
+      "message": "Human-readable description",
       "details": [
         {
-          "field": "поле",
-          "reason": "причина",
-          "message": "описание",
-          "received": "полученное значение",
-          "expected": "ожидаемое значение"
+          "field": "field",
+          "reason": "reason",
+          "message": "description",
+          "received": "received value",
+          "expected": "expected value"
         }
       ]
     }
     ```
 
 servers:
-  - url: http://localhost:8081/api/v1
-    description: Local development server
+  - url: http://localhost:8080/api/v1
+    description: Local development API gateway
 
 paths:
   /health:
@@ -55,9 +55,253 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate a user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/logout:
+    post:
+      summary: Log out the current user
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Request password reset
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Reset request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/reset-password:
+    post:
+      summary: Reset password with token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/yandex:
+    get:
+      summary: Start Yandex OAuth login
+      tags: [Auth]
+      responses:
+        '302':
+          description: Redirect to Yandex OAuth
+
+  /api/v1/auth/yandex/callback:
+    get:
+      summary: Yandex OAuth callback
+      tags: [Auth]
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/achievements:
+    get:
+      summary: List all achievements
+      tags: [Achievements]
+      responses:
+        '200':
+          description: Achievements list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/achievements:
+    get:
+      summary: Get current user achievements
+      tags: [Achievements]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/achievements/{id}/mark-seen:
+    post:
+      summary: Mark an achievement as seen
+      tags: [Achievements]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Achievement marked as seen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/notes:
     get:
       summary: List all notes with pagination
+      tags: [Notes]
       parameters:
         - name: limit
           in: query
@@ -86,6 +330,7 @@ paths:
 
     post:
       summary: Create note
+      tags: [Notes]
       requestBody:
         required: true
         content:
@@ -109,6 +354,7 @@ paths:
   /api/v1/notes/{id}:
     get:
       summary: Get note by ID
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -132,6 +378,7 @@ paths:
 
     put:
       summary: Update note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -161,6 +408,7 @@ paths:
 
     delete:
       summary: Delete note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -178,9 +426,57 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notes/{id}/restore:
+    post:
+      summary: Restore a soft-deleted note
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/batch:
+    post:
+      summary: Batch delete notes
+      tags: [Notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteBatchRequest'
+      responses:
+        '200':
+          description: Batch delete result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/notes/{id}/suggestions:
     get:
       summary: Get recommendations for note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -210,6 +506,7 @@ paths:
   /api/v1/notes/{id}/graph:
     get:
       summary: Graph data for note (BFS)
+      tags: [Graph]
       parameters:
         - name: id
           in: path
@@ -237,6 +534,7 @@ paths:
   /api/v1/notes/search:
     get:
       summary: Search notes
+      tags: [Notes]
       parameters:
         - name: q
           in: query
@@ -268,6 +566,7 @@ paths:
   /api/v1/links:
     post:
       summary: Create link
+      tags: [Links]
       requestBody:
         required: true
         content:
@@ -293,6 +592,7 @@ paths:
   /api/v1/links/{id}:
     get:
       summary: Get link by ID
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -316,6 +616,7 @@ paths:
 
     delete:
       summary: Delete link
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -335,7 +636,8 @@ paths:
 
   /api/v1/notes/{id}/links:
     get:
-      summary: Get links for note
+      summary: Get links for a note
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -345,20 +647,19 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Links for note
+          description: Note links
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
 
     delete:
-      summary: Delete all links for note
+      summary: Delete all links for a note
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -368,7 +669,7 @@ paths:
             format: uuid
       responses:
         '204':
-          description: All links deleted
+          description: Deleted
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -378,24 +679,15 @@ paths:
 
   /api/v1/graph/all:
     get:
-      summary: Get full graph with pagination
+      summary: Get full graph
+      tags: [Graph]
       parameters:
         - name: limit
           in: query
           schema:
             type: integer
-            default: 100
+            default: 1000
         - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: link_limit
-          in: query
-          schema:
-            type: integer
-            default: 500
-        - name: link_offset
           in: query
           schema:
             type: integer
@@ -410,7 +702,277 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/me/graph/cached:
+    get:
+      summary: Get cached graph for current user
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cached graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/me/graph/fresh:
+    get:
+      summary: Get fresh graph for current user
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fresh graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/tags:
+    get:
+      summary: List all tags
+      tags: [Tags]
+      responses:
+        '200':
+          description: Tags list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create tag
+      tags: [Tags]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/tags/{id}:
+    get:
+      summary: Get tag by ID
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update tag
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '200':
+          description: Tag updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete tag
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/tags:
+    get:
+      summary: Get tags for a note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Add tag to note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTagToNoteRequest'
+      responses:
+        '200':
+          description: Tag added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/tags/{tagId}:
+    delete:
+      summary: Remove tag from note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/backup/cloud:
+    post:
+      summary: Trigger cloud backup
+      tags: [Backup]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Backup task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/backup/status:
+    get:
+      summary: Get backup status
+      tags: [Backup]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Backup status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     SuccessResponse:
       type: object
@@ -426,7 +988,7 @@ components:
           id: "550e8400-e29b-41d4-a716-446655440000"
           title: "Note Title"
           content: "Note content"
-        message: "Ресурс успешно создан"
+        message: "Resource created successfully"
 
     ErrorResponse:
       type: object
@@ -440,18 +1002,18 @@ components:
           enum: [VALIDATION_ERROR, NOT_FOUND, CONFLICT, FORBIDDEN, UNAUTHORIZED, INTERNAL_ERROR]
         message:
           type: string
-          description: Human-readable error message (Russian)
+          description: Human-readable error message
         details:
           type: array
           items:
             $ref: '#/components/schemas/FieldError'
       example:
         code: "VALIDATION_ERROR"
-        message: "Некорректные входные данные"
+        message: "Invalid input data"
         details:
           - field: "title"
             reason: "required"
-            message: "Поле обязательно для заполнения"
+            message: "Title is required"
 
     FieldError:
       type: object
@@ -471,7 +1033,7 @@ components:
           type: string
           description: Human-readable error description
         received:
-          type: any
+          type: string
           description: Received value (optional)
         expected:
           type: string
@@ -527,6 +1089,17 @@ components:
           maxLength: 50000
         metadata:
           type: object
+
+    DeleteBatchRequest:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
 
     Link:
       type: object
@@ -609,6 +1182,124 @@ components:
           type: string
           enum: [reference, dependency, related, custom]
 
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        points:
+          type: integer
+
+    UserAchievement:
+      type: object
+      properties:
+        achievement_id:
+          type: string
+        seen:
+          type: boolean
+        earned_at:
+          type: string
+          format: date-time
+
+    CreateTagRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        color:
+          type: string
+
+    AddTagToNoteRequest:
+      type: object
+      required:
+        - tag_id
+      properties:
+        tag_id:
+          type: string
+          format: uuid
+
     HealthResponse:
       type: object
       properties:
@@ -648,11 +1339,21 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "VALIDATION_ERROR"
-            message: "Некорректные входные данные"
+            message: "Invalid input data"
             details:
               - field: "title"
                 reason: "required"
-                message: "Поле обязательно для заполнения"
+                message: "Title is required"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "UNAUTHORIZED"
+            message: "Authentication required"
 
     NotFound:
       description: Not Found
@@ -662,7 +1363,7 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "NOT_FOUND"
-            message: "Заметка не найдена"
+            message: "Note not found"
 
     Conflict:
       description: Conflict - Duplicate or conflicting data
@@ -672,21 +1373,21 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "CONFLICT"
-            message: "Конфликт данных"
+            message: "Data conflict"
             details:
               - field: "link"
                 reason: "already_exists"
-                message: "Связь уже существует"
+                message: "Link already exists"
 
     Forbidden:
-      description: Forbidden - Reserved for future authentication
+      description: Forbidden
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "FORBIDDEN"
-            message: "Доступ запрещён"
+            message: "Access denied"
 
     InternalError:
       description: Internal Server Error
@@ -696,4 +1397,4 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "INTERNAL_ERROR"
-            message: "Внутренняя ошибка сервера"
+            message: "Internal server error"
