@@ -698,6 +698,155 @@ jobs:
 
 ---
 
+## Docker Test Stacks
+
+The project provides three separate Docker environments for different purposes:
+
+### Stack Comparison
+
+| Stack | Purpose | Frontend Port | Backend Port | Config File |
+|-------|---------|---------------|--------------|-------------|
+| **Dev** | Development | 5173 | 9000 | `docker-compose.yml` |
+| **Personal** | Personal notes | 3001 | 8085 | `docker-compose.personal.yml` |
+| **Test** | Testing/E2E | 3002 | 8083 | `docker-compose.test.yml` |
+
+### Test Stack (Isolated Testing Environment)
+
+The test stack provides a completely isolated environment for testing that is destroyed after use, ensuring no test data contaminates development or personal environments.
+
+**Port Mapping:**
+- Frontend: `3002:3000`
+- Backend: `8083:8080`
+- Graph Service: `9095:9091` (HTTP), `9094:9090` (gRPC)
+- NLP Service: `5002:5000`
+- PostgreSQL: `5434:5432`
+- Redis: `6381:6379`
+- MongoDB: `27019:27017`
+- Nginx: `8084:8080`
+
+**Key Features:**
+- Unique container names (`kg-test-*`)
+- Separate volumes (`pgdata_test`, `mongodbdata_test`)
+- Test database (`knowledge_test`)
+- Auto-flush Redis on startup
+- SKIP_AUTH enabled for testing
+- Completely isolated from dev/personal stacks
+
+#### Starting the Test Stack
+
+```powershell
+# Using PowerShell script
+.\scripts\start-test.ps1
+
+# Or manually
+docker compose -f docker-compose.test.yml up -d --build
+```
+
+#### Stopping the Test Stack
+
+```powershell
+# Using PowerShell script (removes all data)
+.\scripts\stop-test.ps1
+
+# Or manually
+docker compose -f docker-compose.test.yml down -v
+```
+
+The `-v` flag is critical—it removes all volumes, ensuring complete cleanup of test data.
+
+#### Seeding Test Data
+
+```powershell
+# Populate test database with sample data
+.\scripts\seed-test-data.ps1
+```
+
+This creates:
+- Test user (`testuser` / `Test123!`)
+- 5 sample notes (star, planet, galaxy, nebula, blackhole)
+- 5 test tags
+- Sample connections between notes
+
+#### Running Tests Against Test Stack
+
+```bash
+# Start test stack
+.\scripts\start-test.ps1
+
+# Seed test data (optional)
+.\scripts\seed-test-data.ps1
+
+# Run E2E tests
+cd frontend
+npm run test
+
+# Run BDD tests
+npm run test:bdd
+
+# Stop and cleanup
+.\scripts\stop-test.ps1
+```
+
+#### Health Checks
+
+```bash
+# Test stack health endpoints
+curl http://localhost:8083/health           # Backend
+curl http://localhost:8084/health           # Nginx gateway
+curl http://localhost:9095/health           # Graph service
+curl http://localhost:5002/health           # NLP service
+```
+
+### Dev Stack
+
+For development work with live data persistence.
+
+**Starting:**
+```bash
+docker compose up -d
+```
+
+**Ports:**
+- Frontend: `5173:3000`
+- Backend: `9000:8080`
+- Graph Service: `9091:9091`
+- PostgreSQL: `15432:5432`
+- Redis: `6379:6379`
+
+### Personal Stack
+
+For personal knowledge base with backup integration.
+
+**Starting:**
+```bash
+docker compose -f docker-compose.personal.yml up -d
+```
+
+**Ports:**
+- Frontend: `3001:3000`
+- Backend: `8085:8080`
+- Graph Service: `9092:9091`
+- PostgreSQL: `5433:5432`
+- Redis: `6380:6379`
+
+### Stack Isolation
+
+All three stacks can run simultaneously without conflicts:
+
+| Resource | Dev | Personal | Test |
+|----------|-----|----------|------|
+| PostgreSQL Port | 15432 | 5433 | 5434 |
+| Redis Port | 6379 | 6380 | 6381 |
+| MongoDB Port | 27017 | 27018 | 27019 |
+| Backend Port | 9000 | 8085 | 8083 |
+| Frontend Port | 5173 | 3001 | 3002 |
+| Container Names | kg-* | kg-*-personal | kg-test-* |
+| Volumes | postgres_data | pgdata_personal | pgdata_test |
+
+**Important:** Never run multiple stacks that share the same ports or container names. Always use the dedicated test stack for automated testing.
+
+---
+
 ## Reports and Coverage
 
 ### Backend Coverage
