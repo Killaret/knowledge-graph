@@ -61,9 +61,9 @@ foreach ($type in $noteTypes) {
 Write-Host "Creating test links..." -ForegroundColor Yellow
 if ($noteIds.Count -ge 2) {
     $link = @{
-        source_id = $noteIds[0]
-        target_id = $noteIds[1]
-        type = "related"
+        source_note_id = $noteIds[0]
+        target_note_id = $noteIds[1]
+        link_type = "related"
         weight = 1.0
     }
     
@@ -77,9 +77,9 @@ if ($noteIds.Count -ge 2) {
     # Create second link
     if ($noteIds.Count -ge 3) {
         $link2 = @{
-            source_id = $noteIds[1]
-            target_id = $noteIds[2]
-            type = "dependency"
+            source_note_id = $noteIds[1]
+            target_note_id = $noteIds[2]
+            link_type = "dependency"
             weight = 0.5
         }
         

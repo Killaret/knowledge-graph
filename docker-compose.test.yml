@@ -40,7 +40,7 @@ services:
     image: mongo:7
     container_name: kg-test-mongo
     ports:
-      - "27018:27017"
+      - "27019:27017"
     volumes:
       - test_mongodb_data:/data/db
     healthcheck:

@@ -62,9 +62,9 @@ done
 echo "Creating test links..."
 if [ ${#NOTE_IDS[@]} -ge 2 ]; then
     LINK="{
-        \"source_id\": \"${NOTE_IDS[0]}\",
-        \"target_id\": \"${NOTE_IDS[1]}\",
-        \"type\": \"related\",
+        \"source_note_id\": \"${NOTE_IDS[0]}\",
+        \"target_note_id\": \"${NOTE_IDS[1]}\",
+        \"link_type\": \"related\",
         \"weight\": 1.0
     }"
     
@@ -74,9 +74,9 @@ if [ ${#NOTE_IDS[@]} -ge 2 ]; then
     # Create second link
     if [ ${#NOTE_IDS[@]} -ge 3 ]; then
         LINK2="{
-            \"source_id\": \"${NOTE_IDS[1]}\",
-            \"target_id\": \"${NOTE_IDS[2]}\",
-            \"type\": \"dependency\",
+            \"source_note_id\": \"${NOTE_IDS[1]}\",
+            \"target_note_id\": \"${NOTE_IDS[2]}\",
+            \"link_type\": \"dependency\",
             \"weight\": 0.5
         }"
         
