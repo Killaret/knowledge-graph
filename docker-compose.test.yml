@@ -103,9 +103,8 @@ services:
 
   frontend-test:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: production
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: kg-test-frontend
     ports:
       - "127.0.0.1:13002:3000"
