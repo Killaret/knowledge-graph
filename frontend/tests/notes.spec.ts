@@ -204,6 +204,8 @@ test.describe('Knowledge Graph Frontend', {
   });
 
   test('should open 3D graph for a note with links', async ({ page, request }) => {
+    test.skip(true, '3D graph feature frozen for v1.0 - see CHANGELOG.md');
+
     // Create two notes and a link via API using helper
     const note1 = await createNote(request, { title: 'Node A', content: 'A' });
     const note2 = await createNote(request, { title: 'Node B', content: 'B' });

@@ -3,6 +3,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('PreloadService Full Cycle E2E', () => {
   test.beforeEach(async ({ page }) => {
+    // Skip all preload tests in SKIP_AUTH mode (no login flow)
+    test.skip(process.env.SKIP_AUTH === 'true', 'Preload tests skipped in SKIP_AUTH mode');
+    
     // Очищаем localStorage перед каждым тестом
     await page.context().clearCookies();
     await page.addInitScript(() => {
