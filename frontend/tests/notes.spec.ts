@@ -1,26 +1,42 @@
 import { test, expect } from '@playwright/test';
-import { createNote, createLink, getBackendUrl } from './helpers/testData';
+import { createNote, createLink, deleteNote, getBackendUrl } from './helpers/testData';
 import { clickCreateNoteButton, fillSearchInput, clickSearchButton, setupSkipAuth } from './helpers/testUtils';
 
 test.describe('Knowledge Graph Frontend', { 
   tag: ['@smoke', '@notes']
 }, () => {
+  const testNoteIds: string[] = [];
+  
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
+    
+    // Verify SKIP_AUTH flag is set
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
     
     await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
   // Add test-level error handling for screenshots
-  test.afterEach(async ({ page }, testInfo) => {
+  test.afterEach(async ({ page, request }, testInfo) => {
     if (testInfo.status !== 'passed') {
       await page.screenshot({ 
         path: `test-results/debug-${testInfo.title.replace(/\s+/g, '-').toLowerCase()}-failure.png`,
         fullPage: true
       });
     }
+    
+    // Cleanup test notes
+    for (const noteId of testNoteIds) {
+      try {
+        await deleteNote(request, noteId);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    testNoteIds.length = 0;
   });
 
   test('should create a new note', async ({ page, request }) => {
@@ -79,6 +95,7 @@ test.describe('Knowledge Graph Frontend', {
       type: 'star'
     });
     const noteId = note.data.id;
+    testNoteIds.push(noteId);
 
     // Wait for note to be available in GET endpoint
     await page.waitForTimeout(2000);
@@ -211,6 +228,7 @@ test.describe('Knowledge Graph Frontend', {
     const note2 = await createNote(request, { title: 'Node B', content: 'B' });
     const id1 = note1.data.id;
     const id2 = note2.data.id;
+    testNoteIds.push(id1, id2);
     await createLink(request, id1, id2, 1.0, 'reference');
 
     // Navigate to 3D graph page - it redirects to 2D graph
@@ -240,6 +258,7 @@ test.describe('Knowledge Graph Frontend', {
       content: 'Testing back button functionality'
     });
     const noteId = note.data.id;
+    testNoteIds.push(noteId);
 
     // Wait for note to be available
     await page.waitForTimeout(2000);
@@ -264,11 +283,13 @@ test.describe('Knowledge Graph Frontend', {
   test('should search for notes', async ({ page, request }) => {
     // Create a note via API with searchable content using helper
     const timestamp = Date.now();
-    await createNote(request, {
+    const note = await createNote(request, {
       title: 'Searchable Note ' + timestamp,
       content: 'Unique search content ' + timestamp,
       type: 'star'
     });
+    const noteId = note.data.id;
+    testNoteIds.push(noteId);
 
     // Wait for note to be available
     await page.waitForTimeout(2000);
@@ -294,6 +315,7 @@ test.describe('Knowledge Graph Frontend', {
       content: 'Testing browser back functionality'
     });
     const noteId = note.data.id;
+    testNoteIds.push(noteId);
 
     // Wait for note to be available
     await page.waitForTimeout(2000);

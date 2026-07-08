@@ -10,6 +10,10 @@ test.describe('SKIP_AUTH Verification', () => {
     // Setup SKIP_AUTH first
     await setupSkipAuth(page);
     
+    // Verify SKIP_AUTH flag is set
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
+    
     // Now navigate to main page
     await page.goto('/');
     await page.waitForTimeout(500);
@@ -25,6 +29,10 @@ test.describe('SKIP_AUTH Verification', () => {
   test('should access graph page without authentication', async ({ page }) => {
     // Setup SKIP_AUTH first
     await setupSkipAuth(page);
+    
+    // Verify SKIP_AUTH flag is set
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
     
     // Navigate to graph page
     await page.goto('/graph');

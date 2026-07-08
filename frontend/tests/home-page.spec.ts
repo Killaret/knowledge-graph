@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createNote, getBackendUrl } from './helpers/testData';
+import { createNote, deleteNote, getBackendUrl } from './helpers/testData';
 import { clickViewToggle, clickCreateNoteButton, setupSkipAuth } from './helpers/testUtils';
 
 /**
@@ -9,15 +9,32 @@ import { clickViewToggle, clickCreateNoteButton, setupSkipAuth } from './helpers
  */
 
 test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
+  const testNoteIds: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
     
+    // Verify SKIP_AUTH flag is set
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
+    
     // Navigate to home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
+  });
+
+  test.afterEach(async ({ request }) => {
+    // Cleanup test notes
+    for (const noteId of testNoteIds) {
+      try {
+        await deleteNote(request, noteId);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    testNoteIds.length = 0;
   });
 
   test('should display graph canvas by default on home page', async ({ page }) => {
@@ -126,9 +143,10 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
         const count = parseInt(countMatch[1], 10);
         expect(count).toBeGreaterThan(0);
       }
+    } else {
+      // If stats not visible, verify page loaded successfully
+      await expect(page.locator('main')).toBeVisible();
     }
-    // If stats not visible, test passes if page loaded without errors
-    expect(true).toBe(true);
   });
 
   test('should filter notes by type from home page', async ({ page, request }) => {
@@ -285,9 +303,11 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
       // If no notes, verify some content is visible (empty state, graph container, or error)
       const content = page.locator('.fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i').first();
       await expect(content).toBeVisible({ timeout: 10000 });
+    } else {
+      // If notes exist, verify list container is visible
+      const listContainer = page.locator('.list-container, .notes-grid').first();
+      await expect(listContainer).toBeVisible({ timeout: 10000 });
     }
-    // If notes exist, test passes - we just verify the page loads
-    expect(true).toBe(true);
   });
 
   test('should toggle full graph mode on home page', async ({ page, request }) => {

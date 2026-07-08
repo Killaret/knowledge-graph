@@ -21,7 +21,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('login page should display galaxy icon', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -31,7 +31,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('login page should have glass morphism card', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -51,12 +51,12 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
              style.backgroundColor?.includes('rgba') ||
              false;
     });
-    // Be lenient - card exists and has some styling
-    expect(hasBackdrop || true).toBe(true);
+    // Verify card has glass morphism effect
+    expect(hasBackdrop).toBe(true);
   });
 
   test('login form should have styled inputs', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -94,7 +94,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('forgot-password page should display cosmic theme', async ({ page }) => {
-    await page.goto('/auth/forgot-password', { timeout: 60000 });
+    await page.goto('/auth/forgot-password', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -108,7 +108,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('reset-password page should display cosmic theme', async ({ page }) => {
-    await page.goto('/auth/reset-password?token=test-token', { timeout: 60000 });
+    await page.goto('/auth/reset-password?token=test-token', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -122,23 +122,24 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('reset-password page without token should show error', async ({ page }) => {
-    await page.goto('/auth/reset-password', { timeout: 60000 });
+    await page.goto('/auth/reset-password', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
     // Verify error state or page loads gracefully
     try {
-      const errorTitle = page.locator('text=Ошибка').first();
+      const errorTitle = page.locator('text=Error').first();
       await expect(errorTitle).toBeVisible({ timeout: 5000 });
     } catch {
       // Page might redirect or show different error
-      // Accept that page handles missing token gracefully
-      expect(true).toBe(true);
+      // Verify we're not on the reset page (redirect occurred)
+      const currentUrl = page.url();
+      expect(currentUrl).not.toContain('/reset-password');
     }
   });
 
   test('auth page should have animated transitions', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -156,12 +157,12 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
              el.classList.contains('fade') ||
              el.classList.contains('transition');
     });
-    // Animation might be inline, from Svelte transitions, opacity-based, or CSS class-based
-    expect(hasAnimation || true).toBe(true);
+    // Verify animation exists (inline, Svelte transition, opacity-based, or CSS class-based)
+    expect(hasAnimation).toBe(true);
   });
 
   test('login form should be interactive', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -178,7 +179,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('register form should validate password requirements', async ({ page }) => {
-    await page.goto('/auth/register', { timeout: 60000 });
+    await page.goto('/auth/register', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -197,7 +198,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('Yandex button should have cosmic hover effect', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -224,7 +225,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
     ];
     
     for (const url of pages) {
-      await page.goto(url, { timeout: 60000 });
+      await page.goto(url, { timeout: 15000 });
       await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(1000);
       
@@ -239,7 +240,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
   });
 
   test('auth forms should have glowing input focus effect', async ({ page }) => {
-    await page.goto('/auth/login', { timeout: 60000 });
+    await page.goto('/auth/login', { timeout: 15000 });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     
@@ -256,7 +257,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
       };
     });
     
-    // Should have some styling when focused (be lenient)
-    expect(styles.borderColor || styles.boxShadow || true).toBeTruthy();
+    // Verify focus styling is applied (border color or box shadow)
+    expect(styles.borderColor || styles.boxShadow).toBeTruthy();
   });
 });

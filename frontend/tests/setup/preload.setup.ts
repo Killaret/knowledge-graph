@@ -1,7 +1,7 @@
-// Setup файл для тестов PreloadService - ОТКЛЮЧЕН для Playwright
-// import { vi, afterEach } from 'vitest'; // Временно отключено для Playwright
+// Setup file for PreloadService tests - DISABLED for Playwright
+// import { vi, afterEach } from 'vitest'; // Temporarily disabled for Playwright
 
-// Глобальные моки для всех тестов
+// Global mocks for all tests
 /*
 vi.mock('$app/environment', () => ({
   browser: true
@@ -12,7 +12,7 @@ vi.mock('$app/navigation', () => ({
 }));
 */
 
-// Мок для localStorage
+// Mock for localStorage
 /*
 const localStorageMock = {
   getItem: vi.fn(),
@@ -25,7 +25,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-// Очистка после каждого теста
+// Cleanup after each test
 /*
 afterEach(() => {
   vi.clearAllMocks();

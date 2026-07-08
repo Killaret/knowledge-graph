@@ -29,7 +29,7 @@ test.describe('Auth Functional Tests (SKIP_AUTH Mode)', { tag: ['@auth', '@e2e']
     // In SKIP_AUTH mode, user interface may vary - just verify we have access
     // Check for any user-related UI elements
     const userMenu = page.locator('[data-testid="user-menu"], .user-menu, text=test_user').first();
-    const logoutBtn = page.locator('text=Выйти, text=Logout').first();
+    const logoutBtn = page.locator('text=Logout').first();
     const userProfile = page.locator('[data-testid="user-profile"], .user-profile').first();
     
     // At least one UI element should be present, or graph should be accessible
@@ -58,7 +58,10 @@ test.describe('Auth Functional Tests (SKIP_AUTH Mode)', { tag: ['@auth', '@e2e']
     const currentUrl = page.url();
     
     // In SKIP_AUTH mode, we expect to be redirected to main page or stay on login
+    // Verify we're on a valid page (not an error page)
     expect(currentUrl).toMatch(/\/(auth\/login|\/|graph)/);
+    // Verify page loaded successfully (no 404 or error)
+    await expect(page.locator('main, h1, .auth-card')).toBeVisible({ timeout: 5000 });
   });
 
   test('should register endpoint handle requests', async ({ request }) => {
@@ -76,8 +79,10 @@ test.describe('Auth Functional Tests (SKIP_AUTH Mode)', { tag: ['@auth', '@e2e']
     });
     
     // In SKIP_AUTH mode, registration might return an error or be disabled
-    // We just verify the endpoint responds
+    // Verify endpoint responds with valid JSON
     expect([200, 201, 400, 403, 409]).toContain(response.status());
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
   });
 
   test('should login endpoint handle requests', async ({ request }) => {
@@ -90,7 +95,10 @@ test.describe('Auth Functional Tests (SKIP_AUTH Mode)', { tag: ['@auth', '@e2e']
     });
     
     // In SKIP_AUTH mode, login might return token or redirect
+    // Verify endpoint responds with valid JSON
     expect([200, 201, 400, 401]).toContain(response.status());
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
   });
 
   test('should have working logout', async ({ page }) => {
@@ -99,17 +107,20 @@ test.describe('Auth Functional Tests (SKIP_AUTH Mode)', { tag: ['@auth', '@e2e']
     await page.waitForTimeout(2000);
     
     // Find logout button
-    const logoutBtn = page.locator('text=Выйти, text=Logout').first();
+    const logoutBtn = page.locator('text=Logout').first();
     const isVisible = await logoutBtn.isVisible().catch(() => false);
     
     if (isVisible) {
       await logoutBtn.click();
       await page.waitForTimeout(1000);
-      // Should stay on page or redirect (depending on implementation)
+      // Verify we're still on the page or redirected appropriately
+      const currentUrl = page.url();
+      expect(currentUrl).toBeTruthy();
+    } else {
+      // If logout button doesn't exist, that's acceptable in SKIP_AUTH mode
+      // Verify we can still access the application
+      await expect(page.locator('main')).toBeVisible();
     }
-    
-    // In SKIP_AUTH mode, logout may not do much
-    expect(true).toBeTruthy();
   });
 });
     
