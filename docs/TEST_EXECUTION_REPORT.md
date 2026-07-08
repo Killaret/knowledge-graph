@@ -922,3 +922,24 @@ Failures:
 5 scenarios (1 failed, 4 passed)
 43 steps (1 failed, 2 skipped, 40 passed)
 0m46.545s (executing steps: 0m45.858s)
+
+---
+
+## 11. BDD 100% Pass Rate (Final)
+
+**Status:** 5/5 scenarios passing (100%)
+
+**Committed:** 3c05be9
+
+**Changes:**
+- Fixed toggle button click to use Playwright .click() instead of JavaScript click
+- Added aria-pressed assertion to wait for view state change
+- Fixed count badge selector to look inside .filter-chip.active .filter-count
+
+**Results:**
+- 5 scenarios (5 passed)
+- 43 steps (43 passed)
+- Execution time: 46s
+
+**How to run:**
+cd frontend && npm run test:bdd
