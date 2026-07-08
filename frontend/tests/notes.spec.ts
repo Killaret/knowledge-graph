@@ -95,7 +95,7 @@ test.describe('Knowledge Graph Frontend', {
     page.on('console', msg => console.log('[BROWSER]', msg.type(), msg.text()));
     page.on('pageerror', error => console.log('[BROWSER ERROR]', error.message));
 
-    await page.waitForTimeout(7000); // Wait for client-side rendering
+    await page.waitForTimeout(3000); // Wait for client-side rendering
 
     // Debug: save screenshot and HTML
     await page.screenshot({ path: 'test-results/debug-note-page.png', fullPage: true });
@@ -184,7 +184,7 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate directly to note page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(7000);
+    await page.waitForTimeout(3000);
 
     // Setup dialog handler before click
     page.on('dialog', async dialog => {
@@ -218,7 +218,7 @@ test.describe('Knowledge Graph Frontend', {
     // Wait for redirect to 2D graph page
     await page.waitForURL(`**/graph/${id1}`, { timeout: 15000 });
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
     
     // Verify 2D graph canvas is visible after redirect
     const graphContainer = page.locator('.graph-container, .graph-3d-container, canvas').first();
@@ -250,7 +250,7 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate to note detail page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(7000);
+    await page.waitForTimeout(3000);
 
     // Check that back button is visible
     await page.waitForSelector('.back-button', { timeout: 20000 });
@@ -304,15 +304,15 @@ test.describe('Knowledge Graph Frontend', {
 
     // Navigate to note page
     await page.goto(`/notes/${noteId}`);
-    await page.waitForTimeout(7000);
+    await page.waitForTimeout(3000);
 
     // Navigate to home page
     await page.goto('/');
-    await page.waitForTimeout(7000);
+    await page.waitForTimeout(3000);
 
     // Go back to note page
     await page.goBack();
-    await page.waitForTimeout(7000);
+    await page.waitForTimeout(3000);
 
     // Verify back button is visible
     await page.waitForSelector('.back-button', { timeout: 20000 });

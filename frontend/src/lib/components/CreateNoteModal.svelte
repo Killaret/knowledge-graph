@@ -133,7 +133,7 @@
       <Button variant="secondary" onClick={close} disabled={loading}>
         {cancelText}
       </Button>
-      <Button variant="primary" type="submit" disabled={loading}>
+      <Button variant="primary" type="submit" disabled={loading} data-testid="create-note-submit">
         {loading ? creatingText : createText}
       </Button>
     </div>

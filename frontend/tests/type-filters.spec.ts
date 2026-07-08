@@ -308,7 +308,7 @@ test.describe('Type Filters - metadata.type fallback', { tag: ['@metadata'] }, (
     await page.waitForTimeout(2000);
     
     // Apply star filter - should catch both metadata.type and root type
-    const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), button[data-filter="star"]').first();
+    const starsFilter = page.locator('[data-testid="filter-chip-star"]').first();
     if (await starsFilter.isVisible().catch(() => false)) {
       await starsFilter.click();
       await page.waitForTimeout(1000);
@@ -341,7 +341,7 @@ test.describe('Type Filters - metadata.type fallback', { tag: ['@metadata'] }, (
     await page.waitForTimeout(2000);
     
     // The note should appear when filtering by "star" (default fallback)
-    const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), button[data-filter="star"]').first();
+    const starsFilter = page.locator('[data-testid="filter-chip-star"]').first();
     if (await starsFilter.isVisible().catch(() => false)) {
       await starsFilter.click();
       await page.waitForTimeout(1000);

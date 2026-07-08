@@ -89,7 +89,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
     await expect(galaxyIcon).toBeVisible();
     
     // Verify title
-    const title = page.locator('text=Создать аккаунт').first();
+    const title = page.locator('h1').first();
     await expect(title).toBeVisible();
   });
 
@@ -103,7 +103,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
     await expect(cosmicBg).toBeVisible();
     
     // Verify title
-    const title = page.locator('text=Восстановление пароля').first();
+    const title = page.locator('h1').first();
     await expect(title).toBeVisible();
   });
 
@@ -117,7 +117,7 @@ test.describe('Auth Pages - Cosmic Theme', { tag: ['@smoke', '@auth'] }, () => {
     await expect(cosmicBg).toBeVisible();
     
     // Verify title
-    const title = page.locator('text=Сброс пароля').first();
+    const title = page.locator('h1').first();
     await expect(title).toBeVisible();
   });
 

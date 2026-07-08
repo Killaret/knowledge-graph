@@ -192,6 +192,7 @@
     <button 
       type="button"
       class="menu-btn"
+      data-testid="menu-button"
       onclick={() => showMenu = !showMenu}
       title="Menu"
       aria-expanded={showMenu}

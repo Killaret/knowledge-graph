@@ -46,7 +46,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     // Reload page to see the note
     await page.reload();
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
     
     // Verify something is visible (graph, empty state, list, or loading)
     const graphContainer = page.locator('[data-testid="graph-2d-container"]').first();
@@ -150,7 +150,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     await page.waitForTimeout(2000);
     
     // Click on "Stars" filter
-    const starsFilter = page.locator('button:has-text("⭐"), button:has-text("Stars"), [data-filter="star"]').first();
+    const starsFilter = page.locator('[data-testid="filter-chip-star"]').first();
     if (await starsFilter.isVisible().catch(() => false)) {
       await starsFilter.click();
       await page.waitForTimeout(500);
@@ -179,7 +179,7 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
     // Reload page
     await page.reload();
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
     
     // Fill search input
     const searchInput = page.locator('.search-input, input[type="search"]').first();

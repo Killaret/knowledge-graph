@@ -1,4 +1,4 @@
-// E2E тесты для полного цикла предзагрузки данных
+// E2E tests for full preload data cycle
 import { test, expect } from '@playwright/test';
 
 test.describe('PreloadService Full Cycle E2E', () => {
@@ -6,10 +6,10 @@ test.describe('PreloadService Full Cycle E2E', () => {
     // Skip all preload tests in SKIP_AUTH mode (no login flow)
     test.skip(process.env.SKIP_AUTH === 'true', 'Preload tests skipped in SKIP_AUTH mode');
     
-    // Очищаем localStorage перед каждым тестом
+    // Clear localStorage before each test
     await page.context().clearCookies();
     await page.addInitScript(() => {
-      // Инициализация localStorage если нужно
+      // Initialize localStorage if needed
       if (typeof localStorage !== 'undefined') {
         localStorage.clear();
       }
@@ -17,48 +17,48 @@ test.describe('PreloadService Full Cycle E2E', () => {
   });
 
   test('should preload data on login page and display instantly after login', async ({ page }) => {
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Ждем загрузки страницы входа
+    // Wait for login page to load
     await expect(page.locator('h1')).toContainText('Knowledge Graph');
     
-    // Проверяем, что PreloadService запускается (через консольные логи)
+    // Check that PreloadService starts (via console logs)
     const consoleMessages: string[] = [];
     page.on('console', msg => {
       consoleMessages.push(msg.text());
     });
     
-    // Ждем некоторое время для предзагрузки
+    // Wait for preload to complete
     await page.waitForTimeout(2000);
     
-    // Проверяем, что были логи предзагрузки
+    // Check that preload logs exist
     const preloadLogs = consoleMessages.filter(msg => 
       msg.includes('[PreloadService]') && msg.includes('Starting background preload')
     );
     expect(preloadLogs.length).toBeGreaterThan(0);
     
-    // Заполняем форму входа
+    // Fill login form
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     
-    // Отслеживаем время отображения главной страницы после входа
+    // Track main page display time after login
     const startTime = Date.now();
     
-    // Нажимаем кнопку входа
+    // Click login button
     await page.click('button[type="submit"]');
     
-    // Ждем перехода на главную страницу
+    // Wait for navigation to main page
     await page.waitForURL('/');
     
-    // Проверяем, что интерфейс отображается быстро (менее 1 секунды)
+    // Check that interface displays quickly (less than 1 second)
     const loadTime = Date.now() - startTime;
     expect(loadTime).toBeLessThan(1000);
     
-    // Проверяем, что граф отображается (не пустой)
+    // Check that graph displays (not empty)
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
     
-    // Проверяем, что были логи использования предзагруженных данных
+    // Check that preloaded data usage logs exist
     const usePreloadedLogs = consoleMessages.filter(msg => 
       msg.includes('[usePreloadedData]') && msg.includes('Using preloaded')
     );
@@ -66,7 +66,7 @@ test.describe('PreloadService Full Cycle E2E', () => {
   });
 
   test('should handle preload errors gracefully', async ({ page }) => {
-    // Мокаем ошибки API через страницу
+    // Mock API errors via page
     await page.route('**/api/v1/graph/all**', route => {
       route.fulfill({
         status: 500,
@@ -83,13 +83,13 @@ test.describe('PreloadService Full Cycle E2E', () => {
       });
     });
     
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Ждем некоторое время для попытки предзагрузки
+    // Wait for preload attempt
     await page.waitForTimeout(2000);
     
-    // Проверяем, что были логи ошибок предзагрузки
+    // Check that preload error logs exist
     const consoleMessages: string[] = [];
     page.on('console', msg => {
       consoleMessages.push(msg.text());
@@ -102,66 +102,66 @@ test.describe('PreloadService Full Cycle E2E', () => {
     );
     expect(errorLogs.length).toBeGreaterThan(0);
     
-    // Выполняем вход
+    // Execute login
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     await page.click('button[type="submit"]');
     
-    // Ждем перехода на главную страницу
+    // Wait for navigation to main page
     await page.waitForURL('/');
     
-    // Приложение все равно должно загрузиться (с fallback на сервер)
+    // Application should still load (with fallback to server)
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
   });
 
   test('should clear preload cache on logout', async ({ page }) => {
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Ждем предзагрузки
+    // Wait for preload
     await page.waitForTimeout(2000);
     
-    // Выполняем вход
+    // Execute login
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     await page.click('button[type="submit"]');
     
-    // Ждем загрузки главной страницы
+    // Wait for main page to load
     await page.waitForURL('/');
     
-    // Проверяем, что данные загружены
+    // Check that data is loaded
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
     
-    // Выполняем выход
+    // Execute logout
     await page.click('[data-testid="logout-button"]');
     
-    // Ждем перехода на страницу входа
+    // Wait for navigation to login page
     await page.waitForURL('/auth/login');
     
-    // Проверяем, что кэш очищен (через localStorage)
+    // Check that cache is cleared (via localStorage)
     await page.evaluate(() => {
       localStorage.removeItem('preload_cache');
     });
     
-    // В нашей реализации кэш хранится в памяти, но мы можем проверить
-    // что пользователь разлогинен
+    // In our implementation cache is stored in memory, but we can check
+    // that user is logged out
     await expect(page.locator('h1')).toContainText('Knowledge Graph');
   });
 
   test('should not preload when already authenticated', async ({ page }) => {
-    // Устанавливаем токены в localStorage (эмулируем уже аутентифицированного пользователя)
+    // Set tokens in localStorage (simulate already authenticated user)
     await page.addInitScript(() => {
       localStorage.setItem('access_token', 'test_token');
       localStorage.setItem('refresh_token', 'test_refresh');
     });
     
-    // Переходим на главную страницу
+    // Navigate to main page
     await page.goto('/');
     
-    // Проверяем, что мы не перенаправлены на страницу входа
+    // Check that we are not redirected to login page
     await expect(page).toHaveURL('/');
     
-    // Проверяем, что предзагрузка не запускалась
+    // Check that preload did not start
     const consoleMessages: string[] = [];
     page.on('console', msg => {
       consoleMessages.push(msg.text());
@@ -176,34 +176,34 @@ test.describe('PreloadService Full Cycle E2E', () => {
   });
 
   test('should handle concurrent preload requests', async ({ page }) => {
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Ждем начала предзагрузки
+    // Wait for preload to start
     await page.waitForTimeout(500);
     
-    // Открываем вторую вкладку с той же страницей
+    // Open second tab with same page
     const newPage = await page.context().newPage();
     await newPage.goto('/auth/login');
     
-    // Ждем завершения предзагрузки
+    // Wait for preload to complete
     await page.waitForTimeout(2000);
     
-    // Выполняем вход на первой странице
+    // Execute login on first page
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     await page.click('button[type="submit"]');
     
     await page.waitForURL('/');
     
-    // Выполняем вход на второй странице
+    // Execute login on second page
     await newPage.fill('input[name="login"]', 'testuser2');
     await newPage.fill('input[name="password"]', 'testpassword2');
     await newPage.click('button[type="submit"]');
     
     await newPage.waitForURL('/');
     
-    // Обе страницы должны загрузиться корректно
+    // Both pages should load correctly
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
     await expect(newPage.locator('[data-testid="graph-canvas"]')).toBeVisible();
     
@@ -211,75 +211,75 @@ test.describe('PreloadService Full Cycle E2E', () => {
   });
 
   test('should respect TTL and refresh expired cache', async ({ page }) => {
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Ждем предзагрузки
+    // Wait for preload
     await page.waitForTimeout(2000);
     
-    // Выполняем вход
+    // Execute login
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     await page.click('button[type="submit"]');
     
     await page.waitForURL('/');
     
-    // Проверяем, что данные отображаются быстро
+    // Check that data displays quickly
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
     
-    // Эмулируем истечение TTL (перезагружаем страницу через долгое время)
+    // Simulate TTL expiration (reload page after long time)
     await page.evaluate(() => {
-      // Мокаем Date.now для эмуляции истечения TTL
+      // Mock Date.now to simulate TTL expiration
       const originalDateNow = Date.now;
-      Date.now = () => originalDateNow() + (6 * 60 * 1000); // +6 минут
+      Date.now = () => originalDateNow() + (6 * 60 * 1000); // +6 minutes
     });
     
-    // Перезагружаем страницу
+    // Reload page
     await page.reload();
     
-    // Данные должны загрузиться с сервера (медленнее)
+    // Data should load from server (slower)
     const startTime = Date.now();
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
     const loadTime = Date.now() - startTime;
     
-    // Загрузка должна занять больше времени (нет предзагруженных данных)
+    // Load should take longer (no preloaded data)
     expect(loadTime).toBeGreaterThan(500);
     
-    // Восстанавливаем Date.now
+    // Restore Date.now
     await page.evaluate(() => {
-      // Date.now будет восстановлен при перезагрузке страницы
+      // Date.now will be restored on page reload
     });
   });
 
   test('should work with different user roles', async ({ page }) => {
-    // Тестируем с разными ролями пользователей
+    // Test with different user roles
     const userRoles = ['user', 'admin'];
     
     for (const role of userRoles) {
-      // Создаем новую страницу для каждой роли
+      // Create new page for each role
       const testPage = await page.context().newPage();
       
-      // Переходим на страницу входа
+      // Navigate to login page
       await testPage.goto('/auth/login');
       
-      // Ждем предзагрузки
+      // Wait for preload
       await testPage.waitForTimeout(2000);
       
-      // Выполняем вход с соответствующей ролью
+      // Execute login with corresponding role
       await testPage.fill('input[name="login"]', `${role}user`);
       await testPage.fill('input[name="password"]', 'testpassword');
       await testPage.click('button[type="submit"]');
       
       await testPage.waitForURL('/');
       
-      // Проверяем, что интерфейс отображается корректно
+      // Check that interface displays correctly
       await expect(testPage.locator('[data-testid="graph-canvas"]')).toBeVisible();
       
-      // Для админа могут быть дополнительные элементы
+      // For admin there may be additional elements
       if (role === 'admin') {
-        // Проверяем наличие админских элементов (если они есть)
+        // Check for admin elements (if they exist)
         void testPage.locator('[data-testid*="admin"]');
-        // Не ждем их наличия, просто проверяем что нет ошибок
+        // Don't expect them to exist, just check no errors
       }
       
       await testPage.close();
@@ -287,27 +287,27 @@ test.describe('PreloadService Full Cycle E2E', () => {
   });
 
   test('should handle network interruptions gracefully', async ({ page }) => {
-    // Переходим на страницу входа
+    // Navigate to login page
     await page.goto('/auth/login');
     
-    // Эмулируем прерывание сети во время предзагрузки
+    // Simulate network interruption during preload
     await page.route('**/api/v1/graph/all**', route => {
-      // Обрываем соединение
+      // Abort connection
       route.abort('failed');
     });
     
-    // Ждем попытки предзагрузки
+    // Wait for preload attempt
     await page.waitForTimeout(2000);
     
-    // Убираем блокировку
+    // Remove blocking
     await page.unroute('**/api/v1/graph/all**');
     
-    // Выполняем вход
+    // Execute login
     await page.fill('input[name="login"]', 'testuser');
     await page.fill('input[name="password"]', 'testpassword');
     await page.click('button[type="submit"]');
     
-    // Приложение должно загрузиться с fallback
+    // Application should load with fallback
     await page.waitForURL('/');
     await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible();
   });

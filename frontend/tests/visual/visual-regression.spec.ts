@@ -194,7 +194,7 @@ test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
       await selectButton.click();
       await page.waitForTimeout(500);
       
-      const firstNote = page.locator('[data-testid^="note-card-"]').first();
+      const firstNote = page.locator('[data-testid="note-card"]').first();
       await firstNote.click();
       await page.waitForTimeout(500);
     } catch {
