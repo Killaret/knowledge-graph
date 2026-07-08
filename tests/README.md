@@ -79,16 +79,16 @@ pytest tests/ -v
 | **Frontend Unit** | 52 | 526 tests | ✅ pass (37 skipped) |
 | **Frontend svelte-check** | - | - | ✅ 0 errors, 46 warnings |
 | **Frontend Build** | - | - | ✅ success |
-| **Playwright E2E** | 18 | 89 tests | ⚠️ 77 passed, 11 failed, 1 skipped |
-| **BDD Features** | 1 | 5 scenarios | ⚠️ 2 passed, 3 failed |
+| **Playwright E2E** | 18 | 94 tests | ✅ 84 passed, 10 skipped |
+| **BDD Features** | 1 | 5 scenarios | ✅ 5 passed (43 steps) |
+| **Smoke Tests** | 1 | 9 tests | ✅ 9 passed |
 | **NLP Python** | 2 | 33 collected | ✅ 28 passed, 5 skipped |
 
 > **Note:** Go integration tests are resource-intensive and failed on this run because PostgreSQL testcontainers could not reach the ready state within the startup timeout. They should be run on a clean Docker environment with adequate CPU/memory for accurate results.
 
 ## Known Issues
 
-1. **E2E failures:** Failures are concentrated in `preload-full-cycle.spec.ts` (login form selectors) and `auth-skip-auth.spec.ts` / `home-page.spec.ts` / `notes.spec.ts` / `skip-auth-check.spec.ts` (graph canvas/profile content visibility), indicating outdated selectors or test environment drift.
-2. **BDD failures:** `Search notes from list view`, `Filter notes by star type`, and `Create note from floating controls` fail on selector/timing issues.
-3. **Go integration tests:** require a stable Docker Desktop setup with sufficient resources and no stale testcontainers reaper containers.
-4. **Swagger UI:** `http://localhost:8080/swagger/` returns 404 because the `gin-swagger` handler requires a `swag init` generated `docs` package, which is not produced during the Docker build.
-5. **OpenAPI spec:** `backend/openAPI.yaml` does not yet cover auth, users, achievements, tags, backup, batch/restore notes, or cached/fresh graph endpoints. See `docs/TEST_EXECUTION_REPORT.md` for the full audit.
+1. **Docker Desktop not available** - Cannot run dev and personal stacks for full integration testing
+2. **Go integration tests:** require a stable Docker Desktop setup with sufficient resources and no stale testcontainers reaper containers
+3. **Swagger UI:** `http://localhost:8080/swagger/` returns 404 because the `gin-swagger` handler requires a `swag init` generated `docs` package, which is not produced during the Docker build
+4. **OpenAPI spec:** Missing 403 Forbidden response codes for all endpoints (403 should be documented for authorization errors)

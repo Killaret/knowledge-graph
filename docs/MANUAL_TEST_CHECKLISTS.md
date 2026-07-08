@@ -6,6 +6,7 @@ This document contains checklists for manually verifying new Knowledge Graph fun
 
 ### Ghost Node Creation
 - [ ] Click on empty canvas area / use hotkey `N` to activate ghost-node creation.
+- [ ] Verify the ghost node form appears with backdrop blur and gradient styling.
 - [ ] Fill in the title and confirm.
 - [ ] Verify a new star/planet node appears on the canvas.
 - [ ] Verify the new note is persisted (refresh page and check it still exists).
@@ -18,10 +19,16 @@ This document contains checklists for manually verifying new Knowledge Graph fun
 - [ ] Verify a toast appears with an "Undo" action.
 - [ ] Click "Undo" and verify the node reappears.
 - [ ] Drag again and dismiss the toast; verify the note is deleted after refresh.
+- [ ] Open note side panel and verify "Delete all links" button exists.
+- [ ] Click "Delete all links" and confirm via modal.
+- [ ] Verify all links are removed from the note.
 
 ### Drag-and-Drop Links
 - [ ] Hover over a source node to see the link creation affordance.
 - [ ] Drag the link handle to a target node.
+- [ ] Verify a visual preview link appears while dragging.
+- [ ] Verify the link form appears with enhanced styling.
+- [ ] Fill in the link type and weight.
 - [ ] Verify a new link/edge is drawn between the nodes.
 - [ ] Try to create the same link again; verify a "duplicate link" warning/toast appears.
 - [ ] Refresh and verify the link persists.
@@ -31,6 +38,8 @@ This document contains checklists for manually verifying new Knowledge Graph fun
 - [ ] Press `F` — search/focus input should appear.
 - [ ] Press `?` — help modal with hotkeys should open.
 - [ ] Press `Esc` — any open modal/tooltip should close.
+- [ ] Press `Ctrl+Z` — undo last action (if implemented).
+- [ ] Press `Delete`/`Backspace` — delete selected node (if implemented).
 
 ### Knowledge Core (Technical Note)
 - [ ] Verify the central "Knowledge Core" node is always visible.
@@ -70,6 +79,8 @@ This document contains checklists for manually verifying new Knowledge Graph fun
 - [ ] Select multiple notes using checkboxes.
 - [ ] Click "Delete selected".
 - [ ] Verify only selected notes are removed and an Undo toast appears.
+- [ ] Verify the Undo toast shows "Done" first, then "Restore" after 1.5s.
+- [ ] Click "Restore" within 5s; verify the notes reappear in the list.
 
 ### Undo Deletion
 - [ ] Delete a note from the list view.
