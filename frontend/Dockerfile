@@ -39,12 +39,15 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/package*.json .
 
 # Install curl for health check and production dependencies
-RUN apk add --no-cache curl && \
+RUN apk add --no-cache curl wget && \
     npm ci --omit=dev || npm install --omit=dev
 
 EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 --start-period=10s \
+  CMD wget -q -O- http://localhost:3000/ || exit 1
 
 CMD ["node", "build"]

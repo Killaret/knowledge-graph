@@ -122,6 +122,28 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  worker-test:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+      target: worker
+    container_name: kg-test-worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-kb_user}:${POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${POSTGRES_DB:-knowledge_test}?sslmode=disable}
+      REDIS_URL: ${REDIS_URL:-redis-test:6379}
+      NLP_SERVICE_URL: ${NLP_SERVICE_URL:-http://nlp-test:5000}
+      SKIP_AUTH: "true"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      nlp-test:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   test_postgres_data:
   test_mongodb_data:

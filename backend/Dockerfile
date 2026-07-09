@@ -11,7 +11,7 @@ RUN go build -ldflags="-s -w" -o /app/seed ./scripts/seed.go
 RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 
 FROM alpine:latest AS base
-RUN apk --no-cache add ca-certificates curl
+RUN apk --no-cache add ca-certificates curl wget
 WORKDIR /root/
 
 FROM base AS server
@@ -21,6 +21,8 @@ COPY --from=builder /app/backend/openAPI.yaml ./openAPI.yaml
 COPY --from=builder /app/backend/docs ./docs
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 --start-period=10s \
+  CMD wget -q -O- http://localhost:8080/health || exit 1
 CMD ["./server"]
 
 FROM base AS worker
