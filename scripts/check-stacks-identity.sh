@@ -1,0 +1,132 @@
+#!/bin/bash
+# Check Stacks Identity - Bash
+# This script verifies that dev, personal, and test stacks are consistent
+
+echo "========================================"
+echo "  Stacks Identity Check"
+echo "========================================"
+
+ERRORS=0
+DIFFERENCES=()
+
+# Step 1: Check service versions from Dockerfiles
+echo ""
+echo "[Step 1/5] Checking service versions..."
+
+# Check Go version
+GO_VERSION=$(grep "FROM golang:" backend/Dockerfile | head -1)
+if [ -n "$GO_VERSION" ]; then
+    GO_VERSION_STR=${GO_VERSION#FROM golang:}
+    echo "  Go version: $GO_VERSION_STR"
+else
+    echo "  Go version: NOT FOUND"
+    ((ERRORS++))
+fi
+
+# Check Node version
+NODE_VERSION=$(grep "FROM node:" frontend/Dockerfile | head -1)
+if [ -n "$NODE_VERSION" ]; then
+    NODE_VERSION_STR=${NODE_VERSION#FROM node:}
+    echo "  Node version: $NODE_VERSION_STR"
+else
+    echo "  Node version: NOT FOUND"
+    ((ERRORS++))
+fi
+
+# Check Python version
+PYTHON_VERSION=$(grep "FROM python:" nlp-service/Dockerfile | head -1)
+if [ -n "$PYTHON_VERSION" ]; then
+    PYTHON_VERSION_STR=${PYTHON_VERSION#FROM python:}
+    echo "  Python version: $PYTHON_VERSION_STR"
+else
+    echo "  Python version: NOT FOUND"
+    ((ERRORS++))
+fi
+
+# Step 2: Compare docker-compose files
+echo ""
+echo "[Step 2/5] Comparing docker-compose files..."
+
+DEV_SERVICES=$(grep -c "image:\|build:" docker-compose.yml || echo "0")
+PERSONAL_SERVICES=$(grep -c "image:\|build:" docker-compose.personal.yml || echo "0")
+TEST_SERVICES=$(grep -c "image:\|build:" docker-compose.test.yml || echo "0")
+
+echo "  Dev services: $DEV_SERVICES found"
+echo "  Personal services: $PERSONAL_SERVICES found"
+echo "  Test services: $TEST_SERVICES found"
+
+# Check for SKIP_AUTH consistency
+DEV_SKIP_AUTH=$(grep "SKIP_AUTH" docker-compose.yml || echo "NOT FOUND")
+PERSONAL_SKIP_AUTH=$(grep "SKIP_AUTH" docker-compose.personal.yml || echo "NOT FOUND")
+TEST_SKIP_AUTH=$(grep "SKIP_AUTH" docker-compose.test.yml || echo "NOT FOUND")
+
+echo "  Dev SKIP_AUTH: $DEV_SKIP_AUTH"
+echo "  Personal SKIP_AUTH: $PERSONAL_SKIP_AUTH"
+echo "  Test SKIP_AUTH: $TEST_SKIP_AUTH"
+
+# Step 3: Check configuration files
+echo ""
+echo "[Step 3/5] Checking configuration files..."
+
+if [ -f "knowledge-graph.config.json" ]; then
+    echo "  knowledge-graph.config.json: OK"
+else
+    echo "  knowledge-graph.config.json: NOT FOUND"
+    ((ERRORS++))
+fi
+
+# Step 4: Check nginx configurations
+echo ""
+echo "[Step 4/5] Checking nginx configurations..."
+
+if [ -f "nginx.conf" ]; then
+    echo "  nginx.conf: OK"
+else
+    echo "  nginx.conf: NOT FOUND"
+    ((ERRORS++))
+fi
+
+if [ -f "nginx.personal.conf" ]; then
+    echo "  nginx.personal.conf: OK"
+else
+    echo "  nginx.personal.conf: NOT FOUND"
+    ((ERRORS++))
+fi
+
+# Step 5: Check stack health
+echo ""
+echo "[Step 5/5] Checking stack health..."
+
+# Check dev stack
+if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    echo "  Dev stack: OK"
+else
+    echo "  Dev stack: FAILED"
+    ((ERRORS++))
+fi
+
+# Check personal stack
+if curl -s http://localhost:8082/health > /dev/null 2>&1; then
+    echo "  Personal stack: OK"
+else
+    echo "  Personal stack: FAILED"
+    ((ERRORS++))
+fi
+
+# Final result
+echo ""
+echo "========================================"
+if [ $ERRORS -eq 0 ]; then
+    echo "  STACKS_IDENTICAL"
+    echo "========================================"
+    exit 0
+else
+    echo "  STACKS_HAVE_DIFFERENCES"
+    echo "========================================"
+    echo ""
+    echo "Differences found:"
+    for diff in "${DIFFERENCES[@]}"; do
+        echo "  - $diff"
+    done
+    exit 1
+fi

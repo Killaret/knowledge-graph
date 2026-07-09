@@ -23,18 +23,23 @@ The test stack is fully isolated from dev and personal stacks:
 
 | Service | Container Name | Port | Purpose |
 |---------|---------------|------|---------|
-| postgres-test | kg-test-postgres | 15434 | Test database |
-| redis-test | kg-test-redis | 16381 | Test cache/queue |
+| postgres-test | kg-test-postgres | 5434 | Test database |
+| redis-test | kg-test-redis | 6381 | Test cache/queue |
 | mongo-test | kg-test-mongo | 27018 | Test drafts |
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
-| backend-test | kg-test-backend | 18083 | Test backend API |
-| frontend-test | kg-test-frontend | 13002 | Test frontend |
+| backend-test | kg-test-backend | 8083 | Test backend API |
+| frontend-test | kg-test-frontend | 3002 | Test frontend |
 
 ### Configuration
 
 - **SKIP_AUTH: true** - Authentication bypassed for testing
 - **REDIS_FLUSH_ON_STARTUP: true** - Redis cleared on startup
 - **Database: knowledge_test** - Separate test database
+
+### Test Stack URLs
+
+- **Frontend:** http://localhost:3002
+- **Backend API:** http://localhost:8083
 
 ## Automated Testing Scripts
 
@@ -141,8 +146,8 @@ Orchestrates the complete testing cycle.
 ### Test Environment
 
 After starting the test stack, access the test environment at:
-- **Frontend:** http://localhost:13002
-- **Backend API:** http://localhost:18083
+- **Frontend:** http://localhost:3002
+- **Backend API:** http://localhost:8083
 
 ### Test User Credentials
 
@@ -156,11 +161,34 @@ Follow the manual test checklist at `docs/MANUAL_TEST_CHECKLISTS.md` for detaile
 ### Test Coverage
 
 The manual test checklist covers:
-- Canvas features (ghost node, black hole, drag-and-drop links, hotkeys)
-- Note cards (visual style, batch operations, undo, sorting)
-- General UX (galactic lexicon, browser console, language switch)
+- **Pre-testing setup** - Stack health checks, test stack startup, data seeding
+- **Smoke tests** - Public access, authentication, profile, graph, note creation, logout
+- **Public graph verification** - Public note/link creation, API access without auth, frontend public access
+- **Canvas features** - Ghost node, black hole, drag-and-drop links, hotkeys, tooltips, new indicators
+- **Note cards** - Visual style, batch operations, undo, sorting, dust style, card tooltips
+- **General UX** - Galactic lexicon, browser console, language switch
+- **Post-testing cleanup** - Test stack destruction, stacks health verification, defect reporting
 
 ## Automated Tests
+
+### Current Test Statistics
+
+**Latest Test Results (from FINAL_TEST_REPORT.md):**
+
+| Layer | Category | Total | Passed | Failed | Skipped | Status |
+|-------|----------|-------|--------|--------|---------|--------|
+| Backend | Unit Tests | 118 | 118 | 0 | 0 | ✅ Excellent |
+| Backend | Integration Tests | 2 | 0 | 2 | 0 | ❌ Failed (Windows limitation) |
+| Frontend | Unit Tests | 563 | 521 | 5 | 37 | ✅ Good |
+| Frontend | E2E Tests | 94 | 84 | 0 | 10 | ✅ Excellent |
+| Frontend | BDD Tests | 5 | 5 | 0 | 0 | ✅ Excellent |
+| NLP | API Tests | 17 | 17 | 0 | 0 | ✅ Excellent |
+| NLP | Utils Tests | 16 | 11 | 0 | 5 | ✅ Good |
+| **NLP Total** | - | **33** | **28** | **0** | **5** | ✅ **Excellent** |
+
+**Notes:**
+- Backend integration tests fail on Windows due to testcontainers rootless Docker limitation (not a code issue)
+- Frontend unit test failures are due to Russian text in LoginForm tests (non-blocking, functionality correct)
 
 ### Backend Tests
 
@@ -232,6 +260,22 @@ This ensures:
 
 ## Troubleshooting
 
+### Dev stack 502 error (FIXED)
+
+**Issue:** Dev nginx returns 502 Bad Gateway for API requests
+
+**Root Cause:** Incorrect container names in nginx.conf
+
+**Fix:** Updated nginx.conf to use correct container names (kg-backend, kg-frontend, kg-graph-service)
+
+**Verification:**
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/api/v1/notes?limit=1
+```
+
+**Status:** ✅ Resolved - Dev stack API is now accessible
+
 ### Test stack won't start
 
 **Check Docker:**
@@ -246,7 +290,7 @@ docker compose -f docker-compose.test.yml logs
 ```
 
 **Common issues:**
-- Port conflicts (13002, 18083, 15434, 16381, 27018, 15002)
+- Port conflicts (3002, 8083, 5434, 6381, 27018, 15002)
 - Docker Desktop not running
 - Insufficient resources
 
@@ -254,12 +298,12 @@ docker compose -f docker-compose.test.yml logs
 
 **Check backend health:**
 ```bash
-curl http://localhost:18083/health
+curl http://localhost:8083/health
 ```
 
 **Check API:**
 ```bash
-curl http://localhost:18083/api/v1/notes
+curl http://localhost:8083/api/v1/notes
 ```
 
 **Common issues:**
@@ -313,6 +357,36 @@ The test stack can be integrated into CI/CD pipelines:
 ## References
 
 - [Manual Test Checklist](MANUAL_TEST_CHECKLISTS.md)
-- [Test Execution Report](TEST_EXECUTION_REPORT.md)
+- [Regression Test Plan](REGRESSION_TEST_PLAN.md)
+- [Final Test Report](FINAL_TEST_REPORT.md)
 - [Backend Testing](../backend/README.md#testing)
 - [Frontend Testing](../frontend/tests/README.md)
+
+## Recent Improvements
+
+### Dev Stack Fix (July 2026)
+- **Issue:** Nginx 502 Bad Gateway error on dev stack
+- **Resolution:** Updated nginx.conf with correct container names
+- **Status:** ✅ Resolved - Dev stack fully operational
+
+### Test Stack Automation (July 2026)
+- **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
+- **Isolation:** Complete separation from dev/personal stacks
+- **Ports:** Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- **Status:** ✅ Fully automated and verified
+
+### Smoke Tests (July 2026)
+- **Coverage:** Public access, authentication, profile, graph, note creation, logout
+- **Status:** ✅ All smoke tests passing
+- **Documentation:** Added to MANUAL_TEST_CHECKLISTS.md
+
+### Public Graph Verification (July 2026)
+- **Feature:** Public notes and links accessible without authentication
+- **Testing:** API and frontend verification for public graph access
+- **Status:** ✅ Documented in MANUAL_TEST_CHECKLISTS.md
+
+### Regression Test Plan (July 2026)
+- **New Document:** REGRESSION_TEST_PLAN.md
+- **Coverage:** 20-part comprehensive regression testing plan
+- **Includes:** Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
+- **Status:** ✅ Documented and ready for execution

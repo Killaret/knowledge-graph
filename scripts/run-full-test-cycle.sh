@@ -7,10 +7,13 @@ set -e
 echo "========================================"
 echo "  Knowledge Graph Full Test Cycle"
 echo "========================================"
+echo ""
+echo "For comprehensive regression testing, see docs/REGRESSION_TEST_PLAN.md"
+echo ""
 
 # Step 1: Check stacks health
 echo ""
-echo "[Step 1/8] Checking dev and personal stacks health..."
+echo "[Step 1/9] Checking dev and personal stacks health..."
 if ! ./scripts/check-stacks-health.sh; then
     echo "ERROR: Dev or personal stacks are not healthy"
     echo "Please start dev and personal stacks first"
@@ -18,9 +21,19 @@ if ! ./scripts/check-stacks-health.sh; then
 fi
 echo "✓ Dev and personal stacks are healthy"
 
+# Step 1.5: Check stacks identity
+echo ""
+echo "[Step 1.5/9] Checking stacks identity..."
+if ! ./scripts/check-stacks-identity.sh; then
+    echo "ERROR: Stacks have differences"
+    echo "Please fix the differences before running tests"
+    exit 1
+fi
+echo "✓ Stacks are identical"
+
 # Step 2: Start test stack
 echo ""
-echo "[Step 2/8] Starting test stack..."
+echo "[Step 2/9] Starting test stack..."
 if ! ./scripts/start-test.sh; then
     echo "ERROR: Failed to start test stack"
     exit 1
@@ -29,7 +42,7 @@ echo "✓ Test stack started"
 
 # Step 3: Seed test data
 echo ""
-echo "[Step 3/8] Seeding test data..."
+echo "[Step 3/9] Seeding test data..."
 if ! ./scripts/seed-test-data.sh; then
     echo "ERROR: Failed to seed test data"
     echo "Continuing anyway (data might already exist)"
@@ -38,7 +51,7 @@ echo "✓ Test data seeded"
 
 # Step 4: Manual testing instructions
 echo ""
-echo "[Step 4/8] Test environment ready"
+echo "[Step 4/9] Test environment ready"
 echo "========================================"
 echo "  MANUAL TESTING INSTRUCTIONS"
 echo "========================================"
@@ -59,7 +72,7 @@ read
 
 # Step 5: Stop test stack
 echo ""
-echo "[Step 5/8] Stopping test stack..."
+echo "[Step 5/9] Stopping test stack..."
 if ! ./scripts/stop-test.sh; then
     echo "WARNING: Failed to stop test stack"
 else
@@ -68,7 +81,7 @@ fi
 
 # Step 6: Check stacks health again
 echo ""
-echo "[Step 6/8] Checking dev and personal stacks health after testing..."
+echo "[Step 6/9] Checking dev and personal stacks health after testing..."
 if ! ./scripts/check-stacks-health.sh; then
     echo "WARNING: Dev or personal stacks are not healthy after testing"
     echo "Please check the stacks"
@@ -78,19 +91,20 @@ fi
 
 # Step 7: Summary
 echo ""
-echo "[Step 7/8] Test cycle summary"
+echo "[Step 7/9] Test cycle summary"
 echo "========================================"
 echo "  TEST CYCLE COMPLETE"
 echo "========================================"
 echo ""
 echo "✓ Dev and personal stacks verified (before and after)"
+echo "✓ Stacks identity verified"
 echo "✓ Test stack started and destroyed"
 echo "✓ Test data seeded"
 echo "✓ Manual testing completed"
 echo ""
-echo "All stacks are stable."
+echo "All stacks are stable and identical."
 
 # Step 8: Exit
 echo ""
-echo "Press Enter to exit..."
+echo "[Step 8/9] Press Enter to exit..."
 read

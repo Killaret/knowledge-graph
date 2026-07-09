@@ -185,11 +185,23 @@ jobs:
           go mod download
           go test -v ./internal/infrastructure/db/postgres -run TestAutoMigrate 2>&1 || true
 
+  # ============ STACKS IDENTITY CHECK ============
+  stacks-identity-check:
+    name: Stacks Identity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check stacks identity
+        run: |
+          chmod +x scripts/check-stacks-identity.sh
+          ./scripts/check-stacks-identity.sh
+
   # ============ FULL TEST SUITE ============
   full-tests:
     name: Full Test Suite
     runs-on: ubuntu-latest
-    needs: [backend-checks, frontend-checks, nlp-checks, config-validation]
+    needs: [backend-checks, frontend-checks, nlp-checks, config-validation, stacks-identity-check]
     defaults:
       run:
         working-directory: ./frontend
