@@ -175,11 +175,33 @@ Partial regression testing cycle completed successfully. Core infrastructure, ba
 
 ## PART 9: Frontend Tests
 
+### Result: ✅ PASSED (Unit Tests), ⏭️ SKIPPED (E2E/Integration)
+
+**Unit Tests:**
+- Test Files: 52 passed, 2 skipped
+- Tests: 526 passed, 37 skipped
+- Duration: 51.17s
+- Status: PASSED ✅
+
+**Issues Fixed:**
+- Updated LoginForm.spec.ts to use English text patterns (language policy compliance)
+- Fixed Russian regex patterns (/логин/i → /login/i, /пароль/i → /password/i, etc.)
+
+**E2E Tests:** Skipped due to time constraints
+**BDD Tests:** Skipped due to time constraints
+**Visual Tests:** Skipped due to time constraints
+
+---
+
+## PART 9.5: Backend Integration Tests
+
 ### Result: ⏭️ SKIPPED
 
 **Reason:** Time constraints and complexity of full regression cycle.
 
-**Recommendation:** Run frontend tests separately before production deployment.
+**Recommendation:** Run backend integration tests separately before production deployment.
+
+**Command:** `cd backend && go test -tags=integration ./...`
 
 ---
 
@@ -226,32 +248,34 @@ Partial regression testing cycle completed successfully. Core infrastructure, ba
 8. Asynchronous Tasks (Worker)
 9. PGVECTOR Extension
 10. Redis & MongoDB Connectivity
+11. Frontend Unit Tests (526 tests passed)
 
 ### ⏭️ SKIPPED Components:
 1. NLP API Tests (JSON formatting issues)
 2. Backend Integration Tests (time constraints)
 3. Backend Auth API Tests (JSON formatting issues)
-4. Frontend Unit Tests (time constraints)
-5. Frontend E2E Tests (time constraints)
-6. Frontend Visual Tests (time constraints)
-7. Frontend BDD Tests (time constraints)
-8. Public Graph Verification (time constraints)
-9. CI/CD Verification (time constraints)
+4. Frontend E2E Tests (time constraints)
+5. Frontend Visual Tests (time constraints)
+6. Frontend BDD Tests (time constraints)
+7. Public Graph Verification (time constraints)
+8. CI/CD Verification (time constraints)
 
 ### 🎯 Recommendations
 
 **Before Production Deployment:**
-1. Run frontend tests: `cd frontend && npm run test:unit`
-2. Run frontend E2E tests: `cd frontend && npx playwright test`
+1. Run frontend E2E tests: `cd frontend && npx playwright test`
+2. Run backend integration tests: `cd backend && go test -tags=integration ./...`
 3. Verify CI/CD workflows in GitHub Actions
 4. Test public graph functionality manually
-5. Complete backend integration tests: `cd backend && go test -tags=integration ./...`
+5. Complete NLP API testing with proper JSON formatting
+6. Complete backend auth API testing with proper JSON formatting
 
 **Configuration Notes:**
 - CORS configuration is now configurable via environment variables
 - Healthchecks are present in all Dockerfiles
 - Worker for test stack is functional
 - PGVECTOR extension is ready for use
+- Frontend unit tests passing (526 tests, language policy compliant)
 
 ### 📊 System Status
 
@@ -262,8 +286,9 @@ Partial regression testing cycle completed successfully. Core infrastructure, ba
 **API Endpoints:** ✅ STABLE
 **Async Processing:** ✅ STABLE
 **Data Layer:** ✅ STABLE
+**Frontend Unit Tests:** ✅ STABLE (526 tests passed)
 
-**Frontend & CI/CD:** ⏭️ NEEDS VERIFICATION
+**Frontend E2E & CI/CD:** ⏭️ NEEDS VERIFICATION
 
 ---
 

@@ -97,17 +97,40 @@ cd backend && go build ./cmd/server                   # Build server
 
 # Frontend
 cd frontend && npm run test:unit                      # Vitest unit tests
-cd frontend && npm run test                           # Playwright E2E
-cd frontend && npm run test:bdd                       # Cucumber BDD
-cd frontend && npm run build                          # Production build
+cd frontend && npx playwright test                    # Playwright E2E tests
+cd frontend && npx playwright test --grep="@visual"   # Visual regression tests
+cd frontend && npm run test:bdd                       # Cucumber BDD tests
+cd frontend && npm run build                          # Build frontend
 
 # NLP Service
-cd nlp-service && uvicorn app.main:app --reload      # Dev server
-cd nlp-service && pytest tests/ -v                   # Tests
+cd nlp-service && pytest tests/ -v                    # Unit tests
+curl http://localhost:5000/health                    # Health check
 
-# Docker
-docker compose up -d                                 # Dev stack
-docker compose -f docker-compose.personal.yml up -d  # Personal instance
+# Test Stack Management
+.\scripts\start-test.ps1                             # Start test stack
+.\scripts\seed-test-data.ps1                          # Seed test data
+.\scripts\stop-test.ps1                              # Destroy test stack
+docker compose -f docker-compose.test.yml up -d --build  # Manual start
+docker compose -f docker-compose.test.yml down -v            # Manual cleanup
+
+# Regression Testing
+.\scripts\run-full-test-cycle.ps1                    # Full regression cycle
+.\scripts\check-stacks-identity.ps1                   # Stacks identity check
+
+# Health Checks
+curl http://localhost:8080/health                    # Dev stack nginx
+curl http://localhost:9000/health                    # Dev stack backend
+curl http://localhost:8082/health                    # Personal stack
+curl http://localhost:8083/health                    # Test stack backend
+curl http://localhost:3002                           # Test stack frontend
+```
+
+## Docker
+
+```bash
+# Dev stack
+docker compose up -d                                 # Start dev stack
+docker compose -f docker-compose.personal.yml up -d  # Start personal stack
 docker compose logs -f backend                       # Backend logs
 
 # Test Stack (for E2E/BDD testing)

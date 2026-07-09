@@ -25,16 +25,16 @@ describe('LoginForm', () => {
   it('renders login form with default fields', () => {
     render(LoginForm);
 
-    expect(screen.getByLabelText(/логин/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/пароль/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /войти/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('updates login and password fields', async () => {
     render(LoginForm);
 
-    const loginInput = screen.getByLabelText(/логин/i);
-    const passwordInput = screen.getByLabelText(/пароль/i);
+    const loginInput = screen.getByLabelText(/login/i);
+    const passwordInput = screen.getByLabelText(/password/i);
 
     await fireEvent.input(loginInput, { target: { value: 'testuser' } });
     await fireEvent.input(passwordInput, { target: { value: 'password123' } });
@@ -56,9 +56,9 @@ describe('LoginForm', () => {
     mockLogin.mockResolvedValue(true);
     render(LoginForm);
 
-    const loginInput = screen.getByLabelText(/логин/i);
-    const passwordInput = screen.getByLabelText(/пароль/i);
-    const submitButton = screen.getByRole('button', { name: /войти/i });
+    const loginInput = screen.getByLabelText(/login/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     await fireEvent.input(loginInput, { target: { value: 'testuser' } });
     await fireEvent.input(passwordInput, { target: { value: 'password123' } });
@@ -70,14 +70,14 @@ describe('LoginForm', () => {
   it('has link to register page', () => {
     render(LoginForm);
 
-    const registerLink = screen.getByRole('link', { name: /регистрация/i });
+    const registerLink = screen.getByRole('link', { name: /register/i });
     expect(registerLink).toHaveAttribute('href', '/auth/register');
   });
 
   it('has link to forgot password page', () => {
     render(LoginForm);
 
-    const forgotLink = screen.getByRole('link', { name: /забыли пароль/i });
+    const forgotLink = screen.getByRole('link', { name: /forgot password/i });
     expect(forgotLink).toHaveAttribute('href', '/auth/forgot-password');
   });
 });

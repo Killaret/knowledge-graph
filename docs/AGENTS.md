@@ -131,6 +131,142 @@ toast.success("Заметка создана успешно");
 
 ---
 
+## Testing Commands & Procedures
+
+**Comprehensive testing commands for AI agents and developers:**
+
+### Frontend Testing
+```bash
+# Unit tests (Vitest)
+cd frontend && npm run test:unit
+
+# E2E tests (Playwright)
+cd frontend && npx playwright test
+
+# Visual regression tests
+cd frontend && npx playwright test --grep="@visual"
+
+# BDD tests (Cucumber)
+cd frontend && npm run test:bdd
+
+# Build verification
+cd frontend && npm run build
+```
+
+### Backend Testing
+```bash
+# Unit tests
+cd backend && go test ./...
+
+# Integration tests
+cd backend && go test -tags=integration ./...
+
+# Race detection (requires CGO_ENABLED=1)
+cd backend && CGO_ENABLED=1 go test -race ./...
+
+# Build verification
+cd backend && go build ./cmd/server
+```
+
+### NLP Service Testing
+```bash
+# Unit tests
+cd nlp-service && pytest tests/ -v
+
+# Health check
+curl http://localhost:5000/health
+
+# API tests
+curl -X POST http://localhost:5000/extract_keywords -H "Content-Type: application/json" -d '{"text":"test","top_n":3}'
+curl -X POST http://localhost:5000/embed -H "Content-Type: application/json" -d '{"text":"test"}'
+```
+
+### Test Stack Management
+```bash
+# Start test stack
+.\scripts\start-test.ps1
+
+# Seed test data
+.\scripts\seed-test-data.ps1
+
+# Stop and destroy test stack
+.\scripts\stop-test.ps1
+
+# Manual test stack management
+docker compose -f docker-compose.test.yml up -d --build
+docker compose -f docker-compose.test.yml down -v
+```
+
+### Regression Testing
+```bash
+# Full regression cycle
+.\scripts\run-full-test-cycle.ps1
+
+# Stacks identity check
+.\scripts\check-stacks-identity.ps1
+
+# Individual regression parts
+# PART 0: Stacks Identity Check
+# PART 0.5: Docker Build Verification
+# PART 1: Dev/Personal Stacks Health
+# PART 2: Test Stack Startup
+# PART 3: NLP Service Tests
+# PART 4: Backend Tests
+# PART 5: Backend API Verification
+# PART 6: Asynchronous Tasks
+# PART 7: PGVECTOR Verification
+# PART 8: Redis & MongoDB
+# PART 9: Frontend Tests
+# PART 10: Public Graph Verification
+# PART 11: CI/CD Verification
+# PART 12: Final Report & Cleanup
+```
+
+### Database Verification
+```bash
+# PostgreSQL (test stack)
+docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT extname FROM pg_extension WHERE extname = 'vector';"
+docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT COUNT(*) FROM note_embeddings;"
+
+# Redis (test stack)
+docker exec kg-test-redis redis-cli PING
+docker exec kg-test-redis redis-cli KEYS "*"
+
+# MongoDB (test stack)
+docker exec kg-test-mongo mongosh --eval "db.adminCommand('ping')"
+docker exec kg-test-mongo mongosh --eval "db.getCollectionNames()"
+```
+
+### Health Checks
+```bash
+# Dev stack
+curl http://localhost:8080/health           # Nginx gateway
+curl http://localhost:9000/health           # Backend
+curl http://localhost:9091/health           # Graph service
+curl http://localhost:8080/api/v1/notes     # Notes API
+
+# Personal stack
+curl http://localhost:8085/health           # Personal backend
+curl http://localhost:8082/health           # Personal API gateway
+curl http://localhost:8092/health           # Personal graph service
+
+# Test stack
+curl http://localhost:8083/health           # Test backend
+curl http://localhost:3002                  # Test frontend
+curl http://localhost:15002/health          # Test NLP service
+```
+
+### Testing Best Practices
+- **ALWAYS** use isolated test stack for E2E and BDD testing
+- **NEVER** run E2E/BDD tests against dev or personal stacks
+- **ALWAYS** verify stacks identity before regression testing
+- **ALWAYS** destroy test stack with `down -v` after testing
+- **ALWAYS** use English text patterns in frontend tests (language policy)
+- **ALWAYS** run unit tests before integration tests
+- **ALWAYS** verify health endpoints before API testing
+
+---
+
 ## UI Modernization Roadmap
 
 Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexicon, and improved UX.
