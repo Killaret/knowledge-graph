@@ -276,8 +276,28 @@ docker-compose build --no-cache
 - Use strong passwords in production
 - Change default ports in production
 - Use HTTPS/TLS in production
-- Configure proper CORS origins
+- Configure proper CORS origins via environment variables
 - Enable rate limiting in production
+
+### CORS Configuration
+
+**Environment Variables:**
+- `CORS_ALLOWED_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://example.com,https://app.example.com`)
+- `CORS_ALLOWED_METHODS` - Allowed HTTP methods (default: `GET,POST,PUT,DELETE,OPTIONS`)
+- `CORS_ALLOWED_HEADERS` - Allowed headers (default: `Content-Type,Authorization`)
+- `CORS_MAX_AGE` - Preflight cache duration in seconds (default: `86400`)
+
+**Example docker-compose.yml:**
+```yaml
+backend:
+  environment:
+    - CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
+    - CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+    - CORS_ALLOWED_HEADERS=Content-Type,Authorization
+    - CORS_MAX_AGE=86400
+```
+
+**Important:** Never use `*` as CORS origin in production. Always specify exact origins.
 
 ### Scaling
 

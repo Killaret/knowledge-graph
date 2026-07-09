@@ -176,7 +176,7 @@ This document describes the 11 AI agent roles used across Cursor AI, Koda (Conti
 **Key Responsibilities:**
 - Security audit and vulnerability scanning
 - JWT validation middleware (golang-jwt/jwt/v5)
-- CORS configuration
+- CORS configuration (environment variables: CORS_ALLOWED_ORIGINS, CORS_ALLOWED_METHODS, CORS_ALLOWED_HEADERS, CORS_MAX_AGE)
 - Rate limiting for write operations (POST/PUT/DELETE)
 - Secret management (never commit .env, tokens, OAuth keys)
 - Input validation (go-playground/validator)
@@ -190,6 +190,19 @@ This document describes the 11 AI agent roles used across Cursor AI, Koda (Conti
 - "Review JWT authentication implementation"
 - "Add rate limiting to note creation endpoint"
 - "Audit CORS configuration"
+- "Configure CORS for production origins"
+- "Verify CORS headers are properly set"
+
+**CORS Configuration Reference:**
+```yaml
+# docker-compose.yml
+backend:
+  environment:
+    - CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
+    - CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+    - CORS_ALLOWED_HEADERS=Content-Type,Authorization
+    - CORS_MAX_AGE=86400
+```
 
 ---
 

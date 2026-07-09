@@ -9,7 +9,7 @@ $errors = 0
 $differences = @()
 
 # Step 1: Check service versions from Dockerfiles
-Write-Host "`n[Step 1/5] Checking service versions..." -ForegroundColor Yellow
+Write-Host "`n[Step 1/6] Checking service versions..." -ForegroundColor Yellow
 
 # Check Go version (from Dockerfile)
 $goVersion = Select-String -Path "backend/Dockerfile" -Pattern "FROM golang:" | Select-Object -First 1
@@ -41,8 +41,41 @@ if ($pythonVersion) {
     $errors++
 }
 
+# Step 1.5: Check healthchecks in Dockerfiles
+Write-Host "`n[Step 1.5/6] Checking healthchecks in Dockerfiles..." -ForegroundColor Yellow
+
+# Check backend Dockerfile for healthcheck
+$backendHealthcheck = Select-String -Path "backend/Dockerfile" -Pattern "HEALTHCHECK"
+if ($backendHealthcheck) {
+    Write-Host "  Backend Dockerfile: HEALTHCHECK present" -ForegroundColor Green
+} else {
+    Write-Host "  Backend Dockerfile: HEALTHCHECK missing" -ForegroundColor Red
+    $errors++
+    $differences += "Backend Dockerfile missing HEALTHCHECK"
+}
+
+# Check frontend Dockerfile for healthcheck
+$frontendHealthcheck = Select-String -Path "frontend/Dockerfile" -Pattern "HEALTHCHECK"
+if ($frontendHealthcheck) {
+    Write-Host "  Frontend Dockerfile: HEALTHCHECK present" -ForegroundColor Green
+} else {
+    Write-Host "  Frontend Dockerfile: HEALTHCHECK missing" -ForegroundColor Red
+    $errors++
+    $differences += "Frontend Dockerfile missing HEALTHCHECK"
+}
+
+# Check NLP Dockerfile for healthcheck
+$nlpHealthcheck = Select-String -Path "nlp-service/Dockerfile" -Pattern "HEALTHCHECK"
+if ($nlpHealthcheck) {
+    Write-Host "  NLP Dockerfile: HEALTHCHECK present" -ForegroundColor Green
+} else {
+    Write-Host "  NLP Dockerfile: HEALTHCHECK missing" -ForegroundColor Red
+    $errors++
+    $differences += "NLP Dockerfile missing HEALTHCHECK"
+}
+
 # Step 2: Compare docker-compose files
-Write-Host "`n[Step 2/5] Comparing docker-compose files..." -ForegroundColor Yellow
+Write-Host "`n[Step 2/6] Comparing docker-compose files..." -ForegroundColor Yellow
 
 $devCompose = Get-Content "docker-compose.yml" -Raw
 $personalCompose = Get-Content "docker-compose.personal.yml" -Raw
@@ -67,7 +100,7 @@ Write-Host "  Personal SKIP_AUTH: $($personalSkipAuth.Line)" -ForegroundColor Gr
 Write-Host "  Test SKIP_AUTH: $($testSkipAuth.Line)" -ForegroundColor Green
 
 # Step 3: Check configuration files
-Write-Host "`n[Step 3/5] Checking configuration files..." -ForegroundColor Yellow
+Write-Host "`n[Step 3/6] Checking configuration files..." -ForegroundColor Yellow
 
 if (Test-Path "knowledge-graph.config.json") {
     $config = Get-Content "knowledge-graph.config.json" -Raw | ConvertFrom-Json
@@ -78,7 +111,7 @@ if (Test-Path "knowledge-graph.config.json") {
 }
 
 # Step 4: Check nginx configurations
-Write-Host "`n[Step 4/5] Checking nginx configurations..." -ForegroundColor Yellow
+Write-Host "`n[Step 4/6] Checking nginx configurations..." -ForegroundColor Yellow
 
 if (Test-Path "nginx.conf") {
     Write-Host "  nginx.conf: OK" -ForegroundColor Green
@@ -95,7 +128,7 @@ if (Test-Path "nginx.personal.conf") {
 }
 
 # Step 5: Check stack health
-Write-Host "`n[Step 5/5] Checking stack health..." -ForegroundColor Yellow
+Write-Host "`n[Step 5/6] Checking stack health..." -ForegroundColor Yellow
 
 # Check dev stack
 try {
@@ -113,6 +146,27 @@ try {
 } catch {
     Write-Host "  Personal stack: FAILED" -ForegroundColor Red
     $errors++
+}
+
+# Step 6: Verify healthcheck endpoints are accessible
+Write-Host "`n[Step 6/6] Verifying healthcheck endpoints..." -ForegroundColor Yellow
+
+# Check backend health endpoint
+try {
+    $backendHealth = Invoke-RestMethod -Uri "http://localhost:9000/health" -Method Get -TimeoutSec 5
+    Write-Host "  Backend health endpoint: OK" -ForegroundColor Green
+} catch {
+    Write-Host "  Backend health endpoint: FAILED (backend may not be running)" -ForegroundColor Yellow
+    # Not counting as error since backend might not be exposed directly
+}
+
+# Check NLP service health endpoint (if running)
+try {
+    $nlpHealth = Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get -TimeoutSec 5
+    Write-Host "  NLP service health endpoint: OK" -ForegroundColor Green
+} catch {
+    Write-Host "  NLP service health endpoint: FAILED (NLP may not be running)" -ForegroundColor Yellow
+    # Not counting as error since NLP might not be running
 }
 
 # Final result

@@ -48,8 +48,16 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 - [ ] Port mappings are different (no conflicts)
 - [ ] Volume names are different (dev: postgres_data, personal: pgdata_personal, test: test_postgres_data)
 - [ ] Environment variables point to correct service names
-- [ ] Healthcheck configurations are identical
-- [ ] Depends_on conditions are identical
+
+### 0.1.5 Verify Healthchecks in Dockerfiles
+**Files:** backend/Dockerfile, frontend/Dockerfile, nlp-service/Dockerfile
+
+**Checks:**
+- [ ] Backend Dockerfile contains HEALTHCHECK directive
+- [ ] Frontend Dockerfile contains HEALTHCHECK directive
+- [ ] NLP Dockerfile contains HEALTHCHECK directive
+- [ ] Healthcheck endpoints are accessible (http://localhost:9000/health, http://localhost:8000/health)
+- [ ] Healthcheck commands use appropriate intervals and timeouts
 
 **Expected Result:** STACKS_IDENTICAL
 
@@ -352,6 +360,19 @@ go test -tags=integration ./... -count=1 2>&1 | tee test-backend-integration.log
 curl -I http://localhost:18083/api/v1/notes
 ```
 **Expected:** CORS headers present
+
+**Environment Variables:**
+- `CORS_ALLOWED_ORIGINS` - Comma-separated list of allowed origins (e.g., `http://localhost:3000,http://localhost:3001,http://localhost:3002`)
+- `CORS_ALLOWED_METHODS` - Allowed HTTP methods (default: `GET,POST,PUT,DELETE,OPTIONS`)
+- `CORS_ALLOWED_HEADERS` - Allowed headers (default: `Content-Type,Authorization`)
+- `CORS_MAX_AGE` - Preflight cache duration in seconds (default: `86400`)
+
+**Configuration Locations:**
+- Backend: `backend/cmd/server/middleware.go` (reads from environment)
+- Docker Compose: Set in `docker-compose.yml`, `docker-compose.personal.yml`, `docker-compose.test.yml`
+- Dev/Personal: Localhost origins whitelisted
+- Test: Test stack ports whitelisted
+- Production: Must configure production origins via environment variables
 
 ### 5.5.2 Check Rate Limiting
 **Test:** Send rapid requests to write endpoint

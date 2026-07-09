@@ -11,7 +11,7 @@ DIFFERENCES=()
 
 # Step 1: Check service versions from Dockerfiles
 echo ""
-echo "[Step 1/5] Checking service versions..."
+echo "[Step 1/6] Checking service versions..."
 
 # Check Go version
 GO_VERSION=$(grep "FROM golang:" backend/Dockerfile | head -1)
@@ -43,9 +43,40 @@ else
     ((ERRORS++))
 fi
 
+# Step 1.5: Check healthchecks in Dockerfiles
+echo ""
+echo "[Step 1.5/6] Checking healthchecks in Dockerfiles..."
+
+# Check backend Dockerfile for healthcheck
+if grep -q "HEALTHCHECK" backend/Dockerfile; then
+    echo "  Backend Dockerfile: HEALTHCHECK present"
+else
+    echo "  Backend Dockerfile: HEALTHCHECK missing"
+    ((ERRORS++))
+    DIFFERENCES+=("Backend Dockerfile missing HEALTHCHECK")
+fi
+
+# Check frontend Dockerfile for healthcheck
+if grep -q "HEALTHCHECK" frontend/Dockerfile; then
+    echo "  Frontend Dockerfile: HEALTHCHECK present"
+else
+    echo "  Frontend Dockerfile: HEALTHCHECK missing"
+    ((ERRORS++))
+    DIFFERENCES+=("Frontend Dockerfile missing HEALTHCHECK")
+fi
+
+# Check NLP Dockerfile for healthcheck
+if grep -q "HEALTHCHECK" nlp-service/Dockerfile; then
+    echo "  NLP Dockerfile: HEALTHCHECK present"
+else
+    echo "  NLP Dockerfile: HEALTHCHECK missing"
+    ((ERRORS++))
+    DIFFERENCES+=("NLP Dockerfile missing HEALTHCHECK")
+fi
+
 # Step 2: Compare docker-compose files
 echo ""
-echo "[Step 2/5] Comparing docker-compose files..."
+echo "[Step 2/6] Comparing docker-compose files..."
 
 DEV_SERVICES=$(grep -c "image:\|build:" docker-compose.yml || echo "0")
 PERSONAL_SERVICES=$(grep -c "image:\|build:" docker-compose.personal.yml || echo "0")
@@ -66,7 +97,7 @@ echo "  Test SKIP_AUTH: $TEST_SKIP_AUTH"
 
 # Step 3: Check configuration files
 echo ""
-echo "[Step 3/5] Checking configuration files..."
+echo "[Step 3/6] Checking configuration files..."
 
 if [ -f "knowledge-graph.config.json" ]; then
     echo "  knowledge-graph.config.json: OK"
@@ -77,7 +108,7 @@ fi
 
 # Step 4: Check nginx configurations
 echo ""
-echo "[Step 4/5] Checking nginx configurations..."
+echo "[Step 4/6] Checking nginx configurations..."
 
 if [ -f "nginx.conf" ]; then
     echo "  nginx.conf: OK"
@@ -95,7 +126,7 @@ fi
 
 # Step 5: Check stack health
 echo ""
-echo "[Step 5/5] Checking stack health..."
+echo "[Step 5/6] Checking stack health..."
 
 # Check dev stack
 if curl -s http://localhost:8080/health > /dev/null 2>&1; then
@@ -111,6 +142,26 @@ if curl -s http://localhost:8082/health > /dev/null 2>&1; then
 else
     echo "  Personal stack: FAILED"
     ((ERRORS++))
+fi
+
+# Step 6: Verify healthcheck endpoints are accessible
+echo ""
+echo "[Step 6/6] Verifying healthcheck endpoints..."
+
+# Check backend health endpoint
+if curl -s http://localhost:9000/health > /dev/null 2>&1; then
+    echo "  Backend health endpoint: OK"
+else
+    echo "  Backend health endpoint: FAILED (backend may not be running)"
+    # Not counting as error since backend might not be exposed directly
+fi
+
+# Check NLP service health endpoint (if running)
+if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+    echo "  NLP service health endpoint: OK"
+else
+    echo "  NLP service health endpoint: FAILED (NLP may not be running)"
+    # Not counting as error since NLP might not be running
 fi
 
 # Final result

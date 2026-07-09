@@ -897,6 +897,33 @@ npx playwright show-report
 - [ ] **Load Tests** - k6 or Artillery for API load
 - [ ] **Security Tests** - OWASP ZAP scanning
 - [ ] **Contract Tests** - Pact for API contracts
+- [ ] **CORS Configuration Tests** - Verify CORS headers and origin validation
+
+### CORS Testing
+
+**Environment Variables:**
+- `CORS_ALLOWED_ORIGINS` - Comma-separated list of allowed origins
+- `CORS_ALLOWED_METHODS` - Allowed HTTP methods (default: `GET,POST,PUT,DELETE,OPTIONS`)
+- `CORS_ALLOWED_HEADERS` - Allowed headers (default: `Content-Type,Authorization`)
+- `CORS_MAX_AGE` - Preflight cache duration in seconds (default: `86400`)
+
+**Test Commands:**
+```bash
+# Check CORS headers
+curl -I http://localhost:8080/api/v1/notes
+
+# Test preflight request
+curl -X OPTIONS http://localhost:8080/api/v1/notes \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type,Authorization"
+```
+
+**Expected Headers:**
+- `Access-Control-Allow-Origin: <origin from whitelist>`
+- `Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS`
+- `Access-Control-Allow-Headers: Content-Type,Authorization`
+- `Access-Control-Max-Age: 86400`
 
 ---
 
