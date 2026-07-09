@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,20 +16,36 @@ import (
 // corsMiddleware returns CORS middleware that allows requests from whitelisted origins.
 // In development, localhost origins are allowed. In production, only configured origins are allowed.
 func corsMiddleware() gin.HandlerFunc {
-	// Whitelist of allowed origins
-	allowedOrigins := map[string]bool{
-		"http://localhost:3000":  true,
-		"http://localhost:3001":  true,
-		"http://localhost:5173":  true,
-		"http://localhost:8080":  true,
-		"http://localhost:8081":  true,
-		"http://localhost:8082":  true,
-		"http://localhost:8083":  true,
-		"http://127.0.0.1:3000":  true,
-		"http://127.0.0.1:3001":  true,
-		"http://127.0.0.1:5173":  true,
-		"http://127.0.0.1:8080":  true,
-		"http://127.0.0.1:8082":  true,
+	// Default localhost origins for development
+	defaultOrigins := map[string]bool{
+		"http://localhost:3000": true,
+		"http://localhost:3001": true,
+		"http://localhost:5173": true,
+		"http://localhost:8080": true,
+		"http://localhost:8081": true,
+		"http://localhost:8082": true,
+		"http://localhost:8083": true,
+		"http://127.0.0.1:3000": true,
+		"http://127.0.0.1:3001": true,
+		"http://127.0.0.1:5173": true,
+		"http://127.0.0.1:8080": true,
+		"http://127.0.0.1:8082": true,
+	}
+
+	// Read CORS_ALLOWED_ORIGINS from environment variable
+	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS")
+	allowedOrigins := defaultOrigins
+
+	if corsOriginsEnv != "" {
+		// Parse comma-separated origins from environment variable
+		origins := strings.Split(corsOriginsEnv, ",")
+		allowedOrigins = make(map[string]bool)
+		for _, origin := range origins {
+			origin = strings.TrimSpace(origin)
+			if origin != "" {
+				allowedOrigins[origin] = true
+			}
+		}
 	}
 
 	return func(c *gin.Context) {
