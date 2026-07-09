@@ -83,6 +83,54 @@ toast.success("Заметка создана успешно");
 
 ---
 
+## Regression Testing Plan
+
+**Comprehensive 20-part regression testing plan for production readiness:**
+
+### Regression Test Cycle
+- **Document:** `docs/REGRESSION_TEST_PLAN.md`
+- **Script:** `scripts/run-full-test-cycle.ps1` (Windows) or `scripts/run-full-test-cycle.sh` (Linux/Mac)
+- **Identity Check:** `scripts/check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+
+### Test Parts (20 total)
+1. **PART 0:** Stacks Identity Check (docker-compose, versions, config, DB structure)
+2. **PART 0.5:** Docker Build Verification (builds, sizes, healthchecks, secrets)
+3. **PART 0.6:** Environment Config Check (.env.example, required vars)
+4. **PART 1:** Dev/Personal Stacks Health (health endpoints, API)
+5. **PART 2:** Test Stack Startup (start, seed, verify)
+6. **PART 3:** NLP Service Tests (unit tests, health, API)
+7. **PART 3.5:** Dependencies & Vulnerabilities (npm audit, pip-audit)
+8. **PART 4:** Backend Tests (unit, integration)
+9. **PART 5:** Backend API Verification (auth, notes, links, graph)
+10. **PART 5.5:** Security Verification (CORS, rate limiting, JWT)
+11. **PART 6:** Asynchronous Tasks (worker, Redis, recommendations)
+12. **PART 6.5:** Logs & Monitoring (error logs, debug logs)
+13. **PART 7:** PGVECTOR Verification (extension, embeddings, similarity)
+14. **PART 8:** Redis & MongoDB (PING, collections)
+15. **PART 8.3:** Backup Verification (scheduler, directory)
+16. **PART 9:** Frontend Tests (unit, E2E, visual, BDD)
+17. **PART 10:** Public Graph Verification (public notes, links)
+18. **PART 11:** CI/CD Verification (workflows, versions, secrets)
+19. **PART 11.4:** Documentation Verification (OpenAPI, README)
+20. **PART 12:** Final Report & Cleanup (report, destroy, verdict)
+
+### Frequency
+- **Full Regression:** Before each production deployment
+- **Quick Regression:** Before each major feature release (PARTS 0-2, 4, 9)
+- **Smoke Regression:** After each minor feature release (PARTS 1, 5, 10)
+- **Identity Check:** Before each manual testing session
+
+### Exit Criteria
+- **PASS:** All stacks identical, all builds succeed, all tests pass, no vulnerabilities
+- **FAIL:** Any stack identity mismatch, build failure, test failure, API failure, vulnerability, infrastructure failure, data leakage
+
+### See Also
+- [REGRESSION_TEST_PLAN.md](REGRESSION_TEST_PLAN.md) — Complete regression testing procedures
+- [TESTING_EN.md](TESTING_EN.md) — Testing infrastructure and procedures
+- [FINAL_TEST_REPORT.md](FINAL_TEST_REPORT.md) — Latest test results
+
+---
+
 ## UI Modernization Roadmap
 
 Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexicon, and improved UX.

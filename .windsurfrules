@@ -192,6 +192,16 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 - Test stack completely isolated with unique container names (`kg-test-*`)
 - See `docs/TESTING_EN.md` for complete test stack documentation
 
+**Regression Testing (MANDATORY before production deployment):**
+- **ALWAYS** run full regression cycle before production deployment
+- Run: `.\scripts\run-full-test-cycle.ps1` (includes stacks identity check)
+- Regression plan: 20-part comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
+- Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
+- Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
+- Stacks identity check: `.\scripts\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- Exit criteria: All stacks identical, all builds succeed, all tests pass, no vulnerabilities
+- See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
+
 **Go table-driven tests (mandatory pattern):**
 ```go
 func TestCreateNote(t *testing.T) {
