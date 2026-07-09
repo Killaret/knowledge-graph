@@ -36,6 +36,18 @@ func main() {
 		log.Printf("NLP_SERVICE_URL from environment: %s", nlpServiceURL)
 	}
 
+	// Override DATABASE_URL from environment (environment has priority over config)
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		cfg.DatabaseURL = databaseURL
+		log.Printf("DATABASE_URL from environment: %s", maskURL(databaseURL))
+	}
+
+	// Override REDIS_URL from environment (environment has priority over config)
+	if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
+		cfg.RedisURL = redisURL
+		log.Printf("REDIS_URL from environment: %s", redisURL)
+	}
+
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД
