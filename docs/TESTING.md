@@ -41,28 +41,75 @@ The test stack is fully isolated from dev and personal stacks:
 - **Frontend:** http://localhost:3002
 - **Backend API:** http://localhost:8083
 
+## Isolated Testing Model
+
+**⚠️ IMPORTANT:** Knowledge Graph uses an isolated testing model to ensure accurate test results and prevent resource conflicts.
+
+### Overview
+
+The isolated testing model ensures that:
+- **Only the test stack runs during testing** - dev and personal stacks are stopped
+- **No resource conflicts** - Eliminates Docker API instability from running multiple stacks
+- **Accurate test results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **Resource efficiency** - Optimizes resource usage during testing
+
+### Testing Process
+
+1. **Pre-test snapshot** - Capture dev stack state (containers, health, API)
+2. **Stop dev/personal stacks** - Free up resources for testing
+3. **Run tests on isolated test stack** - Clean environment, no conflicts
+4. **Stop test stack** - Complete cleanup with volume removal
+5. **Restore dev/personal stacks** - Bring back development environments
+6. **Post-test comparison** - Verify dev stack state unchanged
+
+### Benefits
+
+- **Docker stability** - Prevents Docker API instability from running multiple stacks
+- **Resource efficiency** - Only test stack uses resources during testing
+- **Accurate results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **No conflicts** - Eliminates port and resource conflicts between stacks
+
+### When to Use Isolated Testing
+
+- **Full regression testing** - Before production deployment
+- **E2E and BDD testing** - Always use isolated test stack
+- **Integration testing** - When testing with real databases
+- **Performance testing** - When measuring system performance
+
+### When to Use Concurrent Stacks
+
+- **Manual testing** - When testing features across dev/personal stacks
+- **Feature development** - When working on features in dev stack
+- **Personal use** - When using personal stack for daily work
+
 ## Automated Testing Scripts
 
 ### check-stacks-health
-Checks the health of dev and personal stacks.
+Checks the health of specified stack(s).
 
 **Windows:**
 ```powershell
-.\scripts\check-stacks-health.ps1
+.\scripts\check-stacks-health.ps1 -Stack <dev|personal|test|all>
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/check-stacks-health.sh
+./scripts/check-stacks-health.sh --stack <dev|personal|test|all>
 ```
 
-**Checks:**
-- Dev containers running
-- Dev health endpoint (http://localhost:8080/health)
-- Dev API (http://localhost:8080/api/v1/notes?limit=1)
-- Personal containers running
-- Personal health endpoint (http://localhost:8082/health)
-- Personal API (http://localhost:8082/api/v1/notes?limit=1)
+**Parameters:**
+- `-Stack` / `--stack`: Specify which stack to check (default: all)
+  - `dev` - Check only dev stack
+  - `personal` - Check only personal stack
+  - `test` - Check only test stack
+  - `all` - Check all stacks (default)
+
+**Checks (for each stack):**
+- Containers running
+- Health endpoint
+- API endpoint
 
 ### start-test
 Starts the isolated test stack.
@@ -119,7 +166,9 @@ Seeds the test database with test data.
 - 2 test links between notes
 
 ### run-full-test-cycle
-Orchestrates the complete testing cycle.
+Orchestrates the complete testing cycle with **full stack isolation**.
+
+**⚠️ IMPORTANT:** This script uses an isolated testing model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.
 
 **Windows:**
 ```powershell
@@ -131,15 +180,41 @@ Orchestrates the complete testing cycle.
 ./scripts/run-full-test-cycle.sh
 ```
 
-**Steps:**
-1. Check dev and personal stacks health
-2. Start test stack
-3. Seed test data
-4. Display manual testing instructions
-5. Wait for manual testing (press Enter)
-6. Stop test stack
-7. Check dev and personal stacks health again
-8. Display summary
+**Isolated Testing Model Steps:**
+1. **Capture dev stack state snapshot** - Save container state, health endpoint, and API response
+2. **Stop dev stack** - `docker compose down`
+3. **Stop personal stack** - `docker compose -f docker-compose.personal.yml down`
+4. **Check stacks identity** - Verify dev/personal/test consistency
+5. **Start test stack** - `start-test.ps1`
+6. **Seed test data** - `seed-test-data.ps1`
+7. **Docker build verification** - Check Docker images
+8. **NLP service tests** - Verify NLP health and functionality
+9. **Backend unit tests** - Run Go unit tests
+10. **Backend API verification** - Test critical endpoints
+11. **Asynchronous tasks verification** - Check worker and Redis
+12. **PGVECTOR verification** - Verify pgvector extension
+13. **Redis & MongoDB verification** - Check data layer
+14. **Frontend unit tests** - Run Vitest tests
+15. **Manual testing instructions** - Display URLs and credentials
+16. **Public graph verification** - Manual verification
+17. **CI/CD verification** - Manual verification
+18. **Stop test stack** - `stop-test.ps1`
+19. **Start dev stack** - `docker compose up -d --wait`
+20. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
+21. **Compare dev stack state** - Compare with pre-test snapshot
+22. **Check stacks health** - Verify dev and personal stacks are healthy
+
+**Benefits of Isolated Testing:**
+- **Resource efficiency** - Only test stack uses resources during testing
+- **No conflicts** - Eliminates port and resource conflicts between stacks
+- **Accurate results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **Docker stability** - Prevents Docker API instability from running multiple stacks
+
+**Snapshots:**
+- Pre-test snapshots saved to `test-snapshots_YYYYMMDD_HHMMSS/` directory
+- Includes: container state, health endpoint, API response
+- Post-test snapshots for comparison
 
 ## Manual Testing
 

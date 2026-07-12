@@ -343,20 +343,18 @@ cd tests && npm run test:bdd
 
 ### Test Stack (Isolated Testing Environment)
 
+**⚠️ IMPORTANT:** Knowledge Graph uses an isolated testing model. The full test cycle script (`run-full-test-cycle.ps1`) automatically stops dev and personal stacks during testing to prevent resource conflicts and ensure accurate test results.
+
 For automated testing, use the dedicated test stack that is completely isolated from development and personal data:
 
 ```bash
-# Start test stack
-.\scripts\start-test.ps1
+# Full test cycle (isolated model - stops dev/personal stacks)
+.\scripts\run-full-test-cycle.ps1
 
-# Seed test data (optional)
-.\scripts\seed-test-data.ps1
-
-# Run tests against test stack
-cd frontend && npm run test
-
-# Destroy test stack (removes all data)
-.\scripts\stop-test.ps1
+# Manual test stack management
+.\scripts\start-test.ps1    # Start test stack
+.\scripts\seed-test-data.ps1  # Populate with test data
+.\scripts\stop-test.ps1     # Stop and destroy test stack
 ```
 
 **Test Stack Details:**
@@ -365,6 +363,12 @@ cd frontend && npm run test
 - **Volumes:** Isolated `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - **Auth:** SKIP_AUTH enabled for testing
 - **Cleanup:** All data removed on `stop-test.ps1 -v`
+
+**Isolated Testing Model:**
+- Dev and personal stacks are stopped during full test cycle
+- Prevents Docker API instability from running multiple stacks
+- Ensures accurate test results on clean environment
+- Automatic state verification of dev stack before/after testing
 
 See [docs/TESTING_EN.md](docs/TESTING_EN.md) for complete testing documentation.
 
