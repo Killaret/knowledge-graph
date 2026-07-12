@@ -199,7 +199,7 @@ knowledge-graph/
 ## 📚 Documentation
 
 ### Core Documentation
-- [🎯 Roadmap](docs/ROADMAP.md) — план развития продукта
+- [🎯 Roadmap](ROADMAP.md) — план развития продукта
 - [📐 Architecture](docs/architecture/README.md) — C4 модель, UML, ADR
 - [🚀 Deployment](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
 - [⚙️ Configuration](docs/CONFIGURATION.md) — настройка системы

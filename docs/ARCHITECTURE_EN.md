@@ -789,7 +789,7 @@ make dev
 ## 📚 Additional Documentation
 
 - `API_ERRORS.md` — API errors and codes
-- `ARCHITECTURE_ROADMAP.md` — Development plans
+- `ROADMAP.md` — Development plans (moved to project root)
 - `WEIGHTS_CALCULATION.md` — Link weight calculation logic
 - `docs/architecture/c4/` — C4 Model diagrams
 - `docs/architecture/decisions/` — ADR (Architecture Decision Records)

@@ -1,6 +1,13 @@
 # Knowledge Graph Roadmap v2.0
 
-## 📋 Единый Roadmap
+**⚠️ DEPRECATED:** This file has been moved to the project root.  
+**📍 New Location:** [ROADMAP.md](../ROADMAP.md)
+
+Please use the updated roadmap in the project root for the latest development plans.
+
+---
+
+## 📋 Единый Roadmap (Legacy)
 
 | Приоритет | Фаза | Задачи | Статус |
 |-----------|------|--------|--------|
