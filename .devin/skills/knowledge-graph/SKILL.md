@@ -54,12 +54,15 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 
 ### Regression Testing (MANDATORY before production deployment)
 - **ALWAYS run full regression cycle before production deployment**
-- Run: `.\scripts\run-full-test-cycle.ps1` (includes stacks identity check)
-- Regression plan: 20-part comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
-- Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
+- Run: `.\scripts\run-full-test-cycle.ps1` (Windows) or `./scripts/run-full-test-cycle.sh` (Linux/Mac)
+- **Isolated Testing Model:** Dev and personal stacks are stopped during testing
+- Regression plan: 24-step comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
+- Steps: State snapshot, stack isolation, test execution, state comparison, auto-commit
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
 - Stacks identity check: `.\scripts\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
-- Exit criteria: All stacks identical, all builds succeed, all tests pass, no vulnerabilities
+- Stack health check: `.\scripts\check-stacks-health.ps1 -Stack <dev|personal|test|all>`
+- Exit criteria: Dev state unchanged, dev/personal identical, all stacks healthy, all tests pass
+- Auto-commit: Only if all checks pass (dev unchanged, dev/personal identical, stacks healthy)
 - See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
 
 ### Architecture
@@ -113,9 +116,12 @@ curl http://localhost:5000/health                    # Health check
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 
-# Regression Testing
-.\scripts\run-full-test-cycle.ps1                    # Full regression cycle
+# Regression Testing (Isolated Model)
+.\scripts\run-full-test-cycle.ps1                    # Full regression cycle (24 steps)
 .\scripts\check-stacks-identity.ps1                   # Stacks identity check
+.\scripts\check-stacks-health.ps1 -Stack dev          # Check dev stack health
+.\scripts\check-stacks-health.ps1 -Stack personal     # Check personal stack health
+.\scripts\check-stacks-health.ps1 -Stack test         # Check test stack health
 
 # Health Checks
 curl http://localhost:8080/health                    # Dev stack nginx
@@ -133,13 +139,13 @@ docker compose up -d                                 # Start dev stack
 docker compose -f docker-compose.personal.yml up -d  # Start personal stack
 docker compose logs -f backend                       # Backend logs
 
-# Test Stack (for E2E/BDD testing)
+# Test Stack (for E2E/BDD testing - Isolated Model)
+.\scripts\run-full-test-cycle.ps1                    # Full test cycle (isolated model)
 .\scripts\start-test.ps1                            # Start isolated test stack
 .\scripts\stop-test.ps1                             # Destroy test stack (removes all data)
 .\scripts\seed-test-data.ps1                        # Seed test database
-.\scripts\check-stacks-health.ps1                   # Check dev/personal stacks health
+.\scripts\check-stacks-health.ps1 -Stack test         # Check test stack health
 .\scripts\check-stacks-identity.ps1                 # Check stacks identity (dev/personal/test)
-.\scripts\run-full-test-cycle.ps1                    # Full test cycle (includes identity check)
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 ```

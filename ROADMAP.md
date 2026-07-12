@@ -198,12 +198,16 @@
 |------|--------|----------|-----------------|
 | Stabilize dev/personal/test stacks | ✅ Done | 🔴 Critical | July 2026 |
 | Fix 502 error on dev stack | ✅ Done | 🔴 Critical | July 2026 |
-| Full regression testing plan (20 parts) | ✅ Done | 🔴 Critical | July 2026 |
+| Full regression testing plan (24 steps) | ✅ Done | 🔴 Critical | July 2026 |
 | Automatic stacks identity check | ✅ Done | 🔴 Critical | July 2026 |
 | Docker build verification | ✅ Done | 🔴 Critical | July 2026 |
 | Worker for test stack configuration | ✅ Done | 🔴 Critical | July 2026 |
 | CORS configuration via environment variables | ✅ Done | 🔴 Critical | July 2026 |
 | Healthcheck verification in regression testing | ✅ Done | 🔴 Critical | July 2026 |
+| Isolated testing model implementation | ✅ Done | 🔴 Critical | July 2026 |
+| Automatic state verification (dev pre/post-test) | ✅ Done | 🔴 Critical | July 2026 |
+| Auto-commit on successful regression cycle | ✅ Done | 🔴 Critical | July 2026 |
+| Dev/Personal identity verification | ✅ Done | 🔴 Critical | July 2026 |
 
 ### 🎨 Frontend Improvements
 

@@ -85,44 +85,59 @@ toast.success("Заметка создана успешно");
 
 ## Regression Testing Plan
 
-**Comprehensive 20-part regression testing plan for production readiness:**
+**Comprehensive 24-step isolated regression testing plan for production readiness:**
 
-### Regression Test Cycle
+### Regression Test Cycle (Isolated Model)
 - **Document:** `docs/REGRESSION_TEST_PLAN.md`
 - **Script:** `scripts/run-full-test-cycle.ps1` (Windows) or `scripts/run-full-test-cycle.sh` (Linux/Mac)
 - **Identity Check:** `scripts/check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- **Health Check:** `scripts/check-stacks-health.ps1 -Stack <dev|personal|test|all>`
 
-### Test Parts (20 total)
-1. **PART 0:** Stacks Identity Check (docker-compose, versions, config, DB structure)
-2. **PART 0.5:** Docker Build Verification (builds, sizes, healthchecks, secrets)
-3. **PART 0.6:** Environment Config Check (.env.example, required vars)
-4. **PART 1:** Dev/Personal Stacks Health (health endpoints, API)
-5. **PART 2:** Test Stack Startup (start, seed, verify)
-6. **PART 3:** NLP Service Tests (unit tests, health, API)
-7. **PART 3.5:** Dependencies & Vulnerabilities (npm audit, pip-audit)
-8. **PART 4:** Backend Tests (unit, integration)
-9. **PART 5:** Backend API Verification (auth, notes, links, graph)
-10. **PART 5.5:** Security Verification (CORS, rate limiting, JWT)
-11. **PART 6:** Asynchronous Tasks (worker, Redis, recommendations)
-12. **PART 6.5:** Logs & Monitoring (error logs, debug logs)
-13. **PART 7:** PGVECTOR Verification (extension, embeddings, similarity)
-14. **PART 8:** Redis & MongoDB (PING, collections)
-15. **PART 8.3:** Backup Verification (scheduler, directory)
-16. **PART 9:** Frontend Tests (unit, E2E, visual, BDD)
-17. **PART 10:** Public Graph Verification (public notes, links)
-18. **PART 11:** CI/CD Verification (workflows, versions, secrets)
-19. **PART 11.4:** Documentation Verification (OpenAPI, README)
-20. **PART 12:** Final Report & Cleanup (report, destroy, verdict)
+### Isolated Testing Model
+**⚠️ IMPORTANT:** The test cycle uses an isolated model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.
+
+### Test Steps (24 total)
+1. **Step 0:** Capture dev stack state snapshot (containers, health, API)
+2. **Step 1:** Stop dev stack (`docker compose down`)
+3. **Step 2:** Stop personal stack (`docker compose -f docker-compose.personal.yml down`)
+4. **Step 3:** Check stacks identity (dev/personal/test consistency)
+5. **Step 4:** Start test stack (`start-test.ps1`)
+6. **Step 5:** Seed test data (`seed-test-data.ps1`)
+7. **Step 6:** Docker build verification
+8. **Step 7:** NLP service tests
+9. **Step 8:** Backend unit tests
+10. **Step 9:** Backend API verification
+11. **Step 10:** Asynchronous tasks verification
+12. **Step 11:** PGVECTOR verification
+13. **Step 12:** Redis & MongoDB verification
+14. **Step 13:** Frontend unit tests
+15. **Step 14:** Manual testing instructions
+16. **Step 15:** Public graph verification
+17. **Step 16:** CI/CD verification
+18. **Step 17:** Stop test stack (`stop-test.ps1`)
+19. **Step 18:** Start dev stack (`docker compose up -d --wait`)
+20. **Step 19:** Start personal stack (`docker compose -f docker-compose.personal.yml up -d --wait`)
+21. **Step 20:** Compare dev stack state with pre-test snapshot
+22. **Step 21:** Compare dev and personal stacks for identity
+23. **Step 22:** Check dev and personal stacks health
+24. **Step 23:** Auto-commit with test success marker (if all checks pass)
+
+### Automatic State Verification
+- **Pre-test snapshot:** Captures dev stack state before testing
+- **Post-test comparison:** Compares dev stack state after testing
+- **Dev/Personal identity:** Verifies dev and personal stacks are identical
+- **Auto-commit:** Only if dev state unchanged and dev/personal identical
+- **Failure handling:** Stops with exit code 1 if differences found
 
 ### Frequency
 - **Full Regression:** Before each production deployment
-- **Quick Regression:** Before each major feature release (PARTS 0-2, 4, 9)
-- **Smoke Regression:** After each minor feature release (PARTS 1, 5, 10)
+- **Quick Regression:** Before each major feature release (Steps 0-6, 8, 13)
+- **Smoke Regression:** After each minor feature release (Steps 0-2, 8-9, 15)
 - **Identity Check:** Before each manual testing session
 
 ### Exit Criteria
-- **PASS:** All stacks identical, all builds succeed, all tests pass, no vulnerabilities
-- **FAIL:** Any stack identity mismatch, build failure, test failure, API failure, vulnerability, infrastructure failure, data leakage
+- **PASS:** Dev state unchanged, dev/personal identical, all stacks healthy, all tests pass
+- **FAIL:** Dev state changed, dev/personal not identical, stacks not healthy, test failure, infrastructure failure, data leakage
 
 ### See Also
 - [REGRESSION_TEST_PLAN.md](REGRESSION_TEST_PLAN.md) — Complete regression testing procedures
@@ -183,43 +198,63 @@ curl -X POST http://localhost:5000/embed -H "Content-Type: application/json" -d 
 
 ### Test Stack Management
 ```bash
+# Full test cycle (isolated model - stops dev/personal stacks)
+.\scripts\run-full-test-cycle.ps1      # Windows
+./scripts/run-full-test-cycle.sh       # Linux/Mac
+
 # Start test stack
-.\scripts\start-test.ps1
+.\scripts\start-test.ps1              # Windows
+./scripts\start-test.sh               # Linux/Mac
 
 # Seed test data
-.\scripts\seed-test-data.ps1
+.\scripts\seed-test-data.ps1          # Windows
+./scripts\seed-test-data.sh           # Linux/Mac
 
 # Stop and destroy test stack
-.\scripts\stop-test.ps1
+.\scripts\stop-test.ps1               # Windows
+./scripts\stop-test.sh                # Linux/Mac
 
 # Manual test stack management
 docker compose -f docker-compose.test.yml up -d --build
 docker compose -f docker-compose.test.yml down -v
 ```
 
+### Stack Health Checks
+```bash
+# Check all stacks (default)
+.\scripts\check-stacks-health.ps1              # Windows
+./scripts/check-stacks-health.sh               # Linux/Mac
+
+# Check specific stack
+.\scripts\check-stacks-health.ps1 -Stack dev   # Windows
+.\scripts\check-stacks-health.ps1 -Stack personal
+.\scripts\check-stacks-health.ps1 -Stack test
+./scripts/check-stacks-health.sh --stack dev    # Linux/Mac
+./scripts/check-stacks-health.sh --stack personal
+./scripts/check-stacks-health.sh --stack test
+```
+
 ### Regression Testing
 ```bash
-# Full regression cycle
-.\scripts\run-full-test-cycle.ps1
+# Full regression cycle (isolated model - 24 steps)
+.\scripts\run-full-test-cycle.ps1      # Windows
+./scripts/run-full-test-cycle.sh       # Linux/Mac
 
 # Stacks identity check
-.\scripts\check-stacks-identity.ps1
+.\scripts\check-stacks-identity.ps1    # Windows
+./scripts\check-stacks-identity.sh     # Linux/Mac
 
-# Individual regression parts
-# PART 0: Stacks Identity Check
-# PART 0.5: Docker Build Verification
-# PART 1: Dev/Personal Stacks Health
-# PART 2: Test Stack Startup
-# PART 3: NLP Service Tests
-# PART 4: Backend Tests
-# PART 5: Backend API Verification
-# PART 6: Asynchronous Tasks
-# PART 7: PGVECTOR Verification
-# PART 8: Redis & MongoDB
-# PART 9: Frontend Tests
-# PART 10: Public Graph Verification
-# PART 11: CI/CD Verification
-# PART 12: Final Report & Cleanup
+# Individual regression steps
+# Step 0: Capture dev stack state snapshot
+# Step 1-2: Stop dev and personal stacks
+# Step 3: Check stacks identity
+# Step 4: Start test stack
+# Step 5: Seed test data
+# Step 6-16: Run tests and verifications
+# Step 17: Stop test stack
+# Step 18-19: Restore dev and personal stacks
+# Step 20-22: Compare states and verify identity
+# Step 23: Auto-commit if all checks pass
 ```
 
 ### Database Verification
@@ -264,6 +299,9 @@ curl http://localhost:15002/health          # Test NLP service
 - **ALWAYS** use English text patterns in frontend tests (language policy)
 - **ALWAYS** run unit tests before integration tests
 - **ALWAYS** verify health endpoints before API testing
+- **ALWAYS** use the full test cycle script for regression testing (isolated model)
+- **ALWAYS** check dev stack state before/after testing for data leakage
+- **ALWAYS** verify dev/personal identity after testing
 
 ---
 

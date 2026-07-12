@@ -241,6 +241,49 @@ describe('NoteCard', () => {
 
 ## Playwright E2E Tests
 
+**⚠️ IMPORTANT:** Always use the isolated test stack for E2E and BDD testing. Never run E2E tests against dev or personal stacks.
+
+### Isolated Testing Model
+
+The project uses an isolated testing model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.
+
+### Test Stack Usage
+
+```bash
+# Start isolated test stack
+.\scripts\start-test.ps1              # Windows
+./scripts/start-test.sh               # Linux/Mac
+
+# Seed test data
+.\scripts\seed-test-data.ps1          # Windows
+./scripts\seed-test-data.sh           # Linux/Mac
+
+# Run E2E tests against test stack
+cd frontend && npx playwright test
+
+# Stop and destroy test stack
+.\scripts\stop-test.ps1               # Windows
+./scripts/stop-test.sh                # Linux/Mac
+```
+
+### Full Regression Cycle
+
+```bash
+# Full regression cycle (24 steps with isolated model)
+.\scripts\run-full-test-cycle.ps1      # Windows
+./scripts/run-full-test-cycle.sh       # Linux/Mac
+```
+
+The full regression cycle:
+1. Captures dev stack state snapshot
+2. Stops dev and personal stacks
+3. Runs all tests on isolated test stack
+4. Compares dev stack state before/after testing
+5. Verifies dev/personal identity
+6. Auto-commits if all checks pass
+
+### E2E Test Example
+
 ```typescript
 // frontend/e2e/notes.spec.ts
 import { test, expect } from '@playwright/test';
@@ -253,7 +296,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('creates a note and sees it in graph', async ({ page }) => {
-  await page.goto('/notes/new');
+  await page.goto('http://localhost:3002/notes/new');  // Test stack URL
   await page.fill('[name="title"]', 'Playwright Test Note');
   await page.fill('[name="content"]', 'E2E test content');
   await page.click('button[type="submit"]');
@@ -262,6 +305,14 @@ test('creates a note and sees it in graph', async ({ page }) => {
 ```
 
 Config: `frontend/cucumber.mjs` (BDD runner), `playwright.config.ts`.
+
+### Test Stack URLs
+
+- **Frontend:** http://localhost:3002
+- **Backend API:** http://localhost:8083
+- **PostgreSQL:** localhost:5434
+- **Redis:** localhost:6381
+- **MongoDB:** localhost:27018
 
 ---
 
