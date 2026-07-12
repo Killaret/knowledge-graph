@@ -197,7 +197,7 @@ Start-Sleep -Seconds 30
 Write-Host "  ✓ Personal stack started" -ForegroundColor Green
 
 # Step 20: Compare dev stack state with snapshot
-Write-Host "`n[Step 20/22] Comparing dev stack state with snapshot..." -ForegroundColor Yellow
+Write-Host "`n[Step 20/24] Comparing dev stack state with snapshot..." -ForegroundColor Yellow
 docker ps --filter "name=kg-" > "$snapshotDir\post-test-ps.txt"
 Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
 
@@ -206,6 +206,8 @@ try {
     Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
 } catch {
     Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
+    Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
+    exit 1
 }
 
 try {
@@ -213,16 +215,118 @@ try {
     Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
 } catch {
     Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Red
+    Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
+    exit 1
 }
 
-# Step 21: Check stacks health
-Write-Host "`n[Step 21/22] Checking dev and personal stacks health after testing..." -ForegroundColor Yellow
-& .\scripts\check-stacks-health.ps1 -Stack dev
-& .\scripts\check-stacks-health.ps1 -Stack personal
-Write-Host "  ✓ Dev and personal stacks health checked" -ForegroundColor Green
+# Compare pre-test and post-test snapshots
+Write-Host "`n[Step 21/24] Comparing pre-test and post-test dev stack state..." -ForegroundColor Yellow
+$devStateChanged = $false
 
-# Step 22: Summary
-Write-Host "`n[Step 22/22] Test cycle summary" -ForegroundColor Cyan
+# Compare container states
+if (Compare-Object (Get-Content "$snapshotDir\pre-test-ps.txt") (Get-Content "$snapshotDir\post-test-ps.txt")) {
+    Write-Host "  ⚠ Dev container state changed during testing" -ForegroundColor Yellow
+    $devStateChanged = $true
+} else {
+    Write-Host "  ✓ Dev container state unchanged" -ForegroundColor Green
+}
+
+# Compare health endpoints
+if (Test-Path "$snapshotDir\pre-test-health.json" -and Test-Path "$snapshotDir\post-test-health.json") {
+    if (Compare-Object (Get-Content "$snapshotDir\pre-test-health.json") (Get-Content "$snapshotDir\post-test-health.json")) {
+        Write-Host "  ⚠ Dev health endpoint changed during testing" -ForegroundColor Yellow
+        $devStateChanged = $true
+    } else {
+        Write-Host "  ✓ Dev health endpoint unchanged" -ForegroundColor Green
+    }
+}
+
+# Compare API responses
+if (Compare-Object (Get-Content "$snapshotDir\pre-test-notes.json") (Get-Content "$snapshotDir\post-test-notes.json")) {
+    Write-Host "  ⚠ Dev API response changed during testing" -ForegroundColor Yellow
+    $devStateChanged = $true
+} else {
+    Write-Host "  ✓ Dev API response unchanged" -ForegroundColor Green
+}
+
+if ($devStateChanged) {
+    Write-Host "  WARNING: Dev stack state changed during testing" -ForegroundColor Yellow
+    Write-Host "  This may indicate data leakage or side effects" -ForegroundColor Yellow
+} else {
+    Write-Host "  ✓ Dev stack state verified - no changes detected" -ForegroundColor Green
+}
+
+# Step 22: Compare dev and personal stacks
+Write-Host "`n[Step 22/24] Comparing dev and personal stacks..." -ForegroundColor Yellow
+try {
+    $devNotes = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json
+    $devNotes | Out-File "$snapshotDir\dev-notes.json"
+    Write-Host "  ✓ Dev notes snapshot saved" -ForegroundColor Green
+} catch {
+    Write-Host "  ERROR: Failed to get dev notes" -ForegroundColor Red
+    exit 1
+}
+
+try {
+    $personalNotes = Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json
+    $personalNotes | Out-File "$snapshotDir\personal-notes.json"
+    Write-Host "  ✓ Personal notes snapshot saved" -ForegroundColor Green
+} catch {
+    Write-Host "  ERROR: Failed to get personal notes" -ForegroundColor Red
+    exit 1
+}
+
+# Compare dev and personal notes
+if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
+    Write-Host "  ⚠ Dev and Personal stacks are NOT identical" -ForegroundColor Red
+    Write-Host "  ERROR: Stacks have differences - manual investigation required" -ForegroundColor Red
+    Write-Host "  Difference details:" -ForegroundColor Yellow
+    diff "$snapshotDir\dev-notes.json" "$snapshotDir\personal-notes.json"
+    Write-Host ""
+    Write-Host "  Skipping auto-commit due to stack differences" -ForegroundColor Yellow
+    Write-Host "  Please investigate and fix the differences manually" -ForegroundColor Yellow
+    exit 1
+} else {
+    Write-Host "  ✓ Dev and Personal stacks are identical" -ForegroundColor Green
+}
+
+# Step 23: Check stacks health
+Write-Host "`n[Step 23/24] Checking dev and personal stacks health after testing..." -ForegroundColor Yellow
+& .\scripts\check-stacks-health.ps1 -Stack dev
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  ERROR: Dev stack is not healthy" -ForegroundColor Red
+    exit 1
+}
+
+& .\scripts\check-stacks-health.ps1 -Stack personal
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  ERROR: Personal stack is not healthy" -ForegroundColor Red
+    exit 1
+}
+Write-Host "  ✓ Dev and personal stacks health verified" -ForegroundColor Green
+
+# Step 24: Auto-commit if all checks passed
+Write-Host "`n[Step 24/24] All checks passed - creating auto-commit..." -ForegroundColor Yellow
+if (-not $devStateChanged) {
+    Write-Host "  Dev stack state: Unchanged ✓" -ForegroundColor Green
+    Write-Host "  Dev/Personal identity: Identical ✓" -ForegroundColor Green
+    Write-Host "  Stacks health: Healthy ✓" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  Performing auto-commit with test success marker..." -ForegroundColor Yellow
+    
+    git add -A
+    $commitMessage = "test: successful regression cycle — dev and personal identical`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
+    git commit -m $commitMessage
+    git push
+    
+    Write-Host "  ✓ Auto-commit pushed successfully" -ForegroundColor Green
+} else {
+    Write-Host "  WARNING: Dev stack state changed - skipping auto-commit" -ForegroundColor Yellow
+    Write-Host "  Please investigate the changes manually before committing" -ForegroundColor Yellow
+}
+
+# Step 25: Summary
+Write-Host "`n[Step 25/25] Test cycle summary" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TEST CYCLE COMPLETE" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -243,12 +347,18 @@ Write-Host "✓ Frontend unit tests completed" -ForegroundColor Green
 Write-Host "✓ Manual testing completed" -ForegroundColor Green
 Write-Host "✓ Dev and personal stacks restored" -ForegroundColor Green
 Write-Host "✓ Dev stack state compared with snapshot" -ForegroundColor Green
+Write-Host "✓ Dev and personal stacks compared for identity" -ForegroundColor Green
 Write-Host "✓ Dev and personal stacks health verified" -ForegroundColor Green
+if (-not $devStateChanged) {
+    Write-Host "✓ Auto-commit with test success marker pushed" -ForegroundColor Green
+} else {
+    Write-Host "⚠ Auto-commit skipped (dev state changed)" -ForegroundColor Yellow
+}
 Write-Host ""
 Write-Host "Snapshots saved to: $snapshotDir" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "All stacks are stable and isolated testing completed successfully." -ForegroundColor Green
 
-# Step 23: Exit
+# Step 26: Exit
 Write-Host "`nPress Enter to exit..." -ForegroundColor Cyan
 Read-Host

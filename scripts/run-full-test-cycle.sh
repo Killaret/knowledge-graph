@@ -211,7 +211,7 @@ echo "  ✓ Personal stack started"
 
 # Step 20: Compare dev stack state with snapshot
 echo ""
-echo "[Step 20/22] Comparing dev stack state with snapshot..."
+echo "[Step 20/24] Comparing dev stack state with snapshot..."
 docker ps --filter "name=kg-" > "$snapshot_dir/post-test-ps.txt"
 echo "  ✓ Post-test container snapshot saved"
 
@@ -220,6 +220,8 @@ if curl -s -f http://localhost:8080/health > /dev/null; then
     echo "  ✓ Post-test health snapshot saved"
 else
     echo "  ⚠ Dev health endpoint not available after restoration"
+    echo "  ERROR: Dev stack restoration failed"
+    exit 1
 fi
 
 if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
@@ -227,18 +229,122 @@ if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
     echo "  ✓ Post-test notes snapshot saved"
 else
     echo "  ⚠ Dev API not available after restoration"
+    echo "  ERROR: Dev stack restoration failed"
+    exit 1
 fi
 
-# Step 21: Check stacks health
+# Compare pre-test and post-test snapshots
 echo ""
-echo "[Step 21/22] Checking dev and personal stacks health after testing..."
-./scripts/check-stacks-health.sh --stack dev
-./scripts/check-stacks-health.sh --stack personal
-echo "  ✓ Dev and personal stacks health checked"
+echo "[Step 21/24] Comparing pre-test and post-test dev stack state..."
+dev_state_changed=false
 
-# Step 22: Summary
+# Compare container states
+if ! diff -q "$snapshot_dir/pre-test-ps.txt" "$snapshot_dir/post-test-ps.txt" > /dev/null; then
+    echo "  ⚠ Dev container state changed during testing"
+    dev_state_changed=true
+else
+    echo "  ✓ Dev container state unchanged"
+fi
+
+# Compare health endpoints
+if [ -f "$snapshot_dir/pre-test-health.json" ] && [ -f "$snapshot_dir/post-test-health.json" ]; then
+    if ! diff -q "$snapshot_dir/pre-test-health.json" "$snapshot_dir/post-test-health.json" > /dev/null; then
+        echo "  ⚠ Dev health endpoint changed during testing"
+        dev_state_changed=true
+    else
+        echo "  ✓ Dev health endpoint unchanged"
+    fi
+fi
+
+# Compare API responses
+if ! diff -q "$snapshot_dir/pre-test-notes.json" "$snapshot_dir/post-test-notes.json" > /dev/null; then
+    echo "  ⚠ Dev API response changed during testing"
+    dev_state_changed=true
+else
+    echo "  ✓ Dev API response unchanged"
+fi
+
+if [ "$dev_state_changed" = true ]; then
+    echo "  WARNING: Dev stack state changed during testing"
+    echo "  This may indicate data leakage or side effects"
+else
+    echo "  ✓ Dev stack state verified - no changes detected"
+fi
+
+# Step 22: Compare dev and personal stacks
 echo ""
-echo "[Step 22/22] Test cycle summary"
+echo "[Step 22/24] Comparing dev and personal stacks..."
+if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://localhost:8080/api/v1/notes?limit=1" > "$snapshot_dir/dev-notes.json"
+    echo "  ✓ Dev notes snapshot saved"
+else
+    echo "  ERROR: Failed to get dev notes"
+    exit 1
+fi
+
+if curl -s -f "http://localhost:8082/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://localhost:8082/api/v1/notes?limit=1" > "$snapshot_dir/personal-notes.json"
+    echo "  ✓ Personal notes snapshot saved"
+else
+    echo "  ERROR: Failed to get personal notes"
+    exit 1
+fi
+
+# Compare dev and personal notes
+if ! diff -q "$snapshot_dir/dev-notes.json" "$snapshot_dir/personal-notes.json" > /dev/null; then
+    echo "  ⚠ Dev and Personal stacks are NOT identical"
+    echo "  ERROR: Stacks have differences - manual investigation required"
+    echo "  Difference details:"
+    diff "$snapshot_dir/dev-notes.json" "$snapshot_dir/personal-notes.json"
+    echo ""
+    echo "  Skipping auto-commit due to stack differences"
+    echo "  Please investigate and fix the differences manually"
+    exit 1
+else
+    echo "  ✓ Dev and Personal stacks are identical"
+fi
+
+# Step 23: Check stacks health
+echo ""
+echo "[Step 23/24] Checking dev and personal stacks health after testing..."
+if ! ./scripts/check-stacks-health.sh --stack dev; then
+    echo "  ERROR: Dev stack is not healthy"
+    exit 1
+fi
+
+if ! ./scripts/check-stacks-health.sh --stack personal; then
+    echo "  ERROR: Personal stack is not healthy"
+    exit 1
+fi
+echo "  ✓ Dev and personal stacks health verified"
+
+# Step 24: Auto-commit if all checks passed
+echo ""
+echo "[Step 24/24] All checks passed - creating auto-commit..."
+if [ "$dev_state_changed" = false ]; then
+    echo "  Dev stack state: Unchanged ✓"
+    echo "  Dev/Personal identity: Identical ✓"
+    echo "  Stacks health: Healthy ✓"
+    echo ""
+    echo "  Performing auto-commit with test success marker..."
+    
+    git add -A
+    git commit -m "test: successful regression cycle — dev and personal identical
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
+    git push
+    
+    echo "  ✓ Auto-commit pushed successfully"
+else
+    echo "  WARNING: Dev stack state changed - skipping auto-commit"
+    echo "  Please investigate the changes manually before committing"
+fi
+
+# Step 25: Summary
+echo ""
+echo "[Step 25/25] Test cycle summary"
 echo "========================================"
 echo "  TEST CYCLE COMPLETE"
 echo "========================================"
@@ -259,13 +365,19 @@ echo "✓ Frontend unit tests completed"
 echo "✓ Manual testing completed"
 echo "✓ Dev and personal stacks restored"
 echo "✓ Dev stack state compared with snapshot"
+echo "✓ Dev and personal stacks compared for identity"
 echo "✓ Dev and personal stacks health verified"
+if [ "$dev_state_changed" = false ]; then
+    echo "✓ Auto-commit with test success marker pushed"
+else
+    echo "⚠ Auto-commit skipped (dev state changed)"
+fi
 echo ""
 echo "Snapshots saved to: $snapshot_dir"
 echo ""
 echo "All stacks are stable and isolated testing completed successfully."
 
-# Step 23: Exit
+# Step 26: Exit
 echo ""
 echo "Press Enter to exit..."
 read

@@ -62,6 +62,8 @@ The isolated testing model ensures that:
 4. **Stop test stack** - Complete cleanup with volume removal
 5. **Restore dev/personal stacks** - Bring back development environments
 6. **Post-test comparison** - Verify dev stack state unchanged
+7. **Dev/Personal identity check** - Verify stacks are identical
+8. **Auto-commit** - Commit with test success marker if all checks pass
 
 ### Benefits
 
@@ -70,6 +72,8 @@ The isolated testing model ensures that:
 - **Accurate results** - Tests run on clean, isolated environment
 - **State verification** - Automatic comparison of dev stack state before/after testing
 - **No conflicts** - Eliminates port and resource conflicts between stacks
+- **Auto-commit** - Automatic commit with test success marker when all checks pass
+- **Identity verification** - Automatic comparison of dev and personal stacks
 
 ### When to Use Isolated Testing
 
@@ -201,8 +205,17 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 18. **Stop test stack** - `stop-test.ps1`
 19. **Start dev stack** - `docker compose up -d --wait`
 20. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
-21. **Compare dev stack state** - Compare with pre-test snapshot
-22. **Check stacks health** - Verify dev and personal stacks are healthy
+21. **Compare dev stack state** - Compare with pre-test snapshot (containers, health, API)
+22. **Compare dev and personal stacks** - Verify dev and personal are identical
+23. **Check stacks health** - Verify dev and personal stacks are healthy
+24. **Auto-commit** - If all checks passed, commit with test success marker
+
+**Automatic State Verification:**
+- **Pre-test snapshot:** Captures dev stack state before testing
+- **Post-test comparison:** Compares dev stack state after testing
+- **Dev/Personal identity:** Verifies dev and personal stacks are identical
+- **Auto-commit:** Only if dev state unchanged and dev/personal identical
+- **Failure handling:** Stops with exit code 1 if differences found
 
 **Benefits of Isolated Testing:**
 - **Resource efficiency** - Only test stack uses resources during testing
@@ -215,6 +228,35 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 - Pre-test snapshots saved to `test-snapshots_YYYYMMDD_HHMMSS/` directory
 - Includes: container state, health endpoint, API response
 - Post-test snapshots for comparison
+
+## Auto-Commit on Successful Testing
+
+**When all checks pass:**
+- Dev stack state unchanged (pre-test vs post-test)
+- Dev and personal stacks identical
+- Dev and personal stacks healthy
+
+**Auto-commit action:**
+```bash
+git add -A
+git commit -m "test: successful regression cycle — dev and personal identical"
+git push
+```
+
+**Commit message includes:**
+- Test success marker
+- Dev/Personal identity confirmation
+- Co-authored-by tag for Devin
+
+**When checks fail:**
+- Dev stack state changed → Skip auto-commit, show warning
+- Dev/Personal not identical → Exit with code 1, skip auto-commit
+- Stacks not healthy → Exit with code 1, skip auto-commit
+
+**Manual investigation required:**
+- Check snapshot differences in `test-snapshots_YYYYMMDD_HHMMSS/`
+- Review diff output for dev/personal differences
+- Fix issues before re-running test cycle
 
 ## Manual Testing
 
