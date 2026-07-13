@@ -8,7 +8,7 @@ System parameters can be configured via:
 
 For production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
 
-🌐 **Language:** English
+🌐 **Language:** English | [Русская версия](CONFIGURATION_RU.md)
 
 ---
 
@@ -66,6 +66,46 @@ import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } fr
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
 const limit = apiConfig.default_limit;
 const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
+```
+
+---
+
+## Frontend Graph 2D Parameters (`frontend.graph.2d`)
+
+All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not be hardcoded in source files.
+
+```json
+{
+  "frontend": {
+    "graph": {
+      "2d": {
+        "max_nodes": 500,
+        "shadows_threshold": 100,
+        "animated_links_threshold": 50,
+        "gravity_nodes_threshold": 100,
+        "gravity_max_distance": 300,
+        "ghost_node_radius": 30
+      }
+    }
+  }
+}
+```
+
+| Parameter | Type | Default | Used in | Description |
+|-----------|------|---------|---------|-------------|
+| `max_nodes` | integer | `500` | `renderer.ts` | Maximum nodes loaded into the 2D graph canvas |
+| `shadows_threshold` | integer | `100` | `renderer.ts` | Node count **below** which CSS drop-shadows are rendered. Above this threshold shadows are disabled for performance |
+| `animated_links_threshold` | integer | `50` | `renderer.ts` | Link count **above** which animated link drawing falls back to static straight lines. Prevents jank on dense graphs |
+| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
+| `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Max world-unit radius within which nodes exert gravitational attraction on each other |
+| `ghost_node_radius` | integer | `30` | `ghost-node.ts` | Screen-space pixel radius of the translucent "+" ghost node button (rendered in screen coordinates, always visible) |
+
+### Performance decision tree
+
+```
+nodes.length < shadows_threshold (100)       → enable CSS shadows
+nodes.length < gravity_nodes_threshold (100) → enable gravity simulation
+links.length > animated_links_threshold (50) → use static links instead of animated
 ```
 
 ### Backend Usage (Go)

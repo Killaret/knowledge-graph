@@ -47,5 +47,5 @@ docker compose -f docker-compose.test.yml ps
 
 echo ""
 echo "Test stack ready: http://localhost:3002"
-echo "Backend API: http://localhost:18083"
-echo "Frontend: http://localhost:13002"
+echo "Backend API: http://localhost:8083"
+echo "Frontend: http://localhost:3002"

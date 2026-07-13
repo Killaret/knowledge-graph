@@ -16,7 +16,7 @@ Write-Host "Waiting for containers to be healthy..." -ForegroundColor Yellow
 $timeout = 120 # 2 minutes
 $startTime = Get-Date
 
-while ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+while (((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
     $healthy = docker compose -f docker-compose.test.yml ps --format json | ConvertFrom-Json | Where-Object { $_.State -eq "running" -and $_.Health -eq "healthy" }
     $total = docker compose -f docker-compose.test.yml ps --format json | ConvertFrom-Json | Where-Object { $_.State -eq "running" } | Measure-Object | Select-Object -ExpandProperty Count
     
@@ -35,5 +35,5 @@ Write-Host "`nTest stack status:" -ForegroundColor Cyan
 Write-Host $finalCheck
 
 Write-Host "`nTest stack ready: http://localhost:3002" -ForegroundColor Green
-Write-Host "Backend API: http://localhost:18083" -ForegroundColor Green
-Write-Host "Frontend: http://localhost:13002" -ForegroundColor Green
+Write-Host "Backend API: http://localhost:8083" -ForegroundColor Green
+Write-Host "Frontend: http://localhost:3002" -ForegroundColor Green

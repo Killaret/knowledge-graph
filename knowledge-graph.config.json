@@ -136,7 +136,11 @@
     "graph": {
       "2d": {
         "max_nodes": 500,
-        "shadows_threshold": 100
+        "shadows_threshold": 100,
+        "animated_links_threshold": 50,
+        "gravity_nodes_threshold": 100,
+        "gravity_max_distance": 300,
+        "ghost_node_radius": 30
       },
       "3d": {
         "max_nodes": 500

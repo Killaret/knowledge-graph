@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { isAuthenticated } from '$lib/stores/auth.svelte';
+  import { getCurrentLocale, setLocale, type Locale } from '$lib/utils/i18n';
 
   console.log('[FloatingControls] Component loaded');
 
@@ -11,7 +12,6 @@
     onFilter,
     onImport,
     onExport,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     noteId = '',
     typeFilters = [],
     selectedType = 'all',
@@ -47,6 +47,21 @@
   
   let searchQuery = $state('');
   let showMenu = $state(false);
+  let filtersContainer: HTMLDivElement | null = $state(null);
+  let currentLocale = $state<Locale>(getCurrentLocale());
+
+  function toggleLocale() {
+    const next: Locale = currentLocale === 'en' ? 'ru' : 'en';
+    currentLocale = next;
+    setLocale(next);
+    window.location.reload();
+  }
+
+  function scrollFilters(dir: 'left' | 'right') {
+    if (filtersContainer) {
+      filtersContainer.scrollBy({ left: dir === 'right' ? 120 : -120, behavior: 'smooth' });
+    }
+  }
   
   function handleSearch() {
     onSearch?.(searchQuery);
@@ -129,24 +144,28 @@
 
   <!-- Type Filters -->
   {#if typeFilters.length > 0}
-    <div class="type-filters">
-      {#each typeFilters as filter}
-        <button
-          type="button"
-          class="filter-chip {selectedType === filter.id ? 'active' : ''}"
-          onclick={() => handleFilter(filter.id)}
-          title={filter.label}
-          data-testid="filter-chip-{filter.id}"
-          aria-pressed={selectedType === filter.id}
-          aria-label={`Filter by ${filter.label}`}
-        >
-          <span class="filter-emoji">{filter.emoji}</span>
-          <span class="filter-label">{filter.label}</span>
-          {#if typeCounts[filter.id] !== undefined}
-            <span class="filter-count" data-testid="filter-count-{filter.id}">{typeCounts[filter.id]}</span>
-          {/if}
-        </button>
-      {/each}
+    <div class="type-filters-wrapper">
+      <button type="button" class="scroll-arrow scroll-left" onclick={() => scrollFilters('left')} aria-label="Scroll left">‹</button>
+      <div class="type-filters" bind:this={filtersContainer}>
+        {#each typeFilters as filter}
+          <button
+            type="button"
+            class="filter-chip {selectedType === filter.id ? 'active' : ''}"
+            onclick={() => handleFilter(filter.id)}
+            title={filter.label}
+            data-testid="filter-chip-{filter.id}"
+            aria-pressed={selectedType === filter.id}
+            aria-label={`Filter by ${filter.label}`}
+          >
+            <span class="filter-emoji">{filter.emoji}</span>
+            <span class="filter-label">{filter.label}</span>
+            {#if typeCounts[filter.id] !== undefined}
+              <span class="filter-count" data-testid="filter-count-{filter.id}">{typeCounts[filter.id]}</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      <button type="button" class="scroll-arrow scroll-right" onclick={() => scrollFilters('right')} aria-label="Scroll right">›</button>
     </div>
   {/if}
 
@@ -223,6 +242,18 @@
     {/if}
   </div>
 
+  <!-- Language Toggle -->
+  <button
+    type="button"
+    class="lang-toggle"
+    onclick={toggleLocale}
+    title="Switch language"
+    aria-label="Toggle language"
+    data-testid="lang-toggle"
+  >
+    {currentLocale === 'en' ? 'RU' : 'EN'}
+  </button>
+
   <!-- Create Button -->
   <button type="button" class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button" aria-label="Create new note">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -241,20 +272,18 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 50px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     z-index: 100;
     width: clamp(320px, 90vw, 900px);
-    overflow-x: auto;
-    overflow-y: visible;
-    scrollbar-width: none; /* Firefox */
-    scrollbar-height: none;
-    /* prevent layout reflow when content changes */
-    height: 56px;
+    /* Allow natural height — chips must not be clipped */
+    min-height: 56px;
     box-sizing: border-box;
+    flex-wrap: nowrap;
+    overflow: visible;
   }
 
   .floating-controls::-webkit-scrollbar {
@@ -415,6 +444,27 @@
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
   }
 
+  .lang-toggle {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+
+  .lang-toggle:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+  }
+
   .login-btn {
     padding: 10px;
     border: none;
@@ -435,17 +485,28 @@
     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
   }
 
-  /* Type Filters — scrollable row */
+  /* Type Filters wrapper — scroll arrows + scrollable row.
+     flex: 1 1 0 but capped so right-side buttons (lang, create) always stay visible */
+  .type-filters-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 380px;
+    gap: 2px;
+  }
+
   .type-filters {
     display: flex;
     gap: 6px;
     align-items: center;
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-width: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
     scrollbar-width: none;
-    padding: 2px 0;
+    padding: 4px 2px;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -453,20 +514,46 @@
     display: none;
   }
 
+  .scroll-arrow {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    color: #64748b;
+    line-height: 1;
+    padding: 0;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .scroll-arrow:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e0;
+    color: #334155;
+  }
+
   .filter-chip {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 6px 10px;
+    padding: 5px 12px;
     border: 1px solid #e2e8f0;
     background: white;
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 12px;
-    color: #64748b;
+    font-size: 13px;
+    color: #334155;
     white-space: nowrap;
     flex-shrink: 0;
+    min-height: 32px;
   }
 
   .filter-chip:hover {

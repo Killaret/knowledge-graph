@@ -31,7 +31,6 @@
     type BlackHoleState,
     updateGhostNodePosition,
     updateGhostNodePulse,
-    isPointOverGhostNode,
     type GhostNodeState,
     type GravitySystem
   } from './GraphCanvas';
@@ -251,7 +250,10 @@
           }
           
           // Draw the full graph with all effects
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
+          const linkMousePos = (dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget)
+            ? { sourceId: dragDropState.draggedNodeId, x: dragDropState.mouseWorldPosition.x, y: dragDropState.mouseWorldPosition.y }
+            : null;
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget, linkMousePos);
         }
       },
       stableRender
@@ -314,7 +316,10 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
+          const linkMousePos2 = (dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget)
+            ? { sourceId: dragDropState.draggedNodeId, x: dragDropState.mouseWorldPosition.x, y: dragDropState.mouseWorldPosition.y }
+            : null;
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget, linkMousePos2);
         }
       },
       () => {
@@ -345,7 +350,10 @@
       onTick: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
-          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
+          const linkMousePos3 = (dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget)
+            ? { sourceId: dragDropState.draggedNodeId, x: dragDropState.mouseWorldPosition.x, y: dragDropState.mouseWorldPosition.y }
+            : null;
+          draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget, linkMousePos3);
         }
       },
       onResetView: () => {
@@ -362,7 +370,10 @@
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
-      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget);
+      const linkMousePos = (dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget)
+        ? { sourceId: dragDropState.draggedNodeId, x: dragDropState.mouseWorldPosition.x, y: dragDropState.mouseWorldPosition.y }
+        : null;
+      draw(ctx, width, height, simState.simLinks, simNodes, angles, transform, simState.nodeOpacity, simState.linkOpacity, stableRender, animationTime, hoveredNodeId, particleSystem, blackHole, ghostNode, gravitySystem, focusMode, hotkeysState.searchMatchIds, highlightedLinkId, dragDropState.linkPreviewTarget, linkMousePos);
     }
   }
 
@@ -390,6 +401,14 @@
         }
       }
     );
+    // Fix dragged node in place so simulation doesn't move it while drawing link preview
+    if (dragDropState.draggedNodeId) {
+      const node = getSimulationNodes(simState).find((n) => n.id === dragDropState.draggedNodeId);
+      if (node && node.x != null && node.y != null) {
+        node.fx = node.x;
+        node.fy = node.y;
+      }
+    }
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -399,29 +418,32 @@
 
     // Update hover states for interactive elements
     blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, transform);
-    ghostNode.hovered = isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform);
+    // Ghost node is now drawn in screen coords at (60, 60)
+    const canvasRect = canvas?.getBoundingClientRect();
+    const screenX = canvasRect ? e.clientX - canvasRect.left : e.clientX;
+    const screenY = canvasRect ? e.clientY - canvasRect.top : e.clientY;
+    const dx = screenX - 60, dy = screenY - 60;
+    ghostNode.hovered = Math.sqrt(dx * dx + dy * dy) < ghostNode.radius;
 
-    // Dragging a node
+    // Dragging a node — node stays fixed, we draw a preview line to mouse position
     if (dragDropState.draggedNodeId && dragState.dragging) {
       const node = getSimulationNodes(simState).find((n) => n.id === dragDropState.draggedNodeId);
       if (node && node.x != null && node.y != null) {
-        node.x = pos.x;
-        node.y = pos.y;
-        node.fx = pos.x;
-        node.fy = pos.y;
-
-        // Check if over black hole
+        // Do NOT move the node — keep it at original position
+        // Check if over black hole (use original node position)
         blackHole.hovered = isNodeOverBlackHole(node, blackHole);
 
-        // Check if over another node for link creation
+        // Check if under cursor there is another node to link to
         const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
         if (targetNode && targetNode.id !== dragDropState.draggedNodeId && !isTechnicalNode(targetNode.id)) {
           dragDropState.isDraggingForLink = true;
           dragDropState.linkTargetNodeId = targetNode.id;
+          // Preview from source node to target node position
           dragDropState.linkPreviewTarget = { sourceId: dragDropState.draggedNodeId, targetId: targetNode.id };
         } else {
           dragDropState.isDraggingForLink = false;
           dragDropState.linkTargetNodeId = null;
+          // Preview from source node to current mouse position (stored in mouseWorldPosition)
           dragDropState.linkPreviewTarget = null;
         }
       }
@@ -505,27 +527,15 @@
     if (dragDropState.draggedNodeId) {
       const node = getSimulationNodes(simState).find((n) => n.id === dragDropState.draggedNodeId);
       if (node) {
-        // Check if dropped over black hole -> delete
-        if (isNodeOverBlackHole(node, blackHole)) {
-          animateNodeDeletion(node, () => {
-            if (onNoteDelete) {
-              onNoteDelete(node.id);
-            }
-            showUndoToastFor(node.id);
-          });
-        } else {
-          // Check if dropped over another node -> create link
-          const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
-          if (targetNode && targetNode.id !== dragDropState.draggedNodeId && !isTechnicalNode(targetNode.id)) {
-            openLinkForm(linkFormState, dragDropState.draggedNodeId, targetNode.id, e.clientX, e.clientY);
+        // Release the fixed position so simulation can resume
+        node.fx = undefined;
+        node.fy = undefined;
 
-            // Spring-back source node to original position
-            animateSpringBack(node, dragDropState.dragStartPosition);
-          } else {
-            // Release fixed position
-            node.fx = undefined;
-            node.fy = undefined;
-          }
+        // Node never moved — check what's under the cursor on drop
+        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(simState));
+        if (targetNode && targetNode.id !== dragDropState.draggedNodeId && !isTechnicalNode(targetNode.id)) {
+          // Dropped on another node -> open link form
+          openLinkForm(linkFormState, dragDropState.draggedNodeId, targetNode.id, e.clientX, e.clientY);
         }
       }
       dragDropState.draggedNodeId = null;
@@ -565,6 +575,28 @@
     }
   }
 
+  // Double-click to zoom in (desktop); double-click on empty space zooms in at cursor
+  function onDblClick(e: MouseEvent) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const zoomFactor = 1.8;
+    const newScale = Math.min(transform.k * zoomFactor, 5);
+    const scaleChange = newScale / transform.k;
+    transform.x = mouseX - (mouseX - transform.x) * scaleChange;
+    transform.y = mouseY - (mouseY - transform.y) * scaleChange;
+    transform.k = newScale;
+    redraw();
+  }
+
+  // Global mouseup — cancels pan/drag even if mouse leaves canvas
+  function onWindowMouseUp(e: MouseEvent) {
+    if (!dragState.dragging) return;
+    onMouseUp(e);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function animateNodeDeletion(node: SimulationNode, onComplete: () => void) {
     const startX = node.x!;
     const startY = node.y!;
@@ -593,6 +625,7 @@
     requestAnimationFrame(step);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function animateSpringBack(node: SimulationNode, target: { x: number; y: number }) {
     const startX = node.x!;
     const startY = node.y!;
@@ -779,6 +812,7 @@
   let undoToastStage = $state<'done' | 'restore'>('done');
   let undoToastTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function showUndoToastFor(nodeId: string) {
     lastDeletedNodeId = nodeId;
     showUndoToast = true;
@@ -865,7 +899,7 @@
     redraw();
   }</script>
 
-<svelte:window onkeydown={handleKeyDown} />
+<svelte:window onkeydown={handleKeyDown} onmouseup={onWindowMouseUp} />
 
 <canvas
   bind:this={canvas}
@@ -873,6 +907,7 @@
   onmousedown={onMouseDown}
   onmousemove={onMouseMove}
   onmouseup={onMouseUp}
+  ondblclick={onDblClick}
   onclick={onClick}
   ontouchstart={onTouchStart}
   onwheel={onZoom}
@@ -1083,19 +1118,28 @@
   </div>
 {/if}
 
-{#if hotkeysState.showHelpTooltip}
+{#if hotkeysState.showHelpTooltip && hotkeysState.helpTooltipPosition.x === -1}
+  <!-- Inactivity tip — shown at bottom-center -->
   <div
     class="help-tooltip"
-    style="position: fixed; left: {hotkeysState.helpTooltipPosition.x}px; top: {hotkeysState.helpTooltipPosition.y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
+    style="position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 10px; padding: 12px 18px; color: rgba(255,255,255,0.92); font-size: 13px; max-width: 360px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 24px rgba(0,0,0,0.6); text-align: center; line-height: 1.5;"
   >
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #a78bfa; font-weight: 600; font-size: 12px;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px; color: #a78bfa; font-weight: 600; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10" />
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
-      Knowledge Core
+      Tip
     </div>
+    {hotkeysState.helpTooltipMessage}
+  </div>
+{:else if hotkeysState.showHelpTooltip}
+  <!-- Node hover tooltip — shown near cursor -->
+  <div
+    class="help-tooltip"
+    style="position: fixed; left: {hotkeysState.helpTooltipPosition.x}px; top: {hotkeysState.helpTooltipPosition.y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
+  >
     {hotkeysState.helpTooltipMessage}
   </div>
 {/if}

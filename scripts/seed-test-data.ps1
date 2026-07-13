@@ -1,7 +1,7 @@
 # Seed Test Data - Windows PowerShell
 # This script registers a test user and creates test notes and links
 
-$apiUrl = "http://localhost:18083/api/v1"
+$apiUrl = "http://localhost:8083/api/v1"
 
 Write-Host "Seeding test data..." -ForegroundColor Cyan
 

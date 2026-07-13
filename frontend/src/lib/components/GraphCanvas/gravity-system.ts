@@ -1,12 +1,22 @@
 /**
- * Gravity system for subtle node attraction and background lens distortion
+ * Gravity system for subtle node attraction and background lens distortion.
+ *
+ * Tunable parameters are sourced from knowledge-graph.config.json:
+ *   frontend.graph.2d.gravity_nodes_threshold  — node count above which gravity is disabled
+ *   frontend.graph.2d.gravity_max_distance     — max world-unit attraction radius
+ *
+ * GRAVITY_COEFFICIENT is kept local — it is a physics constant, not a user-tunable setting.
  */
 
 import type { SimulationNode } from './types';
+import { graphConfig2D } from '$lib/config';
 
+/** Physics spring constant — controls attraction force magnitude */
 const GRAVITY_COEFFICIENT = 0.0001;
-const MAX_GRAVITY_DISTANCE = 300;
-const PERFORMANCE_THRESHOLD_NODES = 100;
+/** Max world-unit distance within which gravity is applied (from config) */
+const MAX_GRAVITY_DISTANCE = graphConfig2D.gravity_max_distance;
+/** Node count above which gravity system is disabled for performance (from config) */
+const PERFORMANCE_THRESHOLD_NODES = graphConfig2D.gravity_nodes_threshold;
 
 export interface GravitySystem {
   applyAttraction: (nodes: SimulationNode[]) => void;

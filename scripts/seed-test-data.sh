@@ -4,7 +4,7 @@
 
 set -e
 
-API_URL="http://localhost:18083/api/v1"
+API_URL="http://localhost:8083/api/v1"
 
 echo "Seeding test data..."
 

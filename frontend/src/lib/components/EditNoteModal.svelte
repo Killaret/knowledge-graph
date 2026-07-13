@@ -18,7 +18,7 @@
 
   let title = $state('');
   let content = $state('');
-  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid'>('star');
+  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula' | 'dust'>('star');
   let loading = $state(false);
   let saving = $state(false);
   let apiError = $state<ErrorResponse | null>(null);

@@ -1,7 +1,7 @@
 /**
  * Canvas rendering functions for GraphCanvas
  */
-import { graphConfig2D, anomalyConfig } from '$lib/config';
+import { graphConfig2D } from '$lib/config';
 import type { SimulationNode, SimulationLink } from './types';
 import { getVariation, applyHueShift } from '$lib/utils/variation';
 import {
@@ -9,16 +9,16 @@ import {
   drawBlackHoleTooltip
 } from './black-hole';
 import {
-  drawGhostNode,
-  drawGhostNodeTooltip
+  drawGhostNodeScreen,
+  drawGhostNodeTooltipScreen
 } from './ghost-node';
-import { drawDistortedBackgroundGrid, createGravitySystem } from './gravity-system';
+import { drawDistortedBackgroundGrid } from './gravity-system';
 import type { BlackHoleState } from './black-hole';
 import type { GhostNodeState } from './ghost-node';
 import { getGlowIntensity } from '$shared/lib/graph/animation-utils.js';
 import { getAnomalyParams } from '$shared/lib/graph/renderer/anomalies/helpers';
 import type { AnomalyRenderer } from '$features/graph-rendering/anomalies/helpers';
-import * as nodeRenderers from '$features/graph-rendering/nodes';
+
 import { drawRealityRift } from '$features/graph-rendering/anomalies/reality-rift';
 import { drawChromaticMaw } from '$shared/lib/graph/renderer/anomalies/chromatic-maw';
 import { drawVoidWhisper } from '$shared/lib/graph/renderer/anomalies/void-whisper';
@@ -33,9 +33,8 @@ export type { SimulationNode, SimulationLink };
 export type { BlackHoleState } from './black-hole';
 export type { GhostNodeState } from './ghost-node';
 
-// Performance thresholds
-const PERFORMANCE_THRESHOLD_NODES = 100;
-const PERFORMANCE_THRESHOLD_LINKS = 50;
+// Performance thresholds — sourced from knowledge-graph.config.json → frontend.graph.2d
+const PERFORMANCE_THRESHOLD_LINKS = graphConfig2D.animated_links_threshold;
 
 /**
  * Simple hash function for strings (local copy for anomaly generation)
@@ -48,6 +47,16 @@ function stringHash(str: string): number {
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
+}
+
+/**
+ * Deterministic pseudo-random float in [0,1) seeded by string + index.
+ * Replaces Math.random() in per-frame drawing to eliminate flickering.
+ */
+function seededRand(seed: string, index: number): number {
+  const h = stringHash(seed + ':' + index);
+  // Use two large primes to spread bits; result in [0,1)
+  return (h * 1664525 + 1013904223 & 0x7fffffff) / 0x7fffffff;
 }
 
 /**
@@ -374,6 +383,8 @@ export function drawAsteroid(
   const hueShift = variation?.hueShift ?? 0;
   const adjustedR = r * sizeMultiplier;
   const asteroidColor = applyHueShift('#94a3b8', hueShift);
+  // Stable seed — fallback to empty string so seededRand still works without nodeId
+  const seed = nodeId ?? 'asteroid';
 
   // Apply glow effect
   if (time && nodeId && nodeCount !== undefined) {
@@ -382,12 +393,12 @@ export function drawAsteroid(
     ctx.shadowColor = asteroidColor;
   }
 
-  // Irregular rocky shape
+  // Irregular rocky shape — deterministic per node, no flickering
   ctx.beginPath();
   const points = 7;
   for (let i = 0; i < points; i++) {
     const theta = (i / points) * 2 * Math.PI;
-    const radiusVariation = disableVariation ? 0.85 : 0.7 + Math.random() * 0.3;
+    const radiusVariation = disableVariation ? 0.85 : 0.7 + seededRand(seed, i) * 0.3;
     const px = x + Math.cos(theta) * adjustedR * radiusVariation;
     const py = y + Math.sin(theta) * adjustedR * radiusVariation;
     if (i === 0) ctx.moveTo(px, py);
@@ -401,15 +412,15 @@ export function drawAsteroid(
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Add craters (dark spots)
-  const craterCount = 3 + Math.floor(Math.random() * 3);
+  // Add craters (dark spots) — deterministic count and positions
+  const craterCount = 3 + Math.floor(seededRand(seed, 100) * 3);
   for (let i = 0; i < craterCount; i++) {
-    const craterAngle = Math.random() * Math.PI * 2;
-    const craterDist = Math.random() * adjustedR * 0.6;
+    const craterAngle = seededRand(seed, 200 + i) * Math.PI * 2;
+    const craterDist = seededRand(seed, 300 + i) * adjustedR * 0.6;
     const craterX = x + Math.cos(craterAngle) * craterDist;
     const craterY = y + Math.sin(craterAngle) * craterDist;
-    const craterR = adjustedR * 0.15 * (0.5 + Math.random() * 0.5);
-    
+    const craterR = adjustedR * 0.15 * (0.5 + seededRand(seed, 400 + i) * 0.5);
+
     ctx.beginPath();
     ctx.arc(craterX, craterY, craterR, 0, 2 * Math.PI);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
@@ -430,13 +441,15 @@ export function drawDebris(
   y: number,
   r: number,
   _angle: number,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
+  nodeId?: string
 ): void {
-  // Scattered small particles
+  const seed = nodeId ?? 'debris';
+  // Scattered small particles — deterministic positions per node
   ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';
   for (let i = 0; i < 5; i++) {
-    const offsetX = disableVariation ? (i - 2) * (r * 0.25) : (Math.random() - 0.5) * r * 2;
-    const offsetY = disableVariation ? ((i % 2 === 0 ? -1 : 1) * r * 0.2) : (Math.random() - 0.5) * r * 2;
+    const offsetX = disableVariation ? (i - 2) * (r * 0.25) : (seededRand(seed, i) - 0.5) * r * 2;
+    const offsetY = disableVariation ? ((i % 2 === 0 ? -1 : 1) * r * 0.2) : (seededRand(seed, 10 + i) - 0.5) * r * 2;
     ctx.beginPath();
     ctx.arc(x + offsetX, y + offsetY, r * 0.3, 0, 2 * Math.PI);
     ctx.fill();
@@ -843,9 +856,9 @@ export function drawNode(
   // but other random jitter/animation is suppressed via `disableVariation` flags.
   const variation = ['blackhole', 'debris', 'unknown'].includes(type) ? undefined : getVariation(node.id, type);
 
-  // Apply micro-jitter to position (±1px) for "alive" feel unless stable rendering or focus mode is requested
-  let x = node.x! + (disableVariation || focusMode ? 0 : (Math.random() - 0.5) * 2);
-  let y = node.y! + (disableVariation || focusMode ? 0 : (Math.random() - 0.5) * 2);
+  // Use exact node position — random jitter caused visible flickering every frame
+  let x = node.x!;
+  let y = node.y!;
 
   // For stable render mode snap to integer pixel positions to avoid
   // subpixel anti-aliasing differences between runs/environments.
@@ -883,7 +896,7 @@ export function drawNode(
       drawAsteroid(ctx, x, y, r, angle, variation, disableVariation || focusMode, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
       break;
     case 'debris':
-      drawDebris(ctx, x, y, r, angle, disableVariation || focusMode);
+      drawDebris(ctx, x, y, r, angle, disableVariation || focusMode, node.id);
       break;
     case 'blackhole':
       drawBlackhole(ctx, x, y, r, angle, node.id, focusMode ? undefined : nodeCount, focusMode ? undefined : animationTime);
@@ -955,7 +968,7 @@ export function drawAllNodes(
   focusMode: boolean = false,
   searchMatchIds?: string[]
 ): void {
-  const r = 24;
+  const r = 16;
   const nodeCount = nodes.length;
 
   if (disableVariation) {
@@ -1086,7 +1099,8 @@ export function draw(
   focusMode: boolean = false,
   searchMatchIds?: string[],
   highlightedLinkId?: string | null,
-  linkPreviewTarget?: { sourceId: string; targetId: string } | null
+  linkPreviewTarget?: { sourceId: string; targetId: string } | null,
+  linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -1117,14 +1131,22 @@ export function draw(
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {
+    // Preview to a specific target node
     const sourceNode = nodes.find((n) => n.id === linkPreviewTarget.sourceId);
     const targetNode = nodes.find((n) => n.id === linkPreviewTarget.targetId);
     if (sourceNode && targetNode && sourceNode.x != null && sourceNode.y != null && targetNode.x != null && targetNode.y != null) {
       drawPreviewLink(ctx, sourceNode.x, sourceNode.y, targetNode.x, targetNode.y, 0.6);
     }
+  } else if (linkPreviewMousePos) {
+    // No target node yet — draw line from dragged node to current mouse world position
+    const sourceNode = nodes.find((n) => n.id === linkPreviewMousePos.sourceId);
+    if (sourceNode && sourceNode.x != null && sourceNode.y != null) {
+      drawPreviewLink(ctx, sourceNode.x, sourceNode.y, linkPreviewMousePos.x, linkPreviewMousePos.y, 0.35);
+    }
   }
 
-  // Draw nodes with new effects
+  // Draw nodes with CSS shadows only when node count is below the threshold (performance).
+  // Threshold: frontend.graph.2d.shadows_threshold in knowledge-graph.config.json
   const enableShadows = !focusMode && nodes.length < graphConfig2D.shadows_threshold;
   drawAllNodes(ctx, nodes, angles, enableShadows, nodeOpacity, disableVariation, animationTime, hoveredNodeId, particleSystem, focusMode, searchMatchIds);
 
@@ -1136,14 +1158,15 @@ export function draw(
     }
   }
 
+  ctx.restore();
+
+  // Draw ghost node in SCREEN coordinates so it stays fixed regardless of pan/zoom
   if (!focusMode && ghostNode?.active) {
-    drawGhostNode(ctx, ghostNode, animationTime);
+    drawGhostNodeScreen(ctx, ghostNode, animationTime);
     if (ghostNode.hovered) {
-      drawGhostNodeTooltip(ctx, ghostNode);
+      drawGhostNodeTooltipScreen(ctx, ghostNode);
     }
   }
-
-  ctx.restore();
 }
 
 /**

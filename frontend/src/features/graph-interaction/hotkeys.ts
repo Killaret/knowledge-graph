@@ -164,16 +164,20 @@ export function resetInactivityTimer(
   }, 10000);
 }
 
-export function updateActivity(state: HotkeysState, onTipHide: () => void): void {
+export function updateActivity(state: HotkeysState, onInactivityTip: () => void): void {
   state.lastActivityTime = Date.now();
-  onTipHide();
-  resetInactivityTimer(state, onTipHide);
+  // Hide tip on activity (not show it)
+  if (state.showHelpTooltip && state.helpTooltipPosition.x === -1) {
+    state.showHelpTooltip = false;
+  }
+  resetInactivityTimer(state, onInactivityTip);
 }
 
 export function showRandomTip(state: HotkeysState, tips: string[]): void {
   const tip = tips[Math.floor(Math.random() * tips.length)];
   state.helpTooltipMessage = tip;
-  state.helpTooltipPosition = { x: 20, y: 20 };
+  // Position at bottom-center; actual centering is handled via CSS transform
+  state.helpTooltipPosition = { x: -1, y: -1 };
   state.showHelpTooltip = true;
   setTimeout(() => {
     state.showHelpTooltip = false;

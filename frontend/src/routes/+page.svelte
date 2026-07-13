@@ -39,7 +39,7 @@
   // Filter and sort state
   let selectedType = $state<string>('all');
   let sortBy = $state<'created' | 'updated' | 'type'>('created');
-  let selectedNoteIds = $state<Set<string>>(new Set());
+  const selectedNoteIds = $state<Set<string>>(new Set());
   let selectionMode = $state(false);
   let lastDeletedNote: Note | null = $state(null);
   let showUndoToast = $state(false);
@@ -283,28 +283,46 @@
     return note.type ?? 'unknown';
   }
 
-  // Reactive filtered graph data based on selected type
+  // Reactive filtered graph data based on selected type and search query
   const filteredGraphData = $derived(() => {
-    if (selectedType === 'all' || !graphData.nodes.length) {
-      return graphData;
+    if (!graphData.nodes.length) return graphData;
+
+    // Build allowed IDs based on type filter
+    let allowedNodeIds: Set<string> | null = null;
+    if (selectedType !== 'all') {
+      allowedNodeIds = new Set(
+        allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
+      );
     }
-    
-    const allowedNodeIds = new Set(
-      allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
-    );
-    
-    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => allowedNodeIds.has(n.id));
+
+    // Build allowed IDs based on search query (uses already-filtered allNotes from handleSearch)
+    let searchNodeIds: Set<string> | null = null;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      searchNodeIds = new Set(
+        allNotes
+          .filter(n =>
+            n.title.toLowerCase().includes(q) ||
+            (n.content ?? '').toLowerCase().includes(q)
+          )
+          .map(n => n.id)
+      );
+    }
+
+    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => {
+      if (allowedNodeIds && !allowedNodeIds.has(n.id)) return false;
+      if (searchNodeIds && !searchNodeIds.has(n.id)) return false;
+      return true;
+    });
+
     const filteredNodeIds = new Set(filteredNodes.map((n: { id: string; title: string; type?: string }) => n.id));
-    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) => 
+    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) =>
       filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
     );
-    
-    if (import.meta.env.DEV) { console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`) };
-    
-    return {
-      nodes: filteredNodes,
-      links: filteredLinks
-    };
+
+    if (import.meta.env.DEV) { console.log(`[FilteredGraph] Type: ${selectedType}, search: "${searchQuery}", nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`) };
+
+    return { nodes: filteredNodes, links: filteredLinks };
   });
 
   function applyFiltersAndSort() {
@@ -352,15 +370,19 @@
 
   async function handleSearch() {
     if (!searchQuery.trim()) {
-      await loadNotes();
+      // searchQuery cleared — filteredGraphData will reactively show all nodes
+      applyFiltersAndSort();
       return;
     }
     
     try {
+      // Use server search results only for the list view (filteredNotes)
+      // The graph canvas uses local search via filteredGraphData derived
       const response = await searchNotes(searchQuery, 1, 20);
-      allNotes = response.data;
-      applyFiltersAndSort();
+      filteredNotes = response.data;
     } catch (e) {
+      // Fallback: local filter on allNotes
+      applyFiltersAndSort();
       console.error('Search error:', e);
     }
   }
