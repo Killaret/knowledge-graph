@@ -201,7 +201,7 @@ func main() {
 	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
 
 	// Auth handler
-	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, time.Hour*24, time.Hour*24*7) // 24h access, 7d refresh
+	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
 	tokenStore := authpkg.NewRedisTokenStore(redisClient)
 	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
 

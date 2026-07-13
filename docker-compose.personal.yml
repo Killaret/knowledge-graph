@@ -23,7 +23,7 @@ services:
     image: redis:7-alpine
     container_name: kg-redis-personal
     ports:
-      - "6380:6379"
+      - "127.0.0.1:16380:6379"
     volumes:
       - redisdata_personal:/data
     healthcheck:

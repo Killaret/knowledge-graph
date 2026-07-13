@@ -42,6 +42,8 @@ func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore *auth.RedisTokenSt
 			"/api/v1/auth/reset-password",
 			"/api/v1/auth/yandex/login",
 			"/api/v1/auth/yandex/callback",
+			"/api/v1/achievements",
+			"/api/v1/graph/all",
 			"/health",
 			"/swagger/*any",
 			"/openapi.yaml",

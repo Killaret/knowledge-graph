@@ -224,10 +224,12 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 - **State verification** - Automatic comparison of dev stack state before/after testing
 - **Docker stability** - Prevents Docker API instability from running multiple stacks
 
-**Snapshots:**
-- Pre-test snapshots saved to `test-snapshots_YYYYMMDD_HHMMSS/` directory
-- Includes: container state, health endpoint, API response
-- Post-test snapshots for comparison
+**Temporary Files and Snapshots:**
+- All temporary snapshots are saved to `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`.
+- Includes: container state, health endpoint, API response.
+- Post-test snapshots are saved to the same directory for comparison.
+- Argos visual screenshots are saved to `frontend/argos-screenshots/` (see docs/ARGOS.md).
+- These directories are ignored by Git — only source changes are committed.
 
 ## Auto-Commit on Successful Testing
 
@@ -254,7 +256,7 @@ git push
 - Stacks not healthy → Exit with code 1, skip auto-commit
 
 **Manual investigation required:**
-- Check snapshot differences in `test-snapshots_YYYYMMDD_HHMMSS/`
+- Check snapshot differences in `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
 - Review diff output for dev/personal differences
 - Fix issues before re-running test cycle
 
@@ -347,6 +349,28 @@ npm run test:bdd
 cd nlp-service
 pytest tests/ -v
 ```
+
+### Visual Regression / Argos
+
+Visual regression tests are located in `frontend/tests/visual/` and produce screenshots in `frontend/argos-screenshots/`.
+
+**Run locally:**
+```bash
+cd frontend
+npm run test:visual
+npm run test:visual:upload   # requires ARGOS_TOKEN env variable
+```
+
+**CLI upload manually:**
+```bash
+cd frontend
+npx argos upload ./argos-screenshots --token $ARGOS_TOKEN
+```
+
+**Configuration:**
+- Token is read from the `ARGOS_TOKEN` environment variable (or `--token` CLI flag).
+- Branch and commit are detected from Git, or can be overridden with `ARGOS_BRANCH` and `ARGOS_COMMIT`.
+- See `docs/ARGOS.md` for the full visual regression workflow.
 
 ## Test Data Isolation
 

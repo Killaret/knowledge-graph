@@ -14,15 +14,15 @@ test.describe('Home Page - Graph First', { tag: ['@smoke', '@home'] }, () => {
   test.beforeEach(async ({ page }) => {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
-    
-    // Verify SKIP_AUTH flag is set
-    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
-    expect(skipAuthFlag).toBe(true);
-    
+
     // Navigate to home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
+
+    // Verify SKIP_AUTH flag is set after navigation
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
   });
 
   test.afterEach(async ({ request }) => {

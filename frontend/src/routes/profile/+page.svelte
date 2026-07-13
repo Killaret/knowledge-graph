@@ -2,9 +2,10 @@
   import { goto } from '$app/navigation';
   import ProfileEditor from '$lib/components/ProfileEditor.svelte';
   import { isAuthenticated, currentUser, initAuth } from '$lib/stores/auth.svelte.js';
-  
-  // Initialize auth on mount
-  $effect(() => {
+  import { onMount } from 'svelte';
+
+  // Initialize auth once on mount
+  onMount(() => {
     initAuth();
   });
   

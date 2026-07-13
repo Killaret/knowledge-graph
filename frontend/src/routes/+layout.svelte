@@ -5,6 +5,7 @@
   import ToastNotification from '$lib/components/ToastNotification.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { initAuth, isAuthenticated, isInitialized, isLoading, skipAuthMode } from '$lib/stores/auth.svelte.js';
   import { startPreload } from '$lib/services/PreloadService';
   import { achievementsStore } from '$lib/stores/achievements';
@@ -34,11 +35,13 @@
   // Check if we're in SKIP_AUTH mode
   let isSkipAuth = $state(false);
 
-  // Initialize auth on mount
-  $effect(() => {
+  // Initialize auth once on mount
+  onMount(() => {
     initAuth();
+  });
 
-    // After hydration from localStorage, preload only for guests (avoids duplicate fetch + wrong UX)
+  // After hydration from localStorage, preload only for guests (avoids duplicate fetch + wrong UX)
+  $effect(() => {
     if (isInitialized() && !isAuthenticated()) {
       startPreload();
     }

@@ -1,4 +1,4 @@
-const API_BASE = '/api/v1'
+import api from '$lib/api/client';
 
 export type Achievement = {
   id: string
@@ -13,24 +13,15 @@ export type Achievement = {
 }
 
 export async function fetchAllAchievements(): Promise<Achievement[]> {
-  const res = await fetch(`${API_BASE}/achievements`, { credentials: 'same-origin' })
-  if (!res.ok) throw new Error('Failed to fetch achievements')
-  const data = await res.json()
+  const data = await api.get('v1/achievements').json<{ achievements: Achievement[] }>();
   return data.achievements ?? []
 }
 
 export async function fetchUserAchievements(): Promise<Achievement[]> {
-  const res = await fetch(`${API_BASE}/users/me/achievements`, { credentials: 'same-origin' })
-  if (!res.ok) throw new Error('Failed to fetch user achievements')
-  const data = await res.json()
+  const data = await api.get('v1/users/me/achievements').json<{ achievements: Achievement[] }>();
   return data.achievements ?? []
 }
 
 export async function markAchievementSeen(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/users/me/achievements/${id}/mark-seen`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin'
-  })
-  if (!res.ok) throw new Error('Failed to mark achievement seen')
+  await api.post(`v1/users/me/achievements/${id}/mark-seen`);
 }

@@ -64,19 +64,32 @@ export const api = ky.create({
     ],
     afterResponse: [
       async (request, options, response) => {
+        // The auth refresh endpoint is used by the refresh flow itself;
+        // do not try to refresh on a refresh request to avoid recursion/deadlock.
+        const requestPath = new URL(request.url).pathname;
+        if (requestPath.endsWith('/api/v1/auth/refresh')) {
+          return response;
+        }
+
         // Handle 401 Unauthorized
         if (response.status === 401) {
-          // Prevent infinite loops - if we're already refreshing, redirect to login
+          // Prevent infinite loops - if we're already refreshing, wait for it and retry
           if (isRefreshing) {
             // Wait for the current refresh to complete
             if (refreshPromise) {
               const refreshed = await refreshPromise;
-              if (!refreshed) {
-                // Refresh failed, clear auth and redirect
-                goto('/auth/login');
-                return response;
+              if (refreshed) {
+                // Retry the original request with the new token
+                const newToken = getAccessToken();
+                if (newToken) {
+                  request.headers.set('Authorization', `Bearer ${newToken}`);
+                  return ky(request);
+                }
               }
+              // Refresh failed, clear auth and redirect
+              goto('/auth/login');
             }
+            return response;
           } else {
             // Try to refresh the token
             isRefreshing = true;

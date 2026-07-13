@@ -166,7 +166,10 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	// Store refresh token
-	h.storeRefreshToken(c, user.ID, tokens.RefreshToken)
+	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
+		return
+	}
 
 	c.JSON(http.StatusCreated, TokenResponse{
 		AccessToken:  tokens.AccessToken,
@@ -231,7 +234,10 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Store refresh token
-	h.storeRefreshToken(c, user.ID, tokens.RefreshToken)
+	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
+		return
+	}
 
 	c.JSON(http.StatusOK, TokenResponse{
 		AccessToken:  tokens.AccessToken,
@@ -308,13 +314,17 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Store new refresh token before revoking the old one to avoid invalidating
+	// the session if the storage step fails.
+	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
+		return
+	}
+
 	// Revoke old refresh token
 	if h.tokenStore != nil {
 		h.tokenStore.RevokeRefreshToken(c.Request.Context(), req.RefreshToken, h.cfg.JWTRefreshTTL)
 	}
-
-	// Store new refresh token
-	h.storeRefreshToken(c, user.ID, tokens.RefreshToken)
 
 	c.JSON(http.StatusOK, TokenResponse{
 		AccessToken:  tokens.AccessToken,
@@ -527,10 +537,10 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 	})
 }
 
-// storeRefreshToken stores refresh token hash in database
-func (h *Handler) storeRefreshToken(c *gin.Context, userID uuid.UUID, token string) {
+// storeRefreshToken stores refresh token hash in database and Redis cache
+func (h *Handler) storeRefreshToken(c *gin.Context, userID uuid.UUID, token string) error {
 	if h.tokenStore == nil {
-		return
+		return nil
 	}
 
 	hash := sha256.Sum256([]byte(token))
@@ -545,5 +555,10 @@ func (h *Handler) storeRefreshToken(c *gin.Context, userID uuid.UUID, token stri
 		CreatedAt: time.Now(),
 	}
 
-	h.db.Create(&refreshToken)
+	if err := h.db.Create(&refreshToken).Error; err != nil {
+		return err
+	}
+
+	// Also store in Redis so the refresh endpoint can validate it
+	return h.tokenStore.StoreRefreshToken(c.Request.Context(), userID.String(), token, refreshToken.ExpiresAt)
 }

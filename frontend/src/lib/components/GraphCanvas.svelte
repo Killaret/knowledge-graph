@@ -201,6 +201,9 @@
   onMount(() => {
     if (!browser || !canvas) return;
     
+    // Expose for debugging
+    (window as any).__graphCanvas = { getSimulationNodes: () => getSimulationNodes(simState), transform };
+    
     // SSR-safe: получаем контекст canvas
     ctx = canvas.getContext('2d')!;
     

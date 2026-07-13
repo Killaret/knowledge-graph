@@ -369,6 +369,8 @@ For automated testing, use the dedicated test stack that is completely isolated 
 - Prevents Docker API instability from running multiple stacks
 - Ensures accurate test results on clean environment
 - Automatic state verification of dev stack before/after testing
+- Temporary snapshots are written to `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
+- Visual regression screenshots are written to `frontend/argos-screenshots/`
 
 See [docs/TESTING_EN.md](docs/TESTING_EN.md) for complete testing documentation.
 

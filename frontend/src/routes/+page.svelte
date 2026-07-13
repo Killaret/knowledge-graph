@@ -106,9 +106,10 @@
       }
       
       // Load notes and graph data in parallel
+      const isAuth = isAuthenticated();
       const [notesResult, freshGraphResult] = await Promise.all([
         getNotes(),
-        isAuthenticated()
+        isAuth
           ? getFreshGraph().catch((e: unknown) => {
               console.error('[+page] Failed to load fresh graph:', e);
               return null;
@@ -125,11 +126,11 @@
       
       // Apply fresh graph data when available
       if (freshGraphResult) {
-        if (isAuthenticated() && 'fresh' in freshGraphResult) {
+        if (isAuth && 'fresh' in freshGraphResult) {
           graphResult = freshGraphResult.fresh;
           graphDeltaResult = freshGraphResult.delta ?? undefined;
           console.log('[+page] Using fresh authenticated graph data');
-        } else if (!isAuthenticated()) {
+        } else if (!isAuth) {
           graphResult = freshGraphResult as GraphData;
           graphDeltaResult = undefined;
           console.log('[+page] Using public graph data');
@@ -562,11 +563,12 @@
           <p>Loading graph...</p>
         </div>
       {:else if filteredGraphData().nodes.length > 0}
-        <GraphCanvas 
+        <GraphCanvas
           nodes={filteredGraphData().nodes}
           links={filteredGraphData().links}
           delta={graphDelta}
           onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
+          onNoteDelete={handleDeleteRequest}
         />
         <!-- Stats Overlay -->
         <div class="graph-stats-overlay" data-testid="graph-stats">

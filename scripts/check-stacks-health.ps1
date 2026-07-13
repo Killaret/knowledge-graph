@@ -12,11 +12,32 @@ Write-Host "Stack: $Stack" -ForegroundColor Yellow
 
 $errors = 0
 
+function Check-Api {
+    param(
+        [string]$Port,
+        [string]$Name
+    )
+    try {
+        $null = Invoke-RestMethod -Uri "http://localhost:$Port/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        Write-Host "  $Name API: OK" -ForegroundColor Green
+        return 0
+    } catch {
+        try {
+            $null = Invoke-RestMethod -Uri "http://localhost:$Port/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5
+            Write-Host "  $Name API: OK (via public graph)" -ForegroundColor Green
+            return 0
+        } catch {
+            Write-Host "  $Name API: FAILED" -ForegroundColor Red
+            return 1
+        }
+    }
+}
+
 function Check-DevStack {
     Write-Host "`nChecking dev stack..." -ForegroundColor Yellow
     
     # Check dev containers
-    $devContainers = docker ps --filter "name=kg-" --format json | ConvertFrom-Json | Where-Object { $_.Names -notlike "*test*" -and $_.Names -notlike "*personal*" }
+    $devContainers = docker ps --filter "name=kg-" --format '{{.Names}}' | Where-Object { $_ -notlike "*test*" -and $_ -notlike "*personal*" }
     if ($devContainers.Count -eq 0) {
         Write-Host "  No dev containers running" -ForegroundColor Red
         return 1
@@ -33,23 +54,15 @@ function Check-DevStack {
         return 1
     }
     
-    # Check dev API
-    try {
-        $devNotes = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Write-Host "  Dev API: OK" -ForegroundColor Green
-    } catch {
-        Write-Host "  Dev API: FAILED" -ForegroundColor Red
-        return 1
-    }
-    
-    return 0
+    # Check dev API (notes if public, fallback to public graph)
+    return (Check-Api -Port 8080 -Name "Dev")
 }
 
 function Check-PersonalStack {
     Write-Host "`nChecking personal stack..." -ForegroundColor Yellow
     
     # Check personal containers
-    $personalContainers = docker ps --filter "name=kg-" --format json | ConvertFrom-Json | Where-Object { $_.Names -like "*personal*" }
+    $personalContainers = docker ps --filter "name=kg-" --format '{{.Names}}' | Where-Object { $_ -like "*personal*" }
     if ($personalContainers.Count -eq 0) {
         Write-Host "  No personal containers running" -ForegroundColor Red
         return 1
@@ -67,22 +80,14 @@ function Check-PersonalStack {
     }
     
     # Check personal API
-    try {
-        $personalNotes = Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Write-Host "  Personal API: OK" -ForegroundColor Green
-    } catch {
-        Write-Host "  Personal API: FAILED" -ForegroundColor Red
-        return 1
-    }
-    
-    return 0
+    return (Check-Api -Port 8082 -Name "Personal")
 }
 
 function Check-TestStack {
     Write-Host "`nChecking test stack..." -ForegroundColor Yellow
     
     # Check test containers
-    $testContainers = docker ps --filter "name=kg-" --format json | ConvertFrom-Json | Where-Object { $_.Names -like "*test*" }
+    $testContainers = docker ps --filter "name=kg-" --format '{{.Names}}' | Where-Object { $_ -like "*test*" }
     if ($testContainers.Count -eq 0) {
         Write-Host "  No test containers running" -ForegroundColor Red
         return 1
@@ -100,15 +105,7 @@ function Check-TestStack {
     }
     
     # Check test API
-    try {
-        $testNotes = Invoke-RestMethod -Uri "http://localhost:8083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Write-Host "  Test API: OK" -ForegroundColor Green
-    } catch {
-        Write-Host "  Test API: FAILED" -ForegroundColor Red
-        return 1
-    }
-    
-    return 0
+    return (Check-Api -Port 8083 -Name "Test")
 }
 
 # Check requested stacks

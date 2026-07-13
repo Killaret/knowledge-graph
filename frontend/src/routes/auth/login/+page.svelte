@@ -5,6 +5,7 @@
   import AuthCard from '$lib/components/AuthCard.svelte';
   import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
   import { startPreload } from '$lib/services/PreloadService';
+  import { onMount } from 'svelte';
   
   // Redirect if already authenticated
   $effect(() => {
@@ -14,11 +15,13 @@
     }
   });
   
-  // Initialize auth on mount and start preload
-  $effect(() => {
+  // Initialize auth once on mount
+  onMount(() => {
     initAuth();
-    
-    // Start background preload if not authenticated
+  });
+
+  // Start background preload if not authenticated
+  $effect(() => {
     if (!isAuthenticated()) {
       startPreload();
     }

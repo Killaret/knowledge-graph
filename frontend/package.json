@@ -29,6 +29,7 @@
     "test:smoke": "playwright test --grep='@smoke'",
     "test:performance": "playwright test tests/performance/",
     "test:visual": "playwright test tests/visual/",
+    "test:visual:upload": "npx argos upload ./argos-screenshots",
     "test:lighthouse": "lhci autorun",
     "test:all": "npm run test:unit && npm run test && npm run test:cucumber",
     "test:ci:smoke": "npm run test:unit && npm run test:smoke",

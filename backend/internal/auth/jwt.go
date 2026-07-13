@@ -68,6 +68,7 @@ func (m *JWTManager) GenerateTokenPair(userID uuid.UUID, login, role string) (*T
 			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    m.issuer,
 			Subject:   userID.String(),
+			ID:        uuid.NewString(),
 		},
 	}
 
@@ -86,6 +87,7 @@ func (m *JWTManager) GenerateTokenPair(userID uuid.UUID, login, role string) (*T
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    m.issuer,
 			Subject:   userID.String(),
+			ID:        uuid.NewString(),
 		},
 	}
 

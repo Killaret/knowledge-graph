@@ -11,20 +11,19 @@ This project uses [Argos](https://www.argos-ci.com/) for automated visual regres
 - **Repository**: `Killaret/knowledge-graph`
 - **Visibility**: Public ✅
 - **Argos Plan**: Free tier (available for public repos)
-- **Project Token**: `argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8`
-- **GitHub Secret**: `ARGOS_TOKEN` (configured in repository settings)
+- **Project Token**: Set via the `ARGOS_TOKEN` environment variable (configured in repository settings)
 
 ### Configuration
 
-**Frontend argos.json:**
-```json
-{
-  "token": "ARGOS_TOKEN",
-  "bucket": "Killaret/knowledge-graph",
-  "branch": "origin/main",
-  "baseBranch": "origin/main"
-}
-```
+Argos is configured through environment variables.
+
+- `ARGOS_TOKEN` — repository token (required for upload).
+- `ARGOS_BRANCH` — branch name (optional, defaults to the current Git branch).
+- `ARGOS_COMMIT` — commit SHA (optional, defaults to the current Git HEAD).
+- `ARGOS_REFERENCE_BRANCH` — branch used as the baseline for comparison.
+- `ARGOS_REFERENCE_COMMIT` — commit used as the baseline for comparison.
+
+For the local CLI, the token can also be passed with `--token`.
 
 **GitHub CI Workflow:**
 ```yaml
@@ -81,7 +80,7 @@ npm run test:visual
 
 # Upload screenshots to Argos
 cd frontend
-npx argos upload argos-screenshots/ --token argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8
+npx argos upload argos-screenshots/ --token $ARGOS_TOKEN
 ```
 
 ### CI/CD Pipeline
