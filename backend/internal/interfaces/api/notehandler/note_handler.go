@@ -237,6 +237,7 @@ func (h *Handler) Create(c *gin.Context) {
 type updateNoteRequest struct {
 	Title    string                 `json:"title" binding:"omitempty,min=1,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris pulsar blackhole"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -330,6 +331,9 @@ func (h *Handler) Update(c *gin.Context) {
 			})
 			return
 		}
+	}
+	if req.Type != "" {
+		existing.SetType(req.Type)
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
