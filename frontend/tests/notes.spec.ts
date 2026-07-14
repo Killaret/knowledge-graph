@@ -11,12 +11,12 @@ test.describe('Knowledge Graph Frontend', {
     // Setup SKIP_AUTH for protected route
     await setupSkipAuth(page);
     
-    // Verify SKIP_AUTH flag is set
-    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
-    expect(skipAuthFlag).toBe(true);
-    
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+
+    // Verify SKIP_AUTH flag is set after navigation
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
   });
 
   // Add test-level error handling for screenshots

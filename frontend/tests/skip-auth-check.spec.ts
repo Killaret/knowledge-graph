@@ -10,13 +10,13 @@ test.describe('SKIP_AUTH Verification', () => {
     // Setup SKIP_AUTH first
     await setupSkipAuth(page);
     
-    // Verify SKIP_AUTH flag is set
-    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
-    expect(skipAuthFlag).toBe(true);
-    
     // Now navigate to main page
     await page.goto('/');
     await page.waitForTimeout(500);
+
+    // Verify SKIP_AUTH flag is set after navigation
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
     
     // Should NOT redirect to login
     await expect(page).toHaveURL('/');
@@ -30,14 +30,14 @@ test.describe('SKIP_AUTH Verification', () => {
     // Setup SKIP_AUTH first
     await setupSkipAuth(page);
     
-    // Verify SKIP_AUTH flag is set
-    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
-    expect(skipAuthFlag).toBe(true);
-    
     // Navigate to graph page
     await page.goto('/graph');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
+
+    // Verify SKIP_AUTH flag is set after navigation
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
+    expect(skipAuthFlag).toBe(true);
     
     // Should NOT redirect to login
     await expect(page).toHaveURL('/graph');
