@@ -71,7 +71,14 @@ export async function initAuth(): Promise<void> {
     authState.refreshToken = storedRefreshToken;
 
     if (!storedRefreshToken) {
+      // Stale access token alone is not enough to be authenticated.
+      authState.accessToken = null;
+      authState.refreshToken = null;
       authState.currentUser = null;
+      if (browser) {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+      }
       return;
     }
 
@@ -104,7 +111,12 @@ export async function login(login: string, password: string): Promise<boolean> {
   authState.error = null;
 
   if (skipAuthMode()) {
-    saveTokens({ accessToken: 'skip-auth-token', refreshToken: 'skip-auth-refresh' });
+    saveTokens({
+      access_token: 'skip-auth-token',
+      refresh_token: 'skip-auth-refresh',
+      token_type: 'Bearer',
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    });
     authState.currentUser = { id: 'skip-auth-user', login: login || 'testuser', email: 'test@example.com', role: 'user', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as User;
     authState.isLoading = false;
     return true;

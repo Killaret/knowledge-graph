@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
 
   interface Star {
@@ -160,7 +159,7 @@
   }
 
   function animate(time: number) {
-    if (!isActive || !ctx) return;
+    if (!isActive || !ctx || !canvas) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -176,11 +175,6 @@
     animationId = requestAnimationFrame(animate);
   }
 
-  function handleMouseMove(e: MouseEvent) {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  }
-
   function handleResize() {
     if (!canvas) return;
     canvas.width = window.innerWidth;
@@ -189,22 +183,20 @@
     nebulas = generateNebulas();
   }
 
-  onMount(() => {
-    if (!browser) return;
-    
+  $effect(() => {
+    if (!browser || !canvas) return;
+
     ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     handleResize();
-    
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-    
-    // Start animation
-    animationId = requestAnimationFrame(animate);
-    
-    // Handle visibility change
-    document.addEventListener('visibilitychange', () => {
+
+    const onMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
+    const onResize = () => handleResize();
+    const onVisibility = () => {
       if (document.hidden) {
         isActive = false;
         cancelAnimationFrame(animationId);
@@ -212,15 +204,22 @@
         isActive = true;
         animationId = requestAnimationFrame(animate);
       }
-    });
-  });
+    };
 
-  onDestroy(() => {
-    if (!browser) return;
-    isActive = false;
-    cancelAnimationFrame(animationId);
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('resize', handleResize);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('resize', onResize);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    isActive = true;
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      isActive = false;
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   });
 </script>
 

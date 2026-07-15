@@ -1,6 +1,5 @@
 // API client wrapper для ky
 import ky from 'ky';
-import { goto } from '$app/navigation';
 import { getAccessToken, getApiKey, refreshAccessToken } from '$lib/stores/auth.svelte';
 
 // Определяем базовый URL в зависимости от среды
@@ -86,40 +85,29 @@ export const api = ky.create({
                   return ky(request);
                 }
               }
-              // Refresh failed, clear auth and redirect
-              goto('/auth/login');
             }
             return response;
-          } else {
-            // Try to refresh the token
-            isRefreshing = true;
-            refreshPromise = refreshAccessToken();
-            
-            try {
-              const refreshed = await refreshPromise;
-              
-              if (refreshed) {
-                // Retry the original request with new token
-                const newToken = getAccessToken();
-                if (newToken) {
-                  request.headers.set('Authorization', `Bearer ${newToken}`);
-                  // Retry the request
-                  return ky(request);
-                }
+          }
+
+          // Try to refresh the token
+          isRefreshing = true;
+          refreshPromise = refreshAccessToken();
+
+          try {
+            const refreshed = await refreshPromise;
+            if (refreshed) {
+              const newToken = getAccessToken();
+              if (newToken) {
+                request.headers.set('Authorization', `Bearer ${newToken}`);
+                return ky(request);
               }
-              
-              // Refresh failed, redirect to login
-              goto('/auth/login');
-            } catch (error) {
-              console.error('Token refresh error:', error);
-              goto('/auth/login');
-            } finally {
-              isRefreshing = false;
-              refreshPromise = null;
             }
+          } finally {
+            isRefreshing = false;
+            refreshPromise = null;
           }
         }
-        
+
         return response;
       }
     ]
