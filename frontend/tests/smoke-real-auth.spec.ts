@@ -18,7 +18,7 @@ test.describe('Smoke tests - real auth flow', { tag: ['@smoke', '@auth-real'] },
 
     // Login via UI
     await page.goto(`${FRONTEND_URL}/auth/login`);
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
     await page.fill('input[name="login"]', loginName);
     await page.fill('input[name="password"]', password);
     await page.click('button[type="submit"]');

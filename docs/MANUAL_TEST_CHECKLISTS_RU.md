@@ -45,7 +45,7 @@
 
 - [ ] Открыть `http://localhost:3002` в инкогнито.
 - [ ] `GET http://localhost:8083/api/v1/graph/all` без Authorization → 200, публичные данные.
-- [ ] `GET http://localhost:8083/api/v1/notes?is_public=true` без auth → только public notes.
+- [ ] `GET http://localhost:8083/api/v1/notes?is_public=true` без auth → 401 (список заметок требует auth; публичный граф отдаётся через `/api/v1/graph/all`).
 - [ ] Приватные заметки не отображаются и не возвращаются.
 - [ ] Попытка перейти на `/profile` без auth → редирект на login или 401.
 - [ ] Повторный hard refresh (`Ctrl+F5`) не вызывает 401-циклов.
