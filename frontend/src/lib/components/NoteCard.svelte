@@ -68,7 +68,7 @@
 
   let cardRef: HTMLElement | null = $state(null);
   let tippyInstance: Instance | null = $state(null);
-  let isExiting = $state(false);
+  const isExiting = $state(false);
 
   function highlightText(text: string, query: string): string {
     if (!query.trim()) return text;

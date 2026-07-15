@@ -5,7 +5,7 @@
     onClose: () => void;
   }
 
-  let { hotkeyLines, helpContent, onClose }: Props = $props();
+  const { hotkeyLines, helpContent, onClose }: Props = $props();
 </script>
 
 <div class="modal-backdrop" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="button" tabindex="0">

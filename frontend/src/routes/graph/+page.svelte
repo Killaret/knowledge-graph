@@ -36,7 +36,7 @@
         // Загружаем локальный граф
         try {
           notes = await getNotes();
-        } catch (e) {
+        } catch {
           console.log('[graph/+page] No user notes, trying public notes');
           notes = [];
         }
@@ -54,7 +54,7 @@
       // Fetch the Knowledge Core system note for in-app help
       try {
         knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
-      } catch (e) {
+      } catch {
         console.log('[graph/+page] Knowledge Core not found, help content will be empty');
         knowledgeCore = null;
       }

@@ -2,10 +2,6 @@
 import ky from 'ky';
 import { getAccessToken, getApiKey, refreshAccessToken } from '$lib/stores/auth.svelte';
 
-// Определяем базовый URL в зависимости от среды
-// import.meta.env доступен в Vite/SvelteKit
-const isDev = import.meta.env.DEV;
-
 // Проверяем тестовое окружение через process.env.VITEST
 // Vitest устанавливает эту переменную автоматически
 const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';

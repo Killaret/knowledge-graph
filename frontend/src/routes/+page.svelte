@@ -517,7 +517,7 @@
     try {
       await createNote({ title: data.title, content: data.content, type: data.type });
       await loadNotes();
-    } catch (e) {
+    } catch {
       if (browser) {
         alert('Failed to create note');
       }
