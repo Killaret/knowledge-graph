@@ -140,7 +140,8 @@
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
         "gravity_max_distance": 300,
-        "ghost_node_radius": 30
+        "ghost_node_radius": 30,
+        "hover_delay_ms": 150
       },
       "3d": {
         "max_nodes": 500

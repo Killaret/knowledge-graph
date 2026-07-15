@@ -53,6 +53,8 @@ export interface Config {
         gravity_max_distance: number;
         /** Screen-space pixel radius of the ghost-node create button */
         ghost_node_radius: number;
+        /** Delay in milliseconds before node/link hover dimming and tooltips activate */
+        hover_delay_ms: number;
       };
       '3d': {
         max_nodes: number;

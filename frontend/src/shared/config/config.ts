@@ -44,6 +44,7 @@ export interface Config {
       '2d': {
         max_nodes: number;
         shadows_threshold: number;
+        hover_delay_ms: number;
       };
       '3d': {
         max_nodes: number;

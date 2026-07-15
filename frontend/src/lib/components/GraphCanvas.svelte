@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import { graphConfig2D } from '$lib/config';
   import type { GraphDelta } from '$lib/api/graph';
   import LinkTooltip from '$lib/components/LinkTooltip.svelte';
   import GraphTooltip from '$lib/components/GraphTooltip.svelte';
@@ -22,6 +23,7 @@
     type TransformState,
     type DragState,
     type SimulationNode,
+    type SimulationLink,
     applyDelta as applyDeltaToSimulation,
     createBlackHole,
     updateBlackHolePosition,
@@ -158,9 +160,12 @@
   let hoveredNodeId: string | null = $state(null);
 
   // Hover delay to avoid accidental dimming/tooltips on quick mouse movements
+  const HOVER_DELAY_MS = graphConfig2D.hover_delay_ms;
   let hoverNodeTimeout: ReturnType<typeof setTimeout> | null = null;
   let hoverCandidateNodeId: string | null = null;
-  const HOVER_DELAY_MS = 150;
+  let hoverLinkTimeout: ReturnType<typeof setTimeout> | null = null;
+  let hoverCandidateLink: { source: string; target: string; link_type: string; weight: number; source_type: string } | null = null;
+  let hoverCandidateLinkKey: string | null = null;
   
   // Particle system
   let particleSystem: ParticleSystem | null = $state(null);
@@ -401,6 +406,45 @@
     }, HOVER_DELAY_MS);
   }
 
+  function getLinkKey(link: SimulationLink | { source: string; target: string }): string {
+    const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+    const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+    return `${sourceId}|${targetId}`;
+  }
+
+  function clearLinkHover() {
+    if (hoverLinkTimeout) {
+      clearTimeout(hoverLinkTimeout);
+      hoverLinkTimeout = null;
+    }
+    hoverCandidateLink = null;
+    hoverCandidateLinkKey = null;
+    hoveredLink = null;
+  }
+
+  function scheduleLinkHover(
+    link: { source: string; target: string; link_type: string; weight: number; source_type: string },
+    mouseX: number,
+    mouseY: number
+  ) {
+    const linkKey = getLinkKey(link);
+    if (hoverCandidateLinkKey === linkKey && hoverLinkTimeout) {
+      return;
+    }
+    if (hoverLinkTimeout) {
+      clearTimeout(hoverLinkTimeout);
+    }
+    hoverCandidateLink = link;
+    hoverCandidateLinkKey = linkKey;
+    hoverLinkTimeout = setTimeout(() => {
+      if (hoverCandidateLinkKey === linkKey) {
+        hoveredLink = hoverCandidateLink;
+        tooltipPosition = { x: mouseX, y: mouseY };
+      }
+      hoverLinkTimeout = null;
+    }, HOVER_DELAY_MS);
+  }
+
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
@@ -444,8 +488,9 @@
       }
     }
 
-    // Starting a drag/click clears any pending hover to avoid accidental dimming
+    // Starting a drag/click clears any pending hover to avoid accidental dimming/tooltips
     clearNodeHover();
+    clearLinkHover();
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -539,7 +584,7 @@
         : hovered.target;
 
       if (sourceNode && targetNode) {
-        hoveredLink = {
+        const linkData = {
           source: typeof hovered.source === 'string' ? hovered.source : (hovered.source as any).id,
           target: typeof hovered.target === 'string' ? hovered.target : (hovered.target as any).id,
           link_type: hovered.link_type || 'related',
@@ -548,13 +593,15 @@
         };
         const centerX = (sourceNode.x! + targetNode.x!) / 2;
         const centerY = (sourceNode.y! + targetNode.y!) / 2;
-        tooltipPosition = {
-          x: centerX * transform.k + transform.x + 10,
-          y: centerY * transform.k + transform.y + 10
-        };
+        const tooltipX = centerX * transform.k + transform.x + 10;
+        const tooltipY = centerY * transform.k + transform.y + 10;
+
+        if (!hoveredLink || getLinkKey(hoveredLink) !== getLinkKey(linkData)) {
+          scheduleLinkHover(linkData, tooltipX, tooltipY);
+        }
       }
     } else {
-      hoveredLink = null;
+      clearLinkHover();
     }
   }
 
