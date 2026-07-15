@@ -108,19 +108,33 @@
       // Load notes and graph data in parallel
       const isAuth = isAuthenticated();
       const [notesResult, freshGraphResult] = await Promise.all([
-        getNotes(),
+        isAuth ? getNotes() : Promise.resolve([] as Note[]),
         isAuth
           ? getFreshGraph().catch((e: unknown) => {
               console.error('[+page] Failed to load fresh graph:', e);
               return null;
             })
           : getGraphWithPreload().catch((e: unknown) => {
-              console.error('[+page] Failed to load graph:', e);
+              console.error('[+page] Failed to load public graph:', e);
               return null;
             })
       ]);
-      
-      allNotes = notesResult;
+
+      // For public (unauthenticated) view, derive the note list from the public graph
+      // because the notes API is protected.
+      if (!isAuth && freshGraphResult && 'nodes' in freshGraphResult) {
+        allNotes = (freshGraphResult as GraphData).nodes.map((n: any) => ({
+          id: n.id || n.Id || n.ID,
+          title: n.title || n.Title,
+          content: '',
+          metadata: {},
+          type: n.type ?? n.Type ?? 'unknown',
+          created_at: '',
+          updated_at: ''
+        }));
+      } else {
+        allNotes = notesResult;
+      }
       console.log('[+page] Notes loaded:', allNotes.length);
       applyFiltersAndSort();
       
