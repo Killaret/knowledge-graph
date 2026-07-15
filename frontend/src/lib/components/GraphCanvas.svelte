@@ -156,6 +156,11 @@
   let hoveredLink: { source: string; target: string; link_type: string; weight: number; source_type: string } | null = $state(null);
   let tooltipPosition = $state({ x: 0, y: 0 });
   let hoveredNodeId: string | null = $state(null);
+
+  // Hover delay to avoid accidental dimming/tooltips on quick mouse movements
+  let hoverNodeTimeout: ReturnType<typeof setTimeout> | null = null;
+  let hoverCandidateNodeId: string | null = null;
+  const HOVER_DELAY_MS = 150;
   
   // Particle system
   let particleSystem: ParticleSystem | null = $state(null);
@@ -370,6 +375,32 @@
 
 
 
+  function clearNodeHover() {
+    if (hoverNodeTimeout) {
+      clearTimeout(hoverNodeTimeout);
+      hoverNodeTimeout = null;
+    }
+    hoverCandidateNodeId = null;
+    hoveredNodeId = null;
+  }
+
+  function scheduleNodeHover(nodeId: string) {
+    if (hoverCandidateNodeId === nodeId && hoverNodeTimeout) {
+      // same candidate already scheduled; do nothing
+      return;
+    }
+    if (hoverNodeTimeout) {
+      clearTimeout(hoverNodeTimeout);
+    }
+    hoverCandidateNodeId = nodeId;
+    hoverNodeTimeout = setTimeout(() => {
+      if (hoverCandidateNodeId === nodeId) {
+        hoveredNodeId = nodeId;
+      }
+      hoverNodeTimeout = null;
+    }, HOVER_DELAY_MS);
+  }
+
   function redraw() {
     const simNodes = getSimulationNodes(simState);
     if (ctx) {
@@ -412,6 +443,9 @@
         node.fy = node.y;
       }
     }
+
+    // Starting a drag/click clears any pending hover to avoid accidental dimming
+    clearNodeHover();
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -473,17 +507,19 @@
         const dx = pos.x - node.x;
         const dy = pos.y - node.y;
         if (Math.sqrt(dx * dx + dy * dy) < 30) {
-          hoveredNodeId = node.id;
           foundHoveredNode = true;
           if (node.type === 'technical') {
             hoveredTechnicalNode = node;
+          }
+          if (hoveredNodeId !== node.id) {
+            scheduleNodeHover(node.id);
           }
           break;
         }
       }
     }
     if (!foundHoveredNode) {
-      hoveredNodeId = null;
+      clearNodeHover();
     }
 
     if (hoveredTechnicalNode) {
