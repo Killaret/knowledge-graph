@@ -9,7 +9,7 @@
   import NoteCard from '$lib/components/NoteCard.svelte';
   import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
   import StateIllustration from '$lib/components/StateIllustration.svelte';
-  import { getNotes, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$lib/api/notes';
+  import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$lib/api/notes';
   import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$lib/api/graph';
   import { getGraphWithPreload, useInstantData } from '$lib/hooks/usePreloadedData';
   import { isAuthenticated } from '$lib/stores/auth.svelte';
@@ -513,6 +513,17 @@
     }
   }
 
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+    try {
+      await createNote({ title: data.title, content: data.content, type: data.type });
+      await loadNotes();
+    } catch (e) {
+      if (browser) {
+        alert('Failed to create note');
+      }
+    }
+  }
+
   function handleNoteCreated(note: Note) {
     showCreateModal = false;
     selectedNodeId = note.id;
@@ -582,6 +593,7 @@
           links={filteredGraphData().links}
           delta={graphDelta}
           onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
+          onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
         />
         <!-- Stats Overlay -->
