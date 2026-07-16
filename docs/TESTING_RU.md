@@ -227,7 +227,7 @@ Knowledge Graph использует три Docker-стека:
 
 ### Текущая статистика тестов
 
-**Последние результаты тестов (из FINAL_TEST_REPORT.md):**
+**Последние результаты тестов (из archive/FINAL_TEST_REPORT.md):**
 
 | Слой | Категория | Всего | Прошло | Неудачно | Пропущено | Статус |
 |------|----------|-------|--------|----------|-----------|--------|
@@ -413,7 +413,7 @@ docker compose -f docker-compose.test.yml down -v
 - [План регрессионного тестирования](REGRESSION_TEST_PLAN.md)
 - [Чек-лист ручного тестирования (RU)](MANUAL_TEST_CHECKLISTS_RU.md)
 - [Чек-лист ручного тестирования (EN)](MANUAL_TEST_CHECKLISTS.md)
-- [Финальный отчёт о тестировании](FINAL_TEST_REPORT.md)
+- [Финальный отчёт о тестировании](archive/FINAL_TEST_REPORT.md)
 - [Тестирование Backend](../backend/README.md#testing)
 - [Тестирование Frontend](../frontend/tests/README.md)
 

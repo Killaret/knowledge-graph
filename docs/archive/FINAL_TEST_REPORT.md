@@ -249,7 +249,7 @@ Knowledge Graph has completed a comprehensive refactoring and testing cycle. The
 
 ## 4. API Endpoint Verification
 
-Based on previous test execution from TEST_EXECUTION_REPORT.md:
+Based on previous test execution from docs/archive/TEST_EXECUTION_REPORT.md:
 
 | Endpoint | Expected Code | Actual Code | Response Time | Status |
 |----------|---------------|-------------|---------------|--------|
@@ -272,7 +272,7 @@ Based on previous test execution from TEST_EXECUTION_REPORT.md:
 
 ## 5. Smoke Tests
 
-Based on previous test execution from TEST_EXECUTION_REPORT.md:
+Based on previous test execution from docs/archive/TEST_EXECUTION_REPORT.md:
 
 | Test | Status | Notes |
 |------|--------|-------|

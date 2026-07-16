@@ -596,7 +596,7 @@ curl http://localhost:18083/openapi.yaml
 
 ## PART 12: Final Report and Cleanup
 
-### 12.1 Update FINAL_TEST_REPORT.md
+### 12.1 Update docs/archive/FINAL_TEST_REPORT.md
 **Sections:**
 - Stacks identity status
 - Docker build verification results
@@ -637,7 +637,7 @@ curl http://localhost:18083/openapi.yaml
 - System is READY for production deployment
 
 **If any checks fail:**
-- Document failures in FINAL_TEST_REPORT.md
+- Document failures in docs/archive/FINAL_TEST_REPORT.md
 - Fix failures before proceeding
 - Re-run regression cycle
 

@@ -262,7 +262,7 @@
 | TESTING_EN.md (testing infrastructure) | ✅ Done | 🔴 Critical | July 2026 |
 | TESTING_RU.md (Russian translation) | ✅ Done | 🔴 Critical | July 2026 |
 | MANUAL_TEST_CHECKLISTS.md | ✅ Done | 🔴 Critical | July 2026 |
-| REGRESSION_TEST_REPORT.md | ✅ Done | 🔴 Critical | July 2026 |
+| docs/archive/REGRESSION_TEST_REPORT.md | ✅ Done | 🔴 Critical | July 2026 |
 | CORS configuration documentation | ✅ Done | 🔴 Critical | July 2026 |
 | Healthcheck verification documentation | ✅ Done | 🔴 Critical | July 2026 |
 | Testing commands in AGENTS.md | ✅ Done | 🔴 Critical | July 2026 |
@@ -318,7 +318,7 @@
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
 - [AGENTS.md](docs/AGENTS.md) - AI agents and development workflows
 - [REGRESSION_TEST_PLAN.md](docs/REGRESSION_TEST_PLAN.md) - Testing procedures
-- [REGRESSION_TEST_REPORT.md](REGRESSION_TEST_REPORT.md) - Latest test results
+- [REGRESSION_TEST_REPORT.md](docs/archive/REGRESSION_TEST_REPORT.md) - Latest test results
 - [TESTING_EN.md](docs/TESTING_EN.md) - Testing infrastructure guide
 
 ---

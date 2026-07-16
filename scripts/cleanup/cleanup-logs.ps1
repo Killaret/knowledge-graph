@@ -49,6 +49,14 @@ foreach ($pattern in $rootPatterns) {
         Remove-IfOld -Days 0 -Label 'root log'
 }
 
+Write-Host "Cleaning frontend generated logs..." -ForegroundColor Cyan
+Get-ChildItem -Path (Join-Path $repoRoot 'frontend') -Filter '*.log' -File -ErrorAction SilentlyContinue |
+    Remove-IfOld -Days 0 -Label 'frontend log'
+
+Write-Host "Cleaning backend generated logs and test result files..." -ForegroundColor Cyan
+Get-ChildItem -Path (Join-Path $repoRoot 'backend') -Include '*.log','*-test-results.txt' -File -ErrorAction SilentlyContinue |
+    Remove-IfOld -Days 0 -Label 'backend artifact'
+
 Write-Host "Cleaning old logs in logs/ (keeping .gitkeep and README)..." -ForegroundColor Cyan
 Get-ChildItem -Path (Join-Path $repoRoot 'logs') -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -ne '.gitkeep' -and $_.Name -notlike 'README*' } |

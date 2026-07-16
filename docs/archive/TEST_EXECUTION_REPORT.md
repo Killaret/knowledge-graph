@@ -220,7 +220,7 @@ ErrorResponse:
 | File | Status | Notes |
 |------|--------|-------|
 | `tests/README.md` | ✅ Updated | Current test counts, added smoke tests section |
-| `docs/TEST_EXECUTION_REPORT.md` | ✅ Updated | This file |
+| `docs/archive/TEST_EXECUTION_REPORT.md` | ✅ Updated | This file |
 | `docs/MANUAL_TEST_CHECKLISTS.md` | ✅ Updated | Enhanced with new canvas features |
 | `docs/TESTING_EN.md` | ✅ Current | General testing guidelines |
 

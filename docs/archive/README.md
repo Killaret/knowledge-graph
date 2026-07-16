@@ -23,8 +23,34 @@
 | `TEST_FIXES_REPORT_2026-04-13.md` | 13 апреля | Исправления уже в main branch |
 | `IMPLEMENTATION_SUMMARY_2026-04-13.md` | 13 апреля | Дублирует CHANGELOG.md |
 
+### Файлы из корня репозитория (июль 2026)
+
+| Файл | Дата | Почему архивирован |
+|------|------|-------------------|
+| `FINAL_TEST_REPORT.md` | июль | Устаревший финальный отчёт; заменён актуальным прогоном |
+| `REGRESSION_TEST_REPORT.md` | июль | Устаревший отчёт регрессии |
+| `FRONTEND_REFACTORING_LOG.md` | июль | Исторический лог рефакторинга |
+| `MANUAL_TEST_REPORT.md` | июль | Устаревший ручной отчёт |
+| `MANUAL_TESTING_CHECKLIST_COMPLETE.md` | июль | Заменён `../MANUAL_TEST_CHECKLISTS.md` |
+| `MANUAL_TESTING_CHECKLIST_COMPLETE_EN.md` | июль | Заменён `../MANUAL_TEST_CHECKLISTS.md` |
+| `PERSONAL_STACK_DEEP_VERIFICATION.md` | июль | Устаревшая верификация personal stack |
+| `PERSONAL_STACK_VERIFICATION_REPORT.md` | июль | Устаревший отчёт personal stack |
+| `TEST_INSPECTION_REPORT.md` | июль | Устаревший инспекционный отчёт |
+
+### Промежуточные отчёты из docs/ (июль 2026)
+
+| Файл | Дата | Почему архивирован |
+|------|------|-------------------|
+| `DOCUMENTATION_AUDIT_REPORT.md` | июль | Аудит документации выполнен |
+| `PRIORITY_FIXES_REPORT.md` | июль | Исправления внесены |
+| `ROUTE_AUTH_REPORT.md` | июль | Проблемы auth исправлены |
+| `TEST_EXECUTION_REPORT.md` | июль | Данные перенесены в финальный отчёт |
+
 **Актуальная документация по тестированию:**
 - `../TESTING.md` — Полное руководство по тестированию
+- `../MANUAL_TEST_CHECKLISTS.md` — Чек-лист ручного тестирования (EN)
+- `../MANUAL_TEST_CHECKLISTS_RU.md` — Чек-лист ручного тестирования (RU)
+- `../REGRESSION_TEST_PLAN.md` — План регрессионного тестирования
 - `../CHANGELOG.md` — История изменений с результатами тестов
 
 ---

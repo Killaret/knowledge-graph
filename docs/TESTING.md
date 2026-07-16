@@ -292,7 +292,7 @@ The manual test checklist covers:
 
 ### Current Test Statistics
 
-**Latest Test Results (from FINAL_TEST_REPORT.md):**
+**Latest Test Results (from archive/FINAL_TEST_REPORT.md):**
 
 | Layer | Category | Total | Passed | Failed | Skipped | Status |
 |-------|----------|-------|--------|--------|---------|--------|
@@ -521,7 +521,7 @@ The test stack can be integrated into CI/CD pipelines:
 
 - [Manual Test Checklist](MANUAL_TEST_CHECKLISTS.md)
 - [Regression Test Plan](REGRESSION_TEST_PLAN.md)
-- [Final Test Report](FINAL_TEST_REPORT.md)
+- [Final Test Report](archive/FINAL_TEST_REPORT.md)
 - [Backend Testing](../backend/README.md#testing)
 - [Frontend Testing](../frontend/tests/README.md)
 

@@ -142,7 +142,7 @@ toast.success("Заметка создана успешно");
 ### See Also
 - [REGRESSION_TEST_PLAN.md](REGRESSION_TEST_PLAN.md) — Complete regression testing procedures
 - [TESTING_EN.md](TESTING_EN.md) — Testing infrastructure and procedures
-- [FINAL_TEST_REPORT.md](FINAL_TEST_REPORT.md) — Latest test results
+- [FINAL_TEST_REPORT.md](archive/FINAL_TEST_REPORT.md) — Latest test results
 
 ---
 

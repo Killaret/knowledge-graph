@@ -38,6 +38,16 @@ find "$REPO_ROOT" -maxdepth 1 -type f \( \
     remove_if_old "$file" 0 'root log'
 done
 
+echo "Cleaning frontend generated logs..."
+find "$REPO_ROOT/frontend" -maxdepth 1 -type f -name '*.log' -print0 2>/dev/null | while IFS= read -r -d '' file; do
+    remove_if_old "$file" 0 'frontend log'
+done
+
+echo "Cleaning backend generated logs and test result files..."
+find "$REPO_ROOT/backend" -maxdepth 1 -type f \( -name '*.log' -o -name '*-test-results.txt' \) -print0 2>/dev/null | while IFS= read -r -d '' file; do
+    remove_if_old "$file" 0 'backend artifact'
+done
+
 echo "Cleaning old logs in logs/ (keeping .gitkeep and README)..."
 find "$REPO_ROOT/logs" -type f ! -name '.gitkeep' ! -name 'README*' -print0 2>/dev/null | while IFS= read -r -d '' file; do
     remove_if_old "$file" "$LOG_RETENTION_DAYS" 'log file'
@@ -47,7 +57,7 @@ echo "Cleaning old test snapshots in scripts/testing/temp/snapshots/..."
 SNAPSHOTS_DIR="$REPO_ROOT/scripts/testing/temp/snapshots"
 if [[ -d "$SNAPSHOTS_DIR" ]]; then
     find "$SNAPSHOTS_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' dir; do
-        remove_if_old "$dir" "$SNAPSHOTS_RETENTION_DAYS" 'snapshot dir'
+        remove_if_old "$dir" "$SNAPSHOT_RETENTION_DAYS" 'snapshot dir'
     done
 fi
 
