@@ -92,9 +92,6 @@ cd frontend
 npm run test:unit                  # Запуск unit тестов
 npm run test:unit:watch            # Unit тесты в watch режиме
 npm run test:coverage              # Unit тесты с coverage
-npm run test:preload               # Preload специфичные тесты
-npm run test:preload:watch         # Preload тесты в watch режиме
-npm run test:preload:coverage      # Preload тесты с coverage
 ```
 
 ### E2E тесты (Playwright)
@@ -119,8 +116,6 @@ npm run test:bdd                   # Алиас для test:cucumber
 ### Комплексные тесты
 ```bash
 cd frontend
-npm run test:e2e:preload           # E2E тесты для preload функционала
-npm run test:e2e:preload:ui        # E2E preload тесты с UI
 npm run test:all                   # Все тесты (unit + E2E + BDD)
 npm run test:ci:smoke              # CI smoke тесты
 npm run test:ci:full               # Полные CI тесты

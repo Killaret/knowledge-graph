@@ -98,8 +98,7 @@
 - Unit: `vitest` / `@testing-library/svelte` → `npm run test:unit`
 - E2E: `playwright` → `npm run test`
 - BDD: `cucumber` → `npm run test:cucumber`
-- Preload: `vitest` с config `vitest.config.preload.ts`
-- Visual: `playwright test tests/visual/`
+- Visual: `playwright test --project=visual`
 
 ### 3.2 Мокирование API и окружения
 - `vitest.config.ts` настраивает alias для тестов:
