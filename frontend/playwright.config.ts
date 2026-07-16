@@ -1,5 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
 import { createArgosReporterOptions } from '@argos-ci/playwright/reporter';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Load Argos token from gitignored argos.json if ARGOS_TOKEN is not set.
+// This lets local runs upload screenshots without hardcoding the secret in the repo.
+if (!process.env.ARGOS_TOKEN) {
+  try {
+    const argosConfigPath = resolve('argos.json');
+    if (existsSync(argosConfigPath)) {
+      const argosConfig = JSON.parse(readFileSync(argosConfigPath, 'utf-8'));
+      if (typeof argosConfig?.token === 'string') {
+        process.env.ARGOS_TOKEN = argosConfig.token;
+      }
+    }
+  } catch {
+    // Ignore missing or malformed argos.json
+  }
+}
 
 // Type for Node.js process
 declare const process: {
