@@ -1,21 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import FloatingControls from '$lib/components/FloatingControls.svelte';
-  import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
-  import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
-  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
-  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-  import NoteCard from '$lib/components/NoteCard.svelte';
-  import ApiErrorDisplay from '$lib/components/ApiErrorDisplay.svelte';
-  import StateIllustration from '$lib/components/StateIllustration.svelte';
-  import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$lib/api/graph';
-  import { getGraphWithPreload, useInstantData } from '$lib/hooks/usePreloadedData';
-  import { isAuthenticated } from '$lib/stores/auth.svelte';
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
-  import type { ErrorResponse } from '$lib/types/errors';
-  import SplashScreen from '$lib/components/SplashScreen.svelte';
+  import FloatingControls from '$components/organisms/FloatingControls.svelte';
+  import NoteSidePanel from '$components/organisms/NoteSidePanel.svelte';
+  import CreateNoteModal from '$components/organisms/CreateNoteModal.svelte';
+  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
+  import ConfirmModal from '$components/organisms/ConfirmModal.svelte';
+  import NoteCard from '$components/molecules/NoteCard.svelte';
+  import ApiErrorDisplay from '$components/atoms/ApiErrorDisplay.svelte';
+  import StateIllustration from '$components/atoms/StateIllustration.svelte';
+  import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$shared/api/notes';
+  import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
+  import { getGraphWithPreload, useInstantData } from '$shared/hooks/usePreloadedData';
+  import { isAuthenticated } from '$shared/stores/auth.svelte';
+  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
+  import type { ErrorResponse } from '$shared/types/errors';
+  import SplashScreen from '$components/atoms/SplashScreen.svelte';
 
   // State
   let allNotes: Note[] = $state([]);

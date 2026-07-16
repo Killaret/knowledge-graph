@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { searchNotes, type Note } from '$lib/api/notes';
-  import SearchBar from '$lib/components/SearchBar.svelte';
-  import NoteCard from '$lib/components/NoteCard.svelte';
-  import StateIllustration from '$lib/components/StateIllustration.svelte';
+  import { searchNotes, type Note } from '$shared/api/notes';
+  import SearchBar from '$components/molecules/SearchBar.svelte';
+  import NoteCard from '$components/molecules/NoteCard.svelte';
+  import StateIllustration from '$components/atoms/StateIllustration.svelte';
 
   let notes = $state<Note[]>([]);
   let loading = $state(false);

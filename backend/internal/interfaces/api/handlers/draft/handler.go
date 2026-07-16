@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"knowledge-graph/internal/application/draft"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -28,15 +29,18 @@ type SaveDraftRequest struct {
 
 // SaveDraft saves or updates a draft for a note
 func (h *Handler) SaveDraft(c *gin.Context) {
-	noteIDStr := c.Param("note_id")
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+
+	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note_id"})
 		return
 	}
-
-	// TODO: Get user ID from authentication context
-	userID := uuid.New() // Placeholder
 
 	var req SaveDraftRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -93,15 +97,18 @@ func (h *Handler) ResolveConflict(c *gin.Context) {
 
 // GetDraft retrieves a draft for a note
 func (h *Handler) GetDraft(c *gin.Context) {
-	noteIDStr := c.Param("note_id")
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+
+	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note_id"})
 		return
 	}
-
-	// TODO: Get user ID from authentication context
-	userID := uuid.New() // Placeholder
 
 	draft, err := h.service.GetLatestDraft(c.Request.Context(), noteID, userID)
 	if err != nil {
@@ -144,8 +151,11 @@ func (h *Handler) DeleteDraft(c *gin.Context) {
 
 // GetActiveDrafts retrieves all active drafts for the current user
 func (h *Handler) GetActiveDrafts(c *gin.Context) {
-	// TODO: Get user ID from authentication context
-	userID := uuid.New() // Placeholder
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
 
 	drafts, err := h.service.GetActiveDrafts(c.Request.Context(), userID)
 	if err != nil {

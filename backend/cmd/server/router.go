@@ -16,6 +16,9 @@ import (
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
 	backphandler "knowledge-graph/internal/interfaces/api/handlers/backup"
+	drafthandler "knowledge-graph/internal/interfaces/api/handlers/draft"
+	settingshandler "knowledge-graph/internal/interfaces/api/handlers/settings"
+	sharehandler "knowledge-graph/internal/interfaces/api/handlers/share"
 	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -33,6 +36,9 @@ func setupRouter(
 	authHandler *authhandler.Handler,
 	userHandler *userhandler.Handler,
 	backupHandler *backphandler.Handler,
+	settingsHandler *settingshandler.Handler,
+	shareHandler *sharehandler.Handler,
+	draftHandler *drafthandler.Handler,
 	cfg *config.Config,
 	database *gorm.DB,
 	redisClient *redis.Client,
@@ -108,6 +114,32 @@ func setupRouter(
 
 		// User routes
 		v1.GET("/users/me", userHandler.GetMe)
+
+		// Settings routes
+		v1.GET("/users/me/settings", settingsHandler.GetMySettings)
+		v1.GET("/users/me/settings/:key", settingsHandler.GetSetting)
+		v1.PUT("/users/me/settings", writeLimiter, settingsHandler.UpdateSetting)
+		v1.DELETE("/users/me/settings/:key", writeLimiter, settingsHandler.DeleteSetting)
+		v1.GET("/users/me/settings/galactic_mode", settingsHandler.GetGalacticMode)
+		v1.POST("/users/me/settings/galactic_mode/toggle", writeLimiter, settingsHandler.ToggleGalacticMode)
+
+		// Share routes
+		v1.POST("/notes/:id/share", writeLimiter, shareHandler.ShareNote)
+		v1.POST("/notes/:id/share-link", writeLimiter, shareHandler.CreateShareLink)
+		v1.GET("/notes/:id/shares", shareHandler.ListNoteShares)
+		v1.DELETE("/notes/:id/shares/:shareId", writeLimiter, shareHandler.RevokeShare)
+		v1.DELETE("/share-links/:id", writeLimiter, shareHandler.RevokeShareLink)
+		v1.GET("/share/:token", shareHandler.AccessSharedNote)
+
+		// Draft routes (only if MongoDB is configured)
+		if draftHandler != nil {
+			v1.POST("/notes/:id/draft", writeLimiter, draftHandler.SaveDraft)
+			v1.GET("/notes/:id/draft", draftHandler.GetDraft)
+			v1.POST("/drafts/:draft_id/sync", writeLimiter, draftHandler.SyncDraft)
+			v1.POST("/drafts/:draft_id/resolve", writeLimiter, draftHandler.ResolveConflict)
+			v1.DELETE("/drafts/:draft_id", writeLimiter, draftHandler.DeleteDraft)
+			v1.GET("/users/me/drafts", draftHandler.GetActiveDrafts)
+		}
 
 		// Achievements
 		v1.GET("/achievements", achievementHandler.ListAchievements)

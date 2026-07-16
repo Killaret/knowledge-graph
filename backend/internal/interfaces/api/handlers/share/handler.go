@@ -303,12 +303,12 @@ func (h *Handler) ListNoteShares(c *gin.Context) {
 			login = share.SharedWithUser.Login
 		}
 		userShares = append(userShares, gin.H{
-			"id":                 share.ID,
+			"id":                  share.ID,
 			"shared_with_user_id": share.SharedWithUserID,
-			"shared_with_login":  login,
-			"permission":         share.Permission,
-			"created_at":         share.CreatedAt,
-			"expires_at":         share.ExpiresAt,
+			"shared_with_login":   login,
+			"permission":          share.Permission,
+			"created_at":          share.CreatedAt,
+			"expires_at":          share.ExpiresAt,
 		})
 	}
 
@@ -333,6 +333,51 @@ func (h *Handler) ListNoteShares(c *gin.Context) {
 		"user_shares": userShares,
 		"share_links": shareLinks,
 	})
+}
+
+// RevokeShare revokes a direct user-to-user share
+func (h *Handler) RevokeShare(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+
+	noteID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid note ID"})
+		return
+	}
+
+	shareID, err := uuid.Parse(c.Param("shareId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid share ID"})
+		return
+	}
+
+	// Verify note ownership
+	var note postgres.NoteModel
+	if result := h.db.First(&note, noteID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
+		return
+	}
+	if note.CreatorID == nil || *note.CreatorID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only the creator can revoke shares"})
+		return
+	}
+
+	// Delete the share
+	result := h.db.Where("id = ? AND note_id = ?", shareID, noteID).Delete(&postgres.NoteShareModel{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke share"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "share not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "share revoked successfully"})
 }
 
 // AccessSharedNote handles access to a shared note via token

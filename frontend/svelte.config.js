@@ -11,9 +11,8 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			'$shared': path.resolve('src/shared'),
-			'$entities': path.resolve('src/entities'),
 			'$features': path.resolve('src/features'),
-			'$widgets': path.resolve('src/widgets'),
+			'$components': path.resolve('src/components'),
 			'$config': path.resolve('../knowledge-graph.config.json')
 		}
 	}

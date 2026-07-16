@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import ProfileEditor from '$lib/components/ProfileEditor.svelte';
-  import { isAuthenticated, currentUser, initAuth } from '$lib/stores/auth.svelte.js';
+  import ProfileEditor from '$components/organisms/ProfileEditor.svelte';
+  import { isAuthenticated, currentUser, initAuth } from '$shared/stores/auth.svelte.js';
   import { onMount } from 'svelte';
 
   // Initialize auth once on mount

@@ -10,6 +10,11 @@ docker compose -f docker-compose.test.yml down -v
 # Start test stack
 Write-Host "Starting test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml up -d --build --wait
+$upExit = $LASTEXITCODE
+if ($upExit -ne 0) {
+    Write-Host "ERROR: Test stack failed to start (exit $upExit)" -ForegroundColor Red
+    exit $upExit
+}
 
 # Wait for all containers to be healthy
 Write-Host "Waiting for containers to be healthy..." -ForegroundColor Yellow

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import SmartGraph from '$lib/components/SmartGraph.svelte';
-  import { getGraphData } from '$lib/api/graph';
-  import BackButton from '$lib/components/BackButton.svelte';
-  import type { GraphNode, GraphLink } from '$lib/api/graph';
+  import SmartGraph from '$components/organisms/SmartGraph.svelte';
+  import { getGraphData } from '$shared/api/graph';
+  import BackButton from '$components/atoms/BackButton.svelte';
+  import type { GraphNode, GraphLink } from '$shared/api/graph';
 
   let nodes: GraphNode[] = $state([]);
   let links: GraphLink[] = $state([]);

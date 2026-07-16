@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { getNote, updateNote } from '$lib/api/notes';
-  import type { Note } from '$lib/api/notes';
+  import { getNote, updateNote } from '$shared/api/notes';
+  import type { Note } from '$shared/api/notes';
 
   let note: Note | null = $state(null);
   let title = $state('');

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { createNote } from '$lib/api/notes';
+  import { createNote } from '$shared/api/notes';
 
   let title = $state('');
   let content = $state('');

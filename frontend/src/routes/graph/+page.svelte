@@ -2,17 +2,17 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { getNotes, getNote, createNote, deleteNote, restoreNote, type Note } from '$lib/api/notes';
-  import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
+  import { getNotes, getNote, createNote, deleteNote, restoreNote, type Note } from '$shared/api/notes';
+  import { getGraphData, getFullGraphData, type GraphData } from '$shared/api/graph';
 
   const KNOWLEDGE_CORE_ID = '00000000-0000-0000-0000-000000000001';
-  import { createLink } from '$lib/api/links';
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
-  import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
-  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
-  import BackButton from '$lib/components/BackButton.svelte';
-  import WeltallBackground from '$lib/components/WeltallBackground.svelte';
-  import StateIllustration from '$lib/components/StateIllustration.svelte';
+  import { createLink } from '$shared/api/links';
+  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
+  import NoteSidePanel from '$components/organisms/NoteSidePanel.svelte';
+  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
+  import BackButton from '$components/atoms/BackButton.svelte';
+  import WeltallBackground from '$components/atoms/WeltallBackground.svelte';
+  import StateIllustration from '$components/atoms/StateIllustration.svelte';
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });

@@ -2,13 +2,13 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
-  import { getNote, getSuggestions, deleteNote } from '$lib/api/notes';
-  import type { Note, Suggestion } from '$lib/api/notes';
+  import { getNote, getSuggestions, deleteNote } from '$shared/api/notes';
+  import type { Note, Suggestion } from '$shared/api/notes';
   import { goto } from '$app/navigation';
-  import { formatDateTime } from '$lib/utils/date';
-  import BackButton from '$lib/components/BackButton.svelte';
-  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
-  import StateIllustration from '$lib/components/StateIllustration.svelte';
+  import { formatDateTime } from '$shared/utils/date';
+  import BackButton from '$components/atoms/BackButton.svelte';
+  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
+  import StateIllustration from '$components/atoms/StateIllustration.svelte';
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);

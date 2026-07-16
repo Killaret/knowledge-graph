@@ -12,13 +12,13 @@
    */
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
-  import type { GraphNode, GraphLink } from '$lib/api/graph';
+  import type { GraphNode, GraphLink } from '$shared/api/graph';
   
   // Dynamic import for browser-only component
   let GraphCanvas: any;
   
   if (browser) {
-    import('$lib/components/GraphCanvas.svelte').then(m => {
+    import('$components/organisms/GraphCanvas.svelte').then(m => {
       GraphCanvas = m.default;
     });
   }

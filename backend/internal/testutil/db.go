@@ -28,7 +28,7 @@ func SetupTestDB(t *testing.T) (*gorm.DB, func()) {
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
-				WithStartupTimeout(60*time.Second),
+				WithStartupTimeout(120*time.Second),
 		),
 	)
 	if err != nil {

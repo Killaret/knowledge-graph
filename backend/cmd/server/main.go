@@ -16,22 +16,26 @@ import (
 	"knowledge-graph/internal/application/achievement"
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
+	draftApp "knowledge-graph/internal/application/draft"
 	appGraph "knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	userApp "knowledge-graph/internal/application/user"
 	"knowledge-graph/internal/auth"
-	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
 	backphandler "knowledge-graph/internal/interfaces/api/handlers/backup"
+	drafthandler "knowledge-graph/internal/interfaces/api/handlers/draft"
+	settingshandler "knowledge-graph/internal/interfaces/api/handlers/settings"
+	sharehandler "knowledge-graph/internal/interfaces/api/handlers/share"
 	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -109,6 +113,26 @@ func main() {
 		log.Printf("[Cache] Redis flush on startup is disabled")
 	}
 
+	// MongoDB client (optional - required for draft feature)
+	var mongoClient *mongo.Client
+	if cfg.MongoDBURL != "" {
+		var err error
+		mongoClient, err = mongo.NewClient(ctx, cfg.MongoDBURL, cfg.MongoDBDatabase)
+		if err != nil {
+			log.Printf("[MongoDB] WARNING: failed to connect to MongoDB at %s: %v", cfg.MongoDBURL, err)
+			mongoClient = nil
+		} else {
+			log.Printf("[MongoDB] Connected to MongoDB at %s/%s", cfg.MongoDBURL, cfg.MongoDBDatabase)
+			defer func() {
+				if err := mongoClient.Close(ctx); err != nil {
+					log.Printf("[MongoDB] Error closing MongoDB client: %v", err)
+				}
+			}()
+		}
+	} else {
+		log.Printf("[MongoDB] MongoDB URL not configured, draft feature disabled")
+	}
+
 	// Graceful shutdown
 	defer func() {
 		log.Println("Server shutdown, closing database connection...")
@@ -123,6 +147,17 @@ func main() {
 	noteRepo := postgres.NewNoteRepository(database, redisClient)
 	linkRepo := postgres.NewLinkRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database)
+
+	// Draft service and handler (only if MongoDB is available)
+	var draftHandler *drafthandler.Handler
+	if mongoClient != nil {
+		draftRepo := mongo.NewDraftRepository(mongoClient)
+		draftService := draftApp.NewService(draftRepo, noteRepo, "")
+		draftHandler = drafthandler.NewHandler(draftService)
+		log.Println("[Draft] Draft service initialized")
+	} else {
+		log.Println("[Draft] Draft service disabled (MongoDB unavailable)")
+	}
 
 	// Yandex.Disk backup service
 	var yandexBackupService *cloud.YandexBackupService
@@ -201,8 +236,8 @@ func main() {
 	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
 
 	// Auth handler
-	jwtManager := authpkg.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
-	tokenStore := authpkg.NewRedisTokenStore(redisClient)
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
+	tokenStore := auth.NewRedisTokenStore(redisClient)
 	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
 
 	// User handler
@@ -214,6 +249,12 @@ func main() {
 	}
 	passwordPolicy := auth.DefaultPasswordPolicy()
 	userHandler := userhandler.NewHandler(database, passwordConfig, passwordPolicy)
+
+	// Settings handler
+	settingsHandler := settingshandler.NewHandler(settingsService)
+
+	// Share handler
+	shareHandler := sharehandler.NewHandler(database)
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
@@ -230,6 +271,9 @@ func main() {
 		authHandler,
 		userHandler,
 		backupHandler,
+		settingsHandler,
+		shareHandler,
+		draftHandler,
 		cfg,
 		database,
 		redisClient,

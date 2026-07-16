@@ -1,5 +1,5 @@
-import type { TransformState, SimulationNode } from '$lib/components/GraphCanvas/types';
-import type { GhostNodeState } from '$lib/components/GraphCanvas';
+import type { TransformState, SimulationNode } from '$components/organisms/GraphCanvas/types';
+import type { GhostNodeState } from '$components/organisms/GraphCanvas';
 
 export interface HotkeysState {
   showSearchBox: boolean;

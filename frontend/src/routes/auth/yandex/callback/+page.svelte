@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { handleYandexCallback, error } from '$lib/stores/auth.svelte.js';
+  import { handleYandexCallback, error } from '$shared/stores/auth.svelte.js';
   
   let isProcessing = $state(true);
   let localError = $state<string | null>(null);

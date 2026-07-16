@@ -1,7 +1,7 @@
 /**
  * Reality Rift anomaly renderer
  */
-import { hexToRgba } from '../utils';
+import { hexToRgba } from '../../helpers';
 import { seededRandom } from './helpers';
 
 /**

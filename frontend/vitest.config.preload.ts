@@ -6,15 +6,15 @@ export default defineConfig({
   plugins: [sveltekit()],
   test: {
     include: [
-      'src/lib/services/**/*.test.ts',
-      'src/lib/hooks/**/*.test.ts',
-      'src/lib/stores/**/*.integration.test.ts'
+      'src/shared/services/**/*.test.ts',
+      'src/shared/hooks/**/*.test.ts',
+      'src/shared/stores/**/*.integration.test.ts'
     ],
     exclude: [
       'node_modules/**',
       '.svelte-kit/**',
       'dist/**',
-      'src/lib/stores/auth.svelte.test.ts'
+      'src/shared/stores/auth.svelte.test.ts'
     ],
     environment: 'jsdom',
     setupFiles: ['./tests/setup/preload.setup.ts'],
@@ -22,8 +22,8 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'json', 'html'],
       include: [
-        'src/lib/services/PreloadService.ts',
-        'src/lib/hooks/usePreloadedData.ts'
+        'src/shared/services/PreloadService.ts',
+        'src/shared/hooks/usePreloadedData.ts'
       ],
       exclude: [
         '**/*.test.ts',

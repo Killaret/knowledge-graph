@@ -43,7 +43,17 @@ export interface Config {
     graph: {
       '2d': {
         max_nodes: number;
+        /** Node count below which CSS drop-shadows are rendered (performance) */
         shadows_threshold: number;
+        /** Link count above which animated link drawing falls back to static (performance) */
+        animated_links_threshold: number;
+        /** Node count above which the gravity attraction system is disabled (performance) */
+        gravity_nodes_threshold: number;
+        /** Max world-unit radius for gravity pull between nodes */
+        gravity_max_distance: number;
+        /** Screen-space pixel radius of the ghost-node create button */
+        ghost_node_radius: number;
+        /** Delay in milliseconds before node/link hover dimming and tooltips activate */
         hover_delay_ms: number;
       };
       '3d': {

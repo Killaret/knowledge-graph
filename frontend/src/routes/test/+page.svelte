@@ -2,7 +2,7 @@
   /**
    * Test index page
    */
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
+  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
   
   const nodes = [{ id: '1', title: 'Test Star', type: 'star' }];
   const links: any[] = [];

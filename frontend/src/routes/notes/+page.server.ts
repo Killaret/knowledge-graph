@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
-import { createNote } from '$lib/api/notes';
+import { createNote } from '$shared/api/notes';
 
 export const actions: Actions = {
   default: async ({ request }) => {

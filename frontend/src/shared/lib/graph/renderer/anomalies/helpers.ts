@@ -2,7 +2,7 @@
  * Anomaly helpers
  */
 import { graphConfig2D, anomalyConfig } from '$shared/config';
-import { stringHash } from '../utils';
+import { stringHash } from '../../helpers';
 
 /**
  * Seeded random number generator for deterministic anomaly parameters

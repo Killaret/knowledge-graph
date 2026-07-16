@@ -126,7 +126,8 @@ try {
     Write-Host "`n[Step 8/24] Backend Unit Tests..." -ForegroundColor Yellow
     Write-Host "  Running backend unit tests..." -ForegroundColor Yellow
     Set-Location $scriptDir\..\backend
-    go test ./... -count=1
+    # Run packages sequentially to reduce concurrent testcontainers load on Docker Desktop
+    go test -p=1 -count=1 ./...
     $backendTestExit = $LASTEXITCODE
     Set-Location $scriptDir\..
     if ($backendTestExit -ne 0) {
@@ -177,18 +178,19 @@ try {
     if ($LASTEXITCODE -ne 0) { exit 1 }
     Write-Host "  ✓ Redis and MongoDB checked" -ForegroundColor Green
 
-    # Step 13: Frontend Unit Tests
-    Write-Host "`n[Step 13/24] Frontend Unit Tests..." -ForegroundColor Yellow
-    Write-Host "  Running frontend unit tests..." -ForegroundColor Yellow
+    # Step 13: Frontend Unit Tests + Coverage
+    Write-Host "`n[Step 13/24] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
+    Write-Host "  Running frontend unit tests with coverage (npm run test:coverage)..." -ForegroundColor Yellow
+    Write-Host "  Tip: coverage report can be regenerated anytime with: cd frontend && npm run test:coverage" -ForegroundColor Cyan
     Set-Location $scriptDir\..\frontend
-    npm run test:unit
+    npm run test:coverage
     $frontendTestExit = $LASTEXITCODE
     Set-Location $scriptDir\..
     if ($frontendTestExit -ne 0) {
-        Write-Host "  ERROR: Frontend unit tests failed" -ForegroundColor Red
+        Write-Host "  ERROR: Frontend unit tests or coverage check failed" -ForegroundColor Red
         exit 1
     }
-    Write-Host "  ✓ Frontend unit tests completed" -ForegroundColor Green
+    Write-Host "  ✓ Frontend unit tests + coverage completed" -ForegroundColor Green
 
     # Step 14: Manual testing instructions
     Write-Host "`n[Step 14/24] Test environment ready for manual testing" -ForegroundColor Green
@@ -307,7 +309,7 @@ try {
         Write-Host "  ✓ Dev container state unchanged" -ForegroundColor Green
     }
 
-    if (Test-Path "$snapshotDir\pre-test-health.json" -and Test-Path "$snapshotDir\post-test-health.json") {
+    if ((Test-Path "$snapshotDir\pre-test-health.json") -and (Test-Path "$snapshotDir\post-test-health.json")) {
         if (Compare-Object (Get-Content "$snapshotDir\pre-test-health.json") (Get-Content "$snapshotDir\post-test-health.json")) {
             Write-Host "  ⚠ Dev health endpoint changed during testing" -ForegroundColor Yellow
             $devStateChanged = $true
@@ -350,17 +352,24 @@ try {
         exit 1
     }
 
-    if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
+    # Compare stack responses ignoring timestamps, which legitimately differ after fresh starts
+    $timestampPattern = '("(?:created_at|updated_at)":\s*")[^"]*("|$)'
+    $normalizedDevNotes = (Get-Content "$snapshotDir\dev-notes.json" -Raw) -replace $timestampPattern, '$1<TIMESTAMP>$2'
+    $normalizedPersonalNotes = (Get-Content "$snapshotDir\personal-notes.json" -Raw) -replace $timestampPattern, '$1<TIMESTAMP>$2'
+    $normalizedDevNotes | Out-File "$snapshotDir\dev-notes-normalized.json"
+    $normalizedPersonalNotes | Out-File "$snapshotDir\personal-notes-normalized.json"
+
+    if (Compare-Object (Get-Content "$snapshotDir\dev-notes-normalized.json") (Get-Content "$snapshotDir\personal-notes-normalized.json")) {
         Write-Host "  ⚠ Dev and Personal stacks are NOT identical" -ForegroundColor Red
         Write-Host "  ERROR: Stacks have differences - manual investigation required" -ForegroundColor Red
-        Write-Host "  Difference details:" -ForegroundColor Yellow
-        diff "$snapshotDir\dev-notes.json" "$snapshotDir\personal-notes.json"
+        Write-Host "  Difference details (normalized):" -ForegroundColor Yellow
+        diff "$snapshotDir\dev-notes-normalized.json" "$snapshotDir\personal-notes-normalized.json"
         Write-Host ""
         Write-Host "  Skipping auto-commit due to stack differences" -ForegroundColor Yellow
         Write-Host "  Please investigate and fix the differences manually" -ForegroundColor Yellow
         exit 1
     } else {
-        Write-Host "  ✓ Dev and Personal stacks are identical" -ForegroundColor Green
+        Write-Host "  ✓ Dev and Personal stacks are identical (timestamps ignored)" -ForegroundColor Green
     }
 
     # Step 23: Check stacks health
@@ -388,19 +397,19 @@ try {
         Write-Host "  Performing auto-commit with test success marker..." -ForegroundColor Yellow
 
         git add -A
-        $commitMessage = "test: successful regression cycle — dev and personal identical`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-        git commit --allow-empty -m $commitMessage
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Failed to commit" -ForegroundColor Red
-            exit 1
+        $staged = git diff --cached --name-only
+        if ($staged) {
+            $commitMessage = "test: successful regression cycle — dev and personal identical`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
+            git commit -m $commitMessage
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  ERROR: Failed to commit" -ForegroundColor Red
+                exit 1
+            }
+            Write-Host "  ✓ Auto-commit created successfully" -ForegroundColor Green
+            Write-Host "  ℹ Push skipped - review and push manually if desired" -ForegroundColor Cyan
+        } else {
+            Write-Host "  ℹ No changes to commit" -ForegroundColor Cyan
         }
-        git push
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Failed to push" -ForegroundColor Red
-            exit 1
-        }
-
-        Write-Host "  ✓ Auto-commit pushed successfully" -ForegroundColor Green
     } else {
         Write-Host "  WARNING: Dev stack state changed - skipping auto-commit" -ForegroundColor Yellow
         Write-Host "  Please investigate the changes manually before committing" -ForegroundColor Yellow

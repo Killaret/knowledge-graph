@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import LoginForm from '$lib/components/LoginForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
-  import { startPreload } from '$lib/services/PreloadService';
+  import LoginForm from '$components/organisms/LoginForm.svelte';
+  import AuthCard from '$components/organisms/AuthCard.svelte';
+  import { isAuthenticated, initAuth } from '$shared/stores/auth.svelte.js';
+  import { startPreload } from '$shared/services/PreloadService';
   import { onMount } from 'svelte';
   
   // Redirect if already authenticated

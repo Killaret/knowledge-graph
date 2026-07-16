@@ -25,16 +25,14 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: [
-			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/environment.ts') },
-			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/navigation.ts') },
-			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/lib/mocks/app/stores.ts') },
-			{ find: /^\$lib/, replacement: path.resolve(__dirname, './src/lib') },
+			{ find: /^\$app\/environment$/, replacement: path.resolve(__dirname, './src/shared/mocks/app/environment.ts') },
+			{ find: /^\$app\/navigation$/, replacement: path.resolve(__dirname, './src/shared/mocks/app/navigation.ts') },
+			{ find: /^\$app\/stores$/, replacement: path.resolve(__dirname, './src/shared/mocks/app/stores.ts') },
 			{ find: /^\$config$/, replacement: path.resolve(__dirname, '../knowledge-graph.config.json') },
 			// FSD aliases (must match svelte.config.js)
 			{ find: /^\$shared/, replacement: path.resolve(__dirname, './src/shared') },
-			{ find: /^\$entities/, replacement: path.resolve(__dirname, './src/entities') },
 			{ find: /^\$features/, replacement: path.resolve(__dirname, './src/features') },
-			{ find: /^\$widgets/, replacement: path.resolve(__dirname, './src/widgets') }
+			{ find: /^\$components/, replacement: path.resolve(__dirname, './src/components') }
 		],
 		conditions: ['browser', 'default']
 	},
@@ -50,15 +48,21 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'json', 'html'],
 			include: [
+				'src/shared/**/*.{ts,svelte}',
+				'src/features/**/*.{ts,svelte}',
+				'src/components/**/*.{ts,svelte}',
 				'src/lib/**/*.{ts,svelte}'
 			],
 			exclude: [
 				'node_modules/',
 				'vitest-setup.ts',
-				'src/lib/mocks/**/*',
-				'src/lib/**/*.spec.ts',
-				'src/lib/**/*.test.ts',
-				'src/lib/**/__mocks__/**/*',
+				'.svelte-kit/**',
+				'dist/**',
+				'src/shared/mocks/**/*',
+				'src/shared/test-utils/**/*',
+				'src/**/*.spec.ts',
+				'src/**/*.test.ts',
+				'src/**/__mocks__/**/*',
 				'**/*.d.ts',
 				'src/lib/three/**/*'
 			],

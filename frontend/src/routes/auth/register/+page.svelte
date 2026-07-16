@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import RegisterForm from '$lib/components/RegisterForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
+  import RegisterForm from '$components/organisms/RegisterForm.svelte';
+  import AuthCard from '$components/organisms/AuthCard.svelte';
+  import { isAuthenticated, initAuth } from '$shared/stores/auth.svelte.js';
   
   // Redirect if already authenticated
   $effect(() => {

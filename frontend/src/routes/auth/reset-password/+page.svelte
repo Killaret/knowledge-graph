@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import ResetPasswordForm from '$lib/components/ResetPasswordForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import ConstellationIcon from '$lib/components/ConstellationIcon.svelte';
-  import { isAuthenticated } from '$lib/stores/auth.svelte.js';
+  import ResetPasswordForm from '$components/organisms/ResetPasswordForm.svelte';
+  import AuthCard from '$components/organisms/AuthCard.svelte';
+  import ConstellationIcon from '$components/atoms/ConstellationIcon.svelte';
+  import { isAuthenticated } from '$shared/stores/auth.svelte.js';
   
   // Get token from URL
   let token = $state('');
@@ -23,22 +23,22 @@
 
 {#if token}
   <AuthCard 
-    title="Сброс пароля" 
-    subtitle="Создайте новый пароль для аккаунта"
+    title="Reset Password" 
+    subtitle="Create a new password for your account"
     showIcon={true}
   >
     <ResetPasswordForm {token} />
   </AuthCard>
 {:else}
   <AuthCard 
-    title="Ошибка" 
-    subtitle="Токен сброса пароля не найден"
+    title="Error" 
+    subtitle="Reset password token not found"
     showIcon={false}
   >
     <div class="error-content">
       <ConstellationIcon size={48} class="error-icon" />
-      <p class="error-text">Пожалуйста, запросите новую ссылку для сброса пароля.</p>
-      <a href="/auth/forgot-password" class="back-link">Запросить сброс пароля</a>
+      <p class="error-text">Please request a new password reset link.</p>
+      <a href="/auth/forgot-password" class="back-link">Request password reset</a>
     </div>
   </AuthCard>
 {/if}

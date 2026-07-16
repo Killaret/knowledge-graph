@@ -1,15 +1,15 @@
 <script lang="ts">
-  import '$lib/styles/global.css';
-  import Sidebar from '$lib/components/Sidebar.svelte';
-  import QuickCaptureWidget from '$lib/components/QuickCaptureWidget.svelte';
-  import ToastNotification from '$lib/components/ToastNotification.svelte';
+  import '$shared/styles/global.css';
+  import Sidebar from '$components/organisms/Sidebar.svelte';
+  import QuickCaptureWidget from '$components/organisms/QuickCaptureWidget.svelte';
+  import ToastNotification from '$components/atoms/ToastNotification.svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { initAuth, isAuthenticated, isInitialized, isLoading, skipAuthMode } from '$lib/stores/auth.svelte.js';
-  import { startPreload } from '$lib/services/PreloadService';
-  import { achievementsStore } from '$lib/stores/achievements';
-  import { mode, getMessage } from '$lib/stores/lexicon-settings';
+  import { initAuth, isAuthenticated, isInitialized, isLoading, skipAuthMode } from '$shared/stores/auth.svelte.js';
+  import { startPreload } from '$shared/services/PreloadService';
+  import { achievementsStore } from '$shared/stores/achievements';
+  import { mode, getMessage } from '$shared/stores/lexicon-settings';
 
   const { children } = $props();
 

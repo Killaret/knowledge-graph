@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../vitest-setup';
 import Page from './+page.svelte';
+
+vi.mock('$shared/stores/auth.svelte', async () => {
+  const actual = await vi.importActual<typeof import('$shared/stores/auth.svelte')>('$shared/stores/auth.svelte');
+  return {
+    ...actual,
+    isAuthenticated: vi.fn(() => true)
+  };
+});
 
 describe('Page list view - batch operations', () => {
   const mockNotes = [

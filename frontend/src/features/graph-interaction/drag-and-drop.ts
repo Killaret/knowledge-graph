@@ -1,7 +1,7 @@
-import type { TransformState, DragState, SimulationNode } from '$lib/components/GraphCanvas/types';
-import type { BlackHoleState, GhostNodeState } from '$lib/components/GraphCanvas';
-import { isPointOverGhostNode } from '$lib/components/GraphCanvas/ghost-node';
-import { isPointOverBlackHole, isNodeOverBlackHole } from '$lib/components/GraphCanvas/black-hole';
+import type { TransformState, DragState, SimulationNode } from '$components/organisms/GraphCanvas/types';
+import type { BlackHoleState, GhostNodeState } from '$components/organisms/GraphCanvas';
+import { isPointOverGhostNode } from '$components/organisms/GraphCanvas/ghost-node';
+import { isPointOverBlackHole, isNodeOverBlackHole } from '$components/organisms/GraphCanvas/black-hole';
 
 export interface DragDropState {
   draggedNodeId: string | null;
