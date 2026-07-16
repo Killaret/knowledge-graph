@@ -93,7 +93,7 @@ function interpolateOpacity(
   });
 }
 
-function startFadeAnimation(state: SimulationState, totalNodes: number): void {
+function startFadeAnimation(state: SimulationState, totalNodes: number, onStable?: () => void): void {
   if (state.fadeAnimationId !== null) {
     cancelAnimationFrame(state.fadeAnimationId);
     state.fadeAnimationId = null;
@@ -157,6 +157,9 @@ function startFadeAnimation(state: SimulationState, totalNodes: number): void {
       if (state.simulation) {
         state.simulation.stop();
       }
+      state.isRunning = false;
+      state.stable = true;
+      onStable?.();
     }
   };
 
@@ -174,7 +177,8 @@ export function startSimulation(
   state: SimulationState,
   transform: TransformState,
   onTick: () => void,
-  onResetView: () => void
+  onResetView: () => void,
+  onStable?: () => void
 ): void {
   if (!d3Force) {
     return;
@@ -269,9 +273,10 @@ export function startSimulation(
 
     // Then start the animation
     state.simulation.alpha(1).restart();
-    startFadeAnimation(state, totalNodes);
+    startFadeAnimation(state, totalNodes, onStable);
   }
   state.isRunning = true;
+  state.stable = false;
 }
 
 /**
@@ -323,4 +328,5 @@ export function clearSimulation(state: SimulationState): void {
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
   state.isRunning = false;
+  state.stable = false;
 }

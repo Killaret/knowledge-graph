@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { createArgosReporterOptions } from '@argos-ci/playwright/reporter';
 
 // Type for Node.js process
 declare const process: {
@@ -10,6 +11,8 @@ declare const process: {
     DATABASE_URL?: string;
     REDIS_URL?: string;
     SKIP_AUTH?: string;
+    ARGOS_TOKEN?: string;
+    ARGOS_UPLOAD_LOCAL?: string;
   };
 };
 
@@ -21,12 +24,19 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   timeout: 120 * 1000, // 120s per test (increased from 90s)
   globalSetup: './tests/setup/global-setup.ts',
-  reporter: [['line']],
+  reporter: [
+    ['line'],
+    ['@argos-ci/playwright/reporter', createArgosReporterOptions({
+      uploadToArgos: !!process.env.CI || !!process.env.ARGOS_UPLOAD_LOCAL,
+      token: process.env.ARGOS_TOKEN,
+    })],
+  ],
   use: {
     baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     actionTimeout: 60000, // Increased from 30000ms
     navigationTimeout: 60000, // Increased from 30000ms
+    bypassCSP: true, // Required for Argos stabilization script injection
     // Inject SKIP_AUTH flag for testing
     launchOptions: {
       args: ['--disable-web-security'],
@@ -49,8 +59,20 @@ export default defineConfig({
         },
       },
       // Note: auth-functional tests will auto-skip if backend has SKIP_AUTH enabled
-      // Skip 3D tests in CI (WebGL not available in headless)
-      grepInvert: /@3d/,
+      // Skip 3D and visual tests in default project
+      grepInvert: /@3d|@visual/,
+      dependencies: ['setup'],
+    },
+    // Visual regression project (runs only @visual tests)
+    {
+      name: 'visual',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--disable-web-security'],
+        },
+      },
+      grep: /@visual/,
       dependencies: ['setup'],
     },
     // Auth project: only auth-functional tests (auth_skipped=false)

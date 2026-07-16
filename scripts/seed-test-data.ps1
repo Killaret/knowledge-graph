@@ -6,8 +6,13 @@ param(
     [int]$NoteCount = 100,
     [int]$LinkCount = 60,
     [int]$NlpWaitSeconds = 600,
+    [int]$Seed = 0,
     [string]$ReportPath = "$PSScriptRoot\seed-report.json"
 )
+
+if ($Seed -gt 0) {
+    Get-Random -SetSeed $Seed | Out-Null
+}
 
 $apiUrl = "http://localhost:8083/api/v1"
 $postgresContainer = "kg-test-postgres"

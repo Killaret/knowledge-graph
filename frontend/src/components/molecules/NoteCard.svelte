@@ -222,9 +222,9 @@
       <div class="note-card__type" aria-hidden="true">
         <span class="note-card__emoji">{getTypeEmoji(note.type)}</span>
         {#if isNew()}
-          <span class="note-card__indicator note-card__indicator--new" aria-label="New note"></span>
+          <span class="note-card__indicator note-card__indicator--new" data-visual-test="transparent" aria-label="New note"></span>
         {:else if isRecentlyUpdated()}
-          <span class="note-card__indicator note-card__indicator--updated" aria-label="Recently updated"></span>
+          <span class="note-card__indicator note-card__indicator--updated" data-visual-test="transparent" aria-label="Recently updated"></span>
         {/if}
       </div>
 
@@ -249,11 +249,11 @@
     </div>
 
     <div class="note-card__footer">
-      <span class="note-card__date" data-testid="note-date">
+      <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
         Star lit: {formatDate(note.created_at)}
       </span>
       {#if isRecentlyUpdated()}
-        <span class="note-card__date note-card__date--updated" data-testid="note-updated-date">
+        <span class="note-card__date note-card__date--updated" data-testid="note-updated-date" data-visual-test="transparent">
           Orbit corrected: {formatDate(note.updated_at)}
         </span>
       {/if}

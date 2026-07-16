@@ -105,6 +105,7 @@ function createSimulationState(): SimulationState {
     simulation: null,
     simLinks: [],
     isRunning: false,
+    stable: false,
     nodeOpacity: new Map(),
     linkOpacity: new Map(),
     fadeAnimationId: null

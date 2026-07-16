@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { shareNote, createShareLink } from '$shared/api/sharing.js';
-  import type { NoteShare, ShareLink } from '$shared/types.js';
+  import type { NoteShare, ShareLink } from '$shared/types';
   import { mode } from '$shared/stores/lexicon-settings';
   
   interface Props {

@@ -352,25 +352,47 @@ pytest tests/ -v
 
 ### Visual Regression / Argos
 
-Visual regression tests are located in `frontend/tests/visual/` and produce screenshots in `frontend/argos-screenshots/`.
+Visual regression tests are located in `frontend/tests/visual/visual-regression.spec.ts` and use `@argos-ci/playwright`. The reporter uploads screenshots to Argos automatically when `CI` or `ARGOS_UPLOAD_LOCAL` is set.
 
-**Run locally:**
-```bash
+**Run locally (test stack):**
+```powershell
+# Windows
+./scripts/start-test.ps1
+./scripts/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+
 cd frontend
-npm run test:visual
+$env:FRONTEND_URL = "http://localhost:3002"
 npm run test:visual:upload   # requires ARGOS_TOKEN env variable
 ```
 
-**CLI upload manually:**
+```bash
+# Linux/Mac
+SKIP_AUTH=true ./scripts/start-test.sh
+NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/seed-test-data.sh
+
+cd frontend
+FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
+```
+
+**Configuration:**
+- `ARGOS_TOKEN` — required for upload.
+- `FRONTEND_URL` — defaults to `http://localhost:3002` (test stack).
+- `ARGOS_REFERENCE_BRANCH` — baseline branch (`ai-agents` for this work).
+- `ARGOS_UPLOAD_LOCAL` — set to `true` to upload from a local run.
+
+**Determinism helpers:**
+- Tests append `?stableRender=true` to disable animated variations.
+- `page.addInitScript` injects a seeded `Math.random` LCG and `__SKIP_AUTH__`.
+- `data-visual-test="transparent"` masks dynamic timestamps and indicators.
+- `data-testid="graph-canvas"` exposes `data-test-stable="true"` after the force simulation settles.
+
+**CLI upload manually (legacy — not required with the Playwright reporter):**
 ```bash
 cd frontend
 npx argos upload ./argos-screenshots --token $ARGOS_TOKEN
 ```
 
-**Configuration:**
-- Token is read from the `ARGOS_TOKEN` environment variable (or `--token` CLI flag).
-- Branch and commit are detected from Git, or can be overridden with `ARGOS_BRANCH` and `ARGOS_COMMIT`.
-- See `docs/ARGOS.md` for the full visual regression workflow.
+See `docs/ARGOS.md` for the full visual regression workflow.
 
 ## Test Data Isolation
 

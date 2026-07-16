@@ -143,6 +143,7 @@
     simulation: null,
     simLinks: [],
     isRunning: false,
+    stable: false,
     nodeOpacity: new Map(),
     linkOpacity: new Map(),
     fadeAnimationId: null
@@ -163,6 +164,13 @@
   let tooltipPosition = $state({ x: 0, y: 0 });
   let hoveredNodeId: string | null = $state(null);
 
+  // Expose simulation stability for visual regression tests
+  $effect(() => {
+    if (canvas) {
+      canvas.dataset.testStable = graphStable ? 'true' : 'false';
+    }
+  });
+
   // Hover delay to avoid accidental dimming/tooltips on quick mouse movements
   const HOVER_DELAY_MS = graphConfig2D.hover_delay_ms;
   let hoverNodeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -176,6 +184,7 @@
   
   // Time for animations
   let animationTime = $state(0);
+  let graphStable = $state(false);
 
   // Interactive canvas elements
   let blackHole: BlackHoleState = $state(createBlackHole(width, height));
@@ -252,20 +261,24 @@
       () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx) {
-          // Update animation time
-          animationTime = performance.now();
-          
+          // In stable render mode keep animation time fixed for deterministic screenshots
+          if (stableRender) {
+            animationTime = 0;
+          } else {
+            animationTime = performance.now();
+          }
+
           // Update interactive element positions and pulses
           updateBlackHolePosition(blackHole, width, height);
           updateBlackHolePulse(blackHole, animationTime);
           updateGhostNodePosition(ghostNode, width, height, nodes);
           updateGhostNodePulse(ghostNode, animationTime);
 
-          // Apply subtle gravity attraction
-          if (gravitySystem.isEnabled(simNodes.length)) {
+          // Apply subtle gravity attraction only when not taking stable screenshots
+          if (!stableRender && gravitySystem.isEnabled(simNodes.length)) {
             gravitySystem.applyAttraction(simNodes);
           }
-          
+
           // Draw the full graph with all effects
           const linkMousePos = (dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget)
             ? { sourceId: dragDropState.draggedNodeId, x: dragDropState.mouseWorldPosition.x, y: dragDropState.mouseWorldPosition.y }
@@ -311,6 +324,8 @@
 
     if (!browser || !mounted) return;
 
+    graphStable = false;
+
     if (nodes.length === 0) {
       clearSimulation(simState);
       if (ctx) {
@@ -348,6 +363,9 @@
         if (ctx && simNodes.length > 0) {
           resetView(ctx, width, height, simNodes, transform);
         }
+      },
+      () => {
+        graphStable = true;
       }
     );
   });

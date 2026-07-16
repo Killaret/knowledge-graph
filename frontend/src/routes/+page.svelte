@@ -622,6 +622,7 @@
           <div class="list-controls">
             <button
               class="list-control-btn"
+              data-testid="select-mode-toggle"
               onclick={toggleSelectionMode}
               aria-label="Toggle selection mode"
             >

@@ -1012,7 +1012,8 @@ export function drawAllNodes(
     }
 
     // New note indicator (pulsing turquoise outline for 24 hours)
-    if (!focusMode && isNewNode(node) && node.x != null && node.y != null) {
+    // Disabled in stable render mode to keep screenshots deterministic
+    if (!disableVariation && !focusMode && isNewNode(node) && node.x != null && node.y != null) {
       const pulse = 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 1000));
       ctx.save();
       ctx.beginPath();
@@ -1024,7 +1025,10 @@ export function drawAllNodes(
     }
 
     if (!focusMode && particleSystem?.isEnabled() && node.x && node.y) {
-      particleSystem.update(node.id, node.x, node.y);
+      // Keep particles fixed in stable render mode for deterministic screenshots
+      if (!disableVariation) {
+        particleSystem.update(node.id, node.x, node.y);
+      }
       particleSystem.draw(ctx, node.id);
     }
 

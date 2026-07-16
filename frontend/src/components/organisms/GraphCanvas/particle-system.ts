@@ -27,6 +27,7 @@ export class ParticleSystem {
    */
   initParticles(nodeId: string, x: number, y: number, color: string): void {
     if (!this.enabled) return;
+    if (this.particles.has(nodeId)) return;
 
     const particleCount = 5 + Math.floor(Math.random() * 5); // 5-10 particles
     const particles: Particle[] = [];

@@ -28,8 +28,8 @@
     "test:e2e:preload:ui": "playwright test tests/preload-full-cycle.spec.ts --ui",
     "test:smoke": "playwright test --grep='@smoke'",
     "test:performance": "playwright test tests/performance/",
-    "test:visual": "playwright test tests/visual/",
-    "test:visual:upload": "npx argos upload ./argos-screenshots",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:upload": "cross-env ARGOS_UPLOAD_LOCAL=true playwright test --project=visual",
     "test:lighthouse": "lhci autorun",
     "test:all": "npm run test:unit && npm run test && npm run test:cucumber",
     "test:ci:smoke": "npm run test:unit && npm run test:smoke",
@@ -46,7 +46,8 @@
     "web-streams-polyfill": "^4.3.0"
   },
   "devDependencies": {
-    "@argos-ci/cli": "^5.0.5",
+    "@argos-ci/playwright": "^6.6.1",
+    "cross-env": "^7.0.3",
     "@cucumber/cucumber": "^12.8.0",
     "@eslint/js": "^9.0.0",
     "@playwright/test": "^1.59.1",

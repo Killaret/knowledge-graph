@@ -119,7 +119,7 @@ GRAPH_FULL_LIMIT=1000
 ```bash
 VITE_API_URL=http://localhost:8080
 VITE_GRAPH_SERVICE_URL=http://localhost:8080/graph-service
-ARGOS_TOKEN=argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8
+ARGOS_TOKEN=<your-argos-token>  # set via env / GitHub secret
 ```
 
 ## Health Checks

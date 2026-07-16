@@ -27,12 +27,15 @@ export function error(): string | null { return authState.error; }
 export function apiKey(): string | null { return authState.apiKey; }
 
 /**
- * Check if SKIP_AUTH mode is enabled (dev mode only)
+ * Check if SKIP_AUTH mode is enabled.
+ * The window flag __SKIP_AUTH__ is respected in all builds to support isolated visual regression tests.
+ * LocalStorage and query params remain dev-only to avoid accidental production bypass.
  */
 export function skipAuthMode(): boolean {
   if (!browser) return false;
-  if (!import.meta.env.DEV) return false; // Disabled in production
-  return localStorage.getItem('__SKIP_AUTH__') === 'true' || (window as any).__SKIP_AUTH__ === true;
+  if ((window as any).__SKIP_AUTH__ === true) return true;
+  if (!import.meta.env.DEV) return false;
+  return localStorage.getItem('__SKIP_AUTH__') === 'true';
 }
 
 // LocalStorage keys
@@ -289,24 +292,26 @@ export function getApiKey(): string | null {
 
 /**
  * Check if user is authenticated
- * SKIP_AUTH bypasses auth for testing (dev mode only - via window flag, localStorage, or query param)
+ * SKIP_AUTH bypasses auth for testing via the window flag, localStorage, or query param.
+ * The window flag is allowed in all builds for isolated visual regression tests.
  */
 export function isAuthenticated(): boolean {
-  if (browser && import.meta.env.DEV) {
-    // Check window flag injected by Playwright (dev only)
+  if (browser) {
+    // Check window flag injected by Playwright
     if ((window as any).__SKIP_AUTH__ === true) {
       return true;
     }
-    // Check localStorage flag (set by tests before navigation, dev only)
-    if (localStorage.getItem('__SKIP_AUTH__') === 'true') {
-      return true;
-    }
-    // Check query parameter for testing (dev only)
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('skip_auth') === 'true') {
-      // Persist to localStorage for subsequent navigations
-      localStorage.setItem('__SKIP_AUTH__', 'true');
-      return true;
+    // Check localStorage and query parameters only in dev to avoid production bypass
+    if (import.meta.env.DEV) {
+      if (localStorage.getItem('__SKIP_AUTH__') === 'true') {
+        return true;
+      }
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('skip_auth') === 'true') {
+        // Persist to localStorage for subsequent navigations
+        localStorage.setItem('__SKIP_AUTH__', 'true');
+        return true;
+      }
     }
   }
   return !!authState.accessToken || !!authState.apiKey;

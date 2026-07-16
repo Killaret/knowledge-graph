@@ -27,6 +27,7 @@ export interface SimulationState {
   simulation: any | null;
   simLinks: SimulationLink[];
   isRunning: boolean;
+  stable: boolean;
   nodeOpacity: Map<string, number>;
   linkOpacity: Map<string, number>;
   fadeAnimationId: number | null;

@@ -414,7 +414,7 @@
 **File:** `frontend/argos.json`
 ```json
 {
-  "token": "argos_94zzm1fanz4uk559g2tmsqok8x6ls4p6q8",
+  "token": "<your-argos-token>",
   "bucket": "Killaret/knowledge-graph",
   "branch": "origin/main",
   "baseBranch": "origin/main"

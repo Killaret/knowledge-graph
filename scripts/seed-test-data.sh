@@ -9,6 +9,12 @@ NOTE_COUNT=${NOTE_COUNT:-100}
 LINK_COUNT=${LINK_COUNT:-60}
 NLP_WAIT_SECONDS=${NLP_WAIT_SECONDS:-600}
 REPORT_PATH=${REPORT_PATH:-"$(dirname "$0")/seed-report.json"}
+SEED=${SEED:-}
+
+# Optional deterministic seed for reproducible visual regression fixtures
+if [ -n "$SEED" ]; then
+    RANDOM=$SEED
+fi
 
 API_URL="http://localhost:8083/api/v1"
 POSTGRES_CONTAINER="kg-test-postgres"
