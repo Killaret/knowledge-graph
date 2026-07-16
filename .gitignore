@@ -55,6 +55,12 @@ build_full.log
 !logs/.gitkeep
 logs/*.log
 logs/**/*.log
+# Ad-hoc logs/replays dumped in project root by manual commands
+/*.log
+hs_err_pid*.log
+replay_pid*.log
+/*.results.txt
+*.results.txt
 # Coverage
 coverage/
 htmlcov/

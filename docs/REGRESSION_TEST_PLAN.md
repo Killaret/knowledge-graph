@@ -229,7 +229,7 @@ docker compose -f docker-compose.test.yml build --no-cache
 ### 3.1 Run NLP Unit Tests
 ```bash
 cd nlp-service
-pytest -v 2>&1 | tee test-nlp.log
+pytest -v 2>&1 | tee ../logs/test-outputs/test-nlp.log
 ```
 
 **Expected:** 28/33 tests pass (5 skipped)
@@ -290,7 +290,7 @@ pip-audit  # if available
 ### 4.1 Run Backend Unit Tests
 ```bash
 cd backend
-go test -race ./... -count=1 2>&1 | tee test-backend-unit.log
+go test -race ./... -count=1 2>&1 | tee ../logs/test-outputs/test-backend-unit.log
 ```
 
 **Expected:** 118/118 tests pass
@@ -298,7 +298,7 @@ go test -race ./... -count=1 2>&1 | tee test-backend-unit.log
 ### 4.2 Run Backend Integration Tests
 ```bash
 cd backend
-go test -tags=integration ./... -count=1 2>&1 | tee test-backend-integration.log
+go test -tags=integration ./... -count=1 2>&1 | tee ../logs/test-outputs/test-backend-integration.log
 ```
 
 **Expected:** 0/2 tests pass (Windows limitation - not a code issue)
@@ -499,7 +499,7 @@ ls -la backups/
 ### 9.1 Run Frontend Unit Tests
 ```bash
 cd frontend
-npm run test:unit 2>&1 | tee test-frontend-unit.log
+npm run test:unit 2>&1 | tee ../logs/test-outputs/test-frontend-unit.log
 ```
 
 **Expected:** 521/563 tests pass (5 fail - Russian text, non-blocking)
@@ -507,7 +507,7 @@ npm run test:unit 2>&1 | tee test-frontend-unit.log
 ### 9.2 Run Frontend E2E Tests
 ```bash
 cd frontend
-npx playwright test 2>&1 | tee test-frontend-e2e.log
+npx playwright test 2>&1 | tee ../logs/test-outputs/test-frontend-e2e.log
 ```
 
 **Expected:** 84/94 tests pass (10 skipped)
@@ -515,7 +515,7 @@ npx playwright test 2>&1 | tee test-frontend-e2e.log
 ### 9.3 Run Frontend Visual Tests
 ```bash
 cd frontend
-npx playwright test --grep="@visual" 2>&1 | tee test-frontend-visual.log
+npx playwright test --grep="@visual" 2>&1 | tee ../logs/test-outputs/test-frontend-visual.log
 ```
 
 **Expected:** Visual tests pass
@@ -523,7 +523,7 @@ npx playwright test --grep="@visual" 2>&1 | tee test-frontend-visual.log
 ### 9.4 Run Frontend BDD Tests
 ```bash
 cd frontend
-npm run test:cucumber 2>&1 | tee test-frontend-bdd.log
+npm run test:cucumber 2>&1 | tee ../logs/test-outputs/test-frontend-bdd.log
 ```
 
 **Expected:** 5/5 tests pass
