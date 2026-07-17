@@ -50,8 +50,7 @@ export default defineConfig({
 			include: [
 				'src/shared/**/*.{ts,svelte}',
 				'src/features/**/*.{ts,svelte}',
-				'src/components/**/*.{ts,svelte}',
-				'src/lib/**/*.{ts,svelte}'
+				'src/components/**/*.{ts,svelte}'
 			],
 			exclude: [
 				'node_modules/',
@@ -63,8 +62,7 @@ export default defineConfig({
 				'src/**/*.spec.ts',
 				'src/**/*.test.ts',
 				'src/**/__mocks__/**/*',
-				'**/*.d.ts',
-				'src/lib/three/**/*'
+				'**/*.d.ts'
 			],
 			thresholds: {
 				lines: 40,

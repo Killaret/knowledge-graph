@@ -38,7 +38,7 @@
   } from './GraphCanvas';
   import { createGhostNode } from './GraphCanvas/ghost-node';
   import { createGravitySystem } from './GraphCanvas/gravity-system';
-  
+
   // FSD imports
   import {
     createDragDropState,
@@ -178,10 +178,10 @@
   let hoverLinkTimeout: ReturnType<typeof setTimeout> | null = null;
   let hoverCandidateLink: { source: string; target: string; link_type: string; weight: number; source_type: string } | null = null;
   let hoverCandidateLinkKey: string | null = null;
-  
+
   // Particle system
   let particleSystem: ParticleSystem | null = $state(null);
-  
+
   // Time for animations
   let animationTime = $state(0);
   let graphStable = $state(false);
@@ -223,38 +223,38 @@
 
   onMount(() => {
     if (!browser || !canvas) return;
-    
+
     // Expose for debugging
     (window as any).__graphCanvas = { getSimulationNodes: () => getSimulationNodes(simState), transform };
-    
+
     // SSR-safe: получаем контекст canvas
     ctx = canvas.getContext('2d')!;
-    
+
     // Начальный resize
     resizeCanvas(canvas!, resizeState);
     width = resizeState.width;
     height = resizeState.height;
-    
+
     // Initialize interactive systems
     particleSystem = new ParticleSystem(nodes.length);
     blackHole = createBlackHole(width, height);
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
-    
+
     // ResizeObserver для отслеживания размера контейнера
     observerCleanup = setupResizeObserver(canvas!, () => {
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
     });
-    
+
     // Отложенный resize для стабильных размеров
     resizeCleanup = scheduleDelayedResize(() => {
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
     }, 100);
-    
+
     // Запускаем анимацию
     animationLoop = startAnimationLoop(
       () => getSimulationNodes(simState),
@@ -288,7 +288,7 @@
       },
       stableRender
     );
-    
+
     mounted = true; // triggers $effect re-run since it's $state
 
     resetInactivityTimer(hotkeysState, () => showRandomTipUtil(hotkeysState, hotkeyLines));
@@ -1068,11 +1068,13 @@
 {#if noteFormState.showNoteForm}
   <div
     class="note-form"
+    data-testid="ghost-note-form"
     style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState.noteFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
       <h3 style="margin: 0; color: #a78bfa; font-size: 16px; font-weight: 600;">Create New Note</h3>
       <button
+        data-testid="ghost-note-close"
         onclick={handleNoteFormClose}
         style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
         aria-label="Close"
@@ -1081,6 +1083,7 @@
       </button>
     </div>
     <input
+      data-testid="ghost-note-title"
       type="text"
       placeholder="Title"
       bind:value={noteFormState.newNoteTitle}
@@ -1088,11 +1091,13 @@
       onkeydown={(e) => e.key === 'Enter' && handleCreateNote()}
     />
     <textarea
+      data-testid="ghost-note-content"
       placeholder="Content (optional)"
       bind:value={noteFormState.newNoteContent}
       style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; min-height: 100px; box-sizing: border-box; font-size: 14px; resize: vertical; transition: border-color 0.2s;"
     ></textarea>
     <select
+      data-testid="ghost-note-type"
       bind:value={noteFormState.newNoteType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
@@ -1103,14 +1108,16 @@
       <option value="asteroid">🌑 Asteroid</option>
     </select>
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button 
-        onclick={handleNoteFormClose} 
+      <button
+        data-testid="ghost-note-cancel"
+        onclick={handleNoteFormClose}
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
         Cancel
       </button>
-      <button 
-        onclick={handleCreateNote} 
+      <button
+        data-testid="ghost-note-create"
+        onclick={handleCreateNote}
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
       >
         Create
@@ -1122,6 +1129,7 @@
 {#if linkFormState.showLinkForm}
   <div
     class="link-form"
+    data-testid="link-form"
     style="position: absolute; left: {linkFormState.linkFormPosition.x}px; top: {linkFormState.linkFormPosition.y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
@@ -1156,14 +1164,16 @@
       style="width: 100%; margin-bottom: 16px; accent-color: #fbbf24;"
     />
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button 
-        onclick={handleLinkFormClose} 
+      <button
+        data-testid="link-form-cancel"
+        onclick={handleLinkFormClose}
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
         Cancel
       </button>
-      <button 
-        onclick={handleCreateLink} 
+      <button
+        data-testid="link-form-create"
+        onclick={handleCreateLink}
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);"
       >
         Create Link
@@ -1175,6 +1185,7 @@
 {#if hotkeysState.showSearchBox}
   <div
     class="search-box"
+    data-testid="search-box"
     style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 100; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);"
   >
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2">
@@ -1182,6 +1193,7 @@
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
     <input
+      data-testid="search-input"
       bind:this={searchInput}
       type="text"
       placeholder="Search nodes..."

@@ -1,8 +1,8 @@
 # Knowledge Graph Testing Guide
 
-> **Version:** 1.1  
-> **Date:** April 28, 2026  
-> **Status:** Current for current codebase  
+> **Version:** 1.1
+> **Date:** April 28, 2026
+> **Status:** Current for current codebase
 > **Total tests:** ~496 (118 Go + 204 Frontend Unit + 48 Playwright + 111 BDD + 15 NLP)
 
 ---
@@ -153,9 +153,9 @@ func TestNote_UpdateTitle(t *testing.T) {
 func TestTraversal_BFS(t *testing.T) {
     loader := newMockNeighborLoader()
     traversal := graph.NewTraversal(loader, graph.MAXStrategy)
-    
+
     suggestions, err := traversal.GetSuggestions(context.Background(), "note-1", 3)
-    
+
     require.NoError(t, err)
     assert.Len(t, suggestions, 3)
     assert.Equal(t, "note-2", suggestions[0].NoteID) // Highest weight
@@ -168,9 +168,9 @@ func TestTraversal_BFS(t *testing.T) {
 ```go
 func TestCompositeLoader_Combine(t *testing.T) {
     loader := graph.NewCompositeLoader(explicitLoader, embeddingLoader, 0.7, 0.3)
-    
+
     suggestions, err := loader.LoadSuggestions(ctx, "note-1", 5)
-    
+
     require.NoError(t, err)
     // Verify weighted combination: 0.7 * explicit + 0.3 * semantic
 }
@@ -204,68 +204,48 @@ go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
 
 ### Test Structure
 
-**Unit tests: 22 files, ~220 tests**
-**E2E tests: 10 files, 48 tests**
-**BDD tests: 3 files, 13 scenarios**
+**Unit tests: 52 files, 535 tests**
+**E2E tests: 16 files (Playwright)**
+**BDD tests: 15 feature files**
 
 ```
 frontend/
-├── src/lib/
-│   ├── components/                      # 18 component tests (.spec.ts)
-│   │   ├── BackButton.spec.ts              # Back button component
-│   │   ├── ConfirmModal.spec.ts            # Confirmation modal
-│   │   ├── CreateNoteModal.spec.ts         # Create note modal
-│   │   ├── EditNoteModal.spec.ts           # Edit note modal
-│   │   ├── FloatingControls.spec.ts        # Floating UI controls
-│   │   ├── Graph3D.spec.ts                 # 3D graph component
-│   │   ├── GraphCanvas.interactions.spec.ts # Canvas interactions
-│   │   ├── GraphCanvas.links.spec.ts       # Link rendering
-│   │   ├── GraphCanvas.node-types.spec.ts  # Node type rendering
-│   │   ├── GraphCanvas.rendering.spec.ts   # Canvas rendering
-│   │   ├── GraphCanvas.fade.spec.ts        # GraphCanvas opacity fade animation
-│   │   ├── LazyGraph3D.spec.ts             # Lazy-loaded 3D
-│   │   ├── LinkCreator.spec.ts             # Link creation UI
-│   │   ├── NoteCard.spec.ts                # Note card component
-│   │   ├── NoteEditor.spec.ts              # Note editor
-│   │   ├── NoteSidePanel.spec.ts           # Side panel
-│   │   ├── SearchBar.spec.ts               # Search component
-│   │   ├── SmartGraph.spec.ts              # Smart graph features
-│   │   └── TagSelector.spec.ts             # Tag selection UI
-│   ├── api/                            # 3 API client tests (.test.ts)
-│   │   ├── notes.test.ts              # Note API client (12KB)
-│   │   ├── graph.test.ts              # Graph API client (6.5KB)
-│   │   └── links.test.ts              # Links API client (8.3KB)
-│   └── utils/                          # 1 utility test (.test.ts)
-│       └── deviceCapabilities.test.ts # Device capability detection
+├── src/
+│   ├── components/                      # Component tests (.spec.ts)
+│   │   ├── atoms/...
+│   │   ├── molecules/...
+│   │   └── organisms/...                # GraphCanvas, NoteEditor, NoteSidePanel, etc.
+│   ├── shared/
+│   │   ├── api/                         # API client tests (.test.ts)
+│   │   ├── stores/                      # runes-based store tests
+│   │   ├── services/                    # PreloadService and other service tests
+│   │   ├── utils/                       # Utility tests
+│   │   ├── hooks/                       # Hook tests
+│   │   └── types/...                    # Type tests
+│   └── routes/                          # Route-level tests
 ├── tests/                               # Playwright E2E tests
-│   ├── home-page.spec.ts               # Homepage tests
-│   ├── notes.spec.ts                   # Note CRUD E2E
-│   ├── graph-3d.spec.ts                 # 3D graph E2E
-│   ├── graph-3d-modules.spec.ts         # 3D module tests
-│   ├── camera-position.spec.ts          # Camera navigation
+│   ├── home-page.spec.ts                # Homepage tests
+│   ├── notes.spec.ts                    # Note CRUD E2E
 │   ├── type-filters.spec.ts             # Type filtering
-│   ├── progressive-rendering.spec.ts  # Progressive rendering
-│   ├── performance/
-│   │   └── graph-3d-performance.spec.ts # Performance tests
+│   ├── auth-*.spec.ts                   # Auth-related E2E tests
+│   ├── public-graph.spec.ts             # Public graph
+│   ├── manual-checklist-section-*.spec.ts # Manual checklist tests
+│   ├── smoke.spec.ts                    # Smoke tests
 │   ├── visual/
 │   │   └── visual-regression.spec.ts    # Visual regression
 │   └── features/                        # BDD scenarios
-│       ├── graph_2d_list.feature        # 5 scenarios
-│       ├── graph_interaction.feature    # 5 scenarios
-│       └── graph_3d_loading.feature     # 3 scenarios
+│       ├── graph_2d_list.feature
+│       └── graph_interaction.feature
 └── tests/ (project root)                # Common BDD tests
-    └── features/                        # 11 files, 98 scenarios
-        ├── local_3d_graph.feature       # 13 scenarios
-        ├── full_3d_graph.feature        # 12 scenarios
-        ├── camera_navigation.feature    # 10 scenarios
-        ├── type_filters.feature         # 10 scenarios
-        ├── search_and_discovery.feature # 9 scenarios
-        ├── celestial_body_types.feature # 8 scenarios
-        ├── graph_view.feature           # 8 scenarios
-        ├── link_types.feature           # 8 scenarios
-        ├── note_management.feature      # 8 scenarios
-        ├── graph_navigation.feature     # 6 scenarios
-        └── import_export.feature        # 6 scenarios
+    └── features/
+        ├── achievements.feature
+        ├── auth_cosmic_theme.feature
+        ├── graph_navigation.feature
+        ├── graph_view.feature
+        ├── note_management.feature
+        ├── search_and_discovery.feature
+        ├── type_filters.feature
+        └── ...
 ```
 
 **Naming Convention:**
@@ -306,7 +286,7 @@ test('create note', async ({ page }) => {
   await page.fill('[data-testid="title-input"]', 'Test Note');
   await page.fill('[data-testid="content-input"]', 'Test content');
   await page.click('[data-testid="save-btn"]');
-  
+
   await expect(page.locator('[data-testid="note-card"]')).toContainText('Test Note');
 });
 ```
@@ -315,11 +295,11 @@ test('create note', async ({ page }) => {
 ```typescript
 test('3D graph renders with WebGL', async ({ page }) => {
   await page.goto('/graph/3d/note-123');
-  
+
   // Wait for canvas
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
-  
+
   // Verify WebGL context
   const webglSupported = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
@@ -333,18 +313,18 @@ test('3D graph renders with WebGL', async ({ page }) => {
 ```typescript
 test('fog animation completes', async ({ page }) => {
   await page.goto('/graph/3d/note-123');
-  
+
   // Check initial fog state
-  const initialOpacity = await page.evaluate(() => 
+  const initialOpacity = await page.evaluate(() =>
     window.getComputedStyle(document.body).getPropertyValue('--fog-opacity')
   );
   expect(initialOpacity).toBe('0.9');
-  
+
   // Wait for animation
   await page.waitForTimeout(2000);
-  
+
   // Verify fog cleared
-  const finalOpacity = await page.evaluate(() => 
+  const finalOpacity = await page.evaluate(() =>
     document.querySelector('[data-testid="stats-bar"]')?.textContent
   );
   expect(finalOpacity).toContain('Nodes: 10');
@@ -364,19 +344,7 @@ npx vitest
 npx vitest run --coverage
 ```
 
-**Three.js Modules** (`graph-3d-modules.spec.ts`):
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { setupScene } from '$lib/three/core/sceneSetup';
-
-describe('sceneSetup', () => {
-  it('initializes scene with fog', () => {
-    const { scene } = setupScene();
-    expect(scene.fog).toBeDefined();
-    expect(scene.fog.density).toBe(0.02);
-  });
-});
-```
+**Three.js Modules** — 3D graph functionality is **frozen/removed for v1.0**. The `graph-3d-modules.spec.ts` test and `three/core/sceneSetup` module no longer exist.
 
 ### Link Preservation Tests
 

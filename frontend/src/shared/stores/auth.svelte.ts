@@ -18,6 +18,9 @@ const authState = $state({
   apiKey: null as string | null
 });
 
+// Guard concurrent initAuth calls so refresh token is not used twice
+let initAuthPromise: Promise<void> | null = null;
+
 // Export reactive state through getter functions
 export function currentUser(): User | null { return authState.currentUser; }
 export function accessToken(): string | null { return authState.accessToken; }
@@ -69,59 +72,67 @@ export async function initAuth(): Promise<void> {
     return;
   }
 
-  try {
-    // Check for SKIP_AUTH mode from query parameter on first load (dev only)
-    if (import.meta.env.DEV) {
-      const url = new URL(window.location.href);
-      if (url.searchParams.get('skip_auth') === 'true') {
-        // Persist SKIP_AUTH to localStorage
-        localStorage.setItem('__SKIP_AUTH__', 'true');
-        console.log('[Auth] SKIP_AUTH mode enabled via query param');
-      }
-    }
-    
-    // Try to load tokens from localStorage
-    const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-    const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    const storedApiKey = localStorage.getItem(API_KEY);
-
-    authState.apiKey = storedApiKey;
-
-    authState.accessToken = storedAccessToken;
-    authState.refreshToken = storedRefreshToken;
-
-    if (!storedRefreshToken) {
-      // Stale access token alone is not enough to be authenticated.
-      authState.accessToken = null;
-      authState.refreshToken = null;
-      authState.currentUser = null;
-      if (browser) {
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-      }
-      return;
-    }
-
-    // Try to refresh the token and get user info
-    const refreshed = await refreshAccessToken();
-
-    if (refreshed) {
-      try {
-        const user = await usersApi.getMe();
-        authState.currentUser = user;
-        void preloadAuthenticatedGraph();
-        void applyUserSettings();
-      } catch {
-        // If getting user fails, clear auth state
-        clearAuthState();
-      }
-    }
-  } catch (e) {
-    console.error('Failed to initialize auth:', e);
-    clearAuthState();
-  } finally {
-    authState.isInitialized = true;
+  if (initAuthPromise) {
+    return initAuthPromise;
   }
+
+  initAuthPromise = (async () => {
+    try {
+      // Check for SKIP_AUTH mode from query parameter on first load (dev only)
+      if (import.meta.env.DEV) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('skip_auth') === 'true') {
+          // Persist SKIP_AUTH to localStorage
+          localStorage.setItem('__SKIP_AUTH__', 'true');
+          console.log('[Auth] SKIP_AUTH mode enabled via query param');
+        }
+      }
+
+      // Try to load tokens from localStorage
+      const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      const storedApiKey = localStorage.getItem(API_KEY);
+
+      authState.apiKey = storedApiKey;
+      authState.accessToken = storedAccessToken;
+      authState.refreshToken = storedRefreshToken;
+
+      if (!storedRefreshToken) {
+        // Stale access token alone is not enough to be authenticated.
+        authState.accessToken = null;
+        authState.refreshToken = null;
+        authState.currentUser = null;
+        if (browser) {
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+        }
+        return;
+      }
+
+      // Try to refresh the token and get user info
+      const refreshed = await refreshAccessToken();
+
+      if (refreshed) {
+        try {
+          const user = await usersApi.getMe();
+          authState.currentUser = user;
+          void preloadAuthenticatedGraph();
+          void applyUserSettings();
+        } catch {
+          // If getting user fails, clear auth state
+          clearAuthState();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to initialize auth:', e);
+      clearAuthState();
+    } finally {
+      authState.isInitialized = true;
+      initAuthPromise = null;
+    }
+  })();
+
+  return initAuthPromise;
 }
 
 /**
@@ -145,16 +156,16 @@ export async function login(login: string, password: string): Promise<boolean> {
 
   try {
     const tokens = await authApi.login(login, password);
-    
+
     // Save tokens
     saveTokens(tokens);
-    
+
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
     void applyUserSettings();
-    
+
     return true;
   } catch (e) {
     authState.error = e instanceof Error ? e.message : 'Login failed';
@@ -174,16 +185,16 @@ export async function register(login: string, password: string, email?: string):
 
   try {
     const tokens = await authApi.register(login, password, email);
-    
+
     // Save tokens
     saveTokens(tokens);
-    
+
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
     void applyUserSettings();
-    
+
     return true;
   } catch (e) {
     authState.error = e instanceof Error ? e.message : 'Registration failed';
@@ -206,14 +217,14 @@ export async function logout(): Promise<void> {
       console.error('Logout error:', e);
     }
   }
-  
+
   // Clear preload cache on logout (never block logout if preload helpers fail)
   try {
     clearPreloadCache();
   } catch (e) {
     console.error('Failed to clear preload cache on logout:', e);
   }
-  
+
   clearAuthState();
   goto('/auth/login');
 }
@@ -246,16 +257,16 @@ export async function handleYandexCallback(code: string, state: string): Promise
 
   try {
     const tokens = await authApi.handleYandexCallback(code, state);
-    
+
     // Save tokens
     saveTokens(tokens);
-    
+
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
     void applyUserSettings();
-    
+
     return true;
   } catch (e) {
     authState.error = e instanceof Error ? e.message : 'Yandex authentication failed';
@@ -279,12 +290,12 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
     if (browser) {
       localStorage.setItem(API_KEY, key);
     }
-    
+
     // Try to get user info with API key
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void applyUserSettings();
-    
+
     return true;
   } catch (e) {
     authState.error = e instanceof Error ? e.message : 'Invalid API key';
@@ -352,7 +363,7 @@ export function isAdmin(): boolean {
 function saveTokens(tokens: AuthTokens): void {
   authState.accessToken = tokens.access_token;
   authState.refreshToken = tokens.refresh_token;
-  
+
   if (browser) {
     localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
@@ -368,7 +379,7 @@ function clearAuthState(): void {
   authState.currentUser = null;
   authState.apiKey = null;
   authState.error = null;
-  
+
   if (browser) {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);

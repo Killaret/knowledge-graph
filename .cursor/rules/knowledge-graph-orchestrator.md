@@ -67,7 +67,7 @@ Invoke **multiple agents sequentially** when a task crosses boundaries:
 1. backend-go   → domain service in internal/application/recommendation/
 2. backend-go   → Gin handler in internal/interfaces/api/notehandler/
 3. integration  → @Summary/@Param Swagger comment + DTO struct
-4. frontend-svelte → API client function in frontend/src/lib/api/notes.ts
+4. frontend-svelte → API client function in frontend/src/shared/api/notes.ts
 5. testing      → table-driven unit test + testcontainers integration test
 ```
 
@@ -102,7 +102,7 @@ Invoke **multiple agents sequentially** when a task crosses boundaries:
 ### Pattern: Backend + Frontend contract sync
 When `backend-go` changes a response DTO, `integration` must update the OpenAPI
 spec, and `frontend-svelte` must update the TypeScript type in
-`frontend/src/lib/types/`. Never let these drift.
+`frontend/src/shared/types/`. Never let these drift.
 
 ### Pattern: Migration → model → test atomicity
 `data` writes the migration file → `backend-go` updates the GORM model in the

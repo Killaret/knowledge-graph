@@ -279,7 +279,7 @@ When implementing SSE, replace polling with:
 
 **Language File Structure:**
 ```json
-// src/lib/locales/en.json
+// src/shared/locales/en.json
 {
   "galaxy": {
     "note": "Celestial Body",
@@ -409,7 +409,7 @@ func (h *AchievementHandler) StreamAchievements(c *gin.Context) {
 #### 5. Frontend SSE Client
 
 ```typescript
-// src/lib/achievements/stream.ts
+// src/shared/achievements/stream.ts
 export class AchievementStream {
   private eventSource: EventSource | null = null;
 

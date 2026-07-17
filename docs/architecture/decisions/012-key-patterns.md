@@ -24,7 +24,7 @@ We formally adopt and document the following key patterns and practices as canon
 - Code must avoid importing infrastructure packages from domain; any cross-layer call should be via interfaces.
 - New persistence adapters must implement existing repository interfaces; migration should be incremental and tested with integration suite.
 - Background task payloads must be versioned and validated to enable rolling upgrades.
-- Frontend components should keep business logic in `src/lib/services/*` and stores; UI files (`.svelte`) contain primarily rendering logic.
+- Frontend components should keep business logic in `src/shared/services/*` and stores; UI files (`.svelte`) contain primarily rendering logic.
 - Test stability is a priority — introduce mocks for browser APIs and provide fixtures for repository integration tests.
 
 ## Implementation Notes & References
@@ -36,8 +36,8 @@ We formally adopt and document the following key patterns and practices as canon
 
 - Frontend examples:
   - Patterns doc: `frontend/FRONTEND_PATTERNS.md`
-  - Preload service: `frontend/src/lib/services/PreloadService.ts`
-  - Stores: `frontend/src/lib/stores`
+  - Preload service: `frontend/src/shared/services/PreloadService.ts`
+  - Stores: `frontend/src/shared/stores`
   - Test setup: `frontend/vitest-setup.ts`, `frontend/vitest.config.ts`, `frontend/playwright.config.ts`
 
 ## Next Steps

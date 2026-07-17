@@ -9,7 +9,7 @@
 | `related` | `#999999` (серый) | Сплошная или `[6, 4]` если weight<0.3 | ×1.0 |
 | `custom` | `#ff66ff` (розовый) | `[2, 6]` | ×1.0 |
 
-**Файл:** `frontend/src/lib/components/GraphCanvas/renderer.ts`
+**Файл:** `frontend/src/components/organisms/GraphCanvas/renderer.ts`
 
 ---
 
@@ -73,7 +73,7 @@ opacity = 0.4 + weight × 0.4
 
 ### ❌ Заблокировано
 ```typescript
-['cookie', 'authorization', 'connection', 'proxy-', 
+['cookie', 'authorization', 'connection', 'proxy-',
  'transfer-encoding', 'keep-alive', 'upgrade', 'te', 'host']
 ```
 
@@ -87,7 +87,7 @@ opacity = 0.4 + weight × 0.4
 
 | Компонент | Файл |
 |-----------|------|
-| **Рендеринг** | `frontend/src/lib/components/GraphCanvas/renderer.ts` |
+| **Рендеринг** | `frontend/src/components/organisms/GraphCanvas/renderer.ts` |
 | **Расчёт веса** | `backend/internal/application/recommendation/refresh_service.go` |
 | **Jaccard** | `backend/internal/application/recommendation/keyword_similarity.go` |
 | **BFS** | `backend/internal/domain/graph/bfs.go` |
@@ -105,7 +105,7 @@ npm run test:unit -- GraphCanvas.links
 | Файл | Описание |
 |------|----------|
 | `GraphCanvas.links.spec.ts` | Базовые тесты |
-| `GraphCanvas.links.visual.spec.ts` | Визуальные тесты |
+| `GraphCanvas.rendering.spec.ts` | Визуальные тесты |
 | `GraphCanvas.links.connection.spec.ts` | Тесты соединений |
 | `GraphCanvas.links-detailed.spec.ts` | Детальные тесты |
 

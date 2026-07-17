@@ -5,7 +5,7 @@ applyTo:
   - "backend/cmd/server/main.go"
   - "backend/internal/interfaces/api/**/*handler.go"
   - "backend/internal/interfaces/api/**/*_integration_test.go"
-  - "frontend/src/lib/api/*.ts"
+  - "frontend/src/shared/api/*.ts"
   - "frontend/src/routes/**/*.svelte"
   - "docs/API_ERRORS.md"
   - "openAPI.yaml"
@@ -47,16 +47,19 @@ v1.GET("/me/graph/cached", graphHandler.GetCachedGraph)
 v1.GET("/me/graph/fresh", graphHandler.GetFreshGraph)
 ```
 
-**Frontend API clients (frontend/src/lib/api/*.ts):**
+**Frontend API clients (frontend/src/shared/api/*.ts):**
+
 ```typescript
 // notes.ts
+import { api } from './client';
+
 export async function getNotes(): Promise<Note[]> {
   const response = await api.get('v1/notes', { searchParams: { limit: 10000 } }).json<{ notes: Note[]; total: number; limit: number; offset: number }>();
   return response.notes;
 }
 
 export async function createNote(data: { title: string; content: string }): Promise<Note> {
-  return api.post('v1/notes', { json: data }).json();
+  return api.post('v1/notes', { json: data }).json<Note>();
 }
 ```
 

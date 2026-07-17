@@ -20,7 +20,7 @@ The graph canvas supports double-tap zoom functionality for mobile and touch dev
 
 ### Technical Implementation
 
-**Location:** `frontend/src/lib/components/GraphCanvas.svelte`
+**Location:** `frontend/src/components/organisms/GraphCanvas.svelte`
 
 **State Variables:**
 ```typescript
@@ -33,13 +33,13 @@ let tapCount = 0;
 ```typescript
 function handleTouchStart(e: TouchEvent) {
   if (!browser) return; // Skip in SSR
-  
+
   if (e.touches.length === 1) {
     const now = Date.now();
     const touch = e.touches[0];
     const dx = Math.abs(touch.clientX - lastTouchPos.x);
     const dy = Math.abs(touch.clientY - lastTouchPos.y);
-    
+
     // Double-tap detection: <300ms interval, <30px distance
     if (now - lastTouchTime < 300 && dx < 30 && dy < 30) {
       tapCount++;
@@ -48,7 +48,7 @@ function handleTouchStart(e: TouchEvent) {
     } else {
       tapCount = 0;
     }
-    
+
     lastTouchTime = now;
     lastTouchPos = { x: touch.clientX, y: touch.clientY };
   }
@@ -67,7 +67,7 @@ function handleDoubleTap(clientX: number, clientY: number) {
     const newScale = transform.k * 2;
     const centerX = x * newScale;
     const centerY = y * newScale;
-    
+
     transform.x = clientX - rect.left - centerX;
     transform.y = clientY - rect.top - centerY;
     transform.k = newScale;
@@ -98,7 +98,7 @@ function handleDoubleTap(clientX: number, clientY: number) {
 
 ### Testing
 
-**Unit Tests:** `frontend/src/lib/components/GraphCanvas.interactions.spec.ts`
+**Unit Tests:** `frontend/src/components/organisms/GraphCanvas.interactions.spec.ts`
 - Verifies touch handler is attached to canvas
 - Confirms canvas element is rendered correctly
 
@@ -113,7 +113,7 @@ function handleDoubleTap(clientX: number, clientY: number) {
 
 ### Global CSS Changes
 
-**Location:** `frontend/src/lib/styles/global.css`
+**Location:** `frontend/src/shared/styles/global.css`
 
 Added global box-sizing for better responsive behavior:
 ```css
@@ -148,7 +148,7 @@ Added global box-sizing for better responsive behavior:
 
 ### Note Side Panel
 
-**Location:** `frontend/src/lib/components/NoteSidePanel.svelte`
+**Location:** `frontend/src/components/organisms/NoteSidePanel.svelte`
 
 **Changes:**
 - Changed `height: 100vh` to `max-height: 100vh`

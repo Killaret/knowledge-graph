@@ -24,10 +24,10 @@ applyTo:
 
 Короткий список архитектурных паттернов (на основании структуры проекта и docs):
 
-- Компонентная архитектура: UI разбит на маленькие, переиспользуемые Svelte‑компоненты в `src/components`.
-- Централизованное состояние: использование специализированных `stores` для глобальных данных (если есть `src/stores`).
-- Изоляция логики: бизнес‑логика и утилиты в `src/lib` / `src/utils`, UI — в `src/components`.
-- Тестируемость: отдельные `tests/` и конфиги `vitest`/`playwright` для unit/e2e; snapshot‑тесты и визуальные снимки.
+- Компонентная архитектура: UI разбит на маленькие, переиспользуемые Svelte‑компоненты в `frontend/src/components/` (atoms / molecules / organisms).
+- Централизованное состояние: использование runes-based `stores` в `frontend/src/shared/stores/` для глобальных данных.
+- Изоляция логики: бизнес‑логика, API-клиенты, сервисы и утилиты в `frontend/src/shared/`, feature-модули — в `frontend/src/features/`; UI — в `frontend/src/components/`.
+- Тестируемость: отдельные `frontend/tests/` и конфиги `vitest`/`playwright` для unit/e2e; snapshot‑тесты и визуальные снимки.
 - Интеграция сборки: Vite + SvelteKit (конфиги `vite.config.ts`, `svelte.config.js`).
 
 UI/UX паттерны и рекомендации (чтобы задокументировать и соблюдать):

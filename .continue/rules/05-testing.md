@@ -141,7 +141,7 @@ func TestNoteRepository_Integration(t *testing.T) {
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Button from '$lib/components/Button.svelte';
+import Button from '$components/atoms/Button.svelte';
 
 describe('Button', () => {
   it('renders with correct variant class', () => {
@@ -170,7 +170,7 @@ describe('Button', () => {
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
-vi.mock('$lib/api/auth', () => ({
+vi.mock('$shared/api/auth', () => ({
   login: vi.fn(),
   refreshTokens: vi.fn(),
 }));
@@ -196,9 +196,9 @@ describe('auth store', () => {
 
 ```typescript
 import { describe, it, expect, vi } from 'vitest';
-import { getNotes, createNote } from '$lib/api/notes';
+import { getNotes, createNote } from '$shared/api/notes';
 
-vi.mock('$lib/api/client');
+vi.mock('$shared/api/client');
 
 describe('notes API', () => {
   it('fetches notes with pagination', async () => {

@@ -5,7 +5,7 @@ import { apiConfig } from '$shared/config';
 function getGraphApi() {
   // В тестовом окружении (Vitest) используем полный URL напрямую
   const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
-  
+
   const baseUrl = isTest
     ? 'http://localhost:9091/api'
     : import.meta.env.DEV
@@ -45,7 +45,7 @@ export interface GraphData {
  */
 function handleGraphError(error: unknown, context: string): never {
   console.error(`[Graph API] ${context}:`, error);
-  
+
   if (error instanceof Error) {
     if (error.message.includes('404') || error.message.includes('Not Found')) {
       throw new Error('Граф не найден. Возможно, заметка была удалена.');
@@ -58,7 +58,7 @@ function handleGraphError(error: unknown, context: string): never {
     }
     throw new Error(`Ошибка загрузки графа: ${error.message}`);
   }
-  
+
   throw new Error('Неизвестная ошибка при загрузке графа');
 }
 
@@ -91,9 +91,9 @@ export async function getGraphData(noteId: string, depth: number = 2, userId?: s
 }
 
 // Запросить полный граф всех заметок и связей
-export async function getFullGraphData(limit: number = apiConfig.default_limit, userId?: string): Promise<GraphData> {
+export async function getFullGraphData(limit: number = apiConfig.default_limit, userId?: string, nocache?: boolean): Promise<GraphData> {
   try {
-    const query = buildQuery({ limit, user_id: userId });
+    const query = buildQuery({ limit, user_id: userId, nocache: nocache ? 1 : undefined });
     const response = await getGraphApi().get(`v1/graph/full${query ? `?${query}` : ''}`).json<GraphApiResponse>();
     return response.data || { nodes: [], links: [] };
   } catch (error) {

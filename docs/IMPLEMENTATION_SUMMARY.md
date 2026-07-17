@@ -30,10 +30,10 @@
 **Files Modified:**
 - `frontend/src/routes/notes/new/+page.svelte` - Replaced `window.location.href` with `goto()`
 - `frontend/src/routes/notes/[id]/+page.svelte` - Added `browser` check for `confirm()`
-- `frontend/src/lib/components/SearchBar.svelte` - Added `browser` check for `setTimeout`
-- `frontend/src/lib/components/SmartGraph.svelte` - Fixed `window` access pattern
-- `frontend/src/lib/components/Graph3D.svelte` - Improved SSR-safe dynamic imports
-- `frontend/src/lib/components/GraphCanvas.svelte` - Already SSR-safe with dynamic imports
+- `frontend/src/components/molecules/SearchBar.svelte` - Added `browser` check for `setTimeout`
+- `frontend/src/components/organisms/SmartGraph.svelte` - Fixed `window` access pattern
+- `frontend/src/components/organisms/Graph3D.svelte` - Improved SSR-safe dynamic imports
+- `frontend/src/components/organisms/GraphCanvas.svelte` - Already SSR-safe with dynamic imports
 
 **SSR Safety Pattern Applied:**
 ```typescript

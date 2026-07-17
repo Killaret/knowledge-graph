@@ -5,25 +5,36 @@
 ## 1. Основные архитектурные принципы
 
 ### 1.1 Компонентная архитектура на Svelte 5
-- UI состоит из небольших переиспользуемых компонентов в `frontend/src/lib/components/`.
+- UI состоит из небольших переиспользуемых компонентов в `frontend/src/components/`.
+- Структура Atomic Design:
+  - `frontend/src/components/atoms/` — `Button.svelte`, `Input.svelte`, `Badge.svelte`, `Icon.svelte`
+  - `frontend/src/components/molecules/` — `SearchBar.svelte`, `NoteCard.svelte`, `TagList.svelte`
+  - `frontend/src/components/organisms/` — `GraphCanvas.svelte`, `NoteSidePanel.svelte`, `Sidebar.svelte`, `NoteEditor.svelte`
 - Основные компоненты:
-  - граф: `GraphCanvas.svelte`, `SmartGraph.svelte`, `Graph3D.svelte` (заморожен)
-  - заметки: `NoteCard.svelte`, `NoteEditor.svelte`, `NoteSidePanel.svelte`
-  - модальные окна: `Modal.svelte`, `ConfirmModal.svelte`, `CreateNoteModal.svelte`, `EditNoteModal.svelte`
+  - граф: `GraphCanvas.svelte`, `Graph3D.svelte` (заморожен)
+  - заметки: `NoteCard.svelte`, `NoteEditor.svelte`, `NoteSidePanel.svelte`, `CreateNoteModal.svelte`, `EditNoteModal.svelte`
+  - модальные окна: `Modal.svelte`, `ConfirmModal.svelte`
   - общие элементы: `Button.svelte`, `SearchBar.svelte`, `Sidebar.svelte`, `ToastNotification.svelte`
 - Паттерн «атомы → молекулы → организмы» реализуется через маленькие UI-компоненты и композицию.
 
-### 1.2 Разделение ответственности
-- `frontend/src/lib/api/` — внешний API-клиент и HTTP-слой.
-- `frontend/src/lib/services/` — бизнес-логика, предзагрузка данных, side-effects.
-- `frontend/src/lib/stores/` — глобальное состояние, реактивные хранилища.
-- `frontend/src/lib/utils/` — утилиты и вспомогательные функции.
-- `frontend/src/lib/mocks/` — повторно используемые мок-компоненты для тестового окружения.
-- `frontend/src/lib/test-utils/` — хелперы для unit-тестов.
+### 1.2 Разделение ответственности (FSD + Atomic Design)
+- `frontend/src/shared/api/` — внешний API-клиент и HTTP-слой.
+- `frontend/src/shared/services/` — бизнес-логика, предзагрузка данных, side-effects.
+- `frontend/src/shared/stores/` — глобальное состояние, реактивные хранилища.
+- `frontend/src/shared/utils/` — утилиты и вспомогательные функции.
+- `frontend/src/shared/mocks/` — повторно используемые моки окружения SvelteKit для Vitest.
+- `frontend/src/shared/test-utils/` — хелперы для unit-тестов.
+- `frontend/src/shared/types/` — shared TypeScript-типы.
+- `frontend/src/shared/styles/` — общие стили и CSS-переменные.
+- `frontend/src/shared/config/` — единый runtime-конфиг.
+- `frontend/src/components/` — UI-компоненты по Atomic Design.
+- `frontend/src/features/` — feature-модули (`graph-interaction/`, `graph-forms/`).
+- `frontend/src/shared/lib/graph/` — вспомогательные графовые утилиты/рендерер (legacy-остаток после FSD).
 
 ### 1.3 Централизованная конфигурация
-- `frontend/src/lib/config.ts` читает `knowledge-graph.config.json` из корня проекта.
-- Это единственный runtime-конфиг для фронтенда, значения которого управляются из `config/*.json` в корне.
+- `frontend/src/shared/config/config.ts` читает `knowledge-graph.config.json` из корня проекта.
+- `frontend/src/lib/config.ts` удалён; единый runtime-конфиг — `frontend/src/shared/config/`.
+- Значения управляются из `config/*.json` в корне.
 - Примеры разделов:
   - `frontend.graph['2d']`, `frontend.graph['3d']`
   - `frontend.api.default_limit`
@@ -39,7 +50,7 @@
 - Паттерн: разделение логики состояния и UI-компонентов.
 
 ### 1.5 Сервисы и фоновые процессы
-- `frontend/src/lib/services/PreloadService.ts` реализует singleton `PreloadServiceClass`.
+- `frontend/src/shared/services/PreloadService.ts` реализует singleton `PreloadServiceClass`.
 - Паттерн: preload + cache TTL
   - фоновый preload публичного графа (`getFullGraphData`)
   - authenticated preload (`getCachedGraph`, `getFreshGraph`)
@@ -101,11 +112,12 @@
 - Visual: `playwright test --project=visual`
 
 ### 3.2 Мокирование API и окружения
-- `vitest.config.ts` настраивает alias для тестов:
-  - `$app/environment` → `src/lib/mocks/app/environment.ts`
-  - `$app/navigation` → `src/lib/mocks/app/navigation.ts`
-  - `$app/stores` → `src/lib/mocks/app/stores.ts`
-  - `$lib` → `src/lib`
+- `vitest.config.ts` и `svelte.config.js` настраивают alias:
+  - `$app/*` → `src/shared/mocks/app/*`
+  - `$shared/*` → `src/shared/*`
+  - `$components/*` → `src/components/*`
+  - `$features/*` → `src/features/*`
+  - `$lib` — удалён (legacy `src/lib` больше не существует)
   - `$config$` → `../knowledge-graph.config.json`
 - `vitest-setup.ts` запускает MSW и задаёт глобальные fallback-обработчики.
 - Тесты покрывают API-слой, компоненты, auth, graph и визуальные состояния.
@@ -132,9 +144,10 @@
 
 ### 5.1 Фундаментальные правила
 - Все runtime-параметры фронтенда берутся из `knowledge-graph.config.json`.
-- Компоненты должны использовать `src/lib/api/*` для любых HTTP-запросов.
-- Бизнес-логика предпочтительнее держать в `src/lib/services/*`, а не в `.svelte` файлах.
-- Глобальное состояние должно быть оформлено через `src/lib/stores/*`.
+- Компоненты должны использовать `src/shared/api/*` (alias `$shared/api/*`) для любых HTTP-запросов.
+- Бизнес-логика предпочтительнее держать в `src/shared/services/*` или `src/features/*`, а не в `.svelte` файлах.
+- Глобальное состояние должно быть оформлено через `src/shared/stores/*` (runes-based `.svelte.ts` модули).
+- UI-компоненты живут в `src/components/` (atoms/molecules/organisms) и не должны содержать доменную бизнес-логику.
 - 3D-функциональность остаётся замороженной для стабильности.
 
 ### 5.2 Менее фундаментальные, но важные правила
@@ -142,7 +155,7 @@
 - Тестировать компоненты через `@testing-library/svelte` и MSW, избегая реального HTTP в unit-тестах.
 - Стабилизировать тестовое окружение через mocks для анимаций, canvas и браузерных API.
 - Для новых UI-компонентов следовать графовой тематике и единому стилю сообщений `Galactic Lexicon`.
-- При изменении `frontend/src/lib/config.ts` проверять, что alias `$config$` остаётся доступным для Vitest.
+- При изменении `frontend/src/shared/config/config.ts` проверять, что alias `$config$` остаётся доступным для Vitest.
 
 ## 6. Что сделать дальше
 - Создать `frontend/test-results/temp/.gitignore` и настроить `frontend/.gitignore` на игнорирование temp-артефактов.

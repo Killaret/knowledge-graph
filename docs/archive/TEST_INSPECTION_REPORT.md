@@ -1,7 +1,7 @@
 # Test Inspection Report
 
-**Date:** 2026-07-03  
-**Branch:** ai-agents  
+**Date:** 2026-07-03
+**Branch:** ai-agents
 **Objective:** Comprehensive inspection of test suite for relevance, correctness, and cleanup
 
 ---
@@ -30,8 +30,8 @@
 
 | Test Type | Count | Location |
 |-----------|-------|----------|
-| Unit Tests (*.test.ts) | 16 | `src/lib/` |
-| Component Tests (*.spec.ts) | 29 | `src/lib/components/` |
+| Unit Tests (*.test.ts) | 16 | `src/shared/` |
+| Component Tests (*.spec.ts) | 29 | `src/components/` |
 | E2E Tests (*.spec.ts) | 13 | `tests/` |
 | **Total** | **58** | **Multiple directories** |
 
@@ -39,13 +39,13 @@
 
 #### Unit Tests (16 files)
 - `api/auth.test.ts` ✅ Relevant
-- `api/graph.test.ts` ✅ Relevant  
+- `api/graph.test.ts` ✅ Relevant
 - `api/links.test.ts` ✅ Relevant
 - `api/notes.test.ts` ✅ Relevant
-- `components/GraphCanvas/renderer.test.ts` ⚠️ Contains dead code tests
-- `components/PreloadIndicator.svelte.test.ts` ✅ Relevant
-- `components/GraphCanvas/node-types.visual.spec.ts` ⚠️ Duplicate visual tests
-- `components/GraphCanvas.links.visual.spec.ts` ⚠️ Duplicate visual tests
+- `components/organisms/GraphCanvas/renderer.test.ts` ⚠️ Contains dead code tests
+- `components/organisms/PreloadIndicator.svelte.test.ts` ✅ Relevant
+- `components/organisms/GraphCanvas/node-types.visual.spec.ts` ⚠️ Duplicate visual tests
+- `components/organisms/GraphCanvas.rendering.spec.ts` ⚠️ Duplicate visual tests
 - `hooks/usePreloadedData.test.ts` ✅ Relevant
 - `services/PreloadService.test.ts` ✅ Relevant
 - `services/PreloadService.edge-cases.test.ts` ✅ Relevant
@@ -59,31 +59,31 @@
 - `utils/variation.test.ts` ✅ Relevant
 
 #### Component Tests (29 files)
-- `components/ApiErrorDisplay.spec.ts` ✅ Relevant
-- `components/AuthCard.spec.ts` ✅ Relevant
-- `components/BackButton.spec.ts` ✅ Relevant
-- `components/ConfirmModal.spec.ts` ✅ Relevant
-- `components/CosmicBackground.spec.ts` ✅ Relevant
-- `components/CreateNoteModal.spec.ts` ✅ Relevant
-- `components/EditNoteModal.spec.ts` ✅ Relevant
-- `components/FloatingControls.spec.ts` ✅ Relevant
-- `components/GraphCanvas.fade.spec.ts` ✅ Relevant
-- `components/GraphCanvas.interactions.spec.ts` ✅ Relevant
-- `components/GraphCanvas.links-detailed.spec.ts` ✅ Relevant
-- `components/GraphCanvas.links.connection.spec.ts` ✅ Relevant
-- `components/GraphCanvas.links.spec.ts` ✅ Relevant
-- `components/GraphCanvas.node-types.spec.ts` ✅ Relevant
-- `components/GraphCanvas.rendering.spec.ts` ✅ Relevant
-- `components/LinkCreator.spec.ts` ✅ Relevant
-- `components/NoteCard.spec.ts` ✅ Relevant
-- `components/NoteEditor.spec.ts` ✅ Relevant
-- `components/NoteSidePanel.spec.ts` ✅ Relevant
-- `components/QuickCaptureWidget.spec.ts` ✅ Relevant
-- `components/SearchBar.spec.ts` ✅ Relevant
-- `components/Sidebar.spec.ts` ✅ Relevant
-- `components/SmartGraph.spec.ts` ✅ Relevant
-- `components/StateIllustration.spec.ts` ✅ Relevant
-- `components/TagSelector.spec.ts` ✅ Relevant
+- `components/atoms/ApiErrorDisplay.spec.ts` ✅ Relevant
+- `components/organisms/AuthCard.spec.ts` ✅ Relevant
+- `components/atoms/BackButton.spec.ts` ✅ Relevant
+- `components/organisms/ConfirmModal.spec.ts` ✅ Relevant
+- `components/atoms/CosmicBackground.spec.ts` ✅ Relevant
+- `components/organisms/CreateNoteModal.spec.ts` ✅ Relevant
+- `components/organisms/EditNoteModal.spec.ts` ✅ Relevant
+- `components/organisms/FloatingControls.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.fade.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.interactions.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.links-detailed.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.links.connection.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.links.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.node-types.spec.ts` ✅ Relevant
+- `components/organisms/GraphCanvas.rendering.spec.ts` ✅ Relevant
+- `components/organisms/LinkCreator.spec.ts` ✅ Relevant
+- `components/molecules/NoteCard.spec.ts` ✅ Relevant
+- `components/organisms/NoteEditor.spec.ts` ✅ Relevant
+- `components/organisms/NoteSidePanel.spec.ts` ✅ Relevant
+- `components/organisms/QuickCaptureWidget.spec.ts` ✅ Relevant
+- `components/molecules/SearchBar.spec.ts` ✅ Relevant
+- `components/organisms/Sidebar.spec.ts` ✅ Relevant
+- `components/organisms/SmartGraph.spec.ts` ✅ Relevant
+- `components/atoms/StateIllustration.spec.ts` ✅ Relevant
+- `components/molecules/TagSelector.spec.ts` ✅ Relevant
 
 #### E2E Tests (13 files)
 - `tests/auth-functional.spec.ts` ✅ Relevant
@@ -112,7 +112,7 @@
 
 ### 1. Anomaly Rendering Tests ✅
 
-**Files:** `components/GraphCanvas/renderer.test.ts`, `components/GraphCanvas.node-types.spec.ts`
+**Files:** `components/organisms/GraphCanvas/renderer.test.ts`, `components/organisms/GraphCanvas.node-types.spec.ts`
 
 **Status:** **ACTIVATED** - Anomaly types are now used for unknown nodes
 
@@ -136,7 +136,7 @@
 
 ### 2. Obsolete 3D Graph Tests ❌
 
-**Files:** 
+**Files:**
 - `tests/progressive-rendering.spec.ts`
 - `tests/performance/graph-3d-performance.spec.ts`
 
@@ -157,12 +157,12 @@
 
 **Files:**
 - `tests/graph-visual.spec.ts`
-- `tests/graph-visual-isolated.spec.ts` 
+- `tests/graph-visual-isolated.spec.ts`
 - `tests/graph-visual-isolated-new.spec.ts`
 - `tests/graph-visual-mock.spec.ts`
 - `tests/graph-simple.spec.ts`
-- `components/GraphCanvas.node-types.visual.spec.ts`
-- `components/GraphCanvas.links.visual.spec.ts`
+- `components/organisms/GraphCanvas.node-types.spec.ts`
+- `components/organisms/GraphCanvas.rendering.spec.ts`
 
 **Problem:** Multiple test suites testing the same visual rendering
 
@@ -184,7 +184,7 @@
 
 **Missing Tests:**
 - `Button.svelte` - No test file found
-- `Modal.svelte` - No test file found  
+- `Modal.svelte` - No test file found
 - `LoginForm.svelte` - No test file found
 - `RegisterForm.svelte` - No test file found
 - `ForgotPasswordForm.svelte` - No test file found
@@ -297,8 +297,8 @@
    rm tests/graph-visual-isolated-new.spec.ts
    rm tests/graph-visual-mock.spec.ts
    rm tests/graph-simple.spec.ts
-   rm components/GraphCanvas.node-types.visual.spec.ts
-   rm components/GraphCanvas.links.visual.spec.ts
+   rm components/organisms/GraphCanvas.node-types.spec.ts
+   rm components/organisms/GraphCanvas.rendering.spec.ts
    ```
 
 3. **Remove Debug Files:**
@@ -348,7 +348,7 @@
 ### Problematic Tests ❌
 
 1. **Anomaly rendering tests** - Test unused code
-2. **3D performance tests** - Test frozen functionality  
+2. **3D performance tests** - Test frozen functionality
 3. **Duplicate visual tests** - Redundant coverage
 4. **Manual debug tests** - Not automated
 
@@ -380,8 +380,8 @@
 - `tests/graph-visual-isolated-new.spec.ts`
 - `tests/graph-visual-mock.spec.ts`
 - `tests/graph-simple.spec.ts`
-- `components/GraphCanvas.node-types.visual.spec.ts`
-- `components/GraphCanvas.links.visual.spec.ts`
+- `components/organisms/GraphCanvas.node-types.spec.ts`
+- `components/organisms/GraphCanvas.rendering.spec.ts`
 
 **Debug/Temporary Files:**
 - `frontend/test-api-links.js`
@@ -396,12 +396,12 @@
 ### Files to Add (6+ files)
 
 **Missing Component Tests:**
-- `components/Button.spec.ts`
-- `components/Modal.spec.ts`
-- `components/LoginForm.spec.ts`
-- `components/RegisterForm.spec.ts`
-- `components/SplashScreen.spec.ts`
-- `components/ToastNotification.spec.ts`
+- `components/atoms/Button.spec.ts`
+- `components/atoms/Modal.spec.ts`
+- `components/organisms/LoginForm.spec.ts`
+- `components/organisms/RegisterForm.spec.ts`
+- `components/atoms/SplashScreen.spec.ts`
+- `components/atoms/ToastNotification.spec.ts`
 
 ---
 

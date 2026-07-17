@@ -84,8 +84,8 @@ This document describes the 11 AI agent roles used across Cursor AI, Koda (Conti
 
 **Anti-patterns:**
 - ❌ Svelte 4 `writable()`/`readable()` stores — use `$state` runes
-- ❌ Business logic inside components — use `lib/` services
-- ❌ Direct fetch() calls — use ky client from `lib/`
+- ❌ Business logic inside components — use `$shared/services` modules or `src/features/*`
+- ❌ Direct fetch() calls — use ky client from `$shared/api/client.ts`
 
 **Example Prompts:**
 - "Create a Svelte 5 component for the notes list"

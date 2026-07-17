@@ -67,8 +67,8 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 
 ### Architecture
 - **Backend:** Clean Architecture layers: domain → application → infrastructure → interfaces/api
-- **Frontend:** Atomic design: atoms → molecules → organisms
-- **State:** Svelte 5 runes ONLY ($state, $derived, $effect, $props) — no Svelte 4 writable/readable
+- **Frontend:** Atomic design (`frontend/src/components/`) + shared layer (`frontend/src/shared/`) + feature slices (`frontend/src/features/`)
+- **State:** Svelte 5 runes ONLY ($state, `$derived`, $effect, $props) — no Svelte 4 writable/readable
 - **DI:** No global variables — explicit dependency injection everywhere
 - **NLP:** Lazy loading — model loads on first /health request, not at import
 
@@ -161,8 +161,9 @@ backend/
 │   ├── infrastructure/         # DB, Redis, MongoDB, external services
 │   └── interfaces/api/         # Gin handlers, middleware
 frontend/src/
-├── lib/                        # Business logic, API clients (ky)
+├── shared/                     # API clients, stores, services, utils, types, mocks, test-utils, styles, config
 ├── components/                 # atoms/ molecules/ organisms/
+├── features/                   # graph-interaction/, graph-forms/
 └── routes/                     # SvelteKit pages
 nlp-service/
 ├── app/main.py                 # FastAPI app

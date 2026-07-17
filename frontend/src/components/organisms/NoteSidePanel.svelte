@@ -4,14 +4,14 @@
   import { goto } from '$app/navigation';
   import { formatDate } from '$shared/utils/date';
   import ShareModal from '$components/organisms/ShareModal.svelte';
-  
-  const { nodeId, onClose, onEdit, onDelete }: { 
-    nodeId: string; 
+
+  const { nodeId, onClose, onEdit, onDelete }: {
+    nodeId: string;
     onClose: () => void;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
   } = $props();
-  
+
   let note = $state<Note | null>(null);
   let links = $state<Link[]>([]);
   let loading = $state(true);
@@ -47,7 +47,7 @@
       links = [];
     }
   }
-  
+
   async function handleDeleteAllLinks() {
     deletingLinks = true;
     try {
@@ -60,7 +60,7 @@
       deletingLinks = false;
     }
   }
-  
+
   function getTypeIcon(type: string | undefined): string {
     const icons: Record<string, string> = {
       star: '⭐',
@@ -73,7 +73,7 @@
   }
 </script>
 
-<div class="side-panel" class:open={true}>
+<div class="side-panel" data-testid="note-side-panel" class:open={true}>
   <div class="panel-header">
     <button class="close-btn" onclick={onClose} aria-label="Close panel" data-testid="sidepanel-close-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,10 +81,10 @@
         <line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
-    
+
     {#if !loading && note}
       <div class="actions">
-        <button 
+        <button
           class="action-btn share"
           onclick={() => showShareModal = true}
           aria-label="Share note"
@@ -97,7 +97,7 @@
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
         </button>
-        <button 
+        <button
           class="action-btn"
           onclick={() => onEdit?.(nodeId)}
           aria-label="Edit note"
@@ -108,7 +108,7 @@
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button 
+        <button
           class="action-btn delete"
           onclick={() => onDelete?.(nodeId)}
           aria-label="Delete note"
@@ -122,7 +122,7 @@
       </div>
     {/if}
   </div>
-  
+
   <div class="panel-content">
     {#if loading}
       <div class="loading" role="status" aria-live="polite">
@@ -137,16 +137,16 @@
         <h2 class="title">{note.title}</h2>
         <span class="type-badge">{note.type || 'Note'}</span>
       </div>
-      
+
       <div class="meta">
         <span class="date">Created: {formatDate(note.created_at)}</span>
         <span class="date">Updated: {formatDate(note.updated_at)}</span>
       </div>
-      
+
       <div class="content">
         {note.content}
       </div>
-      
+
       {#if note.metadata?.tags?.length > 0}
         <div class="tags">
           {#each note.metadata.tags as tag}
@@ -154,12 +154,12 @@
           {/each}
         </div>
       {/if}
-      
+
       <div class="links-section">
         <div class="links-header">
           <h3>Links ({links.length})</h3>
           {#if links.length > 0}
-            <button 
+            <button
               class="delete-all-links-btn"
               onclick={() => showDeleteLinksConfirm = true}
               aria-label="Delete all links"
@@ -181,7 +181,7 @@
           </div>
         {/if}
       </div>
-      
+
       <div class="panel-footer">
         <button type="button" class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)} aria-label={`View full page for ${note.title}`}>
           View Full Page →
@@ -192,8 +192,8 @@
 </div>
 
 {#if showShareModal && note}
-  <ShareModal 
-    noteId={note.id} 
+  <ShareModal
+    noteId={note.id}
     noteTitle={note.title}
     on:close={() => showShareModal = false}
   />
@@ -206,14 +206,14 @@
       <h3>Delete All Links?</h3>
       <p>This will remove all {links.length} links from this note. This action cannot be undone.</p>
       <div class="modal-actions">
-        <button 
+        <button
           class="modal-btn cancel"
           onclick={() => showDeleteLinksConfirm = false}
           disabled={deletingLinks}
         >
           Cancel
         </button>
-        <button 
+        <button
           class="modal-btn delete"
           onclick={handleDeleteAllLinks}
           disabled={deletingLinks}

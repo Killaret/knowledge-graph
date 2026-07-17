@@ -1,6 +1,6 @@
 # Anomaly Types in Knowledge Graph
 
-**Updated:** July 2026  
+**Updated:** July 2026
 **Status:** Active - Used for unknown node types
 
 ---
@@ -65,7 +65,7 @@ export function drawNode(
   disableVariation: boolean = false
 ): void {
   const type = node.type || 'unknown';
-  
+
   switch (type) {
     case 'star':
       drawStar(ctx, x, y, r, angle, variation);
@@ -96,7 +96,7 @@ export function drawUnknown(
   // Select anomaly type based on hash of nodeId (deterministic)
   const hash = stringHash(nodeId);
   const anomalyType = hash % 4;
-  
+
   const params = getAnomalyParams(nodeId);
   const renderers = customRenderers ?? {
     0: drawRealityRift,
@@ -130,7 +130,7 @@ function stringHash(str: string): number {
 
 ## Configuration
 
-Anomaly rendering is configured in `frontend/src/lib/config.ts`:
+Anomaly rendering is configured in `frontend/src/shared/config/config.ts`:
 
 ```typescript
 anomaly: {
@@ -176,9 +176,9 @@ Nodes without a recognized type automatically render as anomalies:
 
 ```typescript
 // In +page.svelte
-nodes: allNotes.map(n => ({ 
-  id: n.id, 
-  title: n.title, 
+nodes: allNotes.map(n => ({
+  id: n.id,
+  title: n.title,
   type: n.type || 'unknown'  // Fallback to unknown
 }))
 ```
@@ -199,7 +199,7 @@ Anomalies are reserved for system-generated unknown types.
 
 ### Unit Tests
 
-Anomaly rendering is tested in `frontend/src/lib/components/GraphCanvas.node-types.spec.ts`:
+Anomaly rendering is tested in `frontend/src/components/organisms/GraphCanvas.node-types.spec.ts`:
 
 ```typescript
 describe('Anomaly Rendering (Unknown Node Types)', () => {
@@ -216,7 +216,7 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
 
 ### Integration Tests
 
-Anomaly functions are also tested in `frontend/src/lib/components/GraphCanvas/renderer.test.ts`:
+Anomaly functions are also tested in `frontend/src/components/organisms/GraphCanvas/renderer.test.ts`:
 
 ```typescript
 describe('renderer anomaly functions', () => {
@@ -321,7 +321,7 @@ const hash = stringHash(nodeId);
 
 **Problem:** Graph rendering slows down with many anomalies
 
-**Solution:** 
+**Solution:**
 1. Reduce number of unknown nodes
 2. Use simpler anomaly types
 3. Implement LOD for distant nodes
@@ -330,8 +330,8 @@ const hash = stringHash(nodeId);
 
 ## Related Documentation
 
-- [GraphCanvas Renderer](../frontend/src/lib/components/GraphCanvas/renderer.ts)
-- [Configuration](../frontend/src/lib/config.ts)
+- [GraphCanvas Renderer](../frontend/src/components/organisms/GraphCanvas/renderer.ts)
+- [Configuration](../frontend/src/shared/config/config.ts)
 - [Node Types](./NODE_TYPES.md)
 - [Visual Testing](./ARGOS.md)
 

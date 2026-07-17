@@ -150,15 +150,15 @@ Frontend SSR hooks (`hooks.server.ts`) use `VITE_API_TARGET` to bypass nginx.
 
 ## TypeScript Type Sync
 
-Every DTO change in Go must be mirrored in `frontend/src/lib/types/`:
+Every DTO change in Go must be mirrored in `frontend/src/shared/types/`:
 
 ```typescript
-// frontend/src/lib/types/note.ts
+// frontend/src/shared/types/note.ts
 export interface Note {
   id: string;
   title: string;
   content: string;
-  type: 'star' | 'highlight' | 'link';
+  type: 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid';
   metadata?: Record<string, unknown>;
   created_at: string;   // ISO-8601 string from JSON
   updated_at: string;
@@ -167,7 +167,7 @@ export interface Note {
 export interface CreateNoteRequest {
   title: string;
   content?: string;
-  type?: 'star' | 'highlight' | 'link';
+  type?: 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid';
   metadata?: Record<string, unknown>;
 }
 ```

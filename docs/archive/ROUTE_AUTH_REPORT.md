@@ -1,7 +1,7 @@
 # Route Protection and Authentication Logic Report
 
-**Date:** 2026-07-04  
-**Frontend:** SvelteKit 5 with Svelte 5 Runes  
+**Date:** 2026-07-04
+**Frontend:** SvelteKit 5 with Svelte 5 Runes
 **Auth Store:** `auth.svelte.ts`
 
 ---
@@ -78,7 +78,7 @@ $effect(() => {
 
 **Protection:** None - accessible to guests (public notes).
 
-**Behavior:** 
+**Behavior:**
 - 404 error → redirects to `/` after 3 seconds
 - No auth check
 
@@ -183,7 +183,7 @@ $effect(() => {
 ## 4. Authentication Store Logic
 
 ### Location
-`frontend/src/lib/stores/auth.svelte.ts`
+`frontend/src/shared/stores/auth.svelte.ts`
 
 ### Auth State
 ```typescript

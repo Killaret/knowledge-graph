@@ -85,11 +85,21 @@ This project uses Svelte 5 runes syntax exclusively. Never use Svelte 4 syntax.
 ## Atomic Design Pattern
 
 ```
-frontend/src/lib/components/
+frontend/src/components/
 ├── atoms/        # Button, Input, Badge, Icon (single-purpose)
 ├── molecules/    # SearchBar, NoteCard, TagSelector (composed atoms)
 ├── organisms/    # Sidebar, GraphCanvas, NoteEditor (complex sections)
-└── index.ts      # Re-exports
+frontend/src/features/
+├── graph-interaction/  # Drag-and-drop, hotkeys, zoom-pan
+└── graph-forms/        # Note form, link form
+frontend/src/shared/
+├── api/          # ky-based API clients
+├── stores/       # runes-based state modules
+├── services/     # business logic / side effects
+├── utils/        # helpers
+├── types/        # TypeScript types
+├── mocks/        # SvelteKit mocks for Vitest
+└── lib/graph/    # graph rendering helpers (legacy FSD remnant)
 ```
 
 ### Component Example (Atom)
@@ -146,10 +156,10 @@ export async function login(email: string, password: string): Promise<void> {
 - All files use `lang="ts"` in `<script>` blocks
 - Explicit types for props interfaces
 - No `any` — use `unknown` and narrow
-- API response types defined in `$lib/types.ts`
+- API response types defined in `$shared/types/`
 
 ```typescript
-// $lib/types.ts
+// frontend/src/shared/types/note.ts
 export interface Note {
   id: string;
   title: string;
@@ -160,6 +170,7 @@ export interface Note {
   updated_at: string;
 }
 
+// frontend/src/shared/types/user.ts
 export interface User {
   id: string;
   email: string;
@@ -213,15 +224,16 @@ let count = $state(0);
 ## API Client Pattern
 
 ```typescript
-// $lib/api/notes.ts
-import { client } from './client';
+// frontend/src/shared/api/notes.ts
+import { api } from './client';
 
 export async function getNotes(limit = 100, offset = 0): Promise<NotesResponse> {
-  return client.get(`notes?limit=${limit}&offset=${offset}`).json();
+  const response = await api.get('notes', { searchParams: { limit, offset } }).json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+  return response.notes;
 }
 
 export async function createNote(data: CreateNoteRequest): Promise<Note> {
-  return client.post('notes', { json: data }).json();
+  return api.post('notes', { json: data }).json<Note>();
 }
 ```
 

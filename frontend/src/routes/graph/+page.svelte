@@ -20,18 +20,18 @@
   let loading = $state(true);
   let error = $state('');
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(false); // По умолчанию локальный вид
+  let showFullGraph = $state(browser && new URL(window.location.href).searchParams.has('full'));
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
 
-  async function loadGraphData() {
+  async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
     loading = true;
     error = '';
     try {
       let rawData: GraphData;
       if (showFullGraph) {
-        // Load the full graph of all notes
-        rawData = await getFullGraphData();
+        // Load the full graph of all notes; bypass cache after mutations
+        rawData = await getFullGraphData(0, undefined, nocache);
       } else {
         // Load the local graph
         try {
@@ -39,13 +39,13 @@
         } catch {
           notes = [];
         }
-        
+
         if (notes.length > 0) {
           const centerNote = notes[0];
           rawData = await getGraphData(centerNote.id, 3);
         } else {
           // If there are no notes, load the full graph (public notes)
-          rawData = await getFullGraphData();
+          rawData = await getFullGraphData(0, undefined, nocache);
         }
       }
 
@@ -103,7 +103,9 @@
 
   onMount(async () => {
     if (!browser) return;
-    await loadGraphData();
+    // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
+    const url = new URL(window.location.href);
+    await loadGraphData({ nocache: url.searchParams.has('nocache') });
   });
 
   function handleNodeSelect(nodeId: string) {
@@ -113,6 +115,7 @@
   async function handleNoteDelete(nodeId: string) {
     try {
       await deleteNote(nodeId);
+      await loadGraphData({ nocache: true });
     } catch (e) {
       console.error('Failed to delete note:', e);
     }
@@ -130,7 +133,7 @@
   async function handleNoteCreate(data: { title: string; content: string; type: string }) {
     try {
       await createNote(data);
-      await loadGraphData();
+      await loadGraphData({ nocache: true });
     } catch (e) {
       console.error('Failed to create note:', e);
     }
@@ -144,7 +147,7 @@
         link_type: link.link_type,
         weight: link.weight
       });
-      await loadGraphData();
+      await loadGraphData({ nocache: true });
     } catch (e) {
       console.error('Failed to create link:', e);
     }
@@ -165,7 +168,7 @@
 
 <div class="graph-page">
   <BackButton href="/" />
-  
+
   <div class="top-right-controls">
     <button class="login-btn" onclick={() => goto('/auth/login')} title="Login">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -175,16 +178,16 @@
       </svg>
     </button>
   </div>
-  
+
   <h1>Knowledge Graph</h1>
-  
+
   <div class="controls">
     <label class="toggle">
       <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
       <span>Show all notes ({showFullGraph ? 'enabled' : 'disabled'})</span>
     </label>
   </div>
-  
+
   <!-- Stats -->
   {#if !loading && !error}
     <div class="stats-bar" data-testid="graph-stats">
@@ -201,7 +204,7 @@
       {/if}
     </div>
   {/if}
-  
+
   {#if loading}
     <div class="loading-overlay" data-testid="loading-overlay">
       <div class="spinner"></div>
@@ -216,7 +219,7 @@
     <div class="graph-container graph-3d-container" data-testid="graph-container">
       {#if graphData.nodes.length > 0}
         {#key graphData.nodes.length + '-' + graphData.links.length}
-          <GraphCanvas 
+          <GraphCanvas
             nodes={graphData.nodes}
             links={graphData.links}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
@@ -238,7 +241,7 @@
 </div>
 
 {#if selectedNodeId}
-  <NoteSidePanel 
+  <NoteSidePanel
     nodeId={selectedNodeId}
     onClose={() => selectedNodeId = null}
     onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
@@ -251,7 +254,7 @@
 {/if}
 
 {#if noteToEdit}
-  <EditNoteModal 
+  <EditNoteModal
     bind:open={showEditModal}
     noteId={noteToEdit}
     onSuccess={() => { showEditModal = false; noteToEdit = null; window.location.reload(); }}

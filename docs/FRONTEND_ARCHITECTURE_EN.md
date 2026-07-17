@@ -22,7 +22,7 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 - **Framework**: Svelte 5 (Runes mode)
 - **Language**: TypeScript
 - **Styling**: CSS with CSS variables for theming
-- **Visualization**: 
+- **Visualization**:
   - **3D (Primary)**: Three.js + d3-force-3d physics
   - **2D (Fallback)**: D3-force + Canvas API
 - **Testing**: Playwright + Cucumber (BDD)
@@ -33,19 +33,7 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 The 3D graph visualization is organized in modular layers:
 
 ```
-src/lib/three/
-├── core/
-│   ├── sceneSetup.ts         # Scene, camera, renderer initialization
-│   └── controls.ts           # OrbitControls, mouse interactions
-├── simulation/
-│   └── forceSimulation.ts    # d3-force-3d physics engine integration
-├── rendering/
-│   ├── objectManager.ts      # Node/link mesh management
-│   ├── nodeFactory.ts        # 3D node geometry creation
-│   ├── linkFactory.ts        # Link line geometry creation
-│   └── labelFactory.ts       # Text label management
-└── camera/
-    └── cameraUtils.ts        # Animation, zoom, positioning utilities
+(frozen/removed for v1.0 — the src/shared/three/ module no longer exists)
 ```
 
 ### Progressive Rendering (Fog of War)
@@ -234,23 +222,23 @@ Three.js-based 3D graph visualization with progressive loading:
 - **Camera Animation**: Smooth transitions between views
 - **Stats Bar**: Shows loading progress and node count
 
-**Three.js Integration**:
+**Three.js Integration** — 3D graph is **frozen/removed for v1.0**; the `src/shared/three/` module no longer exists:
 ```typescript
-// Core modules
-import { setupScene } from '$lib/three/core/sceneSetup';
-import { createSimulation } from '$lib/three/simulation/forceSimulation';
-import { ObjectManager } from '$lib/three/rendering/objectManager';
-import { lerpCamera, autoZoomToFit } from '$lib/three/camera/cameraUtils';
+// Core modules (historical — 3D frozen/removed)
+// import { setupScene } from '$shared/three/core/sceneSetup';
+// import { createSimulation } from '$shared/three/simulation/forceSimulation';
+// import { ObjectManager } from '$shared/three/rendering/objectManager';
+// import { lerpCamera, autoZoomToFit } from '$shared/three/camera/cameraUtils';
 
 // Progressive loading flow
 onMount(async () => {
   const { scene, camera, renderer } = setupScene(container);
   const simulation = createSimulation();
   const objects = new ObjectManager(scene);
-  
+
   // Load graph data
   const graphData = await fetchGraphData(noteId, loadDepth);
-  
+
   // Progressive loading with fog animation
   await loadNodesProgressively(graphData.nodes, {
     batchSize: 5,
@@ -261,7 +249,7 @@ onMount(async () => {
       animateFogClearing();
     }
   });
-  
+
   // Auto-position camera
   autoZoomToFit(camera, objects.getNodes(), { padding: 50 });
 });
@@ -274,7 +262,7 @@ onMount(async () => {
 
 ## State Management
 
-### Graph Store (`$lib/stores/graph.ts`)
+### Graph Store (`$shared/stores/graph.ts`)
 
 ```typescript
 interface GraphState {
@@ -326,7 +314,7 @@ export const graphStore = writable<GraphState>({
 ### Navigation Flow
 
 ```
-Main Page (/) 
+Main Page (/)
     ├── Click Note Card → /notes/:id
     │   ├── Click "View Graph" → /graph/3d/:id
     │   └── Click "Edit" → /notes/:id/edit

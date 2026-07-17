@@ -76,7 +76,7 @@ const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
 
 ## 5. Код рендеринга
 
-Основной файл: [`frontend/src/lib/components/GraphCanvas/renderer.ts`](../frontend/src/lib/components/GraphCanvas/renderer.ts)
+Основной файл: [`frontend/src/components/organisms/GraphCanvas/renderer.ts`](../frontend/src/components/organisms/GraphCanvas/renderer.ts)
 
 ### Функция getLinkColor
 ```typescript
@@ -85,7 +85,7 @@ function getLinkColor(weight: number, linkType?: string, fadeOpacity: number = 1
   const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
   const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
   const finalOpacity = baseOpacity * fadeOpacity;
-  
+
   // Convert hex to rgba
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
@@ -133,7 +133,7 @@ export function drawLink(
 
 | Компонент | Файл | Описание |
 |-----------|------|----------|
-| **Типы и цвета** | `frontend/src/lib/components/GraphCanvas/renderer.ts` | Функции `getLinkColor`, `getLineDash`, `drawLink` |
+| **Типы и цвета** | `frontend/src/components/organisms/GraphCanvas/renderer.ts` | Функции `getLinkColor`, `getLineDash`, `drawLink` |
 | **Расчёт комбинированного веса** | `backend/internal/application/recommendation/refresh_service.go` | `RefreshService.RefreshRecommendations` |
 | **Jaccard Similarity** | `backend/internal/application/recommendation/keyword_similarity.go` | `CalculateKeywordSimilarity` |
 | **BFS-обход** | `backend/internal/domain/graph/bfs.go` | `runBFS` |
@@ -143,9 +143,9 @@ export function drawLink(
 
 | Тип тестов | Файл |
 |------------|------|
-| **Визуальные тесты** | `frontend/src/lib/components/GraphCanvas.links.visual.spec.ts` |
-| **Детальные тесты** | `frontend/src/lib/components/GraphCanvas.links-detailed.spec.ts` |
-| **Тесты соединений** | `frontend/src/lib/components/GraphCanvas.links.connection.spec.ts` |
+| **Визуальные тесты** | `frontend/src/components/organisms/GraphCanvas.rendering.spec.ts` |
+| **Детальные тесты** | `frontend/src/components/organisms/GraphCanvas.links-detailed.spec.ts` |
+| **Тесты соединений** | `frontend/src/components/organisms/GraphCanvas.links.connection.spec.ts` |
 
 ## 8. Безопасность прокси (hooks.server.ts)
 
@@ -172,7 +172,7 @@ const blockedHeaders = [
 ```
 
 **Почему?**
-- **cookie** и **authorization** управляются **client-side** через API клиент (`frontend/src/lib/api/client.ts`)
+- **cookie** и **authorization** управляются **client-side** через API клиент (`frontend/src/shared/api/client.ts`)
 - Прокси не должен передавать чувствительные данные между сервисами
 - Предотвращает утечку токенов при компрометации одного из сервисов
 

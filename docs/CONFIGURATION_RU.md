@@ -60,7 +60,7 @@ npm run build-config
 ### Использование во фронтенде (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$lib/config';
+import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config/config.ts';
 
 // Используем централизованный конфиг
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
@@ -72,7 +72,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 
-Все параметры читаются через `$lib/config.ts → graphConfig2D`. Жёсткое задание этих значений в исходном коде **запрещено**.
+Все параметры читаются через `$shared/config/config.ts.ts → graphConfig2D`. Жёсткое задание этих значений в исходном коде **запрещено**.
 
 ```json
 {

@@ -3,9 +3,9 @@ name: knowledge-graph-testing
 description: "Агент для работы с тестами всех уровней в проекте Knowledge Graph: Go unit/integration тесты, frontend Vitest/Playwright/BDD тесты, Python pytest. Используйте этого агента для написания, отладки и анализа тестов."
 applyTo:
   - "backend/**/*_test.go"
-  - "frontend/src/lib/**/*.spec.ts"
-  - "frontend/src/lib/**/*.test.ts"
-  - "frontend/tests/*.spec.ts"
+  - "frontend/src/**/*.spec.ts"
+  - "frontend/src/**/*.test.ts"
+  - "frontend/tests/**/*.spec.ts"
   - "tests/features/*.feature"
   - "tests/features/step_definitions/*.ts"
   - "nlp-service/tests/*.py"
@@ -39,10 +39,10 @@ applyTo:
 - Coverage: `go test -coverprofile=coverage.out ./...`
 
 **Frontend (TypeScript):**
-- Unit тесты: `frontend/src/lib/**/*.spec.ts` (Vitest, ~220 тестов)
-- API тесты с MSW mocks: `frontend/src/lib/api/*.test.ts`
-- E2E тесты: `frontend/tests/*.spec.ts` (Playwright, 48 тестов)
-- BDD тесты: `tests/features/*.feature` (Cucumber, 111 сценариев)
+- Unit тесты: `frontend/src/**/*.spec.ts` / `frontend/src/**/*.test.ts` (Vitest)
+- API тесты с MSW mocks: `frontend/src/shared/api/*.test.ts`
+- E2E тесты: `frontend/tests/**/*.spec.ts` (Playwright)
+- BDD тесты: `tests/features/*.feature` (Cucumber)
 - Запуск: `cd frontend && npm run test:unit`, `npm run test`, `npm run test:bdd`
 
 **NLP Service (Python):**

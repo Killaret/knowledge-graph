@@ -1,7 +1,7 @@
 # Knowledge Graph — Architecture Documentation
 
-> **Relevance:** Auto-generated via @codemaps:  
-> **Date:** 2026-04-27  
+> **Relevance:** Auto-generated via @codemaps:
+> **Date:** 2026-04-27
 > **Stack:** Go + SvelteKit + Python (FastAPI) + PostgreSQL + Redis
 
 ---
@@ -396,7 +396,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `/notes/new` | `notes/new/+page.svelte` | Create note |
 | `/search` | `search/+page.svelte` | Full-text search |
 
-#### 2.2 Components (`src/lib/components/`)
+#### 2.2 Components (`src/components/`)
 
 **Core Components (46 total):**
 
@@ -423,7 +423,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `ApiErrorDisplay.svelte` | Svelte | Error display with lexicon integration | Active |
 | `ShareModal.svelte` | Svelte | Share modal with lexicon integration | Active |
 
-#### 2.3 API Client (`src/lib/api/`)
+#### 2.3 API Client (`src/shared/api/`)
 
 | File | Purpose |
 |------|---------|
@@ -433,7 +433,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `graph.ts` | Graph data API |
 | `achievements.ts` | Achievements API |
 
-#### 2.4 Utilities (`src/lib/utils/`)
+#### 2.4 Utilities (`src/shared/utils/`)
 
 | File | Purpose |
 |------|---------|
@@ -447,7 +447,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 - User-controlled via `galactic_mode` setting in user_settings table
 - Integrated into all UI components (modals, toasts, error displays)
 
-#### 2.5 Stores (`src/lib/stores/`)
+#### 2.5 Stores (`src/shared/stores/`)
 
 | File | Purpose |
 |------|---------|
@@ -455,7 +455,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `lexicon-settings.ts` | Lexicon locale and mode settings |
 | `achievements.ts` | Achievement polling and notification state |
 
-#### 2.6 3D Engine (`src/lib/three/`) - **FROZEN for v1.0**
+#### 2.6 3D Engine (frozen/removed for v1.0)
 
 > **🚫 FROZEN FEATURE:** 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead. See CHANGELOG.md for details.
 
@@ -470,7 +470,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 | `animation.ts` | Animation loop | Frozen |
 | `types.ts` | TypeScript types | Frozen |
 
-#### 2.5 State Management (`src/lib/stores/`)
+#### 2.5 State Management (`src/shared/stores/`)
 
 - `notes.ts` — Svelte store for notes
 - `graph.ts` — Graph state store

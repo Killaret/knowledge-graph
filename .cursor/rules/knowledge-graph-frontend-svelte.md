@@ -39,7 +39,7 @@ For shared auth/graph state, use a `.svelte.ts` module file that exports
 getter functions over a module-level `$state` object.
 
 ```typescript
-// frontend/src/lib/stores/auth.svelte.ts  (real file)
+// frontend/src/shared/stores/auth.svelte.ts  (real file)
 const authState = $state({
   currentUser: null as User | null,
   accessToken: null as string | null,
@@ -62,11 +62,12 @@ Components import and call these functions directly — no store subscriptions.
 ## Atomic Design Component Hierarchy
 
 ```
-frontend/src/lib/components/
-  Atoms:      Button.svelte, SearchBar.svelte, TagSelector.svelte
-  Molecules:  NoteCard.svelte, Modal.svelte, ToastNotification.svelte
-  Organisms:  GraphCanvas.svelte, NoteSidePanel.svelte, Sidebar.svelte
-  Templates:  (route +page.svelte files)
+frontend/src/components/
+  atoms/        Button.svelte, Input.svelte, Badge.svelte, Icon.svelte
+  molecules/    SearchBar.svelte, NoteCard.svelte, TagSelector.svelte, Modal.svelte, ToastNotification.svelte
+  organisms/    GraphCanvas.svelte, NoteSidePanel.svelte, Sidebar.svelte, NoteEditor.svelte
+frontend/src/routes/
+  +page.svelte  (route pages / templates)
 ```
 
 **Rule:** Atoms must have zero business logic. Organisms may call API functions
@@ -77,9 +78,9 @@ but must not contain domain computation.
 ## Component File Structure
 
 ```svelte
-<!-- frontend/src/lib/components/NoteCard.svelte -->
+<!-- frontend/src/components/molecules/NoteCard.svelte -->
 <script lang="ts">
-  import type { Note } from '$lib/types';
+  import type { Note } from '$shared/types';
 
   // Props — always typed, never untyped object
   const {
@@ -101,7 +102,7 @@ but must not contain domain computation.
   );
 
   async function handleDelete() {
-    isDeleting = $state(true);
+    isDeleting = true;
     await onDelete(note.id);
   }
 </script>
@@ -118,29 +119,18 @@ but must not contain domain computation.
 ## API Client Patterns (ky library)
 
 ```typescript
-// frontend/src/lib/api/notes.ts
-import ky from 'ky';
-import { getAccessToken } from '$lib/stores/auth.svelte';
-import type { Note, CreateNoteRequest } from '$lib/types';
-
-const api = ky.extend({
-  prefixUrl: import.meta.env.VITE_API_URL + '/api/v1',
-  hooks: {
-    beforeRequest: [
-      (request) => {
-        const token = getAccessToken();
-        if (token) request.headers.set('Authorization', `Bearer ${token}`);
-      }
-    ]
-  }
-});
+// frontend/src/shared/api/notes.ts
+import { api } from './client';
+import { getAccessToken } from '$shared/stores/auth.svelte';
+import type { Note, CreateNoteRequest } from '$shared/types';
 
 export async function createNote(data: CreateNoteRequest): Promise<Note> {
   return api.post('notes', { json: data }).json<Note>();
 }
 
 export async function getNotes(limit = 20, offset = 0): Promise<Note[]> {
-  return api.get('notes', { searchParams: { limit, offset } }).json<Note[]>();
+  const response = await api.get('notes', { searchParams: { limit, offset } }).json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+  return response.notes;
 }
 ```
 
@@ -148,8 +138,7 @@ export async function getNotes(limit = 20, offset = 0): Promise<Note[]> {
 
 ## D3-Force Graph Patterns
 
-The graph canvas (`GraphCanvas.svelte`) delegates all simulation logic to
-`frontend/src/lib/components/GraphCanvas/` (renderer, simulation modules).
+The graph canvas (`frontend/src/components/organisms/GraphCanvas.svelte`) delegates simulation logic to `frontend/src/features/graph-interaction/` and graph rendering internals under `frontend/src/components/organisms/GraphCanvas/` (renderer, simulation modules).
 
 ```typescript
 // Key pattern: separate simulation state from Svelte state
@@ -198,7 +187,7 @@ use `VITE_API_TARGET` (direct to `backend:8080`) not the public nginx URL.
 ## Testing with @testing-library/svelte
 
 ```typescript
-// frontend/src/lib/components/NoteCard.test.ts
+// frontend/src/components/molecules/NoteCard.spec.ts
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { vi, describe, it, expect } from 'vitest';
 import NoteCard from './NoteCard.svelte';
@@ -228,8 +217,8 @@ describe('NoteCard', () => {
 ## TypeScript Rules
 
 - `strict: true` in `tsconfig.json` — no implicit `any`.
-- All API response types live in `frontend/src/lib/types/`.
-- Import paths use `$lib/` alias, never relative `../../`.
+- All shared API response types live in `frontend/src/shared/types/`.
+- Import paths use aliases (`$shared/*`, `$components/*`, `$features/*`), avoid deep relative `../../`.
 - Never use `as unknown as T` to silence type errors — fix the type.
 
 ---

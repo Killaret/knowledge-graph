@@ -3,18 +3,18 @@
 Краткий свод практик, не столь фундаментальных, как `knowledge-graph.config.json`, но важных для единого стиля разработки.
 
 1. Конфигурация
-- Использовать `src/lib/config.ts` и `knowledge-graph.config.json` как источник истины.
+- Использовать `src/shared/config/config.ts` и `knowledge-graph.config.json` как источник истины.
 
 2. Компоненты
 - Компоненты небольшие, переиспользуемые, тестируемые; избегать больших «монстров».
 - Использовать `Modal.svelte` как базу для всех диалогов.
 
 3. State и stores
-- Глобальное состояние в `src/lib/stores/*`.
-- Сервисную логику выносить в `src/lib/services/*`.
+- Глобальное состояние в `src/shared/stores/*`.
+- Сервисную логику выносить в `src/shared/services/*`.
 
 4. API
-- Все HTTP-вызовы через `src/lib/api/*`.
+- Все HTTP-вызовы через `src/shared/api/*`.
 - В тестах мокировать HTTP через MSW, не делать реальные HTTP в unit-тестах.
 
 5. Тестирование
@@ -39,7 +39,7 @@
 10. Малые правила кодирования
 - Имя файлов: PascalCase для Svelte-компонентов (SearchBar.svelte).
 - Тесты colocated: `Component.spec.ts` рядом с компонентом.
-- Использовать `src/lib/test-utils` для общих хелперов.
+- Использовать `src/shared/test-utils` для общих хелперов.
 
 ---
 

@@ -110,13 +110,28 @@ func (r *NoteRepo) FindByID(id uuid.UUID) (*Note, error) {
 </script>
 ```
 
-**Atomic Design (mandatory component structure):**
+**Frontend folders (FSD + Atomic Design):**
 ```
 frontend/src/components/
 ├── atoms/          # Button, Input, Badge, Icon — single responsibility
 ├── molecules/      # NoteCard, SearchBar, TagList — composed atoms
 └── organisms/      # GraphCanvas, NotePanel, Sidebar — complex sections
+frontend/src/shared/
+├── api/            # ky-based API clients
+├── stores/         # runes-based state modules
+├── services/       # business logic, preload, side effects
+├── utils/          # helpers
+├── types/          # TypeScript types
+├── mocks/          # SvelteKit mocks for Vitest
+├── test-utils/     # test helpers
+├── styles/         # shared styles / CSS variables
+└── config/         # runtime config
+frontend/src/features/
+├── graph-interaction/  # drag-and-drop, hotkeys, zoom-pan
+└── graph-forms/        # note form, link form
 ```
+
+**Aliases:** `$shared/*`, `$components/*`, `$features/*` (legacy `$lib` removed).
 
 ---
 

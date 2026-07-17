@@ -186,11 +186,11 @@ fi
 ## Vitest Unit Tests (Frontend)
 
 ```typescript
-// frontend/src/lib/stores/auth.svelte.test.ts
+// frontend/src/shared/stores/auth.svelte.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock external modules
-vi.mock('$lib/api/auth', () => ({
+vi.mock('$shared/api/auth', () => ({
   login: vi.fn().mockResolvedValue({
     access_token: 'test-token',
     refresh_token: 'refresh-token'
@@ -219,7 +219,7 @@ npx vitest run --coverage   # with Istanbul coverage
 ## @testing-library/svelte Component Tests
 
 ```typescript
-// frontend/src/lib/components/NoteCard.svelte.test.ts
+// frontend/src/components/molecules/NoteCard.spec.ts
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
 import NoteCard from './NoteCard.svelte';

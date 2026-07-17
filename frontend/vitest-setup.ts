@@ -40,7 +40,7 @@ afterEach(() => {
 afterAll(() => server.close());
 
 // Note: $app/* modules are mocked via resolve aliases in vitest.config.ts
-// pointing to src/lib/mocks/app/*.ts files
+// pointing to src/shared/mocks/app/*.ts files
 
 // d3-force is mocked via src/__mocks__/d3-force.ts (auto-loaded by Vitest)
 
@@ -178,7 +178,7 @@ vi.mock('three/examples/jsm/renderers/CSS2DRenderer.js', () => ({
 }));
 
 // Мокируем GraphCanvas animation модуль
-vi.mock('$lib/components/GraphCanvas/animation.ts', () => ({
+vi.mock('$components/organisms/GraphCanvas/animation.ts', () => ({
 	startAnimationLoop: vi.fn().mockReturnValue({
 		stop: vi.fn()
 	}),

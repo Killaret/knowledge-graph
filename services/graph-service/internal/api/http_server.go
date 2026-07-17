@@ -132,12 +132,14 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	startTime := time.Now()
 
-	// Parse limit parameter
-	limit := s.limit
+	// Parse limit parameter (0 or absent means no limit; absent uses server default)
+	limit := 0
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l, err := strconv.Atoi(limitStr); err == nil {
 			limit = l
 		}
+	} else if s.limit > 0 {
+		limit = s.limit
 	}
 
 	// Parse user_id parameter
@@ -146,13 +148,17 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 		userID = "public"
 	}
 
-	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, limit=%d", userID, limit)
+	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
 
-	// Try cache first
-	if cached, hash, err := s.cache.LoadFullLayout(ctx, userID); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for full graph user=%s (took %v)", userID, time.Since(startTime))
-		s.sendGraphData(w, cached, hash)
-		return
+	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, limit=%d, nocache=%v", userID, limit, nocache)
+
+	// Try cache first unless explicitly requested to bypass
+	if !nocache {
+		if cached, hash, err := s.cache.LoadFullLayout(ctx, userID); err == nil && cached != nil {
+			log.Printf("[GraphService] Cache hit for full graph user=%s (took %v)", userID, time.Since(startTime))
+			s.sendGraphData(w, cached, hash)
+			return
+		}
 	}
 
 	// Load from database

@@ -4,10 +4,10 @@
 Knowledge Graph - система управления заметками с графовыми связями и NLP-анализом.
 
 ## Tech Stack
-- **Backend:** Go 1.23+, PostgreSQL, Redis, gRPC
-- **Frontend:** Svelte 5, Vitest, Playwright
+- **Backend:** Go 1.25+, Gin, GORM, PostgreSQL (pgx/v5), Redis (go-redis/v9), MongoDB, gRPC
+- **Frontend:** Svelte 5 (runes only), SvelteKit, TypeScript strict, Vitest, Playwright, ky v1.14
 - **NLP:** Python FastAPI, sentence-transformers, HuggingFace
-- **Infrastructure:** Docker, Docker Compose
+- **Infrastructure:** Docker, Docker Compose, nginx gateway
 
 ## Key Rules for AI
 
@@ -25,10 +25,13 @@ Knowledge Graph - система управления заметками с гр
 - No global variables - explicit dependency injection
 
 ### 3. Frontend Conventions (Svelte 5)
-- Components: atoms → molecules → organisms
-- Stores for state, stores/lib/services for business logic
+- Components: `frontend/src/components/` with Atomic Design (`atoms/` → `molecules/` → `organisms/`)
+- Shared logic: `frontend/src/shared/` (`api/`, `stores/`, `services/`, `utils/`, `types/`, `mocks/`, `test-utils/`, `styles/`, `config/`)
+- Feature slices: `frontend/src/features/` (`graph-interaction/`, `graph-forms/`)
+- State via runes-based `.svelte.ts` modules (no Svelte 4 `writable`/`readable`)
 - TypeScript for all types
 - SvelteKit for routing
+- Import aliases: `$shared/*`, `$components/*`, `$features/*` (legacy `$lib` alias removed)
 
 ### 4. Docker & Infrastructure
 - Multi-stage builds for optimization
@@ -109,9 +112,10 @@ backend/
 │   └── interfaces/     # HTTP handlers, middleware
 frontend/
 ├── src/
-│   ├── lib/            # Business logic
-│   ├── components/     # UI components
-│   └── routes/          # Pages
+│   ├── shared/          # API clients, stores, services, utils, types, mocks, test-utils, styles, config
+│   ├── components/      # UI components (atoms / molecules / organisms)
+│   ├── features/        # Feature slices (graph-interaction, graph-forms)
+│   └── routes/          # SvelteKit pages
 nlp-service/            # Python FastAPI NLP
 services/
 docker-compose.yml      # Main stack
@@ -157,9 +161,10 @@ For backend tasks:
 - Don't mix layers
 
 For frontend tasks:
-- Components should be reactive
-- Stores only for cross-component state
-- Components receive data via props/stores
+- Use Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`) — no Svelte 4 stores
+- Keep business logic out of components; use `$shared/services/` or `$features/*`
+- Components receive data via props; global state via `$shared/stores/`
+- Use ky-based API clients from `$shared/api/*`
 
 For infrastructure:
 - Docker multi-stage builds for optimization

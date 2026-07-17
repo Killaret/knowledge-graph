@@ -1,7 +1,7 @@
 # Changelog - Knowledge Graph
 
 > Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-> 
+>
 > Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 🌐 **Language:** English
@@ -62,7 +62,7 @@
   - All structural parameters in one place
   - Shared between backend, frontend, and NLP service
   - Priority: ENV vars > JSON config > hardcoded defaults
-- **Frontend Config Module**: `frontend/src/lib/config.ts` imports JSON directly
+- **Frontend Config Module**: `frontend/src/shared/config/config.ts` imports JSON directly
   - Exports: `graphConfig2D`, `graphConfig3D`, `apiConfig`, `testConfig`, `ciCdConfig`
   - Type-safe TypeScript interfaces
 - **Backend Config Updates**: `backend/internal/config/config.go`
