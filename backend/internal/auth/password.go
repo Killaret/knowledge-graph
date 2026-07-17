@@ -13,7 +13,7 @@ import (
 )
 
 // PasswordConfig holds the configuration for Argon2id
- type PasswordConfig struct {
+type PasswordConfig struct {
 	Time    uint32
 	Memory  uint32
 	Threads uint8

@@ -25,9 +25,16 @@ ENV HF_HUB_ENABLE_HF_TRANSFER=0
 # Download NLTK data during build
 RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
+# Pre-download embedding model so the service can start offline (HF_HUB_OFFLINE=1)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 COPY . .
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=30 --start-period=600s \
   CMD curl -f http://localhost:5000/health || exit 1
 
-ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh && dos2unix entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "1", "--timeout-keep-alive", "5", "--timeout-graceful-shutdown", "30"]

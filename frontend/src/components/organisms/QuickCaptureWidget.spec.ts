@@ -26,8 +26,8 @@ describe('QuickCaptureWidget', () => {
     
     const button = container.querySelector('.quick-capture-btn');
     expect(button).toBeInTheDocument();
-    
-    await fireEvent.mouseDown(button!);
+
+    await fireEvent.click(button!);
     
     // Wait for modal to render
     await new Promise(resolve => setTimeout(resolve, 10));

@@ -29,6 +29,12 @@ export default [
 		}
 	},
 	{
+		files: ['**/*.cjs'],
+		rules: {
+			'@typescript-eslint/no-require-imports': 'off'
+		}
+	},
+	{
 		rules: {
 			'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 			'@typescript-eslint/no-explicit-any': 'off',

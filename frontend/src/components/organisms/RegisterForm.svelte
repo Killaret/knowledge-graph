@@ -14,19 +14,19 @@
   const passwordErrors = $derived(() => {
     const errors: string[] = [];
     if (password.length < 10) {
-      errors.push('Минимум 10 символов');
+      errors.push('Minimum 10 characters');
     }
     if (!/[A-Z]/.test(password)) {
-      errors.push('Заглавная буква');
+      errors.push('Uppercase letter');
     }
     if (!/[a-z]/.test(password)) {
-      errors.push('Строчная буква');
+      errors.push('Lowercase letter');
     }
     if (!/[0-9]/.test(password)) {
-      errors.push('Цифра');
+      errors.push('Number');
     }
     if (!/[!@#$%^&*]/.test(password)) {
-      errors.push('Специальный символ (!@#$%^&*)');
+      errors.push('Special character (!@#$%^&*)');
     }
     return errors;
   });
@@ -40,22 +40,22 @@
     
     // Validation
     if (!login.trim()) {
-      localError = 'Введите логин';
+      localError = 'Login is required';
       return;
     }
-    
+
     if (!email.trim()) {
-      localError = 'Введите email';
+      localError = 'Email is required';
       return;
     }
-    
+
     if (!isPasswordValid) {
-      localError = 'Пароль не соответствует требованиям';
+      localError = 'Password does not meet requirements';
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      localError = 'Пароли не совпадают';
+      localError = 'Passwords do not match';
       return;
     }
     
@@ -69,83 +69,83 @@
 </script>
 
 <form class="register-form" onsubmit={handleSubmit}>
-  <h2>Регистрация</h2>
-  
+  <h2>Registration</h2>
+
   <div class="form-group">
-    <label for="login">Логин *</label>
+    <label for="login">Login *</label>
     <input
       type="text"
       id="login"
       bind:value={login}
-      placeholder="Придумайте логин"
+      placeholder="Choose a login"
       required
       minlength="3"
     />
   </div>
-  
+
   <div class="form-group">
     <label for="email">Email *</label>
     <input
       type="email"
       id="email"
       bind:value={email}
-      placeholder="Введите email"
+      placeholder="Enter email"
       required
     />
   </div>
-  
+
   <div class="form-group">
-    <label for="password">Пароль *</label>
+    <label for="password">Password *</label>
     <input
       type="password"
       id="password"
       bind:value={password}
-      placeholder="Придумайте пароль"
+      placeholder="Create a password"
       required
     />
-    
+
     {#if password.length > 0}
       <div class="password-requirements">
-        <p>Требования к паролю:</p>
+        <p>Password requirements:</p>
         <ul>
-          <li class:valid={password.length >= 10}>Минимум 10 символов</li>
-          <li class:valid={/[A-Z]/.test(password)}>Заглавная буква</li>
-          <li class:valid={/[a-z]/.test(password)}>Строчная буква</li>
-          <li class:valid={/[0-9]/.test(password)}>Цифра</li>
-          <li class:valid={/[!@#$%^&*]/.test(password)}>Специальный символ</li>
+          <li class:valid={password.length >= 10}>Minimum 10 characters</li>
+          <li class:valid={/[A-Z]/.test(password)}>Uppercase letter</li>
+          <li class:valid={/[a-z]/.test(password)}>Lowercase letter</li>
+          <li class:valid={/[0-9]/.test(password)}>Number</li>
+          <li class:valid={/[!@#$%^&*]/.test(password)}>Special character</li>
         </ul>
       </div>
     {/if}
   </div>
-  
+
   <div class="form-group">
-    <label for="confirm-password">Подтвердите пароль *</label>
+    <label for="confirm-password">Confirm Password *</label>
     <input
       type="password"
       id="confirm-password"
       bind:value={confirmPassword}
-      placeholder="Повторите пароль"
+      placeholder="Repeat password"
       required
     />
     {#if confirmPassword && !passwordsMatch}
-      <span class="error-text">Пароли не совпадают</span>
+      <span class="error-text">Passwords do not match</span>
     {/if}
   </div>
-  
+
   {#if localError}
     <ApiErrorDisplay error={{ message: localError, code: 'REGISTER_ERROR' }} />
   {/if}
-  
-  <Button 
-    type="submit" 
-    variant="primary" 
+
+  <Button
+    type="submit"
+    variant="primary"
     disabled={isLoading() || !isPasswordValid || !passwordsMatch}
   >
-    {isLoading() ? 'Регистрация...' : 'Зарегистрироваться'}
+    {isLoading() ? 'Registering...' : 'Register'}
   </Button>
-  
+
   <div class="form-links">
-    <a href="/auth/login">Уже есть аккаунт? Войти</a>
+    <a href="/auth/login">Already have an account? Sign in</a>
   </div>
 </form>
 

@@ -135,7 +135,7 @@ describe('EditNoteModal', () => {
 
     // Проверяем что отображается ошибка валидации (код ошибки вместо сообщения)
     await waitFor(() => {
-      expect(screen.getByText('Ошибка: VALIDATION_ERROR')).toBeInTheDocument();
+      expect(screen.getByText('Error: VALIDATION_ERROR')).toBeInTheDocument();
     }, { timeout: 1000 });
     
     expect(mockUpdateNote).not.toHaveBeenCalled();

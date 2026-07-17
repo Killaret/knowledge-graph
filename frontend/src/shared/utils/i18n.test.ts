@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { formatMessage, getCurrentLocale, setLocale, type Locale } from './i18n';
+import { formatMessage, getCurrentLocale, setLocale } from './i18n';
 
 describe('i18n', () => {
   beforeEach(() => {

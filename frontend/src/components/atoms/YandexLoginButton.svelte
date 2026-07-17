@@ -13,10 +13,10 @@
       if (result.url) {
         window.location.href = result.url;
       } else {
-        error = 'Не удалось получить URL авторизации';
+        error = 'Failed to get authorization URL';
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Ошибка при инициализации входа через Яндекс';
+      error = err instanceof Error ? err.message : 'Error initializing Yandex login';
     } finally {
       isLoading = false;
     }
@@ -31,13 +31,13 @@
 >
   {#if isLoading}
     <span class="spinner"></span>
-    <span>Подключение к Яндекс...</span>
+    <span>Connecting to Yandex...</span>
   {:else}
     <svg class="yandex-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
       <circle cx="12" cy="12" r="3"/>
     </svg>
-    <span>Войти через Яндекс</span>
+    <span>Sign in with Yandex</span>
   {/if}
 </button>
 

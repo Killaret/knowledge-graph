@@ -86,10 +86,12 @@ func main() {
 	redisAddr := cfg.RedisURL
 	log.Printf("Redis address: %s", redisAddr)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:         redisAddr,
-		PoolSize:     10,              // Maximum number of connections
-		MinIdleConns: 3,               // Minimum number of idle connections
-		PoolTimeout:  4 * time.Second, // Timeout for getting connection from pool
+		Addr:            redisAddr,
+		PoolSize:        10,              // Maximum number of connections
+		MinIdleConns:    3,               // Minimum number of idle connections
+		PoolTimeout:     4 * time.Second, // Timeout for getting connection from pool
+		ConnMaxLifetime: 5 * time.Minute, // Max lifetime of a connection (go-redis v9 API)
+		ConnMaxIdleTime: 1 * time.Minute, // Max idle time before closing a connection
 	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
@@ -97,7 +99,7 @@ func main() {
 		}
 	}()
 
-	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, MaxConnAge=5m")
+	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, ConnMaxLifetime=5m, ConnMaxIdleTime=1m")
 
 	// Redis flush on startup if configured
 	if cfg.RedisFlushOnStartup {

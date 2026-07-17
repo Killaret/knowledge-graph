@@ -30,7 +30,7 @@ export function createMockCanvasContext() {
     setLineDash: vi.fn(),
     fillText: vi.fn(),
     measureText: vi.fn(() => ({ width: 50 })),
-    createRadialGradient: vi.fn((x0, y0, r0, x1, y1, r1) => {
+    createRadialGradient: vi.fn((_x0, _y0, _r0, _x1, _y1, _r1) => {
       const colorStops: Array<{ offset: number; color: string }> = [];
       const gradient = {
         addColorStop: vi.fn((offset: number, color: string) => {

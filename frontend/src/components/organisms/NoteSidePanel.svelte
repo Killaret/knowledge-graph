@@ -200,8 +200,9 @@
 {/if}
 
 {#if showDeleteLinksConfirm}
-  <div class="modal-overlay" onclick={() => showDeleteLinksConfirm = false}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1" onclick={() => showDeleteLinksConfirm = false} onkeydown={(e) => e.key === 'Escape' && (showDeleteLinksConfirm = false)}>
+    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+    <div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <h3>Delete All Links?</h3>
       <p>This will remove all {links.length} links from this note. This action cannot be undone.</p>
       <div class="modal-actions">

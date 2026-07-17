@@ -1,7 +1,7 @@
 // PreloadService - фоновая предзагрузка данных для ускорения первого взаимодействия после входа
 import { browser } from '$app/environment';
 import { isAuthenticated } from '$shared/stores/auth.svelte';
-import { getFullGraphData, getCachedGraph, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
+import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
 import { getAllAchievements } from '$shared/api/users';
 
 // Типы для кэшированных данных
@@ -95,7 +95,9 @@ class PreloadServiceClass {
    * Выполняет фактическую предзагрузку данных для гостя
    */
   private async performPreload(): Promise<void> {
-    console.log('[PreloadService] Starting background preload...');
+    if (import.meta.env.DEV) {
+      console.log('[PreloadService] Starting background preload...');
+    }
 
     try {
       const [graphData, achievementsData] = await Promise.allSettled([
@@ -103,19 +105,23 @@ class PreloadServiceClass {
         this.preloadAchievements()
       ]);
 
-      if (graphData.status === 'fulfilled') {
-        console.log('[PreloadService] Graph preloaded successfully');
-      } else {
-        console.warn('[PreloadService] Failed to preload graph:', graphData.reason);
-      }
+      if (import.meta.env.DEV) {
+        if (graphData.status === 'fulfilled') {
+          console.log('[PreloadService] Graph preloaded successfully');
+        } else {
+          console.warn('[PreloadService] Failed to preload graph:', graphData.reason);
+        }
 
-      if (achievementsData.status === 'fulfilled') {
-        console.log('[PreloadService] Achievements preloaded successfully');
-      } else {
-        console.warn('[PreloadService] Failed to preload achievements:', achievementsData.reason);
+        if (achievementsData.status === 'fulfilled') {
+          console.log('[PreloadService] Achievements preloaded successfully');
+        } else {
+          console.warn('[PreloadService] Failed to preload achievements:', achievementsData.reason);
+        }
       }
     } catch (error) {
-      console.warn('[PreloadService] Preload completed with errors:', error);
+      if (import.meta.env.DEV) {
+        console.warn('[PreloadService] Preload completed with errors:', error);
+      }
     }
   }
 

@@ -45,6 +45,8 @@ func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.Ta
 }
 
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
+//
+//nolint:unused
 func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
 	if h.affectedNotesSvc == nil || h.taskQueue == nil {
 		return
@@ -62,6 +64,7 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 		}
 		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
 			// Log error but continue
+			_ = err
 		}
 	}
 }
@@ -196,14 +199,15 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Check for achievements
+	// Check for achievements asynchronously with bounded context
 	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
-		go func() {
-			ctx := context.Background()
+		go func(ctx context.Context) {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
 			if err := h.achievementService.CheckTrigger(ctx, userID, "link.create"); err != nil {
 				log.Printf("[LinkHandler] Failed to check achievements: %v", err)
 			}
-		}()
+		}(c.Request.Context())
 	}
 
 	// Invalidate graph cache for the user

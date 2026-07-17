@@ -99,7 +99,6 @@
       let graphDeltaResult: GraphDelta | undefined = undefined;
       
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
-        console.log('[+page] Using preloaded graph data for instant display');
         graphResult = instantData.graph;
         graphDeltaResult = instantData.delta ?? undefined;
         graphData = graphResult;
@@ -135,7 +134,6 @@
       } else {
         allNotes = notesResult;
       }
-      console.log('[+page] Notes loaded:', allNotes.length);
       applyFiltersAndSort();
       
       // Apply fresh graph data when available
@@ -143,18 +141,15 @@
         if (isAuth && 'fresh' in freshGraphResult) {
           graphResult = freshGraphResult.fresh;
           graphDeltaResult = freshGraphResult.delta ?? undefined;
-          console.log('[+page] Using fresh authenticated graph data');
         } else if (!isAuth) {
           graphResult = freshGraphResult as GraphData;
           graphDeltaResult = undefined;
-          console.log('[+page] Using public graph data');
         }
       }
       
       graphDelta = graphDeltaResult;
       
       // Set graph data if successful
-      console.log('[+page] Graph result:', graphResult ? 'exists' : 'null', 'nodes:', graphResult?.nodes?.length, 'links:', graphResult?.links?.length);
       if (graphResult && graphResult.nodes && Array.isArray(graphResult.nodes)) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
@@ -223,7 +218,9 @@
 
       // Defensive check for API response structure
       if (!rawData || !rawData.nodes || !Array.isArray(rawData.nodes)) {
-        console.warn('[+page] Graph API returned invalid data structure:', rawData);
+        if (import.meta.env.DEV) {
+          console.warn('[+page] Graph API returned invalid data structure:', rawData);
+        }
         // Fallback: build simple graph from notes
         graphData = {
           nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
@@ -531,9 +528,7 @@
   }
 
   function handleToggleView(view: 'graph' | 'list') {
-    console.log('[+page.svelte] handleToggleView called with view:', view, 'currentView before:', currentView);
     currentView = view;
-    console.log('[+page.svelte] currentView after:', currentView);
   }
 </script>
 
@@ -550,7 +545,6 @@
     onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
     onToggleView={handleToggleView}
     onFilter={(type: string) => { selectedType = type; applyFiltersAndSort(); }}
-    noteId={selectedNodeId ?? undefined}
     typeFilters={typeFilters}
     selectedType={selectedType}
     currentView={currentView}
@@ -643,7 +637,8 @@
             <select
               id="sort-select"
               class="sort-select"
-              bind:value={sortBy}
+              value={sortBy}
+              onchange={(e) => { sortBy = e.currentTarget.value as typeof sortBy; applyFiltersAndSort(); }}
               aria-label="Sort notes"
             >
               {#each sortOptions as opt}
@@ -1128,11 +1123,6 @@
     text-align: center;
     background: linear-gradient(135deg, #0a1a3a 0%, #020617 100%);
     height: 100%;
-  }
-
-  .empty-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
   }
 
   .empty-state h2 {

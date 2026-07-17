@@ -71,26 +71,25 @@
 <!-- Floating button -->
 <div class="quick-capture-container">
   {#if isOpen}
-    <div class="quick-capture-backdrop" on:mousedown={handleBackdropClick}>
+    <div class="quick-capture-backdrop" role="dialog" aria-modal="true" tabindex="-1" onmousedown={handleBackdropClick} onkeydown={(e) => e.key === 'Escape' && toggle()}>
       <div class="quick-capture-modal">
         <div class="modal-header">
           <h3>✨ Quick Capture</h3>
-          <button class="close-btn" on:mousedown={toggle} aria-label="Close">×</button>
+          <button class="close-btn" onclick={toggle} aria-label="Close">×</button>
         </div>
         <div class="modal-body">
           <textarea
             bind:value={content}
             placeholder="Capture your thought... (Ctrl+Enter to submit)"
             disabled={isSubmitting}
-            autofocus
           ></textarea>
           {#if showSuccess}
             <div class="success-message">✓ Saved!</div>
           {/if}
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" on:mousedown={toggle} disabled={isSubmitting}>Cancel</button>
-          <button class="submit-btn" on:mousedown={submitCapture} disabled={isSubmitting || !content.trim()}>
+          <button class="cancel-btn" onclick={toggle} disabled={isSubmitting}>Cancel</button>
+          <button class="submit-btn" onclick={submitCapture} disabled={isSubmitting || !content.trim()}>
             {isSubmitting ? 'Saving...' : 'Save'}
           </button>
         </div>
@@ -98,7 +97,7 @@
     </div>
   {/if}
 
-  <button class="quick-capture-btn" on:mousedown={toggle} title="Quick Capture (Ctrl+Shift+N)">
+  <button class="quick-capture-btn" onclick={toggle} title="Quick Capture (Ctrl+Shift+N)">
     ✨
   </button>
 </div>

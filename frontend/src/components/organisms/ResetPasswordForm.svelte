@@ -20,19 +20,19 @@
   const passwordErrors = $derived(() => {
     const errors: string[] = [];
     if (newPassword.length < 10) {
-      errors.push('Минимум 10 символов');
+      errors.push('Minimum 10 characters');
     }
     if (!/[A-Z]/.test(newPassword)) {
-      errors.push('Заглавная буква');
+      errors.push('Uppercase letter');
     }
     if (!/[a-z]/.test(newPassword)) {
-      errors.push('Строчная буква');
+      errors.push('Lowercase letter');
     }
     if (!/[0-9]/.test(newPassword)) {
-      errors.push('Цифра');
+      errors.push('Number');
     }
     if (!/[!@#$%^&*]/.test(newPassword)) {
-      errors.push('Специальный символ');
+      errors.push('Special character');
     }
     return errors;
   });
@@ -45,12 +45,12 @@
     localError = null;
     
     if (!isPasswordValid) {
-      localError = 'Пароль не соответствует требованиям';
+      localError = 'Password does not meet requirements';
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
-      localError = 'Пароли не совпадают';
+      localError = 'Passwords do not match';
       return;
     }
     
@@ -73,49 +73,49 @@
 </script>
 
 <form class="reset-form" onsubmit={handleSubmit}>
-  <h2>Сброс пароля</h2>
-  
+  <h2>Reset Password</h2>
+
   {#if isSuccess}
     <div class="success-message">
-      <p>✅ Пароль успешно изменен!</p>
-      <p>Вы будете перенаправлены на страницу входа...</p>
+      <p>✅ Password changed successfully!</p>
+      <p>You will be redirected to the login page...</p>
     </div>
   {:else}
     <div class="form-group">
-      <label for="new-password">Новый пароль *</label>
+      <label for="new-password">New Password *</label>
       <input
         type="password"
         id="new-password"
         bind:value={newPassword}
-        placeholder="Придумайте новый пароль"
+        placeholder="Create a new password"
         required
       />
-      
+
       {#if newPassword.length > 0}
         <div class="password-requirements">
-          <p>Требования к паролю:</p>
+          <p>Password requirements:</p>
           <ul>
-            <li class:valid={newPassword.length >= 10}>Минимум 10 символов</li>
-            <li class:valid={/[A-Z]/.test(newPassword)}>Заглавная буква</li>
-            <li class:valid={/[a-z]/.test(newPassword)}>Строчная буква</li>
-            <li class:valid={/[0-9]/.test(newPassword)}>Цифра</li>
-            <li class:valid={/[!@#$%^&*]/.test(newPassword)}>Специальный символ</li>
+            <li class:valid={newPassword.length >= 10}>Minimum 10 characters</li>
+            <li class:valid={/[A-Z]/.test(newPassword)}>Uppercase letter</li>
+            <li class:valid={/[a-z]/.test(newPassword)}>Lowercase letter</li>
+            <li class:valid={/[0-9]/.test(newPassword)}>Number</li>
+            <li class:valid={/[!@#$%^&*]/.test(newPassword)}>Special character</li>
           </ul>
         </div>
       {/if}
     </div>
-    
+
     <div class="form-group">
-      <label for="confirm-password">Подтвердите пароль *</label>
+      <label for="confirm-password">Confirm Password *</label>
       <input
         type="password"
         id="confirm-password"
         bind:value={confirmPassword}
-        placeholder="Повторите новый пароль"
+        placeholder="Repeat new password"
         required
       />
       {#if confirmPassword && !passwordsMatch}
-        <span class="error-text">Пароли не совпадают</span>
+        <span class="error-text">Passwords do not match</span>
       {/if}
     </div>
     
@@ -128,7 +128,7 @@
       variant="primary" 
       disabled={isLoading || !isPasswordValid || !passwordsMatch}
     >
-      {isLoading ? 'Сохранение...' : 'Сохранить новый пароль'}
+      {isLoading ? 'Saving...' : 'Save New Password'}
     </Button>
   {/if}
 </form>

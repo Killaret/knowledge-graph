@@ -16,11 +16,12 @@
     import('$components/organisms/GraphCanvas.svelte').then(m => {
       GraphCanvas = m.default;
     });
-    // Debug: log variation parameters for the test node in browser
-    import('$shared/utils/variation').then(mod => {
-      const v = mod.getVariation('test-node', nodeType);
-      console.log('[DEBUG][isolated-node] variation for test-node', v);
-    }).catch(()=>{});
+    if (import.meta.env.DEV) {
+      import('$shared/utils/variation').then(mod => {
+        const v = mod.getVariation('test-node', nodeType);
+        console.log('[DEBUG][isolated-node] variation for test-node', v);
+      }).catch(()=>{});
+    }
   }
   
   // Get type from query param
@@ -72,12 +73,6 @@
     font-size: 1.5rem;
     margin: 0 0 8px 0;
     text-transform: capitalize;
-  }
-  
-  .info p {
-    font-size: 0.875rem;
-    opacity: 0.7;
-    margin: 0;
   }
   
   .canvas-wrapper {

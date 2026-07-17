@@ -42,7 +42,7 @@
         getMessage(mapped.category, mapped.key, ...(mapped.params || [])).then(m => displayMessage = m)
       } else {
         // fallback to error.message (server-provided)
-        displayMessage = error.message || 'Ошибка'
+        displayMessage = error.message || 'Error'
       }
     } else {
       displayMessage = null
@@ -59,7 +59,7 @@
     <button 
       class="close-button" 
       onclick={handleClose}
-      aria-label="Закрыть ошибку"
+      aria-label="Close error"
       type="button"
     >
       ×
@@ -73,14 +73,14 @@
 
     <div class="error-header">
       <span class="error-icon" aria-hidden="true">⚠️</span>
-      <span class="error-code">Ошибка: {error.code}</span>
+      <span class="error-code">Error: {error.code}</span>
     </div>
     
     <p class="error-message">{displayMessage || error.message}</p>
     
     {#if error.details && error.details.length > 0}
       <div class="error-details">
-        <p class="details-title">Детали:</p>
+        <p class="details-title">Details:</p>
         <ul class="details-list">
           {#each error.details as detail}
             <li class="detail-item">
@@ -88,7 +88,7 @@
               <span class="detail-separator">—</span>
               <span class="detail-reason">{detail.message}</span>
               {#if detail.received !== undefined}
-                <span class="detail-received">(получено: {JSON.stringify(detail.received)})</span>
+                <span class="detail-received">(received: {JSON.stringify(detail.received)})</span>
               {/if}
             </li>
           {/each}

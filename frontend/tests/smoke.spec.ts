@@ -26,10 +26,6 @@ test.describe('Smoke Tests - Critical Routes', { tag: ['@smoke', '@critical'] },
     const graphContainer = page.locator('[data-testid="graph-2d-container"], .fullscreen-graph, canvas').first();
     await expect(graphContainer).toBeVisible({ timeout: 5000 });
 
-    // Verify login button exists (in floating controls or header)
-    const loginButton = page.locator('[data-testid="menu-login"], text=Login, text=Войти').first();
-    const isLoginVisible = await loginButton.isVisible().catch(() => false);
-    
     // In SKIP_AUTH mode, login button might not be visible, but page should still load
     await expect(page.locator('main')).toBeVisible();
   });
@@ -122,7 +118,7 @@ test.describe('Smoke Tests - Critical Routes', { tag: ['@smoke', '@critical'] },
     expect(has404).toBe(false);
   });
 
-  test('note creation - ghost node form appears and creates node', async ({ page, request }) => {
+  test('note creation - ghost node form appears and creates node', async ({ page }) => {
     // Setup SKIP_AUTH for testing
     await setupSkipAuth(page);
 

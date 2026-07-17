@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 from typing import Optional
 
 import nltk
@@ -10,10 +11,12 @@ from sentence_transformers import SentenceTransformer
 logger = logging.getLogger(__name__)
 
 MODEL_NAME = os.environ.get("MODEL_NAME", "all-MiniLM-L6-v2")
-HF_CACHE = os.environ.get("HF_HOME", "/root/.cache/huggingface")
+HF_HOME = os.environ.get("HF_HOME", "/root/.cache/huggingface")
+HF_CACHE = os.environ.get("HF_HUB_CACHE") or os.path.join(HF_HOME, "hub")
 
 _embedding_model: Optional[SentenceTransformer] = None
 _model_load_error: Optional[BaseException] = None
+_model_lock = threading.Lock()
 
 # NLTK data (lightweight — safe at import time)
 try:
@@ -52,31 +55,32 @@ def _resolve_model_path(local_only: bool) -> str:
 def _load_embedding_model() -> SentenceTransformer:
     global _embedding_model, _model_load_error
 
-    if _embedding_model is not None:
-        return _embedding_model
-    if _model_load_error is not None:
+    with _model_lock:
+        if _embedding_model is not None:
+            return _embedding_model
+        if _model_load_error is not None:
+            raise _model_load_error
+
+        _configure_hf_env()
+        attempts: list[tuple[str, bool]] = [("cache (offline)", True)]
+        if not _hf_offline_enabled():
+            attempts.append(("network", False))
+
+        last_error: Optional[BaseException] = None
+        for label, local_only in attempts:
+            try:
+                model_path = _resolve_model_path(local_only)
+                model = SentenceTransformer(model_path)
+                _embedding_model = model
+                logger.info("Embedding model loaded via %s from %s", label, model_path)
+                return model
+            except Exception as exc:
+                last_error = exc
+                logger.warning("Embedding model load (%s) failed: %s", label, exc)
+
+        _model_load_error = last_error or RuntimeError("Failed to load embedding model")
+        logger.error("All embedding model load attempts failed")
         raise _model_load_error
-
-    _configure_hf_env()
-    attempts: list[tuple[str, bool]] = [("cache (offline)", True)]
-    if not _hf_offline_enabled():
-        attempts.append(("network", False))
-
-    last_error: Optional[BaseException] = None
-    for label, local_only in attempts:
-        try:
-            model_path = _resolve_model_path(local_only)
-            model = SentenceTransformer(model_path)
-            _embedding_model = model
-            logger.info("Embedding model loaded via %s from %s", label, model_path)
-            return model
-        except Exception as exc:
-            last_error = exc
-            logger.warning("Embedding model load (%s) failed: %s", label, exc)
-
-    _model_load_error = last_error or RuntimeError("Failed to load embedding model")
-    logger.error("All embedding model load attempts failed")
-    raise _model_load_error
 
 
 def get_embedding_model() -> SentenceTransformer:
@@ -85,7 +89,8 @@ def get_embedding_model() -> SentenceTransformer:
 
 
 def is_model_loaded() -> bool:
-    return _embedding_model is not None
+    with _model_lock:
+        return _embedding_model is not None
 
 
 def ensure_model_loaded() -> bool:

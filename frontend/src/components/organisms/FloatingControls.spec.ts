@@ -216,7 +216,7 @@ describe('FloatingControls', () => {
 
   it('does not show 3D menu entry while 3D is frozen', async () => {
     render(FloatingControls, {
-      props: { ...mockCallbacks, noteId: 'note-123' }
+      props: { ...mockCallbacks }
     });
 
     const menuBtn = screen.getByTitle('Menu');

@@ -17,9 +17,9 @@
   });
 </script>
 
-<AuthCard 
-  title="Создать аккаунт" 
-  subtitle="Присоединитесь к вселенной знаний"
+<AuthCard
+  title="Create Account"
+  subtitle="Join the universe of knowledge"
   showIcon={true}
 >
   <RegisterForm />

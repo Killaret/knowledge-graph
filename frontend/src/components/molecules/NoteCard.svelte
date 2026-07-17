@@ -139,6 +139,9 @@
     tippyInstance?.hide();
   }
 
+  const editListener = (e: Event) => handleEdit(e as MouseEvent);
+  const deleteListener = (e: Event) => handleDelete(e as MouseEvent);
+
   function buildTooltipContent(): string {
     const emoji = getTypeEmoji(note.type);
     const title = truncateText(note.title, 60);
@@ -182,14 +185,14 @@
       onShown: (instance) => {
         const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
-        editBtn?.addEventListener('click', handleEdit as EventListener);
-        deleteBtn?.addEventListener('click', handleDelete as EventListener);
+        editBtn?.addEventListener('click', editListener);
+        deleteBtn?.addEventListener('click', deleteListener);
       },
       onHidden: (instance) => {
         const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
-        editBtn?.removeEventListener('click', handleEdit as EventListener);
-        deleteBtn?.removeEventListener('click', handleDelete as EventListener);
+        editBtn?.removeEventListener('click', editListener);
+        deleteBtn?.removeEventListener('click', deleteListener);
       }
     });
   });
@@ -199,7 +202,7 @@
   });
 </script>
 
-<article
+<div
   bind:this={cardRef}
   class="note-card"
   class:dust={isDust()}
@@ -212,7 +215,7 @@
   onclick={handleClick}
   onkeydown={handleKeyDown}
   tabindex="0"
-  role="article"
+  role="button"
   aria-label="Open note: {note.title}"
 >
   <div class="note-card__stripe" aria-hidden="true"></div>
@@ -259,7 +262,7 @@
       {/if}
     </div>
   </div>
-</article>
+</div>
 
 <style>
   .note-card {

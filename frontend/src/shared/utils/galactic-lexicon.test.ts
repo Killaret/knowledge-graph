@@ -2,229 +2,382 @@ import { describe, it, expect } from 'vitest';
 import { MessageFormatter, GalacticLexicon, createFormatter, getLexiconMessage, getMessageKeys } from './galactic-lexicon';
 
 describe('MessageFormatter', () => {
-  describe('technical mode', () => {
+  describe('English standard (default)', () => {
     const formatter = new MessageFormatter(false);
 
-    it('should return technical success messages', () => {
+    it('should return English success messages', () => {
+      const message = formatter.success('noteCreated', 'Test Note');
+      expect(message).toContain('Test Note');
+      expect(message).toContain('created');
+      expect(message).not.toContain('Star');
+    });
+
+    it('should return English error messages', () => {
+      const message = formatter.error('validation', 'title');
+      expect(message).toContain('title');
+      expect(message).toContain('Invalid value');
+      expect(message).not.toContain('anomaly');
+    });
+
+    it('should return English info messages', () => {
+      const message = formatter.info('emptyGraph');
+      expect(message).toContain('graph is empty');
+      expect(message).toContain('starry sky');
+    });
+
+    it('should return English warning messages', () => {
+      const message = formatter.warning('unsavedChanges');
+      expect(message).toContain('unsaved changes');
+      expect(message).not.toContain('ship log');
+    });
+  });
+
+  describe('Russian standard', () => {
+    const formatter = new MessageFormatter(false, 'ru');
+
+    it('should return Russian success messages', () => {
       const message = formatter.success('noteCreated', 'Test Note');
       expect(message).toContain('Test Note');
       expect(message).toContain('создана');
       expect(message).not.toContain('Звезда');
     });
 
-    it('should return technical error messages', () => {
+    it('should return Russian error messages', () => {
       const message = formatter.error('validation', 'title');
       expect(message).toContain('title');
       expect(message).toContain('Неверное значение');
       expect(message).not.toContain('аномалию');
     });
 
-    it('should return technical info messages', () => {
+    it('should return Russian info messages', () => {
       const message = formatter.info('emptyGraph');
       expect(message).toContain('Граф пуст');
-      // Technical mode also mentions звёздное небо as a metaphor
       expect(message).toContain('звёздное небо');
     });
 
-    it('should return technical warning messages', () => {
+    it('should return Russian warning messages', () => {
       const message = formatter.warning('unsavedChanges');
       expect(message).toContain('несохраненные изменения');
       expect(message).not.toContain('бортовом журнале');
     });
   });
 
-  describe('galactic mode', () => {
+  describe('English galactic', () => {
     const formatter = new MessageFormatter(true);
 
-    it('should return galactic success messages', () => {
+    it('should return galactic English success messages', () => {
+      const message = formatter.success('noteCreated', 'Test Note');
+      expect(message).toContain('Test Note');
+      expect(message).toContain('Star');
+      expect(message).toContain('ignited');
+    });
+
+    it('should return galactic English error messages', () => {
+      const message = formatter.error('validation', 'title');
+      expect(message).toContain('title');
+      expect(message).toContain('anomaly');
+      expect(message).toContain('Sensors');
+    });
+
+    it('should return galactic English info messages', () => {
+      const message = formatter.info('emptyGraph');
+      expect(message).toContain('starry sky is empty');
+      expect(message).toContain('universe');
+    });
+
+    it('should return galactic English warning messages', () => {
+      const message = formatter.warning('unsavedChanges');
+      expect(message).toContain('ship log');
+      expect(message).toContain('entries');
+    });
+  });
+
+  describe('Russian galactic', () => {
+    const formatter = new MessageFormatter(true, 'ru');
+
+    it('should return galactic Russian success messages', () => {
       const message = formatter.success('noteCreated', 'Test Note');
       expect(message).toContain('Test Note');
       expect(message).toContain('Звезда');
       expect(message).toContain('зажжена');
     });
 
-    it('should return galactic error messages', () => {
+    it('should return galactic Russian error messages', () => {
       const message = formatter.error('validation', 'title');
       expect(message).toContain('title');
       expect(message).toContain('аномалию');
-      // Check for 'Сенсоры' (capital S) as it appears in the actual message
       expect(message).toMatch(/[Сс]енсоры/);
     });
 
-    it('should return galactic info messages', () => {
+    it('should return galactic Russian info messages', () => {
       const message = formatter.info('emptyGraph');
       expect(message).toContain('звёздное небо');
       expect(message).toContain('пусто');
     });
 
-    it('should return galactic warning messages', () => {
+    it('should return galactic Russian warning messages', () => {
       const message = formatter.warning('unsavedChanges');
       expect(message).toContain('бортовом журнале');
       expect(message).toContain('записи');
     });
   });
 
-  describe('mode switching', () => {
-    it('should switch between modes', () => {
+  describe('mode and locale switching', () => {
+    it('should switch between modes and locales', () => {
       const formatter = new MessageFormatter(false);
-      
-      // Technical mode
+
       let message = formatter.success('noteCreated', 'Note');
+      expect(message).toContain('created');
+
+      formatter.setLocale('ru');
+      message = formatter.success('noteCreated', 'Note');
       expect(message).toContain('создана');
-      
-      // Switch to galactic
+
       formatter.setGalacticMode(true);
       message = formatter.success('noteCreated', 'Note');
       expect(message).toContain('Звезда');
-      
-      // Switch back
+
+      formatter.setLocale('en');
+      message = formatter.success('noteCreated', 'Note');
+      expect(message).toContain('Star');
+
       formatter.setGalacticMode(false);
       message = formatter.success('noteCreated', 'Note');
-      expect(message).toContain('создана');
+      expect(message).toContain('created');
     });
 
-    it('should report current mode', () => {
-      const formatter = new MessageFormatter(false);
+    it('should report current mode and locale', () => {
+      const formatter = new MessageFormatter(false, 'ru');
       expect(formatter.isGalacticMode()).toBe(false);
-      
+      expect(formatter.getLocale()).toBe('ru');
+
       formatter.setGalacticMode(true);
       expect(formatter.isGalacticMode()).toBe(true);
+
+      formatter.setLocale('en');
+      expect(formatter.getLocale()).toBe('en');
     });
   });
 
   describe('createFormatter helper', () => {
-    it('should create formatter with specified mode', () => {
-      const technicalFormatter = createFormatter(false);
-      expect(technicalFormatter.isGalacticMode()).toBe(false);
-      
-      const galacticFormatter = createFormatter(true);
-      expect(galacticFormatter.isGalacticMode()).toBe(true);
+    it('should create formatter with specified mode and locale', () => {
+      const enStandard = createFormatter(false, 'en');
+      expect(enStandard.isGalacticMode()).toBe(false);
+      expect(enStandard.getLocale()).toBe('en');
+      expect(enStandard.success('noteCreated', 'Note')).toContain('created');
+
+      const ruGalactic = createFormatter(true, 'ru');
+      expect(ruGalactic.isGalacticMode()).toBe(true);
+      expect(ruGalactic.getLocale()).toBe('ru');
+      expect(ruGalactic.success('noteCreated', 'Note')).toContain('Звезда');
     });
   });
 });
 
 describe('GalacticLexicon', () => {
   describe('success messages', () => {
-    it('should return note created message in technical mode', () => {
-      const message = GalacticLexicon.success.noteCreated('My Note', false);
+    it('should return English standard note created message', () => {
+      const message = GalacticLexicon.success.noteCreated('My Note', false, 'en');
+      expect(message).toContain('My Note');
+      expect(message).toContain('created');
+      expect(message).not.toContain('Star');
+    });
+
+    it('should return Russian standard note created message', () => {
+      const message = GalacticLexicon.success.noteCreated('My Note', false, 'ru');
       expect(message).toContain('My Note');
       expect(message).toContain('создана');
     });
 
-    it('should return note created message in galactic mode', () => {
-      const message = GalacticLexicon.success.noteCreated('My Note', true);
+    it('should return English galactic note created message', () => {
+      const message = GalacticLexicon.success.noteCreated('My Note', true, 'en');
+      expect(message).toContain('My Note');
+      expect(message).toContain('Star');
+      expect(message).toContain('ignited');
+    });
+
+    it('should return Russian galactic note created message', () => {
+      const message = GalacticLexicon.success.noteCreated('My Note', true, 'ru');
       expect(message).toContain('My Note');
       expect(message).toContain('Звезда');
+      expect(message).toContain('зажжена');
     });
 
     it('should return achievement unlocked message', () => {
-      const technical = GalacticLexicon.success.achievementUnlocked('Explorer', false);
-      expect(technical).toContain('Explorer');
-      expect(technical).toContain('Достижение');
+      const enStandard = GalacticLexicon.success.achievementUnlocked('Explorer', false, 'en');
+      expect(enStandard).toContain('Explorer');
+      expect(enStandard).toContain('Achievement');
 
-      const galactic = GalacticLexicon.success.achievementUnlocked('Explorer', true);
-      expect(galactic).toContain('Explorer');
-      expect(galactic).toContain('звезда');
+      const ruGalactic = GalacticLexicon.success.achievementUnlocked('Explorer', true, 'ru');
+      expect(ruGalactic).toContain('Explorer');
+      expect(ruGalactic).toContain('звезда');
     });
   });
 
   describe('error messages', () => {
-    it('should return validation error in technical mode', () => {
-      const message = GalacticLexicon.error.validation('email', false);
+    it('should return English standard validation error', () => {
+      const message = GalacticLexicon.error.validation('email', false, 'en');
+      expect(message).toContain('email');
+      expect(message).toContain('Invalid value');
+    });
+
+    it('should return Russian standard validation error', () => {
+      const message = GalacticLexicon.error.validation('email', false, 'ru');
       expect(message).toContain('email');
       expect(message).toContain('Неверное значение');
     });
 
-    it('should return validation error in galactic mode', () => {
-      const message = GalacticLexicon.error.validation('email', true);
+    it('should return English galactic validation error', () => {
+      const message = GalacticLexicon.error.validation('email', true, 'en');
+      expect(message).toContain('email');
+      expect(message).toContain('anomaly');
+    });
+
+    it('should return Russian galactic validation error', () => {
+      const message = GalacticLexicon.error.validation('email', true, 'ru');
       expect(message).toContain('email');
       expect(message).toContain('аномалию');
     });
 
     it('should return unauthorized error', () => {
-      const technical = GalacticLexicon.error.unauthorized(false);
-      expect(technical).toContain('Требуется авторизация');
+      const enStandard = GalacticLexicon.error.unauthorized(false, 'en');
+      expect(enStandard).toContain('Authorization required');
 
-      const galactic = GalacticLexicon.error.unauthorized(true);
-      expect(galactic).toContain('Отказано');
-      expect(galactic).toContain('звёздной системе');
+      const enGalactic = GalacticLexicon.error.unauthorized(true, 'en');
+      expect(enGalactic).toContain('star system');
+
+      const ruStandard = GalacticLexicon.error.unauthorized(false, 'ru');
+      expect(ruStandard).toContain('Требуется авторизация');
+
+      const ruGalactic = GalacticLexicon.error.unauthorized(true, 'ru');
+      expect(ruGalactic).toContain('Отказано');
+      expect(ruGalactic).toContain('звёздной системе');
     });
   });
 
   describe('info messages', () => {
     it('should return empty graph message', () => {
-      const technical = GalacticLexicon.info.emptyGraph(false);
-      expect(technical).toContain('Граф пуст');
+      const enStandard = GalacticLexicon.info.emptyGraph(false, 'en');
+      expect(enStandard).toContain('graph is empty');
 
-      const galactic = GalacticLexicon.info.emptyGraph(true);
-      expect(galactic).toContain('звёздное небо');
+      const enGalactic = GalacticLexicon.info.emptyGraph(true, 'en');
+      expect(enGalactic).toContain('starry sky is empty');
+
+      const ruStandard = GalacticLexicon.info.emptyGraph(false, 'ru');
+      expect(ruStandard).toContain('Граф пуст');
+
+      const ruGalactic = GalacticLexicon.info.emptyGraph(true, 'ru');
+      expect(ruGalactic).toContain('звёздное небо');
     });
 
     it('should return streak message with days', () => {
-      const technical = GalacticLexicon.info.streakActive(7, false);
-      expect(technical).toContain('7');
-      expect(technical).toContain('дней');
+      const enStandard = GalacticLexicon.info.streakActive(7, false, 'en');
+      expect(enStandard).toContain('7');
+      expect(enStandard).toContain('days');
 
-      const galactic = GalacticLexicon.info.streakActive(7, true);
-      expect(galactic).toContain('7');
-      expect(galactic).toContain('путешествие');
+      const enGalactic = GalacticLexicon.info.streakActive(7, true, 'en');
+      expect(enGalactic).toContain('7');
+      expect(enGalactic).toContain('journey');
+
+      const ruStandard = GalacticLexicon.info.streakActive(7, false, 'ru');
+      expect(ruStandard).toContain('7');
+      expect(ruStandard).toContain('дней');
+
+      const ruGalactic = GalacticLexicon.info.streakActive(7, true, 'ru');
+      expect(ruGalactic).toContain('7');
+      expect(ruGalactic).toContain('путешествие');
     });
   });
 
   describe('warning messages', () => {
     it('should return unsaved changes message', () => {
-      const technical = GalacticLexicon.warning.unsavedChanges(false);
-      expect(technical).toContain('несохраненные изменения');
+      const enStandard = GalacticLexicon.warning.unsavedChanges(false, 'en');
+      expect(enStandard).toContain('unsaved changes');
 
-      const galactic = GalacticLexicon.warning.unsavedChanges(true);
-      expect(galactic).toContain('бортовом журнале');
+      const enGalactic = GalacticLexicon.warning.unsavedChanges(true, 'en');
+      expect(enGalactic).toContain('ship log');
+
+      const ruStandard = GalacticLexicon.warning.unsavedChanges(false, 'ru');
+      expect(ruStandard).toContain('несохраненные изменения');
+
+      const ruGalactic = GalacticLexicon.warning.unsavedChanges(true, 'ru');
+      expect(ruGalactic).toContain('бортовом журнале');
     });
 
     it('should return delete confirm message with item name', () => {
-      const technical = GalacticLexicon.warning.deleteConfirm('My Note', false);
-      expect(technical).toContain('My Note');
-      expect(technical).toContain('удалить');
+      const enStandard = GalacticLexicon.warning.deleteConfirm('My Note', false, 'en');
+      expect(enStandard).toContain('My Note');
+      expect(enStandard).toContain('delete');
 
-      const galactic = GalacticLexicon.warning.deleteConfirm('My Note', true);
-      expect(galactic).toContain('My Note');
-      expect(galactic).toContain('чёрную дыру');
+      const enGalactic = GalacticLexicon.warning.deleteConfirm('My Note', true, 'en');
+      expect(enGalactic).toContain('My Note');
+      expect(enGalactic).toContain('black hole');
+
+      const ruStandard = GalacticLexicon.warning.deleteConfirm('My Note', false, 'ru');
+      expect(ruStandard).toContain('My Note');
+      expect(ruStandard).toContain('удалить');
+
+      const ruGalactic = GalacticLexicon.warning.deleteConfirm('My Note', true, 'ru');
+      expect(ruGalactic).toContain('My Note');
+      expect(ruGalactic).toContain('чёрную дыру');
     });
   });
 });
 
 describe('message consistency', () => {
   it('should have matching keys in both modes', () => {
-    const formatter = new MessageFormatter(false);
-    
-    // Test that all categories have the same keys
-    const successKeys = ['noteCreated', 'noteUpdated', 'noteDeleted', 'linkCreated', 'settingsSaved', 'achievementUnlocked', 'shareCreated', 'loginSuccess'];
-    
-    // All keys should work in both modes
+    const formatter = new MessageFormatter(false, 'en');
+
+    const successKeys = [
+      'noteCreated',
+      'noteUpdated',
+      'noteDeleted',
+      'linkCreated',
+      'settingsSaved',
+      'achievementUnlocked',
+      'shareCreated',
+      'loginSuccess',
+    ];
+
     successKeys.forEach(key => {
       const technical = formatter.format('success', key, 'test');
       expect(technical).toBeTruthy();
-      
+
       formatter.setGalacticMode(true);
       const galactic = formatter.format('success', key, 'test');
       expect(galactic).toBeTruthy();
       expect(galactic).not.toEqual(technical);
-      
+
       formatter.setGalacticMode(false);
     });
   });
 });
 
 describe('getLexiconMessage compatibility function', () => {
-  it('should return messages for success category', () => {
+  it('should return English standard messages', () => {
+    const msg = getLexiconMessage('en', 'standard', 'success', 'noteCreated');
+    expect(msg).toBeTruthy();
+    expect(msg).toContain('Note');
+  });
+
+  it('should return Russian standard messages', () => {
     const msg = getLexiconMessage('ru', 'standard', 'success', 'noteCreated');
     expect(msg).toBeTruthy();
     expect(msg).toContain('Заметка');
   });
 
-  it('should return galactic messages when mode is galactic', () => {
+  it('should return English galactic messages when mode is galactic', () => {
+    const msg = getLexiconMessage('en', 'galactic', 'success', 'noteCreated');
+    expect(msg).toBeTruthy();
+    expect(msg).toContain('Star');
+    expect(msg).toContain('ignited');
+  });
+
+  it('should return Russian galactic messages when mode is galactic', () => {
     const msg = getLexiconMessage('ru', 'galactic', 'success', 'noteCreated');
     expect(msg).toBeTruthy();
     expect(msg).toContain('Звезда');
+    expect(msg).toContain('зажжена');
   });
 
   it('should return messages for error category', () => {
@@ -233,36 +386,44 @@ describe('getLexiconMessage compatibility function', () => {
   });
 
   it('should return messages for achievement category', () => {
-    const msg = getLexiconMessage('ru', 'galactic', 'achievement', 'unlocked', 'Test Achievement');
-    expect(msg).toContain('Test Achievement');
-    expect(msg).toContain('✨');
+    const ru = getLexiconMessage('ru', 'galactic', 'achievement', 'unlocked', 'Test Achievement');
+    expect(ru).toContain('Test Achievement');
+    expect(ru).toContain('⭐');
+
+    const en = getLexiconMessage('en', 'galactic', 'achievement', 'unlocked', 'Test Achievement');
+    expect(en).toContain('Test Achievement');
+    expect(en).toContain('⭐');
   });
 
   it('should handle fallback for unknown keys', () => {
-    const msg = getLexiconMessage('ru', 'standard', 'success', 'unknownKey');
+    const msg = getLexiconMessage('en', 'standard', 'success', 'unknownKey');
     expect(msg).toBeTruthy();
+    expect(msg).toContain('unknownKey');
   });
 
   it('should handle locale parameter', () => {
-    const msg = getLexiconMessage('ru', 'standard', 'success', 'noteCreated');
-    expect(msg).toContain('Заметка');
+    const en = getLexiconMessage('en', 'standard', 'success', 'noteCreated');
+    expect(en).toContain('Note');
+
+    const ru = getLexiconMessage('ru', 'standard', 'success', 'noteCreated');
+    expect(ru).toContain('Заметка');
   });
 });
 
 describe('getMessageKeys helper', () => {
   it('should return all message keys', () => {
     const keys = getMessageKeys();
-    
+
     expect(keys).toHaveProperty('success');
     expect(keys).toHaveProperty('error');
     expect(keys).toHaveProperty('info');
     expect(keys).toHaveProperty('warning');
-    
+
     expect(Array.isArray(keys.success)).toBe(true);
     expect(Array.isArray(keys.error)).toBe(true);
     expect(Array.isArray(keys.info)).toBe(true);
     expect(Array.isArray(keys.warning)).toBe(true);
-    
+
     expect(keys.success.length).toBeGreaterThan(0);
     expect(keys.error.length).toBeGreaterThan(0);
     expect(keys.info.length).toBeGreaterThan(0);

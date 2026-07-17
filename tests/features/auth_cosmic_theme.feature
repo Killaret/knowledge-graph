@@ -44,7 +44,7 @@ Feature: Authentication Pages with Cosmic Theme
     When I navigate to the register page
     Then I should see a cosmic starfield background
     And I should see a galaxy icon
-    And I should see the title "Создать аккаунт"
+    And I should see the title "Create Account"
 
   @auth
   Scenario: Register form validates password requirements
@@ -59,13 +59,13 @@ Feature: Authentication Pages with Cosmic Theme
   Scenario: Forgot password page displays cosmic theme
     When I navigate to the forgot password page
     Then I should see a cosmic starfield background
-    And I should see the title "Восстановление пароля"
+    And I should see the title "Password Recovery"
 
   @smoke @auth @visual
   Scenario: Reset password page displays cosmic theme with token
     When I navigate to the reset password page with a valid token
     Then I should see a cosmic starfield background
-    And I should see the title "Сброс пароля"
+    And I should see the title "Reset Password"
     And I should see password input fields
 
   @auth @visual

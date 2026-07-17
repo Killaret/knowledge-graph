@@ -33,6 +33,8 @@ func ProductionConfig() Config {
 }
 
 // developmentConfig returns development logger configuration (unused, kept for future)
+//
+//nolint:unused
 func developmentConfig() Config {
 	cfg := DefaultConfig()
 	cfg.JSONFormat = false

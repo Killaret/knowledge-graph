@@ -1,18 +1,42 @@
-import { writable } from 'svelte/store'
 import type { Locale, Mode } from '$shared/utils/galactic-lexicon'
 import { getLexiconMessage } from '$shared/utils/galactic-lexicon'
+import { getCurrentLocale, setLocale as setUiLocale } from '$shared/utils/i18n'
 
-export const locale = writable<Locale>('ru')
-export const mode = writable<Mode>('standard')
+let currentMode: Mode = 'standard'
+const subscribers = new Set<(value: Mode) => void>()
 
-export function setLocale(l: Locale) { locale.set(l) }
-export function setMode(m: Mode) { mode.set(m) }
+function notify(value: Mode) {
+  subscribers.forEach(fn => fn(value))
+}
+
+function setModeValue(value: Mode) {
+  currentMode = value
+  notify(currentMode)
+}
+
+export const mode = {
+  subscribe(fn: (value: Mode) => void) {
+    fn(currentMode)
+    subscribers.add(fn)
+    return () => subscribers.delete(fn)
+  },
+  set: setModeValue,
+  update(fn: (value: Mode) => Mode) {
+    setModeValue(fn(currentMode))
+  },
+}
+
+export function setLocale(l: Locale) {
+  setUiLocale(l)
+}
+
+export function setMode(m: Mode) {
+  mode.set(m)
+}
 
 export async function getMessage(category: string, key: string, ...params: any[]) {
-  let loc: Locale = 'ru'
+  const locale = getCurrentLocale()
   let md: Mode = 'standard'
-  locale.subscribe(v => loc = v)()
-  mode.subscribe(v => md = v)()
-  // category must match types used in lexicon
-  return getLexiconMessage(loc, md, category as any, key, ...params)
+  mode.subscribe(m => md = m)()
+  return getLexiconMessage(locale, md, category as any, key, ...params)
 }

@@ -35,7 +35,7 @@ type LogEntry struct {
 func LoggingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-		
+
 		// Extract token data if available
 		var userID, login, role string
 		if claims, exists := c.Get("token_claims"); exists {

@@ -63,7 +63,13 @@ func main() {
 		redisAddr = "localhost:6379"
 	}
 	log.Println("Starting worker, connecting to Redis at", redisAddr)
-	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:            redisAddr,
+		PoolSize:        10,
+		MinIdleConns:    1,
+		ConnMaxLifetime: 5 * time.Minute,
+		ConnMaxIdleTime: 1 * time.Minute,
+	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
 			log.Printf("Error closing redis client: %v", err)

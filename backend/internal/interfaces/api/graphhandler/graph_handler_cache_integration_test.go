@@ -436,7 +436,7 @@ func (s *GraphHandlerCacheIntegrationTestSuite) TestPositionCaching() {
 		},
 		Links: []GraphLink{},
 	}
-	
+
 	err := s.graphCache.CacheUserGraph(context.Background(), userID.String(), convertToCacheGraphData(cachedData))
 	s.Require().NoError(err)
 
@@ -448,11 +448,11 @@ func (s *GraphHandlerCacheIntegrationTestSuite) TestPositionCaching() {
 	// Шаг 3: Конвертируем и проверяем что позиции сохранились
 	convertedData := convertFromCacheGraphData(retrievedData)
 	s.Len(convertedData.Nodes, 2)
-	
+
 	// Проверяем позиции первой ноды
 	s.Equal(100.5, convertedData.Nodes[0].X, "first node X position should be preserved")
 	s.Equal(200.3, convertedData.Nodes[0].Y, "first node Y position should be preserved")
-	
+
 	// Проверяем позиции второй ноды
 	s.Equal(300.7, convertedData.Nodes[1].X, "second node X position should be preserved")
 	s.Equal(400.9, convertedData.Nodes[1].Y, "second node Y position should be preserved")
@@ -472,7 +472,7 @@ func (s *GraphHandlerCacheIntegrationTestSuite) TestPreserveCachedPositions() {
 		Nodes: []GraphNode{
 			{ID: "node1", Title: "Updated Note 1", Type: "star", X: 0.0, Y: 0.0}, // Title changed, position should be preserved
 			{ID: "node2", Title: "Note 2", Type: "planet", X: 0.0, Y: 0.0},       // Unchanged, position should be preserved
-			{ID: "node3", Title: "New Note", Type: "comet", X: 0.0, Y: 0.0},       // New node, position stays 0,0
+			{ID: "node3", Title: "New Note", Type: "comet", X: 0.0, Y: 0.0},      // New node, position stays 0,0
 		},
 		Links: []GraphLink{},
 	}
@@ -482,16 +482,16 @@ func (s *GraphHandlerCacheIntegrationTestSuite) TestPreserveCachedPositions() {
 
 	// Проверяем что позиции сохранились для существующих нод
 	s.Len(preserved.Nodes, 3)
-	
+
 	// node1 должна иметь позицию из кэша
 	s.Equal(100.0, preserved.Nodes[0].X, "node1 X should be from cache")
 	s.Equal(200.0, preserved.Nodes[0].Y, "node1 Y should be from cache")
 	s.Equal("Updated Note 1", preserved.Nodes[0].Title, "node1 title should be from fresh")
-	
+
 	// node2 должна иметь позицию из кэша
 	s.Equal(300.0, preserved.Nodes[1].X, "node2 X should be from cache")
 	s.Equal(400.0, preserved.Nodes[1].Y, "node2 Y should be from cache")
-	
+
 	// node3 новая, позиция должна быть 0,0
 	s.Equal(0.0, preserved.Nodes[2].X, "node3 X should be 0.0 for new node")
 	s.Equal(0.0, preserved.Nodes[2].Y, "node3 Y should be 0.0 for new node")

@@ -23,20 +23,20 @@ describe('RegisterForm', () => {
   it('renders registration form with all fields', () => {
     render(RegisterForm);
 
-    expect(screen.getByLabelText(/логин/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^пароль/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/подтвердите пароль/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /зарегистрироваться/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /register/i })).toBeInTheDocument();
   });
 
   it('updates all form fields', async () => {
     render(RegisterForm);
 
-    const loginInput = screen.getByLabelText(/логин/i);
+    const loginInput = screen.getByLabelText(/login/i);
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/^пароль/i);
-    const confirmInput = screen.getByLabelText(/подтвердите пароль/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
+    const confirmInput = screen.getByLabelText(/confirm password/i);
 
     await fireEvent.input(loginInput, { target: { value: 'newuser' } });
     await fireEvent.input(emailInput, { target: { value: 'newuser@example.com' } });
@@ -52,12 +52,12 @@ describe('RegisterForm', () => {
   it('shows password requirements when password is entered', async () => {
     render(RegisterForm);
 
-    const passwordInput = screen.getByLabelText(/^пароль/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     await fireEvent.input(passwordInput, { target: { value: 'weak' } });
 
-    expect(screen.getByText(/требования к паролю/i)).toBeInTheDocument();
-    expect(screen.getByText(/минимум 10 символов/i)).toBeInTheDocument();
-    expect(screen.getByText(/заглавная буква/i)).toBeInTheDocument();
+    expect(screen.getByText(/password requirements/i)).toBeInTheDocument();
+    expect(screen.getByText(/minimum 10 characters/i)).toBeInTheDocument();
+    expect(screen.getByText(/uppercase letter/i)).toBeInTheDocument();
   });
 
   it('shows error when login is empty', async () => {
@@ -66,30 +66,30 @@ describe('RegisterForm', () => {
     const form = container.querySelector('form');
     await fireEvent.submit(form!);
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/введите логин/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/login is required/i);
   });
 
   it('shows error when passwords do not match', async () => {
     render(RegisterForm);
 
-    const passwordInput = screen.getByLabelText(/^пароль/i);
-    const confirmInput = screen.getByLabelText(/подтвердите пароль/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
+    const confirmInput = screen.getByLabelText(/confirm password/i);
 
     await fireEvent.input(passwordInput, { target: { value: 'Password123!' } });
     await fireEvent.input(confirmInput, { target: { value: 'Different123!' } });
 
-    expect(screen.getByText(/пароли не совпадают/i)).toBeInTheDocument();
+    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
   });
 
   it('submits registration with valid data', async () => {
     mockRegister.mockResolvedValue(true);
     render(RegisterForm);
 
-    const loginInput = screen.getByLabelText(/логин/i);
+    const loginInput = screen.getByLabelText(/login/i);
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/^пароль/i);
-    const confirmInput = screen.getByLabelText(/подтвердите пароль/i);
-    const submitButton = screen.getByRole('button', { name: /зарегистрироваться/i });
+    const passwordInput = screen.getByLabelText(/^password/i);
+    const confirmInput = screen.getByLabelText(/confirm password/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
 
     await fireEvent.input(loginInput, { target: { value: 'newuser' } });
     await fireEvent.input(emailInput, { target: { value: 'newuser@example.com' } });
@@ -103,7 +103,7 @@ describe('RegisterForm', () => {
   it('has link to login page', () => {
     render(RegisterForm);
 
-    const loginLink = screen.getByRole('link', { name: /войти/i });
+    const loginLink = screen.getByRole('link', { name: /sign in/i });
     expect(loginLink).toHaveAttribute('href', '/auth/login');
   });
 });

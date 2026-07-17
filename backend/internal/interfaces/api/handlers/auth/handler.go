@@ -323,7 +323,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 	// Revoke old refresh token
 	if h.tokenStore != nil {
-		h.tokenStore.RevokeRefreshToken(c.Request.Context(), req.RefreshToken, h.cfg.JWTRefreshTTL)
+		_ = h.tokenStore.RevokeRefreshToken(c.Request.Context(), req.RefreshToken, h.cfg.JWTRefreshTTL)
 	}
 
 	c.JSON(http.StatusOK, TokenResponse{
@@ -357,7 +357,7 @@ func (h *Handler) Logout(c *gin.Context) {
 
 	if refreshToken != "" && h.tokenStore != nil {
 		// Revoke refresh token
-		h.tokenStore.RevokeRefreshToken(c.Request.Context(), refreshToken, h.cfg.JWTRefreshTTL)
+		_ = h.tokenStore.RevokeRefreshToken(c.Request.Context(), refreshToken, h.cfg.JWTRefreshTTL)
 	}
 
 	// Get access token and blacklist it
@@ -366,7 +366,7 @@ func (h *Handler) Logout(c *gin.Context) {
 		parts := strings.SplitN(authHeader, " ", 2)
 		// Try to extract and blacklist access token
 		if len(parts) == 2 {
-			h.tokenStore.BlacklistToken(c.Request.Context(), parts[1], h.cfg.JWTAccessTTL)
+			_ = h.tokenStore.BlacklistToken(c.Request.Context(), parts[1], h.cfg.JWTAccessTTL)
 		}
 	}
 
@@ -460,7 +460,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	}
 
 	// Delete reset token
-	h.tokenStore.DeletePasswordResetToken(c.Request.Context(), req.Token)
+	_ = h.tokenStore.DeletePasswordResetToken(c.Request.Context(), req.Token)
 
 	c.JSON(http.StatusOK, gin.H{"message": "password has been reset successfully"})
 }
@@ -481,7 +481,7 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 		codeChallenge = pkce.CodeChallenge
 		// Store PKCE data in Redis
 		if h.tokenStore != nil {
-			h.tokenStore.StorePKCE(c.Request.Context(), state, pkce, 10*time.Minute)
+			_ = h.tokenStore.StorePKCE(c.Request.Context(), state, pkce, 10*time.Minute)
 		}
 	}
 

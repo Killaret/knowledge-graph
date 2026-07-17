@@ -1,6 +1,6 @@
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
-import type { CustomWorld } from '../support/world';
+import type CustomWorld from '../support/world';
 
 Before(async function(this: CustomWorld) {
   // Ensure browser is initialized
@@ -58,7 +58,7 @@ Then('the background should have animated stars', async function(this: CustomWor
   await expect(canvas).toBeVisible();
   
   // Canvas should have CSS that indicates animation
-  const hasAnimation = await canvas.evaluate((el) => {
+  const hasAnimation = await canvas.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     return style.background?.includes('gradient') || true;
   });
@@ -71,7 +71,7 @@ Then('I should see a rotating galaxy icon above the title', async function(this:
   
   // Verify icon is positioned above title (in the logo section)
   const logoSection = this.page.locator('.logo-section').first();
-  await expect(logoSection).toContainElement('.galaxy-icon');
+  await expect(logoSection.locator('.galaxy-icon')).toBeVisible();
 });
 
 Then('the icon should have a glowing effect', async function(this: CustomWorld) {
@@ -79,7 +79,7 @@ Then('the icon should have a glowing effect', async function(this: CustomWorld) 
   await expect(galaxyIcon).toBeVisible();
   
   // Check for glow filter
-  const hasGlow = await galaxyIcon.evaluate((el) => {
+  const hasGlow = await galaxyIcon.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     return style.filter?.includes('drop-shadow') || style.filter?.includes('glow') || true;
   });
@@ -98,7 +98,7 @@ Then('I should see a login form in a glass-like card', async function(this: Cust
 Then('the card should have a backdrop blur effect', async function(this: CustomWorld) {
   const card = this.page.locator('.card').first();
   
-  const hasBlur = await card.evaluate((el) => {
+  const hasBlur = await card.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     const backdropFilter = (style as CSSStyleDeclaration & { webkitBackdropFilter?: string }).backdropFilter;
     return backdropFilter?.includes('blur') || false;
@@ -109,7 +109,7 @@ Then('the card should have a backdrop blur effect', async function(this: CustomW
 Then('the card should have a subtle golden border glow', async function(this: CustomWorld) {
   const card = this.page.locator('.card').first();
   
-  const hasGlow = await card.evaluate((el) => {
+  const hasGlow = await card.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     const boxShadow = style.boxShadow;
     return boxShadow?.includes('255, 204, 0') || boxShadow?.includes('rgba(255, 204') || false;
@@ -127,7 +127,7 @@ When('I click on the login input field', async function(this: CustomWorld) {
 Then('the input should have a golden glow border', async function(this: CustomWorld) {
   const loginInput = this.page.locator('input#login').first();
   
-  const hasGoldenBorder = await loginInput.evaluate((el) => {
+  const hasGoldenBorder = await loginInput.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     const borderColor = style.borderColor;
     const boxShadow = style.boxShadow;
@@ -141,7 +141,7 @@ Then('the input should have a golden glow border', async function(this: CustomWo
 Then('the glow should animate smoothly', async function(this: CustomWorld) {
   const loginInput = this.page.locator('input#login').first();
   
-  const hasTransition = await loginInput.evaluate((el) => {
+  const hasTransition = await loginInput.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     return style.transition?.includes('box-shadow') || 
            style.transition?.includes('border') || false;
@@ -214,7 +214,7 @@ Then('all requirements should be marked as valid', async function(this: CustomWo
 
 // Error state steps
 Then('I should see an error message', async function(this: CustomWorld) {
-  const errorTitle = this.page.locator('text=Ошибка').first();
+  const errorTitle = this.page.locator('text=Error').first();
   await expect(errorTitle).toBeVisible();
 });
 
@@ -224,7 +224,7 @@ Then('I should see a constellation icon', async function(this: CustomWorld) {
 });
 
 Then('I should see a link to request a new reset', async function(this: CustomWorld) {
-  const backLink = this.page.locator('text=Запросить сброс пароля').first();
+  const backLink = this.page.locator('text=Back to login').first();
   await expect(backLink).toBeVisible();
 });
 
@@ -234,7 +234,7 @@ Then('the auth card should animate in with a fly effect', async function(this: C
   await expect(authContainer).toBeVisible();
   
   // Check for animation properties
-  const hasAnimation = await authContainer.evaluate((el) => {
+  const hasAnimation = await authContainer.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     return style.animation || style.transition || true;
   });
@@ -244,7 +244,7 @@ Then('the auth card should animate in with a fly effect', async function(this: C
 Then('the animation should fade in smoothly', async function(this: CustomWorld) {
   const authContainer = this.page.locator('.auth-container').first();
   
-  const hasFade = await authContainer.evaluate((el) => {
+  const hasFade = await authContainer.evaluate((el: HTMLElement) => {
     const style = window.getComputedStyle(el);
     return style.opacity === '1' || true;
   });
@@ -287,7 +287,7 @@ Then('the button should have a glow effect', async function(this: CustomWorld) {
   const exists = await yandexBtn.isVisible().catch(() => false);
   
   if (exists) {
-    const hasGlow = await yandexBtn.evaluate((el) => {
+    const hasGlow = await yandexBtn.evaluate((el: HTMLElement) => {
       const style = window.getComputedStyle(el);
       return style.boxShadow?.includes('252, 63') || false;
     });
@@ -301,7 +301,7 @@ Then('the button should lift slightly', async function(this: CustomWorld) {
   const exists = await yandexBtn.isVisible().catch(() => false);
   
   if (exists) {
-    const hasTransform = await yandexBtn.evaluate((el) => {
+    const hasTransform = await yandexBtn.evaluate((el: HTMLElement) => {
       const style = window.getComputedStyle(el);
       return style.transform?.includes('translateY') || false;
     });

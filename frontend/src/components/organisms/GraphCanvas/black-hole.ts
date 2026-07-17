@@ -61,7 +61,7 @@ export function isPointOverBlackHole(
 export function drawBlackHole(
   ctx: CanvasRenderingContext2D,
   blackHole: BlackHoleState,
-  animationTime: number
+  _animationTime: number
 ): void {
   const { x, y, radius, pulsePhase, hovered } = blackHole;
 

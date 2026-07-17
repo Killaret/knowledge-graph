@@ -25,7 +25,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25'
           cache-dependency-path: backend/go.sum
 
       - name: Download dependencies
@@ -35,7 +35,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           working-directory: ./backend
-          version: v1.56.0
+          version: v2.12.2
           args: --path-prefix=. --timeout=10m
           skip-cache: false
           install-mode: binary
@@ -78,6 +78,9 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
+      - name: Check root BDD TypeScript
+        run: npx tsc --noEmit -p ../tests/tsconfig.json
+
   # ============ NLP SERVICE TESTS ============
   nlp-checks:
     name: NLP Service Checks
@@ -115,7 +118,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25'
           cache-dependency-path: backend/go.sum
 
       - name: Validate JSON syntax
@@ -175,7 +178,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25'
           cache-dependency-path: backend/go.sum
 
       - name: Check GORM AutoMigrate compatibility
@@ -183,7 +186,7 @@ jobs:
           DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db?sslmode=disable
         run: |
           go mod download
-          go test -v ./internal/infrastructure/db/postgres -run TestAutoMigrate 2>&1 || true
+          go test -v ./internal/infrastructure/db/postgres -run TestAutoMigrate 2>&1
 
   # ============ STACKS IDENTITY CHECK ============
   stacks-identity-check:
@@ -270,11 +273,22 @@ jobs:
             echo "Waiting for backend... attempt $i/30"
             sleep 2
           done
+          if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            echo "❌ Backend failed to start"
+            exit 1
+          fi
 
       - name: Run all Playwright tests
+        env:
+          PLAYWRIGHT_DEV_SERVER: true
+          VITE_API_TARGET: http://127.0.0.1:8080
+          BACKEND_URL: http://localhost:8080
         run: npm test
 
       - name: Run all Cucumber tests
+        env:
+          VITE_API_TARGET: http://127.0.0.1:8080
+          BACKEND_URL: http://localhost:8080
         run: npm run test:cucumber
 
       - name: Upload test results
@@ -316,9 +330,6 @@ jobs:
         run: |
           npm install -g @lhci/cli
           lhci autorun --config=lighthouserc.cjs
-
-      - name: Run FPS performance tests
-        run: npx playwright test tests/performance/ --project=chromium
 
       - name: Upload performance results
         if: always()

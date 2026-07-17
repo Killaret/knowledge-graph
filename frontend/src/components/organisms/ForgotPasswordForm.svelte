@@ -13,7 +13,7 @@
     localError = null;
     
     if (!email.trim()) {
-      localError = 'Введите email';
+      localError = 'Email is required';
       return;
     }
     
@@ -31,40 +31,40 @@
 </script>
 
 <form class="forgot-form" onsubmit={handleSubmit}>
-  <h2>Восстановление пароля</h2>
-  
+  <h2>Password Recovery</h2>
+
   {#if isSent}
     <div class="success-message">
-      <p>✅ Письмо для сброса пароля отправлено на указанный email.</p>
-      <p>Проверьте вашу почту и следуйте инструкциям.</p>
+      <p>✅ A password reset email has been sent to the specified address.</p>
+      <p>Check your inbox and follow the instructions.</p>
     </div>
-    <a href="/auth/login" class="back-link">Вернуться к входу</a>
+    <a href="/auth/login" class="back-link">Back to login</a>
   {:else}
     <p class="description">
-      Введите ваш email, и мы отправим вам ссылку для сброса пароля.
+      Enter your email and we will send you a password reset link.
     </p>
-    
+
     <div class="form-group">
       <label for="email">Email</label>
       <input
         type="email"
         id="email"
         bind:value={email}
-        placeholder="Введите ваш email"
+        placeholder="Enter your email"
         required
       />
     </div>
-    
+
     {#if localError}
       <ApiErrorDisplay error={{ message: localError, code: 'FORGOT_PASSWORD_ERROR' }} />
     {/if}
-    
+
     <Button type="submit" variant="primary" disabled={isLoading}>
-      {isLoading ? 'Отправка...' : 'Отправить'}
+      {isLoading ? 'Sending...' : 'Send'}
     </Button>
-    
+
     <div class="form-links">
-      <a href="/auth/login">Вспомнили пароль? Войти</a>
+      <a href="/auth/login">Remembered your password? Sign in</a>
     </div>
   {/if}
 </form>

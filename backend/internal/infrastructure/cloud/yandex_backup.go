@@ -12,11 +12,11 @@ import (
 
 // YandexBackupService handles backup operations to Yandex.Disk via WebDAV
 type YandexBackupService struct {
-	client        *http.Client
-	oauthToken    string
-	backupFolder  string
-	maxBackups    int
-	maxRetries    int
+	client       *http.Client
+	oauthToken   string
+	backupFolder string
+	maxBackups   int
+	maxRetries   int
 }
 
 // YandexConfig holds Yandex.Disk configuration
@@ -283,6 +283,6 @@ func (s *YandexBackupService) cleanupOldBackups(ctx context.Context) {
 	// Sort files by name (assuming timestamp in filename)
 	// and delete oldest ones
 	for i := 0; i < len(files)-s.maxBackups; i++ {
-		s.DeleteBackup(ctx, files[i])
+		_ = s.DeleteBackup(ctx, files[i])
 	}
 }

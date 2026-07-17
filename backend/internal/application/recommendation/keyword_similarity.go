@@ -289,7 +289,7 @@ func (c *CosineSimilarity) Similarity(source []string, target []string, weightsS
 	}
 
 	cosine := dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
-	
+
 	// Защита от численных ошибок
 	if cosine > 1.0 {
 		return 1.0

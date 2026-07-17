@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 
@@ -9,18 +10,34 @@ from .models import (
     ExtractKeywordsResponse,
     Keyword,
 )
-from .nlp_utils import ensure_model_loaded, extract_keywords, get_embedding_model
+from .nlp_utils import (
+    ensure_model_loaded,
+    extract_keywords,
+    get_embedding_model,
+    is_model_loaded,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="NLP Service for Knowledge Graph")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Preload embedding model on startup so /health and endpoints respond quickly."""
+    logger.info("Preloading embedding model on startup...")
+    if not ensure_model_loaded():
+        raise RuntimeError("Failed to preload embedding model")
+    logger.info("Embedding model ready")
+    yield
+
+
+app = FastAPI(title="NLP Service for Knowledge Graph", lifespan=lifespan)
 
 
 @app.get("/health")
 async def health():
-    """Health check — loads model from local cache on first call."""
-    if not ensure_model_loaded():
+    """Health check — model is preloaded at startup."""
+    if not is_model_loaded():
         raise HTTPException(status_code=503, detail="Embedding model not loaded")
     return {
         "status": "healthy",

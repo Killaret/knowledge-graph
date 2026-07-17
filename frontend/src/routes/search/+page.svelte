@@ -194,11 +194,7 @@
     color: var(--color-text-secondary, #6b7280);
   }
 
-  .no-results-icon, .empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
+
 
   .no-results h2, .empty-state h2 {
     color: var(--color-text, #1f2937);

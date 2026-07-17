@@ -68,7 +68,7 @@ describe('ToastNotification', () => {
       }
     });
 
-    const closeButton = screen.getByLabelText('Закрыть уведомление');
+    const closeButton = screen.getByLabelText('Close notification');
     await fireEvent.click(closeButton);
 
     vi.advanceTimersByTime(400);

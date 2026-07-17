@@ -6,24 +6,24 @@ import type { ErrorResponse } from '$shared/types/errors';
 describe('ApiErrorDisplay', () => {
   const mockError: ErrorResponse = {
     code: 'VALIDATION_ERROR',
-    message: 'Некорректные входные данные'
+    message: 'Invalid input data'
   };
 
   const mockErrorWithDetails: ErrorResponse = {
     code: 'VALIDATION_ERROR',
-    message: 'Некорректные входные данные',
+    message: 'Invalid input data',
     details: [
       {
         field: 'title',
         reason: 'required',
-        message: 'Поле обязательно для заполнения',
+        message: 'Field is required',
         received: '',
         expected: 'non-empty string'
       },
       {
         field: 'content',
         reason: 'too_short',
-        message: 'Слишком короткое содержание'
+        message: 'Content is too short'
       }
     ]
   };
@@ -31,8 +31,8 @@ describe('ApiErrorDisplay', () => {
   it('renders with error data (code and message visible)', () => {
     render(ApiErrorDisplay, { props: { error: mockError } });
 
-    expect(screen.getByText('Ошибка: VALIDATION_ERROR')).toBeInTheDocument();
-    expect(screen.getByText('Некорректные входные данные')).toBeInTheDocument();
+    expect(screen.getByText('Error: VALIDATION_ERROR')).toBeInTheDocument();
+    expect(screen.getByText('Invalid input data')).toBeInTheDocument();
     expect(screen.getByText('⚠️')).toBeInTheDocument();
   });
 
@@ -48,24 +48,24 @@ describe('ApiErrorDisplay', () => {
   it('displays details list when details are provided', () => {
     render(ApiErrorDisplay, { props: { error: mockErrorWithDetails } });
 
-    expect(screen.getByText('Детали:')).toBeInTheDocument();
+    expect(screen.getByText('Details:')).toBeInTheDocument();
     expect(screen.getByText('title')).toBeInTheDocument();
-    expect(screen.getByText('Поле обязательно для заполнения')).toBeInTheDocument();
+    expect(screen.getByText('Field is required')).toBeInTheDocument();
     expect(screen.getByText('content')).toBeInTheDocument();
-    expect(screen.getByText('Слишком короткое содержание')).toBeInTheDocument();
+    expect(screen.getByText('Content is too short')).toBeInTheDocument();
   });
 
   it('displays received value in details when available', () => {
     render(ApiErrorDisplay, { props: { error: mockErrorWithDetails } });
 
-    expect(screen.getByText('(получено: "")')).toBeInTheDocument();
+    expect(screen.getByText('(received: "")')).toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', async () => {
     const onClose = vi.fn();
     render(ApiErrorDisplay, { props: { error: mockError, onClose } });
 
-    const closeButton = screen.getByLabelText('Закрыть ошибку');
+    const closeButton = screen.getByLabelText('Close error');
     await fireEvent.click(closeButton);
 
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -81,7 +81,7 @@ describe('ApiErrorDisplay', () => {
   it('close button has correct aria-label', () => {
     render(ApiErrorDisplay, { props: { error: mockError } });
 
-    const closeButton = screen.getByLabelText('Закрыть ошибку');
+    const closeButton = screen.getByLabelText('Close error');
     expect(closeButton).toBeInTheDocument();
     expect(closeButton).toHaveAttribute('type', 'button');
   });
@@ -89,36 +89,36 @@ describe('ApiErrorDisplay', () => {
   it('does not show details section when details are empty', () => {
     const errorWithoutDetails: ErrorResponse = {
       code: 'NOT_FOUND',
-      message: 'Заметка не найдена',
+      message: 'Note not found',
       details: []
     };
 
     render(ApiErrorDisplay, { props: { error: errorWithoutDetails } });
 
-    expect(screen.queryByText('Детали:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Details:')).not.toBeInTheDocument();
   });
 
   it('does not show details section when details are undefined', () => {
     render(ApiErrorDisplay, { props: { error: mockError } });
 
-    expect(screen.queryByText('Детали:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Details:')).not.toBeInTheDocument();
   });
 
   it('works without onClose callback', async () => {
     render(ApiErrorDisplay, { props: { error: mockError } });
 
-    const closeButton = screen.getByLabelText('Закрыть ошибку');
+    const closeButton = screen.getByLabelText('Close error');
     // Should not throw when clicking without onClose
     await fireEvent.click(closeButton);
     
     // Component should still be rendered
-    expect(screen.getByText('Ошибка: VALIDATION_ERROR')).toBeInTheDocument();
+    expect(screen.getByText('Error: VALIDATION_ERROR')).toBeInTheDocument();
   });
 
   it('automatically renders a 404 illustration for NOT_FOUND errors', () => {
     const notFoundError: ErrorResponse = {
       code: 'NOT_FOUND',
-      message: 'Заметка не найдена'
+      message: 'Note not found'
     };
 
     render(ApiErrorDisplay, { props: { error: notFoundError } });

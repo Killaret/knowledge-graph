@@ -5,7 +5,7 @@ export function drawChromaticMaw(
   x: number,
   y: number,
   r: number,
-  params: AnomalyParams
+  _params: AnomalyParams
 ): void {
   ctx.save();
   ctx.translate(x, y);

@@ -107,7 +107,7 @@
   <button 
     class="toast-close"
     onclick={closeToast}
-    aria-label="Закрыть уведомление"
+    aria-label="Close notification"
   >
     ×
   </button>

@@ -3,16 +3,16 @@ services:
     image: pgvector/pgvector:pg16
     container_name: kg-test-postgres
     environment:
-      POSTGRES_USER: kb_user
-      POSTGRES_PASSWORD: kb_password
-      POSTGRES_DB: knowledge_test
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-kb_user}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-kb_password}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-knowledge_test}
     volumes:
       - test_postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     ports:
       - "15434:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kb_user} -d ${POSTGRES_DB:-knowledge_test}"]
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_POSTGRES_USER:-kb_user} -d ${TEST_POSTGRES_DB:-knowledge_test}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,6 +33,10 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   mongo-test:
     image: mongo:7
@@ -47,6 +51,10 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   nlp-test:
     build: ./nlp-service
@@ -54,10 +62,10 @@ services:
     ports:
       - "15002:5000"
     environment:
-      - MODEL_NAME=all-MiniLM-L6-V2
+      - MODEL_NAME=all-MiniLM-L6-v2
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
-      - HF_HUB_OFFLINE=1
+      - HF_HUB_OFFLINE=0
     volumes:
       - ./huggingface_cache:/root/.cache/huggingface
     healthcheck:
@@ -67,6 +75,10 @@ services:
       retries: 30
       start_period: 600s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   backend-test:
     build:
@@ -77,13 +89,13 @@ services:
     ports:
       - "127.0.0.1:8083:8080"
     environment:
-      DATABASE_URL: postgresql://kb_user:kb_password@postgres-test:5432/knowledge_test?sslmode=disable
+      DATABASE_URL: postgresql://${TEST_POSTGRES_USER:-kb_user}:${TEST_POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${TEST_POSTGRES_DB:-knowledge_test}?sslmode=disable
       REDIS_URL: redis-test:6379
       REDIS_FLUSH_ON_STARTUP: "true"
       NLP_SERVICE_URL: http://nlp-test:5000
       SKIP_AUTH: ${SKIP_AUTH:-false}
       MONGO_URL: mongodb://mongo-test:27017
-      MONGO_DATABASE: knowledge_test
+      MONGO_DATABASE: ${TEST_POSTGRES_DB:-knowledge_test}
       CORS_ALLOWED_ORIGINS: http://localhost:3002,http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://127.0.0.1:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:8080,http://127.0.0.1:8082
     depends_on:
       postgres-test:
@@ -101,6 +113,10 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   graph-service-test:
     build:
@@ -111,7 +127,7 @@ services:
       - "19090:9090"
       - "19091:9091"
     environment:
-      POSTGRES_URL: postgresql://kb_user:kb_password@postgres-test:5432/knowledge_test?sslmode=disable
+      POSTGRES_URL: postgresql://${TEST_POSTGRES_USER:-kb_user}:${TEST_POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${TEST_POSTGRES_DB:-knowledge_test}?sslmode=disable
       REDIS_URL: redis-test:6379
       HTTP_PORT: "9091"
       GRPC_PORT: "9090"
@@ -129,6 +145,10 @@ services:
       retries: 5
       start_period: 10s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   frontend-test:
     build:
@@ -158,6 +178,10 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   worker-test:
     build:
@@ -166,7 +190,7 @@ services:
       target: worker
     container_name: kg-test-worker
     environment:
-      DATABASE_URL: postgresql://kb_user:kb_password@postgres-test:5432/knowledge_test?sslmode=disable
+      DATABASE_URL: postgresql://${TEST_POSTGRES_USER:-kb_user}:${TEST_POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${TEST_POSTGRES_DB:-knowledge_test}?sslmode=disable
       REDIS_URL: redis-test:6379
       NLP_SERVICE_URL: http://nlp-test:5000
       SKIP_AUTH: ${SKIP_AUTH:-false}
@@ -178,7 +202,17 @@ services:
         condition: service_healthy
       nlp-test:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'worker' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
 volumes:
   test_postgres_data:

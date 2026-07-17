@@ -1,7 +1,7 @@
 /**
  * Anomaly helpers
  */
-import { graphConfig2D, anomalyConfig } from '$shared/config';
+import { anomalyConfig } from '$shared/config';
 import { stringHash } from '../../helpers';
 
 /**

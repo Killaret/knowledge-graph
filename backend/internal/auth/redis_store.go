@@ -58,17 +58,17 @@ func (s *RedisTokenStore) IsTokenBlacklisted(ctx context.Context, token string) 
 func (s *RedisTokenStore) StoreRefreshToken(ctx context.Context, userID string, token string, expiresAt time.Time) error {
 	hash := hashToken(token)
 	key := s.key("refresh:" + hash)
-	
+
 	data := map[string]interface{}{
 		"user_id": userID,
 		"created": time.Now().Unix(),
 	}
-	
+
 	ttl := time.Until(expiresAt)
 	if ttl <= 0 {
 		return fmt.Errorf("token already expired")
 	}
-	
+
 	return s.client.HSet(ctx, key, data).Err()
 }
 
@@ -76,7 +76,7 @@ func (s *RedisTokenStore) StoreRefreshToken(ctx context.Context, userID string, 
 func (s *RedisTokenStore) ValidateRefreshToken(ctx context.Context, token string) (string, error) {
 	hash := hashToken(token)
 	key := s.key("refresh:" + hash)
-	
+
 	// Check if blacklisted first
 	blacklisted, err := s.IsTokenBlacklisted(ctx, token)
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *RedisTokenStore) ValidateRefreshToken(ctx context.Context, token string
 	if blacklisted {
 		return "", fmt.Errorf("token has been revoked")
 	}
-	
+
 	// Get token data
 	userID, err := s.client.HGet(ctx, key, "user_id").Result()
 	if err == redis.Nil {
@@ -94,7 +94,7 @@ func (s *RedisTokenStore) ValidateRefreshToken(ctx context.Context, token string
 	if err != nil {
 		return "", err
 	}
-	
+
 	return userID, nil
 }
 
@@ -102,12 +102,12 @@ func (s *RedisTokenStore) ValidateRefreshToken(ctx context.Context, token string
 func (s *RedisTokenStore) RevokeRefreshToken(ctx context.Context, token string, ttl time.Duration) error {
 	hash := hashToken(token)
 	key := s.key("refresh:" + hash)
-	
+
 	// Delete from active tokens
 	if err := s.client.Del(ctx, key).Err(); err != nil {
 		return err
 	}
-	
+
 	// Add to blacklist
 	return s.BlacklistToken(ctx, token, ttl)
 }
@@ -116,7 +116,7 @@ func (s *RedisTokenStore) RevokeRefreshToken(ctx context.Context, token string, 
 func (s *RedisTokenStore) StorePasswordResetToken(ctx context.Context, userID string, token string, ttl time.Duration) error {
 	hash := hashToken(token)
 	key := s.key("password_reset:" + hash)
-	
+
 	return s.client.Set(ctx, key, userID, ttl).Err()
 }
 
@@ -124,7 +124,7 @@ func (s *RedisTokenStore) StorePasswordResetToken(ctx context.Context, userID st
 func (s *RedisTokenStore) ValidatePasswordResetToken(ctx context.Context, token string) (string, error) {
 	hash := hashToken(token)
 	key := s.key("password_reset:" + hash)
-	
+
 	userID, err := s.client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return "", fmt.Errorf("invalid or expired token")
@@ -132,7 +132,7 @@ func (s *RedisTokenStore) ValidatePasswordResetToken(ctx context.Context, token 
 	if err != nil {
 		return "", err
 	}
-	
+
 	return userID, nil
 }
 
@@ -157,7 +157,7 @@ func (s *RedisTokenStore) StorePKCE(ctx context.Context, state string, pkce *PKC
 // GetPKCE retrieves PKCE parameters by state
 func (s *RedisTokenStore) GetPKCE(ctx context.Context, state string) (*PKCE, error) {
 	key := s.key("pkce:" + state)
-	
+
 	data, err := s.client.HGetAll(ctx, key).Result()
 	if err == redis.Nil || len(data) == 0 {
 		return nil, fmt.Errorf("pkce data not found")
@@ -165,10 +165,10 @@ func (s *RedisTokenStore) GetPKCE(ctx context.Context, state string) (*PKCE, err
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Delete after retrieval (one-time use)
 	defer s.client.Del(ctx, key)
-	
+
 	return &PKCE{
 		CodeChallenge:       data["code_challenge"],
 		CodeChallengeMethod: data["code_challenge_method"],
@@ -189,7 +189,7 @@ func (s *RedisTokenStore) CachePermission(ctx context.Context, userID, resource,
 // CheckCachedPermission checks cached user permissions
 func (s *RedisTokenStore) CheckCachedPermission(ctx context.Context, userID, resource, action string) (bool, bool, error) {
 	key := s.key(fmt.Sprintf("perm:%s:%s:%s", userID, resource, action))
-	
+
 	val, err := s.client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return false, false, nil // Not cached
@@ -197,14 +197,14 @@ func (s *RedisTokenStore) CheckCachedPermission(ctx context.Context, userID, res
 	if err != nil {
 		return false, false, err
 	}
-	
+
 	return val == "1", true, nil
 }
 
 // InvalidatePermissionCache clears permission cache for a user
 func (s *RedisTokenStore) InvalidatePermissionCache(ctx context.Context, userID string) error {
 	pattern := s.key("perm:" + userID + ":*")
-	
+
 	// Use scan to find and delete keys
 	var cursor uint64
 	for {
@@ -212,18 +212,18 @@ func (s *RedisTokenStore) InvalidatePermissionCache(ctx context.Context, userID 
 		if err != nil {
 			return err
 		}
-		
+
 		if len(keys) > 0 {
 			if err := s.client.Del(ctx, keys...).Err(); err != nil {
 				return err
 			}
 		}
-		
+
 		cursor = nextCursor
 		if cursor == 0 {
 			break
 		}
 	}
-	
+
 	return nil
 }

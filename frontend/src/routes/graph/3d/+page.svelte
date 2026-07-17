@@ -53,25 +53,5 @@
     to { transform: rotate(360deg); }
   }
 
-  .stats-bar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 8px;
-    font-size: 14px;
-    color: #94a3b8;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-  }
 
-  .stats-bar strong {
-    color: #88aaff;
-    font-weight: 600;
-  }
 </style>

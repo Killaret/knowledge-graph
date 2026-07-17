@@ -112,16 +112,16 @@
   </div>
   
   <div class="form-group">
-    <label for="locale">Language / Язык</label>
+    <label for="locale">Language</label>
     <select
       id="locale"
       bind:value={selectedLocale}
       onchange={(e) => handleLocaleChange(e.currentTarget.value as Locale)}
     >
       <option value="en">English</option>
-      <option value="ru">Русский</option>
+      <option value="ru">Russian</option>
     </select>
-    <span class="hint">Select your preferred language / Выберите предпочитаемый язык</span>
+    <span class="hint">Select your preferred language</span>
   </div>
   
   {#if localError}
@@ -150,7 +150,7 @@
   <Modal title={formatMessage('delete.confirm', selectedLocale, { item: 'account' })} open={showDeleteConfirm} onClose={closeDeleteConfirm}>
     <div class="delete-confirm">
       <p class="warning">
-        ⚠️ {selectedLocale === 'en' ? 'Warning! This action is irreversible. All your data will be deleted.' : 'Внимание! Это действие необратимо. Все ваши данные будут удалены.'}
+        ⚠️ Warning! This action is irreversible. All your data will be deleted.
       </p>
       
       <div class="form-group">
@@ -159,7 +159,7 @@
           type="password"
           id="delete-password"
           bind:value={deletePassword}
-          placeholder={selectedLocale === 'en' ? 'Your password' : 'Ваш пароль'}
+          placeholder="Your password"
         />
       </div>
       

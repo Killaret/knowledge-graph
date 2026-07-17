@@ -90,6 +90,7 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 		}
 		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
 			// Log error but continue
+			_ = err
 		}
 	}
 }
@@ -105,6 +106,7 @@ type deleteBatchRequest struct {
 	IDs []string `json:"ids" binding:"required,dive,uuid"`
 }
 
+//nolint:unused
 type noteResponse struct {
 	ID       string                 `json:"id"`
 	Title    string                 `json:"title"`
@@ -113,6 +115,7 @@ type noteResponse struct {
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
+//nolint:unused
 var noteValidationMessages = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",

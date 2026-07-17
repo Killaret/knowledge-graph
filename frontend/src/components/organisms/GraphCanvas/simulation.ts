@@ -12,19 +12,6 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// Compute fade progress by stable nodes (small velocity + valid position)
-function computeStableProgress(currentNodes: any[], totalNodes: number): number {
-  if (totalNodes === 0) return 1;
-
-  const stableNodes = currentNodes.filter((n: any) =>
-    n.x !== undefined && !isNaN(n.x) &&
-    n.y !== undefined && !isNaN(n.y) &&
-    Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2
-  ).length;
-
-  return Math.min(stableNodes / totalNodes, 1);
-}
-
 function anyOpacityBelowOne(state: SimulationState): boolean {
   for (const value of state.nodeOpacity.values()) {
     if (value < 0.999) return true;
@@ -44,52 +31,15 @@ function initializeOpacityMaps(
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
 
-  // Calculate center of the graph for distance-based wave animation
-  let centerX = 0, centerY = 0;
-  if (nodes.length > 0) {
-    const validNodes = nodes.filter(n => n.x !== undefined && n.y !== undefined);
-    if (validNodes.length > 0) {
-      centerX = validNodes.reduce((sum, n) => sum + n.x!, 0) / validNodes.length;
-      centerY = validNodes.reduce((sum, n) => sum + n.y!, 0) / validNodes.length;
-    }
-  }
-
-  // Calculate max distance for normalization
-  let maxDistance = 0;
-  const nodeDistances = new Map<string, number>();
-
-  nodes.forEach(node => {
-    if (node.x !== undefined && node.y !== undefined) {
-      const distance = Math.hypot(node.x - centerX, node.y - centerY);
-      nodeDistances.set(node.id, distance);
-      if (distance > maxDistance) maxDistance = distance;
-    }
-  });
-
-  // Initialize node opacity based on distance (wave effect)
-  nodes.forEach(node => {
-    const distance = nodeDistances.get(node.id) || 0;
-    const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0;
-    // Start at 0, will fade in based on distance delay
-    state.nodeOpacity.set(node.id, 0);
-  });
-
   // Initialize link opacity (links fade in after their source/target nodes)
   links.forEach((link, index) => {
     const linkId = `${link.source}-${link.target}-${index}`;
     state.linkOpacity.set(linkId, 0);
   });
-}
 
-// Interpolate opacity values towards target
-function interpolateOpacity(
-  opacityMap: Map<string, number>,
-  targetOpacity: number,
-  factor: number = 0.1
-): void {
-  opacityMap.forEach((currentOpacity, key) => {
-    const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * factor;
-    opacityMap.set(key, Math.min(Math.max(newOpacity, 0), 1));
+  // Initialize node opacity
+  nodes.forEach(node => {
+    state.nodeOpacity.set(node.id, 0);
   });
 }
 
@@ -97,25 +47,6 @@ function startFadeAnimation(state: SimulationState, totalNodes: number, onStable
   if (state.fadeAnimationId !== null) {
     cancelAnimationFrame(state.fadeAnimationId);
     state.fadeAnimationId = null;
-  }
-
-  // Calculate center and max distance for wave animation
-  let centerX = 0, centerY = 0, maxDistance = 0;
-  const nodeDistances = new Map<string, number>();
-
-  if (state.simulation) {
-    const currentNodes = state.simulation.nodes();
-    const validNodes = currentNodes.filter((n: any) => n.x !== undefined && n.y !== undefined);
-    if (validNodes.length > 0) {
-      centerX = validNodes.reduce((sum: number, n: any) => sum + n.x, 0) / validNodes.length;
-      centerY = validNodes.reduce((sum: number, n: any) => sum + n.y, 0) / validNodes.length;
-
-      validNodes.forEach((n: any) => {
-        const distance = Math.hypot(n.x - centerX, n.y - centerY);
-        nodeDistances.set(n.id, distance);
-        if (distance > maxDistance) maxDistance = distance;
-      });
-    }
   }
 
   const animationStartTime = performance.now();
@@ -127,16 +58,11 @@ function startFadeAnimation(state: SimulationState, totalNodes: number, onStable
       return;
     }
 
-    const currentNodes = state.simulation.nodes();
-    const progress = computeStableProgress(currentNodes, totalNodes);
     const elapsedTime = timestamp - animationStartTime;
     const waveProgress = Math.min(elapsedTime / WAVE_DURATION, 1);
 
-    // Update node opacity based on distance-based wave
+    // Update node opacity
     state.nodeOpacity.forEach((currentOpacity, nodeId) => {
-      const distance = nodeDistances.get(nodeId) || 0;
-      const normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0;
-      // No delay - instant fade-in for all nodes
       const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
       const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
       state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
@@ -210,7 +136,7 @@ export function startSimulation(
 
   // Filter links to only include those where both source and target nodes exist
   const validLinks = filterValidLinks(nodes, links);
-  if (validLinks.length !== links.length) {
+  if (validLinks.length !== links.length && import.meta.env.DEV) {
     console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
   }
 
@@ -236,7 +162,6 @@ export function startSimulation(
   initializeOpacityMaps(nodes, edges, state);
 
   const totalNodes = nodes.length;
-  let tickCount = 0;
 
   state.simulation = d3Force
     .forceSimulation(simulationNodes as any)
@@ -254,7 +179,6 @@ export function startSimulation(
     .alphaDecay(0.1) // Even faster cooling
     .on('tick', () => {
       onTick();
-      tickCount++;
     })
     .on('end', () => {
       // Simulation ended - nodes are stable

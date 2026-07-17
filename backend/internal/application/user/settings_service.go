@@ -15,8 +15,8 @@ import (
 
 // SettingsService provides user settings management with caching
 type SettingsService struct {
-	repo   userDomain.UserSettingsRepository
-	redis  *redis.Client
+	repo     userDomain.UserSettingsRepository
+	redis    *redis.Client
 	cacheTTL time.Duration
 }
 
@@ -185,7 +185,7 @@ func (s *SettingsService) InvalidateCache(ctx context.Context, userID uuid.UUID)
 	}
 
 	pattern := fmt.Sprintf("setting:%s:*", userID.String())
-	
+
 	// Use scan to find and delete keys
 	var cursor uint64
 	for {
@@ -193,13 +193,13 @@ func (s *SettingsService) InvalidateCache(ctx context.Context, userID uuid.UUID)
 		if err != nil {
 			return err
 		}
-		
+
 		if len(keys) > 0 {
 			if err := s.redis.Del(ctx, keys...).Err(); err != nil {
 				return err
 			}
 		}
-		
+
 		cursor = nextCursor
 		if cursor == 0 {
 			break

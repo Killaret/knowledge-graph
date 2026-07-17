@@ -30,14 +30,13 @@
     try {
       let rawData: GraphData;
       if (showFullGraph) {
-        // Загружаем полный граф всех заметок
+        // Load the full graph of all notes
         rawData = await getFullGraphData();
       } else {
-        // Загружаем локальный граф
+        // Load the local graph
         try {
           notes = await getNotes();
         } catch {
-          console.log('[graph/+page] No user notes, trying public notes');
           notes = [];
         }
         
@@ -45,8 +44,7 @@
           const centerNote = notes[0];
           rawData = await getGraphData(centerNote.id, 3);
         } else {
-          // Если нет заметок, загружаем полный граф (публичные заметки)
-          console.log('[graph/+page] No notes found, loading full graph as fallback');
+          // If there are no notes, load the full graph (public notes)
           rawData = await getFullGraphData();
         }
       }
@@ -55,7 +53,6 @@
       try {
         knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
       } catch {
-        console.log('[graph/+page] Knowledge Core not found, help content will be empty');
         knowledgeCore = null;
       }
 
@@ -385,15 +382,6 @@
     gap: 16px;
     z-index: 1000;
     color: white;
-  }
-
-  .center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 16px;
   }
 
   .spinner {

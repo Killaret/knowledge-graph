@@ -12,17 +12,17 @@
     const state = $page.url.searchParams.get('state');
     
     if (!code || !state) {
-      localError = 'Отсутствуют необходимые параметры авторизации';
+      localError = 'Missing required authorization parameters';
       isProcessing = false;
       return;
     }
-    
+
     const success = await handleYandexCallback(code, state);
-    
+
     if (success) {
       goto('/');
     } else {
-      localError = error() || 'Ошибка авторизации через Яндекс';
+      localError = error() || 'Yandex authorization failed';
       isProcessing = false;
     }
   });
@@ -33,12 +33,12 @@
     {#if isProcessing}
       <div class="loading">
         <div class="spinner"></div>
-        <p>Выполняется вход через Яндекс...</p>
+        <p>Signing in with Yandex...</p>
       </div>
     {:else if localError}
       <div class="error">
         <p>❌ {localError}</p>
-        <a href="/auth/login" class="back-link">Вернуться к входу</a>
+        <a href="/auth/login" class="back-link">Back to login</a>
       </div>
     {/if}
   </div>

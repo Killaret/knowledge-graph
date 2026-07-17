@@ -296,7 +296,8 @@ Then('I should see the fullscreen 2D force graph', async function(this: ITestWor
 
 Then('I am in list view', async function(this: ITestWorld) {
   // First ensure we're on main page
-  await this.page.goto('http://localhost:5173/', { timeout: 60000 });
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  await this.page.goto(`${baseUrl}/`, { timeout: 60000 });
   await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(2000);
   
@@ -483,7 +484,8 @@ Then('all nodes should be visible', async function(this: ITestWorld) {
 
 // Alternative "I am on the main page" without parameter
 Given('I am on the main page', async function(this: ITestWorld) {
-  await this.page.goto('http://localhost:5173/');
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  await this.page.goto(`${baseUrl}/`);
   await this.page.waitForLoadState('domcontentloaded');
   await this.page.waitForTimeout(500);
 });

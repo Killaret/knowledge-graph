@@ -1,9 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { isAuthenticated } from '$shared/stores/auth.svelte';
-  import { getCurrentLocale, setLocale, type Locale } from '$shared/utils/i18n';
-
-  console.log('[FloatingControls] Component loaded');
+  import LangSwitcher from '$components/atoms/LangSwitcher.svelte';
 
   const {
     onCreate,
@@ -12,7 +10,6 @@
     onFilter,
     onImport,
     onExport,
-    noteId = '',
     typeFilters = [],
     selectedType = 'all',
     typeCounts = {},
@@ -24,38 +21,15 @@
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
-    noteId?: string;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
     currentView?: 'graph' | 'list';
   } = $props();
 
-  console.log('[FloatingControls] Props:', {
-    onCreate: !!onCreate,
-    onSearch: !!onSearch,
-    onToggleView: !!onToggleView,
-    onFilter: !!onFilter,
-    onImport: !!onImport,
-    onExport: !!onExport,
-    noteId,
-    typeFiltersCount: typeFilters.length,
-    selectedType,
-    typeCounts,
-    currentView
-  });
-  
   let searchQuery = $state('');
   let showMenu = $state(false);
   let filtersContainer: HTMLDivElement | null = $state(null);
-  let currentLocale = $state<Locale>(getCurrentLocale());
-
-  function toggleLocale() {
-    const next: Locale = currentLocale === 'en' ? 'ru' : 'en';
-    currentLocale = next;
-    setLocale(next);
-    window.location.reload();
-  }
 
   function scrollFilters(dir: 'left' | 'right') {
     if (filtersContainer) {
@@ -243,16 +217,7 @@
   </div>
 
   <!-- Language Toggle -->
-  <button
-    type="button"
-    class="lang-toggle"
-    onclick={toggleLocale}
-    title="Switch language"
-    aria-label="Toggle language"
-    data-testid="lang-toggle"
-  >
-    {currentLocale === 'en' ? 'RU' : 'EN'}
-  </button>
+  <LangSwitcher />
 
   <!-- Create Button -->
   <button type="button" class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button" aria-label="Create new note">
@@ -442,27 +407,6 @@
   .create-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
-  }
-
-  .lang-toggle {
-    flex-shrink: 0;
-    padding: 6px 10px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    border-radius: 14px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 700;
-    color: #334155;
-    letter-spacing: 0.03em;
-    transition: all 0.2s;
-    line-height: 1;
-  }
-
-  .lang-toggle:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #1e293b;
   }
 
   .login-btn {

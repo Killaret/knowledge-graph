@@ -23,7 +23,7 @@ Given('I have test notes with connections', async function (this: ITestWorld) {
     content: 'Central node for progressive loading test',
     type: 'star',
   });
-  testNoteIds.push(centerNote.id);
+  testNoteIds.push(centerNote.data.id);
 
   // Create surrounding notes with links
   for (let i = 0; i < 5; i++) {
@@ -32,12 +32,12 @@ Given('I have test notes with connections', async function (this: ITestWorld) {
       content: `Content for note ${i}`,
       type: 'planet',
     });
-    testNoteIds.push(linkedNote.id);
-    await createLink(this.request, centerNote.id, linkedNote.id, 0.7);
+    testNoteIds.push(linkedNote.data.id);
+    await createLink(this.request, centerNote.data.id, linkedNote.data.id, 0.7);
   }
 
   // Store center note ID for navigation
-  (this as any).centerNoteId = centerNote.id;
+  (this as any).centerNoteId = centerNote.data.id;
 });
 
 Given('I navigate to {string}', async function (this: ITestWorld, path: string) {

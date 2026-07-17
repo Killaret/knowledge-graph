@@ -124,7 +124,7 @@
     }
   });
 
-  let canvas: HTMLCanvasElement | null = null;
+  let canvas: HTMLCanvasElement | null = $state(null);
   let ctx: CanvasRenderingContext2D | null = null;
   let width = 800;
   let height = 600;
@@ -213,7 +213,7 @@
 
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
-  let searchInput: HTMLInputElement | null = null;
+  let searchInput: HTMLInputElement | null = $state(null);
 
   // Duplicate link warning state
   let duplicateWarning = $state<{ message: string; x: number; y: number; linkId: string } | null>(null);
@@ -376,9 +376,7 @@
       return;
     }
 
-    console.log('[GraphCanvas] Applying delta:', delta);
-
-    // Используем delta модуль для применения обновлений
+    // Apply incremental delta updates to the simulation
     applyDeltaToSimulation(delta, {
       nodes,
       links,
@@ -898,7 +896,7 @@
           }
         },
         onUndo: () => {
-          console.log('[GraphCanvas] Undo not yet implemented');
+          // Undo is not implemented yet
         }
       }
     );
@@ -1130,7 +1128,9 @@
         ×
       </button>
     </div>
+    <label for="link-type" style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Type</label>
     <select
+      id="link-type"
       bind:value={linkFormState.newLinkType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
@@ -1139,8 +1139,9 @@
       <option value="related">🔀 Related</option>
       <option value="custom">✨ Custom</option>
     </select>
-    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Strength: {linkFormState.newLinkWeight.toFixed(1)}</label>
+    <label for="link-strength" style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;">Link Strength: {linkFormState.newLinkWeight.toFixed(1)}</label>
     <input
+      id="link-strength"
       type="range"
       min="0.1"
       max="1.0"

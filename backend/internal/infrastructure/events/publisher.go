@@ -31,14 +31,14 @@ type LinkEventPayload struct {
 
 // Publisher handles publishing events to Redis Pub/Sub
 type Publisher struct {
-	redis  *redis.Client
+	redis   *redis.Client
 	channel string
 }
 
 // NewPublisher creates a new event publisher
 func NewPublisher(redis *redis.Client, channel string) *Publisher {
 	return &Publisher{
-		redis:  redis,
+		redis:   redis,
 		channel: channel,
 	}
 }

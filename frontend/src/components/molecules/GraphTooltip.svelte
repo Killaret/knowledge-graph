@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import tippy from 'tippy.js';
-  import type { Instance, Props } from 'tippy.js';
+  import type { Instance } from 'tippy.js';
   import 'tippy.js/dist/tippy.css';
 
   const {
@@ -12,7 +12,6 @@
 
   let tippyInstance: Instance | null = $state(null);
   let currentContent: string = $state('');
-  let isVisible = $state(false);
 
   onMount(() => {
     tippyInstance = tippy(target, {
@@ -25,13 +24,7 @@
       theme: 'light',
       hideOnClick: false,
       interactive: true,
-      allowHTML: true,
-      onShow: () => {
-        isVisible = true;
-      },
-      onHide: () => {
-        isVisible = false;
-      }
+      allowHTML: true
     });
   });
 

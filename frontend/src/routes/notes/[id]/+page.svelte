@@ -29,10 +29,10 @@
       suggestions = await getSuggestions(id, 5);
     } catch (e: any) {
       if (e.response?.status === 404) {
-        error = 'Заметка не найдена';
+        error = 'Note not found';
         setTimeout(() => goto('/'), 3000);
       } else {
-        error = 'Note not found';
+        error = 'Failed to load note';
       }
     } finally {
       loading = false;
@@ -52,14 +52,14 @@
   <p>Loading...</p>
 {:else if error}
   <div class="note-error">
-    <StateIllustration type={error === 'Заметка не найдена' ? '404' : 'error'} />
+    <StateIllustration type={error === 'Note not found' ? '404' : 'error'} />
     <p class="error">{error}</p>
   </div>
 {:else if note}
   <div class="note-container">
     <BackButton href="/" />
     <h1 data-testid="note-detail-title">{note.title}</h1>
-    <div class="meta">Создано: {formatDateTime(note.created_at)}</div>
+    <div class="meta">Created: {formatDateTime(note.created_at)}</div>
     <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
       <button onclick={() => editModalOpen = true} class="edit-btn" data-testid="edit-note-btn">Edit</button>

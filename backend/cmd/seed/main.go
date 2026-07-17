@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -22,7 +21,7 @@ func main() {
 		log.Fatal("Database DSN is required: set DATABASE_URL or pass -dsn")
 	}
 
-	sqlBytes, err := ioutil.ReadFile(file)
+	sqlBytes, err := os.ReadFile(file)
 	if err != nil {
 		log.Fatalf("failed to read sql file: %v", err)
 	}

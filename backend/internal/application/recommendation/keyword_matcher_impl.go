@@ -15,9 +15,9 @@ type KeywordRepositoryWithWeights interface {
 
 // KeywordMatcherImpl — реализация KeywordMatcher с использованием KeywordSimilarity
 type KeywordMatcherImpl struct {
-	repo             KeywordRepositoryWithWeights
-	similarity       KeywordSimilarity
-	requiresWeights  bool
+	repo            KeywordRepositoryWithWeights
+	similarity      KeywordSimilarity
+	requiresWeights bool
 }
 
 // NewKeywordMatcherImpl создаёт новый KeywordMatcherImpl
@@ -59,7 +59,7 @@ func (k *KeywordMatcherImpl) Match(ctx context.Context, sourceID uuid.UUID, cand
 	results := make(map[uuid.UUID]float64, len(candidateIDs))
 	for _, candidateID := range candidateIDs {
 		candidateKeywordsMap := allKeywordsMap[candidateID]
-		
+
 		// Преобразуем в слайс строк
 		candidateKeywords := make([]string, 0, len(candidateKeywordsMap))
 		for kw := range candidateKeywordsMap {
@@ -73,7 +73,7 @@ func (k *KeywordMatcherImpl) Match(ctx context.Context, sourceID uuid.UUID, cand
 		} else {
 			similarity = k.similarity.Similarity(sourceKeywords, candidateKeywords, nil, nil)
 		}
-		
+
 		results[candidateID] = similarity
 	}
 

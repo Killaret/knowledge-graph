@@ -42,31 +42,31 @@
   });
   
   // Computed labels based on mode
-  const modalTitle = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Поделиться заметкой');
-  const tabUsers = $derived(currentMode === 'galactic' ? 'To Traveler' : 'Пользователю');
-  const tabLink = $derived(currentMode === 'galactic' ? 'Via Wormhole' : 'По ссылке');
-  const emailLabel = $derived(currentMode === 'galactic' ? 'Traveler Email' : 'Email пользователя');
+  const modalTitle = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Share Note');
+  const tabUsers = $derived(currentMode === 'galactic' ? 'To Traveler' : 'To User');
+  const tabLink = $derived(currentMode === 'galactic' ? 'Via Wormhole' : 'By Link');
+  const emailLabel = $derived(currentMode === 'galactic' ? 'Traveler Email' : 'User Email');
   const emailPlaceholder = $derived(currentMode === 'galactic' ? 'traveler@cosmos.net' : 'user@example.com');
-  const accessLevelLabel = $derived(currentMode === 'galactic' ? 'Access Level' : 'Уровень доступа');
-  const viewOnlyText = $derived(currentMode === 'galactic' ? 'Observation Only' : 'Только просмотр');
-  const editText = $derived(currentMode === 'galactic' ? 'Modification' : 'Редактирование');
-  const grantAccessText = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Предоставить доступ');
-  const grantingText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Создание доступа...');
-  const expiresLabel = $derived(currentMode === 'galactic' ? 'Expires (hours)' : 'Истекает через (часы)');
-  const expiresPlaceholder = $derived(currentMode === 'galactic' ? 'Indefinite' : 'Бессрочно');
-  const maxUsesLabel = $derived(currentMode === 'galactic' ? 'Max Uses' : 'Максимум использований');
-  const maxUsesPlaceholder = $derived(currentMode === 'galactic' ? 'Unlimited' : 'Без ограничений');
-  const linkLabel = $derived(currentMode === 'galactic' ? 'Portal Link' : 'Ссылка для доступа');
-  const copyText = $derived(currentMode === 'galactic' ? 'Copy' : 'Копировать');
-  const createLinkText = $derived(currentMode === 'galactic' ? 'Create Portal' : 'Создать ссылку');
-  const createNewLinkText = $derived(currentMode === 'galactic' ? 'Create New Portal' : 'Создать новую ссылку');
-  const creatingLinkText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Создание ссылки...');
-  const accessGrantedMsg = $derived((email: string) => currentMode === 'galactic' ? `Portal opened for ${email}` : `Доступ предоставлен пользователю ${email}`);
-  const linkCreatedMsg = $derived(currentMode === 'galactic' ? 'Portal opened' : 'Ссылка для доступа создана');
-  const linkCopiedMsg = $derived(currentMode === 'galactic' ? 'Portal coordinates copied' : 'Ссылка скопирована в буфер обмена');
-  const emailRequiredMsg = $derived(currentMode === 'galactic' ? 'Enter traveler email' : 'Введите email пользователя');
-  const shareErrorMsg = $derived(currentMode === 'galactic' ? 'Portal opening failed' : 'Ошибка при предоставлении доступа');
-  const linkErrorMsg = $derived(currentMode === 'galactic' ? 'Portal creation failed' : 'Ошибка при создании ссылки');
+  const accessLevelLabel = $derived(currentMode === 'galactic' ? 'Access Level' : 'Access Level');
+  const viewOnlyText = $derived(currentMode === 'galactic' ? 'Observation Only' : 'View Only');
+  const editText = $derived(currentMode === 'galactic' ? 'Modification' : 'Edit');
+  const grantAccessText = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Grant Access');
+  const grantingText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Granting Access...');
+  const expiresLabel = $derived(currentMode === 'galactic' ? 'Expires (hours)' : 'Expires (hours)');
+  const expiresPlaceholder = $derived(currentMode === 'galactic' ? 'Indefinite' : 'Indefinite');
+  const maxUsesLabel = $derived(currentMode === 'galactic' ? 'Max Uses' : 'Max Uses');
+  const maxUsesPlaceholder = $derived(currentMode === 'galactic' ? 'Unlimited' : 'Unlimited');
+  const linkLabel = $derived(currentMode === 'galactic' ? 'Portal Link' : 'Access Link');
+  const copyText = $derived(currentMode === 'galactic' ? 'Copy' : 'Copy');
+  const createLinkText = $derived(currentMode === 'galactic' ? 'Create Portal' : 'Create Link');
+  const createNewLinkText = $derived(currentMode === 'galactic' ? 'Create New Portal' : 'Create New Link');
+  const creatingLinkText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Creating link...');
+  const accessGrantedMsg = $derived((email: string) => currentMode === 'galactic' ? `Portal opened for ${email}` : `Access granted to ${email}`);
+  const linkCreatedMsg = $derived(currentMode === 'galactic' ? 'Portal opened' : 'Access link created');
+  const linkCopiedMsg = $derived(currentMode === 'galactic' ? 'Portal coordinates copied' : 'Link copied to clipboard');
+  const emailRequiredMsg = $derived(currentMode === 'galactic' ? 'Enter traveler email' : 'Enter user email');
+  const shareErrorMsg = $derived(currentMode === 'galactic' ? 'Portal opening failed' : 'Access grant failed');
+  const linkErrorMsg = $derived(currentMode === 'galactic' ? 'Portal creation failed' : 'Link creation failed');
   
   function closeModal() {
     dispatch('close');
@@ -126,27 +126,26 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="modal-backdrop" on:click={handleBackdropClick}>
+<div class="modal-backdrop" role="dialog" aria-modal="true" tabindex="-1" onclick={handleBackdropClick} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
   <div class="modal">
     <div class="modal-header">
       <h2>{modalTitle}</h2>
       <p class="note-title">«{noteTitle}»</p>
-      <button class="close-button" on:click={closeModal}>×</button>
+      <button class="close-button" onclick={closeModal}>×</button>
     </div>
     
     <div class="modal-tabs">
       <button 
         class="tab-button"
         class:active={activeTab === 'users'}
-        on:click={() => activeTab = 'users'}
+        onclick={() => activeTab = 'users'}
       >
         {tabUsers}
       </button>
       <button 
         class="tab-button"
         class:active={activeTab === 'link'}
-        on:click={() => activeTab = 'link'}
+        onclick={() => activeTab = 'link'}
       >
         {tabLink}
       </button>
@@ -183,7 +182,7 @@
           
           <button 
             class="action-button"
-            on:click={handleShareWithUser}
+            onclick={handleShareWithUser}
             disabled={isLoading || !userEmail.trim()}
           >
             {isLoading ? grantingText : grantAccessText}
@@ -235,7 +234,7 @@
                   />
                   <button 
                     class="copy-button"
-                    on:click={() => copyToClipboard(`${window.location.origin}/shared/${generatedLink?.token}`)}
+                    onclick={() => copyToClipboard(`${window.location.origin}/shared/${generatedLink?.token}`)}
                   >
                     {copyText}
                   </button>
@@ -246,7 +245,7 @@
           
           <button 
             class="action-button"
-            on:click={handleCreateLink}
+            onclick={handleCreateLink}
             disabled={isLoading}
           >
             {isLoading ? creatingLinkText : generatedLink ? createNewLinkText : createLinkText}

@@ -11,20 +11,20 @@ import (
 )
 
 // SettingKey defines valid setting keys
- type SettingKey string
+type SettingKey string
 
 // Valid setting keys
 const (
-	SettingKeyGalacticMode               SettingKey = "galactic_mode"
+	SettingKeyGalacticMode                 SettingKey = "galactic_mode"
 	SettingKeyShowAchievementNotifications SettingKey = "show_achievement_notifications"
-	SettingKeyPreferredLanguage          SettingKey = "preferred_language"
+	SettingKeyPreferredLanguage            SettingKey = "preferred_language"
 )
 
 // ValidSettingKeys contains all valid setting keys
 var ValidSettingKeys = map[SettingKey]bool{
-	SettingKeyGalacticMode:               true,
+	SettingKeyGalacticMode:                 true,
 	SettingKeyShowAchievementNotifications: true,
-	SettingKeyPreferredLanguage:          true,
+	SettingKeyPreferredLanguage:            true,
 }
 
 // Validate checks if the setting key is valid

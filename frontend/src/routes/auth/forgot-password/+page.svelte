@@ -12,9 +12,9 @@
   });
 </script>
 
-<AuthCard 
-  title="Восстановление пароля" 
-  subtitle="Введите email для получения ссылки"
+<AuthCard
+  title="Password Recovery"
+  subtitle="Enter your email to receive a reset link"
   showIcon={true}
 >
   <ForgotPasswordForm />

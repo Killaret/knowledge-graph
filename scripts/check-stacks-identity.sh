@@ -128,20 +128,25 @@ fi
 echo ""
 echo "[Step 5/6] Checking stack health..."
 
-# Check dev stack
-if curl -s http://localhost:8080/health > /dev/null 2>&1; then
-    echo "  Dev stack: OK"
+# In CI, dev/personal stacks are not running, so only report status without failing
+if [ -n "$CI" ]; then
+    echo "  CI environment detected: skipping live stack health checks"
 else
-    echo "  Dev stack: FAILED"
-    ((ERRORS++))
-fi
+    # Check dev stack
+    if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+        echo "  Dev stack: OK"
+    else
+        echo "  Dev stack: FAILED"
+        ((ERRORS++))
+    fi
 
-# Check personal stack
-if curl -s http://localhost:8082/health > /dev/null 2>&1; then
-    echo "  Personal stack: OK"
-else
-    echo "  Personal stack: FAILED"
-    ((ERRORS++))
+    # Check personal stack
+    if curl -s http://localhost:8082/health > /dev/null 2>&1; then
+        echo "  Personal stack: OK"
+    else
+        echo "  Personal stack: FAILED"
+        ((ERRORS++))
+    fi
 fi
 
 # Step 6: Verify healthcheck endpoints are accessible
