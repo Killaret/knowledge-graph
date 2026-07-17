@@ -2,7 +2,6 @@
 import { browser } from '$app/environment';
 import { isAuthenticated } from '$shared/stores/auth.svelte';
 import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
-import { getAllAchievements } from '$shared/api/users';
 
 // Типы для кэшированных данных
 interface PreloadedGraphData {
@@ -35,9 +34,8 @@ class PreloadServiceClass {
   private isPreloading: boolean = false;
   private preloadPromise: Promise<void> | null = null;
 
-  // TTL для кэша (5 минут для графа, 10 минут для достижений)
+  // TTL для кэша (5 минут для графа)
   private readonly GRAPH_TTL = 5 * 60 * 1000;
-  private readonly ACHIEVEMENTS_TTL = 10 * 60 * 1000;
 
   private constructor() {}
 
@@ -100,23 +98,10 @@ class PreloadServiceClass {
     }
 
     try {
-      const [graphData, achievementsData] = await Promise.allSettled([
-        this.preloadGraph(),
-        this.preloadAchievements()
-      ]);
+      await this.preloadGraph();
 
       if (import.meta.env.DEV) {
-        if (graphData.status === 'fulfilled') {
-          console.log('[PreloadService] Graph preloaded successfully');
-        } else {
-          console.warn('[PreloadService] Failed to preload graph:', graphData.reason);
-        }
-
-        if (achievementsData.status === 'fulfilled') {
-          console.log('[PreloadService] Achievements preloaded successfully');
-        } else {
-          console.warn('[PreloadService] Failed to preload achievements:', achievementsData.reason);
-        }
+        console.log('[PreloadService] Graph preloaded successfully');
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -165,24 +150,6 @@ class PreloadServiceClass {
       console.log('[PreloadService] Public graph preloaded successfully');
     } catch (error) {
       console.error('[PreloadService] Error preloading public graph:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Предзагружает список достижений
-   */
-  private async preloadAchievements(): Promise<void> {
-    try {
-      const achievementsData = await getAllAchievements();
-      
-      this.preloadedAchievements = {
-        achievements: achievementsData.achievements,
-        timestamp: Date.now(),
-        ttl: this.ACHIEVEMENTS_TTL
-      };
-    } catch (error) {
-      console.error('[PreloadService] Error preloading achievements:', error);
       throw error;
     }
   }

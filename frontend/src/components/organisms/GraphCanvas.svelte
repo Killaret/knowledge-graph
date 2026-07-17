@@ -878,6 +878,12 @@
         onHelpToggle: () => {
           hotkeysState.showHelpModal = !hotkeysState.showHelpModal;
         },
+        onNoteFormClose: () => {
+          handleNoteFormClose();
+        },
+        onLinkFormClose: () => {
+          handleLinkFormClose();
+        },
         onGhostNodeCreate: () => {
           if (canvas) {
             const rect = canvas.getBoundingClientRect();

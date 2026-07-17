@@ -74,9 +74,17 @@
     localError = null;
   }
 
-  function handleLocaleChange(locale: Locale) {
+  async function handleLocaleChange(locale: Locale) {
     selectedLocale = locale;
     setLocale(locale);
+
+    // Persist locale to backend user settings
+    try {
+      await usersApi.updateSetting('preferred_language', locale);
+    } catch (e) {
+      console.error('Failed to save locale setting:', e);
+    }
+
     // Reload page to apply new locale
     window.location.reload();
   }

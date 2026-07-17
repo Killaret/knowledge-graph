@@ -109,71 +109,37 @@ describe('usePreloadedData Hooks', () => {
   });
 
   describe('getAchievementsWithPreload', () => {
-    it('should return preloaded public achievements when available', async () => {
-      await PreloadService.startPreload();
-      
+    it('should fetch public achievements from server', async () => {
       const result = await getAchievementsWithPreload(false);
-      
-      expect(result).toEqual({ achievements: mockAchievementsData.achievements });
-      // getAllAchievements может быть вызван 1 раз из-за предзагрузки
-      expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
-    });
 
-    it('should fetch personal achievements when usePersonal is true', async () => {
-      await PreloadService.startPreload();
-      
-      const result = await getAchievementsWithPreload(true);
-      
-      expect(result).toEqual(mockPersonalAchievementsData);
-      expect(usersApi.getMyAchievements).toHaveBeenCalled();
-      // getAllAchievements может быть вызван 1 раз из-за предзагрузки
-      expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
-    });
-
-    it('should fetch public achievements when usePersonal is false and no preloaded data', async () => {
-      const result = await getAchievementsWithPreload(false);
-      
       expect(result).toEqual({ achievements: mockAchievementsData.achievements });
-      expect(usersApi.getAllAchievements).toHaveBeenCalled();
+      expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
       expect(usersApi.getMyAchievements).not.toHaveBeenCalled();
     });
 
-    it('should fetch personal achievements when usePersonal is true and no preloaded data', async () => {
+    it('should fetch personal achievements from server when usePersonal is true', async () => {
       const result = await getAchievementsWithPreload(true);
-      
+
       expect(result).toEqual(mockPersonalAchievementsData);
-      expect(usersApi.getMyAchievements).toHaveBeenCalled();
+      expect(usersApi.getMyAchievements).toHaveBeenCalledTimes(1);
       expect(usersApi.getAllAchievements).not.toHaveBeenCalled();
     });
 
     it('should handle API errors gracefully', async () => {
       vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
-      
-      await expect(getAchievementsWithPreload(false)).rejects.toThrow(mockAchievementsError);
-    });
 
-    it('should log when using preloaded achievements', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
-      await PreloadService.startPreload();
-      await getAchievementsWithPreload(false);
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[usePreloadedData] Using preloaded achievements data'
-      );
-      
-      consoleSpy.mockRestore();
+      await expect(getAchievementsWithPreload(false)).rejects.toThrow(mockAchievementsError);
     });
 
     it('should log when loading achievements from server', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       await getAchievementsWithPreload(false);
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         '[usePreloadedData] Loading all achievements from server'
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -181,7 +147,7 @@ describe('usePreloadedData Hooks', () => {
   describe('usePreloadedDataStatus', () => {
     it('should return correct status when no data is preloaded', () => {
       const status = usePreloadedDataStatus();
-      
+
       expect(status).toEqual({
         hasData: false,
         hasGraph: false,
@@ -189,45 +155,15 @@ describe('usePreloadedData Hooks', () => {
       });
     });
 
-    it('should return correct status when only graph is preloaded', async () => {
-      // Предзагружаем только граф (эмулируем частичную загрузку)
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
-      
+    it('should return correct status when graph is preloaded', async () => {
       await PreloadService.startPreload();
-      
+
       const status = usePreloadedDataStatus();
-      
+
       expect(status).toEqual({
         hasData: true,
         hasGraph: true,
         hasAchievements: false
-      });
-    });
-
-    it('should return correct status when only achievements are preloaded', async () => {
-      // Предзагружаем только достижения (эмулируем частичную загрузку)
-      vi.mocked(graphApi.getFullGraphData).mockRejectedValue(mockGraphError);
-      
-      await PreloadService.startPreload();
-      
-      const status = usePreloadedDataStatus();
-      
-      expect(status).toEqual({
-        hasData: true,
-        hasGraph: false,
-        hasAchievements: true
-      });
-    });
-
-    it('should return correct status when both data types are preloaded', async () => {
-      await PreloadService.startPreload();
-      
-      const status = usePreloadedDataStatus();
-      
-      expect(status).toEqual({
-        hasData: true,
-        hasGraph: true,
-        hasAchievements: true
       });
     });
   });
@@ -247,11 +183,11 @@ describe('usePreloadedData Hooks', () => {
 
     it('should return preloaded graph when available', async () => {
       await PreloadService.startPreload();
-      
+
       const instantData = useInstantData();
-      
+
       expect(instantData.graph).toEqual(mockGraphData);
-      expect(instantData.achievements).toEqual(mockAchievementsData.achievements);
+      expect(instantData.achievements).toEqual([]);
       expect(instantData.hasInstantData).toBe(true);
       expect(instantData.isDataReady).toBe(true);
     });
@@ -272,15 +208,15 @@ describe('usePreloadedData Hooks', () => {
   });
 
   describe('loadAppData', () => {
-    it('should load both data types using preloaded data', async () => {
+    it('should load graph from preloaded data and achievements from server', async () => {
       await PreloadService.startPreload();
-      
+
       const result = await loadAppData();
-      
+
       expect(result.graph).toEqual(mockGraphData);
       expect(result.achievements).toEqual(mockAchievementsData.achievements);
       expect(result.usedPreloaded.graph).toBe(true);
-      expect(result.usedPreloaded.achievements).toBe(true);
+      expect(result.usedPreloaded.achievements).toBe(false);
       expect(result.totalPoints).toBeUndefined();
     });
 

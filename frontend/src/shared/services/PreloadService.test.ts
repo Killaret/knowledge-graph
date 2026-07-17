@@ -2,12 +2,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { isAuthenticated } from '$shared/stores/auth.svelte';
 import * as graphApi from '$shared/api/graph';
-import * as usersApi from '$shared/api/users';
 import {
   mockGraphData,
-  mockAchievementsData,
-  mockGraphError,
-  mockAchievementsError
+  mockGraphError
 } from './__mocks__/PreloadService.mocks';
 
 // Мокаем зависимости
@@ -23,10 +20,6 @@ vi.mock('$shared/api/graph', () => ({
   getFullGraphData: vi.fn(),
   getCachedGraph: vi.fn(),
   getFreshGraph: vi.fn()
-}));
-
-vi.mock('$shared/api/users', () => ({
-  getAllAchievements: vi.fn()
 }));
 
 // Создаем mock для PreloadService с реальным поведением
@@ -54,10 +47,7 @@ const mockPreloadService = {
         preloadedGraph = freshResponse.fresh;
         preloadedGraph.delta = freshResponse.delta;
 
-        const achievements = await usersApi.getAllAchievements();
-        if (achievements) {
-          preloadedAchievements = achievements.achievements;
-        }
+
       } catch (error) {
         // Silently handle errors - don't throw, just log
         console.warn('[PreloadService] Preload error:', error);
@@ -129,7 +119,6 @@ describe('PreloadService', () => {
       fresh: mockGraphData,
       delta: undefined
     });
-    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
   });
 
   afterEach(() => {
@@ -144,7 +133,6 @@ describe('PreloadService', () => {
       expect(result).toBeUndefined();
       expect(graphApi.getCachedGraph).toHaveBeenCalled();
       expect(graphApi.getFreshGraph).toHaveBeenCalled();
-      expect(usersApi.getAllAchievements).toHaveBeenCalled();
     });
 
     it('should not preload when authenticated', async () => {
@@ -155,13 +143,11 @@ describe('PreloadService', () => {
       expect(result).toBeUndefined();
       expect(graphApi.getCachedGraph).not.toHaveBeenCalled();
       expect(graphApi.getFreshGraph).not.toHaveBeenCalled();
-      expect(usersApi.getAllAchievements).not.toHaveBeenCalled();
     });
 
     it('should handle preload errors gracefully', async () => {
       vi.mocked(graphApi.getCachedGraph).mockRejectedValue(mockGraphError);
       vi.mocked(graphApi.getFreshGraph).mockRejectedValue(mockGraphError);
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
 
       await mockPreloadService.startPreload();
 
@@ -219,7 +205,7 @@ describe('PreloadService', () => {
       await mockPreloadService.startPreload();
       
       expect(mockPreloadService.getPreloadedGraph()).toEqual(mockGraphData);
-      expect(mockPreloadService.getPreloadedAchievements()).toEqual(mockAchievementsData.achievements);
+      expect(mockPreloadService.getPreloadedAchievements()).toBeNull();
     });
 
     it('should clear cache', async () => {
@@ -237,7 +223,7 @@ describe('PreloadService', () => {
       mockPreloadService.invalidateGraphCache();
       
       expect(mockPreloadService.getPreloadedGraph()).toBeNull();
-      expect(mockPreloadService.getPreloadedAchievements()).toEqual(mockAchievementsData.achievements);
+      expect(mockPreloadService.getPreloadedAchievements()).toBeNull();
     });
 
     it('should invalidate achievements cache', async () => {
@@ -285,9 +271,9 @@ describe('PreloadService', () => {
       const newStats = mockPreloadService.getStats();
       
       expect(newStats.hasGraph).toBe(true);
-      expect(newStats.hasAchievements).toBe(true);
+      expect(newStats.hasAchievements).toBe(false);
       expect(newStats.graphAge).toBeGreaterThanOrEqual(0);
-      expect(newStats.achievementsAge).toBeGreaterThanOrEqual(0);
+      expect(newStats.achievementsAge).toBeNull();
       expect(newStats.isPreloading).toBe(false);
     });
   });
@@ -304,7 +290,6 @@ describe('PreloadService', () => {
       
       // API должен вызваться только один раз (concurrent request protection)
       expect(graphApi.getFreshGraph).toHaveBeenCalledTimes(1);
-      expect(usersApi.getAllAchievements).toHaveBeenCalledTimes(1);
     });
 
     it('should handle concurrent cache access', async () => {
@@ -319,7 +304,7 @@ describe('PreloadService', () => {
       const results = await Promise.all(promises);
       
       expect(results[0]).toEqual(mockGraphData);
-      expect(results[1]).toEqual(mockAchievementsData.achievements);
+      expect(results[1]).toBeNull();
       expect(results[2]).toEqual(mockGraphData);
     });
   });

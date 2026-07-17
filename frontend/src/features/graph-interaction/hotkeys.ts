@@ -22,6 +22,8 @@ export interface HotkeysCallbacks {
   onGhostNodeCreate?: () => void;
   onNodeDelete?: (nodeId: string) => void;
   onUndo?: () => void;
+  onNoteFormClose?: () => void;
+  onLinkFormClose?: () => void;
 }
 
 export function createHotkeysState(): HotkeysState {
@@ -59,12 +61,12 @@ export function handleKeyDownEvent(
   if (e.key === 'Escape') {
     if (state.showHelpModal) {
       state.showHelpModal = false;
-      callbacks.onHelpToggle?.();
     } else if (state.showSearchBox) {
       callbacks.onSearchClose?.();
-    } else if (showNoteForm || showLinkForm) {
-      // Let form close first; focus mode toggles only when no forms are open
-      return;
+    } else if (showNoteForm) {
+      callbacks.onNoteFormClose?.();
+    } else if (showLinkForm) {
+      callbacks.onLinkFormClose?.();
     } else {
       callbacks.onFocusModeToggle?.();
     }

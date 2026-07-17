@@ -4,6 +4,7 @@ import { goto } from '$app/navigation';
 import * as authApi from '$shared/api/auth';
 import * as usersApi from '$shared/api/users';
 import { clearPreloadCache, preloadAuthenticatedGraph } from '$shared/services/PreloadService';
+import { setLocale, type Locale } from '$shared/utils/i18n';
 import type { User, AuthTokens } from '$shared/types';
 
 // Global reactive state - wrapped in object for export
@@ -25,6 +26,22 @@ export function isInitialized(): boolean { return authState.isInitialized; }
 export function isLoading(): boolean { return authState.isLoading; }
 export function error(): string | null { return authState.error; }
 export function apiKey(): string | null { return authState.apiKey; }
+
+/**
+ * Apply user settings like locale after login/init.
+ */
+async function applyUserSettings(): Promise<void> {
+  try {
+    const { settings } = await usersApi.getSettings();
+    const localeSetting = settings.find((s) => s.key === 'preferred_language');
+    if (localeSetting?.value && (localeSetting.value === 'en' || localeSetting.value === 'ru')) {
+      setLocale(localeSetting.value as Locale);
+    }
+  } catch (e) {
+    // Settings are not critical for auth flow
+    console.warn('Failed to load user settings:', e);
+  }
+}
 
 /**
  * Check if SKIP_AUTH mode is enabled.
@@ -93,6 +110,7 @@ export async function initAuth(): Promise<void> {
         const user = await usersApi.getMe();
         authState.currentUser = user;
         void preloadAuthenticatedGraph();
+        void applyUserSettings();
       } catch {
         // If getting user fails, clear auth state
         clearAuthState();
@@ -135,6 +153,7 @@ export async function login(login: string, password: string): Promise<boolean> {
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
+    void applyUserSettings();
     
     return true;
   } catch (e) {
@@ -163,6 +182,7 @@ export async function register(login: string, password: string, email?: string):
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
+    void applyUserSettings();
     
     return true;
   } catch (e) {
@@ -234,6 +254,7 @@ export async function handleYandexCallback(code: string, state: string): Promise
     const user = await usersApi.getMe();
     authState.currentUser = user;
     void preloadAuthenticatedGraph();
+    void applyUserSettings();
     
     return true;
   } catch (e) {
@@ -262,6 +283,7 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
     // Try to get user info with API key
     const user = await usersApi.getMe();
     authState.currentUser = user;
+    void applyUserSettings();
     
     return true;
   } catch (e) {
@@ -365,6 +387,7 @@ export async function updateUserInfo(): Promise<void> {
   try {
     const user = await usersApi.getMe();
     authState.currentUser = user;
+    void applyUserSettings();
   } catch (e) {
     console.error('Failed to update user info:', e);
   }

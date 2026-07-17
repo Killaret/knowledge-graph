@@ -202,7 +202,6 @@ func setupRouter(
 	r.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
 
 	r.GET("/notes/:id/graph", graphHandler.GetGraph)
-	r.GET("/graph/all", graphHandler.GetFullGraph)
 
 	// Tag routes
 	r.POST("/tags", writeLimiter, tagHandler.Create)

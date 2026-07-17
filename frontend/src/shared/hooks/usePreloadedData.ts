@@ -1,5 +1,5 @@
 // Хуки для использования предзагруженных данных в компонентах
-import { getPreloadedGraph, getPreloadedGraphDelta, getPreloadedAchievements, hasPreloadedData } from '$shared/services/PreloadService';
+import { getPreloadedGraph, getPreloadedGraphDelta, hasPreloadedData } from '$shared/services/PreloadService';
 import { getFullGraphData } from '$shared/api/graph';
 import { getAllAchievements, getMyAchievements } from '$shared/api/users';
 import type { GraphData } from '$shared/api/graph';
@@ -23,8 +23,8 @@ export async function getGraphWithPreload(limit: number = 1000): Promise<GraphDa
 }
 
 /**
- * Хук для получения достижений с использованием предзагруженных данных
- * Возвращает предзагруженные данные если они есть, иначе загружает с сервера
+ * Хук для получения достижений с сервера
+ * Достижения больше не предзагружаются для неаутентифицированных пользователей
  */
 export async function getAchievementsWithPreload(usePersonal: boolean = false): Promise<{
   achievements: Array<{
@@ -40,17 +40,8 @@ export async function getAchievementsWithPreload(usePersonal: boolean = false): 
   }>;
   total_points?: number;
 }> {
-  // Сначала пробуем получить предзагруженные данные
-  const preloadedData = getPreloadedAchievements();
-  
-  if (preloadedData && !usePersonal) {
-    console.log('[usePreloadedData] Using preloaded achievements data');
-    return { achievements: preloadedData };
-  }
-  
-  // Если нужны персональные данные или нет предзагруженных, загружаем с сервера
   console.log(`[usePreloadedData] Loading ${usePersonal ? 'personal' : 'all'} achievements from server`);
-  
+
   if (usePersonal) {
     return await getMyAchievements();
   } else {
@@ -65,7 +56,7 @@ export function usePreloadedDataStatus() {
   return {
     hasData: hasPreloadedData(),
     hasGraph: !!getPreloadedGraph(),
-    hasAchievements: !!getPreloadedAchievements()
+    hasAchievements: false
   };
 }
 
@@ -76,13 +67,12 @@ export function usePreloadedDataStatus() {
 export function useInstantData() {
   const graph = getPreloadedGraph();
   const delta = getPreloadedGraphDelta();
-  const achievements = getPreloadedAchievements();
-  
+
   return {
     graph: graph || { nodes: [], links: [] },
     delta,
-    achievements: achievements || [],
-    hasInstantData: !!(graph || achievements),
+    achievements: [],
+    hasInstantData: !!graph,
     isDataReady: hasPreloadedData()
   };
 }
@@ -131,7 +121,7 @@ export async function loadAppData(options: {
   
   const usedPreloaded = {
     graph: !!getPreloadedGraph(),
-    achievements: !!getPreloadedAchievements() && !usePersonalAchievements
+    achievements: false
   };
   
   return {
