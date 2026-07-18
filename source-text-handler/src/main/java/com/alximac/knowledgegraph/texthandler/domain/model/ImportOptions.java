@@ -29,7 +29,7 @@ public record ImportOptions(
                 "minChunkLength can't be bigger than chunkSize," +
                         " got minChunkLength " + minChunkLength + " , got chunkSize " + chunkSize);
 
-        if (minChunkLength < 50) throw new IllegalArgumentException("minimal chunk length should be more than 50, got  "
+        if (minChunkLength < 50) throw new IllegalArgumentException("min chunk length must be more than 50, got  "
                 + minChunkLength);
 
 

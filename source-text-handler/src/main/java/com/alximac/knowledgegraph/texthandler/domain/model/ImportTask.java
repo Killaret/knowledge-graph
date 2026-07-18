@@ -36,7 +36,7 @@ public record ImportTask( //входящая задача из очереди. �
                     "Content too large: " + content.length() + " chars, maximum is " + MAX_CONTENT_LENGTH);
         }
 
-        metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();//defence copying
+        metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();//unmodifiable view
 
     }
 }
