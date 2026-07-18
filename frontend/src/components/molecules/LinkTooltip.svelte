@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { LinkType } from "$shared/lib/domain";
 
   const {
     visible,
@@ -25,12 +26,7 @@
     onDelete?: () => void;
   } = $props();
 
-  const linkTypeLabels: Record<string, string> = {
-    reference: "Reference",
-    dependency: "Dependency",
-    related: "Related",
-    custom: "Custom",
-  };
+  const linkTypeLabel = $derived(LinkType.fromString(linkType).label);
 
   // Smart positioning to keep tooltip within viewport
   let adjustedX = $derived(x);
@@ -68,7 +64,7 @@
     transition:fade={{ duration: 200 }}
   >
     <div class="tooltip-header">
-      <span class="link-type-badge">{linkTypeLabels[linkType] || linkType}</span
+      <span class="link-type-badge">{linkTypeLabel}</span
       >
       {#if sourceType === "gamma"}
         <span class="gamma-badge">Recommended</span>

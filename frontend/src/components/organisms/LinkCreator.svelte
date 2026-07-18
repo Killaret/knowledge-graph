@@ -1,6 +1,7 @@
 <script lang="ts">
   import { searchNotes } from "$shared/api/notes";
   import { createLink, type CreateLinkData } from "$shared/api/links";
+  import { LinkType } from "$shared/lib/domain";
   import { addJitter } from "$shared/utils/jitter";
 
   const {
@@ -17,19 +18,13 @@
   let searchResults = $state<Array<{ id: string; title: string }>>([]);
   let isSearching = $state(false);
   let selectedTarget = $state<{ id: string; title: string } | null>(null);
-  let linkType = $state("reference");
+  let linkType = $state(LinkType.REFERENCE.type);
   let isSubmitting = $state(false);
   let error = $state<string | null>(null);
   let showTypeDropdown = $state(false);
   let isFocused = $state(false); // eslint-disable-line @typescript-eslint/no-unused-vars -- Reserved for future focus tracking
 
-  const linkTypes = [
-    { value: "reference", label: "Reference" },
-    { value: "related", label: "Related" },
-    { value: "dependency", label: "Dependency" },
-    { value: "parent", label: "Parent" },
-    { value: "child", label: "Child" },
-  ];
+  const linkTypes = LinkType.UI_TYPES;
 
   let debounceTimer: ReturnType<typeof setTimeout>;
 
@@ -157,20 +152,20 @@
         aria-expanded={showTypeDropdown}
         aria-haspopup="listbox"
       >
-        {linkTypes.find((t) => t.value === linkType)?.label || "Select type"}
+        {linkTypes.find((t) => t.type === linkType)?.label || "Select type"}
         <span class="dropdown-arrow">▼</span>
       </button>
 
       {#if showTypeDropdown}
         <ul class="type-dropdown" role="listbox" aria-label="Link types">
           {#each linkTypes as type}
-            <li role="option" aria-selected={type.value === linkType}>
+            <li role="option" aria-selected={type.type === linkType}>
               <button
                 type="button"
                 class="type-option"
-                class:selected={type.value === linkType}
+                class:selected={type.type === linkType}
                 onclick={() => {
-                  linkType = type.value;
+                  linkType = type.type;
                   showTypeDropdown = false;
                 }}
               >

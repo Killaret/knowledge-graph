@@ -1,3 +1,5 @@
+import { LinkType } from "$shared/lib/domain";
+
 export interface LinkFormState {
   showLinkForm: boolean;
   linkFormPosition: { x: number; y: number };
@@ -30,8 +32,8 @@ export function createLinkFormState(): LinkFormState {
     linkFormPosition: { x: 0, y: 0 },
     linkSourceNodeId: null,
     linkTargetNodeId: null,
-    newLinkType: "related",
-    newLinkWeight: 0.5,
+    newLinkType: LinkType.RELATED.type,
+    newLinkWeight: LinkType.RELATED.defaultWeight,
   };
 }
 
@@ -46,16 +48,16 @@ export function openLinkForm(
   state.linkFormPosition = { x, y };
   state.linkSourceNodeId = sourceId;
   state.linkTargetNodeId = targetId;
-  state.newLinkType = "related";
-  state.newLinkWeight = 0.5;
+  state.newLinkType = LinkType.RELATED.type;
+  state.newLinkWeight = LinkType.RELATED.defaultWeight;
 }
 
 export function closeLinkForm(state: LinkFormState): void {
   state.showLinkForm = false;
   state.linkSourceNodeId = null;
   state.linkTargetNodeId = null;
-  state.newLinkType = "related";
-  state.newLinkWeight = 0.5;
+  state.newLinkType = LinkType.RELATED.type;
+  state.newLinkWeight = LinkType.RELATED.defaultWeight;
 }
 
 export function createLink(

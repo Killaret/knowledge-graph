@@ -4,3 +4,6 @@ export type {
   CelestialBodyDrawFunction,
   CelestialBodyDrawContext,
 } from "./celestial-body";
+
+export { LinkType } from "./link-type";
+export type { LinkTypeProps } from "./link-type";
