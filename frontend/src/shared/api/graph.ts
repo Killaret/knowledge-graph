@@ -131,7 +131,7 @@ export async function getFullGraphData(
 }
 
 // Graph delta structure for incremental updates
-export interface GraphDelta {
+export interface GraphDeltaData {
   added_nodes?: GraphNode[];
   removed_nodes?: string[];
   updated_nodes?: GraphNode[];
@@ -142,7 +142,7 @@ export interface GraphDelta {
 // Fresh graph response with optional delta
 export interface FreshGraphResponse {
   fresh: GraphData;
-  delta?: GraphDelta;
+  delta?: GraphDeltaData;
 }
 
 // API wrapper for fresh graph response (backend returns { data: ... })

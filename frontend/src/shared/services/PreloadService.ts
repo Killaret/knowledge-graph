@@ -5,7 +5,7 @@ import {
   getFullGraphData,
   getFreshGraph,
   type GraphData,
-  type GraphDelta,
+  type GraphDeltaData,
 } from "$shared/api/graph";
 
 // Типы для кэшированных данных
@@ -13,7 +13,7 @@ interface PreloadedGraphData {
   data: GraphData;
   timestamp: number;
   ttl: number; // Time to live в миллисекундах
-  delta?: GraphDelta; // Delta for incremental updates
+  delta?: GraphDeltaData; // Delta for incremental updates
 }
 
 interface PreloadedAchievementsData {
@@ -185,7 +185,7 @@ class PreloadServiceClass {
     return this.getPreloadedGraphData()?.data ?? null;
   }
 
-  public getPreloadedGraphDelta(): GraphDelta | null {
+  public getPreloadedGraphDelta(): GraphDeltaData | null {
     return this.getPreloadedGraphData()?.delta ?? null;
   }
 
@@ -302,7 +302,7 @@ export function getPreloadedGraphData(): PreloadedGraphData | null {
   return PreloadService.getPreloadedGraphData();
 }
 
-export function getPreloadedGraphDelta(): GraphDelta | null {
+export function getPreloadedGraphDelta(): GraphDeltaData | null {
   return PreloadService.getPreloadedGraphDelta();
 }
 

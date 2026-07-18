@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import type { GraphDelta } from "$shared/api/graph";
+  import type { GraphDeltaData } from "$shared/api/graph";
   import {
     GraphCanvasOverlay,
     GraphCanvasModals,
@@ -125,7 +125,7 @@
     onNoteDelete?: (nodeId: string) => void;
     onNoteRestore?: (nodeId: string) => void;
     helpContent?: string;
-    delta?: GraphDelta;
+    delta?: GraphDeltaData;
     disableVariation?: boolean;
     readonly?: boolean;
     className?: string;

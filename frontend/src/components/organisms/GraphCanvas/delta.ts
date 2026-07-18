@@ -3,7 +3,8 @@
  * Handles incremental graph updates with animations
  */
 
-import type { GraphDelta } from "$shared/api/graph";
+import type { GraphDeltaData } from "$shared/api/graph";
+import { GraphDelta } from "$shared/lib/domain";
 import type {
   SimulationNode,
   SimulationLink,
@@ -120,29 +121,20 @@ export interface DeltaUpdateOptions {
  * Returns true if simulation was restarted, false otherwise
  */
 export function applyDelta(
-  delta: GraphDelta,
+  delta: GraphDeltaData,
   options: DeltaUpdateOptions,
 ): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodes, links, width, height, state, onTick, onResetView } = options;
+  const domainDelta = GraphDelta.fromAPI(delta);
 
-  // Вычисляем общее количество изменений
-  const totalChanges =
-    (delta.removed_nodes?.length || 0) +
-    (delta.added_nodes?.length || 0) +
-    (delta.updated_nodes?.length || 0) +
-    (delta.removed_links?.length || 0) +
-    (delta.added_links?.length || 0);
-
-  console.log("[Delta] Applying delta with", totalChanges, "changes");
+  console.log("[Delta] Applying delta with", domainDelta.totalChanges, "changes");
 
   // Если изменений много (>10), перезапускаем симуляцию полностью
-  if (totalChanges > 10) {
-    return applyFullRestart(delta, options);
+  if (domainDelta.requiresFullRestart()) {
+    return applyFullRestart(domainDelta, options);
   }
 
   // Для небольших изменений применяем инкрементальные обновления
-  return applyIncremental(delta, options);
+  return applyIncremental(domainDelta, options);
 }
 
 /**
@@ -158,17 +150,17 @@ function applyFullRestart(
 
   // Фильтруем удаленные узлы
   const filteredNodes = nodes.filter(
-    (n) => !delta.removed_nodes?.includes(n.id),
+    (n) => !delta.removedNodeIds.includes(n.id),
   );
 
   // Добавляем новые узлы
-  if (delta.added_nodes) {
-    filteredNodes.push(...delta.added_nodes);
+  if (delta.addedNodes.length > 0) {
+    filteredNodes.push(...delta.addedNodes);
   }
 
   // Обновляем существующие узлы
-  if (delta.updated_nodes) {
-    delta.updated_nodes.forEach((updated) => {
+  if (delta.updatedNodes.length > 0) {
+    delta.updatedNodes.forEach((updated) => {
       const index = filteredNodes.findIndex((n) => n.id === updated.id);
       if (index !== -1) {
         filteredNodes[index] = updated;
@@ -178,8 +170,8 @@ function applyFullRestart(
 
   // Фильтруем и обновляем связи
   const filteredLinks = links.filter((l) => {
-    if (delta.removed_links) {
-      const isRemoved = delta.removed_links.some(
+    if (delta.removedLinks.length > 0) {
+      const isRemoved = delta.removedLinks.some(
         (removed) => removed.source === l.source && removed.target === l.target,
       );
       if (isRemoved) return false;
@@ -188,13 +180,13 @@ function applyFullRestart(
   });
 
   // Добавляем новые связи
-  if (delta.added_links) {
-    filteredLinks.push(...delta.added_links);
+  if (delta.addedLinks.length > 0) {
+    filteredLinks.push(...delta.addedLinks);
   }
 
   // Инициализируем прозрачность для новых узлов
-  if (delta.added_nodes) {
-    delta.added_nodes.forEach((node) => {
+  if (delta.addedNodes.length > 0) {
+    delta.addedNodes.forEach((node) => {
       state.nodeOpacity.set(node.id, 0);
     });
   }
@@ -318,17 +310,16 @@ function applyIncremental(
   delta: GraphDelta,
   options: DeltaUpdateOptions,
 ): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodes, links, width, height, state, onTick, onResetView } = options;
+  const { nodes, links, state, onTick, onResetView } = options;
 
   console.log("[Delta] Incremental update");
 
   let simulationRestarted = false;
 
   // Обновляем существующие узлы (без перезапуска симуляции)
-  if (delta.updated_nodes && delta.updated_nodes.length > 0) {
+  if (delta.updatedNodes.length > 0) {
     const simNodes = state.simulation?.nodes() || [];
-    delta.updated_nodes.forEach((updated) => {
+    delta.updatedNodes.forEach((updated) => {
       const simNode = simNodes.find((n: any) => n.id === updated.id);
       if (simNode) {
         simNode.title = updated.title;
@@ -348,10 +339,10 @@ function applyIncremental(
   // Для добавления/удаления узлов и связей используем полный перезапуск
   // даже для небольших изменений, так как D3 требует этого
   if (
-    delta.added_nodes?.length ||
-    delta.removed_nodes?.length ||
-    delta.added_links?.length ||
-    delta.removed_links?.length
+    delta.addedNodes.length > 0 ||
+    delta.removedNodeIds.length > 0 ||
+    delta.addedLinks.length > 0 ||
+    delta.removedLinks.length > 0
   ) {
     return applyFullRestart(delta, options);
   }

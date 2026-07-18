@@ -22,7 +22,7 @@
     getFullGraphData,
     getFreshGraph,
     type GraphData,
-    type GraphDelta,
+    type GraphDeltaData,
   } from "$shared/api/graph";
   import {
     getGraphWithPreload,
@@ -49,7 +49,7 @@
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
-  let graphDelta: GraphDelta | undefined = $state(undefined);
+  let graphDelta: GraphDeltaData | undefined = $state(undefined);
   let graphLoading = $state(false);
   let searchQuery = $state("");
 
@@ -125,7 +125,7 @@
       // Check for instant preloaded data first
       const instantData = useInstantData();
       let graphResult: GraphData | null = null;
-      let graphDeltaResult: GraphDelta | undefined = undefined;
+      let graphDeltaResult: GraphDeltaData | undefined = undefined;
 
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
         graphResult = instantData.graph;

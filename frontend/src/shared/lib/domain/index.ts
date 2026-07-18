@@ -7,3 +7,6 @@ export type {
 
 export { LinkType } from "./link-type";
 export type { LinkTypeProps } from "./link-type";
+
+export { GraphDelta } from "./graph-delta";
+export type { GraphDeltaProps } from "./graph-delta";
