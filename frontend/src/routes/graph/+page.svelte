@@ -1,32 +1,47 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
-  import { getNotes, getNote, createNote, deleteNote, restoreNote, type Note } from '$shared/api/notes';
-  import { getGraphData, getFullGraphData, type GraphData } from '$shared/api/graph';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import {
+    getNotes,
+    getNote,
+    createNote,
+    deleteNote,
+    restoreNote,
+    type Note,
+  } from "$shared/api/notes";
+  import {
+    getGraphData,
+    getFullGraphData,
+    type GraphData,
+  } from "$shared/api/graph";
 
-  const KNOWLEDGE_CORE_ID = '00000000-0000-0000-0000-000000000001';
-  import { createLink } from '$shared/api/links';
-  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
-  import NoteSidePanel from '$components/organisms/NoteSidePanel.svelte';
-  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
-  import BackButton from '$components/atoms/BackButton.svelte';
-  import WeltallBackground from '$components/atoms/WeltallBackground.svelte';
-  import StateIllustration from '$components/atoms/StateIllustration.svelte';
+  const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
+  import { createLink } from "$shared/api/links";
+  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import NoteSidePanel from "$components/organisms/NoteSidePanel.svelte";
+  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
+  import BackButton from "$components/atoms/BackButton.svelte";
+  import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let knowledgeCore: Note | null = $state(null);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(browser && new URL(window.location.href).searchParams.has('full'));
+  let showFullGraph = $state(
+    browser && new URL(window.location.href).searchParams.has("full"),
+  );
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
 
-  async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
+  async function loadGraphData({
+    nocache = false,
+  }: { nocache?: boolean } = {}) {
     loading = true;
-    error = '';
+    error = "";
     try {
       let rawData: GraphData;
       if (showFullGraph) {
@@ -60,17 +75,20 @@
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
         title: n.title || n.Title,
-        type: n.type || n.Type || 'star',
-        createdAt: n.created_at || n.createdAt || n.CreatedAt
+        type: n.type || n.Type || "star",
+        createdAt: n.created_at || n.createdAt || n.CreatedAt,
       }));
 
       // Ensure the Knowledge Core is always present on the canvas
-      if (knowledgeCore && !transformedNodes.some((n) => n.id === knowledgeCore?.id)) {
+      if (
+        knowledgeCore &&
+        !transformedNodes.some((n) => n.id === knowledgeCore?.id)
+      ) {
         transformedNodes.push({
           id: knowledgeCore.id,
           title: knowledgeCore.title,
-          type: 'technical',
-          createdAt: knowledgeCore.created_at
+          type: "technical",
+          createdAt: knowledgeCore.created_at,
         });
       }
 
@@ -80,22 +98,28 @@
         target: l.target_note_id || l.target,
         weight: l.weight,
         link_type: l.link_type,
-        source_type: l.source_type || 'user'
+        source_type: l.source_type || "user",
       }));
 
       graphData = {
         nodes: transformedNodes,
-        links: transformedLinks
+        links: transformedLinks,
       };
 
       if (import.meta.env.DEV) {
-        console.log('[graph/+page] Graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-        console.log('[graph/+page] Sample node:', transformedNodes[0]);
-        console.log('[graph/+page] Sample link:', transformedLinks[0]);
+        console.log(
+          "[graph/+page] Graph loaded:",
+          graphData.nodes.length,
+          "nodes,",
+          graphData.links.length,
+          "links",
+        );
+        console.log("[graph/+page] Sample node:", transformedNodes[0]);
+        console.log("[graph/+page] Sample link:", transformedLinks[0]);
       }
     } catch (e) {
-      console.error('Failed to load graph:', e);
-      error = 'Failed to load graph data';
+      console.error("Failed to load graph:", e);
+      error = "Failed to load graph data";
     } finally {
       loading = false;
     }
@@ -105,7 +129,7 @@
     if (!browser) return;
     // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
     const url = new URL(window.location.href);
-    await loadGraphData({ nocache: url.searchParams.has('nocache') });
+    await loadGraphData({ nocache: url.searchParams.has("nocache") });
   });
 
   function handleNodeSelect(nodeId: string) {
@@ -117,7 +141,7 @@
       await deleteNote(nodeId);
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error('Failed to delete note:', e);
+      console.error("Failed to delete note:", e);
     }
   }
 
@@ -126,30 +150,39 @@
       await restoreNote(nodeId);
       await loadGraphData();
     } catch (e) {
-      console.error('Failed to restore note:', e);
+      console.error("Failed to restore note:", e);
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+  }) {
     try {
       await createNote(data);
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error('Failed to create note:', e);
+      console.error("Failed to create note:", e);
     }
   }
 
-  async function handleLinkCreate(link: { source: string; target: string; link_type: string; weight: number }) {
+  async function handleLinkCreate(link: {
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
     try {
       await createLink({
         source_note_id: link.source,
         target_note_id: link.target,
         link_type: link.link_type,
-        weight: link.weight
+        weight: link.weight,
       });
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error('Failed to create link:', e);
+      console.error("Failed to create link:", e);
     }
   }
 
@@ -170,11 +203,19 @@
   <BackButton href="/" />
 
   <div class="top-right-controls">
-    <button class="login-btn" onclick={() => goto('/auth/login')} title="Login">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
+    <button class="login-btn" onclick={() => goto("/auth/login")} title="Login">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <polyline points="10 17 15 12 10 7" />
+        <line x1="15" y1="12" x2="3" y2="12" />
       </svg>
     </button>
   </div>
@@ -183,8 +224,12 @@
 
   <div class="controls">
     <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
-      <span>Show all notes ({showFullGraph ? 'enabled' : 'disabled'})</span>
+      <input
+        type="checkbox"
+        bind:checked={showFullGraph}
+        data-testid="full-graph-toggle"
+      />
+      <span>Show all notes ({showFullGraph ? "enabled" : "disabled"})</span>
     </label>
   </div>
 
@@ -213,12 +258,15 @@
   {:else if error}
     <div class="error">
       <p>{error}</p>
-      <button onclick={() => goto('/')}>Go Home</button>
+      <button onclick={() => goto("/")}>Go Home</button>
     </div>
   {:else}
-    <div class="graph-container graph-3d-container" data-testid="graph-container">
+    <div
+      class="graph-container graph-3d-container"
+      data-testid="graph-container"
+    >
       {#if graphData.nodes.length > 0}
-        {#key graphData.nodes.length + '-' + graphData.links.length}
+        {#key graphData.nodes.length + "-" + graphData.links.length}
           <GraphCanvas
             nodes={graphData.nodes}
             links={graphData.links}
@@ -243,8 +291,11 @@
 {#if selectedNodeId}
   <NoteSidePanel
     nodeId={selectedNodeId}
-    onClose={() => selectedNodeId = null}
-    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
+    onClose={() => (selectedNodeId = null)}
+    onEdit={(id: string) => {
+      noteToEdit = id;
+      showEditModal = true;
+    }}
     onDelete={() => {
       selectedNodeId = null;
       // Reload graph
@@ -257,7 +308,11 @@
   <EditNoteModal
     bind:open={showEditModal}
     noteId={noteToEdit}
-    onSuccess={() => { showEditModal = false; noteToEdit = null; window.location.reload(); }}
+    onSuccess={() => {
+      showEditModal = false;
+      noteToEdit = null;
+      window.location.reload();
+    }}
   />
 {/if}
 
@@ -390,14 +445,16 @@
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255,255,255,0.2);
+    border: 3px solid rgba(255, 255, 255, 0.2);
     border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .error {

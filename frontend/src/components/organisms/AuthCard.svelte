@@ -1,36 +1,46 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { fly, fade } from 'svelte/transition';
-  import { quintOut } from 'svelte/easing';
-  import GalaxyIcon from '$components/atoms/GalaxyIcon.svelte';
-  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
-  import { getGraphWithPreload } from '$shared/hooks/usePreloadedData';
-  import type { GraphData } from '$shared/api/graph';
+  import { onMount } from "svelte";
+  import { fly, fade } from "svelte/transition";
+  import { quintOut } from "svelte/easing";
+  import GalaxyIcon from "$components/atoms/GalaxyIcon.svelte";
+  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+  import type { GraphData } from "$shared/api/graph";
 
   interface Props {
     title: string;
     subtitle?: string;
     showIcon?: boolean;
-    children?: import('svelte').Snippet;
+    children?: import("svelte").Snippet;
   }
 
-  const { title, subtitle = '', showIcon = true, children }: Props = $props();
+  const { title, subtitle = "", showIcon = true, children }: Props = $props();
 
   let graphData = $state<GraphData>({ nodes: [], links: [] });
 
   onMount(() => {
     getGraphWithPreload(100)
-      .then((data) => { graphData = data; })
-      .catch((err) => { console.warn('[AuthCard] Failed to load graph background:', err); });
+      .then((data) => {
+        graphData = data;
+      })
+      .catch((err) => {
+        console.warn("[AuthCard] Failed to load graph background:", err);
+      });
   });
 </script>
 
 <div class="auth-page">
   <div class="graph-background cosmic-background">
-    <GraphCanvas nodes={graphData.nodes} links={graphData.links} readonly={true} disableVariation={true} className="cosmic-background" />
+    <GraphCanvas
+      nodes={graphData.nodes}
+      links={graphData.links}
+      readonly={true}
+      disableVariation={true}
+      className="cosmic-background"
+    />
   </div>
-  
-  <div 
+
+  <div
     class="auth-container"
     in:fly={{ y: 30, duration: 800, easing: quintOut }}
     out:fade={{ duration: 300 }}
@@ -44,7 +54,7 @@
         <p class="subtitle">{subtitle}</p>
       {/if}
     </div>
-    
+
     <div class="card">
       {@render children?.()}
     </div>
@@ -68,7 +78,7 @@
     z-index: 0;
     pointer-events: none;
   }
-  
+
   .auth-container {
     position: relative;
     z-index: 10;
@@ -79,7 +89,7 @@
     align-items: center;
     gap: 2rem;
   }
-  
+
   .logo-section {
     text-align: center;
     display: flex;
@@ -87,11 +97,11 @@
     align-items: center;
     gap: 0.75rem;
   }
-  
+
   .logo-section :global(.logo-icon) {
     margin-bottom: 0.5rem;
   }
-  
+
   .title {
     margin: 0;
     font-size: 1.75rem;
@@ -100,14 +110,14 @@
     text-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
     letter-spacing: 0.05em;
   }
-  
+
   .subtitle {
     margin: 0;
     font-size: 1rem;
     color: var(--color-text-secondary, #94a3b8);
     max-width: 300px;
   }
-  
+
   .card {
     width: 100%;
     padding: 2rem;
@@ -116,30 +126,32 @@
     -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    box-shadow:
       0 0 0 1px rgba(255, 204, 0, 0.1),
       0 8px 32px rgba(0, 0, 0, 0.4),
       0 0 40px rgba(64, 169, 255, 0.1);
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    transition:
+      box-shadow 0.3s ease,
+      border-color 0.3s ease;
   }
-  
+
   .card:hover {
-    box-shadow: 
+    box-shadow:
       0 0 0 1px rgba(255, 204, 0, 0.2),
       0 12px 40px rgba(0, 0, 0, 0.5),
       0 0 60px rgba(64, 169, 255, 0.15);
     border-color: rgba(255, 204, 0, 0.2);
   }
-  
+
   @media (max-width: 640px) {
     .auth-page {
       padding: 1rem;
     }
-    
+
     .title {
       font-size: 1.5rem;
     }
-    
+
     .card {
       padding: 1.5rem;
     }

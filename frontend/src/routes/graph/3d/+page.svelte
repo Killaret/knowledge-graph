@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
 
   onMount(() => {
     // 3D functionality frozen for v1 - redirecting to 2D graph
     setTimeout(() => {
-      goto('/graph');
+      goto("/graph");
     }, 500);
   });
 </script>
@@ -14,7 +14,10 @@
   <div class="center">
     <div class="frozen-notice">
       <h2>3D Graph Feature Frozen</h2>
-      <p>The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.</p>
+      <p>
+        The 3D graph functionality has been temporarily frozen for version 1.0
+        to improve stability and reduce maintenance overhead.
+      </p>
       <p>You will be automatically redirected to the 2D graph view.</p>
       <div class="spinner"></div>
     </div>
@@ -50,8 +53,8 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
-
-
 </style>

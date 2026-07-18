@@ -1,7 +1,7 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 bindable props require let, see: https://svelte.dev/docs/svelte/$bindable */
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
 
   interface Props {
     open: boolean;
@@ -10,18 +10,15 @@
     children?: () => any;
   }
 
-  let {
-    open = $bindable(false),
-    title,
-    onClose,
-    children
-  }: Props = $props();
+  let { open = $bindable(false), title, onClose, children }: Props = $props();
 
   let modalRef = $state<HTMLDivElement | null>(null);
 
   // Отключаем анимации в тестовом окружении (где нет Web Animations API)
-  const hasAnimations = browser && typeof Element !== 'undefined' && 
-    (Element.prototype.animate || typeof document !== 'undefined');
+  const hasAnimations =
+    browser &&
+    typeof Element !== "undefined" &&
+    (Element.prototype.animate || typeof document !== "undefined");
 
   function handleClose() {
     open = false;
@@ -35,15 +32,15 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && open) {
+    if (e.key === "Escape" && open) {
       handleClose();
     }
   }
 
   onMount(() => {
-    document.addEventListener('keydown', handleKeydown);
+    document.addEventListener("keydown", handleKeydown);
     return () => {
-      document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener("keydown", handleKeydown);
     };
   });
 </script>

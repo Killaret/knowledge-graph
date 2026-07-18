@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
 
   // Parallax intensity (0 = disabled, 1 = full)
   const parallaxIntensity = 0.3;
@@ -18,10 +18,10 @@
       mouseY = (e.clientY - rect.top) / rect.height;
     };
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener("mousemove", handleMouseMove);
     };
   });
 
@@ -99,7 +99,11 @@
   .blob-1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(64, 169, 255, 0.3) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(64, 169, 255, 0.3) 0%,
+      transparent 70%
+    );
     top: 10%;
     left: 20%;
     animation: drift 20s ease-in-out infinite;
@@ -108,7 +112,11 @@
   .blob-2 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(255, 51, 51, 0.2) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(255, 51, 51, 0.2) 0%,
+      transparent 70%
+    );
     top: 50%;
     right: 10%;
     animation: drift 25s ease-in-out infinite reverse;
@@ -117,14 +125,19 @@
   .blob-3 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(255, 204, 0, 0.15) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(255, 204, 0, 0.15) 0%,
+      transparent 70%
+    );
     bottom: 20%;
     left: 30%;
     animation: drift 30s ease-in-out infinite;
   }
 
   @keyframes drift {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(0, 0) scale(1);
     }
     33% {
@@ -146,15 +159,31 @@
     position: absolute;
     inset: 0;
     background-image:
-      radial-gradient(circle at 20% 30%, rgba(255, 204, 0, 0.03) 0%, transparent 2px),
-      radial-gradient(circle at 80% 70%, rgba(64, 169, 255, 0.03) 0%, transparent 2px),
-      radial-gradient(circle at 50% 50%, rgba(255, 51, 51, 0.02) 0%, transparent 3px);
-    background-size: 100px 100px, 150px 150px, 200px 200px;
+      radial-gradient(
+        circle at 20% 30%,
+        rgba(255, 204, 0, 0.03) 0%,
+        transparent 2px
+      ),
+      radial-gradient(
+        circle at 80% 70%,
+        rgba(64, 169, 255, 0.03) 0%,
+        transparent 2px
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 51, 51, 0.02) 0%,
+        transparent 3px
+      );
+    background-size:
+      100px 100px,
+      150px 150px,
+      200px 200px;
     animation: twinkle 4s ease-in-out infinite;
   }
 
   @keyframes twinkle {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 0.5;
     }
     50% {
@@ -181,7 +210,11 @@
       linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
     background-size: 50px 50px;
     mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
-    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(
+      ellipse at 50% 50%,
+      black 0%,
+      transparent 70%
+    );
   }
 
   /* Reduced motion support */

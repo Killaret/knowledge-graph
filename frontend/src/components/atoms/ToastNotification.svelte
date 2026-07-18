@@ -1,49 +1,49 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  
+  import { onMount, onDestroy } from "svelte";
+
   interface Props {
     message: string;
-    type?: 'success' | 'error' | 'info' | 'warning';
+    type?: "success" | "error" | "info" | "warning";
     duration?: number;
     useGalacticMode?: boolean;
     onClose?: () => void;
   }
 
-  const { 
-    message, 
-    type = 'info', 
-    duration = 5000, 
-    useGalacticMode = false, 
-    onClose = () => {} 
+  const {
+    message,
+    type = "info",
+    duration = 5000,
+    useGalacticMode = false,
+    onClose = () => {},
   }: Props = $props();
 
-    let visible = $state(false);
+  let visible = $state(false);
   let progress = $state(100);
   let intervalId: ReturnType<typeof setInterval>;
   let timeoutId: ReturnType<typeof setTimeout>;
 
   // Icons for different types
   const icons = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️',
-    warning: '⚠️',
+    success: "✅",
+    error: "❌",
+    info: "ℹ️",
+    warning: "⚠️",
   };
 
   // Galactic icons
   const galacticIcons = {
-    success: '⭐',
-    error: '💥',
-    info: '🔭',
-    warning: '🚨',
+    success: "⭐",
+    error: "💥",
+    info: "🔭",
+    warning: "🚨",
   };
 
   // CSS classes for different types
   const typeClasses = {
-    success: 'toast-success',
-    error: 'toast-error',
-    info: 'toast-info',
-    warning: 'toast-warning',
+    success: "toast-success",
+    error: "toast-error",
+    info: "toast-info",
+    warning: "toast-warning",
   };
 
   onMount(() => {
@@ -55,7 +55,7 @@
     // Start progress bar
     const interval = 50;
     const decrement = 100 / (duration / interval);
-    
+
     intervalId = setInterval(() => {
       progress -= decrement;
       if (progress <= 0) {
@@ -83,35 +83,35 @@
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       closeToast();
     }
   }
 
-  const displayIcon = $derived(useGalacticMode ? galacticIcons[type] : icons[type]);
-  const toastClass = $derived(`toast-notification ${typeClasses[type]} ${visible ? 'visible' : ''}`);
+  const displayIcon = $derived(
+    useGalacticMode ? galacticIcons[type] : icons[type],
+  );
+  const toastClass = $derived(
+    `toast-notification ${typeClasses[type]} ${visible ? "visible" : ""}`,
+  );
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div 
-  class={toastClass}
-  role="alert"
-  aria-live="polite"
->
+<div class={toastClass} role="alert" aria-live="polite">
   <div class="toast-content">
     <span class="toast-icon">{displayIcon}</span>
     <span class="toast-message">{message}</span>
   </div>
-  
-  <button 
+
+  <button
     class="toast-close"
     onclick={closeToast}
     aria-label="Close notification"
   >
     ×
   </button>
-  
+
   <div class="toast-progress">
     <div class="toast-progress-bar" style="width: {progress}%"></div>
   </div>
@@ -150,22 +150,38 @@
   }
 
   .toast-success {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(21, 128, 61, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(34, 197, 94, 0.95),
+      rgba(21, 128, 61, 0.95)
+    );
     border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .toast-error {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.95),
+      rgba(185, 28, 28, 0.95)
+    );
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .toast-info {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.95),
+      rgba(37, 99, 235, 0.95)
+    );
     border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .toast-warning {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(245, 158, 11, 0.95),
+      rgba(217, 119, 6, 0.95)
+    );
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
@@ -228,12 +244,16 @@
 
   /* Galactic theme enhancements */
   .toast-success:global(.galactic) {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(139, 92, 246, 0.95),
+      rgba(124, 58, 237, 0.95)
+    );
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
   }
 
   .toast-notification:global(.galactic) .toast-message {
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     letter-spacing: 0.5px;
   }
 </style>

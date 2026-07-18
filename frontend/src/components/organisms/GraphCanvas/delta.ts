@@ -3,22 +3,33 @@
  * Handles incremental graph updates with animations
  */
 
-import type { GraphDelta } from '$shared/api/graph';
-import type { SimulationNode, SimulationLink, SimulationState, TransformState } from './types';
-import * as d3Force from 'd3-force';
+import type { GraphDelta } from "$shared/api/graph";
+import type {
+  SimulationNode,
+  SimulationLink,
+  SimulationState,
+  TransformState,
+} from "./types";
+import * as d3Force from "d3-force";
 
 // Easing function for smooth fade animation
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function computeStableProgress(currentNodes: any[], totalNodes: number): number {
+function computeStableProgress(
+  currentNodes: any[],
+  totalNodes: number,
+): number {
   if (totalNodes === 0) return 1;
 
-  const stableNodes = currentNodes.filter((n: any) =>
-    n.x !== undefined && !isNaN(n.x) &&
-    n.y !== undefined && !isNaN(n.y) &&
-    Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2
+  const stableNodes = currentNodes.filter(
+    (n: any) =>
+      n.x !== undefined &&
+      !isNaN(n.x) &&
+      n.y !== undefined &&
+      !isNaN(n.y) &&
+      Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2,
   ).length;
 
   return Math.min(stableNodes / totalNodes, 1);
@@ -27,12 +38,12 @@ function computeStableProgress(currentNodes: any[], totalNodes: number): number 
 function initializeOpacityMaps(
   nodes: SimulationNode[],
   links: SimulationLink[],
-  state: SimulationState
+  state: SimulationState,
 ): void {
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     state.nodeOpacity.set(node.id, 0);
   });
 
@@ -45,10 +56,11 @@ function initializeOpacityMaps(
 function interpolateOpacity(
   opacityMap: Map<string, number>,
   targetOpacity: number,
-  factor: number = 0.1
+  factor: number = 0.1,
 ): void {
   opacityMap.forEach((currentOpacity, key) => {
-    const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * factor;
+    const newOpacity =
+      currentOpacity + (targetOpacity - currentOpacity) * factor;
     opacityMap.set(key, Math.min(Math.max(newOpacity, 0), 1));
   });
 }
@@ -109,20 +121,20 @@ export interface DeltaUpdateOptions {
  */
 export function applyDelta(
   delta: GraphDelta,
-  options: DeltaUpdateOptions
+  options: DeltaUpdateOptions,
 ): boolean {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { nodes, links, width, height, state, onTick, onResetView } = options;
 
   // Вычисляем общее количество изменений
-  const totalChanges = 
+  const totalChanges =
     (delta.removed_nodes?.length || 0) +
     (delta.added_nodes?.length || 0) +
     (delta.updated_nodes?.length || 0) +
     (delta.removed_links?.length || 0) +
     (delta.added_links?.length || 0);
 
-  console.log('[Delta] Applying delta with', totalChanges, 'changes');
+  console.log("[Delta] Applying delta with", totalChanges, "changes");
 
   // Если изменений много (>10), перезапускаем симуляцию полностью
   if (totalChanges > 10) {
@@ -138,27 +150,26 @@ export function applyDelta(
  */
 function applyFullRestart(
   delta: GraphDelta,
-  options: DeltaUpdateOptions
+  options: DeltaUpdateOptions,
 ): boolean {
-   
   const { nodes, links, width, height, state, onTick, onResetView } = options;
 
-  console.log('[Delta] Full simulation restart');
+  console.log("[Delta] Full simulation restart");
 
   // Фильтруем удаленные узлы
-  const filteredNodes = nodes.filter(n => 
-    !delta.removed_nodes?.includes(n.id)
+  const filteredNodes = nodes.filter(
+    (n) => !delta.removed_nodes?.includes(n.id),
   );
-  
+
   // Добавляем новые узлы
   if (delta.added_nodes) {
     filteredNodes.push(...delta.added_nodes);
   }
-  
+
   // Обновляем существующие узлы
   if (delta.updated_nodes) {
-    delta.updated_nodes.forEach(updated => {
-      const index = filteredNodes.findIndex(n => n.id === updated.id);
+    delta.updated_nodes.forEach((updated) => {
+      const index = filteredNodes.findIndex((n) => n.id === updated.id);
       if (index !== -1) {
         filteredNodes[index] = updated;
       }
@@ -166,10 +177,10 @@ function applyFullRestart(
   }
 
   // Фильтруем и обновляем связи
-  const filteredLinks = links.filter(l => {
+  const filteredLinks = links.filter((l) => {
     if (delta.removed_links) {
-      const isRemoved = delta.removed_links.some(removed => 
-        removed.source === l.source && removed.target === l.target
+      const isRemoved = delta.removed_links.some(
+        (removed) => removed.source === l.source && removed.target === l.target,
       );
       if (isRemoved) return false;
     }
@@ -183,7 +194,7 @@ function applyFullRestart(
 
   // Инициализируем прозрачность для новых узлов
   if (delta.added_nodes) {
-    delta.added_nodes.forEach(node => {
+    delta.added_nodes.forEach((node) => {
       state.nodeOpacity.set(node.id, 0);
     });
   }
@@ -204,15 +215,15 @@ function applyFullRestart(
     return {
       ...n,
       x: width / 2 + Math.cos(angle) * radius,
-      y: height / 2 + Math.sin(angle) * radius
+      y: height / 2 + Math.sin(angle) * radius,
     };
   });
 
-  state.simLinks = filteredLinks.map(l => ({
+  state.simLinks = filteredLinks.map((l) => ({
     source: l.source,
     target: l.target,
     weight: l.weight ?? 1,
-    link_type: l.link_type
+    link_type: l.link_type,
   }));
 
   // Initialize opacity maps for fade effect using current nodes and links
@@ -224,18 +235,18 @@ function applyFullRestart(
   state.simulation = d3Force
     .forceSimulation(simulationNodes as any)
     .force(
-      'link',
+      "link",
       d3Force
         .forceLink(state.simLinks)
         .id((d: any) => d.id)
         .distance(100)
-        .strength(0.3)
+        .strength(0.3),
     )
-    .force('charge', d3Force.forceManyBody().strength(-150))
-    .force('center', d3Force.forceCenter(width / 2, height / 2).strength(0.5))
-    .force('collision', d3Force.forceCollide().radius(30))
+    .force("charge", d3Force.forceManyBody().strength(-150))
+    .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.5))
+    .force("collision", d3Force.forceCollide().radius(30))
     .alphaDecay(0.01)
-    .on('tick', () => {
+    .on("tick", () => {
       onTick();
       tickCount++;
 
@@ -249,7 +260,7 @@ function applyFullRestart(
         interpolateOpacity(state.linkOpacity, targetOpacity, 0.12);
       }
     })
-    .on('end', () => {
+    .on("end", () => {
       // Final fade animation
       if (state.fadeAnimationId !== null) {
         cancelAnimationFrame(state.fadeAnimationId);
@@ -265,13 +276,15 @@ function applyFullRestart(
 
         state.nodeOpacity.forEach((_, nodeId) => {
           const currentOpacity = state.nodeOpacity.get(nodeId) || 0;
-          const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.15;
+          const newOpacity =
+            currentOpacity + (targetOpacity - currentOpacity) * 0.15;
           state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
         });
 
         state.linkOpacity.forEach((_, linkId) => {
           const currentOpacity = state.linkOpacity.get(linkId) || 0;
-          const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.15;
+          const newOpacity =
+            currentOpacity + (targetOpacity - currentOpacity) * 0.15;
           state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
         });
 
@@ -303,19 +316,19 @@ function applyFullRestart(
  */
 function applyIncremental(
   delta: GraphDelta,
-  options: DeltaUpdateOptions
+  options: DeltaUpdateOptions,
 ): boolean {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { nodes, links, width, height, state, onTick, onResetView } = options;
-  
-  console.log('[Delta] Incremental update');
-  
+
+  console.log("[Delta] Incremental update");
+
   let simulationRestarted = false;
 
   // Обновляем существующие узлы (без перезапуска симуляции)
   if (delta.updated_nodes && delta.updated_nodes.length > 0) {
     const simNodes = state.simulation?.nodes() || [];
-    delta.updated_nodes.forEach(updated => {
+    delta.updated_nodes.forEach((updated) => {
       const simNode = simNodes.find((n: any) => n.id === updated.id);
       if (simNode) {
         simNode.title = updated.title;
@@ -324,7 +337,7 @@ function applyIncremental(
         if (updated.y !== undefined) simNode.y = updated.y;
       }
     });
-    
+
     // Легкий перезапуск симуляции для применения изменений
     if (state.simulation) {
       state.simulation.alpha(0.3).restart();
@@ -334,8 +347,12 @@ function applyIncremental(
 
   // Для добавления/удаления узлов и связей используем полный перезапуск
   // даже для небольших изменений, так как D3 требует этого
-  if (delta.added_nodes?.length || delta.removed_nodes?.length ||
-      delta.added_links?.length || delta.removed_links?.length) {
+  if (
+    delta.added_nodes?.length ||
+    delta.removed_nodes?.length ||
+    delta.added_links?.length ||
+    delta.removed_links?.length
+  ) {
     return applyFullRestart(delta, options);
   }
 

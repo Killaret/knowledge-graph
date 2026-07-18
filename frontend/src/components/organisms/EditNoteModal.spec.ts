@@ -1,43 +1,43 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
-import { tick } from 'svelte';
-import EditNoteModal from './EditNoteModal.svelte';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { tick } from "svelte";
+import EditNoteModal from "./EditNoteModal.svelte";
 
 // Мокируем API
 const mockGetNote = vi.fn();
 const mockUpdateNote = vi.fn();
 
-vi.mock('$shared/api/notes', () => ({
+vi.mock("$shared/api/notes", () => ({
   getNote: (...args: any[]) => mockGetNote(...args),
-  updateNote: (...args: any[]) => mockUpdateNote(...args)
+  updateNote: (...args: any[]) => mockUpdateNote(...args),
 }));
 
 // Мокаем lexicon-settings для получения текстов валидации
-vi.mock('$shared/stores/lexicon-settings', () => ({
-  getMessage: vi.fn().mockResolvedValue('Title is required'),
+vi.mock("$shared/stores/lexicon-settings", () => ({
+  getMessage: vi.fn().mockResolvedValue("Title is required"),
   mode: {
     subscribe: vi.fn((cb) => {
-      cb('standard');
+      cb("standard");
       return () => {};
-    })
-  }
+    }),
+  },
 }));
 
-describe('EditNoteModal', () => {
+describe("EditNoteModal", () => {
   const mockNote = {
-    id: '456',
-    title: 'Existing Note',
-    content: 'Existing content',
-    type: 'planet',
+    id: "456",
+    title: "Existing Note",
+    content: "Existing content",
+    type: "planet",
     metadata: {},
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-02T00:00:00Z'
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-02T00:00:00Z",
   };
 
   const updatedNote = {
     ...mockNote,
-    title: 'Updated Title',
-    content: 'Updated content'
+    title: "Updated Title",
+    content: "Updated content",
   };
 
   beforeEach(() => {
@@ -48,100 +48,107 @@ describe('EditNoteModal', () => {
     vi.resetAllMocks();
   });
 
-  it('renders modal when open is true', async () => {
+  it("renders modal when open is true", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
-    expect(screen.getByText('Edit Note')).toBeInTheDocument();
+    expect(screen.getByText("Edit Note")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Save Changes" }),
+      ).toBeInTheDocument();
     });
   });
 
-  it('does not render when open is false', () => {
-    render(EditNoteModal, { props: { open: false, noteId: '456' } });
+  it("does not render when open is false", () => {
+    render(EditNoteModal, { props: { open: false, noteId: "456" } });
 
-    expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit Note")).not.toBeInTheDocument();
   });
 
-  it('loads note data when opened', async () => {
+  it("loads note data when opened", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(mockGetNote).toHaveBeenCalledWith('456');
+      expect(mockGetNote).toHaveBeenCalledWith("456");
     });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
-    expect(screen.getByDisplayValue('Existing content')).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Existing content")).toBeInTheDocument();
     // TypeSelector показывает выбранный тип через aria-pressed
-    const planetButton = screen.getByRole('button', { name: /Planet/i });
-    expect(planetButton).toHaveAttribute('aria-pressed', 'true');
+    const planetButton = screen.getByRole("button", { name: /Planet/i });
+    expect(planetButton).toHaveAttribute("aria-pressed", "true");
   });
 
-  it('shows loading state while loading', async () => {
+  it("shows loading state while loading", async () => {
     let resolveGetNote: (value: any) => void;
     const getNotePromise = new Promise((resolve) => {
       resolveGetNote = resolve;
     });
     mockGetNote.mockReturnValueOnce(getNotePromise);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
 
     // Разрешаем промис
     resolveGetNote!(mockNote);
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
   });
 
-  it('shows error when loading fails', async () => {
-    mockGetNote.mockRejectedValueOnce(new Error('Failed to load'));
+  it("shows error when loading fails", async () => {
+    mockGetNote.mockRejectedValueOnce(new Error("Failed to load"));
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to load note')).toBeInTheDocument();
+      expect(screen.getByText("Failed to load note")).toBeInTheDocument();
     });
   });
 
-  it('shows validation error when title is empty', async () => {
+  it("shows validation error when title is empty", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
     // Очищаем заголовок
-    const titleInput = screen.getByTestId('edit-title-input') as HTMLInputElement;
-    titleInput.value = '';
+    const titleInput = screen.getByTestId(
+      "edit-title-input",
+    ) as HTMLInputElement;
+    titleInput.value = "";
     await fireEvent.input(titleInput);
     await tick();
 
-    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
     await fireEvent.click(saveButton);
     await tick();
 
     // Проверяем что отображается ошибка валидации (код ошибки вместо сообщения)
-    await waitFor(() => {
-      expect(screen.getByText('Error: VALIDATION_ERROR')).toBeInTheDocument();
-    }, { timeout: 1000 });
-    
+    await waitFor(
+      () => {
+        expect(screen.getByText("Error: VALIDATION_ERROR")).toBeInTheDocument();
+      },
+      { timeout: 1000 },
+    );
+
     expect(mockUpdateNote).not.toHaveBeenCalled();
   });
 
-  it('updates note successfully and calls onSuccess', async () => {
+  it("updates note successfully and calls onSuccess", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
     mockUpdateNote.mockResolvedValueOnce(updatedNote);
     const mockOnSuccess = vi.fn();
@@ -149,36 +156,40 @@ describe('EditNoteModal', () => {
     render(EditNoteModal, {
       props: {
         open: true,
-        noteId: '456',
-        onSuccess: mockOnSuccess
-      }
+        noteId: "456",
+        onSuccess: mockOnSuccess,
+      },
     });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
     // Изменяем данные
-    const titleInput = screen.getByTestId('edit-title-input') as HTMLInputElement;
-    titleInput.value = 'Updated Title';
+    const titleInput = screen.getByTestId(
+      "edit-title-input",
+    ) as HTMLInputElement;
+    titleInput.value = "Updated Title";
     await fireEvent.input(titleInput);
     await tick();
 
-    const contentInput = screen.getByTestId('edit-content-input') as HTMLTextAreaElement;
-    contentInput.value = 'Updated content';
+    const contentInput = screen.getByTestId(
+      "edit-content-input",
+    ) as HTMLTextAreaElement;
+    contentInput.value = "Updated content";
     await fireEvent.input(contentInput);
     await tick();
 
     // Сохраняем
-    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
     await fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(mockUpdateNote).toHaveBeenCalledWith('456', {
-        title: 'Updated Title',
-        content: 'Updated content',
-        type: 'planet',
-        metadata: {}
+      expect(mockUpdateNote).toHaveBeenCalledWith("456", {
+        title: "Updated Title",
+        content: "Updated content",
+        type: "planet",
+        metadata: {},
       });
     });
 
@@ -187,31 +198,31 @@ describe('EditNoteModal', () => {
     });
 
     // Модаль закрывается
-    expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit Note")).not.toBeInTheDocument();
   });
 
-  it('shows error when update fails', async () => {
+  it("shows error when update fails", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
-    mockUpdateNote.mockRejectedValueOnce(new Error('Failed to update'));
+    mockUpdateNote.mockRejectedValueOnce(new Error("Failed to update"));
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
     await fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to update note')).toBeInTheDocument();
+      expect(screen.getByText("Failed to update note")).toBeInTheDocument();
     });
 
     // Модаль не закрывается
-    expect(screen.getByText('Edit Note')).toBeInTheDocument();
+    expect(screen.getByText("Edit Note")).toBeInTheDocument();
   });
 
-  it('shows saving state during update', async () => {
+  it("shows saving state during update", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
     let resolveUpdate: (value: any) => void;
     const updatePromise = new Promise((resolve) => {
@@ -219,72 +230,72 @@ describe('EditNoteModal', () => {
     });
     mockUpdateNote.mockReturnValueOnce(updatePromise);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
     await fireEvent.click(saveButton);
 
-    expect(saveButton).toHaveTextContent('Saving...');
+    expect(saveButton).toHaveTextContent("Saving...");
     expect(saveButton).toBeDisabled();
-    expect(screen.getByTestId('edit-title-input')).toBeDisabled();
+    expect(screen.getByTestId("edit-title-input")).toBeDisabled();
 
     // Разрешаем промис
     resolveUpdate!(updatedNote);
 
     await waitFor(() => {
-      expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
+      expect(screen.queryByText("Edit Note")).not.toBeInTheDocument();
     });
   });
 
-  it('closes modal when cancel is clicked', async () => {
+  it("closes modal when cancel is clicked", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Note')).toBeInTheDocument();
+      expect(screen.getByText("Edit Note")).toBeInTheDocument();
     });
 
-    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
     await fireEvent.click(cancelButton);
 
-    expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit Note")).not.toBeInTheDocument();
   });
 
-  it('closes modal when close button is clicked', async () => {
+  it("closes modal when close button is clicked", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Note')).toBeInTheDocument();
+      expect(screen.getByText("Edit Note")).toBeInTheDocument();
     });
 
-    const closeButton = screen.getByLabelText('Close');
+    const closeButton = screen.getByLabelText("Close");
     await fireEvent.click(closeButton);
 
-    expect(screen.queryByText('Edit Note')).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit Note")).not.toBeInTheDocument();
   });
 
-  it('updates note type selection', async () => {
+  it("updates note type selection", async () => {
     mockGetNote.mockResolvedValueOnce(mockNote);
 
-    render(EditNoteModal, { props: { open: true, noteId: '456' } });
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Existing Note')).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
     });
 
     // Выбираем Comet через TypeSelector (вместо старого select)
-    const cometButton = screen.getByRole('button', { name: /Comet/i });
+    const cometButton = screen.getByRole("button", { name: /Comet/i });
     await fireEvent.click(cometButton);
     await tick();
 
     // Проверяем что Comet выбран
-    expect(cometButton).toHaveAttribute('aria-pressed', 'true');
+    expect(cometButton).toHaveAttribute("aria-pressed", "true");
   });
 });

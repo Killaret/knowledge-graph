@@ -1,5 +1,8 @@
-import type { TransformState, SimulationNode } from '$components/organisms/GraphCanvas/types';
-import { resetView } from '$components/organisms/GraphCanvas';
+import type {
+  TransformState,
+  SimulationNode,
+} from "$components/organisms/GraphCanvas/types";
+import { resetView } from "$components/organisms/GraphCanvas";
 
 export interface ZoomPanState {
   lastTouchTime: number;
@@ -11,7 +14,7 @@ export function createZoomPanState(): ZoomPanState {
   return {
     lastTouchTime: 0,
     lastTouchPos: { x: 0, y: 0 },
-    tapCount: 0
+    tapCount: 0,
   };
 }
 
@@ -19,10 +22,10 @@ export function handleZoom(
   e: WheelEvent,
   transform: TransformState,
   canvas: HTMLCanvasElement,
-  redraw: () => void
+  redraw: () => void,
 ): void {
   e.preventDefault();
-  
+
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
@@ -49,7 +52,7 @@ export function handleTouchStart(
   simNodes: SimulationNode[],
   ctx: CanvasRenderingContext2D | null,
   width: number,
-  height: number
+  height: number,
 ): void {
   if (e.touches.length === 1) {
     const now = Date.now();
@@ -59,7 +62,17 @@ export function handleTouchStart(
 
     if (now - state.lastTouchTime < 300 && dx < 30 && dy < 30) {
       state.tapCount++;
-      handleDoubleTap(state, touch.clientX, touch.clientY, transform, canvas, simNodes, ctx, width, height);
+      handleDoubleTap(
+        state,
+        touch.clientX,
+        touch.clientY,
+        transform,
+        canvas,
+        simNodes,
+        ctx,
+        width,
+        height,
+      );
       e.preventDefault();
     } else {
       state.tapCount = 0;
@@ -79,7 +92,7 @@ function handleDoubleTap(
   simNodes: SimulationNode[],
   ctx: CanvasRenderingContext2D | null,
   width: number,
-  height: number
+  height: number,
 ): void {
   const rect = canvas.getBoundingClientRect();
   const x = (clientX - rect.left - transform.x) / transform.k;
@@ -107,12 +120,15 @@ export function resetViewToCenter(
   transform: TransformState,
   width: number,
   height: number,
-  simNodes: SimulationNode[]
+  simNodes: SimulationNode[],
 ): void {
   if (simNodes.length === 0) return;
 
   // Calculate bounding box of all nodes
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const node of simNodes) {
     if (node.x != null && node.y != null) {
       minX = Math.min(minX, node.x);

@@ -1,9 +1,14 @@
 /**
  * D3-force simulation management for GraphCanvas
  */
-import * as d3Force from 'd3-force';
-import { filterValidLinks } from '$shared/utils/graphUtils';
-import type { SimulationNode, SimulationLink, SimulationState, TransformState } from './types';
+import * as d3Force from "d3-force";
+import { filterValidLinks } from "$shared/utils/graphUtils";
+import type {
+  SimulationNode,
+  SimulationLink,
+  SimulationState,
+  TransformState,
+} from "./types";
 
 export type { SimulationNode, SimulationLink, SimulationState, TransformState };
 
@@ -26,7 +31,7 @@ function anyOpacityBelowOne(state: SimulationState): boolean {
 function initializeOpacityMaps(
   nodes: SimulationNode[],
   links: SimulationLink[],
-  state: SimulationState
+  state: SimulationState,
 ): void {
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
@@ -38,12 +43,16 @@ function initializeOpacityMaps(
   });
 
   // Initialize node opacity
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     state.nodeOpacity.set(node.id, 0);
   });
 }
 
-function startFadeAnimation(state: SimulationState, totalNodes: number, onStable?: () => void): void {
+function startFadeAnimation(
+  state: SimulationState,
+  totalNodes: number,
+  onStable?: () => void,
+): void {
   if (state.fadeAnimationId !== null) {
     cancelAnimationFrame(state.fadeAnimationId);
     state.fadeAnimationId = null;
@@ -64,14 +73,16 @@ function startFadeAnimation(state: SimulationState, totalNodes: number, onStable
     // Update node opacity
     state.nodeOpacity.forEach((currentOpacity, nodeId) => {
       const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
-      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      const newOpacity =
+        currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
       state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
     });
 
     // Update link opacity (links fade in after nodes)
     state.linkOpacity.forEach((currentOpacity, linkId) => {
       const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
-      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      const newOpacity =
+        currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
       state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
     });
 
@@ -104,7 +115,7 @@ export function startSimulation(
   transform: TransformState,
   onTick: () => void,
   onResetView: () => void,
-  onStable?: () => void
+  onStable?: () => void,
 ): void {
   if (!d3Force) {
     return;
@@ -126,25 +137,30 @@ export function startSimulation(
     return {
       ...n,
       x: width / 2 + Math.cos(angle) * radius,
-      y: height / 2 + Math.sin(angle) * radius
+      y: height / 2 + Math.sin(angle) * radius,
     };
   });
 
   if (import.meta.env.DEV) {
-    console.log('[simulation] Initial node coordinates:', simulationNodes.slice(0, 3).map(n => ({ id: n.id, x: n.x, y: n.y })));
+    console.log(
+      "[simulation] Initial node coordinates:",
+      simulationNodes.slice(0, 3).map((n) => ({ id: n.id, x: n.x, y: n.y })),
+    );
   }
 
   // Filter links to only include those where both source and target nodes exist
   const validLinks = filterValidLinks(nodes, links);
   if (validLinks.length !== links.length && import.meta.env.DEV) {
-    console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
+    console.warn(
+      `[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`,
+    );
   }
 
   const edges = validLinks.map((l) => ({
     source: l.source,
     target: l.target,
     weight: l.weight ?? 1,
-    link_type: l.link_type
+    link_type: l.link_type,
   }));
 
   state.simLinks = edges;
@@ -166,21 +182,21 @@ export function startSimulation(
   state.simulation = d3Force
     .forceSimulation(simulationNodes as any)
     .force(
-      'link',
+      "link",
       d3Force
         .forceLink(edges)
         .id((d: any) => d.id)
         .distance(100)
-        .strength(0.2)
+        .strength(0.2),
     )
-    .force('charge', d3Force.forceManyBody().strength(-100)) // Further reduced repulsion
-    .force('center', d3Force.forceCenter(width / 2, height / 2).strength(0.3))
-    .force('collision', d3Force.forceCollide().radius(25))
+    .force("charge", d3Force.forceManyBody().strength(-100)) // Further reduced repulsion
+    .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.3))
+    .force("collision", d3Force.forceCollide().radius(25))
     .alphaDecay(0.1) // Even faster cooling
-    .on('tick', () => {
+    .on("tick", () => {
       onTick();
     })
-    .on('end', () => {
+    .on("end", () => {
       // Simulation ended - nodes are stable
       // No additional fade animation needed (already handled in startFadeAnimation)
       state.fadeAnimationId = null;

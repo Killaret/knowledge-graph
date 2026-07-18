@@ -1,21 +1,38 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import FloatingControls from '$components/organisms/FloatingControls.svelte';
-  import NoteSidePanel from '$components/organisms/NoteSidePanel.svelte';
-  import CreateNoteModal from '$components/organisms/CreateNoteModal.svelte';
-  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
-  import ConfirmModal from '$components/organisms/ConfirmModal.svelte';
-  import NoteCard from '$components/molecules/NoteCard.svelte';
-  import ApiErrorDisplay from '$components/atoms/ApiErrorDisplay.svelte';
-  import StateIllustration from '$components/atoms/StateIllustration.svelte';
-  import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote, searchNotes, type Note } from '$shared/api/notes';
-  import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
-  import { getGraphWithPreload, useInstantData } from '$shared/hooks/usePreloadedData';
-  import { isAuthenticated } from '$shared/stores/auth.svelte';
-  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
-  import type { ErrorResponse } from '$shared/types/errors';
-  import SplashScreen from '$components/atoms/SplashScreen.svelte';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import FloatingControls from "$components/organisms/FloatingControls.svelte";
+  import NoteSidePanel from "$components/organisms/NoteSidePanel.svelte";
+  import CreateNoteModal from "$components/organisms/CreateNoteModal.svelte";
+  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
+  import ConfirmModal from "$components/organisms/ConfirmModal.svelte";
+  import NoteCard from "$components/molecules/NoteCard.svelte";
+  import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import {
+    getNotes,
+    createNote,
+    deleteNote,
+    deleteNotesBatch,
+    restoreNote,
+    searchNotes,
+    type Note,
+  } from "$shared/api/notes";
+  import {
+    getFullGraphData,
+    getFreshGraph,
+    type GraphData,
+    type GraphDelta,
+  } from "$shared/api/graph";
+  import {
+    getGraphWithPreload,
+    useInstantData,
+  } from "$shared/hooks/usePreloadedData";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import type { ErrorResponse } from "$shared/types/errors";
+  import SplashScreen from "$components/atoms/SplashScreen.svelte";
+  import { CelestialBody } from "$shared/lib/domain";
 
   // State
   let allNotes: Note[] = $state([]);
@@ -28,50 +45,62 @@
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
-  
+  let currentView: "graph" | "list" = $state("graph"); // Graph-first interface
+
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let graphDelta: GraphDelta | undefined = $state(undefined);
   let graphLoading = $state(false);
-  let searchQuery = $state('');
-  
+  let searchQuery = $state("");
+
   // Filter and sort state
-  let selectedType = $state<string>('all');
-  let sortBy = $state<'created' | 'updated' | 'type'>('created');
+  let selectedType = $state<string>("all");
+  let sortBy = $state<"created" | "updated" | "type">("created");
   const selectedNoteIds = $state<Set<string>>(new Set());
   let selectionMode = $state(false);
   let lastDeletedNote: Note | null = $state(null);
   let showUndoToast = $state(false);
-  let undoToastStage = $state<'done' | 'restore'>('done');
+  let undoToastStage = $state<"done" | "restore">("done");
   let showBulkActionsMenu = $state(false);
 
+  function filterLabel(body: CelestialBody): string {
+    if (body.type === "dust") return "Cosmic Dust";
+    if (body.type === "blackhole") return "Black Holes";
+    if (body.type === "unknown") return "Unknown";
+    return `${body.label}s`;
+  }
+
   const typeFilters = [
-    { id: 'inbox', label: 'Inbox', emoji: '📥' },
-    { id: 'all', label: 'All', emoji: '🌌' },
-    { id: 'star', label: 'Stars', emoji: '⭐' },
-    { id: 'planet', label: 'Planets', emoji: '🪐' },
-    { id: 'moon', label: 'Moons', emoji: '🌙' },
-    { id: 'comet', label: 'Comets', emoji: '☄️' },
-    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' },
-    { id: 'nebula', label: 'Nebulas', emoji: '💫' },
-    { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
-    { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
-    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' },
-    { id: 'dust', label: 'Cosmic Dust', emoji: '🌫️' },
-    { id: 'unknown', label: 'Unknown', emoji: '❓' }
+    { id: "inbox", label: "Inbox", emoji: "📥" },
+    { id: "all", label: "All", emoji: "�" },
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: filterLabel(body), emoji: body.emoji };
+    }),
   ];
 
   const sortOptions = [
-    { id: 'created', label: 'Created (newest first)' },
-    { id: 'updated', label: 'Updated (recent first)' },
-    { id: 'type', label: 'Type (alphabetical)' }
+    { id: "created", label: "Created (newest first)" },
+    { id: "updated", label: "Updated (recent first)" },
+    { id: "type", label: "Type (alphabetical)" },
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.
   // These are the available sorting options for the notes list view:
   // - newest: Sort by creation date, newest first
-  // - oldest: Sort by creation date, oldest first  
+  // - oldest: Sort by creation date, oldest first
   // - az: Alphabetical sorting A-Z
   // - za: Alphabetical sorting Z-A
   // Functionality: Provides sorting options for the notes list view UI
@@ -92,53 +121,53 @@
     try {
       // Reset error state before loading
       apiError = null;
-      
+
       // Check for instant preloaded data first
       const instantData = useInstantData();
       let graphResult: GraphData | null = null;
       let graphDeltaResult: GraphDelta | undefined = undefined;
-      
+
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
         graphResult = instantData.graph;
         graphDeltaResult = instantData.delta ?? undefined;
         graphData = graphResult;
       }
-      
+
       // Load notes and graph data in parallel
       const isAuth = isAuthenticated();
       const [notesResult, freshGraphResult] = await Promise.all([
         isAuth ? getNotes() : Promise.resolve([] as Note[]),
         isAuth
           ? getFreshGraph().catch((e: unknown) => {
-              console.error('[+page] Failed to load fresh graph:', e);
+              console.error("[+page] Failed to load fresh graph:", e);
               return null;
             })
           : getGraphWithPreload().catch((e: unknown) => {
-              console.error('[+page] Failed to load public graph:', e);
+              console.error("[+page] Failed to load public graph:", e);
               return null;
-            })
+            }),
       ]);
 
       // For public (unauthenticated) view, derive the note list from the public graph
       // because the notes API is protected.
-      if (!isAuth && freshGraphResult && 'nodes' in freshGraphResult) {
+      if (!isAuth && freshGraphResult && "nodes" in freshGraphResult) {
         allNotes = (freshGraphResult as GraphData).nodes.map((n: any) => ({
           id: n.id || n.Id || n.ID,
           title: n.title || n.Title,
-          content: '',
+          content: "",
           metadata: {},
-          type: n.type ?? n.Type ?? 'unknown',
-          created_at: '',
-          updated_at: ''
+          type: n.type ?? n.Type ?? "unknown",
+          created_at: "",
+          updated_at: "",
         }));
       } else {
         allNotes = notesResult;
       }
       applyFiltersAndSort();
-      
+
       // Apply fresh graph data when available
       if (freshGraphResult) {
-        if (isAuth && 'fresh' in freshGraphResult) {
+        if (isAuth && "fresh" in freshGraphResult) {
           graphResult = freshGraphResult.fresh;
           graphDeltaResult = freshGraphResult.delta ?? undefined;
         } else if (!isAuth) {
@@ -146,16 +175,32 @@
           graphDeltaResult = undefined;
         }
       }
-      
+
       graphDelta = graphDeltaResult;
-      
+
       // Set graph data if successful
-      if (graphResult && graphResult.nodes && Array.isArray(graphResult.nodes)) {
+      if (
+        graphResult &&
+        graphResult.nodes &&
+        Array.isArray(graphResult.nodes)
+      ) {
         // Debug: check what types come from API
-        const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
+        const apiTypes = graphResult.nodes.map(
+          (n: any) => n.type || n.Type || "MISSING",
+        );
         if (import.meta.env.DEV) {
-          console.log('[+page] loadDataParallel API types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-          console.log('[+page] loadDataParallel First 3 nodes:', graphResult.nodes.slice(0, 3).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+          console.log(
+            "[+page] loadDataParallel API types:",
+            [...new Set(apiTypes)],
+            "Total:",
+            apiTypes.length,
+          );
+          console.log(
+            "[+page] loadDataParallel First 3 nodes:",
+            graphResult.nodes
+              .slice(0, 3)
+              .map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })),
+          );
         }
 
         // Transform nodes to ensure correct type field
@@ -163,28 +208,47 @@
           nodes: graphResult.nodes.map((n: any) => ({
             id: n.id || n.Id || n.ID,
             title: n.title || n.Title,
-            type: n.type ?? n.Type ?? 'unknown'
+            type: n.type ?? n.Type ?? "unknown",
           })),
           links: (graphResult.links || []).map((l: any) => ({
             source: l.source_note_id || l.source,
             target: l.target_note_id || l.target,
             weight: l.weight,
-            link_type: l.link_type
-          }))
+            link_type: l.link_type,
+          })),
         };
         if (import.meta.env.DEV) {
-          console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-          console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
+          console.log(
+            "[+page] Full graph loaded:",
+            graphData.nodes.length,
+            "nodes,",
+            graphData.links.length,
+            "links",
+          );
+          console.log("[+page] Transformed types:", [
+            ...new Set(
+              graphData.nodes.map(
+                (n: { id: string; title: string; type?: string }) => n.type,
+              ),
+            ),
+          ]);
         }
       } else {
         // Fallback: build simple graph from notes
         graphData = {
-          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
-          links: []
+          nodes: allNotes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            type: n.type || "unknown",
+          })),
+          links: [],
         };
       }
     } catch (e: any) {
-      apiError = e?.response?.data || { code: 'LOAD_ERROR', message: 'Failed to load notes' };
+      apiError = e?.response?.data || {
+        code: "LOAD_ERROR",
+        message: "Failed to load notes",
+      };
       console.error(e);
     } finally {
       loading = false;
@@ -198,7 +262,10 @@
       // Also load graph data when notes are loaded
       await loadGraphData();
     } catch (e: any) {
-      apiError = e?.response?.data || { code: 'LOAD_ERROR', message: 'Failed to load notes' };
+      apiError = e?.response?.data || {
+        code: "LOAD_ERROR",
+        message: "Failed to load notes",
+      };
       console.error(e);
     } finally {
       loading = false;
@@ -219,28 +286,47 @@
       // Defensive check for API response structure
       if (!rawData || !rawData.nodes || !Array.isArray(rawData.nodes)) {
         if (import.meta.env.DEV) {
-          console.warn('[+page] Graph API returned invalid data structure:', rawData);
+          console.warn(
+            "[+page] Graph API returned invalid data structure:",
+            rawData,
+          );
         }
         // Fallback: build simple graph from notes
         graphData = {
-          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
-          links: []
+          nodes: allNotes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            type: n.type || "unknown",
+          })),
+          links: [],
         };
         return;
       }
 
       // Debug: check what types come from API
-      const apiTypes = rawData.nodes.map((n: any) => n.type || n.Type || 'MISSING');
+      const apiTypes = rawData.nodes.map(
+        (n: any) => n.type || n.Type || "MISSING",
+      );
       if (import.meta.env.DEV) {
-        console.log('[+page] API node types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-        console.log('[+page] First 5 raw nodes:', rawData.nodes.slice(0, 5).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
+        console.log(
+          "[+page] API node types:",
+          [...new Set(apiTypes)],
+          "Total:",
+          apiTypes.length,
+        );
+        console.log(
+          "[+page] First 5 raw nodes:",
+          rawData.nodes
+            .slice(0, 5)
+            .map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })),
+        );
       }
 
       // Transform nodes: backend might return Id/id/ID in different cases
       const transformedNodes = rawData.nodes.map((n: any) => ({
         id: n.id || n.Id || n.ID,
         title: n.title || n.Title,
-        type: n.type ?? n.Type ?? 'unknown'
+        type: n.type ?? n.Type ?? "unknown",
       }));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
@@ -248,41 +334,63 @@
         source: l.source_note_id || l.source,
         target: l.target_note_id || l.target,
         weight: l.weight,
-        link_type: l.link_type
+        link_type: l.link_type,
       }));
 
       graphData = {
         nodes: transformedNodes,
-        links: transformedLinks
+        links: transformedLinks,
       };
 
       if (import.meta.env.DEV) {
-        console.log('[+page] Transformed links:', transformedLinks.length, 'links');
-        console.log('[+page] First 3 transformed links:', transformedLinks.slice(0, 3));
-        
+        console.log(
+          "[+page] Transformed links:",
+          transformedLinks.length,
+          "links",
+        );
+        console.log(
+          "[+page] First 3 transformed links:",
+          transformedLinks.slice(0, 3),
+        );
+
         // Check if links match node IDs
-        const nodeIds = new Set(transformedNodes.map(n => n.id));
-        const validLinks = transformedLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
-        console.log('[+page] Node IDs:', Array.from(nodeIds).slice(0, 5));
-        console.log('[+page] Valid links (matching node IDs):', validLinks.length, 'of', transformedLinks.length);
-        
+        const nodeIds = new Set(transformedNodes.map((n) => n.id));
+        const validLinks = transformedLinks.filter(
+          (l) => nodeIds.has(l.source) && nodeIds.has(l.target),
+        );
+        console.log("[+page] Node IDs:", Array.from(nodeIds).slice(0, 5));
+        console.log(
+          "[+page] Valid links (matching node IDs):",
+          validLinks.length,
+          "of",
+          transformedLinks.length,
+        );
+
         if (validLinks.length < transformedLinks.length) {
-          console.warn('[+page] Some links have invalid node IDs:', transformedLinks.filter(l => !nodeIds.has(l.source) || !nodeIds.has(l.target)));
+          console.warn(
+            "[+page] Some links have invalid node IDs:",
+            transformedLinks.filter(
+              (l) => !nodeIds.has(l.source) || !nodeIds.has(l.target),
+            ),
+          );
         }
       }
-
     } catch (e) {
-      console.error('[+page] Failed to load graph:', e);
+      console.error("[+page] Failed to load graph:", e);
       // Fallback: build simple graph from notes
       graphData = {
-        nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'unknown' })),
-        links: []
+        nodes: allNotes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          type: n.type || "unknown",
+        })),
+        links: [],
       };
     } finally {
       graphLoading = false;
     }
   }
-  
+
   // Reload graph when allNotes changes (notes added/deleted)
   $effect(() => {
     if (browser && allNotes.length > 0) {
@@ -290,9 +398,9 @@
     }
   });
 
-  // Helper to get note type - unified with renderer.ts logic
+  // Helper to get note type - unified with renderer.ts logic via CelestialBody
   function getNoteType(note: Note): string {
-    return note.type ?? 'unknown';
+    return CelestialBody.fromString(note.type).type;
   }
 
   // Reactive filtered graph data based on selected type and search query
@@ -301,9 +409,11 @@
 
     // Build allowed IDs based on type filter
     let allowedNodeIds: Set<string> | null = null;
-    if (selectedType !== 'all') {
+    if (selectedType !== "all") {
       allowedNodeIds = new Set(
-        allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
+        allNotes
+          .filter((n) => getNoteType(n) === selectedType)
+          .map((n) => n.id),
       );
     }
 
@@ -313,26 +423,38 @@
       const q = searchQuery.toLowerCase();
       searchNodeIds = new Set(
         allNotes
-          .filter(n =>
-            n.title.toLowerCase().includes(q) ||
-            (n.content ?? '').toLowerCase().includes(q)
+          .filter(
+            (n) =>
+              n.title.toLowerCase().includes(q) ||
+              (n.content ?? "").toLowerCase().includes(q),
           )
-          .map(n => n.id)
+          .map((n) => n.id),
       );
     }
 
-    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => {
-      if (allowedNodeIds && !allowedNodeIds.has(n.id)) return false;
-      if (searchNodeIds && !searchNodeIds.has(n.id)) return false;
-      return true;
-    });
-
-    const filteredNodeIds = new Set(filteredNodes.map((n: { id: string; title: string; type?: string }) => n.id));
-    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) =>
-      filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
+    const filteredNodes = graphData.nodes.filter(
+      (n: { id: string; title: string; type?: string }) => {
+        if (allowedNodeIds && !allowedNodeIds.has(n.id)) return false;
+        if (searchNodeIds && !searchNodeIds.has(n.id)) return false;
+        return true;
+      },
     );
 
-    if (import.meta.env.DEV) { console.log(`[FilteredGraph] Type: ${selectedType}, search: "${searchQuery}", nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`) };
+    const filteredNodeIds = new Set(
+      filteredNodes.map(
+        (n: { id: string; title: string; type?: string }) => n.id,
+      ),
+    );
+    const filteredLinks = graphData.links.filter(
+      (l: { source: string; target: string }) =>
+        filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target),
+    );
+
+    if (import.meta.env.DEV) {
+      console.log(
+        `[FilteredGraph] Type: ${selectedType}, search: "${searchQuery}", nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`,
+      );
+    }
 
     return { nodes: filteredNodes, links: filteredLinks };
   });
@@ -341,24 +463,25 @@
     let result = [...allNotes];
 
     // Apply type filter
-    if (selectedType === 'inbox') {
+    if (selectedType === "inbox") {
       // Filter notes with #inbox tag
-      result = result.filter(n => 
-        n.metadata?.tags?.some((tag: string) => tag === '#inbox')
+      result = result.filter((n) =>
+        n.metadata?.tags?.some((tag: string) => tag === "#inbox"),
       );
-    } else if (selectedType !== 'all') {
-      result = result.filter(n => getNoteType(n) === selectedType);
+    } else if (selectedType !== "all") {
+      result = result.filter((n) => getNoteType(n) === selectedType);
     }
 
     // Apply search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(n => 
-        n.title.toLowerCase().includes(query) || 
-        n.content.toLowerCase().includes(query)
+      result = result.filter(
+        (n) =>
+          n.title.toLowerCase().includes(query) ||
+          n.content.toLowerCase().includes(query),
       );
     }
-    
+
     // Expose to window for tests
     if (browser) {
       (window as any).filteredNotes = result;
@@ -366,14 +489,22 @@
 
     // Apply sorting
     switch (sortBy) {
-      case 'created':
-        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      case "created":
+        result.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
         break;
-      case 'updated':
-        result.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      case "updated":
+        result.sort(
+          (a, b) =>
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+        );
         break;
-      case 'type':
-        result.sort((a, b) => (a.type || 'unknown').localeCompare(b.type || 'unknown'));
+      case "type":
+        result.sort((a, b) =>
+          (a.type || "unknown").localeCompare(b.type || "unknown"),
+        );
         break;
     }
 
@@ -386,7 +517,7 @@
       applyFiltersAndSort();
       return;
     }
-    
+
     try {
       // Use server search results only for the list view (filteredNotes)
       // The graph canvas uses local search via filteredGraphData derived
@@ -395,7 +526,7 @@
     } catch (e) {
       // Fallback: local filter on allNotes
       applyFiltersAndSort();
-      console.error('Search error:', e);
+      console.error("Search error:", e);
     }
   }
 
@@ -411,13 +542,13 @@
       await deleteNote(noteToDelete);
       selectedNodeId = null;
       // Remove deleted note from local arrays immediately
-      allNotes = allNotes.filter(n => n.id !== noteToDelete);
-      filteredNotes = filteredNotes.filter(n => n.id !== noteToDelete);
+      allNotes = allNotes.filter((n) => n.id !== noteToDelete);
+      filteredNotes = filteredNotes.filter((n) => n.id !== noteToDelete);
       // Then reload from server to ensure sync
       await loadNotes();
     } catch {
       if (browser) {
-        alert('Failed to delete note');
+        alert("Failed to delete note");
       }
     } finally {
       noteToDelete = null;
@@ -436,7 +567,7 @@
     if (selectedNoteIds.size === filteredNotes.length) {
       selectedNoteIds.clear();
     } else {
-      filteredNotes.forEach(n => selectedNoteIds.add(n.id));
+      filteredNotes.forEach((n) => selectedNoteIds.add(n.id));
     }
   }
 
@@ -453,15 +584,17 @@
 
     // Confirmation dialog
     if (browser) {
-      const confirmed = confirm(`Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? 's' : ''}? This action cannot be undone.`);
+      const confirmed = confirm(
+        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`,
+      );
       if (!confirmed) return;
     }
 
     try {
       await deleteNotesBatch(Array.from(selectedNoteIds));
       // Remove deleted notes from local arrays
-      allNotes = allNotes.filter(n => !selectedNoteIds.has(n.id));
-      filteredNotes = filteredNotes.filter(n => !selectedNoteIds.has(n.id));
+      allNotes = allNotes.filter((n) => !selectedNoteIds.has(n.id));
+      filteredNotes = filteredNotes.filter((n) => !selectedNoteIds.has(n.id));
       selectedNoteIds.clear();
       selectionMode = false;
       showBulkActionsMenu = false;
@@ -469,7 +602,7 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert('Failed to delete selected notes');
+        alert("Failed to delete selected notes");
       }
     }
   }
@@ -482,13 +615,13 @@
   async function handleNoteDelete(note: Note) {
     lastDeletedNote = note;
     await deleteNote(note.id);
-    allNotes = allNotes.filter(n => n.id !== note.id);
-    filteredNotes = filteredNotes.filter(n => n.id !== note.id);
+    allNotes = allNotes.filter((n) => n.id !== note.id);
+    filteredNotes = filteredNotes.filter((n) => n.id !== note.id);
     await loadNotes();
     showUndoToast = true;
-    undoToastStage = 'done';
+    undoToastStage = "done";
     setTimeout(() => {
-      undoToastStage = 'restore';
+      undoToastStage = "restore";
     }, 1500);
     setTimeout(() => {
       showUndoToast = false;
@@ -505,18 +638,26 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert('Failed to restore note');
+        alert("Failed to restore note");
       }
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+  }) {
     try {
-      await createNote({ title: data.title, content: data.content, type: data.type });
+      await createNote({
+        title: data.title,
+        content: data.content,
+        type: data.type,
+      });
       await loadNotes();
     } catch {
       if (browser) {
-        alert('Failed to create note');
+        alert("Failed to create note");
       }
     }
   }
@@ -527,7 +668,7 @@
     loadNotes();
   }
 
-  function handleToggleView(view: 'graph' | 'list') {
+  function handleToggleView(view: "graph" | "list") {
     currentView = view;
   }
 </script>
@@ -538,17 +679,31 @@
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
 <div class="page-container">
-
-<!-- Floating Controls with Filters -->
+  <!-- Floating Controls with Filters -->
   <FloatingControls
-    onCreate={() => { showCreateModal = true; }}
-    onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
+    onCreate={() => {
+      showCreateModal = true;
+    }}
+    onSearch={(query: string) => {
+      searchQuery = query;
+      handleSearch();
+    }}
     onToggleView={handleToggleView}
-    onFilter={(type: string) => { selectedType = type; applyFiltersAndSort(); }}
-    typeFilters={typeFilters}
-    selectedType={selectedType}
-    currentView={currentView}
-    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? allNotes.length : allNotes.filter(n => n.type === f.id).length]))}
+    onFilter={(type: string) => {
+      selectedType = type;
+      applyFiltersAndSort();
+    }}
+    {typeFilters}
+    {selectedType}
+    {currentView}
+    typeCounts={Object.fromEntries(
+      typeFilters.map((f) => [
+        f.id,
+        f.id === "all"
+          ? allNotes.length
+          : allNotes.filter((n) => n.type === f.id).length,
+      ]),
+    )}
   />
 
   <!-- Fullscreen Graph Container -->
@@ -559,12 +714,19 @@
         <p>Loading notes...</p>
       </div>
     {:else if apiError}
-      <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
-      <button onclick={() => { apiError = null; loadDataParallel(); }}>Retry</button>
-    {:else if currentView === 'graph'}
+      <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
+      <button
+        onclick={() => {
+          apiError = null;
+          loadDataParallel();
+        }}>Retry</button
+      >
+    {:else if currentView === "graph"}
       <!-- Debug info - remove in production -->
       {#if import.meta.env.DEV}
-        <div style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;">
+        <div
+          style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;"
+        >
           <div>allNotes: {allNotes.length}</div>
           <div>graphData.nodes: {graphData.nodes.length}</div>
           <div>graphData.links: {graphData.links.length}</div>
@@ -572,7 +734,9 @@
           <div>selectedType: {selectedType}</div>
           <div>loading: {loading}</div>
           <div>graphLoading: {graphLoading}</div>
-          <div>apiError: {(apiError as ErrorResponse | null)?.message ?? 'none'}</div>
+          <div>
+            apiError: {(apiError as ErrorResponse | null)?.message ?? "none"}
+          </div>
         </div>
       {/if}
       <!-- Fullscreen 2D Graph View -->
@@ -586,30 +750,36 @@
           nodes={filteredGraphData().nodes}
           links={filteredGraphData().links}
           delta={graphDelta}
-          onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
+          onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
         />
         <!-- Stats Overlay -->
         <div class="graph-stats-overlay" data-testid="graph-stats">
-          <span class="stat-item"><strong>{filteredGraphData().nodes.length}</strong> nodes</span>
-          <span class="stat-item"><strong>{filteredGraphData().links.length}</strong> links</span>
-          {#if selectedType !== 'all'}
-            <span class="stat-filter">{typeFilters.find(f => f.id === selectedType)?.label}</span>
+          <span class="stat-item"
+            ><strong>{filteredGraphData().nodes.length}</strong> nodes</span
+          >
+          <span class="stat-item"
+            ><strong>{filteredGraphData().links.length}</strong> links</span
+          >
+          {#if selectedType !== "all"}
+            <span class="stat-filter"
+              >{typeFilters.find((f) => f.id === selectedType)?.label}</span
+            >
           {/if}
         </div>
       {:else}
         <div class="empty-state">
           <StateIllustration type="no-links" />
           <h2>No graph data</h2>
-          <p>{selectedType === 'all' 
-            ? "Create some notes to see the knowledge graph" 
-            : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
+          <p>
+            {selectedType === "all"
+              ? "Create some notes to see the knowledge graph"
+              : `No ${typeFilters.find((f) => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
           </p>
         </div>
       {/if}
-
-    {:else if currentView === 'list'}
+    {:else if currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
         <div class="list-header">
@@ -620,7 +790,7 @@
               onclick={toggleSelectionMode}
               aria-label="Toggle selection mode"
             >
-              {selectionMode ? 'Cancel selection' : 'Select'}
+              {selectionMode ? "Cancel selection" : "Select"}
             </button>
             {#if selectionMode}
               <button
@@ -628,7 +798,9 @@
                 onclick={toggleSelectAll}
                 aria-label="Select all notes"
               >
-                {selectedNoteIds.size === filteredNotes.length ? 'Clear selection' : 'Select all'}
+                {selectedNoteIds.size === filteredNotes.length
+                  ? "Clear selection"
+                  : "Select all"}
               </button>
             {/if}
           </div>
@@ -638,7 +810,10 @@
               id="sort-select"
               class="sort-select"
               value={sortBy}
-              onchange={(e) => { sortBy = e.currentTarget.value as typeof sortBy; applyFiltersAndSort(); }}
+              onchange={(e) => {
+                sortBy = e.currentTarget.value as typeof sortBy;
+                applyFiltersAndSort();
+              }}
               aria-label="Sort notes"
             >
               {#each sortOptions as opt}
@@ -650,20 +825,27 @@
 
         {#if filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
-            <StateIllustration type={selectedType === 'all' && !searchQuery ? 'empty' : 'no-results'} />
+            <StateIllustration
+              type={selectedType === "all" && !searchQuery
+                ? "empty"
+                : "no-results"}
+            />
             <h2>
-              {selectedType === 'all' && !searchQuery
-                ? 'Your star chart is empty'
-                : 'No cosmic objects found'}
+              {selectedType === "all" && !searchQuery
+                ? "Your star chart is empty"
+                : "No cosmic objects found"}
             </h2>
             <p>
-              {selectedType === 'all' && !searchQuery
-                ? 'Ignite your first star to begin your knowledge galaxy.'
+              {selectedType === "all" && !searchQuery
+                ? "Ignite your first star to begin your knowledge galaxy."
                 : searchQuery
                   ? `No objects match "${searchQuery}". Try different coordinates.`
-                  : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found in this sector.`}
+                  : `No ${typeFilters.find((f) => f.id === selectedType)?.label.toLowerCase()} found in this sector.`}
             </p>
-            <button class="new-note-button" onclick={() => showCreateModal = true}>
+            <button
+              class="new-note-button"
+              onclick={() => (showCreateModal = true)}
+            >
               Create your first note
             </button>
           </div>
@@ -678,7 +860,7 @@
                 onSelect={handleNoteSelect}
                 onEdit={handleNoteEdit}
                 onDelete={handleNoteDelete}
-                onClick={() => selectedNodeId = note.id}
+                onClick={() => (selectedNodeId = note.id)}
                 highlightQuery={searchQuery}
               />
             {/each}
@@ -692,7 +874,7 @@
           <span class="batch-count">{selectedNoteIds.size} selected</span>
           <button
             class="batch-btn batch-btn--actions"
-            onclick={() => showBulkActionsMenu = !showBulkActionsMenu}
+            onclick={() => (showBulkActionsMenu = !showBulkActionsMenu)}
             aria-label="Bulk actions"
           >
             Actions
@@ -706,7 +888,10 @@
           </button>
           <button
             class="batch-btn batch-btn--cancel"
-            onclick={() => { selectedNoteIds.clear(); selectionMode = false; }}
+            onclick={() => {
+              selectedNoteIds.clear();
+              selectionMode = false;
+            }}
             aria-label="Cancel selection"
           >
             Cancel
@@ -718,7 +903,9 @@
           <div class="bulk-actions-menu">
             <button
               class="bulk-action-item"
-              onclick={() => { showBulkActionsMenu = false; }}
+              onclick={() => {
+                showBulkActionsMenu = false;
+              }}
               aria-label="Move to type"
             >
               <span class="bulk-action-icon">📂</span>
@@ -726,7 +913,9 @@
             </button>
             <button
               class="bulk-action-item"
-              onclick={() => { showBulkActionsMenu = false; }}
+              onclick={() => {
+                showBulkActionsMenu = false;
+              }}
               aria-label="Add tags"
             >
               <span class="bulk-action-icon">🏷️</span>
@@ -734,7 +923,9 @@
             </button>
             <button
               class="bulk-action-item"
-              onclick={() => { showBulkActionsMenu = false; }}
+              onclick={() => {
+                showBulkActionsMenu = false;
+              }}
               aria-label="Export notes"
             >
               <span class="bulk-action-icon">📤</span>
@@ -749,26 +940,29 @@
 
 <!-- Side Panel for selected note -->
 {#if selectedNodeId}
-  <NoteSidePanel 
-    nodeId={selectedNodeId} 
-    onClose={() => selectedNodeId = null}
-    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
+  <NoteSidePanel
+    nodeId={selectedNodeId}
+    onClose={() => (selectedNodeId = null)}
+    onEdit={(id: string) => {
+      noteToEdit = id;
+      showEditModal = true;
+    }}
     onDelete={handleDeleteRequest}
   />
 {/if}
 
 <!-- Create Note Modal -->
-<CreateNoteModal 
-  bind:open={showCreateModal}
-  onSuccess={handleNoteCreated}
-/>
+<CreateNoteModal bind:open={showCreateModal} onSuccess={handleNoteCreated} />
 
 <!-- Edit Note Modal -->
 {#if noteToEdit}
-  <EditNoteModal 
+  <EditNoteModal
     bind:open={showEditModal}
     noteId={noteToEdit}
-    onSuccess={() => { showEditModal = false; noteToEdit = null; }}
+    onSuccess={() => {
+      showEditModal = false;
+      noteToEdit = null;
+    }}
   />
 {/if}
 
@@ -781,16 +975,19 @@
   cancelText="Cancel"
   danger={true}
   onConfirm={handleDeleteConfirm}
-  onCancel={() => { showConfirmDelete = false; noteToDelete = null; }}
+  onCancel={() => {
+    showConfirmDelete = false;
+    noteToDelete = null;
+  }}
 />
 
 <!-- Undo toast -->
 {#if showUndoToast}
   <div
     class="undo-toast"
-    class:undo-toast--restore={undoToastStage === 'restore'}
+    class:undo-toast--restore={undoToastStage === "restore"}
   >
-    {#if undoToastStage === 'done'}
+    {#if undoToastStage === "done"}
       <span class="undo-toast-message">Done</span>
     {:else}
       <span class="undo-toast-message">Note deleted.</span>
@@ -888,7 +1085,9 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
   }
 
   .list-control-btn:hover {
@@ -1110,7 +1309,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Empty State */

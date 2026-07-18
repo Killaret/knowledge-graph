@@ -8,8 +8,34 @@
   const { hotkeyLines, helpContent, onClose }: Props = $props();
 </script>
 
-<div class="modal-backdrop" data-testid="help-modal-backdrop" onclick={onClose} onkeydown={(e) => { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }} role="button" tabindex="0">
-  <div class="modal-content" data-testid="help-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { e.stopPropagation(); if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }} role="dialog" aria-modal="true" tabindex="-1">
+<div
+  class="modal-backdrop"
+  data-testid="help-modal-backdrop"
+  onclick={onClose}
+  onkeydown={(e) => {
+    if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClose();
+    }
+  }}
+  role="button"
+  tabindex="0"
+>
+  <div
+    class="modal-content"
+    data-testid="help-modal"
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => {
+      e.stopPropagation();
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClose();
+      }
+    }}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
     <div class="modal-header">
       <h2>Keyboard Shortcuts</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close">×</button>

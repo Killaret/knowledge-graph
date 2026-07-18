@@ -3,7 +3,7 @@
 export interface DeviceCapabilities {
   isMobile: boolean;
   isLowPower: boolean;
-  gpuTier: 'high' | 'medium' | 'low';
+  gpuTier: "high" | "medium" | "low";
   maxNodes: number;
   starCount: number;
   enableParticles: boolean;
@@ -12,24 +12,25 @@ export interface DeviceCapabilities {
 }
 
 export function detectDeviceCapabilities(): DeviceCapabilities {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     // SSR fallback - return conservative settings
     return {
       isMobile: false,
       isLowPower: true,
-      gpuTier: 'low',
+      gpuTier: "low",
       maxNodes: 50,
       starCount: 200,
       enableParticles: false,
       enableGlow: false,
-      pixelRatio: 1
+      pixelRatio: 1,
     };
   }
 
   // Check for mobile device
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  ) || window.innerWidth < 768;
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    ) || window.innerWidth < 768;
 
   // Check hardware concurrency (CPU cores)
   const cpuCores = navigator.hardwareConcurrency || 2;
@@ -38,45 +39,56 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   const deviceMemory = (navigator as any).deviceMemory || 4;
 
   // Try to detect GPU tier
-  let gpuTier: 'high' | 'medium' | 'low' = 'medium';
+  let gpuTier: "high" | "medium" | "low" = "medium";
 
-  const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  const canvas = document.createElement("canvas");
+  const gl =
+    canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 
   if (gl) {
-    const debugInfo = (gl as any).getExtension('WEBGL_debug_renderer_info');
+    const debugInfo = (gl as any).getExtension("WEBGL_debug_renderer_info");
     if (debugInfo) {
-      const renderer = (gl as any).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      const renderer = (gl as any).getParameter(
+        debugInfo.UNMASKED_RENDERER_WEBGL,
+      );
 
       // Check for software renderer or low-end GPUs
-      const lowEndGPUs = ['swiftshader', 'llvmpipe', 'software', 'microsoft basic render'];
-      const isSoftwareRenderer = lowEndGPUs.some(gpu =>
-        renderer.toLowerCase().includes(gpu)
+      const lowEndGPUs = [
+        "swiftshader",
+        "llvmpipe",
+        "software",
+        "microsoft basic render",
+      ];
+      const isSoftwareRenderer = lowEndGPUs.some((gpu) =>
+        renderer.toLowerCase().includes(gpu),
       );
 
       if (isSoftwareRenderer) {
-        gpuTier = 'low';
-      } else if (renderer.toLowerCase().includes('intel')) {
-        gpuTier = 'low';
+        gpuTier = "low";
+      } else if (renderer.toLowerCase().includes("intel")) {
+        gpuTier = "low";
       } else if (isMobile) {
-        gpuTier = 'medium';
+        gpuTier = "medium";
       } else {
-        gpuTier = 'high';
+        gpuTier = "high";
       }
     }
 
     // Check max texture size as GPU capability indicator
-    const maxTextureSize = (gl as any).getParameter((gl as any).MAX_TEXTURE_SIZE);
+    const maxTextureSize = (gl as any).getParameter(
+      (gl as any).MAX_TEXTURE_SIZE,
+    );
     if (maxTextureSize < 4096) {
-      gpuTier = 'low';
+      gpuTier = "low";
     }
   }
 
   // Determine if low power mode
-  const isLowPower = isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === 'low';
+  const isLowPower =
+    isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === "low";
 
   // Set optimization parameters based on capabilities
-  if (isLowPower || gpuTier === 'low') {
+  if (isLowPower || gpuTier === "low") {
     return {
       isMobile,
       isLowPower: true,
@@ -85,11 +97,11 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
       starCount: 100,
       enableParticles: false,
       enableGlow: false,
-      pixelRatio: Math.min(window.devicePixelRatio, 1)
+      pixelRatio: Math.min(window.devicePixelRatio, 1),
     };
   }
 
-  if (gpuTier === 'medium' || isMobile) {
+  if (gpuTier === "medium" || isMobile) {
     return {
       isMobile,
       isLowPower: isMobile,
@@ -98,7 +110,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
       starCount: 500,
       enableParticles: true,
       enableGlow: true,
-      pixelRatio: Math.min(window.devicePixelRatio, 1.5)
+      pixelRatio: Math.min(window.devicePixelRatio, 1.5),
     };
   }
 
@@ -106,18 +118,18 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   return {
     isMobile: false,
     isLowPower: false,
-    gpuTier: 'high',
+    gpuTier: "high",
     maxNodes: 100,
     starCount: 1000,
     enableParticles: true,
     enableGlow: true,
-    pixelRatio: Math.min(window.devicePixelRatio, 2)
+    pixelRatio: Math.min(window.devicePixelRatio, 2),
   };
 }
 
 export function shouldUse3D(capabilities: DeviceCapabilities): boolean {
   // Use 2D fallback for very low-end devices
-  if (capabilities.gpuTier === 'low' && capabilities.isMobile) {
+  if (capabilities.gpuTier === "low" && capabilities.isMobile) {
     return false;
   }
   return true;

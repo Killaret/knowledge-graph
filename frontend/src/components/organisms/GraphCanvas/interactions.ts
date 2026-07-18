@@ -1,8 +1,13 @@
 /**
  * Interaction handlers for GraphCanvas
  */
-import { goto } from '$app/navigation';
-import type { SimulationNode, SimulationLink, TransformState, DragState } from './types';
+import { goto } from "$app/navigation";
+import type {
+  SimulationNode,
+  SimulationLink,
+  TransformState,
+  DragState,
+} from "./types";
 
 export type { DragState };
 
@@ -16,7 +21,7 @@ function pointToLineDistance(
   x1: number,
   y1: number,
   x2: number,
-  y2: number
+  y2: number,
 ): number {
   const A = px - x1;
   const B = py - y1;
@@ -59,18 +64,26 @@ export function findLinkAtPosition(
   links: SimulationLink[],
   nodes: SimulationNode[],
   transform: TransformState,
-  tolerance: number = 8
+  tolerance: number = 8,
 ): SimulationLink | null {
   for (const link of links) {
-    const sourceNode = typeof link.source === 'string'
-      ? nodes.find((n) => n.id === link.source)
-      : link.source;
-    const targetNode = typeof link.target === 'string'
-      ? nodes.find((n) => n.id === link.target)
-      : link.target;
+    const sourceNode =
+      typeof link.source === "string"
+        ? nodes.find((n) => n.id === link.source)
+        : link.source;
+    const targetNode =
+      typeof link.target === "string"
+        ? nodes.find((n) => n.id === link.target)
+        : link.target;
 
     if (!sourceNode || !targetNode) continue;
-    if (sourceNode.x == null || sourceNode.y == null || targetNode.x == null || targetNode.y == null) continue;
+    if (
+      sourceNode.x == null ||
+      sourceNode.y == null ||
+      targetNode.x == null ||
+      targetNode.y == null
+    )
+      continue;
 
     const distance = pointToLineDistance(
       mouseX,
@@ -78,7 +91,7 @@ export function findLinkAtPosition(
       sourceNode.x,
       sourceNode.y,
       targetNode.x,
-      targetNode.y
+      targetNode.y,
     );
 
     if (distance <= tolerance) {
@@ -95,7 +108,7 @@ export function handleZoom(
   e: WheelEvent,
   transform: TransformState,
   canvas: HTMLCanvasElement,
-  onDraw: () => void
+  onDraw: () => void,
 ): void {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.95 : 1.05;
@@ -123,11 +136,14 @@ export function handlePanStart(
   e: MouseEvent,
   dragState: DragState,
   transform: TransformState,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ): void {
   dragState.dragging = true;
-  dragState.dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-  canvas.style.cursor = 'grabbing';
+  dragState.dragStart = {
+    x: e.clientX - transform.x,
+    y: e.clientY - transform.y,
+  };
+  canvas.style.cursor = "grabbing";
 }
 
 /**
@@ -137,7 +153,7 @@ export function handlePanMove(
   e: MouseEvent,
   dragState: DragState,
   transform: TransformState,
-  onDraw: () => void
+  onDraw: () => void,
 ): void {
   if (!dragState.dragging) return;
   transform.x = e.clientX - dragState.dragStart.x;
@@ -150,10 +166,10 @@ export function handlePanMove(
  */
 export function handlePanEnd(
   dragState: DragState,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ): void {
   dragState.dragging = false;
-  canvas.style.cursor = 'grab';
+  canvas.style.cursor = "grab";
 }
 
 /**
@@ -164,7 +180,7 @@ export function handleClick(
   canvas: HTMLCanvasElement,
   transform: TransformState,
   nodes: SimulationNode[],
-  onNodeClick?: (node: { id: string; title: string; type?: string }) => void
+  onNodeClick?: (node: { id: string; title: string; type?: string }) => void,
 ): void {
   const rect = canvas.getBoundingClientRect();
   const clickX = (e.clientX - rect.left - transform.x) / transform.k;

@@ -4,18 +4,22 @@
 
 // Colors for different link types (per specification)
 const linkTypeColors: Record<string, string> = {
-  reference: '#3366ff', // Blue - default direct link
-  dependency: '#ff6600', // Orange - dependency
-  related: '#999999', // Gray - related topic (default)
-  custom: '#ff66ff' // Pink - custom
+  reference: "#3366ff", // Blue - default direct link
+  dependency: "#ff6600", // Orange - dependency
+  related: "#999999", // Gray - related topic (default)
+  custom: "#ff66ff", // Pink - custom
 };
 
 /**
  * Get link color based on weight and type
  */
-export function getLinkColor(weight: number, linkType?: string, fadeOpacity: number = 1): string {
-  const effectiveType = linkType || 'related';
-  const color = linkTypeColors[effectiveType] || linkTypeColors['related'];
+export function getLinkColor(
+  weight: number,
+  linkType?: string,
+  fadeOpacity: number = 1,
+): string {
+  const effectiveType = linkType || "related";
+  const color = linkTypeColors[effectiveType] || linkTypeColors["related"];
   const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
   const finalOpacity = baseOpacity * fadeOpacity;
 

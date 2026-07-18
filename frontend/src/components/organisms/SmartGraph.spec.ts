@@ -1,42 +1,40 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/svelte';
-import { tick } from 'svelte';
-import SmartGraph from './SmartGraph.svelte';
+import { describe, it, expect, vi } from "vitest";
+import { render } from "@testing-library/svelte";
+import { tick } from "svelte";
+import SmartGraph from "./SmartGraph.svelte";
 
 // Mock device capabilities
-vi.mock('$shared/utils/deviceCapabilities', () => ({
+vi.mock("$shared/utils/deviceCapabilities", () => ({
   detectDeviceCapabilities: vi.fn().mockReturnValue({
     isMobile: false,
     isLowPower: false,
     hasWebGL: true,
-    screenSize: { width: 1920, height: 1080 }
+    screenSize: { width: 1920, height: 1080 },
   }),
-  shouldUse3D: vi.fn().mockReturnValue(false)
+  shouldUse3D: vi.fn().mockReturnValue(false),
 }));
 
 // Mock GraphCanvas
-vi.mock('./GraphCanvas.svelte', () => ({
+vi.mock("./GraphCanvas.svelte", () => ({
   default: vi.fn().mockImplementation(() => {
-    const div = document.createElement('div');
-    div.setAttribute('data-testid', 'graph-canvas');
+    const div = document.createElement("div");
+    div.setAttribute("data-testid", "graph-canvas");
     return div;
-  })
+  }),
 }));
 
-describe('SmartGraph', () => {
+describe("SmartGraph", () => {
   const mockData = {
     nodes: [
-      { id: '1', title: 'Node 1', type: 'star' },
-      { id: '2', title: 'Node 2', type: 'planet' }
+      { id: "1", title: "Node 1", type: "star" },
+      { id: "2", title: "Node 2", type: "planet" },
     ],
-    links: [
-      { source: '1', target: '2', weight: 1 }
-    ]
+    links: [{ source: "1", target: "2", weight: 1 }],
   };
 
-  it('renders without errors', async () => {
+  it("renders without errors", async () => {
     const { container } = render(SmartGraph, {
-      props: mockData
+      props: mockData,
     });
 
     await tick();
@@ -44,12 +42,12 @@ describe('SmartGraph', () => {
     expect(container).toBeTruthy();
   });
 
-  it('accepts nodes and links props', async () => {
+  it("accepts nodes and links props", async () => {
     const { container } = render(SmartGraph, {
       props: {
         nodes: mockData.nodes,
-        links: mockData.links
-      }
+        links: mockData.links,
+      },
     });
 
     await tick();
@@ -57,12 +55,12 @@ describe('SmartGraph', () => {
     expect(container).toBeTruthy();
   });
 
-  it('handles empty data', async () => {
+  it("handles empty data", async () => {
     const { container } = render(SmartGraph, {
       props: {
         nodes: [],
-        links: []
-      }
+        links: [],
+      },
     });
 
     await tick();

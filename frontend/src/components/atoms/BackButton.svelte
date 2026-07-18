@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
+  import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
 
-  const { href = '/', text = 'Back' }: { href?: string; text?: string } = $props();
+  const { href = "/", text = "Back" }: { href?: string; text?: string } =
+    $props();
 
   function handleBack() {
     if (browser && window.history.length > 1) {
@@ -13,11 +14,7 @@
   }
 </script>
 
-<button 
-  class="back-button" 
-  onclick={handleBack}
-  aria-label="Go back"
->
+<button class="back-button" onclick={handleBack} aria-label="Go back">
   {text}
 </button>
 

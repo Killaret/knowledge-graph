@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade } from "svelte/transition";
 
   const {
     visible,
@@ -11,7 +11,7 @@
     sourceTitle,
     targetTitle,
     onEdit,
-    onDelete
+    onDelete,
   }: {
     visible: boolean;
     x: number;
@@ -26,10 +26,10 @@
   } = $props();
 
   const linkTypeLabels: Record<string, string> = {
-    reference: 'Reference',
-    dependency: 'Dependency',
-    related: 'Related',
-    custom: 'Custom'
+    reference: "Reference",
+    dependency: "Dependency",
+    related: "Related",
+    custom: "Custom",
   };
 
   // Smart positioning to keep tooltip within viewport
@@ -68,8 +68,9 @@
     transition:fade={{ duration: 200 }}
   >
     <div class="tooltip-header">
-      <span class="link-type-badge">{linkTypeLabels[linkType] || linkType}</span>
-      {#if sourceType === 'gamma'}
+      <span class="link-type-badge">{linkTypeLabels[linkType] || linkType}</span
+      >
+      {#if sourceType === "gamma"}
         <span class="gamma-badge">Recommended</span>
       {/if}
     </div>
@@ -92,7 +93,9 @@
         <button class="action-btn edit-btn" onmousedown={onEdit}>Edit</button>
       {/if}
       {#if onDelete}
-        <button class="action-btn delete-btn" onmousedown={onDelete}>Delete</button>
+        <button class="action-btn delete-btn" onmousedown={onDelete}
+          >Delete</button
+        >
       {/if}
     </div>
   </div>

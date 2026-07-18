@@ -1,11 +1,14 @@
 // Auth store with Svelte 5 runes
-import { browser } from '$app/environment';
-import { goto } from '$app/navigation';
-import * as authApi from '$shared/api/auth';
-import * as usersApi from '$shared/api/users';
-import { clearPreloadCache, preloadAuthenticatedGraph } from '$shared/services/PreloadService';
-import { setLocale, type Locale } from '$shared/utils/i18n';
-import type { User, AuthTokens } from '$shared/types';
+import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
+import * as authApi from "$shared/api/auth";
+import * as usersApi from "$shared/api/users";
+import {
+  clearPreloadCache,
+  preloadAuthenticatedGraph,
+} from "$shared/services/PreloadService";
+import { setLocale, type Locale } from "$shared/utils/i18n";
+import type { User, AuthTokens } from "$shared/types";
 
 // Global reactive state - wrapped in object for export
 const authState = $state({
@@ -15,20 +18,34 @@ const authState = $state({
   isInitialized: false,
   isLoading: false,
   error: null as string | null,
-  apiKey: null as string | null
+  apiKey: null as string | null,
 });
 
 // Guard concurrent initAuth calls so refresh token is not used twice
 let initAuthPromise: Promise<void> | null = null;
 
 // Export reactive state through getter functions
-export function currentUser(): User | null { return authState.currentUser; }
-export function accessToken(): string | null { return authState.accessToken; }
-export function refreshToken(): string | null { return authState.refreshToken; }
-export function isInitialized(): boolean { return authState.isInitialized; }
-export function isLoading(): boolean { return authState.isLoading; }
-export function error(): string | null { return authState.error; }
-export function apiKey(): string | null { return authState.apiKey; }
+export function currentUser(): User | null {
+  return authState.currentUser;
+}
+export function accessToken(): string | null {
+  return authState.accessToken;
+}
+export function refreshToken(): string | null {
+  return authState.refreshToken;
+}
+export function isInitialized(): boolean {
+  return authState.isInitialized;
+}
+export function isLoading(): boolean {
+  return authState.isLoading;
+}
+export function error(): string | null {
+  return authState.error;
+}
+export function apiKey(): string | null {
+  return authState.apiKey;
+}
 
 /**
  * Apply user settings like locale after login/init.
@@ -36,13 +53,16 @@ export function apiKey(): string | null { return authState.apiKey; }
 async function applyUserSettings(): Promise<void> {
   try {
     const { settings } = await usersApi.getSettings();
-    const localeSetting = settings.find((s) => s.key === 'preferred_language');
-    if (localeSetting?.value && (localeSetting.value === 'en' || localeSetting.value === 'ru')) {
+    const localeSetting = settings.find((s) => s.key === "preferred_language");
+    if (
+      localeSetting?.value &&
+      (localeSetting.value === "en" || localeSetting.value === "ru")
+    ) {
       setLocale(localeSetting.value as Locale);
     }
   } catch (e) {
     // Settings are not critical for auth flow
-    console.warn('Failed to load user settings:', e);
+    console.warn("Failed to load user settings:", e);
   }
 }
 
@@ -55,13 +75,13 @@ export function skipAuthMode(): boolean {
   if (!browser) return false;
   if ((window as any).__SKIP_AUTH__ === true) return true;
   if (!import.meta.env.DEV) return false;
-  return localStorage.getItem('__SKIP_AUTH__') === 'true';
+  return localStorage.getItem("__SKIP_AUTH__") === "true";
 }
 
 // LocalStorage keys
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-const API_KEY = 'api_key';
+const ACCESS_TOKEN_KEY = "access_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
+const API_KEY = "api_key";
 
 /**
  * Initialize auth state from localStorage
@@ -81,10 +101,10 @@ export async function initAuth(): Promise<void> {
       // Check for SKIP_AUTH mode from query parameter on first load (dev only)
       if (import.meta.env.DEV) {
         const url = new URL(window.location.href);
-        if (url.searchParams.get('skip_auth') === 'true') {
+        if (url.searchParams.get("skip_auth") === "true") {
           // Persist SKIP_AUTH to localStorage
-          localStorage.setItem('__SKIP_AUTH__', 'true');
-          console.log('[Auth] SKIP_AUTH mode enabled via query param');
+          localStorage.setItem("__SKIP_AUTH__", "true");
+          console.log("[Auth] SKIP_AUTH mode enabled via query param");
         }
       }
 
@@ -124,7 +144,7 @@ export async function initAuth(): Promise<void> {
         }
       }
     } catch (e) {
-      console.error('Failed to initialize auth:', e);
+      console.error("Failed to initialize auth:", e);
       clearAuthState();
     } finally {
       authState.isInitialized = true;
@@ -144,12 +164,19 @@ export async function login(login: string, password: string): Promise<boolean> {
 
   if (skipAuthMode()) {
     saveTokens({
-      access_token: 'skip-auth-token',
-      refresh_token: 'skip-auth-refresh',
-      token_type: 'Bearer',
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      access_token: "skip-auth-token",
+      refresh_token: "skip-auth-refresh",
+      token_type: "Bearer",
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
-    authState.currentUser = { id: 'skip-auth-user', login: login || 'testuser', email: 'test@example.com', role: 'user', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as User;
+    authState.currentUser = {
+      id: "skip-auth-user",
+      login: login || "testuser",
+      email: "test@example.com",
+      role: "user",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as User;
     authState.isLoading = false;
     return true;
   }
@@ -168,7 +195,7 @@ export async function login(login: string, password: string): Promise<boolean> {
 
     return true;
   } catch (e) {
-    authState.error = e instanceof Error ? e.message : 'Login failed';
+    authState.error = e instanceof Error ? e.message : "Login failed";
     clearAuthState();
     return false;
   } finally {
@@ -179,7 +206,11 @@ export async function login(login: string, password: string): Promise<boolean> {
 /**
  * Register new user
  */
-export async function register(login: string, password: string, email?: string): Promise<boolean> {
+export async function register(
+  login: string,
+  password: string,
+  email?: string,
+): Promise<boolean> {
   authState.isLoading = true;
   authState.error = null;
 
@@ -197,7 +228,7 @@ export async function register(login: string, password: string, email?: string):
 
     return true;
   } catch (e) {
-    authState.error = e instanceof Error ? e.message : 'Registration failed';
+    authState.error = e instanceof Error ? e.message : "Registration failed";
     clearAuthState();
     return false;
   } finally {
@@ -214,7 +245,7 @@ export async function logout(): Promise<void> {
       await authApi.logout(authState.refreshToken);
     } catch (e) {
       // Ignore errors during logout
-      console.error('Logout error:', e);
+      console.error("Logout error:", e);
     }
   }
 
@@ -222,11 +253,11 @@ export async function logout(): Promise<void> {
   try {
     clearPreloadCache();
   } catch (e) {
-    console.error('Failed to clear preload cache on logout:', e);
+    console.error("Failed to clear preload cache on logout:", e);
   }
 
   clearAuthState();
-  goto('/auth/login');
+  goto("/auth/login");
 }
 
 /**
@@ -242,7 +273,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     saveTokens(tokens);
     return true;
   } catch (e) {
-    console.error('Token refresh failed:', e);
+    console.error("Token refresh failed:", e);
     clearAuthState();
     return false;
   }
@@ -251,7 +282,10 @@ export async function refreshAccessToken(): Promise<boolean> {
 /**
  * Handle Yandex OAuth callback
  */
-export async function handleYandexCallback(code: string, state: string): Promise<boolean> {
+export async function handleYandexCallback(
+  code: string,
+  state: string,
+): Promise<boolean> {
   authState.isLoading = true;
   authState.error = null;
 
@@ -269,7 +303,8 @@ export async function handleYandexCallback(code: string, state: string): Promise
 
     return true;
   } catch (e) {
-    authState.error = e instanceof Error ? e.message : 'Yandex authentication failed';
+    authState.error =
+      e instanceof Error ? e.message : "Yandex authentication failed";
     clearAuthState();
     return false;
   } finally {
@@ -298,7 +333,7 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
 
     return true;
   } catch (e) {
-    authState.error = e instanceof Error ? e.message : 'Invalid API key';
+    authState.error = e instanceof Error ? e.message : "Invalid API key";
     authState.apiKey = null;
     if (browser) {
       localStorage.removeItem(API_KEY);
@@ -336,13 +371,13 @@ export function isAuthenticated(): boolean {
     }
     // Check localStorage and query parameters only in dev to avoid production bypass
     if (import.meta.env.DEV) {
-      if (localStorage.getItem('__SKIP_AUTH__') === 'true') {
+      if (localStorage.getItem("__SKIP_AUTH__") === "true") {
         return true;
       }
       const url = new URL(window.location.href);
-      if (url.searchParams.get('skip_auth') === 'true') {
+      if (url.searchParams.get("skip_auth") === "true") {
         // Persist to localStorage for subsequent navigations
-        localStorage.setItem('__SKIP_AUTH__', 'true');
+        localStorage.setItem("__SKIP_AUTH__", "true");
         return true;
       }
     }
@@ -354,7 +389,7 @@ export function isAuthenticated(): boolean {
  * Check if user is admin
  */
 export function isAdmin(): boolean {
-  return authState.currentUser?.role === 'admin';
+  return authState.currentUser?.role === "admin";
 }
 
 /**
@@ -400,6 +435,6 @@ export async function updateUserInfo(): Promise<void> {
     authState.currentUser = user;
     void applyUserSettings();
   } catch (e) {
-    console.error('Failed to update user info:', e);
+    console.error("Failed to update user info:", e);
   }
 }

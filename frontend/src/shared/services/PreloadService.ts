@@ -1,7 +1,12 @@
 // PreloadService - фоновая предзагрузка данных для ускорения первого взаимодействия после входа
-import { browser } from '$app/environment';
-import { isAuthenticated } from '$shared/stores/auth.svelte';
-import { getFullGraphData, getFreshGraph, type GraphData, type GraphDelta } from '$shared/api/graph';
+import { browser } from "$app/environment";
+import { isAuthenticated } from "$shared/stores/auth.svelte";
+import {
+  getFullGraphData,
+  getFreshGraph,
+  type GraphData,
+  type GraphDelta,
+} from "$shared/api/graph";
 
 // Типы для кэшированных данных
 interface PreloadedGraphData {
@@ -94,18 +99,18 @@ class PreloadServiceClass {
    */
   private async performPreload(): Promise<void> {
     if (import.meta.env.DEV) {
-      console.log('[PreloadService] Starting background preload...');
+      console.log("[PreloadService] Starting background preload...");
     }
 
     try {
       await this.preloadGraph();
 
       if (import.meta.env.DEV) {
-        console.log('[PreloadService] Graph preloaded successfully');
+        console.log("[PreloadService] Graph preloaded successfully");
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.warn('[PreloadService] Preload completed with errors:', error);
+        console.warn("[PreloadService] Preload completed with errors:", error);
       }
     }
   }
@@ -114,24 +119,29 @@ class PreloadServiceClass {
    * Выполняет предзагрузку данных графа для аутентифицированного пользователя
    */
   private async performAuthenticatedPreload(): Promise<void> {
-    console.log('[PreloadService] Starting authenticated graph preload...');
+    console.log("[PreloadService] Starting authenticated graph preload...");
 
     try {
       // Получаем только свежий граф (cached не нужен, так как fresh перезапишет)
       const freshResult = await getFreshGraph();
-      
+
       this.preloadedGraph = {
         data: freshResult.fresh,
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
-        delta: freshResult.delta
+        delta: freshResult.delta,
       };
 
       if (freshResult.delta) {
-        console.log('[PreloadService] Delta available for authenticated update');
+        console.log(
+          "[PreloadService] Delta available for authenticated update",
+        );
       }
     } catch (error) {
-      console.error('[PreloadService] Error during authenticated graph preload:', error);
+      console.error(
+        "[PreloadService] Error during authenticated graph preload:",
+        error,
+      );
       throw error;
     }
   }
@@ -145,11 +155,11 @@ class PreloadServiceClass {
       this.preloadedGraph = {
         data: graphData,
         timestamp: Date.now(),
-        ttl: this.GRAPH_TTL
+        ttl: this.GRAPH_TTL,
       };
-      console.log('[PreloadService] Public graph preloaded successfully');
+      console.log("[PreloadService] Public graph preloaded successfully");
     } catch (error) {
-      console.error('[PreloadService] Error preloading public graph:', error);
+      console.error("[PreloadService] Error preloading public graph:", error);
       throw error;
     }
   }
@@ -197,12 +207,15 @@ class PreloadServiceClass {
     }
 
     const now = Date.now();
-    if (now - this.preloadedAchievements.timestamp > this.preloadedAchievements.ttl) {
+    if (
+      now - this.preloadedAchievements.timestamp >
+      this.preloadedAchievements.ttl
+    ) {
       // Кэш устарел
       this.preloadedAchievements = null;
       return null;
     }
-    
+
     return this.preloadedAchievements.achievements;
   }
 
@@ -224,7 +237,7 @@ class PreloadServiceClass {
    * Очищает весь кэш (вызывается при выходе)
    */
   public clearCache(): void {
-    console.log('[PreloadService] Clearing preload cache...');
+    console.log("[PreloadService] Clearing preload cache...");
     this.preloadedGraph = null;
     this.preloadedAchievements = null;
   }
@@ -254,13 +267,17 @@ class PreloadServiceClass {
     isPreloading: boolean;
   } {
     const now = Date.now();
-    
+
     return {
       hasGraph: !!this.preloadedGraph,
       hasAchievements: !!this.preloadedAchievements,
-      graphAge: this.preloadedGraph ? now - this.preloadedGraph.timestamp : null,
-      achievementsAge: this.preloadedAchievements ? now - this.preloadedAchievements.timestamp : null,
-      isPreloading: this.isPreloading
+      graphAge: this.preloadedGraph
+        ? now - this.preloadedGraph.timestamp
+        : null,
+      achievementsAge: this.preloadedAchievements
+        ? now - this.preloadedAchievements.timestamp
+        : null,
+      isPreloading: this.isPreloading,
     };
   }
 }

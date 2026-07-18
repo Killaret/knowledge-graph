@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Button from '$components/atoms/Button.svelte';
-import Modal from '$components/atoms/Modal.svelte';
-  import { mode } from '$shared/stores/lexicon-settings';
+  import Button from "$components/atoms/Button.svelte";
+  import Modal from "$components/atoms/Modal.svelte";
+  import { mode } from "$shared/stores/lexicon-settings";
 
   interface Props {
     open: boolean;
@@ -17,28 +17,40 @@ import Modal from '$components/atoms/Modal.svelte';
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
-    title = 'Confirm',
+    title = "Confirm",
     message,
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    confirmText = "Confirm",
+    cancelText = "Cancel",
     danger = false,
     onConfirm,
-    onCancel
+    onCancel,
   }: Props = $props();
   /* eslint-enable prefer-const */
 
-  let currentMode = $state('standard');
-  
+  let currentMode = $state("standard");
+
   // Subscribe to mode changes
   $effect(() => {
-    const unsubscribe = mode.subscribe(m => currentMode = m);
+    const unsubscribe = mode.subscribe((m) => (currentMode = m));
     return unsubscribe;
   });
 
   // Compute display values reactively
-  const displayTitle = $derived(currentMode === 'galactic' && title === 'Confirm' ? 'Confirm Trajectory' : title);
-  const displayConfirmText = $derived(currentMode === 'galactic' && confirmText === 'Confirm' ? 'Engage' : confirmText);
-  const displayCancelText = $derived(currentMode === 'galactic' && cancelText === 'Cancel' ? 'Abort' : cancelText);
+  const displayTitle = $derived(
+    currentMode === "galactic" && title === "Confirm"
+      ? "Confirm Trajectory"
+      : title,
+  );
+  const displayConfirmText = $derived(
+    currentMode === "galactic" && confirmText === "Confirm"
+      ? "Engage"
+      : confirmText,
+  );
+  const displayCancelText = $derived(
+    currentMode === "galactic" && cancelText === "Cancel"
+      ? "Abort"
+      : cancelText,
+  );
 
   function handleConfirm() {
     onConfirm();
@@ -59,7 +71,7 @@ import Modal from '$components/atoms/Modal.svelte';
     <Button variant="secondary" onClick={handleCancel}>
       {displayCancelText}
     </Button>
-    <Button variant={danger ? 'danger' : 'primary'} onClick={handleConfirm}>
+    <Button variant={danger ? "danger" : "primary"} onClick={handleConfirm}>
       {displayConfirmText}
     </Button>
   </div>

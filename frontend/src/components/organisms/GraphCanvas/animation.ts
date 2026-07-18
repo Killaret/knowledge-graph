@@ -2,7 +2,8 @@
  * Animation loop management for GraphCanvas
  */
 
-import { getVariation } from '$shared/utils/variation';
+import { getVariation } from "$shared/utils/variation";
+import { CelestialBody } from "$shared/lib/domain";
 
 export interface AnimationState {
   animationId: number;
@@ -11,22 +12,10 @@ export interface AnimationState {
 }
 
 /**
- * Calculate rotation speed based on node type
+ * Calculate rotation speed based on the CelestialBody configuration.
  */
 export function getBaseSpeed(type: string): number {
-  switch (type) {
-    case 'planet':
-      return 0.02;
-    case 'comet':
-      return 0.03;
-    case 'galaxy':
-      return 0.01;
-    case 'nebula':
-      return 0.008;
-    case 'star':
-    default:
-      return 0.005;
-  }
+  return CelestialBody.fromString(type).baseSpeed;
 }
 
 /**
@@ -36,11 +25,11 @@ export function updateNodeAngles(
   nodes: Array<{ id: string; type?: string }>,
   angles: Map<string, number>,
   speeds: Map<string, number>,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
 ): void {
   for (const node of nodes) {
     const id = node.id;
-    const type = node.type ?? 'star';
+    const type = node.type ?? "star";
     const baseSpeed = getBaseSpeed(type);
 
     let speed = speeds.get(id);
@@ -71,7 +60,7 @@ export function updateNodeAngles(
 export function startAnimationLoop(
   getNodes: () => Array<{ id: string; type?: string }>,
   onUpdate: () => void,
-  disableVariation: boolean = false
+  disableVariation: boolean = false,
 ): { stop: () => void } {
   let animationId: number;
   const angles = new Map<string, number>();
@@ -89,7 +78,7 @@ export function startAnimationLoop(
   return {
     stop: () => {
       cancelAnimationFrame(animationId);
-    }
+    },
   };
 }
 
@@ -98,7 +87,7 @@ export function startAnimationLoop(
  */
 export function clearAnimationState(
   angles: Map<string, number>,
-  speeds: Map<string, number>
+  speeds: Map<string, number>,
 ): void {
   angles.clear();
   speeds.clear();

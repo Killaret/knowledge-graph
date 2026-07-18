@@ -49,7 +49,7 @@ export interface NoteShare {
   shared_by_user_id: string;
   shared_with_user_id: string;
   shared_with_login: string;
-  permission: 'read' | 'write';
+  permission: "read" | "write";
   created_at: string;
   expires_at?: string;
 }
@@ -57,7 +57,7 @@ export interface NoteShare {
 export interface ShareLink {
   id: string;
   token: string;
-  permission: 'read' | 'write';
+  permission: "read" | "write";
   created_at: string;
   expires_at?: string;
   max_uses?: number;
@@ -67,12 +67,12 @@ export interface ShareLink {
 
 export interface CreateShareRequest {
   user_id: string;
-  permission?: 'read' | 'write';
+  permission?: "read" | "write";
   expires_at?: string;
 }
 
 export interface CreateShareLinkRequest {
-  permission?: 'read' | 'write';
+  permission?: "read" | "write";
   expires_at?: string;
   max_uses?: number;
 }
@@ -113,4 +113,4 @@ export interface APIError {
   details?: Record<string, string[]>;
 }
 
-export * from './errors';
+export * from "./errors";

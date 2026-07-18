@@ -1,17 +1,17 @@
 <script lang="ts">
-	// ==========================================
-	// CONTEXT CONTROL CENTER (CCC) - ЗАРЕЗЕРВИРОВАНО
-	// ==========================================
-	// Планируемые props (будут активированы в v2.0):
-	// export let collapsed = false;
-	// export let activeFilters = [];
-	// export let selectedGroups = [];
-	// export let savedSearches = [];
-	// ...
+  // ==========================================
+  // CONTEXT CONTROL CENTER (CCC) - ЗАРЕЗЕРВИРОВАНО
+  // ==========================================
+  // Планируемые props (будут активированы в v2.0):
+  // export let collapsed = false;
+  // export let activeFilters = [];
+  // export let selectedGroups = [];
+  // export let savedSearches = [];
+  // ...
 </script>
 
 <div class="sidebar-placeholder" data-testid="sidebar-placeholder">
-	<!--
+  <!--
     ==========================================
     ЗАРЕЗЕРВИРОВАНО ДЛЯ БУДУЩЕЙ НАВИГАЦИИ (v2.0)
     ==========================================
@@ -46,27 +46,27 @@
     - Левая панель берёт на себя "аналитические" сценарии
     ==========================================
   -->
-	<div class="sidebar-content-hidden">Navigation Panel (v2.0)</div>
+  <div class="sidebar-content-hidden">Navigation Panel (v2.0)</div>
 </div>
 
 <style>
-	.sidebar-placeholder {
-		width: 0; /* Сейчас скрыта - резервирование для будущего */
-		overflow: hidden;
-		background: var(--color-surface);
-		border-right: 1px solid var(--color-border);
-		transition: width 0.3s ease;
-		flex-shrink: 0;
-		/* Будущие стили для активации:
+  .sidebar-placeholder {
+    width: 0; /* Сейчас скрыта - резервирование для будущего */
+    overflow: hidden;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+    /* Будущие стили для активации:
     width: 280px;
     padding: 1rem;
     */
-	}
+  }
 
-	.sidebar-content-hidden {
-		display: none; /* Скрыт до активации */
-		padding: 1rem;
-		font-size: 0.875rem;
-		color: var(--color-text-secondary);
-	}
+  .sidebar-content-hidden {
+    display: none; /* Скрыт до активации */
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
 </style>

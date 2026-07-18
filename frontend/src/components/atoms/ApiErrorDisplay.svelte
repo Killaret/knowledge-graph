@@ -1,9 +1,10 @@
 <script lang="ts">
-  import StateIllustration from './StateIllustration.svelte';
-  import type { ErrorResponse } from '$shared/types/errors';
-  import { getMessage } from '$shared/stores/lexicon-settings'
+  import StateIllustration from "./StateIllustration.svelte";
+  import type { ErrorResponse } from "$shared/types/errors";
+  import { getMessage } from "$shared/stores/lexicon-settings";
 
-  type IllustrationType = 'empty' | 'error' | '404' | 'offline' | 'no-links' | 'no-results';
+  type IllustrationType =
+    "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
 
   interface Props {
     error: ErrorResponse | null;
@@ -12,59 +13,64 @@
   }
 
   const { error, onClose, illustrationType }: Props = $props();
-  let displayMessage = $state<string | null>(null)
-  let resolvedIllustrationType = $state<IllustrationType | undefined>(undefined);
+  let displayMessage = $state<string | null>(null);
+  let resolvedIllustrationType = $state<IllustrationType | undefined>(
+    undefined,
+  );
 
   const errorIllustrationMap: Record<string, IllustrationType> = {
-    NOT_FOUND: '404',
-    VALIDATION_ERROR: 'error',
-    INTERNAL_ERROR: 'error',
-    CONFLICT: 'error'
+    NOT_FOUND: "404",
+    VALIDATION_ERROR: "error",
+    INTERNAL_ERROR: "error",
+    CONFLICT: "error",
   };
 
   $effect(() => {
-    resolvedIllustrationType = illustrationType ?? (error ? errorIllustrationMap[error.code] : undefined);
+    resolvedIllustrationType =
+      illustrationType ??
+      (error ? errorIllustrationMap[error.code] : undefined);
   });
 
   function handleClose() {
     onClose?.();
   }
 
-  const codeToLexiconKey: Record<string, { category: string; key: string; params?: any[] }> = {
-    'connection_exists': { category: 'error', key: 'connectionExists' },
+  const codeToLexiconKey: Record<
+    string,
+    { category: string; key: string; params?: any[] }
+  > = {
+    connection_exists: { category: "error", key: "connectionExists" },
     // add mappings as needed
-  }
+  };
 
   $effect(() => {
     if (error) {
-      const mapped = codeToLexiconKey[error.code || '']
+      const mapped = codeToLexiconKey[error.code || ""];
       if (mapped) {
-        getMessage(mapped.category, mapped.key, ...(mapped.params || [])).then(m => displayMessage = m)
+        getMessage(mapped.category, mapped.key, ...(mapped.params || [])).then(
+          (m) => (displayMessage = m),
+        );
       } else {
         // fallback to error.message (server-provided)
-        displayMessage = error.message || 'Error'
+        displayMessage = error.message || "Error";
       }
     } else {
-      displayMessage = null
+      displayMessage = null;
     }
-  })
+  });
 </script>
 
 {#if error}
-  <div 
-    class="error-container"
-    role="alert"
-    aria-live="assertive"
-  >
-    <button 
-      class="close-button" 
+  <div class="error-container" role="alert" aria-live="assertive">
+    <button
+      class="close-button"
       onclick={handleClose}
       aria-label="Close error"
       type="button"
     >
       ×
     </button>
-    
+
     {#if resolvedIllustrationType}
       <div class="error-illustration">
         <StateIllustration type={resolvedIllustrationType} />
@@ -75,9 +81,9 @@
       <span class="error-icon" aria-hidden="true">⚠️</span>
       <span class="error-code">Error: {error.code}</span>
     </div>
-    
+
     <p class="error-message">{displayMessage || error.message}</p>
-    
+
     {#if error.details && error.details.length > 0}
       <div class="error-details">
         <p class="details-title">Details:</p>
@@ -88,7 +94,9 @@
               <span class="detail-separator">—</span>
               <span class="detail-reason">{detail.message}</span>
               {#if detail.received !== undefined}
-                <span class="detail-received">(received: {JSON.stringify(detail.received)})</span>
+                <span class="detail-received"
+                  >(received: {JSON.stringify(detail.received)})</span
+                >
               {/if}
             </li>
           {/each}
@@ -106,7 +114,9 @@
     background: var(--color-surface, #1e293b);
     border-left: 4px solid var(--color-danger, #ef4444);
     border-radius: 0 8px 8px 0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
     color: var(--color-text, #f1f5f9);
   }
 
@@ -122,7 +132,9 @@
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    transition: color 0.2s, background-color 0.2s;
+    transition:
+      color 0.2s,
+      background-color 0.2s;
   }
 
   .close-button:hover {

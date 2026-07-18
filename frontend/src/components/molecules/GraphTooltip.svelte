@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import tippy from 'tippy.js';
-  import type { Instance } from 'tippy.js';
-  import 'tippy.js/dist/tippy.css';
+  import { onMount, onDestroy } from "svelte";
+  import tippy from "tippy.js";
+  import type { Instance } from "tippy.js";
+  import "tippy.js/dist/tippy.css";
 
   const {
-    target
+    target,
   }: {
     target: HTMLElement;
   } = $props();
 
   let tippyInstance: Instance | null = $state(null);
-  let currentContent: string = $state('');
+  let currentContent: string = $state("");
 
   onMount(() => {
     tippyInstance = tippy(target, {
-      content: '',
-      placement: 'top',
+      content: "",
+      placement: "top",
       followCursor: true,
-      animation: 'fade',
+      animation: "fade",
       duration: 200,
       arrow: true,
-      theme: 'light',
+      theme: "light",
       hideOnClick: false,
       interactive: true,
-      allowHTML: true
+      allowHTML: true,
     });
   });
 
@@ -32,7 +32,11 @@
     tippyInstance?.destroy();
   });
 
-  export function showNodeTooltip(title: string, type: string, emoji: string): void {
+  export function showNodeTooltip(
+    title: string,
+    type: string,
+    emoji: string,
+  ): void {
     if (!tippyInstance) return;
     currentContent = `
       <div style="padding: 8px 12px;">

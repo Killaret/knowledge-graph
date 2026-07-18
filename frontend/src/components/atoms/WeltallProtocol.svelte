@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { fade, fly } from 'svelte/transition';
-  import { browser } from '$app/environment';
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { browser } from "$app/environment";
 
   interface Props {
     show?: boolean;
@@ -14,20 +14,22 @@
 
   // Handle escape key
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
+    if (e.key === "Escape" && show) {
       dispatchClose();
     }
   }
 
   // Focus trap
   function handleFocusTrap(e: KeyboardEvent) {
-    if (e.key !== 'Tab' || !modalRef) return;
+    if (e.key !== "Tab" || !modalRef) return;
 
     const focusableElements = modalRef.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+    const lastElement = focusableElements[
+      focusableElements.length - 1
+    ] as HTMLElement;
 
     if (e.shiftKey && document.activeElement === firstElement) {
       e.preventDefault();
@@ -40,7 +42,7 @@
 
   // Custom event dispatcher
   function dispatchClose() {
-    const event = new CustomEvent('close', { bubbles: true });
+    const event = new CustomEvent("close", { bubbles: true });
     modalRef?.dispatchEvent(event);
   }
 
@@ -53,9 +55,9 @@
 
   onMount(() => {
     if (browser) {
-      document.addEventListener('keydown', handleKeydown);
+      document.addEventListener("keydown", handleKeydown);
       return () => {
-        document.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener("keydown", handleKeydown);
       };
     }
   });
@@ -64,7 +66,9 @@
 {#if show}
   <div
     class="protocol-overlay"
-    onclick={(e) => { if (e.target === e.currentTarget) dispatchClose(); }}
+    onclick={(e) => {
+      if (e.target === e.currentTarget) dispatchClose();
+    }}
     role="presentation"
     transition:fade={{ duration: 300 }}
   >
@@ -200,7 +204,7 @@
 
   .protocol-title {
     margin: 0 0 1.5rem;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 1.5rem;
     text-align: center;
     letter-spacing: 0.15em;
@@ -222,7 +226,7 @@
 
   .protocol-message {
     color: rgba(255, 255, 255, 0.7);
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.9rem;
     text-align: center;
     margin-bottom: 1.5rem;
@@ -233,7 +237,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     overflow: hidden;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.75rem;
   }
 
@@ -278,7 +282,7 @@
     border: 1px solid rgba(255, 204, 0, 0.3);
     border-radius: 4px;
     color: #ffcc00;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.875rem;
     cursor: pointer;
     overflow: hidden;
@@ -304,7 +308,11 @@
   .button-glow {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(255, 204, 0, 0.2) 0%, transparent 70%);
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 204, 0, 0.2) 0%,
+      transparent 70%
+    );
     opacity: 0;
     transition: opacity 0.3s ease;
   }

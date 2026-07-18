@@ -1,17 +1,17 @@
 <script lang="ts">
-  const { 
+  const {
     tags = [],
     onChange,
     maxTags = 10,
-    placeholder = 'Add tag...'
-  }: { 
+    placeholder = "Add tag...",
+  }: {
     tags?: string[];
     onChange?: (tags: string[]) => void;
     maxTags?: number;
     placeholder?: string;
   } = $props();
 
-  let inputValue = $state('');
+  let inputValue = $state("");
   let isFocused = $state(false);
   let error = $state<string | null>(null);
   let localTags = $state<string[]>([]);
@@ -23,58 +23,62 @@
 
   function validateTag(tag: string): string | null {
     const trimmed = tag.trim();
-    
+
     if (!trimmed) {
-      return 'Tag cannot be empty';
+      return "Tag cannot be empty";
     }
-    
+
     if (trimmed.length > 30) {
-      return 'Tag must be less than 30 characters';
+      return "Tag must be less than 30 characters";
     }
-    
+
     if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
-      return 'Tag can only contain letters, numbers, underscores and hyphens';
+      return "Tag can only contain letters, numbers, underscores and hyphens";
     }
-    
+
     if (localTags.includes(trimmed)) {
-      return 'Tag already exists';
+      return "Tag already exists";
     }
-    
+
     if (localTags.length >= maxTags) {
       return `Maximum ${maxTags} tags allowed`;
     }
-    
+
     return null;
   }
 
   function addTag() {
     const trimmed = inputValue.trim();
     const validationError = validateTag(trimmed);
-    
+
     if (validationError) {
       error = validationError;
       return;
     }
-    
+
     const newTags = [...localTags, trimmed.toLowerCase()];
     localTags = newTags;
     onChange?.(newTags);
-    inputValue = '';
+    inputValue = "";
     error = null;
   }
 
   function removeTag(tagToRemove: string) {
-    const newTags = localTags.filter(tag => tag !== tagToRemove);
+    const newTags = localTags.filter((tag) => tag !== tagToRemove);
     localTags = newTags;
     onChange?.(newTags);
     error = null;
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       event.preventDefault();
       addTag();
-    } else if (event.key === 'Backspace' && !inputValue && localTags.length > 0) {
+    } else if (
+      event.key === "Backspace" &&
+      !inputValue &&
+      localTags.length > 0
+    ) {
       // Удаляем последний тег при Backspace на пустом поле
       removeTag(localTags[localTags.length - 1]);
     } else {
@@ -87,7 +91,7 @@
     isFocused = false;
     // Не добавляем тег при blur, только очищаем если пустой
     if (!inputValue.trim()) {
-      inputValue = '';
+      inputValue = "";
     }
   }
 </script>
@@ -108,28 +112,28 @@
         </button>
       </span>
     {/each}
-    
+
     {#if localTags.length < maxTags}
       <input
         type="text"
         bind:value={inputValue}
         onkeydown={handleKeyDown}
-        onfocus={() => isFocused = true}
+        onfocus={() => (isFocused = true)}
         onblur={handleBlur}
-        placeholder={localTags.length === 0 ? placeholder : ''}
+        placeholder={localTags.length === 0 ? placeholder : ""}
         class="tag-input"
         aria-label="Add new tag"
         maxlength="30"
       />
     {/if}
   </div>
-  
+
   {#if error}
     <div class="error-message" role="alert" aria-live="polite">
       {error}
     </div>
   {/if}
-  
+
   <div class="hint">
     {localTags.length}/{maxTags} tags • Press Enter to add
   </div>
@@ -141,7 +145,9 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 8px 12px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
   .tag-selector.focused {

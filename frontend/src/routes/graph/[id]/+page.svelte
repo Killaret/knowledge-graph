@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import SmartGraph from '$components/organisms/SmartGraph.svelte';
-  import { getGraphData } from '$shared/api/graph';
-  import BackButton from '$components/atoms/BackButton.svelte';
-  import type { GraphNode, GraphLink } from '$shared/api/graph';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import SmartGraph from "$components/organisms/SmartGraph.svelte";
+  import { getGraphData } from "$shared/api/graph";
+  import BackButton from "$components/atoms/BackButton.svelte";
+  import type { GraphNode, GraphLink } from "$shared/api/graph";
 
   let nodes: GraphNode[] = $state([]);
   let links: GraphLink[] = $state([]);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
 
   function getRouteId(): string {
     const id = $page.params.id;
-    if (!id) throw new Error('Missing route parameter: id');
+    if (!id) throw new Error("Missing route parameter: id");
     return id;
   }
 
@@ -24,15 +24,15 @@
       // Map nodes with defaults for SmartGraph compatibility
       nodes = data.nodes.map((n: GraphNode) => ({
         ...n,
-        type: n.type ?? 'default',
-        size: n.size ?? 5
+        type: n.type ?? "default",
+        size: n.size ?? 5,
       }));
       links = data.links.map((l: GraphLink) => ({
         ...l,
-        weight: l.weight ?? 1
+        weight: l.weight ?? 1,
       }));
     } catch (e) {
-      error = 'Failed to load graph data';
+      error = "Failed to load graph data";
       console.error(e);
     } finally {
       loading = false;
@@ -44,7 +44,9 @@
   <header class="graph-header">
     <BackButton href="/" />
     <h1>Knowledge Constellation</h1>
-    <span class="hint">Drag to rotate/pan • Scroll to zoom • Click node to open</span>
+    <span class="hint"
+      >Drag to rotate/pan • Scroll to zoom • Click node to open</span
+    >
   </header>
 
   {#if loading}
@@ -57,7 +59,10 @@
       <p class="error">{error}</p>
     </div>
   {:else}
-    <div class="graph-container graph-3d-container" data-testid="graph-container">
+    <div
+      class="graph-container graph-3d-container"
+      data-testid="graph-container"
+    >
       <SmartGraph {nodes} {links} />
     </div>
     <div class="stats-bar" data-testid="graph-stats">
@@ -129,7 +134,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .error {

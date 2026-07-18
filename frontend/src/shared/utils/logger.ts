@@ -1,7 +1,7 @@
 // Утилита для централизованного логирования в проекте
 // Логи сохраняются в console и могут быть отправлены на сервер при необходимости
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
   timestamp: string;
@@ -16,35 +16,39 @@ class Logger {
   private logBuffer: LogEntry[] = [];
   private readonly maxBufferSize = 100;
 
-  constructor(context: string = 'app') {
+  constructor(context: string = "app") {
     this.context = context;
   }
 
-  private createLogEntry(level: LogLevel, message: string, data?: unknown): LogEntry {
+  private createLogEntry(
+    level: LogLevel,
+    message: string,
+    data?: unknown,
+  ): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
       message,
       context: this.context,
-      data
+      data,
     };
   }
 
   private logToConsole(entry: LogEntry): void {
     const prefix = `[${entry.timestamp}] [${entry.level.toUpperCase()}] [${entry.context}]`;
-    
+
     switch (entry.level) {
-      case 'debug':
-        console.debug(prefix, entry.message, entry.data || '');
+      case "debug":
+        console.debug(prefix, entry.message, entry.data || "");
         break;
-      case 'info':
-        console.info(prefix, entry.message, entry.data || '');
+      case "info":
+        console.info(prefix, entry.message, entry.data || "");
         break;
-      case 'warn':
-        console.warn(prefix, entry.message, entry.data || '');
+      case "warn":
+        console.warn(prefix, entry.message, entry.data || "");
         break;
-      case 'error':
-        console.error(prefix, entry.message, entry.data || '');
+      case "error":
+        console.error(prefix, entry.message, entry.data || "");
         break;
     }
   }
@@ -57,25 +61,25 @@ class Logger {
   }
 
   debug(message: string, data?: unknown): void {
-    const entry = this.createLogEntry('debug', message, data);
+    const entry = this.createLogEntry("debug", message, data);
     this.logToConsole(entry);
     this.addToBuffer(entry);
   }
 
   info(message: string, data?: unknown): void {
-    const entry = this.createLogEntry('info', message, data);
+    const entry = this.createLogEntry("info", message, data);
     this.logToConsole(entry);
     this.addToBuffer(entry);
   }
 
   warn(message: string, data?: unknown): void {
-    const entry = this.createLogEntry('warn', message, data);
+    const entry = this.createLogEntry("warn", message, data);
     this.logToConsole(entry);
     this.addToBuffer(entry);
   }
 
   error(message: string, error?: unknown): void {
-    const entry = this.createLogEntry('error', message, error);
+    const entry = this.createLogEntry("error", message, error);
     this.logToConsole(entry);
     this.addToBuffer(entry);
   }
@@ -97,6 +101,6 @@ export function createLogger(context: string): Logger {
 }
 
 // Глобальный логер
-export const logger = new Logger('app');
+export const logger = new Logger("app");
 
 export default logger;

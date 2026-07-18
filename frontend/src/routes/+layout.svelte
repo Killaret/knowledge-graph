@@ -1,34 +1,40 @@
 <script lang="ts">
-  import '$shared/styles/global.css';
-  import Sidebar from '$components/organisms/Sidebar.svelte';
-  import QuickCaptureWidget from '$components/organisms/QuickCaptureWidget.svelte';
-  import ToastNotification from '$components/atoms/ToastNotification.svelte';
-  import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import { initAuth, isAuthenticated, isInitialized, isLoading, skipAuthMode } from '$shared/stores/auth.svelte.js';
-  import { startPreload } from '$shared/services/PreloadService';
-  import { achievementsStore } from '$shared/stores/achievements';
-  import { mode, getMessage } from '$shared/stores/lexicon-settings';
+  import "$shared/styles/global.css";
+  import Sidebar from "$components/organisms/Sidebar.svelte";
+  import QuickCaptureWidget from "$components/organisms/QuickCaptureWidget.svelte";
+  import ToastNotification from "$components/atoms/ToastNotification.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import {
+    initAuth,
+    isAuthenticated,
+    isInitialized,
+    isLoading,
+    skipAuthMode,
+  } from "$shared/stores/auth.svelte.js";
+  import { startPreload } from "$shared/services/PreloadService";
+  import { achievementsStore } from "$shared/stores/achievements";
+  import { mode, getMessage } from "$shared/stores/lexicon-settings";
 
   const { children } = $props();
 
   // Public routes that don't require authentication
   const publicRoutes = [
-    '/', // Main page - accessible for guests
-    '/graph', // Graph page - accessible for guests
-    '/auth/login',
-    '/auth/register',
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/auth/yandex/callback',
-    '/health',
-    '/test'  // Test routes for visual regression testing
+    "/", // Main page - accessible for guests
+    "/graph", // Graph page - accessible for guests
+    "/auth/login",
+    "/auth/register",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/auth/yandex/callback",
+    "/health",
+    "/test", // Test routes for visual regression testing
   ];
 
   // Toast notification state
-  let toastMessage = $state('');
-  let toastType: 'success' | 'error' | 'info' | 'warning' = $state('info');
+  let toastMessage = $state("");
+  let toastType: "success" | "error" | "info" | "warning" = $state("info");
   let showToast = $state(false);
   let toastGalacticMode = $state(false);
 
@@ -57,7 +63,9 @@
   // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
   $effect(() => {
     const currentPath = $page.url.pathname;
-    const isPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
+    const isPublicRoute = publicRoutes.some((route) =>
+      currentPath.startsWith(route),
+    );
 
     if (
       isInitialized() &&
@@ -79,16 +87,18 @@
     achievementsStore.startPolling();
 
     // Subscribe to new achievements
-    const unsubscribe = achievementsStore.subscribe(({ new: newAchievements }) => {
-      if (newAchievements.length > 0) {
-        // Show notification for each new achievement
-        newAchievements.forEach(achievement => {
-          showAchievementNotification(achievement);
-          // Mark as seen after showing
-          achievementsStore.dismiss(achievement.id);
-        });
-      }
-    });
+    const unsubscribe = achievementsStore.subscribe(
+      ({ new: newAchievements }) => {
+        if (newAchievements.length > 0) {
+          // Show notification for each new achievement
+          newAchievements.forEach((achievement) => {
+            showAchievementNotification(achievement);
+            // Mark as seen after showing
+            achievementsStore.dismiss(achievement.id);
+          });
+        }
+      },
+    );
 
     return () => {
       achievementsStore.stopPolling();
@@ -98,19 +108,23 @@
 
   // Update galactic mode for toasts
   $effect(() => {
-    let currentMode = 'standard';
-    mode.subscribe(m => currentMode = m)();
-    toastGalacticMode = currentMode === 'galactic';
+    let currentMode = "standard";
+    mode.subscribe((m) => (currentMode = m))();
+    toastGalacticMode = currentMode === "galactic";
   });
 
   async function showAchievementNotification(achievement: any) {
     try {
-      const msg = await getMessage('achievement', 'unlocked', achievement.title || achievement.name_en || 'Achievement');
+      const msg = await getMessage(
+        "achievement",
+        "unlocked",
+        achievement.title || achievement.name_en || "Achievement",
+      );
       toastMessage = msg;
-      toastType = 'success';
+      toastType = "success";
       showToast = true;
     } catch (e) {
-      console.error('Failed to get achievement message:', e);
+      console.error("Failed to get achievement message:", e);
     }
   }
 
@@ -126,11 +140,14 @@
 -->
 <div class="app-shell">
   {#if isSkipAuth}
-    <div class="skip-auth-badge" title="Auth is disabled for testing (SKIP_AUTH=true)">
+    <div
+      class="skip-auth-badge"
+      title="Auth is disabled for testing (SKIP_AUTH=true)"
+    >
       🔑 SKIP_AUTH
     </div>
   {/if}
-  
+
   <Sidebar />
   <main class="app-main">
     {@render children()}
@@ -181,7 +198,14 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
   }
 </style>

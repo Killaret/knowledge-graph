@@ -1,4 +1,4 @@
 /**
  * Shared utilities re-exports
  */
-export * from './variation';
+export * from "./variation";

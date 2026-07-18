@@ -1,11 +1,21 @@
 <script lang="ts">
-  import { getNote, type Note } from '$shared/api/notes';
-  import { getNoteLinks, deleteAllNoteLinks, type Link } from '$shared/api/links';
-  import { goto } from '$app/navigation';
-  import { formatDate } from '$shared/utils/date';
-  import ShareModal from '$components/organisms/ShareModal.svelte';
+  import { getNote, type Note } from "$shared/api/notes";
+  import {
+    getNoteLinks,
+    deleteAllNoteLinks,
+    type Link,
+  } from "$shared/api/links";
+  import { goto } from "$app/navigation";
+  import { formatDate } from "$shared/utils/date";
+  import { CelestialBody } from "$shared/lib/domain";
+  import ShareModal from "$components/organisms/ShareModal.svelte";
 
-  const { nodeId, onClose, onEdit, onDelete }: {
+  const {
+    nodeId,
+    onClose,
+    onEdit,
+    onDelete,
+  }: {
     nodeId: string;
     onClose: () => void;
     onEdit?: (id: string) => void;
@@ -15,7 +25,7 @@
   let note = $state<Note | null>(null);
   let links = $state<Link[]>([]);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let showShareModal = $state(false);
   let showDeleteLinksConfirm = $state(false);
   let deletingLinks = $state(false);
@@ -29,11 +39,11 @@
 
   async function loadNote(id: string) {
     loading = true;
-    error = '';
+    error = "";
     try {
       note = await getNote(id);
     } catch {
-      error = 'Failed to load note';
+      error = "Failed to load note";
       note = null;
     } finally {
       loading = false;
@@ -55,30 +65,42 @@
       links = [];
       showDeleteLinksConfirm = false;
     } catch {
-      error = 'Failed to delete links';
+      error = "Failed to delete links";
     } finally {
       deletingLinks = false;
     }
   }
 
   function getTypeIcon(type: string | undefined): string {
-    const icons: Record<string, string> = {
-      star: '⭐',
-      planet: '🪐',
-      comet: '☄️',
-      galaxy: '🌀',
-      asteroid: '☁️'
-    };
-    return icons[type || 'star'] || '📄';
+    return type
+      ? CelestialBody.fromString(type).emoji
+      : CelestialBody.STAR.emoji;
+  }
+
+  function getTypeLabel(type: string | undefined): string {
+    return type ? CelestialBody.fromString(type).label : "Note";
   }
 </script>
 
 <div class="side-panel" data-testid="note-side-panel" class:open={true}>
   <div class="panel-header">
-    <button class="close-btn" onclick={onClose} aria-label="Close panel" data-testid="sidepanel-close-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
+    <button
+      class="close-btn"
+      onclick={onClose}
+      aria-label="Close panel"
+      data-testid="sidepanel-close-btn"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
       </svg>
     </button>
 
@@ -86,15 +108,23 @@
       <div class="actions">
         <button
           class="action-btn share"
-          onclick={() => showShareModal = true}
+          onclick={() => (showShareModal = true)}
           aria-label="Share note"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
         </button>
         <button
@@ -103,9 +133,19 @@
           aria-label="Edit note"
           data-testid="sidepanel-edit-btn"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </button>
         <button
@@ -114,9 +154,19 @@
           aria-label="Delete note"
           data-testid="sidepanel-delete-btn"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
           </svg>
         </button>
       </div>
@@ -135,7 +185,7 @@
       <div class="note-header">
         <span class="type-icon">{getTypeIcon(note.type)}</span>
         <h2 class="title">{note.title}</h2>
-        <span class="type-badge">{note.type || 'Note'}</span>
+        <span class="type-badge">{getTypeLabel(note.type)}</span>
       </div>
 
       <div class="meta">
@@ -161,7 +211,7 @@
           {#if links.length > 0}
             <button
               class="delete-all-links-btn"
-              onclick={() => showDeleteLinksConfirm = true}
+              onclick={() => (showDeleteLinksConfirm = true)}
               aria-label="Delete all links"
             >
               Delete All
@@ -175,7 +225,8 @@
             {#each links as link}
               <div class="link-item">
                 <span class="link-type">{link.link_type}</span>
-                <span class="link-weight">Weight: {link.weight.toFixed(1)}</span>
+                <span class="link-weight">Weight: {link.weight.toFixed(1)}</span
+                >
               </div>
             {/each}
           </div>
@@ -183,7 +234,12 @@
       </div>
 
       <div class="panel-footer">
-        <button type="button" class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)} aria-label={`View full page for ${note.title}`}>
+        <button
+          type="button"
+          class="view-full-btn"
+          onclick={() => note && goto(`/notes/${note.id}`)}
+          aria-label={`View full page for ${note.title}`}
+        >
           View Full Page →
         </button>
       </div>
@@ -195,20 +251,34 @@
   <ShareModal
     noteId={note.id}
     noteTitle={note.title}
-    on:close={() => showShareModal = false}
+    on:close={() => (showShareModal = false)}
   />
 {/if}
 
 {#if showDeleteLinksConfirm}
-  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1" onclick={() => showDeleteLinksConfirm = false} onkeydown={(e) => e.key === 'Escape' && (showDeleteLinksConfirm = false)}>
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    onclick={() => (showDeleteLinksConfirm = false)}
+    onkeydown={(e) => e.key === "Escape" && (showDeleteLinksConfirm = false)}
+  >
     <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-    <div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+    <div
+      class="modal"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+    >
       <h3>Delete All Links?</h3>
-      <p>This will remove all {links.length} links from this note. This action cannot be undone.</p>
+      <p>
+        This will remove all {links.length} links from this note. This action cannot
+        be undone.
+      </p>
       <div class="modal-actions">
         <button
           class="modal-btn cancel"
-          onclick={() => showDeleteLinksConfirm = false}
+          onclick={() => (showDeleteLinksConfirm = false)}
           disabled={deletingLinks}
         >
           Cancel
@@ -218,7 +288,7 @@
           onclick={handleDeleteAllLinks}
           disabled={deletingLinks}
         >
-          {deletingLinks ? 'Deleting...' : 'Delete All'}
+          {deletingLinks ? "Deleting..." : "Delete All"}
         </button>
       </div>
     </div>
@@ -323,7 +393,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .error {

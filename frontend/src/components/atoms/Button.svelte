@@ -1,20 +1,20 @@
 <script lang="ts">
-  type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-  type ButtonType = 'button' | 'submit' | 'reset';
+  type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+  type ButtonType = "button" | "submit" | "reset";
 
   interface Props {
     variant?: ButtonVariant;
     type?: ButtonType;
     disabled?: boolean;
     onClick?: (e: MouseEvent) => void;
-    children?: import('svelte').Snippet;
-    'data-testid'?: string;
-    'aria-label'?: string;
+    children?: import("svelte").Snippet;
+    "data-testid"?: string;
+    "aria-label"?: string;
   }
 
   const {
-    variant = 'primary',
-    type = 'button',
+    variant = "primary",
+    type = "button",
     disabled = false,
     onClick,
     children,
@@ -70,7 +70,7 @@
   .button.primary:hover:not(.disabled) {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     transform: translateY(-2px);
-    box-shadow: 
+    box-shadow:
       0 8px 25px rgba(59, 130, 246, 0.4),
       0 0 30px rgba(64, 169, 255, 0.2);
   }

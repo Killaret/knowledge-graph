@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { fade } from 'svelte/transition';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { fade } from "svelte/transition";
 
   interface Props {
     duration?: number;
@@ -15,12 +15,12 @@
   onMount(() => {
     // Check if already shown in this session
     if (browser) {
-      hasShown = sessionStorage.getItem('splash-shown') === 'true';
+      hasShown = sessionStorage.getItem("splash-shown") === "true";
       if (hasShown) {
         visible = false;
         return;
       }
-      sessionStorage.setItem('splash-shown', 'true');
+      sessionStorage.setItem("splash-shown", "true");
     }
 
     // Auto-hide after duration
@@ -60,7 +60,12 @@
           </linearGradient>
           <!-- Roughness filter for organic feel -->
           <filter id="roughness">
-            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.04"
+              numOctaves="3"
+              result="noise"
+            />
             <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
           </filter>
           <!-- Glow filter -->
@@ -89,9 +94,23 @@
         <!-- The cross symbol -->
         <g filter="url(#roughness)">
           <!-- Vertical bar -->
-          <rect x="46" y="20" width="8" height="60" fill="url(#grad-x)" rx="1" />
+          <rect
+            x="46"
+            y="20"
+            width="8"
+            height="60"
+            fill="url(#grad-x)"
+            rx="1"
+          />
           <!-- Horizontal bar -->
-          <rect x="20" y="46" width="60" height="8" fill="url(#grad-x)" rx="1" />
+          <rect
+            x="20"
+            y="46"
+            width="60"
+            height="8"
+            fill="url(#grad-x)"
+            rx="1"
+          />
         </g>
 
         <!-- Center gem -->
@@ -191,7 +210,8 @@
   }
 
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0);
     }
     50% {
@@ -200,7 +220,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1);
       opacity: 0.5;
     }

@@ -5,9 +5,9 @@
     onReset,
     onSearch,
     onToggleMode,
-    onToggleFocus
+    onToggleFocus,
   }: {
-    mode: 'normal' | 'focus';
+    mode: "normal" | "focus";
     focusMode: boolean;
     onReset: () => void;
     onSearch: () => void;
@@ -40,16 +40,25 @@
     data-testid="graph-controls-mode"
     onclick={onToggleMode}
     title="Toggle mode"
-    style="background: rgba(0,0,0,0.6); border: 1px solid {mode === 'focus' ? 'rgba(139, 92, 246, 0.8)' : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {mode === 'focus' ? '#a78bfa' : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+    style="background: rgba(0,0,0,0.6); border: 1px solid {mode === 'focus'
+      ? 'rgba(139, 92, 246, 0.8)'
+      : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {mode ===
+    'focus'
+      ? '#a78bfa'
+      : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
-    {mode === 'focus' ? '👁' : '⚡'}
+    {mode === "focus" ? "👁" : "⚡"}
   </button>
   <button
     data-testid="graph-controls-focus"
     onclick={onToggleFocus}
     title="Toggle focus mode"
-    style="background: rgba(0,0,0,0.6); border: 1px solid {focusMode ? 'rgba(139, 92, 246, 0.8)' : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {focusMode ? '#a78bfa' : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+    style="background: rgba(0,0,0,0.6); border: 1px solid {focusMode
+      ? 'rgba(139, 92, 246, 0.8)'
+      : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {focusMode
+      ? '#a78bfa'
+      : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
-    {focusMode ? '🎯' : '🔘'}
+    {focusMode ? "🎯" : "🔘"}
   </button>
 </div>

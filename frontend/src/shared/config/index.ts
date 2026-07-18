@@ -1,4 +1,4 @@
 /**
  * Shared config re-exports
  */
-export * from './config';
+export * from "./config";

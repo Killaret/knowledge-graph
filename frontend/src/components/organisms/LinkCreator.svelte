@@ -1,34 +1,34 @@
 <script lang="ts">
-  import { searchNotes } from '$shared/api/notes';
-  import { createLink, type CreateLinkData } from '$shared/api/links';
-  import { addJitter } from '$shared/utils/jitter';
-  
-  const { 
+  import { searchNotes } from "$shared/api/notes";
+  import { createLink, type CreateLinkData } from "$shared/api/links";
+  import { addJitter } from "$shared/utils/jitter";
+
+  const {
     sourceNoteId,
     onSuccess,
-    onCancel
-  }: { 
+    onCancel,
+  }: {
     sourceNoteId: string;
     onSuccess?: (link: { id: string; target_note_id: string }) => void;
     onCancel?: () => void;
   } = $props();
 
-  let searchQuery = $state('');
+  let searchQuery = $state("");
   let searchResults = $state<Array<{ id: string; title: string }>>([]);
   let isSearching = $state(false);
   let selectedTarget = $state<{ id: string; title: string } | null>(null);
-  let linkType = $state('reference');
+  let linkType = $state("reference");
   let isSubmitting = $state(false);
   let error = $state<string | null>(null);
   let showTypeDropdown = $state(false);
   let isFocused = $state(false); // eslint-disable-line @typescript-eslint/no-unused-vars -- Reserved for future focus tracking
 
   const linkTypes = [
-    { value: 'reference', label: 'Reference' },
-    { value: 'related', label: 'Related' },
-    { value: 'dependency', label: 'Dependency' },
-    { value: 'parent', label: 'Parent' },
-    { value: 'child', label: 'Child' }
+    { value: "reference", label: "Reference" },
+    { value: "related", label: "Related" },
+    { value: "dependency", label: "Dependency" },
+    { value: "parent", label: "Parent" },
+    { value: "child", label: "Child" },
   ];
 
   let debounceTimer: ReturnType<typeof setTimeout>;
@@ -38,16 +38,16 @@
       searchResults = [];
       return;
     }
-    
+
     isSearching = true;
     error = null;
-    
+
     try {
       const result = await searchNotes(searchQuery, 1, 10);
       // Исключаем текущую заметку из результатов
-      searchResults = result.data.filter(note => note.id !== sourceNoteId);
+      searchResults = result.data.filter((note) => note.id !== sourceNoteId);
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Search failed';
+      error = err instanceof Error ? err.message : "Search failed";
       searchResults = [];
     } finally {
       isSearching = false;
@@ -68,7 +68,7 @@
 
   async function handleSubmit() {
     if (!selectedTarget) {
-      error = 'Please select a target note';
+      error = "Please select a target note";
       return;
     }
 
@@ -80,16 +80,16 @@
         source_note_id: sourceNoteId,
         target_note_id: selectedTarget.id,
         link_type: linkType,
-        weight: 1.0
+        weight: 1.0,
       };
 
       const link = await createLink(data);
       onSuccess?.(link);
     } catch (err) {
-      if (err instanceof Error && err.message.includes('409')) {
-        error = 'Link already exists between these notes';
+      if (err instanceof Error && err.message.includes("409")) {
+        error = "Link already exists between these notes";
       } else {
-        error = err instanceof Error ? err.message : 'Failed to create link';
+        error = err instanceof Error ? err.message : "Failed to create link";
       }
     } finally {
       isSubmitting = false;
@@ -107,7 +107,7 @@
 
 <div class="link-creator">
   <h3 class="title">Create Link</h3>
-  
+
   <div class="search-section">
     <label for="target-search">Target Note</label>
     <div class="search-wrapper">
@@ -115,7 +115,7 @@
         id="target-search"
         type="text"
         bind:value={searchQuery}
-        onfocus={() => isFocused = true}
+        onfocus={() => (isFocused = true)}
         onblur={handleBlur}
         oninput={onSearchInput}
         placeholder="Search for a note..."
@@ -127,7 +127,7 @@
         <span class="spinner" aria-label="Searching"></span>
       {/if}
     </div>
-    
+
     {#if searchResults.length > 0}
       <ul class="search-results" role="listbox" aria-label="Search results">
         {#each searchResults as note}
@@ -153,14 +153,14 @@
         type="button"
         id="link-type"
         class="type-dropdown-btn"
-        onclick={() => showTypeDropdown = !showTypeDropdown}
+        onclick={() => (showTypeDropdown = !showTypeDropdown)}
         aria-expanded={showTypeDropdown}
         aria-haspopup="listbox"
       >
-        {linkTypes.find(t => t.value === linkType)?.label || 'Select type'}
+        {linkTypes.find((t) => t.value === linkType)?.label || "Select type"}
         <span class="dropdown-arrow">▼</span>
       </button>
-      
+
       {#if showTypeDropdown}
         <ul class="type-dropdown" role="listbox" aria-label="Link types">
           {#each linkTypes as type}
@@ -279,7 +279,9 @@
   }
 
   @keyframes spin {
-    to { transform: translateY(-50%) rotate(360deg); }
+    to {
+      transform: translateY(-50%) rotate(360deg);
+    }
   }
 
   .search-results {

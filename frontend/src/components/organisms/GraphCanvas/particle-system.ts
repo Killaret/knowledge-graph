@@ -45,7 +45,7 @@ export class ParticleSystem {
         speed,
         size: 1 + Math.random(),
         color,
-        alpha: 0.3 + Math.random() * 0.4
+        alpha: 0.3 + Math.random() * 0.4,
       });
     }
 
@@ -80,7 +80,9 @@ export class ParticleSystem {
     for (const particle of particles) {
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fillStyle = particle.color.replace(')', `, ${particle.alpha})`).replace('rgb', 'rgba');
+      ctx.fillStyle = particle.color
+        .replace(")", `, ${particle.alpha})`)
+        .replace("rgb", "rgba");
       ctx.fill();
     }
   }

@@ -1,7 +1,7 @@
 /**
  * Canvas resize utilities for GraphCanvas
  */
-import type { ResizeState } from './types';
+import type { ResizeState } from "./types";
 
 export type { ResizeState };
 
@@ -10,7 +10,7 @@ export type { ResizeState };
  */
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
-  state: ResizeState
+  state: ResizeState,
 ): void {
   const rect = canvas.parentElement?.getBoundingClientRect();
   if (rect && rect.width > 0 && rect.height > 0) {
@@ -23,10 +23,10 @@ export function resizeCanvas(
     // Set backing store size
     canvas.width = Math.round(state.width * dpr);
     canvas.height = Math.round(state.height * dpr);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (ctx) {
       // setTransform may not be available in test environments with mock canvas
-      if (typeof ctx.setTransform === 'function') {
+      if (typeof ctx.setTransform === "function") {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       } else {
         // Fallback for environments without setTransform support
@@ -42,10 +42,10 @@ export function resizeCanvas(
     canvas.style.height = `${Math.round(state.height)}px`;
     canvas.width = Math.round(state.width * dpr);
     canvas.height = Math.round(state.height * dpr);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (ctx) {
       // setTransform may not be available in test environments with mock canvas
-      if (typeof ctx.setTransform === 'function') {
+      if (typeof ctx.setTransform === "function") {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       } else {
         // Fallback for environments without setTransform support
@@ -60,7 +60,7 @@ export function resizeCanvas(
  */
 export function setupResizeObserver(
   canvas: HTMLCanvasElement,
-  onResize: () => void
+  onResize: () => void,
 ): { disconnect: () => void } {
   const resizeObserver = new ResizeObserver(() => {
     onResize();
@@ -73,7 +73,7 @@ export function setupResizeObserver(
   return {
     disconnect: () => {
       resizeObserver.disconnect();
-    }
+    },
   };
 }
 
@@ -82,13 +82,13 @@ export function setupResizeObserver(
  */
 export function scheduleDelayedResize(
   callback: () => void,
-  delayMs: number = 100
+  delayMs: number = 100,
 ): { clear: () => void } {
   const timer = setTimeout(callback, delayMs);
 
   return {
     clear: () => {
       clearTimeout(timer);
-    }
+    },
   };
 }

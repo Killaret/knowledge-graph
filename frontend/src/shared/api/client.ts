@@ -1,22 +1,26 @@
 // API client wrapper для ky
-import ky from 'ky';
-import { browser } from '$app/environment';
-import { goto } from '$app/navigation';
-import { getAccessToken, getApiKey, refreshAccessToken } from '$shared/stores/auth.svelte';
+import ky from "ky";
+import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
+import {
+  getAccessToken,
+  getApiKey,
+  refreshAccessToken,
+} from "$shared/stores/auth.svelte";
 
 // Redirect to login after an unrecoverable auth failure (browser only)
 function redirectToLogin(): void {
   if (browser) {
-    void goto('/auth/login');
+    void goto("/auth/login");
   }
 }
 
 // Проверяем тестовое окружение через process.env.VITEST
 // Vitest устанавливает эту переменную автоматически
-const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
+const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 
 // Получаем backend URL из env (для Docker) или используем default
-let backendUrl = '';
+let backendUrl = "";
 try {
   const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (envUrl) backendUrl = envUrl;
@@ -27,10 +31,13 @@ try {
 // В dev режиме (Vite) используем относительный путь (проксируется на backend)
 // Production использует прямой backend URL или относительный путь
 // Если backendUrl относительный (начинается с /), используем его как есть
-const isRelativeUrl = backendUrl.startsWith('/');
-const prefixUrl = isTest && !isRelativeUrl
-  ? `${backendUrl}/api`
-  : (isRelativeUrl ? backendUrl : `${backendUrl}/api`);
+const isRelativeUrl = backendUrl.startsWith("/");
+const prefixUrl =
+  isTest && !isRelativeUrl
+    ? `${backendUrl}/api`
+    : isRelativeUrl
+      ? backendUrl
+      : `${backendUrl}/api`;
 
 // Flag to prevent infinite refresh loops
 let isRefreshing = false;
@@ -47,8 +54,8 @@ export const api = ky.create({
   timeout: 30000,
   retry: {
     limit: 3,
-    methods: ['get', 'post', 'put', 'patch'],
-    statusCodes: [408, 413, 429, 500, 502, 503, 504]
+    methods: ["get", "post", "put", "patch"],
+    statusCodes: [408, 413, 429, 500, 502, 503, 504],
   },
   hooks: {
     beforeRequest: [
@@ -56,22 +63,22 @@ export const api = ky.create({
         // Add Authorization header if access token exists
         const token = getAccessToken();
         if (token) {
-          request.headers.set('Authorization', `Bearer ${token}`);
+          request.headers.set("Authorization", `Bearer ${token}`);
         }
-        
+
         // Add API Key header if exists (for API key auth)
         const key = getApiKey();
         if (key) {
-          request.headers.set('X-API-Key', key);
+          request.headers.set("X-API-Key", key);
         }
-      }
+      },
     ],
     afterResponse: [
       async (request, options, response) => {
         // The auth refresh endpoint is used by the refresh flow itself;
         // do not try to refresh on a refresh request to avoid recursion/deadlock.
         const requestPath = new URL(request.url).pathname;
-        if (requestPath.endsWith('/api/v1/auth/refresh')) {
+        if (requestPath.endsWith("/api/v1/auth/refresh")) {
           return response;
         }
 
@@ -86,7 +93,7 @@ export const api = ky.create({
                 // Retry the original request with the new token
                 const newToken = getAccessToken();
                 if (newToken) {
-                  request.headers.set('Authorization', `Bearer ${newToken}`);
+                  request.headers.set("Authorization", `Bearer ${newToken}`);
                   return ky(request);
                 }
               }
@@ -105,7 +112,7 @@ export const api = ky.create({
             if (refreshed) {
               const newToken = getAccessToken();
               if (newToken) {
-                request.headers.set('Authorization', `Bearer ${newToken}`);
+                request.headers.set("Authorization", `Bearer ${newToken}`);
                 return ky(request);
               }
             }
@@ -118,9 +125,9 @@ export const api = ky.create({
         }
 
         return response;
-      }
-    ]
-  }
+      },
+    ],
+  },
 });
 
 export default api;

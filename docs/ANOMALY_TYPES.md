@@ -14,6 +14,7 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
 ## Anomaly Types
 
 ### 1. Reality Rift
+
 - **Appearance:** Dark core with jagged cracks and amoebic contour
 - **Use Case:** Unknown nodes with hash % 4 === 0
 - **Visual Characteristics:**
@@ -22,6 +23,7 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
   - Deformed, organic shape
 
 ### 2. Chromatic Maw
+
 - **Appearance:** Tentacles with gradient core
 - **Use Case:** Unknown nodes with hash % 4 === 1
 - **Visual Characteristics:**
@@ -30,6 +32,7 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
   - Color-shifting effects
 
 ### 3. Void Whisper
+
 - **Appearance:** Particles with connections and snow effect
 - **Use Case:** Unknown nodes with hash % 4 === 2
 - **Visual Characteristics:**
@@ -38,6 +41,7 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
   - Subtle crack patterns
 
 ### 4. Cosmic Abomination
+
 - **Appearance:** Combines all three anomaly types
 - **Use Case:** Unknown nodes with hash % 4 === 3
 - **Visual Characteristics:**
@@ -52,31 +56,40 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
 
 ### Automatic Dispatch
 
-The system automatically selects anomaly types for nodes with `type: 'unknown'`:
+The system automatically selects anomaly types for nodes with `type: 'unknown'`. Rendering is driven by the `CelestialBody` Value Object; the renderer no longer contains a `switch` over raw type strings.
 
 ```typescript
-// In renderer.ts
-export function drawNode(
-  ctx: CanvasRenderingContext2D,
-  node: SimulationNode,
-  r: number,
-  angle: number,
-  enableShadows: boolean,
-  disableVariation: boolean = false
-): void {
-  const type = node.type || 'unknown';
+import { CelestialBody } from "$shared/lib/domain";
 
-  switch (type) {
-    case 'star':
-      drawStar(ctx, x, y, r, angle, variation);
-      break;
-    // ... other types
-    case 'unknown':
-    default:
-      drawUnknown(ctx, x, y, r, angle, node.id);
-      break;
-  }
-}
+// In renderer.ts drawNode
+const body = CelestialBody.fromString(node.type);
+
+// ... compute deterministic variation, shadows, focus, etc.
+
+body.draw(ctx, {
+  x,
+  y,
+  r: r * body.baseRadius,
+  angle,
+  nodeId: node.id,
+  nodeCount: focusMode ? undefined : nodeCount,
+  time: focusMode ? undefined : animationTime,
+  variation,
+  disableVariation,
+  enableShadows: effectiveEnableShadows,
+  focusMode,
+});
+```
+
+Anomalies are also first-class `CelestialBody` instances:
+
+```typescript
+CelestialBody.REALITY_RIFT; // isAnomaly = true, anomalyType = 'reality_rift'
+CelestialBody.CHROMATIC_MAW;
+CelestialBody.VOID_WHISPER;
+CelestialBody.COSMIC_ABOMINATION;
+
+CelestialBody.ANOMALIES; // array of all anomaly bodies
 ```
 
 ### Deterministic Selection
@@ -91,19 +104,21 @@ export function drawUnknown(
   r: number,
   angle: number,
   nodeId: string,
-  customRenderers?: Record<number, AnomalyRenderer>
+  customRenderers?: Record<number, AnomalyRenderer>,
 ): void {
   // Select anomaly type based on hash of nodeId (deterministic)
   const hash = stringHash(nodeId);
   const anomalyType = hash % 4;
 
   const params = getAnomalyParams(nodeId);
-  const renderers = customRenderers ?? {
-    0: drawRealityRift,
-    1: drawChromaticMaw,
-    2: drawVoidWhisper,
-    3: drawCosmicAbomination,
-  } as Record<number, AnomalyRenderer>;
+  const renderers =
+    customRenderers ??
+    ({
+      0: drawRealityRift,
+      1: drawChromaticMaw,
+      2: drawVoidWhisper,
+      3: drawCosmicAbomination,
+    } as Record<number, AnomalyRenderer>);
 
   const rendererFn = renderers[anomalyType] ?? drawRealityRift;
   rendererFn(ctx, x, y, r, params);
@@ -119,7 +134,7 @@ function stringHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
@@ -141,20 +156,20 @@ anomaly: {
     crack_count_max: number;
     deform_amount_min: number;
     deform_amount_max: number;
-  };
+  }
   chromatic_maw: {
     tentacle_count_min: number;
     tentacle_count_max: number;
     hue_shift_base: number;
     hue_shift_range: number;
-  };
+  }
   void_whisper: {
     particle_count_min: number;
     particle_count_max: number;
     hue_shift_base: number;
     hue_shift_range: number;
     connection_distance_threshold: number;
-  };
+  }
   cosmic_abomination: {
     particle_count_min: number;
     particle_count_max: number;
@@ -162,7 +177,7 @@ anomaly: {
     tentacle_count_max: number;
     crack_count_min: number;
     crack_count_max: number;
-  };
+  }
 }
 ```
 
@@ -172,26 +187,30 @@ anomaly: {
 
 ### Automatic Fallback
 
-Nodes without a recognized type automatically render as anomalies:
+Nodes without a recognized type automatically resolve to `CelestialBody.UNKNOWN`, which dispatches to an anomaly renderer:
 
 ```typescript
+import { CelestialBody } from "$shared/lib/domain";
+
 // In +page.svelte
-nodes: allNotes.map(n => ({
+nodes: allNotes.map((n) => ({
   id: n.id,
   title: n.title,
-  type: n.type || 'unknown'  // Fallback to unknown
-}))
+  type: CelestialBody.fromString(n.type).type, // Always normalizes to a known body
+}));
 ```
 
 ### Type Selector
 
-The TypeSelector component includes standard types but not anomalies:
+The TypeSelector component lists only non-anomaly, user-selectable celestial bodies. This set is derived from `CelestialBody.UI_TYPES`:
 
 ```typescript
-type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid';
+import { CelestialBody } from "$shared/lib/domain";
+
+const types = CelestialBody.UI_TYPES; // star, planet, comet, galaxy, etc.
 ```
 
-Anomalies are reserved for system-generated unknown types.
+Anomalies (`UNKNOWN` and the four explicit anomaly bodies) are reserved for system-generated unknown types and do not appear in the note creation selector.
 
 ---
 
@@ -202,15 +221,17 @@ Anomalies are reserved for system-generated unknown types.
 Anomaly rendering is tested in `frontend/src/components/organisms/GraphCanvas.node-types.spec.ts`:
 
 ```typescript
-describe('Anomaly Rendering (Unknown Node Types)', () => {
-  it('drawRealityRift renders without errors');
-  it('drawChromaticMaw renders tentacles with gradient core');
-  it('drawVoidWhisper renders particles with connections');
-  it('drawCosmicAbomination combines all anomaly types');
-  it('drawUnknown dispatches to one anomaly renderer based on nodeId');
-  it('drawUnknown is deterministic for the same nodeId');
-  it('getAnomalyParams returns stable and different values for different nodeIds');
-  it('drawNode dispatches to drawUnknown for unknown type');
+describe("Anomaly Rendering (Unknown Node Types)", () => {
+  it("drawRealityRift renders without errors");
+  it("drawChromaticMaw renders tentacles with gradient core");
+  it("drawVoidWhisper renders particles with connections");
+  it("drawCosmicAbomination combines all anomaly types");
+  it("drawUnknown dispatches to one anomaly renderer based on nodeId");
+  it("drawUnknown is deterministic for the same nodeId");
+  it(
+    "getAnomalyParams returns stable and different values for different nodeIds",
+  );
+  it("drawNode dispatches to drawUnknown for unknown type");
 });
 ```
 
@@ -219,11 +240,19 @@ describe('Anomaly Rendering (Unknown Node Types)', () => {
 Anomaly functions are also tested in `frontend/src/components/organisms/GraphCanvas/renderer.test.ts`:
 
 ```typescript
-describe('renderer anomaly functions', () => {
-  describe('drawRealityRift', () => { /* ... */ });
-  describe('drawChromaticMaw', () => { /* ... */ });
-  describe('drawVoidWhisper', () => { /* ... */ });
-  describe('drawCosmicAbomination', () => { /* ... */ });
+describe("renderer anomaly functions", () => {
+  describe("drawRealityRift", () => {
+    /* ... */
+  });
+  describe("drawChromaticMaw", () => {
+    /* ... */
+  });
+  describe("drawVoidWhisper", () => {
+    /* ... */
+  });
+  describe("drawCosmicAbomination", () => {
+    /* ... */
+  });
 });
 ```
 
@@ -232,21 +261,25 @@ describe('renderer anomaly functions', () => {
 ## Visual Examples
 
 ### Reality Rift
+
 - Dark, cracked appearance
 - Organic, deformed shape
 - Subtle glow effects
 
 ### Chromatic Maw
+
 - Central gradient core
 - Radiating tentacles
 - Color-shifting animations
 
 ### Void Whisper
+
 - Particle-based rendering
 - Connection lines
 - Snow-like effect
 
 ### Cosmic Abomination
+
 - Most complex visual
 - Combines all anomaly types
 - High visual impact
@@ -258,6 +291,7 @@ describe('renderer anomaly functions', () => {
 ### Rendering Cost
 
 Anomaly rendering is more expensive than standard types:
+
 - **Reality Rift:** Medium cost (cracks + deformations)
 - **Chromatic Maw:** High cost (tentacles + gradients)
 - **Void Whisper:** Medium cost (particles + connections)
@@ -266,6 +300,7 @@ Anomaly rendering is more expensive than standard types:
 ### Optimization
 
 For large graphs with many unknown nodes:
+
 1. Consider limiting unknown node count
 2. Use `disableVariation` flag for stable rendering
 3. Implement LOD (Level of Detail) for distant nodes
@@ -301,10 +336,13 @@ anomaly: {
 
 **Problem:** All nodes show as anomalies instead of standard types
 
-**Solution:** Check that node types are correctly set:
+**Solution:** Check that node types are normalized through `CelestialBody`:
+
 ```typescript
-// Ensure types are set correctly
-type: n.type || 'unknown'  // Should be 'star', 'planet', etc.
+import { CelestialBody } from "$shared/lib/domain";
+
+// Ensure types resolve to a known body; tyros will become UNKNOWN/anomaly
+type: CelestialBody.fromString(n.type).type; // Should be 'star', 'planet', etc.
 ```
 
 ### Anomaly Type Changes on Re-render
@@ -312,6 +350,7 @@ type: n.type || 'unknown'  // Should be 'star', 'planet', etc.
 **Problem:** Same node shows different anomaly types
 
 **Solution:** Ensure node IDs are consistent:
+
 ```typescript
 // Hash is based on nodeId - must be stable
 const hash = stringHash(nodeId);
@@ -322,6 +361,7 @@ const hash = stringHash(nodeId);
 **Problem:** Graph rendering slows down with many anomalies
 
 **Solution:**
+
 1. Reduce number of unknown nodes
 2. Use simpler anomaly types
 3. Implement LOD for distant nodes
@@ -331,6 +371,7 @@ const hash = stringHash(nodeId);
 ## Related Documentation
 
 - [GraphCanvas Renderer](../frontend/src/components/organisms/GraphCanvas/renderer.ts)
+- [CelestialBody Value Object](../frontend/src/shared/lib/domain/celestial-body.ts)
 - [Configuration](../frontend/src/shared/config/config.ts)
 - [Node Types](./NODE_TYPES.md)
 - [Visual Testing](./ARGOS.md)

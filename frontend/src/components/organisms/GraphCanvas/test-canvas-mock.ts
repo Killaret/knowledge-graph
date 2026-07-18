@@ -1,7 +1,7 @@
 /**
  * Reusable canvas context mock for GraphCanvas tests
  */
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 export function createMockCanvasContext() {
   const fillStyles: string[] = [];
@@ -36,37 +36,40 @@ export function createMockCanvasContext() {
         addColorStop: vi.fn((offset: number, color: string) => {
           colorStops.push({ offset, color });
         }),
-        getColorStops: () => colorStops
+        getColorStops: () => colorStops,
       };
       return gradient;
     }),
     createLinearGradient: vi.fn(() => ({
-      addColorStop: vi.fn()
+      addColorStop: vi.fn(),
     })),
     roundRect: vi.fn(),
     set fillStyle(value: string) {
       (ctx as any)._fillStyle = value;
     },
     get fillStyle() {
-      return (ctx as any)._fillStyle || '';
+      return (ctx as any)._fillStyle || "";
     },
     set strokeStyle(value: string) {
       (ctx as any)._strokeStyle = value;
       strokeStyles.push(value);
     },
     get strokeStyle() {
-      return (ctx as any)._strokeStyle || '';
+      return (ctx as any)._strokeStyle || "";
     },
-    font: '',
-    textAlign: 'center' as CanvasTextAlign,
-    textBaseline: 'middle' as CanvasTextBaseline,
+    font: "",
+    textAlign: "center" as CanvasTextAlign,
+    textBaseline: "middle" as CanvasTextBaseline,
     lineWidth: 1,
     shadowBlur: 0,
-    shadowColor: '',
+    shadowColor: "",
     globalAlpha: 1,
     getFillStyles: () => fillStyles,
-    getStrokeStyles: () => strokeStyles
-  } as unknown as CanvasRenderingContext2D & { getFillStyles: () => string[]; getStrokeStyles: () => string[] };
+    getStrokeStyles: () => strokeStyles,
+  } as unknown as CanvasRenderingContext2D & {
+    getFillStyles: () => string[];
+    getStrokeStyles: () => string[];
+  };
 
   return ctx;
 }

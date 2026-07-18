@@ -1,5 +1,14 @@
-import { setWorldConstructor, setDefaultTimeout, World } from '@cucumber/cucumber';
-import { type Browser, type BrowserContext, type Page, type APIRequestContext } from '@playwright/test';
+import {
+  setWorldConstructor,
+  setDefaultTimeout,
+  World,
+} from "@cucumber/cucumber";
+import {
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type APIRequestContext,
+} from "@playwright/test";
 
 export interface ITestWorld extends World {
   browser?: Browser;

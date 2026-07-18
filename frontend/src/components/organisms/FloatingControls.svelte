@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { isAuthenticated } from '$shared/stores/auth.svelte';
-  import LangSwitcher from '$components/atoms/LangSwitcher.svelte';
+  import { goto } from "$app/navigation";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
   const {
     onCreate,
@@ -11,46 +11,49 @@
     onImport,
     onExport,
     typeFilters = [],
-    selectedType = 'all',
+    selectedType = "all",
     typeCounts = {},
-    currentView = 'graph'
+    currentView = "graph",
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
-    onToggleView?: (view: 'graph' | 'list') => void;
+    onToggleView?: (view: "graph" | "list") => void;
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
-    currentView?: 'graph' | 'list';
+    currentView?: "graph" | "list";
   } = $props();
 
-  let searchQuery = $state('');
+  let searchQuery = $state("");
   let showMenu = $state(false);
   let filtersContainer: HTMLDivElement | null = $state(null);
 
-  function scrollFilters(dir: 'left' | 'right') {
+  function scrollFilters(dir: "left" | "right") {
     if (filtersContainer) {
-      filtersContainer.scrollBy({ left: dir === 'right' ? 120 : -120, behavior: 'smooth' });
+      filtersContainer.scrollBy({
+        left: dir === "right" ? 120 : -120,
+        behavior: "smooth",
+      });
     }
   }
-  
+
   function handleSearch() {
     onSearch?.(searchQuery);
   }
-  
-  function toggleView(targetView: 'graph' | 'list') {
+
+  function toggleView(targetView: "graph" | "list") {
     onToggleView?.(targetView);
   }
 
   function handleFilter(typeId: string) {
     onFilter?.(typeId);
   }
-  
+
   function handleLogin() {
-    goto('/auth/login');
+    goto("/auth/login");
     showMenu = false;
   }
 </script>
@@ -61,22 +64,30 @@
     <button
       type="button"
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
-      onclick={() => toggleView('graph')}
+      onclick={() => toggleView("graph")}
       title="2D Graph"
       data-testid="view-toggle-graph"
-      aria-pressed={currentView === 'graph'}
+      aria-pressed={currentView === "graph"}
       aria-label="Switch to 2D graph view"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <circle cx="5" cy="5" r="2"/>
-        <circle cx="19" cy="5" r="2"/>
-        <circle cx="5" cy="19" r="2"/>
-        <circle cx="19" cy="19" r="2"/>
-        <line x1="7" y1="7" x2="10" y2="10"/>
-        <line x1="14" y1="10" x2="17" y2="7"/>
-        <line x1="7" y1="17" x2="10" y2="14"/>
-        <line x1="14" y1="14" x2="17" y2="17"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="3" />
+        <circle cx="5" cy="5" r="2" />
+        <circle cx="19" cy="5" r="2" />
+        <circle cx="5" cy="19" r="2" />
+        <circle cx="19" cy="19" r="2" />
+        <line x1="7" y1="7" x2="10" y2="10" />
+        <line x1="14" y1="10" x2="17" y2="7" />
+        <line x1="7" y1="17" x2="10" y2="14" />
+        <line x1="14" y1="14" x2="17" y2="17" />
       </svg>
       <span class="btn-label">2D</span>
     </button>
@@ -101,16 +112,24 @@
     <button
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
-      onclick={() => toggleView('list')}
+      onclick={() => toggleView("list")}
       title="List View"
       data-testid="view-toggle-list"
-      aria-pressed={currentView === 'list'}
+      aria-pressed={currentView === "list"}
       aria-label="Switch to list view"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
       <span class="btn-label">List</span>
     </button>
@@ -119,7 +138,12 @@
   <!-- Type Filters -->
   {#if typeFilters.length > 0}
     <div class="type-filters-wrapper">
-      <button type="button" class="scroll-arrow scroll-left" onclick={() => scrollFilters('left')} aria-label="Scroll left">‹</button>
+      <button
+        type="button"
+        class="scroll-arrow scroll-left"
+        onclick={() => scrollFilters("left")}
+        aria-label="Scroll left">‹</button
+      >
       <div class="type-filters" bind:this={filtersContainer}>
         {#each typeFilters as filter}
           <button
@@ -134,12 +158,19 @@
             <span class="filter-emoji">{filter.emoji}</span>
             <span class="filter-label">{filter.label}</span>
             {#if typeCounts[filter.id] !== undefined}
-              <span class="filter-count" data-testid="filter-count-{filter.id}">{typeCounts[filter.id]}</span>
+              <span class="filter-count" data-testid="filter-count-{filter.id}"
+                >{typeCounts[filter.id]}</span
+              >
             {/if}
           </button>
         {/each}
       </div>
-      <button type="button" class="scroll-arrow scroll-right" onclick={() => scrollFilters('right')} aria-label="Scroll right">›</button>
+      <button
+        type="button"
+        class="scroll-arrow scroll-right"
+        onclick={() => scrollFilters("right")}
+        aria-label="Scroll right">›</button
+      >
     </div>
   {/if}
 
@@ -149,15 +180,28 @@
       type="text"
       bind:value={searchQuery}
       placeholder="Search notes..."
-      onkeyup={(e) => e.key === 'Enter' && handleSearch()}
+      onkeyup={(e) => e.key === "Enter" && handleSearch()}
       class="search-input"
       data-testid="search-input"
       aria-label="Search notes"
     />
-    <button type="button" class="search-btn" onclick={handleSearch} aria-label="Search">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <button
+      type="button"
+      class="search-btn"
+      onclick={handleSearch}
+      aria-label="Search"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
     </button>
   </div>
@@ -172,44 +216,84 @@
       data-testid="floating-login-button"
       aria-label="Login to your account"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <polyline points="10 17 15 12 10 7" />
+        <line x1="15" y1="12" x2="3" y2="12" />
       </svg>
     </button>
   {/if}
 
   <!-- Menu -->
   <div class="menu-container">
-    <button 
+    <button
       type="button"
       class="menu-btn"
       data-testid="menu-button"
-      onclick={() => showMenu = !showMenu}
+      onclick={() => (showMenu = !showMenu)}
       title="Menu"
       aria-expanded={showMenu}
       aria-haspopup="true"
       aria-label="Open menu"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
-    
+
     {#if showMenu}
       <div class="dropdown-menu" role="menu">
         {#if !isAuthenticated()}
-          <button type="button" class="menu-item" role="menuitem" onclick={handleLogin} data-testid="menu-login">
+          <button
+            type="button"
+            class="menu-item"
+            role="menuitem"
+            onclick={handleLogin}
+            data-testid="menu-login"
+          >
             🔑 Login
           </button>
         {/if}
-        <button type="button" class="menu-item" role="menuitem" onclick={() => { onImport?.(); showMenu = false; }} data-testid="menu-import">
+        <button
+          type="button"
+          class="menu-item"
+          role="menuitem"
+          onclick={() => {
+            onImport?.();
+            showMenu = false;
+          }}
+          data-testid="menu-import"
+        >
           Import
         </button>
-        <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }} data-testid="menu-export">
+        <button
+          type="button"
+          class="menu-item"
+          role="menuitem"
+          onclick={() => {
+            onExport?.();
+            showMenu = false;
+          }}
+          data-testid="menu-export"
+        >
           Export
         </button>
       </div>
@@ -220,10 +304,25 @@
   <LangSwitcher />
 
   <!-- Create Button -->
-  <button type="button" class="create-btn" onclick={() => onCreate?.()} title="Create new note" data-testid="create-note-button" aria-label="Create new note">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5" y1="12" x2="19" y2="12"/>
+  <button
+    type="button"
+    class="create-btn"
+    onclick={() => onCreate?.()}
+    title="Create new note"
+    data-testid="create-note-button"
+    aria-label="Create new note"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   </button>
 </div>
@@ -607,11 +706,13 @@
       font-size: 12px;
     }
 
-    .menu-btn, .create-btn {
+    .menu-btn,
+    .create-btn {
       padding: 7px;
     }
 
-    .menu-btn svg, .create-btn svg {
+    .menu-btn svg,
+    .create-btn svg {
       width: 18px;
       height: 18px;
     }

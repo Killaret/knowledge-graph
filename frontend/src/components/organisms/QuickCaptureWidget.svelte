@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { createNote } from '$shared/api/notes';
+  import { createNote } from "$shared/api/notes";
+  import { CelestialBody } from "$shared/lib/domain";
 
   // State
   let isOpen = $state(false);
-  let content = $state('');
+  let content = $state("");
   let isSubmitting = $state(false);
   let showSuccess = $state(false);
 
@@ -11,7 +12,7 @@
   function toggle() {
     isOpen = !isOpen;
     if (isOpen) {
-      content = '';
+      content = "";
       showSuccess = false;
     }
   }
@@ -22,21 +23,21 @@
 
     isSubmitting = true;
     try {
-      const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
+      const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
       await createNote({
         title,
         content,
-        type: 'dust'
+        type: CelestialBody.DUST.type,
       });
 
       showSuccess = true;
-      content = '';
+      content = "";
       setTimeout(() => {
         showSuccess = false;
         toggle();
       }, 1000);
     } catch (error) {
-      console.error('Error creating note:', error);
+      console.error("Error creating note:", error);
     } finally {
       isSubmitting = false;
     }
@@ -45,14 +46,14 @@
   // Handle keyboard shortcuts
   function handleKeydown(e: KeyboardEvent) {
     // Ctrl+Shift+N to open quick capture
-    if (e.key === 'n' && e.ctrlKey && e.shiftKey && !isOpen) {
+    if (e.key === "n" && e.ctrlKey && e.shiftKey && !isOpen) {
       e.preventDefault();
       toggle();
     }
-    if (e.key === 'Escape' && isOpen) {
+    if (e.key === "Escape" && isOpen) {
       toggle();
     }
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && isOpen) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && isOpen) {
       e.preventDefault();
       submitCapture();
     }
@@ -60,7 +61,7 @@
 
   // Close modal when clicking outside
   function handleBackdropClick(e: MouseEvent) {
-    if ((e.target as HTMLElement).classList.contains('quick-capture-modal')) {
+    if ((e.target as HTMLElement).classList.contains("quick-capture-modal")) {
       toggle();
     }
   }
@@ -71,11 +72,20 @@
 <!-- Floating button -->
 <div class="quick-capture-container">
   {#if isOpen}
-    <div class="quick-capture-backdrop" role="dialog" aria-modal="true" tabindex="-1" onmousedown={handleBackdropClick} onkeydown={(e) => e.key === 'Escape' && toggle()}>
+    <div
+      class="quick-capture-backdrop"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      onmousedown={handleBackdropClick}
+      onkeydown={(e) => e.key === "Escape" && toggle()}
+    >
       <div class="quick-capture-modal">
         <div class="modal-header">
           <h3>✨ Quick Capture</h3>
-          <button class="close-btn" onclick={toggle} aria-label="Close">×</button>
+          <button class="close-btn" onclick={toggle} aria-label="Close"
+            >×</button
+          >
         </div>
         <div class="modal-body">
           <textarea
@@ -88,16 +98,26 @@
           {/if}
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" onclick={toggle} disabled={isSubmitting}>Cancel</button>
-          <button class="submit-btn" onclick={submitCapture} disabled={isSubmitting || !content.trim()}>
-            {isSubmitting ? 'Saving...' : 'Save'}
+          <button class="cancel-btn" onclick={toggle} disabled={isSubmitting}
+            >Cancel</button
+          >
+          <button
+            class="submit-btn"
+            onclick={submitCapture}
+            disabled={isSubmitting || !content.trim()}
+          >
+            {isSubmitting ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
     </div>
   {/if}
 
-  <button class="quick-capture-btn" onclick={toggle} title="Quick Capture (Ctrl+Shift+N)">
+  <button
+    class="quick-capture-btn"
+    onclick={toggle}
+    title="Quick Capture (Ctrl+Shift+N)"
+  >
     ✨
   </button>
 </div>
@@ -168,8 +188,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .modal-header {

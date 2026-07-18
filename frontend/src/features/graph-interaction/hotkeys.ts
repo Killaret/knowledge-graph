@@ -1,5 +1,8 @@
-import type { TransformState, SimulationNode } from '$components/organisms/GraphCanvas/types';
-import type { GhostNodeState } from '$components/organisms/GraphCanvas';
+import type {
+  TransformState,
+  SimulationNode,
+} from "$components/organisms/GraphCanvas/types";
+import type { GhostNodeState } from "$components/organisms/GraphCanvas";
 
 export interface HotkeysState {
   showSearchBox: boolean;
@@ -29,15 +32,15 @@ export interface HotkeysCallbacks {
 export function createHotkeysState(): HotkeysState {
   return {
     showSearchBox: false,
-    searchQuery: '',
+    searchQuery: "",
     searchMatchIds: [],
     searchCurrentIndex: 0,
     showHelpModal: false,
     showHelpTooltip: false,
     helpTooltipPosition: { x: 0, y: 0 },
-    helpTooltipMessage: '',
+    helpTooltipMessage: "",
     inactivityTimeout: null,
-    lastActivityTime: 0
+    lastActivityTime: 0,
   };
 }
 
@@ -52,13 +55,16 @@ export function handleKeyDownEvent(
   showNoteForm: boolean,
   showLinkForm: boolean,
   searchInput: HTMLInputElement | null,
-  callbacks: HotkeysCallbacks
+  callbacks: HotkeysCallbacks,
 ): void {
   // Ignore hotkeys when typing in a form or search input
   const active = document.activeElement;
-  const isTyping = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
+  const isTyping =
+    active instanceof HTMLInputElement ||
+    active instanceof HTMLTextAreaElement ||
+    active instanceof HTMLSelectElement;
 
-  if (e.key === 'Escape') {
+  if (e.key === "Escape") {
     if (state.showHelpModal) {
       state.showHelpModal = false;
     } else if (state.showSearchBox) {
@@ -78,34 +84,34 @@ export function handleKeyDownEvent(
     return;
   }
 
-  if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (e.key === "f" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     e.preventDefault();
     callbacks.onSearchOpen?.();
     requestAnimationFrame(() => searchInput?.focus());
     return;
   }
 
-  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
     callbacks.onHelpToggle?.();
     return;
   }
 
-  if (e.key === 'Enter' && state.showSearchBox) {
+  if (e.key === "Enter" && state.showSearchBox) {
     e.preventDefault();
     focusNextSearchMatch(state, transform, simNodes, canvas);
     return;
   }
 
   // N - Create ghost node
-  if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if (e.key === "n" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     e.preventDefault();
     callbacks.onGhostNodeCreate?.();
     return;
   }
 
   // Delete/Backspace - Delete selected node (if not typing)
-  if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
+  if ((e.key === "Delete" || e.key === "Backspace") && !isTyping) {
     e.preventDefault();
     if (selectedNodeId) {
       callbacks.onNodeDelete?.(selectedNodeId);
@@ -114,7 +120,7 @@ export function handleKeyDownEvent(
   }
 
   // Ctrl+Z - Undo (placeholder for now)
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
     e.preventDefault();
     callbacks.onUndo?.();
     return;
@@ -123,7 +129,7 @@ export function handleKeyDownEvent(
 
 export function updateSearch(
   state: HotkeysState,
-  simNodes: SimulationNode[]
+  simNodes: SimulationNode[],
 ): void {
   const query = state.searchQuery.trim().toLowerCase();
   if (!query) {
@@ -142,10 +148,11 @@ export function focusNextSearchMatch(
   state: HotkeysState,
   transform: TransformState,
   simNodes: SimulationNode[],
-  canvas: HTMLCanvasElement | null
+  canvas: HTMLCanvasElement | null,
 ): void {
   if (state.searchMatchIds.length === 0) return;
-  state.searchCurrentIndex = (state.searchCurrentIndex + 1) % state.searchMatchIds.length;
+  state.searchCurrentIndex =
+    (state.searchCurrentIndex + 1) % state.searchMatchIds.length;
   const nodeId = state.searchMatchIds[state.searchCurrentIndex];
   const node = simNodes.find((n) => n.id === nodeId);
   if (node && node.x != null && node.y != null && canvas) {
@@ -158,7 +165,7 @@ export function focusNextSearchMatch(
 
 export function resetInactivityTimer(
   state: HotkeysState,
-  onTipShow: () => void
+  onTipShow: () => void,
 ): void {
   if (state.inactivityTimeout) clearTimeout(state.inactivityTimeout);
   state.inactivityTimeout = setTimeout(() => {
@@ -166,7 +173,10 @@ export function resetInactivityTimer(
   }, 10000);
 }
 
-export function updateActivity(state: HotkeysState, onInactivityTip: () => void): void {
+export function updateActivity(
+  state: HotkeysState,
+  onInactivityTip: () => void,
+): void {
   state.lastActivityTime = Date.now();
   // Hide tip on activity (not show it)
   if (state.showHelpTooltip && state.helpTooltipPosition.x === -1) {

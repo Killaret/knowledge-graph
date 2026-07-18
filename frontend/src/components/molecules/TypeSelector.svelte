@@ -1,43 +1,38 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
-  type CelestialType = 'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula' | 'dust';
+  import { CelestialBody } from "$shared/lib/domain";
 
   interface Props {
-    selected: CelestialType;
+    selected: string;
     id?: string;
   }
 
   let {
-    selected = $bindable('star'),
-    id = 'type-selector'
+    selected = $bindable(CelestialBody.STAR.type),
+    id = "type-selector",
   }: Props = $props();
 
-  const types: Array<{ value: CelestialType; label: string; emoji: string; color: string }> = [
-    { value: 'star', label: 'Star', emoji: '⭐', color: 'var(--color-star, #fbbf24)' },
-    { value: 'planet', label: 'Planet', emoji: '🪐', color: 'var(--color-planet, #60a5fa)' },
-    { value: 'comet', label: 'Comet', emoji: '☄️', color: 'var(--color-comet, #f472b6)' },
-    { value: 'galaxy', label: 'Galaxy', emoji: '🌀', color: 'var(--color-galaxy, #a78bfa)' },
-    { value: 'asteroid', label: 'Asteroid', emoji: '☁️', color: 'var(--color-asteroid, #94a3b8)' },
-    { value: 'satellite', label: 'Satellite', emoji: '🛰️', color: 'var(--color-satellite, #a1a1aa)' },
-    { value: 'debris', label: 'Debris', emoji: '🗑️', color: 'var(--color-debris, #71717a)' },
-    { value: 'nebula', label: 'Nebula', emoji: '🌌', color: 'var(--color-nebula, #c084fc)' },
-    { value: 'dust', label: 'Cosmic Dust', emoji: '🌫️', color: 'var(--color-dust, #a0a0a0)' }
-  ];
+  const types = CelestialBody.UI_TYPES;
 
-  function selectType(type: CelestialType) {
+  function selectType(type: string) {
     selected = type;
   }
 </script>
 
-<div class="type-selector" {id} role="group" aria-label="Select celestial body type">
+<div
+  class="type-selector"
+  {id}
+  role="group"
+  aria-label="Select celestial body type"
+>
   {#each types as type}
     <button
       type="button"
       class="type-btn"
-      class:active={selected === type.value}
-      onclick={() => selectType(type.value)}
-      style="--type-color: {type.color}; --type-bg: {type.color}33"
-      aria-pressed={selected === type.value}
+      class:active={selected === type.type}
+      onclick={() => selectType(type.type)}
+      style="--type-color: {type.toCSSColor()}; --type-bg: {type.color}33"
+      aria-pressed={selected === type.type}
     >
       <span class="emoji">{type.emoji}</span>
       <span class="label">{type.label}</span>

@@ -5,36 +5,38 @@
    * Test page for isolated node rendering
    * Used for visual regression testing of individual celestial body types
    */
-  import { page } from '$app/stores';
-  import { browser } from '$app/environment';
-  import type { GraphNode, GraphLink } from '$shared/api/graph';
-  
+  import { page } from "$app/stores";
+  import { browser } from "$app/environment";
+  import type { GraphNode, GraphLink } from "$shared/api/graph";
+
   // Dynamic import for browser-only component
   let GraphCanvas: any;
-  
+
   if (browser) {
-    import('$components/organisms/GraphCanvas.svelte').then(m => {
+    import("$components/organisms/GraphCanvas.svelte").then((m) => {
       GraphCanvas = m.default;
     });
     if (import.meta.env.DEV) {
-      import('$shared/utils/variation').then(mod => {
-        const v = mod.getVariation('test-node', nodeType);
-        console.log('[DEBUG][isolated-node] variation for test-node', v);
-      }).catch(()=>{});
+      import("$shared/utils/variation")
+        .then((mod) => {
+          const v = mod.getVariation("test-node", nodeType);
+          console.log("[DEBUG][isolated-node] variation for test-node", v);
+        })
+        .catch(() => {});
     }
   }
-  
+
   // Get type from query param
-  let nodeType = 'star';
-  $: nodeType = $page.url.searchParams.get('type') || 'star';
-  
+  let nodeType = "star";
+  $: nodeType = $page.url.searchParams.get("type") || "star";
+
   // Create isolated node (reactive)
   $: isolatedNode = {
-    id: 'test-node',
+    id: "test-node",
     title: `Test ${nodeType.charAt(0).toUpperCase() + nodeType.slice(1)}`,
-    type: nodeType
+    type: nodeType,
   } as GraphNode;
-  
+
   $: nodes = [isolatedNode];
   $: links = [] as GraphLink[];
 </script>
@@ -43,7 +45,7 @@
   <div class="info">
     <h1>Isolated {nodeType} node</h1>
   </div>
-  
+
   <div class="canvas-wrapper">
     {#if GraphCanvas}
       <svelte:component this={GraphCanvas} {nodes} {links} />
@@ -59,22 +61,25 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    background: var(--gradient-cosmic-bg, radial-gradient(ellipse at 50% 100%, #1a0505 0%, #000 80%));
+    background: var(
+      --gradient-cosmic-bg,
+      radial-gradient(ellipse at 50% 100%, #1a0505 0%, #000 80%)
+    );
     min-height: 100vh;
   }
-  
+
   .info {
     color: white;
     text-align: center;
     margin-bottom: 20px;
   }
-  
+
   .info h1 {
     font-size: 1.5rem;
     margin: 0 0 8px 0;
     text-transform: capitalize;
   }
-  
+
   .canvas-wrapper {
     width: 800px;
     height: 600px;
@@ -83,7 +88,7 @@
     overflow: hidden;
     background: rgba(0, 0, 0, 0.5);
   }
-  
+
   .loading {
     display: flex;
     align-items: center;

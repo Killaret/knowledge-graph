@@ -1,5 +1,5 @@
 // Мок для API клиента
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Создаем мок-функции для HTTP методов
 export const mockGet = vi.fn();
@@ -24,7 +24,9 @@ const mockApi = {
   put: mockPut,
   delete: mockDelete,
   patch: mockPatch,
-  extend: vi.fn(function(this: any) { return this; }),
+  extend: vi.fn(function (this: any) {
+    return this;
+  }),
 };
 
 // Экспортируем api как мок

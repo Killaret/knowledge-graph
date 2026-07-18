@@ -1,4 +1,4 @@
-import type { FullConfig } from '@playwright/test';
+import type { FullConfig } from "@playwright/test";
 
 /**
  * Global setup for Playwright tests
@@ -7,8 +7,8 @@ import type { FullConfig } from '@playwright/test';
 
 async function globalSetup(_config: FullConfig) {
   // Set SKIP_AUTH environment variable
-  process.env.SKIP_AUTH = 'true';
-  console.log('[Global Setup] SKIP_AUTH enabled for tests');
+  process.env.SKIP_AUTH = "true";
+  console.log("[Global Setup] SKIP_AUTH enabled for tests");
 }
 
 export default globalSetup;

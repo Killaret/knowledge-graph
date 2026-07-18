@@ -8,8 +8,9 @@
  * GRAVITY_COEFFICIENT is kept local — it is a physics constant, not a user-tunable setting.
  */
 
-import type { SimulationNode } from './types';
-import { graphConfig2D } from '$shared/config';
+import type { SimulationNode } from "./types";
+import { graphConfig2D } from "$shared/config";
+import { CelestialBody } from "$shared/lib/domain";
 
 /** Physics spring constant — controls attraction force magnitude */
 const GRAVITY_COEFFICIENT = 0.0001;
@@ -24,7 +25,7 @@ export interface GravitySystem {
     x: number,
     y: number,
     nodes: SimulationNode[],
-    maxDistance?: number
+    maxDistance?: number,
   ) => { dx: number; dy: number };
   isEnabled: (nodeCount: number) => boolean;
 }
@@ -47,7 +48,11 @@ export function createGravitySystem(): GravitySystem {
           const dy = nodeB.y - nodeA.y;
           const distanceSq = dx * dx + dy * dy;
 
-          if (distanceSq === 0 || distanceSq > MAX_GRAVITY_DISTANCE * MAX_GRAVITY_DISTANCE) continue;
+          if (
+            distanceSq === 0 ||
+            distanceSq > MAX_GRAVITY_DISTANCE * MAX_GRAVITY_DISTANCE
+          )
+            continue;
 
           const distance = Math.sqrt(distanceSq);
           const force = GRAVITY_COEFFICIENT / (distance * 0.1 + 1);
@@ -66,7 +71,7 @@ export function createGravitySystem(): GravitySystem {
       x: number,
       y: number,
       nodes: SimulationNode[],
-      maxDistance: number = 100
+      maxDistance: number = 100,
     ): { dx: number; dy: number } {
       if (!this.isEnabled(nodes.length)) return { dx: 0, dy: 0 };
 
@@ -83,7 +88,7 @@ export function createGravitySystem(): GravitySystem {
 
         if (distance === 0 || distance >= maxDistance) continue;
 
-        const maxOffset = node.type === 'star' ? 20 : node.type === 'planet' ? 15 : 10;
+        const maxOffset = CelestialBody.fromString(node.type).gravityOffset;
         const weight = 1 - distance / maxDistance;
         const offset = maxOffset * weight;
 
@@ -96,13 +101,13 @@ export function createGravitySystem(): GravitySystem {
 
       return {
         dx: totalDx / totalWeight,
-        dy: totalDy / totalWeight
+        dy: totalDy / totalWeight,
       };
     },
 
     isEnabled(nodeCount: number) {
       return nodeCount <= PERFORMANCE_THRESHOLD_NODES;
-    }
+    },
   };
 }
 
@@ -112,7 +117,7 @@ export function drawDistortedBackgroundGrid(
   height: number,
   nodes: SimulationNode[],
   animationTime: number,
-  gridSize: number = 100
+  gridSize: number = 100,
 ): void {
   const gravity = createGravitySystem();
   if (!gravity.isEnabled(nodes.length)) return;
@@ -120,7 +125,7 @@ export function drawDistortedBackgroundGrid(
   const maxDistance = 100;
 
   ctx.save();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
   ctx.lineWidth = 1;
 
   // Vertical lines

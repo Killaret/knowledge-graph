@@ -1,97 +1,101 @@
 <script lang="ts">
-  import { createNote, type Note } from '$shared/api/notes';
-  import Button from '$components/atoms/Button.svelte';
-import Modal from '$components/atoms/Modal.svelte';
-import TypeSelector from '$components/molecules/TypeSelector.svelte';
-  import ApiErrorDisplay from '$components/atoms/ApiErrorDisplay.svelte';
-  import type { ErrorResponse } from '$shared/types/errors';
-  import { getMessage, mode } from '$shared/stores/lexicon-settings';
+  import { createNote, type Note } from "$shared/api/notes";
+  import Button from "$components/atoms/Button.svelte";
+  import Modal from "$components/atoms/Modal.svelte";
+  import TypeSelector from "$components/molecules/TypeSelector.svelte";
+  import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+  import type { ErrorResponse } from "$shared/types/errors";
+  import { getMessage, mode } from "$shared/stores/lexicon-settings";
+  import { CelestialBody } from "$shared/lib/domain";
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
-    onSuccess
+    onSuccess,
   }: {
     open: boolean;
     onSuccess?: (note: Note) => void;
   } = $props();
-  
-  let title = $state('');
-  let content = $state('');
-  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula' | 'dust'>('star');
+
+  let title = $state("");
+  let content = $state("");
+  let type = $state<string>(CelestialBody.STAR.type);
   let loading = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
-  let modalTitle = $state('Create New Note');
-  let titleLabel = $state('Title *');
-  let typeLabel = $state('Type');
-  let contentLabel = $state('Content');
-  let cancelText = $state('Cancel');
-  let createText = $state('Create Note');
-  let creatingText = $state('Creating...');
-  let titlePlaceholder = $state('Enter note title...');
-  let contentPlaceholder = $state('Enter note content...');
+  let modalTitle = $state("Create New Note");
+  let titleLabel = $state("Title *");
+  let typeLabel = $state("Type");
+  let contentLabel = $state("Content");
+  let cancelText = $state("Cancel");
+  let createText = $state("Create Note");
+  let creatingText = $state("Creating...");
+  let titlePlaceholder = $state("Enter note title...");
+  let contentPlaceholder = $state("Enter note content...");
 
   // Update labels based on galactic mode
   $effect(() => {
-    let currentMode = 'standard';
-    mode.subscribe(m => currentMode = m)();
-    
-    if (currentMode === 'galactic') {
-      modalTitle = 'Ignite New Star';
-      titleLabel = 'Star Name *';
-      typeLabel = 'Celestial Type';
-      contentLabel = 'Star Data';
-      cancelText = 'Abort Mission';
-      createText = 'Ignite Star';
-      creatingText = 'Igniting...';
-      titlePlaceholder = 'Enter star name...';
-      contentPlaceholder = 'Enter star data...';
+    let currentMode = "standard";
+    mode.subscribe((m) => (currentMode = m))();
+
+    if (currentMode === "galactic") {
+      modalTitle = "Ignite New Star";
+      titleLabel = "Star Name *";
+      typeLabel = "Celestial Type";
+      contentLabel = "Star Data";
+      cancelText = "Abort Mission";
+      createText = "Ignite Star";
+      creatingText = "Igniting...";
+      titlePlaceholder = "Enter star name...";
+      contentPlaceholder = "Enter star data...";
     } else {
-      modalTitle = 'Create New Note';
-      titleLabel = 'Title *';
-      typeLabel = 'Type';
-      contentLabel = 'Content';
-      cancelText = 'Cancel';
-      createText = 'Create Note';
-      creatingText = 'Creating...';
-      titlePlaceholder = 'Enter note title...';
-      contentPlaceholder = 'Enter note content...';
+      modalTitle = "Create New Note";
+      titleLabel = "Title *";
+      typeLabel = "Type";
+      contentLabel = "Content";
+      cancelText = "Cancel";
+      createText = "Create Note";
+      creatingText = "Creating...";
+      titlePlaceholder = "Enter note title...";
+      contentPlaceholder = "Enter note content...";
     }
   });
-  
+
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      const msg = await getMessage('error', 'validation', 'title');
-      apiError = { code: 'VALIDATION_ERROR', message: msg };
+      const msg = await getMessage("error", "validation", "title");
+      apiError = { code: "VALIDATION_ERROR", message: msg };
       return;
     }
-    
+
     loading = true;
     apiError = null;
-    
+
     try {
-      const note = await createNote({ 
-        title: title.trim(), 
+      const note = await createNote({
+        title: title.trim(),
         content: content.trim(),
         type: type,
-        metadata: {}
+        metadata: {},
       });
-      
+
       onSuccess?.(note);
       close();
     } catch (err: any) {
-      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to create note' };
+      apiError = err?.response?.data || {
+        code: "API_ERROR",
+        message: "Failed to create note",
+      };
     } finally {
       loading = false;
     }
   }
-  
+
   function close() {
     open = false;
-    title = '';
-    content = '';
-    type = 'star'; // reset to default
+    title = "";
+    content = "";
+    type = CelestialBody.STAR.type; // reset to default
     apiError = null;
   }
 </script>
@@ -110,12 +114,12 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
         data-testid="create-note-title"
       />
     </div>
-    
+
     <div class="form-group">
       <label for="note-type">{typeLabel}</label>
       <TypeSelector id="note-type" bind:selected={type} />
     </div>
-    
+
     <div class="form-group">
       <label for="note-content">{contentLabel}</label>
       <textarea
@@ -128,14 +132,19 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
         data-testid="create-note-content"
       ></textarea>
     </div>
-    
-    <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
-    
+
+    <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
+
     <div class="form-actions">
       <Button variant="secondary" onClick={close} disabled={loading}>
         {cancelText}
       </Button>
-      <Button variant="primary" type="submit" disabled={loading} data-testid="create-note-submit">
+      <Button
+        variant="primary"
+        type="submit"
+        disabled={loading}
+        data-testid="create-note-submit"
+      >
         {loading ? creatingText : createText}
       </Button>
     </div>
@@ -155,7 +164,8 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
     margin-bottom: 6px;
   }
 
-  input, textarea {
+  input,
+  textarea {
     width: 100%;
     padding: 10px 14px;
     border: 1px solid var(--color-border, #d1d5db);
@@ -166,7 +176,8 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
     transition: border-color 0.2s;
   }
 
-  input:focus, textarea:focus {
+  input:focus,
+  textarea:focus {
     outline: none;
     border-color: var(--color-primary, #3b82f6);
     box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.1));

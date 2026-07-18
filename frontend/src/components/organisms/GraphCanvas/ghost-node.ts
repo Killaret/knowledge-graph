@@ -8,8 +8,8 @@
  * so it stays visible regardless of canvas pan/zoom state.
  */
 
-import type { SimulationNode } from './types';
-import { graphConfig2D } from '$shared/config';
+import type { SimulationNode } from "./types";
+import { graphConfig2D } from "$shared/config";
 
 export interface GhostNodeState {
   x: number;
@@ -23,7 +23,11 @@ export interface GhostNodeState {
 /** Screen-space pixel radius of the ghost node button (from config) */
 export const GHOST_NODE_RADIUS = graphConfig2D.ghost_node_radius;
 
-export function createGhostNode(width: number, height: number, nodes: SimulationNode[]): GhostNodeState {
+export function createGhostNode(
+  width: number,
+  height: number,
+  nodes: SimulationNode[],
+): GhostNodeState {
   // Show in top-left if there are notes, otherwise center
   const hasNotes = nodes.length > 0;
   return {
@@ -32,7 +36,7 @@ export function createGhostNode(width: number, height: number, nodes: Simulation
     radius: GHOST_NODE_RADIUS,
     hovered: false,
     pulsePhase: 0,
-    active: true
+    active: true,
   };
 }
 
@@ -40,14 +44,17 @@ export function updateGhostNodePosition(
   state: GhostNodeState,
   width: number,
   height: number,
-  nodes: SimulationNode[]
+  nodes: SimulationNode[],
 ): void {
   const hasNotes = nodes.length > 0;
   state.x = hasNotes ? 60 : width / 2;
   state.y = hasNotes ? 60 : height / 2;
 }
 
-export function updateGhostNodePulse(state: GhostNodeState, animationTime: number): void {
+export function updateGhostNodePulse(
+  state: GhostNodeState,
+  animationTime: number,
+): void {
   const pulseSpeed = 0.002;
   state.pulsePhase = Math.sin(animationTime * pulseSpeed) * 0.5 + 0.5;
 }
@@ -56,7 +63,7 @@ export function isPointOverGhostNode(
   x: number,
   y: number,
   ghostNode: GhostNodeState,
-  transform: { x: number; y: number; k: number }
+  transform: { x: number; y: number; k: number },
 ): boolean {
   const worldX = (x - transform.x) / transform.k;
   const worldY = (y - transform.y) / transform.k;
@@ -69,7 +76,7 @@ export function isPointOverGhostNode(
 export function drawGhostNode(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  _animationTime: number
+  _animationTime: number,
 ): void {
   const { x, y, radius, hovered, pulsePhase } = ghostNode;
 
@@ -89,7 +96,7 @@ export function drawGhostNode(
     0,
     x,
     y,
-    radius * scale
+    radius * scale,
   );
   gradient.addColorStop(0, `rgba(255, 255, 255, ${baseOpacity + 0.2})`);
   gradient.addColorStop(0.5, `rgba(200, 220, 255, ${baseOpacity})`);
@@ -122,7 +129,7 @@ export function drawGhostNode(
 export function drawGhostNodeScreen(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  _animationTime: number
+  _animationTime: number,
 ): void {
   const x = 60;
   const y = 60;
@@ -138,8 +145,12 @@ export function drawGhostNodeScreen(
   ctx.shadowColor = `rgba(255, 255, 255, ${glowOpacity})`;
 
   const gradient = ctx.createRadialGradient(
-    x - radius * 0.3, y - radius * 0.3, 0,
-    x, y, radius * scale
+    x - radius * 0.3,
+    y - radius * 0.3,
+    0,
+    x,
+    y,
+    radius * scale,
   );
   gradient.addColorStop(0, `rgba(255, 255, 255, ${baseOpacity + 0.2})`);
   gradient.addColorStop(0.5, `rgba(200, 220, 255, ${baseOpacity})`);
@@ -166,14 +177,14 @@ export function drawGhostNodeScreen(
 export function drawGhostNodeTooltipScreen(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  text: string = 'Create new note'
+  text: string = "Create new note",
 ): void {
   const x = 60;
   const y = 60;
   const radius = ghostNode.radius;
 
   ctx.save();
-  ctx.font = '12px sans-serif';
+  ctx.font = "12px sans-serif";
   const textMetrics = ctx.measureText(text);
   const padding = 8;
   const boxWidth = textMetrics.width + padding * 2;
@@ -181,17 +192,17 @@ export function drawGhostNodeTooltipScreen(
   const boxX = x - boxWidth / 2;
   const boxY = y + radius + 15;
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 4);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillText(text, x, boxY + boxHeight / 2);
   ctx.restore();
 }
@@ -199,12 +210,12 @@ export function drawGhostNodeTooltipScreen(
 export function drawGhostNodeTooltip(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  text: string = 'Create new note'
+  text: string = "Create new note",
 ): void {
   const { x, y, radius } = ghostNode;
 
   ctx.save();
-  ctx.font = '12px sans-serif';
+  ctx.font = "12px sans-serif";
   const textMetrics = ctx.measureText(text);
   const padding = 8;
   const boxWidth = textMetrics.width + padding * 2;
@@ -212,17 +223,17 @@ export function drawGhostNodeTooltip(
   const boxX = x - boxWidth / 2;
   const boxY = y + radius + 15;
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 4);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillText(text, x, boxY + boxHeight / 2);
 
   ctx.restore();

@@ -1,28 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
-import BackButton from './BackButton.svelte';
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/svelte";
+import BackButton from "./BackButton.svelte";
 
-describe('BackButton', () => {
-	it('renders back button', () => {
-		render(BackButton);
+describe("BackButton", () => {
+  it("renders back button", () => {
+    render(BackButton);
 
-		const button = screen.getByRole('button') || screen.getByText(/back|←/i);
-		 
-		expect(button).toBeInTheDocument();
-	});
+    const button = screen.getByRole("button") || screen.getByText(/back|←/i);
 
-	it('renders with custom text', () => {
-		render(BackButton, { props: { text: 'Go Back' } });
+    expect(button).toBeInTheDocument();
+  });
 
-		 
-		expect(screen.getByText('Go Back')).toBeInTheDocument();
-	});
+  it("renders with custom text", () => {
+    render(BackButton, { props: { text: "Go Back" } });
 
-	it('has correct href default', () => {
-		render(BackButton);
+    expect(screen.getByText("Go Back")).toBeInTheDocument();
+  });
 
-		const button = screen.getByRole('button');
-		 
-		expect(button).toBeInTheDocument();
-	});
+  it("has correct href default", () => {
+    render(BackButton);
+
+    const button = screen.getByRole("button");
+
+    expect(button).toBeInTheDocument();
+  });
 });

@@ -1,14 +1,18 @@
 /**
  * Glow intensity utility for node pulsating effect
  */
-import { stringHash } from './helpers';
+import { stringHash } from "./helpers";
 
 const PERFORMANCE_THRESHOLD_NODES = 100;
 
 /**
  * Get glow intensity based on time and node ID (pulsating effect)
  */
-export function getGlowIntensity(nodeId: string, time: number, nodeCount: number): number {
+export function getGlowIntensity(
+  nodeId: string,
+  time: number,
+  nodeCount: number,
+): number {
   if (nodeCount > PERFORMANCE_THRESHOLD_NODES) {
     return 0.3; // Minimal glow for stars only
   }

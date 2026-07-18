@@ -1,48 +1,19 @@
 <script lang="ts">
-  import type { Note } from '$shared/api/notes';
-  import { goto } from '$app/navigation';
-  import { formatDate } from '$shared/utils/date';
-  import { onMount, onDestroy } from 'svelte';
-  import tippy from 'tippy.js';
-  import type { Instance } from 'tippy.js';
-  import 'tippy.js/dist/tippy.css';
+  import type { Note } from "$shared/api/notes";
+  import { goto } from "$app/navigation";
+  import { formatDate } from "$shared/utils/date";
+  import { onMount, onDestroy } from "svelte";
+  import tippy from "tippy.js";
+  import type { Instance } from "tippy.js";
+  import "tippy.js/dist/tippy.css";
+  import { CelestialBody } from "$shared/lib/domain";
 
   const HOUR_MS = 60 * 60 * 1000;
   const DAY_MS = 24 * HOUR_MS;
 
-  const typeEmoji: Record<string, string> = {
-    star: '⭐',
-    planet: '🪐',
-    comet: '☄️',
-    galaxy: '🌀',
-    asteroid: '🌑',
-    moon: '🌙',
-    nebula: '💫',
-    satellite: '🛰️',
-    blackhole: '⚫',
-    debris: '🌌',
-    dust: '🌫️',
-    unknown: '❓'
-  };
-
-  const typeColorVar: Record<string, string> = {
-    star: '--color-star',
-    planet: '--color-planet',
-    comet: '--color-comet',
-    galaxy: '--color-galaxy',
-    asteroid: '--color-asteroid',
-    moon: '--color-moon',
-    nebula: '--color-nebula',
-    satellite: '--color-satellite',
-    blackhole: '--color-blackhole',
-    debris: '--color-debris',
-    dust: '--color-dust',
-    unknown: '--color-unknown'
-  };
-
   const {
     note,
-    highlightQuery = '',
+    highlightQuery = "",
     selected = false,
     selectMode = false,
     animationIndex = 0,
@@ -51,7 +22,7 @@
     onClick,
     onSelect,
     onEdit,
-    onDelete
+    onDelete,
   }: {
     note: Note;
     highlightQuery?: string;
@@ -72,23 +43,22 @@
 
   function highlightText(text: string, query: string): string {
     if (!query.trim()) return text;
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedQuery})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escapedQuery})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
   }
 
   function truncateText(text: string, maxLength: number): string {
     if (!text || text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+    return text.slice(0, maxLength) + "...";
   }
 
   function getTypeColor(type?: string): string {
-    const varName = typeColorVar[type?.toLowerCase() || 'unknown'];
-    return `var(${varName}, var(--color-asteroid, #94a3b8))`;
+    return CelestialBody.fromString(type).toCSSColor();
   }
 
   function getTypeEmoji(type?: string): string {
-    return typeEmoji[type?.toLowerCase() || 'unknown'] || typeEmoji.unknown;
+    return CelestialBody.fromString(type).emoji;
   }
 
   function isNew(): boolean {
@@ -103,7 +73,7 @@
   }
 
   function isDust(): boolean {
-    return note.type?.toLowerCase() === 'dust';
+    return CelestialBody.fromString(note.type).type === "dust";
   }
 
   function handleClick() {
@@ -115,7 +85,7 @@
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleClick();
     }
@@ -148,7 +118,7 @@
     const keywordChips = keywords
       .slice(0, 3)
       .map((k) => `<span class="nc-tooltip-keyword">${k}</span>`)
-      .join('');
+      .join("");
 
     return `
       <div class="nc-tooltip" role="tooltip">
@@ -158,7 +128,7 @@
         </div>
         <div class="nc-tooltip-meta">
           <span class="nc-tooltip-links">Links: ${linkCount}</span>
-          ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ''}
+          ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ""}
         </div>
         <div class="nc-tooltip-actions">
           <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="Edit note">Edit</button>
@@ -173,27 +143,35 @@
 
     tippyInstance = tippy(cardRef, {
       content: buildTooltipContent(),
-      placement: 'right',
-      animation: 'fade',
+      placement: "right",
+      animation: "fade",
       duration: 200,
       arrow: true,
-      theme: 'translucent',
+      theme: "translucent",
       hideOnClick: false,
       interactive: true,
       allowHTML: true,
       appendTo: document.body,
       onShown: (instance) => {
-        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
-        const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
-        editBtn?.addEventListener('click', editListener);
-        deleteBtn?.addEventListener('click', deleteListener);
+        const editBtn = instance.popper.querySelector(
+          '[data-action="edit"]',
+        ) as HTMLElement | null;
+        const deleteBtn = instance.popper.querySelector(
+          '[data-action="delete"]',
+        ) as HTMLElement | null;
+        editBtn?.addEventListener("click", editListener);
+        deleteBtn?.addEventListener("click", deleteListener);
       },
       onHidden: (instance) => {
-        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
-        const deleteBtn = instance.popper.querySelector('[data-action="delete"]') as HTMLElement | null;
-        editBtn?.removeEventListener('click', editListener);
-        deleteBtn?.removeEventListener('click', deleteListener);
-      }
+        const editBtn = instance.popper.querySelector(
+          '[data-action="edit"]',
+        ) as HTMLElement | null;
+        const deleteBtn = instance.popper.querySelector(
+          '[data-action="delete"]',
+        ) as HTMLElement | null;
+        editBtn?.removeEventListener("click", editListener);
+        deleteBtn?.removeEventListener("click", deleteListener);
+      },
     });
   });
 
@@ -210,8 +188,10 @@
   class:exiting={isExiting}
   data-testid="note-card"
   data-note-id={note.id}
-  data-note-type={note.type || 'unknown'}
-  style="--type-color: {getTypeColor(note.type)}; --stagger-delay: {animationIndex * 50}ms"
+  data-note-type={note.type || "unknown"}
+  style="--type-color: {getTypeColor(
+    note.type,
+  )}; --stagger-delay: {animationIndex * 50}ms"
   onclick={handleClick}
   onkeydown={handleKeyDown}
   tabindex="0"
@@ -225,9 +205,17 @@
       <div class="note-card__type" aria-hidden="true">
         <span class="note-card__emoji">{getTypeEmoji(note.type)}</span>
         {#if isNew()}
-          <span class="note-card__indicator note-card__indicator--new" data-visual-test="transparent" aria-label="New note"></span>
+          <span
+            class="note-card__indicator note-card__indicator--new"
+            data-visual-test="transparent"
+            aria-label="New note"
+          ></span>
         {:else if isRecentlyUpdated()}
-          <span class="note-card__indicator note-card__indicator--updated" data-visual-test="transparent" aria-label="Recently updated"></span>
+          <span
+            class="note-card__indicator note-card__indicator--updated"
+            data-visual-test="transparent"
+            aria-label="Recently updated"
+          ></span>
         {/if}
       </div>
 
@@ -244,19 +232,31 @@
     </div>
 
     <h3 class="note-card__title" data-testid="note-title">
-      {@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}
+      {@html highlightQuery
+        ? highlightText(note.title, highlightQuery)
+        : note.title}
     </h3>
 
     <div class="note-card__body" data-testid="note-content">
-      {@html highlightQuery ? highlightText(truncateText(note.content, 180), highlightQuery) : truncateText(note.content, 180)}
+      {@html highlightQuery
+        ? highlightText(truncateText(note.content, 180), highlightQuery)
+        : truncateText(note.content, 180)}
     </div>
 
     <div class="note-card__footer">
-      <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
+      <span
+        class="note-card__date"
+        data-testid="note-date"
+        data-visual-test="transparent"
+      >
         Star lit: {formatDate(note.created_at)}
       </span>
       {#if isRecentlyUpdated()}
-        <span class="note-card__date note-card__date--updated" data-testid="note-updated-date" data-visual-test="transparent">
+        <span
+          class="note-card__date note-card__date--updated"
+          data-testid="note-updated-date"
+          data-visual-test="transparent"
+        >
           Orbit corrected: {formatDate(note.updated_at)}
         </span>
       {/if}
@@ -287,7 +287,7 @@
   }
 
   .note-card::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background: radial-gradient(
@@ -331,11 +331,15 @@
   .note-card.dust {
     border-style: dashed;
     border-color: rgba(255, 255, 255, 0.12);
-    background: color-mix(in srgb, var(--color-surface-elevated, rgba(20, 24, 45, 0.85)) 95%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--color-surface-elevated, rgba(20, 24, 45, 0.85)) 95%,
+      transparent
+    );
   }
 
   .note-card.dust::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background: repeating-linear-gradient(
@@ -527,7 +531,11 @@
   }
 
   :global(mark) {
-    background: linear-gradient(120deg, rgba(254, 240, 138, 0.3) 0%, rgba(253, 224, 71, 0.3) 100%);
+    background: linear-gradient(
+      120deg,
+      rgba(254, 240, 138, 0.3) 0%,
+      rgba(253, 224, 71, 0.3) 100%
+    );
     color: #ffcc00;
     padding: 0.1em 0.2em;
     border-radius: 0.2em;
@@ -557,7 +565,8 @@
   }
 
   @keyframes pulse-new {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -568,13 +577,13 @@
   }
 
   /* Tippy translucent theme overrides for dark canvas */
-  :global(.tippy-box[data-theme~='translucent']) {
+  :global(.tippy-box[data-theme~="translucent"]) {
     background: rgba(10, 14, 35, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
-  :global(.tippy-box[data-theme~='translucent'] .tippy-arrow) {
+  :global(.tippy-box[data-theme~="translucent"] .tippy-arrow) {
     color: rgba(10, 14, 35, 0.96);
   }
 </style>

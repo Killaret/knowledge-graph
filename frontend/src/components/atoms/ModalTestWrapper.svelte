@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Modal from '$components/atoms/Modal.svelte';
-  
+  import Modal from "$components/atoms/Modal.svelte";
+
   const { open, title, onClose, content } = $props<{
     open: boolean;
     title: string;

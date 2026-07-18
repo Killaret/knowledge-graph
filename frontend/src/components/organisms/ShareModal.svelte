@@ -1,166 +1,237 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { shareNote, createShareLink } from '$shared/api/sharing.js';
-  import type { NoteShare, ShareLink } from '$shared/types';
-  import { mode } from '$shared/stores/lexicon-settings';
-  
+  import { createEventDispatcher } from "svelte";
+  import { shareNote, createShareLink } from "$shared/api/sharing.js";
+  import type { NoteShare, ShareLink } from "$shared/types";
+  import { mode } from "$shared/stores/lexicon-settings";
+
   interface Props {
     noteId: string;
     noteTitle: string;
   }
-  
+
   const { noteId, noteTitle }: Props = $props();
-  
+
   const dispatch = createEventDispatcher<{
     close: void;
     shared: { share: NoteShare | ShareLink };
     revoked: { shareId: string };
   }>();
-  
-  let activeTab = $state<'users' | 'link'>('users');
+
+  let activeTab = $state<"users" | "link">("users");
   let isLoading = $state(false);
   let error = $state<string | null>(null);
   let success = $state<string | null>(null);
-  
+
   // User sharing
-  let userEmail = $state('');
-  let permission = $state<'view' | 'edit'>('view');
-  
+  let userEmail = $state("");
+  let permission = $state<"view" | "edit">("view");
+
   // Link sharing
-  let linkPermission = $state<'view' | 'edit'>('view');
+  let linkPermission = $state<"view" | "edit">("view");
   let expiresIn = $state<number | undefined>(undefined);
   let maxUses = $state<number | undefined>(undefined);
   let generatedLink = $state<ShareLink | null>(null);
-  
+
   // Galactic mode state
-  let currentMode = $state('standard');
-  
+  let currentMode = $state("standard");
+
   // Subscribe to mode changes
   $effect(() => {
-    const unsubscribe = mode.subscribe(m => currentMode = m);
+    const unsubscribe = mode.subscribe((m) => (currentMode = m));
     return unsubscribe;
   });
-  
+
   // Computed labels based on mode
-  const modalTitle = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Share Note');
-  const tabUsers = $derived(currentMode === 'galactic' ? 'To Traveler' : 'To User');
-  const tabLink = $derived(currentMode === 'galactic' ? 'Via Wormhole' : 'By Link');
-  const emailLabel = $derived(currentMode === 'galactic' ? 'Traveler Email' : 'User Email');
-  const emailPlaceholder = $derived(currentMode === 'galactic' ? 'traveler@cosmos.net' : 'user@example.com');
-  const accessLevelLabel = $derived(currentMode === 'galactic' ? 'Access Level' : 'Access Level');
-  const viewOnlyText = $derived(currentMode === 'galactic' ? 'Observation Only' : 'View Only');
-  const editText = $derived(currentMode === 'galactic' ? 'Modification' : 'Edit');
-  const grantAccessText = $derived(currentMode === 'galactic' ? 'Open Portal' : 'Grant Access');
-  const grantingText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Granting Access...');
-  const expiresLabel = $derived(currentMode === 'galactic' ? 'Expires (hours)' : 'Expires (hours)');
-  const expiresPlaceholder = $derived(currentMode === 'galactic' ? 'Indefinite' : 'Indefinite');
-  const maxUsesLabel = $derived(currentMode === 'galactic' ? 'Max Uses' : 'Max Uses');
-  const maxUsesPlaceholder = $derived(currentMode === 'galactic' ? 'Unlimited' : 'Unlimited');
-  const linkLabel = $derived(currentMode === 'galactic' ? 'Portal Link' : 'Access Link');
-  const copyText = $derived(currentMode === 'galactic' ? 'Copy' : 'Copy');
-  const createLinkText = $derived(currentMode === 'galactic' ? 'Create Portal' : 'Create Link');
-  const createNewLinkText = $derived(currentMode === 'galactic' ? 'Create New Portal' : 'Create New Link');
-  const creatingLinkText = $derived(currentMode === 'galactic' ? 'Opening Portal...' : 'Creating link...');
-  const accessGrantedMsg = $derived((email: string) => currentMode === 'galactic' ? `Portal opened for ${email}` : `Access granted to ${email}`);
-  const linkCreatedMsg = $derived(currentMode === 'galactic' ? 'Portal opened' : 'Access link created');
-  const linkCopiedMsg = $derived(currentMode === 'galactic' ? 'Portal coordinates copied' : 'Link copied to clipboard');
-  const emailRequiredMsg = $derived(currentMode === 'galactic' ? 'Enter traveler email' : 'Enter user email');
-  const shareErrorMsg = $derived(currentMode === 'galactic' ? 'Portal opening failed' : 'Access grant failed');
-  const linkErrorMsg = $derived(currentMode === 'galactic' ? 'Portal creation failed' : 'Link creation failed');
-  
+  const modalTitle = $derived(
+    currentMode === "galactic" ? "Open Portal" : "Share Note",
+  );
+  const tabUsers = $derived(
+    currentMode === "galactic" ? "To Traveler" : "To User",
+  );
+  const tabLink = $derived(
+    currentMode === "galactic" ? "Via Wormhole" : "By Link",
+  );
+  const emailLabel = $derived(
+    currentMode === "galactic" ? "Traveler Email" : "User Email",
+  );
+  const emailPlaceholder = $derived(
+    currentMode === "galactic" ? "traveler@cosmos.net" : "user@example.com",
+  );
+  const accessLevelLabel = $derived(
+    currentMode === "galactic" ? "Access Level" : "Access Level",
+  );
+  const viewOnlyText = $derived(
+    currentMode === "galactic" ? "Observation Only" : "View Only",
+  );
+  const editText = $derived(
+    currentMode === "galactic" ? "Modification" : "Edit",
+  );
+  const grantAccessText = $derived(
+    currentMode === "galactic" ? "Open Portal" : "Grant Access",
+  );
+  const grantingText = $derived(
+    currentMode === "galactic" ? "Opening Portal..." : "Granting Access...",
+  );
+  const expiresLabel = $derived(
+    currentMode === "galactic" ? "Expires (hours)" : "Expires (hours)",
+  );
+  const expiresPlaceholder = $derived(
+    currentMode === "galactic" ? "Indefinite" : "Indefinite",
+  );
+  const maxUsesLabel = $derived(
+    currentMode === "galactic" ? "Max Uses" : "Max Uses",
+  );
+  const maxUsesPlaceholder = $derived(
+    currentMode === "galactic" ? "Unlimited" : "Unlimited",
+  );
+  const linkLabel = $derived(
+    currentMode === "galactic" ? "Portal Link" : "Access Link",
+  );
+  const copyText = $derived(currentMode === "galactic" ? "Copy" : "Copy");
+  const createLinkText = $derived(
+    currentMode === "galactic" ? "Create Portal" : "Create Link",
+  );
+  const createNewLinkText = $derived(
+    currentMode === "galactic" ? "Create New Portal" : "Create New Link",
+  );
+  const creatingLinkText = $derived(
+    currentMode === "galactic" ? "Opening Portal..." : "Creating link...",
+  );
+  const accessGrantedMsg = $derived((email: string) =>
+    currentMode === "galactic"
+      ? `Portal opened for ${email}`
+      : `Access granted to ${email}`,
+  );
+  const linkCreatedMsg = $derived(
+    currentMode === "galactic" ? "Portal opened" : "Access link created",
+  );
+  const linkCopiedMsg = $derived(
+    currentMode === "galactic"
+      ? "Portal coordinates copied"
+      : "Link copied to clipboard",
+  );
+  const emailRequiredMsg = $derived(
+    currentMode === "galactic" ? "Enter traveler email" : "Enter user email",
+  );
+  const shareErrorMsg = $derived(
+    currentMode === "galactic"
+      ? "Portal opening failed"
+      : "Access grant failed",
+  );
+  const linkErrorMsg = $derived(
+    currentMode === "galactic"
+      ? "Portal creation failed"
+      : "Link creation failed",
+  );
+
   function closeModal() {
-    dispatch('close');
+    dispatch("close");
   }
-  
+
   function handleBackdropClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
       closeModal();
     }
   }
-  
+
   async function handleShareWithUser() {
     if (!userEmail.trim()) {
       error = emailRequiredMsg;
       return;
     }
-    
+
     isLoading = true;
     error = null;
     success = null;
-    
+
     try {
-      const share = await shareNote(noteId, userEmail.trim(), permission === 'view' ? 'read' : 'write');
+      const share = await shareNote(
+        noteId,
+        userEmail.trim(),
+        permission === "view" ? "read" : "write",
+      );
       success = accessGrantedMsg(userEmail);
-      userEmail = '';
-      dispatch('shared', { share });
+      userEmail = "";
+      dispatch("shared", { share });
     } catch (err) {
       error = err instanceof Error ? err.message : shareErrorMsg;
     } finally {
       isLoading = false;
     }
   }
-  
+
   async function handleCreateLink() {
     isLoading = true;
     error = null;
     success = null;
-    
+
     try {
-      const link = await createShareLink(noteId, linkPermission === 'view' ? 'read' : 'write', 
-        expiresIn ? new Date(Date.now() + expiresIn * 60 * 60 * 1000).toISOString() : undefined,
-        maxUses
+      const link = await createShareLink(
+        noteId,
+        linkPermission === "view" ? "read" : "write",
+        expiresIn
+          ? new Date(Date.now() + expiresIn * 60 * 60 * 1000).toISOString()
+          : undefined,
+        maxUses,
       );
       generatedLink = link;
       success = linkCreatedMsg;
-      dispatch('shared', { share: link });
+      dispatch("shared", { share: link });
     } catch (err) {
       error = err instanceof Error ? err.message : linkErrorMsg;
     } finally {
       isLoading = false;
     }
   }
-  
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
     success = linkCopiedMsg;
   }
 </script>
 
-<div class="modal-backdrop" role="dialog" aria-modal="true" tabindex="-1" onclick={handleBackdropClick} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+<div
+  class="modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  onclick={handleBackdropClick}
+  onkeydown={(e) => e.key === "Escape" && closeModal()}
+>
   <div class="modal">
     <div class="modal-header">
       <h2>{modalTitle}</h2>
       <p class="note-title">«{noteTitle}»</p>
       <button class="close-button" onclick={closeModal}>×</button>
     </div>
-    
+
     <div class="modal-tabs">
-      <button 
+      <button
         class="tab-button"
-        class:active={activeTab === 'users'}
-        onclick={() => activeTab = 'users'}
+        class:active={activeTab === "users"}
+        onclick={() => (activeTab = "users")}
       >
         {tabUsers}
       </button>
-      <button 
+      <button
         class="tab-button"
-        class:active={activeTab === 'link'}
-        onclick={() => activeTab = 'link'}
+        class:active={activeTab === "link"}
+        onclick={() => (activeTab = "link")}
       >
         {tabLink}
       </button>
     </div>
-    
+
     <div class="modal-content">
       {#if error}
         <div class="error-message">{error}</div>
       {/if}
-      
+
       {#if success}
         <div class="success-message">{success}</div>
       {/if}
-      
-      {#if activeTab === 'users'}
+
+      {#if activeTab === "users"}
         <div class="share-section">
           <label class="field-label">
             {emailLabel}
@@ -171,7 +242,7 @@
               disabled={isLoading}
             />
           </label>
-          
+
           <label class="field-label">
             {accessLevelLabel}
             <select bind:value={permission} disabled={isLoading}>
@@ -179,8 +250,8 @@
               <option value="edit">{editText}</option>
             </select>
           </label>
-          
-          <button 
+
+          <button
             class="action-button"
             onclick={handleShareWithUser}
             disabled={isLoading || !userEmail.trim()}
@@ -197,7 +268,7 @@
               <option value="edit">{editText}</option>
             </select>
           </label>
-          
+
           <div class="field-row">
             <label class="field-label">
               {expiresLabel}
@@ -209,7 +280,7 @@
                 disabled={isLoading}
               />
             </label>
-            
+
             <label class="field-label">
               {maxUsesLabel}
               <input
@@ -221,7 +292,7 @@
               />
             </label>
           </div>
-          
+
           {#if generatedLink}
             <div class="generated-link">
               <label class="field-label">
@@ -232,9 +303,12 @@
                     value={`${window.location.origin}/shared/${generatedLink.token}`}
                     readonly
                   />
-                  <button 
+                  <button
                     class="copy-button"
-                    onclick={() => copyToClipboard(`${window.location.origin}/shared/${generatedLink?.token}`)}
+                    onclick={() =>
+                      copyToClipboard(
+                        `${window.location.origin}/shared/${generatedLink?.token}`,
+                      )}
                   >
                     {copyText}
                   </button>
@@ -242,13 +316,17 @@
               </label>
             </div>
           {/if}
-          
-          <button 
+
+          <button
             class="action-button"
             onclick={handleCreateLink}
             disabled={isLoading}
           >
-            {isLoading ? creatingLinkText : generatedLink ? createNewLinkText : createLinkText}
+            {isLoading
+              ? creatingLinkText
+              : generatedLink
+                ? createNewLinkText
+                : createLinkText}
           </button>
         </div>
       {/if}
@@ -267,7 +345,7 @@
     z-index: 1000;
     padding: 1rem;
   }
-  
+
   .modal {
     background: var(--color-surface);
     border-radius: var(--radius-lg);
@@ -277,26 +355,26 @@
     overflow: hidden;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
-  
+
   .modal-header {
     position: relative;
     padding: 1.5rem;
     border-bottom: 1px solid var(--color-border);
   }
-  
+
   .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--color-text-primary);
   }
-  
+
   .note-title {
     margin: 0.25rem 0 0;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
   }
-  
+
   .close-button {
     position: absolute;
     top: 1rem;
@@ -314,17 +392,17 @@
     border-radius: var(--radius-sm);
     transition: all 0.2s;
   }
-  
+
   .close-button:hover {
     background: var(--color-background);
     color: var(--color-text-primary);
   }
-  
+
   .modal-tabs {
     display: flex;
     border-bottom: 1px solid var(--color-border);
   }
-  
+
   .tab-button {
     flex: 1;
     padding: 1rem;
@@ -336,28 +414,28 @@
     transition: all 0.2s;
     border-bottom: 2px solid transparent;
   }
-  
+
   .tab-button.active {
     color: var(--color-primary);
     border-bottom-color: var(--color-primary);
   }
-  
+
   .tab-button:hover:not(.active) {
     color: var(--color-text-primary);
     background: var(--color-background);
   }
-  
+
   .modal-content {
     padding: 1.5rem;
     overflow-y: auto;
   }
-  
+
   .share-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .field-label {
     display: flex;
     flex-direction: column;
@@ -366,7 +444,7 @@
     font-weight: 500;
     color: var(--color-text-primary);
   }
-  
+
   .field-label input,
   .field-label select {
     padding: 0.625rem 0.75rem;
@@ -376,19 +454,19 @@
     background: var(--color-background);
     color: var(--color-text-primary);
   }
-  
+
   .field-label input:focus,
   .field-label select:focus {
     outline: none;
     border-color: var(--color-primary);
   }
-  
+
   .field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
-  
+
   .action-button {
     padding: 0.75rem 1.5rem;
     background: var(--color-primary);
@@ -399,31 +477,31 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-  
+
   .action-button:hover:not(:disabled) {
     background: var(--color-primary-dark);
   }
-  
+
   .action-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
-  
+
   .generated-link {
     padding: 1rem;
     background: var(--color-background);
     border-radius: var(--radius-md);
   }
-  
+
   .link-row {
     display: flex;
     gap: 0.5rem;
   }
-  
+
   .link-row input {
     flex: 1;
   }
-  
+
   .copy-button {
     padding: 0.5rem 1rem;
     background: var(--color-surface);
@@ -433,11 +511,11 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  
+
   .copy-button:hover {
     background: var(--color-background);
   }
-  
+
   .error-message {
     padding: 0.75rem;
     background: var(--color-error-bg, #fee2e2);
@@ -445,7 +523,7 @@
     border-radius: var(--radius-md);
     font-size: 0.875rem;
   }
-  
+
   .success-message {
     padding: 0.75rem;
     background: var(--color-success-bg, #dcfce7);

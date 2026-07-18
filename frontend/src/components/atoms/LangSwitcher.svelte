@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getCurrentLocale, setLocale, type Locale } from '$shared/utils/i18n';
+  import { getCurrentLocale, setLocale, type Locale } from "$shared/utils/i18n";
 
   let currentLocale = $state<Locale>(getCurrentLocale());
 
   function toggleLocale() {
-    const next: Locale = currentLocale === 'en' ? 'ru' : 'en';
+    const next: Locale = currentLocale === "en" ? "ru" : "en";
     currentLocale = next;
     setLocale(next);
     window.location.reload();
@@ -19,7 +19,7 @@
   aria-label="Switch language"
   data-testid="lang-switcher"
 >
-  {currentLocale === 'en' ? 'EN' : 'RU'}
+  {currentLocale === "en" ? "EN" : "RU"}
 </button>
 
 <style>

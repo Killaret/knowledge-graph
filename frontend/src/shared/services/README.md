@@ -13,7 +13,10 @@ PreloadService - это сервис для фоновой загрузки пу
 ### Базовое использование в компонентах
 
 ```typescript
-import { getGraphWithPreload, getAchievementsWithPreload } from '$shared/hooks/usePreloadedData';
+import {
+  getGraphWithPreload,
+  getAchievementsWithPreload,
+} from "$shared/hooks/usePreloadedData";
 
 // Получение графа с приоритетом на предзагруженные данные
 const graphData = await getGraphWithPreload(1000);
@@ -26,7 +29,7 @@ const personalAchievements = await getAchievementsWithPreload(true); // перс
 ### Мгновенное отображение после входа
 
 ```typescript
-import { useInstantData } from '$shared/hooks/usePreloadedData';
+import { useInstantData } from "$shared/hooks/usePreloadedData";
 
 // Получить предзагруженные данные мгновенно
 const instantData = useInstantData();
@@ -41,15 +44,15 @@ if (instantData.hasInstantData) {
 ### Комбинированная загрузка данных приложения
 
 ```typescript
-import { loadAppData } from '$shared/hooks/usePreloadedData';
+import { loadAppData } from "$shared/hooks/usePreloadedData";
 
 const appData = await loadAppData({
   limit: 1000,
   usePersonalAchievements: false,
-  fallbackToServer: true
+  fallbackToServer: true,
 });
 
-console.log('Used preloaded data:', appData.usedPreloaded);
+console.log("Used preloaded data:", appData.usedPreloaded);
 ```
 
 ## API Reference
@@ -59,7 +62,7 @@ console.log('Used preloaded data:', appData.usedPreloaded);
 Основной класс сервиса (синглтон):
 
 ```typescript
-import { PreloadService } from '$shared/services/PreloadService';
+import { PreloadService } from "$shared/services/PreloadService";
 
 // Запуск фоновой предзагрузки
 await PreloadService.startPreload();
@@ -82,13 +85,13 @@ const stats = PreloadService.getStats();
 ### Удобные функции
 
 ```typescript
-import { 
-  startPreload, 
-  getPreloadedGraph, 
+import {
+  startPreload,
+  getPreloadedGraph,
   getPreloadedAchievements,
   clearPreloadCache,
-  hasPreloadedData 
-} from '$shared/services/PreloadService';
+  hasPreloadedData,
+} from "$shared/services/PreloadService";
 ```
 
 ## Конфигурация
@@ -108,11 +111,11 @@ import {
 ### 1. Layout (+layout.svelte)
 
 ```typescript
-import { startPreload } from '$shared/services/PreloadService';
+import { startPreload } from "$shared/services/PreloadService";
 
 $effect(() => {
   initAuth();
-  
+
   // Запуск предзагрузки если не аутентифицирован
   if (!isAuthenticated()) {
     startPreload();
@@ -123,7 +126,7 @@ $effect(() => {
 ### 2. Auth Store
 
 ```typescript
-import { clearPreloadCache } from '$shared/services/PreloadService';
+import { clearPreloadCache } from "$shared/services/PreloadService";
 
 export async function logout(): Promise<void> {
   // ... логика выхода ...
@@ -135,16 +138,19 @@ export async function logout(): Promise<void> {
 ### 3. Главная страница (+page.svelte)
 
 ```typescript
-import { getGraphWithPreload, useInstantData } from '$shared/hooks/usePreloadedData';
+import {
+  getGraphWithPreload,
+  useInstantData,
+} from "$shared/hooks/usePreloadedData";
 
 async function loadDataParallel() {
   // Мгновенное получение предзагруженных данных
   const instantData = useInstantData();
-  
+
   if (instantData.hasInstantData) {
     graphData = instantData.graph; // Немедленное отображение
   }
-  
+
   // Загрузка свежих данных параллельно
   const freshData = await getGraphWithPreload();
   if (freshData !== graphData) {
@@ -170,7 +176,7 @@ async function loadDataParallel() {
 
 ```typescript
 const stats = PreloadService.getStats();
-console.log('Preload stats:', stats);
+console.log("Preload stats:", stats);
 /*
 {
   hasGraph: true,

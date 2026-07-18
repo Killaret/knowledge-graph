@@ -1,222 +1,253 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
-import { tick } from 'svelte';
-import CreateNoteModal from './CreateNoteModal.svelte';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { tick } from "svelte";
+import CreateNoteModal from "./CreateNoteModal.svelte";
 
 // Мокаем API
-vi.mock('$shared/api/notes', () => ({
-  createNote: vi.fn()
+vi.mock("$shared/api/notes", () => ({
+  createNote: vi.fn(),
 }));
 
 // Мокаем lexicon-settings для получения текстов валидации
-vi.mock('$shared/stores/lexicon-settings', () => ({
-  getMessage: vi.fn().mockResolvedValue('Title is required'),
-  mode: { subscribe: vi.fn((fn: (v: string) => void) => { fn('standard'); return () => {}; }) }
+vi.mock("$shared/stores/lexicon-settings", () => ({
+  getMessage: vi.fn().mockResolvedValue("Title is required"),
+  mode: {
+    subscribe: vi.fn((fn: (v: string) => void) => {
+      fn("standard");
+      return () => {};
+    }),
+  },
 }));
 
-import { createNote } from '$shared/api/notes';
+import { createNote } from "$shared/api/notes";
 
-describe('CreateNoteModal', () => {
+describe("CreateNoteModal", () => {
   const mockNote = {
-    id: '123',
-    title: 'Test Note',
-    content: 'Test content',
-    type: 'star',
+    id: "123",
+    title: "Test Note",
+    content: "Test content",
+    type: "star",
     metadata: {},
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders modal when open is true', () => {
+  it("renders modal when open is true", () => {
     render(CreateNoteModal, { props: { open: true } });
-    
-    expect(screen.getByText('Create New Note')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter note title...')).toBeInTheDocument();
-    expect(screen.getByText('Create Note')).toBeInTheDocument();
+
+    expect(screen.getByText("Create New Note")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Enter note title..."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create Note")).toBeInTheDocument();
   });
 
-  it('does not render when open is false', () => {
+  it("does not render when open is false", () => {
     render(CreateNoteModal, { props: { open: false } });
-    
-    expect(screen.queryByText('Create New Note')).not.toBeInTheDocument();
+
+    expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
   });
 
-  it('shows validation error when title is empty', async () => {
+  it("shows validation error when title is empty", async () => {
     render(CreateNoteModal, { props: { open: true } });
-    
-    const submitButton = screen.getByText('Create Note');
+
+    const submitButton = screen.getByText("Create Note");
     await fireEvent.click(submitButton);
     await tick();
-    
-    expect(screen.getByText('Title is required')).toBeInTheDocument();
+
+    expect(screen.getByText("Title is required")).toBeInTheDocument();
     expect(createNote).not.toHaveBeenCalled();
   });
 
-  it('creates note successfully and calls onSuccess', async () => {
+  it("creates note successfully and calls onSuccess", async () => {
     const mockOnSuccess = vi.fn();
     vi.mocked(createNote).mockResolvedValueOnce(mockNote);
-    
-    render(CreateNoteModal, { 
-      props: { 
-        open: true, 
-        onSuccess: mockOnSuccess 
-      } 
+
+    render(CreateNoteModal, {
+      props: {
+        open: true,
+        onSuccess: mockOnSuccess,
+      },
     });
-    
+
     // Заполняем форму используя паттерн для Svelte 5
-    const titleInput = screen.getByPlaceholderText('Enter note title...') as HTMLInputElement;
-    titleInput.value = 'Test Note';
+    const titleInput = screen.getByPlaceholderText(
+      "Enter note title...",
+    ) as HTMLInputElement;
+    titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
-    
-    const contentInput = screen.getByPlaceholderText('Enter note content...') as HTMLTextAreaElement;
-    contentInput.value = 'Test content';
+
+    const contentInput = screen.getByPlaceholderText(
+      "Enter note content...",
+    ) as HTMLTextAreaElement;
+    contentInput.value = "Test content";
     await fireEvent.input(contentInput);
     await tick();
-    
+
     // Отправляем форму
-    const submitButton = screen.getByRole('button', { name: 'Create Note' });
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
     await fireEvent.click(submitButton);
-    
+
     await waitFor(() => {
       expect(createNote).toHaveBeenCalledWith({
-        title: 'Test Note',
-        content: 'Test content',
-        type: 'star',
-        metadata: {}
+        title: "Test Note",
+        content: "Test content",
+        type: "star",
+        metadata: {},
       });
     });
-    
+
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalledWith(mockNote);
     });
   });
 
-  it('handles API error and displays error message', async () => {
-    vi.mocked(createNote).mockRejectedValueOnce(new Error('API Error'));
-    
+  it("handles API error and displays error message", async () => {
+    vi.mocked(createNote).mockRejectedValueOnce(new Error("API Error"));
+
     render(CreateNoteModal, { props: { open: true } });
-    
+
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText('Enter note title...') as HTMLInputElement;
-    titleInput.value = 'Test Note';
+    const titleInput = screen.getByPlaceholderText(
+      "Enter note title...",
+    ) as HTMLInputElement;
+    titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
-    
+
     // Отправляем форму
-    const submitButton = screen.getByRole('button', { name: 'Create Note' });
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
     await fireEvent.click(submitButton);
-    
+
     await waitFor(() => {
-      expect(screen.getByText('Failed to create note')).toBeInTheDocument();
+      expect(screen.getByText("Failed to create note")).toBeInTheDocument();
     });
   });
 
-  it('closes modal on Cancel button click', async () => {
+  it("closes modal on Cancel button click", async () => {
     render(CreateNoteModal, { props: { open: true } });
-    
-    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
     await fireEvent.click(cancelButton);
     await tick();
-    
+
     // Модал должен закрыться (open = false через bindable)
-    expect(screen.queryByText('Create New Note')).not.toBeInTheDocument();
+    expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
   });
 
-  it('closes modal on close button click', async () => {
+  it("closes modal on close button click", async () => {
     render(CreateNoteModal, { props: { open: true } });
-    
-    const closeButton = screen.getByLabelText('Close');
+
+    const closeButton = screen.getByLabelText("Close");
     await fireEvent.click(closeButton);
     await tick();
-    
-    expect(screen.queryByText('Create New Note')).not.toBeInTheDocument();
+
+    expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
   });
 
-  it('allows selecting different note types', async () => {
+  it("allows selecting different note types", async () => {
     const mockOnSuccess = vi.fn();
-    vi.mocked(createNote).mockResolvedValueOnce({ ...mockNote, type: 'planet' });
-    
-    render(CreateNoteModal, { 
-      props: { 
-        open: true, 
-        onSuccess: mockOnSuccess 
-      } 
+    vi.mocked(createNote).mockResolvedValueOnce({
+      ...mockNote,
+      type: "planet",
     });
-    
+
+    render(CreateNoteModal, {
+      props: {
+        open: true,
+        onSuccess: mockOnSuccess,
+      },
+    });
+
     // Выбираем тип Planet через TypeSelector (находим по эмодзи + текст)
-    const planetButton = screen.getByRole('button', { name: /Planet/i });
+    const planetButton = screen.getByRole("button", { name: /Planet/i });
     await fireEvent.click(planetButton);
     await tick();
-    
+
     // Заполняем и отправляем
-    const titleInput = screen.getByPlaceholderText('Enter note title...') as HTMLInputElement;
-    titleInput.value = 'Planet Note';
+    const titleInput = screen.getByPlaceholderText(
+      "Enter note title...",
+    ) as HTMLInputElement;
+    titleInput.value = "Planet Note";
     await fireEvent.input(titleInput);
     await tick();
-    
-    const submitButton = screen.getByRole('button', { name: 'Create Note' });
+
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
     await fireEvent.click(submitButton);
-    
+
     await waitFor(() => {
-      expect(createNote).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'planet'
-      }));
+      expect(createNote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "planet",
+        }),
+      );
     });
   });
 
-  it('disables submit button while loading', async () => {
-    vi.mocked(createNote).mockImplementation(() => new Promise(resolve => {
-      setTimeout(() => resolve(mockNote), 100);
-    }));
-    
+  it("disables submit button while loading", async () => {
+    vi.mocked(createNote).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve(mockNote), 100);
+        }),
+    );
+
     render(CreateNoteModal, { props: { open: true } });
-    
+
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText('Enter note title...') as HTMLInputElement;
-    titleInput.value = 'Test Note';
+    const titleInput = screen.getByPlaceholderText(
+      "Enter note title...",
+    ) as HTMLInputElement;
+    titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
-    
+
     // Отправляем
-    const submitButton = screen.getByRole('button', { name: 'Create Note' });
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
     await fireEvent.click(submitButton);
-    
+
     // Кнопка должна быть disabled и показывать "Creating..."
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Creating..." }),
+      ).toBeInTheDocument();
     });
-    
+
     expect(submitButton).toBeDisabled();
   });
 
-  it('clears form after successful creation', async () => {
+  it("clears form after successful creation", async () => {
     vi.mocked(createNote).mockResolvedValueOnce(mockNote);
-    
+
     render(CreateNoteModal, { props: { open: true } });
-    
+
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText('Enter note title...') as HTMLInputElement;
-    titleInput.value = 'Test Note';
+    const titleInput = screen.getByPlaceholderText(
+      "Enter note title...",
+    ) as HTMLInputElement;
+    titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
-    
-    const contentInput = screen.getByPlaceholderText('Enter note content...') as HTMLTextAreaElement;
-    contentInput.value = 'Test content';
+
+    const contentInput = screen.getByPlaceholderText(
+      "Enter note content...",
+    ) as HTMLTextAreaElement;
+    contentInput.value = "Test content";
     await fireEvent.input(contentInput);
     await tick();
-    
+
     // Отправляем
-    const submitButton = screen.getByRole('button', { name: 'Create Note' });
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
     await fireEvent.click(submitButton);
-    
+
     // После успеха форма очищается и модал закрывается
     await waitFor(() => {
-      expect(screen.queryByText('Create New Note')).not.toBeInTheDocument();
+      expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
     });
   });
 });

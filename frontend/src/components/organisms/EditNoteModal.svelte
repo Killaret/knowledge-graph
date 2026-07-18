@@ -1,68 +1,69 @@
 <script lang="ts">
-  import { updateNote, getNote, type Note } from '$shared/api/notes';
-  import Button from '$components/atoms/Button.svelte';
-import Modal from '$components/atoms/Modal.svelte';
-import TypeSelector from '$components/molecules/TypeSelector.svelte';
-  import ApiErrorDisplay from '$components/atoms/ApiErrorDisplay.svelte';
-  import type { ErrorResponse } from '$shared/types/errors';
-  import { getMessage, mode } from '$shared/stores/lexicon-settings';
+  import { updateNote, getNote, type Note } from "$shared/api/notes";
+  import Button from "$components/atoms/Button.svelte";
+  import Modal from "$components/atoms/Modal.svelte";
+  import TypeSelector from "$components/molecules/TypeSelector.svelte";
+  import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+  import type { ErrorResponse } from "$shared/types/errors";
+  import { getMessage, mode } from "$shared/stores/lexicon-settings";
+  import { CelestialBody } from "$shared/lib/domain";
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
-    noteId = $bindable(''),
-    onSuccess
+    noteId = $bindable(""),
+    onSuccess,
   }: {
     open: boolean;
     noteId: string;
     onSuccess?: (note: Note) => void;
   } = $props();
 
-  let title = $state('');
-  let content = $state('');
-  let type = $state<'star' | 'planet' | 'comet' | 'galaxy' | 'asteroid' | 'satellite' | 'debris' | 'nebula' | 'dust'>('star');
+  let title = $state("");
+  let content = $state("");
+  let type = $state<string>(CelestialBody.STAR.type);
   let loading = $state(false);
   let saving = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
-  
-  let modalTitle = $state('Edit Note');
-  let titleLabel = $state('Title *');
-  let typeLabel = $state('Type');
-  let contentLabel = $state('Content');
-  let cancelText = $state('Cancel');
-  let saveText = $state('Save Changes');
-  let savingText = $state('Saving...');
-  let loadingText = $state('Loading...');
-  let titlePlaceholder = $state('Enter note title');
-  let contentPlaceholder = $state('Enter note content');
+
+  let modalTitle = $state("Edit Note");
+  let titleLabel = $state("Title *");
+  let typeLabel = $state("Type");
+  let contentLabel = $state("Content");
+  let cancelText = $state("Cancel");
+  let saveText = $state("Save Changes");
+  let savingText = $state("Saving...");
+  let loadingText = $state("Loading...");
+  let titlePlaceholder = $state("Enter note title");
+  let contentPlaceholder = $state("Enter note content");
 
   // Update labels based on galactic mode
   $effect(() => {
-    let currentMode = 'standard';
-    mode.subscribe(m => currentMode = m)();
-    
-    if (currentMode === 'galactic') {
-      modalTitle = 'Recalibrate Orbit';
-      titleLabel = 'Star Name *';
-      typeLabel = 'Celestial Type';
-      contentLabel = 'Star Data';
-      cancelText = 'Abort Mission';
-      saveText = 'Update Orbit';
-      savingText = 'Recalibrating...';
-      loadingText = 'Scanning star...';
-      titlePlaceholder = 'Enter star name';
-      contentPlaceholder = 'Enter star data';
+    let currentMode = "standard";
+    mode.subscribe((m) => (currentMode = m))();
+
+    if (currentMode === "galactic") {
+      modalTitle = "Recalibrate Orbit";
+      titleLabel = "Star Name *";
+      typeLabel = "Celestial Type";
+      contentLabel = "Star Data";
+      cancelText = "Abort Mission";
+      saveText = "Update Orbit";
+      savingText = "Recalibrating...";
+      loadingText = "Scanning star...";
+      titlePlaceholder = "Enter star name";
+      contentPlaceholder = "Enter star data";
     } else {
-      modalTitle = 'Edit Note';
-      titleLabel = 'Title *';
-      typeLabel = 'Type';
-      contentLabel = 'Content';
-      cancelText = 'Cancel';
-      saveText = 'Save Changes';
-      savingText = 'Saving...';
-      loadingText = 'Loading...';
-      titlePlaceholder = 'Enter note title';
-      contentPlaceholder = 'Enter note content';
+      modalTitle = "Edit Note";
+      titleLabel = "Title *";
+      typeLabel = "Type";
+      contentLabel = "Content";
+      cancelText = "Cancel";
+      saveText = "Save Changes";
+      savingText = "Saving...";
+      loadingText = "Loading...";
+      titlePlaceholder = "Enter note title";
+      contentPlaceholder = "Enter note content";
     }
   });
 
@@ -79,10 +80,13 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
     try {
       const note = await getNote(noteId);
       title = note.title;
-      content = note.content || '';
-      type = (note.type as typeof type) || 'star';
+      content = note.content || "";
+      type = note.type || CelestialBody.STAR.type;
     } catch (err: any) {
-      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to load note' };
+      apiError = err?.response?.data || {
+        code: "API_ERROR",
+        message: "Failed to load note",
+      };
     } finally {
       loading = false;
     }
@@ -91,8 +95,8 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
-      const msg = await getMessage('error', 'validation', 'title');
-      apiError = { code: 'VALIDATION_ERROR', message: msg };
+      const msg = await getMessage("error", "validation", "title");
+      apiError = { code: "VALIDATION_ERROR", message: msg };
       return;
     }
 
@@ -104,13 +108,16 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
         title: title.trim(),
         content: content.trim(),
         type: type,
-        metadata: {}
+        metadata: {},
       });
 
       onSuccess?.(note);
       close();
     } catch (err: any) {
-      apiError = err?.response?.data || { code: 'API_ERROR', message: 'Failed to update note' };
+      apiError = err?.response?.data || {
+        code: "API_ERROR",
+        message: "Failed to update note",
+      };
     } finally {
       saving = false;
     }
@@ -130,7 +137,7 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
     </div>
   {:else}
     <form onsubmit={handleSubmit}>
-      <ApiErrorDisplay error={apiError} onClose={() => apiError = null} />
+      <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
 
       <div class="form-group">
         <label for="edit-note-title">{titleLabel}</label>
@@ -194,7 +201,9 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .form-group {
@@ -209,25 +218,30 @@ import TypeSelector from '$components/molecules/TypeSelector.svelte';
     font-size: 0.875rem;
   }
 
-  input, textarea {
+  input,
+  textarea {
     width: 100%;
     padding: 0.625rem 0.875rem;
     border: 1px solid var(--color-border, #d1d5db);
     border-radius: 6px;
     font-size: 0.875rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
     font-family: inherit;
     color: var(--color-text, #1f2937);
     background: var(--color-surface, white);
   }
 
-  input:focus, textarea:focus {
+  input:focus,
+  textarea:focus {
     outline: none;
     border-color: var(--color-primary, #3b82f6);
     box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.1));
   }
 
-  input:disabled, textarea:disabled {
+  input:disabled,
+  textarea:disabled {
     background: var(--color-surface-elevated, #f3f4f6);
     cursor: not-allowed;
   }

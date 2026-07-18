@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import GraphCanvas from '$components/organisms/GraphCanvas.svelte';
+  import { onMount } from "svelte";
+  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
 
   interface GraphNode {
     id: string;
@@ -16,10 +16,7 @@
     link_type?: string;
   }
 
-  const {
-    nodes = [] as GraphNode[],
-    links = [] as GraphLink[]
-  } = $props<{
+  const { nodes = [] as GraphNode[], links = [] as GraphLink[] } = $props<{
     nodes: GraphNode[];
     links: GraphLink[];
   }>();
@@ -64,7 +61,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .graph-wrapper {

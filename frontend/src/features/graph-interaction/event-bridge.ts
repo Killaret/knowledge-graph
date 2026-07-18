@@ -1,33 +1,44 @@
-import type { SimulationNode, SimulationLink, TransformState, DragState } from '$components/organisms/GraphCanvas';
-import type { BlackHoleState, GhostNodeState, GravitySystem } from '$components/organisms/GraphCanvas';
+import type {
+  SimulationNode,
+  SimulationLink,
+  TransformState,
+  DragState,
+} from "$components/organisms/GraphCanvas";
+import type {
+  BlackHoleState,
+  GhostNodeState,
+  GravitySystem,
+} from "$components/organisms/GraphCanvas";
 import {
   findLinkAtPosition,
   getSimulationNodes,
   isNodeOverBlackHole,
-  isPointOverBlackHole
-} from '$components/organisms/GraphCanvas';
-import { createGhostNode } from '$components/organisms/GraphCanvas/ghost-node';
-import { graphConfig2D } from '$shared/config';
-import type { DragDropState } from '$features/graph-interaction/drag-and-drop';
+  isPointOverBlackHole,
+} from "$components/organisms/GraphCanvas";
+import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
+import { graphConfig2D } from "$shared/config";
+import type { DragDropState } from "$features/graph-interaction/drag-and-drop";
 import {
   getMouseWorldPosition,
   findNodeAtPosition,
-  handleMouseDown
-} from '$features/graph-interaction/drag-and-drop';
-import type { HotkeysState } from '$features/graph-interaction/hotkeys';
+  handleMouseDown,
+} from "$features/graph-interaction/drag-and-drop";
+import type { HotkeysState } from "$features/graph-interaction/hotkeys";
 import {
   handleKeyDownEvent,
   updateActivity,
   showRandomTip,
-  focusNextSearchMatch
-} from '$features/graph-interaction/hotkeys';
-import type { ZoomPanState } from '$features/graph-interaction/zoom-pan';
-import { handleZoom, handleTouchStart } from '$features/graph-interaction/zoom-pan';
-import type { NoteFormState } from '$features/graph-forms/note-form';
-import { openNoteForm, closeNoteForm } from '$features/graph-forms/note-form';
-import type { LinkFormState } from '$features/graph-forms/link-form';
-import { openLinkForm, closeLinkForm } from '$features/graph-forms/link-form';
-import type { SimulationState } from '$components/organisms/GraphCanvas/types';
+} from "$features/graph-interaction/hotkeys";
+import type { ZoomPanState } from "$features/graph-interaction/zoom-pan";
+import {
+  handleZoom,
+  handleTouchStart,
+} from "$features/graph-interaction/zoom-pan";
+import type { NoteFormState } from "$features/graph-forms/note-form";
+import { openNoteForm, closeNoteForm } from "$features/graph-forms/note-form";
+import type { LinkFormState } from "$features/graph-forms/link-form";
+import { openLinkForm, closeLinkForm } from "$features/graph-forms/link-form";
+import type { SimulationState } from "$components/organisms/GraphCanvas/types";
 
 export interface HoveredLinkInfo {
   source: string;
@@ -98,7 +109,9 @@ export interface GraphEventBridge {
   cleanup: () => void;
 }
 
-export function createGraphEventBridge(context: GraphCanvasEventContext): GraphEventBridge {
+export function createGraphEventBridge(
+  context: GraphCanvasEventContext,
+): GraphEventBridge {
   const HOVER_DELAY_MS = graphConfig2D.hover_delay_ms;
 
   let hoverNodeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -107,9 +120,14 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   let hoverCandidateLink: HoveredLinkInfo | null = null;
   let hoverCandidateLinkKey: string | null = null;
 
-  function getLinkKey(link: HoveredLinkInfo | SimulationLink | { source: string | { id: string }; target: string | { id: string } }): string {
-    const s = typeof link.source === 'string' ? link.source : link.source.id;
-    const t = typeof link.target === 'string' ? link.target : link.target.id;
+  function getLinkKey(
+    link:
+      | HoveredLinkInfo
+      | SimulationLink
+      | { source: string | { id: string }; target: string | { id: string } },
+  ): string {
+    const s = typeof link.source === "string" ? link.source : link.source.id;
+    const t = typeof link.target === "string" ? link.target : link.target.id;
     return `${s}|${t}`;
   }
 
@@ -148,7 +166,11 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     context.setHoveredLink(null);
   }
 
-  function scheduleLinkHover(link: HoveredLinkInfo, mouseX: number, mouseY: number) {
+  function scheduleLinkHover(
+    link: HoveredLinkInfo,
+    mouseX: number,
+    mouseY: number,
+  ) {
     const linkKey = getLinkKey(link);
     if (hoverCandidateLinkKey === linkKey && hoverLinkTimeout) {
       return;
@@ -169,7 +191,9 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onMouseDown(e: MouseEvent) {
     if (context.readonly) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
 
@@ -184,16 +208,18 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
       context.isTechnicalNode,
       {
         onNodeDragStart: (nodeId) => {
-          if (nodeId === 'ghost') {
+          if (nodeId === "ghost") {
             openNoteForm(context.noteFormState, e.clientX, e.clientY);
             context.redraw();
           }
-        }
-      }
+        },
+      },
     );
 
     if (context.dragDropState.draggedNodeId) {
-      const node = getSimulationNodes(context.simState).find((n) => n.id === context.dragDropState.draggedNodeId);
+      const node = getSimulationNodes(context.simState).find(
+        (n) => n.id === context.dragDropState.draggedNodeId,
+      );
       if (node && node.x != null && node.y != null) {
         node.fx = node.x;
         node.fy = node.y;
@@ -206,7 +232,9 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onMouseMove(e: MouseEvent) {
     if (context.readonly) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
 
@@ -216,7 +244,12 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     const blackHole = context.getBlackHole();
     const ghostNode = context.getGhostNode();
 
-    blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, context.transform);
+    blackHole.hovered = isPointOverBlackHole(
+      e.clientX,
+      e.clientY,
+      blackHole,
+      context.transform,
+    );
 
     const canvasRect = canvas.getBoundingClientRect();
     const screenX = e.clientX - canvasRect.left;
@@ -226,15 +259,28 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     ghostNode.hovered = Math.sqrt(dx * dx + dy * dy) < ghostNode.radius;
 
     if (context.dragDropState.draggedNodeId && context.dragState.dragging) {
-      const node = getSimulationNodes(context.simState).find((n) => n.id === context.dragDropState.draggedNodeId);
+      const node = getSimulationNodes(context.simState).find(
+        (n) => n.id === context.dragDropState.draggedNodeId,
+      );
       if (node && node.x != null && node.y != null) {
         blackHole.hovered = isNodeOverBlackHole(node, blackHole);
 
-        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
-        if (targetNode && targetNode.id !== context.dragDropState.draggedNodeId && !context.isTechnicalNode(targetNode.id)) {
+        const targetNode = findNodeAtPosition(
+          pos.x,
+          pos.y,
+          getSimulationNodes(context.simState),
+        );
+        if (
+          targetNode &&
+          targetNode.id !== context.dragDropState.draggedNodeId &&
+          !context.isTechnicalNode(targetNode.id)
+        ) {
           context.dragDropState.isDraggingForLink = true;
           context.dragDropState.linkTargetNodeId = targetNode.id;
-          context.dragDropState.linkPreviewTarget = { sourceId: context.dragDropState.draggedNodeId, targetId: targetNode.id };
+          context.dragDropState.linkPreviewTarget = {
+            sourceId: context.dragDropState.draggedNodeId,
+            targetId: targetNode.id,
+          };
         } else {
           context.dragDropState.isDraggingForLink = false;
           context.dragDropState.linkTargetNodeId = null;
@@ -252,7 +298,13 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
       return;
     }
 
-    const hovered = findLinkAtPosition(pos.x, pos.y, context.simState.simLinks, getSimulationNodes(context.simState), context.transform);
+    const hovered = findLinkAtPosition(
+      pos.x,
+      pos.y,
+      context.simState.simLinks,
+      getSimulationNodes(context.simState),
+      context.transform,
+    );
 
     let foundHoveredNode = false;
     let hoveredTechnicalNode: SimulationNode | null = null;
@@ -263,7 +315,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
         const ndy = pos.y - node.y;
         if (Math.sqrt(ndx * ndx + ndy * ndy) < 30) {
           foundHoveredNode = true;
-          if (node.type === 'technical') {
+          if (node.type === "technical") {
             hoveredTechnicalNode = node;
           }
           if (context.getHoveredNodeId() !== node.id) {
@@ -278,34 +330,60 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     }
 
     if (hoveredTechnicalNode) {
-      context.hotkeysState.helpTooltipMessage = 'Click to open help, or press ?';
-      context.hotkeysState.helpTooltipPosition = { x: e.clientX, y: e.clientY - 10 };
+      context.hotkeysState.helpTooltipMessage =
+        "Click to open help, or press ?";
+      context.hotkeysState.helpTooltipPosition = {
+        x: e.clientX,
+        y: e.clientY - 10,
+      };
       context.hotkeysState.showHelpTooltip = true;
-    } else if (context.hotkeysState.showHelpTooltip && context.hotkeysState.helpTooltipMessage === 'Click to open help, or press ?') {
+    } else if (
+      context.hotkeysState.showHelpTooltip &&
+      context.hotkeysState.helpTooltipMessage ===
+        "Click to open help, or press ?"
+    ) {
       context.hotkeysState.showHelpTooltip = false;
     }
 
     if (hovered) {
-      const sourceNode = typeof hovered.source === 'string'
-        ? simNodes.find((n) => n.id === hovered.source)
-        : hovered.source as SimulationNode;
-      const targetNode = typeof hovered.target === 'string'
-        ? simNodes.find((n) => n.id === hovered.target)
-        : hovered.target as SimulationNode;
+      const sourceNode =
+        typeof hovered.source === "string"
+          ? simNodes.find((n) => n.id === hovered.source)
+          : (hovered.source as SimulationNode);
+      const targetNode =
+        typeof hovered.target === "string"
+          ? simNodes.find((n) => n.id === hovered.target)
+          : (hovered.target as SimulationNode);
 
       if (sourceNode && targetNode) {
         const linkData: HoveredLinkInfo = {
-          source: typeof hovered.source === 'string' ? hovered.source : (hovered.source as { id: string }).id,
-          target: typeof hovered.target === 'string' ? hovered.target : (hovered.target as { id: string }).id,
-          link_type: hovered.link_type || 'related',
+          source:
+            typeof hovered.source === "string"
+              ? hovered.source
+              : (hovered.source as { id: string }).id,
+          target:
+            typeof hovered.target === "string"
+              ? hovered.target
+              : (hovered.target as { id: string }).id,
+          link_type: hovered.link_type || "related",
           weight: hovered.weight ?? 0.5,
-          source_type: (hovered as { source_type?: string }).source_type || 'user'
+          source_type:
+            (hovered as { source_type?: string }).source_type || "user",
         };
 
-        const centerX = ((sourceNode.x! + targetNode.x!) / 2) * context.transform.k + context.transform.x + 10;
-        const centerY = ((sourceNode.y! + targetNode.y!) / 2) * context.transform.k + context.transform.y + 10;
+        const centerX =
+          ((sourceNode.x! + targetNode.x!) / 2) * context.transform.k +
+          context.transform.x +
+          10;
+        const centerY =
+          ((sourceNode.y! + targetNode.y!) / 2) * context.transform.k +
+          context.transform.y +
+          10;
 
-        if (!context.getHoveredLink() || getLinkKey(context.getHoveredLink()!) !== getLinkKey(linkData)) {
+        if (
+          !context.getHoveredLink() ||
+          getLinkKey(context.getHoveredLink()!) !== getLinkKey(linkData)
+        ) {
           scheduleLinkHover(linkData, centerX, centerY);
         }
       }
@@ -316,7 +394,9 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onMouseUp(e: MouseEvent) {
     if (context.readonly) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
 
@@ -324,14 +404,30 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     const wasDraggingNode = context.dragDropState.draggedNodeId !== null;
 
     if (context.dragDropState.draggedNodeId) {
-      const node = getSimulationNodes(context.simState).find((n) => n.id === context.dragDropState.draggedNodeId);
+      const node = getSimulationNodes(context.simState).find(
+        (n) => n.id === context.dragDropState.draggedNodeId,
+      );
       if (node) {
         node.fx = undefined;
         node.fy = undefined;
 
-        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
-        if (targetNode && targetNode.id !== context.dragDropState.draggedNodeId && !context.isTechnicalNode(targetNode.id)) {
-          openLinkForm(context.linkFormState, context.dragDropState.draggedNodeId, targetNode.id, e.clientX, e.clientY);
+        const targetNode = findNodeAtPosition(
+          pos.x,
+          pos.y,
+          getSimulationNodes(context.simState),
+        );
+        if (
+          targetNode &&
+          targetNode.id !== context.dragDropState.draggedNodeId &&
+          !context.isTechnicalNode(targetNode.id)
+        ) {
+          openLinkForm(
+            context.linkFormState,
+            context.dragDropState.draggedNodeId,
+            targetNode.id,
+            e.clientX,
+            e.clientY,
+          );
         }
       }
       context.dragDropState.draggedNodeId = null;
@@ -340,11 +436,15 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     }
 
     context.dragState.dragging = false;
-    canvas.style.cursor = 'grab';
+    canvas.style.cursor = "grab";
     context.getBlackHole().hovered = false;
 
     if (!wasDraggingNode && !context.getGhostNode().hovered) {
-      const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
+      const clickedNode = findNodeAtPosition(
+        pos.x,
+        pos.y,
+        getSimulationNodes(context.simState),
+      );
       if (!clickedNode) {
         context.setHoveredLink(null);
       }
@@ -355,21 +455,31 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onClick(e: MouseEvent) {
     if (context.readonly) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
 
     const pos = getMouseWorldPosition(e, canvas, context.transform);
     context.dragDropState.mouseWorldPosition = pos;
 
-    const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
+    const clickedNode = findNodeAtPosition(
+      pos.x,
+      pos.y,
+      getSimulationNodes(context.simState),
+    );
     if (clickedNode) {
       if (context.isTechnicalNode(clickedNode.id)) {
         context.openHelp();
         return;
       }
       context.setSelectedNodeId(clickedNode.id);
-      context.onNodeClick?.({ id: clickedNode.id, title: clickedNode.title, type: clickedNode.type });
+      context.onNodeClick?.({
+        id: clickedNode.id,
+        title: clickedNode.title,
+        type: clickedNode.type,
+      });
     } else {
       context.setSelectedNodeId(null);
     }
@@ -402,7 +512,9 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onZoom(e: WheelEvent) {
     if (context.readonly) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
     handleZoom(e, context.transform, canvas, context.redraw);
@@ -410,10 +522,21 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
   function onTouchStart(e: TouchEvent) {
     if (context.readonly || !context.browser) return;
-    updateActivity(context.hotkeysState, () => showRandomTip(context.hotkeysState, context.getKeyLines()));
+    updateActivity(context.hotkeysState, () =>
+      showRandomTip(context.hotkeysState, context.getKeyLines()),
+    );
     const canvas = context.getCanvas();
     if (!canvas) return;
-    handleTouchStart(e, context.zoomPanState, context.transform, canvas, getSimulationNodes(context.simState), context.getCtx(), context.getWidth(), context.getHeight());
+    handleTouchStart(
+      e,
+      context.zoomPanState,
+      context.transform,
+      canvas,
+      getSimulationNodes(context.simState),
+      context.getCtx(),
+      context.getWidth(),
+      context.getHeight(),
+    );
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -446,9 +569,17 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           const canvas = context.getCanvas();
           if (!canvas) return;
           const rect = canvas.getBoundingClientRect();
-          const centerX = (rect.width / 2 - context.transform.x) / context.transform.k;
-          const centerY = (rect.height / 2 - context.transform.y) / context.transform.k;
-          context.setGhostNode(createGhostNode(rect.width, rect.height, getSimulationNodes(context.simState)));
+          const centerX =
+            (rect.width / 2 - context.transform.x) / context.transform.k;
+          const centerY =
+            (rect.height / 2 - context.transform.y) / context.transform.k;
+          context.setGhostNode(
+            createGhostNode(
+              rect.width,
+              rect.height,
+              getSimulationNodes(context.simState),
+            ),
+          );
           openNoteForm(context.noteFormState, centerX, centerY);
           context.redraw();
         },
@@ -457,8 +588,8 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           context.setSelectedNodeId(null);
           context.redraw();
         },
-        onUndo: () => {}
-      }
+        onUndo: () => {},
+      },
     );
   }
 
@@ -486,37 +617,39 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     onZoom,
     onTouchStart,
     handleKeyDown,
-    cleanup
+    cleanup,
   };
 }
 
 export function attachEvents(
   canvas: HTMLCanvasElement,
   context: GraphCanvasEventContext,
-  windowImpl: Window = globalThis.window
+  windowImpl: Window = globalThis.window,
 ): () => void {
   const bridge = createGraphEventBridge(context);
 
-  canvas.addEventListener('mousedown', bridge.onMouseDown);
-  canvas.addEventListener('mousemove', bridge.onMouseMove);
-  canvas.addEventListener('mouseup', bridge.onMouseUp);
-  canvas.addEventListener('click', bridge.onClick);
-  canvas.addEventListener('dblclick', bridge.onDblClick);
-  canvas.addEventListener('wheel', bridge.onZoom, { passive: false });
-  canvas.addEventListener('touchstart', bridge.onTouchStart, { passive: false });
-  windowImpl.addEventListener('mouseup', bridge.onWindowMouseUp);
-  windowImpl.addEventListener('keydown', bridge.handleKeyDown);
+  canvas.addEventListener("mousedown", bridge.onMouseDown);
+  canvas.addEventListener("mousemove", bridge.onMouseMove);
+  canvas.addEventListener("mouseup", bridge.onMouseUp);
+  canvas.addEventListener("click", bridge.onClick);
+  canvas.addEventListener("dblclick", bridge.onDblClick);
+  canvas.addEventListener("wheel", bridge.onZoom, { passive: false });
+  canvas.addEventListener("touchstart", bridge.onTouchStart, {
+    passive: false,
+  });
+  windowImpl.addEventListener("mouseup", bridge.onWindowMouseUp);
+  windowImpl.addEventListener("keydown", bridge.handleKeyDown);
 
   return () => {
-    canvas.removeEventListener('mousedown', bridge.onMouseDown);
-    canvas.removeEventListener('mousemove', bridge.onMouseMove);
-    canvas.removeEventListener('mouseup', bridge.onMouseUp);
-    canvas.removeEventListener('click', bridge.onClick);
-    canvas.removeEventListener('dblclick', bridge.onDblClick);
-    canvas.removeEventListener('wheel', bridge.onZoom);
-    canvas.removeEventListener('touchstart', bridge.onTouchStart);
-    windowImpl.removeEventListener('mouseup', bridge.onWindowMouseUp);
-    windowImpl.removeEventListener('keydown', bridge.handleKeyDown);
+    canvas.removeEventListener("mousedown", bridge.onMouseDown);
+    canvas.removeEventListener("mousemove", bridge.onMouseMove);
+    canvas.removeEventListener("mouseup", bridge.onMouseUp);
+    canvas.removeEventListener("click", bridge.onClick);
+    canvas.removeEventListener("dblclick", bridge.onDblClick);
+    canvas.removeEventListener("wheel", bridge.onZoom);
+    canvas.removeEventListener("touchstart", bridge.onTouchStart);
+    windowImpl.removeEventListener("mouseup", bridge.onWindowMouseUp);
+    windowImpl.removeEventListener("keydown", bridge.handleKeyDown);
     bridge.cleanup();
   };
 }

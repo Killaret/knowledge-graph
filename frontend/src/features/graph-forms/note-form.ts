@@ -7,7 +7,11 @@ export interface NoteFormState {
 }
 
 export interface NoteFormCallbacks {
-  onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
+  onNoteCreate?: (data: {
+    title: string;
+    content: string;
+    type: string;
+  }) => void;
   onFormClose?: () => void;
 }
 
@@ -15,40 +19,36 @@ export function createNoteFormState(): NoteFormState {
   return {
     showNoteForm: false,
     noteFormPosition: { x: 0, y: 0 },
-    newNoteTitle: '',
-    newNoteContent: '',
-    newNoteType: 'planet'
+    newNoteTitle: "",
+    newNoteContent: "",
+    newNoteType: "planet",
   };
 }
 
-export function openNoteForm(
-  state: NoteFormState,
-  x: number,
-  y: number
-): void {
+export function openNoteForm(state: NoteFormState, x: number, y: number): void {
   state.showNoteForm = true;
   state.noteFormPosition = { x, y };
-  state.newNoteTitle = '';
-  state.newNoteContent = '';
-  state.newNoteType = 'planet';
+  state.newNoteTitle = "";
+  state.newNoteContent = "";
+  state.newNoteType = "planet";
 }
 
 export function closeNoteForm(state: NoteFormState): void {
   state.showNoteForm = false;
-  state.newNoteTitle = '';
-  state.newNoteContent = '';
-  state.newNoteType = 'planet';
+  state.newNoteTitle = "";
+  state.newNoteContent = "";
+  state.newNoteType = "planet";
 }
 
 export function createNote(
   state: NoteFormState,
-  callbacks: NoteFormCallbacks
+  callbacks: NoteFormCallbacks,
 ): void {
   if (state.newNoteTitle.trim() && callbacks.onNoteCreate) {
     callbacks.onNoteCreate({
       title: state.newNoteTitle.trim(),
       content: state.newNoteContent.trim(),
-      type: state.newNoteType
+      type: state.newNoteType,
     });
   }
   closeNoteForm(state);

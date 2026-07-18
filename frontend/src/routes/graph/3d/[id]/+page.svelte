@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { page } from "$app/stores";
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
 
   let currentNoteId: string | null = $state(null);
 
   onMount(() => {
     const id = $page.params.id as string;
     currentNoteId = id;
-    
+
     // 3D functionality frozen for v1 - redirecting to 2D graph
     setTimeout(() => {
       if (id) {
         goto(`/graph/${id}`);
       } else {
-        goto('/graph');
+        goto("/graph");
       }
     }, 500);
   });
@@ -24,8 +24,14 @@
   <div class="center">
     <div class="frozen-notice">
       <h2>3D Graph Feature Frozen</h2>
-      <p>The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.</p>
-      <p>You will be automatically redirected to 2D graph view for note {currentNoteId || 'the entire graph'}.</p>
+      <p>
+        The 3D graph functionality has been temporarily frozen for version 1.0
+        to improve stability and reduce maintenance overhead.
+      </p>
+      <p>
+        You will be automatically redirected to 2D graph view for note {currentNoteId ||
+          "the entire graph"}.
+      </p>
       <div class="spinner"></div>
     </div>
   </div>
@@ -82,6 +88,8 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

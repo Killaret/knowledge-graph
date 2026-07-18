@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { page } from '$app/stores';
-  import { getNote, getSuggestions, deleteNote } from '$shared/api/notes';
-  import type { Note, Suggestion } from '$shared/api/notes';
-  import { goto } from '$app/navigation';
-  import { formatDateTime } from '$shared/utils/date';
-  import BackButton from '$components/atoms/BackButton.svelte';
-  import EditNoteModal from '$components/organisms/EditNoteModal.svelte';
-  import StateIllustration from '$components/atoms/StateIllustration.svelte';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { page } from "$app/stores";
+  import { getNote, getSuggestions, deleteNote } from "$shared/api/notes";
+  import type { Note, Suggestion } from "$shared/api/notes";
+  import { goto } from "$app/navigation";
+  import { formatDateTime } from "$shared/utils/date";
+  import BackButton from "$components/atoms/BackButton.svelte";
+  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let editModalOpen = $state(false);
 
   function getRouteId(): string {
     const id = $page.params.id;
-    if (!id) throw new Error('Missing route parameter: id');
+    if (!id) throw new Error("Missing route parameter: id");
     return id;
   }
 
@@ -29,10 +29,10 @@
       suggestions = await getSuggestions(id, 5);
     } catch (e: any) {
       if (e.response?.status === 404) {
-        error = 'Note not found';
-        setTimeout(() => goto('/'), 3000);
+        error = "Note not found";
+        setTimeout(() => goto("/"), 3000);
       } else {
-        error = 'Failed to load note';
+        error = "Failed to load note";
       }
     } finally {
       loading = false;
@@ -41,10 +41,10 @@
 
   async function handleDelete() {
     if (!browser) return;
-    if (!confirm('Delete this note?')) return;
+    if (!confirm("Delete this note?")) return;
     const id = getRouteId();
     await deleteNote(id);
-    await goto('/');
+    await goto("/");
   }
 </script>
 
@@ -52,7 +52,7 @@
   <p>Loading...</p>
 {:else if error}
   <div class="note-error">
-    <StateIllustration type={error === 'Note not found' ? '404' : 'error'} />
+    <StateIllustration type={error === "Note not found" ? "404" : "error"} />
     <p class="error">{error}</p>
   </div>
 {:else if note}
@@ -62,22 +62,33 @@
     <div class="meta">Created: {formatDateTime(note.created_at)}</div>
     <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
-      <button onclick={() => editModalOpen = true} class="edit-btn" data-testid="edit-note-btn">Edit</button>
-      <button onclick={handleDelete} data-testid="delete-note-btn">Delete</button>
-      <a href={`/graph/3d/${note.id}`} class="graph-link">✨ Show constellation</a>
+      <button
+        onclick={() => (editModalOpen = true)}
+        class="edit-btn"
+        data-testid="edit-note-btn">Edit</button
+      >
+      <button onclick={handleDelete} data-testid="delete-note-btn"
+        >Delete</button
+      >
+      <a href={`/graph/3d/${note.id}`} class="graph-link"
+        >✨ Show constellation</a
+      >
     </div>
 
     <EditNoteModal
       bind:open={editModalOpen}
       noteId={note.id}
-      onSuccess={(updatedNote: Note) => note = updatedNote}
+      onSuccess={(updatedNote: Note) => (note = updatedNote)}
     />
 
     {#if suggestions.length}
       <h2>Similar notes</h2>
       <ul class="suggestions">
         {#each suggestions as s}
-          <li><a href={`/notes/${s.note_id}`}>{s.title}</a> <span class="score">score: {s.score.toFixed(3)}</span></li>
+          <li>
+            <a href={`/notes/${s.note_id}`}>{s.title}</a>
+            <span class="score">score: {s.score.toFixed(3)}</span>
+          </li>
         {/each}
       </ul>
     {/if}
@@ -85,9 +96,19 @@
 {/if}
 
 <style>
-  .note-container { max-width: 800px; margin: 0 auto; }
-  .content { white-space: pre-wrap; margin: 1rem 0; }
-  .actions { display: flex; gap: 1rem; margin: 1rem 0; }
+  .note-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .content {
+    white-space: pre-wrap;
+    margin: 1rem 0;
+  }
+  .actions {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
   .actions button {
     padding: 0.5rem 1rem;
     border: 1px solid var(--color-border);
@@ -115,8 +136,22 @@
   .edit-btn:hover {
     background: var(--color-primary-hover) !important;
   }
-  .suggestions li { margin-bottom: 0.5rem; }
-  .score { margin-left: 1rem; color: var(--color-text-secondary); font-size: 0.9rem; }
-  .error { color: var(--color-danger); }
-  .graph-link { background: var(--color-galaxy); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; text-decoration: none; }
+  .suggestions li {
+    margin-bottom: 0.5rem;
+  }
+  .score {
+    margin-left: 1rem;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+  }
+  .error {
+    color: var(--color-danger);
+  }
+  .graph-link {
+    background: var(--color-galaxy);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    text-decoration: none;
+  }
 </style>

@@ -1,8 +1,8 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 2026  
+**Updated:** July 18, 2026  
 **Status:** System stabilized, regression testing complete, manual testing in progress  
-**Version:** 1.0.0-alpha
+**Version:** v2.5
 
 ---
 
@@ -114,6 +114,25 @@
 
 ---
 
+### 🍯 Honeycomb View (Graph Visualization Mode)
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Implement radial node placement by link weight | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Add view mode switcher (Free / Honeycomb / Clusters) | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Implement hover-reveal link visualization | ⏳ Planned | 🟡 Medium | 📝 Yes |
+
+**Scope:**
+- Center node selected by max `sum(weight)` across all links
+- Radial placement on concentric rings by link weight thresholds (>0.7, 0.3-0.7, <0.3)
+- Line thickness, opacity, and color based on weight and link type
+- Hidden links by default in Honeycomb mode; reveal on node hover with 300ms fade-out
+- Mode switcher in FloatingControls with Free / Honeycomb / Clusters options
+- Persist selected mode in `graphSettings` (localStorage / user settings)
+- Use D3 force.find or spatial hash for fast cursor-to-node lookup
+
+---
+
 ## 📋 LATER: Backlog
 
 ### 📥 Import/Export Tools
@@ -187,6 +206,22 @@
 - Automatic syncing
 - API rate limiting
 - Error handling
+
+---
+
+### 🌌 Galactic Clusters (Semantic Clustering)
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Backend clustering service for semantic grouping | ⏳ Planned | 🟢 Low | 📝 No |
+| Background cluster recalculation | ⏳ Planned | 🟢 Low | 📝 No |
+| Canvas visualization for clusters | ⏳ Planned | 🟢 Low | 📝 No |
+
+**Scope:**
+- Semantic clustering of notes based on link relationships and embeddings
+- Dedicated backend clustering service with background recalculation (ASYNQ)
+- Cluster rendering on canvas
+- Integration with view mode switcher (Clusters mode)
 
 ---
 
@@ -273,10 +308,10 @@
 ## 📈 Progress Metrics
 
 ### Development Progress
-- **Total Tasks:** 50+
-- **Completed:** 30+ (60%)
+- **Total Tasks:** 53+
+- **Completed:** 30+ (57%)
 - **In Progress:** 3 (6%)
-- **Planned:** 17+ (34%)
+- **Planned:** 20+ (38%)
 
 ### Testing Coverage
 - **Frontend Unit Tests:** 526 tests ✅
@@ -323,5 +358,26 @@
 
 ---
 
-**Last Updated:** July 9, 2026  
+## 🎛️ Visualization Mode Switcher
+
+| Mode | Name | Status |
+|------|------|--------|
+| Free | Free Flight (current D3-force) | ✅ Working |
+| Honeycomb | Honeycomb View | ⏳ Ready for implementation |
+| Clusters | Galactic Clusters | 🌙 Backlog |
+
+---
+
+## 🧭 Visualization Approach Comparison
+
+| Aspect | Galactic Clusters | Honeycomb View |
+|--------|-------------------|----------------|
+| Implementation complexity | High (backend + frontend + ASYNQ) | Low (frontend only) |
+| Requires backend? | Yes | No |
+| Chaos reduction | Full (grouping + hidden lines) | Partial (radial layout + visual encoding) |
+| When to use | When semantic grouping is needed | When fast visual order is needed |
+
+---
+
+**Last Updated:** July 18, 2026  
 **Next Review:** After manual testing completion

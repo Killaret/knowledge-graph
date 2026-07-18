@@ -1,20 +1,23 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import { browser } from '$app/environment';
-  import { onMount, untrack } from 'svelte';
-  import { addJitter } from '$shared/utils/jitter';
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { browser } from "$app/environment";
+  import { onMount, untrack } from "svelte";
+  import { addJitter } from "$shared/utils/jitter";
 
   // Props
-  const { placeholder = 'Search notes (Russian & English)...', autoFocus = false } = $props();
+  const {
+    placeholder = "Search notes (Russian & English)...",
+    autoFocus = false,
+  } = $props();
 
-  let query = $state('');
+  let query = $state("");
   let inputElement: HTMLInputElement;
 
   // Sync with URL parameter when URL changes (not when query changes)
   // Use untrack to prevent this effect from re-running when query changes
   $effect(() => {
-    const q = $page.url.searchParams.get('q') || '';
+    const q = $page.url.searchParams.get("q") || "";
     if (q !== untrack(() => query)) {
       query = q;
     }
@@ -41,7 +44,7 @@
 
   // Handle Enter key
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       if (debounceTimer) clearTimeout(debounceTimer);
       doSearch();
     }
@@ -62,11 +65,16 @@
     bind:value={query}
     oninput={handleInput}
     onkeydown={handleKeyDown}
-    placeholder={placeholder}
+    {placeholder}
     aria-label="Search"
     class="search-input"
   />
-  <button type="button" onclick={doSearch} class="search-button" aria-label="Search">
+  <button
+    type="button"
+    onclick={doSearch}
+    class="search-button"
+    aria-label="Search"
+  >
     Search
   </button>
 </div>
@@ -79,7 +87,7 @@
     max-width: 600px;
     margin: 0 auto;
   }
-  
+
   .search-input {
     flex: 1;
     padding: 0.75rem 1rem;
@@ -89,13 +97,13 @@
     background: white;
     transition: border-color 0.2s;
   }
-  
+
   .search-input:focus {
     outline: none;
     border-color: var(--color-primary, #3b82f6);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
-  
+
   .search-button {
     padding: 0.75rem 1.5rem;
     background: var(--color-primary, #3b82f6);
@@ -107,11 +115,11 @@
     font-weight: 500;
     transition: background 0.2s;
   }
-  
+
   .search-button:hover {
     background: var(--color-primary-dark, #2563eb);
   }
-  
+
   .search-button:active {
     transform: translateY(0);
   }

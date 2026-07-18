@@ -1,7 +1,7 @@
 // Centralized configuration module
 // Imports settings from knowledge-graph.config.json at project root
 
-import configData from '$config';
+import configData from "$config";
 
 // Type definitions matching the JSON structure
 export interface Config {
@@ -41,7 +41,7 @@ export interface Config {
       mock_goto_delay_ms: number;
     };
     graph: {
-      '2d': {
+      "2d": {
         max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
         shadows_threshold: number;
@@ -56,7 +56,7 @@ export interface Config {
         /** Delay in milliseconds before node/link hover dimming and tooltips activate */
         hover_delay_ms: number;
       };
-      '3d': {
+      "3d": {
         max_nodes: number;
       };
       anomaly: {
@@ -115,12 +115,13 @@ export interface Config {
 export const config: Config = configData as Config;
 
 // Convenience exports for common values
-export const graphConfig2D = config.frontend.graph['2d'];
-export const graphConfig3D = config.frontend.graph['3d'];
+export const graphConfig2D = config.frontend.graph["2d"];
+export const graphConfig3D = config.frontend.graph["3d"];
 export const anomalyConfig = config.frontend.graph.anomaly;
 export const apiConfig = config.frontend.api;
 export const testConfig = config.frontend.test;
 export const ciCdConfig = config.ci_cd;
-export const ACHIEVEMENT_POLL_INTERVAL_MS = config.frontend.achievements.poll_interval_ms;
+export const ACHIEVEMENT_POLL_INTERVAL_MS =
+  config.frontend.achievements.poll_interval_ms;
 
 export default config;

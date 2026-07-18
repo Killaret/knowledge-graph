@@ -1,42 +1,46 @@
-import type { Locale, Mode } from '$shared/utils/galactic-lexicon'
-import { getLexiconMessage } from '$shared/utils/galactic-lexicon'
-import { getCurrentLocale, setLocale as setUiLocale } from '$shared/utils/i18n'
+import type { Locale, Mode } from "$shared/utils/galactic-lexicon";
+import { getLexiconMessage } from "$shared/utils/galactic-lexicon";
+import { getCurrentLocale, setLocale as setUiLocale } from "$shared/utils/i18n";
 
-let currentMode: Mode = 'standard'
-const subscribers = new Set<(value: Mode) => void>()
+let currentMode: Mode = "standard";
+const subscribers = new Set<(value: Mode) => void>();
 
 function notify(value: Mode) {
-  subscribers.forEach(fn => fn(value))
+  subscribers.forEach((fn) => fn(value));
 }
 
 function setModeValue(value: Mode) {
-  currentMode = value
-  notify(currentMode)
+  currentMode = value;
+  notify(currentMode);
 }
 
 export const mode = {
   subscribe(fn: (value: Mode) => void) {
-    fn(currentMode)
-    subscribers.add(fn)
-    return () => subscribers.delete(fn)
+    fn(currentMode);
+    subscribers.add(fn);
+    return () => subscribers.delete(fn);
   },
   set: setModeValue,
   update(fn: (value: Mode) => Mode) {
-    setModeValue(fn(currentMode))
+    setModeValue(fn(currentMode));
   },
-}
+};
 
 export function setLocale(l: Locale) {
-  setUiLocale(l)
+  setUiLocale(l);
 }
 
 export function setMode(m: Mode) {
-  mode.set(m)
+  mode.set(m);
 }
 
-export async function getMessage(category: string, key: string, ...params: any[]) {
-  const locale = getCurrentLocale()
-  let md: Mode = 'standard'
-  mode.subscribe(m => md = m)()
-  return getLexiconMessage(locale, md, category as any, key, ...params)
+export async function getMessage(
+  category: string,
+  key: string,
+  ...params: any[]
+) {
+  const locale = getCurrentLocale();
+  let md: Mode = "standard";
+  mode.subscribe((m) => (md = m))();
+  return getLexiconMessage(locale, md, category as any, key, ...params);
 }

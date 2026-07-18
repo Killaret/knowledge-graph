@@ -1,103 +1,102 @@
- 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
- 
-import ConfirmModal from './ConfirmModal.svelte';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/svelte";
 
-describe('ConfirmModal', () => {
-	it('renders modal with title and message when open', () => {
-		render(ConfirmModal, {
-			props: {
-				open: true,
-				title: 'Delete Note?',
-				message: 'Are you sure you want to delete this note?',
-				onConfirm: vi.fn(),
-				onCancel: vi.fn()
-			}
-		});
+import ConfirmModal from "./ConfirmModal.svelte";
 
-		 
-		expect(screen.getByText('Delete Note?')).toBeInTheDocument();
-		 
-		expect(screen.getByText('Are you sure you want to delete this note?')).toBeInTheDocument();
-	});
+describe("ConfirmModal", () => {
+  it("renders modal with title and message when open", () => {
+    render(ConfirmModal, {
+      props: {
+        open: true,
+        title: "Delete Note?",
+        message: "Are you sure you want to delete this note?",
+        onConfirm: vi.fn(),
+        onCancel: vi.fn(),
+      },
+    });
 
-	it('calls onConfirm when confirm button clicked', async () => {
-		const onConfirm = vi.fn();
-		const onCancel = vi.fn();
+    expect(screen.getByText("Delete Note?")).toBeInTheDocument();
 
-		render(ConfirmModal, {
-			props: {
-				open: true,
-				title: 'Confirm?',
-				message: 'Test message',
-				onConfirm,
-				onCancel
-			}
-		});
+    expect(
+      screen.getByText("Are you sure you want to delete this note?"),
+    ).toBeInTheDocument();
+  });
 
-		// Находим кнопку подтверждения по роли и тексту
-		const confirmButton = screen.getByRole('button', { name: 'Confirm' });
-		await fireEvent.click(confirmButton);
-		 
-		expect(onConfirm).toHaveBeenCalled();
-		expect(onCancel).not.toHaveBeenCalled();
-	});
+  it("calls onConfirm when confirm button clicked", async () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
 
-	it('calls onCancel when cancel button clicked', async () => {
-		const onConfirm = vi.fn();
-		const onCancel = vi.fn();
+    render(ConfirmModal, {
+      props: {
+        open: true,
+        title: "Confirm?",
+        message: "Test message",
+        onConfirm,
+        onCancel,
+      },
+    });
 
-		render(ConfirmModal, {
-			props: {
-				open: true,
-				title: 'Confirm?',
-				message: 'Test message',
-				onConfirm,
-				onCancel
-			}
-		});
+    // Находим кнопку подтверждения по роли и тексту
+    const confirmButton = screen.getByRole("button", { name: "Confirm" });
+    await fireEvent.click(confirmButton);
 
-		// Находим кнопку отмены по роли и тексту
-		const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-		await fireEvent.click(cancelButton);
-		 
-		expect(onCancel).toHaveBeenCalled();
-		expect(onConfirm).not.toHaveBeenCalled();
-	});
+    expect(onConfirm).toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
 
-	it('does not render when open is false', () => {
-		render(ConfirmModal, {
-			props: {
-				open: false,
-				title: 'Hidden Modal',
-				message: 'Should not see this',
-				onConfirm: vi.fn(),
-				onCancel: vi.fn()
-			}
-		});
+  it("calls onCancel when cancel button clicked", async () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
 
-		// Modal should not be visible
-		 
-		expect(screen.queryByText('Hidden Modal')).not.toBeInTheDocument();
-	});
+    render(ConfirmModal, {
+      props: {
+        open: true,
+        title: "Confirm?",
+        message: "Test message",
+        onConfirm,
+        onCancel,
+      },
+    });
 
-	it('renders with custom button labels', () => {
-		render(ConfirmModal, {
-			props: {
-				open: true,
-				title: 'Save Changes?',
-				message: 'Do you want to save?',
-				confirmText: 'Save',
-				cancelText: 'Discard',
-				onConfirm: vi.fn(),
-				onCancel: vi.fn()
-			}
-		});
+    // Находим кнопку отмены по роли и тексту
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
+    await fireEvent.click(cancelButton);
 
-		 
-		expect(screen.getByText('Save')).toBeInTheDocument();
-		 
-		expect(screen.getByText('Discard')).toBeInTheDocument();
-	});
+    expect(onCancel).toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("does not render when open is false", () => {
+    render(ConfirmModal, {
+      props: {
+        open: false,
+        title: "Hidden Modal",
+        message: "Should not see this",
+        onConfirm: vi.fn(),
+        onCancel: vi.fn(),
+      },
+    });
+
+    // Modal should not be visible
+
+    expect(screen.queryByText("Hidden Modal")).not.toBeInTheDocument();
+  });
+
+  it("renders with custom button labels", () => {
+    render(ConfirmModal, {
+      props: {
+        open: true,
+        title: "Save Changes?",
+        message: "Do you want to save?",
+        confirmText: "Save",
+        cancelText: "Discard",
+        onConfirm: vi.fn(),
+        onCancel: vi.fn(),
+      },
+    });
+
+    expect(screen.getByText("Save")).toBeInTheDocument();
+
+    expect(screen.getByText("Discard")).toBeInTheDocument();
+  });
 });

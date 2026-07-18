@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import { onMount } from 'svelte';
-  import { handleYandexCallback, error } from '$shared/stores/auth.svelte.js';
-  
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { onMount } from "svelte";
+  import { handleYandexCallback, error } from "$shared/stores/auth.svelte.js";
+
   let isProcessing = $state(true);
   let localError = $state<string | null>(null);
-  
+
   onMount(async () => {
-    const code = $page.url.searchParams.get('code');
-    const state = $page.url.searchParams.get('state');
-    
+    const code = $page.url.searchParams.get("code");
+    const state = $page.url.searchParams.get("state");
+
     if (!code || !state) {
-      localError = 'Missing required authorization parameters';
+      localError = "Missing required authorization parameters";
       isProcessing = false;
       return;
     }
@@ -20,9 +20,9 @@
     const success = await handleYandexCallback(code, state);
 
     if (success) {
-      goto('/');
+      goto("/");
     } else {
-      localError = error() || 'Yandex authorization failed';
+      localError = error() || "Yandex authorization failed";
       isProcessing = false;
     }
   });
@@ -53,19 +53,19 @@
     background: radial-gradient(ellipse at 50% 100%, #0a0a1a 0%, #000 80%);
     padding: 2rem;
   }
-  
+
   .callback-container {
     text-align: center;
     color: var(--color-text-dark, #e0e0e0);
   }
-  
+
   .loading {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
   }
-  
+
   .spinner {
     width: 48px;
     height: 48px;
@@ -76,35 +76,35 @@
     animation: spin 1s linear infinite;
     box-shadow: 0 0 20px rgba(64, 169, 255, 0.3);
   }
-  
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
     }
   }
-  
+
   .loading p {
     color: var(--color-text-dark, #94a3b8);
     text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
   }
-  
+
   .error {
     padding: 2rem;
     background: rgba(10, 10, 26, 0.7);
     backdrop-filter: blur(12px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    box-shadow:
       0 0 0 1px rgba(255, 204, 0, 0.1),
       0 8px 32px rgba(0, 0, 0, 0.4);
   }
-  
+
   .error p {
     margin: 0 0 1rem;
     color: #ef4444;
     text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
   }
-  
+
   .back-link {
     display: inline-block;
     padding: 0.75rem 1.5rem;
@@ -116,10 +116,10 @@
     transition: all 0.2s ease;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
   }
-  
+
   .back-link:hover {
     transform: translateY(-2px);
-    box-shadow: 
+    box-shadow:
       0 8px 25px rgba(59, 130, 246, 0.4),
       0 0 30px rgba(64, 169, 255, 0.2);
   }

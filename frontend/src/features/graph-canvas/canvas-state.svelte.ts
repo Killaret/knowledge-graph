@@ -1,8 +1,25 @@
-import { getSimulationNodes, resetView } from '$components/organisms/GraphCanvas';
-import type { SimulationState, TransformState } from '$components/organisms/GraphCanvas/types';
-import { createNote, closeNoteForm, type NoteFormState } from '$features/graph-forms/note-form';
-import { createLink, closeLinkForm, type LinkFormState } from '$features/graph-forms/link-form';
-import { updateSearch, type HotkeysState } from '$features/graph-interaction/hotkeys';
+import {
+  getSimulationNodes,
+  resetView,
+} from "$components/organisms/GraphCanvas";
+import type {
+  SimulationState,
+  TransformState,
+} from "$components/organisms/GraphCanvas/types";
+import {
+  createNote,
+  closeNoteForm,
+  type NoteFormState,
+} from "$features/graph-forms/note-form";
+import {
+  createLink,
+  closeLinkForm,
+  type LinkFormState,
+} from "$features/graph-forms/link-form";
+import {
+  updateSearch,
+  type HotkeysState,
+} from "$features/graph-interaction/hotkeys";
 
 export interface HoveredLinkInfo {
   source: string;
@@ -41,36 +58,51 @@ export function createGraphCanvasState() {
   let hoveredNodeId = $state<string | null>(null);
 
   let duplicateWarning = $state<DuplicateWarning | null>(null);
-  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
+  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   let highlightedLinkId = $state<string | null>(null);
-  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
+  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   let lastDeletedNodeId = $state<string | null>(null);
   let showUndoToast = $state(false);
-  let undoToastStage = $state<'done' | 'restore'>('done');
+  let undoToastStage = $state<"done" | "restore">("done");
   let undoToastTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
 
   let focusMode = $state(false);
   let selectedNodeId = $state<string | null>(null);
 
   const hotkeyLines = [
-    'F — search nodes by name',
-    'Esc — toggle focus mode (hide effects)',
-    '? — show/hide this help',
-    'N — create ghost node at center',
-    'Delete/Backspace — delete selected node',
-    'Ctrl+Z — undo (coming soon)',
-    'Ctrl+Shift+N — quick capture a new note',
-    'Drag node to another node — create a link',
-    'Drag node to black hole — delete note',
-    'Double-click empty space — create new note',
-    'Mouse wheel — zoom in/out'
+    "F — search nodes by name",
+    "Esc — toggle focus mode (hide effects)",
+    "? — show/hide this help",
+    "N — create ghost node at center",
+    "Delete/Backspace — delete selected node",
+    "Ctrl+Z — undo (coming soon)",
+    "Ctrl+Shift+N — quick capture a new note",
+    "Drag node to another node — create a link",
+    "Drag node to black hole — delete note",
+    "Double-click empty space — create new note",
+    "Mouse wheel — zoom in/out",
   ];
 
-  function showDuplicateWarning(source: string, target: string, linkType: string, x: number, y: number) {
+  function showDuplicateWarning(
+    source: string,
+    target: string,
+    linkType: string,
+    x: number,
+    y: number,
+  ) {
     const stableLinkId = `${source}-${target}-${linkType}`;
     highlightedLinkId = stableLinkId;
-    duplicateWarning = { message: 'This link already exists', x, y, linkId: stableLinkId };
+    duplicateWarning = {
+      message: "This link already exists",
+      x,
+      y,
+      linkId: stableLinkId,
+    };
 
     if (duplicateWarningTimeout) clearTimeout(duplicateWarningTimeout);
     if (highlightedLinkTimeout) clearTimeout(highlightedLinkTimeout);
@@ -87,15 +119,15 @@ export function createGraphCanvasState() {
   function showUndoToastFor(nodeId: string) {
     lastDeletedNodeId = nodeId;
     showUndoToast = true;
-    undoToastStage = 'done';
+    undoToastStage = "done";
     if (undoToastTimeout) clearTimeout(undoToastTimeout);
 
     undoToastTimeout = setTimeout(() => {
-      undoToastStage = 'restore';
+      undoToastStage = "restore";
       undoToastTimeout = setTimeout(() => {
         showUndoToast = false;
         lastDeletedNodeId = null;
-        undoToastStage = 'done';
+        undoToastStage = "done";
       }, 5000);
     }, 1500);
   }
@@ -106,21 +138,25 @@ export function createGraphCanvasState() {
     }
     showUndoToast = false;
     lastDeletedNodeId = null;
-    undoToastStage = 'done';
+    undoToastStage = "done";
     if (undoToastTimeout) clearTimeout(undoToastTimeout);
   }
 
   function cancelUndo() {
     showUndoToast = false;
     lastDeletedNodeId = null;
-    undoToastStage = 'done';
+    undoToastStage = "done";
     if (undoToastTimeout) clearTimeout(undoToastTimeout);
   }
 
   function handleCreateNote(
     noteFormState: NoteFormState,
-    onNoteCreate?: (data: { title: string; content: string; type: string }) => void,
-    redraw?: () => void
+    onNoteCreate?: (data: {
+      title: string;
+      content: string;
+      type: string;
+    }) => void,
+    redraw?: () => void,
   ) {
     createNote(noteFormState, {
       onNoteCreate: (data) => {
@@ -130,11 +166,14 @@ export function createGraphCanvasState() {
       },
       onFormClose: () => {
         redraw?.();
-      }
+      },
     });
   }
 
-  function handleNoteFormClose(noteFormState: NoteFormState, redraw?: () => void) {
+  function handleNoteFormClose(
+    noteFormState: NoteFormState,
+    redraw?: () => void,
+  ) {
     closeNoteForm(noteFormState);
     redraw?.();
   }
@@ -142,8 +181,13 @@ export function createGraphCanvasState() {
   function handleCreateLink(
     linkFormState: LinkFormState,
     links: GraphLinkInput[],
-    onLinkCreate?: (link: { source: string; target: string; link_type: string; weight: number }) => void,
-    redraw?: () => void
+    onLinkCreate?: (link: {
+      source: string;
+      target: string;
+      link_type: string;
+      weight: number;
+    }) => void,
+    redraw?: () => void,
   ) {
     createLink(linkFormState, links, {
       onLinkCreate: (link) => {
@@ -156,34 +200,54 @@ export function createGraphCanvasState() {
       },
       onDuplicateWarning: (source, target, linkType, x, y) => {
         showDuplicateWarning(source, target, linkType, x, y);
-      }
+      },
     });
   }
 
-  function handleLinkFormClose(linkFormState: LinkFormState, redraw?: () => void) {
+  function handleLinkFormClose(
+    linkFormState: LinkFormState,
+    redraw?: () => void,
+  ) {
     closeLinkForm(linkFormState);
     redraw?.();
   }
 
-  function handleLinkEdit(onLinkEdit?: (link: { source: string; target: string; link_type: string; weight: number }) => void) {
+  function handleLinkEdit(
+    onLinkEdit?: (link: {
+      source: string;
+      target: string;
+      link_type: string;
+      weight: number;
+    }) => void,
+  ) {
     if (hoveredLink && onLinkEdit) {
       onLinkEdit(hoveredLink);
     }
     hoveredLink = null;
   }
 
-  function handleLinkDelete(onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void) {
+  function handleLinkDelete(
+    onLinkDelete?: (link: {
+      source: string;
+      target: string;
+      link_type: string;
+    }) => void,
+  ) {
     if (hoveredLink && onLinkDelete) {
       onLinkDelete({
         source: hoveredLink.source,
         target: hoveredLink.target,
-        link_type: hoveredLink.link_type
+        link_type: hoveredLink.link_type,
       });
     }
     hoveredLink = null;
   }
 
-  function handleUpdateSearch(hotkeysState: HotkeysState, simState: SimulationState, redraw?: () => void) {
+  function handleUpdateSearch(
+    hotkeysState: HotkeysState,
+    simState: SimulationState,
+    redraw?: () => void,
+  ) {
     updateSearch(hotkeysState, getSimulationNodes(simState));
     redraw?.();
   }
@@ -199,7 +263,7 @@ export function createGraphCanvasState() {
 
   function handleCloseSearch(hotkeysState: HotkeysState, redraw?: () => void) {
     hotkeysState.showSearchBox = false;
-    hotkeysState.searchQuery = '';
+    hotkeysState.searchQuery = "";
     hotkeysState.searchMatchIds = [];
     hotkeysState.searchCurrentIndex = 0;
     redraw?.();
@@ -207,7 +271,7 @@ export function createGraphCanvasState() {
 
   function handleOpenSearch(hotkeysState: HotkeysState) {
     hotkeysState.showSearchBox = true;
-    hotkeysState.searchQuery = '';
+    hotkeysState.searchQuery = "";
     hotkeysState.searchMatchIds = [];
     hotkeysState.searchCurrentIndex = 0;
   }
@@ -222,7 +286,7 @@ export function createGraphCanvasState() {
     width: number,
     height: number,
     simState: SimulationState,
-    transform: TransformState
+    transform: TransformState,
   ) {
     const simNodes = getSimulationNodes(simState);
     if (ctx && simNodes.length > 0) {
@@ -231,24 +295,60 @@ export function createGraphCanvasState() {
   }
 
   return {
-    get hoveredLink() { return hoveredLink; },
-    set hoveredLink(value) { hoveredLink = value; },
-    get tooltipPosition() { return tooltipPosition; },
-    set tooltipPosition(value) { tooltipPosition = value; },
-    get hoveredNodeId() { return hoveredNodeId; },
-    set hoveredNodeId(value) { hoveredNodeId = value; },
-    get duplicateWarning() { return duplicateWarning; },
-    get duplicateWarningTimeout() { return duplicateWarningTimeout; },
-    get highlightedLinkId() { return highlightedLinkId; },
-    get highlightedLinkTimeout() { return highlightedLinkTimeout; },
-    get lastDeletedNodeId() { return lastDeletedNodeId; },
-    get showUndoToast() { return showUndoToast; },
-    get undoToastStage() { return undoToastStage; },
-    get undoToastTimeout() { return undoToastTimeout; },
-    get focusMode() { return focusMode; },
-    set focusMode(value) { focusMode = value; },
-    get selectedNodeId() { return selectedNodeId; },
-    set selectedNodeId(value) { selectedNodeId = value; },
+    get hoveredLink() {
+      return hoveredLink;
+    },
+    set hoveredLink(value) {
+      hoveredLink = value;
+    },
+    get tooltipPosition() {
+      return tooltipPosition;
+    },
+    set tooltipPosition(value) {
+      tooltipPosition = value;
+    },
+    get hoveredNodeId() {
+      return hoveredNodeId;
+    },
+    set hoveredNodeId(value) {
+      hoveredNodeId = value;
+    },
+    get duplicateWarning() {
+      return duplicateWarning;
+    },
+    get duplicateWarningTimeout() {
+      return duplicateWarningTimeout;
+    },
+    get highlightedLinkId() {
+      return highlightedLinkId;
+    },
+    get highlightedLinkTimeout() {
+      return highlightedLinkTimeout;
+    },
+    get lastDeletedNodeId() {
+      return lastDeletedNodeId;
+    },
+    get showUndoToast() {
+      return showUndoToast;
+    },
+    get undoToastStage() {
+      return undoToastStage;
+    },
+    get undoToastTimeout() {
+      return undoToastTimeout;
+    },
+    get focusMode() {
+      return focusMode;
+    },
+    set focusMode(value) {
+      focusMode = value;
+    },
+    get selectedNodeId() {
+      return selectedNodeId;
+    },
+    set selectedNodeId(value) {
+      selectedNodeId = value;
+    },
     hotkeyLines,
     showDuplicateWarning,
     showUndoToastFor,
@@ -266,29 +366,37 @@ export function createGraphCanvasState() {
     handleCloseSearch,
     handleOpenSearch,
     handleToggleFocus,
-    handleResetView
+    handleResetView,
   };
 }
 
 export function isTechnicalNode(
   nodes: Array<{ id: string; type?: string }>,
-  nodeId: string
+  nodeId: string,
 ): boolean {
-  return nodes.some((n) => n.id === nodeId && n.type === 'technical');
+  return nodes.some((n) => n.id === nodeId && n.type === "technical");
 }
 
 export function pinTechnicalNodes<
-  T extends { id: string; title: string; type?: string; createdAt?: string; created_at?: string }
->(nodeList: T[]): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
+  T extends {
+    id: string;
+    title: string;
+    type?: string;
+    createdAt?: string;
+    created_at?: string;
+  },
+>(
+  nodeList: T[],
+): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
   return nodeList.map((n) => {
-    if (n.type === 'technical') {
+    if (n.type === "technical") {
       const padding = 60;
       return {
         ...n,
         x: padding,
         y: padding,
         fx: padding,
-        fy: padding
+        fy: padding,
       };
     }
     return n;
