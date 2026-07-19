@@ -2,6 +2,7 @@
   import Button from "$components/atoms/Button.svelte";
   import Modal from "$components/atoms/Modal.svelte";
   import { mode } from "$shared/stores/lexicon-settings";
+  import { Theme } from "$shared/lib/domain";
 
   interface Props {
     open: boolean;
@@ -28,6 +29,7 @@
   /* eslint-enable prefer-const */
 
   let currentMode = $state("standard");
+  const theme = $derived(Theme.fromString(currentMode));
 
   // Subscribe to mode changes
   $effect(() => {
@@ -37,19 +39,13 @@
 
   // Compute display values reactively
   const displayTitle = $derived(
-    currentMode === "galactic" && title === "Confirm"
-      ? "Confirm Trajectory"
-      : title,
+    theme.transformLabel(title, { Confirm: "Confirm Trajectory" }),
   );
   const displayConfirmText = $derived(
-    currentMode === "galactic" && confirmText === "Confirm"
-      ? "Engage"
-      : confirmText,
+    theme.transformLabel(confirmText, { Confirm: "Engage" }),
   );
   const displayCancelText = $derived(
-    currentMode === "galactic" && cancelText === "Cancel"
-      ? "Abort"
-      : cancelText,
+    theme.transformLabel(cancelText, { Cancel: "Abort" }),
   );
 
   function handleConfirm() {

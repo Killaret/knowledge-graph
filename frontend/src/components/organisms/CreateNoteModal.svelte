@@ -6,7 +6,7 @@
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import { getMessage, mode } from "$shared/stores/lexicon-settings";
-  import { CelestialBody } from "$shared/lib/domain";
+  import { CelestialBody, Theme } from "$shared/lib/domain";
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
@@ -22,43 +22,29 @@
   let type = $state<string>(CelestialBody.STAR.type);
   let loading = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
-  let modalTitle = $state("Create New Note");
-  let titleLabel = $state("Title *");
-  let typeLabel = $state("Type");
-  let contentLabel = $state("Content");
-  let cancelText = $state("Cancel");
-  let createText = $state("Create Note");
-  let creatingText = $state("Creating...");
-  let titlePlaceholder = $state("Enter note title...");
-  let contentPlaceholder = $state("Enter note content...");
+  let currentMode = $state("standard");
+  const theme = $derived(Theme.fromString(currentMode));
 
-  // Update labels based on galactic mode
+  // Subscribe to mode changes
   $effect(() => {
-    let currentMode = "standard";
-    mode.subscribe((m) => (currentMode = m))();
-
-    if (currentMode === "galactic") {
-      modalTitle = "Ignite New Star";
-      titleLabel = "Star Name *";
-      typeLabel = "Celestial Type";
-      contentLabel = "Star Data";
-      cancelText = "Abort Mission";
-      createText = "Ignite Star";
-      creatingText = "Igniting...";
-      titlePlaceholder = "Enter star name...";
-      contentPlaceholder = "Enter star data...";
-    } else {
-      modalTitle = "Create New Note";
-      titleLabel = "Title *";
-      typeLabel = "Type";
-      contentLabel = "Content";
-      cancelText = "Cancel";
-      createText = "Create Note";
-      creatingText = "Creating...";
-      titlePlaceholder = "Enter note title...";
-      contentPlaceholder = "Enter note content...";
-    }
+    const unsubscribe = mode.subscribe((m) => (currentMode = m));
+    return unsubscribe;
   });
+
+  // Computed labels based on theme
+  const modalTitle = $derived(theme.choose("Create New Note", "Ignite New Star"));
+  const titleLabel = $derived(theme.choose("Title *", "Star Name *"));
+  const typeLabel = $derived(theme.choose("Type", "Celestial Type"));
+  const contentLabel = $derived(theme.choose("Content", "Star Data"));
+  const cancelText = $derived(theme.choose("Cancel", "Abort Mission"));
+  const createText = $derived(theme.choose("Create Note", "Ignite Star"));
+  const creatingText = $derived(theme.choose("Creating...", "Igniting..."));
+  const titlePlaceholder = $derived(
+    theme.choose("Enter note title...", "Enter star name..."),
+  );
+  const contentPlaceholder = $derived(
+    theme.choose("Enter note content...", "Enter star data..."),
+  );
 
   async function handleSubmit(e: Event) {
     e.preventDefault();

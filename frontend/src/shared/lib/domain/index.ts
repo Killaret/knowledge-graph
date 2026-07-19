@@ -22,3 +22,6 @@ export type { NotificationProps, NotificationType } from "./notification";
 
 export { FilterState } from "./filter-state";
 export type { FilterStateProps, FilterView, SortBy } from "./filter-state";
+
+export { Theme } from "./theme";
+export type { ThemeProps, ThemeMode } from "./theme";

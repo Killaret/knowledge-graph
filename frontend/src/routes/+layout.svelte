@@ -16,6 +16,7 @@
   import { startPreload } from "$shared/services/PreloadService";
   import { achievementsStore } from "$shared/stores/achievements";
   import { mode, getMessage } from "$shared/stores/lexicon-settings";
+  import { Theme } from "$shared/lib/domain";
 
   const { children } = $props();
 
@@ -110,7 +111,7 @@
   $effect(() => {
     let currentMode = "standard";
     mode.subscribe((m) => (currentMode = m))();
-    toastGalacticMode = currentMode === "galactic";
+    toastGalacticMode = Theme.fromString(currentMode).isGalactic;
   });
 
   async function showAchievementNotification(achievement: { title: string }) {

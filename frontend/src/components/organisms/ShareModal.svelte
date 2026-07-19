@@ -3,6 +3,7 @@
   import { shareNote, createShareLink } from "$shared/api/sharing.js";
   import type { NoteShare, ShareLink } from "$shared/types";
   import { mode } from "$shared/stores/lexicon-settings";
+  import { Theme } from "$shared/lib/domain";
 
   interface Props {
     noteId: string;
@@ -34,6 +35,7 @@
 
   // Galactic mode state
   let currentMode = $state("standard");
+  const theme = $derived(Theme.fromString(currentMode));
 
   // Subscribe to mode changes
   $effect(() => {
@@ -42,86 +44,52 @@
   });
 
   // Computed labels based on mode
-  const modalTitle = $derived(
-    currentMode === "galactic" ? "Open Portal" : "Share Note",
-  );
-  const tabUsers = $derived(
-    currentMode === "galactic" ? "To Traveler" : "To User",
-  );
-  const tabLink = $derived(
-    currentMode === "galactic" ? "Via Wormhole" : "By Link",
-  );
-  const emailLabel = $derived(
-    currentMode === "galactic" ? "Traveler Email" : "User Email",
-  );
+  const modalTitle = $derived(theme.choose("Share Note", "Open Portal"));
+  const tabUsers = $derived(theme.choose("To User", "To Traveler"));
+  const tabLink = $derived(theme.choose("By Link", "Via Wormhole"));
+  const emailLabel = $derived(theme.choose("User Email", "Traveler Email"));
   const emailPlaceholder = $derived(
-    currentMode === "galactic" ? "traveler@cosmos.net" : "user@example.com",
+    theme.choose("user@example.com", "traveler@cosmos.net"),
   );
-  const accessLevelLabel = $derived(
-    currentMode === "galactic" ? "Access Level" : "Access Level",
-  );
-  const viewOnlyText = $derived(
-    currentMode === "galactic" ? "Observation Only" : "View Only",
-  );
-  const editText = $derived(
-    currentMode === "galactic" ? "Modification" : "Edit",
-  );
-  const grantAccessText = $derived(
-    currentMode === "galactic" ? "Open Portal" : "Grant Access",
-  );
+  const accessLevelLabel = $derived(theme.choose("Access Level", "Access Level"));
+  const viewOnlyText = $derived(theme.choose("View Only", "Observation Only"));
+  const editText = $derived(theme.choose("Edit", "Modification"));
+  const grantAccessText = $derived(theme.choose("Grant Access", "Open Portal"));
   const grantingText = $derived(
-    currentMode === "galactic" ? "Opening Portal..." : "Granting Access...",
+    theme.choose("Granting Access...", "Opening Portal..."),
   );
   const expiresLabel = $derived(
-    currentMode === "galactic" ? "Expires (hours)" : "Expires (hours)",
+    theme.choose("Expires (hours)", "Expires (hours)"),
   );
-  const expiresPlaceholder = $derived(
-    currentMode === "galactic" ? "Indefinite" : "Indefinite",
-  );
-  const maxUsesLabel = $derived(
-    currentMode === "galactic" ? "Max Uses" : "Max Uses",
-  );
-  const maxUsesPlaceholder = $derived(
-    currentMode === "galactic" ? "Unlimited" : "Unlimited",
-  );
-  const linkLabel = $derived(
-    currentMode === "galactic" ? "Portal Link" : "Access Link",
-  );
-  const copyText = $derived(currentMode === "galactic" ? "Copy" : "Copy");
-  const createLinkText = $derived(
-    currentMode === "galactic" ? "Create Portal" : "Create Link",
-  );
+  const expiresPlaceholder = $derived(theme.choose("Indefinite", "Indefinite"));
+  const maxUsesLabel = $derived(theme.choose("Max Uses", "Max Uses"));
+  const maxUsesPlaceholder = $derived(theme.choose("Unlimited", "Unlimited"));
+  const linkLabel = $derived(theme.choose("Access Link", "Portal Link"));
+  const copyText = $derived(theme.choose("Copy", "Copy"));
+  const createLinkText = $derived(theme.choose("Create Link", "Create Portal"));
   const createNewLinkText = $derived(
-    currentMode === "galactic" ? "Create New Portal" : "Create New Link",
+    theme.choose("Create New Link", "Create New Portal"),
   );
   const creatingLinkText = $derived(
-    currentMode === "galactic" ? "Opening Portal..." : "Creating link...",
+    theme.choose("Creating link...", "Opening Portal..."),
   );
   const accessGrantedMsg = $derived((email: string) =>
-    currentMode === "galactic"
-      ? `Portal opened for ${email}`
-      : `Access granted to ${email}`,
+    theme.choose(`Access granted to ${email}`, `Portal opened for ${email}`),
   );
   const linkCreatedMsg = $derived(
-    currentMode === "galactic" ? "Portal opened" : "Access link created",
+    theme.choose("Access link created", "Portal opened"),
   );
   const linkCopiedMsg = $derived(
-    currentMode === "galactic"
-      ? "Portal coordinates copied"
-      : "Link copied to clipboard",
+    theme.choose("Link copied to clipboard", "Portal coordinates copied"),
   );
   const emailRequiredMsg = $derived(
-    currentMode === "galactic" ? "Enter traveler email" : "Enter user email",
+    theme.choose("Enter user email", "Enter traveler email"),
   );
   const shareErrorMsg = $derived(
-    currentMode === "galactic"
-      ? "Portal opening failed"
-      : "Access grant failed",
+    theme.choose("Access grant failed", "Portal opening failed"),
   );
   const linkErrorMsg = $derived(
-    currentMode === "galactic"
-      ? "Portal creation failed"
-      : "Link creation failed",
+    theme.choose("Link creation failed", "Portal creation failed"),
   );
 
   function closeModal() {
