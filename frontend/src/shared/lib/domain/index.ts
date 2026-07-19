@@ -16,3 +16,6 @@ export type { AchievementProps, AchievementApiData } from "./achievement";
 
 export { SearchQuery } from "./search-query";
 export type { SearchQueryProps } from "./search-query";
+
+export { Notification } from "./notification";
+export type { NotificationProps, NotificationType } from "./notification";

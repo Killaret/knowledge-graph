@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { Notification } from "$shared/lib/domain";
 
   interface Props {
     message: string;
@@ -22,29 +23,9 @@
   let intervalId: ReturnType<typeof setInterval>;
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  // Icons for different types
-  const icons = {
-    success: "✅",
-    error: "❌",
-    info: "ℹ️",
-    warning: "⚠️",
-  };
-
-  // Galactic icons
-  const galacticIcons = {
-    success: "⭐",
-    error: "💥",
-    info: "🔭",
-    warning: "🚨",
-  };
-
-  // CSS classes for different types
-  const typeClasses = {
-    success: "toast-success",
-    error: "toast-error",
-    info: "toast-info",
-    warning: "toast-warning",
-  };
+  const notification = $derived(
+    new Notification({ message, type, duration, useGalacticMode }),
+  );
 
   onMount(() => {
     // Animate in
@@ -88,12 +69,8 @@
     }
   }
 
-  const displayIcon = $derived(
-    useGalacticMode ? galacticIcons[type] : icons[type],
-  );
-  const toastClass = $derived(
-    `toast-notification ${typeClasses[type]} ${visible ? "visible" : ""}`,
-  );
+  const displayIcon = $derived(notification.icon);
+  const toastClass = $derived(notification.cssClass(visible));
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
