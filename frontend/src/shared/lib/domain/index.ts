@@ -13,3 +13,6 @@ export type { GraphDeltaProps } from "./graph-delta";
 
 export { Achievement } from "./achievement";
 export type { AchievementProps, AchievementApiData } from "./achievement";
+
+export { SearchQuery } from "./search-query";
+export type { SearchQueryProps } from "./search-query";

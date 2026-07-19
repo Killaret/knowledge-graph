@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import { browser } from "$app/environment";
   import { onMount, untrack } from "svelte";
+  import { SearchQuery } from "$shared/lib/domain";
   import { addJitter } from "$shared/utils/jitter";
 
   // Props
@@ -17,7 +18,7 @@
   // Sync with URL parameter when URL changes (not when query changes)
   // Use untrack to prevent this effect from re-running when query changes
   $effect(() => {
-    const q = $page.url.searchParams.get("q") || "";
+    const q = SearchQuery.fromURL($page.url.searchParams.get("q")).value;
     if (q !== untrack(() => query)) {
       query = q;
     }
@@ -25,11 +26,10 @@
 
   // Perform search (navigate to search page)
   function doSearch() {
-    const trimmed = query.trim();
-    if (trimmed) {
-      goto(`/search?q=${encodeURIComponent(trimmed)}`);
+    const searchQuery = new SearchQuery(query);
+    if (!searchQuery.isEmpty()) {
+      goto(`/search?q=${searchQuery.toURL()}`);
     }
-    // Empty query - don't navigate
   }
 
   // Debounce for automatic search while typing (optional)

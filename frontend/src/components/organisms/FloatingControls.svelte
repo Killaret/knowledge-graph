@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { SearchQuery } from "$shared/lib/domain";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
   const {
@@ -41,7 +42,8 @@
   }
 
   function handleSearch() {
-    onSearch?.(searchQuery);
+    const q = new SearchQuery(searchQuery);
+    onSearch?.(q.value);
   }
 
   function toggleView(targetView: "graph" | "list") {

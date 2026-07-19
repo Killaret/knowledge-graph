@@ -1,7 +1,7 @@
 <script lang="ts">
   import { searchNotes } from "$shared/api/notes";
   import { createLink, type CreateLinkData } from "$shared/api/links";
-  import { LinkType } from "$shared/lib/domain";
+  import { LinkType, SearchQuery } from "$shared/lib/domain";
   import { addJitter } from "$shared/utils/jitter";
 
   const {
@@ -29,7 +29,8 @@
   let debounceTimer: ReturnType<typeof setTimeout>;
 
   async function handleSearch() {
-    if (!searchQuery.trim()) {
+    const q = new SearchQuery(searchQuery);
+    if (q.isEmpty()) {
       searchResults = [];
       return;
     }
@@ -38,7 +39,7 @@
     error = null;
 
     try {
-      const result = await searchNotes(searchQuery, 1, 10);
+      const result = await searchNotes(q.value, 1, 10);
       // Исключаем текущую заметку из результатов
       searchResults = result.data.filter((note) => note.id !== sourceNoteId);
     } catch (err) {

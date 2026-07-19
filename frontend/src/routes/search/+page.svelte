@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { searchNotes, type Note } from "$shared/api/notes";
+  import { SearchQuery } from "$shared/lib/domain";
   import SearchBar from "$components/molecules/SearchBar.svelte";
   import NoteCard from "$components/molecules/NoteCard.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
@@ -16,13 +17,13 @@
 
   // Get parameters from URL and perform search
   $effect(() => {
-    const q = $page.url.searchParams.get("q") || "";
+    const q = SearchQuery.fromURL($page.url.searchParams.get("q"));
     const pageParam = $page.url.searchParams.get("page");
     const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
     currentPage = pageNum > 0 ? pageNum : 1;
 
-    if (q) {
-      performSearch(q, currentPage);
+    if (!q.isEmpty()) {
+      performSearch(q.value, currentPage);
     } else {
       // If query is empty, redirect to home page
       goto("/");
@@ -48,8 +49,8 @@
   // Navigate to different page
   function goToPage(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    const q = $page.url.searchParams.get("q") || "";
-    goto(`/search?q=${encodeURIComponent(q)}&page=${newPage}`);
+    const q = SearchQuery.fromURL($page.url.searchParams.get("q"));
+    goto(`/search?q=${q.toURL()}&page=${newPage}`);
   }
 
   function getPluralForm(
