@@ -7,6 +7,7 @@ import {
 import { getFullGraphData } from "$shared/api/graph";
 import { getAllAchievements, getMyAchievements } from "$shared/api/users";
 import type { GraphData } from "$shared/api/graph";
+import { UserPoints } from "$shared/lib/domain";
 
 /**
  * Хук для получения данных графа с использованием предзагруженных данных
@@ -114,6 +115,7 @@ export async function loadAppData(
     graph: boolean;
     achievements: boolean;
   };
+  userPoints?: UserPoints;
 }> {
   const { limit = 1000, usePersonalAchievements = false } = options;
 
@@ -128,6 +130,11 @@ export async function loadAppData(
     achievementsPromise,
   ]);
 
+  const userPoints = UserPoints.fromApi({
+    achievements: achievementsResult.achievements,
+    total_points: achievementsResult.total_points,
+  });
+
   const usedPreloaded = {
     graph: !!getPreloadedGraph(),
     achievements: false,
@@ -137,6 +144,7 @@ export async function loadAppData(
     graph,
     achievements: achievementsResult.achievements,
     totalPoints: achievementsResult.total_points,
+    userPoints,
     usedPreloaded,
   };
 }

@@ -10,6 +10,7 @@ import {
 import { PreloadService } from "$shared/services/PreloadService";
 import * as graphApi from "$shared/api/graph";
 import * as usersApi from "$shared/api/users";
+import { UserPoints } from "$shared/lib/domain";
 import {
   mockGraphData,
   mockAchievementsData,
@@ -236,6 +237,8 @@ describe("usePreloadedData Hooks", () => {
       expect(result.usedPreloaded.graph).toBe(true);
       expect(result.usedPreloaded.achievements).toBe(false);
       expect(result.totalPoints).toBeUndefined();
+      expect(result.userPoints).toBeInstanceOf(UserPoints);
+      expect(result.userPoints?.computedTotal).toBe(25);
     });
 
     it("should load data from server when no preloaded data", async () => {
@@ -256,6 +259,9 @@ describe("usePreloadedData Hooks", () => {
         mockPersonalAchievementsData.achievements,
       );
       expect(result.totalPoints).toBe(35);
+      expect(result.userPoints).toBeInstanceOf(UserPoints);
+      expect(result.userPoints?.total).toBe(35);
+      expect(result.userPoints?.isConsistent).toBe(true);
       expect(result.usedPreloaded.achievements).toBe(false); // Всегда false для персональных
     });
 

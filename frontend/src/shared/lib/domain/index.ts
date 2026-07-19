@@ -28,3 +28,6 @@ export type { ThemeProps, ThemeMode } from "./theme";
 
 export { GraphMode } from "./graph-mode";
 export type { GraphModeProps, GraphModeType } from "./graph-mode";
+
+export { UserPoints } from "./user-points";
+export type { UserPointsProps, UserPointsApiData } from "./user-points";
