@@ -13,7 +13,7 @@ function getGraphApi() {
       ? "/graph-service/api"
       : import.meta.env.VITE_GRAPH_SERVICE_URL || "/graph-service";
 
-  return api.extend({ prefixUrl: baseUrl });
+  return api.extend({ prefixUrl: baseUrl, cache: "no-store" });
 }
 
 // Узел графа – заметка (звезда)

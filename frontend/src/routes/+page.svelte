@@ -678,20 +678,6 @@
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
         />
-        <!-- Stats Overlay -->
-        <div class="graph-stats-overlay" data-testid="graph-stats">
-          <span class="stat-item"
-            ><strong>{filteredGraphData.nodes.length}</strong> nodes</span
-          >
-          <span class="stat-item"
-            ><strong>{filteredGraphData.links.length}</strong> links</span
-          >
-          {#if filterState.isTypeActive}
-            <span class="stat-filter"
-              >{filterState.getSelectedTypeLabel(typeFilters)}</span
-            >
-          {/if}
-        </div>
       {:else}
         <div class="empty-state">
           <StateIllustration type="no-links" />
@@ -950,32 +936,6 @@
   .fullscreen-graph :global(canvas) {
     width: 100% !important;
     height: 100% !important;
-  }
-
-  /* Stats Overlay on Graph */
-  .graph-stats-overlay {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    display: flex;
-    gap: 16px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    color: #94a3b8;
-    font-size: 14px;
-    z-index: 10;
-  }
-
-  .stat-item strong {
-    color: #88aaff;
-    font-weight: 600;
-  }
-
-  .stat-filter {
-    color: #64748b;
-    font-style: italic;
   }
 
   /* List Container */
@@ -1300,13 +1260,6 @@
     .list-container {
       padding: 16px;
       height: calc(100vh - 50px);
-    }
-
-    .graph-stats-overlay {
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      flex-wrap: wrap;
     }
   }
 </style>

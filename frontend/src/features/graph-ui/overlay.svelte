@@ -177,6 +177,7 @@
 {#if hotkeysState.showSearchBox}
   <div
     class="search-box"
+    data-testid="search-box"
     style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(10, 26, 58, 0.9); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.4);"
   >
     <span style="color: rgba(255,255,255,0.6); font-size: 14px;">🔍</span>

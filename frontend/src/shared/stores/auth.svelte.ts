@@ -135,9 +135,9 @@ export async function initAuth(): Promise<void> {
       if (refreshed) {
         try {
           const user = await usersApi.getMe();
+          await applyUserSettings();
           authState.currentUser = user;
           void preloadAuthenticatedGraph();
-          void applyUserSettings();
         } catch {
           // If getting user fails, clear auth state
           clearAuthState();

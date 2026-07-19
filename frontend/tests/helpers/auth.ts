@@ -20,8 +20,13 @@ export async function loginAsTestUser(page: Page, request: APIRequestContext) {
 
   await page.addInitScript(
     (tokens: { access: string; refresh: string }) => {
-      localStorage.setItem("access_token", tokens.access);
-      localStorage.setItem("refresh_token", tokens.refresh);
+      // Only seed tokens on first load; after a refresh the auth store may have
+      // rotated to a newer refresh token, and overwriting it would revoke the
+      // active session.
+      if (!localStorage.getItem("refresh_token")) {
+        localStorage.setItem("access_token", tokens.access);
+        localStorage.setItem("refresh_token", tokens.refresh);
+      }
       // Disable any SKIP_AUTH bypass from setup projects
       (window as any).__SKIP_AUTH__ = false;
     },
