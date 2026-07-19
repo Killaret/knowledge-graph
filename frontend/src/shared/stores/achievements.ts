@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { Achievement } from "$shared/services/achievements";
+import { Achievement } from "$shared/lib/domain";
 import * as svc from "$shared/services/achievements";
 import { ACHIEVEMENT_POLL_INTERVAL_MS } from "$shared/config";
 import { isAuthenticated } from "./auth.svelte";
@@ -9,7 +9,7 @@ function createAchievementsStore() {
     all: Achievement[];
     new: Achievement[];
   }>({ all: [], new: [] });
-  let timer: any = null;
+  let timer: ReturnType<typeof setInterval> | null = null;
   let consecutiveErrors = 0;
   const MAX_CONSECUTIVE_ERRORS = 5;
 
@@ -18,8 +18,7 @@ function createAchievementsStore() {
     try {
       const list = await svc.fetchUserAchievements();
       consecutiveErrors = 0;
-      // new items: notification_seen === false
-      const newOnes = list.filter((i) => !i.notification_seen);
+      const newOnes = list.filter((a) => a.isNew());
       set({ all: list, new: newOnes });
     } catch (e) {
       consecutiveErrors++;

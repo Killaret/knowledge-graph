@@ -113,13 +113,9 @@
     toastGalacticMode = currentMode === "galactic";
   });
 
-  async function showAchievementNotification(achievement: any) {
+  async function showAchievementNotification(achievement: { title: string }) {
     try {
-      const msg = await getMessage(
-        "achievement",
-        "unlocked",
-        achievement.title || achievement.name_en || "Achievement",
-      );
+      const msg = await getMessage("achievement", "unlocked", achievement.title);
       toastMessage = msg;
       toastType = "success";
       showToast = true;

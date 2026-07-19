@@ -95,7 +95,7 @@ export interface UserSetting {
 }
 
 // Achievement types
-export interface Achievement {
+export interface AchievementData {
   id: string;
   code: string;
   title: string;

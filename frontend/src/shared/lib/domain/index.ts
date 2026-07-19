@@ -10,3 +10,6 @@ export type { LinkTypeProps } from "./link-type";
 
 export { GraphDelta } from "./graph-delta";
 export type { GraphDeltaProps } from "./graph-delta";
+
+export { Achievement } from "./achievement";
+export type { AchievementProps, AchievementApiData } from "./achievement";

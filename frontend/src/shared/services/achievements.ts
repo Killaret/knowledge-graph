@@ -1,29 +1,21 @@
 import api from "$shared/api/client";
+import { Achievement, type AchievementApiData } from "$shared/lib/domain";
 
-export type Achievement = {
-  id: string;
-  code: string;
-  name_ru?: string;
-  name_en?: string;
-  description_ru?: string;
-  description_en?: string;
-  icon_emoji?: string;
-  unlocked_at?: string | null;
-  notification_seen?: boolean;
-};
+export type { AchievementApiData } from "$shared/lib/domain";
+export { Achievement } from "$shared/lib/domain";
 
 export async function fetchAllAchievements(): Promise<Achievement[]> {
   const data = await api
     .get("v1/achievements")
-    .json<{ achievements: Achievement[] }>();
-  return data.achievements ?? [];
+    .json<{ achievements: AchievementApiData[] }>();
+  return (data.achievements ?? []).map((a) => Achievement.fromApi(a));
 }
 
 export async function fetchUserAchievements(): Promise<Achievement[]> {
   const data = await api
     .get("v1/users/me/achievements")
-    .json<{ achievements: Achievement[] }>();
-  return data.achievements ?? [];
+    .json<{ achievements: AchievementApiData[] }>();
+  return (data.achievements ?? []).map((a) => Achievement.fromApi(a));
 }
 
 export async function markAchievementSeen(id: string): Promise<void> {
