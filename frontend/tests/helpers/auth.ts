@@ -8,6 +8,16 @@ export const TEST_USER = {
 };
 
 export async function loginAsTestUser(page: Page, request: APIRequestContext) {
+  // When the backend runs in SKIP_AUTH mode the frontend should bypass the
+  // real login/refresh flow entirely. initAuth will create a fake user and
+  // tokens when it sees __SKIP_AUTH__ === true.
+  if (process.env.SKIP_AUTH === "true") {
+    await page.addInitScript(() => {
+      (window as any).__SKIP_AUTH__ = true;
+    });
+    return;
+  }
+
   const response = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
     data: TEST_USER,
     headers: { "Content-Type": "application/json" },
@@ -27,7 +37,6 @@ export async function loginAsTestUser(page: Page, request: APIRequestContext) {
         localStorage.setItem("access_token", tokens.access);
         localStorage.setItem("refresh_token", tokens.refresh);
       }
-      // Disable any SKIP_AUTH bypass from setup projects
       (window as any).__SKIP_AUTH__ = false;
     },
     { access: access_token, refresh: refresh_token },

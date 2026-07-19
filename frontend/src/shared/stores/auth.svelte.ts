@@ -108,6 +108,27 @@ export async function initAuth(): Promise<void> {
         }
       }
 
+      // In SKIP_AUTH mode we do not need real tokens or refresh flow.
+      if (skipAuthMode()) {
+        saveTokens({
+          access_token: "skip-auth-token",
+          refresh_token: "skip-auth-refresh",
+          token_type: "Bearer",
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        });
+        await applyUserSettings();
+        authState.currentUser = {
+          id: "skip-auth-user",
+          login: "testuser",
+          email: "test@example.com",
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as User;
+        void preloadAuthenticatedGraph();
+        return;
+      }
+
       // Try to load tokens from localStorage
       const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
       const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
