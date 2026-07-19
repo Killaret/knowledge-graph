@@ -116,7 +116,11 @@
 
   async function showAchievementNotification(achievement: { title: string }) {
     try {
-      const msg = await getMessage("achievement", "unlocked", achievement.title);
+      const msg = await getMessage(
+        "achievement",
+        "unlocked",
+        achievement.title,
+      );
       toastMessage = msg;
       toastType = "success";
       showToast = true;

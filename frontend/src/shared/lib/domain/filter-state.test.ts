@@ -28,7 +28,10 @@ describe("FilterState", () => {
   });
 
   it("filters by type", () => {
-    const notes = [note({ id: "1", type: "star" }), note({ id: "2", type: "planet" })];
+    const notes = [
+      note({ id: "1", type: "star" }),
+      note({ id: "2", type: "planet" }),
+    ];
     const f = new FilterState({ selectedType: "star" });
     const filtered = f.filterNotes(notes, getNoteType);
     expect(filtered).toHaveLength(1);
@@ -70,7 +73,10 @@ describe("FilterState", () => {
 
   it("filters graph data", () => {
     const graphData = {
-      nodes: [{ id: "1", title: "A" }, { id: "2", title: "B" }],
+      nodes: [
+        { id: "1", title: "A" },
+        { id: "2", title: "B" },
+      ],
       links: [{ source: "1", target: "2" }],
     };
     const notes = [

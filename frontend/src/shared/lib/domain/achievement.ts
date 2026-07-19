@@ -108,8 +108,7 @@ export class Achievement {
     const title =
       data.title ?? data.name_en ?? data.code ?? "Unknown achievement";
     const titleRu = data.name_ru ?? title;
-    const description =
-      data.description ?? data.description_en ?? "";
+    const description = data.description ?? data.description_en ?? "";
     const descriptionRu = data.description_ru ?? description;
     const icon = data.icon ?? data.icon_emoji ?? "🏆";
 

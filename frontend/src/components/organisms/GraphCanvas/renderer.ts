@@ -18,11 +18,8 @@ import { drawChromaticMaw } from "$shared/lib/graph/renderer/anomalies/chromatic
 import { drawVoidWhisper } from "$shared/lib/graph/renderer/anomalies/void-whisper";
 import { drawCosmicAbomination } from "$shared/lib/graph/renderer/anomalies/cosmic-abomination";
 export { drawChromaticMaw, drawVoidWhisper, drawCosmicAbomination };
-import { getLinkColor } from "$shared/lib/graph/link-color";
-import { getLineDash } from "$shared/lib/graph/line-dash";
-import { getNodeColor } from "$shared/lib/graph/node-color";
 import { getNodeGradient } from "$shared/lib/graph/node-gradient";
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody, LinkType } from "$shared/lib/domain";
 
 export type { SimulationNode, SimulationLink };
 export type { BlackHoleState } from "./black-hole";
@@ -612,8 +609,9 @@ export function drawAnimatedLink(
     hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
   const opacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : 1;
 
-  const color = getLinkColor(link.weight ?? 0.5, link.link_type, opacity);
-  const dashArray = getLineDash(link.link_type, link.weight);
+  const linkType = LinkType.fromString(link.link_type);
+  const color = linkType.getColor(link.weight ?? 0.5, opacity);
+  const dashArray = linkType.getLineDash(link.weight);
 
   // Draw base line
   ctx.beginPath();
@@ -658,21 +656,21 @@ export function drawLink(
   ctx.lineTo(targetNode.x!, targetNode.y!);
 
   const weight = link.weight ?? 0.5;
-  const linkType = link.link_type;
+  const linkType = LinkType.fromString(link.link_type);
 
   const lineWidth =
     Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = isDuplicateHighlighted
     ? `rgba(255, 204, 0, ${finalOpacity})`
-    : getLinkColor(weight, linkType, finalOpacity);
+    : linkType.getColor(weight, finalOpacity);
 
   if (isDuplicateHighlighted) {
     ctx.shadowBlur = 15;
     ctx.shadowColor = "rgba(255, 204, 0, 0.8)";
   }
 
-  const dash = getLineDash(linkType, weight);
+  const dash = linkType.getLineDash(weight);
   if (dash.length > 0) {
     ctx.setLineDash(dash);
   }
@@ -1180,7 +1178,7 @@ export function drawAllNodes(
         node.id,
         node.x || 0,
         node.y || 0,
-        getNodeColor(node.type),
+        CelestialBody.fromString(node.type).color,
       );
     }
   }

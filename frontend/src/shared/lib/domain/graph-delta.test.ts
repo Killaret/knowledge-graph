@@ -3,8 +3,6 @@ import { GraphDelta } from "./graph-delta";
 import type { GraphDeltaData } from "$shared/api/graph";
 
 describe("GraphDelta", () => {
-  const emptyData: GraphDeltaData = {};
-
   const fullData: GraphDeltaData = {
     added_nodes: [{ id: "1", title: "A" }],
     removed_nodes: ["2"],
@@ -31,7 +29,9 @@ describe("GraphDelta", () => {
   });
 
   it("detects when a full restart is required", () => {
-    const small = GraphDelta.fromAPI({ added_nodes: [{ id: "1", title: "A" }] });
+    const small = GraphDelta.fromAPI({
+      added_nodes: [{ id: "1", title: "A" }],
+    });
     expect(small.requiresFullRestart()).toBe(false);
 
     const large = GraphDelta.fromAPI({

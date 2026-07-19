@@ -34,9 +34,7 @@ export class GraphMode {
   }
 
   get borderColor(): string {
-    return this.isFocus
-      ? "rgba(139, 92, 246, 0.8)"
-      : "rgba(255,255,255,0.2)";
+    return this.isFocus ? "rgba(139, 92, 246, 0.8)" : "rgba(255,255,255,0.2)";
   }
 
   get textColor(): string {

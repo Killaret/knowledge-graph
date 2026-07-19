@@ -3,7 +3,8 @@ import { UserPoints } from "./user-points";
 import { Achievement } from "./achievement";
 
 describe("UserPoints", () => {
-  const makeAchievement = (overrides: Partial<{
+  const makeAchievement = (
+    overrides: Partial<{
       id: string;
       code: string;
       title: string;
@@ -16,7 +17,8 @@ describe("UserPoints", () => {
       hidden: boolean;
       obtainedAt: string | null;
       notificationSeen: boolean;
-    }> = {}) =>
+    }> = {},
+  ) =>
     new Achievement({
       id: "1",
       code: "code",

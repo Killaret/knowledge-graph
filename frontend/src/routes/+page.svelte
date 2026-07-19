@@ -56,9 +56,22 @@
   // Filter and sort state
   let selectedType = $state<string>("all");
   let sortBy = $state<"created" | "updated" | "type">("created");
-  const filterState = $derived(
-    new FilterState({ selectedType, sortBy, searchQuery, currentView }),
+  let filterState = $state(
+    new FilterState({
+      selectedType: "all",
+      sortBy: "created",
+      searchQuery: "",
+      currentView: "graph",
+    }),
   );
+  $effect(() => {
+    filterState = new FilterState({
+      selectedType,
+      sortBy,
+      searchQuery,
+      currentView,
+    });
+  });
   const selectedNoteIds = $state<Set<string>>(new Set());
   let selectionMode = $state(false);
   let lastDeletedNote: Note | null = $state(null);

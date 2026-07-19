@@ -119,7 +119,9 @@ class PreloadServiceClass {
    * Выполняет предзагрузку данных графа для аутентифицированного пользователя
    */
   private async performAuthenticatedPreload(): Promise<void> {
-    console.log("[PreloadService] Starting authenticated graph preload...");
+    if (import.meta.env.DEV) {
+      console.log("[PreloadService] Starting authenticated graph preload...");
+    }
 
     try {
       // Получаем только свежий граф (cached не нужен, так как fresh перезапишет)
@@ -133,9 +135,11 @@ class PreloadServiceClass {
       };
 
       if (freshResult.delta) {
-        console.log(
-          "[PreloadService] Delta available for authenticated update",
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            "[PreloadService] Delta available for authenticated update",
+          );
+        }
       }
     } catch (error) {
       console.error(
@@ -157,7 +161,9 @@ class PreloadServiceClass {
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
       };
-      console.log("[PreloadService] Public graph preloaded successfully");
+      if (import.meta.env.DEV) {
+        console.log("[PreloadService] Public graph preloaded successfully");
+      }
     } catch (error) {
       console.error("[PreloadService] Error preloading public graph:", error);
       throw error;
@@ -237,7 +243,9 @@ class PreloadServiceClass {
    * Очищает весь кэш (вызывается при выходе)
    */
   public clearCache(): void {
-    console.log("[PreloadService] Clearing preload cache...");
+    if (import.meta.env.DEV) {
+      console.log("[PreloadService] Clearing preload cache...");
+    }
     this.preloadedGraph = null;
     this.preloadedAchievements = null;
   }

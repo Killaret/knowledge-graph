@@ -64,8 +64,7 @@
     transition:fade={{ duration: 200 }}
   >
     <div class="tooltip-header">
-      <span class="link-type-badge">{linkTypeLabel}</span
-      >
+      <span class="link-type-badge">{linkTypeLabel}</span>
       {#if sourceType === "gamma"}
         <span class="gamma-badge">Recommended</span>
       {/if}

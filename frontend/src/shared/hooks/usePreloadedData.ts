@@ -20,12 +20,16 @@ export async function getGraphWithPreload(
   const preloadedData = getPreloadedGraph();
 
   if (preloadedData) {
-    console.log("[usePreloadedData] Using preloaded graph data");
+    if (import.meta.env.DEV) {
+      console.log("[usePreloadedData] Using preloaded graph data");
+    }
     return preloadedData;
   }
 
   // Если нет предзагруженных данных, загружаем с сервера
-  console.log("[usePreloadedData] Loading graph data from server");
+  if (import.meta.env.DEV) {
+    console.log("[usePreloadedData] Loading graph data from server");
+  }
   return await getFullGraphData(limit);
 }
 
@@ -49,9 +53,11 @@ export async function getAchievementsWithPreload(
   }>;
   total_points?: number;
 }> {
-  console.log(
-    `[usePreloadedData] Loading ${usePersonal ? "personal" : "all"} achievements from server`,
-  );
+  if (import.meta.env.DEV) {
+    console.log(
+      `[usePreloadedData] Loading ${usePersonal ? "personal" : "all"} achievements from server`,
+    );
+  }
 
   if (usePersonal) {
     return await getMyAchievements();

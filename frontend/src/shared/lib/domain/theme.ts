@@ -45,7 +45,10 @@ export class Theme {
    * Optionally transform a standard label when it exactly matches a known
    * default and the theme is galactic.
    */
-  transformLabel(standardLabel: string, galacticMap: Record<string, string>): string {
+  transformLabel(
+    standardLabel: string,
+    galacticMap: Record<string, string>,
+  ): string {
     if (!this.isGalactic) return standardLabel;
     return galacticMap[standardLabel] ?? standardLabel;
   }

@@ -32,7 +32,9 @@
   });
 
   // Computed labels based on theme
-  const modalTitle = $derived(theme.choose("Create New Note", "Ignite New Star"));
+  const modalTitle = $derived(
+    theme.choose("Create New Note", "Ignite New Star"),
+  );
   const titleLabel = $derived(theme.choose("Title *", "Star Name *"));
   const typeLabel = $derived(theme.choose("Type", "Celestial Type"));
   const contentLabel = $derived(theme.choose("Content", "Star Data"));

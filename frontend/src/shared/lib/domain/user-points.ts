@@ -39,8 +39,10 @@ export class UserPoints {
 
   /** True when the reported total matches the sum of earned achievements. */
   get isConsistent(): boolean {
-    return this.reportedTotal === undefined ||
-      this.reportedTotal === this.computedTotal;
+    return (
+      this.reportedTotal === undefined ||
+      this.reportedTotal === this.computedTotal
+    );
   }
 
   get earnedCount(): number {
@@ -68,7 +70,7 @@ export class UserPoints {
 
   static fromApi(data: UserPointsApiData): UserPoints {
     const achievements = (data.achievements ?? []).map((a) =>
-      Achievement.fromApi(a)
+      Achievement.fromApi(a),
     );
     return new UserPoints(achievements, data.total_points);
   }

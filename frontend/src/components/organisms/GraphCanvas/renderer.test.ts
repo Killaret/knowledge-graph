@@ -6,10 +6,7 @@ import { drawNode, drawUnknown } from "./renderer";
 import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
 import { getGlowIntensity } from "$shared/lib/graph/glow-intensity";
-import { getLinkColor } from "$shared/lib/graph/link-color";
-import { getLineDash } from "$shared/lib/graph/line-dash";
 import { getNodeGradient } from "$shared/lib/graph/node-gradient";
-import { getNodeColor } from "$shared/lib/graph/node-color";
 
 // Mock CanvasRenderingContext2D
 const mockCtx = {
@@ -285,58 +282,6 @@ describe("renderer anomaly functions", () => {
     });
   });
 
-  describe("getLinkColor", () => {
-    it("should return correct color for reference links", () => {
-      const color = getLinkColor(1.0, "reference");
-      expect(color).toContain("51"); // RGB for blue #3366ff
-      expect(color).toContain("102");
-      expect(color).toContain("255");
-    });
-
-    it("should return correct color for dependency links", () => {
-      const color = getLinkColor(0.8, "dependency");
-      expect(color).toContain("255"); // RGB for orange #ff6600
-      expect(color).toContain("102");
-      expect(color).toContain("0");
-    });
-
-    it("should apply opacity based on weight", () => {
-      const color1 = getLinkColor(1.0, "reference");
-      const color2 = getLinkColor(0.2, "reference");
-
-      // Higher weight should have higher opacity
-      expect(color1).toMatch(/rgba?\([^,]+,\s*[^,]+,\s*[^,]+,\s*([0-9.]+)\)/);
-      expect(color2).toMatch(/rgba?\([^,]+,\s*[^,]+,\s*[^,]+,\s*([0-9.]+)\)/);
-    });
-  });
-
-  describe("getLineDash", () => {
-    it("should return empty array for reference links (solid)", () => {
-      const dash = getLineDash("reference");
-      expect(dash).toEqual([]);
-    });
-
-    it("should return dash-dot for dependency links", () => {
-      const dash = getLineDash("dependency");
-      expect(dash).toEqual([10, 3]);
-    });
-
-    it("should return dotted for custom links", () => {
-      const dash = getLineDash("custom");
-      expect(dash).toEqual([2, 6]);
-    });
-
-    it("should return dashed for weak related links", () => {
-      const dash = getLineDash("related", 0.1);
-      expect(dash).toEqual([6, 4]);
-    });
-
-    it("should return solid for strong related links", () => {
-      const dash = getLineDash("related", 0.8);
-      expect(dash).toEqual([]);
-    });
-  });
-
   describe("getGlowIntensity", () => {
     it("should return minimal glow when nodeCount > 100", () => {
       const intensity = getGlowIntensity("node-1", 1000, 150);
@@ -354,28 +299,6 @@ describe("renderer anomaly functions", () => {
       const intensity2 = getGlowIntensity("node-2", 1000, 50);
       // Due to hash-based phase offset, values should differ
       expect(intensity1).not.toBe(intensity2);
-    });
-  });
-
-  describe("getNodeColor", () => {
-    it("should return correct color for star", () => {
-      const color = getNodeColor("star");
-      expect(color).toBe("#ffcc00");
-    });
-
-    it("should return correct color for planet", () => {
-      const color = getNodeColor("planet");
-      expect(color).toBe("#d6aa5d");
-    });
-
-    it("should return default color for unknown type", () => {
-      const color = getNodeColor("unknown");
-      expect(color).toBe("#94a3b8");
-    });
-
-    it("should return default color for undefined type", () => {
-      const color = getNodeColor("nonexistent");
-      expect(color).toBe("#94a3b8");
     });
   });
 

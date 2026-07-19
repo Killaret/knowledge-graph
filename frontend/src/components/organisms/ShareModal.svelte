@@ -51,7 +51,9 @@
   const emailPlaceholder = $derived(
     theme.choose("user@example.com", "traveler@cosmos.net"),
   );
-  const accessLevelLabel = $derived(theme.choose("Access Level", "Access Level"));
+  const accessLevelLabel = $derived(
+    theme.choose("Access Level", "Access Level"),
+  );
   const viewOnlyText = $derived(theme.choose("View Only", "Observation Only"));
   const editText = $derived(theme.choose("Edit", "Modification"));
   const grantAccessText = $derived(theme.choose("Grant Access", "Open Portal"));

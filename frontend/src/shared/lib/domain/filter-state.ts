@@ -115,8 +115,7 @@ export class FilterState {
     const allowedIds = new Set(
       allNotes
         .filter(
-          (n) =>
-            this.matchesType(n, getNoteType) && this.matchesSearch(n),
+          (n) => this.matchesType(n, getNoteType) && this.matchesSearch(n),
         )
         .map((n) => n.id),
     );

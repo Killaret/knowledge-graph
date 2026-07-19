@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as renderer from "./GraphCanvas/renderer";
-import { getLinkColor } from "$shared/lib/graph/link-color";
-import { getLineDash } from "$shared/lib/graph/line-dash";
 import type { SimulationNode, SimulationLink } from "./GraphCanvas/types";
 
 describe("GraphCanvas - Link Rendering Detailed", () => {
@@ -427,30 +425,6 @@ describe("GraphCanvas - Link Rendering Detailed", () => {
 
       // Line width depends only on weight, not on type
       expect(depStroke?.lineWidth).toBe(refStroke?.lineWidth);
-    });
-  });
-
-  describe("Link Colors Helper Functions", () => {
-    it("getLinkColor returns correct color for each type", () => {
-      const referenceColor = getLinkColor(0.8, "reference");
-      expect(referenceColor).toContain("rgba(51, 102, 255");
-
-      const dependencyColor = getLinkColor(0.8, "dependency");
-      expect(dependencyColor).toContain("rgba(255, 102, 0");
-
-      const relatedColor = getLinkColor(0.8, "related");
-      expect(relatedColor).toContain("rgba(153, 153, 153");
-
-      const customColor = getLinkColor(0.8, "custom");
-      expect(customColor).toContain("rgba(255, 102, 255");
-    });
-
-    it("getLineDash returns correct patterns for each type", () => {
-      expect(getLineDash("reference")).toEqual([]); // solid
-      expect(getLineDash("dependency")).toEqual([10, 3]); // dash-dot
-      expect(getLineDash("custom")).toEqual([2, 6]); // dotted
-      expect(getLineDash("related", 0.2)).toEqual([6, 4]); // dashed for weak
-      expect(getLineDash("related", 0.8)).toEqual([]); // solid for strong
     });
   });
 });

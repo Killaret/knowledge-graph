@@ -126,7 +126,13 @@ export function applyDelta(
 ): boolean {
   const domainDelta = GraphDelta.fromAPI(delta);
 
-  console.log("[Delta] Applying delta with", domainDelta.totalChanges, "changes");
+  if (import.meta.env.DEV) {
+    console.log(
+      "[Delta] Applying delta with",
+      domainDelta.totalChanges,
+      "changes",
+    );
+  }
 
   // Если изменений много (>10), перезапускаем симуляцию полностью
   if (domainDelta.requiresFullRestart()) {
@@ -146,7 +152,9 @@ function applyFullRestart(
 ): boolean {
   const { nodes, links, width, height, state, onTick, onResetView } = options;
 
-  console.log("[Delta] Full simulation restart");
+  if (import.meta.env.DEV) {
+    console.log("[Delta] Full simulation restart");
+  }
 
   // Фильтруем удаленные узлы
   const filteredNodes = nodes.filter(
@@ -310,9 +318,11 @@ function applyIncremental(
   delta: GraphDelta,
   options: DeltaUpdateOptions,
 ): boolean {
-  const { nodes, links, state, onTick, onResetView } = options;
+  const { state } = options;
 
-  console.log("[Delta] Incremental update");
+  if (import.meta.env.DEV) {
+    console.log("[Delta] Incremental update");
+  }
 
   let simulationRestarted = false;
 
