@@ -19,3 +19,6 @@ export type { SearchQueryProps } from "./search-query";
 
 export { Notification } from "./notification";
 export type { NotificationProps, NotificationType } from "./notification";
+
+export { FilterState } from "./filter-state";
+export type { FilterStateProps, FilterView, SortBy } from "./filter-state";

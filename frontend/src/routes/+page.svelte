@@ -32,7 +32,7 @@
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
-  import { CelestialBody } from "$shared/lib/domain";
+  import { CelestialBody, FilterState } from "$shared/lib/domain";
 
   // State
   let allNotes: Note[] = $state([]);
@@ -56,6 +56,9 @@
   // Filter and sort state
   let selectedType = $state<string>("all");
   let sortBy = $state<"created" | "updated" | "type">("created");
+  const filterState = $derived(
+    new FilterState({ selectedType, sortBy, searchQuery, currentView }),
+  );
   const selectedNoteIds = $state<Set<string>>(new Set());
   let selectionMode = $state(false);
   let lastDeletedNote: Note | null = $state(null);
@@ -403,116 +406,24 @@
     return CelestialBody.fromString(note.type).type;
   }
 
-  // Reactive filtered graph data based on selected type and search query
-  const filteredGraphData = $derived(() => {
-    if (!graphData.nodes.length) return graphData;
-
-    // Build allowed IDs based on type filter
-    let allowedNodeIds: Set<string> | null = null;
-    if (selectedType !== "all") {
-      allowedNodeIds = new Set(
-        allNotes
-          .filter((n) => getNoteType(n) === selectedType)
-          .map((n) => n.id),
-      );
-    }
-
-    // Build allowed IDs based on search query (uses already-filtered allNotes from handleSearch)
-    let searchNodeIds: Set<string> | null = null;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      searchNodeIds = new Set(
-        allNotes
-          .filter(
-            (n) =>
-              n.title.toLowerCase().includes(q) ||
-              (n.content ?? "").toLowerCase().includes(q),
-          )
-          .map((n) => n.id),
-      );
-    }
-
-    const filteredNodes = graphData.nodes.filter(
-      (n: { id: string; title: string; type?: string }) => {
-        if (allowedNodeIds && !allowedNodeIds.has(n.id)) return false;
-        if (searchNodeIds && !searchNodeIds.has(n.id)) return false;
-        return true;
-      },
-    );
-
-    const filteredNodeIds = new Set(
-      filteredNodes.map(
-        (n: { id: string; title: string; type?: string }) => n.id,
-      ),
-    );
-    const filteredLinks = graphData.links.filter(
-      (l: { source: string; target: string }) =>
-        filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target),
-    );
-
-    if (import.meta.env.DEV) {
-      console.log(
-        `[FilteredGraph] Type: ${selectedType}, search: "${searchQuery}", nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`,
-      );
-    }
-
-    return { nodes: filteredNodes, links: filteredLinks };
-  });
+  // Reactive filtered graph data based on filter state
+  const filteredGraphData = $derived(
+    filterState.filterGraphData(graphData, allNotes, getNoteType),
+  );
 
   function applyFiltersAndSort() {
-    let result = [...allNotes];
-
-    // Apply type filter
-    if (selectedType === "inbox") {
-      // Filter notes with #inbox tag
-      result = result.filter((n) =>
-        n.metadata?.tags?.some((tag: string) => tag === "#inbox"),
-      );
-    } else if (selectedType !== "all") {
-      result = result.filter((n) => getNoteType(n) === selectedType);
-    }
-
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (n) =>
-          n.title.toLowerCase().includes(query) ||
-          n.content.toLowerCase().includes(query),
-      );
-    }
+    const result = filterState.applyFiltersAndSort(allNotes, getNoteType);
 
     // Expose to window for tests
     if (browser) {
       (window as any).filteredNotes = result;
     }
 
-    // Apply sorting
-    switch (sortBy) {
-      case "created":
-        result.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-        break;
-      case "updated":
-        result.sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        );
-        break;
-      case "type":
-        result.sort((a, b) =>
-          (a.type || "unknown").localeCompare(b.type || "unknown"),
-        );
-        break;
-    }
-
     filteredNotes = result;
   }
 
   async function handleSearch() {
-    if (!searchQuery.trim()) {
+    if (!filterState.isSearchActive) {
       // searchQuery cleared — filteredGraphData will reactively show all nodes
       applyFiltersAndSort();
       return;
@@ -521,7 +432,7 @@
     try {
       // Use server search results only for the list view (filteredNotes)
       // The graph canvas uses local search via filteredGraphData derived
-      const response = await searchNotes(searchQuery, 1, 20);
+      const response = await searchNotes(filterState.searchQuery.value, 1, 20);
       filteredNotes = response.data;
     } catch (e) {
       // Fallback: local filter on allNotes
@@ -730,7 +641,7 @@
           <div>allNotes: {allNotes.length}</div>
           <div>graphData.nodes: {graphData.nodes.length}</div>
           <div>graphData.links: {graphData.links.length}</div>
-          <div>filtered: {filteredGraphData().nodes.length}</div>
+          <div>filtered: {filteredGraphData.nodes.length}</div>
           <div>selectedType: {selectedType}</div>
           <div>loading: {loading}</div>
           <div>graphLoading: {graphLoading}</div>
@@ -745,10 +656,10 @@
           <div class="spinner"></div>
           <p>Loading graph...</p>
         </div>
-      {:else if filteredGraphData().nodes.length > 0}
+      {:else if filteredGraphData.nodes.length > 0}
         <GraphCanvas
-          nodes={filteredGraphData().nodes}
-          links={filteredGraphData().links}
+          nodes={filteredGraphData.nodes}
+          links={filteredGraphData.links}
           delta={graphDelta}
           onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
           onNoteCreate={handleNoteCreate}
@@ -757,14 +668,14 @@
         <!-- Stats Overlay -->
         <div class="graph-stats-overlay" data-testid="graph-stats">
           <span class="stat-item"
-            ><strong>{filteredGraphData().nodes.length}</strong> nodes</span
+            ><strong>{filteredGraphData.nodes.length}</strong> nodes</span
           >
           <span class="stat-item"
-            ><strong>{filteredGraphData().links.length}</strong> links</span
+            ><strong>{filteredGraphData.links.length}</strong> links</span
           >
-          {#if selectedType !== "all"}
+          {#if filterState.isTypeActive}
             <span class="stat-filter"
-              >{typeFilters.find((f) => f.id === selectedType)?.label}</span
+              >{filterState.getSelectedTypeLabel(typeFilters)}</span
             >
           {/if}
         </div>
@@ -773,9 +684,9 @@
           <StateIllustration type="no-links" />
           <h2>No graph data</h2>
           <p>
-            {selectedType === "all"
+            {!filterState.isTypeActive
               ? "Create some notes to see the knowledge graph"
-              : `No ${typeFilters.find((f) => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
+              : `No ${filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase()} in the graph. Try selecting a different type.`}
           </p>
         </div>
       {/if}
@@ -826,21 +737,21 @@
         {#if filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
             <StateIllustration
-              type={selectedType === "all" && !searchQuery
+              type={!filterState.isTypeActive && !filterState.isSearchActive
                 ? "empty"
                 : "no-results"}
             />
             <h2>
-              {selectedType === "all" && !searchQuery
+              {!filterState.isTypeActive && !filterState.isSearchActive
                 ? "Your star chart is empty"
                 : "No cosmic objects found"}
             </h2>
             <p>
-              {selectedType === "all" && !searchQuery
+              {!filterState.isTypeActive && !filterState.isSearchActive
                 ? "Ignite your first star to begin your knowledge galaxy."
-                : searchQuery
-                  ? `No objects match "${searchQuery}". Try different coordinates.`
-                  : `No ${typeFilters.find((f) => f.id === selectedType)?.label.toLowerCase()} found in this sector.`}
+                : filterState.isSearchActive
+                  ? `No objects match "${filterState.searchQuery.value}". Try different coordinates.`
+                  : `No ${filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase()} found in this sector.`}
             </p>
             <button
               class="new-note-button"
@@ -861,7 +772,7 @@
                 onEdit={handleNoteEdit}
                 onDelete={handleNoteDelete}
                 onClick={() => (selectedNodeId = note.id)}
-                highlightQuery={searchQuery}
+                highlightQuery={filterState.searchQuery.value}
               />
             {/each}
           </div>
