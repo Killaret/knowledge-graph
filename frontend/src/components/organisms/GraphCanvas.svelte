@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import type { GraphDeltaData } from "$shared/api/graph";
+  import { GraphMode } from "$shared/lib/domain";
   import {
     GraphCanvasOverlay,
     GraphCanvasModals,
@@ -524,8 +525,7 @@
 ></canvas>
 
 <GraphCanvasControls
-  mode={canvasState.focusMode ? "focus" : "normal"}
-  focusMode={canvasState.focusMode}
+  mode={GraphMode.fromFocus(canvasState.focusMode)}
   onReset={() =>
     canvasState.handleResetView(ctx, width, height, simState, transform)}
   onSearch={() => canvasState.handleOpenSearch(hotkeysState)}

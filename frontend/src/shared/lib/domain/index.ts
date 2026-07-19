@@ -25,3 +25,6 @@ export type { FilterStateProps, FilterView, SortBy } from "./filter-state";
 
 export { Theme } from "./theme";
 export type { ThemeProps, ThemeMode } from "./theme";
+
+export { GraphMode } from "./graph-mode";
+export type { GraphModeProps, GraphModeType } from "./graph-mode";

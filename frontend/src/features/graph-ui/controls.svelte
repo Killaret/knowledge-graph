@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { GraphMode } from "$shared/lib/domain";
+
   const {
     mode,
     focusMode,
@@ -7,13 +9,18 @@
     onToggleMode,
     onToggleFocus,
   }: {
-    mode: "normal" | "focus";
-    focusMode: boolean;
+    mode: GraphMode;
+    focusMode?: boolean;
     onReset: () => void;
     onSearch: () => void;
     onToggleMode: () => void;
     onToggleFocus: () => void;
   } = $props();
+
+  const graphMode = $derived(mode);
+  const focusGraphMode = $derived(
+    GraphMode.fromFocus(focusMode ?? graphMode.isFocus),
+  );
 </script>
 
 <div
@@ -39,26 +46,17 @@
   <button
     data-testid="graph-controls-mode"
     onclick={onToggleMode}
-    title="Toggle mode"
-    style="background: rgba(0,0,0,0.6); border: 1px solid {mode === 'focus'
-      ? 'rgba(139, 92, 246, 0.8)'
-      : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {mode ===
-    'focus'
-      ? '#a78bfa'
-      : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+    title={graphMode.label}
+    style="background: rgba(0,0,0,0.6); border: 1px solid {graphMode.borderColor}; border-radius: 8px; padding: 8px; color: {graphMode.textColor}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
-    {mode === "focus" ? "👁" : "⚡"}
+    {graphMode.icon}
   </button>
   <button
     data-testid="graph-controls-focus"
     onclick={onToggleFocus}
-    title="Toggle focus mode"
-    style="background: rgba(0,0,0,0.6); border: 1px solid {focusMode
-      ? 'rgba(139, 92, 246, 0.8)'
-      : 'rgba(255,255,255,0.2)'}; border-radius: 8px; padding: 8px; color: {focusMode
-      ? '#a78bfa'
-      : 'white'}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+    title={focusGraphMode.focusLabel}
+    style="background: rgba(0,0,0,0.6); border: 1px solid {focusGraphMode.borderColor}; border-radius: 8px; padding: 8px; color: {focusGraphMode.textColor}; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
-    {focusMode ? "🎯" : "🔘"}
+    {focusGraphMode.focusIcon}
   </button>
 </div>
