@@ -5,45 +5,26 @@ import (
 	"testing"
 	"time"
 
-	dcache "knowledge-graph/internal/domain/cache"
-	infracache "knowledge-graph/internal/infrastructure/cache"
+	"knowledge-graph/internal/domain/cache/cachetest"
 
-	"github.com/alicebob/miniredis/v2"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
-	mr, err := miniredis.Run()
-	require.NoError(t, err)
-
-	client := redis.NewClient(&redis.Options{
-		Addr: mr.Addr(),
-	})
-
-	return mr, client
-}
-
-func newTestCacheClient(t *testing.T, client *redis.Client) dcache.CacheClient {
-	return infracache.NewRedisCacheClient(client)
+func newTestCacheClient(t *testing.T) *cachetest.FakeCacheClient {
+	return cachetest.NewFakeCacheClient()
 }
 
 func TestNewGraphCache(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
-	cache := NewGraphCache(newTestCacheClient(t, client))
+	cache := NewGraphCache(newTestCacheClient(t))
 	assert.NotNil(t, cache)
 	assert.Equal(t, 5*time.Minute, cache.ttl)
 }
 
 func TestCacheUserGraph(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
 	ctx := context.Background()
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	userID := "test-user-123"
 	testData := GraphData{
@@ -60,24 +41,22 @@ func TestCacheUserGraph(t *testing.T) {
 	err := graphCache.CacheUserGraph(ctx, userID, testData)
 	require.NoError(t, err)
 
-	// Verify the key exists in Redis
+	// Verify the key exists
 	key := graphCache.key(userID)
-	exists, err := client.Exists(ctx, key).Result()
+	exists, err := cacheClient.Exists(ctx, key)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), exists)
 
 	// Verify TTL is set (should be approximately 5 minutes)
-	ttl, err := client.TTL(ctx, key).Result()
+	ttl, err := cacheClient.TTL(ctx, key)
 	require.NoError(t, err)
 	assert.True(t, ttl > 4*time.Minute && ttl <= 5*time.Minute)
 }
 
 func TestGetCachedUserGraph(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
 	ctx := context.Background()
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	userID := "test-user-456"
 	testData := GraphData{
@@ -113,11 +92,9 @@ func TestGetCachedUserGraph(t *testing.T) {
 }
 
 func TestInvalidateUserGraph(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
 	ctx := context.Background()
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	userID := "test-user-789"
 	testData := GraphData{
@@ -147,11 +124,9 @@ func TestInvalidateUserGraph(t *testing.T) {
 }
 
 func TestGetStats(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
 	ctx := context.Background()
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	// Initial stats should be zero
 	stats := graphCache.GetStats()
@@ -188,10 +163,8 @@ func TestGetStats(t *testing.T) {
 }
 
 func TestCacheKeyGeneration(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	userID := "user-123"
 	expectedKey := "graph:user-123"
@@ -200,11 +173,9 @@ func TestCacheKeyGeneration(t *testing.T) {
 }
 
 func TestCacheWithMultipleUsers(t *testing.T) {
-	mr, client := setupTestRedis(t)
-	defer mr.Close()
-
 	ctx := context.Background()
-	graphCache := NewGraphCache(newTestCacheClient(t, client))
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
 
 	user1 := "user-1"
 	user2 := "user-2"

@@ -5,13 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"knowledge-graph/internal/domain/cache/cachetest"
 	domainGraph "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/domain/note"
-	infracache "knowledge-graph/internal/infrastructure/cache"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -68,9 +66,8 @@ func TestGetSuggestionsHandler_Handle(t *testing.T) {
 	loader.On("GetNeighbors", ctx, neighborID).Return([]domainGraph.Edge{}, nil)
 
 	traversalSvc := domainGraph.NewTraversalService(loader, 3, 0.5, "max", false)
-	rdb := redis.NewClient(&redis.Options{Addr: miniredis.RunT(t).Addr()})
 
-	handler := NewGetSuggestionsHandler(traversalSvc, &mockNoteRepoForQueries{}, infracache.NewRedisCacheClient(rdb), time.Minute)
+	handler := NewGetSuggestionsHandler(traversalSvc, &mockNoteRepoForQueries{}, cachetest.NewFakeCacheClient(), time.Minute)
 
 	result, err := handler.Handle(ctx, GetSuggestionsQuery{NoteID: noteID, Limit: 5})
 	require.NoError(t, err)

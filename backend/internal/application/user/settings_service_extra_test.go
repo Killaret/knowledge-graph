@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"knowledge-graph/internal/domain/cache"
+	"knowledge-graph/internal/domain/cache/cachetest"
 	userDomain "knowledge-graph/internal/domain/user"
-	infracache "knowledge-graph/internal/infrastructure/cache"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -42,14 +41,13 @@ func TestSettingsService_DeleteSetting_Error(t *testing.T) {
 
 func TestSettingsService_GetSettingValue_FromCache(t *testing.T) {
 	repo := new(MockRepository)
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
+	cacheClient := cachetest.NewFakeCacheClient()
+	service := NewSettingsService(repo, cacheClient)
 	userID := uuid.New()
 	ctx := context.Background()
 
 	cacheKey := "setting:" + userID.String() + ":" + userDomain.SettingKeyPreferredLanguage.String()
-	_ = rdb.Set(ctx, cacheKey, `{"value":"cached"}`, time.Hour)
+	_ = cacheClient.Set(ctx, cacheKey, `{"value":"cached"}`, time.Hour)
 
 	value, err := service.GetSettingValue(ctx, userID, userDomain.SettingKeyPreferredLanguage)
 	assert.NoError(t, err)
@@ -58,14 +56,13 @@ func TestSettingsService_GetSettingValue_FromCache(t *testing.T) {
 
 func TestSettingsService_GetSettingValue_InvalidCacheJSON(t *testing.T) {
 	repo := new(MockRepository)
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
+	cacheClient := cachetest.NewFakeCacheClient()
+	service := NewSettingsService(repo, cacheClient)
 	userID := uuid.New()
 	ctx := context.Background()
 
 	cacheKey := "setting:" + userID.String() + ":" + userDomain.SettingKeyPreferredLanguage.String()
-	_ = rdb.Set(ctx, cacheKey, `not-json`, time.Hour)
+	_ = cacheClient.Set(ctx, cacheKey, `not-json`, time.Hour)
 
 	setting, _ := userDomain.NewUserSetting(userID, userDomain.SettingKeyPreferredLanguage, userDomain.SettingValue{Value: "en"})
 	repo.On("FindByUserIDAndKey", ctx, userID, userDomain.SettingKeyPreferredLanguage).Return(setting, nil).Once()
@@ -77,20 +74,19 @@ func TestSettingsService_GetSettingValue_InvalidCacheJSON(t *testing.T) {
 
 func TestSettingsService_InvalidateCache(t *testing.T) {
 	repo := new(MockRepository)
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
+	cacheClient := cachetest.NewFakeCacheClient()
+	service := NewSettingsService(repo, cacheClient)
 	userID := uuid.New()
 	ctx := context.Background()
 
-	_ = rdb.Set(ctx, "setting:"+userID.String()+":lang", "en", time.Hour)
-	_ = rdb.Set(ctx, "setting:"+userID.String()+":theme", "dark", time.Hour)
+	_ = cacheClient.Set(ctx, "setting:"+userID.String()+":lang", "en", time.Hour)
+	_ = cacheClient.Set(ctx, "setting:"+userID.String()+":theme", "dark", time.Hour)
 
 	err := service.InvalidateCache(ctx, userID)
 	assert.NoError(t, err)
 
-	_, err = rdb.Get(ctx, "setting:"+userID.String()+":lang").Result()
-	assert.Error(t, err)
+	_, err = cacheClient.Get(ctx, "setting:"+userID.String()+":lang")
+	assert.ErrorIs(t, err, cache.ErrCacheMiss)
 }
 
 func TestSettingsService_InvalidateCache_NoRedis(t *testing.T) {

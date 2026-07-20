@@ -5,11 +5,9 @@ import (
 	"testing"
 
 	achievementDomain "knowledge-graph/internal/domain/achievement"
-	infracache "knowledge-graph/internal/infrastructure/cache"
+	"knowledge-graph/internal/domain/cache/cachetest"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -311,13 +309,10 @@ func TestTrackLoginAndGetStreak_WithRedis(t *testing.T) {
 	ctx := context.Background()
 	uid := uuid.New()
 
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-
 	mockRepo := new(MockAchievementRepository)
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
 
-	service := NewService(nil, mockRepo, nil, infracache.NewRedisCacheClient(rdb), nil)
+	service := NewService(nil, mockRepo, nil, cachetest.NewFakeCacheClient(), nil)
 
 	err := service.TrackLogin(ctx, uid)
 	assert.NoError(t, err)
