@@ -176,6 +176,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/domain/cache/cachetest/fake.go` — new in-memory `cache.CacheClient` test double.
 - Application-layer unit tests (`achievement`, `cache`, `queries/graph`, `user`) no longer import `internal/infrastructure/cache` or spin up Redis/miniredis.
 - `internal/interfaces/api/handlers/{user,auth,share}/handler_test.go` are now tagged `//go:build integration` because they spin up real `postgres` repositories via testcontainers.
+- `frontend/src/routes/+page.svelte` no longer uses `any` types for graph data transformation; `RawNode`/`RawLink` interfaces and `normalizeNode`/`normalizeLink` helpers are used.
 
 ### Current backend coverage
 
@@ -192,7 +193,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
+- Frontend still has hardcoded user-facing strings in several components/pages that need i18n keys.
 - Full regression cycle and E2E stack verification are pending.
 - Frontend coverage and E2E stack not covered by these notes.
 
