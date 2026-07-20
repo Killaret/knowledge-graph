@@ -9,6 +9,11 @@
   import BackButton from "$components/atoms/BackButton.svelte";
   import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let note: Note | null = $state(null);
   let suggestions: Suggestion[] = $state([]);
@@ -29,10 +34,10 @@
       suggestions = await getSuggestions(id, 5);
     } catch (e: any) {
       if (e.response?.status === 404) {
-        error = "Note not found";
+        error = t("note.notFoundShort");
         setTimeout(() => goto("/"), 3000);
       } else {
-        error = "Failed to load note";
+        error = t("note.loadError");
       }
     } finally {
       loading = false;
@@ -41,7 +46,7 @@
 
   async function handleDelete() {
     if (!browser) return;
-    if (!confirm("Delete this note?")) return;
+    if (!confirm(t("note.deleteConfirm"))) return;
     const id = getRouteId();
     await deleteNote(id);
     await goto("/");
@@ -49,29 +54,29 @@
 </script>
 
 {#if loading}
-  <p>Loading...</p>
+  <p>{t("note.loading")}</p>
 {:else if error}
   <div class="note-error">
-    <StateIllustration type={error === "Note not found" ? "404" : "error"} />
+    <StateIllustration type={error === t("note.notFoundShort") ? "404" : "error"} />
     <p class="error">{error}</p>
   </div>
 {:else if note}
   <div class="note-container">
     <BackButton href="/" />
     <h1 data-testid="note-detail-title">{note.title}</h1>
-    <div class="meta">Created: {formatDateTime(note.created_at)}</div>
+    <div class="meta">{t("note.createdLabel")}{formatDateTime(note.created_at)}</div>
     <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
       <button
         onclick={() => (editModalOpen = true)}
         class="edit-btn"
-        data-testid="edit-note-btn">Edit</button
+        data-testid="edit-note-btn">{t("note.editButton")}</button
       >
       <button onclick={handleDelete} data-testid="delete-note-btn"
-        >Delete</button
+        >{t("note.deleteButton")}</button
       >
       <a href={`/graph/3d/${note.id}`} class="graph-link"
-        >✨ Show constellation</a
+        >{t("note.showConstellation")}</a
       >
     </div>
 
@@ -82,12 +87,12 @@
     />
 
     {#if suggestions.length}
-      <h2>Similar notes</h2>
+      <h2>{t("note.similarNotes")}</h2>
       <ul class="suggestions">
         {#each suggestions as s}
           <li>
             <a href={`/notes/${s.note_id}`}>{s.title}</a>
-            <span class="score">score: {s.score.toFixed(3)}</span>
+            <span class="score">{t("note.score", { score: s.score.toFixed(3) })}</span>
           </li>
         {/each}
       </ul>

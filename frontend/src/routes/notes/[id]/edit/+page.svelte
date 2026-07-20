@@ -4,6 +4,10 @@
   import { goto } from "$app/navigation";
   import { getNote, updateNote } from "$shared/api/notes";
   import type { Note } from "$shared/api/notes";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   let note: Note | null = $state(null);
   let title = $state("");
@@ -25,7 +29,7 @@
       title = note.title;
       content = note.content;
     } catch {
-      error = "Note not found";
+      error = t("note.notFoundShort");
     } finally {
       loading = false;
     }
@@ -35,7 +39,7 @@
     event.preventDefault();
     const id = getRouteId();
     if (!title.trim()) {
-      error = "Title is required";
+      error = t("noteEditor.titleRequired");
       return;
     }
     saving = true;
@@ -44,17 +48,17 @@
       await updateNote(id, { title, content });
       goto(`/notes/${id}`);
     } catch {
-      error = "Failed to update note";
+      error = t("note.updateError");
     } finally {
       saving = false;
     }
   }
 </script>
 
-<h1>Edit Note</h1>
+<h1>{t("noteEditor.titleEdit")}</h1>
 
 {#if loading}
-  <p>Loading...</p>
+  <p>{t("note.loading")}</p>
 {:else if error}
   <p class="error">{error}</p>
 {:else}
@@ -62,13 +66,13 @@
     <input
       type="text"
       name="title"
-      placeholder="Title"
+      placeholder={t("noteEditor.titlePlaceholder")}
       bind:value={title}
       required
     />
     <textarea name="content" bind:value={content} rows="15"></textarea>
     <button type="submit" disabled={saving}
-      >{saving ? "Saving..." : "Update"}</button
+      >{saving ? t("noteEditor.saving") : t("noteEditor.update")}</button
     >
   </form>
 {/if}

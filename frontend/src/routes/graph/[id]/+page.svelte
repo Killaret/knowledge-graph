@@ -5,6 +5,11 @@
   import { getGraphData } from "$shared/api/graph";
   import BackButton from "$components/atoms/BackButton.svelte";
   import type { GraphNode, GraphLink } from "$shared/api/graph";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let nodes: GraphNode[] = $state([]);
   let links: GraphLink[] = $state([]);
@@ -32,7 +37,7 @@
         weight: l.weight ?? 1,
       }));
     } catch (e) {
-      error = "Failed to load graph data";
+      error = t("graph.loadDataError");
       console.error(e);
     } finally {
       loading = false;
@@ -43,16 +48,14 @@
 <div class="graph-page">
   <header class="graph-header">
     <BackButton href="/" />
-    <h1>Knowledge Constellation</h1>
-    <span class="hint"
-      >Drag to rotate/pan • Scroll to zoom • Click node to open</span
-    >
+    <h1>{t("graph.constellationTitle")}</h1>
+    <span class="hint">{t("graph.hint")}</span>
   </header>
 
   {#if loading}
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Loading constellation...</p>
+      <p>{t("graph.loadingConstellation")}</p>
     </div>
   {:else if error}
     <div class="error-state">
@@ -66,8 +69,8 @@
       <SmartGraph {nodes} {links} />
     </div>
     <div class="stats-bar" data-testid="graph-stats">
-      <span class="stats-item"><strong>{nodes.length}</strong> nodes</span>
-      <span class="stats-item"><strong>{links.length}</strong> links</span>
+      <span class="stats-item"><strong>{nodes.length}</strong> {t("graph.nodes")}</span>
+      <span class="stats-item"><strong>{links.length}</strong> {t("graph.links")}</span>
     </div>
   {/if}
 </div>

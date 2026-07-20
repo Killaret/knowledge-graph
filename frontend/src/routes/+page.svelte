@@ -671,7 +671,7 @@
     {#if loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
-        <p>Loading notes...</p>
+        <p>{t("page.loadingNotes")}</p>
       </div>
     {:else if apiError}
       <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
@@ -679,7 +679,7 @@
         onclick={() => {
           apiError = null;
           loadDataParallel();
-        }}>Retry</button
+        }}>{t("page.retry")}</button
       >
     {:else if currentView === "graph"}
       <!-- Debug info - remove in production -->
@@ -703,7 +703,7 @@
       {#if graphLoading}
         <div class="center">
           <div class="spinner"></div>
-          <p>Loading graph...</p>
+          <p>{t("page.loadingGraph")}</p>
         </div>
       {:else if filteredGraphData.nodes.length > 0}
         <GraphCanvas

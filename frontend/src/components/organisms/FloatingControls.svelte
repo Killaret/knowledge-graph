@@ -96,7 +96,7 @@
         <line x1="7" y1="17" x2="10" y2="14" />
         <line x1="14" y1="14" x2="17" y2="17" />
       </svg>
-      <span class="btn-label">2D</span>
+      <span class="btn-label">{t("controls.view2D")}</span>
     </button>
     <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
     <!--
@@ -138,7 +138,7 @@
         <line x1="3" y1="12" x2="21" y2="12" />
         <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
-      <span class="btn-label">List</span>
+      <span class="btn-label">{t("controls.viewList")}</span>
     </button>
   </div>
 

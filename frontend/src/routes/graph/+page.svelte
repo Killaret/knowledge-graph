@@ -24,6 +24,11 @@
   import BackButton from "$components/atoms/BackButton.svelte";
   import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -119,7 +124,7 @@
       }
     } catch (e) {
       console.error("Failed to load graph:", e);
-      error = "Failed to load graph data";
+      error = t("graph.loadDataError");
     } finally {
       loading = false;
     }
@@ -203,7 +208,7 @@
   <BackButton href="/" />
 
   <div class="top-right-controls">
-    <button class="login-btn" onclick={() => goto("/auth/login")} title="Login">
+    <button class="login-btn" onclick={() => goto("/auth/login")} title={t("graph.loginTitle")}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="20"
@@ -220,7 +225,7 @@
     </button>
   </div>
 
-  <h1>Knowledge Graph</h1>
+  <h1>{t("graph.title")}</h1>
 
   <div class="controls">
     <label class="toggle">
@@ -229,19 +234,19 @@
         bind:checked={showFullGraph}
         data-testid="full-graph-toggle"
       />
-      <span>Show all notes ({showFullGraph ? "enabled" : "disabled"})</span>
+      <span>{t("graph.showAllNotes")} ({showFullGraph ? t("graph.enabled") : t("graph.disabled")})</span>
     </label>
   </div>
 
   {#if loading}
     <div class="loading-overlay" data-testid="loading-overlay">
       <div class="spinner"></div>
-      <p>Loading graph...</p>
+      <p>{t("graph.loading")}</p>
     </div>
   {:else if error}
     <div class="error">
       <p>{error}</p>
-      <button onclick={() => goto("/")}>Go Home</button>
+      <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
     </div>
   {:else}
     <div
@@ -264,7 +269,7 @@
       {:else}
         <div class="empty">
           <StateIllustration type="no-links" />
-          <p>No graph data available</p>
+          <p>{t("graph.noData")}</p>
         </div>
       {/if}
     </div>

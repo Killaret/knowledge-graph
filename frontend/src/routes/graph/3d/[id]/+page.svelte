@@ -2,6 +2,11 @@
   import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let currentNoteId: string | null = $state(null);
 
@@ -23,14 +28,10 @@
 <div class="page">
   <div class="center">
     <div class="frozen-notice">
-      <h2>3D Graph Feature Frozen</h2>
+      <h2>{t("graph.frozenTitle")}</h2>
+      <p>{t("graph.frozenMessage1")}</p>
       <p>
-        The 3D graph functionality has been temporarily frozen for version 1.0
-        to improve stability and reduce maintenance overhead.
-      </p>
-      <p>
-        You will be automatically redirected to 2D graph view for note {currentNoteId ||
-          "the entire graph"}.
+        {t("graph.frozenRedirectWithId", { id: currentNoteId || t("graph.entireGraph") })}
       </p>
       <div class="spinner"></div>
     </div>

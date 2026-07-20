@@ -6,6 +6,10 @@
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { startPreload } from "$shared/services/PreloadService";
   import { onMount } from "svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // Redirect if already authenticated
   $effect(() => {
@@ -30,7 +34,7 @@
 
 <AuthCard
   title="Knowledge Graph"
-  subtitle="Your personal multiverse of knowledge"
+  subtitle={t("auth.subtitle")}
   showIcon={true}
 >
   <LoginForm />

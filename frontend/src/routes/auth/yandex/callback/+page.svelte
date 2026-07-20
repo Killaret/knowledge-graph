@@ -3,6 +3,10 @@
   import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { handleYandexCallback, error } from "$shared/stores/auth.svelte.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   let isProcessing = $state(true);
   let localError = $state<string | null>(null);
@@ -12,7 +16,7 @@
     const state = $page.url.searchParams.get("state");
 
     if (!code || !state) {
-      localError = "Missing required authorization parameters";
+      localError = t("yandex.missingParams");
       isProcessing = false;
       return;
     }
@@ -22,7 +26,7 @@
     if (success) {
       goto("/");
     } else {
-      localError = error() || "Yandex authorization failed";
+      localError = error() || t("yandex.authFailed");
       isProcessing = false;
     }
   });
@@ -33,12 +37,12 @@
     {#if isProcessing}
       <div class="loading">
         <div class="spinner"></div>
-        <p>Signing in with Yandex...</p>
+        <p>{t("yandex.signingIn")}</p>
       </div>
     {:else if localError}
       <div class="error">
         <p>❌ {localError}</p>
-        <a href="/auth/login" class="back-link">Back to login</a>
+        <a href="/auth/login" class="back-link">{t("yandex.backToLogin")}</a>
       </div>
     {/if}
   </div>

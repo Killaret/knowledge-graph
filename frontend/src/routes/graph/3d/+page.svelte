@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   onMount(() => {
     // 3D functionality frozen for v1 - redirecting to 2D graph
@@ -13,12 +17,9 @@
 <div class="page">
   <div class="center">
     <div class="frozen-notice">
-      <h2>3D Graph Feature Frozen</h2>
-      <p>
-        The 3D graph functionality has been temporarily frozen for version 1.0
-        to improve stability and reduce maintenance overhead.
-      </p>
-      <p>You will be automatically redirected to the 2D graph view.</p>
+      <h2>{t("graph.frozenTitle")}</h2>
+      <p>{t("graph.frozenMessage1")}</p>
+      <p>{t("graph.frozenMessage2")}</p>
       <div class="spinner"></div>
     </div>
   </div>

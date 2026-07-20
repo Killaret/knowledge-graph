@@ -7,6 +7,10 @@
     initAuth,
   } from "$shared/stores/auth.svelte.js";
   import { onMount } from "svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // Initialize auth once on mount
   onMount(() => {
@@ -24,8 +28,8 @@
 <div class="profile-page">
   <div class="profile-container" data-testid="profile-content">
     <div class="header">
-      <h1>Profile</h1>
-      <p>Manage your account</p>
+      <h1>{t("profile.title")}</h1>
+      <p>{t("profile.subtitle")}</p>
     </div>
 
     {#if currentUser()}
@@ -33,7 +37,7 @@
     {:else}
       <div class="loading">
         <div class="spinner"></div>
-        <p>Loading profile...</p>
+        <p>{t("profile.loading")}</p>
       </div>
     {/if}
   </div>

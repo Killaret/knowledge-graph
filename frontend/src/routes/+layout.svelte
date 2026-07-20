@@ -22,6 +22,10 @@
   } from "$shared/stores/achievements.svelte.js";
   import { mode, getMessage } from "$shared/stores/lexicon-settings";
   import { Theme } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   const { children } = $props();
 
@@ -142,7 +146,7 @@
   {#if isSkipAuth}
     <div
       class="skip-auth-badge"
-      title="Auth is disabled for testing (SKIP_AUTH=true)"
+      title={t("layout.skipAuthTitle")}
     >
       🔑 SKIP_AUTH
     </div>

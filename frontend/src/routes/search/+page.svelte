@@ -6,6 +6,11 @@
   import SearchBar from "$components/molecules/SearchBar.svelte";
   import NoteCard from "$components/molecules/NoteCard.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let notes = $state<Note[]>([]);
   let loading = $state(false);
@@ -39,7 +44,7 @@
       total = response.total;
       totalPages = response.totalPages;
     } catch (e) {
-      error = "Failed to perform search. Please try again later.";
+      error = t("search.error");
       console.error("Search error:", e);
     } finally {
       loading = false;
@@ -54,6 +59,18 @@
   }
 
   function getPluralForm(
+    count: number,
+    one: string,
+    few: string,
+    many: string,
+  ): string {
+    // Use i18n keys search.noteOne, search.noteFew, search.noteMany
+    return [one, few, many].join("").length === 0
+      ? ""
+      : getPluralFormRaw(count, one, few, many);
+  }
+
+  function getPluralFormRaw(
     count: number,
     one: string,
     few: string,
@@ -77,28 +94,28 @@
 
 <div class="search-page">
   <div class="search-header">
-    <h1>Search Notes</h1>
-    <SearchBar placeholder="Enter your search query..." autoFocus={true} />
+    <h1>{t("search.title")}</h1>
+    <SearchBar placeholder={t("search.pagePlaceholder")} autoFocus={true} />
   </div>
 
   {#if loading}
     <div class="center">
       <div class="spinner"></div>
-      <p>Searching...</p>
+      <p>{t("search.searching")}</p>
     </div>
   {:else if error}
     <div class="error-message">{error}</div>
   {:else if $page.url.searchParams.get("q") && notes.length === 0}
     <div class="no-results">
       <StateIllustration type="no-results" />
-      <h2>No results found</h2>
-      <p>No notes found for query "{$page.url.searchParams.get("q")}".</p>
-      <p>Try using different keywords or check spelling.</p>
+      <h2>{t("search.noResultsTitle")}</h2>
+      <p>{t("search.noResultsForQuery", { query: $page.url.searchParams.get("q") || "" })}</p>
+      <p>{t("search.tryDifferent")}</p>
     </div>
   {:else if $page.url.searchParams.get("q")}
     <div class="search-stats">
-      Found: {total}
-      {getPluralForm(total, "note", "notes", "notes")}
+      {t("search.found")} {total}
+      {getPluralForm(total, t("search.noteOne"), t("search.noteFew"), t("search.noteMany"))}
     </div>
 
     <div class="notes-grid">
@@ -119,11 +136,11 @@
           disabled={currentPage === 1}
           class="pagination-button"
         >
-          Previous
+          {t("search.previous")}
         </button>
 
         <span class="pagination-info">
-          Page {currentPage} of {totalPages}
+          {t("search.pageInfo", { current: currentPage.toString(), total: totalPages.toString() })}
         </span>
 
         <button
@@ -131,19 +148,16 @@
           disabled={currentPage === totalPages}
           class="pagination-button"
         >
-          Next
+          {t("search.next")}
         </button>
       </div>
     {/if}
   {:else}
     <div class="empty-state">
       <StateIllustration type="empty" />
-      <h2>Search Notes</h2>
-      <p>Enter keywords above to search through your notes.</p>
-      <p>
-        Search supports both Russian and English languages with automatic
-        stemming.
-      </p>
+      <h2>{t("search.emptyTitle")}</h2>
+      <p>{t("search.emptyPrompt")}</p>
+      <p>{t("search.supports")}</p>
     </div>
   {/if}
 </div>

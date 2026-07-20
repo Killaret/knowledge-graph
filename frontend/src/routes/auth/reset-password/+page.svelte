@@ -5,6 +5,11 @@
   import AuthCard from "$components/organisms/AuthCard.svelte";
   import ConstellationIcon from "$components/atoms/ConstellationIcon.svelte";
   import { isAuthenticated } from "$shared/stores/auth.svelte.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   // Get token from URL
   let token = $state("");
@@ -23,23 +28,23 @@
 
 {#if token}
   <AuthCard
-    title="Reset Password"
-    subtitle="Create a new password for your account"
+    title={t("auth.resetPasswordTitle")}
+    subtitle={t("auth.resetPasswordSubtitle")}
     showIcon={true}
   >
     <ResetPasswordForm {token} />
   </AuthCard>
 {:else}
   <AuthCard
-    title="Error"
-    subtitle="Reset password token not found"
+    title={t("error.fallback")}
+    subtitle={t("auth.resetTokenMissing")}
     showIcon={false}
   >
     <div class="error-content">
       <ConstellationIcon size={48} class="error-icon" />
-      <p class="error-text">Please request a new password reset link.</p>
+      <p class="error-text">{t("auth.requestNewLink")}</p>
       <a href="/auth/forgot-password" class="back-link"
-        >Request password reset</a
+        >{t("auth.requestResetLink")}</a
       >
     </div>
   </AuthCard>

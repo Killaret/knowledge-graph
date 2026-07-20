@@ -1,6 +1,10 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { createNote } from "$shared/api/notes";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   let title = $state("");
   let content = $state("");
@@ -9,7 +13,7 @@
 
   async function handleSubmit() {
     if (!title.trim()) {
-      error = "Title is required";
+      error = t("noteEditor.titleRequired");
       return;
     }
     saving = true;
@@ -18,7 +22,7 @@
       const note = await createNote({ title, content, metadata: {} });
       await goto(`/notes/${note.id}`);
     } catch (e) {
-      error = "Failed to create note";
+      error = t("note.createError");
       console.error("Create note error:", e);
     } finally {
       saving = false;
@@ -26,7 +30,7 @@
   }
 </script>
 
-<h1>New Note</h1>
+<h1>{t("note.newTitle")}</h1>
 
 {#if error}
   <p class="error">{error}</p>
@@ -36,18 +40,18 @@
   <input
     type="text"
     name="title"
-    placeholder="Title"
+    placeholder={t("noteEditor.titlePlaceholder")}
     bind:value={title}
     required
   />
   <textarea
     name="content"
-    placeholder="Content (supports [[wiki links]])"
+    placeholder={t("note.contentPlaceholderWiki")}
     bind:value={content}
     rows="15"
   ></textarea>
   <button type="submit" disabled={saving}
-    >{saving ? "Saving..." : "Create"}</button
+    >{saving ? t("noteEditor.saving") : t("noteEditor.create")}</button
   >
 </form>
 
