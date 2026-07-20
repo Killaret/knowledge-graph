@@ -61,7 +61,9 @@ The major Clean Architecture violations listed in previous audits have been reso
 
 Key remaining items:
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- `internal/interfaces/api/middleware/apikey.go` constructor still accepts `*gorm.DB` to build a default repository; consider accepting a fully constructed `APIKeyRepository` from `cmd/server`.
+- `cmd/worker/main.go` still constructs an asynq server directly; consider wrapping it in the `internal/infrastructure/queue` package.
+- Some backend unit tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
+- Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
 
 ### Conventions used during audit
 
@@ -159,6 +161,15 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
   - `internal/infrastructure/db/postgres/refresh_token_repo.go`
   - `internal/infrastructure/db/postgres/share_repo.go`
 - `internal/auth/interfaces.go` — defines `TokenStore` and `RefreshTokenRepository` ports.
+- `internal/interfaces/api/middleware/apikey.go` — now depends on `domain/user.APIKeyRepository`; no `*gorm.DB`, no local `APIKeyModel`.
+- `internal/interfaces/api/middleware/jwt.go` and `internal/interfaces/api/middleware/permissions.go` — now depend on `auth.TokenStore` interface; no `*auth.RedisTokenStore`.
+- `cmd/server/health.go` — now depends on small `DBPinger`, `RedisPinger`, and `NLPHealthChecker` interfaces; no `*gorm.DB` or `*redis.Client`.
+- `cmd/server/router.go` — no longer receives `*gorm.DB` or `*redis.Client`; the health handler is injected as `gin.HandlerFunc`.
+- `cmd/cli/main.go` — enqueues recommendation tasks through the `common.TaskQueue` port (`queue.NewAsynqClient`) instead of using `asynq` directly.
+- `internal/application/draft/service.go` — no longer holds a concrete `*http.Client`.
+- `internal/domain/graph/traversal_integration_test.go` moved to `internal/application/graph`; domain tests no longer import infrastructure packages.
+- `frontend/src/shared/stores/achievements.svelte.ts` — converted from Svelte 4 `writable` store to Svelte 5 `$state` runes.
+- `frontend/src/shared/api/graph.ts` — graph loading error messages now use `formatMessage` i18n keys instead of hardcoded Russian strings.
 
 ### Current backend coverage
 
@@ -175,7 +186,9 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- `internal/interfaces/api/middleware/apikey.go` constructor still accepts `*gorm.DB` to build a default repository; consider accepting a fully constructed `APIKeyRepository` from `cmd/server`.
+- `cmd/worker/main.go` still constructs an asynq server directly; consider wrapping server creation/run/stop in `internal/infrastructure/queue`.
+- Some backend unit/integration tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
+- Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
 - Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist
