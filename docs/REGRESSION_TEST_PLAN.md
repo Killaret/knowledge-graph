@@ -592,6 +592,18 @@ curl http://localhost:18083/openapi.yaml
 - [ ] Installation instructions accurate
 - [ ] Quick start guide accurate
 
+### 11.4.3 Verify Architecture Documentation
+**Files:**
+- `docs/AGENTS.md`
+- `.windsurfrules`
+- `backend/internal/auth/README.md`
+
+**Checks:**
+- [ ] Architecture boundaries (domain/application/infrastructure/interface) are documented
+- [ ] New repository or cache ports are added to the relevant docs
+- [ ] Outdated references to concrete `*gorm.DB`, `*redis.Client`, or `*postgres.*` types are removed or updated
+- [ ] If code structure changed, docs are updated before merge
+
 ---
 
 ## PART 12: Final Report and Cleanup
@@ -624,14 +636,29 @@ curl http://localhost:18083/openapi.yaml
 - [ ] Test volumes removed
 - [ ] No data leakage to dev/personal stacks
 
-### 12.3 Verify Dev/Personal Stacks Unaffected
+### 12.3 Cleanup Temporary Files and Generated Artifacts
+**Target files and directories:**
+- `backend/coverage.out`
+- `backend/*.cov`
+- `backend/*.tmp`
+- `backend/*.log`
+- `logs/test-outputs/*.log` (keep only latest run)
+- `node_modules/.cache` / build artifacts (if generated)
+
+**Checks:**
+- [ ] No `coverage.out` or `*.cov` files left in the backend directory
+- [ ] No temporary `.tmp` or `.log` files are committed
+- [ ] `git status` shows only intended source/doc changes
+- [ ] Docker volumes and test databases are removed (PART 12.2)
+
+### 12.4 Verify Dev/Personal Stacks Unaffected
 **Checks:**
 - [ ] Dev stack still healthy
 - [ ] Personal stack still healthy
 - [ ] No test containers running
 - [ ] No test volumes remaining
 
-### 12.4 Final Verdict
+### 12.5 Final Verdict
 **If all checks pass:**
 - System is READY for manual testing
 - System is READY for production deployment

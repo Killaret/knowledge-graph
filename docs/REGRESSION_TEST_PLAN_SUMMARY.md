@@ -1,6 +1,6 @@
 # Regression Testing Plan Summary
 
-**Comprehensive 24-step isolated regression testing plan for production readiness:**
+**Comprehensive 25-step isolated regression testing plan for production readiness:**
 
 ### Regression Test Cycle (Isolated Model)
 - **Document:** `docs/REGRESSION_TEST_PLAN.md`
@@ -30,12 +30,13 @@
 16. **Step 15:** Public graph verification
 17. **Step 16:** CI/CD verification
 18. **Step 17:** Stop test stack (`stop-test.ps1`)
-19. **Step 18:** Start dev stack (`docker compose up -d --wait`)
-20. **Step 19:** Start personal stack (`docker compose -f docker-compose.personal.yml up -d --wait`)
-21. **Step 20:** Compare dev stack state with pre-test snapshot
-22. **Step 21:** Compare dev and personal stacks for identity
-23. **Step 22:** Check dev and personal stacks health
-24. **Step 23:** Auto-commit with test success marker (if all checks pass)
+19. **Step 17.5:** Cleanup temporary files (`coverage.out`, `*.cov`, `*.tmp`, `*.log`) and verify `docs/AGENTS.md` / `.windsurfrules` are updated if architecture boundaries changed
+20. **Step 18:** Start dev stack (`docker compose up -d --wait`)
+21. **Step 19:** Start personal stack (`docker compose -f docker-compose.personal.yml up -d --wait`)
+22. **Step 20:** Compare dev stack state with pre-test snapshot
+23. **Step 21:** Compare dev and personal stacks for identity
+24. **Step 22:** Check dev and personal stacks health
+25. **Step 23:** Auto-commit with test success marker (if all checks pass)
 
 ### Automatic State Verification
 - **Pre-test snapshot:** Captures dev stack state before testing
