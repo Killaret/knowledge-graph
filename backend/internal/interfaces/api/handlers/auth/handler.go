@@ -4,44 +4,52 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"knowledge-graph/internal/auth"
+	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
-	"knowledge-graph/internal/infrastructure/db/postgres"
+	domainuser "knowledge-graph/internal/domain/user"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // Handler handles authentication requests
 type Handler struct {
-	db             *gorm.DB
-	jwtManager     *auth.JWTManager
-	tokenStore     *auth.RedisTokenStore
-	passwordConfig *auth.PasswordConfig
-	passwordPolicy *auth.PasswordPolicy
-	cfg            *config.Config
+	userRepo         domainuser.Repository
+	refreshTokenRepo authpkg.RefreshTokenRepository
+	jwtManager       *authpkg.JWTManager
+	tokenStore       authpkg.TokenStore
+	passwordConfig   *authpkg.PasswordConfig
+	passwordPolicy   *authpkg.PasswordPolicy
+	cfg              *config.Config
 }
 
 // NewHandler creates a new auth handler
-func NewHandler(db *gorm.DB, jwtManager *auth.JWTManager, tokenStore *auth.RedisTokenStore, cfg *config.Config) *Handler {
+func NewHandler(
+	userRepo domainuser.Repository,
+	refreshTokenRepo authpkg.RefreshTokenRepository,
+	tokenStore authpkg.TokenStore,
+	jwtManager *authpkg.JWTManager,
+	cfg *config.Config,
+) *Handler {
 	return &Handler{
-		db:         db,
-		jwtManager: jwtManager,
-		tokenStore: tokenStore,
-		passwordConfig: &auth.PasswordConfig{
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		jwtManager:       jwtManager,
+		tokenStore:       tokenStore,
+		passwordConfig: &authpkg.PasswordConfig{
 			Time:    cfg.Argon2Time,
 			Memory:  cfg.Argon2Memory,
 			Threads: cfg.Argon2Threads,
 			KeyLen:  32,
 		},
-		passwordPolicy: &auth.PasswordPolicy{
+		passwordPolicy: &authpkg.PasswordPolicy{
 			MinLength:      cfg.PasswordPolicyMinLength,
 			RequireUpper:   cfg.PasswordPolicyRequireUpper,
 			RequireLower:   cfg.PasswordPolicyRequireLower,
@@ -111,62 +119,67 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	// Validate password policy
-	if err := auth.ValidatePassword(req.Password, h.passwordPolicy); err != nil {
+	if err := authpkg.ValidatePassword(req.Password, h.passwordPolicy); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	ctx := c.Request.Context()
+
 	// Check if login already exists
-	var existingUser postgres.UserModel
-	if result := h.db.Where("login = ?", req.Login).First(&existingUser); result.Error == nil {
+	existing, err := h.userRepo.FindByLogin(ctx, req.Login)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check login"})
+		return
+	}
+	if existing != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "login already exists"})
 		return
 	}
 
 	// Check if email already exists
-	if result := h.db.Where("email = ?", req.Email).First(&existingUser); result.Error == nil {
+	existing, err = h.userRepo.FindByEmail(ctx, req.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check email"})
+		return
+	}
+	if existing != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
 		return
 	}
 
 	// Hash password
-	passwordHash, err := auth.HashPassword(req.Password, h.passwordConfig)
+	passwordHash, err := authpkg.HashPassword(req.Password, h.passwordConfig)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
 	}
 
-	// Get default role
-	var defaultRole postgres.UserRoleModel
-	if result := h.db.Where("name = ?", "user").First(&defaultRole); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get default role"})
+	// Create user with the default role "user"
+	newUser, err := domainuser.NewUser(uuid.New(), req.Login, req.Email, passwordHash, "user", time.Now(), time.Time{}, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
 
-	// Create user
-	user := postgres.UserModel{
-		ID:           uuid.New(),
-		Login:        req.Login,
-		Email:        req.Email,
-		PasswordHash: passwordHash,
-		RoleID:       &defaultRole.ID,
-		CreatedAt:    time.Now(),
-	}
-
-	if result := h.db.Create(&user); result.Error != nil {
+	if err := h.userRepo.Create(ctx, newUser); err != nil {
+		if errors.Is(err, domainuser.ErrRoleNotFound) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get default role"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
 
 	// Generate tokens
-	tokens, err := h.jwtManager.GenerateTokenPair(user.ID, user.Login, defaultRole.Name)
+	tokens, err := h.jwtManager.GenerateTokenPair(newUser.ID(), newUser.Login(), newUser.Role())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
 		return
 	}
 
 	// Store refresh token
-	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+	if err := h.storeRefreshToken(c, newUser.ID(), tokens.RefreshToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
 		return
 	}
@@ -177,11 +190,11 @@ func (h *Handler) Register(c *gin.Context) {
 		TokenType:    tokens.TokenType,
 		ExpiresAt:    tokens.ExpiresAt,
 		User: UserInfo{
-			ID:        user.ID,
-			Login:     user.Login,
-			Email:     user.Email,
-			Role:      defaultRole.Name,
-			CreatedAt: user.CreatedAt,
+			ID:        newUser.ID(),
+			Login:     newUser.Login(),
+			Email:     newUser.Email(),
+			Role:      newUser.Role(),
+			CreatedAt: newUser.CreatedAt(),
 		},
 	})
 }
@@ -198,43 +211,37 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Find user by login
-	var user postgres.UserModel
-	if result := h.db.Where("login = ?", req.Login).First(&user); result.Error != nil {
+	u, err := h.userRepo.FindByLogin(c.Request.Context(), req.Login)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+	if u == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	// Check if user is deleted
-	if user.DeletedAt != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "account has been deleted"})
-		return
-	}
-
 	// Verify password
-	valid, err := auth.VerifyPassword(req.Password, user.PasswordHash)
+	valid, err := authpkg.VerifyPassword(req.Password, u.PasswordHash())
 	if err != nil || !valid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	// Get user role
-	roleName := "user"
-	if user.RoleID != nil {
-		var role postgres.UserRoleModel
-		if result := h.db.First(&role, user.RoleID); result.Error == nil {
-			roleName = role.Name
-		}
+	roleName := u.Role()
+	if roleName == "" {
+		roleName = "user"
 	}
 
 	// Generate tokens
-	tokens, err := h.jwtManager.GenerateTokenPair(user.ID, user.Login, roleName)
+	tokens, err := h.jwtManager.GenerateTokenPair(u.ID(), u.Login(), roleName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
 		return
 	}
 
 	// Store refresh token
-	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+	if err := h.storeRefreshToken(c, u.ID(), tokens.RefreshToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
 		return
 	}
@@ -245,11 +252,11 @@ func (h *Handler) Login(c *gin.Context) {
 		TokenType:    tokens.TokenType,
 		ExpiresAt:    tokens.ExpiresAt,
 		User: UserInfo{
-			ID:        user.ID,
-			Login:     user.Login,
-			Email:     user.Email,
+			ID:        u.ID(),
+			Login:     u.Login(),
+			Email:     u.Email(),
 			Role:      roleName,
-			CreatedAt: user.CreatedAt,
+			CreatedAt: u.CreatedAt(),
 		},
 	})
 }
@@ -272,9 +279,11 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
+
 	// Check if blacklisted
 	if h.tokenStore != nil {
-		blacklisted, err := h.tokenStore.IsTokenBlacklisted(c.Request.Context(), req.RefreshToken)
+		blacklisted, err := h.tokenStore.IsTokenBlacklisted(ctx, req.RefreshToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to validate token"})
 			return
@@ -284,8 +293,8 @@ func (h *Handler) Refresh(c *gin.Context) {
 			return
 		}
 
-		// Validate in database
-		_, err = h.tokenStore.ValidateRefreshToken(c.Request.Context(), req.RefreshToken)
+		// Validate in cache
+		_, err = h.tokenStore.ValidateRefreshToken(ctx, req.RefreshToken)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 			return
@@ -293,22 +302,23 @@ func (h *Handler) Refresh(c *gin.Context) {
 	}
 
 	// Get user and role
-	var user postgres.UserModel
-	if result := h.db.First(&user, claims.UserID); result.Error != nil {
+	u, err := h.userRepo.FindByID(ctx, claims.UserID)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	if u == nil || u.IsDeleted() {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return
 	}
 
-	roleName := "user"
-	if user.RoleID != nil {
-		var role postgres.UserRoleModel
-		if result := h.db.First(&role, user.RoleID); result.Error == nil {
-			roleName = role.Name
-		}
+	roleName := u.Role()
+	if roleName == "" {
+		roleName = "user"
 	}
 
 	// Generate new token pair (token rotation)
-	tokens, err := h.jwtManager.GenerateTokenPair(user.ID, user.Login, roleName)
+	tokens, err := h.jwtManager.GenerateTokenPair(u.ID(), u.Login(), roleName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
 		return
@@ -316,14 +326,14 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 	// Store new refresh token before revoking the old one to avoid invalidating
 	// the session if the storage step fails.
-	if err := h.storeRefreshToken(c, user.ID, tokens.RefreshToken); err != nil {
+	if err := h.storeRefreshToken(c, u.ID(), tokens.RefreshToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
 		return
 	}
 
 	// Revoke old refresh token
 	if h.tokenStore != nil {
-		_ = h.tokenStore.RevokeRefreshToken(c.Request.Context(), req.RefreshToken, h.cfg.JWTRefreshTTL)
+		_ = h.tokenStore.RevokeRefreshToken(ctx, req.RefreshToken, h.cfg.JWTRefreshTTL)
 	}
 
 	c.JSON(http.StatusOK, TokenResponse{
@@ -332,11 +342,11 @@ func (h *Handler) Refresh(c *gin.Context) {
 		TokenType:    tokens.TokenType,
 		ExpiresAt:    tokens.ExpiresAt,
 		User: UserInfo{
-			ID:        user.ID,
-			Login:     user.Login,
-			Email:     user.Email,
+			ID:        u.ID(),
+			Login:     u.Login(),
+			Email:     u.Email(),
 			Role:      roleName,
-			CreatedAt: user.CreatedAt,
+			CreatedAt: u.CreatedAt(),
 		},
 	})
 }
@@ -385,15 +395,19 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	}
 
 	// Find user by email
-	var user postgres.UserModel
-	if result := h.db.Where("email = ?", req.Email).First(&user); result.Error != nil {
+	u, err := h.userRepo.FindByEmail(c.Request.Context(), req.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find user"})
+		return
+	}
+	if u == nil {
 		// Return success even if email not found (security best practice)
 		c.JSON(http.StatusOK, gin.H{"message": "if the email exists, a reset link has been sent"})
 		return
 	}
 
 	// Generate reset token
-	token, err := auth.GenerateRandomToken(32)
+	token, err := authpkg.GenerateRandomToken(32)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate reset token"})
 		return
@@ -401,7 +415,7 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 
 	// Store token in Redis
 	if h.tokenStore != nil {
-		err = h.tokenStore.StorePasswordResetToken(c.Request.Context(), user.ID.String(), token, h.cfg.PasswordResetTTL)
+		err = h.tokenStore.StorePasswordResetToken(c.Request.Context(), u.ID().String(), token, h.cfg.PasswordResetTTL)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store reset token"})
 			return
@@ -428,7 +442,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	}
 
 	// Validate password policy
-	if err := auth.ValidatePassword(req.NewPassword, h.passwordPolicy); err != nil {
+	if err := authpkg.ValidatePassword(req.NewPassword, h.passwordPolicy); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -445,16 +459,31 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 		return
 	}
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or expired reset token"})
+		return
+	}
+
+	u, err := h.userRepo.FindByID(c.Request.Context(), userUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find user"})
+		return
+	}
+	if u == nil || u.IsDeleted() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or expired reset token"})
+		return
+	}
+
 	// Hash new password
-	passwordHash, err := auth.HashPassword(req.NewPassword, h.passwordConfig)
+	passwordHash, err := authpkg.HashPassword(req.NewPassword, h.passwordConfig)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
 	}
 
-	// Update user password
-	userUUID, _ := uuid.Parse(userID)
-	if result := h.db.Model(&postgres.UserModel{}).Where("id = ?", userUUID).Update("password_hash", passwordHash); result.Error != nil {
+	u.SetPasswordHash(passwordHash)
+	if err := h.userRepo.Update(c.Request.Context(), u); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update password"})
 		return
 	}
@@ -473,11 +502,11 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 	}
 
 	// Generate state and PKCE if enabled
-	state, _ := auth.GenerateRandomToken(32)
+	state, _ := authpkg.GenerateRandomToken(32)
 
 	var codeChallenge string
 	if h.cfg.PKCEEnabled {
-		pkce, _ := auth.GeneratePKCE(h.cfg.PKCECodeChallengeLength)
+		pkce, _ := authpkg.GeneratePKCE(h.cfg.PKCECodeChallengeLength)
 		codeChallenge = pkce.CodeChallenge
 		// Store PKCE data in Redis
 		if h.tokenStore != nil {
@@ -539,14 +568,14 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 
 // storeRefreshToken stores refresh token hash in database and Redis cache
 func (h *Handler) storeRefreshToken(c *gin.Context, userID uuid.UUID, token string) error {
-	if h.tokenStore == nil {
+	if h.tokenStore == nil || h.refreshTokenRepo == nil {
 		return nil
 	}
 
 	hash := sha256.Sum256([]byte(token))
 	tokenHash := hex.EncodeToString(hash[:])
 
-	refreshToken := postgres.RefreshTokenModel{
+	refreshToken := &authpkg.RefreshToken{
 		ID:        uuid.New(),
 		UserID:    userID,
 		TokenHash: tokenHash,
@@ -555,7 +584,7 @@ func (h *Handler) storeRefreshToken(c *gin.Context, userID uuid.UUID, token stri
 		CreatedAt: time.Now(),
 	}
 
-	if err := h.db.Create(&refreshToken).Error; err != nil {
+	if err := h.refreshTokenRepo.Create(c.Request.Context(), refreshToken); err != nil {
 		return err
 	}
 

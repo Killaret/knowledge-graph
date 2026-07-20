@@ -265,9 +265,9 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 
 ---
 
-## Language Policy — ENGLISH ONLY
+## Language Policy
 
-**All user-facing content MUST be in English:**
+**User-facing runtime content MUST be in English:**
 
 ```typescript
 // ✅ Good
@@ -279,7 +279,8 @@ errorMessage = "Failed to load notes. Please try again."
 toast.success("Заметка создана успешно");
 ```
 
-**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content, commit messages, documentation.
+**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content, commit messages.
+**May be bilingual:** Documentation (the authoritative English version must be present; Russian translations may be added alongside).
 **Exceptions:** Internal code comments (any language OK).
 
 ---
@@ -383,3 +384,28 @@ Use the right agent for each task:
 - Devin: `.devin/skills/knowledge-graph/SKILL.md`
 
 **Full docs:** `docs/AGENTS_EN.md`
+
+---
+
+## Clean Architecture Check
+
+When modifying backend handlers or repositories:
+
+- **Domain layer** (`internal/domain/*`) must be pure Go: no `*gorm.DB`, no `gin.Context`, no Redis, no framework types.
+- **Application layer** (`internal/application/*`) orchestrates domain objects and interfaces.
+- **Infrastructure layer** (`internal/infrastructure/db/*`, `internal/infrastructure/*`) implements interfaces defined by inner layers.
+- **Interface layer** (`internal/interfaces/api/*`) contains Gin handlers, DTOs, and middleware.
+
+### Current handler decoupling status
+
+- ✅ `user/handler.go` — uses `domainuser.Repository`, `domainuser.APIKeyRepository`
+- ✅ `auth/handler.go` — uses `domainuser.Repository`, `auth.RefreshTokenRepository`, `auth.TokenStore`
+- ✅ `share/handler.go` — uses `domainnote.Repository`, `domainuser.Repository`, `domainshare.Repository`
+- ✅ `backup/handler.go` — no DB dependency
+
+### Before committing backend changes
+
+1. `cd backend && go test ./...`
+2. `cd backend && go vet ./...`
+3. Delete generated artifacts: `coverage.out`, `*.cov`, `*.tmp`, `*.log`
+4. Update `docs/AGENTS.md` if boundaries change

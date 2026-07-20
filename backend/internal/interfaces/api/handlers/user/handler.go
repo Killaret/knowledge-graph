@@ -8,27 +8,33 @@ import (
 	"time"
 
 	"knowledge-graph/internal/auth"
-	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/domain/user"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // Handler handles user management requests
 type Handler struct {
-	db     *gorm.DB
-	config *auth.PasswordConfig
-	policy *auth.PasswordPolicy
+	repo           user.Repository
+	apiKeyRepo     user.APIKeyRepository
+	passwordConfig *auth.PasswordConfig
+	passwordPolicy *auth.PasswordPolicy
 }
 
 // NewHandler creates a new user handler
-func NewHandler(db *gorm.DB, passwordConfig *auth.PasswordConfig, passwordPolicy *auth.PasswordPolicy) *Handler {
+func NewHandler(
+	repo user.Repository,
+	apiKeyRepo user.APIKeyRepository,
+	passwordConfig *auth.PasswordConfig,
+	passwordPolicy *auth.PasswordPolicy,
+) *Handler {
 	return &Handler{
-		db:     db,
-		config: passwordConfig,
-		policy: passwordPolicy,
+		repo:           repo,
+		apiKeyRepo:     apiKeyRepo,
+		passwordConfig: passwordConfig,
+		passwordPolicy: passwordPolicy,
 	}
 }
 
@@ -56,23 +62,22 @@ func (h *Handler) GetMe(c *gin.Context) {
 		return
 	}
 
-	var user postgres.UserModel
-	if result := h.db.Preload("Role").First(&user, userID); result.Error != nil {
+	u, err := h.repo.FindByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
+		return
+	}
+	if u == nil || u.IsDeleted() {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
-	roleName := ""
-	if user.Role != nil {
-		roleName = user.Role.Name
-	}
-
 	c.JSON(http.StatusOK, UserResponse{
-		ID:        user.ID,
-		Login:     user.Login,
-		Email:     user.Email,
-		Role:      roleName,
-		CreatedAt: user.CreatedAt,
+		ID:        u.ID(),
+		Login:     u.Login(),
+		Email:     u.Email(),
+		Role:      u.Role(),
+		CreatedAt: u.CreatedAt(),
 	})
 }
 
@@ -90,77 +95,62 @@ func (h *Handler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	var user postgres.UserModel
-	if result := h.db.First(&user, userID); result.Error != nil {
+	u, err := h.repo.FindByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
+		return
+	}
+	if u == nil || u.IsDeleted() {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
-	updates := make(map[string]interface{})
-
-	// Update email if provided
 	if req.Email != "" {
-		// Check if email is already taken by another user
-		var existingUser postgres.UserModel
-		if result := h.db.Where("email = ? AND id != ?", req.Email, userID).First(&existingUser); result.Error == nil {
+		taken, err := h.repo.EmailExists(c.Request.Context(), req.Email, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check email"})
+			return
+		}
+		if taken {
 			c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
 			return
 		}
-		updates["email"] = req.Email
+		u.SetEmail(req.Email)
 	}
 
-	// Update password if provided
 	if req.NewPassword != "" {
-		// Validate old password
 		if req.OldPassword == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "old password is required"})
 			return
 		}
-
-		// Verify old password
-		valid, err := auth.VerifyPassword(req.OldPassword, user.PasswordHash)
+		valid, err := auth.VerifyPassword(req.OldPassword, u.PasswordHash())
 		if err != nil || !valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid old password"})
 			return
 		}
-
-		// Validate new password policy
-		if err := auth.ValidatePassword(req.NewPassword, h.policy); err != nil {
+		if err := auth.ValidatePassword(req.NewPassword, h.passwordPolicy); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		// Hash new password
-		passwordHash, err := auth.HashPassword(req.NewPassword, h.config)
+		hash, err := auth.HashPassword(req.NewPassword, h.passwordConfig)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 			return
 		}
-		updates["password_hash"] = passwordHash
+		u.SetPasswordHash(hash)
 	}
 
-	// Apply updates if any
-	if len(updates) > 0 {
-		if result := h.db.Model(&user).Updates(updates); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
-			return
-		}
-	}
-
-	// Reload user data
-	h.db.First(&user, userID)
-
-	roleName := ""
-	if user.Role != nil {
-		roleName = user.Role.Name
+	if err := h.repo.Update(c.Request.Context(), u); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		return
 	}
 
 	c.JSON(http.StatusOK, UserResponse{
-		ID:        user.ID,
-		Login:     user.Login,
-		Email:     user.Email,
-		Role:      roleName,
-		CreatedAt: user.CreatedAt,
+		ID:        u.ID(),
+		Login:     u.Login(),
+		Email:     u.Email(),
+		Role:      u.Role(),
+		CreatedAt: u.CreatedAt(),
 	})
 }
 
@@ -180,22 +170,23 @@ func (h *Handler) DeleteMe(c *gin.Context) {
 		return
 	}
 
-	var user postgres.UserModel
-	if result := h.db.First(&user, userID); result.Error != nil {
+	u, err := h.repo.FindByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
+		return
+	}
+	if u == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
-	// Verify password
-	valid, err := auth.VerifyPassword(req.Password, user.PasswordHash)
+	valid, err := auth.VerifyPassword(req.Password, u.PasswordHash())
 	if err != nil || !valid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid password"})
 		return
 	}
 
-	// Soft delete
-	now := time.Now()
-	if result := h.db.Model(&user).Update("deleted_at", &now); result.Error != nil {
+	if err := h.repo.SoftDelete(c.Request.Context(), userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
 		return
 	}
@@ -211,8 +202,8 @@ func (h *Handler) ListAPIKeys(c *gin.Context) {
 		return
 	}
 
-	var keys []postgres.APIKeyModel
-	if result := h.db.Where("user_id = ? AND is_active = ?", userID, true).Find(&keys); result.Error != nil {
+	keys, err := h.apiKeyRepo.FindByUserID(c.Request.Context(), userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch API keys"})
 		return
 	}
@@ -220,12 +211,12 @@ func (h *Handler) ListAPIKeys(c *gin.Context) {
 	response := make([]gin.H, 0, len(keys))
 	for _, key := range keys {
 		response = append(response, gin.H{
-			"id":           key.ID,
-			"name":         key.Name,
-			"scopes":       key.Scopes,
-			"created_at":   key.CreatedAt,
-			"expires_at":   key.ExpiresAt,
-			"last_used_at": key.LastUsedAt,
+			"id":           key.ID(),
+			"name":         key.Name(),
+			"scopes":       key.Scopes(),
+			"created_at":   key.CreatedAt(),
+			"expires_at":   key.ExpiresAt(),
+			"last_used_at": key.LastUsedAt(),
 		})
 	}
 
@@ -252,40 +243,32 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		return
 	}
 
-	// Generate API key
 	apiKey, err := auth.GenerateRandomToken(32)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate API key"})
 		return
 	}
 
-	// Hash the key for storage
 	hash := sha256.Sum256([]byte(apiKey))
 	keyHash := hex.EncodeToString(hash[:])
 
-	// Store in database
-	key := postgres.APIKeyModel{
-		ID:        uuid.New(),
-		UserID:    userID,
-		KeyHash:   keyHash,
-		Name:      req.Name,
-		Scopes:    req.Scopes,
-		IsActive:  true,
-		CreatedAt: time.Now(),
+	key, err := user.NewAPIKey(uuid.New(), userID, keyHash, req.Name, req.Scopes, time.Now())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create API key"})
+		return
 	}
 
-	if result := h.db.Create(&key); result.Error != nil {
+	if err := h.apiKeyRepo.Create(c.Request.Context(), key); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save API key"})
 		return
 	}
 
-	// Return the plain API key (only shown once)
 	c.JSON(http.StatusCreated, gin.H{
-		"id":         key.ID,
+		"id":         key.ID(),
 		"api_key":    apiKey, // Only shown once!
-		"name":       key.Name,
-		"scopes":     key.Scopes,
-		"created_at": key.CreatedAt,
+		"name":       key.Name(),
+		"scopes":     key.Scopes(),
+		"created_at": key.CreatedAt(),
 	})
 }
 
@@ -303,17 +286,12 @@ func (h *Handler) RevokeAPIKey(c *gin.Context) {
 		return
 	}
 
-	// Verify ownership and revoke
-	result := h.db.Model(&postgres.APIKeyModel{}).
-		Where("id = ? AND user_id = ?", keyID, userID).
-		Update("is_active", false)
-
-	if result.Error != nil {
+	revoked, err := h.apiKeyRepo.Revoke(c.Request.Context(), keyID, userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke API key"})
 		return
 	}
-
-	if result.RowsAffected == 0 {
+	if !revoked {
 		c.JSON(http.StatusNotFound, gin.H{"error": "API key not found"})
 		return
 	}

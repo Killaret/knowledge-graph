@@ -38,8 +38,8 @@ func setupTestDB(t *testing.T) (*gorm.DB, func()) {
 	return db, cleanup
 }
 
-func setupTestHandler(t *testing.T) *Handler {
-	db, _ := setupTestDB(t)
+func setupTestHandler(t *testing.T) (*Handler, *gorm.DB, func()) {
+	db, cleanup := setupTestDB(t)
 
 	passwordConfig := &auth.PasswordConfig{
 		Time:    1,
@@ -56,7 +56,9 @@ func setupTestHandler(t *testing.T) *Handler {
 		RequireSpecial: true,
 	}
 
-	return NewHandler(db, passwordConfig, passwordPolicy)
+	repo := postgres.NewUserRepository(db)
+	apiKeyRepo := postgres.NewAPIKeyRepository(db)
+	return NewHandler(repo, apiKeyRepo, passwordConfig, passwordPolicy), db, cleanup
 }
 
 func createTestUser(t *testing.T, db *gorm.DB, login, email, password string) *postgres.UserModel {
@@ -88,10 +90,11 @@ func createTestUser(t *testing.T, db *gorm.DB, login, email, password string) *p
 
 func TestGetMe(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	tests := []struct {
 		name       string
@@ -157,13 +160,14 @@ func TestGetMe(t *testing.T) {
 
 func TestUpdateMe(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	// Create another user for email conflict test
-	createTestUser(t, handler.db, "otheruser", "other@example.com", "TestPass123!")
+	createTestUser(t, db, "otheruser", "other@example.com", "TestPass123!")
 
 	tests := []struct {
 		name       string
@@ -273,10 +277,11 @@ func TestUpdateMe(t *testing.T) {
 
 func TestDeleteMe(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	tests := []struct {
 		name    string
@@ -363,10 +368,11 @@ func TestDeleteMe(t *testing.T) {
 
 func TestListAPIKeys(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	tests := []struct {
 		name       string
@@ -424,10 +430,11 @@ func TestListAPIKeys(t *testing.T) {
 
 func TestCreateAPIKey(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	tests := []struct {
 		name       string
@@ -511,10 +518,11 @@ func TestCreateAPIKey(t *testing.T) {
 
 func TestRevokeAPIKey(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	// Create test API key
 	apiKey := postgres.APIKeyModel{
@@ -526,7 +534,7 @@ func TestRevokeAPIKey(t *testing.T) {
 		IsActive:  true,
 		CreatedAt: time.Now(),
 	}
-	result := handler.db.Create(&apiKey)
+	result := db.Create(&apiKey)
 	if result.Error != nil {
 		t.Logf("Error creating API key: %v", result.Error)
 		// Continue anyway to test the revoke logic
@@ -591,10 +599,11 @@ func TestRevokeAPIKey(t *testing.T) {
 
 func TestUpdateMeEdgeCases(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := setupTestHandler(t)
+	handler, db, cleanup := setupTestHandler(t)
+	defer cleanup()
 
 	// Create test user
-	testUser := createTestUser(t, handler.db, "testuser", "test@example.com", "TestPass123!")
+	testUser := createTestUser(t, db, "testuser", "test@example.com", "TestPass123!")
 
 	tests := []struct {
 		name       string

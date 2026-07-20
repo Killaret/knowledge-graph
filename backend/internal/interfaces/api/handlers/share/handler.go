@@ -5,22 +5,33 @@ import (
 	"net/http"
 	"time"
 
-	"knowledge-graph/internal/infrastructure/db/postgres"
+	domainnote "knowledge-graph/internal/domain/note"
+	domainshare "knowledge-graph/internal/domain/share"
+	domainuser "knowledge-graph/internal/domain/user"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // Handler handles note sharing requests
 type Handler struct {
-	db *gorm.DB
+	noteRepo  domainnote.Repository
+	userRepo  domainuser.Repository
+	shareRepo domainshare.Repository
 }
 
 // NewHandler creates a new share handler
-func NewHandler(db *gorm.DB) *Handler {
-	return &Handler{db: db}
+func NewHandler(
+	noteRepo domainnote.Repository,
+	userRepo domainuser.Repository,
+	shareRepo domainshare.Repository,
+) *Handler {
+	return &Handler{
+		noteRepo:  noteRepo,
+		userRepo:  userRepo,
+		shareRepo: shareRepo,
+	}
 }
 
 // ShareNoteRequest represents a request to share a note with a user
@@ -39,6 +50,23 @@ type ShareNoteResponse struct {
 	Permission       string     `json:"permission"`
 	CreatedAt        time.Time  `json:"created_at"`
 	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
+}
+
+// CreateShareLinkRequest represents a request to create a share link
+type CreateShareLinkRequest struct {
+	Permission string     `json:"permission" binding:"omitempty,oneof=read write"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	MaxUses    *int       `json:"max_uses,omitempty"`
+}
+
+// ShareLinkResponse represents a share link response
+type ShareLinkResponse struct {
+	ID         uuid.UUID  `json:"id"`
+	Token      string     `json:"token"`
+	Permission string     `json:"permission"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	MaxUses    *int       `json:"max_uses,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
 }
 
 // ShareNote shares a note with a specific user
@@ -61,97 +89,91 @@ func (h *Handler) ShareNote(c *gin.Context) {
 		return
 	}
 
-	sharedWithUserID, _ := uuid.Parse(req.UserID)
+	sharedWithUserID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
 
-	// Check if note exists and user is the creator
-	var note postgres.NoteModel
-	if result := h.db.First(&note, noteID); result.Error != nil {
+	ctx := c.Request.Context()
+
+	note, err := h.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch note"})
+		return
+	}
+	if note == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
 		return
 	}
 
-	// Verify ownership
-	if note.CreatorID == nil || *note.CreatorID != userID {
+	if note.CreatorID() == nil || *note.CreatorID() != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only the creator can share this note"})
 		return
 	}
 
-	// Check if user exists
-	var targetUser postgres.UserModel
-	if result := h.db.First(&targetUser, sharedWithUserID); result.Error != nil {
+	targetUser, err := h.userRepo.FindByID(ctx, sharedWithUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch target user"})
+		return
+	}
+	if targetUser == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "target user not found"})
 		return
 	}
 
-	// Set default permission
 	permission := req.Permission
 	if permission == "" {
 		permission = "read"
 	}
 
-	// Check if already shared
-	var existingShare postgres.NoteShareModel
-	result := h.db.Where("note_id = ? AND shared_with_user_id = ?", noteID, sharedWithUserID).First(&existingShare)
-	if result.Error == nil {
-		// Update existing share
-		existingShare.Permission = permission
-		existingShare.ExpiresAt = req.ExpiresAt
-		h.db.Save(&existingShare)
+	existing, err := h.shareRepo.FindShareByNoteAndUser(ctx, noteID, sharedWithUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check existing share"})
+		return
+	}
 
+	if existing != nil {
+		updatedShare, err := domainshare.NewNoteShare(existing.ID(), noteID, userID, sharedWithUserID, permission, req.ExpiresAt)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update share"})
+			return
+		}
+		if err := h.shareRepo.UpdateShare(ctx, updatedShare); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update share"})
+			return
+		}
 		c.JSON(http.StatusOK, ShareNoteResponse{
-			ID:               existingShare.ID,
+			ID:               updatedShare.ID(),
 			NoteID:           noteID,
 			SharedWithUserID: sharedWithUserID,
-			SharedWithLogin:  targetUser.Login,
-			Permission:       permission,
-			CreatedAt:        existingShare.CreatedAt,
-			ExpiresAt:        req.ExpiresAt,
+			SharedWithLogin:  targetUser.Login(),
+			Permission:       updatedShare.Permission(),
+			CreatedAt:        updatedShare.CreatedAt(),
+			ExpiresAt:        updatedShare.ExpiresAt(),
 		})
 		return
 	}
 
-	// Create new share
-	share := postgres.NoteShareModel{
-		ID:               uuid.New(),
-		NoteID:           noteID,
-		SharedByUserID:   userID,
-		SharedWithUserID: sharedWithUserID,
-		Permission:       permission,
-		CreatedAt:        time.Now(),
-		ExpiresAt:        req.ExpiresAt,
+	newShare, err := domainshare.NewNoteShare(uuid.New(), noteID, userID, sharedWithUserID, permission, req.ExpiresAt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create share"})
+		return
 	}
-
-	if result := h.db.Create(&share); result.Error != nil {
+	if err := h.shareRepo.CreateShare(ctx, newShare); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create share"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, ShareNoteResponse{
-		ID:               share.ID,
+		ID:               newShare.ID(),
 		NoteID:           noteID,
 		SharedWithUserID: sharedWithUserID,
-		SharedWithLogin:  targetUser.Login,
-		Permission:       permission,
-		CreatedAt:        share.CreatedAt,
-		ExpiresAt:        req.ExpiresAt,
+		SharedWithLogin:  targetUser.Login(),
+		Permission:       newShare.Permission(),
+		CreatedAt:        newShare.CreatedAt(),
+		ExpiresAt:        newShare.ExpiresAt(),
 	})
-}
-
-// CreateShareLinkRequest represents a request to create a share link
-type CreateShareLinkRequest struct {
-	Permission string     `json:"permission" binding:"omitempty,oneof=read write"`
-	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
-	MaxUses    *int       `json:"max_uses,omitempty"`
-}
-
-// ShareLinkResponse represents a share link response
-type ShareLinkResponse struct {
-	ID         uuid.UUID  `json:"id"`
-	Token      string     `json:"token"`
-	Permission string     `json:"permission"`
-	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
-	MaxUses    *int       `json:"max_uses,omitempty"`
-	CreatedAt  time.Time  `json:"created_at"`
 }
 
 // CreateShareLink creates a public share link for a note
@@ -174,63 +196,48 @@ func (h *Handler) CreateShareLink(c *gin.Context) {
 		return
 	}
 
-	// Check if note exists and user is the creator
-	var note postgres.NoteModel
-	if result := h.db.First(&note, noteID); result.Error != nil {
+	ctx := c.Request.Context()
+
+	note, err := h.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch note"})
+		return
+	}
+	if note == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
 		return
 	}
 
-	// Verify ownership
-	if note.CreatorID == nil || *note.CreatorID != userID {
+	if note.CreatorID() == nil || *note.CreatorID() != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only the creator can create share links"})
 		return
 	}
 
-	// Generate token
-	token, err := generateShareToken()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate share token"})
-		return
-	}
-
-	// Set default permission
 	permission := req.Permission
 	if permission == "" {
 		permission = "read"
 	}
 
-	// Create share link
-	shareLink := postgres.ShareLinkModel{
-		ID:             uuid.New(),
-		NoteID:         noteID,
-		SharedByUserID: userID,
-		Token:          token,
-		Permission:     permission,
-		CreatedAt:      time.Now(),
-		ExpiresAt:      req.ExpiresAt,
-		MaxUses:        req.MaxUses,
-		IsActive:       true,
+	token := uuid.New().String()
+	link, err := domainshare.NewShareLink(uuid.New(), noteID, userID, token, permission, req.ExpiresAt, req.MaxUses, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create share link"})
+		return
 	}
 
-	if result := h.db.Create(&shareLink); result.Error != nil {
+	if err := h.shareRepo.CreateShareLink(ctx, link); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create share link"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, ShareLinkResponse{
-		ID:         shareLink.ID,
-		Token:      token,
-		Permission: permission,
-		ExpiresAt:  req.ExpiresAt,
-		MaxUses:    req.MaxUses,
-		CreatedAt:  shareLink.CreatedAt,
+		ID:         link.ID(),
+		Token:      link.Token(),
+		Permission: link.Permission(),
+		ExpiresAt:  link.ExpiresAt(),
+		MaxUses:    link.MaxUses(),
+		CreatedAt:  link.CreatedAt(),
 	})
-}
-
-// generateShareToken generates a unique share token
-func generateShareToken() (string, error) {
-	return uuid.New().String(), nil
 }
 
 // RevokeShareLink revokes a share link
@@ -247,17 +254,12 @@ func (h *Handler) RevokeShareLink(c *gin.Context) {
 		return
 	}
 
-	// Verify ownership and revoke
-	result := h.db.Model(&postgres.ShareLinkModel{}).
-		Where("id = ? AND shared_by_user_id = ?", linkID, userID).
-		Update("is_active", false)
-
-	if result.Error != nil {
+	revoked, err := h.shareRepo.RevokeShareLink(c.Request.Context(), linkID, userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke share link"})
 		return
 	}
-
-	if result.RowsAffected == 0 {
+	if !revoked {
 		c.JSON(http.StatusNotFound, gin.H{"error": "share link not found"})
 		return
 	}
@@ -279,53 +281,57 @@ func (h *Handler) ListNoteShares(c *gin.Context) {
 		return
 	}
 
-	// Check if note exists and user is the creator
-	var note postgres.NoteModel
-	if result := h.db.First(&note, noteID); result.Error != nil {
+	ctx := c.Request.Context()
+
+	note, err := h.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch note"})
+		return
+	}
+	if note == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
 		return
 	}
 
-	// Verify ownership
-	if note.CreatorID == nil || *note.CreatorID != userID {
+	if note.CreatorID() == nil || *note.CreatorID() != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only the creator can view shares"})
 		return
 	}
 
-	// Get user shares
-	var shares []postgres.NoteShareModel
-	h.db.Preload("SharedWithUser").Where("note_id = ?", noteID).Find(&shares)
+	shares, err := h.shareRepo.ListSharesByNote(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list shares"})
+		return
+	}
 
 	userShares := make([]gin.H, 0, len(shares))
-	for _, share := range shares {
-		login := ""
-		if share.SharedWithUser.ID != uuid.Nil {
-			login = share.SharedWithUser.Login
-		}
+	for _, s := range shares {
 		userShares = append(userShares, gin.H{
-			"id":                  share.ID,
-			"shared_with_user_id": share.SharedWithUserID,
-			"shared_with_login":   login,
-			"permission":          share.Permission,
-			"created_at":          share.CreatedAt,
-			"expires_at":          share.ExpiresAt,
+			"id":                  s.ID(),
+			"shared_with_user_id": s.SharedWithUserID(),
+			"shared_with_login":   s.SharedWithLogin(),
+			"permission":          s.Permission(),
+			"created_at":          s.CreatedAt(),
+			"expires_at":          s.ExpiresAt(),
 		})
 	}
 
-	// Get share links
-	var links []postgres.ShareLinkModel
-	h.db.Where("note_id = ? AND is_active = ?", noteID, true).Find(&links)
+	links, err := h.shareRepo.ListShareLinksByNote(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list share links"})
+		return
+	}
 
 	shareLinks := make([]gin.H, 0, len(links))
 	for _, link := range links {
 		shareLinks = append(shareLinks, gin.H{
-			"id":         link.ID,
-			"token":      link.Token,
-			"permission": link.Permission,
-			"created_at": link.CreatedAt,
-			"expires_at": link.ExpiresAt,
-			"max_uses":   link.MaxUses,
-			"uses_count": link.UsesCount,
+			"id":         link.ID(),
+			"token":      link.Token(),
+			"permission": link.Permission(),
+			"created_at": link.CreatedAt(),
+			"expires_at": link.ExpiresAt(),
+			"max_uses":   link.MaxUses(),
+			"uses_count": link.UsesCount(),
 		})
 	}
 
@@ -355,24 +361,28 @@ func (h *Handler) RevokeShare(c *gin.Context) {
 		return
 	}
 
-	// Verify note ownership
-	var note postgres.NoteModel
-	if result := h.db.First(&note, noteID); result.Error != nil {
+	ctx := c.Request.Context()
+
+	note, err := h.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch note"})
+		return
+	}
+	if note == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
 		return
 	}
-	if note.CreatorID == nil || *note.CreatorID != userID {
+	if note.CreatorID() == nil || *note.CreatorID() != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only the creator can revoke shares"})
 		return
 	}
 
-	// Delete the share
-	result := h.db.Where("id = ? AND note_id = ?", shareID, noteID).Delete(&postgres.NoteShareModel{})
-	if result.Error != nil {
+	revoked, err := h.shareRepo.RevokeShare(ctx, noteID, shareID, userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke share"})
 		return
 	}
-	if result.RowsAffected == 0 {
+	if !revoked {
 		c.JSON(http.StatusNotFound, gin.H{"error": "share not found"})
 		return
 	}
@@ -388,45 +398,54 @@ func (h *Handler) AccessSharedNote(c *gin.Context) {
 		return
 	}
 
-	// Find share link
-	var shareLink postgres.ShareLinkModel
-	if result := h.db.Where("token = ? AND is_active = ?", token, true).First(&shareLink); result.Error != nil {
+	ctx := c.Request.Context()
+
+	shareLink, err := h.shareRepo.FindActiveShareLinkByToken(ctx, token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch share link"})
+		return
+	}
+	if shareLink == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invalid or expired share link"})
 		return
 	}
 
 	// Check expiration
-	if shareLink.ExpiresAt != nil && shareLink.ExpiresAt.Before(time.Now()) {
+	if shareLink.ExpiresAt() != nil && shareLink.ExpiresAt().Before(time.Now()) {
 		c.JSON(http.StatusGone, gin.H{"error": "share link has expired"})
 		return
 	}
 
 	// Check max uses
-	if shareLink.MaxUses != nil && shareLink.UsesCount >= *shareLink.MaxUses {
+	if shareLink.MaxUses() != nil && shareLink.UsesCount() >= *shareLink.MaxUses() {
 		c.JSON(http.StatusGone, gin.H{"error": "share link has reached maximum uses"})
 		return
 	}
 
 	// Increment uses count
-	h.db.Model(&shareLink).Update("uses_count", shareLink.UsesCount+1)
+	_ = h.shareRepo.IncrementShareLinkUsage(ctx, shareLink.ID())
 
 	// Get the note
-	var note postgres.NoteModel
-	if result := h.db.First(&note, shareLink.NoteID); result.Error != nil {
+	note, err := h.noteRepo.FindByID(ctx, shareLink.NoteID())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch note"})
+		return
+	}
+	if note == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "note not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"note": gin.H{
-			"id":         note.ID,
-			"title":      note.Title,
-			"content":    note.Content,
-			"type":       note.Type,
-			"metadata":   note.Metadata,
-			"created_at": note.CreatedAt,
-			"updated_at": note.UpdatedAt,
+			"id":         note.ID(),
+			"title":      note.Title().String(),
+			"content":    note.Content().String(),
+			"type":       note.Type(),
+			"metadata":   note.Metadata().Value(),
+			"created_at": note.CreatedAt(),
+			"updated_at": note.UpdatedAt(),
 		},
-		"permission": shareLink.Permission,
+		"permission": shareLink.Permission(),
 	})
 }

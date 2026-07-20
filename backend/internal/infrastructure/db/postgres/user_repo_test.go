@@ -30,7 +30,7 @@ func TestUserRepository_FindByID(t *testing.T) {
 	user, err := repo.FindByID(context.Background(), id)
 	require.NoError(t, err)
 	require.NotNil(t, user)
-	assert.Equal(t, "testuser", user.Login)
+	assert.Equal(t, "testuser", user.Login())
 }
 
 func TestUserRepository_FindByID_NotFound(t *testing.T) {
@@ -60,14 +60,14 @@ func TestUserRepository_FindByLogin(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "login", "email", "password_hash", "role_id", "created_at", "deleted_at"}).
 		AddRow(id, "testuser", "test@example.com", "hash", nil, now, nil)
 
-	mock.ExpectQuery(`SELECT \* FROM "users" WHERE login = \$1 ORDER BY "users"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "users" WHERE deleted_at IS NULL AND login = \$1 ORDER BY "users"."id" LIMIT \$2`).
 		WithArgs("testuser", 1).
 		WillReturnRows(rows)
 
 	user, err := repo.FindByLogin(context.Background(), "testuser")
 	require.NoError(t, err)
 	require.NotNil(t, user)
-	assert.Equal(t, id, user.ID)
+	assert.Equal(t, id, user.ID())
 }
 
 func TestUserRepository_Exists(t *testing.T) {

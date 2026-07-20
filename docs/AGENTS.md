@@ -112,11 +112,14 @@ curl http://localhost:8092/health           # Personal graph service
 
 ## Language Policy
 
-**All user-facing content MUST be in English:**
+**User-facing runtime content MUST be in English:**
 - UI strings (buttons, labels, placeholders, errors)
 - Toast messages and tooltips (GalacticLexicon)
 - Note titles and content
 - Commit messages
+
+**May be bilingual:**
+- Documentation — the authoritative English version must be present; Russian translations may be added alongside.
 
 **Exceptions:** Internal code comments (any language OK)
 
@@ -129,3 +132,45 @@ toast.success("Заметка создана успешно");
 ```
 
 ---
+
+## Clean Architecture Refactor Notes
+
+This section tracks the ongoing migration from direct `*gorm.DB` usage in handlers to Clean Architecture layers.
+
+### Completed decoupling
+
+- `cmd/server/main.go` — `run()` extracted with dependency injection; wired through constructors.
+- `internal/interfaces/api/handlers/user/handler.go` — now depends on `domainuser.Repository` and `domainuser.APIKeyRepository`; no `*gorm.DB` or `postgres` model usage.
+- `internal/interfaces/api/handlers/auth/handler.go` — now depends on `domainuser.Repository`, `auth.RefreshTokenRepository`, and `auth.TokenStore`; no direct `postgres` usage.
+- `internal/interfaces/api/handlers/share/handler.go` — now depends on `domainnote.Repository`, `domainuser.Repository`, and `domainshare.Repository`; no `*gorm.DB` or `postgres` model usage.
+- New domain packages:
+  - `internal/domain/user` — `User`, `APIKey` aggregates and repository ports.
+  - `internal/domain/share` — `NoteShare`, `ShareLink` aggregates and repository port.
+- New infrastructure implementations:
+  - `internal/infrastructure/db/postgres/user_repo.go`
+  - `internal/infrastructure/db/postgres/apikey_repo.go`
+  - `internal/infrastructure/db/postgres/refresh_token_repo.go`
+  - `internal/infrastructure/db/postgres/share_repo.go`
+- `internal/auth/interfaces.go` — defines `TokenStore` and `RefreshTokenRepository` ports.
+
+### Current backend coverage
+
+- `go test ./...` passes.
+- `go vet ./...` passes.
+- Aggregated backend coverage: **62.0%** (target >60%).
+
+### Remaining debt
+
+- Some application services still reach into `*gorm.DB` directly (audit, analytics, migration helpers).
+- `internal/infrastructure/db/postgres` still contains business logic that should migrate to domain or application services (e.g., role lookup during user creation could live in an application service).
+- `internal/interfaces/api/handlers/backup` is decoupled but minimal.
+- Frontend coverage and E2E stack not covered by these notes.
+
+### Verification checklist
+
+Before committing backend changes:
+
+1. `cd backend && go test ./...`
+2. `cd backend && go vet ./...`
+3. Remove generated artifacts: `coverage.out`, `*.cov`, `*.tmp`, `*.log`.
+4. Update this document if architecture boundaries change.

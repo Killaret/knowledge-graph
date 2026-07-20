@@ -246,9 +246,12 @@ func run(
 	if redisClient != nil {
 		tokenStore = auth.NewRedisTokenStore(redisClient)
 	}
-	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
+	userRepo := postgres.NewUserRepository(database)
+	refreshTokenRepo := postgres.NewRefreshTokenRepository(database)
+	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg)
 
 	// User handler
+	apiKeyRepo := postgres.NewAPIKeyRepository(database)
 	passwordConfig := &auth.PasswordConfig{
 		Time:    3,
 		Memory:  65536,
@@ -256,13 +259,14 @@ func run(
 		KeyLen:  32,
 	}
 	passwordPolicy := auth.DefaultPasswordPolicy()
-	userHandler := userhandler.NewHandler(database, passwordConfig, passwordPolicy)
+	userHandler := userhandler.NewHandler(userRepo, apiKeyRepo, passwordConfig, passwordPolicy)
 
 	// Settings handler
 	settingsHandler := settingshandler.NewHandler(settingsService)
 
 	// Share handler
-	shareHandler := sharehandler.NewHandler(database)
+	shareRepo := postgres.NewShareRepository(database)
+	shareHandler := sharehandler.NewHandler(noteRepo, userRepo, shareRepo)
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
