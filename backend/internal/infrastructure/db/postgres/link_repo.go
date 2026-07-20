@@ -14,9 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ErrDuplicateLink возвращается при попытке создать дубликат связи
-var ErrDuplicateLink = errors.New("link of this type already exists between these notes")
-
 type LinkRepository struct {
 	db *gorm.DB
 }
@@ -39,7 +36,7 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 				model.ID, model.SourceNoteID, model.TargetNoteID, err)
 			// Проверяем на нарушение уникального ограничения (PostgreSQL код 23505)
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-				return ErrDuplicateLink
+				return link.ErrDuplicateLink
 			}
 			return err
 		}

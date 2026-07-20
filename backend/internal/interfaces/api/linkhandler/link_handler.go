@@ -13,7 +13,6 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -187,7 +186,7 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
-		if errors.Is(err, postgres.ErrDuplicateLink) {
+		if errors.Is(err, link.ErrDuplicateLink) {
 			apicommon.Conflict(c, []apicommon.FieldError{
 				apicommon.NewFieldErrorFull("link", apicommon.ReasonAlreadyExists, apicommon.MsgDuplicateLink,
 					map[string]string{"source_note_id": req.SourceNoteID, "target_note_id": req.TargetNoteID, "link_type": req.LinkType},

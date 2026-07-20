@@ -37,7 +37,7 @@ func TestTriggerCloudBackup(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	t.Run("disabled", func(t *testing.T) {
-		h := NewHandler(&config.Config{BackupCloudEnabled: false}, nil, nil)
+		h := NewHandler(&config.Config{BackupCloudEnabled: false}, nil)
 		r := gin.New()
 		r.POST("/backup/cloud", h.TriggerCloudBackup)
 
@@ -50,7 +50,7 @@ func TestTriggerCloudBackup(t *testing.T) {
 	})
 
 	t.Run("missing local path", func(t *testing.T) {
-		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil, nil)
+		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil)
 		r := gin.New()
 		r.POST("/backup/cloud", h.TriggerCloudBackup)
 
@@ -63,7 +63,7 @@ func TestTriggerCloudBackup(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil, &mockTaskQueue{})
+		h := NewHandler(&config.Config{BackupCloudEnabled: true}, &mockTaskQueue{})
 		r := gin.New()
 		r.POST("/backup/cloud", h.TriggerCloudBackup)
 
@@ -80,7 +80,7 @@ func TestTriggerCloudBackup(t *testing.T) {
 	})
 
 	t.Run("enqueue failure", func(t *testing.T) {
-		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil, &mockTaskQueue{fail: true})
+		h := NewHandler(&config.Config{BackupCloudEnabled: true}, &mockTaskQueue{fail: true})
 		r := gin.New()
 		r.POST("/backup/cloud", h.TriggerCloudBackup)
 
@@ -94,7 +94,7 @@ func TestTriggerCloudBackup(t *testing.T) {
 	})
 
 	t.Run("nil task queue", func(t *testing.T) {
-		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil, nil)
+		h := NewHandler(&config.Config{BackupCloudEnabled: true}, nil)
 		r := gin.New()
 		r.POST("/backup/cloud", h.TriggerCloudBackup)
 
@@ -121,7 +121,7 @@ func TestGetBackupStatus(t *testing.T) {
 		BackupYandexMaxBackups: 10,
 	}
 
-	h := NewHandler(cfg, nil, nil)
+	h := NewHandler(cfg, nil)
 	r := gin.New()
 	r.GET("/backup/status", h.GetBackupStatus)
 

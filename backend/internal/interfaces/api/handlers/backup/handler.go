@@ -8,7 +8,6 @@ import (
 
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/config"
-	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
@@ -16,17 +15,15 @@ import (
 
 // Handler handles backup requests
 type Handler struct {
-	cfg           *config.Config
-	yandexService *cloud.YandexBackupService
-	taskQueue     common.TaskQueue
+	cfg       *config.Config
+	taskQueue common.TaskQueue
 }
 
 // NewHandler creates a new backup handler
-func NewHandler(cfg *config.Config, yandexService *cloud.YandexBackupService, taskQueue common.TaskQueue) *Handler {
+func NewHandler(cfg *config.Config, taskQueue common.TaskQueue) *Handler {
 	return &Handler{
-		cfg:           cfg,
-		yandexService: yandexService,
-		taskQueue:     taskQueue,
+		cfg:       cfg,
+		taskQueue: taskQueue,
 	}
 }
 

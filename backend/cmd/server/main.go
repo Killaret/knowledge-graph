@@ -26,7 +26,6 @@ import (
 	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
-	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/mongo"
@@ -194,23 +193,6 @@ func run(
 		log.Println("[Draft] Draft service disabled (MongoDB unavailable)")
 	}
 
-	// Yandex.Disk backup service
-	var yandexBackupService *cloud.YandexBackupService
-	if taskQueue != nil && cfg.BackupCloudProvider == "yandex" && cfg.BackupYandexOAuthToken != "" {
-		yandexCfg := cloud.YandexConfig{
-			OAuthToken:   cfg.BackupYandexOAuthToken,
-			BackupFolder: cfg.BackupYandexFolder,
-			MaxBackups:   cfg.BackupYandexMaxBackups,
-		}
-		var err error
-		yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
-		if err != nil {
-			log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
-		} else {
-			log.Printf("Yandex.Disk backup service initialized successfully")
-		}
-	}
-
 	// Graph loaders
 	linkLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
 	embeddingLoader := appGraph.NewEmbeddingNeighborLoader(embeddingRepo, cfg.EmbeddingSimilarityLimit)
@@ -256,7 +238,7 @@ func run(
 	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
 	// Backup handler
-	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
+	backupHandler := backphandler.NewHandler(cfg, taskQueue)
 
 	// Auth handler
 	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
