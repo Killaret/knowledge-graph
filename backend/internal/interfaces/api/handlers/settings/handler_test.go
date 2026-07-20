@@ -10,6 +10,7 @@ import (
 
 	"knowledge-graph/internal/application/user"
 	userDomain "knowledge-graph/internal/domain/user"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/alicebob/miniredis/v2"
@@ -55,7 +56,7 @@ func setupSettingsHandler() (*gin.Engine, *mockUserSettingsRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := new(mockUserSettingsRepo)
 	rdb := redis.NewClient(&redis.Options{Addr: miniredis.RunT(&testing.T{}).Addr()})
-	service := user.NewSettingsService(repo, rdb)
+	service := user.NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
 	h := NewHandler(service)
 
 	r := gin.New()

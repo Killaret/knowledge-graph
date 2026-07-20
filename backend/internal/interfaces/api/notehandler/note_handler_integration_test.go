@@ -58,7 +58,7 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 		0,   // taskDelay
 		nil, // recRepo
 		nil, // embeddingRepo
-		nil, // redis
+		nil, // cacheClient
 		&config.Config{
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,

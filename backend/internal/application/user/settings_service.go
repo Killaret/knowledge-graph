@@ -7,29 +7,29 @@ import (
 	"fmt"
 	"time"
 
+	dcache "knowledge-graph/internal/domain/cache"
 	userDomain "knowledge-graph/internal/domain/user"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 // SettingsService provides user settings management with caching
 type SettingsService struct {
-	repo     userDomain.UserSettingsRepository
-	redis    *redis.Client
-	cacheTTL time.Duration
+	repo        userDomain.UserSettingsRepository
+	cacheClient dcache.CacheClient
+	cacheTTL    time.Duration
 }
 
 // NewSettingsService creates a new settings service
-func NewSettingsService(repo userDomain.UserSettingsRepository, redis *redis.Client) *SettingsService {
+func NewSettingsService(repo userDomain.UserSettingsRepository, cacheClient dcache.CacheClient) *SettingsService {
 	return &SettingsService{
-		repo:     repo,
-		redis:    redis,
-		cacheTTL: 5 * time.Minute,
+		repo:        repo,
+		cacheClient: cacheClient,
+		cacheTTL:    5 * time.Minute,
 	}
 }
 
-// cacheKey generates a Redis cache key for a setting
+// cacheKey generates a cache key for a setting
 func (s *SettingsService) cacheKey(userID uuid.UUID, key string) string {
 	return fmt.Sprintf("setting:%s:%s", userID.String(), key)
 }
@@ -44,8 +44,8 @@ func (s *SettingsService) GetSettingValue(ctx context.Context, userID uuid.UUID,
 	cacheKey := s.cacheKey(userID, key.String())
 
 	// Try cache first
-	if s.redis != nil {
-		cached, err := s.redis.Get(ctx, cacheKey).Result()
+	if s.cacheClient != nil {
+		cached, err := s.cacheClient.Get(ctx, cacheKey)
 		if err == nil {
 			var value map[string]interface{}
 			if err := json.Unmarshal([]byte(cached), &value); err == nil {
@@ -71,9 +71,9 @@ func (s *SettingsService) GetSettingValue(ctx context.Context, userID uuid.UUID,
 	}
 
 	// Cache the value
-	if s.redis != nil {
+	if s.cacheClient != nil {
 		data, _ := json.Marshal(value)
-		s.redis.Set(ctx, cacheKey, data, s.cacheTTL)
+		_ = s.cacheClient.Set(ctx, cacheKey, string(data), s.cacheTTL)
 	}
 
 	return value, nil
@@ -145,9 +145,9 @@ func (s *SettingsService) SetValue(ctx context.Context, userID uuid.UUID, key us
 	}
 
 	// Invalidate cache
-	if s.redis != nil {
+	if s.cacheClient != nil {
 		cacheKey := s.cacheKey(userID, key.String())
-		s.redis.Del(ctx, cacheKey)
+		_ = s.cacheClient.Del(ctx, cacheKey)
 	}
 
 	return nil
@@ -170,9 +170,9 @@ func (s *SettingsService) DeleteSetting(ctx context.Context, userID uuid.UUID, k
 	}
 
 	// Invalidate cache
-	if s.redis != nil {
+	if s.cacheClient != nil {
 		cacheKey := s.cacheKey(userID, key.String())
-		s.redis.Del(ctx, cacheKey)
+		_ = s.cacheClient.Del(ctx, cacheKey)
 	}
 
 	return nil
@@ -180,7 +180,7 @@ func (s *SettingsService) DeleteSetting(ctx context.Context, userID uuid.UUID, k
 
 // InvalidateCache clears all settings cache for a user
 func (s *SettingsService) InvalidateCache(ctx context.Context, userID uuid.UUID) error {
-	if s.redis == nil {
+	if s.cacheClient == nil {
 		return nil
 	}
 
@@ -189,13 +189,13 @@ func (s *SettingsService) InvalidateCache(ctx context.Context, userID uuid.UUID)
 	// Use scan to find and delete keys
 	var cursor uint64
 	for {
-		keys, nextCursor, err := s.redis.Scan(ctx, cursor, pattern, 100).Result()
+		keys, nextCursor, err := s.cacheClient.Scan(ctx, cursor, pattern, 100)
 		if err != nil {
 			return err
 		}
 
 		if len(keys) > 0 {
-			if err := s.redis.Del(ctx, keys...).Err(); err != nil {
+			if err := s.cacheClient.Del(ctx, keys...); err != nil {
 				return err
 			}
 		}

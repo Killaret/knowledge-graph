@@ -17,6 +17,13 @@ type Repository interface {
 	EmailExists(ctx context.Context, email string, excludeID uuid.UUID) (bool, error)
 }
 
+// RoleRepository resolves role IDs and names.
+// Implemented by infrastructure adapters (e.g. postgres.RoleRepository).
+type RoleRepository interface {
+	FindByName(ctx context.Context, name string) (uuid.UUID, error)
+	FindByID(ctx context.Context, id uuid.UUID) (string, error)
+}
+
 // APIKeyRepository handles persistence for API keys.
 type APIKeyRepository interface {
 	FindByUserID(ctx context.Context, userID uuid.UUID) ([]APIKey, error)

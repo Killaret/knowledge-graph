@@ -2,9 +2,8 @@ package graph
 
 import (
 	"context"
+	apprec "knowledge-graph/internal/application/recommendation"
 	"testing"
-
-	"knowledge-graph/internal/infrastructure/db/postgres"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -13,18 +12,18 @@ import (
 
 // MockEmbeddingRepository для тестов
 type MockEmbeddingRepository struct {
-	findSimilarFunc      func(context.Context, uuid.UUID, int) ([]postgres.SimilarNote, error)
-	findSimilarBatchFunc func(context.Context, []uuid.UUID, int) (map[uuid.UUID][]postgres.SimilarNote, error)
+	findSimilarFunc      func(context.Context, uuid.UUID, int) ([]apprec.SimilarNote, error)
+	findSimilarBatchFunc func(context.Context, []uuid.UUID, int) (map[uuid.UUID][]apprec.SimilarNote, error)
 }
 
-func (m *MockEmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]postgres.SimilarNote, error) {
+func (m *MockEmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]apprec.SimilarNote, error) {
 	if m.findSimilarFunc != nil {
 		return m.findSimilarFunc(ctx, noteID, limit)
 	}
 	return nil, nil
 }
 
-func (m *MockEmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error) {
+func (m *MockEmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error) {
 	if m.findSimilarBatchFunc != nil {
 		return m.findSimilarBatchFunc(ctx, noteIDs, limit)
 	}
@@ -44,10 +43,10 @@ func TestEmbeddingNeighborLoader_GetNeighbors_Success(t *testing.T) {
 	nodeID := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]postgres.SimilarNote, error) {
+		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]apprec.SimilarNote, error) {
 			assert.Equal(t, nodeID, id)
 			assert.Equal(t, 30, limit)
-			return []postgres.SimilarNote{
+			return []apprec.SimilarNote{
 				{NoteID: uuid.New(), Score: 0.9},
 				{NoteID: uuid.New(), Score: 0.8},
 				{NoteID: uuid.New(), Score: 0.7},
@@ -72,8 +71,8 @@ func TestEmbeddingNeighborLoader_GetNeighbors_EmptyResult(t *testing.T) {
 	nodeID := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]postgres.SimilarNote, error) {
-			return []postgres.SimilarNote{}, nil
+		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]apprec.SimilarNote, error) {
+			return []apprec.SimilarNote{}, nil
 		},
 	}
 
@@ -89,7 +88,7 @@ func TestEmbeddingNeighborLoader_GetNeighbors_Error(t *testing.T) {
 	nodeID := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]postgres.SimilarNote, error) {
+		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]apprec.SimilarNote, error) {
 			return nil, assert.AnError
 		},
 	}
@@ -107,8 +106,8 @@ func TestEmbeddingNeighborLoader_GetNeighborsBatch_Success(t *testing.T) {
 	nodeID2 := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error) {
-			return map[uuid.UUID][]postgres.SimilarNote{
+		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error) {
+			return map[uuid.UUID][]apprec.SimilarNote{
 				nodeID1: {
 					{NoteID: uuid.New(), Score: 0.9},
 					{NoteID: uuid.New(), Score: 0.8},
@@ -152,11 +151,11 @@ func TestEmbeddingNeighborLoader_GetNeighborsBatch_BatchFails_FallbackToSequenti
 	nodeID2 := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error) {
+		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error) {
 			return nil, assert.AnError // Batch fails
 		},
-		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]postgres.SimilarNote, error) {
-			return []postgres.SimilarNote{
+		findSimilarFunc: func(ctx context.Context, id uuid.UUID, limit int) ([]apprec.SimilarNote, error) {
+			return []apprec.SimilarNote{
 				{NoteID: uuid.New(), Score: 0.9},
 			}, nil
 		},
@@ -178,9 +177,9 @@ func TestEmbeddingNeighborLoader_GetNeighborsBatch_SomeNodesFail(t *testing.T) {
 	nodeID2 := uuid.New()
 
 	mockRepo := &MockEmbeddingRepository{
-		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error) {
+		findSimilarBatchFunc: func(ctx context.Context, nodeIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error) {
 			// Only return result for nodeID1, skip nodeID2
-			return map[uuid.UUID][]postgres.SimilarNote{
+			return map[uuid.UUID][]apprec.SimilarNote{
 				nodeID1: {
 					{NoteID: uuid.New(), Score: 0.9},
 				},

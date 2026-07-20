@@ -91,6 +91,14 @@ func (m *mockRecommendationRepository) ReplaceRecommendations(ctx context.Contex
 	return m.Called(ctx, noteID, recs).Error(0)
 }
 
+func (m *mockRecommendationRepository) GetRecommendations(ctx context.Context, noteID uuid.UUID, limit int) ([]Recommendation, error) {
+	args := m.Called(ctx, noteID, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]Recommendation), args.Error(1)
+}
+
 // MockTraversalService is a mock for TraversalService interface
 type MockTraversalService struct {
 	mock.Mock

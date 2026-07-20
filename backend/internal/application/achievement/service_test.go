@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	achievementDomain "knowledge-graph/internal/domain/achievement"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
@@ -316,7 +317,7 @@ func TestTrackLoginAndGetStreak_WithRedis(t *testing.T) {
 	mockRepo := new(MockAchievementRepository)
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
 
-	service := NewService(nil, mockRepo, nil, rdb)
+	service := NewService(nil, mockRepo, nil, infracache.NewRedisCacheClient(rdb))
 
 	err := service.TrackLogin(ctx, uid)
 	assert.NoError(t, err)

@@ -26,6 +26,7 @@ import (
 	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/mongo"
@@ -178,6 +179,8 @@ func run(
 		}
 	}
 
+	cacheClient := infracache.NewRedisCacheClient(redisClient)
+
 	noteRepo := postgres.NewNoteRepository(database, redisClient)
 	linkRepo := postgres.NewLinkRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database)
@@ -204,7 +207,7 @@ func run(
 
 	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay, cfg.BFSAggregation, cfg.BFSNormalize)
 
-	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
+	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, cacheClient, cfg.RecommendationCacheTTL)
 
 	// Recommendation repository and affected notes service
 	recRepo := postgres.NewRecommendationRepository(database)
@@ -216,14 +219,14 @@ func run(
 	achievementCounter := postgres.NewAchievementCounter(database)
 	achievementEngine := achievement.NewEngine(achievementCounter)
 	userSettingsRepo := postgres.NewUserSettingsRepository(database)
-	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
-	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)
+	settingsService := userApp.NewSettingsService(userSettingsRepo, cacheClient)
+	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, cacheClient)
 	achievementHandler := achievementhandler.NewHandler(achievementService)
 
 	// Graph cache (nil when Redis is unavailable)
 	var graphCache *cache.GraphCache
-	if redisClient != nil {
-		graphCache = cache.NewGraphCache(redisClient)
+	if cacheClient != nil {
+		graphCache = cache.NewGraphCache(cacheClient)
 		log.Printf("[Cache] Clearing graph cache on startup...")
 		if err := graphCache.InvalidateAll(ctx); err != nil {
 			log.Printf("[Cache] WARNING: failed to clear graph cache on startup: %v", err)
@@ -233,7 +236,7 @@ func run(
 	}
 
 	// Handlers with new parameters
-	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)
@@ -247,7 +250,8 @@ func run(
 	if redisClient != nil {
 		tokenStore = auth.NewRedisTokenStore(redisClient)
 	}
-	userRepo := postgres.NewUserRepository(database)
+	roleRepo := postgres.NewRoleRepository(database)
+	userRepo := postgres.NewUserRepository(database, roleRepo)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(database)
 	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg)
 

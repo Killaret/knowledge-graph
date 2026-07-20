@@ -13,19 +13,16 @@ import (
 
 // UserRepository implements user.Repository using GORM.
 type UserRepository struct {
-	db *gorm.DB
+	db       *gorm.DB
+	roleRepo user.RoleRepository
 }
 
 // NewUserRepository creates a new user repository.
-func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(db *gorm.DB, roleRepo user.RoleRepository) *UserRepository {
+	return &UserRepository{db: db, roleRepo: roleRepo}
 }
 
-func toDomainUser(m *UserModel) (*user.User, error) {
-	role := ""
-	if m.Role != nil {
-		role = m.Role.Name
-	}
+func toDomainUser(m *UserModel, role string) (*user.User, error) {
 	return user.NewUser(m.ID, m.Login, m.Email, m.PasswordHash, role, m.CreatedAt, time.Time{}, m.DeletedAt)
 }
 
@@ -39,30 +36,32 @@ func fromDomainUser(u *user.User) *UserModel {
 	}
 }
 
-func loadRoleForModel(ctx context.Context, db *gorm.DB, model *UserModel) {
-	if model.RoleID == nil {
-		return
+func (r *UserRepository) loadRole(ctx context.Context, roleID *uuid.UUID) (string, error) {
+	if roleID == nil || r.roleRepo == nil {
+		return "", nil
 	}
-	var role UserRoleModel
-	err := db.WithContext(ctx).First(&role, "id = ?", *model.RoleID).Error
-	if err == nil {
-		model.Role = &role
+	roleName, err := r.roleRepo.FindByID(ctx, *roleID)
+	if errors.Is(err, user.ErrRoleNotFound) {
+		return "", nil
 	}
+	if err != nil {
+		return "", err
+	}
+	return roleName, nil
 }
 
 // Create saves a new user.
 func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	model := fromDomainUser(u)
-	if u.Role() != "" {
-		var role UserRoleModel
-		err := r.db.WithContext(ctx).Where("name = ?", u.Role()).First(&role).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	if u.Role() != "" && r.roleRepo != nil {
+		roleID, err := r.roleRepo.FindByName(ctx, u.Role())
+		if errors.Is(err, user.ErrRoleNotFound) {
 			return user.ErrRoleNotFound
 		}
 		if err != nil {
 			return err
 		}
-		model.RoleID = &role.ID
+		model.RoleID = &roleID
 	}
 	return r.db.WithContext(ctx).Create(model).Error
 }
@@ -77,8 +76,11 @@ func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*user.User
 	if err != nil {
 		return nil, err
 	}
-	loadRoleForModel(ctx, r.db, &model)
-	return toDomainUser(&model)
+	role, err := r.loadRole(ctx, model.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	return toDomainUser(&model, role)
 }
 
 // FindByLogin searches a user by login.
@@ -91,8 +93,11 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*user.U
 	if err != nil {
 		return nil, err
 	}
-	loadRoleForModel(ctx, r.db, &model)
-	return toDomainUser(&model)
+	role, err := r.loadRole(ctx, model.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	return toDomainUser(&model, role)
 }
 
 // FindByEmail searches a user by email.
@@ -105,8 +110,11 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.U
 	if err != nil {
 		return nil, err
 	}
-	loadRoleForModel(ctx, r.db, &model)
-	return toDomainUser(&model)
+	role, err := r.loadRole(ctx, model.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	return toDomainUser(&model, role)
 }
 
 // Update saves changes to an existing user.
@@ -119,10 +127,10 @@ func (r *UserRepository) Update(ctx context.Context, u *user.User) error {
 	model.Login = u.Login()
 	model.Email = u.Email()
 	model.PasswordHash = u.PasswordHash()
-	if u.Role() != "" {
-		var role UserRoleModel
-		if err := r.db.WithContext(ctx).Where("name = ?", u.Role()).First(&role).Error; err == nil {
-			model.RoleID = &role.ID
+	if u.Role() != "" && r.roleRepo != nil {
+		roleID, err := r.roleRepo.FindByName(ctx, u.Role())
+		if err == nil {
+			model.RoleID = &roleID
 		}
 	}
 	return r.db.WithContext(ctx).Save(&model).Error

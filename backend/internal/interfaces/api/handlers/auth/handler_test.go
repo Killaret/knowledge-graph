@@ -56,7 +56,7 @@ func setupTestHandler(t *testing.T) *Handler {
 		JWTRefreshTTL:                7 * 24 * time.Hour,
 	}
 
-	userRepo := postgres.NewUserRepository(db)
+	userRepo := postgres.NewUserRepository(db, nil)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
 	return NewHandler(userRepo, refreshTokenRepo, nil, jwtManager, cfg)
 }

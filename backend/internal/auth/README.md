@@ -117,7 +117,8 @@ r.Use(middleware.APIKey(apiKeyConfig))
 
 ### Permission Check
 ```go
-permConfig := middleware.DefaultPermissionConfig(db, tokenStore)
+permRepo := postgres.NewPermissionRepository(db)
+permConfig := middleware.DefaultPermissionConfig(permRepo, tokenStore)
 r.GET("/admin/data", middleware.Can(permConfig, "data", "read"), handler)
 ```
 

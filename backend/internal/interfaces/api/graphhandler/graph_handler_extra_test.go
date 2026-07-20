@@ -11,6 +11,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/alicebob/miniredis/v2"
@@ -80,7 +81,7 @@ func setupGraphRouterWithCache() (*gin.Engine, *cache.GraphCache, *mockNoteRepo,
 	gin.SetMode(gin.TestMode)
 	mr := miniredis.RunT(&testing.T{})
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	graphCache := cache.NewGraphCache(rdb)
+	graphCache := cache.NewGraphCache(infracache.NewRedisCacheClient(rdb))
 
 	noteRepo := new(mockNoteRepo)
 	linkRepo := new(mockLinkRepo)

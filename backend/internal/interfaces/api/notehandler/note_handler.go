@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"knowledge-graph/internal/application/achievement"
-	"knowledge-graph/internal/application/cache"
+	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
+	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
@@ -24,8 +24,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -34,11 +32,11 @@ type Handler struct {
 	suggestionsHandler *graphQueries.GetSuggestionsHandler
 	affectedNotesSvc   *recommendation.AffectedNotesService
 	taskDelay          time.Duration
-	recRepo            *postgres.RecommendationRepository
-	embeddingRepo      *postgres.EmbeddingRepository
-	redis              *redis.Client
+	recRepo            recommendation.Repository
+	embeddingRepo      recommendation.EmbeddingRepository
+	cacheClient        dcache.CacheClient
 	cfg                *config.Config
-	graphCache         *cache.GraphCache
+	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
 }
 
@@ -55,7 +53,7 @@ type Suggestion struct {
 	Score  float64 `json:"score"`
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo *postgres.EmbeddingRepository, redis *redis.Client, cfg *config.Config, graphCache *cache.GraphCache, achievementService *achievement.Service) *Handler {
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
@@ -64,7 +62,7 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		taskDelay:          taskDelay,
 		recRepo:            recRepo,
 		embeddingRepo:      embeddingRepo,
-		redis:              redis,
+		cacheClient:        cacheClient,
 		cfg:                cfg,
 		graphCache:         graphCache,
 		achievementService: achievementService,
@@ -469,7 +467,7 @@ func (h *Handler) Restore(c *gin.Context) {
 	}
 
 	if err := h.repo.Restore(c.Request.Context(), id); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, note.ErrNoteNotFound) {
 			apicommon.NotFound(c, "Note")
 			return
 		}
@@ -547,7 +545,7 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 
 	// 1. Try to get precomputed recommendations from database
 	if h.recRepo != nil {
-		recs, err := h.recRepo.Get(ctx, noteID, limit)
+		recs, err := h.recRepo.GetRecommendations(ctx, noteID, limit)
 		if err == nil && len(recs) > 0 {
 			// Check staleness by comparing recommendation timestamp with note update time
 			stale := false
@@ -601,10 +599,10 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
-	// 3. Fallback to Redis cache (if enabled)
-	if h.cfg.RecommendationFallbackEnabled && h.redis != nil {
+	// 3. Fallback to cache (if enabled)
+	if h.cfg.RecommendationFallbackEnabled && h.cacheClient != nil {
 		cacheKey := "recommendations:" + noteID.String()
-		cached, err := h.redis.Get(ctx, cacheKey).Result()
+		cached, err := h.cacheClient.Get(ctx, cacheKey)
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	userDomain "knowledge-graph/internal/domain/user"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func TestSettingsService_GetSettingValue_FromCache(t *testing.T) {
 	repo := new(MockRepository)
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, rdb)
+	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
 	userID := uuid.New()
 	ctx := context.Background()
 
@@ -59,7 +60,7 @@ func TestSettingsService_GetSettingValue_InvalidCacheJSON(t *testing.T) {
 	repo := new(MockRepository)
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, rdb)
+	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
 	userID := uuid.New()
 	ctx := context.Background()
 
@@ -78,7 +79,7 @@ func TestSettingsService_InvalidateCache(t *testing.T) {
 	repo := new(MockRepository)
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewSettingsService(repo, rdb)
+	service := NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
 	userID := uuid.New()
 	ctx := context.Background()
 

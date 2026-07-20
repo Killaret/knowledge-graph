@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	dcache "knowledge-graph/internal/domain/cache"
 )
 
-// GraphCache provides caching for user graph data in Redis
+// GraphCache provides caching for user graph data
 type GraphCache struct {
-	client    *redis.Client
+	client    dcache.CacheClient
 	prefix    string
 	ttl       time.Duration
 	hitCount  int64
@@ -19,7 +19,7 @@ type GraphCache struct {
 }
 
 // NewGraphCache creates a new graph cache instance
-func NewGraphCache(client *redis.Client) *GraphCache {
+func NewGraphCache(client dcache.CacheClient) *GraphCache {
 	return &GraphCache{
 		client: client,
 		prefix: "graph:",
@@ -27,7 +27,7 @@ func NewGraphCache(client *redis.Client) *GraphCache {
 	}
 }
 
-// key generates a prefixed Redis key for a user's graph
+// key generates a prefixed cache key for a user's graph
 func (c *GraphCache) key(userID string) string {
 	return c.prefix + userID
 }
@@ -55,7 +55,7 @@ type GraphLink struct {
 	LinkType string  `json:"link_type"`
 }
 
-// CacheUserGraph stores the user's graph data in Redis
+// CacheUserGraph stores the user's graph data in cache
 func (c *GraphCache) CacheUserGraph(ctx context.Context, userID string, data GraphData) error {
 	key := c.key(userID)
 
@@ -64,19 +64,19 @@ func (c *GraphCache) CacheUserGraph(ctx context.Context, userID string, data Gra
 		return fmt.Errorf("failed to marshal graph data: %w", err)
 	}
 
-	if err := c.client.Set(ctx, key, jsonData, c.ttl).Err(); err != nil {
+	if err := c.client.Set(ctx, key, string(jsonData), c.ttl); err != nil {
 		return fmt.Errorf("failed to cache graph: %w", err)
 	}
 
 	return nil
 }
 
-// GetCachedUserGraph retrieves the user's cached graph data from Redis
+// GetCachedUserGraph retrieves the user's cached graph data from cache
 func (c *GraphCache) GetCachedUserGraph(ctx context.Context, userID string) (GraphData, bool, error) {
 	key := c.key(userID)
 
-	data, err := c.client.Get(ctx, key).Result()
-	if err == redis.Nil {
+	data, err := c.client.Get(ctx, key)
+	if err == dcache.ErrCacheMiss {
 		c.missCount++
 		return GraphData{}, false, nil
 	}
@@ -97,27 +97,31 @@ func (c *GraphCache) GetCachedUserGraph(ctx context.Context, userID string) (Gra
 // InvalidateUserGraph removes the cached graph for a specific user
 func (gc *GraphCache) InvalidateUserGraph(ctx context.Context, userID string) error {
 	key := gc.key(userID)
-	return gc.client.Del(ctx, key).Err()
+	return gc.client.Del(ctx, key)
 }
 
 // InvalidateAll removes all cached graph data
 func (gc *GraphCache) InvalidateAll(ctx context.Context) error {
 	// Find all keys matching the graph cache pattern
 	pattern := "graph:*"
-	iter := gc.client.Scan(ctx, 0, pattern, 0).Iterator()
 
-	var keys []string
-	for iter.Next(ctx) {
-		keys = append(keys, iter.Val())
-	}
-
-	if err := iter.Err(); err != nil {
-		return err
+	var allKeys []string
+	var cursor uint64
+	for {
+		keys, nextCursor, err := gc.client.Scan(ctx, cursor, pattern, 100)
+		if err != nil {
+			return err
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
 	}
 
 	// Delete all found keys
-	if len(keys) > 0 {
-		return gc.client.Del(ctx, keys...).Err()
+	if len(allKeys) > 0 {
+		return gc.client.Del(ctx, allKeys...)
 	}
 
 	return nil

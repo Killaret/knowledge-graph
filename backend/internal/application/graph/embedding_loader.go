@@ -4,16 +4,16 @@ import (
 	"context"
 	"log"
 
+	apprec "knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/domain/graph"
-	"knowledge-graph/internal/infrastructure/db/postgres"
 
 	"github.com/google/uuid"
 )
 
 // embeddingRepositoryWithBatch — interface for batch loading embeddings
 type embeddingRepositoryWithBatch interface {
-	FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]postgres.SimilarNote, error)
-	FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error)
+	FindSimilarNotes(ctx context.Context, noteID uuid.UUID, limit int) ([]apprec.SimilarNote, error)
+	FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error)
 }
 
 // embeddingNeighborLoader loads neighbors based on semantic similarity of embeddings.
@@ -59,7 +59,7 @@ func (l *embeddingNeighborLoader) GetNeighborsBatch(ctx context.Context, nodeIDs
 
 	// Try to cast repository to interface with batch method
 	batchRepo, ok := l.embeddingRepo.(interface {
-		FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]postgres.SimilarNote, error)
+		FindSimilarNotesBatch(ctx context.Context, noteIDs []uuid.UUID, limit int) (map[uuid.UUID][]apprec.SimilarNote, error)
 	})
 
 	if !ok {

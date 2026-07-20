@@ -42,7 +42,7 @@ func (s *UserRepositoryIntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err, "failed to migrate models")
 
 	// Создаем репозиторий
-	s.repo = NewUserRepository(s.db)
+	s.repo = NewUserRepository(s.db, nil)
 }
 
 func (s *UserRepositoryIntegrationTestSuite) TearDownSuite() {

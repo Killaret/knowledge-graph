@@ -65,7 +65,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 	s.repo = postgres.NewNoteRepository(s.db, s.redisClient)
 
 	// Создаем graph cache
-	s.graphCache = cache.NewGraphCache(s.redisClient)
+	s.graphCache = cache.NewGraphCache(infracache.NewRedisCacheClient(s.redisClient))
 
 	// Создаем хендлер с graph cache
 	handler := New(
@@ -76,7 +76,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 		0,   // taskDelay
 		nil, // recRepo
 		nil, // embeddingRepo
-		s.redisClient,
+		nil,
 		&config.Config{
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,
@@ -161,7 +161,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 		0,
 		nil,
 		nil,
-		s.redisClient,
+		nil,
 		&config.Config{
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,
@@ -224,7 +224,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 		0,
 		nil,
 		nil,
-		s.redisClient,
+		nil,
 		&config.Config{},
 		s.graphCache,
 		nil, // achievementService
@@ -288,7 +288,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 		0,
 		nil,
 		nil,
-		s.redisClient,
+		nil,
 		&config.Config{},
 		s.graphCache,
 		nil, // achievementService

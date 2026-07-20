@@ -56,7 +56,7 @@ func setupTestHandler(t *testing.T) (*Handler, *gorm.DB, func()) {
 		RequireSpecial: true,
 	}
 
-	repo := postgres.NewUserRepository(db)
+	repo := postgres.NewUserRepository(db, nil)
 	apiKeyRepo := postgres.NewAPIKeyRepository(db)
 	return NewHandler(repo, apiKeyRepo, passwordConfig, passwordPolicy), db, cleanup
 }

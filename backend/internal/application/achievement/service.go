@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	userApp "knowledge-graph/internal/application/user"
 	achievementDomain "knowledge-graph/internal/domain/achievement"
+	dcache "knowledge-graph/internal/domain/cache"
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
-	"github.com/redis/go-redis/v9"
 )
 
 // Service handles achievement operations
@@ -21,7 +22,7 @@ type Service struct {
 	achievementRepo achievementDomain.Repository
 	settingsService *userApp.SettingsService
 	taskQueue       interface{}
-	redis           *redis.Client
+	cacheClient     dcache.CacheClient
 }
 
 // NewService creates a new achievement service
@@ -29,13 +30,13 @@ func NewService(
 	engine achievementDomain.Engine,
 	achievementRepo achievementDomain.Repository,
 	settingsService *userApp.SettingsService,
-	redis *redis.Client,
+	cacheClient dcache.CacheClient,
 ) *Service {
 	return &Service{
 		engine:          engine,
 		achievementRepo: achievementRepo,
 		settingsService: settingsService,
-		redis:           redis,
+		cacheClient:     cacheClient,
 	}
 }
 
@@ -268,26 +269,26 @@ func (s *Service) GetAllAchievements(ctx context.Context) ([]achievementDomain.A
 
 // TrackLogin records a user login for streak tracking
 func (s *Service) TrackLogin(ctx context.Context, userID uuid.UUID) error {
-	if s.redis == nil {
+	if s.cacheClient == nil {
 		return nil
 	}
 
 	key := fmt.Sprintf("login:streak:%s", userID.String())
 
 	// Check if there's an existing streak
-	exists, err := s.redis.Exists(ctx, key).Result()
+	exists, err := s.cacheClient.Exists(ctx, key)
 	if err != nil {
 		return err
 	}
 
 	if exists == 0 {
 		// New streak
-		s.redis.Set(ctx, key, 1, 48*time.Hour)
+		_ = s.cacheClient.Set(ctx, key, "1", 48*time.Hour)
 	} else {
 		// Increment existing streak
-		s.redis.Incr(ctx, key)
+		_, _ = s.cacheClient.Incr(ctx, key)
 		// Extend TTL
-		s.redis.Expire(ctx, key, 48*time.Hour)
+		_ = s.cacheClient.Expire(ctx, key, 48*time.Hour)
 	}
 
 	// Check for streak-based achievements
@@ -296,16 +297,21 @@ func (s *Service) TrackLogin(ctx context.Context, userID uuid.UUID) error {
 
 // GetStreak returns the current login streak for a user
 func (s *Service) GetStreak(ctx context.Context, userID uuid.UUID) (int, error) {
-	if s.redis == nil {
+	if s.cacheClient == nil {
 		return 0, nil
 	}
 
 	key := fmt.Sprintf("login:streak:%s", userID.String())
-	streak, err := s.redis.Get(ctx, key).Int()
+	streakStr, err := s.cacheClient.Get(ctx, key)
 	if err != nil {
-		if err == redis.Nil {
+		if err == dcache.ErrCacheMiss {
 			return 0, nil
 		}
+		return 0, err
+	}
+
+	streak, err := strconv.Atoi(streakStr)
+	if err != nil {
 		return 0, err
 	}
 

@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 
+	apprec "knowledge-graph/internal/application/recommendation"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -18,15 +20,28 @@ func NewRecommendationRepository(db *gorm.DB) *RecommendationRepository {
 	return &RecommendationRepository{db: db}
 }
 
-// Get retrieves recommendations for a given note, sorted by score descending
-func (r *RecommendationRepository) Get(ctx context.Context, noteID uuid.UUID, limit int) ([]RecommendationModel, error) {
-	var recommendations []RecommendationModel
+// GetRecommendations retrieves recommendations for a given note, sorted by score descending
+func (r *RecommendationRepository) GetRecommendations(ctx context.Context, noteID uuid.UUID, limit int) ([]apprec.Recommendation, error) {
+	var models []RecommendationModel
 	err := r.db.WithContext(ctx).
 		Where("note_id = ?", noteID).
 		Order("score DESC").
 		Limit(limit).
-		Find(&recommendations).Error
-	return recommendations, err
+		Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+
+	recs := make([]apprec.Recommendation, 0, len(models))
+	for _, m := range models {
+		recs = append(recs, apprec.Recommendation{
+			NoteID:            m.NoteID,
+			RecommendedNoteID: m.RecommendedNoteID,
+			Score:             m.Score,
+			UpdatedAt:         m.UpdatedAt,
+		})
+	}
+	return recs, nil
 }
 
 // SaveBatch saves a batch of recommendations for a note using upsert (ON CONFLICT DO UPDATE)

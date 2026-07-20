@@ -145,6 +145,10 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/interfaces/api/handlers/share/handler.go` — now depends on `domainnote.Repository`, `domainuser.Repository`, and `domainshare.Repository`; no `*gorm.DB` or `postgres` model usage.
 - `internal/application/achievement/engine.go` — now depends on `domain/achievement.Counter` port implemented in `postgres.AchievementCounter`; no `*gorm.DB`.
 - `internal/application/recommendation/refresh_service.go` and `affected_notes.go` — now depend on `note.Repository` and `recommendation.Repository` ports; no `*gorm.DB` or direct `postgres` usage.
+- `internal/interfaces/api/notehandler/note_handler.go` — now depends on `recommendation.Repository` and `recommendation.EmbeddingRepository` ports, plus `cache.CacheClient`; no direct `*postgres.RecommendationRepository`, `*postgres.EmbeddingRepository`, or `*redis.Client`.
+- `internal/interfaces/api/middleware/permissions.go` — now depends on `permission.Repository` port implemented in `postgres.PermissionRepository`; no `*gorm.DB`.
+- `internal/application/cache/graph_cache.go`, `internal/application/queries/graph/get_suggestions.go`, `internal/application/user/settings_service.go`, and `internal/application/achievement/service.go` — now depend on `cache.CacheClient` port implemented in `infrastructure/cache.RedisCacheClient`; no direct `*redis.Client`.
+- `internal/infrastructure/db/postgres/user_repo.go` — role lookup extracted to `domain/user.RoleRepository` port implemented in `postgres.RoleRepository`; no direct `UserRoleModel` queries from `UserRepository`.
 - New domain packages:
   - `internal/domain/user` — `User`, `APIKey` aggregates and repository ports.
   - `internal/domain/share` — `NoteShare`, `ShareLink` aggregates and repository port.
@@ -159,14 +163,13 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **61.9%** (target >60%).
+- Aggregated backend coverage: **61.7%** (target >60%).
 
 ### Remaining debt
 
-- `internal/interfaces/api/notehandler/note_handler.go` still depends on concrete `*postgres.RecommendationRepository` and `*postgres.EmbeddingRepository`.
-- `internal/interfaces/api/middleware/permissions.go` still queries role/permissions directly via `*gorm.DB`; introduce a `PermissionRepository` port.
-- `internal/infrastructure/db/postgres` still contains business logic that should migrate to domain or application services (e.g., role lookup during user creation could live in an application service).
+- `internal/infrastructure/db/postgres/note_repo.go` still uses `*redis.Client` directly for the `FindAll` cache; consider using the domain `cache.CacheClient` port.
 - `internal/interfaces/api/handlers/backup` is decoupled but minimal.
+- `internal/application/cache/graph_cache.go` uses `cache.CacheClient` but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
 - Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist

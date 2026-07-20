@@ -16,7 +16,7 @@ func TestUserRepository_FindByID(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewUserRepository(db)
+	repo := NewUserRepository(db, nil)
 	id := uuid.New()
 	now := time.Now()
 
@@ -37,7 +37,7 @@ func TestUserRepository_FindByID_NotFound(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewUserRepository(db)
+	repo := NewUserRepository(db, nil)
 	id := uuid.New()
 
 	mock.ExpectQuery(`SELECT \* FROM "users" WHERE id = \$1 ORDER BY "users"."id" LIMIT \$2`).
@@ -53,7 +53,7 @@ func TestUserRepository_FindByLogin(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewUserRepository(db)
+	repo := NewUserRepository(db, nil)
 	id := uuid.New()
 	now := time.Now()
 
@@ -74,7 +74,7 @@ func TestUserRepository_Exists(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewUserRepository(db)
+	repo := NewUserRepository(db, nil)
 	id := uuid.New()
 
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(1)
@@ -92,7 +92,7 @@ func TestUserRepository_Delete(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	repo := NewUserRepository(db)
+	repo := NewUserRepository(db, nil)
 	id := uuid.New()
 
 	mock.ExpectBegin()

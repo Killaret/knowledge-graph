@@ -402,11 +402,26 @@ When modifying backend handlers or repositories:
 - ✅ `auth/handler.go` — uses `domainuser.Repository`, `auth.RefreshTokenRepository`, `auth.TokenStore`
 - ✅ `share/handler.go` — uses `domainnote.Repository`, `domainuser.Repository`, `domainshare.Repository`
 - ✅ `backup/handler.go` — no DB dependency
+- ✅ `notehandler/note_handler.go` — uses `recommendation.Repository`, `recommendation.EmbeddingRepository`, and `cache.CacheClient`
+- ✅ `middleware/permissions.go` — uses `permission.Repository`
 
 ### Current application service decoupling status
 
 - ✅ `achievement/engine.go` — uses `domain/achievement.Counter` port
 - ✅ `recommendation/refresh_service.go` and `affected_notes.go` — use `note.Repository` and `recommendation.Repository` ports
+- ✅ `cache/graph_cache.go` — uses `cache.CacheClient`
+- ✅ `queries/graph/get_suggestions.go` — uses `cache.CacheClient`
+- ✅ `user/settings_service.go` — uses `cache.CacheClient`
+- ✅ `achievement/service.go` — uses `cache.CacheClient` for login streaks
+
+### Current infrastructure port implementations
+
+- `postgres.RecommendationRepository` implements `recommendation.Repository`
+- `postgres.EmbeddingRepository` implements `recommendation.EmbeddingRepository`
+- `postgres.AchievementCounter` implements `domain/achievement.Counter`
+- `postgres.PermissionRepository` implements `permission.Repository`
+- `postgres.RoleRepository` implements `domain/user.RoleRepository`
+- `infrastructure/cache.RedisCacheClient` implements `domain/cache.CacheClient`
 
 ### Before committing backend changes
 

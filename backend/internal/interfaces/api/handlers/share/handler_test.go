@@ -37,7 +37,7 @@ func setupTestHandler(t *testing.T) (*Handler, *postgres.NoteRepository, *postgr
 	require.NoError(t, db.Create(&defaultRole).Error)
 
 	noteRepo := postgres.NewNoteRepository(db, nil)
-	userRepo := postgres.NewUserRepository(db)
+	userRepo := postgres.NewUserRepository(db, nil)
 	shareRepo := postgres.NewShareRepository(db)
 
 	handler := NewHandler(noteRepo, userRepo, shareRepo)

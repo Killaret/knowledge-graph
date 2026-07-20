@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	dcache "knowledge-graph/internal/domain/cache"
+	infracache "knowledge-graph/internal/infrastructure/cache"
+
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -22,11 +25,15 @@ func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 	return mr, client
 }
 
+func newTestCacheClient(t *testing.T, client *redis.Client) dcache.CacheClient {
+	return infracache.NewRedisCacheClient(client)
+}
+
 func TestNewGraphCache(t *testing.T) {
 	mr, client := setupTestRedis(t)
 	defer mr.Close()
 
-	cache := NewGraphCache(client)
+	cache := NewGraphCache(newTestCacheClient(t, client))
 	assert.NotNil(t, cache)
 	assert.Equal(t, 5*time.Minute, cache.ttl)
 }
@@ -36,7 +43,7 @@ func TestCacheUserGraph(t *testing.T) {
 	defer mr.Close()
 
 	ctx := context.Background()
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	userID := "test-user-123"
 	testData := GraphData{
@@ -70,7 +77,7 @@ func TestGetCachedUserGraph(t *testing.T) {
 	defer mr.Close()
 
 	ctx := context.Background()
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	userID := "test-user-456"
 	testData := GraphData{
@@ -110,7 +117,7 @@ func TestInvalidateUserGraph(t *testing.T) {
 	defer mr.Close()
 
 	ctx := context.Background()
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	userID := "test-user-789"
 	testData := GraphData{
@@ -144,7 +151,7 @@ func TestGetStats(t *testing.T) {
 	defer mr.Close()
 
 	ctx := context.Background()
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	// Initial stats should be zero
 	stats := graphCache.GetStats()
@@ -184,7 +191,7 @@ func TestCacheKeyGeneration(t *testing.T) {
 	mr, client := setupTestRedis(t)
 	defer mr.Close()
 
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	userID := "user-123"
 	expectedKey := "graph:user-123"
@@ -197,7 +204,7 @@ func TestCacheWithMultipleUsers(t *testing.T) {
 	defer mr.Close()
 
 	ctx := context.Background()
-	graphCache := NewGraphCache(client)
+	graphCache := NewGraphCache(newTestCacheClient(t, client))
 
 	user1 := "user-1"
 	user2 := "user-2"

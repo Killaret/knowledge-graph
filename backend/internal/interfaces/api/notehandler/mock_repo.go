@@ -7,7 +7,6 @@ import (
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type mockNoteRepo struct {
@@ -58,7 +57,7 @@ func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.notes[id]; !ok {
-		return gorm.ErrRecordNotFound
+		return note.ErrNoteNotFound
 	}
 	return nil
 }
