@@ -2,6 +2,11 @@
   import StateIllustration from "./StateIllustration.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import { getMessage } from "$shared/stores/lexicon-settings";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   type IllustrationType =
     "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
@@ -52,7 +57,7 @@
         );
       } else {
         // fallback to error.message (server-provided)
-        displayMessage = error.message || "Error";
+        displayMessage = error.message || t("error.fallback");
       }
     } else {
       displayMessage = null;
@@ -65,7 +70,7 @@
     <button
       class="close-button"
       onclick={handleClose}
-      aria-label="Close error"
+      aria-label={t("error.closeAria")}
       type="button"
     >
       ×
@@ -79,14 +84,14 @@
 
     <div class="error-header">
       <span class="error-icon" aria-hidden="true">⚠️</span>
-      <span class="error-code">Error: {error.code}</span>
+      <span class="error-code">{t("error.codeLabel", { code: error.code })}</span>
     </div>
 
     <p class="error-message">{displayMessage || error.message}</p>
 
     {#if error.details && error.details.length > 0}
       <div class="error-details">
-        <p class="details-title">Details:</p>
+        <p class="details-title">{t("error.detailsTitle")}</p>
         <ul class="details-list">
           {#each error.details as detail}
             <li class="detail-item">
@@ -95,7 +100,7 @@
               <span class="detail-reason">{detail.message}</span>
               {#if detail.received !== undefined}
                 <span class="detail-received"
-                  >(received: {JSON.stringify(detail.received)})</span
+                  >{t("error.received", { value: JSON.stringify(detail.received) })}</span
                 >
               {/if}
             </li>

@@ -228,6 +228,14 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
+    "toast.closeAria": "Close notification",
+
+    // Error display
+    "error.fallback": "Error",
+    "error.closeAria": "Close error",
+    "error.codeLabel": "Error: {{code}}",
+    "error.detailsTitle": "Details:",
+    "error.received": "(received: {{value}})",
 
     // NoteCard
     "noteCard.links": "Links: {{count}}",
@@ -556,6 +564,14 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",
+    "toast.closeAria": "Закрыть уведомление",
+
+    // Error display
+    "error.fallback": "Ошибка",
+    "error.closeAria": "Закрыть ошибку",
+    "error.codeLabel": "Ошибка: {{code}}",
+    "error.detailsTitle": "Подробности:",
+    "error.received": "(получено: {{value}})",
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",

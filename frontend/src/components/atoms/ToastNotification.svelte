@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { Notification } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   interface Props {
     message: string;
@@ -84,7 +88,7 @@
   <button
     class="toast-close"
     onclick={closeToast}
-    aria-label="Close notification"
+    aria-label={t("toast.closeAria")}
   >
     ×
   </button>
