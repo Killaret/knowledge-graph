@@ -3,6 +3,11 @@
   import Modal from "$components/atoms/Modal.svelte";
   import { mode } from "$shared/stores/lexicon-settings";
   import { Theme } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   interface Props {
     open: boolean;
@@ -18,10 +23,10 @@
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {
     open = $bindable(false),
-    title = "Confirm",
+    title = t("confirmModal.title"),
     message,
-    confirmText = "Confirm",
-    cancelText = "Cancel",
+    confirmText = t("confirmModal.confirm"),
+    cancelText = t("confirmModal.cancel"),
     danger = false,
     onConfirm,
     onCancel,
@@ -39,13 +44,13 @@
 
   // Compute display values reactively
   const displayTitle = $derived(
-    theme.transformLabel(title, { Confirm: "Confirm Trajectory" }),
+    theme.transformLabel(title, { [t("confirmModal.title")]: t("confirmModal.titleGalactic") }),
   );
   const displayConfirmText = $derived(
-    theme.transformLabel(confirmText, { Confirm: "Engage" }),
+    theme.transformLabel(confirmText, { [t("confirmModal.confirm")]: t("confirmModal.confirmGalactic") }),
   );
   const displayCancelText = $derived(
-    theme.transformLabel(cancelText, { Cancel: "Abort" }),
+    theme.transformLabel(cancelText, { [t("confirmModal.cancel")]: t("confirmModal.cancelGalactic") }),
   );
 
   function handleConfirm() {

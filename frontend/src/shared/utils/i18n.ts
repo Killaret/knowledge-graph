@@ -218,6 +218,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkTooltip.edit": "Edit",
     "linkTooltip.delete": "Delete",
 
+    // ConfirmModal
+    "confirmModal.title": "Confirm",
+    "confirmModal.titleGalactic": "Confirm Trajectory",
+    "confirmModal.confirm": "Confirm",
+    "confirmModal.confirmGalactic": "Engage",
+    "confirmModal.cancel": "Cancel",
+    "confirmModal.cancelGalactic": "Abort",
+
     // NoteCard
     "noteCard.links": "Links: {{count}}",
     "noteCard.edit": "Edit",
@@ -534,6 +542,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkTooltip.to": "К:",
     "linkTooltip.edit": "Редактировать",
     "linkTooltip.delete": "Удалить",
+
+    // ConfirmModal
+    "confirmModal.title": "Подтвердить",
+    "confirmModal.titleGalactic": "Подтвердить траекторию",
+    "confirmModal.confirm": "Подтвердить",
+    "confirmModal.confirmGalactic": "Задействовать",
+    "confirmModal.cancel": "Отмена",
+    "confirmModal.cancelGalactic": "Прервать",
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",
