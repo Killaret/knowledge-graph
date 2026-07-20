@@ -44,6 +44,45 @@ The project uses **11 specialized AI agents** defined across multiple AI tools:
 
 ---
 
+## Backend Architecture Audit Notes
+
+Date: 2026-07-20
+
+### Completed Clean Architecture / DDD cleanups
+
+- `cmd/server/main.go`: extracted `run(...)` with explicit dependency injection; covered with `cmd/server/main_test.go`.
+- `internal/interfaces/api/middleware/apikey.go`: introduced `APIKeyRepository` interface so the middleware no longer performs raw GORM queries directly inside `APIKey()`.
+- `internal/interfaces/api/handlers/backup/handler.go`: removed the unused `*cloud.YandexBackupService` concrete dependency; handler now only depends on `config.Config` and `common.TaskQueue`.
+- `internal/infrastructure/db/postgres/link_repo.go`: moved `ErrDuplicateLink` to `internal/domain/link/errors.go` so the link handler depends on the domain error instead of an infrastructure package.
+
+### Remaining architecture debt to address in future iterations
+
+1. **Handlers with direct `*gorm.DB` usage (biggest Clean Architecture violations):**
+   - `internal/interfaces/api/handlers/auth/handler.go` — uses `*gorm.DB` and `postgres.UserModel`/`postgres.RefreshTokenModel`.
+   - `internal/interfaces/api/handlers/user/handler.go` — uses `*gorm.DB`, `postgres.UserModel`, and `postgres.APIKeyModel`.
+   - `internal/interfaces/api/handlers/share/handler.go` — uses `*gorm.DB` and several `postgres` models.
+   - Recommended fix: introduce domain repositories (`user.Repository`, `auth.TokenRepository`, `apikey.Repository`, `share.Repository`) in the `domain` layer and move persistence queries to `infrastructure/db/postgres`.
+
+2. **Middleware with persistence coupling:**
+   - `internal/interfaces/api/middleware/permissions.go` still takes `*gorm.DB` and queries role/permissions directly. Extract a `PermissionRepository` interface and inject it from `cmd/server`.
+
+3. **Application-layer Redis/GORM leaks:**
+   - `internal/application/cache/graph_cache.go` and `internal/application/user/settings_service.go` import `github.com/redis/go-redis/v9` directly. Replace with a cache port interface (e.g., `CacheClient`) implemented in `infrastructure/cache`.
+   - `internal/application/queries/graph/get_suggestions.go` imports `go-redis` for caching. Same cache-port abstraction applies.
+   - `internal/application/recommendation/refresh_service.go` imports `gorm` and `go-redis`. It should depend on `note.Repository`, `link.Repository`, and a cache port only.
+
+4. **Handler concrete infrastructure dependencies:**
+   - `internal/interfaces/api/notehandler/note_handler.go` depends on `*postgres.RecommendationRepository`, `*postgres.EmbeddingRepository`, and `*redis.Client`. Define handler-local or domain-driven interfaces so persistence and cache can be mocked in tests.
+   - `internal/interfaces/api/handlers/backup/handler.go` still creates `*asynq.Task` through `internal/infrastructure/queue/tasks`. Consider moving task payload builders into `application` or `domain` and converting `common.TaskQueue` to operate on an application-level `Task` type, with the `infrastructure/queue` adapter translating to `asynq`.
+
+### Conventions used during audit
+
+- Keep constructors explicit (`func New...`) and avoid global state.
+- Domain packages define errors and repository interfaces; infrastructure packages implement them.
+- Interface consumers should not know concrete `gorm`, `go-redis`, `mongo`, or `asynq` types.
+
+---
+
 ## Full Documentation
 
 - **[AGENTS_EN.md](AGENTS_EN.md)** — Full English documentation, agent descriptions, selection matrix
