@@ -175,6 +175,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `backend/internal/infrastructure/db/postgres/embedding_repo_test.go` — uses `testutil.SetupTestVectorDB` (pgvector container) instead of a hardcoded `localhost:5432` DSN.
 - `internal/domain/cache/cachetest/fake.go` — new in-memory `cache.CacheClient` test double.
 - Application-layer unit tests (`achievement`, `cache`, `queries/graph`, `user`) no longer import `internal/infrastructure/cache` or spin up Redis/miniredis.
+- `internal/interfaces/api/handlers/{user,auth,share}/handler_test.go` are now tagged `//go:build integration` because they spin up real `postgres` repositories via testcontainers.
 
 ### Current backend coverage
 
@@ -191,8 +192,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Some handler unit tests in `internal/interfaces/api/handlers/{user,auth,share}` still build real `postgres` repositories and GORM-backed DBs; they should be tagged as integration tests or converted to use mocked domain repositories.
 - Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
+- Full regression cycle and E2E stack verification are pending.
 - Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist
