@@ -403,6 +403,11 @@ When modifying backend handlers or repositories:
 - ✅ `share/handler.go` — uses `domainnote.Repository`, `domainuser.Repository`, `domainshare.Repository`
 - ✅ `backup/handler.go` — no DB dependency
 
+### Current application service decoupling status
+
+- ✅ `achievement/engine.go` — uses `domain/achievement.Counter` port
+- ✅ `recommendation/refresh_service.go` and `affected_notes.go` — use `note.Repository` and `recommendation.Repository` ports
+
 ### Before committing backend changes
 
 1. `cd backend && go test ./...`

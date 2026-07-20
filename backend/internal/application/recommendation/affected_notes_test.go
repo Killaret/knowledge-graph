@@ -2,102 +2,74 @@ package recommendation
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"knowledge-graph/internal/infrastructure/db/postgres"
-
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	gormPostgres "gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-func setupAffectedNotesMock(t *testing.T) (*AffectedNotesService, sqlmock.Sqlmock, func()) {
-	sqlDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	db, err := gorm.Open(gormPostgres.New(gormPostgres.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	require.NoError(t, err)
-
-	recRepo := postgres.NewRecommendationRepository(db)
-	svc := NewAffectedNotesService(recRepo)
-
-	return svc, mock, func() {
-		sqlDB.Close()
-	}
-}
-
 func TestAffectedNotesService_GetAffectedNotes(t *testing.T) {
-	svc, mock, cleanup := setupAffectedNotesMock(t)
-	defer cleanup()
-
 	ctx := context.Background()
 	targetNoteID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
 
 	t.Run("returns target note and reverse dependencies", func(t *testing.T) {
-		// Mock GetNotesThatRecommend query
-		reverseRows := sqlmock.NewRows([]string{"note_id"}).
-			AddRow(uuid.MustParse("a0000000-0000-0000-0000-000000000002")).
-			AddRow(uuid.MustParse("a0000000-0000-0000-0000-000000000003"))
+		mockRepo := new(mockRecommendationRepository)
+		svc := NewAffectedNotesService(mockRepo)
 
-		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
-			WithArgs(targetNoteID).WillReturnRows(reverseRows)
+		id2 := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
+		id3 := uuid.MustParse("a0000000-0000-0000-0000-000000000003")
+		mockRepo.On("GetNotesThatRecommend", ctx, targetNoteID).Return([]uuid.UUID{id2, id3}, nil).Once()
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
-		require.NoError(t, err)
 
-		// Should contain target note + 2 reverse dependencies
+		assert.NoError(t, err)
 		assert.Len(t, result, 3)
 		assert.Contains(t, result, targetNoteID)
-		assert.Contains(t, result, uuid.MustParse("a0000000-0000-0000-0000-000000000002"))
-		assert.Contains(t, result, uuid.MustParse("a0000000-0000-0000-0000-000000000003"))
-		assert.NoError(t, mock.ExpectationsWereMet())
+		assert.Contains(t, result, id2)
+		assert.Contains(t, result, id3)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("returns only target note when no reverse dependencies", func(t *testing.T) {
-		// Mock empty result from GetNotesThatRecommend
-		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
-			WithArgs(targetNoteID).WillReturnRows(sqlmock.NewRows([]string{"note_id"}))
+		mockRepo := new(mockRecommendationRepository)
+		svc := NewAffectedNotesService(mockRepo)
+
+		mockRepo.On("GetNotesThatRecommend", ctx, targetNoteID).Return([]uuid.UUID{}, nil).Once()
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
-		require.NoError(t, err)
 
-		// Should contain only target note
+		assert.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, targetNoteID, result[0])
-		assert.NoError(t, mock.ExpectationsWereMet())
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("deduplicates duplicate IDs", func(t *testing.T) {
-		// Mock query returning duplicate IDs (should not happen in practice, but test dedup)
-		duplicateID := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
-		reverseRows := sqlmock.NewRows([]string{"note_id"}).
-			AddRow(duplicateID).
-			AddRow(duplicateID) // Duplicate
+		mockRepo := new(mockRecommendationRepository)
+		svc := NewAffectedNotesService(mockRepo)
 
-		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
-			WithArgs(targetNoteID).WillReturnRows(reverseRows)
+		duplicateID := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
+		mockRepo.On("GetNotesThatRecommend", ctx, targetNoteID).Return([]uuid.UUID{duplicateID, duplicateID}, nil).Once()
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
-		require.NoError(t, err)
 
-		// Should contain target note + 1 unique reverse dependency
+		assert.NoError(t, err)
 		assert.Len(t, result, 2)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		mockRepo.AssertExpectations(t)
 	})
 
-	t.Run("handles database error", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT .*note_id.*FROM.*note_recommendations.*WHERE.*recommended_note_id.*`).
-			WithArgs(targetNoteID).WillReturnError(assert.AnError)
+	t.Run("handles repository error", func(t *testing.T) {
+		mockRepo := new(mockRecommendationRepository)
+		svc := NewAffectedNotesService(mockRepo)
+
+		mockRepo.On("GetNotesThatRecommend", ctx, targetNoteID).Return(nil, errors.New("db error")).Once()
 
 		result, err := svc.GetAffectedNotes(ctx, targetNoteID)
-		require.Error(t, err)
+
+		assert.Error(t, err)
 		assert.Nil(t, result)
-		assert.NoError(t, mock.ExpectationsWereMet())
+		mockRepo.AssertExpectations(t)
 	})
 }
 

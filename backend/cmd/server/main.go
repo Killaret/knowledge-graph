@@ -213,7 +213,8 @@ func run(
 
 	// Achievement service
 	achievementRepo := postgres.NewAchievementRepository(database)
-	achievementEngine := achievement.NewEngine(database)
+	achievementCounter := postgres.NewAchievementCounter(database)
+	achievementEngine := achievement.NewEngine(achievementCounter)
 	userSettingsRepo := postgres.NewUserSettingsRepository(database)
 	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
 	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)

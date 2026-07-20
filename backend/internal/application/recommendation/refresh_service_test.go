@@ -3,235 +3,151 @@ package recommendation
 import (
 	"context"
 	"errors"
-	"regexp"
-	"sync"
 	"testing"
-	"time"
 
 	"knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/note"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	gormPostgres "gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-// MockTraversalService is a mock for TraversalService interface
-type MockTraversalService struct {
-	mock.Mock
-}
-
-func (m *MockTraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]graph.SuggestionResult, error) {
-	args := m.Called(ctx, startID, topN)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]graph.SuggestionResult), args.Error(1)
-}
-
-// Ensure MockTraversalService implements TraversalService interface
-var _ TraversalService = (*MockTraversalService)(nil)
-
-func setupRefreshServiceMock(t *testing.T) (*RefreshService, sqlmock.Sqlmock, *MockTraversalService, func()) {
-	sqlDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	db, err := gorm.Open(gormPostgres.New(gormPostgres.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	require.NoError(t, err)
-
-	mockSvc := new(MockTraversalService)
-	svc := NewRefreshService(db, nil, mockSvc, 10)
-
-	return svc, mock, mockSvc, func() {
-		sqlDB.Close()
-	}
-}
-
 func TestRefreshService_RefreshRecommendations(t *testing.T) {
-	svc, mock, mockSvc, cleanup := setupRefreshServiceMock(t)
-	defer cleanup()
-
 	ctx := context.Background()
 	noteID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
 	targetID := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
 
+	makeNote := func() *note.Note {
+		title, _ := note.NewTitle("Test Note")
+		content, _ := note.NewContent("Content")
+		meta, _ := note.NewMetadata(map[string]interface{}{})
+		n := note.NewNoteWithCreator(title, content, "star", meta, uuid.New())
+		return n
+	}
+
 	t.Run("successful refresh", func(t *testing.T) {
-		mockSvc.ExpectedCalls = nil // Сброс expectations
-		// Mock note lookup
-		noteRows := sqlmock.NewRows([]string{"id", "title", "content", "created_at", "updated_at"}).
-			AddRow(noteID, "Test Note", "Content", time.Now(), time.Now())
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
-			WithArgs(noteID, 1).WillReturnRows(noteRows)
+		noteRepo := new(mockNoteRepository)
+		recRepo := new(mockRecommendationRepository)
+		traversalSvc := new(MockTraversalService)
 
-		// Mock traversal service returning suggestions
-		suggestions := []graph.SuggestionResult{
-			{NodeID: targetID, Score: 0.9},
-		}
-		mockSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
+		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
-		// Mock transaction begin
-		mock.ExpectBegin()
+		n := makeNote()
+		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
 
-		// Mock upsert (ON CONFLICT DO UPDATE)
-		mock.ExpectExec(regexp.QuoteMeta(
-			`INSERT INTO "note_recommendations"`,
-		)).WillReturnResult(sqlmock.NewResult(1, 1))
+		suggestions := []graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}
+		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
 
-		// Mock delete not in batch
-		mock.ExpectExec(regexp.QuoteMeta(
-			`DELETE FROM "note_recommendations"`,
-		)).WithArgs(noteID, targetID).WillReturnResult(sqlmock.NewResult(0, 0))
-
-		// Mock transaction commit
-		mock.ExpectCommit()
+		recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
-		require.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
-		mockSvc.AssertExpectations(t)
+
+		assert.NoError(t, err)
+		noteRepo.AssertExpectations(t)
+		recRepo.AssertExpectations(t)
+		traversalSvc.AssertExpectations(t)
 	})
 
 	t.Run("note not found", func(t *testing.T) {
-		mockSvc.ExpectedCalls = nil // Сброс expectations
-		// Mock note lookup returning empty result (note not found)
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
-			WithArgs(noteID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "created_at", "updated_at"}))
+		noteRepo := new(mockNoteRepository)
+		recRepo := new(mockRecommendationRepository)
+		traversalSvc := new(MockTraversalService)
+
+		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
+
+		noteRepo.On("FindByID", ctx, noteID).Return(nil, nil).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
-		require.Error(t, err)
+
+		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "note not found")
-		assert.NoError(t, mock.ExpectationsWereMet())
+		noteRepo.AssertExpectations(t)
+	})
+
+	t.Run("note repository error", func(t *testing.T) {
+		noteRepo := new(mockNoteRepository)
+		recRepo := new(mockRecommendationRepository)
+		traversalSvc := new(MockTraversalService)
+
+		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
+
+		noteRepo.On("FindByID", ctx, noteID).Return(nil, errors.New("db error")).Once()
+
+		err := svc.RefreshRecommendations(ctx, noteID)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "note not found")
+		noteRepo.AssertExpectations(t)
 	})
 
 	t.Run("traversal service error", func(t *testing.T) {
-		mockSvc.ExpectedCalls = nil // Сброс expectations
-		// Mock note lookup
-		noteRows := sqlmock.NewRows([]string{"id", "title", "content", "created_at", "updated_at"}).
-			AddRow(noteID, "Test Note", "Content", time.Now(), time.Now())
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
-			WithArgs(noteID, 1).WillReturnRows(noteRows)
+		noteRepo := new(mockNoteRepository)
+		recRepo := new(mockRecommendationRepository)
+		traversalSvc := new(MockTraversalService)
 
-		// Mock traversal service returning error
-		mockSvc.On("GetSuggestions", ctx, noteID, 10).Return(nil, errors.New("traversal failed")).Once()
+		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
+
+		n := makeNote()
+		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
+		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(nil, errors.New("traversal failed")).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
-		require.Error(t, err)
+
+		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get suggestions")
-		assert.NoError(t, mock.ExpectationsWereMet())
-		mockSvc.AssertExpectations(t)
+		noteRepo.AssertExpectations(t)
+		traversalSvc.AssertExpectations(t)
 	})
 
-	t.Run("database transaction rollback on save error", func(t *testing.T) {
-		mockSvc.ExpectedCalls = nil // Сброс expectations
-		// Mock note lookup
-		noteRows := sqlmock.NewRows([]string{"id", "title", "content", "created_at", "updated_at"}).
-			AddRow(noteID, "Test Note", "Content", time.Now(), time.Now())
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
-			WithArgs(noteID, 1).WillReturnRows(noteRows)
+	t.Run("replace recommendations error", func(t *testing.T) {
+		noteRepo := new(mockNoteRepository)
+		recRepo := new(mockRecommendationRepository)
+		traversalSvc := new(MockTraversalService)
 
-		// Mock traversal service
-		suggestions := []graph.SuggestionResult{
-			{NodeID: targetID, Score: 0.9},
-		}
-		mockSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
+		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
-		// Mock transaction begin
-		mock.ExpectBegin()
+		n := makeNote()
+		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
 
-		// Mock upsert failing
-		mock.ExpectExec(regexp.QuoteMeta(
-			`INSERT INTO "note_recommendations"`,
-		)).WillReturnError(errors.New("database error"))
+		suggestions := []graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}
+		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
 
-		// Mock transaction rollback
-		mock.ExpectRollback()
+		recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(errors.New("db error")).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to save recommendations")
-		assert.NoError(t, mock.ExpectationsWereMet())
-		mockSvc.AssertExpectations(t)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to replace recommendations")
+		noteRepo.AssertExpectations(t)
+		recRepo.AssertExpectations(t)
+		traversalSvc.AssertExpectations(t)
 	})
 }
 
-func TestRefreshService_ConcurrentRefresh(t *testing.T) {
-	// This test verifies that concurrent refreshes don't cause data corruption
-	// Skipped: sqlmock doesn't handle concurrent expectations well (strict ordering)
-	t.Skip("Skipped: concurrent test not compatible with sqlmock strict ordering")
-	sqlDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer sqlDB.Close()
-
-	db, err := gorm.Open(gormPostgres.New(gormPostgres.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	require.NoError(t, err)
-
-	mockSvc := new(MockTraversalService)
-	svc := NewRefreshService(db, nil, mockSvc, 10)
-
+func TestRefreshService_RefreshRecommendationsBatch(t *testing.T) {
 	ctx := context.Background()
 	noteID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
-	targetID1 := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
-	targetID2 := uuid.MustParse("a0000000-0000-0000-0000-000000000003")
+	targetID := uuid.MustParse("a0000000-0000-0000-0000-000000000002")
 
-	// Setup expectations for multiple concurrent calls
-	numGoroutines := 5
+	title, _ := note.NewTitle("Test Note")
+	content, _ := note.NewContent("Content")
+	meta, _ := note.NewMetadata(map[string]interface{}{})
+	n := note.NewNoteWithCreator(title, content, "star", meta, uuid.New())
 
-	for i := 0; i < numGoroutines; i++ {
-		// Each goroutine will look up the note
-		noteRows := sqlmock.NewRows([]string{"id", "title", "content", "created_at", "updated_at"}).
-			AddRow(noteID, "Test Note", "Content", time.Now(), time.Now())
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
-			WithArgs(noteID, 1).WillReturnRows(noteRows)
+	noteRepo := new(mockNoteRepository)
+	recRepo := new(mockRecommendationRepository)
+	traversalSvc := new(MockTraversalService)
 
-		// Each call returns slightly different results (simulating race)
-		suggestions := []graph.SuggestionResult{
-			{NodeID: targetID1, Score: 0.9 - float64(i)*0.01},
-			{NodeID: targetID2, Score: 0.8 - float64(i)*0.01},
-		}
-		mockSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
+	svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
-		// Transaction expectations
-		mock.ExpectBegin()
-		mock.ExpectExec(`INSERT INTO "note_recommendations"`).
-			WillReturnResult(sqlmock.NewResult(2, 2))
-		mock.ExpectExec(`DELETE FROM "note_recommendations"`).
-			WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
-	}
+	noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
+	traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return([]graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}, nil).Once()
+	recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
 
-	// Run concurrent refreshes
-	var wg sync.WaitGroup
-	errors := make(chan error, numGoroutines)
+	err := svc.RefreshRecommendationsBatch(ctx, []uuid.UUID{noteID}, 1)
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := svc.RefreshRecommendations(ctx, noteID); err != nil {
-				errors <- err
-			}
-		}()
-	}
-
-	wg.Wait()
-	close(errors)
-
-	// Check that no errors occurred
-	errCount := 0
-	for err := range errors {
-		t.Logf("Error: %v", err)
-		errCount++
-	}
-	assert.Equal(t, 0, errCount, "Concurrent refreshes should not produce errors")
-
-	// Verify all expectations were met
-	assert.NoError(t, mock.ExpectationsWereMet())
-	mockSvc.AssertExpectations(t)
+	assert.NoError(t, err)
+	noteRepo.AssertExpectations(t)
+	recRepo.AssertExpectations(t)
+	traversalSvc.AssertExpectations(t)
 }

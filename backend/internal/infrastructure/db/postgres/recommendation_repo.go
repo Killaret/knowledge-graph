@@ -111,3 +111,15 @@ func (r *RecommendationRepository) Count(ctx context.Context, noteID uuid.UUID) 
 		Count(&count).Error
 	return count, err
 }
+
+// ReplaceRecommendations atomically replaces recommendations for a note with a new set,
+// deleting stale entries inside a single transaction.
+func (r *RecommendationRepository) ReplaceRecommendations(ctx context.Context, noteID uuid.UUID, recs map[uuid.UUID]float64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := &RecommendationRepository{db: tx}
+		if err := txRepo.SaveBatch(ctx, noteID, recs); err != nil {
+			return err
+		}
+		return txRepo.DeleteNotInBatch(ctx, noteID, recs)
+	})
+}

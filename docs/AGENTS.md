@@ -143,6 +143,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/interfaces/api/handlers/user/handler.go` — now depends on `domainuser.Repository` and `domainuser.APIKeyRepository`; no `*gorm.DB` or `postgres` model usage.
 - `internal/interfaces/api/handlers/auth/handler.go` — now depends on `domainuser.Repository`, `auth.RefreshTokenRepository`, and `auth.TokenStore`; no direct `postgres` usage.
 - `internal/interfaces/api/handlers/share/handler.go` — now depends on `domainnote.Repository`, `domainuser.Repository`, and `domainshare.Repository`; no `*gorm.DB` or `postgres` model usage.
+- `internal/application/achievement/engine.go` — now depends on `domain/achievement.Counter` port implemented in `postgres.AchievementCounter`; no `*gorm.DB`.
+- `internal/application/recommendation/refresh_service.go` and `affected_notes.go` — now depend on `note.Repository` and `recommendation.Repository` ports; no `*gorm.DB` or direct `postgres` usage.
 - New domain packages:
   - `internal/domain/user` — `User`, `APIKey` aggregates and repository ports.
   - `internal/domain/share` — `NoteShare`, `ShareLink` aggregates and repository port.
@@ -157,11 +159,12 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **62.0%** (target >60%).
+- Aggregated backend coverage: **61.9%** (target >60%).
 
 ### Remaining debt
 
-- Some application services still reach into `*gorm.DB` directly (audit, analytics, migration helpers).
+- `internal/interfaces/api/notehandler/note_handler.go` still depends on concrete `*postgres.RecommendationRepository` and `*postgres.EmbeddingRepository`.
+- `internal/interfaces/api/middleware/permissions.go` still queries role/permissions directly via `*gorm.DB`; introduce a `PermissionRepository` port.
 - `internal/infrastructure/db/postgres` still contains business logic that should migrate to domain or application services (e.g., role lookup during user creation could live in an application service).
 - `internal/interfaces/api/handlers/backup` is decoupled but minimal.
 - Frontend coverage and E2E stack not covered by these notes.

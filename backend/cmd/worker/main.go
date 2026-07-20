@@ -80,6 +80,7 @@ func main() {
 	noteRepo := postgres.NewNoteRepository(database, redisClient)
 	keywordRepo := postgres.NewKeywordRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database)
+	recRepo := postgres.NewRecommendationRepository(database)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
 	nlpURL := cfg.NLPServiceURL
@@ -130,7 +131,7 @@ func main() {
 	}
 
 	// Refresh service for background recommendation calculation
-	refreshSvc := recommendation.NewRefreshService(database, redisClient, traversalSvc, cfg.RecommendationTopN)
+	refreshSvc := recommendation.NewRefreshService(noteRepo, recRepo, traversalSvc, cfg.RecommendationTopN)
 
 	// Asynq сервер с конфигурацией
 	srv := asynq.NewServer(

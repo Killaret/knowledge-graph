@@ -8,17 +8,16 @@ import (
 	achievementDomain "knowledge-graph/internal/domain/achievement"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // Engine evaluates achievement conditions
 type Engine struct {
-	db *gorm.DB
+	counter achievementDomain.Counter
 }
 
 // NewEngine creates a new achievement engine
-func NewEngine(db *gorm.DB) *Engine {
-	return &Engine{db: db}
+func NewEngine(counter achievementDomain.Counter) *Engine {
+	return &Engine{counter: counter}
 }
 
 // Evaluate evaluates a condition for a user
@@ -42,48 +41,23 @@ func (e *Engine) evaluateCount(ctx context.Context, condition achievementDomain.
 	var count int64
 	var err error
 
+	noteType := ""
+	if condition.Filter != nil {
+		if t, ok := condition.Filter["type"].(string); ok && t != "" {
+			noteType = t
+		}
+	}
+
 	switch condition.Entity {
 	case "note":
-		query := e.db.WithContext(ctx).Model(&struct {
-			CreatorID *uuid.UUID
-			Type      string
-			DeletedAt interface{}
-		}{}).
-			Table("notes").
-			Where("creator_id = ? AND deleted_at IS NULL", userID)
-
-		// Apply type filter if specified
-		if condition.Filter != nil {
-			if noteType, ok := condition.Filter["type"].(string); ok && noteType != "" {
-				query = query.Where("type = ?", noteType)
-			}
-		}
-
-		err = query.Count(&count).Error
-
+		count, err = e.counter.CountNotes(ctx, userID, noteType)
 	case "link":
-		query := e.db.WithContext(ctx).Model(&struct {
-			CreatorID *uuid.UUID
-			DeletedAt interface{}
-		}{}).
-			Table("links").
-			Where("creator_id = ? AND deleted_at IS NULL", userID)
-
-		err = query.Count(&count).Error
-
+		count, err = e.counter.CountLinks(ctx, userID)
 	case "search":
-		// For search, we'd need a search history table
-		// For now, return false
+		// Search history is not persisted yet
 		count = 0
-
 	case "share":
-		// Count note shares where user is the sharer
-		err = e.db.WithContext(ctx).
-			Model(&struct{ SharedByUserID uuid.UUID }{}).
-			Table("note_shares").
-			Where("shared_by_user_id = ?", userID).
-			Count(&count).Error
-
+		count, err = e.counter.CountShares(ctx, userID)
 	default:
 		return false, fmt.Errorf("unknown entity: %s", condition.Entity)
 	}
@@ -97,9 +71,8 @@ func (e *Engine) evaluateCount(ctx context.Context, condition achievementDomain.
 
 // evaluateStreak evaluates streak-based conditions
 func (e *Engine) evaluateStreak(ctx context.Context, condition achievementDomain.Condition, userID uuid.UUID) (bool, error) {
-	// For streaks, we'd use Redis to track consecutive days
-	// For now, return false as this requires Redis integration
-	// The streak tracking is handled by the service layer
+	// Streak tracking is handled by the service layer with Redis.
+	// The engine itself does not query persistence for streaks.
 	return false, nil
 }
 

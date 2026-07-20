@@ -208,3 +208,11 @@ type Repository interface {
 type Engine interface {
 	Evaluate(ctx context.Context, condition Condition, userID uuid.UUID) (bool, error)
 }
+
+// Counter provides the raw counts needed by the achievement engine.
+// It is intentionally narrow so infrastructure implementations can be swapped.
+type Counter interface {
+	CountNotes(ctx context.Context, userID uuid.UUID, noteType string) (int64, error)
+	CountLinks(ctx context.Context, userID uuid.UUID) (int64, error)
+	CountShares(ctx context.Context, userID uuid.UUID) (int64, error)
+}
