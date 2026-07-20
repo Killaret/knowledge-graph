@@ -6,6 +6,7 @@
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import { getMessage, mode } from "$shared/stores/lexicon-settings";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { CelestialBody, Theme } from "$shared/lib/domain";
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
@@ -25,6 +26,20 @@
   let currentMode = $state("standard");
   const theme = $derived(Theme.fromString(currentMode));
 
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+  const tx = (standardKey: string, galacticKey: string) =>
+    theme.isGalactic ? t(galacticKey) : t(standardKey);
+  const toErrorResponse = (e: unknown): ErrorResponse => {
+    if (e && typeof e === "object") {
+      const err = e as { response?: { data?: ErrorResponse } };
+      if (err.response?.data) {
+        return err.response.data;
+      }
+    }
+    return { code: "API_ERROR", message: t("note.createError") };
+  };
+
   // Subscribe to mode changes
   $effect(() => {
     const unsubscribe = mode.subscribe((m) => (currentMode = m));
@@ -32,20 +47,18 @@
   });
 
   // Computed labels based on theme
-  const modalTitle = $derived(
-    theme.choose("Create New Note", "Ignite New Star"),
-  );
-  const titleLabel = $derived(theme.choose("Title *", "Star Name *"));
-  const typeLabel = $derived(theme.choose("Type", "Celestial Type"));
-  const contentLabel = $derived(theme.choose("Content", "Star Data"));
-  const cancelText = $derived(theme.choose("Cancel", "Abort Mission"));
-  const createText = $derived(theme.choose("Create Note", "Ignite Star"));
-  const creatingText = $derived(theme.choose("Creating...", "Igniting..."));
+  const modalTitle = $derived(tx("note.createTitle", "note.createTitleGalactic"));
+  const titleLabel = $derived(tx("note.titleLabel", "note.titleLabelGalactic"));
+  const typeLabel = $derived(tx("note.typeLabel", "note.typeLabelGalactic"));
+  const contentLabel = $derived(tx("note.contentLabel", "note.contentLabelGalactic"));
+  const cancelText = $derived(tx("note.cancel", "note.cancelGalactic"));
+  const createText = $derived(tx("note.create", "note.createGalactic"));
+  const creatingText = $derived(tx("note.creating", "note.creatingGalactic"));
   const titlePlaceholder = $derived(
-    theme.choose("Enter note title...", "Enter star name..."),
+    tx("note.titlePlaceholder", "note.titlePlaceholderGalactic"),
   );
   const contentPlaceholder = $derived(
-    theme.choose("Enter note content...", "Enter star data..."),
+    tx("note.contentPlaceholder", "note.contentPlaceholderGalactic"),
   );
 
   async function handleSubmit(e: Event) {
@@ -69,11 +82,8 @@
 
       onSuccess?.(note);
       close();
-    } catch (err: any) {
-      apiError = err?.response?.data || {
-        code: "API_ERROR",
-        message: "Failed to create note",
-      };
+    } catch (err: unknown) {
+      apiError = toErrorResponse(err);
     } finally {
       loading = false;
     }
