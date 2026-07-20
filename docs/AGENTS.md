@@ -185,6 +185,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/components/molecules/NoteCard.svelte` — tooltip and card labels (links, edit/delete, indicators, dates) now use i18n keys.
 - `frontend/src/shared/lib/domain/celestial-body.ts` — `CelestialBody.label` now resolves through i18n keys (`celestialBody.type.*`), removing hardcoded English user-facing labels.
 - `frontend/src/components/organisms/NoteSidePanel.svelte` — panel labels, dates, links section, and delete-links modal now use i18n keys.
+- `frontend/src/shared/lib/domain/link-type.ts` — `LinkType.label` now resolves through i18n keys (`linkType.*`).
+- `frontend/src/components/organisms/LinkCreator.svelte` and `LinkTooltip.svelte` — link creation form and tooltip labels now use i18n keys.
 
 ### Current backend coverage
 
