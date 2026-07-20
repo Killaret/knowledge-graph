@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
@@ -20,7 +18,6 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
 )
 
 func main() {
@@ -138,22 +135,13 @@ func main() {
 	refreshSvc := recommendation.NewRefreshService(noteRepo, recRepo, traversalSvc, cfg.RecommendationTopN)
 
 	// Asynq сервер с конфигурацией
-	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: redisAddr},
-		asynq.Config{
-			Concurrency: cfg.AsynqConcurrency,
-			Queues: map[string]int{
-				"default": cfg.AsynqQueueDefault,
-			},
-		},
-	)
+	queues := map[string]int{"default": cfg.AsynqQueueDefault}
+	srv := queue.NewServer(redisAddr, cfg.AsynqConcurrency, queues)
 
-	mux := asynq.NewServeMux()
+	mux := queue.NewServeMux()
 	mux.HandleFunc(queue.TypeExtractKeywords, worker.HandleExtractKeywords)
 	mux.HandleFunc(queue.TypeComputeEmbedding, worker.HandleComputeEmbedding)
-	mux.HandleFunc(tasks.TypeRefreshRecommendations, func(ctx context.Context, t *asynq.Task) error {
-		return tasks.HandleRefreshRecommendations(ctx, t, refreshSvc)
-	})
+	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
 
