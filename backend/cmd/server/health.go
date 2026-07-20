@@ -2,19 +2,30 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
-
-	"knowledge-graph/internal/config"
-	"knowledge-graph/internal/infrastructure/nlp"
 )
 
+// DBPinger abstracts a database connection that can be pinged.
+type DBPinger interface {
+	PingContext(ctx context.Context) error
+}
+
+// RedisPinger abstracts a Redis client that can be pinged.
+type RedisPinger interface {
+	Ping(ctx context.Context) error
+}
+
+// NLPHealthChecker abstracts an NLP service client that exposes a health check.
+type NLPHealthChecker interface {
+	HealthCheck(ctx context.Context) error
+}
+
 // newHealthHandler returns a health check handler that checks all dependencies
-func newHealthHandler(database *gorm.DB, redisClient *redis.Client, cfg *config.Config) gin.HandlerFunc {
+func newHealthHandler(database DBPinger, redisClient RedisPinger, nlpClient NLPHealthChecker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.Background()
 		health := gin.H{
@@ -25,20 +36,20 @@ func newHealthHandler(database *gorm.DB, redisClient *redis.Client, cfg *config.
 		status := http.StatusOK
 
 		// Check database
-		sqlDB, err := database.DB()
-		if err != nil {
-			health["database"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			status = http.StatusServiceUnavailable
-		} else if err := sqlDB.Ping(); err != nil {
-			health["database"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			status = http.StatusServiceUnavailable
+		if database != nil {
+			if err := database.PingContext(ctx); err != nil {
+				health["database"] = gin.H{"status": "unhealthy", "error": err.Error()}
+				status = http.StatusServiceUnavailable
+			} else {
+				health["database"] = gin.H{"status": "healthy"}
+			}
 		} else {
-			health["database"] = gin.H{"status": "healthy"}
+			health["database"] = gin.H{"status": "disabled"}
 		}
 
 		// Check Redis
 		if redisClient != nil {
-			if err := redisClient.Ping(ctx).Err(); err != nil {
+			if err := redisClient.Ping(ctx); err != nil {
 				health["redis"] = gin.H{"status": "unhealthy", "error": err.Error()}
 				status = http.StatusServiceUnavailable
 			} else {
@@ -49,14 +60,20 @@ func newHealthHandler(database *gorm.DB, redisClient *redis.Client, cfg *config.
 		}
 
 		// Check NLP service
-		nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, redisClient, cfg.RecommendationCacheTTL)
-		if err := nlpClient.HealthCheck(ctx); err != nil {
-			health["nlp"] = gin.H{"status": "unhealthy", "error": err.Error()}
-			// Don't mark as unhealthy if NLP is optional
+		if nlpClient != nil {
+			if err := nlpClient.HealthCheck(ctx); err != nil {
+				health["nlp"] = gin.H{"status": "unhealthy", "error": err.Error()}
+				// Don't mark as unhealthy if NLP is optional
+			} else {
+				health["nlp"] = gin.H{"status": "healthy"}
+			}
 		} else {
-			health["nlp"] = gin.H{"status": "healthy"}
+			health["nlp"] = gin.H{"status": "disabled"}
 		}
 
 		c.JSON(status, health)
 	}
 }
+
+// compile-time interface assertions
+var _ DBPinger = (*sql.DB)(nil)

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
+	domainuser "knowledge-graph/internal/domain/user"
 	"knowledge-graph/internal/interfaces/api/middleware"
 )
 
@@ -87,11 +87,11 @@ func newWriteLimiter(cfg *config.Config) gin.HandlerFunc {
 }
 
 // newJWTConfig creates JWT middleware configuration
-func newJWTConfig(jwtManager *authpkg.JWTManager, tokenStore *authpkg.RedisTokenStore) *middleware.JWTConfig {
+func newJWTConfig(jwtManager *authpkg.JWTManager, tokenStore authpkg.TokenStore) *middleware.JWTConfig {
 	return middleware.DefaultJWTConfig(jwtManager, tokenStore)
 }
 
 // newAPIKeyConfig creates API key middleware configuration
-func newAPIKeyConfig(db *gorm.DB, enabled bool, staticKey string) *middleware.APIKeyConfig {
-	return middleware.DefaultAPIKeyConfig(db, enabled, staticKey)
+func newAPIKeyConfig(repo domainuser.APIKeyRepository, enabled bool, staticKey string) *middleware.APIKeyConfig {
+	return middleware.DefaultAPIKeyConfig(repo, enabled, staticKey)
 }

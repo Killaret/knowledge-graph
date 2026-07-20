@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"knowledge-graph/internal/config"
+	nlp "knowledge-graph/internal/infrastructure/nlp"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/alicebob/miniredis/v2"
@@ -19,7 +21,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
+func setupMockDB(t *testing.T) (*gorm.DB, *sql.DB, sqlmock.Sqlmock, func()) {
 	sqlDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	require.NoError(t, err)
 
@@ -30,18 +32,19 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	db, err := gorm.Open(dialector, &gorm.Config{})
 	require.NoError(t, err)
 
-	return db, mock, func() { sqlDB.Close() }
+	return db, sqlDB, mock, func() { sqlDB.Close() }
 }
 
 func TestHealthHandler_Healthy(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	db, mock, cleanup := setupMockDB(t)
+	_, sqlDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	mock.ExpectPing()
 
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	redisPinger := &redisPingAdapter{client: rdb}
 
 	nlpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -52,8 +55,9 @@ func TestHealthHandler_Healthy(t *testing.T) {
 		NLPServiceURL:          nlpServer.URL,
 		RecommendationCacheTTL: time.Hour,
 	}
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, rdb, cfg.RecommendationCacheTTL)
 
-	handler := newHealthHandler(db, rdb, cfg)
+	handler := newHealthHandler(sqlDB, redisPinger, nlpClient)
 	r := gin.New()
 	r.GET("/health", handler)
 
@@ -67,13 +71,14 @@ func TestHealthHandler_Healthy(t *testing.T) {
 
 func TestHealthHandler_DatabaseDown(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	db, mock, cleanup := setupMockDB(t)
+	_, sqlDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	mock.ExpectPing().WillReturnError(errors.New("db down"))
 
 	cfg := &config.Config{}
-	handler := newHealthHandler(db, nil, cfg)
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, nil, cfg.RecommendationCacheTTL)
+	handler := newHealthHandler(sqlDB, nil, nlpClient)
 	r := gin.New()
 	r.GET("/health", handler)
 
@@ -87,15 +92,17 @@ func TestHealthHandler_DatabaseDown(t *testing.T) {
 
 func TestHealthHandler_RedisDown(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	db, mock, cleanup := setupMockDB(t)
+	_, sqlDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	mock.ExpectPing()
 
 	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1"})
+	redisPinger := &redisPingAdapter{client: rdb}
 
 	cfg := &config.Config{}
-	handler := newHealthHandler(db, rdb, cfg)
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, nil, cfg.RecommendationCacheTTL)
+	handler := newHealthHandler(sqlDB, redisPinger, nlpClient)
 	r := gin.New()
 	r.GET("/health", handler)
 
@@ -108,7 +115,7 @@ func TestHealthHandler_RedisDown(t *testing.T) {
 
 func TestHealthHandler_NLPUnhealthyButOptional(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	db, mock, cleanup := setupMockDB(t)
+	_, sqlDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	mock.ExpectPing()
@@ -122,8 +129,8 @@ func TestHealthHandler_NLPUnhealthyButOptional(t *testing.T) {
 		NLPServiceURL:          nlpServer.URL,
 		RecommendationCacheTTL: time.Hour,
 	}
-
-	handler := newHealthHandler(db, nil, cfg)
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, nil, cfg.RecommendationCacheTTL)
+	handler := newHealthHandler(sqlDB, nil, nlpClient)
 	r := gin.New()
 	r.GET("/health", handler)
 

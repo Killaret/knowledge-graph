@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"knowledge-graph/internal/domain/user"
@@ -81,4 +82,27 @@ func (r *APIKeyRepository) Revoke(ctx context.Context, keyID, userID uuid.UUID) 
 		return false, result.Error
 	}
 	return result.RowsAffected > 0, nil
+}
+
+// FindActiveByHash returns the active API key with the given hash.
+func (r *APIKeyRepository) FindActiveByHash(ctx context.Context, hash string) (*user.APIKey, error) {
+	var model APIKeyModel
+	err := r.db.WithContext(ctx).
+		Where("key_hash = ? AND is_active = ?", hash, true).
+		First(&model).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toDomainAPIKey(&model)
+}
+
+// UpdateLastUsed updates the last_used_at timestamp for the given key ID.
+func (r *APIKeyRepository) UpdateLastUsed(ctx context.Context, keyID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Model(&APIKeyModel{}).
+		Where("id = ?", keyID).
+		Update("last_used_at", "now()").Error
 }

@@ -6,10 +6,8 @@ import (
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
@@ -40,8 +38,7 @@ func setupRouter(
 	shareHandler *sharehandler.Handler,
 	draftHandler *drafthandler.Handler,
 	cfg *config.Config,
-	database *gorm.DB,
-	redisClient *redis.Client,
+	healthHandler gin.HandlerFunc,
 	writeLimiter gin.HandlerFunc,
 	jwtConfig *middleware.JWTConfig,
 	apiKeyConfig *middleware.APIKeyConfig,
@@ -96,8 +93,8 @@ func setupRouter(
 	// Serve OpenAPI spec
 	r.StaticFile("/openapi.yaml", "./openAPI.yaml")
 
-	// Health check endpoint (created in health.go)
-	r.GET("/health", newHealthHandler(database, redisClient, cfg))
+	// Health check endpoint
+	r.GET("/health", healthHandler)
 
 	// API v1 group
 	v1 := r.Group("/api/v1")

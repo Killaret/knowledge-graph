@@ -12,7 +12,7 @@ import (
 )
 
 func TestRun_NilConfig(t *testing.T) {
-	db, _, cleanup := setupMockDB(t)
+	db, _, _, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	_, _, err := run(context.Background(), nil, db, nil, nil, nil, "")
@@ -28,7 +28,7 @@ func TestRun_NilDatabase(t *testing.T) {
 }
 
 func TestRun_Success(t *testing.T) {
-	db, _, cleanup := setupMockDB(t)
+	db, _, _, cleanup := setupMockDB(t)
 	defer cleanup()
 
 	cfg := &config.Config{

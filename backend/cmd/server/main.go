@@ -30,6 +30,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/mongo"
+	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
@@ -246,17 +247,17 @@ func run(
 
 	// Auth handler
 	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
-	var tokenStore *auth.RedisTokenStore
+	var tokenStore auth.TokenStore
 	if redisClient != nil {
 		tokenStore = auth.NewRedisTokenStore(redisClient)
 	}
 	roleRepo := postgres.NewRoleRepository(database)
 	userRepo := postgres.NewUserRepository(database, roleRepo)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(database)
+	apiKeyRepo := postgres.NewAPIKeyRepository(database)
 	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg)
 
 	// User handler
-	apiKeyRepo := postgres.NewAPIKeyRepository(database)
 	passwordConfig := &auth.PasswordConfig{
 		Time:    3,
 		Memory:  65536,
@@ -273,10 +274,19 @@ func run(
 	shareRepo := postgres.NewShareRepository(database)
 	shareHandler := sharehandler.NewHandler(noteRepo, userRepo, shareRepo)
 
+	// Health handler
+	sqlDB, _ := database.DB()
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, redisClient, cfg.RecommendationCacheTTL)
+	var redisPinger RedisPinger
+	if redisClient != nil {
+		redisPinger = &redisPingAdapter{client: redisClient}
+	}
+	healthHandler := newHealthHandler(sqlDB, redisPinger, nlpClient)
+
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
 	jwtConfig := newJWTConfig(jwtManager, tokenStore)
-	apiKeyConfig := newAPIKeyConfig(database, cfg.APIKeyEnabled, cfg.StaticAPIKey)
+	apiKeyConfig := newAPIKeyConfig(apiKeyRepo, cfg.APIKeyEnabled, cfg.StaticAPIKey)
 	skipAuthConfig := middleware.DefaultSkipAuthConfig(cfg.SkipAuth)
 
 	r := setupRouter(
@@ -292,8 +302,7 @@ func run(
 		shareHandler,
 		draftHandler,
 		cfg,
-		database,
-		redisClient,
+		healthHandler,
 		writeLimiter,
 		jwtConfig,
 		apiKeyConfig,
@@ -381,6 +390,15 @@ func newRedisClient(cfg *config.Config) *redis.Client {
 
 	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, ConnMaxLifetime=5m, ConnMaxIdleTime=1m")
 	return redisClient
+}
+
+// redisPingAdapter adapts *redis.Client to the RedisPinger interface used by the health handler.
+type redisPingAdapter struct {
+	client *redis.Client
+}
+
+func (a *redisPingAdapter) Ping(ctx context.Context) error {
+	return a.client.Ping(ctx).Err()
 }
 
 func newMongoClient(ctx context.Context, cfg *config.Config) *mongo.Client {

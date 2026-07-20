@@ -29,4 +29,6 @@ type APIKeyRepository interface {
 	FindByUserID(ctx context.Context, userID uuid.UUID) ([]APIKey, error)
 	Create(ctx context.Context, key *APIKey) error
 	Revoke(ctx context.Context, keyID, userID uuid.UUID) (bool, error)
+	FindActiveByHash(ctx context.Context, hash string) (*APIKey, error)
+	UpdateLastUsed(ctx context.Context, keyID uuid.UUID) error
 }

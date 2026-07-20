@@ -14,12 +14,12 @@ import (
 // PermissionConfig holds permission middleware configuration
 type PermissionConfig struct {
 	Repo       permission.Repository
-	TokenStore *auth.RedisTokenStore
+	TokenStore auth.TokenStore
 	CacheTTL   time.Duration
 }
 
 // DefaultPermissionConfig returns default permission configuration
-func DefaultPermissionConfig(repo permission.Repository, tokenStore *auth.RedisTokenStore) *PermissionConfig {
+func DefaultPermissionConfig(repo permission.Repository, tokenStore auth.TokenStore) *PermissionConfig {
 	return &PermissionConfig{
 		Repo:       repo,
 		TokenStore: tokenStore,

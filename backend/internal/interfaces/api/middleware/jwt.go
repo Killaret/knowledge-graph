@@ -21,14 +21,14 @@ const (
 // JWTConfig holds JWT middleware configuration
 type JWTConfig struct {
 	JWTManager  *auth.JWTManager
-	TokenStore  *auth.RedisTokenStore
+	TokenStore  auth.TokenStore
 	SkipPaths   []string
 	HeaderName  string
 	TokenLookup string
 }
 
 // DefaultJWTConfig returns default JWT configuration
-func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore *auth.RedisTokenStore) *JWTConfig {
+func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore auth.TokenStore) *JWTConfig {
 	return &JWTConfig{
 		JWTManager:  jwtManager,
 		TokenStore:  tokenStore,

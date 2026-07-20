@@ -17,10 +17,12 @@ func TestSetupRouter(t *testing.T) {
 	apiKeyConfig := middleware.DefaultAPIKeyConfig(nil, false, "")
 	skipAuthConfig := middleware.DefaultSkipAuthConfig(false)
 
+	healthHandler := newHealthHandler(nil, nil, nil)
 	r := setupRouter(
 		nil, nil, nil, nil, nil,
 		nil, nil, nil, nil, nil, nil,
-		cfg, nil, nil,
+		cfg,
+		healthHandler,
 		newWriteLimiter(cfg),
 		jwtConfig,
 		apiKeyConfig,

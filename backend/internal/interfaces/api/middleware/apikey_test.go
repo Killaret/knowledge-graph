@@ -233,11 +233,6 @@ func TestAPIKeyNoKeyProvided(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code) // Continues to next auth method
 }
 
-func TestAPIKeyModelTableName(t *testing.T) {
-	model := APIKeyModel{}
-	assert.Equal(t, "api_keys", model.TableName())
-}
-
 func TestAPIKeyInvalidStaticKey(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
