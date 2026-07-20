@@ -3,6 +3,11 @@
   import { createLink, type CreateLinkData } from "$shared/api/links";
   import { LinkType, SearchQuery } from "$shared/lib/domain";
   import { addJitter } from "$shared/utils/jitter";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     sourceNoteId,
@@ -43,7 +48,7 @@
       // Исключаем текущую заметку из результатов
       searchResults = result.data.filter((note) => note.id !== sourceNoteId);
     } catch (err) {
-      error = err instanceof Error ? err.message : "Search failed";
+      error = err instanceof Error ? err.message : t("linkCreator.searchFailed");
       searchResults = [];
     } finally {
       isSearching = false;
@@ -64,7 +69,7 @@
 
   async function handleSubmit() {
     if (!selectedTarget) {
-      error = "Please select a target note";
+      error = t("linkCreator.selectTargetError");
       return;
     }
 
@@ -83,9 +88,9 @@
       onSuccess?.(link);
     } catch (err) {
       if (err instanceof Error && err.message.includes("409")) {
-        error = "Link already exists between these notes";
+        error = t("linkCreator.linkExists");
       } else {
-        error = err instanceof Error ? err.message : "Failed to create link";
+        error = err instanceof Error ? err.message : t("linkCreator.createFailed");
       }
     } finally {
       isSubmitting = false;
@@ -102,10 +107,10 @@
 </script>
 
 <div class="link-creator">
-  <h3 class="title">Create Link</h3>
+  <h3 class="title">{t("linkCreator.title")}</h3>
 
   <div class="search-section">
-    <label for="target-search">Target Note</label>
+    <label for="target-search">{t("linkCreator.targetLabel")}</label>
     <div class="search-wrapper">
       <input
         id="target-search"
@@ -114,25 +119,25 @@
         onfocus={() => (isFocused = true)}
         onblur={handleBlur}
         oninput={onSearchInput}
-        placeholder="Search for a note..."
+        placeholder={t("linkCreator.searchPlaceholder")}
         class="search-input"
         disabled={isSubmitting}
-        aria-label="Search target note"
+        aria-label={t("linkCreator.searchAria")}
       />
       {#if isSearching}
-        <span class="spinner" aria-label="Searching"></span>
+        <span class="spinner" aria-label={t("linkCreator.searching")}></span>
       {/if}
     </div>
 
     {#if searchResults.length > 0}
-      <ul class="search-results" role="listbox" aria-label="Search results">
+      <ul class="search-results" role="listbox" aria-label={t("linkCreator.searchResults")}>
         {#each searchResults as note}
           <li role="option" aria-selected="false">
             <button
               type="button"
               class="result-item"
               onclick={() => selectTarget(note)}
-              aria-label={`Select ${note.title}`}
+              aria-label={t("linkCreator.selectTarget", { title: note.title })}
             >
               {note.title}
             </button>
@@ -143,7 +148,7 @@
   </div>
 
   <div class="type-section">
-    <label for="link-type">Link Type</label>
+    <label for="link-type">{t("linkCreator.linkTypeLabel")}</label>
     <div class="type-selector">
       <button
         type="button"
@@ -153,12 +158,12 @@
         aria-expanded={showTypeDropdown}
         aria-haspopup="listbox"
       >
-        {linkTypes.find((t) => t.type === linkType)?.label || "Select type"}
+        {linkTypes.find((t) => t.type === linkType)?.label || t("linkCreator.selectType")}
         <span class="dropdown-arrow">▼</span>
       </button>
 
       {#if showTypeDropdown}
-        <ul class="type-dropdown" role="listbox" aria-label="Link types">
+        <ul class="type-dropdown" role="listbox" aria-label={t("linkCreator.linkTypes")}>
           {#each linkTypes as type}
             <li role="option" aria-selected={type.type === linkType}>
               <button
@@ -194,9 +199,9 @@
       aria-busy={isSubmitting}
     >
       {#if isSubmitting}
-        Creating...
+        {t("linkCreator.creating")}
       {:else}
-        Create Link
+        {t("linkCreator.createLink")}
       {/if}
     </button>
     <button
@@ -205,7 +210,7 @@
       onclick={handleCancel}
       disabled={isSubmitting}
     >
-      Cancel
+      {t("linkCreator.cancel")}
     </button>
   </div>
 </div>

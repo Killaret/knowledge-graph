@@ -1,6 +1,11 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { LinkType } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     visible,
@@ -66,30 +71,30 @@
     <div class="tooltip-header">
       <span class="link-type-badge">{linkTypeLabel}</span>
       {#if sourceType === "gamma"}
-        <span class="gamma-badge">Recommended</span>
+        <span class="gamma-badge">{t("linkTooltip.recommended")}</span>
       {/if}
     </div>
     <div class="tooltip-body">
       <div class="tooltip-row">
-        <span class="label">Weight:</span>
+        <span class="label">{t("linkTooltip.weight")}</span>
         <span class="value">{weight.toFixed(2)}</span>
       </div>
       <div class="tooltip-row">
-        <span class="label">From:</span>
+        <span class="label">{t("linkTooltip.from")}</span>
         <span class="value">{sourceTitle}</span>
       </div>
       <div class="tooltip-row">
-        <span class="label">To:</span>
+        <span class="label">{t("linkTooltip.to")}</span>
         <span class="value">{targetTitle}</span>
       </div>
     </div>
     <div class="tooltip-actions">
       {#if onEdit}
-        <button class="action-btn edit-btn" onmousedown={onEdit}>Edit</button>
+        <button class="action-btn edit-btn" onmousedown={onEdit}>{t("linkTooltip.edit")}</button>
       {/if}
       {#if onDelete}
         <button class="action-btn delete-btn" onmousedown={onDelete}
-          >Delete</button
+          >{t("linkTooltip.delete")}</button
         >
       {/if}
     </div>

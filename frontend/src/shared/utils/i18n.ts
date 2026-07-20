@@ -183,6 +183,41 @@ const messages: Record<Locale, Record<string, string>> = {
     "celestialBody.type.void_whisper": "Void Whisper",
     "celestialBody.type.cosmic_abomination": "Cosmic Abomination",
 
+    // Link types
+    "linkType.reference": "Reference",
+    "linkType.dependency": "Dependency",
+    "linkType.related": "Related",
+    "linkType.custom": "Custom",
+    "linkType.parent": "Parent",
+    "linkType.child": "Child",
+
+    // LinkCreator
+    "linkCreator.title": "Create Link",
+    "linkCreator.targetLabel": "Target Note",
+    "linkCreator.searchPlaceholder": "Search for a note...",
+    "linkCreator.searchAria": "Search target note",
+    "linkCreator.searching": "Searching",
+    "linkCreator.searchResults": "Search results",
+    "linkCreator.selectTarget": "Select {{title}}",
+    "linkCreator.linkTypeLabel": "Link Type",
+    "linkCreator.selectType": "Select type",
+    "linkCreator.linkTypes": "Link types",
+    "linkCreator.searchFailed": "Search failed",
+    "linkCreator.selectTargetError": "Please select a target note",
+    "linkCreator.linkExists": "Link already exists between these notes",
+    "linkCreator.createFailed": "Failed to create link",
+    "linkCreator.creating": "Creating...",
+    "linkCreator.createLink": "Create Link",
+    "linkCreator.cancel": "Cancel",
+
+    // LinkTooltip
+    "linkTooltip.recommended": "Recommended",
+    "linkTooltip.weight": "Weight:",
+    "linkTooltip.from": "From:",
+    "linkTooltip.to": "To:",
+    "linkTooltip.edit": "Edit",
+    "linkTooltip.delete": "Delete",
+
     // NoteCard
     "noteCard.links": "Links: {{count}}",
     "noteCard.edit": "Edit",
@@ -464,6 +499,41 @@ const messages: Record<Locale, Record<string, string>> = {
     "celestialBody.type.chromatic_maw": "Хроматическая пасть",
     "celestialBody.type.void_whisper": "Шёпот пустоты",
     "celestialBody.type.cosmic_abomination": "Космическое чудовище",
+
+    // Link types
+    "linkType.reference": "Ссылка",
+    "linkType.dependency": "Зависимость",
+    "linkType.related": "Связано",
+    "linkType.custom": "Пользовательская",
+    "linkType.parent": "Родительская",
+    "linkType.child": "Дочерняя",
+
+    // LinkCreator
+    "linkCreator.title": "Создать связь",
+    "linkCreator.targetLabel": "Целевая заметка",
+    "linkCreator.searchPlaceholder": "Поиск заметки...",
+    "linkCreator.searchAria": "Поиск целевой заметки",
+    "linkCreator.searching": "Поиск",
+    "linkCreator.searchResults": "Результаты поиска",
+    "linkCreator.selectTarget": "Выбрать {{title}}",
+    "linkCreator.linkTypeLabel": "Тип связи",
+    "linkCreator.selectType": "Выберите тип",
+    "linkCreator.linkTypes": "Типы связей",
+    "linkCreator.searchFailed": "Ошибка поиска",
+    "linkCreator.selectTargetError": "Выберите целевую заметку",
+    "linkCreator.linkExists": "Связь между этими заметками уже существует",
+    "linkCreator.createFailed": "Не удалось создать связь",
+    "linkCreator.creating": "Создание...",
+    "linkCreator.createLink": "Создать связь",
+    "linkCreator.cancel": "Отмена",
+
+    // LinkTooltip
+    "linkTooltip.recommended": "Рекомендуется",
+    "linkTooltip.weight": "Вес:",
+    "linkTooltip.from": "От:",
+    "linkTooltip.to": "К:",
+    "linkTooltip.edit": "Редактировать",
+    "linkTooltip.delete": "Удалить",
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",

@@ -6,6 +6,8 @@
  * literals or scattered switch statements.
  */
 
+import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
 export interface LinkTypeProps {
   type: string;
   label: string;
@@ -23,7 +25,7 @@ export class LinkType {
   }
 
   get label(): string {
-    return this.props.label;
+    return formatMessage(this.props.label, getCurrentLocale());
   }
 
   get color(): string {
@@ -75,7 +77,7 @@ export class LinkType {
 
   static readonly REFERENCE = new LinkType({
     type: "reference",
-    label: "Reference",
+    label: "linkType.reference",
     color: "#3366ff",
     lineDash: [],
     defaultWeight: 0.8,
@@ -83,7 +85,7 @@ export class LinkType {
 
   static readonly DEPENDENCY = new LinkType({
     type: "dependency",
-    label: "Dependency",
+    label: "linkType.dependency",
     color: "#ff6600",
     lineDash: [10, 3],
     defaultWeight: 0.7,
@@ -91,7 +93,7 @@ export class LinkType {
 
   static readonly RELATED = new LinkType({
     type: "related",
-    label: "Related",
+    label: "linkType.related",
     color: "#999999",
     lineDash: [],
     defaultWeight: 0.5,
@@ -99,7 +101,7 @@ export class LinkType {
 
   static readonly CUSTOM = new LinkType({
     type: "custom",
-    label: "Custom",
+    label: "linkType.custom",
     color: "#ff66ff",
     lineDash: [2, 6],
     defaultWeight: 0.5,
@@ -108,7 +110,7 @@ export class LinkType {
 
   static readonly PARENT = new LinkType({
     type: "parent",
-    label: "Parent",
+    label: "linkType.parent",
     color: "#3366ff",
     lineDash: [],
     defaultWeight: 0.9,
@@ -116,7 +118,7 @@ export class LinkType {
 
   static readonly CHILD = new LinkType({
     type: "child",
-    label: "Child",
+    label: "linkType.child",
     color: "#3366ff",
     lineDash: [],
     defaultWeight: 0.9,
