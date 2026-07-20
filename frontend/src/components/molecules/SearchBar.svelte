@@ -11,10 +11,7 @@
   const t = (key: string) => formatMessage(key, locale);
 
   // Props
-  const {
-    placeholder = t("search.placeholder"),
-    autoFocus = false,
-  } = $props();
+  const { placeholder = t("search.placeholder"), autoFocus = false } = $props();
 
   let query = $state("");
   let inputElement: HTMLInputElement;

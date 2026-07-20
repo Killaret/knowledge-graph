@@ -109,13 +109,23 @@
     <div class="no-results">
       <StateIllustration type="no-results" />
       <h2>{t("search.noResultsTitle")}</h2>
-      <p>{t("search.noResultsForQuery", { query: $page.url.searchParams.get("q") || "" })}</p>
+      <p>
+        {t("search.noResultsForQuery", {
+          query: $page.url.searchParams.get("q") || "",
+        })}
+      </p>
       <p>{t("search.tryDifferent")}</p>
     </div>
   {:else if $page.url.searchParams.get("q")}
     <div class="search-stats">
-      {t("search.found")} {total}
-      {getPluralForm(total, t("search.noteOne"), t("search.noteFew"), t("search.noteMany"))}
+      {t("search.found")}
+      {total}
+      {getPluralForm(
+        total,
+        t("search.noteOne"),
+        t("search.noteFew"),
+        t("search.noteMany"),
+      )}
     </div>
 
     <div class="notes-grid">
@@ -140,7 +150,10 @@
         </button>
 
         <span class="pagination-info">
-          {t("search.pageInfo", { current: currentPage.toString(), total: totalPages.toString() })}
+          {t("search.pageInfo", {
+            current: currentPage.toString(),
+            total: totalPages.toString(),
+          })}
         </span>
 
         <button

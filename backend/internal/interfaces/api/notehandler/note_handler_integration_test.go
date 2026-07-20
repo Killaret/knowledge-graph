@@ -63,6 +63,8 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,
 			RecommendationFallbackSemanticEnabled: false,
+			PaginationDefaultLimit:                20,
+			PaginationMaxLimit:                    100,
 		},
 		nil, // graphCache
 		nil, // achievementService
@@ -290,13 +292,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestListNotes() {
 
 	s.Equal(200, w.Code)
 
-	var wrappedResponse map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	data := wrappedResponse["data"].(map[string]interface{})
-	s.NotNil(data["notes"])
-	s.Equal(float64(3), data["total"])
-	s.Equal(float64(2), data["limit"])
+	s.NotNil(response["notes"])
+	s.Equal(float64(3), response["total"])
+	s.Equal(float64(2), response["limit"])
 }
 
 // TestSearchNotes - поиск заметок
@@ -320,12 +321,11 @@ func (s *NoteHandlerIntegrationTestSuite) TestSearchNotes() {
 
 	s.Equal(200, w.Code)
 
-	var wrappedResponse map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	data := wrappedResponse["data"].(map[string]interface{})
-	s.NotNil(data["data"])
-	s.NotNil(data["total"])
+	s.NotNil(response["data"])
+	s.NotNil(response["total"])
 }
 
 // TestGetSuggestions - получение рекомендаций

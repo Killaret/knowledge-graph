@@ -31,7 +31,9 @@
       <h2>{t("graph.frozenTitle")}</h2>
       <p>{t("graph.frozenMessage1")}</p>
       <p>
-        {t("graph.frozenRedirectWithId", { id: currentNoteId || t("graph.entireGraph") })}
+        {t("graph.frozenRedirectWithId", {
+          id: currentNoteId || t("graph.entireGraph"),
+        })}
       </p>
       <div class="spinner"></div>
     </div>

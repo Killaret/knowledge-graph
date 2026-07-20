@@ -157,7 +157,11 @@
           disabled={isSaving}
           data-testid="save-button"
         >
-          {isSaving ? t("noteEditor.saving") : noteId ? t("noteEditor.update") : t("noteEditor.create")}
+          {isSaving
+            ? t("noteEditor.saving")
+            : noteId
+              ? t("noteEditor.update")
+              : t("noteEditor.create")}
         </button>
         <button
           type="button"

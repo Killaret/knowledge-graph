@@ -83,7 +83,9 @@
   }
 
   function getTypeLabel(type: string | undefined): string {
-    return type ? CelestialBody.fromString(type).label : t("noteSidePanel.fallbackType");
+    return type
+      ? CelestialBody.fromString(type).label
+      : t("noteSidePanel.fallbackType");
   }
 </script>
 
@@ -194,8 +196,16 @@
       </div>
 
       <div class="meta">
-        <span class="date">{t("noteSidePanel.created", { date: formatDate(note.created_at) })}</span>
-        <span class="date">{t("noteSidePanel.updated", { date: formatDate(note.updated_at) })}</span>
+        <span class="date"
+          >{t("noteSidePanel.created", {
+            date: formatDate(note.created_at),
+          })}</span
+        >
+        <span class="date"
+          >{t("noteSidePanel.updated", {
+            date: formatDate(note.updated_at),
+          })}</span
+        >
       </div>
 
       <div class="content">
@@ -230,7 +240,11 @@
             {#each links as link}
               <div class="link-item">
                 <span class="link-type">{link.link_type}</span>
-                <span class="link-weight">{t("noteSidePanel.weight", { weight: link.weight.toFixed(1) })}</span>
+                <span class="link-weight"
+                  >{t("noteSidePanel.weight", {
+                    weight: link.weight.toFixed(1),
+                  })}</span
+                >
               </div>
             {/each}
           </div>
@@ -291,7 +305,9 @@
           onclick={handleDeleteAllLinks}
           disabled={deletingLinks}
         >
-          {deletingLinks ? t("noteSidePanel.delete") + "..." : t("noteSidePanel.deleteAll")}
+          {deletingLinks
+            ? t("noteSidePanel.delete") + "..."
+            : t("noteSidePanel.deleteAll")}
         </button>
       </div>
     </div>

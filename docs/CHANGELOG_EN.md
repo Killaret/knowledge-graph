@@ -109,7 +109,7 @@
   - Configuration: `knowledge-graph.config.json` section `backup` with `provider=yandex`
   - Automatic cleanup of old backups (7 days local, 10 backups in cloud)
   - Retry logic for failed uploads (3 attempts)
-  - Documentation: [`docs/BACKUP.md`](docs/BACKUP.md) with comprehensive setup guide
+  - Documentation: [`BACKUP.md`](BACKUP.md) with comprehensive setup guide
 - **Comprehensive Health Check**: `/health` endpoint now checks all dependencies
 - **Graph API Pagination**: `/graph/all` supports DB-level pagination
 - **FindAllPaginated**: New repository methods with metadata

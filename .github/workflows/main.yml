@@ -44,6 +44,8 @@ jobs:
         run: go test -v ./...
 
       - name: Validate config
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: go run cmd/checkconfig/main.go ../knowledge-graph.config.json
 
   # ============ BACKEND INTEGRATION TESTS ============
@@ -95,6 +97,9 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Check TypeScript
         run: npm run check
@@ -151,6 +156,8 @@ jobs:
           echo "✓ JSON syntax valid"
 
       - name: Check config loads successfully
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           go mod download
           go run cmd/checkconfig/main.go ../knowledge-graph.config.json
@@ -284,6 +291,8 @@ jobs:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
           REDIS_FLUSH_ON_STARTUP: "true"
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SKIP_AUTH: "true"
         run: |
           cd ../backend
           go mod download

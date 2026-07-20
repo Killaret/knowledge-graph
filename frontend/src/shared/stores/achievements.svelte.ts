@@ -24,9 +24,13 @@ async function refresh() {
     state.new = newOnes;
   } catch (e) {
     consecutiveErrors++;
-    console.error("achievements refresh failed", e);
+    if (import.meta.env.DEV) {
+      console.error("achievements refresh failed", e);
+    }
     if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-      console.warn("Stopping achievements polling after repeated failures");
+      if (import.meta.env.DEV) {
+        console.warn("Stopping achievements polling after repeated failures");
+      }
       stopPolling();
     }
   }

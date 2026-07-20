@@ -162,7 +162,9 @@ export async function getCachedGraph(): Promise<GraphData | null> {
     const body = await response.json<GraphApiResponse>();
     return body.data || null;
   } catch (error) {
-    console.warn("[Graph API] Failed to get cached graph:", error);
+    if (import.meta.env.DEV) {
+      console.warn("[Graph API] Failed to get cached graph:", error);
+    }
     return null; // Return null on error, fallback to fresh
   }
 }

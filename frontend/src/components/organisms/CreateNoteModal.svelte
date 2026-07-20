@@ -47,10 +47,14 @@
   });
 
   // Computed labels based on theme
-  const modalTitle = $derived(tx("note.createTitle", "note.createTitleGalactic"));
+  const modalTitle = $derived(
+    tx("note.createTitle", "note.createTitleGalactic"),
+  );
   const titleLabel = $derived(tx("note.titleLabel", "note.titleLabelGalactic"));
   const typeLabel = $derived(tx("note.typeLabel", "note.typeLabelGalactic"));
-  const contentLabel = $derived(tx("note.contentLabel", "note.contentLabelGalactic"));
+  const contentLabel = $derived(
+    tx("note.contentLabel", "note.contentLabelGalactic"),
+  );
   const cancelText = $derived(tx("note.cancel", "note.cancelGalactic"));
   const createText = $derived(tx("note.create", "note.createGalactic"));
   const creatingText = $derived(tx("note.creating", "note.creatingGalactic"));

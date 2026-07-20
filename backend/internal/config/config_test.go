@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+func init() {
+	if os.Getenv("JWT_SECRET") == "" {
+		os.Setenv("JWT_SECRET", "test-jwt-secret")
+	}
+}
+
 // TestEnvVarPriority tests that environment variables take priority over JSON config
 func TestEnvVarPriority(t *testing.T) {
 	// Save original env vars and restore after test

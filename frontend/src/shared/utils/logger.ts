@@ -35,6 +35,10 @@ class Logger {
   }
 
   private logToConsole(entry: LogEntry): void {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
     const prefix = `[${entry.timestamp}] [${entry.level.toUpperCase()}] [${entry.context}]`;
 
     switch (entry.level) {

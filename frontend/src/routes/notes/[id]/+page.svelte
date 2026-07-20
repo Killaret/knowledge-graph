@@ -57,14 +57,18 @@
   <p>{t("note.loading")}</p>
 {:else if error}
   <div class="note-error">
-    <StateIllustration type={error === t("note.notFoundShort") ? "404" : "error"} />
+    <StateIllustration
+      type={error === t("note.notFoundShort") ? "404" : "error"}
+    />
     <p class="error">{error}</p>
   </div>
 {:else if note}
   <div class="note-container">
     <BackButton href="/" />
     <h1 data-testid="note-detail-title">{note.title}</h1>
-    <div class="meta">{t("note.createdLabel")}{formatDateTime(note.created_at)}</div>
+    <div class="meta">
+      {t("note.createdLabel")}{formatDateTime(note.created_at)}
+    </div>
     <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
       <button
@@ -92,7 +96,9 @@
         {#each suggestions as s}
           <li>
             <a href={`/notes/${s.note_id}`}>{s.title}</a>
-            <span class="score">{t("note.score", { score: s.score.toFixed(3) })}</span>
+            <span class="score"
+              >{t("note.score", { score: s.score.toFixed(3) })}</span
+            >
           </li>
         {/each}
       </ul>

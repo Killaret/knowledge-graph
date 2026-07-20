@@ -40,7 +40,9 @@
 {:else}
   <div class="graph-wrapper graph-2d">
     <GraphCanvas {nodes} {links} />
-    <div class="performance-hint" aria-hidden="true">{t("smartGraph.mode2D")}</div>
+    <div class="performance-hint" aria-hidden="true">
+      {t("smartGraph.mode2D")}
+    </div>
   </div>
 {/if}
 

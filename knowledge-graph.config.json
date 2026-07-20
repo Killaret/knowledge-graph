@@ -76,7 +76,7 @@
       "flush_on_startup": false
     },
     "auth": {
-      "jwt_secret": "change-me-in-production",
+      "jwt_secret": "",
       "jwt_access_ttl_seconds": 900,
       "jwt_refresh_ttl_seconds": 604800,
       "argon2_time": 3,

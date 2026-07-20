@@ -17,6 +17,12 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 	db, cleanup := testutil.SetupTestVectorDB(t)
 	defer cleanup()
 
+	// Включаем расширение pgvector и мигрируем зависимые модели
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
 	repo := NewEmbeddingRepository(db)
 
 	// Создаем заметку сначала (для foreign key)
@@ -55,6 +61,12 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 	db, cleanup := testutil.SetupTestVectorDB(t)
 	defer cleanup()
+
+	// Включаем расширение pgvector и мигрируем зависимые модели
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
 
 	repo := NewEmbeddingRepository(db)
 

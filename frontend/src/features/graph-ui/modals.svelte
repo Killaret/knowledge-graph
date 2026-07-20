@@ -129,7 +129,9 @@
     <label
       for="link-strength"
       style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
-      >{t("graphModals.linkStrength", { value: linkFormState.newLinkWeight.toFixed(1) })}</label
+      >{t("graphModals.linkStrength", {
+        value: linkFormState.newLinkWeight.toFixed(1),
+      })}</label
     >
     <input
       id="link-strength"

@@ -72,7 +72,8 @@
         goto("/auth/login");
       }, 3000);
     } catch (e) {
-      localError = e instanceof Error ? e.message : t("auth.resetPasswordFailed");
+      localError =
+        e instanceof Error ? e.message : t("auth.resetPasswordFailed");
     } finally {
       isLoading = false;
     }
@@ -105,9 +106,15 @@
             <li class:valid={newPassword.length >= 10}>
               {t("auth.passwordMinChars")}
             </li>
-            <li class:valid={/[A-Z]/.test(newPassword)}>{t("auth.passwordUppercase")}</li>
-            <li class:valid={/[a-z]/.test(newPassword)}>{t("auth.passwordLowercase")}</li>
-            <li class:valid={/[0-9]/.test(newPassword)}>{t("auth.passwordNumber")}</li>
+            <li class:valid={/[A-Z]/.test(newPassword)}>
+              {t("auth.passwordUppercase")}
+            </li>
+            <li class:valid={/[a-z]/.test(newPassword)}>
+              {t("auth.passwordLowercase")}
+            </li>
+            <li class:valid={/[0-9]/.test(newPassword)}>
+              {t("auth.passwordNumber")}
+            </li>
             <li class:valid={/[!@#$%^&*]/.test(newPassword)}>
               {t("auth.passwordSpecial")}
             </li>

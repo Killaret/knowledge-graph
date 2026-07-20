@@ -52,7 +52,11 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 
 	// Создаем хендлер с maxDepth = 3
 	cfg := &config.Config{
-		GraphLoadDepth: 3,
+		GraphLoadDepth:        3,
+		GraphDefaultLimit:     100,
+		GraphMaxLimit:         1000,
+		GraphLinkDefaultLimit: 100,
+		GraphLinkMaxLimit:     1000,
 	}
 	s.handler = New(s.noteRepo, s.linkRepo, cfg, nil)
 
@@ -253,7 +257,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_InvalidID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestGetGraph_InvalidDepth - невалидный depth

@@ -109,10 +109,22 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupTest() {
 	s.redis.FlushAll()
 }
 
+// createTestUser создает тестового пользователя с заданным ID
+func (s *NoteHandlerCacheIntegrationTestSuite) createTestUser(id uuid.UUID) {
+	user := &postgres.UserModel{
+		ID:           id,
+		Login:        "user-" + id.String(),
+		PasswordHash: "test-hash",
+	}
+	err := s.db.Create(user).Error
+	s.Require().NoError(err, "failed to create test user")
+}
+
 // TestNoteCreateInvalidatesGraphCache - проверка инвалидации кэша при создании заметки
 func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCache() {
 	ctx := context.Background()
-	userID := uuid.New().String()
+	userID := uuid.New()
+	s.createTestUser(userID)
 
 	// Кэшируем граф для пользователя
 	cachedData := cache.GraphData{
@@ -122,11 +134,11 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 		Links: []cache.GraphLink{},
 	}
 
-	err := s.graphCache.CacheUserGraph(ctx, userID, cachedData)
+	err := s.graphCache.CacheUserGraph(ctx, userID.String(), cachedData)
 	s.Require().NoError(err)
 
 	// Проверяем что кэш существует
-	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().True(found, "cache should exist before note creation")
 
@@ -143,13 +155,10 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 	req, _ := http.NewRequest("POST", "/notes", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	// Устанавливаем user ID в контекст (обычно это делает middleware)
-	req.Header.Set("X-User-ID", userID)
-
 	// Создаем middleware для установки user ID в контекст
 	testRouter := gin.New()
 	testRouter.Use(func(c *gin.Context) {
-		c.Set("user_id", uuid.MustParse(userID))
+		c.Set("user_id", userID)
 		c.Next()
 	})
 
@@ -177,7 +186,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 	s.Equal(201, w.Code, "note creation should succeed")
 
 	// Проверяем что кэш был инвалидирован
-	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().False(found, "cache should be invalidated after note creation")
 }
@@ -185,13 +194,14 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 // TestNoteUpdateInvalidatesGraphCache - проверка инвалидации кэша при обновлении заметки
 func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCache() {
 	ctx := context.Background()
-	userID := uuid.New().String()
+	userID := uuid.New()
+	s.createTestUser(userID)
 
 	// Сначала создаем заметку
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNoteWithCreator(title, content, "star", metadata, uuid.MustParse(userID))
+	n := note.NewNoteWithCreator(title, content, "star", metadata, userID)
 	err := s.repo.Save(ctx, n)
 	s.Require().NoError(err)
 
@@ -203,11 +213,11 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 		Links: []cache.GraphLink{},
 	}
 
-	err = s.graphCache.CacheUserGraph(ctx, userID, cachedData)
+	err = s.graphCache.CacheUserGraph(ctx, userID.String(), cachedData)
 	s.Require().NoError(err)
 
 	// Проверяем что кэш существует
-	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().True(found)
 
@@ -233,7 +243,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 
 	testRouter := gin.New()
 	testRouter.Use(func(c *gin.Context) {
-		c.Set("user_id", uuid.MustParse(userID))
+		c.Set("user_id", userID)
 		c.Next()
 	})
 	testRouter.PUT("/notes/:id", handler.Update)
@@ -246,7 +256,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 	s.Equal(200, w.Code)
 
 	// Проверяем что кэш был инвалидирован
-	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().False(found, "cache should be invalidated after note update")
 }
@@ -254,13 +264,14 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 // TestNoteDeleteInvalidatesGraphCache - проверка инвалидации кэша при удалении заметки
 func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCache() {
 	ctx := context.Background()
-	userID := uuid.New().String()
+	userID := uuid.New()
+	s.createTestUser(userID)
 
 	// Создаем заметку
 	title, _ := note.NewTitle("To Delete")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNoteWithCreator(title, content, "star", metadata, uuid.MustParse(userID))
+	n := note.NewNoteWithCreator(title, content, "star", metadata, userID)
 	err := s.repo.Save(ctx, n)
 	s.Require().NoError(err)
 
@@ -272,11 +283,11 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 		Links: []cache.GraphLink{},
 	}
 
-	err = s.graphCache.CacheUserGraph(ctx, userID, cachedData)
+	err = s.graphCache.CacheUserGraph(ctx, userID.String(), cachedData)
 	s.Require().NoError(err)
 
 	// Проверяем что кэш существует
-	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err := s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().True(found)
 
@@ -297,7 +308,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 
 	testRouter := gin.New()
 	testRouter.Use(func(c *gin.Context) {
-		c.Set("user_id", uuid.MustParse(userID))
+		c.Set("user_id", userID)
 		c.Next()
 	})
 	testRouter.DELETE("/notes/:id", handler.Delete)
@@ -309,7 +320,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 	s.Equal(204, w.Code)
 
 	// Проверяем что кэш был инвалидирован
-	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID)
+	_, found, err = s.graphCache.GetCachedUserGraph(ctx, userID.String())
 	s.Require().NoError(err)
 	s.Require().False(found, "cache should be invalidated after note deletion")
 }

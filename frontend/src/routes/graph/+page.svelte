@@ -208,7 +208,11 @@
   <BackButton href="/" />
 
   <div class="top-right-controls">
-    <button class="login-btn" onclick={() => goto("/auth/login")} title={t("graph.loginTitle")}>
+    <button
+      class="login-btn"
+      onclick={() => goto("/auth/login")}
+      title={t("graph.loginTitle")}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="20"
@@ -234,7 +238,11 @@
         bind:checked={showFullGraph}
         data-testid="full-graph-toggle"
       />
-      <span>{t("graph.showAllNotes")} ({showFullGraph ? t("graph.enabled") : t("graph.disabled")})</span>
+      <span
+        >{t("graph.showAllNotes")} ({showFullGraph
+          ? t("graph.enabled")
+          : t("graph.disabled")})</span
+      >
     </label>
   </div>
 

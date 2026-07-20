@@ -43,7 +43,9 @@
   >
     <div class="modal-header">
       <h2>{t("helpHotkeys.title")}</h2>
-      <button class="close-btn" onclick={onClose} aria-label={t("close")}>×</button>
+      <button class="close-btn" onclick={onClose} aria-label={t("close")}
+        >×</button
+      >
     </div>
     <div class="modal-body">
       {#if helpContent}

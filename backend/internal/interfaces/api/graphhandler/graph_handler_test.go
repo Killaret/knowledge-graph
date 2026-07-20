@@ -53,21 +53,33 @@ func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
 
 func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	args := m.Called(ctx, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
 func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
 	args := m.Called(ctx, query, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
 func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*note.Note), args.Error(1)
 }
 
 func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
 	args := m.Called(ctx, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
@@ -90,11 +102,17 @@ func (m *mockLinkRepo) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, 
 
 func (m *mockLinkRepo) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	args := m.Called(ctx, sourceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*link.Link), args.Error(1)
 }
 
 func (m *mockLinkRepo) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
 	args := m.Called(ctx, targetID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*link.Link), args.Error(1)
 }
 
@@ -105,11 +123,17 @@ func (m *mockLinkRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*link.Link), args.Error(1)
 }
 
 func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
 	args := m.Called(ctx, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
 	return args.Get(0).([]*link.Link), args.Get(1).(int64), args.Error(2)
 }
 

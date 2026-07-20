@@ -22,6 +22,7 @@
     "test:unit:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:smoke": "playwright test --grep='@smoke'",
+    "test:smoke:stack": "cross-env FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 playwright test --grep='@smoke'",
     "test:visual": "playwright test --project=visual",
     "test:visual:upload": "cross-env ARGOS_UPLOAD_LOCAL=true playwright test --project=visual",
     "test:lighthouse": "lhci autorun",

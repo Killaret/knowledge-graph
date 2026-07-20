@@ -114,11 +114,21 @@
       <div class="password-requirements">
         <p>{t("auth.passwordRequirementsTitle")}</p>
         <ul>
-          <li class:valid={password.length >= 10}>{t("auth.passwordMinChars")}</li>
-          <li class:valid={/[A-Z]/.test(password)}>{t("auth.passwordUppercase")}</li>
-          <li class:valid={/[a-z]/.test(password)}>{t("auth.passwordLowercase")}</li>
-          <li class:valid={/[0-9]/.test(password)}>{t("auth.passwordNumber")}</li>
-          <li class:valid={/[!@#$%^&*]/.test(password)}>{t("auth.passwordSpecial")}</li>
+          <li class:valid={password.length >= 10}>
+            {t("auth.passwordMinChars")}
+          </li>
+          <li class:valid={/[A-Z]/.test(password)}>
+            {t("auth.passwordUppercase")}
+          </li>
+          <li class:valid={/[a-z]/.test(password)}>
+            {t("auth.passwordLowercase")}
+          </li>
+          <li class:valid={/[0-9]/.test(password)}>
+            {t("auth.passwordNumber")}
+          </li>
+          <li class:valid={/[!@#$%^&*]/.test(password)}>
+            {t("auth.passwordSpecial")}
+          </li>
         </ul>
       </div>
     {/if}

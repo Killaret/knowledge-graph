@@ -32,10 +32,6 @@
   });
 </script>
 
-<AuthCard
-  title="Knowledge Graph"
-  subtitle={t("auth.subtitle")}
-  showIcon={true}
->
+<AuthCard title="Knowledge Graph" subtitle={t("auth.subtitle")} showIcon={true}>
   <LoginForm />
 </AuthCard>

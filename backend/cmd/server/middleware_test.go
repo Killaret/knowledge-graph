@@ -84,9 +84,9 @@ func TestNewWriteLimiter_Enabled(t *testing.T) {
 		ServerRateLimitRequests:      100,
 		ServerRateLimitWindowSeconds: 1,
 		ServerRateLimitEndpoints: map[string]int{
-			"notes_create":  10,
-			"links_create":  10,
-			"notes_update":  10,
+			"notes_create": 10,
+			"links_create": 10,
+			"notes_update": 10,
 		},
 	}
 	limiter := newWriteLimiter(cfg)

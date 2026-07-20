@@ -35,7 +35,11 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$shared/lib/domain";
-  import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
+  import {
+    formatMessage,
+    getCurrentLocale,
+    type MessageParams,
+  } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: MessageParams) =>
@@ -722,7 +726,10 @@
             {!filterState.isTypeActive
               ? t("page.emptyGraphNoNotes")
               : t("page.emptyGraphNoType", {
-                  type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
+                  type:
+                    filterState
+                      .getSelectedTypeLabel(typeFilters)
+                      ?.toLowerCase() ?? "",
                 })}
           </p>
         </div>
@@ -753,7 +760,9 @@
             {/if}
           </div>
           <div class="list-sort">
-            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
+            <label for="sort-select" class="sort-label"
+              >{t("page.sortBy")}</label
+            >
             <select
               id="sort-select"
               class="sort-select"
@@ -791,7 +800,10 @@
                       query: filterState.searchQuery.value,
                     })
                   : t("page.noTypeResults", {
-                      type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
+                      type:
+                        filterState
+                          .getSelectedTypeLabel(typeFilters)
+                          ?.toLowerCase() ?? "",
                     })}
             </p>
             <button
@@ -823,7 +835,11 @@
       <!-- Floating batch delete panel -->
       {#if selectionMode && selectedNoteIds.size > 0}
         <div class="batch-panel">
-          <span class="batch-count">{t("page.selectedCount", { count: selectedNoteIds.size.toString() })}</span>
+          <span class="batch-count"
+            >{t("page.selectedCount", {
+              count: selectedNoteIds.size.toString(),
+            })}</span
+          >
           <button
             class="batch-btn batch-btn--actions"
             onclick={() => (showBulkActionsMenu = !showBulkActionsMenu)}

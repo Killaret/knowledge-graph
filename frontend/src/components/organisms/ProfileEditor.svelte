@@ -134,7 +134,9 @@
   </div>
 
   <div class="form-group">
-    <label for="locale">{formatMessage("profile.languageLabel", selectedLocale)}</label>
+    <label for="locale"
+      >{formatMessage("profile.languageLabel", selectedLocale)}</label
+    >
     <select
       id="locale"
       bind:value={selectedLocale}
@@ -143,7 +145,9 @@
       <option value="en">{formatMessage("locale.en", selectedLocale)}</option>
       <option value="ru">{formatMessage("locale.ru", selectedLocale)}</option>
     </select>
-    <span class="hint">{formatMessage("profile.languageHint", selectedLocale)}</span>
+    <span class="hint"
+      >{formatMessage("profile.languageHint", selectedLocale)}</span
+    >
   </div>
 
   {#if localError}
@@ -182,7 +186,10 @@
           type="password"
           id="delete-password"
           bind:value={deletePassword}
-          placeholder={formatMessage("profile.passwordPlaceholder", selectedLocale)}
+          placeholder={formatMessage(
+            "profile.passwordPlaceholder",
+            selectedLocale,
+          )}
         />
       </div>
 

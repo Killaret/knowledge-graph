@@ -114,11 +114,13 @@ func (s *TagHandlerIntegrationTestSuite) TestCreateTag_Success() {
 
 	s.Equal(http.StatusCreated, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response.ID)
-	s.Equal("important", response.Name)
+	s.NotEmpty(wrappedResponse.Data.ID)
+	s.Equal("important", wrappedResponse.Data.Name)
 }
 
 // TestCreateTag_Duplicate - дубликат имени тега
@@ -142,7 +144,7 @@ func (s *TagHandlerIntegrationTestSuite) TestCreateTag_Duplicate() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already exists")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestCreateTag_InvalidJSON - невалидный JSON
@@ -237,7 +239,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_NotFound() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "tag not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestGetTag_InvalidID - невалидный UUID
@@ -251,7 +253,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_InvalidID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid tag id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestUpdateTag_Success - успешное обновление тега
@@ -300,7 +302,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Duplicate() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already exists")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestUpdateTag_NotFound - обновление несуществующего тега
@@ -411,7 +413,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 	req1, _ := http.NewRequest("POST", "/notes/"+note.ID().String()+"/tags", bytes.NewBuffer(jsonBody))
 	req1.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w1, req1)
-	s.Equal(http.StatusCreated, w1.Code)
+	s.Equal(http.StatusNoContent, w1.Code)
 
 	// Вторая попытка привязки - конфликт
 	w2 := httptest.NewRecorder()
@@ -424,7 +426,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w2.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already assigned")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestRemoveTagFromNote_Success - успешное удаление привязки

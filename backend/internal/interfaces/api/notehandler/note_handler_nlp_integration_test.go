@@ -62,6 +62,8 @@ func (s *NoteHandlerNLPIntegrationTestSuite) SetupSuite() {
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,
 			RecommendationFallbackSemanticEnabled: false,
+			PaginationDefaultLimit:                20,
+			PaginationMaxLimit:                    100,
 		},
 		nil, // graphCache
 		nil, // achievementService
@@ -73,6 +75,7 @@ func (s *NoteHandlerNLPIntegrationTestSuite) SetupSuite() {
 
 	// Регистрируем маршруты
 	s.router.POST("/notes", handler.Create)
+	s.router.GET("/notes", handler.List)
 	s.router.GET("/notes/:id", handler.Get)
 }
 

@@ -44,13 +44,13 @@
 
 ```bash
 # Full stack with Docker (Development)
-docker-compose up -d
+docker compose up -d
 
 # Personal instance (different ports)
-docker-compose -f docker-compose.personal.yml up -d
+docker compose -f docker compose.personal.yml up -d
 
 # Test stack (isolated testing environment)
-docker-compose -f docker-compose.test.yml up -d --build
+docker compose -f docker compose.test.yml up -d --build
 # Or use convenience scripts:
 .\scripts\start-test.ps1    # Start test stack
 .\scripts\stop-test.ps1     # Stop and destroy test stack
@@ -202,7 +202,7 @@ knowledge-graph/
 - [🎯 Roadmap](ROADMAP.md) — план развития продукта
 - [📐 Architecture](docs/architecture/README.md) — C4 модель, UML, ADR
 - [🚀 Deployment](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
-- [⚙️ Configuration](docs/CONFIGURATION.md) — настройка системы
+- [⚙️ Configuration](docs/CONFIGURATION_EN.md) — настройка системы
 - [🐳 Docker](docs/DOCKER.md) — Docker деплой и архитектура контейнеров
 
 ### Feature Documentation
@@ -218,7 +218,7 @@ knowledge-graph/
 - [🎨 Frontend Patterns](frontend/FRONTEND_PATTERNS.md) — паттерны фронтенда
 
 ### Service Documentation
-- [🔄 API Errors](docs/API_ERRORS.md) — формат ошибок API
+- [🔄 API Errors](docs/API_ERRORS_EN.md) — формат ошибок API
 - [🗄️ Database Schema](docs/SaaS_DATABASE_SCHEMA.md) — схема БД
 
 ---
@@ -285,7 +285,7 @@ cd ../nlp-service && pip install -r requirements.txt
 
 ```bash
 # Start services with Docker
-docker-compose up -d
+docker compose up -d
 
 # Or run individually:
 # Backend
@@ -387,13 +387,13 @@ See [docs/TESTING_EN.md](docs/TESTING_EN.md) for complete testing documentation.
 
 ```bash
 # Production stack
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker compose.prod.yml up -d
 
 # Personal instance
-docker-compose -f docker-compose.personal.yml up -d
+docker compose -f docker compose.personal.yml up -d
 
 # CI/CD testing
-docker-compose -f docker-compose.test.yml up -d
+docker compose -f docker compose.test.yml up -d
 ```
 
 ### Environment Variables
@@ -406,7 +406,7 @@ See `.env.example` and `knowledge-graph.config.json` for configuration options.
 # Manual backup
 ./scripts/utility/backup-personal.sh
 
-# Automatic backup (configured in docker-compose)
+# Automatic backup (configured in docker compose)
 # Back up to Яндекс.Дisk via WebDAV
 ```
 
@@ -458,7 +458,7 @@ See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 - ✅ Updated GraphDelta types for incremental updates
 - ✅ Activated anomaly rendering for unknown node types
 - ✅ Enhanced CI/CD pipeline security
-- ✅ Improved docker-compose configurations
+- ✅ Improved docker compose configurations
 - ✅ Added comprehensive AI agent documentation
 - ✅ Added anomaly types documentation
 

@@ -144,10 +144,7 @@
 -->
 <div class="app-shell">
   {#if isSkipAuth}
-    <div
-      class="skip-auth-badge"
-      title={t("layout.skipAuthTitle")}
-    >
+    <div class="skip-auth-badge" title={t("layout.skipAuthTitle")}>
       🔑 SKIP_AUTH
     </div>
   {/if}

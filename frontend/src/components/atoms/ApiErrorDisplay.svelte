@@ -84,7 +84,9 @@
 
     <div class="error-header">
       <span class="error-icon" aria-hidden="true">⚠️</span>
-      <span class="error-code">{t("error.codeLabel", { code: error.code })}</span>
+      <span class="error-code"
+        >{t("error.codeLabel", { code: error.code })}</span
+      >
     </div>
 
     <p class="error-message">{displayMessage || error.message}</p>
@@ -100,7 +102,9 @@
               <span class="detail-reason">{detail.message}</span>
               {#if detail.received !== undefined}
                 <span class="detail-received"
-                  >{t("error.received", { value: JSON.stringify(detail.received) })}</span
+                  >{t("error.received", {
+                    value: JSON.stringify(detail.received),
+                  })}</span
                 >
               {/if}
             </li>

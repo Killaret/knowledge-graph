@@ -24,7 +24,9 @@
         graphData = data;
       })
       .catch((err) => {
-        console.warn("[AuthCard] Failed to load graph background:", err);
+        if (import.meta.env.DEV) {
+          console.warn("[AuthCard] Failed to load graph background:", err);
+        }
       });
   });
 </script>

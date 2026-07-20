@@ -20,22 +20,22 @@ func TestResponseHelpers(t *testing.T) {
 		emptyBody  bool
 	}{
 		{
-			name: "JSON",
-			fn:   func(c *gin.Context) { JSON(c, http.StatusOK, gin.H{"key": "value"}) },
+			name:       "JSON",
+			fn:         func(c *gin.Context) { JSON(c, http.StatusOK, gin.H{"key": "value"}) },
 			wantStatus: http.StatusOK,
 			wantBody:   map[string]any{"data": map[string]any{"key": "value"}},
 		},
 		{
-			name: "JSONWithMessage",
-			fn:   func(c *gin.Context) { JSONWithMessage(c, http.StatusCreated, gin.H{"id": 1}, "created") },
+			name:       "JSONWithMessage",
+			fn:         func(c *gin.Context) { JSONWithMessage(c, http.StatusCreated, gin.H{"id": 1}, "created") },
 			wantStatus: http.StatusCreated,
 			wantBody:   map[string]any{"data": map[string]any{"id": float64(1)}, "message": "created"},
 		},
 		{
-			name:      "NoContent",
-			fn:        NoContent,
+			name:       "NoContent",
+			fn:         NoContent,
 			wantStatus: http.StatusNoContent,
-			emptyBody: true,
+			emptyBody:  true,
 		},
 		{
 			name: "BadRequest",

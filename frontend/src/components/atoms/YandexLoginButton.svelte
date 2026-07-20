@@ -21,8 +21,7 @@
         error = t("yandex.authUrlError");
       }
     } catch (err) {
-      error =
-        err instanceof Error ? err.message : t("yandex.initError");
+      error = err instanceof Error ? err.message : t("yandex.initError");
     } finally {
       isLoading = false;
     }

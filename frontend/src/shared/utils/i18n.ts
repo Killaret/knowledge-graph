@@ -30,8 +30,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "network.error": "Connection error. Check your internet.",
     "invalid.credentials": "Invalid username or password.",
     "graph.notFound": "Graph not found. The note may have been deleted.",
-    "graph.serverError": "Server error while loading the graph. Please try again later.",
-    "graph.networkError": "Could not connect to the server. Check your internet connection.",
+    "graph.serverError":
+      "Server error while loading the graph. Please try again later.",
+    "graph.networkError":
+      "Could not connect to the server. Check your internet connection.",
     "graph.loadError": "Graph loading error: {{message}}.",
     "graph.unknownError": "Unknown error while loading the graph.",
 
@@ -109,13 +111,16 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Failed to delete selected notes",
     "page.restoreError": "Failed to restore note",
     "page.emptyGraphNoNotes": "Create some notes to see the knowledge graph",
-    "page.emptyGraphNoType": "No {{type}} in the graph. Try selecting a different type.",
+    "page.emptyGraphNoType":
+      "No {{type}} in the graph. Try selecting a different type.",
     "page.emptyGraphTitle": "No graph data",
     "page.emptyListNoNotes": "Your star chart is empty",
     "page.emptyListNoSearch": "No cosmic objects found",
-    "page.emptyListPrompt": "Ignite your first star to begin your knowledge galaxy.",
+    "page.emptyListPrompt":
+      "Ignite your first star to begin your knowledge galaxy.",
     "page.emptyListSearchPrompt": "Try a different search or clear the filter.",
-    "page.noSearchResults": "No objects match \"{{query}}\". Try different coordinates.",
+    "page.noSearchResults":
+      'No objects match "{{query}}". Try different coordinates.',
     "page.noTypeResults": "No {{type}} found in this sector.",
     "page.createFirstNote": "Create your first note",
     "page.sortBy": "Sort by:",
@@ -170,9 +175,12 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.nodes": "nodes",
     "graph.links": "links",
     "graph.frozenTitle": "3D Graph Feature Frozen",
-    "graph.frozenMessage1": "The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.",
-    "graph.frozenMessage2": "You will be automatically redirected to the 2D graph view.",
-    "graph.frozenRedirectWithId": "You will be automatically redirected to 2D graph view for note {{id}}.",
+    "graph.frozenMessage1":
+      "The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.",
+    "graph.frozenMessage2":
+      "You will be automatically redirected to the 2D graph view.",
+    "graph.frozenRedirectWithId":
+      "You will be automatically redirected to 2D graph view for note {{id}}.",
     "graph.entireGraph": "the entire graph",
 
     "note.newTitle": "New Note",
@@ -191,7 +199,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.searching": "Searching...",
     "search.error": "Failed to perform search. Please try again later.",
     "search.noResultsTitle": "No results found",
-    "search.noResultsForQuery": "No notes found for query \"{{query}}\".",
+    "search.noResultsForQuery": 'No notes found for query "{{query}}".',
     "search.tryDifferent": "Try using different keywords or check spelling.",
     "search.found": "Found:",
     "search.noteOne": "note",
@@ -202,7 +210,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.next": "Next",
     "search.emptyTitle": "Search Notes",
     "search.emptyPrompt": "Enter keywords above to search through your notes.",
-    "search.supports": "Search supports both Russian and English languages with automatic stemming.",
+    "search.supports":
+      "Search supports both Russian and English languages with automatic stemming.",
 
     "profile.title": "Profile",
     "profile.subtitle": "Manage your account",
@@ -213,7 +222,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Modal
     "modal.deleteTitle": "Delete Note?",
-    "modal.deleteMessage": "Are you sure you want to delete this note? This action cannot be undone.",
+    "modal.deleteMessage":
+      "Are you sure you want to delete this note? This action cannot be undone.",
     "modal.delete": "Delete",
     "modal.cancel": "Cancel",
 
@@ -322,7 +332,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // QuickCapture
     "quickCapture.title": "✨ Quick Capture",
-    "quickCapture.placeholder": "Capture your thought... (Ctrl+Enter to submit)",
+    "quickCapture.placeholder":
+      "Capture your thought... (Ctrl+Enter to submit)",
     "quickCapture.saved": "✓ Saved!",
     "quickCapture.cancel": "Cancel",
     "quickCapture.save": "Save",
@@ -362,7 +373,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.createLink": "Create Link",
 
     // Graph overlay
-    "graphOverlay.focusActive": "Focus mode is active. Press Esc to restore effects.",
+    "graphOverlay.focusActive":
+      "Focus mode is active. Press Esc to restore effects.",
     "graphOverlay.focus": "Focus",
     "graphOverlay.noteDeleted": "Note deleted.",
     "graphOverlay.restore": "Restore",
@@ -428,7 +440,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteSidePanel.viewFullPage": "View Full Page →",
     "noteSidePanel.viewFullAria": "View full page for {{title}}",
     "noteSidePanel.deleteLinksTitle": "Delete All Links?",
-    "noteSidePanel.deleteLinksMessage": "This will remove all {{count}} links from this note. This action cannot be undone.",
+    "noteSidePanel.deleteLinksMessage":
+      "This will remove all {{count}} links from this note. This action cannot be undone.",
     "noteSidePanel.cancel": "Cancel",
     "noteSidePanel.delete": "Delete",
     "noteSidePanel.loadError": "Failed to load note",
@@ -484,10 +497,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.forgotPasswordLink": "Forgot password?",
     "auth.orDivider": "or",
     "auth.forgotPasswordTitle": "Password Recovery",
-    "auth.forgotPasswordSuccess1": "A password reset email has been sent to the specified address.",
-    "auth.forgotPasswordSuccess2": "Check your inbox and follow the instructions.",
+    "auth.forgotPasswordSuccess1":
+      "A password reset email has been sent to the specified address.",
+    "auth.forgotPasswordSuccess2":
+      "Check your inbox and follow the instructions.",
     "auth.backToLogin": "Back to login",
-    "auth.forgotPasswordDescription": "Enter your email and we will send you a password reset link.",
+    "auth.forgotPasswordDescription":
+      "Enter your email and we will send you a password reset link.",
     "auth.sendButton": "Send",
     "auth.sendingButton": "Sending...",
     "auth.forgotPasswordFailed": "Failed to send reset email",
@@ -525,7 +541,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "delete.account": "Delete Account",
     "profile.languageLabel": "Language",
     "profile.languageHint": "Select your preferred language",
-    "profile.deleteWarning": "Warning! This action is irreversible. All your data will be deleted.",
+    "profile.deleteWarning":
+      "Warning! This action is irreversible. All your data will be deleted.",
     "profile.passwordPlaceholder": "Your password",
     "locale.en": "English",
     "locale.ru": "Russian",
@@ -556,7 +573,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "invalid.credentials": "Неверный логин или пароль.",
     "graph.notFound": "Граф не найден. Возможно, заметка была удалена.",
     "graph.serverError": "Ошибка сервера при загрузке графа. Попробуйте позже.",
-    "graph.networkError": "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
+    "graph.networkError":
+      "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
     "graph.loadError": "Ошибка загрузки графа: {{message}}.",
     "graph.unknownError": "Неизвестная ошибка при загрузке графа.",
 
@@ -634,13 +652,17 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Не удалось удалить выбранные заметки",
     "page.restoreError": "Не удалось восстановить заметку",
     "page.emptyGraphNoNotes": "Создайте заметки, чтобы увидеть граф знаний",
-    "page.emptyGraphNoType": "В графе нет {{type}}. Попробуйте выбрать другой тип.",
+    "page.emptyGraphNoType":
+      "В графе нет {{type}}. Попробуйте выбрать другой тип.",
     "page.emptyGraphTitle": "Нет данных графа",
     "page.emptyListNoNotes": "Ваша звёздная карта пуста",
     "page.emptyListNoSearch": "Космических объектов не найдено",
-    "page.emptyListPrompt": "Зажгите первую звезду, чтобы начать галактику знаний.",
-    "page.emptyListSearchPrompt": "Попробуйте другой поиск или сбросьте фильтр.",
-    "page.noSearchResults": "Нет объектов, соответствующих \"{{query}}\". Попробуйте другие координаты.",
+    "page.emptyListPrompt":
+      "Зажгите первую звезду, чтобы начать галактику знаний.",
+    "page.emptyListSearchPrompt":
+      "Попробуйте другой поиск или сбросьте фильтр.",
+    "page.noSearchResults":
+      'Нет объектов, соответствующих "{{query}}". Попробуйте другие координаты.',
     "page.noTypeResults": "В этом секторе нет {{type}}.",
     "page.createFirstNote": "Создать первую заметку",
     "page.sortBy": "Сортировать по:",
@@ -665,14 +687,17 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.retry": "Повторить",
 
     // Routes
-    "layout.skipAuthTitle": "Авторизация отключена для тестирования (SKIP_AUTH=true)",
+    "layout.skipAuthTitle":
+      "Авторизация отключена для тестирования (SKIP_AUTH=true)",
 
     "auth.subtitle": "Ваш личная мультивселенная знаний",
     "auth.registerSubtitle": "Присоединяйтесь к вселенной знаний",
-    "auth.forgotPasswordSubtitle": "Введите email, чтобы получить ссылку для сброса",
+    "auth.forgotPasswordSubtitle":
+      "Введите email, чтобы получить ссылку для сброса",
     "auth.resetPasswordSubtitle": "Создайте новый пароль для аккаунта",
     "auth.resetTokenMissing": "Токен сброса пароля не найден",
-    "auth.requestNewLink": "Пожалуйста, запросите новую ссылку для сброса пароля.",
+    "auth.requestNewLink":
+      "Пожалуйста, запросите новую ссылку для сброса пароля.",
     "auth.requestResetLink": "Запросить сброс пароля",
 
     "yandex.missingParams": "Отсутствуют обязательные параметры авторизации",
@@ -690,14 +715,18 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.noData": "Нет данных графа",
     "graph.loadDataError": "Не удалось загрузить данные графа",
     "graph.constellationTitle": "Созвездие знаний",
-    "graph.hint": "Перетаскивайте для поворота/панорамы • Прокручивайте для масштаба • Кликните узел, чтобы открыть",
+    "graph.hint":
+      "Перетаскивайте для поворота/панорамы • Прокручивайте для масштаба • Кликните узел, чтобы открыть",
     "graph.loadingConstellation": "Загрузка созвездия...",
     "graph.nodes": "узлов",
     "graph.links": "связей",
     "graph.frozenTitle": "3D граф временно заморожен",
-    "graph.frozenMessage1": "3D функциональность графа временно заморожена в версии 1.0 для повышения стабильности и снижения нагрузки на поддержку.",
-    "graph.frozenMessage2": "Вы будете автоматически перенаправлены на 2D вид графа.",
-    "graph.frozenRedirectWithId": "Вы будете автоматически перенаправлены на 2D вид графа для заметки {{id}}.",
+    "graph.frozenMessage1":
+      "3D функциональность графа временно заморожена в версии 1.0 для повышения стабильности и снижения нагрузки на поддержку.",
+    "graph.frozenMessage2":
+      "Вы будете автоматически перенаправлены на 2D вид графа.",
+    "graph.frozenRedirectWithId":
+      "Вы будете автоматически перенаправлены на 2D вид графа для заметки {{id}}.",
     "graph.entireGraph": "весь граф",
 
     "note.newTitle": "Новая заметка",
@@ -709,15 +738,17 @@ const messages: Record<Locale, Record<string, string>> = {
     "note.showConstellation": "✨ Показать созвездие",
     "note.similarNotes": "Похожие заметки",
     "note.score": "score: {{score}}",
-    "note.contentPlaceholderWiki": "Содержание (поддерживаются [[wiki-ссылки]])",
+    "note.contentPlaceholderWiki":
+      "Содержание (поддерживаются [[wiki-ссылки]])",
 
     "search.title": "Поиск заметок",
     "search.pagePlaceholder": "Введите поисковый запрос...",
     "search.searching": "Поиск...",
     "search.error": "Не удалось выполнить поиск. Попробуйте позже.",
     "search.noResultsTitle": "Ничего не найдено",
-    "search.noResultsForQuery": "Нет заметок по запросу \"{{query}}\".",
-    "search.tryDifferent": "Попробуйте другие ключевые слова или проверьте правописание.",
+    "search.noResultsForQuery": 'Нет заметок по запросу "{{query}}".',
+    "search.tryDifferent":
+      "Попробуйте другие ключевые слова или проверьте правописание.",
     "search.found": "Найдено:",
     "search.noteOne": "заметка",
     "search.noteFew": "заметки",
@@ -727,7 +758,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.next": "Вперёд",
     "search.emptyTitle": "Поиск заметок",
     "search.emptyPrompt": "Введите ключевые слова выше, чтобы найти заметки.",
-    "search.supports": "Поиск поддерживает русский и английский языки с автоматическим стеммингом.",
+    "search.supports":
+      "Поиск поддерживает русский и английский языки с автоматическим стеммингом.",
 
     "profile.title": "Профиль",
     "profile.subtitle": "Управление аккаунтом",
@@ -738,7 +770,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Modal
     "modal.deleteTitle": "Удалить заметку?",
-    "modal.deleteMessage": "Вы уверены, что хотите удалить эту заметку? Это действие нельзя отменить.",
+    "modal.deleteMessage":
+      "Вы уверены, что хотите удалить эту заметку? Это действие нельзя отменить.",
     "modal.delete": "Удалить",
     "modal.cancel": "Отмена",
 
@@ -847,7 +880,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // QuickCapture
     "quickCapture.title": "✨ Быстрая заметка",
-    "quickCapture.placeholder": "Запишите мысль... (Ctrl+Enter чтобы сохранить)",
+    "quickCapture.placeholder":
+      "Запишите мысль... (Ctrl+Enter чтобы сохранить)",
     "quickCapture.saved": "✓ Сохранено!",
     "quickCapture.cancel": "Отмена",
     "quickCapture.save": "Сохранить",
@@ -887,7 +921,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.createLink": "Создать связь",
 
     // Graph overlay
-    "graphOverlay.focusActive": "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",
+    "graphOverlay.focusActive":
+      "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",
     "graphOverlay.focus": "Фокус",
     "graphOverlay.noteDeleted": "Заметка удалена.",
     "graphOverlay.restore": "Восстановить",
@@ -953,7 +988,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteSidePanel.viewFullPage": "Открыть полную страницу →",
     "noteSidePanel.viewFullAria": "Открыть полную страницу для {{title}}",
     "noteSidePanel.deleteLinksTitle": "Удалить все связи?",
-    "noteSidePanel.deleteLinksMessage": "Это удалит все {{count}} связи из этой заметки. Это действие нельзя отменить.",
+    "noteSidePanel.deleteLinksMessage":
+      "Это удалит все {{count}} связи из этой заметки. Это действие нельзя отменить.",
     "noteSidePanel.cancel": "Отмена",
     "noteSidePanel.delete": "Удалить",
     "noteSidePanel.loadError": "Не удалось загрузить заметку",
@@ -1009,18 +1045,22 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.forgotPasswordLink": "Забыли пароль?",
     "auth.orDivider": "или",
     "auth.forgotPasswordTitle": "Восстановление пароля",
-    "auth.forgotPasswordSuccess1": "Письмо для сброса пароля отправлено на указанный адрес.",
+    "auth.forgotPasswordSuccess1":
+      "Письмо для сброса пароля отправлено на указанный адрес.",
     "auth.forgotPasswordSuccess2": "Проверьте почту и следуйте инструкциям.",
     "auth.backToLogin": "Вернуться к входу",
-    "auth.forgotPasswordDescription": "Введите email, и мы отправим вам ссылку для сброса пароля.",
+    "auth.forgotPasswordDescription":
+      "Введите email, и мы отправим вам ссылку для сброса пароля.",
     "auth.sendButton": "Отправить",
     "auth.sendingButton": "Отправка...",
-    "auth.forgotPasswordFailed": "Не удалось отправить письмо для сброса пароля",
+    "auth.forgotPasswordFailed":
+      "Не удалось отправить письмо для сброса пароля",
     "auth.rememberedPasswordLink": "Вспомнили пароль? Войдите",
     "auth.resetPasswordTitle": "Сброс пароля",
     "auth.newPasswordLabel": "Новый пароль",
     "auth.resetPasswordSuccess": "Пароль успешно изменён!",
-    "auth.resetPasswordRedirect": "Вы будете перенаправлены на страницу входа...",
+    "auth.resetPasswordRedirect":
+      "Вы будете перенаправлены на страницу входа...",
     "auth.saveNewPasswordButton": "Сохранить новый пароль",
     "auth.savingButton": "Сохранение...",
     "auth.resetPasswordFailed": "Не удалось сбросить пароль",
@@ -1050,7 +1090,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "delete.account": "Удалить аккаунт",
     "profile.languageLabel": "Язык",
     "profile.languageHint": "Выберите предпочитаемый язык",
-    "profile.deleteWarning": "Внимание! Это действие необратимо. Все ваши данные будут удалены.",
+    "profile.deleteWarning":
+      "Внимание! Это действие необратимо. Все ваши данные будут удалены.",
     "profile.passwordPlaceholder": "Ваш пароль",
     "locale.en": "English",
     "locale.ru": "Русский",

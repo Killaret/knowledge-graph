@@ -62,7 +62,9 @@ async function applyUserSettings(): Promise<void> {
     }
   } catch (e) {
     // Settings are not critical for auth flow
-    console.warn("Failed to load user settings:", e);
+    if (import.meta.env.DEV) {
+      console.warn("Failed to load user settings:", e);
+    }
   }
 }
 
