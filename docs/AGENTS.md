@@ -161,6 +161,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
   - `internal/infrastructure/db/postgres/refresh_token_repo.go`
   - `internal/infrastructure/db/postgres/share_repo.go`
 - `internal/auth/interfaces.go` — defines `TokenStore` and `RefreshTokenRepository` ports.
+- `cmd/worker/main.go` — no longer imports asynq; server creation and ServeMux wiring live in `internal/infrastructure/queue`.
 - `internal/interfaces/api/middleware/apikey.go` — now depends on `domain/user.APIKeyRepository`; no `*gorm.DB`, no local `APIKeyModel`.
 - `internal/interfaces/api/middleware/jwt.go` and `internal/interfaces/api/middleware/permissions.go` — now depend on `auth.TokenStore` interface; no `*auth.RedisTokenStore`.
 - `cmd/server/health.go` — now depends on small `DBPinger`, `RedisPinger`, and `NLPHealthChecker` interfaces; no `*gorm.DB` or `*redis.Client`.
@@ -186,7 +187,6 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- `cmd/worker/main.go` still constructs an asynq server directly; consider wrapping server creation/run/stop in `internal/infrastructure/queue`.
 - Some backend unit/integration tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
 - Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
 - Frontend coverage and E2E stack not covered by these notes.
