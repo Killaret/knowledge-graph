@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/config"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,17 +22,21 @@ type mockTaskQueue struct {
 	fail bool
 }
 
-func (m *mockTaskQueue) Enqueue(ctx context.Context, task *asynq.Task) error {
+func (m *mockTaskQueue) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
 	if m.fail {
 		return errors.New("enqueue failed")
 	}
 	return nil
 }
 
+func (m *mockTaskQueue) EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	return nil
+}
 func (m *mockTaskQueue) EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error {
 	return nil
 }
 func (m *mockTaskQueue) EnqueueComputeEmbedding(ctx context.Context, noteID string) error { return nil }
+func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error    { return nil }
 
 func TestTriggerCloudBackup(t *testing.T) {
 	gin.SetMode(gin.TestMode)

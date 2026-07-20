@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
+	"knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -23,17 +23,17 @@ const (
 
 type NoteRepository struct {
 	db    *gorm.DB
-	redis *redis.Client
+	cache cache.CacheClient
 }
 
-func NewNoteRepository(db *gorm.DB, redis *redis.Client) *NoteRepository {
-	return &NoteRepository{db: db, redis: redis}
+func NewNoteRepository(db *gorm.DB, cacheClient cache.CacheClient) *NoteRepository {
+	return &NoteRepository{db: db, cache: cacheClient}
 }
 
 // invalidateCache удаляет кэш списка заметок
 func (r *NoteRepository) invalidateCache(ctx context.Context) {
-	if r.redis != nil {
-		r.redis.Del(ctx, notesCacheKey)
+	if r.cache != nil {
+		r.cache.Del(ctx, notesCacheKey)
 	}
 }
 
@@ -141,15 +141,15 @@ func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	return toDomainNotes(models), total, nil
 }
 
-// FindAll возвращает все заметки без пагинации с кэшированием в Redis
+// FindAll возвращает все заметки без пагинации с кэшированием
 // DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
-	// 1. Проверяем кэш Redis (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
-	if r.redis != nil {
-		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
+	// 1. Проверяем кэш (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
+	if r.cache != nil {
+		cached, err := r.cache.Get(ctx, notesCacheKey)
 		if err == nil {
 			var models []NoteModel
-			if err := json.Unmarshal(cached, &models); err == nil {
+			if err := json.Unmarshal([]byte(cached), &models); err == nil {
 				// Конвертируем модели в доменные объекты
 				return toDomainNotes(models), nil
 			}
@@ -165,9 +165,9 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	notes := toDomainNotes(models)
 
 	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
-	if r.redis != nil {
+	if r.cache != nil {
 		if data, err := json.Marshal(models); err == nil {
-			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
+			r.cache.Set(ctx, notesCacheKey, string(data), notesCacheTTL)
 		}
 	}
 

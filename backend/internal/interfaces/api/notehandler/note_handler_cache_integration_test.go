@@ -13,6 +13,7 @@ import (
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/testutil"
 
@@ -62,7 +63,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 	})
 
 	// Создаем репозиторий
-	s.repo = postgres.NewNoteRepository(s.db, s.redisClient)
+	s.repo = postgres.NewNoteRepository(s.db, infracache.NewRedisCacheClient(s.redisClient))
 
 	// Создаем graph cache
 	s.graphCache = cache.NewGraphCache(infracache.NewRedisCacheClient(s.redisClient))

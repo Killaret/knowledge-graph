@@ -17,7 +17,6 @@ import (
 	"knowledge-graph/internal/config"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -82,11 +81,7 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 	}
 
 	for _, nid := range affected {
-		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
-		if err != nil {
-			continue
-		}
-		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
+		if err := h.taskQueue.EnqueueRefreshRecommendations(ctx, nid, h.taskDelay); err != nil {
 			// Log error but continue
 			_ = err
 		}
@@ -629,13 +624,7 @@ func (h *Handler) enqueueRefreshWithDelay(noteID uuid.UUID) {
 	}
 
 	delay := time.Duration(h.cfg.RecommendationTaskDelaySeconds) * time.Second
-	task, err := tasks.NewRefreshRecommendationsTask(noteID, delay)
-	if err != nil {
-		log.Printf("failed to create refresh task: %v", err)
-		return
-	}
-
-	if err := h.taskQueue.Enqueue(context.Background(), task); err != nil {
+	if err := h.taskQueue.EnqueueRefreshRecommendations(context.Background(), noteID, delay); err != nil {
 		log.Printf("failed to enqueue refresh task: %v", err)
 	}
 }

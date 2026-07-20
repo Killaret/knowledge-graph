@@ -60,9 +60,8 @@ Date: 2026-07-20
 The major Clean Architecture violations listed in previous audits have been resolved. The current status and any remaining minor debt are tracked in the **Clean Architecture Refactor Notes** section below.
 
 Key remaining items:
-- `internal/infrastructure/db/postgres/note_repo.go` still uses `*redis.Client` directly for the `FindAll` cache; consider using the domain `cache.CacheClient` port.
-- `internal/interfaces/api/handlers/backup` is decoupled but minimal; consider moving task payload builders into `application`/`domain`.
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
+- `internal/interfaces/api/middleware/apikey.go` constructor still accepts `*gorm.DB` to build a default repository; consider accepting a fully constructed `APIKeyRepository` from `cmd/server`.
 
 ### Conventions used during audit
 
@@ -146,6 +145,10 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/interfaces/api/notehandler/note_handler.go` — now depends on `recommendation.Repository` and `recommendation.EmbeddingRepository` ports, plus `cache.CacheClient`; no direct `*postgres.RecommendationRepository`, `*postgres.EmbeddingRepository`, or `*redis.Client`.
 - `internal/interfaces/api/middleware/permissions.go` — now depends on `permission.Repository` port implemented in `postgres.PermissionRepository`; no `*gorm.DB`.
 - `internal/application/cache/graph_cache.go`, `internal/application/queries/graph/get_suggestions.go`, `internal/application/user/settings_service.go`, and `internal/application/achievement/service.go` — now depend on `cache.CacheClient` port implemented in `infrastructure/cache.RedisCacheClient`; no direct `*redis.Client`.
+- `internal/infrastructure/db/postgres/note_repo.go` — now depends on the domain `cache.CacheClient` port for the `FindAll` cache; no direct `*redis.Client`.
+- `internal/application/common/task_queue.go` — `TaskQueue` port no longer imports `asynq`; typed enqueue methods hide the concrete task queue implementation.
+- `internal/application/achievement/service.go` — no longer imports `asynq`; uses the `common.TaskQueue` port's `EnqueueNotification` method.
+- `internal/interfaces/api/handlers/backup/handler.go`, `internal/interfaces/api/notehandler/note_handler.go`, and `internal/interfaces/api/linkhandler/link_handler.go` — no longer import `internal/infrastructure/queue/tasks`; task enqueueing goes through the `common.TaskQueue` port.
 - `internal/infrastructure/db/postgres/user_repo.go` — role lookup extracted to `domain/user.RoleRepository` port implemented in `postgres.RoleRepository`; no direct `UserRoleModel` queries from `UserRepository`.
 - New domain packages:
   - `internal/domain/user` — `User`, `APIKey` aggregates and repository ports.
@@ -161,7 +164,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **60.5%** (target 70%; enforced minimum 60%).
+- Aggregated backend coverage: **60.6%** (target 70%; enforced minimum 60%).
 
 ### Frontend coverage snapshot
 
@@ -171,9 +174,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Remaining debt
 
-- `internal/infrastructure/db/postgres/note_repo.go` still uses `*redis.Client` directly for the `FindAll` cache; consider using the domain `cache.CacheClient` port.
-- `internal/interfaces/api/handlers/backup` is decoupled but minimal.
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
+- `internal/interfaces/api/middleware/apikey.go` constructor still accepts `*gorm.DB` to build a default repository; consider accepting a fully constructed `APIKeyRepository` from `cmd/server`.
 - Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist

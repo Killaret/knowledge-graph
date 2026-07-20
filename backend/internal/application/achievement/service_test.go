@@ -100,7 +100,7 @@ func TestMatchesTrigger(t *testing.T) {
 }
 
 func TestTrackLoginAndGetStreak_WithNilRedis(t *testing.T) {
-	s := NewService(nil, nil, nil, nil)
+	s := NewService(nil, nil, nil, nil, nil)
 	ctx := context.Background()
 	uid := uuid.New()
 
@@ -114,7 +114,7 @@ func TestTrackLoginAndGetStreak_WithNilRedis(t *testing.T) {
 }
 
 func TestMarkNotificationSeen_EmptyID(t *testing.T) {
-	s := NewService(nil, nil, nil, nil)
+	s := NewService(nil, nil, nil, nil, nil)
 	ctx := context.Background()
 	uid := uuid.New()
 
@@ -140,7 +140,7 @@ func TestCheckTrigger_WithMatchingAchievement(t *testing.T) {
 	mockEngine.On("Evaluate", ctx, condition, userID).Return(true, nil)
 	mockRepo.On("SaveUserAchievement", ctx, mock.AnythingOfType("achievement.UserAchievement")).Return(nil)
 
-	service := NewService(mockEngine, mockRepo, nil, nil)
+	service := NewService(mockEngine, mockRepo, nil, nil, nil)
 
 	err := service.CheckTrigger(ctx, userID, "note.create")
 	assert.NoError(t, err)
@@ -162,7 +162,7 @@ func TestCheckTrigger_WithAlreadyEarnedAchievement(t *testing.T) {
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{*achievement}, nil)
 	mockRepo.On("UserHasAchievement", ctx, userID, achievement.ID()).Return(true, nil)
 
-	service := NewService(mockEngine, mockRepo, nil, nil)
+	service := NewService(mockEngine, mockRepo, nil, nil, nil)
 
 	err := service.CheckTrigger(ctx, userID, "note.create")
 	assert.NoError(t, err)
@@ -186,7 +186,7 @@ func TestCheckTrigger_WithUnmetCondition(t *testing.T) {
 	mockRepo.On("UserHasAchievement", ctx, userID, achievement.ID()).Return(false, nil)
 	mockEngine.On("Evaluate", ctx, condition, userID).Return(false, nil)
 
-	service := NewService(mockEngine, mockRepo, nil, nil)
+	service := NewService(mockEngine, mockRepo, nil, nil, nil)
 
 	err := service.CheckTrigger(ctx, userID, "note.create")
 	assert.NoError(t, err)
@@ -215,7 +215,7 @@ func TestGetUserAchievementsWithStatus(t *testing.T) {
 
 	mockRepo.On("FindUserAchievementsWithStatus", ctx, userID).Return(expectedStatus, nil)
 
-	service := NewService(nil, mockRepo, nil, nil)
+	service := NewService(nil, mockRepo, nil, nil, nil)
 
 	result, err := service.GetUserAchievementsWithStatus(ctx, userID)
 	assert.NoError(t, err)
@@ -237,7 +237,7 @@ func TestGetAllAchievements(t *testing.T) {
 	expectedAchievements := []achievementDomain.Achievement{*achievement}
 	mockRepo.On("FindAll", ctx).Return(expectedAchievements, nil)
 
-	service := NewService(nil, mockRepo, nil, nil)
+	service := NewService(nil, mockRepo, nil, nil, nil)
 
 	result, err := service.GetAllAchievements(ctx)
 	assert.NoError(t, err)
@@ -256,7 +256,7 @@ func TestMarkNotificationSeen(t *testing.T) {
 
 	mockRepo.On("MarkNotificationSeen", ctx, userID, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
-	service := NewService(nil, mockRepo, nil, nil)
+	service := NewService(nil, mockRepo, nil, nil, nil)
 
 	err := service.MarkNotificationSeen(ctx, userID, achievementID)
 	assert.NoError(t, err)
@@ -274,7 +274,7 @@ func TestCheckTrigger_WithInvalidTrigger(t *testing.T) {
 	// Mock FindAll to return empty list (no achievements match invalid trigger)
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
 
-	service := NewService(mockEngine, mockRepo, nil, nil)
+	service := NewService(mockEngine, mockRepo, nil, nil, nil)
 
 	err := service.CheckTrigger(ctx, userID, "invalid.trigger")
 	assert.Error(t, err) // Should return error for invalid triggers
@@ -294,7 +294,7 @@ func TestCheckStreaks(t *testing.T) {
 
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{*achievement}, nil)
 
-	service := NewService(nil, mockRepo, nil, nil)
+	service := NewService(nil, mockRepo, nil, nil, nil)
 
 	err := service.CheckStreaks(ctx)
 	assert.NoError(t, err)
@@ -317,7 +317,7 @@ func TestTrackLoginAndGetStreak_WithRedis(t *testing.T) {
 	mockRepo := new(MockAchievementRepository)
 	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
 
-	service := NewService(nil, mockRepo, nil, infracache.NewRedisCacheClient(rdb))
+	service := NewService(nil, mockRepo, nil, infracache.NewRedisCacheClient(rdb), nil)
 
 	err := service.TrackLogin(ctx, uid)
 	assert.NoError(t, err)
@@ -344,7 +344,7 @@ func TestGetUserAchievements(t *testing.T) {
 	mockRepo := new(MockAchievementRepository)
 	mockRepo.On("FindByUserID", ctx, uid).Return([]achievementDomain.Achievement{*achievement}, nil)
 
-	service := NewService(nil, mockRepo, nil, nil)
+	service := NewService(nil, mockRepo, nil, nil, nil)
 	result, err := service.GetUserAchievements(ctx, uid)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)

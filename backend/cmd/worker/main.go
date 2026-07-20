@@ -15,6 +15,7 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
@@ -76,8 +77,11 @@ func main() {
 		}
 	}()
 
+	// Клиент кэша
+	cacheClient := infracache.NewRedisCacheClient(redisClient)
+
 	// Репозитории
-	noteRepo := postgres.NewNoteRepository(database, redisClient)
+	noteRepo := postgres.NewNoteRepository(database, cacheClient)
 	keywordRepo := postgres.NewKeywordRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database)
 	recRepo := postgres.NewRecommendationRepository(database)

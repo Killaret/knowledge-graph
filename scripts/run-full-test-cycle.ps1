@@ -353,13 +353,75 @@ try {
     }
 
     # Step 23: (continued)
+    Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
 
+    $devStateChanged = $false
+
+    $prePs = "$snapshotDir\pre-test-ps.txt"
+    $postPs = "$snapshotDir\post-test-ps.txt"
+    if ((Test-Path $prePs) -and (Test-Path $postPs)) {
+        if (Compare-Object (Get-Content $prePs) (Get-Content $postPs)) {
+            Write-Host "  ⚠ Dev container state changed during testing" -ForegroundColor Yellow
+            $devStateChanged = $true
+        } else {
+            Write-Host "  ✓ Dev container state unchanged" -ForegroundColor Green
+        }
+    }
+
+    $preHealth = "$snapshotDir\pre-test-health.json"
+    $postHealth = "$snapshotDir\post-test-health.json"
+    if ((Test-Path $preHealth) -and (Test-Path $postHealth)) {
+        if (Compare-Object (Get-Content $preHealth) (Get-Content $postHealth)) {
+            Write-Host "  ⚠ Dev health endpoint changed during testing" -ForegroundColor Yellow
+            $devStateChanged = $true
+        } else {
+            Write-Host "  ✓ Dev health endpoint unchanged" -ForegroundColor Green
+        }
+    }
+
+    $preNotes = "$snapshotDir\pre-test-notes.json"
+    $postNotes = "$snapshotDir\post-test-notes.json"
+    if ((Test-Path $preNotes) -and (Test-Path $postNotes)) {
+        if (Compare-Object (Get-Content $preNotes) (Get-Content $postNotes)) {
+            Write-Host "  ⚠ Dev API response changed during testing" -ForegroundColor Yellow
+            $devStateChanged = $true
+        } else {
+            Write-Host "  ✓ Dev API response unchanged" -ForegroundColor Green
+        }
+    }
+
+    if ($devStateChanged) {
+        Write-Host "  WARNING: Dev stack state changed during testing" -ForegroundColor Yellow
+        Write-Host "  This may indicate data leakage or side effects" -ForegroundColor Yellow
     } else {
         Write-Host "  ✓ Dev stack state verified - no changes detected" -ForegroundColor Green
     }
 
     # Step 23: (continued)
+    Write-Host ""
 
+    try {
+        $null = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
+        Write-Host "  ✓ Dev notes snapshot saved" -ForegroundColor Green
+    } catch {
+        Write-Host "  ERROR: Failed to get dev notes" -ForegroundColor Red
+        exit 1
+    }
+
+    try {
+        $null = Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
+        Write-Host "  ✓ Personal notes snapshot saved" -ForegroundColor Green
+    } catch {
+        Write-Host "  ERROR: Failed to get personal notes" -ForegroundColor Red
+        exit 1
+    }
+
+    if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
+        Write-Host "  ⚠ Dev and Personal stacks are NOT identical" -ForegroundColor Red
+        Write-Host "  ERROR: Stacks have differences - manual investigation required" -ForegroundColor Red
+        Write-Host "  Skipping auto-commit due to stack differences" -ForegroundColor Red
         exit 1
     } else {
         Write-Host "  ✓ Dev and Personal stacks are identical (timestamps ignored)" -ForegroundColor Green

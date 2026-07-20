@@ -8,7 +8,6 @@ import (
 
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/config"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,22 +49,14 @@ func (h *Handler) TriggerCloudBackup(c *gin.Context) {
 	timestamp := time.Now().Format("2006-01-02")
 	remoteKey := "backups/backup-personal-" + timestamp + ".sql.gz"
 
-	// Create Asynq task
-	task, err := tasks.NewBackupToCloudTask(req.LocalPath, remoteKey, timestamp)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create backup task"})
+	// Enqueue cloud backup task
+	if h.taskQueue == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "task queue not available"})
 		return
 	}
 
-	// Enqueue task using task queue
-	if h.taskQueue != nil {
-		err = h.taskQueue.Enqueue(context.Background(), task)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to enqueue backup task"})
-			return
-		}
-	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "task queue not available"})
+	if err := h.taskQueue.EnqueueBackupToCloud(context.Background(), req.LocalPath, remoteKey, timestamp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to enqueue backup task"})
 		return
 	}
 

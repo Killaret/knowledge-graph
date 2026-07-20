@@ -181,7 +181,7 @@ func run(
 
 	cacheClient := infracache.NewRedisCacheClient(redisClient)
 
-	noteRepo := postgres.NewNoteRepository(database, redisClient)
+	noteRepo := postgres.NewNoteRepository(database, cacheClient)
 	linkRepo := postgres.NewLinkRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database)
 
@@ -220,7 +220,7 @@ func run(
 	achievementEngine := achievement.NewEngine(achievementCounter)
 	userSettingsRepo := postgres.NewUserSettingsRepository(database)
 	settingsService := userApp.NewSettingsService(userSettingsRepo, cacheClient)
-	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, cacheClient)
+	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, cacheClient, taskQueue)
 	achievementHandler := achievementhandler.NewHandler(achievementService)
 
 	// Graph cache (nil when Redis is unavailable)
@@ -237,7 +237,7 @@ func run(
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService)
-	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
+	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)

@@ -6,6 +6,8 @@ const (
 	// TypeComputeEmbedding — task type for computing embedding
 	TypeComputeEmbedding = "compute:embedding"
 	TypeBackupToCloud    = "backup:cloud"
+	// TypeNotificationAchievement — task type for achievement notifications
+	TypeNotificationAchievement = "notification:achievement"
 )
 
 // ExtractKeywordsTaskPayload contains data for the keyword extraction task

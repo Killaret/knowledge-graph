@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
+	"knowledge-graph/internal/application/common"
 	userApp "knowledge-graph/internal/application/user"
 	achievementDomain "knowledge-graph/internal/domain/achievement"
 	dcache "knowledge-graph/internal/domain/cache"
 
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
 )
 
 // Service handles achievement operations
@@ -21,7 +21,7 @@ type Service struct {
 	engine          achievementDomain.Engine
 	achievementRepo achievementDomain.Repository
 	settingsService *userApp.SettingsService
-	taskQueue       interface{}
+	taskQueue       common.TaskQueue
 	cacheClient     dcache.CacheClient
 }
 
@@ -31,12 +31,14 @@ func NewService(
 	achievementRepo achievementDomain.Repository,
 	settingsService *userApp.SettingsService,
 	cacheClient dcache.CacheClient,
+	taskQueue common.TaskQueue,
 ) *Service {
 	return &Service{
 		engine:          engine,
 		achievementRepo: achievementRepo,
 		settingsService: settingsService,
 		cacheClient:     cacheClient,
+		taskQueue:       taskQueue,
 	}
 }
 
@@ -181,9 +183,7 @@ func (s *Service) sendNotification(ctx context.Context, userID uuid.UUID, achiev
 
 	// Queue notification task if task queue is available
 	if s.taskQueue != nil {
-		task := asynq.NewTask("notification:achievement", data)
-		_, err := s.taskQueue.(*asynq.Client).Enqueue(task)
-		if err != nil {
+		if err := s.taskQueue.EnqueueNotification(ctx, data); err != nil {
 			return err
 		}
 	}

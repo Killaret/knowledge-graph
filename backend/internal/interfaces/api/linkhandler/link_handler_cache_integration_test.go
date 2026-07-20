@@ -13,6 +13,7 @@ import (
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
+	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/testutil"
 
@@ -66,15 +67,12 @@ func (s *LinkHandlerCacheIntegrationTestSuite) SetupSuite() {
 	s.linkRepo = postgres.NewLinkRepository(s.db)
 
 	// Создаем graph cache
-	s.graphCache = cache.NewGraphCache(s.redisClient)
+	s.graphCache = cache.NewGraphCache(infracache.NewRedisCacheClient(s.redisClient))
 
 	// Создаем хендлер с graph cache
 	handler := New(
 		s.linkRepo,
 		s.noteRepo,
-		nil, // taskQueue
-		nil, // affectedNotesSvc
-		0,   // taskDelay
 		nil, // achievementService
 		s.graphCache,
 	)
