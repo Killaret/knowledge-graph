@@ -188,6 +188,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/shared/lib/domain/link-type.ts` — `LinkType.label` now resolves through i18n keys (`linkType.*`).
 - `frontend/src/components/organisms/LinkCreator.svelte` and `LinkTooltip.svelte` — link creation form and tooltip labels now use i18n keys.
 - `frontend/src/components/organisms/ConfirmModal.svelte` — default/galactic confirm/cancel/title labels now use i18n keys.
+- `frontend/src/components/molecules/TypeSelector.svelte` — aria-label now uses i18n key.
 
 ### Current backend coverage
 
