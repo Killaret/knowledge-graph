@@ -35,10 +35,11 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$shared/lib/domain";
-  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
-  const t = (key: string) => formatMessage(key, locale);
+  const t = (key: string, params?: MessageParams) =>
+    formatMessage(key, locale, params);
 
   // Raw API shapes that backend may return with alternative casing
   interface RawNode {
@@ -179,15 +180,6 @@
   // - oldest: Sort by creation date, oldest first
   // - az: Alphabetical sorting A-Z
   // - za: Alphabetical sorting Z-A
-  // Functionality: Provides sorting options for the notes list view UI
-  /*
-  const sortOptions = [
-    { id: 'newest', label: 'Newest first' },
-    { id: 'oldest', label: 'Oldest first' },
-    { id: 'az', label: 'Alphabetical (A-Z)' },
-    { id: 'za', label: 'Alphabetical (Z-A)' }
-  ];
-  */
   onMount(async () => {
     if (!browser) return;
     await loadDataParallel();
@@ -516,7 +508,7 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert("Failed to delete note");
+        alert(t("page.deleteError"));
       }
     } finally {
       noteToDelete = null;
@@ -570,7 +562,7 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert("Failed to delete selected notes");
+        alert(t("page.batchDeleteError"));
       }
     }
   }
@@ -606,7 +598,7 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert("Failed to restore note");
+        alert(t("page.restoreError"));
       }
     }
   }
@@ -625,7 +617,7 @@
       await loadNotes();
     } catch {
       if (browser) {
-        alert("Failed to create note");
+        alert(t("note.createError"));
       }
     }
   }
@@ -725,11 +717,13 @@
       {:else}
         <div class="empty-state">
           <StateIllustration type="no-links" />
-          <h2>No graph data</h2>
+          <h2>{t("page.emptyGraphTitle")}</h2>
           <p>
             {!filterState.isTypeActive
-              ? "Create some notes to see the knowledge graph"
-              : `No ${filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase()} in the graph. Try selecting a different type.`}
+              ? t("page.emptyGraphNoNotes")
+              : t("page.emptyGraphNoType", {
+                  type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
+                })}
           </p>
         </div>
       {/if}
@@ -742,24 +736,24 @@
               class="list-control-btn"
               data-testid="select-mode-toggle"
               onclick={toggleSelectionMode}
-              aria-label="Toggle selection mode"
+              aria-label={t("page.selectionToggle")}
             >
-              {selectionMode ? "Cancel selection" : "Select"}
+              {selectionMode ? t("page.cancelSelection") : t("page.select")}
             </button>
             {#if selectionMode}
               <button
                 class="list-control-btn"
                 onclick={toggleSelectAll}
-                aria-label="Select all notes"
+                aria-label={t("page.selectAllAria")}
               >
                 {selectedNoteIds.size === filteredNotes.length
-                  ? "Clear selection"
-                  : "Select all"}
+                  ? t("page.clearSelection")
+                  : t("page.selectAll")}
               </button>
             {/if}
           </div>
           <div class="list-sort">
-            <label for="sort-select" class="sort-label">Sort by:</label>
+            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
             <select
               id="sort-select"
               class="sort-select"
@@ -768,7 +762,7 @@
                 sortBy = e.currentTarget.value as typeof sortBy;
                 applyFiltersAndSort();
               }}
-              aria-label="Sort notes"
+              aria-label={t("page.sortAriaLabel")}
             >
               {#each sortOptions as opt}
                 <option value={opt.id}>{opt.label}</option>
@@ -786,21 +780,25 @@
             />
             <h2>
               {!filterState.isTypeActive && !filterState.isSearchActive
-                ? "Your star chart is empty"
-                : "No cosmic objects found"}
+                ? t("page.emptyListNoNotes")
+                : t("page.emptyListNoSearch")}
             </h2>
             <p>
               {!filterState.isTypeActive && !filterState.isSearchActive
-                ? "Ignite your first star to begin your knowledge galaxy."
+                ? t("page.emptyListPrompt")
                 : filterState.isSearchActive
-                  ? `No objects match "${filterState.searchQuery.value}". Try different coordinates.`
-                  : `No ${filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase()} found in this sector.`}
+                  ? t("page.noSearchResults", {
+                      query: filterState.searchQuery.value,
+                    })
+                  : t("page.noTypeResults", {
+                      type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
+                    })}
             </p>
             <button
               class="new-note-button"
               onclick={() => (showCreateModal = true)}
             >
-              Create your first note
+              {t("page.createFirstNote")}
             </button>
           </div>
         {:else}
@@ -825,20 +823,20 @@
       <!-- Floating batch delete panel -->
       {#if selectionMode && selectedNoteIds.size > 0}
         <div class="batch-panel">
-          <span class="batch-count">{selectedNoteIds.size} selected</span>
+          <span class="batch-count">{t("page.selectedCount", { count: selectedNoteIds.size.toString() })}</span>
           <button
             class="batch-btn batch-btn--actions"
             onclick={() => (showBulkActionsMenu = !showBulkActionsMenu)}
-            aria-label="Bulk actions"
+            aria-label={t("page.bulkActionsToggle")}
           >
-            Actions
+            {t("page.bulkActionsActions")}
           </button>
           <button
             class="batch-btn batch-btn--delete"
             onclick={handleBatchDelete}
-            aria-label="Delete selected notes"
+            aria-label={t("page.bulkActionsDelete")}
           >
-            Delete selected
+            {t("page.bulkActionsDeleteSelected")}
           </button>
           <button
             class="batch-btn batch-btn--cancel"
@@ -846,9 +844,9 @@
               selectedNoteIds.clear();
               selectionMode = false;
             }}
-            aria-label="Cancel selection"
+            aria-label={t("page.cancelSelection")}
           >
-            Cancel
+            {t("modal.cancel")}
           </button>
         </div>
 
@@ -860,30 +858,30 @@
               onclick={() => {
                 showBulkActionsMenu = false;
               }}
-              aria-label="Move to type"
+              aria-label={t("page.bulkActionsMoveType")}
             >
               <span class="bulk-action-icon">📂</span>
-              Move to type
+              {t("page.bulkActionsMoveType")}
             </button>
             <button
               class="bulk-action-item"
               onclick={() => {
                 showBulkActionsMenu = false;
               }}
-              aria-label="Add tags"
+              aria-label={t("page.bulkActionsAddTags")}
             >
               <span class="bulk-action-icon">🏷️</span>
-              Add tags
+              {t("page.bulkActionsAddTags")}
             </button>
             <button
               class="bulk-action-item"
               onclick={() => {
                 showBulkActionsMenu = false;
               }}
-              aria-label="Export notes"
+              aria-label={t("page.bulkActionsExport")}
             >
               <span class="bulk-action-icon">📤</span>
-              Export notes
+              {t("page.bulkActionsExport")}
             </button>
           </div>
         {/if}
@@ -923,10 +921,10 @@
 <!-- Confirm Modal for delete -->
 <ConfirmModal
   bind:open={showConfirmDelete}
-  title="Delete Note?"
-  message="Are you sure you want to delete this note? This action cannot be undone."
-  confirmText="Delete"
-  cancelText="Cancel"
+  title={t("modal.deleteTitle")}
+  message={t("modal.deleteMessage")}
+  confirmText={t("modal.delete")}
+  cancelText={t("modal.cancel")}
   danger={true}
   onConfirm={handleDeleteConfirm}
   onCancel={() => {
@@ -942,15 +940,15 @@
     class:undo-toast--restore={undoToastStage === "restore"}
   >
     {#if undoToastStage === "done"}
-      <span class="undo-toast-message">Done</span>
+      <span class="undo-toast-message">{t("toast.done")}</span>
     {:else}
-      <span class="undo-toast-message">Note deleted.</span>
+      <span class="undo-toast-message">{t("toast.noteDeleted")}</span>
       <button
         class="undo-toast-btn"
         onclick={handleUndoRestore}
-        aria-label="Restore deleted note"
+        aria-label={t("toast.restoreAriaLabel")}
       >
-        Restore
+        {t("toast.restore")}
       </button>
     {/if}
   </div>
