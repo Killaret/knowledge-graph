@@ -1,5 +1,10 @@
 <script lang="ts">
   import { getYandexLoginUrl } from "$shared/api/auth.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let isLoading = $state(false);
   let error = $state<string | null>(null);
@@ -13,11 +18,11 @@
       if (result.url) {
         window.location.href = result.url;
       } else {
-        error = "Failed to get authorization URL";
+        error = t("yandex.authUrlError");
       }
     } catch (err) {
       error =
-        err instanceof Error ? err.message : "Error initializing Yandex login";
+        err instanceof Error ? err.message : t("yandex.initError");
     } finally {
       isLoading = false;
     }
@@ -32,7 +37,7 @@
 >
   {#if isLoading}
     <span class="spinner"></span>
-    <span>Connecting to Yandex...</span>
+    <span>{t("yandex.connecting")}</span>
   {:else}
     <svg
       class="yandex-icon"
@@ -45,7 +50,7 @@
       />
       <circle cx="12" cy="12" r="3" />
     </svg>
-    <span>Sign in with Yandex</span>
+    <span>{t("yandex.signIn")}</span>
   {/if}
 </button>
 

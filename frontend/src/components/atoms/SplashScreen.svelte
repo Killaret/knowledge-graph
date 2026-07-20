@@ -2,6 +2,10 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { fade } from "svelte/transition";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   interface Props {
     duration?: number;
@@ -37,7 +41,7 @@
     class="splash-screen"
     out:fade={{ duration: 800 }}
     role="img"
-    aria-label="Weltall Protocol - Knowledge Graph"
+    aria-label={t("splash.ariaLabel")}
   >
     <!-- Dark radial gradient background -->
     <div class="splash-background"></div>
@@ -127,8 +131,8 @@
 
     <!-- App name -->
     <div class="app-title">
-      <h1>Knowledge Graph</h1>
-      <p class="subtitle">Explore the cosmos of ideas</p>
+      <h1>{t("splash.title")}</h1>
+      <p class="subtitle">{t("splash.subtitle")}</p>
     </div>
 
     <!-- Loading indicator -->

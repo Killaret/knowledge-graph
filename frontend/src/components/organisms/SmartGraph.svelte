@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   interface GraphNode {
     id: string;
@@ -31,12 +35,12 @@
 {#if isLoading}
   <div class="graph-loading" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
-    <p>Loading visualization...</p>
+    <p>{t("smartGraph.loading")}</p>
   </div>
 {:else}
   <div class="graph-wrapper graph-2d">
     <GraphCanvas {nodes} {links} />
-    <div class="performance-hint" aria-hidden="true">2D Mode (optimized)</div>
+    <div class="performance-hint" aria-hidden="true">{t("smartGraph.mode2D")}</div>
   </div>
 {/if}
 

@@ -1,6 +1,11 @@
 <script lang="ts">
   import { createNote } from "$shared/api/notes";
   import { CelestialBody } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   // State
   let isOpen = $state(false);
@@ -82,31 +87,31 @@
     >
       <div class="quick-capture-modal">
         <div class="modal-header">
-          <h3>✨ Quick Capture</h3>
-          <button class="close-btn" onclick={toggle} aria-label="Close"
+          <h3>{t("quickCapture.title")}</h3>
+          <button class="close-btn" onclick={toggle} aria-label={t("close")}
             >×</button
           >
         </div>
         <div class="modal-body">
           <textarea
             bind:value={content}
-            placeholder="Capture your thought... (Ctrl+Enter to submit)"
+            placeholder={t("quickCapture.placeholder")}
             disabled={isSubmitting}
           ></textarea>
           {#if showSuccess}
-            <div class="success-message">✓ Saved!</div>
+            <div class="success-message">{t("quickCapture.saved")}</div>
           {/if}
         </div>
         <div class="modal-footer">
           <button class="cancel-btn" onclick={toggle} disabled={isSubmitting}
-            >Cancel</button
+            >{t("quickCapture.cancel")}</button
           >
           <button
             class="submit-btn"
             onclick={submitCapture}
             disabled={isSubmitting || !content.trim()}
           >
-            {isSubmitting ? "Saving..." : "Save"}
+            {isSubmitting ? t("quickCapture.saving") : t("quickCapture.save")}
           </button>
         </div>
       </div>
@@ -116,7 +121,7 @@
   <button
     class="quick-capture-btn"
     onclick={toggle}
-    title="Quick Capture (Ctrl+Shift+N)"
+    title={t("quickCapture.tooltip")}
   >
     ✨
   </button>

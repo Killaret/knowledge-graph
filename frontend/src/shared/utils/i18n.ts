@@ -241,6 +241,33 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.cancel": "Cancel",
     "noteEditor.saveError": "Failed to save note. Please try again.",
 
+    // SmartGraph
+    "smartGraph.loading": "Loading visualization...",
+    "smartGraph.mode2D": "2D Mode (optimized)",
+
+    // QuickCapture
+    "quickCapture.title": "✨ Quick Capture",
+    "quickCapture.placeholder": "Capture your thought... (Ctrl+Enter to submit)",
+    "quickCapture.saved": "✓ Saved!",
+    "quickCapture.cancel": "Cancel",
+    "quickCapture.save": "Save",
+    "quickCapture.saving": "Saving...",
+    "quickCapture.tooltip": "Quick Capture (Ctrl+Shift+N)",
+
+    // HelpHotkeysModal
+    "helpHotkeys.title": "Keyboard Shortcuts",
+
+    // SplashScreen
+    "splash.ariaLabel": "Weltall Protocol - Knowledge Graph",
+    "splash.title": "Knowledge Graph",
+    "splash.subtitle": "Explore the cosmos of ideas",
+
+    // YandexLoginButton
+    "yandex.authUrlError": "Failed to get authorization URL",
+    "yandex.initError": "Error initializing Yandex login",
+    "yandex.connecting": "Connecting to Yandex...",
+    "yandex.signIn": "Sign in with Yandex",
+
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
     "toast.closeAria": "Close notification",
@@ -618,6 +645,33 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.create": "Создать",
     "noteEditor.cancel": "Отмена",
     "noteEditor.saveError": "Не удалось сохранить заметку. Попробуйте ещё раз.",
+
+    // SmartGraph
+    "smartGraph.loading": "Загрузка визуализации...",
+    "smartGraph.mode2D": "2D режим (оптимизирован)",
+
+    // QuickCapture
+    "quickCapture.title": "✨ Быстрая заметка",
+    "quickCapture.placeholder": "Запишите мысль... (Ctrl+Enter чтобы сохранить)",
+    "quickCapture.saved": "✓ Сохранено!",
+    "quickCapture.cancel": "Отмена",
+    "quickCapture.save": "Сохранить",
+    "quickCapture.saving": "Сохранение...",
+    "quickCapture.tooltip": "Быстрая заметка (Ctrl+Shift+N)",
+
+    // HelpHotkeysModal
+    "helpHotkeys.title": "Горячие клавиши",
+
+    // SplashScreen
+    "splash.ariaLabel": "Weltall Protocol - Knowledge Graph",
+    "splash.title": "Knowledge Graph",
+    "splash.subtitle": "Исследуйте космос идей",
+
+    // YandexLoginButton
+    "yandex.authUrlError": "Не удалось получить URL авторизации",
+    "yandex.initError": "Ошибка инициализации входа через Яндекс",
+    "yandex.connecting": "Подключение к Яндекс...",
+    "yandex.signIn": "Войти через Яндекс",
 
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",

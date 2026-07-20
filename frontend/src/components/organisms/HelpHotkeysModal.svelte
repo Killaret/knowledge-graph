@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
   interface Props {
     hotkeyLines: string[];
     helpContent?: string;
@@ -37,8 +42,8 @@
     tabindex="-1"
   >
     <div class="modal-header">
-      <h2>Keyboard Shortcuts</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
+      <h2>{t("helpHotkeys.title")}</h2>
+      <button class="close-btn" onclick={onClose} aria-label={t("close")}>×</button>
     </div>
     <div class="modal-body">
       {#if helpContent}
