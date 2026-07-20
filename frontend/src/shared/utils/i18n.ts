@@ -29,6 +29,11 @@ const messages: Record<Locale, Record<string, string>> = {
     "server.error": "Server error. Please try again later.",
     "network.error": "Connection error. Check your internet.",
     "invalid.credentials": "Invalid username or password.",
+    "graph.notFound": "Graph not found. The note may have been deleted.",
+    "graph.serverError": "Server error while loading the graph. Please try again later.",
+    "graph.networkError": "Could not connect to the server. Check your internet connection.",
+    "graph.loadError": "Graph loading error: {{message}}.",
+    "graph.unknownError": "Unknown error while loading the graph.",
 
     // Info messages
     "empty.graph":
@@ -89,6 +94,11 @@ const messages: Record<Locale, Record<string, string>> = {
     "server.error": "Ошибка сервера. Попробуйте позже.",
     "network.error": "Ошибка соединения. Проверьте интернет.",
     "invalid.credentials": "Неверный логин или пароль.",
+    "graph.notFound": "Граф не найден. Возможно, заметка была удалена.",
+    "graph.serverError": "Ошибка сервера при загрузке графа. Попробуйте позже.",
+    "graph.networkError": "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
+    "graph.loadError": "Ошибка загрузки графа: {{message}}.",
+    "graph.unknownError": "Неизвестная ошибка при загрузке графа.",
 
     // Info messages
     "empty.graph":

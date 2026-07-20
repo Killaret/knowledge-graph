@@ -1,6 +1,8 @@
-// API-клиент для получения данных графа (узлы и связи)
 import { api } from "./client";
 import { apiConfig } from "$shared/config";
+import { formatMessage } from "$shared/utils/i18n";
+
+const userLocale = "ru";
 
 function getGraphApi() {
   // В тестовом окружении (Vitest) используем полный URL напрямую
@@ -49,23 +51,23 @@ function handleGraphError(error: unknown, context: string): never {
 
   if (error instanceof Error) {
     if (error.message.includes("404") || error.message.includes("Not Found")) {
-      throw new Error("Граф не найден. Возможно, заметка была удалена.");
+      throw new Error(formatMessage("graph.notFound", userLocale));
     }
     if (error.message.includes("500")) {
-      throw new Error("Ошибка сервера при загрузке графа. Попробуйте позже.");
+      throw new Error(formatMessage("graph.serverError", userLocale));
     }
     if (
       error.message.includes("Failed to fetch") ||
       error.message.includes("NetworkError")
     ) {
-      throw new Error(
-        "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
-      );
+      throw new Error(formatMessage("graph.networkError", userLocale));
     }
-    throw new Error(`Ошибка загрузки графа: ${error.message}`);
+    throw new Error(
+      formatMessage("graph.loadError", userLocale, { message: error.message }),
+    );
   }
 
-  throw new Error("Неизвестная ошибка при загрузке графа");
+  throw new Error(formatMessage("graph.unknownError", userLocale));
 }
 
 // API response wrapper structure

@@ -14,7 +14,12 @@
     skipAuthMode,
   } from "$shared/stores/auth.svelte.js";
   import { startPreload } from "$shared/services/PreloadService";
-  import { achievementsStore } from "$shared/stores/achievements";
+  import {
+    state as achievementsState,
+    startPolling as startAchievementsPolling,
+    stopPolling as stopAchievementsPolling,
+    dismiss as dismissAchievement,
+  } from "$shared/stores/achievements.svelte.js";
   import { mode, getMessage } from "$shared/stores/lexicon-settings";
   import { Theme } from "$shared/lib/domain";
 
@@ -80,31 +85,25 @@
     }
   });
 
-  // Achievement notifications
+  // Achievement polling
   $effect(() => {
     if (!isAuthenticated()) return;
 
-    // Start polling for achievements when authenticated
-    achievementsStore.startPolling();
-
-    // Subscribe to new achievements
-    const unsubscribe = achievementsStore.subscribe(
-      ({ new: newAchievements }) => {
-        if (newAchievements.length > 0) {
-          // Show notification for each new achievement
-          newAchievements.forEach((achievement) => {
-            showAchievementNotification(achievement);
-            // Mark as seen after showing
-            achievementsStore.dismiss(achievement.id);
-          });
-        }
-      },
-    );
-
+    startAchievementsPolling();
     return () => {
-      achievementsStore.stopPolling();
-      unsubscribe();
+      stopAchievementsPolling();
     };
+  });
+
+  // Achievement notifications
+  $effect(() => {
+    const newAchievements = achievementsState.new;
+    if (newAchievements.length > 0) {
+      newAchievements.forEach((achievement) => {
+        showAchievementNotification(achievement);
+        dismissAchievement(achievement.id);
+      });
+    }
   });
 
   // Update galactic mode for toasts
