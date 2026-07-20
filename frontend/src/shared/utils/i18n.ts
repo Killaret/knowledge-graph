@@ -48,6 +48,22 @@ const messages: Record<Locale, Record<string, string>> = {
     "delete.confirm": 'Are you sure you want to delete "{{item}}"?',
     "leave.page": "Leaving the page will lose unsaved changes.",
 
+    // Auth labels and errors
+    "auth.signInTitle": "Sign in",
+    "auth.loginPasswordMode": "Login / Password",
+    "auth.apiKeyMode": "API Key",
+    "auth.apiKeyLabel": "API Key",
+    "auth.apiKeyPlaceholder": "Enter your API key",
+    "auth.loginLabel": "Login",
+    "auth.loginPlaceholder": "Enter login",
+    "auth.passwordLabel": "Password",
+    "auth.passwordPlaceholder": "Enter password",
+    "auth.signInButton": "Sign in",
+    "auth.signingInButton": "Signing in...",
+    "auth.invalidApiKey": "Invalid API key",
+    "auth.enterLoginAndPassword": "Please enter login and password",
+    "auth.invalidCredentials": "Invalid credentials",
+
     // UI labels
     "create.note": "Create Note",
     "edit.note": "Edit Profile",
@@ -112,6 +128,22 @@ const messages: Record<Locale, Record<string, string>> = {
     "unsaved.changes": "Есть несохраненные изменения.",
     "delete.confirm": 'Вы уверены, что хотите удалить "{{item}}"?',
     "leave.page": "При уходе со страницы изменения будут потеряны.",
+
+    // Auth labels and errors
+    "auth.signInTitle": "Вход",
+    "auth.loginPasswordMode": "Логин / Пароль",
+    "auth.apiKeyMode": "API-ключ",
+    "auth.apiKeyLabel": "API-ключ",
+    "auth.apiKeyPlaceholder": "Введите ваш API-ключ",
+    "auth.loginLabel": "Логин",
+    "auth.loginPlaceholder": "Введите логин",
+    "auth.passwordLabel": "Пароль",
+    "auth.passwordPlaceholder": "Введите пароль",
+    "auth.signInButton": "Войти",
+    "auth.signingInButton": "Вход...",
+    "auth.invalidApiKey": "Неверный API-ключ",
+    "auth.enterLoginAndPassword": "Введите логин и пароль",
+    "auth.invalidCredentials": "Неверные учётные данные",
 
     // UI labels
     "create.note": "Создать заметку",

@@ -9,6 +9,10 @@
     isLoading,
     error,
   } from "$shared/stores/auth.svelte.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // Check if API Key mode is enabled
   const apiKeyEnabled = import.meta.env.VITE_API_KEY_ENABLED === "true";
@@ -30,12 +34,12 @@
       if (success) {
         goto("/");
       } else {
-        localError = error() || "Invalid API key";
+        localError = error() || t("auth.invalidApiKey");
       }
     } else {
       // Normal login
       if (!loginValue.trim() || !password) {
-        localError = "Please enter login and password";
+        localError = t("auth.enterLoginAndPassword");
         return;
       }
 
@@ -43,14 +47,14 @@
       if (success) {
         goto("/");
       } else {
-        localError = error() || "Invalid credentials";
+        localError = error() || t("auth.invalidCredentials");
       }
     }
   }
 </script>
 
 <form class="login-form" onsubmit={handleSubmit}>
-  <h2>Sign in</h2>
+  <h2>{t("auth.signInTitle")}</h2>
 
   {#if apiKeyEnabled}
     <div class="auth-mode-toggle">
@@ -60,7 +64,7 @@
         class:active={!useApiKey}
         onclick={() => (useApiKey = false)}
       >
-        Login / Password
+        {t("auth.loginPasswordMode")}
       </button>
       <button
         type="button"
@@ -68,43 +72,43 @@
         class:active={useApiKey}
         onclick={() => (useApiKey = true)}
       >
-        API Key
+        {t("auth.apiKeyMode")}
       </button>
     </div>
   {/if}
 
   {#if useApiKey && apiKeyEnabled}
     <div class="form-group">
-      <label for="api-key">API Key</label>
+      <label for="api-key">{t("auth.apiKeyLabel")}</label>
       <input
         type="password"
         id="api-key"
         bind:value={apiKeyValue}
-        placeholder="Enter your API key"
+        placeholder={t("auth.apiKeyPlaceholder")}
         required
       />
     </div>
   {:else}
     <div class="form-group">
-      <label for="login">Login</label>
+      <label for="login">{t("auth.loginLabel")}</label>
       <input
         type="text"
         id="login"
         name="login"
         bind:value={loginValue}
-        placeholder="Enter login"
+        placeholder={t("auth.loginPlaceholder")}
         required
       />
     </div>
 
     <div class="form-group">
-      <label for="password">Password</label>
+      <label for="password">{t("auth.passwordLabel")}</label>
       <input
         type="password"
         id="password"
         name="password"
         bind:value={password}
-        placeholder="Enter password"
+        placeholder={t("auth.passwordPlaceholder")}
         required
       />
     </div>
@@ -115,7 +119,7 @@
   {/if}
 
   <Button type="submit" variant="primary" disabled={isLoading()}>
-    {isLoading() ? "Signing in..." : "Sign in"}
+    {isLoading() ? t("auth.signingInButton") : t("auth.signInButton")}
   </Button>
 
   <div class="form-links">

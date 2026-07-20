@@ -18,10 +18,18 @@ import (
 
 // SetupTestDB поднимает контейнер PostgreSQL и возвращает подключение GORM
 func SetupTestDB(t *testing.T) (*gorm.DB, func()) {
+	return setupTestDBWithImage(t, "postgres:15-alpine")
+}
+
+// SetupTestVectorDB поднимает контейнер PostgreSQL с pgvector и возвращает подключение GORM
+func SetupTestVectorDB(t *testing.T) (*gorm.DB, func()) {
+	return setupTestDBWithImage(t, "pgvector/pgvector:pg16")
+}
+
+func setupTestDBWithImage(t *testing.T, image string) (*gorm.DB, func()) {
 	ctx := context.Background()
 
-	// Запускаем контейнер PostgreSQL
-	pgContainer, err := pgcontainer.Run(ctx, "postgres:15-alpine",
+	pgContainer, err := pgcontainer.Run(ctx, image,
 		pgcontainer.WithDatabase("testdb"),
 		pgcontainer.WithUsername("test"),
 		pgcontainer.WithPassword("test"),
