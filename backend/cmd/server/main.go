@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
 	_ "knowledge-graph/docs"
 
@@ -50,6 +52,7 @@ const (
 
 func main() {
 	ctx := context.Background()
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Printf("FATAL: Failed to load configuration: %v", err)
@@ -61,235 +64,28 @@ func main() {
 		cfg.RecommendationDepth, cfg.RecommendationDecay,
 		cfg.RecommendationCacheTTL, cfg.EmbeddingSimilarityLimit, cfg.GraphLoadDepth)
 
-	database, err := db.Connect(cfg.DatabaseURL)
+	database, err := connectDatabaseWithRetry(ctx, cfg)
 	if err != nil {
-		retryDelay := cfg.DatabaseRetryDelaySeconds
-		log.Printf("CRITICAL: database connection failed: %v, retrying in %ds...", err, retryDelay)
-		time.Sleep(time.Duration(retryDelay) * time.Second)
-		database, err = db.Connect(cfg.DatabaseURL)
-		if err != nil {
-			log.Fatalf("FATAL: database connection failed after retry: %v", err)
-		}
-	}
-	log.Println("Connected to PostgreSQL")
-
-	// Apply migrations
-	migrationsDir := defaultMigrationsDir
-	if err := postgres.RunMigrations(database, migrationsDir); err != nil {
-		log.Printf("ERROR: Failed to run migrations: %v", err)
-		log.Printf("WARNING: Continuing without migrations - database may be inconsistent")
-	} else {
-		log.Println("Migrations applied successfully")
+		log.Fatalf("FATAL: database connection failed: %v", err)
 	}
 
-	// Redis with connection pool settings
-	redisAddr := cfg.RedisURL
-	log.Printf("Redis address: %s", redisAddr)
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:            redisAddr,
-		PoolSize:        10,              // Maximum number of connections
-		MinIdleConns:    3,               // Minimum number of idle connections
-		PoolTimeout:     4 * time.Second, // Timeout for getting connection from pool
-		ConnMaxLifetime: 5 * time.Minute, // Max lifetime of a connection (go-redis v9 API)
-		ConnMaxIdleTime: 1 * time.Minute, // Max idle time before closing a connection
-	})
-	defer func() {
-		if err := redisClient.Close(); err != nil {
-			log.Printf("Error closing redis client: %v", err)
-		}
-	}()
+	redisClient := newRedisClient(cfg)
+	mongoClient := newMongoClient(ctx, cfg)
+	taskQueue := newAsynqClient(cfg)
 
-	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, ConnMaxLifetime=5m, ConnMaxIdleTime=1m")
-
-	// Redis flush on startup if configured
-	if cfg.RedisFlushOnStartup {
-		keysBefore, _ := redisClient.DBSize(ctx).Result()
-		log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
-		if err := redisClient.FlushDB(ctx).Err(); err != nil {
-			log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
-		} else {
-			keysAfter, _ := redisClient.DBSize(ctx).Result()
-			log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
-		}
-	} else {
-		log.Printf("[Cache] Redis flush on startup is disabled")
-	}
-
-	// MongoDB client (optional - required for draft feature)
-	var mongoClient *mongo.Client
-	if cfg.MongoDBURL != "" {
-		var err error
-		mongoClient, err = mongo.NewClient(ctx, cfg.MongoDBURL, cfg.MongoDBDatabase)
-		if err != nil {
-			log.Printf("[MongoDB] WARNING: failed to connect to MongoDB at %s: %v", cfg.MongoDBURL, err)
-			mongoClient = nil
-		} else {
-			log.Printf("[MongoDB] Connected to MongoDB at %s/%s", cfg.MongoDBURL, cfg.MongoDBDatabase)
-			defer func() {
-				if err := mongoClient.Close(ctx); err != nil {
-					log.Printf("[MongoDB] Error closing MongoDB client: %v", err)
-				}
-			}()
-		}
-	} else {
-		log.Printf("[MongoDB] MongoDB URL not configured, draft feature disabled")
-	}
-
-	// Graceful shutdown
-	defer func() {
-		log.Println("Server shutdown, closing database connection...")
-		if database != nil {
-			sqlDB, _ := database.DB()
-			if sqlDB != nil {
-				sqlDB.Close()
-			}
-		}
-	}()
-
-	noteRepo := postgres.NewNoteRepository(database, redisClient)
-	linkRepo := postgres.NewLinkRepository(database)
-	embeddingRepo := postgres.NewEmbeddingRepository(database)
-
-	// Draft service and handler (only if MongoDB is available)
-	var draftHandler *drafthandler.Handler
-	if mongoClient != nil {
-		draftRepo := mongo.NewDraftRepository(mongoClient)
-		draftService := draftApp.NewService(draftRepo, noteRepo, "")
-		draftHandler = drafthandler.NewHandler(draftService)
-		log.Println("[Draft] Draft service initialized")
-	} else {
-		log.Println("[Draft] Draft service disabled (MongoDB unavailable)")
-	}
-
-	// Yandex.Disk backup service
-	var yandexBackupService *cloud.YandexBackupService
-	// Task queue
-	var taskQueue common.TaskQueue
-	asynqClient, err := queue.NewAsynqClient(redisAddr)
-	if err != nil {
-		log.Printf("WARNING: failed to create asynq client: %v", err)
-	} else {
-		log.Printf("Asynq client created successfully")
-		taskQueue = asynqClient
-		defer func() {
-			if err := asynqClient.Close(); err != nil {
-				log.Printf("Error closing asynq client: %v", err)
-			}
-		}()
-		if cfg.BackupCloudProvider == "yandex" && cfg.BackupYandexOAuthToken != "" {
-			yandexCfg := cloud.YandexConfig{
-				OAuthToken:   cfg.BackupYandexOAuthToken,
-				BackupFolder: cfg.BackupYandexFolder,
-				MaxBackups:   cfg.BackupYandexMaxBackups,
-			}
-			yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
-			if err != nil {
-				log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
-			} else {
-				log.Printf("Yandex.Disk backup service initialized successfully")
-			}
-		}
-	}
-
-	// Graph loaders
-	linkLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
-	embeddingLoader := appGraph.NewEmbeddingNeighborLoader(embeddingRepo, cfg.EmbeddingSimilarityLimit)
-
-	compositeLoader := appGraph.NewCompositeNeighborLoaderWithWeights(
-		[]graphDomain.NeighborLoader{linkLoader, embeddingLoader},
-		[]float64{cfg.RecommendationAlpha, cfg.RecommendationBeta},
-	)
-
-	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay, cfg.BFSAggregation, cfg.BFSNormalize)
-
-	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
-
-	// Recommendation repository and affected notes service
-	recRepo := postgres.NewRecommendationRepository(database)
-	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
-	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
-
-	// Achievement service
-	achievementRepo := postgres.NewAchievementRepository(database)
-	achievementEngine := achievement.NewEngine(database)
-	userSettingsRepo := postgres.NewUserSettingsRepository(database)
-	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
-	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)
-	achievementHandler := achievementhandler.NewHandler(achievementService)
-
-	// Graph cache
-	graphCache := cache.NewGraphCache(redisClient)
-
-	// Clear graph cache on startup
-	log.Printf("[Cache] Clearing graph cache on startup...")
-	if err := graphCache.InvalidateAll(ctx); err != nil {
-		log.Printf("[Cache] WARNING: failed to clear graph cache on startup: %v", err)
-	} else {
-		log.Printf("[Cache] SUCCESS: Graph cache cleared on startup")
-	}
-
-	// Handlers with new parameters
-	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
-	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
-	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
-	tagRepo := postgres.NewTagRepository(database)
-	tagHandler := taghandler.New(tagRepo, noteRepo)
-	// Backup handler
-	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
-
-	// Auth handler
-	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
-	tokenStore := auth.NewRedisTokenStore(redisClient)
-	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
-
-	// User handler
-	passwordConfig := &auth.PasswordConfig{
-		Time:    3,
-		Memory:  65536,
-		Threads: 4,
-		KeyLen:  32,
-	}
-	passwordPolicy := auth.DefaultPasswordPolicy()
-	userHandler := userhandler.NewHandler(database, passwordConfig, passwordPolicy)
-
-	// Settings handler
-	settingsHandler := settingshandler.NewHandler(settingsService)
-
-	// Share handler
-	shareHandler := sharehandler.NewHandler(database)
-
-	// Router setup with all middleware and routes
-	writeLimiter := newWriteLimiter(cfg)
-	jwtConfig := newJWTConfig(jwtManager, tokenStore)
-	apiKeyConfig := newAPIKeyConfig(database, cfg.APIKeyEnabled, cfg.StaticAPIKey)
-	skipAuthConfig := middleware.DefaultSkipAuthConfig(cfg.SkipAuth)
-
-	r := setupRouter(
-		noteHandler,
-		linkHandler,
-		graphHandler,
-		tagHandler,
-		achievementHandler,
-		authHandler,
-		userHandler,
-		backupHandler,
-		settingsHandler,
-		shareHandler,
-		draftHandler,
+	srv, cleanup, err := run(
+		ctx,
 		cfg,
 		database,
 		redisClient,
-		writeLimiter,
-		jwtConfig,
-		apiKeyConfig,
-		skipAuthConfig,
+		mongoClient,
+		taskQueue,
+		defaultMigrationsDir,
 	)
-
-	// Create HTTP server
-	srv := &http.Server{
-		Addr:    ":" + cfg.ServerPort,
-		Handler: r,
+	if err != nil {
+		log.Fatalf("FATAL: failed to build server: %v", err)
 	}
+	defer cleanup()
 
 	// Graceful shutdown channel (declared early for goroutines)
 	quit := make(chan os.Signal, 1)
@@ -344,12 +140,284 @@ func main() {
 
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
 	}
 
 	log.Println("Server exited gracefully")
+}
+
+// run wires all application dependencies and returns an HTTP server ready to start.
+// All external resources (database, Redis, MongoDB, task queue) are injected from main
+// so that run can be covered with unit tests using mocks/fakes.
+func run(
+	ctx context.Context,
+	cfg *config.Config,
+	database *gorm.DB,
+	redisClient *redis.Client,
+	mongoClient *mongo.Client,
+	taskQueue common.TaskQueue,
+	migrationsDir string,
+) (*http.Server, func(), error) {
+	if cfg == nil {
+		return nil, nil, fmt.Errorf("config is nil")
+	}
+	if database == nil {
+		return nil, nil, fmt.Errorf("database is nil")
+	}
+
+	// Apply migrations (non-fatal)
+	if migrationsDir != "" {
+		if err := postgres.RunMigrations(database, migrationsDir); err != nil {
+			log.Printf("ERROR: Failed to run migrations: %v", err)
+			log.Printf("WARNING: Continuing without migrations - database may be inconsistent")
+		} else {
+			log.Println("Migrations applied successfully")
+		}
+	}
+
+	noteRepo := postgres.NewNoteRepository(database, redisClient)
+	linkRepo := postgres.NewLinkRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database)
+
+	// Draft service and handler (only if MongoDB is available)
+	var draftHandler *drafthandler.Handler
+	if mongoClient != nil {
+		draftRepo := mongo.NewDraftRepository(mongoClient)
+		draftService := draftApp.NewService(draftRepo, noteRepo, "")
+		draftHandler = drafthandler.NewHandler(draftService)
+		log.Println("[Draft] Draft service initialized")
+	} else {
+		log.Println("[Draft] Draft service disabled (MongoDB unavailable)")
+	}
+
+	// Yandex.Disk backup service
+	var yandexBackupService *cloud.YandexBackupService
+	if taskQueue != nil && cfg.BackupCloudProvider == "yandex" && cfg.BackupYandexOAuthToken != "" {
+		yandexCfg := cloud.YandexConfig{
+			OAuthToken:   cfg.BackupYandexOAuthToken,
+			BackupFolder: cfg.BackupYandexFolder,
+			MaxBackups:   cfg.BackupYandexMaxBackups,
+		}
+		var err error
+		yandexBackupService, err = cloud.NewYandexBackupService(yandexCfg)
+		if err != nil {
+			log.Printf("WARNING: failed to create Yandex.Disk backup service: %v", err)
+		} else {
+			log.Printf("Yandex.Disk backup service initialized successfully")
+		}
+	}
+
+	// Graph loaders
+	linkLoader := appGraph.NewNeighborLoader(linkRepo, noteRepo)
+	embeddingLoader := appGraph.NewEmbeddingNeighborLoader(embeddingRepo, cfg.EmbeddingSimilarityLimit)
+
+	compositeLoader := appGraph.NewCompositeNeighborLoaderWithWeights(
+		[]graphDomain.NeighborLoader{linkLoader, embeddingLoader},
+		[]float64{cfg.RecommendationAlpha, cfg.RecommendationBeta},
+	)
+
+	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay, cfg.BFSAggregation, cfg.BFSNormalize)
+
+	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, redisClient, cfg.RecommendationCacheTTL)
+
+	// Recommendation repository and affected notes service
+	recRepo := postgres.NewRecommendationRepository(database)
+	affectedNotesSvc := recommendation.NewAffectedNotesService(recRepo)
+	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
+
+	// Achievement service
+	achievementRepo := postgres.NewAchievementRepository(database)
+	achievementEngine := achievement.NewEngine(database)
+	userSettingsRepo := postgres.NewUserSettingsRepository(database)
+	settingsService := userApp.NewSettingsService(userSettingsRepo, redisClient)
+	achievementService := achievement.NewService(achievementEngine, achievementRepo, settingsService, redisClient)
+	achievementHandler := achievementhandler.NewHandler(achievementService)
+
+	// Graph cache (nil when Redis is unavailable)
+	var graphCache *cache.GraphCache
+	if redisClient != nil {
+		graphCache = cache.NewGraphCache(redisClient)
+		log.Printf("[Cache] Clearing graph cache on startup...")
+		if err := graphCache.InvalidateAll(ctx); err != nil {
+			log.Printf("[Cache] WARNING: failed to clear graph cache on startup: %v", err)
+		} else {
+			log.Printf("[Cache] SUCCESS: Graph cache cleared on startup")
+		}
+	}
+
+	// Handlers with new parameters
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, redisClient, cfg, graphCache, achievementService)
+	linkHandler := linkhandler.New(linkRepo, noteRepo, taskQueue, affectedNotesSvc, taskDelay, achievementService, graphCache)
+	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
+	tagRepo := postgres.NewTagRepository(database)
+	tagHandler := taghandler.New(tagRepo, noteRepo)
+	// Backup handler
+	backupHandler := backphandler.NewHandler(cfg, yandexBackupService, taskQueue)
+
+	// Auth handler
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
+	var tokenStore *auth.RedisTokenStore
+	if redisClient != nil {
+		tokenStore = auth.NewRedisTokenStore(redisClient)
+	}
+	authHandler := authhandler.NewHandler(database, jwtManager, tokenStore, cfg)
+
+	// User handler
+	passwordConfig := &auth.PasswordConfig{
+		Time:    3,
+		Memory:  65536,
+		Threads: 4,
+		KeyLen:  32,
+	}
+	passwordPolicy := auth.DefaultPasswordPolicy()
+	userHandler := userhandler.NewHandler(database, passwordConfig, passwordPolicy)
+
+	// Settings handler
+	settingsHandler := settingshandler.NewHandler(settingsService)
+
+	// Share handler
+	shareHandler := sharehandler.NewHandler(database)
+
+	// Router setup with all middleware and routes
+	writeLimiter := newWriteLimiter(cfg)
+	jwtConfig := newJWTConfig(jwtManager, tokenStore)
+	apiKeyConfig := newAPIKeyConfig(database, cfg.APIKeyEnabled, cfg.StaticAPIKey)
+	skipAuthConfig := middleware.DefaultSkipAuthConfig(cfg.SkipAuth)
+
+	r := setupRouter(
+		noteHandler,
+		linkHandler,
+		graphHandler,
+		tagHandler,
+		achievementHandler,
+		authHandler,
+		userHandler,
+		backupHandler,
+		settingsHandler,
+		shareHandler,
+		draftHandler,
+		cfg,
+		database,
+		redisClient,
+		writeLimiter,
+		jwtConfig,
+		apiKeyConfig,
+		skipAuthConfig,
+	)
+
+	// Create HTTP server
+	srv := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: r,
+	}
+
+	cleanup := func() {
+		if asynq, ok := taskQueue.(interface{ Close() error }); ok && asynq != nil {
+			if err := asynq.Close(); err != nil {
+				log.Printf("Error closing asynq client: %v", err)
+			}
+		}
+		if mongoClient != nil {
+			if err := mongoClient.Close(ctx); err != nil {
+				log.Printf("[MongoDB] Error closing MongoDB client: %v", err)
+			}
+		}
+		if redisClient != nil {
+			if err := redisClient.Close(); err != nil {
+				log.Printf("Error closing redis client: %v", err)
+			}
+		}
+		if database != nil {
+			if sqlDB, err := database.DB(); err == nil && sqlDB != nil {
+				sqlDB.Close()
+			}
+		}
+	}
+
+	return srv, cleanup, nil
+}
+
+func connectDatabaseWithRetry(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
+	database, err := db.Connect(cfg.DatabaseURL)
+	if err != nil {
+		retryDelay := cfg.DatabaseRetryDelaySeconds
+		log.Printf("CRITICAL: database connection failed: %v, retrying in %ds...", err, retryDelay)
+		time.Sleep(time.Duration(retryDelay) * time.Second)
+		database, err = db.Connect(cfg.DatabaseURL)
+		if err != nil {
+			return nil, fmt.Errorf("database connection failed after retry: %w", err)
+		}
+	}
+	log.Println("Connected to PostgreSQL")
+	return database, nil
+}
+
+func newRedisClient(cfg *config.Config) *redis.Client {
+	if cfg.RedisURL == "" {
+		log.Println("[Redis] Redis URL not configured")
+		return nil
+	}
+
+	redisAddr := cfg.RedisURL
+	log.Printf("Redis address: %s", redisAddr)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:            redisAddr,
+		PoolSize:        10,
+		MinIdleConns:    3,
+		PoolTimeout:     4 * time.Second,
+		ConnMaxLifetime: 5 * time.Minute,
+		ConnMaxIdleTime: 1 * time.Minute,
+	})
+
+	// Redis flush on startup if configured
+	if cfg.RedisFlushOnStartup {
+		ctx := context.Background()
+		keysBefore, _ := redisClient.DBSize(ctx).Result()
+		log.Printf("[Cache] Redis keys before flush: %d", keysBefore)
+		if err := redisClient.FlushDB(ctx).Err(); err != nil {
+			log.Printf("[Cache] WARNING: failed to flush Redis cache on startup: %v", err)
+		} else {
+			keysAfter, _ := redisClient.DBSize(ctx).Result()
+			log.Printf("[Cache] SUCCESS: Redis cache flushed on startup (keys after: %d)", keysAfter)
+		}
+	} else {
+		log.Printf("[Cache] Redis flush on startup is disabled")
+	}
+
+	log.Println("Redis configured with connection pool: PoolSize=10, MinIdle=3, ConnMaxLifetime=5m, ConnMaxIdleTime=1m")
+	return redisClient
+}
+
+func newMongoClient(ctx context.Context, cfg *config.Config) *mongo.Client {
+	if cfg.MongoDBURL == "" {
+		log.Printf("[MongoDB] MongoDB URL not configured, draft feature disabled")
+		return nil
+	}
+
+	mongoClient, err := mongo.NewClient(ctx, cfg.MongoDBURL, cfg.MongoDBDatabase)
+	if err != nil {
+		log.Printf("[MongoDB] WARNING: failed to connect to MongoDB at %s: %v", cfg.MongoDBURL, err)
+		return nil
+	}
+	log.Printf("[MongoDB] Connected to MongoDB at %s/%s", cfg.MongoDBURL, cfg.MongoDBDatabase)
+	return mongoClient
+}
+
+func newAsynqClient(cfg *config.Config) common.TaskQueue {
+	if cfg.RedisURL == "" {
+		log.Println("[Asynq] Redis URL not configured, task queue disabled")
+		return nil
+	}
+
+	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL)
+	if err != nil {
+		log.Printf("WARNING: failed to create asynq client: %v", err)
+		return nil
+	}
+	log.Printf("Asynq client created successfully")
+	return asynqClient
 }
