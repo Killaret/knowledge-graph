@@ -94,7 +94,7 @@ describe("auth API", () => {
   });
 
   describe("refreshTokens", () => {
-    it("should make POST request to refresh endpoint", async () => {
+    it("should make POST request to refresh endpoint without a body", async () => {
       const mockResponse = {
         access_token: "newaccess123",
         refresh_token: "newrefresh123",
@@ -102,28 +102,21 @@ describe("auth API", () => {
       const mockJson = vi.fn().mockResolvedValue(mockResponse);
       mockPost.mockReturnValue({ json: mockJson });
 
-      const result = await refreshTokens("refresh123");
+      const result = await refreshTokens();
 
-      expect(mockPost).toHaveBeenCalledWith("v1/auth/refresh", {
-        json: { refresh_token: "refresh123" },
-      });
+      expect(mockPost).toHaveBeenCalledWith("v1/auth/refresh");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("logout", () => {
-    it("should make POST request to logout endpoint", async () => {
+    it("should make POST request to logout endpoint without a body", async () => {
       const mockJson = vi.fn().mockResolvedValue({});
       mockPost.mockReturnValue({ json: mockJson });
 
-      await logout("refresh123");
+      await logout();
 
-      expect(mockPost).toHaveBeenCalledWith("v1/auth/logout", {
-        json: { refresh_token: "refresh123" },
-        headers: {
-          "X-Refresh-Token": "refresh123",
-        },
-      });
+      expect(mockPost).toHaveBeenCalledWith("v1/auth/logout");
     });
   });
 

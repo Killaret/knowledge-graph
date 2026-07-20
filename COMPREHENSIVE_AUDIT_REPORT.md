@@ -20,8 +20,9 @@
 - ✅ `console.log/warn/info` в production-коде обёрнуты в `if (import.meta.env.DEV)` или удалены; центральный `logger.ts` теперь не пишет в консоль в production.
 - ✅ `.env.example` дополнен переменными test-стека.
 - ✅ README/TESTING.md приведены к актуальным портам и команде `docker compose`.
+- ✅ Access/refresh токены перенесены из `localStorage` в httpOnly cookies.
 
-**Оставшийся техдолг (HIGH/MEDIUM/LOW):** httpOnly cookies для токенов (предложен план), 46 `any` в TypeScript, TODO/FIXME без Issue, FSD-границы, madge, tippy.js default import warning, актуализация AGENTS.md/.windsurfrules.
+**Оставшийся техдолг (HIGH/MEDIUM/LOW):** 46 `any` в TypeScript, TODO/FIXME без Issue, FSD-границы, madge, tippy.js default import warning, актуализация AGENTS.md/.windsurfrules.
 
 ---
 
@@ -232,7 +233,7 @@
 | Секреты в коде | **FAIL** | `knowledge-graph.config.json:79` — `"jwt_secret": "change-me-in-production"`. `backend/internal/config/config.go:430` — fallback JWT_SECRET `"change-me-in-production"`. Это дефолтный секрет в committed артефактах. |
 | `.env` в `.gitignore` | **PASS** | `.env` и производные игнорируются. |
 | `SKIP_AUTH` в production | **WARNING** | `docker-compose.personal.yml` hardcoded `SKIP_AUTH: "true"`. `.env.example` имеет закомментированный `#SKIP_AUTH=true`. Согласно правилам, `SKIP_AUTH` должен работать только в dev/test. |
-| Хранение токенов | **WARNING** | Access/refresh токены хранятся в `localStorage` (`auth.svelte.ts`), что уязвимо для XSS. Рекомендуется httpOnly cookie. |
+| Хранение токенов | **PASS** | Access/refresh токены хранятся в httpOnly cookies (`access_token`/`refresh_token`), устанавливаемых бэкендом; frontend больше не использует `localStorage` для JWT. |
 | Rate limiting | **PASS** | Middleware `internal/interfaces/api/middleware/ratelimit.go` реализован и подключён. |
 
 ---
@@ -252,7 +253,7 @@
 6. **`console.log` в production-коде**. 76 вызовов, многие не обёрнуты в `if (import.meta.env.DEV)`. Загрязняют логи и замедляют рендер.
 7. **Битые ссылки в документации**. README → `docs/CONFIGURATION.md`, CHANGELOG → `docs/ARCHITECTURE.md` / `docs/CONFIGURATION.md`.
 8. **`docker-compose.personal.yml` hardcoded `SKIP_AUTH: "true"`**. Необходимо явно ограничить `SKIP_AUTH` dev/test окружениями.
-9. **Токены в `localStorage`**. Риск XSS; рассмотреть переход на httpOnly cookies.
+9. **Токены в `localStorage`** ✅. Переведены в httpOnly cookies; frontend не хранит JWT в `localStorage`.
 
 ### MEDIUM — исправить в ближайшее время
 
@@ -289,7 +290,7 @@
 3. **Security:**
    - Удалить/очистить `jwt_secret` из `knowledge-graph.config.json`; сделать `JWT_SECRET` required env var.
    - Убрать hardcoded `SKIP_AUTH: "true"` из `docker-compose.personal.yml`; передавать через `.env` и ограничивать dev/test.
-   - Рассмотреть httpOnly cookies для токенов.
+   - ✅ httpOnly cookies для токенов реализованы.
 
 4. **Code style:**
    - Выполнить `npm run format` и `gofmt -w ./...`.

@@ -73,12 +73,7 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
       expires_at: "2024-12-31T23:59:59Z",
     });
 
-    vi.mocked(authApi.refreshTokens).mockResolvedValue({
-      access_token: "new_access_token",
-      refresh_token: "new_refresh_token",
-      token_type: "Bearer",
-      expires_at: "2024-12-31T23:59:59Z",
-    });
+    vi.mocked(authApi.refreshTokens).mockRejectedValue(new Error("No session"));
 
     vi.mocked(usersApi.getMe).mockResolvedValue({
       id: "1",
@@ -156,16 +151,6 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
 
       // clearPreloadCache не должен вызываться при входе
       expect(preloadMocks.clearPreloadCache).not.toHaveBeenCalled();
-
-      // localStorage должен быть обновлен
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "access_token",
-        "test_access_token",
-      );
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "refresh_token",
-        "test_refresh_token",
-      );
     });
 
     it("should clear cache on failed login", async () => {
@@ -189,14 +174,7 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
 
   describe("Auth Initialization Integration", () => {
     it("should not start preload when user is already authenticated", async () => {
-      // Устанавливаем токены в localStorage
-      localStorageMock.getItem.mockImplementation((key) => {
-        if (key === "access_token") return "existing_access_token";
-        if (key === "refresh_token") return "existing_refresh_token";
-        return null;
-      });
-
-      // Мокаем успешное обновление токена
+      // Мокаем успешное обновление токена (refresh передаётся через HttpOnly cookie)
       vi.mocked(authApi.refreshTokens).mockResolvedValue({
         access_token: "new_access_token",
         refresh_token: "new_refresh_token",

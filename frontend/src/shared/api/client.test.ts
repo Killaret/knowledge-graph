@@ -7,7 +7,6 @@ vi.mock("$app/navigation", () => ({
 }));
 
 vi.mock("$shared/stores/auth.svelte", () => ({
-  getAccessToken: vi.fn(() => "test-token"),
   getApiKey: vi.fn(() => null),
   refreshAccessToken: vi.fn(() => Promise.resolve(true)),
 }));

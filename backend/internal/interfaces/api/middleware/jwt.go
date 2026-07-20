@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -25,6 +24,7 @@ type JWTConfig struct {
 	SkipPaths   []string
 	HeaderName  string
 	TokenLookup string
+	CookieName  string
 }
 
 // DefaultJWTConfig returns default JWT configuration
@@ -34,6 +34,7 @@ func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore auth.TokenStore) *
 		TokenStore:  tokenStore,
 		HeaderName:  "Authorization",
 		TokenLookup: "header",
+		CookieName:  "access_token",
 		SkipPaths: []string{
 			"/api/v1/auth/login",
 			"/api/v1/auth/register",
@@ -64,8 +65,7 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 
 		// Skip if user already exists in context (set by SkipAuth middleware)
 		if userID, exists := GetUserID(c); exists {
-			// Debug log to verify SkipAuth is working
-			fmt.Printf("[DEBUG] JWTAuth: SkipAuth user found in context: %s\n", userID.String())
+			_ = userID
 			c.Next()
 			return
 		}
@@ -128,6 +128,13 @@ func extractToken(c *gin.Context, config *JWTConfig) (string, error) {
 		}
 		// If no Bearer prefix, assume it's the token itself
 		return authHeader, nil
+	}
+
+	// Try HttpOnly cookie
+	if config.CookieName != "" {
+		if cookie, err := c.Cookie(config.CookieName); err == nil && cookie != "" {
+			return cookie, nil
+		}
 	}
 
 	// Try query parameter

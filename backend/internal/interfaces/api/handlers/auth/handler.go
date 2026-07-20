@@ -19,6 +19,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	accessTokenCookieName  = "access_token"
+	refreshTokenCookieName = "refresh_token"
+)
+
 // Handler handles authentication requests
 type Handler struct {
 	userRepo         domainuser.Repository
@@ -58,6 +63,36 @@ func NewHandler(
 		},
 		cfg: cfg,
 	}
+}
+
+// isSecureRequest returns true if the request is served over HTTPS.
+// It checks TLS directly or the X-Forwarded-Proto header set by a reverse proxy.
+func isSecureRequest(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	return c.Request.Header.Get("X-Forwarded-Proto") == "https"
+}
+
+// setAuthCookies sets HttpOnly cookies for access and refresh tokens.
+// The cookies are marked Secure for HTTPS and SameSite=Lax.
+func (h *Handler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
+	secure := isSecureRequest(c)
+	maxAgeAccess := int(h.cfg.JWTAccessTTL.Seconds())
+	maxAgeRefresh := int(h.cfg.JWTRefreshTTL.Seconds())
+
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(accessTokenCookieName, accessToken, maxAgeAccess, "/", "", secure, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refreshTokenCookieName, refreshToken, maxAgeRefresh, "/", "", secure, true)
+}
+
+// clearAuthCookies clears the auth cookies.
+func (h *Handler) clearAuthCookies(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(accessTokenCookieName, "", -1, "/", "", false, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refreshTokenCookieName, "", -1, "/", "", false, true)
 }
 
 // RegisterRequest represents a registration request
@@ -184,6 +219,8 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	h.setAuthCookies(c, tokens.AccessToken, tokens.RefreshToken)
+
 	c.JSON(http.StatusCreated, TokenResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
@@ -246,6 +283,8 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	h.setAuthCookies(c, tokens.AccessToken, tokens.RefreshToken)
+
 	c.JSON(http.StatusOK, TokenResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
@@ -261,19 +300,34 @@ func (h *Handler) Login(c *gin.Context) {
 	})
 }
 
+// refreshTokenFromRequest reads refresh token from the request body or HttpOnly cookie.
+func (h *Handler) refreshTokenFromRequest(c *gin.Context) string {
+	var req RefreshRequest
+	if err := c.ShouldBindJSON(&req); err == nil && req.RefreshToken != "" {
+		return req.RefreshToken
+	}
+
+	cookie, err := c.Cookie(refreshTokenCookieName)
+	if err == nil && cookie != "" {
+		return cookie
+	}
+
+	return ""
+}
+
 // Refresh handles token refresh
 func (h *Handler) Refresh(c *gin.Context) {
 	middleware.SetDBEntity(c, "refresh_tokens")
 	middleware.SetDBOperation(c, "read")
 
-	var req RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	refreshToken := h.refreshTokenFromRequest(c)
+	if refreshToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token is required"})
 		return
 	}
 
 	// Validate refresh token
-	claims, err := h.jwtManager.ValidateToken(req.RefreshToken, "refresh")
+	claims, err := h.jwtManager.ValidateToken(refreshToken, "refresh")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 		return
@@ -283,7 +337,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 	// Check if blacklisted
 	if h.tokenStore != nil {
-		blacklisted, err := h.tokenStore.IsTokenBlacklisted(ctx, req.RefreshToken)
+		blacklisted, err := h.tokenStore.IsTokenBlacklisted(ctx, refreshToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to validate token"})
 			return
@@ -294,7 +348,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 		}
 
 		// Validate in cache
-		_, err = h.tokenStore.ValidateRefreshToken(ctx, req.RefreshToken)
+		_, err = h.tokenStore.ValidateRefreshToken(ctx, refreshToken)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 			return
@@ -333,8 +387,10 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 	// Revoke old refresh token
 	if h.tokenStore != nil {
-		_ = h.tokenStore.RevokeRefreshToken(ctx, req.RefreshToken, h.cfg.JWTRefreshTTL)
+		_ = h.tokenStore.RevokeRefreshToken(ctx, refreshToken, h.cfg.JWTRefreshTTL)
 	}
+
+	h.setAuthCookies(c, tokens.AccessToken, tokens.RefreshToken)
 
 	c.JSON(http.StatusOK, TokenResponse{
 		AccessToken:  tokens.AccessToken,
@@ -351,17 +407,41 @@ func (h *Handler) Refresh(c *gin.Context) {
 	})
 }
 
+// accessTokenFromRequest reads access token from the Authorization header or HttpOnly cookie.
+func (h *Handler) accessTokenFromRequest(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 {
+			return parts[1]
+		}
+		return authHeader
+	}
+
+	cookie, err := c.Cookie(accessTokenCookieName)
+	if err == nil {
+		return cookie
+	}
+
+	return ""
+}
+
 // Logout handles user logout
 func (h *Handler) Logout(c *gin.Context) {
 	middleware.SetDBEntity(c, "refresh_tokens")
 	middleware.SetDBOperation(c, "delete")
 
-	// Get refresh token from request body or header
+	// Get refresh token from request body, header, or HttpOnly cookie
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
 		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err == nil {
 			refreshToken = req.RefreshToken
+		}
+	}
+	if refreshToken == "" {
+		if cookie, err := c.Cookie(refreshTokenCookieName); err == nil {
+			refreshToken = cookie
 		}
 	}
 
@@ -371,14 +451,12 @@ func (h *Handler) Logout(c *gin.Context) {
 	}
 
 	// Get access token and blacklist it
-	authHeader := c.GetHeader("Authorization")
-	if authHeader != "" && h.tokenStore != nil {
-		parts := strings.SplitN(authHeader, " ", 2)
-		// Try to extract and blacklist access token
-		if len(parts) == 2 {
-			_ = h.tokenStore.BlacklistToken(c.Request.Context(), parts[1], h.cfg.JWTAccessTTL)
-		}
+	accessToken := h.accessTokenFromRequest(c)
+	if accessToken != "" && h.tokenStore != nil {
+		_ = h.tokenStore.BlacklistToken(c.Request.Context(), accessToken, h.cfg.JWTAccessTTL)
 	}
+
+	h.clearAuthCookies(c)
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

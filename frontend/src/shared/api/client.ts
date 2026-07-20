@@ -2,11 +2,7 @@
 import ky from "ky";
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import {
-  getAccessToken,
-  getApiKey,
-  refreshAccessToken,
-} from "$shared/stores/auth.svelte";
+import { getApiKey, refreshAccessToken } from "$shared/stores/auth.svelte";
 
 // Redirect to login after an unrecoverable auth failure (browser only)
 function redirectToLogin(): void {
@@ -52,6 +48,7 @@ let refreshPromise: Promise<boolean> | null = null;
 export const api = ky.create({
   prefixUrl,
   timeout: 30000,
+  credentials: "include",
   retry: {
     limit: 3,
     methods: ["get", "post", "put", "patch"],
@@ -60,12 +57,6 @@ export const api = ky.create({
   hooks: {
     beforeRequest: [
       async (request) => {
-        // Add Authorization header if access token exists
-        const token = getAccessToken();
-        if (token) {
-          request.headers.set("Authorization", `Bearer ${token}`);
-        }
-
         // Add API Key header if exists (for API key auth)
         const key = getApiKey();
         if (key) {
@@ -90,12 +81,8 @@ export const api = ky.create({
             if (refreshPromise) {
               const refreshed = await refreshPromise;
               if (refreshed) {
-                // Retry the original request with the new token
-                const newToken = getAccessToken();
-                if (newToken) {
-                  request.headers.set("Authorization", `Bearer ${newToken}`);
-                  return ky(request);
-                }
+                // Cookies are HttpOnly; the browser sends them automatically.
+                return ky(request);
               }
               // Refresh failed while waiting — redirect to login
               redirectToLogin();
@@ -110,13 +97,10 @@ export const api = ky.create({
           try {
             const refreshed = await refreshPromise;
             if (refreshed) {
-              const newToken = getAccessToken();
-              if (newToken) {
-                request.headers.set("Authorization", `Bearer ${newToken}`);
-                return ky(request);
-              }
+              // Cookies are HttpOnly; the browser sends them automatically.
+              return ky(request);
             }
-            // Refresh failed (or no new token) — redirect to login
+            // Refresh failed — redirect to login
             redirectToLogin();
           } finally {
             isRefreshing = false;

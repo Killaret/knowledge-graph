@@ -80,13 +80,12 @@ export function skipAuthMode(): boolean {
   return localStorage.getItem("__SKIP_AUTH__") === "true";
 }
 
-// LocalStorage keys
-const ACCESS_TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
+// API key storage (user-provided, not a JWT)
 const API_KEY = "api_key";
 
 /**
- * Initialize auth state from localStorage
+ * Initialize auth state from the session.
+ * Access/refresh tokens are now HttpOnly cookies and are not accessible to JS.
  */
 export async function initAuth(): Promise<void> {
   if (!browser) {
@@ -100,6 +99,10 @@ export async function initAuth(): Promise<void> {
 
   initAuthPromise = (async () => {
     try {
+      // Restore API key (user-provided, not a JWT)
+      const storedApiKey = browser ? localStorage.getItem(API_KEY) : null;
+      authState.apiKey = storedApiKey;
+
       // Check for SKIP_AUTH mode from query parameter on first load (dev only)
       if (import.meta.env.DEV) {
         const url = new URL(window.location.href);
@@ -131,28 +134,9 @@ export async function initAuth(): Promise<void> {
         return;
       }
 
-      // Try to load tokens from localStorage
-      const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-      const storedApiKey = localStorage.getItem(API_KEY);
-
-      authState.apiKey = storedApiKey;
-      authState.accessToken = storedAccessToken;
-      authState.refreshToken = storedRefreshToken;
-
-      if (!storedRefreshToken) {
-        // Stale access token alone is not enough to be authenticated.
-        authState.accessToken = null;
-        authState.refreshToken = null;
-        authState.currentUser = null;
-        if (browser) {
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
-          localStorage.removeItem(REFRESH_TOKEN_KEY);
-        }
-        return;
-      }
-
-      // Try to refresh the token and get user info
+      // Try to refresh the session (refresh token is sent as HttpOnly cookie).
+      // If the user is not logged in, this will fail with 401 and we leave the
+      // state cleared.
       const refreshed = await refreshAccessToken();
 
       if (refreshed) {
@@ -167,7 +151,9 @@ export async function initAuth(): Promise<void> {
         }
       }
     } catch (e) {
-      console.error("Failed to initialize auth:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to initialize auth:", e);
+      }
       clearAuthState();
     } finally {
       authState.isInitialized = true;
@@ -263,11 +249,11 @@ export async function register(
  * Logout user
  */
 export async function logout(): Promise<void> {
-  if (authState.refreshToken) {
-    try {
-      await authApi.logout(authState.refreshToken);
-    } catch (e) {
-      // Ignore errors during logout
+  try {
+    await authApi.logout();
+  } catch (e) {
+    // Ignore errors during logout
+    if (import.meta.env.DEV) {
       console.error("Logout error:", e);
     }
   }
@@ -276,7 +262,9 @@ export async function logout(): Promise<void> {
   try {
     clearPreloadCache();
   } catch (e) {
-    console.error("Failed to clear preload cache on logout:", e);
+    if (import.meta.env.DEV) {
+      console.error("Failed to clear preload cache on logout:", e);
+    }
   }
 
   clearAuthState();
@@ -285,18 +273,17 @@ export async function logout(): Promise<void> {
 
 /**
  * Refresh access token
+ * The refresh token lives in an HttpOnly cookie; the browser sends it automatically.
  */
 export async function refreshAccessToken(): Promise<boolean> {
-  if (!authState.refreshToken) {
-    return false;
-  }
-
   try {
-    const tokens = await authApi.refreshTokens(authState.refreshToken);
+    const tokens = await authApi.refreshTokens();
     saveTokens(tokens);
     return true;
   } catch (e) {
-    console.error("Token refresh failed:", e);
+    if (import.meta.env.DEV) {
+      console.error("Token refresh failed:", e);
+    }
     clearAuthState();
     return false;
   }
@@ -405,7 +392,7 @@ export function isAuthenticated(): boolean {
       }
     }
   }
-  return !!authState.accessToken || !!authState.apiKey;
+  return !!authState.currentUser || !!authState.apiKey;
 }
 
 /**
@@ -416,16 +403,12 @@ export function isAdmin(): boolean {
 }
 
 /**
- * Save tokens to state and localStorage
+ * Save tokens to in-memory state. Tokens are also stored as HttpOnly cookies
+ * by the backend, so JavaScript never persists them.
  */
 function saveTokens(tokens: AuthTokens): void {
   authState.accessToken = tokens.access_token;
   authState.refreshToken = tokens.refresh_token;
-
-  if (browser) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
-  }
 }
 
 /**
@@ -439,8 +422,6 @@ function clearAuthState(): void {
   authState.error = null;
 
   if (browser) {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(API_KEY);
   }
 }

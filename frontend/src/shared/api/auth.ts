@@ -46,26 +46,18 @@ export async function register(
 
 /**
  * Refresh access token
+ * The refresh token is sent as an HttpOnly cookie automatically by the browser.
  */
-export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
-  const response = await api
-    .post("v1/auth/refresh", {
-      json: { refresh_token: refreshToken },
-    })
-    .json<AuthTokens>();
+export async function refreshTokens(): Promise<AuthTokens> {
+  const response = await api.post("v1/auth/refresh").json<AuthTokens>();
   return response;
 }
 
 /**
  * Logout user
  */
-export async function logout(refreshToken: string): Promise<void> {
-  await api.post("v1/auth/logout", {
-    json: { refresh_token: refreshToken },
-    headers: {
-      "X-Refresh-Token": refreshToken,
-    },
-  });
+export async function logout(): Promise<void> {
+  await api.post("v1/auth/logout");
 }
 
 /**
