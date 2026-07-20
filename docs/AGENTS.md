@@ -190,6 +190,18 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/components/organisms/ConfirmModal.svelte` — default/galactic confirm/cancel/title labels now use i18n keys.
 - `frontend/src/components/molecules/TypeSelector.svelte` — aria-label now uses i18n key.
 - `frontend/src/components/atoms/ToastNotification.svelte` and `ApiErrorDisplay.svelte` — close/error labels now use i18n keys.
+- `frontend/src/components/organisms/Sidebar.svelte` — placeholder text now uses i18n keys.
+- `frontend/src/shared/lib/domain/graph-mode.ts` — mode labels (`label`/`focusLabel`) now resolve through i18n keys.
+- `frontend/src/features/graph-ui/controls.svelte`, `modals.svelte`, and `overlay.svelte` — button titles, modal titles/placeholders, search placeholder, hotkey tooltip, undo toast, and graph stats now use i18n keys.
+- `frontend/src/features/graph-canvas/canvas-state.svelte.ts` — hotkey help list and duplicate-link warning now use i18n keys.
+- `frontend/src/components/molecules/GraphTooltip.svelte` — node type and link type labels now resolve through `CelestialBody`/`LinkType` i18n keys; tooltip weight label uses an i18n key.
+- `frontend/src/routes/+layout.svelte` — skip-auth badge title now uses i18n keys.
+- `frontend/src/routes/+page.svelte` — loading and retry labels now use i18n keys.
+- `frontend/src/routes/auth/{login,register,forgot-password,reset-password,yandex/callback}/+page.svelte` — page titles, subtitles, error messages, and button labels now use i18n keys.
+- `frontend/src/routes/graph/{+page,[id],3d,3d/[id]}/+page.svelte` — titles, hints, loading/error states, toggle labels, and 3D frozen messages now use i18n keys.
+- `frontend/src/routes/notes/{new,[id],[id]/edit}/+page.svelte` — form labels, placeholders, buttons, error messages, and note detail labels now use i18n keys.
+- `frontend/src/routes/search/+page.svelte` — search title, placeholder, loading/error/empty states, pagination, and pluralized result counts now use i18n keys.
+- `frontend/src/routes/profile/+page.svelte` — profile title, subtitle, and loading state now use i18n keys.
 
 ### Current backend coverage
 
@@ -206,7 +218,6 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Frontend still has hardcoded user-facing strings in some components (e.g. GraphCanvas, Sidebar, NoteSidePanel) that need i18n keys.
 - Full regression cycle and E2E stack verification are pending.
 - Frontend coverage and E2E stack not covered by these notes.
 
