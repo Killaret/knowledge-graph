@@ -88,13 +88,17 @@ docker compose -f docker-compose.test.yml down -v
 
 ### Regression Testing
 ```bash
-# Full regression cycle (isolated model - 24 steps)
+# Full regression cycle (isolated model - 25 steps)
 .\scripts\run-full-test-cycle.ps1      # Windows
 ./scripts/run-full-test-cycle.sh       # Linux/Mac
 
 # Stacks identity check
 .\scripts\check-stacks-identity.ps1    # Windows
-./scripts\check-stacks-identity.sh     # Linux/Mac
+./scripts/check-stacks-identity.sh     # Linux/Mac
+
+# Cleanup test artifacts
+.\scripts\cleanup-test-artifacts.ps1    # Windows
+./scripts/cleanup-test-artifacts.sh     # Linux/Mac
 
 # Individual regression steps
 # Step 0: Capture dev stack state snapshot
@@ -102,11 +106,13 @@ docker compose -f docker-compose.test.yml down -v
 # Step 3: Check stacks identity
 # Step 4: Start test stack
 # Step 5: Seed test data
-# Step 6-16: Run tests and verifications
-# Step 17: Stop test stack
-# Step 18-19: Restore dev and personal stacks
-# Step 20-22: Compare states and verify identity
-# Step 23: Auto-commit if all checks pass
+# Step 6-17: Run tests and verifications (unit, integration, API, manual)
+# Step 18: Documentation verification
+# Step 19: Stop test stack
+# Step 20: Cleanup temporary files
+# Step 21-22: Restore dev and personal stacks
+# Step 23: Compare states and verify identity + health
+# Step 24: Auto-commit if all checks pass
 ```
 
 ### Database Verification
@@ -148,7 +154,7 @@ curl http://localhost:15002/health          # Test NLP service
 - **NEVER** run E2E/BDD tests against dev or personal stacks
 - **ALWAYS** verify stacks identity before regression testing
 - **ALWAYS** destroy test stack with `down -v` after testing
-- **ALWAYS** use English text patterns in frontend tests (language policy)
+- **ALWAYS** use i18n keys or `data-testid` selectors in frontend tests to avoid brittle locale-specific text
 - **ALWAYS** run unit tests before integration tests
 - **ALWAYS** verify health endpoints before API testing
 - **ALWAYS** use the full test cycle script for regression testing (isolated model)

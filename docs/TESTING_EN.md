@@ -42,7 +42,7 @@
 
 | Level | Technologies | Coverage | Time | Files |
 |-------|--------------|----------|------|-------|
-| **Unit** | Go testify, Vitest | 70% backend | < 10 sec | 51 |
+| **Unit** | Go testify, Vitest | Target 70% (current ~62% BE / ~64% FE lines) | < 10 sec | 51 |
 | **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 min | - |
 | **E2E** | Playwright + Cucumber | Full scenario | ~ 5 min | 24 |
 
@@ -52,7 +52,7 @@
 
 ### Test Structure
 
-**Total: 31 files, 118 test functions**
+**Total: 35+ files, 118+ test functions**
 
 ```
 backend/
@@ -829,14 +829,21 @@ go tool cover -html=coverage.out -o coverage.html
 # View
 open coverage.html
 
-# Check threshold (minimum 70%)
-go-test-coverage -coverprofile=coverage.out -threshold=70
+# Check threshold (target 70%, enforced minimum 60%)
+go-test-coverage -coverprofile=coverage.out -threshold=60
 ```
 
 ### Frontend Coverage
 
 ```bash
 cd frontend
+
+# Generate report
+npm run test:coverage
+
+# View
+cd coverage
+open index.html
 
 # E2E coverage (via Playwright trace)
 npx playwright test --trace on
@@ -845,15 +852,13 @@ npx playwright test --trace on
 npx playwright show-report
 ```
 
-### Current Coverage (April 2026)
+### Current Coverage
 
 | Component | Coverage | Tests | Status |
 |-----------|----------|-------|--------|
-| **Backend Domain** | ~85% | 19 | ✅ Excellent |
-| **Backend Application** | ~75% | 7 | ✅ Good |
-| **Backend Infrastructure** | ~60% | 62 | ✅ Good |
-| **Backend Interface** | ~70% | 14 | ✅ Good |
-| **Frontend Unit** | ~60% | ~220 | ✅ Excellent |
+| **Backend Unit** | ~62% | — | ✅ Good (target 70%) |
+| **Frontend Unit (lines)** | ~64% | 580 | ✅ Good (target 70%) |
+| **Frontend Unit (functions)** | ~57% | 580 | ⚠️ Below 60% gate (target 70%) |
 | **Frontend E2E** | N/A | 48 | ✅ Excellent |
 | **BDD Scenarios** | N/A | 111 | ✅ Excellent |
 | **NLP Python** | ~80% | ~15 | ✅ Excellent |

@@ -7,7 +7,7 @@
 
 ## Operations & Roadmap
 
-- **[Regression Testing Plan Summary](REGRESSION_TEST_PLAN_SUMMARY.md)** — 24-step isolated regression cycle
+- **[Regression Testing Plan Summary](REGRESSION_TEST_PLAN_SUMMARY.md)** — 25-step isolated regression cycle
 - **[Testing Commands & Procedures](TESTING_COMMANDS.md)** — Commands for unit, integration, E2E, BDD, and stack management
 - **[UI Modernization Roadmap](UI_MODERNIZATION_ROADMAP.md)** — Canvas, NoteCard, multilingual lexicon, and UX improvements
 
@@ -112,23 +112,32 @@ curl http://localhost:8092/health           # Personal graph service
 
 ## Language Policy
 
-**User-facing runtime content MUST be in English:**
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
+
 - UI strings (buttons, labels, placeholders, errors)
 - Toast messages and tooltips (GalacticLexicon)
 - Note titles and content
+
+**MUST be in English:**
+- Code identifiers and variable names
 - Commit messages
+- API error codes
 
-**May be bilingual:**
-- Documentation — the authoritative English version must be present; Russian translations may be added alongside.
+**User content (note titles/bodies) may be in any language.**
 
-**Exceptions:** Internal code comments (any language OK)
+**Documentation:** Authoritative docs are in English; Russian translations may be added alongside.
+
+**Exceptions:** Internal code comments (any language OK).
 
 ```typescript
-// ✅ Good
-toast.success("Note created successfully");
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
 
-// ❌ Bad
-toast.success("Заметка создана успешно");
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+
+// ❌ Bad — hardcoded string without i18n key
+toast.success("Note created successfully");
 ```
 
 ---
@@ -163,7 +172,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **61.7%** (target >60%).
+- Aggregated backend coverage: **61.7%** (target 70%; enforced minimum 60%).
 
 ### Remaining debt
 

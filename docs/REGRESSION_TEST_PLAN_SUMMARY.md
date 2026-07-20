@@ -11,7 +11,7 @@
 ### Isolated Testing Model
 **⚠️ IMPORTANT:** The test cycle uses an isolated model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.
 
-### Test Steps (24 total)
+### Test Steps (25 total)
 1. **Step 0:** Capture dev stack state snapshot (containers, health, API)
 2. **Step 1:** Stop dev stack (`docker compose down`)
 3. **Step 2:** Stop personal stack (`docker compose -f docker-compose.personal.yml down`)
@@ -20,23 +20,23 @@
 6. **Step 5:** Seed test data (`seed-test-data.ps1`)
 7. **Step 6:** Docker build verification
 8. **Step 7:** NLP service tests
-9. **Step 8:** Backend unit tests
-10. **Step 9:** Backend API verification
-11. **Step 10:** Asynchronous tasks verification
-12. **Step 11:** PGVECTOR verification
-13. **Step 12:** Redis & MongoDB verification
-14. **Step 13:** Frontend unit tests
-15. **Step 14:** Manual testing instructions
-16. **Step 15:** Public graph verification
-17. **Step 16:** CI/CD verification
-18. **Step 17:** Stop test stack (`stop-test.ps1`)
-19. **Step 17.5:** Cleanup temporary files (`coverage.out`, `*.cov`, `*.tmp`, `*.log`) and verify `docs/AGENTS.md` / `.windsurfrules` are updated if architecture boundaries changed
-20. **Step 18:** Start dev stack (`docker compose up -d --wait`)
-21. **Step 19:** Start personal stack (`docker compose -f docker-compose.personal.yml up -d --wait`)
-22. **Step 20:** Compare dev stack state with pre-test snapshot
-23. **Step 21:** Compare dev and personal stacks for identity
-24. **Step 22:** Check dev and personal stacks health
-25. **Step 23:** Auto-commit with test success marker (if all checks pass)
+9. **Step 8:** Backend unit tests (`go test ./...`)
+10. **Step 9:** Backend integration tests (`go test -tags=integration ./...` on Linux/WSL Docker)
+11. **Step 10:** Backend API verification (manual/contract)
+12. **Step 11:** Asynchronous tasks verification
+13. **Step 12:** PGVECTOR verification
+14. **Step 13:** Redis & MongoDB verification
+15. **Step 14:** Frontend unit tests (`npm run test:unit`)
+16. **Step 15:** Manual testing instructions
+17. **Step 16:** Public graph verification
+18. **Step 17:** CI/CD verification
+19. **Step 18:** Documentation verification (`docs/AGENTS.md`, `.windsurfrules`, architecture diagrams)
+20. **Step 19:** Stop test stack (`stop-test.ps1`)
+21. **Step 20:** Cleanup temporary files (`coverage.out`, `*.cov`, `*.tmp`, `*.log`)
+22. **Step 21:** Start dev stack (`docker compose up -d --wait`)
+23. **Step 22:** Start personal stack (`docker compose -f docker-compose.personal.yml up -d --wait`)
+24. **Step 23:** Compare dev stack state with pre-test snapshot, compare dev and personal stacks for identity, check health
+25. **Step 24:** Auto-commit with test success marker (if all checks pass)
 
 ### Automatic State Verification
 - **Pre-test snapshot:** Captures dev stack state before testing

@@ -35,7 +35,7 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Backend tests pass.
 - Frontend build succeeds.
 - NoteCard renders redesigned visuals, indicators, tooltip, and checkbox.
-- English UI strings only.
+- Russian UI strings by default (`ru` locale); English available via i18n.
 
 ### Iteration 2 — Page-level selection, sorting, undo
 
@@ -73,7 +73,7 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Keyboard shortcuts work in list view
 - Bulk actions menu displays correctly
 - Confirmation dialog appears before batch delete
-- English UI strings only
+- Russian UI strings by default (`ru` locale); English available via i18n
 
 ### Iteration 4 — Canvas improvements
 
@@ -126,8 +126,8 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - `Escape` - Clear selection or close side panel
 
 **UX Guidelines:**
-- All user-facing content in English only
-- Two-stage undo toast: "Done" (1.5s) → "Restore" (5s)
+- User-facing content defaults to Russian (`ru` locale); English (`en`) available via i18n
+- Two-stage undo toast: "Done" (1.5s) → "Restore" (5s) — use i18n keys
 - Visual feedback for all interactions (hover, selection, drag)
 - Accessibility: proper ARIA labels, keyboard navigation
 - Responsive design with mobile support

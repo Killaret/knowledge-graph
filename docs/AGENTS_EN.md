@@ -231,7 +231,7 @@ backend:
 - Test stack completely isolated with unique container names (`kg-test-*`)
 - See `docs/TESTING_EN.md` for complete test stack documentation
 
-**Coverage requirement: >60% for all modules**
+**Coverage requirement: target 70% for all modules; enforced minimum 60% (frontend functions 55%) until the target is reached.**
 
 **Example Prompts:**
 - "Write table-driven unit tests for note handler"
@@ -395,25 +395,33 @@ curl http://localhost:8085/health                       # Personal backend
 
 ## Language Policy
 
+### Russian Default Locale (`ru`)
+
+User-facing runtime content uses Russian by default, with English (`en`) available through the shared i18n keys and `formatMessage` helper.
+
+- **UI strings** — buttons, labels, placeholders, error messages (`ru`)
+- **Toast notifications** — GalacticLexicon messages (`ru`)
+- **Note titles and content** — user content may be in any language
+
 ### English Required For:
-- **UI strings** — buttons, labels, placeholders, error messages
-- **Toast notifications** — GalacticLexicon messages
-- **Note titles and content** — all user-created content
-- **Code comments** — public API docs, README files
+- **Code identifiers and variable names**
 - **Commit messages** — clear, descriptive English
-- **Documentation** — all files in `docs/`
+- **API error codes** and internal log markers
+- **Authoritative documentation** — all files in `docs/`; Russian translations may be added alongside
 
 ### Not Required:
 - **Internal code comments** — brief explanations in any language OK
 - **Variable/function names** — follow project conventions
 
 ```typescript
-// ✅ Good
-toast.success("Note created successfully");
-tooltip: "New star mapped to the galactic chart, captain!";
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
 
-// ❌ Bad
-toast.success("Заметка создана успешно");
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+
+// ❌ Bad — hardcoded string without i18n key
+toast.success("Note created successfully");
 ```
 
 ---

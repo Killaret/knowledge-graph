@@ -293,15 +293,15 @@ cd backend
 go test -race ./... -count=1 2>&1 | tee ../logs/test-outputs/test-backend-unit.log
 ```
 
-**Expected:** 118/118 tests pass
+**Expected:** All backend unit tests pass (no failures).
 
 ### 4.2 Run Backend Integration Tests
 ```bash
 cd backend
-go test -tags=integration ./... -count=1 2>&1 | tee ../logs/test-outputs/test-backend-integration.log
+go test -tags=integration ./... -count=1 -p=1 2>&1 | tee ../logs/test-outputs/test-backend-integration.log
 ```
 
-**Expected:** 0/2 tests pass (Windows limitation - not a code issue)
+**Expected:** All integration tests pass in Linux/WSL Docker environment. On Windows with rootless Docker, testcontainers may not start; use WSL2 backend or CI runner.
 
 ---
 
@@ -502,7 +502,7 @@ cd frontend
 npm run test:unit 2>&1 | tee ../logs/test-outputs/test-frontend-unit.log
 ```
 
-**Expected:** 521/563 tests pass (5 fail - Russian text, non-blocking)
+**Expected:** All frontend unit tests pass (0 failures, skipped tests allowed). UI uses Russian (`ru`) locale by default; tests should rely on i18n keys or `data-testid` selectors.
 
 ### 9.2 Run Frontend E2E Tests
 ```bash

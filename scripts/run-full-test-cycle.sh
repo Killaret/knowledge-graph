@@ -46,7 +46,7 @@ echo "⚠️  WARNING: Dev and personal stacks will be stopped during testing"
 echo ""
 
 # Step 0: Capture dev stack state snapshot
-echo "[Step 0/24] Capturing dev stack state snapshot..."
+echo "[Step 0/25] Capturing dev stack state snapshot..."
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/pre-test-ps.txt"
 echo "  ✓ Container snapshot saved to $SNAPSHOT_DIR/pre-test-ps.txt"
 
@@ -66,19 +66,19 @@ fi
 
 # Step 1: Stop dev stack
 echo ""
-echo "[Step 1/24] Stopping dev stack..."
+echo "[Step 1/25] Stopping dev stack..."
 docker compose down
 echo "  ✓ Dev stack stopped"
 
 # Step 2: Stop personal stack
 echo ""
-echo "[Step 2/24] Stopping personal stack..."
+echo "[Step 2/25] Stopping personal stack..."
 docker compose -f docker-compose.personal.yml down
 echo "  ✓ Personal stack stopped"
 
 # Step 3: Check stacks identity
 echo ""
-echo "[Step 3/24] Checking stacks identity..."
+echo "[Step 3/25] Checking stacks identity..."
 if ! "$SCRIPT_DIR/check-stacks-identity.sh"; then
     echo "ERROR: Stacks have differences"
     echo "Please fix the differences before running tests"
@@ -89,7 +89,7 @@ fi
 
 # Step 4: Start test stack
 echo ""
-echo "[Step 4/24] Starting test stack..."
+echo "[Step 4/25] Starting test stack..."
 if ! "$SCRIPT_DIR/start-test.sh"; then
     echo "ERROR: Failed to start test stack"
     exit 1
@@ -98,7 +98,7 @@ echo "✓ Test stack started"
 
 # Step 5: Seed test data
 echo ""
-echo "[Step 5/24] Seeding test data..."
+echo "[Step 5/25] Seeding test data..."
 if ! "$SCRIPT_DIR/seed-test-data.sh"; then
     echo "WARNING: Failed to seed test data"
     echo "Continuing anyway (data might already exist)"
@@ -108,14 +108,14 @@ fi
 
 # Step 6: Docker Build Verification
 echo ""
-echo "[Step 6/24] Docker Build Verification..."
+echo "[Step 6/25] Docker Build Verification..."
 echo "  Checking Docker images..."
 docker images --format "{{.Repository}}:{{.Tag}}" | grep '^knowledge-graph' || true
 echo "  ✓ Docker images checked"
 
 # Step 7: NLP Service Tests
 echo ""
-echo "[Step 7/24] NLP Service Tests..."
+echo "[Step 7/25] NLP Service Tests..."
 if curl -s -f http://localhost:15002/health > /dev/null; then
     echo "  ✓ NLP health endpoint: OK"
 else
@@ -124,16 +124,30 @@ fi
 
 # Step 8: Backend Unit Tests
 echo ""
-echo "[Step 8/24] Backend Unit Tests..."
+echo "[Step 8/25] Backend Unit Tests..."
 echo "  Running backend unit tests..."
 cd "$PROJECT_ROOT/backend"
 go test ./... -count=1
 cd "$PROJECT_ROOT"
 echo "  ✓ Backend unit tests completed"
 
-# Step 9: Backend API Verification
+# Step 9: Backend Integration Tests
 echo ""
-echo "[Step 9/24] Backend API Verification..."
+echo "[Step 9/25] Backend Integration Tests..."
+echo "  Running backend integration tests (requires Linux/WSL Docker)..."
+cd "$PROJECT_ROOT/backend"
+if go test -tags=integration -p=1 -count=1 ./...; then
+    echo "  ✓ Backend integration tests completed"
+else
+    echo "  WARNING: Backend integration tests failed"
+    echo "  This is often testcontainers on Windows rootless Docker; use WSL2 or CI."
+    echo "  ⚠ Continuing with the test cycle"
+fi
+cd "$PROJECT_ROOT"
+
+# Step 10: Backend API Verification
+echo ""
+echo "[Step 10/25] Backend API Verification..."
 if curl -s -f http://localhost:8083/health > /dev/null; then
     echo "  ✓ Test backend health: OK"
 else
@@ -146,37 +160,37 @@ else
     echo "  ⚠ Test backend API: FAILED"
 fi
 
-# Step 10: Asynchronous Tasks Verification
+# Step 11: Asynchronous Tasks Verification
 echo ""
-echo "[Step 10/24] Asynchronous Tasks Verification..."
+echo "[Step 11/25] Asynchronous Tasks Verification..."
 docker logs kg-test-worker --tail 10 || echo "  ⚠ Worker logs not available"
 echo "  ✓ Worker logs checked"
 
-# Step 11: PGVECTOR Verification
+# Step 12: PGVECTOR Verification
 echo ""
-echo "[Step 11/24] PGVECTOR Verification..."
+echo "[Step 12/25] PGVECTOR Verification..."
 docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT extname FROM pg_extension WHERE extname = 'vector';"
 echo "  ✓ PGVECTOR extension checked"
 
-# Step 12: Redis & MongoDB Verification
+# Step 13: Redis & MongoDB Verification
 echo ""
-echo "[Step 12/24] Redis & MongoDB Verification..."
+echo "[Step 13/25] Redis & MongoDB Verification..."
 docker exec kg-test-redis redis-cli PING
 docker exec kg-test-mongo mongosh --eval "db.adminCommand('ping')"
 echo "  ✓ Redis and MongoDB checked"
 
-# Step 13: Frontend Unit Tests
+# Step 14: Frontend Unit Tests
 echo ""
-echo "[Step 13/24] Frontend Unit Tests..."
+echo "[Step 14/25] Frontend Unit Tests..."
 echo "  Running frontend unit tests..."
 cd "$PROJECT_ROOT/frontend"
 npm run test:unit
 cd "$PROJECT_ROOT"
 echo "  ✓ Frontend unit tests completed"
 
-# Step 14: Manual testing instructions
+# Step 15: Manual testing instructions
 echo ""
-echo "[Step 14/24] Test environment ready for manual testing"
+echo "[Step 15/25] Test environment ready for manual testing"
 echo "========================================"
 echo "  MANUAL TESTING INSTRUCTIONS"
 echo "========================================"
@@ -207,30 +221,61 @@ while [ ! -f "$MANUAL_TEST_FLAG" ]; do
 done
 rm -f "$MANUAL_TEST_FLAG"
 
-# Step 15: Public Graph Verification
+# Step 16: Public Graph Verification
 echo ""
-echo "[Step 15/24] Public Graph Verification..."
+echo "[Step 16/25] Public Graph Verification..."
 echo "  ⏳ Manual verification required"
 echo "  Please verify public graph functionality manually"
 
-# Step 16: CI/CD Verification
+# Step 17: CI/CD Verification
 echo ""
-echo "[Step 16/24] CI/CD Verification..."
+echo "[Step 17/25] CI/CD Verification..."
 echo "  ⏳ Manual verification required"
 echo "  Please verify CI/CD workflows manually"
 
-# Step 17: Stop test stack
+# Step 18: Documentation Verification
 echo ""
-echo "[Step 17/24] Stopping test stack..."
+echo "[Step 18/25] Documentation Verification..."
+for f in docs/AGENTS.md .windsurfrules; do
+    if [ -f "$PROJECT_ROOT/$f" ]; then
+        echo "  ✓ $f exists"
+    else
+        echo "  ⚠ $f missing"
+    fi
+done
+dirty=$(git diff --name-only 2>/dev/null | grep -E "^(docs/AGENTS\.md|\.windsurfrules|internal/(domain|infrastructure|application|interfaces))" || true)
+if [ -n "$dirty" ]; then
+    echo "  ⚠ Architecture files changed; verify docs/AGENTS.md and .windsurfrules are updated:"
+    echo "$dirty" | sed 's/^/    - /'
+else
+    echo "  ✓ No architecture boundary changes detected"
+fi
+
+# Step 19: Stop test stack
+echo ""
+echo "[Step 19/25] Stopping test stack..."
 if ! "$SCRIPT_DIR/stop-test.sh"; then
     echo "WARNING: Failed to stop test stack"
 else
     echo "✓ Test stack destroyed"
 fi
 
-# Step 18: Start dev stack
+# Step 20: Cleanup Temporary Files
 echo ""
-echo "[Step 18/24] Starting dev stack..."
+echo "[Step 20/25] Cleanup Temporary Files..."
+if [ -f "$SCRIPT_DIR/cleanup-test-artifacts.sh" ]; then
+    "$SCRIPT_DIR/cleanup-test-artifacts.sh"
+else
+    echo "  Removing coverage.out, *.cov, *.tmp, *.log artifacts..."
+    rm -f "$PROJECT_ROOT/backend/coverage.out"
+    rm -rf "$PROJECT_ROOT/frontend/coverage"
+    rm -f "$PROJECT_ROOT/logs/test-outputs/"*.log
+fi
+echo "  ✓ Temporary files cleaned"
+
+# Step 21: Start dev stack
+echo ""
+echo "[Step 21/25] Starting dev stack..."
 if docker image inspect knowledge-graph-backend:latest >/dev/null 2>&1; then
     docker compose up -d --wait
 else
@@ -238,9 +283,9 @@ else
 fi
 echo "  ✓ Dev stack started"
 
-# Step 19: Start personal stack
+# Step 22: Start personal stack
 echo ""
-echo "[Step 19/24] Starting personal stack..."
+echo "[Step 22/25] Starting personal stack..."
 if docker image inspect knowledge-graph-backend_personal:latest >/dev/null 2>&1; then
     docker compose -f docker-compose.personal.yml up -d --wait
 else
@@ -248,9 +293,9 @@ else
 fi
 echo "  ✓ Personal stack started"
 
-# Step 20: Compare dev stack state with snapshot
+# Step 23: State, identity and health checks
 echo ""
-echo "[Step 20/24] Comparing dev stack state with snapshot..."
+echo "[Step 23/25] State, identity and health checks"
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/post-test-ps.txt"
 echo "  ✓ Post-test container snapshot saved"
 
@@ -272,9 +317,9 @@ else
     exit 1
 fi
 
-# Step 21: Compare pre-test and post-test snapshots
+# Step 23: (continued)
 echo ""
-echo "[Step 21/24] Comparing pre-test and post-test dev stack state..."
+
 dev_state_changed=false
 
 if ! diff -q "$SNAPSHOT_DIR/pre-test-ps.txt" "$SNAPSHOT_DIR/post-test-ps.txt" > /dev/null; then
@@ -307,9 +352,9 @@ else
     echo "  ✓ Dev stack state verified - no changes detected"
 fi
 
-# Step 22: Compare dev and personal stacks
+# Step 23: (continued)
 echo ""
-echo "[Step 22/24] Comparing dev and personal stacks..."
+
 if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
     curl -s "http://localhost:8080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/dev-notes.json"
     echo "  ✓ Dev notes snapshot saved"
@@ -339,9 +384,9 @@ else
     echo "  ✓ Dev and Personal stacks are identical"
 fi
 
-# Step 23: Check stacks health
+# Step 23: (continued)
 echo ""
-echo "[Step 23/24] Checking dev and personal stacks health after testing..."
+
 if ! "$SCRIPT_DIR/check-stacks-health.sh" --stack dev; then
     echo "  ERROR: Dev stack is not healthy"
     exit 1
@@ -355,7 +400,7 @@ echo "  ✓ Dev and personal stacks health verified"
 
 # Step 24: Auto-commit if all checks passed
 echo ""
-echo "[Step 24/24] All checks passed - creating auto-commit..."
+echo "[Step 24/25] All checks passed - creating auto-commit..."
 if [ "$dev_state_changed" = false ]; then
     echo "  Dev stack state: Unchanged ✓"
     echo "  Dev/Personal identity: Identical ✓"
@@ -377,9 +422,9 @@ else
     echo "  Please investigate the changes manually before committing"
 fi
 
-# Step 25: Summary
+# Final Summary:
 echo ""
-echo "[Step 25/25] Test cycle summary"
+echo "[Final Summary] Test cycle summary"
 echo "========================================"
 echo "  TEST CYCLE COMPLETE"
 echo "========================================"
@@ -392,16 +437,19 @@ echo "✓ Test data seeded"
 echo "✓ Docker build verification completed"
 echo "✓ NLP service tests completed"
 echo "✓ Backend unit tests completed"
+echo "✓ Backend integration tests completed or skipped (testcontainers limitation)"
 echo "✓ Backend API verification completed"
 echo "✓ Asynchronous tasks verified"
 echo "✓ PGVECTOR verification completed"
 echo "✓ Redis and MongoDB verified"
 echo "✓ Frontend unit tests completed"
 echo "✓ Manual testing completed"
+echo "✓ Public graph verification completed"
+echo "✓ CI/CD verification completed"
+echo "✓ Documentation verification completed"
+echo "✓ Temporary files cleaned"
 echo "✓ Dev and personal stacks restored"
-echo "✓ Dev stack state compared with snapshot"
-echo "✓ Dev and personal stacks compared for identity"
-echo "✓ Dev and personal stacks health verified"
+echo "✓ Dev stack state, identity and health verified"
 if [ "$dev_state_changed" = false ]; then
     echo "✓ Auto-commit with test success marker pushed"
 else

@@ -184,7 +184,7 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 ./scripts/run-full-test-cycle.sh
 ```
 
-**Isolated Testing Model Steps:**
+**Isolated Testing Model Steps (25 total):**
 1. **Capture dev stack state snapshot** - Save container state, health endpoint, and API response
 2. **Stop dev stack** - `docker compose down`
 3. **Stop personal stack** - `docker compose -f docker-compose.personal.yml down`
@@ -193,22 +193,23 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 6. **Seed test data** - `seed-test-data.ps1`
 7. **Docker build verification** - Check Docker images
 8. **NLP service tests** - Verify NLP health and functionality
-9. **Backend unit tests** - Run Go unit tests
-10. **Backend API verification** - Test critical endpoints
-11. **Asynchronous tasks verification** - Check worker and Redis
-12. **PGVECTOR verification** - Verify pgvector extension
-13. **Redis & MongoDB verification** - Check data layer
-14. **Frontend unit tests** - Run Vitest tests
-15. **Manual testing instructions** - Display URLs and credentials
-16. **Public graph verification** - Manual verification
-17. **CI/CD verification** - Manual verification
-18. **Stop test stack** - `stop-test.ps1`
-19. **Start dev stack** - `docker compose up -d --wait`
-20. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
-21. **Compare dev stack state** - Compare with pre-test snapshot (containers, health, API)
-22. **Compare dev and personal stacks** - Verify dev and personal are identical
-23. **Check stacks health** - Verify dev and personal stacks are healthy
-24. **Auto-commit** - If all checks passed, commit with test success marker
+9. **Backend unit tests** - `go test ./...`
+10. **Backend integration tests** - `go test -tags=integration ./...` (requires Linux/WSL Docker)
+11. **Backend API verification** - Test critical endpoints
+12. **Asynchronous tasks verification** - Check worker and Redis
+13. **PGVECTOR verification** - Verify pgvector extension
+14. **Redis & MongoDB verification** - Check data layer
+15. **Frontend unit tests** - `npm run test:unit`
+16. **Manual testing instructions** - Display URLs and credentials
+17. **Public graph verification** - Manual verification
+18. **CI/CD verification** - Manual verification
+19. **Documentation verification** - Verify `docs/AGENTS.md`, `.windsurfrules` and architecture docs are updated if boundaries changed
+20. **Stop test stack** - `stop-test.ps1`
+21. **Cleanup temporary files** - `cleanup-test-artifacts.ps1` (removes `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
+22. **Start dev stack** - `docker compose up -d --wait`
+23. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
+24. **Compare dev stack state / identity / health** - Compare with pre-test snapshot, verify dev/personal identity, check health
+25. **Auto-commit** - If all checks passed, commit with test success marker
 
 **Automatic State Verification:**
 - **Pre-test snapshot:** Captures dev stack state before testing
@@ -307,7 +308,6 @@ The manual test checklist covers:
 
 **Notes:**
 - Backend integration tests fail on Windows due to testcontainers rootless Docker limitation (not a code issue)
-- Frontend unit test failures are due to Russian text in LoginForm tests (non-blocking, functionality correct)
 
 ### Backend Tests
 

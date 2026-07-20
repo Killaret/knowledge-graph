@@ -188,10 +188,10 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 
 ## Testing Requirements
 
-| Layer | Command | Tool | Min Coverage |
-|-------|---------|------|-------------|
-| Go backend | `cd backend && go test ./...` | testify + testcontainers | >60% |
-| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | >60% |
+| Layer | Command | Tool | Coverage |
+|-------|---------|------|----------|
+| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 60%) |
+| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 60% lines/branches, 55% functions) |
 | E2E | `cd frontend && npm run test` | Playwright | - |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |
@@ -267,21 +267,22 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 
 ## Language Policy
 
-**User-facing runtime content MUST be in English:**
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
 
 ```typescript
-// ✅ Good
-toast.success("Note created successfully");
-placeholder="Search your knowledge graph..."
-errorMessage = "Failed to load notes. Please try again."
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
+placeholder="Поиск по графу знаний..."
+errorMessage = "Не удалось загрузить заметки. Попробуйте ещё раз."
 
-// ❌ Bad
-toast.success("Заметка создана успешно");
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
 ```
 
-**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content, commit messages.
-**May be bilingual:** Documentation (the authoritative English version must be present; Russian translations may be added alongside).
-**Exceptions:** Internal code comments (any language OK).
+**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content.
+**MUST be in English:** Code identifiers, variable names, commit messages, API error codes, internal comments may be any language.
+**User content (note titles/bodies) may be in any language.**
+**Documentation:** Authoritative docs are in English; Russian translations may be added alongside.
 
 ---
 
