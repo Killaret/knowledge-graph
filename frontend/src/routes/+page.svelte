@@ -35,6 +35,10 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // Raw API shapes that backend may return with alternative casing
   interface RawNode {
@@ -88,7 +92,7 @@
         return err.response.data;
       }
     }
-    return { code: "LOAD_ERROR", message: "Failed to load notes" };
+    return { code: "LOAD_ERROR", message: t("notes.loadError") };
   }
 
   // State
@@ -137,15 +141,14 @@
   let showBulkActionsMenu = $state(false);
 
   function filterLabel(body: CelestialBody): string {
-    if (body.type === "dust") return "Cosmic Dust";
-    if (body.type === "blackhole") return "Black Holes";
-    if (body.type === "unknown") return "Unknown";
-    return `${body.label}s`;
+    const key = `filter.type.${body.type}`;
+    const localized = t(key);
+    return localized === key ? body.label : localized;
   }
 
   const typeFilters = [
-    { id: "inbox", label: "Inbox", emoji: "📥" },
-    { id: "all", label: "All", emoji: "�" },
+    { id: "inbox", label: t("filter.inbox"), emoji: "📥" },
+    { id: "all", label: t("filter.all"), emoji: "�" },
     ...[
       "star",
       "planet",
@@ -165,9 +168,9 @@
   ];
 
   const sortOptions = [
-    { id: "created", label: "Created (newest first)" },
-    { id: "updated", label: "Updated (recent first)" },
-    { id: "type", label: "Type (alphabetical)" },
+    { id: "created", label: t("sort.created") },
+    { id: "updated", label: t("sort.updated") },
+    { id: "type", label: t("sort.type") },
   ];
 
   // NOTE: The sortOptions constant was previously defined here but is not currently used.
