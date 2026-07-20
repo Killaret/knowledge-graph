@@ -145,6 +145,24 @@ const messages: Record<Locale, Record<string, string>> = {
     // Search
     "search.placeholder": "Search notes...",
     "search.label": "Search",
+    "search.inputAriaLabel": "Search notes",
+
+    // Controls / FloatingControls
+    "controls.graph2DTitle": "2D Graph",
+    "controls.graph2DAria": "Switch to 2D graph view",
+    "controls.listViewTitle": "List View",
+    "controls.listViewAria": "Switch to list view",
+    "controls.scrollLeft": "Scroll left",
+    "controls.scrollRight": "Scroll right",
+    "controls.menuTitle": "Menu",
+    "controls.menuAria": "Open menu",
+    "controls.import": "Import",
+    "controls.export": "Export",
+    "controls.createTitle": "Create new note",
+    "controls.createAria": "Create new note",
+
+    // Filter
+    "filter.filterBy": "Filter by {type}",
 
     // Toast
     "toast.done": "Done",
@@ -167,6 +185,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.passwordPlaceholder": "Enter password",
     "auth.signInButton": "Sign in",
     "auth.signingInButton": "Signing in...",
+    "auth.loginAriaLabel": "Login to your account",
+    "auth.loginMenuItem": "Login",
     "auth.invalidApiKey": "Invalid API key",
     "auth.enterLoginAndPassword": "Please enter login and password",
     "auth.invalidCredentials": "Invalid credentials",
@@ -352,6 +372,24 @@ const messages: Record<Locale, Record<string, string>> = {
     // Search
     "search.placeholder": "Поиск заметок...",
     "search.label": "Поиск",
+    "search.inputAriaLabel": "Поиск заметок",
+
+    // Controls / FloatingControls
+    "controls.graph2DTitle": "2D-граф",
+    "controls.graph2DAria": "Переключиться на 2D-граф",
+    "controls.listViewTitle": "Список",
+    "controls.listViewAria": "Переключиться на список",
+    "controls.scrollLeft": "Прокрутить влево",
+    "controls.scrollRight": "Прокрутить вправо",
+    "controls.menuTitle": "Меню",
+    "controls.menuAria": "Открыть меню",
+    "controls.import": "Импорт",
+    "controls.export": "Экспорт",
+    "controls.createTitle": "Создать новую заметку",
+    "controls.createAria": "Создать новую заметку",
+
+    // Filter
+    "filter.filterBy": "Фильтр по {type}",
 
     // Toast
     "toast.done": "Готово",
@@ -374,6 +412,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.passwordPlaceholder": "Введите пароль",
     "auth.signInButton": "Войти",
     "auth.signingInButton": "Вход...",
+    "auth.loginAriaLabel": "Войти в аккаунт",
+    "auth.loginMenuItem": "Вход",
     "auth.invalidApiKey": "Неверный API-ключ",
     "auth.enterLoginAndPassword": "Введите логин и пароль",
     "auth.invalidCredentials": "Неверные учётные данные",

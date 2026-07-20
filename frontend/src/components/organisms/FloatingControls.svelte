@@ -2,7 +2,12 @@
   import { goto } from "$app/navigation";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
   import { SearchQuery } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string>) =>
+    formatMessage(key, locale, params);
 
   const {
     onCreate,
@@ -67,10 +72,10 @@
       type="button"
       class="toggle-btn {currentView === 'graph' ? 'active' : ''}"
       onclick={() => toggleView("graph")}
-      title="2D Graph"
+      title={t("controls.graph2DTitle")}
       data-testid="view-toggle-graph"
       aria-pressed={currentView === "graph"}
-      aria-label="Switch to 2D graph view"
+      aria-label={t("controls.graph2DAria")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -115,10 +120,10 @@
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
       onclick={() => toggleView("list")}
-      title="List View"
+      title={t("controls.listViewTitle")}
       data-testid="view-toggle-list"
       aria-pressed={currentView === "list"}
-      aria-label="Switch to list view"
+      aria-label={t("controls.listViewAria")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -144,7 +149,7 @@
         type="button"
         class="scroll-arrow scroll-left"
         onclick={() => scrollFilters("left")}
-        aria-label="Scroll left">‹</button
+        aria-label={t("controls.scrollLeft")}>‹</button
       >
       <div class="type-filters" bind:this={filtersContainer}>
         {#each typeFilters as filter}
@@ -155,7 +160,7 @@
             title={filter.label}
             data-testid="filter-chip-{filter.id}"
             aria-pressed={selectedType === filter.id}
-            aria-label={`Filter by ${filter.label}`}
+            aria-label={t("filter.filterBy", { type: filter.label })}
           >
             <span class="filter-emoji">{filter.emoji}</span>
             <span class="filter-label">{filter.label}</span>
@@ -171,7 +176,7 @@
         type="button"
         class="scroll-arrow scroll-right"
         onclick={() => scrollFilters("right")}
-        aria-label="Scroll right">›</button
+        aria-label={t("controls.scrollRight")}>›</button
       >
     </div>
   {/if}
@@ -181,17 +186,17 @@
     <input
       type="text"
       bind:value={searchQuery}
-      placeholder="Search notes..."
+      placeholder={t("search.placeholder")}
       onkeyup={(e) => e.key === "Enter" && handleSearch()}
       class="search-input"
       data-testid="search-input"
-      aria-label="Search notes"
+      aria-label={t("search.inputAriaLabel")}
     />
     <button
       type="button"
       class="search-btn"
       onclick={handleSearch}
-      aria-label="Search"
+      aria-label={t("search.label")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -214,9 +219,9 @@
       type="button"
       class="login-btn"
       onclick={handleLogin}
-      title="Login"
+      title={t("auth.signInButton")}
       data-testid="floating-login-button"
-      aria-label="Login to your account"
+      aria-label={t("auth.loginAriaLabel")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -241,10 +246,10 @@
       class="menu-btn"
       data-testid="menu-button"
       onclick={() => (showMenu = !showMenu)}
-      title="Menu"
+      title={t("controls.menuTitle")}
       aria-expanded={showMenu}
       aria-haspopup="true"
-      aria-label="Open menu"
+      aria-label={t("controls.menuAria")}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -271,7 +276,7 @@
             onclick={handleLogin}
             data-testid="menu-login"
           >
-            🔑 Login
+            🔑 {t("auth.loginMenuItem")}
           </button>
         {/if}
         <button
@@ -284,7 +289,7 @@
           }}
           data-testid="menu-import"
         >
-          Import
+          {t("controls.import")}
         </button>
         <button
           type="button"
@@ -296,7 +301,7 @@
           }}
           data-testid="menu-export"
         >
-          Export
+          {t("controls.export")}
         </button>
       </div>
     {/if}
@@ -310,9 +315,9 @@
     type="button"
     class="create-btn"
     onclick={() => onCreate?.()}
-    title="Create new note"
+    title={t("controls.createTitle")}
     data-testid="create-note-button"
-    aria-label="Create new note"
+    aria-label={t("controls.createAria")}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
