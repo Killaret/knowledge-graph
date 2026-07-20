@@ -23,6 +23,8 @@
     getFreshGraph,
     type GraphData,
     type GraphDeltaData,
+    type GraphNode,
+    type GraphLink,
   } from "$shared/api/graph";
   import {
     getGraphWithPreload,
@@ -33,6 +35,61 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$shared/lib/domain";
+
+  // Raw API shapes that backend may return with alternative casing
+  interface RawNode {
+    id?: string;
+    Id?: string;
+    ID?: string;
+    title?: string;
+    Title?: string;
+    type?: string;
+    Type?: string;
+    x?: number;
+    y?: number;
+    z?: number;
+    size?: number;
+  }
+
+  interface RawLink {
+    source?: string;
+    source_note_id?: string;
+    target?: string;
+    target_note_id?: string;
+    weight?: number;
+    link_type?: string;
+  }
+
+  function normalizeNode(raw: RawNode): GraphNode {
+    return {
+      id: raw.id ?? raw.Id ?? raw.ID ?? "",
+      title: raw.title ?? raw.Title ?? "",
+      type: raw.type ?? raw.Type ?? "unknown",
+      x: raw.x,
+      y: raw.y,
+      z: raw.z,
+      size: raw.size,
+    };
+  }
+
+  function normalizeLink(raw: RawLink): GraphLink {
+    return {
+      source: raw.source_note_id ?? raw.source ?? "",
+      target: raw.target_note_id ?? raw.target ?? "",
+      weight: raw.weight,
+      link_type: raw.link_type,
+    };
+  }
+
+  function toErrorResponse(e: unknown): ErrorResponse {
+    if (e && typeof e === "object") {
+      const err = e as { response?: { data?: ErrorResponse } };
+      if (err.response?.data) {
+        return err.response.data;
+      }
+    }
+    return { code: "LOAD_ERROR", message: "Failed to load notes" };
+  }
 
   // State
   let allNotes: Note[] = $state([]);
@@ -167,15 +224,18 @@
       // For public (unauthenticated) view, derive the note list from the public graph
       // because the notes API is protected.
       if (!isAuth && freshGraphResult && "nodes" in freshGraphResult) {
-        allNotes = (freshGraphResult as GraphData).nodes.map((n: any) => ({
-          id: n.id || n.Id || n.ID,
-          title: n.title || n.Title,
-          content: "",
-          metadata: {},
-          type: n.type ?? n.Type ?? "unknown",
-          created_at: "",
-          updated_at: "",
-        }));
+        allNotes = (freshGraphResult as GraphData).nodes.map((n) => {
+          const raw = n as RawNode;
+          return {
+            id: raw.id ?? raw.Id ?? raw.ID ?? "",
+            title: raw.title ?? raw.Title ?? "",
+            content: "",
+            metadata: {},
+            type: raw.type ?? raw.Type ?? "unknown",
+            created_at: "",
+            updated_at: "",
+          };
+        });
       } else {
         allNotes = notesResult;
       }
@@ -202,7 +262,7 @@
       ) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map(
-          (n: any) => n.type || n.Type || "MISSING",
+          (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
         );
         if (import.meta.env.DEV) {
           console.log(
@@ -213,25 +273,19 @@
           );
           console.log(
             "[+page] loadDataParallel First 3 nodes:",
-            graphResult.nodes
-              .slice(0, 3)
-              .map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })),
+            graphResult.nodes.slice(0, 3).map((n) => {
+              const raw = n as RawNode;
+              return { id: raw.id, type: raw.type, Type: raw.Type };
+            }),
           );
         }
 
         // Transform nodes to ensure correct type field
         graphData = {
-          nodes: graphResult.nodes.map((n: any) => ({
-            id: n.id || n.Id || n.ID,
-            title: n.title || n.Title,
-            type: n.type ?? n.Type ?? "unknown",
-          })),
-          links: (graphResult.links || []).map((l: any) => ({
-            source: l.source_note_id || l.source,
-            target: l.target_note_id || l.target,
-            weight: l.weight,
-            link_type: l.link_type,
-          })),
+          nodes: graphResult.nodes.map((n) => normalizeNode(n as RawNode)),
+          links: (graphResult.links || []).map((l) =>
+            normalizeLink(l as RawLink),
+          ),
         };
         if (import.meta.env.DEV) {
           console.log(
@@ -242,11 +296,7 @@
             "links",
           );
           console.log("[+page] Transformed types:", [
-            ...new Set(
-              graphData.nodes.map(
-                (n: { id: string; title: string; type?: string }) => n.type,
-              ),
-            ),
+            ...new Set(graphData.nodes.map((n) => n.type)),
           ]);
         }
       } else {
@@ -260,11 +310,8 @@
           links: [],
         };
       }
-    } catch (e: any) {
-      apiError = e?.response?.data || {
-        code: "LOAD_ERROR",
-        message: "Failed to load notes",
-      };
+    } catch (e: unknown) {
+      apiError = toErrorResponse(e);
       console.error(e);
     } finally {
       loading = false;
@@ -277,11 +324,8 @@
       applyFiltersAndSort();
       // Also load graph data when notes are loaded
       await loadGraphData();
-    } catch (e: any) {
-      apiError = e?.response?.data || {
-        code: "LOAD_ERROR",
-        message: "Failed to load notes",
-      };
+    } catch (e: unknown) {
+      apiError = toErrorResponse(e);
       console.error(e);
     } finally {
       loading = false;
@@ -321,7 +365,7 @@
 
       // Debug: check what types come from API
       const apiTypes = rawData.nodes.map(
-        (n: any) => n.type || n.Type || "MISSING",
+        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
       );
       if (import.meta.env.DEV) {
         console.log(
@@ -332,26 +376,22 @@
         );
         console.log(
           "[+page] First 5 raw nodes:",
-          rawData.nodes
-            .slice(0, 5)
-            .map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })),
+          rawData.nodes.slice(0, 5).map((n) => {
+            const raw = n as RawNode;
+            return { id: raw.id, type: raw.type, Type: raw.Type };
+          }),
         );
       }
 
       // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n: any) => ({
-        id: n.id || n.Id || n.ID,
-        title: n.title || n.Title,
-        type: n.type ?? n.Type ?? "unknown",
-      }));
+      const transformedNodes = rawData.nodes.map((n) =>
+        normalizeNode(n as RawNode),
+      );
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links || []).map((l: any) => ({
-        source: l.source_note_id || l.source,
-        target: l.target_note_id || l.target,
-        weight: l.weight,
-        link_type: l.link_type,
-      }));
+      const transformedLinks = (rawData.links || []).map((l) =>
+        normalizeLink(l as RawLink),
+      );
 
       graphData = {
         nodes: transformedNodes,
@@ -429,7 +469,8 @@
 
     // Expose to window for tests
     if (browser) {
-      (window as any).filteredNotes = result;
+      (window as typeof window & { filteredNotes?: Note[] }).filteredNotes =
+        result;
     }
 
     filteredNotes = result;
