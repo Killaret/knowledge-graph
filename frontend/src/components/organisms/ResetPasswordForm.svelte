@@ -3,6 +3,11 @@
   import Button from "$components/atoms/Button.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import { resetPassword } from "$shared/api/auth";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   interface Props {
     token: string;
@@ -20,19 +25,19 @@
   const passwordErrors = $derived(() => {
     const errors: string[] = [];
     if (newPassword.length < 10) {
-      errors.push("Minimum 10 characters");
+      errors.push(t("auth.passwordMinChars"));
     }
     if (!/[A-Z]/.test(newPassword)) {
-      errors.push("Uppercase letter");
+      errors.push(t("auth.passwordUppercase"));
     }
     if (!/[a-z]/.test(newPassword)) {
-      errors.push("Lowercase letter");
+      errors.push(t("auth.passwordLowercase"));
     }
     if (!/[0-9]/.test(newPassword)) {
-      errors.push("Number");
+      errors.push(t("auth.passwordNumber"));
     }
     if (!/[!@#$%^&*]/.test(newPassword)) {
-      errors.push("Special character");
+      errors.push(t("auth.passwordSpecial"));
     }
     return errors;
   });
@@ -47,12 +52,12 @@
     localError = null;
 
     if (!isPasswordValid) {
-      localError = "Password does not meet requirements";
+      localError = t("auth.passwordRequirementsNotMet");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      localError = "Passwords do not match";
+      localError = t("auth.passwordsDoNotMatch");
       return;
     }
 
@@ -67,7 +72,7 @@
         goto("/auth/login");
       }, 3000);
     } catch (e) {
-      localError = e instanceof Error ? e.message : "Failed to reset password";
+      localError = e instanceof Error ? e.message : t("auth.resetPasswordFailed");
     } finally {
       isLoading = false;
     }
@@ -75,36 +80,36 @@
 </script>
 
 <form class="reset-form" onsubmit={handleSubmit}>
-  <h2>Reset Password</h2>
+  <h2>{t("auth.resetPasswordTitle")}</h2>
 
   {#if isSuccess}
     <div class="success-message">
-      <p>✅ Password changed successfully!</p>
-      <p>You will be redirected to the login page...</p>
+      <p>✅ {t("auth.resetPasswordSuccess")}</p>
+      <p>{t("auth.resetPasswordRedirect")}</p>
     </div>
   {:else}
     <div class="form-group">
-      <label for="new-password">New Password *</label>
+      <label for="new-password">{t("auth.newPasswordLabel")} *</label>
       <input
         type="password"
         id="new-password"
         bind:value={newPassword}
-        placeholder="Create a new password"
+        placeholder={t("auth.createPasswordPlaceholder")}
         required
       />
 
       {#if newPassword.length > 0}
         <div class="password-requirements">
-          <p>Password requirements:</p>
+          <p>{t("auth.passwordRequirementsTitle")}</p>
           <ul>
             <li class:valid={newPassword.length >= 10}>
-              Minimum 10 characters
+              {t("auth.passwordMinChars")}
             </li>
-            <li class:valid={/[A-Z]/.test(newPassword)}>Uppercase letter</li>
-            <li class:valid={/[a-z]/.test(newPassword)}>Lowercase letter</li>
-            <li class:valid={/[0-9]/.test(newPassword)}>Number</li>
+            <li class:valid={/[A-Z]/.test(newPassword)}>{t("auth.passwordUppercase")}</li>
+            <li class:valid={/[a-z]/.test(newPassword)}>{t("auth.passwordLowercase")}</li>
+            <li class:valid={/[0-9]/.test(newPassword)}>{t("auth.passwordNumber")}</li>
             <li class:valid={/[!@#$%^&*]/.test(newPassword)}>
-              Special character
+              {t("auth.passwordSpecial")}
             </li>
           </ul>
         </div>
@@ -112,16 +117,16 @@
     </div>
 
     <div class="form-group">
-      <label for="confirm-password">Confirm Password *</label>
+      <label for="confirm-password">{t("auth.confirmPasswordLabel")} *</label>
       <input
         type="password"
         id="confirm-password"
         bind:value={confirmPassword}
-        placeholder="Repeat new password"
+        placeholder={t("auth.repeatPasswordPlaceholder")}
         required
       />
       {#if confirmPassword && !passwordsMatch}
-        <span class="error-text">Passwords do not match</span>
+        <span class="error-text">{t("auth.passwordsDoNotMatch")}</span>
       {/if}
     </div>
 
@@ -136,7 +141,7 @@
       variant="primary"
       disabled={isLoading || !isPasswordValid || !passwordsMatch}
     >
-      {isLoading ? "Saving..." : "Save New Password"}
+      {isLoading ? t("auth.savingButton") : t("auth.saveNewPasswordButton")}
     </Button>
   {/if}
 </form>

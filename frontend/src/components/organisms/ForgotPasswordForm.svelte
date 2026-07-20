@@ -2,6 +2,11 @@
   import Button from "$components/atoms/Button.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import { forgotPassword } from "$shared/api/auth";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let email = $state("");
   let isLoading = $state(false);
@@ -13,7 +18,7 @@
     localError = null;
 
     if (!email.trim()) {
-      localError = "Email is required";
+      localError = t("auth.emailRequired");
       return;
     }
 
@@ -24,7 +29,7 @@
       isSent = true;
     } catch (e) {
       localError =
-        e instanceof Error ? e.message : "Failed to send reset email";
+        e instanceof Error ? e.message : t("auth.forgotPasswordFailed");
     } finally {
       isLoading = false;
     }
@@ -32,26 +37,26 @@
 </script>
 
 <form class="forgot-form" onsubmit={handleSubmit}>
-  <h2>Password Recovery</h2>
+  <h2>{t("auth.forgotPasswordTitle")}</h2>
 
   {#if isSent}
     <div class="success-message">
-      <p>✅ A password reset email has been sent to the specified address.</p>
-      <p>Check your inbox and follow the instructions.</p>
+      <p>✅ {t("auth.forgotPasswordSuccess1")}</p>
+      <p>{t("auth.forgotPasswordSuccess2")}</p>
     </div>
-    <a href="/auth/login" class="back-link">Back to login</a>
+    <a href="/auth/login" class="back-link">{t("auth.backToLogin")}</a>
   {:else}
     <p class="description">
-      Enter your email and we will send you a password reset link.
+      {t("auth.forgotPasswordDescription")}
     </p>
 
     <div class="form-group">
-      <label for="email">Email</label>
+      <label for="email">{t("auth.emailLabel")}</label>
       <input
         type="email"
         id="email"
         bind:value={email}
-        placeholder="Enter your email"
+        placeholder={t("auth.emailPlaceholder")}
         required
       />
     </div>
@@ -63,11 +68,11 @@
     {/if}
 
     <Button type="submit" variant="primary" disabled={isLoading}>
-      {isLoading ? "Sending..." : "Send"}
+      {isLoading ? t("auth.sendingButton") : t("auth.sendButton")}
     </Button>
 
     <div class="form-links">
-      <a href="/auth/login">Remembered your password? Sign in</a>
+      <a href="/auth/login">{t("auth.rememberedPasswordLink")}</a>
     </div>
   {/if}
 </form>

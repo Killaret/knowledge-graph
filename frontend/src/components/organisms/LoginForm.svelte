@@ -123,13 +123,13 @@
   </Button>
 
   <div class="form-links">
-    <a href="/auth/register">Register</a>
-    <a href="/auth/forgot-password">Forgot password?</a>
+    <a href="/auth/register">{t("auth.registerLink")}</a>
+    <a href="/auth/forgot-password">{t("auth.forgotPasswordLink")}</a>
   </div>
 
   {#if yandexEnabled && !useApiKey}
     <div class="divider">
-      <span>or</span>
+      <span>{t("auth.orDivider")}</span>
     </div>
     <YandexLoginButton />
   {/if}
