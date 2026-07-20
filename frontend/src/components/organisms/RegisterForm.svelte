@@ -3,6 +3,10 @@
   import Button from "$components/atoms/Button.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import { register, isLoading, error } from "$shared/stores/auth.svelte.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   let login = $state("");
   let email = $state("");
@@ -14,19 +18,19 @@
   const passwordErrors = $derived(() => {
     const errors: string[] = [];
     if (password.length < 10) {
-      errors.push("Minimum 10 characters");
+      errors.push(t("auth.passwordMinChars"));
     }
     if (!/[A-Z]/.test(password)) {
-      errors.push("Uppercase letter");
+      errors.push(t("auth.passwordUppercase"));
     }
     if (!/[a-z]/.test(password)) {
-      errors.push("Lowercase letter");
+      errors.push(t("auth.passwordLowercase"));
     }
     if (!/[0-9]/.test(password)) {
-      errors.push("Number");
+      errors.push(t("auth.passwordNumber"));
     }
     if (!/[!@#$%^&*]/.test(password)) {
-      errors.push("Special character (!@#$%^&*)");
+      errors.push(t("auth.passwordSpecial"));
     }
     return errors;
   });
@@ -42,22 +46,22 @@
 
     // Validation
     if (!login.trim()) {
-      localError = "Login is required";
+      localError = t("auth.loginRequired");
       return;
     }
 
     if (!email.trim()) {
-      localError = "Email is required";
+      localError = t("auth.emailRequired");
       return;
     }
 
     if (!isPasswordValid) {
-      localError = "Password does not meet requirements";
+      localError = t("auth.passwordRequirementsNotMet");
       return;
     }
 
     if (password !== confirmPassword) {
-      localError = "Passwords do not match";
+      localError = t("auth.passwordsDoNotMatch");
       return;
     }
 
@@ -65,72 +69,72 @@
     if (success) {
       goto("/");
     } else {
-      localError = error() || "Registration failed";
+      localError = error() || t("auth.registrationFailed");
     }
   }
 </script>
 
 <form class="register-form" onsubmit={handleSubmit}>
-  <h2>Registration</h2>
+  <h2>{t("auth.registerTitle")}</h2>
 
   <div class="form-group">
-    <label for="login">Login *</label>
+    <label for="login">{t("auth.loginLabel")} *</label>
     <input
       type="text"
       id="login"
       bind:value={login}
-      placeholder="Choose a login"
+      placeholder={t("auth.chooseLoginPlaceholder")}
       required
       minlength="3"
     />
   </div>
 
   <div class="form-group">
-    <label for="email">Email *</label>
+    <label for="email">{t("auth.emailLabel")} *</label>
     <input
       type="email"
       id="email"
       bind:value={email}
-      placeholder="Enter email"
+      placeholder={t("auth.enterEmailPlaceholder")}
       required
     />
   </div>
 
   <div class="form-group">
-    <label for="password">Password *</label>
+    <label for="password">{t("auth.passwordLabel")} *</label>
     <input
       type="password"
       id="password"
       bind:value={password}
-      placeholder="Create a password"
+      placeholder={t("auth.createPasswordPlaceholder")}
       required
     />
 
     {#if password.length > 0}
       <div class="password-requirements">
-        <p>Password requirements:</p>
+        <p>{t("auth.passwordRequirementsTitle")}</p>
         <ul>
-          <li class:valid={password.length >= 10}>Minimum 10 characters</li>
-          <li class:valid={/[A-Z]/.test(password)}>Uppercase letter</li>
-          <li class:valid={/[a-z]/.test(password)}>Lowercase letter</li>
-          <li class:valid={/[0-9]/.test(password)}>Number</li>
-          <li class:valid={/[!@#$%^&*]/.test(password)}>Special character</li>
+          <li class:valid={password.length >= 10}>{t("auth.passwordMinChars")}</li>
+          <li class:valid={/[A-Z]/.test(password)}>{t("auth.passwordUppercase")}</li>
+          <li class:valid={/[a-z]/.test(password)}>{t("auth.passwordLowercase")}</li>
+          <li class:valid={/[0-9]/.test(password)}>{t("auth.passwordNumber")}</li>
+          <li class:valid={/[!@#$%^&*]/.test(password)}>{t("auth.passwordSpecial")}</li>
         </ul>
       </div>
     {/if}
   </div>
 
   <div class="form-group">
-    <label for="confirm-password">Confirm Password *</label>
+    <label for="confirm-password">{t("auth.confirmPasswordLabel")} *</label>
     <input
       type="password"
       id="confirm-password"
       bind:value={confirmPassword}
-      placeholder="Repeat password"
+      placeholder={t("auth.repeatPasswordPlaceholder")}
       required
     />
     {#if confirmPassword && !passwordsMatch}
-      <span class="error-text">Passwords do not match</span>
+      <span class="error-text">{t("auth.passwordsDoNotMatch")}</span>
     {/if}
   </div>
 
@@ -143,11 +147,11 @@
     variant="primary"
     disabled={isLoading() || !isPasswordValid || !passwordsMatch}
   >
-    {isLoading() ? "Registering..." : "Register"}
+    {isLoading() ? t("auth.registeringButton") : t("auth.registerButton")}
   </Button>
 
   <div class="form-links">
-    <a href="/auth/login">Already have an account? Sign in</a>
+    <a href="/auth/login">{t("auth.alreadyHaveAccount")}</a>
   </div>
 </form>
 
