@@ -173,6 +173,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/shared/api/graph.ts` — graph loading error messages now use `formatMessage` i18n keys instead of hardcoded Russian strings.
 - `frontend/src/components/organisms/LoginForm.svelte` and `RegisterForm.svelte` — UI strings now use `formatMessage` i18n keys from `shared/utils/i18n.ts`.
 - `backend/internal/infrastructure/db/postgres/embedding_repo_test.go` — uses `testutil.SetupTestVectorDB` (pgvector container) instead of a hardcoded `localhost:5432` DSN.
+- `internal/domain/cache/cachetest/fake.go` — new in-memory `cache.CacheClient` test double.
+- Application-layer unit tests (`achievement`, `cache`, `queries/graph`, `user`) no longer import `internal/infrastructure/cache` or spin up Redis/miniredis.
 
 ### Current backend coverage
 
@@ -189,7 +191,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Some backend unit/integration tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
+- Some handler unit tests in `internal/interfaces/api/handlers/{user,auth,share}` still build real `postgres` repositories and GORM-backed DBs; they should be tagged as integration tests or converted to use mocked domain repositories.
 - Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
 - Frontend coverage and E2E stack not covered by these notes.
 
