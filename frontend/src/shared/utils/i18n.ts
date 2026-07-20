@@ -268,6 +268,51 @@ const messages: Record<Locale, Record<string, string>> = {
     "yandex.connecting": "Connecting to Yandex...",
     "yandex.signIn": "Sign in with Yandex",
 
+    // Graph UI
+    "graphControls.resetView": "Reset view",
+    "graphControls.search": "Search (F)",
+    "graphMode.normal": "Normal mode",
+    "graphMode.focus": "Focus mode",
+    "graphMode.focused": "Focused",
+    "graphMode.focusOff": "Focus off",
+
+    // Graph modals
+    "graphModals.createNoteTitle": "Create New Note",
+    "graphModals.noteTitlePlaceholder": "Title",
+    "graphModals.noteContentPlaceholder": "Content (optional)",
+    "graphModals.create": "Create",
+    "graphModals.createLinkTitle": "Create Link",
+    "graphModals.linkTypeLabel": "Link Type",
+    "graphModals.linkStrength": "Link Strength: {{value}}",
+    "graphModals.createLink": "Create Link",
+
+    // Graph overlay
+    "graphOverlay.focusActive": "Focus mode is active. Press Esc to restore effects.",
+    "graphOverlay.focus": "Focus",
+    "graphOverlay.noteDeleted": "Note deleted.",
+    "graphOverlay.restore": "Restore",
+    "graphOverlay.searchPlaceholder": "Search nodes...",
+    "graphOverlay.tip": "Tip",
+    "graphOverlay.nodes": "nodes",
+    "graphOverlay.links": "links",
+    "common.unknown": "Unknown",
+
+    // Hotkeys
+    "hotkey.search": "F — search nodes by name",
+    "hotkey.focus": "Esc — toggle focus mode (hide effects)",
+    "hotkey.help": "? — show/hide this help",
+    "hotkey.ghostNode": "N — create ghost node at center",
+    "hotkey.delete": "Delete/Backspace — delete selected node",
+    "hotkey.undo": "Ctrl+Z — undo (coming soon)",
+    "hotkey.quickCapture": "Ctrl+Shift+N — quick capture a new note",
+    "hotkey.dragLink": "Drag node to another node — create a link",
+    "hotkey.dragDelete": "Drag node to black hole — delete note",
+    "hotkey.doubleClick": "Double-click empty space — create new note",
+    "hotkey.zoom": "Mouse wheel — zoom in/out",
+
+    // Sidebar
+    "sidebar.placeholder": "Navigation Panel (v2.0)",
+
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
     "toast.closeAria": "Close notification",
@@ -672,6 +717,51 @@ const messages: Record<Locale, Record<string, string>> = {
     "yandex.initError": "Ошибка инициализации входа через Яндекс",
     "yandex.connecting": "Подключение к Яндекс...",
     "yandex.signIn": "Войти через Яндекс",
+
+    // Graph UI
+    "graphControls.resetView": "Сбросить вид",
+    "graphControls.search": "Поиск (F)",
+    "graphMode.normal": "Обычный режим",
+    "graphMode.focus": "Режим фокуса",
+    "graphMode.focused": "Сфокусирован",
+    "graphMode.focusOff": "Фокус выключен",
+
+    // Graph modals
+    "graphModals.createNoteTitle": "Создать заметку",
+    "graphModals.noteTitlePlaceholder": "Заголовок",
+    "graphModals.noteContentPlaceholder": "Содержание (необязательно)",
+    "graphModals.create": "Создать",
+    "graphModals.createLinkTitle": "Создать связь",
+    "graphModals.linkTypeLabel": "Тип связи",
+    "graphModals.linkStrength": "Сила связи: {{value}}",
+    "graphModals.createLink": "Создать связь",
+
+    // Graph overlay
+    "graphOverlay.focusActive": "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",
+    "graphOverlay.focus": "Фокус",
+    "graphOverlay.noteDeleted": "Заметка удалена.",
+    "graphOverlay.restore": "Восстановить",
+    "graphOverlay.searchPlaceholder": "Искать узлы...",
+    "graphOverlay.tip": "Подсказка",
+    "graphOverlay.nodes": "узлов",
+    "graphOverlay.links": "связей",
+    "common.unknown": "Неизвестно",
+
+    // Hotkeys
+    "hotkey.search": "F — искать узлы по имени",
+    "hotkey.focus": "Esc — переключить режим фокуса (скрыть эффекты)",
+    "hotkey.help": "? — показать/скрыть справку",
+    "hotkey.ghostNode": "N — создать призрачный узел в центре",
+    "hotkey.delete": "Delete/Backspace — удалить выбранный узел",
+    "hotkey.undo": "Ctrl+Z — отменить (скоро)",
+    "hotkey.quickCapture": "Ctrl+Shift+N — быстрая заметка",
+    "hotkey.dragLink": "Перетащите узел на другой узел — создать связь",
+    "hotkey.dragDelete": "Перетащите узел в чёрную дыру — удалить заметку",
+    "hotkey.doubleClick": "Двойной клик по пустому месту — создать заметку",
+    "hotkey.zoom": "Колёсико мыши — масштабирование",
+
+    // Sidebar
+    "sidebar.placeholder": "Панель навигации (v2.0)",
 
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",

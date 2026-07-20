@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
   // ==========================================
   // CONTEXT CONTROL CENTER (CCC) - ЗАРЕЗЕРВИРОВАНО
   // ==========================================
@@ -46,7 +51,7 @@
     - Левая панель берёт на себя "аналитические" сценарии
     ==========================================
   -->
-  <div class="sidebar-content-hidden">Navigation Panel (v2.0)</div>
+  <div class="sidebar-content-hidden">{t("sidebar.placeholder")}</div>
 </div>
 
 <style>

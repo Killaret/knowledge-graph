@@ -3,6 +3,12 @@
   import tippy from "tippy.js";
   import type { Instance } from "tippy.js";
   import "tippy.js/dist/tippy.css";
+  import { CelestialBody, LinkType } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     target,
@@ -38,9 +44,10 @@
     emoji: string,
   ): void {
     if (!tippyInstance) return;
+    const typeLabel = CelestialBody.fromString(type).label;
     currentContent = `
       <div style="padding: 8px 12px;">
-        <div style="font-weight: 600; margin-bottom: 4px;">${emoji} ${type}</div>
+        <div style="font-weight: 600; margin-bottom: 4px;">${emoji} ${typeLabel}</div>
         <div style="color: #666;">${title}</div>
       </div>
     `;
@@ -50,10 +57,11 @@
 
   export function showLinkTooltip(linkType: string, weight: number): void {
     if (!tippyInstance) return;
+    const typeLabel = LinkType.fromString(linkType).label;
     currentContent = `
       <div style="padding: 8px 12px;">
-        <div style="font-weight: 600; margin-bottom: 4px;">${linkType}</div>
-        <div style="color: #666;">Weight: ${weight.toFixed(2)}</div>
+        <div style="font-weight: 600; margin-bottom: 4px;">${typeLabel}</div>
+        <div style="color: #666;">${t("linkTooltip.weight")} ${weight.toFixed(2)}</div>
       </div>
     `;
     tippyInstance.setContent(currentContent);

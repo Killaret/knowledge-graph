@@ -1,5 +1,9 @@
 <script lang="ts">
   import { GraphMode } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   const {
     mode,
@@ -30,7 +34,7 @@
   <button
     data-testid="graph-controls-reset"
     onclick={onReset}
-    title="Reset view"
+    title={t("graphControls.resetView")}
     style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
     🔄
@@ -38,7 +42,7 @@
   <button
     data-testid="graph-controls-search"
     onclick={onSearch}
-    title="Search (F)"
+    title={t("graphControls.search")}
     style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
     🔍

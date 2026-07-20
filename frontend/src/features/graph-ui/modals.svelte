@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { NoteFormState } from "$features/graph-forms/note-form";
   import type { LinkFormState } from "$features/graph-forms/link-form";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     activeForm,
@@ -29,13 +34,13 @@
       style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"
     >
       <h3 style="margin: 0; color: #a78bfa; font-size: 16px; font-weight: 600;">
-        Create New Note
+        {t("graphModals.createNoteTitle")}
       </h3>
       <button
         data-testid="ghost-note-close"
         onclick={() => onCancel("note")}
         style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
-        aria-label="Close"
+        aria-label={t("close")}
       >
         ×
       </button>
@@ -43,14 +48,14 @@
     <input
       data-testid="ghost-note-title"
       type="text"
-      placeholder="Title"
+      placeholder={t("graphModals.noteTitlePlaceholder")}
       bind:value={noteFormState.newNoteTitle}
       style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; font-size: 14px; transition: border-color 0.2s;"
       onkeydown={(e) => e.key === "Enter" && onSave("note")}
     />
     <textarea
       data-testid="ghost-note-content"
-      placeholder="Content (optional)"
+      placeholder={t("graphModals.noteContentPlaceholder")}
       bind:value={noteFormState.newNoteContent}
       style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; min-height: 100px; box-sizing: border-box; font-size: 14px; resize: vertical; transition: border-color 0.2s;"
     ></textarea>
@@ -59,11 +64,11 @@
       bind:value={noteFormState.newNoteType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
-      <option value="star">⭐ Star</option>
-      <option value="planet">🪐 Planet</option>
-      <option value="comet">☄️ Comet</option>
-      <option value="galaxy">🌀 Galaxy</option>
-      <option value="asteroid">🌑 Asteroid</option>
+      <option value="star">⭐ {t("celestialBody.type.star")}</option>
+      <option value="planet">🪐 {t("celestialBody.type.planet")}</option>
+      <option value="comet">☄️ {t("celestialBody.type.comet")}</option>
+      <option value="galaxy">🌀 {t("celestialBody.type.galaxy")}</option>
+      <option value="asteroid">🌑 {t("celestialBody.type.asteroid")}</option>
     </select>
     <div style="display: flex; gap: 12px; justify-content: flex-end;">
       <button
@@ -71,14 +76,14 @@
         onclick={() => onCancel("note")}
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
-        Cancel
+        {t("cancel")}
       </button>
       <button
         data-testid="ghost-note-create"
         onclick={() => onSave("note")}
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
       >
-        Create
+        {t("graphModals.create")}
       </button>
     </div>
   </div>
@@ -96,12 +101,12 @@
       style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"
     >
       <h3 style="margin: 0; color: #fbbf24; font-size: 16px; font-weight: 600;">
-        Create Link
+        {t("graphModals.createLinkTitle")}
       </h3>
       <button
         onclick={() => onCancel("link")}
         style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
-        aria-label="Close"
+        aria-label={t("close")}
       >
         ×
       </button>
@@ -109,22 +114,22 @@
     <label
       for="link-type"
       style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
-      >Link Type</label
+      >{t("graphModals.linkTypeLabel")}</label
     >
     <select
       id="link-type"
       bind:value={linkFormState.newLinkType}
       style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
     >
-      <option value="reference">📖 Reference</option>
-      <option value="dependency">🔗 Dependency</option>
-      <option value="related">🔀 Related</option>
-      <option value="custom">✨ Custom</option>
+      <option value="reference">📖 {t("linkType.reference")}</option>
+      <option value="dependency">🔗 {t("linkType.dependency")}</option>
+      <option value="related">🔀 {t("linkType.related")}</option>
+      <option value="custom">✨ {t("linkType.custom")}</option>
     </select>
     <label
       for="link-strength"
       style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
-      >Link Strength: {linkFormState.newLinkWeight.toFixed(1)}</label
+      >{t("graphModals.linkStrength", { value: linkFormState.newLinkWeight.toFixed(1) })}</label
     >
     <input
       id="link-strength"
@@ -141,14 +146,14 @@
         onclick={() => onCancel("link")}
         style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
       >
-        Cancel
+        {t("cancel")}
       </button>
       <button
         data-testid="link-form-create"
         onclick={() => onSave("link")}
         style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);"
       >
-        Create Link
+        {t("graphModals.createLink")}
       </button>
     </div>
   </div>

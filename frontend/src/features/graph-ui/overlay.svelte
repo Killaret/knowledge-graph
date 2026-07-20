@@ -3,6 +3,11 @@
   import LinkTooltip from "$components/molecules/LinkTooltip.svelte";
   import type { HotkeysState } from "$features/graph-interaction/hotkeys";
   import { CelestialBody } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     canvas,
@@ -107,8 +112,8 @@
     linkType={hoveredLink.link_type}
     weight={hoveredLink.weight}
     sourceType={hoveredLink.source_type}
-    sourceTitle={sourceNode?.title || "Unknown"}
-    targetTitle={targetNode?.title || "Unknown"}
+    sourceTitle={sourceNode?.title || t("common.unknown")}
+    targetTitle={targetNode?.title || t("common.unknown")}
     onEdit={onLinkEdit}
     onDelete={onLinkDelete}
   />
@@ -127,7 +132,7 @@
   <div
     class="focus-mode-indicator"
     style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px; color: white; z-index: 50; display: flex; align-items: center; gap: 4px; font-size: 12px;"
-    title="Focus mode is active. Press Esc to restore effects."
+    title={t("graphOverlay.focusActive")}
   >
     <svg
       width="16"
@@ -140,7 +145,7 @@
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
-    Focus
+    {t("graphOverlay.focus")}
   </div>
 {/if}
 
@@ -151,21 +156,21 @@
   >
     {#if undoToastStage === "done"}
       <span style="font-size: 14px; color: rgba(255,255,255,0.9);"
-        >Note deleted.</span
+        >{t("graphOverlay.noteDeleted")}</span
       >
     {:else}
-      <span style="font-size: 14px;">Note deleted.</span>
+      <span style="font-size: 14px;">{t("graphOverlay.noteDeleted")}</span>
       <div style="display: flex; gap: 8px; align-items: center;">
         <button
           onclick={onRestoreDeletedNode}
           style="padding: 6px 12px; border: none; border-radius: 4px; background: #8b5cf6; color: white; cursor: pointer; font-size: 13px; font-weight: 600;"
         >
-          Restore
+          {t("graphOverlay.restore")}
         </button>
         <button
           onclick={onCancelUndo}
           style="background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 18px; line-height: 1;"
-          aria-label="Close"
+          aria-label={t("close")}
         >
           ×
         </button>
@@ -185,7 +190,7 @@
       bind:this={searchInput}
       bind:value={hotkeysState.searchQuery}
       oninput={onUpdateSearch}
-      placeholder="Search nodes..."
+      placeholder={t("graphOverlay.searchPlaceholder")}
       style="background: transparent; border: none; color: white; outline: none; min-width: 200px; font-size: 14px;"
     />
     {#if hotkeysState.searchMatchIds.length > 0}
@@ -222,7 +227,7 @@
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
-      Tip
+      {t("graphOverlay.tip")}
     </div>
     {hotkeysState.helpTooltipMessage}
   </div>
@@ -246,9 +251,9 @@
       style="display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"
     ></span>
   {/if}
-  <span>{nodes.length} nodes</span>
+  <span>{nodes.length} {t("graphOverlay.nodes")}</span>
   <span style="color: rgba(255,255,255,0.4);">·</span>
-  <span>{links.length} links</span>
+  <span>{links.length} {t("graphOverlay.links")}</span>
 </div>
 
 <style>

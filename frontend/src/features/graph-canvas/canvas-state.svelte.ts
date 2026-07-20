@@ -20,6 +20,11 @@ import {
   updateSearch,
   type HotkeysState,
 } from "$features/graph-interaction/hotkeys";
+import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+const locale = getCurrentLocale();
+const t = (key: string, params?: Record<string, string | number>) =>
+  formatMessage(key, locale, params);
 
 export interface HoveredLinkInfo {
   source: string;
@@ -75,17 +80,17 @@ export function createGraphCanvasState() {
   let selectedNodeId = $state<string | null>(null);
 
   const hotkeyLines = [
-    "F — search nodes by name",
-    "Esc — toggle focus mode (hide effects)",
-    "? — show/hide this help",
-    "N — create ghost node at center",
-    "Delete/Backspace — delete selected node",
-    "Ctrl+Z — undo (coming soon)",
-    "Ctrl+Shift+N — quick capture a new note",
-    "Drag node to another node — create a link",
-    "Drag node to black hole — delete note",
-    "Double-click empty space — create new note",
-    "Mouse wheel — zoom in/out",
+    t("hotkey.search"),
+    t("hotkey.focus"),
+    t("hotkey.help"),
+    t("hotkey.ghostNode"),
+    t("hotkey.delete"),
+    t("hotkey.undo"),
+    t("hotkey.quickCapture"),
+    t("hotkey.dragLink"),
+    t("hotkey.dragDelete"),
+    t("hotkey.doubleClick"),
+    t("hotkey.zoom"),
   ];
 
   function showDuplicateWarning(
@@ -98,7 +103,7 @@ export function createGraphCanvasState() {
     const stableLinkId = `${source}-${target}-${linkType}`;
     highlightedLinkId = stableLinkId;
     duplicateWarning = {
-      message: "This link already exists",
+      message: t("duplicate.link"),
       x,
       y,
       linkId: stableLinkId,

@@ -6,6 +6,8 @@
  * GraphCanvasControls and the canvas renderer.
  */
 
+import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
 export type GraphModeType = "normal" | "focus";
 
 export interface GraphModeProps {
@@ -42,11 +44,15 @@ export class GraphMode {
   }
 
   get label(): string {
-    return this.isFocus ? "Focus mode" : "Normal mode";
+    return this.isFocus
+      ? formatMessage("graphMode.focus", getCurrentLocale())
+      : formatMessage("graphMode.normal", getCurrentLocale());
   }
 
   get focusLabel(): string {
-    return this.isFocus ? "Focused" : "Focus off";
+    return this.isFocus
+      ? formatMessage("graphMode.focused", getCurrentLocale())
+      : formatMessage("graphMode.focusOff", getCurrentLocale());
   }
 
   toggle(): GraphMode {
