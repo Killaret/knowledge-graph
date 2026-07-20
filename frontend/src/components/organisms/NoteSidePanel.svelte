@@ -8,7 +8,12 @@
   import { goto } from "$app/navigation";
   import { formatDate } from "$shared/utils/date";
   import { CelestialBody } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import ShareModal from "$components/organisms/ShareModal.svelte";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const {
     nodeId,
@@ -43,7 +48,7 @@
     try {
       note = await getNote(id);
     } catch {
-      error = "Failed to load note";
+      error = t("noteSidePanel.loadError");
       note = null;
     } finally {
       loading = false;
@@ -65,7 +70,7 @@
       links = [];
       showDeleteLinksConfirm = false;
     } catch {
-      error = "Failed to delete links";
+      error = t("noteSidePanel.deleteLinksError");
     } finally {
       deletingLinks = false;
     }
@@ -78,7 +83,7 @@
   }
 
   function getTypeLabel(type: string | undefined): string {
-    return type ? CelestialBody.fromString(type).label : "Note";
+    return type ? CelestialBody.fromString(type).label : t("noteSidePanel.fallbackType");
   }
 </script>
 
@@ -87,7 +92,7 @@
     <button
       class="close-btn"
       onclick={onClose}
-      aria-label="Close panel"
+      aria-label={t("noteSidePanel.closeAria")}
       data-testid="sidepanel-close-btn"
     >
       <svg
@@ -109,7 +114,7 @@
         <button
           class="action-btn share"
           onclick={() => (showShareModal = true)}
-          aria-label="Share note"
+          aria-label={t("noteSidePanel.shareAria")}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +135,7 @@
         <button
           class="action-btn"
           onclick={() => onEdit?.(nodeId)}
-          aria-label="Edit note"
+          aria-label={t("noteSidePanel.editAria")}
           data-testid="sidepanel-edit-btn"
         >
           <svg
@@ -151,7 +156,7 @@
         <button
           class="action-btn delete"
           onclick={() => onDelete?.(nodeId)}
-          aria-label="Delete note"
+          aria-label={t("noteSidePanel.deleteAria")}
           data-testid="sidepanel-delete-btn"
         >
           <svg
@@ -177,7 +182,7 @@
     {#if loading}
       <div class="loading" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
-        <p>Loading note...</p>
+        <p>{t("noteSidePanel.loading")}</p>
       </div>
     {:else if error}
       <div class="error">{error}</div>
@@ -189,8 +194,8 @@
       </div>
 
       <div class="meta">
-        <span class="date">Created: {formatDate(note.created_at)}</span>
-        <span class="date">Updated: {formatDate(note.updated_at)}</span>
+        <span class="date">{t("noteSidePanel.created", { date: formatDate(note.created_at) })}</span>
+        <span class="date">{t("noteSidePanel.updated", { date: formatDate(note.updated_at) })}</span>
       </div>
 
       <div class="content">
@@ -207,26 +212,25 @@
 
       <div class="links-section">
         <div class="links-header">
-          <h3>Links ({links.length})</h3>
+          <h3>{t("noteSidePanel.linksTitle", { count: links.length })}</h3>
           {#if links.length > 0}
             <button
               class="delete-all-links-btn"
               onclick={() => (showDeleteLinksConfirm = true)}
-              aria-label="Delete all links"
+              aria-label={t("noteSidePanel.deleteAllAria")}
             >
-              Delete All
+              {t("noteSidePanel.deleteAll")}
             </button>
           {/if}
         </div>
         {#if links.length === 0}
-          <p class="no-links">No links yet</p>
+          <p class="no-links">{t("noteSidePanel.noLinks")}</p>
         {:else}
           <div class="links-list">
             {#each links as link}
               <div class="link-item">
                 <span class="link-type">{link.link_type}</span>
-                <span class="link-weight">Weight: {link.weight.toFixed(1)}</span
-                >
+                <span class="link-weight">{t("noteSidePanel.weight", { weight: link.weight.toFixed(1) })}</span>
               </div>
             {/each}
           </div>
@@ -238,9 +242,9 @@
           type="button"
           class="view-full-btn"
           onclick={() => note && goto(`/notes/${note.id}`)}
-          aria-label={`View full page for ${note.title}`}
+          aria-label={t("noteSidePanel.viewFullAria", { title: note.title })}
         >
-          View Full Page →
+          {t("noteSidePanel.viewFullPage")}
         </button>
       </div>
     {/if}
@@ -270,10 +274,9 @@
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
     >
-      <h3>Delete All Links?</h3>
+      <h3>{t("noteSidePanel.deleteLinksTitle")}</h3>
       <p>
-        This will remove all {links.length} links from this note. This action cannot
-        be undone.
+        {t("noteSidePanel.deleteLinksMessage", { count: links.length })}
       </p>
       <div class="modal-actions">
         <button
@@ -281,14 +284,14 @@
           onclick={() => (showDeleteLinksConfirm = false)}
           disabled={deletingLinks}
         >
-          Cancel
+          {t("noteSidePanel.cancel")}
         </button>
         <button
           class="modal-btn delete"
           onclick={handleDeleteAllLinks}
           disabled={deletingLinks}
         >
-          {deletingLinks ? "Deleting..." : "Delete All"}
+          {deletingLinks ? t("noteSidePanel.delete") + "..." : t("noteSidePanel.deleteAll")}
         </button>
       </div>
     </div>
