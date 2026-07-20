@@ -3,9 +3,10 @@
    * Test index page
    */
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import type { GraphLink } from "$shared/api/graph";
 
   const nodes = [{ id: "1", title: "Test Star", type: "star" }];
-  const links: any[] = [];
+  const links: GraphLink[] = [];
 </script>
 
 <div class="test-container">

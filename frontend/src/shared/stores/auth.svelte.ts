@@ -1,4 +1,5 @@
-// Auth store with Svelte 5 runes
+// Auth store with Svelte 5 runes. This module orchestrates authentication flows;
+// low-level state lives in auth-session.svelte.ts to keep the API client cycle-free.
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import * as authApi from "$shared/api/auth";
@@ -8,44 +9,35 @@ import {
   preloadAuthenticatedGraph,
 } from "$shared/services/PreloadService";
 import { setLocale, type Locale } from "$shared/utils/i18n";
-import type { User, AuthTokens } from "$shared/types";
+import type { User } from "$shared/types";
+import {
+  authState,
+  clearAuthState,
+  isAuthenticated,
+  saveTokens,
+  setApiKey,
+  skipAuthMode,
+} from "$shared/stores/auth-session.svelte";
 
-// Global reactive state - wrapped in object for export
-const authState = $state({
-  currentUser: null as User | null,
-  accessToken: null as string | null,
-  refreshToken: null as string | null,
-  isInitialized: false,
-  isLoading: false,
-  error: null as string | null,
-  apiKey: null as string | null,
-});
+// Re-export state getters so components can keep importing from this module
+export {
+  currentUser,
+  accessToken,
+  refreshToken,
+  isInitialized,
+  isLoading,
+  error,
+  apiKey,
+  getApiKey,
+  isAuthenticated,
+  isAdmin,
+  skipAuthMode,
+} from "$shared/stores/auth-session.svelte";
 
 // Guard concurrent initAuth calls so refresh token is not used twice
 let initAuthPromise: Promise<void> | null = null;
 
-// Export reactive state through getter functions
-export function currentUser(): User | null {
-  return authState.currentUser;
-}
-export function accessToken(): string | null {
-  return authState.accessToken;
-}
-export function refreshToken(): string | null {
-  return authState.refreshToken;
-}
-export function isInitialized(): boolean {
-  return authState.isInitialized;
-}
-export function isLoading(): boolean {
-  return authState.isLoading;
-}
-export function error(): string | null {
-  return authState.error;
-}
-export function apiKey(): string | null {
-  return authState.apiKey;
-}
+const API_KEY = "api_key";
 
 /**
  * Apply user settings like locale after login/init.
@@ -69,21 +61,6 @@ async function applyUserSettings(): Promise<void> {
 }
 
 /**
- * Check if SKIP_AUTH mode is enabled.
- * The window flag __SKIP_AUTH__ is respected in all builds to support isolated visual regression tests.
- * LocalStorage and query params remain dev-only to avoid accidental production bypass.
- */
-export function skipAuthMode(): boolean {
-  if (!browser) return false;
-  if ((window as any).__SKIP_AUTH__ === true) return true;
-  if (!import.meta.env.DEV) return false;
-  return localStorage.getItem("__SKIP_AUTH__") === "true";
-}
-
-// API key storage (user-provided, not a JWT)
-const API_KEY = "api_key";
-
-/**
  * Initialize auth state from the session.
  * Access/refresh tokens are now HttpOnly cookies and are not accessible to JS.
  */
@@ -101,7 +78,7 @@ export async function initAuth(): Promise<void> {
     try {
       // Restore API key (user-provided, not a JWT)
       const storedApiKey = browser ? localStorage.getItem(API_KEY) : null;
-      authState.apiKey = storedApiKey;
+      setApiKey(storedApiKey);
 
       // Check for SKIP_AUTH mode from query parameter on first load (dev only)
       if (import.meta.env.DEV) {
@@ -137,18 +114,17 @@ export async function initAuth(): Promise<void> {
       // Try to refresh the session (refresh token is sent as HttpOnly cookie).
       // If the user is not logged in, this will fail with 401 and we leave the
       // state cleared.
-      const refreshed = await refreshAccessToken();
+      const tokens = await authApi.refreshTokens();
+      saveTokens(tokens);
 
-      if (refreshed) {
-        try {
-          const user = await usersApi.getMe();
-          await applyUserSettings();
-          authState.currentUser = user;
-          void preloadAuthenticatedGraph();
-        } catch {
-          // If getting user fails, clear auth state
-          clearAuthState();
-        }
+      try {
+        const user = await usersApi.getMe();
+        await applyUserSettings();
+        authState.currentUser = user;
+        void preloadAuthenticatedGraph();
+      } catch {
+        // If getting user fails, clear auth state
+        clearAuthState();
       }
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -272,24 +248,6 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Refresh access token
- * The refresh token lives in an HttpOnly cookie; the browser sends it automatically.
- */
-export async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const tokens = await authApi.refreshTokens();
-    saveTokens(tokens);
-    return true;
-  } catch (e) {
-    if (import.meta.env.DEV) {
-      console.error("Token refresh failed:", e);
-    }
-    clearAuthState();
-    return false;
-  }
-}
-
-/**
  * Handle Yandex OAuth callback
  */
 export async function handleYandexCallback(
@@ -331,10 +289,7 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
 
   try {
     // Save API key
-    authState.apiKey = key;
-    if (browser) {
-      localStorage.setItem(API_KEY, key);
-    }
+    setApiKey(key);
 
     // Try to get user info with API key
     const user = await usersApi.getMe();
@@ -344,85 +299,10 @@ export async function loginWithApiKey(key: string): Promise<boolean> {
     return true;
   } catch (e) {
     authState.error = e instanceof Error ? e.message : "Invalid API key";
-    authState.apiKey = null;
-    if (browser) {
-      localStorage.removeItem(API_KEY);
-    }
+    setApiKey(null);
     return false;
   } finally {
     authState.isLoading = false;
-  }
-}
-
-/**
- * Get current access token
- */
-export function getAccessToken(): string | null {
-  return authState.accessToken;
-}
-
-/**
- * Get API key
- */
-export function getApiKey(): string | null {
-  return authState.apiKey;
-}
-
-/**
- * Check if user is authenticated
- * SKIP_AUTH bypasses auth for testing via the window flag, localStorage, or query param.
- * The window flag is allowed in all builds for isolated visual regression tests.
- */
-export function isAuthenticated(): boolean {
-  if (browser) {
-    // Check window flag injected by Playwright
-    if ((window as any).__SKIP_AUTH__ === true) {
-      return true;
-    }
-    // Check localStorage and query parameters only in dev to avoid production bypass
-    if (import.meta.env.DEV) {
-      if (localStorage.getItem("__SKIP_AUTH__") === "true") {
-        return true;
-      }
-      const url = new URL(window.location.href);
-      if (url.searchParams.get("skip_auth") === "true") {
-        // Persist to localStorage for subsequent navigations
-        localStorage.setItem("__SKIP_AUTH__", "true");
-        return true;
-      }
-    }
-  }
-  return !!authState.currentUser || !!authState.apiKey;
-}
-
-/**
- * Check if user is admin
- */
-export function isAdmin(): boolean {
-  return authState.currentUser?.role === "admin";
-}
-
-/**
- * Save tokens to in-memory state. Tokens are also stored as HttpOnly cookies
- * by the backend, so JavaScript never persists them.
- */
-function saveTokens(tokens: AuthTokens): void {
-  authState.accessToken = tokens.access_token;
-  authState.refreshToken = tokens.refresh_token;
-}
-
-/**
- * Clear all auth state
- */
-function clearAuthState(): void {
-  authState.accessToken = null;
-  authState.refreshToken = null;
-  authState.currentUser = null;
-  authState.apiKey = null;
-  authState.error = null;
-
-  if (browser) {
-    localStorage.removeItem(API_KEY);
   }
 }
 

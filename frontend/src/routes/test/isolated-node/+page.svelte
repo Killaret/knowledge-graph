@@ -10,7 +10,9 @@
   import type { GraphNode, GraphLink } from "$shared/api/graph";
 
   // Dynamic import for browser-only component
-  let GraphCanvas: any;
+  let GraphCanvas:
+    | typeof import("$components/organisms/GraphCanvas.svelte").default
+    | undefined;
 
   if (browser) {
     import("$components/organisms/GraphCanvas.svelte").then((m) => {

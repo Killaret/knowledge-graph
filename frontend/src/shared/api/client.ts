@@ -2,7 +2,12 @@
 import ky from "ky";
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import { getApiKey, refreshAccessToken } from "$shared/stores/auth.svelte";
+import {
+  getApiKey,
+  saveTokens,
+  clearAuthState,
+} from "$shared/stores/auth-session.svelte";
+import type { AuthTokens } from "$shared/types";
 
 // Redirect to login after an unrecoverable auth failure (browser only)
 function redirectToLogin(): void {
@@ -18,7 +23,7 @@ const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 // Получаем backend URL из env (для Docker) или используем default
 let backendUrl = "";
 try {
-  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) backendUrl = envUrl;
 } catch {
   // Fallback to default
@@ -39,6 +44,27 @@ const prefixUrl =
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * Refresh access token directly against the backend.
+ * The refresh token is sent as an HttpOnly cookie automatically by the browser.
+ * This function lives in the API client module (rather than the auth store) to
+ * avoid a static circular dependency: the auth store imports this client through
+ * API modules, and this client needs to persist tokens after refresh.
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const tokens = await api.post("v1/auth/refresh").json<AuthTokens>();
+    saveTokens(tokens);
+    return true;
+  } catch (e) {
+    if (import.meta.env.DEV) {
+      console.error("Token refresh failed:", e);
+    }
+    clearAuthState();
+    return false;
+  }
+}
+
 // Базовый URL с прокси /api → http://localhost:8080
 // Retry настроен для устойчивости к временным сетевым сбоям:
 // - limit: 3 попытки (4 total: initial + 3 retries)
@@ -57,7 +83,7 @@ export const api = ky.create({
   hooks: {
     beforeRequest: [
       async (request) => {
-        // Add API Key header if exists (for API key auth)
+        // Add API Key header if exists (for API key auth).
         const key = getApiKey();
         if (key) {
           request.headers.set("X-API-Key", key);
@@ -90,7 +116,7 @@ export const api = ky.create({
             return response;
           }
 
-          // Try to refresh the token
+          // Try to refresh the token.
           isRefreshing = true;
           refreshPromise = refreshAccessToken();
 

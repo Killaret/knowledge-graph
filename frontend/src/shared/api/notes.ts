@@ -6,7 +6,7 @@ export interface Note {
   id: string;
   title: string;
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   type?: string;
   created_at: string;
   updated_at: string;
@@ -39,7 +39,7 @@ export async function createNote(data: {
   title: string;
   content: string;
   type?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }): Promise<Note> {
   return api.post("v1/notes", { json: data }).json();
 }

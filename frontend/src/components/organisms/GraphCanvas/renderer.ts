@@ -2,7 +2,12 @@
  * Canvas rendering functions for GraphCanvas
  */
 import { graphConfig2D } from "$shared/config";
-import type { SimulationNode, SimulationLink } from "./types";
+import {
+  getLinkEndpointId,
+  resolveLinkEndpoint,
+  type SimulationNode,
+  type SimulationLink,
+} from "./types";
 import { getVariation, applyHueShift } from "$shared/utils/variation";
 import { drawBlackHole, drawBlackHoleTooltip } from "./black-hole";
 import { drawGhostNodeScreen, drawGhostNodeTooltipScreen } from "./ghost-node";
@@ -580,10 +585,8 @@ export function drawAnimatedLink(
   linkCount: number,
   hoveredNodeId?: string | null,
 ): void {
-  const sourceId =
-    typeof link.source === "string" ? link.source : link.source.id;
-  const targetId =
-    typeof link.target === "string" ? link.target : link.target.id;
+  const sourceId = getLinkEndpointId(link.source);
+  const targetId = getLinkEndpointId(link.target);
 
   const source = nodes.get(sourceId);
   const target = nodes.get(targetId);
@@ -956,20 +959,6 @@ function registerCelestialBodyDrawers(): void {
   CelestialBody.COSMIC_ABOMINATION.drawFunction = (ctx, c) => {
     drawCosmicAbomination(ctx, c.x, c.y, c.r, getAnomalyParams(c.nodeId));
   };
-}
-
-/**
- * Resolve a link endpoint after d3-force: `source` / `target` may be id strings
- * or the same simulation node objects d3 mutates in place.
- */
-function resolveLinkEndpoint(
-  ref: string | SimulationNode,
-  nodes: SimulationNode[],
-): SimulationNode | undefined {
-  if (typeof ref === "object" && ref !== null) {
-    return ref as SimulationNode;
-  }
-  return nodes.find((n) => String(n.id) === String(ref));
 }
 
 /**

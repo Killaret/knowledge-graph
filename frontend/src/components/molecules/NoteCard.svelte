@@ -3,7 +3,6 @@
   import { goto } from "$app/navigation";
   import { formatDate } from "$shared/utils/date";
   import { onMount, onDestroy } from "svelte";
-  import tippy from "tippy.js";
   import type { Instance } from "tippy.js";
   import "tippy.js/dist/tippy.css";
   import { CelestialBody } from "$shared/lib/domain";
@@ -143,9 +142,11 @@
     `;
   }
 
-  onMount(() => {
+  onMount(async () => {
     if (!cardRef) return;
 
+    const { default: tippy } = await import("tippy.js");
+    if (typeof document === "undefined") return;
     tippyInstance = tippy(cardRef, {
       content: buildTooltipContent(),
       placement: "right",

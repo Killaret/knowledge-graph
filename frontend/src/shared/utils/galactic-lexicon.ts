@@ -8,13 +8,7 @@ export type Mode = "standard" | "galactic";
 export type MessageCategory = "success" | "error" | "info" | "warning";
 export type MessageKey = string;
 
-const messages: Record<
-  Locale,
-  Record<
-    Mode,
-    Record<MessageCategory, Record<string, (...args: any[]) => string>>
-  >
-> = {
+const messages = {
   en: {
     standard: {
       success: {
@@ -274,7 +268,7 @@ const messages: Record<
       },
     },
   },
-};
+} as const;
 
 /**
  * Message formatter that supports locale and galactic mode
@@ -291,7 +285,11 @@ export class MessageFormatter {
   /**
    * Format a message with the current locale and mode
    */
-  format(category: MessageCategory, key: MessageKey, ...args: any[]): string {
+  format(
+    category: MessageCategory,
+    key: MessageKey,
+    ...args: unknown[]
+  ): string {
     const mode: Mode = this.useGalacticMode ? "galactic" : "standard";
     const localeMessages = messages[this.locale];
 
@@ -306,34 +304,37 @@ export class MessageFormatter {
       return `[${this.locale}.${mode}.${category}.${key}]`;
     }
 
-    return categoryMessages[key](...args);
+    const formatter = categoryMessages[
+      key as keyof typeof categoryMessages
+    ] as (...args: unknown[]) => string;
+    return formatter(...args);
   }
 
   /**
    * Get success message
    */
-  success(key: MessageKey, ...args: any[]): string {
+  success(key: MessageKey, ...args: unknown[]): string {
     return this.format("success", key, ...args);
   }
 
   /**
    * Get error message
    */
-  error(key: MessageKey, ...args: any[]): string {
+  error(key: MessageKey, ...args: unknown[]): string {
     return this.format("error", key, ...args);
   }
 
   /**
    * Get info message
    */
-  info(key: MessageKey, ...args: any[]): string {
+  info(key: MessageKey, ...args: unknown[]): string {
     return this.format("info", key, ...args);
   }
 
   /**
    * Get warning message
    */
-  warning(key: MessageKey, ...args: any[]): string {
+  warning(key: MessageKey, ...args: unknown[]): string {
     return this.format("warning", key, ...args);
   }
 
@@ -392,7 +393,8 @@ export function getMessageKeys(): Record<MessageCategory, string[]> {
  * Legacy compatibility function for lexicon-settings.ts
  * Maps old API to new MessageFormatter system
  */
-type LegacyCategory = "success" | "error" | "info" | "warning" | "achievement";
+export type LegacyCategory =
+  "success" | "error" | "info" | "warning" | "achievement";
 
 const keyToMethodMap: Record<LegacyCategory, Record<string, string>> = {
   success: { unlocked: "achievementUnlocked" },
@@ -407,7 +409,7 @@ export function getLexiconMessage(
   mode: Mode,
   category: LegacyCategory,
   key: string,
-  ...params: any[]
+  ...params: unknown[]
 ): string {
   const methodKey = keyToMethodMap[category]?.[key] || key;
   const targetCategory: MessageCategory =

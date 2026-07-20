@@ -42,7 +42,7 @@
 
   const codeToLexiconKey: Record<
     string,
-    { category: string; key: string; params?: any[] }
+    { category: string; key: string; params?: unknown[] }
   > = {
     connection_exists: { category: "error", key: "connectionExists" },
     // add mappings as needed

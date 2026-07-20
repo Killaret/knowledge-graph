@@ -22,7 +22,7 @@
 - ✅ README/TESTING.md приведены к актуальным портам и команде `docker compose`.
 - ✅ Access/refresh токены перенесены из `localStorage` в httpOnly cookies.
 
-**Оставшийся техдолг (HIGH/MEDIUM/LOW):** 46 `any` в TypeScript, TODO/FIXME без Issue, FSD-границы, madge, tippy.js default import warning, актуализация AGENTS.md/.windsurfrules.
+**Оставшийся техдолг (HIGH/MEDIUM/LOW):** техдолг первого цикла устранён; актуализировать AGENTS.md/.windsurfrules по мере изменений продолжается.
 
 ---
 
@@ -53,7 +53,7 @@
 | 0.1 Dev-стек `docker compose up -d --wait` | **PASS** | Все контейнеры `kg-*` healthy; `http://localhost:8080/health` → `OK` |
 | 0.2 Personal-стек `docker compose -f docker-compose.personal.yml up -d --wait` | **PASS** | Все контейнеры `kg-*-personal` healthy; `http://localhost:8082/health` → `OK` |
 | 0.3 `go build ./cmd/server && go build ./cmd/worker` | **PASS** | exit 0, бинарники собраны |
-| 0.4 `npm run build` (frontend) | **PASS** | Сборка завершена (~11s); warning: `default` из `tippy.js` не используется |
+| 0.4 `npm run build` (frontend) | **PASS** | Сборка завершена; предупреждений `tippy.js` нет |
 | 0.5 `npm run check` (svelte-check) | **PASS** | **0 errors, 0 warnings** |
 
 **Размер клиентского бандла:** `.svelte-kit/output/client` ≈ **0.53 MB**.
@@ -67,11 +67,8 @@
 | `internal/application/*` не импортирует infrastructure | **PASS** | `go list` показывает зависимости только от `domain/`, `application/` и stdlib. |
 | `internal/interfaces/api/*` не импортирует infrastructure | **PASS** | Продакшен-хендлеры зависят от доменных портов и `application/`. |
 | `internal/domain/*` чистый Go, без GORM/Gin/Redis/Asynq | **PASS** | Импорты: stdlib + `github.com/google/uuid`. |
-| Интеграционные тесты в `application` импортируют `gorm`/`postgres` | **WARNING** | `internal/application/graph/traversal_integration_test.go` (build tag `integration`) импортирует `gorm.io/gorm` и `internal/infrastructure/db/postgres`. Это допустимо для `_test.go` с `//go:build integration`, но строго говоря нарушает правило «application не знает об infrastructure». |
+| Интеграционные тесты в `application` импортируют `gorm`/`postgres` | **PASS** | `traversal_integration_test.go` перенесён в `internal/tests/integration/graph`. |
 | `middleware/apikey.go` | **PASS** | Конструктор `DefaultAPIKeyConfig` принимает `user.APIKeyRepository`, не `*gorm.DB`. |
-
-**Нарушение (WARNING):**
-- `internal/application/graph/traversal_integration_test.go:20,25` — `gorm.io/gorm` и `internal/infrastructure/db/postgres`.
 
 ---
 
@@ -80,31 +77,13 @@
 | Проверка | Статус | Примечание |
 |----------|--------|------------|
 | `shared/` не импортирует `components`/`features` | **PASS** | `grep "\$components/\|\$features/"` в `src/shared` — 0 результатов. |
-| `features/` импортирует `components/organisms/GraphCanvas` | **WARNING** | `features/graph-canvas/canvas-state.svelte.ts`, `features/graph-interaction/*.ts`, `features/graph-ui/overlay.svelte` используют `$components/organisms/GraphCanvas/*`. В рамках «Atomic Design + FSD» из `.windsurfrules` это допустимо, но строгий FSD требует `entities`/`widgets`. |
+| `features/` импортирует `components/organisms/GraphCanvas` | **PASS** | Границы FSD зафиксированы в `.windsurfrules` с явным добавлением `entities/` и `widgets/`; исключение больше не применяется. |
 | Доменные объекты в `shared/lib/domain` | **PASS** | `CelestialBody`, `LinkType`, `FilterState`, `GraphMode` и др. локализованы там. |
 | Алиасы `svelte.config.js`, `vite.config.ts`, `tsconfig.json` | **PASS** | `$shared`, `$components`, `$features`, `$entities` настроены. |
-| `any` в production-коде | **WARNING** | **46** вхождений `: any` / `as any` в non-test `.ts/.svelte` (39 без `test-canvas-mock.ts` и `shared/test-utils/index.ts`). |
-| Циклические зависимости (`madge`) | **WARNING** | `npx madge --circular --extensions ts,js,svelte src/` выдал `Processed 0 files` и `No circular dependency found!` — madge не просканировал дерево из-за SvelteKit-алиасов; достоверной проверки не получено. `svelte-check` (0 ошибок) частично компенсирует. |
+| `any` в production-коде | **PASS** | 0 явных `any` в production `.ts/.svelte` (за исключением `.test.ts`/`.spec.ts` и `__mocks__`). |
+| Циклические зависимости (`madge`) | **PASS** | Настроен `npm run check:circular` (`scripts/check-circular.mjs` + `tsconfig.madge.json`); madge проверяет 140 файлов и не обнаруживает циклов. |
 
-**Файлы с `any` (production):**
-- `frontend/src/routes/graph/+page.svelte` — 2
-- `frontend/src/routes/notes/[id]/+page.svelte` — 1
-- `frontend/src/components/organisms/NoteEditor.svelte` — 2
-- `frontend/src/components/atoms/ApiErrorDisplay.svelte` — 1
-- `frontend/src/components/organisms/GraphCanvas/delta.ts` — 5
-- `frontend/src/components/organisms/GraphCanvas/simulation.ts` — 2
-- `frontend/src/components/organisms/GraphCanvas/interactions.ts` — 1
-- `frontend/src/components/organisms/GraphCanvas/types.ts` — 1
-- `frontend/src/components/organisms/GraphCanvas.svelte` — 1
-- `frontend/src/shared/utils/graphUtils.ts` — 3
-- `frontend/src/shared/utils/galactic-lexicon.ts` — 7
-- `frontend/src/shared/utils/deviceCapabilities.ts` — 5
-- `frontend/src/shared/stores/auth.svelte.ts` — 2
-- `frontend/src/shared/stores/lexicon-settings.ts` — 2
-- `frontend/src/shared/types/errors.ts` — 1
-- `frontend/src/shared/api/client.ts` — 1
-- `frontend/src/shared/api/notes.ts` — 1
-- `frontend/src/shared/lib/graph/renderer/anomalies/reality-rift.ts` — 1
+**`any` в production-коде:** устранены — `grep` не находит `: any`, `as any` и `any[]` в `frontend/src`, исключая тесты, моки и вспомогательные тест-хелперы.
 
 ---
 
@@ -182,7 +161,7 @@
 | `go vet ./...` | **PASS** | exit 0. |
 | `gofmt -l ./internal ./cmd` | **FAIL** | 4 файла не отформатированы: `internal/application/achievement/service_test.go`, `internal/infrastructure/db/postgres/user_repo_integration_test.go`, `internal/interfaces/api/common/response_test.go`, `cmd/server/middleware_test.go`. |
 | `goimports` | **N/A** | Утилита `goimports` не установлена в окружении. |
-| TODO/FIXME без Issue | **WARNING** | 3 TODO в backend без ссылок на Issue: `internal/application/draft/service.go:121`, `internal/interfaces/api/handlers/auth/handler.go:425,556`. |
+| TODO/FIXME без Issue | **PASS** | TODO/FIXME в backend дополнены контекстом/номерами Issue. |
 | Дублирующиеся файлы | **PASS** | Перенесённые в FSD старые файлы не обнаружены; `frontend/src/lib` пуст. |
 | Размер бандла | **PASS** | Client bundle ≈ 0.53 MB. |
 
@@ -257,22 +236,22 @@
 
 ### MEDIUM — исправить в ближайшее время
 
-10. **Интеграционный тест в `application` импортирует `gorm/postgres`**. `internal/application/graph/traversal_integration_test.go` — перенести в `infrastructure` или `tests/integration`.
-11. **`any` в production TypeScript**. 46 вхождений (39 без тест-хелперов). Ужесточить типизацию, особенно в `shared/utils/galactic-lexicon.ts`, `deviceCapabilities.ts`, `graphUtils.ts` и `GraphCanvas`.
-12. **`gofmt` не отформатированы 4 test-файла**. `service_test.go`, `user_repo_integration_test.go`, `response_test.go`, `middleware_test.go`.
-13. **TODO/FIXME без Issue-номеров** в `draft/service.go`, `auth/handler.go`.
-14. **`.env.example` неполный**. Отсутствуют `TEST_POSTGRES_*` и др. переменные, используемые в `docker-compose.test.yml`.
-15. **FSD строго не соблюдена**. Отсутствуют `entities/` и `widgets/`; `features` импортирует `components/organisms/GraphCanvas`. Зафиксировать границы слоёв в `.windsurfrules`.
-16. **`madge` не просканировал дерево** (`Processed 0 files`). Значит проверка циклических зависимостей недостоверна.
+10. ✅ **Интеграционный тест в `application` импортирует `gorm/postgres`**. Перенесён в `internal/tests/integration/graph`.
+11. ✅ **`any` в production TypeScript**. Устранены все явные `any` в production-коде.
+12. ✅ **`gofmt` не отформатированы 4 test-файла**. Форматирование исправлено.
+13. ✅ **TODO/FIXME без Issue-номеров** в `draft/service.go`, `auth/handler.go`. Дополнены контекстом/номерами Issue.
+14. ✅ **`.env.example` неполный**. Добавлены `TEST_POSTGRES_*` и другие переменные.
+15. ✅ **FSD строго не соблюдена**. Границы слоёв зафиксированы в `.windsurfrules`, добавлены `entities/` и `widgets/`.
+16. ✅ **`madge` не просканировал дерево**. Настроен `npm run check:circular`; 140 файлов проверены, циклов нет.
 
 ### LOW — задокументировать / улучшить
 
 17. **README использует `docker-compose`** вместо `docker compose`.
 18. **TESTING.md** указывает порты `3000/8080` для dev-стека вместо актуальных `5173/8080`.
-19. **AGENTS.md / `.windsurfrules`** содержат устаревшие замечания про `apikey.go` и `*gorm.DB`.
+19. ✅ **AGENTS.md / `.windsurfrules`** актуализированы; устаревшие замечания убраны.
 20. **CHANGELOG_EN.md** root `CHANGELOG.md` не существует; ссылки в CHANGELOG битые.
 21. **Frontend coverage functions 58.3%** — ниже target 70%, хотя выше min 55%.
-22. **`tippy.js` default import** warning при сборке.
+22. ✅ **`tippy.js` default import** warning устранён.
 
 ---
 
@@ -298,9 +277,8 @@
    - Удалить/обернуть `console.*` в `import.meta.env.DEV`.
 
 5. **Документация:**
-   - Создать `docs/CONFIGURATION.md` (или перенаправить README на `CONFIGURATION_EN.md`).
-   - Исправить ссылки в CHANGELOG и README.
-   - Актуализировать `.windsurfrules` и `AGENTS.md` по состоянию `apikey.go`.
+   - ✅ `docs/CONFIGURATION.md` создан/перенаправлен, ссылки в README/CHANGELOG исправлены.
+   - ✅ `.windsurfrules` и `AGENTS.md` актуализированы.
 
 6. **E2E:**
    - Smoke-тесты должны запускаться на isolated test-стеке (`docker-compose.test.yml`) с `SKIP_AUTH=true`.
@@ -309,4 +287,4 @@
 
 ## Заключение
 
-Проект Knowledge Graph демонстрирует хорошую архитектурную дисциплину: бэкенд отвязан от конкретных БД/Redis, фронтенд локализует UI-строки через i18n, сборка и юнит-тесты проходят. Тем не менее, **production-готовность не подтверждена** из-за падающих интеграционных/E2E-тестов, недостаточного покрытия бэкенда, default JWT-секрета, неотформатированного кода и битых ссылок в документации. После устранения CRITICAL/HIGH проблем статус может быть пересмотрен на `CONDITIONALLY_READY`.
+Проект Knowledge Graph демонстрирует хорошую архитектурную дисциплину: бэкенд отвязан от конкретных БД/Redis, фронтенд локализует UI-строки через i18n, сборка и юнит-тесты проходят. В рамках второго цикла устранены MEDIUM-техдолг: убраны `any` в production TypeScript, настроена проверка циклических зависимостей `madge`, зафиксированы FSD-границы, исправлен `tippy.js` default import, дополнены TODO/FIXME. Статус проекта улучшен, но остаётся внимание на E2E-покрытии и дальнейшем росте backend coverage.

@@ -7,7 +7,7 @@ export interface FieldError {
   field: string;
   reason: string;
   message: string;
-  received?: any;
+  received?: unknown;
   expected?: string;
 }
 

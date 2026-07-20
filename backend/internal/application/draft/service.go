@@ -116,9 +116,10 @@ func (s *Service) SyncDraft(ctx context.Context, draftID uuid.UUID) error {
 
 // syncWithServer performs the actual HTTP sync
 func (s *Service) syncWithServer(ctx context.Context, draft *noteDomain.Draft) error {
-	// This would make an HTTP PATCH request to the note endpoint
-	// For now, we'll simulate success
-	// TODO: Implement actual HTTP sync with the note API
+	// This would make an HTTP PATCH request to the note endpoint.
+	// For now, we'll simulate success.
+	// TODO: Implement actual HTTP sync once the remote note sync endpoint and
+	// conflict-resolution strategy are defined (see docs/SYNC.md when created).
 	return nil
 }
 

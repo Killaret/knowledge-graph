@@ -36,20 +36,23 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   const cpuCores = navigator.hardwareConcurrency || 2;
 
   // Check device memory (if available)
-  const deviceMemory = (navigator as any).deviceMemory || 4;
+  const deviceMemory = navigator.deviceMemory ?? 4;
 
   // Try to detect GPU tier
   let gpuTier: "high" | "medium" | "low" = "medium";
 
   const canvas = document.createElement("canvas");
   const gl =
-    canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    (canvas.getContext("webgl") as WebGLRenderingContext | null) ??
+    (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
 
   if (gl) {
-    const debugInfo = (gl as any).getExtension("WEBGL_debug_renderer_info");
+    const debugInfo = gl.getExtension(
+      "WEBGL_debug_renderer_info",
+    ) as WEBGL_debug_renderer_info | null;
     if (debugInfo) {
-      const renderer = (gl as any).getParameter(
-        debugInfo.UNMASKED_RENDERER_WEBGL,
+      const renderer = String(
+        gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL),
       );
 
       // Check for software renderer or low-end GPUs
@@ -75,9 +78,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     }
 
     // Check max texture size as GPU capability indicator
-    const maxTextureSize = (gl as any).getParameter(
-      (gl as any).MAX_TEXTURE_SIZE,
-    );
+    const maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE));
     if (maxTextureSize < 4096) {
       gpuTier = "low";
     }

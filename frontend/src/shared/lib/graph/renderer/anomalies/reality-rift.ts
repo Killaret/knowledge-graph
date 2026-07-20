@@ -15,7 +15,7 @@ export function drawRealityRift(
   params: import("./helpers").AnomalyParams,
 ): void {
   const { crackCount, deformAmount, rotationOffset } = params;
-  const rr = (globalThis as any).anomalyConfig?.reality_rift || {
+  const rr = globalThis.anomalyConfig?.reality_rift || {
     core_color: "#6b21a8",
     glow_color: "#a855f7",
   };

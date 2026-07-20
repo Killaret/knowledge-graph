@@ -19,13 +19,13 @@ function easeOutCubic(t: number): number {
 }
 
 function computeStableProgress(
-  currentNodes: any[],
+  currentNodes: SimulationNode[],
   totalNodes: number,
 ): number {
   if (totalNodes === 0) return 1;
 
   const stableNodes = currentNodes.filter(
-    (n: any) =>
+    (n) =>
       n.x !== undefined &&
       !isNaN(n.x) &&
       n.y !== undefined &&
@@ -209,7 +209,7 @@ function applyFullRestart(
   }
 
   // Распределяем новые узлы в круге
-  const simulationNodes = filteredNodes.map((n, i) => {
+  const simulationNodes: SimulationNode[] = filteredNodes.map((n, i) => {
     const angle = (i / filteredNodes.length) * 2 * Math.PI;
     const radius = Math.min(width, height) * 0.3;
     return {
@@ -233,12 +233,12 @@ function applyFullRestart(
   let tickCount = 0;
 
   state.simulation = d3Force
-    .forceSimulation(simulationNodes as any)
+    .forceSimulation<SimulationNode, SimulationLink>(simulationNodes)
     .force(
       "link",
       d3Force
-        .forceLink(state.simLinks)
-        .id((d: any) => d.id)
+        .forceLink<SimulationNode, SimulationLink>(state.simLinks)
+        .id((d) => d.id)
         .distance(100)
         .strength(0.3),
     )
@@ -330,7 +330,7 @@ function applyIncremental(
   if (delta.updatedNodes.length > 0) {
     const simNodes = state.simulation?.nodes() || [];
     delta.updatedNodes.forEach((updated) => {
-      const simNode = simNodes.find((n: any) => n.id === updated.id);
+      const simNode = simNodes.find((n) => n.id === updated.id);
       if (simNode) {
         simNode.title = updated.title;
         simNode.type = updated.type;

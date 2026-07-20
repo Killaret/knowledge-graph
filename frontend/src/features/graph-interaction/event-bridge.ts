@@ -1,8 +1,9 @@
-import type {
-  SimulationNode,
-  SimulationLink,
-  TransformState,
-  DragState,
+import {
+  getLinkEndpointId,
+  type SimulationNode,
+  type SimulationLink,
+  type TransformState,
+  type DragState,
 } from "$components/organisms/GraphCanvas";
 import type {
   BlackHoleState,
@@ -126,8 +127,8 @@ export function createGraphEventBridge(
       | SimulationLink
       | { source: string | { id: string }; target: string | { id: string } },
   ): string {
-    const s = typeof link.source === "string" ? link.source : link.source.id;
-    const t = typeof link.target === "string" ? link.target : link.target.id;
+    const s = getLinkEndpointId(link.source);
+    const t = getLinkEndpointId(link.target);
     return `${s}|${t}`;
   }
 

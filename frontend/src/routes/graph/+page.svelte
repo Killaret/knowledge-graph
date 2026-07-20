@@ -14,6 +14,8 @@
     getGraphData,
     getFullGraphData,
     type GraphData,
+    type GraphNode,
+    type GraphLink,
   } from "$shared/api/graph";
 
   const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
@@ -29,6 +31,22 @@
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  interface RawNode extends GraphNode {
+    Id?: string;
+    ID?: string;
+    Title?: string;
+    Type?: string;
+    created_at?: string;
+    createdAt?: string;
+    CreatedAt?: string;
+  }
+
+  interface RawLink extends GraphLink {
+    source_note_id?: string;
+    target_note_id?: string;
+    source_type?: string;
+  }
 
   let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -77,9 +95,9 @@
       }
 
       // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n: any) => ({
-        id: n.id || n.Id || n.ID,
-        title: n.title || n.Title,
+      const transformedNodes = (rawData.nodes as RawNode[]).map((n) => ({
+        id: n.id || n.Id || n.ID || "",
+        title: n.title || n.Title || "",
         type: n.type || n.Type || "star",
         createdAt: n.created_at || n.createdAt || n.CreatedAt,
       }));
@@ -98,7 +116,7 @@
       }
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = rawData.links.map((l: any) => ({
+      const transformedLinks = (rawData.links as RawLink[]).map((l) => ({
         source: l.source_note_id || l.source,
         target: l.target_note_id || l.target,
         weight: l.weight,

@@ -34,6 +34,7 @@
   let showShareModal = $state(false);
   let showDeleteLinksConfirm = $state(false);
   let deletingLinks = $state(false);
+  let tags = $derived((note?.metadata?.tags ?? []) as string[]);
 
   // Load note when nodeId changes
   $effect(() => {
@@ -212,9 +213,9 @@
         {note.content}
       </div>
 
-      {#if note.metadata?.tags?.length > 0}
+      {#if tags.length > 0}
         <div class="tags">
-          {#each note.metadata.tags as tag}
+          {#each tags as tag}
             <span class="tag">#{tag}</span>
           {/each}
         </div>

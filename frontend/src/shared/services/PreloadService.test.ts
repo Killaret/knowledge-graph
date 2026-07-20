@@ -1,6 +1,6 @@
 // Unit тесты для PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { isAuthenticated } from "$shared/stores/auth.svelte";
+import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import * as graphApi from "$shared/api/graph";
 import {
   mockGraphData,
@@ -12,7 +12,7 @@ vi.mock("$app/environment", () => ({
   browser: true,
 }));
 
-vi.mock("$shared/stores/auth.svelte", () => ({
+vi.mock("$shared/stores/auth-session.svelte", () => ({
   isAuthenticated: vi.fn(() => false),
 }));
 

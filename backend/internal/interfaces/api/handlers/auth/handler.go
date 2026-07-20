@@ -500,11 +500,11 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 		}
 	}
 
-	// TODO: Send email with reset link
-	// For now, just return the token in development mode
+	// TODO: Integrate with an email provider (SendGrid/Amazon SES/SMTP) to send
+	// the reset link and remove debug_token before deploying to production.
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "if the email exists, a reset link has been sent",
-		"debug_token": token, // Remove in production
+		"debug_token": token,
 	})
 }
 
@@ -631,11 +631,12 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 		codeVerifier = pkce.CodeVerifier
 	}
 
-	// TODO: Exchange code for access token with Yandex
-	// This would require making an HTTP request to Yandex OAuth token endpoint
-	// For now, return a placeholder
+	// TODO: Implement Yandex OAuth token exchange. POST the authorization code
+	// and codeVerifier to https://oauth.yandex.com/token, create or link the
+	// user account, generate tokens and set the same HttpOnly auth cookies as
+	// the password flow. Remove this placeholder response.
 
-	_ = codeVerifier // Use in actual implementation
+	_ = codeVerifier
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Yandex OAuth callback received",

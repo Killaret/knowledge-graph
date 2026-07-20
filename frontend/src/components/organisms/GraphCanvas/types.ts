@@ -1,30 +1,34 @@
 /**
  * Shared types for GraphCanvas modules
  */
+import type {
+  Simulation,
+  SimulationNodeDatum,
+  SimulationLinkDatum,
+} from "d3-force";
 
-export interface SimulationNode {
+export interface SimulationNode extends SimulationNodeDatum {
   id: string;
   title: string;
   type?: string;
-  x?: number;
-  y?: number;
-  fx?: number;
-  fy?: number;
   scale?: number;
   opacity?: number;
   createdAt?: string;
 }
 
-export interface SimulationLink {
-  source: string | SimulationNode;
-  target: string | SimulationNode;
+export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {
+  source: SimulationNode | string;
+  target: SimulationNode | string;
   weight?: number;
   link_type?: string;
   source_type?: string; // 'user' or 'gamma'
 }
 
+// Re-export node/link datum base properties explicitly for clarity
+export type { SimulationNodeDatum, SimulationLinkDatum };
+
 export interface SimulationState {
-  simulation: any | null;
+  simulation: Simulation<SimulationNode, SimulationLink> | null;
   simLinks: SimulationLink[];
   isRunning: boolean;
   stable: boolean;
@@ -47,4 +51,31 @@ export interface DragState {
 export interface ResizeState {
   width: number;
   height: number;
+}
+
+/**
+ * Resolve a link endpoint reference to the actual simulation node.
+ * d3-force allows `source`/`target` to be a node id string, an array index
+ * number, or the resolved node object itself.
+ */
+export function resolveLinkEndpoint(
+  ref: string | number | SimulationNode,
+  nodes: SimulationNode[],
+): SimulationNode | undefined {
+  if (typeof ref === "object" && ref !== null) {
+    return ref;
+  }
+  if (typeof ref === "number") {
+    return nodes[ref];
+  }
+  return nodes.find((n) => n.id === ref);
+}
+
+/** Extract the node id from a link endpoint reference. */
+export function getLinkEndpointId(
+  ref: string | number | { id: string },
+): string {
+  if (typeof ref === "string") return ref;
+  if (typeof ref === "number") return String(ref);
+  return ref.id;
 }

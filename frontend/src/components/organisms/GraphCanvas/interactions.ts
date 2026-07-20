@@ -2,11 +2,12 @@
  * Interaction handlers for GraphCanvas
  */
 import { goto } from "$app/navigation";
-import type {
-  SimulationNode,
-  SimulationLink,
-  TransformState,
-  DragState,
+import {
+  resolveLinkEndpoint,
+  type SimulationNode,
+  type SimulationLink,
+  type TransformState,
+  type DragState,
 } from "./types";
 
 export type { DragState };
@@ -67,14 +68,8 @@ export function findLinkAtPosition(
   tolerance: number = 8,
 ): SimulationLink | null {
   for (const link of links) {
-    const sourceNode =
-      typeof link.source === "string"
-        ? nodes.find((n) => n.id === link.source)
-        : link.source;
-    const targetNode =
-      typeof link.target === "string"
-        ? nodes.find((n) => n.id === link.target)
-        : link.target;
+    const sourceNode = resolveLinkEndpoint(link.source, nodes);
+    const targetNode = resolveLinkEndpoint(link.target, nodes);
 
     if (!sourceNode || !targetNode) continue;
     if (
@@ -185,7 +180,7 @@ export function handleClick(
   const rect = canvas.getBoundingClientRect();
   const clickX = (e.clientX - rect.left - transform.x) / transform.k;
   const clickY = (e.clientY - rect.top - transform.y) / transform.k;
-  const node = nodes.find((n: any) => {
+  const node = nodes.find((n) => {
     const dx = n.x! - clickX;
     const dy = n.y! - clickY;
     return Math.hypot(dx, dy) < 24;

@@ -13,6 +13,8 @@ const config = {
       $shared: path.resolve("src/shared"),
       $features: path.resolve("src/features"),
       $components: path.resolve("src/components"),
+      $entities: path.resolve("src/entities"),
+      $widgets: path.resolve("src/widgets"),
       $config: path.resolve("../knowledge-graph.config.json"),
     },
   },

@@ -181,7 +181,8 @@ func setupRouter(
 	}
 
 	// Legacy routes (deprecated - kept for backward compatibility)
-	// TODO(# Issue): Remove legacy routes after all clients migrate to /api/v1
+	// TODO: Remove legacy /notes routes once all clients migrate to /api/v1/notes.
+	// Migration progress should be tracked in docs/DEPRECATIONS.md before removal.
 	r.POST("/notes", writeLimiter, noteHandler.Create)
 	r.GET("/notes/:id", noteHandler.Get)
 	r.PUT("/notes/:id", writeLimiter, noteHandler.Update)

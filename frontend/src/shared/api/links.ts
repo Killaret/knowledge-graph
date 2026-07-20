@@ -8,7 +8,7 @@ export interface Link {
   target_note_id: string;
   link_type: string;
   weight: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -19,7 +19,7 @@ export interface CreateLinkData {
   target_note_id: string;
   link_type: string;
   weight?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Получить все связи

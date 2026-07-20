@@ -241,7 +241,7 @@
     if (!browser || !canvas) return;
 
     // Expose for debugging
-    (window as any).__graphCanvas = {
+    window.__graphCanvas = {
       getSimulationNodes: () => getSimulationNodes(simState),
       transform,
     };

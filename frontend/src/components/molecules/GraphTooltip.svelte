@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import tippy from "tippy.js";
   import type { Instance } from "tippy.js";
   import "tippy.js/dist/tippy.css";
   import { CelestialBody, LinkType } from "$shared/lib/domain";
@@ -19,7 +18,8 @@
   let tippyInstance: Instance | null = $state(null);
   let currentContent: string = $state("");
 
-  onMount(() => {
+  onMount(async () => {
+    const { default: tippy } = await import("tippy.js");
     tippyInstance = tippy(target, {
       content: "",
       placement: "top",

@@ -61,9 +61,14 @@ The major Clean Architecture violations listed in previous audits have been reso
 
 Key remaining items:
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- `cmd/worker/main.go` still constructs an asynq server directly; consider wrapping it in the `internal/infrastructure/queue` package.
 - Some backend unit tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
-- Frontend still has hardcoded user-facing strings and `any` types in several components/pages that need i18n / strict typing.
+- Continue i18n coverage for user-facing strings.
+
+### Frontend architecture notes
+
+- Production frontend code is now free of explicit `any` type annotations in `src/` (excluding `.test.ts`/`.spec.ts` and mocks).
+- Auth state was split into `src/shared/stores/auth-session.svelte.ts` (low-level reactive state, no API client imports) and `src/shared/stores/auth.svelte.ts` (auth flows). This removes the previous circular dependency between the API client and the auth store.
+- Madge is configured for circular-dependency detection via `npm run check:circular` (`frontend/scripts/check-circular.mjs` + `frontend/tsconfig.madge.json`).
 
 ### Conventions used during audit
 
@@ -168,7 +173,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `cmd/server/router.go` — no longer receives `*gorm.DB` or `*redis.Client`; the health handler is injected as `gin.HandlerFunc`.
 - `cmd/cli/main.go` — enqueues recommendation tasks through the `common.TaskQueue` port (`queue.NewAsynqClient`) instead of using `asynq` directly.
 - `internal/application/draft/service.go` — no longer holds a concrete `*http.Client`.
-- `internal/domain/graph/traversal_integration_test.go` moved to `internal/application/graph`; domain tests no longer import infrastructure packages.
+- `internal/application/graph/traversal_integration_test.go` moved to `internal/tests/integration/graph`; domain tests no longer import infrastructure packages.
 - `frontend/src/shared/stores/achievements.svelte.ts` — converted from Svelte 4 `writable` store to Svelte 5 `$state` runes.
 - `frontend/src/shared/api/graph.ts` — graph loading error messages now use `formatMessage` i18n keys instead of hardcoded Russian strings.
 - `frontend/src/components/organisms/LoginForm.svelte` and `RegisterForm.svelte` — UI strings now use `formatMessage` i18n keys from `shared/utils/i18n.ts`.

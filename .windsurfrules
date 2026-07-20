@@ -112,26 +112,39 @@ func (r *NoteRepo) FindByID(id uuid.UUID) (*Note, error) {
 
 **Frontend folders (FSD + Atomic Design):**
 ```
+frontend/src/app/            # SvelteKit entry points, hooks, layouts
+frontend/src/routes/         # SvelteKit pages (FSD pages layer)
+frontend/src/widgets/        # Complex, self-contained sections (GraphCanvas, NotePanel)
+frontend/src/features/       # User scenarios and flows (graph-interaction, graph-forms)
+frontend/src/entities/       # Domain entities (note, user, tag, link)
 frontend/src/components/
-├── atoms/          # Button, Input, Badge, Icon — single responsibility
-├── molecules/      # NoteCard, SearchBar, TagList — composed atoms
-└── organisms/      # GraphCanvas, NotePanel, Sidebar — complex sections
+├── atoms/                   # Button, Input, Badge, Icon — single responsibility
+├── molecules/               # NoteCard, SearchBar, TagList — composed atoms
+└── organisms/               # Sidebar, AuthCard — composed molecules
 frontend/src/shared/
-├── api/            # ky-based API clients
-├── stores/         # runes-based state modules
-├── services/       # business logic, preload, side effects
-├── utils/          # helpers
-├── types/          # TypeScript types
-├── mocks/          # SvelteKit mocks for Vitest
-├── test-utils/     # test helpers
-├── styles/         # shared styles / CSS variables
-└── config/         # runtime config
-frontend/src/features/
-├── graph-interaction/  # drag-and-drop, hotkeys, zoom-pan
-└── graph-forms/        # note form, link form
+├── api/                     # ky-based API clients
+├── stores/                  # runes-based state modules
+├── services/                # business logic, preload, side effects
+├── utils/                   # helpers
+├── types/                   # TypeScript types
+├── mocks/                   # SvelteKit mocks for Vitest
+├── test-utils/              # test helpers
+├── styles/                  # shared styles / CSS variables
+└── config/                  # runtime config
 ```
 
-**Aliases:** `$shared/*`, `$components/*`, `$features/*` (legacy `$lib` removed).
+**FSD dependency boundaries (MANDATORY):**
+
+- `shared/` MUST NOT import any higher layer (`entities`, `features`, `widgets`, `components`, `routes`).
+- `components/atoms/` MUST NOT import `components/molecules/`, `components/organisms/`, or any higher layer.
+- `components/molecules/` MAY import `components/atoms/` and `shared/`.
+- `components/organisms/` MAY import `components/atoms/`, `components/molecules/`, and `shared/`.
+- `entities/` MAY import `shared/` only (no `components/features/widgets/routes`).
+- `features/` MAY import `entities/`, `components/`, and `shared/`.
+- `widgets/` MAY import `entities/`, `features/`, `components/`, and `shared/`.
+- `routes/` MAY import any layer.
+
+**Aliases:** `$shared/*`, `$components/*`, `$features/*`, `$entities/*`, `$widgets/*` (legacy `$lib` removed).
 
 ---
 

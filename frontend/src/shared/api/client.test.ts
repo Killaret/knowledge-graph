@@ -6,9 +6,10 @@ vi.mock("$app/navigation", () => ({
   goto: vi.fn(),
 }));
 
-vi.mock("$shared/stores/auth.svelte", () => ({
+vi.mock("$shared/stores/auth-session.svelte", () => ({
   getApiKey: vi.fn(() => null),
-  refreshAccessToken: vi.fn(() => Promise.resolve(true)),
+  saveTokens: vi.fn(),
+  clearAuthState: vi.fn(),
 }));
 
 describe("API Client", () => {

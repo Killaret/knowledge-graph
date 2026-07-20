@@ -1,6 +1,6 @@
 // Тесты для edge cases и пограничных сценариев PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { isAuthenticated } from "$shared/stores/auth.svelte";
+import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import * as graphApi from "$shared/api/graph";
 import * as usersApi from "$shared/api/users";
 import type { GraphData } from "$shared/api/graph";
@@ -14,7 +14,7 @@ vi.mock("$app/environment", () => ({
   browser: true,
 }));
 
-vi.mock("$shared/stores/auth.svelte", () => ({
+vi.mock("$shared/stores/auth-session.svelte", () => ({
   isAuthenticated: vi.fn(() => false),
 }));
 

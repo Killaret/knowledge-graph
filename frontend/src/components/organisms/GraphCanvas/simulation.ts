@@ -128,7 +128,7 @@ export function startSimulation(
 
   // Distribute nodes in a circle instead of single point (prevents extreme coordinates)
   // Preserve fixed-position nodes (e.g. Knowledge Core) that already have x/y/fx/fy.
-  const simulationNodes = nodes.map((n, i) => {
+  const simulationNodes: SimulationNode[] = nodes.map((n, i) => {
     if (n.fx != null && n.fy != null && n.x != null && n.y != null) {
       return { ...n };
     }
@@ -156,7 +156,7 @@ export function startSimulation(
     );
   }
 
-  const edges = validLinks.map((l) => ({
+  const edges: SimulationLink[] = validLinks.map((l) => ({
     source: l.source,
     target: l.target,
     weight: l.weight ?? 1,
@@ -180,12 +180,12 @@ export function startSimulation(
   const totalNodes = nodes.length;
 
   state.simulation = d3Force
-    .forceSimulation(simulationNodes as any)
+    .forceSimulation<SimulationNode, SimulationLink>(simulationNodes)
     .force(
       "link",
       d3Force
-        .forceLink(edges)
-        .id((d: any) => d.id)
+        .forceLink<SimulationNode, SimulationLink>(edges)
+        .id((d) => d.id)
         .distance(100)
         .strength(0.2),
     )

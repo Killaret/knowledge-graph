@@ -1,6 +1,6 @@
 // PreloadService - фоновая предзагрузка данных для ускорения первого взаимодействия после входа
 import { browser } from "$app/environment";
-import { isAuthenticated } from "$shared/stores/auth.svelte";
+import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import {
   getFullGraphData,
   getFreshGraph,

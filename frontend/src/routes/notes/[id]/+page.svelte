@@ -27,13 +27,27 @@
     return id;
   }
 
+  function getErrorStatus(err: unknown): number | undefined {
+    if (typeof err !== "object" || err === null || !("response" in err))
+      return undefined;
+    const response = (err as { response?: unknown }).response;
+    if (
+      typeof response !== "object" ||
+      response === null ||
+      !("status" in response)
+    )
+      return undefined;
+    const status = (response as { status?: unknown }).status;
+    return typeof status === "number" ? status : undefined;
+  }
+
   onMount(async () => {
     try {
       const id = getRouteId();
       note = await getNote(id);
       suggestions = await getSuggestions(id, 5);
-    } catch (e: any) {
-      if (e.response?.status === 404) {
+    } catch (e: unknown) {
+      if (getErrorStatus(e) === 404) {
         error = t("note.notFoundShort");
         setTimeout(() => goto("/"), 3000);
       } else {

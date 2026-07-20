@@ -24,6 +24,22 @@
   let apiError = $state<ErrorResponse | null>(null);
   let titleError = $state<string | null>(null);
 
+  function extractApiError(err: unknown): ErrorResponse | undefined {
+    if (typeof err !== "object" || err === null || !("response" in err))
+      return undefined;
+    const response = (err as { response?: unknown }).response;
+    if (
+      typeof response !== "object" ||
+      response === null ||
+      !("data" in response)
+    )
+      return undefined;
+    const data = (response as { data?: unknown }).data;
+    return typeof data === "object" && data !== null
+      ? (data as ErrorResponse)
+      : undefined;
+  }
+
   // Загрузка данных при редактировании
   $effect(() => {
     if (noteId) {
@@ -39,8 +55,8 @@
       title = note.title;
       content = note.content || "";
       noteType = note.type || "star";
-    } catch (err: any) {
-      apiError = err?.response?.data || {
+    } catch (err: unknown) {
+      apiError = extractApiError(err) || {
         code: "API_ERROR",
         message: t("noteEditor.loadError"),
       };
@@ -77,8 +93,8 @@
         const newNote = await createNote(noteData);
         await goto(`/notes/${newNote.id}`);
       }
-    } catch (err: any) {
-      apiError = err?.response?.data || {
+    } catch (err: unknown) {
+      apiError = extractApiError(err) || {
         code: "API_ERROR",
         message: t("noteEditor.saveError"),
       };
