@@ -7,6 +7,11 @@
   import type { Instance } from "tippy.js";
   import "tippy.js/dist/tippy.css";
   import { CelestialBody } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const HOUR_MS = 60 * 60 * 1000;
   const DAY_MS = 24 * HOUR_MS;
@@ -127,12 +132,12 @@
           <span class="nc-tooltip-title">${title}</span>
         </div>
         <div class="nc-tooltip-meta">
-          <span class="nc-tooltip-links">Links: ${linkCount}</span>
+          <span class="nc-tooltip-links">${t("noteCard.links", { count: linkCount })}</span>
           ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ""}
         </div>
         <div class="nc-tooltip-actions">
-          <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="Edit note">Edit</button>
-          <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="Delete note">Delete</button>
+          <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="${t("noteCard.editAria")}">${t("noteCard.edit")}</button>
+          <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="${t("noteCard.deleteAria")}">${t("noteCard.delete")}</button>
         </div>
       </div>
     `;
@@ -196,7 +201,7 @@
   onkeydown={handleKeyDown}
   tabindex="0"
   role="button"
-  aria-label="Open note: {note.title}"
+  aria-label={t("noteCard.openNote", { title: note.title })}
 >
   <div class="note-card__stripe" aria-hidden="true"></div>
 
@@ -208,13 +213,13 @@
           <span
             class="note-card__indicator note-card__indicator--new"
             data-visual-test="transparent"
-            aria-label="New note"
+            aria-label={t("noteCard.newNote")}
           ></span>
         {:else if isRecentlyUpdated()}
           <span
             class="note-card__indicator note-card__indicator--updated"
             data-visual-test="transparent"
-            aria-label="Recently updated"
+            aria-label={t("noteCard.recentlyUpdated")}
           ></span>
         {/if}
       </div>
@@ -225,7 +230,7 @@
           class="note-card__checkbox"
           checked={selected}
           aria-checked={selected}
-          aria-label="Select note {note.title}"
+          aria-label={t("noteCard.selectNote", { title: note.title })}
           onclick={handleSelectToggle}
         />
       </div>
@@ -249,7 +254,7 @@
         data-testid="note-date"
         data-visual-test="transparent"
       >
-        Star lit: {formatDate(note.created_at)}
+        {t("noteCard.starLit", { date: formatDate(note.created_at) })}
       </span>
       {#if isRecentlyUpdated()}
         <span
@@ -257,7 +262,7 @@
           data-testid="note-updated-date"
           data-visual-test="transparent"
         >
-          Orbit corrected: {formatDate(note.updated_at)}
+          {t("noteCard.orbitCorrected", { date: formatDate(note.updated_at) })}
         </span>
       {/if}
     </div>

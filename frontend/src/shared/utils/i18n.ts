@@ -109,14 +109,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Failed to delete selected notes",
     "page.restoreError": "Failed to restore note",
     "page.emptyGraphNoNotes": "Create some notes to see the knowledge graph",
-    "page.emptyGraphNoType": "No {type} in the graph. Try selecting a different type.",
+    "page.emptyGraphNoType": "No {{type}} in the graph. Try selecting a different type.",
     "page.emptyGraphTitle": "No graph data",
     "page.emptyListNoNotes": "Your star chart is empty",
     "page.emptyListNoSearch": "No cosmic objects found",
     "page.emptyListPrompt": "Ignite your first star to begin your knowledge galaxy.",
     "page.emptyListSearchPrompt": "Try a different search or clear the filter.",
-    "page.noSearchResults": "No objects match \"{query}\". Try different coordinates.",
-    "page.noTypeResults": "No {type} found in this sector.",
+    "page.noSearchResults": "No objects match \"{{query}}\". Try different coordinates.",
+    "page.noTypeResults": "No {{type}} found in this sector.",
     "page.createFirstNote": "Create your first note",
     "page.sortBy": "Sort by:",
     "page.selectionToggle": "Toggle selection mode",
@@ -134,7 +134,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.bulkActionsActions": "Actions",
     "page.bulkActionsDeleteSelected": "Delete selected",
     "page.bulkActionsCancel": "Cancel",
-    "page.selectedCount": "{count} selected",
+    "page.selectedCount": "{{count}} selected",
 
     // Modal
     "modal.deleteTitle": "Delete Note?",
@@ -162,7 +162,20 @@ const messages: Record<Locale, Record<string, string>> = {
     "controls.createAria": "Create new note",
 
     // Filter
-    "filter.filterBy": "Filter by {type}",
+    "filter.filterBy": "Filter by {{type}}",
+
+    // NoteCard
+    "noteCard.links": "Links: {{count}}",
+    "noteCard.edit": "Edit",
+    "noteCard.delete": "Delete",
+    "noteCard.editAria": "Edit note",
+    "noteCard.deleteAria": "Delete note",
+    "noteCard.openNote": "Open note: {{title}}",
+    "noteCard.newNote": "New note",
+    "noteCard.recentlyUpdated": "Recently updated",
+    "noteCard.selectNote": "Select note {{title}}",
+    "noteCard.starLit": "Star lit: {{date}}",
+    "noteCard.orbitCorrected": "Orbit corrected: {{date}}",
 
     // Toast
     "toast.done": "Done",
@@ -336,14 +349,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Не удалось удалить выбранные заметки",
     "page.restoreError": "Не удалось восстановить заметку",
     "page.emptyGraphNoNotes": "Создайте заметки, чтобы увидеть граф знаний",
-    "page.emptyGraphNoType": "В графе нет {type}. Попробуйте выбрать другой тип.",
+    "page.emptyGraphNoType": "В графе нет {{type}}. Попробуйте выбрать другой тип.",
     "page.emptyGraphTitle": "Нет данных графа",
     "page.emptyListNoNotes": "Ваша звёздная карта пуста",
     "page.emptyListNoSearch": "Космических объектов не найдено",
     "page.emptyListPrompt": "Зажгите первую звезду, чтобы начать галактику знаний.",
     "page.emptyListSearchPrompt": "Попробуйте другой поиск или сбросьте фильтр.",
-    "page.noSearchResults": "Нет объектов, соответствующих \"{query}\". Попробуйте другие координаты.",
-    "page.noTypeResults": "В этом секторе нет {type}.",
+    "page.noSearchResults": "Нет объектов, соответствующих \"{{query}}\". Попробуйте другие координаты.",
+    "page.noTypeResults": "В этом секторе нет {{type}}.",
     "page.createFirstNote": "Создать первую заметку",
     "page.sortBy": "Сортировать по:",
     "page.selectionToggle": "Переключить режим выбора",
@@ -361,7 +374,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.bulkActionsActions": "Действия",
     "page.bulkActionsDeleteSelected": "Удалить выбранные",
     "page.bulkActionsCancel": "Отмена",
-    "page.selectedCount": "Выбрано: {count}",
+    "page.selectedCount": "Выбрано: {{count}}",
 
     // Modal
     "modal.deleteTitle": "Удалить заметку?",
@@ -389,7 +402,20 @@ const messages: Record<Locale, Record<string, string>> = {
     "controls.createAria": "Создать новую заметку",
 
     // Filter
-    "filter.filterBy": "Фильтр по {type}",
+    "filter.filterBy": "Фильтр по {{type}}",
+
+    // NoteCard
+    "noteCard.links": "Связи: {{count}}",
+    "noteCard.edit": "Редактировать",
+    "noteCard.delete": "Удалить",
+    "noteCard.editAria": "Редактировать заметку",
+    "noteCard.deleteAria": "Удалить заметку",
+    "noteCard.openNote": "Открыть заметку: {{title}}",
+    "noteCard.newNote": "Новая заметка",
+    "noteCard.recentlyUpdated": "Недавно обновлена",
+    "noteCard.selectNote": "Выбрать заметку {{title}}",
+    "noteCard.starLit": "Звезда зажжена: {{date}}",
+    "noteCard.orbitCorrected": "Орбита скорректирована: {{date}}",
 
     // Toast
     "toast.done": "Готово",
