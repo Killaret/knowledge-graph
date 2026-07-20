@@ -226,6 +226,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirmModal.cancel": "Cancel",
     "confirmModal.cancelGalactic": "Abort",
 
+    // TypeSelector
+    "typeSelector.ariaLabel": "Select celestial body type",
+
     // NoteCard
     "noteCard.links": "Links: {{count}}",
     "noteCard.edit": "Edit",
@@ -550,6 +553,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirmModal.confirmGalactic": "Задействовать",
     "confirmModal.cancel": "Отмена",
     "confirmModal.cancelGalactic": "Прервать",
+
+    // TypeSelector
+    "typeSelector.ariaLabel": "Выберите тип небесного тела",
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",

@@ -1,6 +1,10 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
   import { CelestialBody } from "$shared/lib/domain";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   interface Props {
     selected: string;
@@ -23,7 +27,7 @@
   class="type-selector"
   {id}
   role="group"
-  aria-label="Select celestial body type"
+  aria-label={t("typeSelector.ariaLabel")}
 >
   {#each types as type}
     <button
