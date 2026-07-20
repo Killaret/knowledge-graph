@@ -164,6 +164,25 @@ const messages: Record<Locale, Record<string, string>> = {
     // Filter
     "filter.filterBy": "Filter by {{type}}",
 
+    // Celestial bodies (singular)
+    "celestialBody.type.star": "Star",
+    "celestialBody.type.planet": "Planet",
+    "celestialBody.type.moon": "Moon",
+    "celestialBody.type.comet": "Comet",
+    "celestialBody.type.galaxy": "Galaxy",
+    "celestialBody.type.nebula": "Nebula",
+    "celestialBody.type.asteroid": "Asteroid",
+    "celestialBody.type.satellite": "Satellite",
+    "celestialBody.type.blackhole": "Black Hole",
+    "celestialBody.type.debris": "Debris",
+    "celestialBody.type.dust": "Cosmic Dust",
+    "celestialBody.type.technical": "Technical",
+    "celestialBody.type.unknown": "Unknown",
+    "celestialBody.type.reality_rift": "Reality Rift",
+    "celestialBody.type.chromatic_maw": "Chromatic Maw",
+    "celestialBody.type.void_whisper": "Void Whisper",
+    "celestialBody.type.cosmic_abomination": "Cosmic Abomination",
+
     // NoteCard
     "noteCard.links": "Links: {{count}}",
     "noteCard.edit": "Edit",
@@ -403,6 +422,25 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Filter
     "filter.filterBy": "Фильтр по {{type}}",
+
+    // Celestial bodies (singular)
+    "celestialBody.type.star": "Звезда",
+    "celestialBody.type.planet": "Планета",
+    "celestialBody.type.moon": "Луна",
+    "celestialBody.type.comet": "Комета",
+    "celestialBody.type.galaxy": "Галактика",
+    "celestialBody.type.nebula": "Туманность",
+    "celestialBody.type.asteroid": "Астероид",
+    "celestialBody.type.satellite": "Спутник",
+    "celestialBody.type.blackhole": "Чёрная дыра",
+    "celestialBody.type.debris": "Обломки",
+    "celestialBody.type.dust": "Космическая пыль",
+    "celestialBody.type.technical": "Техническое",
+    "celestialBody.type.unknown": "Неизвестное",
+    "celestialBody.type.reality_rift": "Разлом реальности",
+    "celestialBody.type.chromatic_maw": "Хроматическая пасть",
+    "celestialBody.type.void_whisper": "Шёпот пустоты",
+    "celestialBody.type.cosmic_abomination": "Космическое чудовище",
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",
