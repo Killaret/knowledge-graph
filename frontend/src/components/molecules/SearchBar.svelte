@@ -5,10 +5,14 @@
   import { onMount, untrack } from "svelte";
   import { SearchQuery } from "$shared/lib/domain";
   import { addJitter } from "$shared/utils/jitter";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // Props
   const {
-    placeholder = "Search notes (Russian & English)...",
+    placeholder = t("search.placeholder"),
     autoFocus = false,
   } = $props();
 
@@ -66,16 +70,16 @@
     oninput={handleInput}
     onkeydown={handleKeyDown}
     {placeholder}
-    aria-label="Search"
+    aria-label={t("search.label")}
     class="search-input"
   />
   <button
     type="button"
     onclick={doSearch}
     class="search-button"
-    aria-label="Search"
+    aria-label={t("search.label")}
   >
-    Search
+    {t("search.label")}
   </button>
 </div>
 

@@ -142,6 +142,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "modal.delete": "Delete",
     "modal.cancel": "Cancel",
 
+    // Search
+    "search.placeholder": "Search notes...",
+    "search.label": "Search",
+
     // Toast
     "toast.done": "Done",
     "toast.noteDeleted": "Note deleted.",
@@ -344,6 +348,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "modal.deleteMessage": "Вы уверены, что хотите удалить эту заметку? Это действие нельзя отменить.",
     "modal.delete": "Удалить",
     "modal.cancel": "Отмена",
+
+    // Search
+    "search.placeholder": "Поиск заметок...",
+    "search.label": "Поиск",
 
     // Toast
     "toast.done": "Готово",
