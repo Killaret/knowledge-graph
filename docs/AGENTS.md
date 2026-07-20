@@ -183,6 +183,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/components/molecules/SearchBar.svelte` — placeholder, aria-label, and button text now use i18n keys.
 - `frontend/src/components/organisms/FloatingControls.svelte` — all titles, aria-labels, placeholders, and menu items now use i18n keys.
 - `frontend/src/components/molecules/NoteCard.svelte` — tooltip and card labels (links, edit/delete, indicators, dates) now use i18n keys.
+- `frontend/src/shared/lib/domain/celestial-body.ts` — `CelestialBody.label` now resolves through i18n keys (`celestialBody.type.*`), removing hardcoded English user-facing labels.
 
 ### Current backend coverage
 
@@ -199,7 +200,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Frontend still has hardcoded user-facing strings in some components (e.g. GraphCanvas, Sidebar) that need i18n keys.
+- Frontend still has hardcoded user-facing strings in some components (e.g. GraphCanvas, Sidebar, NoteSidePanel) that need i18n keys.
 - Full regression cycle and E2E stack verification are pending.
 - Frontend coverage and E2E stack not covered by these notes.
 
