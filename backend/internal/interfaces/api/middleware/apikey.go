@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
@@ -11,9 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// APIKeyRepository abstracts persistence for API keys.
+// It lives in the middleware package because APIKeyModel is local.
+type APIKeyRepository interface {
+	FindActiveByHash(ctx context.Context, hash string) (*APIKeyModel, error)
+	UpdateLastUsed(ctx context.Context, id uuid.UUID) error
+}
+
 // APIKeyConfig holds API key middleware configuration
 type APIKeyConfig struct {
-	DB           *gorm.DB
+	Repo         APIKeyRepository
 	HeaderName   string
 	Enabled      bool
 	StaticAPIKey string
@@ -21,9 +29,31 @@ type APIKeyConfig struct {
 }
 
 // DefaultAPIKeyConfig returns default API key configuration
+type gormAPIKeyRepository struct {
+	db *gorm.DB
+}
+
+func (r *gormAPIKeyRepository) FindActiveByHash(ctx context.Context, hash string) (*APIKeyModel, error) {
+	var key APIKeyModel
+	err := r.db.WithContext(ctx).Where("key_hash = ? AND is_active = ?", hash, true).First(&key).Error
+	if err != nil {
+		return nil, err
+	}
+	return &key, nil
+}
+
+func (r *gormAPIKeyRepository) UpdateLastUsed(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&APIKeyModel{}).Where("id = ?", id).Update("last_used_at", "now()").Error
+}
+
 func DefaultAPIKeyConfig(db *gorm.DB, enabled bool, staticAPIKey string) *APIKeyConfig {
+	var repo APIKeyRepository
+	if db != nil {
+		repo = &gormAPIKeyRepository{db: db}
+	}
+
 	return &APIKeyConfig{
-		DB:           db,
+		Repo:         repo,
 		HeaderName:   "X-API-Key",
 		Enabled:      enabled,
 		StaticAPIKey: staticAPIKey,
@@ -98,14 +128,18 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 			return
 		}
 
+		if config.Repo == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			c.Abort()
+			return
+		}
+
 		// Hash the API key for lookup
 		hash := hashAPIKey(apiKey)
 
 		// Look up the API key in the database
-		var keyModel APIKeyModel
-		result := config.DB.Where("key_hash = ? AND is_active = ?", hash, true).First(&keyModel)
-
-		if result.Error != nil {
+		keyModel, err := config.Repo.FindActiveByHash(c.Request.Context(), hash)
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
 			c.Abort()
 			return
@@ -119,7 +153,7 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 		}
 
 		// Update last used time
-		config.DB.Model(&keyModel).Update("last_used_at", "now()")
+		_ = config.Repo.UpdateLastUsed(c.Request.Context(), keyModel.ID)
 
 		// Set context values
 		c.Set(ContextUserIDKey, keyModel.UserID)
