@@ -462,3 +462,136 @@ func TestSecurityConfig(t *testing.T) {
 		}
 	})
 }
+
+func TestConfigHelpers(t *testing.T) {
+	t.Run("getEnv returns env value", func(t *testing.T) {
+		t.Setenv("TEST_CONFIG_KEY", "value")
+		if got := getEnv("TEST_CONFIG_KEY", "default"); got != "value" {
+			t.Errorf("expected 'value', got %q", got)
+		}
+	})
+
+	t.Run("getEnv returns default", func(t *testing.T) {
+		t.Setenv("TEST_CONFIG_KEY_UNKNOWN", "")
+		if got := getEnv("TEST_CONFIG_KEY_UNKNOWN_XYZ", "default"); got != "default" {
+			t.Errorf("expected 'default', got %q", got)
+		}
+	})
+
+	t.Run("mustGetEnv returns value", func(t *testing.T) {
+		t.Setenv("TEST_MUST_KEY", "value")
+		val, err := mustGetEnv("TEST_MUST_KEY")
+		if err != nil || val != "value" {
+			t.Errorf("expected 'value', got %q, err %v", val, err)
+		}
+	})
+
+	t.Run("mustGetEnv returns error when missing", func(t *testing.T) {
+		t.Setenv("TEST_MUST_KEY_MISSING", "")
+		if _, err := mustGetEnv("TEST_MUST_KEY_MISSING_XYZ"); err == nil {
+			t.Error("expected error for missing env var")
+		}
+	})
+
+	t.Run("getIntEnv parses integer", func(t *testing.T) {
+		t.Setenv("TEST_INT_KEY", "42")
+		if got := getIntEnv("TEST_INT_KEY", 0); got != 42 {
+			t.Errorf("expected 42, got %d", got)
+		}
+	})
+
+	t.Run("getIntEnv returns default on invalid", func(t *testing.T) {
+		t.Setenv("TEST_INT_KEY_INVALID", "not-a-number")
+		if got := getIntEnv("TEST_INT_KEY_INVALID", 7); got != 7 {
+			t.Errorf("expected default 7, got %d", got)
+		}
+	})
+
+	t.Run("getFloatEnv parses float", func(t *testing.T) {
+		t.Setenv("TEST_FLOAT_KEY", "3.14")
+		if got := getFloatEnv("TEST_FLOAT_KEY", 0); got != 3.14 {
+			t.Errorf("expected 3.14, got %f", got)
+		}
+	})
+
+	t.Run("getBoolEnv parses bool", func(t *testing.T) {
+		t.Setenv("TEST_BOOL_KEY", "true")
+		if got := getBoolEnv("TEST_BOOL_KEY", false); !got {
+			t.Error("expected true")
+		}
+	})
+
+	t.Run("getUint32Env parses uint32", func(t *testing.T) {
+		t.Setenv("TEST_UINT32_KEY", "100")
+		if got := getUint32Env("TEST_UINT32_KEY", 0); got != 100 {
+			t.Errorf("expected 100, got %d", got)
+		}
+	})
+
+	t.Run("getUint8Env parses uint8", func(t *testing.T) {
+		t.Setenv("TEST_UINT8_KEY", "8")
+		if got := getUint8Env("TEST_UINT8_KEY", 0); got != 8 {
+			t.Errorf("expected 8, got %d", got)
+		}
+	})
+}
+
+func TestMergeJSONObjects(t *testing.T) {
+	dst := map[string]any{
+		"backend": map[string]any{
+			"server": map[string]any{
+				"port": "8080",
+			},
+		},
+	}
+	src := map[string]any{
+		"backend": map[string]any{
+			"server": map[string]any{
+				"port": "9090",
+				"host": "127.0.0.1",
+			},
+			"new": true,
+		},
+	}
+
+	merged := mergeJSONObjects(dst, src)
+	backend := merged["backend"].(map[string]any)
+	server := backend["server"].(map[string]any)
+
+	if server["port"] != "9090" {
+		t.Errorf("expected port 9090, got %v", server["port"])
+	}
+	if server["host"] != "127.0.0.1" {
+		t.Errorf("expected host 127.0.0.1, got %v", server["host"])
+	}
+	if backend["new"] != true {
+		t.Error("expected new key")
+	}
+}
+
+func TestMustJSON(t *testing.T) {
+	data := map[string]any{"key": "value"}
+	jsonStr := mustJSON(data)
+	if jsonStr != `{"key":"value"}` {
+		t.Errorf("unexpected json: %s", jsonStr)
+	}
+}
+
+func TestJSONDefaultHelpers(t *testing.T) {
+	var cfg JSONConfig
+	cfg.Backend.Recommendation.Depth = 5
+	cfg.Backend.Recommendation.Alpha = 0.5
+
+	if got := getJSONIntOrDefault(&cfg, func(j *JSONConfig) int { return j.Backend.Recommendation.Depth }, 1); got != 5 {
+		t.Errorf("expected 5, got %d", got)
+	}
+	if got := getJSONIntOrDefault(nil, nil, 3); got != 3 {
+		t.Errorf("expected default 3, got %d", got)
+	}
+	if got := getJSONFloatOrDefault(&cfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Alpha }, 0.1); got != 0.5 {
+		t.Errorf("expected 0.5, got %f", got)
+	}
+	if got := getJSONStringOrDefault(nil, nil, "default"); got != "default" {
+		t.Errorf("expected default string, got %q", got)
+	}
+}

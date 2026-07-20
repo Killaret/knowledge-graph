@@ -6,7 +6,9 @@ import (
 
 	achievementDomain "knowledge-graph/internal/domain/achievement"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -302,4 +304,48 @@ func TestCheckStreaks(t *testing.T) {
 // Helper function
 func stringPtr(s string) *string {
 	return &s
+}
+
+func TestTrackLoginAndGetStreak_WithRedis(t *testing.T) {
+	ctx := context.Background()
+	uid := uuid.New()
+
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+
+	mockRepo := new(MockAchievementRepository)
+	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{}, nil)
+
+	service := NewService(nil, mockRepo, nil, rdb)
+
+	err := service.TrackLogin(ctx, uid)
+	assert.NoError(t, err)
+
+	streak, err := service.GetStreak(ctx, uid)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, streak)
+
+	err = service.TrackLogin(ctx, uid)
+	assert.NoError(t, err)
+
+	streak, err = service.GetStreak(ctx, uid)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, streak)
+}
+
+func TestGetUserAchievements(t *testing.T) {
+	ctx := context.Background()
+	uid := uuid.New()
+
+	condition := achievementDomain.Condition{Type: "count", Entity: "note", Action: "create", Threshold: 1}
+	achievement, _ := achievementDomain.NewAchievement("first_note", "First Note", "Description", "⭐", condition, 10, false)
+
+	mockRepo := new(MockAchievementRepository)
+	mockRepo.On("FindByUserID", ctx, uid).Return([]achievementDomain.Achievement{*achievement}, nil)
+
+	service := NewService(nil, mockRepo, nil, nil)
+	result, err := service.GetUserAchievements(ctx, uid)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "first_note", result[0].Code())
 }

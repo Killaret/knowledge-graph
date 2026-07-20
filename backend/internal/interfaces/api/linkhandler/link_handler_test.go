@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/gin-gonic/gin"
@@ -769,6 +770,72 @@ func TestCreateLinkInvalidSourceUUID(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func createTestLink(t *testing.T, r *gin.Engine, linkRepo *mockLinkRepo, noteRepo *mockNoteRepoForLink) (*link.Link, uuid.UUID, uuid.UUID) {
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	l := linkRepo.Create(context.Background(), sourceID, targetID, "reference", 0.8, nil, "user")
+	return l, sourceID, targetID
+}
+
+func TestDeleteLink_Success(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+	l, _, _ := createTestLink(t, r, linkRepo, noteRepo)
+
+	req := httptest.NewRequest("DELETE", "/links/"+l.ID().String(), nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	found, _ := linkRepo.FindByID(context.Background(), l.ID())
+	assert.Nil(t, found)
+}
+
+func TestGetLinksByNote_Success(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+	l, sourceID, _ := createTestLink(t, r, linkRepo, noteRepo)
+
+	req := httptest.NewRequest("GET", "/notes/"+sourceID.String()+"/links", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	data := resp["data"].(map[string]interface{})
+	outgoing := data["outgoing"].([]interface{})
+	assert.Len(t, outgoing, 1)
+	assert.Equal(t, l.ID().String(), outgoing[0].(map[string]interface{})["id"])
+}
+
+func TestDeleteByNote_Success(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+	l, sourceID, _ := createTestLink(t, r, linkRepo, noteRepo)
+
+	req := httptest.NewRequest("DELETE", "/notes/"+sourceID.String()+"/links", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	found, _ := linkRepo.FindByID(context.Background(), l.ID())
+	assert.Nil(t, found)
 }
 
 func TestCreateLinkInvalidTargetUUID(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/domain/tag"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
 	"knowledge-graph/internal/interfaces/api/middleware"
@@ -17,12 +17,12 @@ import (
 
 // Handler — HTTP-хендлер для работы с тегами
 type Handler struct {
-	tagRepo  *postgres.TagRepository
+	tagRepo  tag.Repository
 	noteRepo note.Repository
 }
 
 // New создает новый хендлер тегов
-func New(tagRepo *postgres.TagRepository, noteRepo note.Repository) *Handler {
+func New(tagRepo tag.Repository, noteRepo note.Repository) *Handler {
 	return &Handler{
 		tagRepo:  tagRepo,
 		noteRepo: noteRepo,
@@ -79,12 +79,12 @@ func validateTagName(name string) []apicommon.FieldError {
 	return errors
 }
 
-// toTagResponse преобразует модель в ответ
-func toTagResponse(tag *postgres.TagModel) TagResponse {
+// toTagResponse преобразует доменную сущность в ответ
+func toTagResponse(t *tag.Tag) TagResponse {
 	return TagResponse{
-		ID:        tag.ID.String(),
-		Name:      tag.Name,
-		CreatedAt: tag.CreatedAt,
+		ID:        t.ID().String(),
+		Name:      t.Name(),
+		CreatedAt: t.CreatedAt(),
 	}
 }
 
@@ -138,17 +138,20 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	tag := &postgres.TagModel{
-		ID:   uuid.New(),
-		Name: sanitizedName,
+	newTag, err := tag.New(sanitizedName)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("name", apicommon.ReasonInvalidValue, err.Error(), sanitizedName),
+		})
+		return
 	}
 
-	if err := h.tagRepo.Create(ctx, tag); err != nil {
+	if err := h.tagRepo.Create(ctx, newTag); err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось создать тег")
 		return
 	}
 
-	apicommon.JSON(c, http.StatusCreated, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusCreated, toTagResponse(newTag))
 }
 
 // List возвращает список всех тегов
@@ -165,8 +168,8 @@ func (h *Handler) List(c *gin.Context) {
 	}
 
 	response := make([]TagResponse, len(tags))
-	for i, tag := range tags {
-		response[i] = toTagResponse(tag)
+	for i, t := range tags {
+		response[i] = toTagResponse(t)
 	}
 
 	apicommon.JSON(c, http.StatusOK, response)
@@ -188,17 +191,17 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	tag, err := h.tagRepo.FindByID(ctx, id)
+	foundTag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
-	if tag == nil {
+	if foundTag == nil {
 		apicommon.NotFound(c, "Тег")
 		return
 	}
 
-	apicommon.JSON(c, http.StatusOK, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusOK, toTagResponse(foundTag))
 }
 
 // Update обновляет тег
@@ -248,18 +251,18 @@ func (h *Handler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Проверяем существование тега
-	tag, err := h.tagRepo.FindByID(ctx, id)
+	foundTag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
-	if tag == nil {
+	if foundTag == nil {
 		apicommon.NotFound(c, "Тег")
 		return
 	}
 
 	// Проверяем уникальность нового имени (если оно изменилось)
-	if sanitizedName != tag.Name {
+	if sanitizedName != foundTag.Name() {
 		existing, err := h.tagRepo.FindByName(ctx, sanitizedName)
 		if err != nil {
 			apicommon.InternalErrorWithMessage(c, "Не удалось проверить существование тега")
@@ -274,13 +277,19 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 	}
 
-	tag.Name = sanitizedName
-	if err := h.tagRepo.Update(ctx, tag); err != nil {
+	if err := foundTag.Rename(sanitizedName); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("name", apicommon.ReasonInvalidValue, err.Error(), sanitizedName),
+		})
+		return
+	}
+
+	if err := h.tagRepo.Update(ctx, foundTag); err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось обновить тег")
 		return
 	}
 
-	apicommon.JSON(c, http.StatusOK, toTagResponse(tag))
+	apicommon.JSON(c, http.StatusOK, toTagResponse(foundTag))
 }
 
 // Delete удаляет тег
@@ -301,12 +310,12 @@ func (h *Handler) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Проверяем существование тега
-	tag, err := h.tagRepo.FindByID(ctx, id)
+	foundTag, err := h.tagRepo.FindByID(ctx, id)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось получить тег")
 		return
 	}
-	if tag == nil {
+	if foundTag == nil {
 		apicommon.NotFound(c, "Тег")
 		return
 	}
@@ -367,12 +376,12 @@ func (h *Handler) AddTagToNote(c *gin.Context) {
 	}
 
 	// Проверяем существование тега
-	tag, err := h.tagRepo.FindByID(ctx, tagID)
+	foundTag, err := h.tagRepo.FindByID(ctx, tagID)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, "Не удалось проверить тег")
 		return
 	}
-	if tag == nil {
+	if foundTag == nil {
 		apicommon.NotFound(c, "Тег")
 		return
 	}
@@ -467,8 +476,8 @@ func (h *Handler) GetTagsByNote(c *gin.Context) {
 	}
 
 	response := make([]TagResponse, len(tags))
-	for i, tag := range tags {
-		response[i] = toTagResponse(tag)
+	for i, t := range tags {
+		response[i] = toTagResponse(t)
 	}
 
 	apicommon.JSON(c, http.StatusOK, response)

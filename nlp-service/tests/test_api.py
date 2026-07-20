@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+import asyncio
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
@@ -15,8 +16,9 @@ client = TestClient(app)
 
 
 class TestHealthEndpoint:
+    @patch("app.main.is_model_loaded", return_value=True)
     @patch("app.main.ensure_model_loaded", return_value=True)
-    def test_health_endpoint(self, _mock_loaded):
+    def test_health_endpoint(self, _mock_loaded, _mock_is_loaded):
         """Test the health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
@@ -180,8 +182,9 @@ class TestEmbedEndpoint:
 class TestAPIIntegration:
     """Integration tests for the API endpoints"""
     
+    @patch("app.main.is_model_loaded", return_value=True)
     @patch("app.main.ensure_model_loaded", return_value=True)
-    def test_api_structure(self, _mock_loaded):
+    def test_api_structure(self, _mock_loaded, _mock_is_loaded):
         """Test that API has correct structure"""
         # Test that endpoints exist and return correct status codes
         health_response = client.get("/health")
@@ -223,6 +226,39 @@ class TestErrorHandling:
             headers={"content-type": "text/plain"}
         )
         assert response.status_code == 422
+
+
+class TestLifespanAndHealth:
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_lifespan_success(self, _mock_ensure):
+        """Test that lifespan context manager completes successfully"""
+        from app.main import lifespan
+        loop = asyncio.new_event_loop()
+        try:
+            ctx = lifespan(app)
+            loop.run_until_complete(ctx.__aenter__())
+            loop.run_until_complete(ctx.__aexit__(None, None, None))
+        finally:
+            loop.close()
+
+    @patch("app.main.ensure_model_loaded", return_value=False)
+    def test_lifespan_failure_raises(self, _mock_ensure):
+        """Test that lifespan raises RuntimeError when model fails to load"""
+        from app.main import lifespan
+        loop = asyncio.new_event_loop()
+        try:
+            ctx = lifespan(app)
+            with pytest.raises(RuntimeError):
+                loop.run_until_complete(ctx.__aenter__())
+        finally:
+            loop.close()
+
+    @patch("app.main.is_model_loaded", return_value=False)
+    def test_health_not_loaded(self, _mock_loaded):
+        """Test health endpoint returns 503 when model is not loaded"""
+        response = client.get("/health")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
 
 
 if __name__ == "__main__":

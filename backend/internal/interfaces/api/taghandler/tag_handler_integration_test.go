@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/domain/note"
+	tagDomain "knowledge-graph/internal/domain/tag"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/testutil"
 
@@ -91,11 +92,10 @@ func (s *TagHandlerIntegrationTestSuite) createTestNote(title, content, noteType
 }
 
 // createTestTag создает тестовый тег
-func (s *TagHandlerIntegrationTestSuite) createTestTag(name string) *postgres.TagModel {
-	tag := &postgres.TagModel{
-		Name: name,
-	}
-	err := s.tagRepo.Create(s.db.Statement.Context, tag)
+func (s *TagHandlerIntegrationTestSuite) createTestTag(name string) *tagDomain.Tag {
+	tag, err := tagDomain.New(name)
+	s.Require().NoError(err, "failed to create test tag")
+	err = s.tagRepo.Create(s.db.Statement.Context, tag)
 	s.Require().NoError(err, "failed to create test tag")
 	return tag
 }
@@ -212,7 +212,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_Success() {
 	tag := s.createTestTag("test-tag")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("GET", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusOK, w.Code)
@@ -222,7 +222,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_Success() {
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), wrappedResponse.Data.ID)
+	s.Equal(tag.ID().String(), wrappedResponse.Data.ID)
 	s.Equal("test-tag", wrappedResponse.Data.Name)
 }
 
@@ -264,7 +264,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Success() {
 	jsonBody, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/tags/"+tag.ID.String(), bytes.NewBuffer(jsonBody))
+	req, _ := http.NewRequest("PUT", "/tags/"+tag.ID().String(), bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
@@ -275,7 +275,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Success() {
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), wrappedResponse.Data.ID)
+	s.Equal(tag.ID().String(), wrappedResponse.Data.ID)
 	s.Equal("new-name", wrappedResponse.Data.Name)
 }
 
@@ -291,7 +291,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Duplicate() {
 	jsonBody, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/tags/"+tag1.ID.String(), bytes.NewBuffer(jsonBody))
+	req, _ := http.NewRequest("PUT", "/tags/"+tag1.ID().String(), bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
@@ -323,14 +323,14 @@ func (s *TagHandlerIntegrationTestSuite) TestDeleteTag_Success() {
 	tag := s.createTestTag("delete-me")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("DELETE", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusNoContent, w.Code)
 
 	// Проверяем что тег удален
 	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("GET", "/tags/"+tag.ID.String(), nil)
+	req2, _ := http.NewRequest("GET", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w2, req2)
 	s.Equal(http.StatusNotFound, w2.Code)
 }
@@ -350,7 +350,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_Success() {
 	tag := s.createTestTag("important")
 
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -359,7 +359,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_Success() {
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
-	s.Equal(http.StatusCreated, w.Code)
+	s.Equal(http.StatusNoContent, w.Code)
 }
 
 // TestAddTagToNote_NoteNotFound - несуществующая заметка
@@ -367,7 +367,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_NoteNotFound() {
 	tag := s.createTestTag("important")
 
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -403,7 +403,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 
 	// Первая привязка
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -433,12 +433,12 @@ func (s *TagHandlerIntegrationTestSuite) TestRemoveTagFromNote_Success() {
 	tag := s.createTestTag("important")
 
 	// Привязываем тег
-	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag.ID)
+	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag.ID())
 	s.Require().NoError(err)
 
 	// Отвязываем тег
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/notes/"+note.ID().String()+"/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("DELETE", "/notes/"+note.ID().String()+"/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusNoContent, w.Code)
@@ -451,9 +451,9 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote() {
 	tag2 := s.createTestTag("urgent")
 
 	// Привязываем оба тега
-	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag1.ID)
+	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag1.ID())
 	s.Require().NoError(err)
-	err = s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag2.ID)
+	err = s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag2.ID())
 	s.Require().NoError(err)
 
 	w := httptest.NewRecorder()

@@ -36,6 +36,9 @@ func Connect(dsn string) (*gorm.DB, error) {
 
 // GetPoolStats returns connection pool statistics for monitoring
 func GetPoolStats(database *gorm.DB) map[string]interface{} {
+	if database == nil {
+		return map[string]interface{}{"error": "database is nil"}
+	}
 	sqlDB, err := database.DB()
 	if err != nil {
 		return map[string]interface{}{"error": err.Error()}

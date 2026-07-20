@@ -37,6 +37,9 @@ func NewClient(ctx context.Context, uri, databaseName string) (*Client, error) {
 
 // GetDatabase returns the MongoDB database
 func (c *Client) GetDatabase() *mongo.Database {
+	if c == nil {
+		return nil
+	}
 	return c.database
 }
 
@@ -47,5 +50,8 @@ func (c *Client) Close(ctx context.Context) error {
 
 // GetCollection returns a collection by name
 func (c *Client) GetCollection(name string) *mongo.Collection {
+	if c == nil || c.database == nil {
+		return nil
+	}
 	return c.database.Collection(name)
 }
