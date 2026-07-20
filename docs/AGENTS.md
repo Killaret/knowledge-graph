@@ -171,6 +171,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/domain/graph/traversal_integration_test.go` moved to `internal/application/graph`; domain tests no longer import infrastructure packages.
 - `frontend/src/shared/stores/achievements.svelte.ts` — converted from Svelte 4 `writable` store to Svelte 5 `$state` runes.
 - `frontend/src/shared/api/graph.ts` — graph loading error messages now use `formatMessage` i18n keys instead of hardcoded Russian strings.
+- `frontend/src/components/organisms/LoginForm.svelte` — UI strings now use `formatMessage` i18n keys from `shared/utils/i18n.ts`.
+- `backend/internal/infrastructure/db/postgres/embedding_repo_test.go` — uses `testutil.SetupTestVectorDB` (pgvector container) instead of a hardcoded `localhost:5432` DSN.
 
 ### Current backend coverage
 
