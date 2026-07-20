@@ -3,6 +3,11 @@
   import { createNote, updateNote, getNote } from "$shared/api/notes";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   interface Props {
     noteId?: string | null;
@@ -37,7 +42,7 @@
     } catch (err: any) {
       apiError = err?.response?.data || {
         code: "API_ERROR",
-        message: "Failed to load note",
+        message: t("noteEditor.loadError"),
       };
     } finally {
       isLoading = false;
@@ -47,7 +52,7 @@
   function validate(): boolean {
     titleError = null;
     if (!title.trim()) {
-      titleError = "Title is required";
+      titleError = t("noteEditor.titleRequired");
       return false;
     }
     return true;
@@ -75,7 +80,7 @@
     } catch (err: any) {
       apiError = err?.response?.data || {
         code: "API_ERROR",
-        message: "Failed to save note. Please try again.",
+        message: t("noteEditor.saveError"),
       };
     } finally {
       isSaving = false;
@@ -93,7 +98,7 @@
 
 <div class="note-editor" data-testid="note-editor">
   {#if isLoading}
-    <div class="loading" data-testid="loading">Loading...</div>
+    <div class="loading" data-testid="loading">{t("noteEditor.loading")}</div>
   {:else}
     <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
 
@@ -104,12 +109,12 @@
       }}
     >
       <div class="field">
-        <label for="title">Title</label>
+        <label for="title">{t("noteEditor.titleLabel")}</label>
         <input
           id="title"
           type="text"
           bind:value={title}
-          placeholder="Enter note title"
+          placeholder={t("noteEditor.titlePlaceholder")}
           data-testid="title-input"
           disabled={isSaving}
         />
@@ -120,25 +125,25 @@
       </div>
 
       <div class="field">
-        <label for="type">Type</label>
+        <label for="type">{t("noteEditor.typeLabel")}</label>
         <select
           id="type"
           bind:value={noteType}
           data-testid="type-select"
           disabled={isSaving}
         >
-          <option value="star">Star</option>
-          <option value="planet">Planet</option>
-          <option value="comet">Comet</option>
+          <option value="star">{t("celestialBody.type.star")}</option>
+          <option value="planet">{t("celestialBody.type.planet")}</option>
+          <option value="comet">{t("celestialBody.type.comet")}</option>
         </select>
       </div>
 
       <div class="field">
-        <label for="content">Content</label>
+        <label for="content">{t("noteEditor.contentLabel")}</label>
         <textarea
           id="content"
           bind:value={content}
-          placeholder="Enter note content"
+          placeholder={t("noteEditor.contentPlaceholder")}
           rows="10"
           data-testid="content-input"
           disabled={isSaving}
@@ -152,7 +157,7 @@
           disabled={isSaving}
           data-testid="save-button"
         >
-          {isSaving ? "Saving..." : noteId ? "Update" : "Create"}
+          {isSaving ? t("noteEditor.saving") : noteId ? t("noteEditor.update") : t("noteEditor.create")}
         </button>
         <button
           type="button"
@@ -161,7 +166,7 @@
           disabled={isSaving}
           data-testid="cancel-button"
         >
-          Cancel
+          {t("noteEditor.cancel")}
         </button>
       </div>
     </form>

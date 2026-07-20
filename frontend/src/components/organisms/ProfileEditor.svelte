@@ -134,16 +134,16 @@
   </div>
 
   <div class="form-group">
-    <label for="locale">Language</label>
+    <label for="locale">{formatMessage("profile.languageLabel", selectedLocale)}</label>
     <select
       id="locale"
       bind:value={selectedLocale}
       onchange={(e) => handleLocaleChange(e.currentTarget.value as Locale)}
     >
-      <option value="en">English</option>
-      <option value="ru">Russian</option>
+      <option value="en">{formatMessage("locale.en", selectedLocale)}</option>
+      <option value="ru">{formatMessage("locale.ru", selectedLocale)}</option>
     </select>
-    <span class="hint">Select your preferred language</span>
+    <span class="hint">{formatMessage("profile.languageHint", selectedLocale)}</span>
   </div>
 
   {#if localError}
@@ -153,7 +153,7 @@
   <div class="actions">
     <Button variant="primary" disabled={isSaving} onClick={handleSave}>
       {isSaving
-        ? formatMessage("loading", selectedLocale)
+        ? formatMessage("saving", selectedLocale)
         : formatMessage("save", selectedLocale)}
     </Button>
 
@@ -171,7 +171,7 @@
   >
     <div class="delete-confirm">
       <p class="warning">
-        ⚠️ Warning! This action is irreversible. All your data will be deleted.
+        ⚠️ {formatMessage("profile.deleteWarning", selectedLocale)}
       </p>
 
       <div class="form-group">
@@ -182,7 +182,7 @@
           type="password"
           id="delete-password"
           bind:value={deletePassword}
-          placeholder="Your password"
+          placeholder={formatMessage("profile.passwordPlaceholder", selectedLocale)}
         />
       </div>
 
@@ -202,7 +202,7 @@
           onClick={handleDelete}
         >
           {isDeleting
-            ? formatMessage("loading", selectedLocale)
+            ? formatMessage("deleting", selectedLocale)
             : formatMessage("confirm.delete", selectedLocale)}
         </Button>
       </div>

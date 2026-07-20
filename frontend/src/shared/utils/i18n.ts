@@ -226,6 +226,21 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirmModal.cancel": "Cancel",
     "confirmModal.cancelGalactic": "Abort",
 
+    // NoteEditor
+    "noteEditor.loading": "Loading...",
+    "noteEditor.loadError": "Failed to load note",
+    "noteEditor.titleLabel": "Title",
+    "noteEditor.titlePlaceholder": "Enter note title",
+    "noteEditor.titleRequired": "Title is required",
+    "noteEditor.typeLabel": "Type",
+    "noteEditor.contentLabel": "Content",
+    "noteEditor.contentPlaceholder": "Enter note content",
+    "noteEditor.saving": "Saving...",
+    "noteEditor.update": "Update",
+    "noteEditor.create": "Create",
+    "noteEditor.cancel": "Cancel",
+    "noteEditor.saveError": "Failed to save note. Please try again.",
+
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
     "toast.closeAria": "Close notification",
@@ -361,6 +376,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "password.confirm": "Please enter your password for confirmation",
     "confirm.delete": "Confirm Delete",
     "delete.account": "Delete Account",
+    "profile.languageLabel": "Language",
+    "profile.languageHint": "Select your preferred language",
+    "profile.deleteWarning": "Warning! This action is irreversible. All your data will be deleted.",
+    "profile.passwordPlaceholder": "Your password",
+    "locale.en": "English",
+    "locale.ru": "Russian",
+    saving: "Saving...",
+    deleting: "Deleting...",
   },
   ru: {
     // Success messages
@@ -581,6 +604,21 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirmModal.cancel": "Отмена",
     "confirmModal.cancelGalactic": "Прервать",
 
+    // NoteEditor
+    "noteEditor.loading": "Загрузка...",
+    "noteEditor.loadError": "Не удалось загрузить заметку",
+    "noteEditor.titleLabel": "Заголовок",
+    "noteEditor.titlePlaceholder": "Введите заголовок заметки",
+    "noteEditor.titleRequired": "Введите заголовок",
+    "noteEditor.typeLabel": "Тип",
+    "noteEditor.contentLabel": "Содержание",
+    "noteEditor.contentPlaceholder": "Введите содержание заметки",
+    "noteEditor.saving": "Сохранение...",
+    "noteEditor.update": "Обновить",
+    "noteEditor.create": "Создать",
+    "noteEditor.cancel": "Отмена",
+    "noteEditor.saveError": "Не удалось сохранить заметку. Попробуйте ещё раз.",
+
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",
     "toast.closeAria": "Закрыть уведомление",
@@ -716,6 +754,14 @@ const messages: Record<Locale, Record<string, string>> = {
     "password.confirm": "Введите пароль для подтверждения",
     "confirm.delete": "Подтвердить удаление",
     "delete.account": "Удалить аккаунт",
+    "profile.languageLabel": "Язык",
+    "profile.languageHint": "Выберите предпочитаемый язык",
+    "profile.deleteWarning": "Внимание! Это действие необратимо. Все ваши данные будут удалены.",
+    "profile.passwordPlaceholder": "Ваш пароль",
+    "locale.en": "English",
+    "locale.ru": "Русский",
+    saving: "Сохранение...",
+    deleting: "Удаление...",
   },
 };
 
