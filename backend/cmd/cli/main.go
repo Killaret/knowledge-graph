@@ -9,9 +9,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
-
-	"github.com/hibiken/asynq"
+	"knowledge-graph/internal/infrastructure/queue"
 )
 
 func main() {
@@ -72,24 +70,24 @@ func main() {
 		return
 	}
 
-	// Create Asynq client
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: cfg.RedisURL})
-	defer client.Close()
-	log.Println("Asynq client connected to Redis")
+	// Create task queue client through the common port
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL)
+	if err != nil {
+		log.Fatalf("Failed to create task queue client: %v", err)
+	}
+	defer func() {
+		if err := taskQueue.Close(); err != nil {
+			log.Printf("Error closing task queue client: %v", err)
+		}
+	}()
+	log.Println("Task queue client connected to Redis")
 
 	// Enqueue tasks
 	enqueued := 0
 	failed := 0
 
 	for i, note := range notes {
-		task, err := tasks.NewRefreshRecommendationsTask(note.ID(), delay)
-		if err != nil {
-			log.Printf("Failed to create task for note %s: %v", note.ID(), err)
-			failed++
-			continue
-		}
-
-		info, err := client.Enqueue(task)
+		err := taskQueue.EnqueueRefreshRecommendations(ctx, note.ID(), delay)
 		if err != nil {
 			log.Printf("Failed to enqueue task for note %s: %v", note.ID(), err)
 			failed++
@@ -98,8 +96,8 @@ func main() {
 
 		enqueued++
 		if (i+1)%100 == 0 || i == len(notes)-1 {
-			log.Printf("Progress: %d/%d tasks enqueued (ID: %s, Queue: %s)",
-				i+1, len(notes), info.ID, info.Queue)
+			log.Printf("Progress: %d/%d tasks enqueued (note_id: %s)",
+				i+1, len(notes), note.ID())
 		}
 
 		// Small sleep to avoid overwhelming Redis

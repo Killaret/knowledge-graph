@@ -4,7 +4,6 @@ package draft
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	noteDomain "knowledge-graph/internal/domain/note"
@@ -16,7 +15,6 @@ import (
 type Service struct {
 	repo         noteDomain.DraftRepository
 	noteRepo     noteDomain.Repository
-	apiClient    *http.Client
 	syncEndpoint string
 	maxRetries   int
 }
@@ -26,7 +24,6 @@ func NewService(repo noteDomain.DraftRepository, noteRepo noteDomain.Repository,
 	return &Service{
 		repo:         repo,
 		noteRepo:     noteRepo,
-		apiClient:    &http.Client{Timeout: 30 * time.Second},
 		syncEndpoint: syncEndpoint,
 		maxRetries:   3,
 	}
