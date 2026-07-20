@@ -1,7 +1,7 @@
 # Comprehensive Regression Test Plan
 
 **Version:** 1.0  
-**Last Updated:** 2026-07-08  
+**Last Updated:** 2026-07-20  
 **Status:** Active
 
 ## Overview
@@ -14,14 +14,14 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 |-------|----------------|----------------|---------------|----------|---------|
 | Dev | docker-compose.yml | 3000 (5173) | 8080 (9000) | knowledge_base | Development |
 | Personal | docker-compose.personal.yml | 3001 | 8082 (8085) | knowledge_personal | Personal use |
-| Test | docker-compose.test.yml | 3002 (13002) | 8083 (18083) | knowledge_test | Isolated testing |
+| Test | docker-compose.test.yml | 3002 (3000) | 8083 (8080) | knowledge_test | Isolated testing |
 
 ## Prerequisites
 
 ### Required Tools
 - Docker Desktop (running)
 - Docker Compose v2+
-- Go 1.23+
+- Go 1.25+
 - Node 20+
 - Python 3.11+
 - PowerShell (Windows) or Bash (Linux/Mac)
@@ -33,6 +33,8 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 - `scripts/seed-test-data.ps1/.sh`
 - `scripts/stop-test.ps1/.sh`
 - `scripts/run-full-test-cycle.ps1/.sh`
+- `scripts/test.ps1/.sh` (unified test entry point)
+- `scripts/cleanup-test-artifacts.ps1/.sh` (temporary artifact cleanup)
 
 ---
 
@@ -216,9 +218,9 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 ### 2.3 Verify Test Stack Health
 **Checks:**
-- [ ] Test health: http://localhost:18083/health → 200
-- [ ] Test API: http://localhost:18083/api/v1/notes?limit=1 → JSON (5 notes)
-- [ ] Test frontend: http://localhost:13002 → loads
+- [ ] Test health: http://localhost:8083/health → 200
+- [ ] Test API: http://localhost:8083/api/v1/notes?limit=1 → JSON (5 notes)
+- [ ] Test frontend: http://localhost:3002 → loads
 
 **Expected Result:** Test stack ready for testing
 
@@ -308,7 +310,7 @@ go test -tags=integration ./... -count=1 -p=1 2>&1 | tee ../logs/test-outputs/te
 ## PART 5: Backend API Verification
 
 ### 5.1 Authentication Endpoints
-**Base URL:** http://localhost:18083
+**Base URL:** http://localhost:8083
 
 **Checks:**
 - [ ] POST /api/v1/auth/register → 201
@@ -357,7 +359,7 @@ go test -tags=integration ./... -count=1 -p=1 2>&1 | tee ../logs/test-outputs/te
 
 ### 5.5.1 Check CORS Headers
 ```bash
-curl -I http://localhost:18083/api/v1/notes
+curl -I http://localhost:8083/api/v1/notes
 ```
 **Expected:** CORS headers present
 
@@ -539,12 +541,12 @@ npm run test:cucumber 2>&1 | tee ../logs/test-outputs/test-frontend-bdd.log
 
 ### 10.2 Check Public API
 ```bash
-curl http://localhost:18083/graph-service/api/v1/graph/full?limit=100
+curl http://localhost:8083/graph-service/api/v1/graph/full?limit=100
 ```
 **Expected:** JSON with 3 nodes and 2 links
 
 ### 10.3 Check Public Frontend
-**URL:** http://localhost:13002/graph
+**URL:** http://localhost:3002/graph
 **Expected:** 3 nodes and 2 links visible
 
 ### 10.4 Check Private Note Filtering
@@ -566,9 +568,10 @@ curl http://localhost:18083/graph-service/api/v1/graph/full?limit=100
 
 ### 11.2 Check Workflow Configurations
 **Checks:**
-- [ ] Go version: 1.23 (not 1.25)
+- [ ] Go version: 1.25
 - [ ] Node version: 20
 - [ ] Database env vars: kb_user/knowledge_base (not kg_user/knowledge_graph)
+- [ ] `backend-integration-tests` job exists in `.github/workflows/main.yml` and `.github/workflows/ci.yml` and runs `go test -tags=integration ./...`
 
 ### 11.3 Check Secrets
 **Checks:**
@@ -582,7 +585,7 @@ curl http://localhost:18083/graph-service/api/v1/graph/full?limit=100
 
 ### 11.4.1 Check OpenAPI Spec
 ```bash
-curl http://localhost:18083/openapi.yaml
+curl http://localhost:8083/openapi.yaml
 ```
 **Expected:** Valid OpenAPI 3.0 spec
 
@@ -637,11 +640,18 @@ curl http://localhost:18083/openapi.yaml
 - [ ] No data leakage to dev/personal stacks
 
 ### 12.3 Cleanup Temporary Files and Generated Artifacts
+**Run the cleanup helper:**
+```bash
+./scripts/cleanup-test-artifacts.sh   # Linux/Mac
+.\scripts\cleanup-test-artifacts.ps1  # Windows
+```
+
 **Target files and directories:**
 - `backend/coverage.out`
 - `backend/*.cov`
 - `backend/*.tmp`
 - `backend/*.log`
+- `frontend/coverage`
 - `logs/test-outputs/*.log` (keep only latest run)
 - `node_modules/.cache` / build artifacts (if generated)
 

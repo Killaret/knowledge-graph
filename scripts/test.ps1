@@ -36,7 +36,8 @@ switch ($Target) {
     'coverage' {
         Write-Host "Generating backend coverage..." -ForegroundColor Cyan
         Set-Location "$root\backend"
-        go test ./... -coverprofile=coverage.out
+        go test ./... -count=1 -coverprofile=.\coverage.out
+        go tool cover -func .\coverage.out | Select-Object -Last 1
 
         Write-Host "Generating frontend coverage..." -ForegroundColor Cyan
         Set-Location "$root\frontend"

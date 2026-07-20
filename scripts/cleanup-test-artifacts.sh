@@ -15,6 +15,7 @@ remove_if_exists() {
 }
 
 remove_if_exists "$PROJECT_ROOT/backend/coverage.out"
+remove_if_exists "$PROJECT_ROOT/backend/.coverage_tmp"
 
 for f in "$PROJECT_ROOT/backend/"*.cov; do
     [ -e "$f" ] || continue

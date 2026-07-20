@@ -35,6 +35,21 @@ cd backend && CGO_ENABLED=1 go test -race ./...
 cd backend && go build ./cmd/server
 ```
 
+### Unified Test Entry Point
+```bash
+# All test layers (unit → integration → e2e → bdd)
+.\scripts\test.ps1 all          # Windows
+./scripts/test.sh all            # Linux/Mac
+
+# Individual targets
+.\scripts\test.ps1 unit         # backend + frontend unit
+.\scripts\test.ps1 integration  # backend integration tests
+.\scripts\test.ps1 e2e          # Playwright E2E
+.\scripts\test.ps1 bdd          # Cucumber BDD
+.\scripts\test.ps1 coverage     # backend + frontend coverage
+.\scripts\test.ps1 clean        # cleanup temporary artifacts
+```
+
 ### NLP Service Testing
 ```bash
 # Unit tests
@@ -56,7 +71,7 @@ curl -X POST http://localhost:5000/embed -H "Content-Type: application/json" -d 
 
 # Start test stack
 .\scripts\start-test.ps1              # Windows
-./scripts\start-test.sh               # Linux/Mac
+./scripts/start-test.sh               # Linux/Mac
 
 # Seed test data
 .\scripts\seed-test-data.ps1          # Windows

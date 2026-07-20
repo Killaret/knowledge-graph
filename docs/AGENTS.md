@@ -57,23 +57,12 @@ Date: 2026-07-20
 
 ### Remaining architecture debt to address in future iterations
 
-1. **Handlers with direct `*gorm.DB` usage (biggest Clean Architecture violations):**
-   - `internal/interfaces/api/handlers/auth/handler.go` — uses `*gorm.DB` and `postgres.UserModel`/`postgres.RefreshTokenModel`.
-   - `internal/interfaces/api/handlers/user/handler.go` — uses `*gorm.DB`, `postgres.UserModel`, and `postgres.APIKeyModel`.
-   - `internal/interfaces/api/handlers/share/handler.go` — uses `*gorm.DB` and several `postgres` models.
-   - Recommended fix: introduce domain repositories (`user.Repository`, `auth.TokenRepository`, `apikey.Repository`, `share.Repository`) in the `domain` layer and move persistence queries to `infrastructure/db/postgres`.
+The major Clean Architecture violations listed in previous audits have been resolved. The current status and any remaining minor debt are tracked in the **Clean Architecture Refactor Notes** section below.
 
-2. **Middleware with persistence coupling:**
-   - `internal/interfaces/api/middleware/permissions.go` still takes `*gorm.DB` and queries role/permissions directly. Extract a `PermissionRepository` interface and inject it from `cmd/server`.
-
-3. **Application-layer Redis/GORM leaks:**
-   - `internal/application/cache/graph_cache.go` and `internal/application/user/settings_service.go` import `github.com/redis/go-redis/v9` directly. Replace with a cache port interface (e.g., `CacheClient`) implemented in `infrastructure/cache`.
-   - `internal/application/queries/graph/get_suggestions.go` imports `go-redis` for caching. Same cache-port abstraction applies.
-   - `internal/application/recommendation/refresh_service.go` imports `gorm` and `go-redis`. It should depend on `note.Repository`, `link.Repository`, and a cache port only.
-
-4. **Handler concrete infrastructure dependencies:**
-   - `internal/interfaces/api/notehandler/note_handler.go` depends on `*postgres.RecommendationRepository`, `*postgres.EmbeddingRepository`, and `*redis.Client`. Define handler-local or domain-driven interfaces so persistence and cache can be mocked in tests.
-   - `internal/interfaces/api/handlers/backup/handler.go` still creates `*asynq.Task` through `internal/infrastructure/queue/tasks`. Consider moving task payload builders into `application` or `domain` and converting `common.TaskQueue` to operate on an application-level `Task` type, with the `infrastructure/queue` adapter translating to `asynq`.
+Key remaining items:
+- `internal/infrastructure/db/postgres/note_repo.go` still uses `*redis.Client` directly for the `FindAll` cache; consider using the domain `cache.CacheClient` port.
+- `internal/interfaces/api/handlers/backup` is decoupled but minimal; consider moving task payload builders into `application`/`domain`.
+- `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
 
 ### Conventions used during audit
 
@@ -172,13 +161,19 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **61.7%** (target 70%; enforced minimum 60%).
+- Aggregated backend coverage: **60.5%** (target 70%; enforced minimum 60%).
+
+### Frontend coverage snapshot
+
+- Frontend unit tests pass: 580 passed, 37 skipped.
+- Statements: **63.63%**, Branches: **78.74%**, Functions: **56.91%**, Lines: **63.63%**.
+- Biggest gaps: `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%), `shared/stores` (~43%).
 
 ### Remaining debt
 
 - `internal/infrastructure/db/postgres/note_repo.go` still uses `*redis.Client` directly for the `FindAll` cache; consider using the domain `cache.CacheClient` port.
 - `internal/interfaces/api/handlers/backup` is decoupled but minimal.
-- `internal/application/cache/graph_cache.go` uses `cache.CacheClient` but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
+- `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
 - Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist
@@ -187,5 +182,5 @@ Before committing backend changes:
 
 1. `cd backend && go test ./...`
 2. `cd backend && go vet ./...`
-3. Remove generated artifacts: `coverage.out`, `*.cov`, `*.tmp`, `*.log`.
+3. Remove generated artifacts: `coverage.out`, `*.cov`, `*.tmp`, `*.log`, `frontend/coverage`, `backend/.coverage_tmp`.
 4. Update this document if architecture boundaries change.

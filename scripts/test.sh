@@ -32,7 +32,8 @@ run_bdd() {
 
 run_coverage() {
     echo "Generating backend coverage..."
-    cd "$PROJECT_ROOT/backend" && go test ./... -coverprofile=coverage.out
+    cd "$PROJECT_ROOT/backend" && go test ./... -count=1 -coverprofile=./coverage.out
+    go tool cover -func ./coverage.out | tail -1
 
     echo "Generating frontend coverage..."
     cd "$PROJECT_ROOT/frontend" && npm run test:coverage

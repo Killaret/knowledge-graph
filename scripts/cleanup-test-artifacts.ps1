@@ -8,6 +8,7 @@ $removed = 0
 
 $patterns = @(
     "backend/coverage.out",
+    "backend/.coverage_tmp",
     "backend/*.cov",
     "frontend/coverage",
     "logs/test-outputs/*.log",

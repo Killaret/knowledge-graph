@@ -329,6 +329,11 @@ CMD ["/server"]
 ## Common Commands
 
 ```bash
+# Unified test entry point
+.\scripts\test.ps1 unit                               # Unit tests (backend + frontend)
+.\scripts\test.ps1 integration                       # Backend integration tests
+.\scripts\test.ps1 all                                # All test layers
+
 # Backend
 cd backend && go test ./...                          # Unit tests
 cd backend && go test -tags=integration ./...        # Integration tests
@@ -338,6 +343,9 @@ cd backend && go build ./cmd/server                  # Build
 cd frontend && npm run test:unit                     # Vitest
 cd frontend && npm run test                          # Playwright
 cd frontend && npm run build                         # Build
+
+# Cleanup temporary test artifacts
+.\scripts\cleanup-test-artifacts.ps1
 
 # Docker
 docker compose up -d                                 # Dev stack
@@ -428,5 +436,5 @@ When modifying backend handlers or repositories:
 
 1. `cd backend && go test ./...`
 2. `cd backend && go vet ./...`
-3. Delete generated artifacts: `coverage.out`, `*.cov`, `*.tmp`, `*.log`
+3. Run `.\scripts\cleanup-test-artifacts.ps1` (or `rm` `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
 4. Update `docs/AGENTS.md` if boundaries change

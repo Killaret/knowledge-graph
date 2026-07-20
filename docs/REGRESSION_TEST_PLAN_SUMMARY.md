@@ -47,8 +47,8 @@
 
 ### Frequency
 - **Full Regression:** Before each production deployment
-- **Quick Regression:** Before each major feature release (Steps 0-6, 8, 13)
-- **Smoke Regression:** After each minor feature release (Steps 0-2, 8-9, 15)
+- **Quick Regression:** Before each major feature release (Steps 0-6, 8-14, 19-23)
+- **Smoke Regression:** After each minor feature release (Steps 0-6, 8-9, 13-14, 19-23)
 - **Identity Check:** Before each manual testing session
 
 ### Exit Criteria

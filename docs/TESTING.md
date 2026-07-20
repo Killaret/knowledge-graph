@@ -205,7 +205,7 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 18. **CI/CD verification** - Manual verification
 19. **Documentation verification** - Verify `docs/AGENTS.md`, `.windsurfrules` and architecture docs are updated if boundaries changed
 20. **Stop test stack** - `stop-test.ps1`
-21. **Cleanup temporary files** - `cleanup-test-artifacts.ps1` (removes `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
+21. **Cleanup temporary files** - `cleanup-test-artifacts.ps1` (removes `coverage.out`, `*.cov`, `frontend/coverage`, `backend/.coverage_tmp`, `*.log`)
 22. **Start dev stack** - `docker compose up -d --wait`
 23. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
 24. **Compare dev stack state / identity / health** - Compare with pre-test snapshot, verify dev/personal identity, check health
@@ -293,21 +293,48 @@ The manual test checklist covers:
 
 ### Current Test Statistics
 
-**Latest Test Results (from archive/FINAL_TEST_REPORT.md):**
+**Latest Test Results (run 2026-07-20):**
 
 | Layer | Category | Total | Passed | Failed | Skipped | Status |
 |-------|----------|-------|--------|--------|---------|--------|
-| Backend | Unit Tests | 118 | 118 | 0 | 0 | ✅ Excellent |
-| Backend | Integration Tests | 2 | 0 | 2 | 0 | ❌ Failed (Windows limitation) |
-| Frontend | Unit Tests | 563 | 521 | 5 | 37 | ✅ Good |
-| Frontend | E2E Tests | 94 | 84 | 0 | 10 | ✅ Excellent |
-| Frontend | BDD Tests | 5 | 5 | 0 | 0 | ✅ Excellent |
-| NLP | API Tests | 17 | 17 | 0 | 0 | ✅ Excellent |
-| NLP | Utils Tests | 16 | 11 | 0 | 5 | ✅ Good |
-| **NLP Total** | - | **33** | **28** | **0** | **5** | ✅ **Excellent** |
+| Backend | Unit Tests | 1089 | 1085 | 0 | 4 | ✅ Excellent |
+| Backend | Integration Tests | - | - | - | - | ⚠️ Not run — requires Linux/WSL Docker (`-tags=integration`) |
+| Frontend | Unit Tests | 617 | 580 | 0 | 37 | ✅ Good |
+| Frontend | E2E Tests | - | - | - | - | ⚠️ Run separately with `npm run test` |
+| Frontend | BDD Tests | - | - | - | - | ⚠️ Run separately with `npm run test:bdd` |
+| NLP | API + Utils Tests | 46 | 46 | 0 | 0 | ✅ Excellent |
+| **NLP Total** | - | **46** | **46** | **0** | **0** | ✅ **Excellent** |
 
 **Notes:**
-- Backend integration tests fail on Windows due to testcontainers rootless Docker limitation (not a code issue)
+- Backend unit tests (`go test ./...`) pass with 1085 passing, 4 skipped, 0 failures.
+- Backend integration tests are excluded by default; run `go test -tags=integration ./...` on Linux/WSL or in CI.
+- Frontend E2E and BDD tests are not part of `npm run test:unit`; they require the isolated test stack.
+
+### Current Code Coverage
+
+**Latest Coverage Results (run 2026-07-20):**
+
+| Layer | Metric | Value | Target | Status |
+|-------|--------|-------|--------|--------|
+| Backend | Statements | **60.5%** | 70% (min 60%) | ⚠️ At minimum threshold |
+| Frontend | Statements | **63.63%** | 70% (min 60%) | ⚠️ Below target |
+| Frontend | Branches | **78.74%** | - | ✅ Good |
+| Frontend | Functions | **56.91%** | 55% (min) | ✅ Above minimum |
+| Frontend | Lines | **63.63%** | 60% (min) | ✅ Above minimum |
+
+**Backend coverage gaps (packages below 60%):**
+- `cmd/worker` (14.6%), `internal/infrastructure/mongo` (15.3%), `internal/infrastructure/db` (20.0%)
+- `internal/infrastructure/cloud` (34.3%), `internal/infrastructure/db/postgres` (37.2%)
+- `internal/interfaces/api/handlers/auth` (43.5%), `internal/infrastructure/queue` (46.0%)
+- `cmd/checkconfig` (47.2%), `internal/domain/user` (50.7%)
+- `internal/interfaces/api/handlers/share` (56.7%), `internal/application/cache` (57.1%)
+- `internal/interfaces/api/handlers/draft` (58.7%), `internal/interfaces/api/notehandler` (59.8%)
+
+**Frontend coverage gaps (files/directories below 60%):**
+- `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%)
+- `shared/stores` (~43%), `shared/api` (~54%), `shared/services` (~59%)
+- Several form components (`ForgotPasswordForm`, `RegisterForm`, `ResetPasswordForm`) at 0%
+- `GraphCanvas.svelte` interaction/zoom-pan/pan handlers and `delta.ts` largely uncovered
 
 ### Backend Tests
 
@@ -400,25 +427,28 @@ The test stack ensures complete isolation:
 - Separate database (knowledge_test vs knowledge_base/knowledge_personal)
 - Separate volumes (test_postgres_data vs postgres_data)
 - Separate container names (kg-test-* vs kg-*)
-- Separate ports (13002/18083 vs 3000/8080 and 3001/8082)
+- Separate ports (3002/8083 vs 3000/8080 and 3001/8082)
 
 ## Cleanup
 
-After testing, always run the cleanup script to ensure complete isolation:
+After testing, always run the cleanup scripts to ensure complete isolation:
 
 ```powershell
 .\scripts\stop-test.ps1
+.\scripts\cleanup-test-artifacts.ps1
 ```
 
 or
 
 ```bash
 ./scripts/stop-test.sh
+./scripts/cleanup-test-artifacts.sh
 ```
 
 This ensures:
 - Test containers are stopped
 - Test volumes are removed
+- Temporary artifacts (`coverage.out`, `*.cov`, `frontend/coverage`, `backend/.coverage_tmp`, `*.log`) are removed
 - No data leakage to dev/personal stacks
 
 ## Troubleshooting
