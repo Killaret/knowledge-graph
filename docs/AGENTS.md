@@ -189,6 +189,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/components/organisms/LinkCreator.svelte` and `LinkTooltip.svelte` — link creation form and tooltip labels now use i18n keys.
 - `frontend/src/components/organisms/ConfirmModal.svelte` — default/galactic confirm/cancel/title labels now use i18n keys.
 - `frontend/src/components/molecules/TypeSelector.svelte` — aria-label now uses i18n key.
+- `frontend/src/components/atoms/ToastNotification.svelte` and `ApiErrorDisplay.svelte` — close/error labels now use i18n keys.
 
 ### Current backend coverage
 
