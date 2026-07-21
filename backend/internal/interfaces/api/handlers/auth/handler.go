@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -27,6 +28,12 @@ const (
 	refreshTokenCookieName = "refresh_token"
 )
 
+// OAuthProvider abstracts Yandex OAuth token exchange and user info retrieval.
+type OAuthProvider interface {
+	Exchange(ctx context.Context, code, codeVerifier string) (string, error)
+	UserInfo(ctx context.Context, accessToken string) (*oauthpkg.UserInfo, error)
+}
+
 // Handler handles authentication requests
 type Handler struct {
 	userRepo         domainuser.Repository
@@ -36,6 +43,7 @@ type Handler struct {
 	passwordConfig   *authpkg.PasswordConfig
 	passwordPolicy   *authpkg.PasswordPolicy
 	emailSender      emailpkg.Sender
+	oauthProvider    OAuthProvider
 	cfg              *config.Config
 }
 
@@ -69,6 +77,11 @@ func NewHandler(
 		emailSender: emailSender,
 		cfg:         cfg,
 	}
+}
+
+// SetOAuthProvider is used by tests to inject a mock OAuth provider.
+func (h *Handler) SetOAuthProvider(p OAuthProvider) {
+	h.oauthProvider = p
 }
 
 // isSecureRequest returns true if the request is served over HTTPS.
@@ -667,7 +680,10 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 		redirectURI = scheme + "://" + c.Request.Host + "/auth/yandex/callback"
 	}
 
-	provider := oauthpkg.NewYandex(h.cfg.YandexClientID, h.cfg.YandexClientSecret, redirectURI)
+	var provider OAuthProvider = h.oauthProvider
+	if provider == nil {
+		provider = oauthpkg.NewYandex(h.cfg.YandexClientID, h.cfg.YandexClientSecret, redirectURI)
+	}
 
 	ctx := c.Request.Context()
 	accessToken, err := provider.Exchange(ctx, code, codeVerifier)
