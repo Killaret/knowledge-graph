@@ -57,6 +57,8 @@ export async function dismiss(id: string) {
     await svc.markAchievementSeen(id);
     await refresh();
   } catch (e) {
-    console.error(e);
+    if (import.meta.env.DEV) {
+      console.error(e);
+    }
   }
 }

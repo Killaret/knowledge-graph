@@ -45,7 +45,9 @@
       totalPages = response.totalPages;
     } catch (e) {
       error = t("search.error");
-      console.error("Search error:", e);
+      if (import.meta.env.DEV) {
+        console.error("Search error:", e);
+      }
     } finally {
       loading = false;
     }

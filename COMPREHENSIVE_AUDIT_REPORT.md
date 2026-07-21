@@ -199,9 +199,9 @@
 | Проверка | Статус | Примечание |
 |----------|--------|------------|
 | `docs/ARCHITECTURE_EN.md` | **PASS** | Описаны слои Clean Architecture, Gin, DDD, FSD, паттерны. Соответствует коду. |
-| `docs/CHANGELOG_EN.md` | **WARNING** | Содержит битые ссылки на `docs/CONFIGURATION.md` и `docs/ARCHITECTURE.md`. Root `CHANGELOG.md` отсутствует. |
+| `docs/CHANGELOG_EN.md` | **PASS** | Ссылки исправлены на `docs/CONFIGURATION_EN.md` / `docs/CONFIGURATION_RU.md` и `docs/ARCHITECTURE_EN.md`. Root `CHANGELOG.md` создан с перенаправлением. |
 | `AGENTS.md` / `.windsurfrules` | **WARNING** | Существуют, но содержат устаревшие утверждения: `middleware/apikey.go` якобы принимает `*gorm.DB` (не соответствует коду), `docker-compose.personal.yml` уже не содержит `backup_scheduler`? (есть, см. compose). Не критично, но требует актуализации. |
-| Рабочие ссылки | **FAIL** | README → `docs/CONFIGURATION.md` отсутствует. CHANGELOG → `docs/ARCHITECTURE.md` / `docs/CONFIGURATION.md` отсутствуют. |
+| Рабочие ссылки | **PASS** | README → `docs/CONFIGURATION_EN.md` актуален. CHANGELOG → `docs/ARCHITECTURE_EN.md` / `docs/CONFIGURATION_EN.md` / `docs/CONFIGURATION_RU.md` исправлены. |
 
 ---
 
@@ -209,9 +209,9 @@
 
 | Проверка | Статус | Примечание |
 |----------|--------|------------|
-| Секреты в коде | **FAIL** | `knowledge-graph.config.json:79` — `"jwt_secret": "change-me-in-production"`. `backend/internal/config/config.go:430` — fallback JWT_SECRET `"change-me-in-production"`. Это дефолтный секрет в committed артефактах. |
+| Секреты в коде | **PASS** | `knowledge-graph.config.json:79` — `"jwt_secret": ""`. `backend/internal/config/config.go` требует `JWT_SECRET` через env; fallback default удалён. |
 | `.env` в `.gitignore` | **PASS** | `.env` и производные игнорируются. |
-| `SKIP_AUTH` в production | **WARNING** | `docker-compose.personal.yml` hardcoded `SKIP_AUTH: "true"`. `.env.example` имеет закомментированный `#SKIP_AUTH=true`. Согласно правилам, `SKIP_AUTH` должен работать только в dev/test. |
+| `SKIP_AUTH` в production | **PASS** | `docker-compose.personal.yml` использует `${SKIP_AUTH:-false}`; `SKIP_AUTH` управляется через `.env` и не активен по умолчанию. |
 | Хранение токенов | **PASS** | Access/refresh токены хранятся в httpOnly cookies (`access_token`/`refresh_token`), устанавливаемых бэкендом; frontend больше не использует `localStorage` для JWT. |
 | Rate limiting | **PASS** | Middleware `internal/interfaces/api/middleware/ratelimit.go` реализован и подключён. |
 
@@ -221,18 +221,18 @@
 
 ### CRITICAL — немедленно к исправлению
 
-1. **Интеграционные тесты бэкенда падают** (`taghandler`, `notehandler`). Без стабильных интеграционных тестов нельзя гарантировать корректность API.
-2. **Покрытие бэкенда 54.8% < 60%**. Нарушает внутренний минимум и критично для production.
-3. **Дефолтный `JWT_SECRET` в committed конфиге**. `knowledge-graph.config.json:79` и `backend/internal/config/config.go:430` содержат `"change-me-in-production"`. Для production `JWT_SECRET` должен отсутствовать в committed файлах и подаваться только через env/secret.
-4. **Smoke E2E тесты падают** (6/51). Auth-flow тесты не работают против dev-стека без `SKIP_AUTH`.
+1. ✅ **Интеграционные тесты бэкенда проходят** (`taghandler`, `notehandler`, `linkhandler`, `graphhandler`, `postgres`).
+2. ✅ **Покрытие бэкенда > 60%** (минимальный порог пройден).
+3. ✅ **Дефолтный `JWT_SECRET` удалён** из `knowledge-graph.config.json` и `backend/internal/config/config.go`; `JWT_SECRET` подаётся через env.
+4. ✅ **Smoke E2E test stack настроен** с `SKIP_AUTH=true` и `JWT_SECRET` из env; `VITE_SKIP_AUTH` выровнен.
 
 ### HIGH — исправить до релиза
 
-5. **Prettier нарушен в 25 файлах**. `npm run format:check` падает; CI (`ci.yml`) не запускает `format:check`.
-6. **`console.log` в production-коде**. 76 вызовов, многие не обёрнуты в `if (import.meta.env.DEV)`. Загрязняют логи и замедляют рендер.
-7. **Битые ссылки в документации**. README → `docs/CONFIGURATION.md`, CHANGELOG → `docs/ARCHITECTURE.md` / `docs/CONFIGURATION.md`.
-8. **`docker-compose.personal.yml` hardcoded `SKIP_AUTH: "true"`**. Необходимо явно ограничить `SKIP_AUTH` dev/test окружениями.
-9. **Токены в `localStorage`** ✅. Переведены в httpOnly cookies; frontend не хранит JWT в `localStorage`.
+5. ✅ **Prettier** — 25 файлов отформатированы; `npm run format:check` проходит; шаг добавлен в CI.
+6. ✅ **`console.log` в production-коде** — необёрнутые вызовы обёрнуты в `if (import.meta.env.DEV)`; `logger.ts` gated.
+7. ✅ **Битые ссылки в документации** — README/CHANGELOG ссылки исправлены; root `CHANGELOG.md` создан.
+8. ✅ **`docker-compose.personal.yml`** — `SKIP_AUTH` подаётся через `${SKIP_AUTH:-false}` и ограничен dev/test.
+9. ✅ **Токены в `localStorage`** — переведены в httpOnly cookies; frontend не хранит JWT в `localStorage`.
 
 ### MEDIUM — исправить в ближайшее время
 
@@ -246,45 +246,42 @@
 
 ### LOW — задокументировать / улучшить
 
-17. **README использует `docker-compose`** вместо `docker compose`.
-18. **TESTING.md** указывает порты `3000/8080` для dev-стека вместо актуальных `5173/8080`.
+17. ✅ **README** — использует `docker compose` вместо `docker-compose`.
+18. ✅ **TESTING.md** — dev/personal/test порты и health-check URL актуализированы.
 19. ✅ **AGENTS.md / `.windsurfrules`** актуализированы; устаревшие замечания убраны.
-20. **CHANGELOG_EN.md** root `CHANGELOG.md` не существует; ссылки в CHANGELOG битые.
-21. **Frontend coverage functions 58.3%** — ниже target 70%, хотя выше min 55%.
+20. ✅ **CHANGELOG_EN.md** — root `CHANGELOG.md` создан; битые ссылки исправлены.
+21. **Frontend coverage functions** — ~56.9%, ниже target 70%, хотя выше min 55%.
 22. ✅ **`tippy.js` default import** warning устранён.
 
 ---
 
 ## Рекомендуемые шаги по исправлению
 
-1. **Backend integration:**
-   - Исправить `taghandler` — возвращаемые HTTP-статусы при duplicate tag и пустые поля (`TestAddTagToNote_AlreadyAssigned`, `TestCreateTag_Success`).
-   - Исправить `notehandler` — timeout/500 на одном из сценариев.
-   - Запускать `go test -tags=integration ./...` в CI с `timeout 15m` и `-p=1`.
+1. ✅ **Backend integration:** интеграционные тесты проходят; CI запускает `go test -tags=integration ./...` с `timeout 15m` и `-p=1`.
 
 2. **Coverage:**
-   - Добавить unit-тесты для `internal/interfaces/api/handlers/auth`, `share`, `user` (сейчас 0% или нет тестов без build tag).
+   - Добавить unit-тесты для `internal/interfaces/api/handlers/auth`, `share`, `user`.
    - Покрыть `internal/infrastructure/cache`, `mongo`, `db/postgres` (ниже 40%).
 
-3. **Security:**
-   - Удалить/очистить `jwt_secret` из `knowledge-graph.config.json`; сделать `JWT_SECRET` required env var.
-   - Убрать hardcoded `SKIP_AUTH: "true"` из `docker-compose.personal.yml`; передавать через `.env` и ограничивать dev/test.
-   - ✅ httpOnly cookies для токенов реализованы.
+3. ✅ **Security:**
+   - `jwt_secret` очищен в `knowledge-graph.config.json`; `JWT_SECRET` required через env.
+   - `SKIP_AUTH` в `docker-compose.personal.yml` вынесен в env с default `false`.
+   - httpOnly cookies для токенов реализованы.
 
-4. **Code style:**
-   - Выполнить `npm run format` и `gofmt -w ./...`.
-   - Добавить в `ci.yml` шаг `npm run format:check`.
-   - Удалить/обернуть `console.*` в `import.meta.env.DEV`.
+4. ✅ **Code style:**
+   - `npm run format` и `gofmt -w ./...` применены.
+   - `npm run format:check` добавлен в CI.
+   - Необёрнутые `console.*` в production обёрнуты в `if (import.meta.env.DEV)`.
 
-5. **Документация:**
-   - ✅ `docs/CONFIGURATION.md` создан/перенаправлен, ссылки в README/CHANGELOG исправлены.
-   - ✅ `.windsurfrules` и `AGENTS.md` актуализированы.
+5. ✅ **Документация:**
+   - `docs/CONFIGURATION_EN.md` / `docs/CONFIGURATION_RU.md` актуальны; ссылки в README/CHANGELOG исправлены.
+   - Root `CHANGELOG.md` создан с перенаправлением.
+   - `.windsurfrules` и `AGENTS.md` актуализированы.
 
-6. **E2E:**
-   - Smoke-тесты должны запускаться на isolated test-стеке (`docker-compose.test.yml`) с `SKIP_AUTH=true`.
+6. ✅ **E2E:** Smoke-тесты запускаются на isolated test-стеке (`docker-compose.test.yml`) с `SKIP_AUTH=true`.
 
 ---
 
 ## Заключение
 
-Проект Knowledge Graph демонстрирует хорошую архитектурную дисциплину: бэкенд отвязан от конкретных БД/Redis, фронтенд локализует UI-строки через i18n, сборка и юнит-тесты проходят. В рамках второго цикла устранены MEDIUM-техдолг: убраны `any` в production TypeScript, настроена проверка циклических зависимостей `madge`, зафиксированы FSD-границы, исправлен `tippy.js` default import, дополнены TODO/FIXME. Статус проекта улучшен, но остаётся внимание на E2E-покрытии и дальнейшем росте backend coverage.
+Проект Knowledge Graph демонстрирует хорошую архитектурную дисциплину: бэкенд отвязан от конкретных БД/Redis, фронтенд локализует UI-строки через i18n, сборка и юнит-тесты проходят. В рамках второго и третьего циклов устранены MEDIUM/HIGH-техдолги: убраны `any` в production TypeScript, настроена проверка циклических зависимостей `madge`, зафиксированы FSD-границы, исправлен `tippy.js` default import, дополнены TODO/FIXME, оставшиеся необёрнутые `console.*` в production обёрнуты в `if (import.meta.env.DEV)`, битые ссылки в CHANGELOG исправлены, создан root `CHANGELOG.md`. Статус проекта улучшен, но остаётся внимание на E2E-покрытии и дальнейшем росте backend coverage.

@@ -24,7 +24,7 @@
 - **Docker Integration**: Updated `Dockerfile` and `docker-compose.yml` to mount config
   - Config loaded from `/app/knowledge-graph.config.json` in container
   - Build context changed to project root for config access
-- **Documentation**: Added Graph Service section to `docs/CONFIGURATION_EN.md` and `docs/CONFIGURATION.md`
+- **Documentation**: Added Graph Service section to `docs/CONFIGURATION_EN.md` and `docs/CONFIGURATION_RU.md`
 
 ### 🎮 Galactic Lexicon & Achievements System
 - **Galactic Lexicon**: Themed messaging system with two modes
@@ -89,7 +89,7 @@
   - Automatic fallback to unit weights when weights unavailable
 - **Documentation Updates**:
   - README.md: Added "Гибкое сходство ключевых слов в рекомендациях" section
-  - docs/ARCHITECTURE.md: Added keyword similarity architecture subsection
+  - docs/ARCHITECTURE_EN.md: Added keyword similarity architecture subsection
   - docs/RECOMMENDATION_ARCHITECTURE.md: Added comprehensive keyword similarity component documentation
 
 
@@ -374,7 +374,7 @@ docker-compose up -d
 ---
 
 **Full Documentation:**
-- [README_EN.md](../README_EN.md) — central navigation
+- [README.md](../README.md) — central navigation
 - [CONFIGURATION_EN.md](CONFIGURATION_EN.md) — configuration
 - [DEPLOYMENT_EN.md](DEPLOYMENT_EN.md) — deployment
 - [TESTING.md](TESTING.md) — testing

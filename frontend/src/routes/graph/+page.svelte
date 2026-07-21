@@ -141,7 +141,9 @@
         console.log("[graph/+page] Sample link:", transformedLinks[0]);
       }
     } catch (e) {
-      console.error("Failed to load graph:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to load graph:", e);
+      }
       error = t("graph.loadDataError");
     } finally {
       loading = false;
@@ -164,7 +166,9 @@
       await deleteNote(nodeId);
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error("Failed to delete note:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to delete note:", e);
+      }
     }
   }
 
@@ -173,7 +177,9 @@
       await restoreNote(nodeId);
       await loadGraphData();
     } catch (e) {
-      console.error("Failed to restore note:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to restore note:", e);
+      }
     }
   }
 
@@ -186,7 +192,9 @@
       await createNote(data);
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error("Failed to create note:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to create note:", e);
+      }
     }
   }
 
@@ -205,7 +213,9 @@
       });
       await loadGraphData({ nocache: true });
     } catch (e) {
-      console.error("Failed to create link:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to create link:", e);
+      }
     }
   }
 

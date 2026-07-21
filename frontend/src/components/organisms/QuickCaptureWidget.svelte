@@ -42,7 +42,9 @@
         toggle();
       }, 1000);
     } catch (error) {
-      console.error("Error creating note:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error creating note:", error);
+      }
     } finally {
       isSubmitting = false;
     }

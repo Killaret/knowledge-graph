@@ -21,7 +21,9 @@ export const actions: Actions = {
 
       throw redirect(302, `/notes/${note.id}`);
     } catch (e) {
-      console.error("Server action create error:", e);
+      if (import.meta.env.DEV) {
+        console.error("Server action create error:", e);
+      }
       return fail(500, { message: "Failed to create note" });
     }
   },

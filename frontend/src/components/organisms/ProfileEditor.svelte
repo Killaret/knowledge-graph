@@ -97,7 +97,9 @@
     try {
       await usersApi.updateSetting("preferred_language", locale);
     } catch (e) {
-      console.error("Failed to save locale setting:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to save locale setting:", e);
+      }
     }
 
     // Reload page to apply new locale

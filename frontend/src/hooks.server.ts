@@ -70,7 +70,9 @@ const backendApiProxy: Handle = async ({ event, resolve }) => {
         headers: headers,
       });
     } catch (error) {
-      console.error("[Backend API Proxy] Error:", error);
+      if (import.meta.env.DEV) {
+        console.error("[Backend API Proxy] Error:", error);
+      }
       return new Response(
         JSON.stringify({ error: "Failed to connect to backend" }),
         {
@@ -171,7 +173,9 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
         headers: headers,
       });
     } catch (error) {
-      console.error("[Graph Service Proxy] Error:", error);
+      if (import.meta.env.DEV) {
+        console.error("[Graph Service Proxy] Error:", error);
+      }
       return new Response(
         JSON.stringify({ error: "Failed to connect to graph service" }),
         {

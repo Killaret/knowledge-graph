@@ -38,7 +38,9 @@
       }));
     } catch (e) {
       error = t("graph.loadDataError");
-      console.error(e);
+      if (import.meta.env.DEV) {
+        console.error(e);
+      }
     } finally {
       loading = false;
     }

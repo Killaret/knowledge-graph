@@ -128,7 +128,9 @@
       toastType = "success";
       showToast = true;
     } catch (e) {
-      console.error("Failed to get achievement message:", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to get achievement message:", e);
+      }
     }
   }
 

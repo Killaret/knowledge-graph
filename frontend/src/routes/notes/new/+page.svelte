@@ -23,7 +23,9 @@
       await goto(`/notes/${note.id}`);
     } catch (e) {
       error = t("note.createError");
-      console.error("Create note error:", e);
+      if (import.meta.env.DEV) {
+        console.error("Create note error:", e);
+      }
     } finally {
       saving = false;
     }

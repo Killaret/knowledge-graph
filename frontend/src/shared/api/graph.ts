@@ -47,7 +47,9 @@ export interface GraphData {
  * Обрабатывает ошибки API графа и возвращает понятное сообщение
  */
 function handleGraphError(error: unknown, context: string): never {
-  console.error(`[Graph API] ${context}:`, error);
+  if (import.meta.env.DEV) {
+    console.error(`[Graph API] ${context}:`, error);
+  }
 
   if (error instanceof Error) {
     if (error.message.includes("404") || error.message.includes("Not Found")) {

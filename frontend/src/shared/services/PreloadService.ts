@@ -142,10 +142,12 @@ class PreloadServiceClass {
         }
       }
     } catch (error) {
-      console.error(
-        "[PreloadService] Error during authenticated graph preload:",
-        error,
-      );
+      if (import.meta.env.DEV) {
+        console.error(
+          "[PreloadService] Error during authenticated graph preload:",
+          error,
+        );
+      }
       throw error;
     }
   }
@@ -165,7 +167,9 @@ class PreloadServiceClass {
         console.log("[PreloadService] Public graph preloaded successfully");
       }
     } catch (error) {
-      console.error("[PreloadService] Error preloading public graph:", error);
+      if (import.meta.env.DEV) {
+        console.error("[PreloadService] Error preloading public graph:", error);
+      }
       throw error;
     }
   }

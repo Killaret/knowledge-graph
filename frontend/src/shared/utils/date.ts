@@ -36,7 +36,9 @@ export function formatDate(
     );
     return formatter.format(date);
   } catch (error) {
-    console.error("Error formatting date:", error);
+    if (import.meta.env.DEV) {
+      console.error("Error formatting date:", error);
+    }
     return String(dateString);
   }
 }

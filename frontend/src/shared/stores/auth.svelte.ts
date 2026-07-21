@@ -319,6 +319,8 @@ export async function updateUserInfo(): Promise<void> {
     authState.currentUser = user;
     void applyUserSettings();
   } catch (e) {
-    console.error("Failed to update user info:", e);
+    if (import.meta.env.DEV) {
+      console.error("Failed to update user info:", e);
+    }
   }
 }

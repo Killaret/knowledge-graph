@@ -211,11 +211,15 @@
         isAuth ? getNotes() : Promise.resolve([] as Note[]),
         isAuth
           ? getFreshGraph().catch((e: unknown) => {
-              console.error("[+page] Failed to load fresh graph:", e);
+              if (import.meta.env.DEV) {
+                console.error("[+page] Failed to load fresh graph:", e);
+              }
               return null;
             })
           : getGraphWithPreload().catch((e: unknown) => {
-              console.error("[+page] Failed to load public graph:", e);
+              if (import.meta.env.DEV) {
+                console.error("[+page] Failed to load public graph:", e);
+              }
               return null;
             }),
       ]);
@@ -311,7 +315,9 @@
       }
     } catch (e: unknown) {
       apiError = toErrorResponse(e);
-      console.error(e);
+      if (import.meta.env.DEV) {
+        console.error(e);
+      }
     } finally {
       loading = false;
     }
@@ -325,7 +331,9 @@
       await loadGraphData();
     } catch (e: unknown) {
       apiError = toErrorResponse(e);
-      console.error(e);
+      if (import.meta.env.DEV) {
+        console.error(e);
+      }
     } finally {
       loading = false;
     }
@@ -431,7 +439,9 @@
         }
       }
     } catch (e) {
-      console.error("[+page] Failed to load graph:", e);
+      if (import.meta.env.DEV) {
+        console.error("[+page] Failed to load graph:", e);
+      }
       // Fallback: build simple graph from notes
       graphData = {
         nodes: allNotes.map((n) => ({
@@ -490,7 +500,9 @@
     } catch (e) {
       // Fallback: local filter on allNotes
       applyFiltersAndSort();
-      console.error("Search error:", e);
+      if (import.meta.env.DEV) {
+        console.error("Search error:", e);
+      }
     }
   }
 
