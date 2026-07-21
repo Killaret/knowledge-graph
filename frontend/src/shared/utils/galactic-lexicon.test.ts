@@ -507,3 +507,33 @@ describe("getMessageKeys helper", () => {
     expect(keys.error).toContain("unauthorized");
   });
 });
+
+describe("Comprehensive message coverage", () => {
+  it("covers every GalacticLexicon wrapper and message function for all modes/locales", () => {
+    const getArgs = (fn: (...args: any[]) => string) => {
+      const paramCount = fn.length; // message args before the default useGalactic/locale
+      if (paramCount >= 2) return ["Source", "Target"];
+      if (paramCount === 1) return ["Value"];
+      return [];
+    };
+
+    const results: string[] = [];
+    for (const [category, methods] of Object.entries(GalacticLexicon)) {
+      for (const [key, fn] of Object.entries(methods)) {
+        const args = getArgs(fn as (...args: any[]) => string);
+        for (const useGalactic of [false, true]) {
+          for (const locale of ["en", "ru"]) {
+            const message = (fn as (...args: any[]) => string)(
+              ...args,
+              useGalactic,
+              locale,
+            );
+            expect(message).toBeTypeOf("string");
+            results.push(`${category}.${key}:${message}`);
+          }
+        }
+      }
+    }
+    expect(results.length).toBeGreaterThan(100);
+  });
+});

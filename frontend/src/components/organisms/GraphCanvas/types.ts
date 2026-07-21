@@ -17,8 +17,8 @@ export interface SimulationNode extends SimulationNodeDatum {
 }
 
 export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {
-  source: SimulationNode | string;
-  target: SimulationNode | string;
+  source: SimulationNode | string | number;
+  target: SimulationNode | string | number;
   weight?: number;
   link_type?: string;
   source_type?: string; // 'user' or 'gamma'

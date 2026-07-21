@@ -55,12 +55,12 @@ class PreloadServiceClass {
    * Запускает фоновую предзагрузку данных, если пользователь не аутентифицирован
    */
   public async startPreload(): Promise<void> {
-    if (!browser || this.isPreloading || isAuthenticated()) {
-      return;
-    }
-
     if (this.preloadPromise) {
       return this.preloadPromise;
+    }
+
+    if (!browser || this.isPreloading || isAuthenticated()) {
+      return;
     }
 
     this.isPreloading = true;
@@ -75,12 +75,12 @@ class PreloadServiceClass {
   }
 
   public async preloadAuthenticatedGraph(): Promise<void> {
-    if (!browser || this.isPreloading || !isAuthenticated()) {
-      return;
-    }
-
     if (this.preloadPromise) {
       return this.preloadPromise;
+    }
+
+    if (!browser || this.isPreloading || !isAuthenticated()) {
+      return;
     }
 
     this.isPreloading = true;
