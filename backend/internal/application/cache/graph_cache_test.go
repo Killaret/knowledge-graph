@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -160,6 +161,29 @@ func TestGetStats(t *testing.T) {
 	assert.Equal(t, int64(1), stats.HitCount)
 	assert.Equal(t, int64(1), stats.MissCount)
 	assert.Equal(t, 0.5, stats.HitRate)
+}
+
+func TestInvalidateAll(t *testing.T) {
+	ctx := context.Background()
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
+
+	for i := 1; i <= 3; i++ {
+		userID := fmt.Sprintf("user-%d", i)
+		data := GraphData{
+			Nodes: []GraphNode{{ID: "node", Title: "Test", Type: "star"}},
+			Links: []GraphLink{},
+		}
+		require.NoError(t, graphCache.CacheUserGraph(ctx, userID, data))
+	}
+
+	require.NoError(t, graphCache.InvalidateAll(ctx))
+
+	for i := 1; i <= 3; i++ {
+		_, found, err := graphCache.GetCachedUserGraph(ctx, fmt.Sprintf("user-%d", i))
+		require.NoError(t, err)
+		assert.False(t, found)
+	}
 }
 
 func TestCacheKeyGeneration(t *testing.T) {
