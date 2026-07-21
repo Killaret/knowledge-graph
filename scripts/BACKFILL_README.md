@@ -1,12 +1,12 @@
 # Backfill Recommendations
 
-Массовый пересчёт рекомендаций для всех заметок в базе.
+Bulk recalculation of recommendations for all notes in the database.
 
-## Зачем нужно?
+## Why is it needed?
 
-Worker автоматически обновляет рекомендации только для **новых/изменённых** заметок. Для существующих заметок нужно запустить CLI вручную.
+The worker automatically updates recommendations only for **new or changed** notes. For existing notes, run the CLI manually.
 
-## Быстрый запуск
+## Quick start
 
 ```powershell
 # Personal stack
@@ -16,135 +16,143 @@ docker compose -f docker-compose.personal.yml run --rm cli_personal ./cli
 docker compose run --rm cli ./cli
 ```
 
-## Dry Run (проверка без создания задач)
+## Dry run (verify without creating tasks)
 
 ```powershell
 docker compose -f docker-compose.personal.yml run --rm cli_personal ./cli --dry-run
 ```
 
-## Мониторинг прогресса
+## Progress monitoring
 
-### 1. Логи worker
+### 1. Worker logs
 
 ```powershell
 docker compose -f docker-compose.personal.yml logs -f kg-worker-personal
 ```
 
-Искать строки:
+Look for lines:
+
 ```
 [RefreshService] Starting refresh recommendations for note {id}
 [RefreshService] Successfully refreshed N recommendations for note {id}
 ```
 
-### 2. Проверка в БД
+### 2. Check in the database
 
 ```bash
-docker compose -f docker-compose.personal.yml exec postgres_personal psql -U personal -d knowledge_personal -c "SELECT note_id, COUNT(*) as rec_count FROM note_recommendations GROUP BY note_id;"
+docker compose -f docker-compose.personal.yml exec postgres_personal \
+  psql -U personal -d knowledge_personal \
+  -c "SELECT note_id, COUNT(*) as rec_count FROM note_recommendations GROUP BY note_id;"
 ```
 
 ### 3. Redis queue (asynqmon)
 
 ```bash
-# Установить asynqmon
+# Install asynqmon
 go install github.com/hibiken/asynqmon@latest
 
-# Запустить
+# Run
 asynqmon --redis-addr localhost:6380
 ```
 
-## Конфигурация
+## Configuration
 
-Параметры из `knowledge-graph.config.json`:
+Parameters from `knowledge-graph.config.json`:
 
 ```json
 {
   "backend": {
     "recommendation": {
-      "alpha": 0.5,           // Вес графа
-      "beta": 0.5,            // Вес семантики
-      "gamma": 0.2,           // Вес ключевых слов
-      "depth": 3,             // Глубина обхода графа
-      "decay": 0.5,           // Затухание веса
-      "top_n": 50,            // Максимум рекомендаций
+      "alpha": 0.5,
+      "beta": 0.5,
+      "gamma": 0.2,
+      "depth": 3,
+      "decay": 0.5,
+      "top_n": 50,
       "keyword_similarity_method": "jaccard"
     }
   }
 }
 ```
 
-## Формула расчёта
+## Scoring formula
 
 ```
-Final Score = α×Graph + β×Semantic + γ×Keyword
+Final Score = α × Graph + β × Semantic + γ × Keyword
 ```
 
-### Компоненты:
+### Components
 
-1. **Graph Score** (α=0.5)
-   - BFS traversal depth=3
-   - Decay factor=0.5
+1. **Graph Score** (α = 0.5)
+   - BFS traversal depth = 3
+   - Decay factor = 0.5
    - Link types: reference, dependency, related
 
-2. **Semantic Score** (β=0.5)
-   - Cosine similarity векторов (384 dim)
-   - Модель: all-MiniLM-L6-V2
-   - Из `note_embeddings` таблицы
+2. **Semantic Score** (β = 0.5)
+   - Cosine similarity of 384-dimensional vectors
+   - Model: `all-MiniLM-L6-v2`
+   - From the `note_embeddings` table
 
-3. **Keyword Score** (γ=0.2)
+3. **Keyword Score** (γ = 0.2)
    - Jaccard coefficient
-   - Ключевые слова из NLP service
-   - Из `note_keywords` таблицы
+   - Keywords from the NLP service
+   - From the `note_keywords` table
 
 ## Troubleshooting
 
-### Worker не обрабатывает задачи
+### Worker is not processing tasks
 
-1. Проверить очередь:
+1. Check the queue:
+
    ```bash
    docker compose -f docker-compose.personal.yml exec redis_personal redis-cli LLEN asynq:{default}
    ```
 
-2. Проверить логи worker:
+2. Check worker logs:
+
    ```bash
    docker logs kg-worker-personal --tail 100
    ```
 
-3. Перезапустить worker:
+3. Restart the worker:
+
    ```bash
    docker compose -f docker-compose.personal.yml restart worker_personal
    ```
 
-### Ошибки подключения к БД
+### Database connection errors
 
-Проверить DATABASE_URL:
+Check `DATABASE_URL`:
+
 ```bash
 docker compose -f docker-compose.personal.yml exec backend_personal env | grep DATABASE_URL
 ```
 
-### Пустые рекомендации
+### Empty recommendations
 
-Причины:
-- Нет связей между заметками → создать через UI
-- Нет embeddings → проверить NLP service
-- Нет keywords → проверить NLP service
+Possible causes:
 
-## Автоматизация
+- No links between notes → create links through the UI
+- No embeddings → check the NLP service
+- No keywords → check the NLP service
 
-Добавить в crontab для периодического пересчёта:
+## Automation
+
+Add to `crontab` for periodic recalculation:
 
 ```bash
-# Раз в неделю в 3:00
+# Once a week at 03:00
 0 3 * * 0 docker compose -f /path/to/docker-compose.personal.yml run --rm cli_personal ./cli
 ```
 
-## Скрипт PowerShell
+## PowerShell helper script
 
-Автоматический скрипт `scripts/backfill-recommendations.ps1`:
+Use `scripts/backfill-recommendations.ps1`:
 
 ```powershell
 # Dry run
 .\scripts\backfill-recommendations.ps1 -DryRun
 
-# Реальный запуск
+# Real run
 .\scripts\backfill-recommendations.ps1
 ```
