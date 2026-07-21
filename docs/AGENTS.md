@@ -54,14 +54,14 @@ Date: 2026-07-20
 - `internal/interfaces/api/middleware/apikey.go`: introduced `APIKeyRepository` interface so the middleware no longer performs raw GORM queries directly inside `APIKey()`.
 - `internal/interfaces/api/handlers/backup/handler.go`: removed the unused `*cloud.YandexBackupService` concrete dependency; handler now only depends on `config.Config` and `common.TaskQueue`.
 - `internal/infrastructure/db/postgres/link_repo.go`: moved `ErrDuplicateLink` to `internal/domain/link/errors.go` so the link handler depends on the domain error instead of an infrastructure package.
+- `internal/application/cache/graph_cache.go`: confirmed as an application-layer graph cache orchestration service that depends only on the `domain/cache.CacheClient` port. It stays in `application/cache` and the placement debt is closed.
 
 ### Remaining architecture debt to address in future iterations
 
 The major Clean Architecture violations listed in previous audits have been resolved. The current status and any remaining minor debt are tracked in the **Clean Architecture Refactor Notes** section below.
 
 Key remaining items:
-- `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Continue i18n coverage for user-facing strings (most active pages are now covered; placeholder/unused components such as `WeltallProtocol.svelte` still have hardcoded English strings).
+- Continue i18n coverage for user-facing strings (active pages are covered; `WeltallProtocol.svelte` is unused/placeholder and remains hardcoded in English).
 
 ### Frontend architecture notes
 
@@ -225,7 +225,6 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Remaining debt
 
-- `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
 - Full regression cycle and E2E stack verification are pending.
 
 ### Verification checklist
