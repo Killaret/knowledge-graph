@@ -1,7 +1,17 @@
 // Интеграционные тесты для authStore с PreloadService
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { goto } from "$app/navigation";
-import { initAuth, login, logout, isAuthenticated } from "./auth.svelte";
+import {
+  initAuth,
+  login,
+  logout,
+  isAuthenticated,
+  register,
+  handleYandexCallback,
+  loginWithApiKey,
+  updateUserInfo,
+  getApiKey,
+} from "./auth.svelte";
 import {
   clearPreloadCache,
   hasPreloadedData,
@@ -44,6 +54,8 @@ vi.mock("$shared/api/auth", () => ({
   login: vi.fn(),
   logout: vi.fn(),
   refreshTokens: vi.fn(),
+  register: vi.fn(),
+  handleYandexCallback: vi.fn(),
 }));
 
 vi.mock("$shared/api/graph", () => ({
@@ -55,6 +67,7 @@ vi.mock("$shared/api/graph", () => ({
 vi.mock("$shared/api/users", () => ({
   getMe: vi.fn(),
   getAllAchievements: vi.fn(),
+  getSettings: vi.fn(),
 }));
 
 // Мокаем localStorage
@@ -79,13 +92,17 @@ describe("Auth Store Integration with PreloadService", () => {
     vi.mocked(authApi.refreshTokens).mockRejectedValue(new Error("No session"));
     await logout();
 
-    // Мокаем успешные ответы API
-    vi.mocked(authApi.login).mockResolvedValue({
+    const mockTokens = {
       access_token: "test_access_token",
       refresh_token: "test_refresh_token",
       token_type: "Bearer",
       expires_at: "2024-12-31T23:59:59Z",
-    });
+    };
+
+    // Мокаем успешные ответы API
+    vi.mocked(authApi.login).mockResolvedValue(mockTokens);
+    vi.mocked(authApi.register).mockResolvedValue(mockTokens);
+    vi.mocked(authApi.handleYandexCallback).mockResolvedValue(mockTokens);
 
     vi.mocked(usersApi.getMe).mockResolvedValue({
       id: "1",
@@ -93,6 +110,10 @@ describe("Auth Store Integration with PreloadService", () => {
       email: "test@example.com",
       role: "user",
       created_at: "2024-01-01T00:00:00Z",
+    });
+
+    vi.mocked(usersApi.getSettings).mockResolvedValue({
+      settings: [{ key: "preferred_language", value: "en", updated_at: "" }],
     });
 
     vi.mocked(graphApi.getFullGraphData).mockResolvedValue(mockGraphData);
@@ -303,6 +324,92 @@ describe("Auth Store Integration with PreloadService", () => {
       await login("user1", "pass1");
       await login("user2", "pass2");
       await logout();
+    });
+  });
+
+  describe("Auth Flows", () => {
+    it("registers a new user", async () => {
+      const result = await register("newuser", "password", "email@example.com");
+
+      expect(result).toBe(true);
+      expect(isAuthenticated()).toBe(true);
+      expect(usersApi.getMe).toHaveBeenCalled();
+    });
+
+    it("handles registration failure", async () => {
+      vi.mocked(authApi.register).mockRejectedValue(new Error("Login exists"));
+
+      const result = await register("existing", "password");
+
+      expect(result).toBe(false);
+      expect(isAuthenticated()).toBe(false);
+    });
+
+    it("handles Yandex OAuth callback", async () => {
+      const result = await handleYandexCallback("code", "state");
+
+      expect(result).toBe(true);
+      expect(isAuthenticated()).toBe(true);
+      expect(authApi.handleYandexCallback).toHaveBeenCalledWith(
+        "code",
+        "state",
+      );
+    });
+
+    it("handles Yandex callback failure", async () => {
+      vi.mocked(authApi.handleYandexCallback).mockRejectedValue(
+        new Error("OAuth failed"),
+      );
+
+      const result = await handleYandexCallback("code", "state");
+
+      expect(result).toBe(false);
+      expect(isAuthenticated()).toBe(false);
+    });
+
+    it("logs in with API key", async () => {
+      const result = await loginWithApiKey("my-api-key");
+
+      expect(result).toBe(true);
+      expect(getApiKey()).toBe("my-api-key");
+      expect(isAuthenticated()).toBe(true);
+    });
+
+    it("handles invalid API key", async () => {
+      vi.mocked(usersApi.getMe).mockRejectedValue(new Error("Invalid key"));
+
+      const result = await loginWithApiKey("bad-key");
+
+      expect(result).toBe(false);
+      expect(getApiKey()).toBeNull();
+    });
+
+    it("updates user info when authenticated", async () => {
+      // Authenticate first
+      await login("user", "pass");
+      const initialUser = vi.mocked(usersApi.getMe).mock.results[0]?.value;
+
+      vi.mocked(usersApi.getMe).mockResolvedValue({
+        id: "2",
+        login: "updated",
+        email: "updated@example.com",
+        role: "admin",
+        created_at: "2024-01-01T00:00:00Z",
+      });
+
+      await updateUserInfo();
+
+      expect(usersApi.getMe).toHaveBeenCalledTimes(2);
+      expect(isAuthenticated()).toBe(true);
+    });
+
+    it("does not update user info when not authenticated", async () => {
+      await logout();
+      vi.mocked(usersApi.getMe).mockClear();
+
+      await updateUserInfo();
+
+      expect(usersApi.getMe).not.toHaveBeenCalled();
     });
   });
 });

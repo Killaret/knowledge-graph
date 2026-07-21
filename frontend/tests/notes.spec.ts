@@ -305,7 +305,7 @@ test.describe(
       page,
       request,
     }) => {
-      test.skip(true, "3D graph feature frozen for v1.0 - see CHANGELOG.md");
+      // 3D graph is frozen for v1.0 - the page redirects to 2D graph
 
       // Create two notes and a link via API using helper
       const note1 = await createNote(request, {

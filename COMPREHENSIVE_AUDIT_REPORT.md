@@ -174,11 +174,11 @@
 | Backend unit `go test ./...` | **PASS** | Все пакеты `ok`, failures не обнаружены. |
 | Backend integration `go test -tags=integration ./...` | **FAIL** | `notehandler` — timeout 150s; `taghandler` — 6 failed (ожидались 201, получен 204; пустые названия тегов и т.д.). |
 | Backend coverage | **FAIL** | `go tool cover -func coverage.out` → **total 54.8%** (min 60%, target 70%). |
-| Frontend unit `npm run test:unit` | **PASS** | **688 passed / 37 skipped**. |
-| Frontend coverage `npm run test:coverage` | **PASS** | Statements 71.35%, Branches 82.05%, Functions 70.01%, Lines 71.35%. Минимум и target 70% пройдены. |
+| Frontend unit `npm run test:unit` | **PASS** | **753 passed / 37 skipped**. |
+| Frontend coverage `npm run test:coverage` | **PASS** | Statements 79.66%, Branches 81.61%, Functions 74.86%, Lines 79.66%. Минимум и target 70% пройдены. |
 | Smoke E2E `npx playwright test --grep='@smoke'` | **FAIL** | **43 passed / 6 failed / 2 skipped**. Падения в основном связаны с авторизацией (dev-стек не в `SKIP_AUTH`). |
 | Visual / BDD | **N/A** | Не запускались в рамках аудита. |
-| Пропущенные тесты с комментариями | **WARNING** | `PreloadIndicator.svelte.test.ts` и `PreloadService.edge-cases.test.ts` имеют комментарии. `GraphCanvas.node-types.spec.ts` содержит `it.skip`/`describe.skip` без явных причин. |
+| Пропущенные тесты с комментариями | **WARNING** | `PreloadIndicator.svelte.test.ts` и `PreloadService.edge-cases.test.ts` skipped. `GraphCanvas.node-types.spec.ts` содержит `it.skip`/`describe.skip` для anomaly rendering. 3D-граф E2E-тест `tests/notes.spec.ts` разморожен (редирект на 2D). |
 
 ---
 
@@ -250,7 +250,7 @@
 18. ✅ **TESTING.md** — dev/personal/test порты и health-check URL актуализированы.
 19. ✅ **AGENTS.md / `.windsurfrules`** актуализированы; устаревшие замечания убраны.
 20. ✅ **CHANGELOG_EN.md** — root `CHANGELOG.md` создан; битые ссылки исправлены.
-21. ✅ **Frontend coverage functions** — 70.01%, target 70% достигнут.
+21. ✅ **Frontend coverage functions** — 74.86%, target 70% превышен.
 22. ✅ **`tippy.js` default import** warning устранён.
 
 ---
