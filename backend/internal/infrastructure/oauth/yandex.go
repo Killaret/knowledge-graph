@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	yandexTokenURL  = "https://oauth.yandex.com/token"
-	yandexInfoURL   = "https://login.yandex.ru/info"
-	yandexTimeout   = 10 * time.Second
+	yandexTokenURL = "https://oauth.yandex.com/token"
+	yandexInfoURL  = "https://login.yandex.ru/info"
+	yandexTimeout  = 10 * time.Second
 )
 
 // YandexProvider handles Yandex OAuth token exchange and user info retrieval.
@@ -23,6 +23,8 @@ type YandexProvider struct {
 	clientID     string
 	clientSecret string
 	redirectURI  string
+	tokenURL     string
+	infoURL      string
 	client       *http.Client
 }
 
@@ -32,15 +34,17 @@ func NewYandex(clientID, clientSecret, redirectURI string) *YandexProvider {
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		redirectURI:  redirectURI,
+		tokenURL:     yandexTokenURL,
+		infoURL:      yandexInfoURL,
 		client:       &http.Client{Timeout: yandexTimeout},
 	}
 }
 
 // UserInfo represents the subset of the Yandex Passport response we need.
 type UserInfo struct {
-	ID     string `json:"id"`
-	Login  string `json:"login"`
-	Email  string `json:"default_email"`
+	ID     string   `json:"id"`
+	Login  string   `json:"login"`
+	Email  string   `json:"default_email"`
 	Emails []string `json:"emails"`
 }
 
@@ -65,7 +69,7 @@ func (p *YandexProvider) Exchange(ctx context.Context, code, codeVerifier string
 		data.Set("code_verifier", codeVerifier)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, yandexTokenURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("build token request: %w", err)
 	}
@@ -97,7 +101,7 @@ func (p *YandexProvider) Exchange(ctx context.Context, code, codeVerifier string
 
 // UserInfo fetches the user profile from Yandex Passport.
 func (p *YandexProvider) UserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, yandexInfoURL+"?format=json", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.infoURL+"?format=json", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build info request: %w", err)
 	}
