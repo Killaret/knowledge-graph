@@ -2,6 +2,9 @@
   /* eslint-disable prefer-const -- Svelte 5 bindable props require let, see: https://svelte.dev/docs/svelte/$bindable */
   import { onMount, type Snippet } from "svelte";
   import { browser } from "$app/environment";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const t = (key: string) => formatMessage(key, getCurrentLocale());
 
   interface Props {
     open: boolean;
@@ -65,7 +68,7 @@
         <button
           class="close-btn"
           onclick={handleClose}
-          aria-label="Close"
+          aria-label={t("modal.close")}
           type="button"
         >
           <svg

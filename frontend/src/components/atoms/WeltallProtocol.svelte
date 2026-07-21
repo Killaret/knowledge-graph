@@ -2,6 +2,9 @@
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { browser } from "$app/environment";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const t = (key: string) => formatMessage(key, getCurrentLocale());
 
   interface Props {
     show?: boolean;
@@ -126,7 +129,7 @@
           class="close-button"
           bind:this={closeButtonRef}
           onclick={dispatchClose}
-          aria-label="Close protocol panel"
+          aria-label={t("protocol.closePanel")}
         >
           <span class="button-text">Close</span>
           <span class="button-glow"></span>

@@ -226,6 +226,13 @@ const messages: Record<Locale, Record<string, string>> = {
       "Are you sure you want to delete this note? This action cannot be undone.",
     "modal.delete": "Delete",
     "modal.cancel": "Cancel",
+    "modal.close": "Close",
+    "tagSelector.placeholder": "Add tag...",
+    "tagSelector.addTag": "Add new tag",
+    "protocol.closePanel": "Close protocol panel",
+    "langSwitcher.switchLanguage": "Switch language",
+    "backButton.back": "Back",
+    "backButton.goBack": "Go back",
 
     // Search
     "search.placeholder": "Search notes...",
@@ -774,6 +781,13 @@ const messages: Record<Locale, Record<string, string>> = {
       "Вы уверены, что хотите удалить эту заметку? Это действие нельзя отменить.",
     "modal.delete": "Удалить",
     "modal.cancel": "Отмена",
+    "modal.close": "Закрыть",
+    "tagSelector.placeholder": "Добавить тег...",
+    "tagSelector.addTag": "Добавить новый тег",
+    "protocol.closePanel": "Закрыть панель протокола",
+    "langSwitcher.switchLanguage": "Переключить язык",
+    "backButton.back": "Назад",
+    "backButton.goBack": "Назад",
 
     // Search
     "search.placeholder": "Поиск заметок...",

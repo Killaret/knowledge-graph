@@ -1,9 +1,13 @@
 <script lang="ts">
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const t = (key: string) => formatMessage(key, getCurrentLocale());
+
   const {
     tags = [],
     onChange,
     maxTags = 10,
-    placeholder = "Add tag...",
+    placeholder = t("tagSelector.placeholder"),
   }: {
     tags?: string[];
     onChange?: (tags: string[]) => void;
@@ -122,7 +126,7 @@
         onblur={handleBlur}
         placeholder={localTags.length === 0 ? placeholder : ""}
         class="tag-input"
-        aria-label="Add new tag"
+        aria-label={t("tagSelector.addTag")}
         maxlength="30"
       />
     {/if}

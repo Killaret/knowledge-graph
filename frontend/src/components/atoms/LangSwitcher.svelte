@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { getCurrentLocale, setLocale, type Locale } from "$shared/utils/i18n";
+  import {
+    formatMessage,
+    getCurrentLocale,
+    setLocale,
+    type Locale,
+  } from "$shared/utils/i18n";
+
+  const t = (key: string) => formatMessage(key, getCurrentLocale());
 
   let currentLocale = $state<Locale>(getCurrentLocale());
 
@@ -15,8 +22,8 @@
   type="button"
   class="lang-switcher"
   onclick={toggleLocale}
-  title="Switch language"
-  aria-label="Switch language"
+  title={t("langSwitcher.switchLanguage")}
+  aria-label={t("langSwitcher.switchLanguage")}
   data-testid="lang-switcher"
 >
   {currentLocale === "en" ? "EN" : "RU"}
