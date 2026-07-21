@@ -6,7 +6,7 @@ Backup system for personal Knowledge Graph instance with support for local stora
 
 The backup system includes:
 
-- **Local scripts**: `scripts/utility/backup-personal.sh` (Linux/Mac) and `scripts/utility/backup-personal.ps1` (Windows)
+- **Local scripts**: `scripts/devops/backup-personal.sh` (Linux/Mac) and `scripts/devops/backup-personal.ps1` (Windows)
 - **Go service**: `backend/internal/infrastructure/cloud/yandex_backup.go` for Yandex.Disk WebDAV integration
 - **Asynq task**: `TypeBackupToCloud` for asynchronous backup uploads
 - **Docker service**: `backup_scheduler` in `docker-compose.personal.yml` for automated backups
@@ -148,7 +148,7 @@ $env:BACKUP_YANDEX_TOKEN = "your_oauth_token_here"
 $env:BACKUP_YANDEX_FOLDER = "/KnowledgeGraphBackups"
 
 # Run backup script
-.\scripts\utility\backup-personal.ps1
+.\scripts\devops\backup-personal.ps1
 ```
 
 ### Linux/Mac
@@ -160,7 +160,7 @@ export BACKUP_YANDEX_TOKEN="your_oauth_token_here"
 export BACKUP_YANDEX_FOLDER="/KnowledgeGraphBackups"
 
 # Run backup script
-./scripts/utility/backup-personal.sh
+./scripts/devops/backup-personal.sh
 ```
 
 ### Via Docker Compose (personal instance)
@@ -185,7 +185,7 @@ backup_scheduler:
   container_name: kg-backup-scheduler
   volumes:
     - ./backups:/backups
-    - ./scripts/utility:/scripts:ro
+    - ./scripts/devops:/scripts:ro
     - ./knowledge-graph.config.json:/config/config.json:ro
   environment:
     BACKUP_DIR: /backups
@@ -202,7 +202,7 @@ backup_scheduler:
       apk add --no-cache curl gzip &&
       while true; do
         echo Running scheduled backup at $$(date) &&
-        /scripts/backup-personal.sh &&
+        /scripts/devops/backup-personal.sh &&
         echo Next backup in 24 hours &&
         sleep 86400
       done
@@ -219,7 +219,7 @@ Add to crontab (`crontab -e`):
 
 ```bash
 # Daily backup at 2:00 AM
-0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_TOKEN=your_token ./scripts/utility/backup-personal.sh >> /var/log/kg-backup.log 2>&1
+0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_TOKEN=your_token ./scripts/devops/backup-personal.sh >> /var/log/kg-backup.log 2>&1
 ```
 
 ### Via Task Scheduler (Windows)
@@ -228,7 +228,7 @@ Add to crontab (`crontab -e`):
 2. Create Task → Triggers → Daily at 2:00 AM
 3. Action: Start a program
    - Program: `powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\utility\backup-personal.ps1"`
+   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
    - Add environment variables:
      - `BACKUP_CLOUD_ENABLED=true`
      - `BACKUP_YANDEX_TOKEN=your_token`
@@ -454,7 +454,7 @@ docker logs kg-backup-scheduler
 
 ```bash
 # Redirect output to file
-./scripts/utility/backup-personal.sh >> /var/log/kg-backup.log 2>&1
+./scripts/devops/backup-personal.sh >> /var/log/kg-backup.log 2>&1
 
 # View logs
 tail -f /var/log/kg-backup.log

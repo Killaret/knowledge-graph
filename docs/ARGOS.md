@@ -76,8 +76,8 @@ The suite captures stable, deterministic views only:
 
 **Windows:**
 ```powershell
-./scripts/start-test.ps1
-./scripts/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+./scripts/testing/start-test.ps1
+./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
 
 cd frontend
 $env:FRONTEND_URL = "http://localhost:3002"
@@ -87,8 +87,8 @@ npm run test:visual:upload
 
 **Linux / Mac:**
 ```bash
-SKIP_AUTH=true ./scripts/start-test.sh
-NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/seed-test-data.sh
+SKIP_AUTH=true ./scripts/testing/start-test.sh
+NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
 
 cd frontend
 FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
@@ -129,7 +129,7 @@ Playwright configuration is in `frontend/playwright.config.ts`:
 
 2. **Seed data with the deterministic fixture:**
    ```bash
-   NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/seed-test-data.sh
+   NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
    ```
 
 3. **Confirm `SKIP_AUTH=true`:**

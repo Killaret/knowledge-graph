@@ -212,9 +212,9 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 **Test Stack (MANDATORY for E2E/BDD testing):**
 - **ALWAYS** use isolated test stack for E2E and BDD tests
 - Never run E2E/BDD tests against dev or personal stacks
-- Start test stack: `.\scripts\start-test.ps1`
-- Seed test data: `.\scripts\seed-test-data.ps1`
-- Stop and destroy: `.\scripts\stop-test.ps1` (removes all data with `-v`)
+- Start test stack: `.\scripts\testing\start-test.ps1`
+- Seed test data: `.\scripts\testing\seed-test-data.ps1`
+- Stop and destroy: `.\scripts\testing\stop-test.ps1` (removes all data with `-v`)
 - Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
@@ -222,11 +222,11 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
-- Run: `.\scripts\run-full-test-cycle.ps1` (includes stacks identity check)
+- Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)
 - Regression plan: 20-part comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
 - Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
-- Stacks identity check: `.\scripts\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- Stacks identity check: `.\scripts\ci\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
 - Exit criteria: All stacks identical, all builds succeed, all tests pass, no vulnerabilities
 - See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
 
@@ -334,7 +334,7 @@ CMD ["/server"]
 - Completely isolated from dev/personal environments
 - Unique container names: `kg-test-*`
 - Test database: `knowledge_test` with test credentials
-- Scripts: `.\scripts\start-test.ps1`, `.\scripts\stop-test.ps1`, `.\scripts\seed-test-data.ps1`
+- Scripts: `.\scripts\testing\start-test.ps1`, `.\scripts\testing\stop-test.ps1`, `.\scripts\testing\seed-test-data.ps1`
 - Always destroy with `down -v` to remove test data
 
 ---
@@ -343,9 +343,9 @@ CMD ["/server"]
 
 ```bash
 # Unified test entry point
-.\scripts\test.ps1 unit                               # Unit tests (backend + frontend)
-.\scripts\test.ps1 integration                       # Backend integration tests
-.\scripts\test.ps1 all                                # All test layers
+.\scripts\testing\test.ps1 unit                               # Unit tests (backend + frontend)
+.\scripts\testing\test.ps1 integration                       # Backend integration tests
+.\scripts\testing\test.ps1 all                                # All test layers
 
 # Backend
 cd backend && go test ./...                          # Unit tests
@@ -358,7 +358,7 @@ cd frontend && npm run test                          # Playwright
 cd frontend && npm run build                         # Build
 
 # Cleanup temporary test artifacts
-.\scripts\cleanup-test-artifacts.ps1
+python .\scripts\cleanup\cleanup-test-artifacts.py
 
 # Docker
 docker compose up -d                                 # Dev stack
@@ -366,9 +366,9 @@ docker compose -f docker-compose.personal.yml up -d  # Personal stack
 docker compose logs -f backend                       # Logs
 
 # Test Stack (for E2E/BDD testing)
-.\scripts\start-test.ps1                            # Start test stack
-.\scripts\stop-test.ps1                             # Destroy test stack
-.\scripts\seed-test-data.ps1                        # Seed test data
+.\scripts\testing\start-test.ps1                            # Start test stack
+.\scripts\testing\stop-test.ps1                             # Destroy test stack
+.\scripts\testing\seed-test-data.ps1                        # Seed test data
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 
@@ -449,5 +449,5 @@ When modifying backend handlers or repositories:
 
 1. `cd backend && go test ./...`
 2. `cd backend && go vet ./...`
-3. Run `.\scripts\cleanup-test-artifacts.ps1` (or `rm` `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
+3. Run `python .\scripts\cleanup\cleanup-test-artifacts.py` (or `rm` `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
 4. Update `docs/AGENTS.md` if boundaries change

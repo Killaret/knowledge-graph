@@ -112,8 +112,8 @@ jobs:
 
       - name: Check stacks identity
         run: |
-          chmod +x scripts/check-stacks-identity.sh
-          ./scripts/check-stacks-identity.sh
+          chmod +x scripts/ci/check-stacks-identity.sh
+          ./scripts/ci/check-stacks-identity.sh
 
   # ============ FULL TEST SUITE ============
   full-tests:
@@ -290,8 +290,8 @@ jobs:
 
       - name: Seed visual fixture
         run: |
-          chmod +x scripts/seed-test-data.sh
-          NOTE_COUNT=20 LINK_COUNT=10 SEED=42 NLP_WAIT_SECONDS=120 scripts/seed-test-data.sh
+          chmod +x scripts/testing/seed-test-data.sh
+          NOTE_COUNT=20 LINK_COUNT=10 SEED=42 NLP_WAIT_SECONDS=120 scripts/testing/seed-test-data.sh
 
       - name: Run visual tests with Argos
         working-directory: ./frontend

@@ -34,7 +34,7 @@ remove_if_old() {
 echo "Cleaning ad-hoc log files in project root..."
 find "$REPO_ROOT" -maxdepth 1 -type f \( \
     -name '*.log' -o -name 'hs_err_pid*.log' -o -name 'replay_pid*.log' -o -name '*.results.txt' \
-) -print0 | while IFS= read -r -d '' file; do
+\) -print0 | while IFS= read -r -d '' file; do
     remove_if_old "$file" 0 'root log'
 done
 

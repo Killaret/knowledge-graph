@@ -550,8 +550,8 @@ curl http://localhost:8000/health
 docker-compose exec postgres psql -U kb_user -d knowledge_base
 
 # Резервное копирование
-./scripts/backup-personal.sh      # Linux/Mac
-./scripts/backup-personal.ps1    # Windows
+./scripts/devops/backup-personal.sh      # Linux/Mac
+./scripts/devops/backup-personal.ps1    # Windows
 ```
 
 ## 🔨 Инфраструктура и CI/CD

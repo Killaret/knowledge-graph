@@ -158,10 +158,10 @@
 
 ## 6. Очистка после тестирования
 
-- [ ] Запустить `scripts/stop-test.ps1` (Windows) или `scripts/stop-test.sh` (Linux/Mac).
+- [ ] Запустить `scripts/testing/stop-test.ps1` (Windows) или `scripts/testing/stop-test.sh` (Linux/Mac).
 - [ ] Тестовые контейнеры остановлены, volume'ы удалены.
 - [ ] `docker ps --filter "name=kg-test"` не показывает контейнеры.
-- [ ] Dev и personal стеки здоровы (`scripts/check-stacks-health.ps1`).
+- [ ] Dev и personal стеки здоровы (`scripts/ci/check-stacks-health.ps1`).
 - [ ] Тестовые данные не просочились в dev/personal.
 
 ---

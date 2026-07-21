@@ -1,5 +1,5 @@
 # Backup script for personal Knowledge Graph instance (Windows)
-# Usage: .\scripts\backup-personal.ps1
+# Usage: .\scripts\devops\backup-personal.ps1
 
 $ErrorActionPreference = "Stop"
 

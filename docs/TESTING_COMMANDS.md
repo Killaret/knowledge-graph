@@ -38,16 +38,16 @@ cd backend && go build ./cmd/server
 ### Unified Test Entry Point
 ```bash
 # All test layers (unit → integration → e2e → bdd)
-.\scripts\test.ps1 all          # Windows
-./scripts/test.sh all            # Linux/Mac
+.\scripts\testing\test.ps1 all          # Windows
+./scripts/testing/test.sh all            # Linux/Mac
 
 # Individual targets
-.\scripts\test.ps1 unit         # backend + frontend unit
-.\scripts\test.ps1 integration  # backend integration tests
-.\scripts\test.ps1 e2e          # Playwright E2E
-.\scripts\test.ps1 bdd          # Cucumber BDD
-.\scripts\test.ps1 coverage     # backend + frontend coverage
-.\scripts\test.ps1 clean        # cleanup temporary artifacts
+.\scripts\testing\test.ps1 unit         # backend + frontend unit
+.\scripts\testing\test.ps1 integration  # backend integration tests
+.\scripts\testing\test.ps1 e2e          # Playwright E2E
+.\scripts\testing\test.ps1 bdd          # Cucumber BDD
+.\scripts\testing\test.ps1 coverage     # backend + frontend coverage
+.\scripts\testing\test.ps1 clean        # cleanup temporary artifacts
 ```
 
 ### NLP Service Testing
@@ -66,20 +66,20 @@ curl -X POST http://localhost:5000/embed -H "Content-Type: application/json" -d 
 ### Test Stack Management
 ```bash
 # Full test cycle (isolated model - stops dev/personal stacks)
-.\scripts\run-full-test-cycle.ps1      # Windows
-./scripts/run-full-test-cycle.sh       # Linux/Mac
+.\scripts\testing\run-full-test-cycle.ps1      # Windows
+./scripts/testing/run-full-test-cycle.sh       # Linux/Mac
 
 # Start test stack
-.\scripts\start-test.ps1              # Windows
-./scripts/start-test.sh               # Linux/Mac
+.\scripts\testing\start-test.ps1              # Windows
+./scripts/testing/start-test.sh               # Linux/Mac
 
 # Seed test data
-.\scripts\seed-test-data.ps1          # Windows
-./scripts\seed-test-data.sh           # Linux/Mac
+.\scripts\testing\seed-test-data.ps1          # Windows
+./scripts\testing\seed-test-data.sh           # Linux/Mac
 
 # Stop and destroy test stack
-.\scripts\stop-test.ps1               # Windows
-./scripts\stop-test.sh                # Linux/Mac
+.\scripts\testing\stop-test.ps1               # Windows
+./scripts\testing\stop-test.sh                # Linux/Mac
 
 # Manual test stack management
 docker compose -f docker-compose.test.yml up -d --build
@@ -89,31 +89,31 @@ docker compose -f docker-compose.test.yml down -v
 ### Stack Health Checks
 ```bash
 # Check all stacks (default)
-.\scripts\check-stacks-health.ps1              # Windows
-./scripts/check-stacks-health.sh               # Linux/Mac
+.\scripts\ci\check-stacks-health.ps1              # Windows
+./scripts/ci/check-stacks-health.sh               # Linux/Mac
 
 # Check specific stack
-.\scripts\check-stacks-health.ps1 -Stack dev   # Windows
-.\scripts\check-stacks-health.ps1 -Stack personal
-.\scripts\check-stacks-health.ps1 -Stack test
-./scripts/check-stacks-health.sh --stack dev    # Linux/Mac
-./scripts/check-stacks-health.sh --stack personal
-./scripts/check-stacks-health.sh --stack test
+.\scripts\ci\check-stacks-health.ps1 -Stack dev   # Windows
+.\scripts\ci\check-stacks-health.ps1 -Stack personal
+.\scripts\ci\check-stacks-health.ps1 -Stack test
+./scripts/ci/check-stacks-health.sh --stack dev    # Linux/Mac
+./scripts/ci/check-stacks-health.sh --stack personal
+./scripts/ci/check-stacks-health.sh --stack test
 ```
 
 ### Regression Testing
 ```bash
 # Full regression cycle (isolated model - 25 steps)
-.\scripts\run-full-test-cycle.ps1      # Windows
-./scripts/run-full-test-cycle.sh       # Linux/Mac
+.\scripts\testing\run-full-test-cycle.ps1      # Windows
+./scripts/testing/run-full-test-cycle.sh       # Linux/Mac
 
 # Stacks identity check
-.\scripts\check-stacks-identity.ps1    # Windows
-./scripts/check-stacks-identity.sh     # Linux/Mac
+.\scripts\ci\check-stacks-identity.ps1    # Windows
+./scripts/ci/check-stacks-identity.sh     # Linux/Mac
 
 # Cleanup test artifacts
-.\scripts\cleanup-test-artifacts.ps1    # Windows
-./scripts/cleanup-test-artifacts.sh     # Linux/Mac
+python .\scripts\cleanup\cleanup-test-artifacts.py    # Windows
+python ./scripts/cleanup/cleanup-test-artifacts.py     # Linux/Mac
 
 # Individual regression steps
 # Step 0: Capture dev stack state snapshot

@@ -12,12 +12,9 @@
     "clean:logs": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/cleanup-logs.ps1",
     "clean:logs:dry": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/cleanup-logs.ps1 -DryRun",
     "clean:logs:sh": "bash ./scripts/cleanup/cleanup-logs.sh",
-    "clean:lunix": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress -UseCompact",
-    "clean:lunix:vhd": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress",
-    "clean:lunix:dry": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/clean_and_compress_lunix.ps1 -Search -Compress -UseCompact -DryRun",
-    "clean:lunix:sh": "bash ./scripts/cleanup/clean_and_compress_lunix.sh -c",
-    "clean:lunix:sh:dry": "bash ./scripts/cleanup/clean_and_compress_lunix.sh --dry-run -c",
-    "clean:docker:vhdx": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/cleanup/diskpart_compress_admin.ps1"
+    "clean:test-artifacts": "python ./scripts/cleanup/cleanup-test-artifacts.py",
+    "clean:test-artifacts:dry": "python ./scripts/cleanup/cleanup-test-artifacts.py --dry-run",
+    "lint:scripts": "python ./scripts/devops/lint-scripts.py"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.8.1",

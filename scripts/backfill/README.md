@@ -147,12 +147,12 @@ Add to `crontab` for periodic recalculation:
 
 ## PowerShell helper script
 
-Use `scripts/backfill-recommendations.ps1`:
+Use `scripts/backfill/backfill-recommendations.ps1`:
 
 ```powershell
 # Dry run
-.\scripts\backfill-recommendations.ps1 -DryRun
+.\scripts\backfill\backfill-recommendations.ps1 -DryRun
 
 # Real run
-.\scripts\backfill-recommendations.ps1
+.\scripts\backfill\backfill-recommendations.ps1
 ```

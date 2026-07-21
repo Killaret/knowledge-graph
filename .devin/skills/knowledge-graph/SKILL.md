@@ -48,19 +48,19 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - Always run `go test ./...` after backend changes
 - Always run `npm run test:unit` after frontend changes
 - Coverage MUST be >60%
-- **ALWAYS use test stack for E2E/BDD testing:** `.\scripts\start-test.ps1`
+- **ALWAYS use test stack for E2E/BDD testing:** `.\scripts\testing\start-test.ps1`
 - Never run E2E/BDD tests against dev or personal stacks
 - Use table-driven tests in Go with testify/require (not assert)
 
 ### Regression Testing (MANDATORY before production deployment)
 - **ALWAYS run full regression cycle before production deployment**
-- Run: `.\scripts\run-full-test-cycle.ps1` (Windows) or `./scripts/run-full-test-cycle.sh` (Linux/Mac)
+- Run: `.\scripts\testing\run-full-test-cycle.ps1` (Windows) or `./scripts/testing/run-full-test-cycle.sh` (Linux/Mac)
 - **Isolated Testing Model:** Dev and personal stacks are stopped during testing
 - Regression plan: 24-step comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
 - Steps: State snapshot, stack isolation, test execution, state comparison, auto-commit
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
-- Stacks identity check: `.\scripts\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
-- Stack health check: `.\scripts\check-stacks-health.ps1 -Stack <dev|personal|test|all>`
+- Stacks identity check: `.\scripts\ci\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- Stack health check: `.\scripts\ci\check-stacks-health.ps1 -Stack <dev|personal|test|all>`
 - Exit criteria: Dev state unchanged, dev/personal identical, all stacks healthy, all tests pass
 - Auto-commit: Only if all checks pass (dev unchanged, dev/personal identical, stacks healthy)
 - See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
@@ -110,18 +110,18 @@ cd nlp-service && pytest tests/ -v                    # Unit tests
 curl http://localhost:5000/health                    # Health check
 
 # Test Stack Management
-.\scripts\start-test.ps1                             # Start test stack
-.\scripts\seed-test-data.ps1                          # Seed test data
-.\scripts\stop-test.ps1                              # Destroy test stack
+.\scripts\testing\start-test.ps1                             # Start test stack
+.\scripts\testing\seed-test-data.ps1                          # Seed test data
+.\scripts\testing\stop-test.ps1                              # Destroy test stack
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 
 # Regression Testing (Isolated Model)
-.\scripts\run-full-test-cycle.ps1                    # Full regression cycle (24 steps)
-.\scripts\check-stacks-identity.ps1                   # Stacks identity check
-.\scripts\check-stacks-health.ps1 -Stack dev          # Check dev stack health
-.\scripts\check-stacks-health.ps1 -Stack personal     # Check personal stack health
-.\scripts\check-stacks-health.ps1 -Stack test         # Check test stack health
+.\scripts\testing\run-full-test-cycle.ps1                    # Full regression cycle (24 steps)
+.\scripts\ci\check-stacks-identity.ps1                   # Stacks identity check
+.\scripts\ci\check-stacks-health.ps1 -Stack dev          # Check dev stack health
+.\scripts\ci\check-stacks-health.ps1 -Stack personal     # Check personal stack health
+.\scripts\ci\check-stacks-health.ps1 -Stack test         # Check test stack health
 
 # Health Checks
 curl http://localhost:8080/health                    # Dev stack nginx
@@ -140,12 +140,12 @@ docker compose -f docker-compose.personal.yml up -d  # Start personal stack
 docker compose logs -f backend                       # Backend logs
 
 # Test Stack (for E2E/BDD testing - Isolated Model)
-.\scripts\run-full-test-cycle.ps1                    # Full test cycle (isolated model)
-.\scripts\start-test.ps1                            # Start isolated test stack
-.\scripts\stop-test.ps1                             # Destroy test stack (removes all data)
-.\scripts\seed-test-data.ps1                        # Seed test database
-.\scripts\check-stacks-health.ps1 -Stack test         # Check test stack health
-.\scripts\check-stacks-identity.ps1                 # Check stacks identity (dev/personal/test)
+.\scripts\testing\run-full-test-cycle.ps1                    # Full test cycle (isolated model)
+.\scripts\testing\start-test.ps1                            # Start isolated test stack
+.\scripts\testing\stop-test.ps1                             # Destroy test stack (removes all data)
+.\scripts\testing\seed-test-data.ps1                        # Seed test database
+.\scripts\ci\check-stacks-health.ps1 -Stack test         # Check test stack health
+.\scripts\ci\check-stacks-identity.ps1                 # Check stacks identity (dev/personal/test)
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 ```
@@ -221,10 +221,10 @@ nlp-service/
 5. Test with `docker compose up -d`
 
 ### Testing Tasks (E2E/BDD)
-1. **ALWAYS start test stack:** `.\scripts\start-test.ps1`
-2. Seed test data if needed: `.\scripts\seed-test-data.ps1`
+1. **ALWAYS start test stack:** `.\scripts\testing\start-test.ps1`
+2. Seed test data if needed: `.\scripts\testing\seed-test-data.ps1`
 3. Run E2E/BDD tests against test stack (ports 3002/8083)
-4. **ALWAYS destroy test stack after testing:** `.\scripts\stop-test.ps1`
+4. **ALWAYS destroy test stack after testing:** `.\scripts\testing\stop-test.ps1`
 5. Never test against dev/personal stacks (data contamination risk)
 
 ## Error Handling

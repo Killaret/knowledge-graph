@@ -224,27 +224,27 @@ The project uses an isolated testing model where dev and personal stacks are sto
 
 ```bash
 # Start isolated test stack
-.\scripts\start-test.ps1              # Windows
-./scripts/start-test.sh               # Linux/Mac
+.\scripts\testing\start-test.ps1              # Windows
+./scripts/testing/start-test.sh               # Linux/Mac
 
 # Seed test data
-.\scripts\seed-test-data.ps1          # Windows
-./scripts\seed-test-data.sh           # Linux/Mac
+.\scripts\testing\seed-test-data.ps1          # Windows
+./scripts\testing\seed-test-data.sh           # Linux/Mac
 
 # Run E2E tests against test stack
 cd frontend && npx playwright test
 
 # Stop and destroy test stack
-.\scripts\stop-test.ps1               # Windows
-./scripts/stop-test.sh                # Linux/Mac
+.\scripts\testing\stop-test.ps1               # Windows
+./scripts/testing/stop-test.sh                # Linux/Mac
 ```
 
 ### Full Regression Cycle
 
 ```bash
 # Full regression cycle (24 steps with isolated model)
-.\scripts\run-full-test-cycle.ps1      # Windows
-./scripts/run-full-test-cycle.sh       # Linux/Mac
+.\scripts\testing\run-full-test-cycle.ps1      # Windows
+./scripts/testing/run-full-test-cycle.sh       # Linux/Mac
 ```
 
 The full regression cycle:

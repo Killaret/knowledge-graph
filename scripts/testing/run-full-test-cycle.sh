@@ -9,7 +9,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-SNAPSHOT_BASE="$SCRIPT_DIR/testing/temp/snapshots"
+SNAPSHOT_BASE="$SCRIPT_DIR/temp/snapshots"
 SNAPSHOT_DIR="$SNAPSHOT_BASE/$TIMESTAMP"
 mkdir -p "$SNAPSHOT_DIR"
 
@@ -79,7 +79,7 @@ echo "  ✓ Personal stack stopped"
 # Step 3: Check stacks identity
 echo ""
 echo "[Step 3/25] Checking stacks identity..."
-if ! "$SCRIPT_DIR/check-stacks-identity.sh"; then
+if ! "$SCRIPT_DIR/../ci/check-stacks-identity.sh"; then
     echo "ERROR: Stacks have differences"
     echo "Please fix the differences before running tests"
     echo "⚠ Continuing with isolated testing despite identity differences"
@@ -263,14 +263,7 @@ fi
 # Step 20: Cleanup Temporary Files
 echo ""
 echo "[Step 20/25] Cleanup Temporary Files..."
-if [ -f "$SCRIPT_DIR/cleanup-test-artifacts.sh" ]; then
-    "$SCRIPT_DIR/cleanup-test-artifacts.sh"
-else
-    echo "  Removing coverage.out, *.cov, *.tmp, *.log artifacts..."
-    rm -f "$PROJECT_ROOT/backend/coverage.out"
-    rm -rf "$PROJECT_ROOT/frontend/coverage"
-    rm -f "$PROJECT_ROOT/logs/test-outputs/"*.log
-fi
+python "$SCRIPT_DIR/../cleanup/cleanup-test-artifacts.py"
 echo "  ✓ Temporary files cleaned"
 
 # Step 21: Start dev stack
@@ -387,12 +380,12 @@ fi
 # Step 23: (continued)
 echo ""
 
-if ! "$SCRIPT_DIR/check-stacks-health.sh" --stack dev; then
+if ! "$SCRIPT_DIR/../ci/check-stacks-health.sh" --stack dev; then
     echo "  ERROR: Dev stack is not healthy"
     exit 1
 fi
 
-if ! "$SCRIPT_DIR/check-stacks-health.sh" --stack personal; then
+if ! "$SCRIPT_DIR/../ci/check-stacks-health.sh" --stack personal; then
     echo "  ERROR: Personal stack is not healthy"
     exit 1
 fi

@@ -15,7 +15,7 @@ Write-Host ""
 
 $scriptDir = $PSScriptRoot
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$snapshotBase = Join-Path $scriptDir "testing" "temp" "snapshots"
+$snapshotBase = Join-Path $scriptDir "temp" "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp
 New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
 
@@ -79,7 +79,7 @@ try {
 
     # Step 3: Check stacks identity
     Write-Host "`n[Step 3/25] Checking stacks identity..." -ForegroundColor Yellow
-    & $scriptDir\check-stacks-identity.ps1
+    & $scriptDir\..\ci\check-stacks-identity.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Stacks have differences" -ForegroundColor Red
         Write-Host "Please fix the differences before running tests" -ForegroundColor Red
@@ -289,15 +289,7 @@ try {
 
     # Step 20: Cleanup Temporary Files
     Write-Host "`n[Step 20/25] Cleanup Temporary Files..." -ForegroundColor Yellow
-    $cleanupScript = Join-Path $scriptDir "cleanup-test-artifacts.ps1"
-    if (Test-Path $cleanupScript) {
-        & $cleanupScript
-    } else {
-        Write-Host "  Removing coverage.out, *.cov, *.tmp, *.log artifacts..." -ForegroundColor Yellow
-        Remove-Item -Path "$scriptDir\..\backend\coverage.out" -ErrorAction SilentlyContinue
-        Remove-Item -Path "$scriptDir\..\frontend\coverage" -Recurse -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path "$scriptDir\..\logs\test-outputs\*.log" -ErrorAction SilentlyContinue
-    }
+    python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
     Write-Host "  ✓ Temporary files cleaned" -ForegroundColor Green
 
 
@@ -429,13 +421,13 @@ try {
 
     # Step 23: (continued)
 
-    & $scriptDir\check-stacks-health.ps1 -Stack dev
+    & $scriptDir\..\ci\check-stacks-health.ps1 -Stack dev
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR: Dev stack is not healthy" -ForegroundColor Red
         exit 1
     }
 
-    & $scriptDir\check-stacks-health.ps1 -Stack personal
+    & $scriptDir\..\ci\check-stacks-health.ps1 -Stack personal
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR: Personal stack is not healthy" -ForegroundColor Red
         exit 1

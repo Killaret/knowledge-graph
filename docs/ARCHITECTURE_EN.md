@@ -577,8 +577,8 @@ users          — Users
 **Components:**
 
 **Backup scripts:**
-- `scripts/utility/backup-personal.sh` — Bash script for Linux/Mac
-- `scripts/utility/backup-personal.ps1` — PowerShell script for Windows
+- `scripts/devops/backup-personal.sh` — Bash script for Linux/Mac
+- `scripts/devops/backup-personal.ps1` — PowerShell script for Windows
 
 **Go-service:**
 - `backend/internal/infrastructure/cloud/yandex_backup.go` — YandexBackupService for Yandex.Disk via WebDAV API

@@ -7,7 +7,7 @@
 ## Обзор
 
 Система резервного копирования включает:
-- **Локальные скрипты**: `scripts/backup-personal.ps1` (Windows) и `scripts/backup-personal.sh` (Linux/Mac)
+- **Локальные скрипты**: `scripts/devops/backup-personal.ps1` (Windows) и `scripts/devops/backup-personal.sh` (Linux/Mac)
 - **Backend сервис**: `backend/internal/infrastructure/cloud/r2_backup.go` для работы с Cloudflare R2
 - **API endpoint**: `/api/v1/admin/backup/cloud` для запуска облачного бэкапа
 - **Асинхронная очередь**: задачи загружаются в очередь через Asynq
@@ -115,7 +115,7 @@ BACKUP_R2_REGION=auto
 $env:CLOUD_BACKUP_ENABLED = "true"
 
 # Запустите скрипт бэкапа
-.\scripts\backup-personal.ps1
+.\scripts\devops\backup-personal.ps1
 ```
 
 ### Ручной запуск бэкапа (Linux/Mac)
@@ -125,7 +125,7 @@ $env:CLOUD_BACKUP_ENABLED = "true"
 export CLOUD_BACKUP_ENABLED=true
 
 # Запустите скрипт бэкапа
-./scripts/backup-personal.sh
+./scripts/devops/backup-personal.sh
 ```
 
 ### Через API endpoint
@@ -146,7 +146,7 @@ curl -X POST http://localhost:8081/api/v1/admin/backup/cloud \
 
 ```bash
 # Ежедневный бэкап в 2:00 ночи
-0 2 * * * cd /path/to/knowledge-graph && CLOUD_BACKUP_ENABLED=true ./scripts/backup-personal.sh
+0 2 * * * cd /path/to/knowledge-graph && CLOUD_BACKUP_ENABLED=true ./scripts/devops/backup-personal.sh
 ```
 
 ### Windows (Task Scheduler)
@@ -155,7 +155,7 @@ curl -X POST http://localhost:8081/api/v1/admin/backup/cloud \
 2. Create Task → Triggers → Daily at 2:00 AM
 3. Action: Start a program
    - Program: `powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\backup-personal.ps1"`
+   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
    - Add environment variable: `CLOUD_BACKUP_ENABLED=true`
 
 ## Проверка бэкапов

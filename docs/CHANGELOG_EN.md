@@ -102,7 +102,7 @@
 
 ### 🚀 Added
 - **Yandex.Disk Backup System**: Automatic backup system for personal instance
-  - Local backup scripts: `scripts/utility/backup-personal.sh` (Linux/Mac) and `scripts/utility/backup-personal.ps1` (Windows)
+  - Local backup scripts: `scripts/devops/backup-personal.sh` (Linux/Mac) and `scripts/devops/backup-personal.ps1` (Windows)
   - Go service: `backend/internal/infrastructure/cloud/yandex_backup.go` for Yandex.Disk WebDAV integration
   - Asynq task: `TypeBackupToCloud` for async cloud backup uploads
   - Docker service: `backup_scheduler` in `docker-compose.personal.yml` for daily scheduled backups

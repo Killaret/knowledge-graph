@@ -46,7 +46,7 @@ Knowledge Graph - система управления заметками с гр
 - Separate volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - Test database: `knowledge_test` with test credentials
 - SKIP_AUTH enabled for testing
-- Use scripts: `.\scripts\start-test.ps1`, `.\scripts\stop-test.ps1`, `.\scripts\seed-test-data.ps1`
+- Use scripts: `.\scripts\testing\start-test.ps1`, `.\scripts\testing\stop-test.ps1`, `.\scripts\testing\seed-test-data.ps1`
 - Never run E2E/BDD tests against dev or personal stacks
 - Test stack destroyed with `down -v` to remove all test data
 
@@ -94,9 +94,9 @@ docker compose -f docker-compose.personal.yml up -d  # Personal instance
 docker compose logs -f backend         # Backend logs
 
 # Test Stack (for automated testing)
-.\scripts\start-test.ps1             # Start isolated test stack
-.\scripts\stop-test.ps1              # Destroy test stack (removes all data)
-.\scripts\seed-test-data.ps1         # Populate test database
+.\scripts\testing\start-test.ps1             # Start isolated test stack
+.\scripts\testing\stop-test.ps1              # Destroy test stack (removes all data)
+.\scripts\testing\seed-test-data.ps1         # Populate test database
 docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v        # Manual cleanup
 ```

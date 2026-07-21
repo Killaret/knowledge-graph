@@ -245,7 +245,7 @@ services:
     container_name: kg-backup-scheduler
     volumes:
       - ./backups:/backups
-      - ./scripts/utility:/scripts:ro
+      - ./scripts/devops:/scripts:ro
       - ./knowledge-graph.config.json:/config/config.json:ro
     environment:
       BACKUP_DIR: /backups
@@ -262,7 +262,7 @@ services:
         apk add --no-cache curl gzip &&
         while true; do
           echo Running scheduled backup at $$(date) &&
-          /scripts/backup-personal.sh &&
+          /scripts/devops/backup-personal.sh &&
           echo Next backup in 24 hours &&
           sleep 86400
         done

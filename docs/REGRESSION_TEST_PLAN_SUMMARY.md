@@ -4,9 +4,9 @@
 
 ### Regression Test Cycle (Isolated Model)
 - **Document:** `docs/REGRESSION_TEST_PLAN.md`
-- **Script:** `scripts/run-full-test-cycle.ps1` (Windows) or `scripts/run-full-test-cycle.sh` (Linux/Mac)
-- **Identity Check:** `scripts/check-stacks-identity.ps1` (verifies dev/personal/test consistency)
-- **Health Check:** `scripts/check-stacks-health.ps1 -Stack <dev|personal|test|all>`
+- **Script:** `scripts/testing/run-full-test-cycle.ps1` (Windows) or `scripts/testing/run-full-test-cycle.sh` (Linux/Mac)
+- **Identity Check:** `scripts/ci/check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- **Health Check:** `scripts/ci/check-stacks-health.ps1 -Stack <dev|personal|test|all>`
 
 ### Isolated Testing Model
 **⚠️ IMPORTANT:** The test cycle uses an isolated model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.

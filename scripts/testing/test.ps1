@@ -1,5 +1,5 @@
 # Unified test entry point for Knowledge Graph
-# Usage: .\scripts\test.ps1 [-Target unit|integration|e2e|bdd|coverage|clean|all]
+# Usage: .\scripts\testing\test.ps1 [-Target unit|integration|e2e|bdd|coverage|clean|all]
 param(
     [ValidateSet('unit', 'integration', 'e2e', 'bdd', 'coverage', 'clean', 'all')]
     [string]$Target = 'all'
@@ -44,7 +44,7 @@ switch ($Target) {
         npm run test:coverage
     }
     'clean' {
-        & "$scriptDir\cleanup-test-artifacts.ps1" -ProjectRoot $root
+        python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
     }
     'all' {
         & "$scriptDir\test.ps1" -Target unit

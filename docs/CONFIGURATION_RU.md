@@ -228,12 +228,12 @@ cfg := config.Load()
 
 ### Скрипты резервного копирования
 
-**Linux/Mac:** `scripts/utility/backup-personal.sh`
+**Linux/Mac:** `scripts/devops/backup-personal.sh`
 - Выполняет `pg_dump` в `backups/backup-personal-YYYY-MM-DD.sql.gz`
 - Загружает на Яндекс.Диск через WebDAV если облачный бэкап включён
 - Удаляет старые бэкапы по сроку хранения
 
-**Windows:** `scripts/utility/backup-personal.ps1`
+**Windows:** `scripts/devops/backup-personal.ps1`
 - Аналогичная функциональность для Windows
 
 ---

@@ -95,12 +95,12 @@ Checks the health of specified stack(s).
 
 **Windows:**
 ```powershell
-.\scripts\check-stacks-health.ps1 -Stack <dev|personal|test|all>
+.\scripts\ci\check-stacks-health.ps1 -Stack <dev|personal|test|all>
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/check-stacks-health.sh --stack <dev|personal|test|all>
+./scripts/ci/check-stacks-health.sh --stack <dev|personal|test|all>
 ```
 
 **Parameters:**
@@ -120,12 +120,12 @@ Starts the isolated test stack.
 
 **Windows:**
 ```powershell
-.\scripts\start-test.ps1
+.\scripts\testing\start-test.ps1
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/start-test.sh
+./scripts/testing/start-test.sh
 ```
 
 **Actions:**
@@ -139,12 +139,12 @@ Stops and destroys the test stack.
 
 **Windows:**
 ```powershell
-.\scripts\stop-test.ps1
+.\scripts\testing\stop-test.ps1
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/stop-test.sh
+./scripts/testing/stop-test.sh
 ```
 
 **Actions:**
@@ -156,12 +156,12 @@ Seeds the test database with test data.
 
 **Windows:**
 ```powershell
-.\scripts\seed-test-data.ps1
+.\scripts\testing\seed-test-data.ps1
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/seed-test-data.sh
+./scripts/testing/seed-test-data.sh
 ```
 
 **Creates:**
@@ -176,12 +176,12 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 
 **Windows:**
 ```powershell
-.\scripts\run-full-test-cycle.ps1
+.\scripts\testing\run-full-test-cycle.ps1
 ```
 
 **Linux/Mac:**
 ```bash
-./scripts/run-full-test-cycle.sh
+./scripts/testing/run-full-test-cycle.sh
 ```
 
 **Isolated Testing Model Steps (25 total):**
@@ -384,8 +384,8 @@ Visual regression tests are located in `frontend/tests/visual/visual-regression.
 **Run locally (test stack):**
 ```powershell
 # Windows
-./scripts/start-test.ps1
-./scripts/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+./scripts/testing/start-test.ps1
+./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
 
 cd frontend
 $env:FRONTEND_URL = "http://localhost:3002"
@@ -394,8 +394,8 @@ npm run test:visual:upload   # requires ARGOS_TOKEN env variable
 
 ```bash
 # Linux/Mac
-SKIP_AUTH=true ./scripts/start-test.sh
-NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/seed-test-data.sh
+SKIP_AUTH=true ./scripts/testing/start-test.sh
+NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
 
 cd frontend
 FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
@@ -434,15 +434,15 @@ The test stack ensures complete isolation:
 After testing, always run the cleanup scripts to ensure complete isolation:
 
 ```powershell
-.\scripts\stop-test.ps1
-.\scripts\cleanup-test-artifacts.ps1
+.\scripts\testing\stop-test.ps1
+python .\scripts\cleanup\cleanup-test-artifacts.py
 ```
 
 or
 
 ```bash
-./scripts/stop-test.sh
-./scripts/cleanup-test-artifacts.sh
+./scripts/testing/stop-test.sh
+python ./scripts/cleanup/cleanup-test-artifacts.py
 ```
 
 This ensures:
@@ -535,16 +535,16 @@ The test stack can be integrated into CI/CD pipelines:
 
 ```yaml
 - name: Start test stack
-  run: ./scripts/start-test.sh
+  run: ./scripts/testing/start-test.sh
 
 - name: Seed test data
-  run: ./scripts/seed-test-data.sh
+  run: ./scripts/testing/seed-test-data.sh
 
 - name: Run tests
   run: npm run test
 
 - name: Stop test stack
-  run: ./scripts/stop-test.sh
+  run: ./scripts/testing/stop-test.sh
 ```
 
 ## References

@@ -29,5 +29,5 @@ This log tracks the batch-by-batch reorganization of the frontend from the `src/
 - Batch 5.2-5.6: All remaining shared logic (`stores`, `utils`, `hooks`, `services`, `mocks`, `test-utils`, `types`, `styles`) moved to `src/shared`. `src/lib/assets` removed. `src/shared/types/index.ts` now re-exports `errors`. `vitest.config.ts` `$app` mock aliases updated to `src/shared/mocks`.
 - Batch 5.7-5.8: `src/lib/components` moved to `src/components` and organized into `atoms`, `molecules`, `organisms` (Atomic Design). `src/lib` removed. `index.ts` barrel removed and modal imports converted to direct alias imports. `src/features/graph-interaction` imports updated to `$components/organisms/GraphCanvas/...`. `svelte.config.js` and `vitest.config.ts` updated with `$components` alias and `src/lib` alias removed. `npx svelte-kit sync` completed.
 - Verification: `npm run test:unit` passed (52 files, 526 tests), `npm run build` passed, `cd backend && go test ./...` passed.
-- Next: Phase 6/7b — E2E (Playwright) and BDD require the isolated test stack (`scripts/start-test.ps1`) and seed data, not yet run.
+- Next: Phase 6/7b — E2E (Playwright) and BDD require the isolated test stack (`scripts/testing/start-test.ps1`) and seed data, not yet run.
 

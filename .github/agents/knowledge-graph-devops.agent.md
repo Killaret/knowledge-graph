@@ -16,8 +16,8 @@ This agent is specialized for the current `knowledge-graph` repository and shoul
 - deployment scripts and rollback procedures
 - log monitoring and alerting
 - release checklists and verification
-- stack health checks (`scripts/check-stacks-health.ps1` / `.sh`)
-- full regression test cycle orchestration (`scripts/run-full-test-cycle.ps1` / `.sh`)
+- stack health checks (`scripts/ci/check-stacks-health.ps1` / `.sh`)
+- full regression test cycle orchestration (`scripts/testing/run-full-test-cycle.ps1` / `.sh`)
 
 ## Key Constraints
 

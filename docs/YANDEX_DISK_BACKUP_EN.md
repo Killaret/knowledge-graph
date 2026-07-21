@@ -5,7 +5,7 @@ This project supports database backup to Yandex.Disk via REST API.
 ## Overview
 
 The Yandex.Disk backup system includes:
-- **Local scripts**: `scripts/backup-personal.ps1` (Windows) and `scripts/backup-personal.sh` (Linux/Mac)
+- **Local scripts**: `scripts/devops/backup-personal.ps1` (Windows) and `scripts/devops/backup-personal.sh` (Linux/Mac)
 - **REST API**: direct file upload to Yandex.Disk via OAuth token
 - **Automatic cleanup**: deletion of old backups (default 7 days)
 
@@ -184,7 +184,7 @@ $env:BACKUP_CLOUD_PROVIDER = "yandex"
 $env:BACKUP_YANDEX_TOKEN = "your_oauth_token_here"
 
 # Run backup script
-.\scripts\backup-personal.ps1
+.\scripts\devops\backup-personal.ps1
 ```
 
 ### Manual backup run (Linux/Mac)
@@ -196,7 +196,7 @@ export BACKUP_CLOUD_PROVIDER=yandex
 export BACKUP_YANDEX_TOKEN=your_oauth_token_here
 
 # Run backup script
-./scripts/backup-personal.sh
+./scripts/devops/backup-personal.sh
 ```
 
 ## Automation via cron
@@ -207,7 +207,7 @@ Add to crontab (`crontab -e`):
 
 ```bash
 # Daily backup at 2:00 AM
-0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_CLOUD_PROVIDER=yandex BACKUP_YANDEX_TOKEN=your_token ./scripts/backup-personal.sh
+0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_CLOUD_PROVIDER=yandex BACKUP_YANDEX_TOKEN=your_token ./scripts/devops/backup-personal.sh
 ```
 
 ### Windows (Task Scheduler)
@@ -216,7 +216,7 @@ Add to crontab (`crontab -e`):
 2. Create Task → Triggers → Daily at 2:00 AM
 3. Action: Start a program
    - Program: `powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\backup-personal.ps1"`
+   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
    - Add environment variables:
      - `BACKUP_CLOUD_ENABLED=true`
      - `BACKUP_CLOUD_PROVIDER=yandex`

@@ -164,17 +164,17 @@ Manual testing of Knowledge Graph system in progress. Multiple infrastructure is
 - Updated ports: frontend 3002, backend 8083
 - Updated CORS_ALLOWED_ORIGINS to include localhost:3002
 
-### `scripts/start-test.ps1`
+### `scripts/testing/start-test.ps1`
 - Fixed PowerShell syntax error in while loop
 - Updated ports in output messages
 
-### `scripts/start-test.sh`
+### `scripts/testing/start-test.sh`
 - Updated ports in output messages
 
-### `scripts/seed-test-data.ps1`
+### `scripts/testing/seed-test-data.ps1`
 - Updated API URL to port 8083
 
-### `scripts/seed-test-data.sh`
+### `scripts/testing/seed-test-data.sh`
 - Updated API URL to port 8083
 
 ---

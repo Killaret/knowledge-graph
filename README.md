@@ -52,9 +52,9 @@ docker compose -f docker compose.personal.yml up -d
 # Test stack (isolated testing environment)
 docker compose -f docker compose.test.yml up -d --build
 # Or use convenience scripts:
-.\scripts\start-test.ps1    # Start test stack
-.\scripts\stop-test.ps1     # Stop and destroy test stack
-.\scripts\seed-test-data.ps1  # Populate with test data
+.\scripts\testing\start-test.ps1    # Start test stack
+.\scripts\testing\stop-test.ps1     # Stop and destroy test stack
+.\scripts\testing\seed-test-data.ps1  # Populate with test data
 ```
 
 **Access services:**
@@ -349,12 +349,12 @@ For automated testing, use the dedicated test stack that is completely isolated 
 
 ```bash
 # Full test cycle (isolated model - stops dev/personal stacks)
-.\scripts\run-full-test-cycle.ps1
+.\scripts\testing\run-full-test-cycle.ps1
 
 # Manual test stack management
-.\scripts\start-test.ps1    # Start test stack
-.\scripts\seed-test-data.ps1  # Populate with test data
-.\scripts\stop-test.ps1     # Stop and destroy test stack
+.\scripts\testing\start-test.ps1    # Start test stack
+.\scripts\testing\seed-test-data.ps1  # Populate with test data
+.\scripts\testing\stop-test.ps1     # Stop and destroy test stack
 ```
 
 **Test Stack Details:**
@@ -404,7 +404,7 @@ See `.env.example` and `knowledge-graph.config.json` for configuration options.
 
 ```bash
 # Manual backup
-./scripts/utility/backup-personal.sh
+./scripts/devops/backup-personal.sh
 
 # Automatic backup (configured in docker compose)
 # Back up to Яндекс.Дisk via WebDAV

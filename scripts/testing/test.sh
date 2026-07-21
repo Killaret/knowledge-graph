@@ -1,6 +1,6 @@
 #!/bin/bash
 # Unified test entry point for Knowledge Graph
-# Usage: ./scripts/test.sh [unit|integration|e2e|bdd|coverage|clean|all]
+# Usage: ./scripts/testing/test.sh [unit|integration|e2e|bdd|coverage|clean|all]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -40,7 +40,7 @@ run_coverage() {
 }
 
 run_clean() {
-    "$SCRIPT_DIR/cleanup-test-artifacts.sh"
+    python "$SCRIPT_DIR/../cleanup/cleanup-test-artifacts.py"
 }
 
 case "$TARGET" in

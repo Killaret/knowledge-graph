@@ -232,12 +232,12 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 
 ### Backup Scripts
 
-**Linux/Mac:** `scripts/utility/backup-personal.sh`
+**Linux/Mac:** `scripts/devops/backup-personal.sh`
 - Performs `pg_dump` to `backups/backup-personal-YYYY-MM-DD.sql.gz`
 - Uploads to Yandex.Disk via WebDAV if cloud backup enabled
 - Cleans up old backups older than retention days
 
-**Windows:** `scripts/utility/backup-personal.ps1`
+**Windows:** `scripts/devops/backup-personal.ps1`
 - Same functionality for Windows
 
 ---

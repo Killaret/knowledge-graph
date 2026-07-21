@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Backup script for personal Knowledge Graph instance
-# Usage: ./scripts/backup-personal.sh
+# Usage: ./scripts/devops/backup-personal.sh
 
 set -e
 

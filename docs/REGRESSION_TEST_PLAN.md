@@ -27,14 +27,14 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 - PowerShell (Windows) or Bash (Linux/Mac)
 
 ### Required Scripts
-- `scripts/check-stacks-health.ps1/.sh`
-- `scripts/check-stacks-identity.ps1/.sh`
-- `scripts/start-test.ps1/.sh`
-- `scripts/seed-test-data.ps1/.sh`
-- `scripts/stop-test.ps1/.sh`
-- `scripts/run-full-test-cycle.ps1/.sh`
-- `scripts/test.ps1/.sh` (unified test entry point)
-- `scripts/cleanup-test-artifacts.ps1/.sh` (temporary artifact cleanup)
+- `scripts/ci/check-stacks-health.ps1/.sh`
+- `scripts/ci/check-stacks-identity.ps1/.sh`
+- `scripts/testing/start-test.ps1/.sh`
+- `scripts/testing/seed-test-data.ps1/.sh`
+- `scripts/testing/stop-test.ps1/.sh`
+- `scripts/testing/run-full-test-cycle.ps1/.sh`
+- `scripts/testing/test.ps1/.sh` (unified test entry point)
+- `scripts/cleanup/cleanup-test-artifacts.py/.sh` (temporary artifact cleanup)
 
 ---
 
@@ -173,8 +173,8 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 ### 1.1 Run check-stacks-health
 ```bash
-./scripts/check-stacks-health.sh  # Linux/Mac
-./scripts/check-stacks-health.ps1  # Windows
+./scripts/ci/check-stacks-health.sh  # Linux/Mac
+./scripts/ci/check-stacks-health.ps1  # Windows
 ```
 
 **Checks:**
@@ -195,8 +195,8 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 ### 2.1 Start Test Stack
 ```bash
-./scripts/start-test.sh  # Linux/Mac
-./scripts/start-test.ps1  # Windows
+./scripts/testing/start-test.sh  # Linux/Mac
+./scripts/testing/start-test.ps1  # Windows
 ```
 
 **Checks:**
@@ -207,8 +207,8 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 ### 2.2 Seed Test Data
 ```bash
-./scripts/seed-test-data.sh  # Linux/Mac
-./scripts/seed-test-data.ps1  # Windows
+./scripts/testing/seed-test-data.sh  # Linux/Mac
+./scripts/testing/seed-test-data.ps1  # Windows
 ```
 
 **Checks:**
@@ -630,8 +630,8 @@ curl http://localhost:8083/openapi.yaml
 
 ### 12.2 Destroy Test Stack
 ```bash
-./scripts/stop-test.sh  # Linux/Mac
-./scripts/stop-test.ps1  # Windows
+./scripts/testing/stop-test.sh  # Linux/Mac
+./scripts/testing/stop-test.ps1  # Windows
 ```
 
 **Checks:**
@@ -642,8 +642,8 @@ curl http://localhost:8083/openapi.yaml
 ### 12.3 Cleanup Temporary Files and Generated Artifacts
 **Run the cleanup helper:**
 ```bash
-./scripts/cleanup-test-artifacts.sh   # Linux/Mac
-.\scripts\cleanup-test-artifacts.ps1  # Windows
+python ./scripts/cleanup/cleanup-test-artifacts.py   # Linux/Mac
+python .\scripts\cleanup\cleanup-test-artifacts.py  # Windows
 ```
 
 **Target files and directories:**

@@ -223,9 +223,9 @@ backend:
 **Test Stack (MANDATORY for E2E/BDD):**
 - **ALWAYS** use `docker-compose.test.yml` for E2E and BDD tests
 - Never run E2E/BDD against dev or personal stacks
-- Start test stack: `.\scripts\start-test.ps1`
-- Seed test data: `.\scripts\seed-test-data.ps1`
-- Stop and destroy: `.\scripts\stop-test.ps1` (removes all data with `-v`)
+- Start test stack: `.\scripts\testing\start-test.ps1`
+- Seed test data: `.\scripts\testing\seed-test-data.ps1`
+- Stop and destroy: `.\scripts\testing\stop-test.ps1` (removes all data with `-v`)
 - Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
@@ -357,9 +357,9 @@ docker compose logs -f backend                         # Backend logs
 
 ### Test Stack (for E2E/BDD testing)
 ```bash
-.\scripts\start-test.ps1                               # Start isolated test stack
-.\scripts\seed-test-data.ps1                           # Populate test database
-.\scripts\stop-test.ps1                                # Destroy test stack (removes all data)
+.\scripts\testing\start-test.ps1                               # Start isolated test stack
+.\scripts\testing\seed-test-data.ps1                           # Populate test database
+.\scripts\testing\stop-test.ps1                                # Destroy test stack (removes all data)
 docker compose -f docker-compose.test.yml up -d --build # Manual start
 docker compose -f docker-compose.test.yml down -v       # Manual cleanup
 ```

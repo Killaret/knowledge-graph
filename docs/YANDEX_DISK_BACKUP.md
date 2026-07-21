@@ -5,7 +5,7 @@
 ## РћР±Р·РѕСЂ
 
 РЎРёСЃС‚РµРјР° СЂРµР·РµСЂРІРЅРѕРіРѕ РєРѕРїРёСЂРѕРІР°РЅРёСЏ РЅР° РЇРЅРґРµРєСЃ.Р”РёСЃРє РІРєР»СЋС‡Р°РµС‚:
-- **Р›РѕРєР°Р»СЊРЅС‹Рµ СЃРєСЂРёРїС‚С‹**: `scripts/backup-personal.ps1` (Windows) Рё `scripts/backup-personal.sh` (Linux/Mac)
+- **Р›РѕРєР°Р»СЊРЅС‹Рµ СЃРєСЂРёРїС‚С‹**: `scripts/devops/backup-personal.ps1` (Windows) Рё `scripts/devops/backup-personal.sh` (Linux/Mac)
 - **REST API**: РїСЂСЏРјР°СЏ Р·Р°РіСЂСѓР·РєР° С„Р°Р№Р»РѕРІ РЅР° РЇРЅРґРµРєСЃ.Р”РёСЃРє С‡РµСЂРµР· OAuth С‚РѕРєРµРЅ
 - **РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РѕС‡РёСЃС‚РєР°**: СѓРґР°Р»РµРЅРёРµ СЃС‚Р°СЂС‹С… Р±СЌРєР°РїРѕРІ (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 7 РґРЅРµР№)
 
@@ -184,7 +184,7 @@ $env:BACKUP_CLOUD_PROVIDER = "yandex"
 $env:BACKUP_YANDEX_TOKEN = "your_oauth_token_here"
 
 # Р—Р°РїСѓСЃС‚РёС‚Рµ СЃРєСЂРёРїС‚ Р±СЌРєР°РїР°
-.\scripts\backup-personal.ps1
+.\scripts\devops\backup-personal.ps1
 ```
 
 ### Р СѓС‡РЅРѕР№ Р·Р°РїСѓСЃРє Р±СЌРєР°РїР° (Linux/Mac)
@@ -196,7 +196,7 @@ export BACKUP_CLOUD_PROVIDER=yandex
 export BACKUP_YANDEX_TOKEN=your_oauth_token_here
 
 # Р—Р°РїСѓСЃС‚РёС‚Рµ СЃРєСЂРёРїС‚ Р±СЌРєР°РїР°
-./scripts/backup-personal.sh
+./scripts/devops/backup-personal.sh
 ```
 
 ## РђРІС‚РѕРјР°С‚РёР·Р°С†РёСЏ С‡РµСЂРµР· cron
@@ -207,7 +207,7 @@ export BACKUP_YANDEX_TOKEN=your_oauth_token_here
 
 ```bash
 # Р•Р¶РµРґРЅРµРІРЅС‹Р№ Р±СЌРєР°Рї РІ 2:00 РЅРѕС‡Рё
-0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_CLOUD_PROVIDER=yandex BACKUP_YANDEX_TOKEN=your_token ./scripts/backup-personal.sh
+0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_CLOUD_PROVIDER=yandex BACKUP_YANDEX_TOKEN=your_token ./scripts/devops/backup-personal.sh
 ```
 
 ### Windows (Task Scheduler)
@@ -216,7 +216,7 @@ export BACKUP_YANDEX_TOKEN=your_oauth_token_here
 2. Create Task в†’ Triggers в†’ Daily at 2:00 AM
 3. Action: Start a program
    - Program: `powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\backup-personal.ps1"`
+   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
    - Add environment variables:
      - `BACKUP_CLOUD_ENABLED=true`
      - `BACKUP_CLOUD_PROVIDER=yandex`
@@ -298,32 +298,32 @@ gpg --symmetric --cipher-algo AES256 backup-personal-2024-05-17.sql.gz
 gpg --decrypt backup-personal-2024-05-17.sql.gz.gpg > backup-personal-2024-05-17.sql.gz
 ```
 
-## ?? Текущий статус системы бэкапов
+## ?? пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-### Проверка от 2026-06-15
+### пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ 2026-06-15
 
-#### Локальный бэкап ?
-- **Статус**: РАБОТАЕТ
-- **Расположение**: ./backups/backup-personal-YYYY-MM-DD.sql.gz
-- **Периодичность**: Каждые 24 часа (автоматически через Docker)
-- **Очистка**: Автоматически удаляет бэкапы старше 7 дней
-- **Существующие бэкапы**:
+#### пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ ?
+- **пїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: ./backups/backup-personal-YYYY-MM-DD.sql.gz
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅ 24 пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ Docker)
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 7 пїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ**:
   - ackup-personal-2026-06-01.sql
   - ackup-personal-2026-06-02.sql
   - ackup-personal-2026-06-07.sql
   - ackup-personal-2026-06-08.sql.gz
-  - ackup-personal-2026-06-15.sql.gz (актуальный)
+  - ackup-personal-2026-06-15.sql.gz (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 
-#### Яндекс.Диск бэкап ?
-- **Статус**: Требует настройки
-- **Проблема**: BACKUP_YANDEX_TOKEN не задан
-- **Конфигурация контейнера**:
+#### пїЅпїЅпїЅпїЅпїЅпїЅ.пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ ?
+- **пїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: BACKUP_YANDEX_TOKEN пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**:
   `ash
-  BACKUP_CLOUD_ENABLED=true              # ? Включен
-  BACKUP_YANDEX_TOKEN=                   # ? Пустой
-  BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups  # ? Папка задана
+  BACKUP_CLOUD_ENABLED=true              # ? пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  BACKUP_YANDEX_TOKEN=                   # ? пїЅпїЅпїЅпїЅпїЅпїЅ
+  BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups  # ? пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
   `
-- **Логи контейнера**:
+- **пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**:
   `
   Backup completed successfully: /backups/backup-personal-2026-06-15.sql.gz
   Uploading to Yandex.Disk...
@@ -332,50 +332,50 @@ gpg --decrypt backup-personal-2024-05-17.sql.gz.gpg > backup-personal-2024-05-17
   Backup process completed.
   `
 
-#### Docker сервис backup_scheduler ?
-- **Статус**: РАБОТАЕТ
-- **Контейнер**: kg-backup-scheduler
-- **Периодичность**: Каждые 24 часа
-- **Скрипт**: /scripts/backup-personal.sh
-- **Формат скриптов**: Исправлен (CRLF > LF) для корректной работы в Linux контейнерах
+#### Docker пїЅпїЅпїЅпїЅпїЅпїЅ backup_scheduler ?
+- **пїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: kg-backup-scheduler
+- **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅ 24 пїЅпїЅпїЅпїЅ
+- **пїЅпїЅпїЅпїЅпїЅпїЅ**: /scripts/backup-personal.sh
+- **пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (CRLF > LF) пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Linux пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-### Необходимые действия для активации Яндекс.Диск бэкапа
+### пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
-1. **Получить OAuth токен**:
+1. **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ OAuth пїЅпїЅпїЅпїЅпїЅ**:
    `
    https://oauth.yandex.ru/authorize?response_type=token&client_id=c0ebe342af7d48fbbbfcf2d2eedb8f9e
    `
 
-2. **Установить токен** (один из способов):
+2. **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ** (пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ):
    `powershell
    # PowerShell:
-    =  ваш_токен
+    =  пїЅпїЅпїЅ_пїЅпїЅпїЅпїЅпїЅ
    docker-compose -f docker-compose.personal.yml restart backup_scheduler
    `
 
-   Или в .env файле:
+   пїЅпїЅпїЅ пїЅ .env пїЅпїЅпїЅпїЅпїЅ:
    `ash
-   BACKUP_YANDEX_TOKEN=ваш_токен
+   BACKUP_YANDEX_TOKEN=пїЅпїЅпїЅ_пїЅпїЅпїЅпїЅпїЅ
    `
 
-3. **Перезапустить контейнер**:
+3. **пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ**:
    `ash
    docker-compose -f docker-compose.personal.yml restart backup_scheduler
    `
 
-### Мониторинг
+### пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-**Проверить логи бэкапа:**
+**пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:**
 `ash
 docker logs kg-backup-scheduler --tail 20
 `
 
-**Проверить переменные окружения в контейнере:**
+**пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:**
 `ash
 docker inspect kg-backup-scheduler --format='{{range .Config.Env}}{{println .}}{{end}}' | findstr BACKUP
 `
 
-**Проверить существующие локальные бэкапы:**
+**пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:**
 `ash
 dir backups
 `

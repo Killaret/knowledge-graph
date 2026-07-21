@@ -341,11 +341,11 @@ None
 ## 8. Test Infrastructure
 
 ### Scripts Created
-- ✅ scripts/start-test.ps1 and .sh
-- ✅ scripts/stop-test.ps1 and .sh
-- ✅ scripts/seed-test-data.ps1 and .sh
-- ✅ scripts/check-stacks-health.ps1 and .sh
-- ✅ scripts/run-full-test-cycle.ps1 and .sh
+- ✅ scripts/testing/start-test.ps1 and .sh
+- ✅ scripts/testing/stop-test.ps1 and .sh
+- ✅ scripts/testing/seed-test-data.ps1 and .sh
+- ✅ scripts/ci/check-stacks-health.ps1 and .sh
+- ✅ scripts/testing/run-full-test-cycle.ps1 and .sh
 
 ### Documentation
 - ✅ docker-compose.test.yml
