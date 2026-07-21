@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	domainuser "knowledge-graph/internal/domain/user"
+	emailpkg "knowledge-graph/internal/infrastructure/email"
+	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +35,7 @@ type Handler struct {
 	tokenStore       authpkg.TokenStore
 	passwordConfig   *authpkg.PasswordConfig
 	passwordPolicy   *authpkg.PasswordPolicy
+	emailSender      emailpkg.Sender
 	cfg              *config.Config
 }
 
@@ -42,6 +46,7 @@ func NewHandler(
 	tokenStore authpkg.TokenStore,
 	jwtManager *authpkg.JWTManager,
 	cfg *config.Config,
+	emailSender emailpkg.Sender,
 ) *Handler {
 	return &Handler{
 		userRepo:         userRepo,
@@ -61,7 +66,8 @@ func NewHandler(
 			RequireDigit:   cfg.PasswordPolicyRequireDigit,
 			RequireSpecial: cfg.PasswordPolicyRequireSpecial,
 		},
-		cfg: cfg,
+		emailSender: emailSender,
+		cfg:         cfg,
 	}
 }
 
@@ -500,11 +506,27 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 		}
 	}
 
-	// TODO: Integrate with an email provider (SendGrid/Amazon SES/SMTP) to send
-	// the reset link and remove debug_token before deploying to production.
+	// Build the password-reset link. Prefer the configured frontend URL,
+	// otherwise fall back to the request host so tests/local runs still work.
+	resetLink := h.cfg.FrontendURL
+	if resetLink == "" {
+		scheme := "http"
+		if isSecureRequest(c) {
+			scheme = "https"
+		}
+		resetLink = scheme + "://" + c.Request.Host
+	}
+	resetLink += "/auth/reset-password?token=" + url.QueryEscape(token)
+
+	if h.emailSender != nil {
+		if err := h.emailSender.SendPasswordReset(c.Request.Context(), u.Email(), resetLink); err != nil {
+			// Log the error but do not leak it to the caller.
+			c.Error(err)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "if the email exists, a reset link has been sent",
-		"debug_token": token,
+		"message": "if the email exists, a reset link has been sent",
 	})
 }
 
@@ -631,17 +653,103 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 		codeVerifier = pkce.CodeVerifier
 	}
 
-	// TODO: Implement Yandex OAuth token exchange. POST the authorization code
-	// and codeVerifier to https://oauth.yandex.com/token, create or link the
-	// user account, generate tokens and set the same HttpOnly auth cookies as
-	// the password flow. Remove this placeholder response.
+	if h.cfg.YandexClientID == "" || h.cfg.YandexClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Yandex OAuth not configured"})
+		return
+	}
 
-	_ = codeVerifier
+	redirectURI := h.cfg.FrontendURL + "/auth/yandex/callback"
+	if redirectURI == "/auth/yandex/callback" {
+		scheme := "http"
+		if isSecureRequest(c) {
+			scheme = "https"
+		}
+		redirectURI = scheme + "://" + c.Request.Host + "/auth/yandex/callback"
+	}
 
+	provider := oauthpkg.NewYandex(h.cfg.YandexClientID, h.cfg.YandexClientSecret, redirectURI)
+
+	ctx := c.Request.Context()
+	accessToken, err := provider.Exchange(ctx, code, codeVerifier)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to exchange authorization code"})
+		return
+	}
+
+	info, err := provider.UserInfo(ctx, accessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to fetch user info"})
+		return
+	}
+	if info.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Yandex account has no email"})
+		return
+	}
+
+	u, err := h.userRepo.FindByEmail(ctx, info.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find user"})
+		return
+	}
+	if u == nil {
+		// Create a new user linked to the Yandex account.
+		login := info.Login
+		if login == "" {
+			login = strings.Split(info.Email, "@")[0]
+		}
+		// Make sure login is unique by appending a short random suffix if needed.
+		baseLogin := login
+		for i := 1; ; i++ {
+			existing, err := h.userRepo.FindByLogin(ctx, login)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check login uniqueness"})
+				return
+			}
+			if existing == nil {
+				break
+			}
+			login = fmt.Sprintf("%s%d", baseLogin, i)
+		}
+
+		// Generate a random password hash so the domain invariant is satisfied.
+		rawPassword, err := authpkg.GenerateRandomToken(32)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+			return
+		}
+		passwordHash, err := authpkg.HashPassword(rawPassword, h.passwordConfig)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+			return
+		}
+
+		now := time.Now()
+		u, err = domainuser.NewUser(uuid.New(), login, info.Email, passwordHash, "user", now, now, nil)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err := h.userRepo.Create(ctx, u); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+			return
+		}
+	}
+
+	pair, err := h.jwtManager.GenerateTokenPair(u.ID(), u.Login(), u.Role())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
+		return
+	}
+
+	if err := h.storeRefreshToken(c, u.ID(), pair.RefreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store refresh token"})
+		return
+	}
+
+	h.setAuthCookies(c, pair.AccessToken, pair.RefreshToken)
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Yandex OAuth callback received",
-		"code":    code,
-		"state":   state,
+		"message": "authenticated via Yandex",
+		"user":    gin.H{"id": u.ID(), "login": u.Login(), "email": u.Email()},
 	})
 }
 

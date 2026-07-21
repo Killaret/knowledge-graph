@@ -218,7 +218,7 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 - Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
-- See `docs/TESTING_EN.md` for complete test stack documentation
+- See `docs/TESTING.md` for complete test stack documentation
 
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment

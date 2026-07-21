@@ -221,8 +221,8 @@ ErrorResponse:
 |------|--------|-------|
 | `tests/README.md` | ✅ Updated | Current test counts, added smoke tests section |
 | `docs/archive/TEST_EXECUTION_REPORT.md` | ✅ Updated | This file |
-| `docs/MANUAL_TEST_CHECKLISTS.md` | ✅ Updated | Enhanced with new canvas features |
-| `docs/TESTING_EN.md` | ✅ Current | General testing guidelines |
+| `docs/MANUAL_TEST_CHECKLISTS_RU.md` | ✅ Updated | Enhanced with new canvas features |
+| `docs/TESTING.md` | ✅ Current | General testing guidelines |
 
 ### 4.2 Test Counts Verification
 
@@ -292,7 +292,7 @@ All test categories are documented:
 
 **Total manual checklist items:** 42
 
-**Location:** `docs/MANUAL_TEST_CHECKLISTS.md`
+**Location:** `docs/MANUAL_TEST_CHECKLISTS_RU.md`
 
 ---
 
@@ -344,7 +344,7 @@ All test categories are documented:
 
 **Commit:** `57e948a` - feat: add smoke tests for critical routes
 
-**Updates to `docs/MANUAL_TEST_CHECKLISTS.md`:**
+**Updates to `docs/MANUAL_TEST_CHECKLISTS_RU.md`:**
 - Enhanced ghost node creation checklist (form styling verification)
 - Enhanced black hole deletion checklist (Delete all links button)
 - Enhanced drag-and-drop links checklist (visual preview, enhanced form)

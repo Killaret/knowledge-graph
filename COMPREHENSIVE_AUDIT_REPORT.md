@@ -150,7 +150,7 @@
 | TESTING.md | **PASS/WARNING** | Изолированная тестовая модель и скрипты описаны. Старые порты `3000/8080` для dev-стека; `SKIP_AUTH: true` заявлено, но `docker-compose.test.yml` по умолчанию `SKIP_AUTH=${SKIP_AUTH:-false}`. |
 | CONFIGURATION_EN.md | **WARNING** | В примере используется `$lib/config`, тогда как код использует `frontend/src/shared/config/`. В остальном конфиги описаны. |
 | `docs/CONFIGURATION.md` | **FAIL** | Отсутствует (битая ссылка из README). |
-| MANUAL_TEST_CHECKLISTS.md | **PASS** | Файл существует (`docs/MANUAL_TEST_CHECKLISTS.md` + `_RU.md`), структура чек-листов есть. |
+| MANUAL_TEST_CHECKLISTS.md | **PASS** | Файл существует (`docs/MANUAL_TEST_CHECKLISTS_RU.md`), структура чек-листов есть. |
 
 ---
 

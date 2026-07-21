@@ -229,7 +229,7 @@ backend:
 - Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
-- See `docs/TESTING_EN.md` for complete test stack documentation
+- See `docs/TESTING.md` for complete test stack documentation
 
 **Coverage requirement: target 70% for all modules; enforced minimum 60% (frontend functions 55%) until the target is reached.**
 
@@ -370,7 +370,7 @@ docker compose -f docker-compose.test.yml down -v       # Manual cleanup
 - Containers: `kg-test-*` (unique names)
 - Volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - Auth: SKIP_AUTH enabled for testing
-- See `docs/TESTING_EN.md` for complete documentation
+- See `docs/TESTING.md` for complete documentation
 
 ### Health Checks
 ```bash

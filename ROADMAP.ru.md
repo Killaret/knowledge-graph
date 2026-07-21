@@ -296,9 +296,9 @@
 |--------|--------|-----------|-----------------|
 | AGENTS.md с 11 специализированными агентами | ✅ Done | 🔴 Critical | Июль 2026 |
 | REGRESSION_TEST_PLAN.md (20-частевый план) | ✅ Done | 🔴 Critical | Июль 2026 |
-| TESTING_EN.md (инфраструктура тестирования) | ✅ Done | 🔴 Critical | Июль 2026 |
-| TESTING_RU.md (русский перевод) | ✅ Done | 🔴 Critical | Июль 2026 |
-| MANUAL_TEST_CHECKLISTS.md | ✅ Done | 🔴 Critical | Июль 2026 |
+| TESTING.md (инфраструктура тестирования) | ✅ Done | 🔴 Critical | Июль 2026 |
+| TESTING.md (русский перевод) | ✅ Done | 🔴 Critical | Июль 2026 |
+| MANUAL_TEST_CHECKLISTS_RU.md | ✅ Done | 🔴 Critical | Июль 2026 |
 | docs/archive/REGRESSION_TEST_REPORT.md | ✅ Done | 🔴 Critical | Июль 2026 |
 | Документация CORS-конфигурации | ✅ Done | 🔴 Critical | Июль 2026 |
 | Документация healthcheck-верификации | ✅ Done | 🔴 Critical | Июль 2026 |
@@ -356,7 +356,7 @@
 - [AGENTS.md](docs/AGENTS.md) — AI-агенты и рабочие процессы
 - [REGRESSION_TEST_PLAN.md](docs/REGRESSION_TEST_PLAN.md) — Процедуры тестирования
 - [REGRESSION_TEST_REPORT.md](docs/archive/REGRESSION_TEST_REPORT.md) — Последние результаты тестов
-- [TESTING_EN.md](docs/TESTING_EN.md) — Гайд по инфраструктуре тестирования
+- [TESTING.md](docs/TESTING.md) — Гайд по инфраструктуре тестирования
 
 ---
 

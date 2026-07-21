@@ -294,9 +294,9 @@
 |------|--------|----------|-----------------|
 | AGENTS.md with 11 specialized agents | ✅ Done | 🔴 Critical | July 2026 |
 | REGRESSION_TEST_PLAN.md (20-part plan) | ✅ Done | 🔴 Critical | July 2026 |
-| TESTING_EN.md (testing infrastructure) | ✅ Done | 🔴 Critical | July 2026 |
-| TESTING_RU.md (Russian translation) | ✅ Done | 🔴 Critical | July 2026 |
-| MANUAL_TEST_CHECKLISTS.md | ✅ Done | 🔴 Critical | July 2026 |
+| TESTING.md (testing infrastructure) | ✅ Done | 🔴 Critical | July 2026 |
+| TESTING.md (Russian translation) | ✅ Done | 🔴 Critical | July 2026 |
+| MANUAL_TEST_CHECKLISTS_RU.md | ✅ Done | 🔴 Critical | July 2026 |
 | docs/archive/REGRESSION_TEST_REPORT.md | ✅ Done | 🔴 Critical | July 2026 |
 | CORS configuration documentation | ✅ Done | 🔴 Critical | July 2026 |
 | Healthcheck verification documentation | ✅ Done | 🔴 Critical | July 2026 |
@@ -354,7 +354,7 @@
 - [AGENTS.md](docs/AGENTS.md) - AI agents and development workflows
 - [REGRESSION_TEST_PLAN.md](docs/REGRESSION_TEST_PLAN.md) - Testing procedures
 - [REGRESSION_TEST_REPORT.md](docs/archive/REGRESSION_TEST_REPORT.md) - Latest test results
-- [TESTING_EN.md](docs/TESTING_EN.md) - Testing infrastructure guide
+- [TESTING.md](docs/TESTING.md) - Testing infrastructure guide
 
 ---
 

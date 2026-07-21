@@ -219,7 +219,7 @@ try {
     Write-Host "  Backend API: http://localhost:8083" -ForegroundColor White
     Write-Host ""
     Write-Host "Follow the manual test checklist:" -ForegroundColor Yellow
-    Write-Host "  docs/MANUAL_TEST_CHECKLISTS.md" -ForegroundColor White
+    Write-Host "  docs/MANUAL_TEST_CHECKLISTS_RU.md" -ForegroundColor White
     Write-Host ""
     Write-Host "Test user credentials:" -ForegroundColor Yellow
     Write-Host "  Login: testuser" -ForegroundColor White

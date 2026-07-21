@@ -29,6 +29,7 @@ import (
 	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/email"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
@@ -255,7 +256,8 @@ func run(
 	userRepo := postgres.NewUserRepository(database, roleRepo)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(database)
 	apiKeyRepo := postgres.NewAPIKeyRepository(database)
-	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg)
+	emailSender := email.FromConfig(cfg)
+	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg, emailSender)
 
 	// User handler
 	passwordConfig := &auth.PasswordConfig{

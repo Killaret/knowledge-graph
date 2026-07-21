@@ -350,7 +350,7 @@ None
 ### Documentation
 - ✅ docker-compose.test.yml
 - ✅ docs/TESTING.md
-- ✅ docs/MANUAL_TEST_CHECKLISTS.md (updated)
+- ✅ docs/MANUAL_TEST_CHECKLISTS_RU.md (updated)
 
 ### Isolation
 - ✅ Separate database (knowledge_test)

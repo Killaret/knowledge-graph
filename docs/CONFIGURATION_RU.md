@@ -821,7 +821,7 @@ def get_embedding_model():
 ## Ссылки
 
 - [CONFIGURATION_EN.md](CONFIGURATION_EN.md) — Английская версия
-- [TESTING_RU.md](TESTING_RU.md) — Тестирование
+- [TESTING.md](TESTING.md) — Тестирование
 - [DEPLOYMENT_EN.md](DEPLOYMENT_EN.md) — Деплой
 - [BACKUP.md](BACKUP.md) — Резервное копирование
 - [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md) — Архитектура рекомендаций

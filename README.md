@@ -372,7 +372,7 @@ For automated testing, use the dedicated test stack that is completely isolated 
 - Temporary snapshots are written to `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
 - Visual regression screenshots are written to `frontend/argos-screenshots/`
 
-See [docs/TESTING_EN.md](docs/TESTING_EN.md) for complete testing documentation.
+See [docs/TESTING.md](docs/TESTING.md) for complete testing documentation.
 
 ### Test Coverage
 - **Backend:** >85% coverage required

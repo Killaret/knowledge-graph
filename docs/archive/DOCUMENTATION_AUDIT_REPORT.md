@@ -413,7 +413,7 @@ The project has extensive documentation but several critical discrepancies exist
 
 ## 11. Testing Documentation
 
-### TESTING_EN.md vs Actual Implementation
+### TESTING.md vs Actual Implementation
 
 **Documented:**
 - Go backend: testify + testcontainers
@@ -435,7 +435,7 @@ The project has extensive documentation but several critical discrepancies exist
 - Documented: >60% for backend and frontend
 - Actual: 50% threshold in frontend, no metrics for backend
 
-**Recommendation:** Update TESTING_EN.md to reflect actual coverage thresholds
+**Recommendation:** Update TESTING.md to reflect actual coverage thresholds
 
 ---
 

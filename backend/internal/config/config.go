@@ -78,6 +78,7 @@ type JSONConfig struct {
 			FlushOnStartup bool `json:"flush_on_startup"`
 		} `json:"redis"`
 		Auth struct {
+			FrontendURL                  string `json:"frontend_url"`
 			JWTSecret                    string `json:"jwt_secret"`
 			JWTAccessTTLSeconds          int    `json:"jwt_access_ttl_seconds"`
 			JWTRefreshTTLSeconds         int    `json:"jwt_refresh_ttl_seconds"`
@@ -195,7 +196,8 @@ type Config struct {
 	MongoDBURL      string
 	MongoDBDatabase string
 
-	// Auth
+	// Auth / App
+	FrontendURL                  string
 	JWTSecret                    string
 	JWTAccessTTL                 time.Duration
 	JWTRefreshTTL                time.Duration
@@ -426,7 +428,8 @@ func Load() (*Config, error) {
 		MongoDBURL:      getEnv("MONGO_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017")),
 		MongoDBDatabase: getEnv("MONGO_DATABASE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph")),
 
-		// Auth configuration
+		// Auth / App configuration
+		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
 		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "")),
 		JWTAccessTTL:                 time.Duration(getIntEnv("JWT_ACCESS_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTAccessTTLSeconds }, 900))) * time.Second,
 		JWTRefreshTTL:                time.Duration(getIntEnv("JWT_REFRESH_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTRefreshTTLSeconds }, 604800))) * time.Second,

@@ -147,12 +147,12 @@ func TestNewService(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	assert.NotNil(t, service)
 	assert.Equal(t, mockDraftRepo, service.repo)
 	assert.Equal(t, mockNoteRepo, service.noteRepo)
-	assert.Equal(t, "http://test.com", service.syncEndpoint)
+	assert.Equal(t, "", service.syncEndpoint)
 	assert.Equal(t, 3, service.maxRetries)
 }
 
@@ -160,7 +160,7 @@ func TestSaveDraft_NewDraft(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	noteID := uuid.New()
@@ -190,7 +190,7 @@ func TestSaveDraft_UpdateExisting(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	noteID := uuid.New()
@@ -218,7 +218,7 @@ func TestSaveDraft_ErrorCheckingExisting(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	noteID := uuid.New()
@@ -238,7 +238,7 @@ func TestSaveDraft_ErrorSavingNew(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	noteID := uuid.New()
@@ -259,7 +259,7 @@ func TestSyncDraft_Success(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()
@@ -268,9 +268,21 @@ func TestSyncDraft_Success(t *testing.T) {
 	// Set ID to match the expected draft ID
 	draft = noteDomain.ReconstructDraft(draftID, draft.NoteID(), draft.UserID(), draft.Content(), draft.Title(), noteDomain.DraftStateActive, draft.CreatedAt(), draft.UpdatedAt())
 
+	// Existing note owned by the draft author.
+	title, _ := noteDomain.NewTitle("Old title")
+	content, _ := noteDomain.NewContent("Old content")
+	metadata, _ := noteDomain.NewMetadata(nil)
+	userID := draft.UserID()
+	existingNote := noteDomain.ReconstructNoteWithCreator(
+		draft.NoteID(), title, content, "star", metadata, &userID,
+		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
+	)
+
 	mockDraftRepo.On("FindByID", ctx, draftID).Return(draft, nil)
 	mockDraftRepo.On("Update", ctx, draft).Return(nil).Times(2) // StartPublishing and MarkAsPublished
 	mockDraftRepo.On("DeleteByID", ctx, draftID).Return(nil)
+	mockNoteRepo.On("FindByID", ctx, draft.NoteID()).Return(existingNote, nil)
+	mockNoteRepo.On("Save", ctx, mock.AnythingOfType("*note.Note")).Return(nil)
 
 	err := service.SyncDraft(ctx, draftID)
 
@@ -284,7 +296,7 @@ func TestSyncDraft_NotFound(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()
@@ -303,7 +315,7 @@ func TestResolveConflict_Success(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()
@@ -327,7 +339,7 @@ func TestResolveConflict_NotFound(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()
@@ -346,7 +358,7 @@ func TestGetLatestDraft(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	noteID := uuid.New()
@@ -368,7 +380,7 @@ func TestGetActiveDrafts(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -393,7 +405,7 @@ func TestDeleteDraft(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()
@@ -411,7 +423,7 @@ func TestDeleteDraft_Error(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
 
-	service := NewService(mockDraftRepo, mockNoteRepo, "http://test.com")
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
 
 	ctx := context.Background()
 	draftID := uuid.New()

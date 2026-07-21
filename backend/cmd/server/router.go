@@ -180,29 +180,7 @@ func setupRouter(
 		v1.GET("/backup/status", backupHandler.GetBackupStatus)
 	}
 
-	// Legacy routes (deprecated - kept for backward compatibility)
-	// TODO: Remove legacy /notes routes once all clients migrate to /api/v1/notes.
-	// Migration progress should be tracked in docs/DEPRECATIONS.md before removal.
-	r.POST("/notes", writeLimiter, noteHandler.Create)
-	r.GET("/notes/:id", noteHandler.Get)
-	r.PUT("/notes/:id", writeLimiter, noteHandler.Update)
-	r.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
-	r.POST("/notes/batch", writeLimiter, noteHandler.DeleteBatch)
-	r.POST("/notes/:id/restore", writeLimiter, noteHandler.Restore)
-	r.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
-	r.GET("/notes", noteHandler.List)
-	r.GET("/notes/search", noteHandler.Search)
-
-	r.POST("/links", writeLimiter, linkHandler.Create)
-	r.GET("/links/:id", linkHandler.Get)
-	r.GET("/notes/:id/links", linkHandler.GetByNote)
-	r.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
-	r.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
-
-	r.GET("/notes/:id/graph", graphHandler.GetGraph)
-
 	// Tag routes
-	r.POST("/tags", writeLimiter, tagHandler.Create)
 	r.GET("/tags", tagHandler.List)
 	r.GET("/tags/:id", tagHandler.Get)
 	r.PUT("/tags/:id", writeLimiter, tagHandler.Update)

@@ -88,10 +88,36 @@ func (d *dummyNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int)
 	return nil, 0, nil
 }
 
-func setupDraftHandler() (*gin.Engine, *mockDraftRepo) {
+type mockNoteRepo struct {
+	note *noteDomain.Note
+}
+
+func (m *mockNoteRepo) Save(ctx context.Context, note *noteDomain.Note) error { return nil }
+func (m *mockNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*noteDomain.Note, error) {
+	return m.note, nil
+}
+func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
+func (m *mockNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
+func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
+func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+	return nil, 0, nil
+}
+func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*noteDomain.Note, int64, error) {
+	return nil, 0, nil
+}
+func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*noteDomain.Note, error) { return nil, nil }
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+	return nil, 0, nil
+}
+
+func setupDraftHandler(noteRepo ...noteDomain.Repository) (*gin.Engine, *mockDraftRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := new(mockDraftRepo)
-	service := draft.NewService(repo, &dummyNoteRepo{}, "")
+	nRepo := noteDomain.Repository(&dummyNoteRepo{})
+	if len(noteRepo) > 0 {
+		nRepo = noteRepo[0]
+	}
+	service := draft.NewService(repo, nRepo, "")
 	h := NewHandler(service)
 
 	r := gin.New()
@@ -166,9 +192,21 @@ func TestDeleteDraft(t *testing.T) {
 }
 
 func TestSyncDraft(t *testing.T) {
-	r, repo := setupDraftHandler()
-	draftID := uuid.New()
+	// Existing note owned by the draft author so the local sync succeeds.
+	title, _ := noteDomain.NewTitle("Old title")
+	content, _ := noteDomain.NewContent("Old content")
+	metadata, _ := noteDomain.NewMetadata(nil)
 	d := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
+	userID := d.UserID()
+	existingNote := noteDomain.ReconstructNoteWithCreator(
+		d.NoteID(), title, content, "star", metadata, &userID,
+		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
+	)
+
+	noteRepo := &mockNoteRepo{note: existingNote}
+
+	r, repo := setupDraftHandler(noteRepo)
+	draftID := uuid.New()
 
 	repo.On("FindByID", mock.Anything, draftID).Return(d, nil)
 	repo.On("Update", mock.Anything, mock.Anything).Return(nil)

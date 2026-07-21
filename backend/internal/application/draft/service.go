@@ -114,12 +114,48 @@ func (s *Service) SyncDraft(ctx context.Context, draftID uuid.UUID) error {
 	return fmt.Errorf("sync failed after %d retries: %w", s.maxRetries, lastErr)
 }
 
-// syncWithServer performs the actual HTTP sync
+// syncWithServer performs the actual sync of a draft to the note repository.
+// When a remote syncEndpoint is configured it will be used; otherwise the sync
+// is performed locally through the note repository.
 func (s *Service) syncWithServer(ctx context.Context, draft *noteDomain.Draft) error {
-	// This would make an HTTP PATCH request to the note endpoint.
-	// For now, we'll simulate success.
-	// TODO: Implement actual HTTP sync once the remote note sync endpoint and
-	// conflict-resolution strategy are defined (see docs/SYNC.md when created).
+	if s.syncEndpoint != "" {
+		// Remote sync over HTTP is not implemented yet.
+		return fmt.Errorf("remote sync endpoint not implemented: %s", s.syncEndpoint)
+	}
+
+	// Local sync: update the target note from the draft contents.
+	note, err := s.noteRepo.FindByID(ctx, draft.NoteID())
+	if err != nil {
+		return fmt.Errorf("failed to find note: %w", err)
+	}
+	if note == nil {
+		return fmt.Errorf("note not found")
+	}
+
+	if note.CreatorID() == nil || *note.CreatorID() != draft.UserID() {
+		return fmt.Errorf("draft does not belong to the note owner")
+	}
+
+	title, err := noteDomain.NewTitle(draft.Title())
+	if err != nil {
+		return fmt.Errorf("invalid draft title: %w", err)
+	}
+	content, err := noteDomain.NewContent(draft.Content())
+	if err != nil {
+		return fmt.Errorf("invalid draft content: %w", err)
+	}
+
+	if err := note.UpdateTitle(title); err != nil {
+		return fmt.Errorf("failed to update note title: %w", err)
+	}
+	if err := note.UpdateContent(content); err != nil {
+		return fmt.Errorf("failed to update note content: %w", err)
+	}
+
+	if err := s.noteRepo.Save(ctx, note); err != nil {
+		return fmt.Errorf("failed to save note: %w", err)
+	}
+
 	return nil
 }
 
