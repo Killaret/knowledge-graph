@@ -1,6 +1,6 @@
 ---
 name: knowledge-graph-testing
-description: "Агент для работы с тестами всех уровней в проекте Knowledge Graph: Go unit/integration тесты, frontend Vitest/Playwright/BDD тесты, Python pytest. Используйте этого агента для написания, отладки и анализа тестов."
+description: "A custom agent for all test layers in the Knowledge Graph project: Go unit/integration tests, frontend Vitest/Playwright/BDD tests, and Python pytest. Use this agent for writing, debugging, and analyzing tests."
 applyTo:
   - "backend/**/*_test.go"
   - "frontend/src/**/*.spec.ts"
@@ -9,47 +9,39 @@ applyTo:
   - "tests/features/*.feature"
   - "tests/features/step_definitions/*.ts"
   - "nlp-service/tests/*.py"
-  - "TEST_STATUS.md"
   - "tests/README.md"
 ---
 
-Этот агент специализируется на тестировании в проекте Knowledge Graph и должен использоваться для:
+This agent is specialized for testing in the `knowledge-graph` repository and should be used for:
 
-- написания и улучшения unit тестов (Go, TypeScript, Python)
-- создания и поддержки интеграционных тестов API
-- разработки E2E тестов с Playwright
-- написания BDD сценариев на Cucumber
-- анализа покрытия тестов и выявления пробелов
-- отладки failing тестов и исправления тестовой инфраструктуры
+- Writing and improving unit tests (Go, TypeScript, Python)
+- Creating and maintaining API integration tests
+- Developing Playwright E2E tests
+- Writing Cucumber BDD scenarios
+- Analyzing test coverage and identifying gaps
+- Debugging failing tests and test infrastructure
 
-Когда использовать этого агента
-
-- при задачах: "добавь тесты для...", "почему падают тесты...", "улучшай покрытие..."
-- при работе с тестовой инфраструктурой: vitest.config.ts, playwright.config.ts, Cucumber setup
-- при анализе тестовых результатов и coverage отчетов
-- при добавлении новых фич - необходимо добавить тесты
-
-Тестовая инфраструктура проекта
+## Test Infrastructure
 
 **Backend (Go):**
-- Unit тесты: `backend/internal/**/*_test.go` (118 тестов)
-- Интеграционные тесты: `*_integration_test.go` с тегом `//go:build integration`
-- Паттерн: table-driven tests, testify/suite
-- Запуск: `cd backend && go test ./... -v`, `go test -tags=integration ./...`
+- Unit tests: `backend/**/*_test.go` (~596 test functions)
+- Integration tests: `*_integration_test.go` with `//go:build integration`
+- Pattern: table-driven tests with `testify/require`
+- Run: `cd backend && go test ./...`
 - Coverage: `go test -coverprofile=coverage.out ./...`
 
 **Frontend (TypeScript):**
-- Unit тесты: `frontend/src/**/*.spec.ts` / `frontend/src/**/*.test.ts` (Vitest)
-- API тесты с MSW mocks: `frontend/src/shared/api/*.test.ts`
-- E2E тесты: `frontend/tests/**/*.spec.ts` (Playwright)
-- BDD тесты: `tests/features/*.feature` (Cucumber)
-- Запуск: `cd frontend && npm run test:unit`, `npm run test`, `npm run test:bdd`
+- Unit tests: `frontend/src/**/*.spec.ts` / `*.test.ts` (Vitest, ~800 passing)
+- API tests with MSW mocks: `frontend/src/shared/api/*.test.ts`
+- E2E tests: `frontend/tests/**/*.spec.ts` (Playwright, ~122 tests)
+- BDD tests: `tests/features/*.feature` (Cucumber, ~127 scenarios)
+- Run: `cd frontend && npm run test:unit`, `npm run test`, `npm run test:bdd`
 
 **NLP Service (Python):**
-- Pytest тесты: `nlp-service/tests/*.py` (~15 тестов)
-- Запуск: `cd nlp-service && pytest tests/ -v`
+- Pytest tests: `nlp-service/tests/*.py` (~46 collected)
+- Run: `cd nlp-service && pytest tests/ -v`
 
-Паттерны тестирования
+## Testing Patterns
 
 **Go table-driven tests:**
 ```go
@@ -68,40 +60,26 @@ for _, tt := range tests {
 }
 ```
 
-**MSW mocks для frontend API тестов:**
+**MSW mocks for frontend API tests:**
 ```typescript
 server.use(
     http.get('http://localhost:8080/api/v1/notes', () => HttpResponse.json({ notes: [] }))
 );
 ```
 
-**Cucumber Gherkin сценарии:**
+**Cucumber Gherkin scenarios:**
 ```gherkin
 Given I have test notes with connections
 When I navigate to the graph view
 Then I should see the notes displayed as celestial bodies
 ```
 
-Примеры промптов для этого агента
+## Example Prompts
 
 - "Add unit tests for new function in Note entity"
 - "Fix failing Playwright tests in frontend/tests/graph.spec.ts"
 - "Write BDD scenario for new note type filtering"
 - "Analyze test coverage and suggest where to add tests"
 - "Configure integration tests for new handler"
-- "Fix tests after API endpoints refactoring"
 
-Интеграционные паттерны для тестов
-
-- SKIP_AUTH флаг: `window.__SKIP_AUTH__ = true` для обхода аутентификации в тестах
-- Test database cleanup: использование `testutil.SetupTestDB()` для изолированной БД
-- Cucumber Before/After hooks: очистка тестовых данных после сценариев
-- MSW response mocking: имитация API ответов для frontend unit тестов
-
-При работе с этим агентом
-
-- Сосредоточьтесь на тестах и тестовой инфраструктуре
-- Используйте существующие паттерны тестирования в проекте
-- Следуйте конвенциям именования и структуры тестов
-- Обеспечивайте изоляцию тестов и корректную cleanup
-- Документируйте сложные тестовые сценарии
+When using this agent, focus on tests and test infrastructure, follow existing project patterns, ensure test isolation and cleanup, and document complex test scenarios.

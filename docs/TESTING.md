@@ -276,7 +276,7 @@ After starting the test stack, access the test environment at:
 
 ### Manual Test Checklist
 
-Follow the manual test checklist at `docs/MANUAL_TEST_CHECKLISTS.md` for detailed testing procedures.
+Follow the manual test checklist at `docs/MANUAL_TEST_CHECKLISTS_RU.md` for detailed testing procedures.
 
 ### Test Coverage
 
@@ -549,7 +549,7 @@ The test stack can be integrated into CI/CD pipelines:
 
 ## References
 
-- [Manual Test Checklist](MANUAL_TEST_CHECKLISTS.md)
+- [Manual Test Checklist](MANUAL_TEST_CHECKLISTS_RU.md)
 - [Regression Test Plan](REGRESSION_TEST_PLAN.md)
 - [Final Test Report](archive/FINAL_TEST_REPORT.md)
 - [Backend Testing](../backend/README.md#testing)
@@ -571,15 +571,27 @@ The test stack can be integrated into CI/CD pipelines:
 ### Smoke Tests (July 2026)
 - **Coverage:** Public access, authentication, profile, graph, note creation, logout
 - **Status:** ✅ All smoke tests passing
-- **Documentation:** Added to MANUAL_TEST_CHECKLISTS.md
+- **Documentation:** Added to MANUAL_TEST_CHECKLISTS_RU.md
 
 ### Public Graph Verification (July 2026)
 - **Feature:** Public notes and links accessible without authentication
 - **Testing:** API and frontend verification for public graph access
-- **Status:** ✅ Documented in MANUAL_TEST_CHECKLISTS.md
+- **Status:** ✅ Documented in MANUAL_TEST_CHECKLISTS_RU.md
 
 ### Regression Test Plan (July 2026)
 - **New Document:** REGRESSION_TEST_PLAN.md
 - **Coverage:** 20-part comprehensive regression testing plan
 - **Includes:** Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
 - **Status:** ✅ Documented and ready for execution
+
+## Current Test Counts
+
+| Category | Files | Tests/Scenarios | Notes |
+|----------|-------|-----------------|-------|
+| **Go Unit** | 99 | 596 test functions | `backend/**/*_test.go` |
+| **Frontend Unit** | 84 | 976+ | `frontend/src/**/*.spec.ts` / `*.test.ts` |
+| **Playwright E2E** | 16 | 122 | `frontend/tests/**/*.spec.ts` |
+| **BDD (Cucumber)** | 14 | 127 scenarios | `tests/features/*.feature` |
+| **NLP Python** | 2 | 46 | `nlp-service/tests/*.py` |
+
+> Run `cd backend && go test ./...`, `cd frontend && npm run test:unit`, `cd frontend && npx playwright test`, `npm run test:bdd`, `cd nlp-service && pytest` to verify.

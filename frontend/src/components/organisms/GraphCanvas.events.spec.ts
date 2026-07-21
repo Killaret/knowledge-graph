@@ -282,7 +282,7 @@ describe("GraphCanvas events", () => {
 
   it("initializes simulation and exposes debug helpers", () => {
     expect(window.__graphCanvas).toBeDefined();
-    expect(window.__graphCanvas.getSimulationNodes().length).toBe(4);
+    expect(window.__graphCanvas!.getSimulationNodes().length).toBe(4);
   });
 
   it("renders the canvas and overlays", () => {
@@ -685,12 +685,3 @@ describe("GraphCanvas events", () => {
     expect(canvas).toBeTruthy();
   });
 });
-
-declare global {
-  interface Window {
-    __graphCanvas?: {
-      getSimulationNodes: () => any[];
-      transform: { x: number; y: number; k: number };
-    };
-  }
-}

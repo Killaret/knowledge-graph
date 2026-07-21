@@ -25,4 +25,4 @@ foreach ($pattern in $patterns) {
     }
 }
 
-Write-Host "  ✓ Temporary test artifacts cleaned ($removed items)" -ForegroundColor Green
+Write-Host "Temporary test artifacts cleaned: $removed items" -ForegroundColor Green

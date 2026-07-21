@@ -14,11 +14,12 @@ backend/                          # Go backend
 └── cmd/checkconfig/main.go       # Config validation CLI
 
 frontend/                         # SvelteKit frontend
-├── src/lib/
-│   ├── components/*.spec.ts      # Component unit tests (Vitest)
+├── src/components/**/*.spec.ts  # Component unit tests (Vitest)
+├── src/features/**/*.test.ts    # Feature logic tests
+├── src/shared/
 │   ├── api/*.test.ts             # API client tests
 │   ├── services/*.test.ts        # Service tests
-│   ├── stores/*.test.ts          # Svelte store tests
+│   ├── stores/*.svelte.test.ts   # Svelte runes store tests
 │   └── utils/*.test.ts           # Utility tests
 ├── tests/*.spec.ts               # Playwright E2E tests
 └── tests/features/*.feature      # BDD scenarios
@@ -73,16 +74,16 @@ pytest tests/ -v
 
 | Category | Files | Tests/Scenarios | Latest Result |
 |----------|-------|-------------------|---------------|
-| **Go Unit** | 31 | ~118 test functions | ✅ pass |
+| **Go Unit** | 99 | 596 test functions | ✅ pass |
 | **Go Race** | - | - | ⚠️ skipped (CGO_ENABLED=0 on Windows) |
-| **Go Integration** | 5+ | repository/handler suites | ❌ fail (Docker testcontainers PostgreSQL startup timeout) |
-| **Frontend Unit** | 52 | 526 tests | ✅ pass (37 skipped) |
-| **Frontend svelte-check** | - | - | ✅ 0 errors, 46 warnings |
+| **Go Integration** | 5+ | repository/handler suites | ⚠️ requires Linux/WSL Docker + resources |
+| **Frontend Unit** | 84 | 976+ tests | ✅ pass (37 skipped) |
+| **Frontend svelte-check** | - | - | ✅ 0 errors, warnings acceptable |
 | **Frontend Build** | - | - | ✅ success |
-| **Playwright E2E** | 18 | 94 tests | ✅ 84 passed, 10 skipped |
-| **BDD Features** | 1 | 5 scenarios | ✅ 5 passed (43 steps) |
+| **Playwright E2E** | 16 | 122 tests | ✅ most pass, some skipped |
+| **BDD Features** | 14 | 127 scenarios | ✅ most pass |
 | **Smoke Tests** | 1 | 9 tests | ✅ 9 passed |
-| **NLP Python** | 2 | 33 collected | ✅ 28 passed, 5 skipped |
+| **NLP Python** | 2 | 46 collected | ✅ most pass |
 
 > **Note:** Go integration tests are resource-intensive and failed on this run because PostgreSQL testcontainers could not reach the ready state within the startup timeout. They should be run on a clean Docker environment with adequate CPU/memory for accurate results.
 

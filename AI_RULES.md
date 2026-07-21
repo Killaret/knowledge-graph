@@ -129,27 +129,33 @@ scripts/
 
 ## AI-Specific Hints
 
-### 🌐 Language Policy (ENGLISH ONLY)
+### 🌐 Language Policy
 
-**All user-facing content MUST be in English:**
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
 
-- ✅ **Note titles and content** — all user-created notes
-- ✅ **Annotations and descriptions** — any text fields for users
-- ✅ **UI strings** — buttons, labels, placeholders, error messages
-- ✅ **Toast messages and tooltips** — GalacticLexicon messages
-- ✅ **Comments in code** — public API docs, README files
-- ✅ **Commit messages** — clear, descriptive English
+- UI strings (buttons, labels, placeholders, errors)
+- Toast messages and tooltips (GalacticLexicon)
+- Note titles and content
 
-**Exceptions:**
-- Internal code comments — brief explanations in any language OK
-- Variable/function names — follow project conventions
+**MUST be in English:**
+- Code identifiers and variable names
+- Commit messages
+- API error codes
+
+**User content (note titles/bodies) may be in any language.**
+**Documentation:** Authoritative docs are in English; Russian translations may be added alongside.
+**Exceptions:** Internal code comments (any language OK).
 
 ```typescript
-// ✅ Good
-toast.success("Note created successfully");
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
+placeholder="Поиск по графу знаний...";
 
-// ❌ Bad
-toast.success("Заметка создана успешно");
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+
+// ❌ Bad — hardcoded string without i18n key
+toast.success("Note created successfully");
 ```
 
 ## AI-Specific Hints

@@ -1,13 +1,13 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 bindable props require let, see: https://svelte.dev/docs/svelte/$bindable */
-  import { onMount } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import { browser } from "$app/environment";
 
   interface Props {
     open: boolean;
     title: string;
     onClose?: () => void;
-    children?: () => any;
+    children?: Snippet;
   }
 
   let { open = $bindable(false), title, onClose, children }: Props = $props();

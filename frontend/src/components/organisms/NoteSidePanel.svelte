@@ -34,7 +34,7 @@
   let showShareModal = $state(false);
   let showDeleteLinksConfirm = $state(false);
   let deletingLinks = $state(false);
-  let tags = $derived((note?.metadata?.tags ?? []) as string[]);
+  const tags = $derived((note?.metadata?.tags ?? []) as string[]);
 
   // Load note when nodeId changes
   $effect(() => {

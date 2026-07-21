@@ -3,16 +3,18 @@
 This file contains unified context for Windsurf AI and the full agent list.
 Do not delete.
 
-## Agent List (9 agents)
+## Agent List (11 agents)
 1. knowledge-graph-orchestrator — coordination and delegation
 2. knowledge-graph-backend-go — Go backend, API, DB, auth
 3. knowledge-graph-frontend-svelte — Svelte UI, components and state
 4. knowledge-graph-integration — OpenAPI, contracts, webhooks
 5. knowledge-graph-infrastructure — Docker, K8s, monitoring
 6. knowledge-graph-devops — CI/CD, deploy, logging
-7. knowledge-graph-performance — profiling and optimization
+7. knowledge-graph-performance — profiling, caching, P95
 8. knowledge-graph-security — audit, auth, compliance
-9. knowledge-graph-testing — unit/integration/E2E, coverage
+9. knowledge-graph-testing — unit/integration/E2E/BDD, coverage
+10. knowledge-graph-nlp — Python FastAPI, NLP, HuggingFace
+11. knowledge-graph-data — DB migrations, pgvector, schemas
 
 ## Commands and Permissions
 - Use Windsurf as a unified context file

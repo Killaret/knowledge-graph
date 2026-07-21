@@ -12,6 +12,7 @@ export default defineConfig({
       $entities: path.resolve(__dirname, "src/entities"),
       $features: path.resolve(__dirname, "src/features"),
       $widgets: path.resolve(__dirname, "src/widgets"),
+      $components: path.resolve(__dirname, "src/components"),
       // Алиас для проекта (корневой knowledge-graph.config.json)
       $config: path.resolve(__dirname, "../knowledge-graph.config.json"),
     },

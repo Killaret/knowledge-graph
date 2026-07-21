@@ -36,20 +36,33 @@ backend/internal/
 - Repositories return domain entities, never DB models
 - No global variables — explicit dependency injection everywhere
 
-## Language Policy — ENGLISH ONLY
+## Language Policy
 
-All user-facing content MUST be in English:
-- UI strings, buttons, labels, placeholders
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
+
+- UI strings, buttons, labels, placeholders, errors
 - Toast messages, error messages, tooltips
+- Note titles and content
+
+**MUST be in English:**
+- Code identifiers and variable names
 - Commit messages
-- API response messages
-- Public code comments, README, docs
+- API error codes
+- Public code comments, README, authoritative docs
+
+**User content (note titles/bodies) may be in any language.**
+**Exceptions:** Internal code comments — any language OK.
 
 ```typescript
-// ✅ Good
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
+placeholder="Поиск по графу знаний...";
+
+// ✅ Good — English variant via same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+
+// ❌ Bad — hardcoded string without i18n key
 toast.success("Note created successfully");
-// ❌ Bad
-toast.success("Заметка создана успешно");
 ```
 
 ## Key Commands

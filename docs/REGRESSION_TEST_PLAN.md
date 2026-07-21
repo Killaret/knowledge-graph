@@ -234,7 +234,7 @@ cd nlp-service
 pytest -v 2>&1 | tee ../logs/test-outputs/test-nlp.log
 ```
 
-**Expected:** 28/33 tests pass (5 skipped)
+**Expected:** 46 tests collected (all non-skipped pass; skips allowed due to model/cache)
 
 ### 3.2 Check NLP Health
 ```bash
@@ -512,7 +512,7 @@ cd frontend
 npx playwright test 2>&1 | tee ../logs/test-outputs/test-frontend-e2e.log
 ```
 
-**Expected:** 84/94 tests pass (10 skipped)
+**Expected:** 122 tests collected; all non-skipped pass (skips allowed for known environment limitations)
 
 ### 9.3 Run Frontend Visual Tests
 ```bash
@@ -528,7 +528,7 @@ cd frontend
 npm run test:cucumber 2>&1 | tee ../logs/test-outputs/test-frontend-bdd.log
 ```
 
-**Expected:** 5/5 tests pass
+**Expected:** 127 scenarios collected; all non-skipped pass (skips allowed)
 
 ---
 

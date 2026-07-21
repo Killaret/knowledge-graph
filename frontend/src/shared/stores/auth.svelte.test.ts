@@ -387,7 +387,6 @@ describe("Auth Store Integration with PreloadService", () => {
     it("updates user info when authenticated", async () => {
       // Authenticate first
       await login("user", "pass");
-      const initialUser = vi.mocked(usersApi.getMe).mock.results[0]?.value;
 
       vi.mocked(usersApi.getMe).mockResolvedValue({
         id: "2",

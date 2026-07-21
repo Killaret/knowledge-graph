@@ -40,9 +40,27 @@ export default [
         "error",
         { argsIgnorePattern: "^_" },
       ],
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
       "prefer-const": "error",
       "no-var": "error",
+    },
+  },
+  {
+    files: [
+      "**/*.spec.ts",
+      "**/*.test.ts",
+      "**/__mocks__/**",
+      "**/shared/test-utils/**",
+      "**/test-canvas-mock.ts",
+      "tests/**",
+      "vitest-*.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
     },
   },
 ];
