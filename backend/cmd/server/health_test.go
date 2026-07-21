@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -12,14 +13,20 @@ import (
 	nlp "knowledge-graph/internal/infrastructure/nlp"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+type fakeRedisPinger struct {
+	err error
+}
+
+func (f *fakeRedisPinger) Ping(ctx context.Context) error {
+	return f.err
+}
 
 func setupMockDB(t *testing.T) (*gorm.DB, *sql.DB, sqlmock.Sqlmock, func()) {
 	sqlDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
@@ -42,9 +49,7 @@ func TestHealthHandler_Healthy(t *testing.T) {
 
 	mock.ExpectPing()
 
-	mr := miniredis.RunT(t)
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	redisPinger := &redisPingAdapter{client: rdb}
+	redisPinger := &fakeRedisPinger{}
 
 	nlpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -55,7 +60,7 @@ func TestHealthHandler_Healthy(t *testing.T) {
 		NLPServiceURL:          nlpServer.URL,
 		RecommendationCacheTTL: time.Hour,
 	}
-	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, rdb, cfg.RecommendationCacheTTL)
+	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, nil, cfg.RecommendationCacheTTL)
 
 	handler := newHealthHandler(sqlDB, redisPinger, nlpClient)
 	r := gin.New()
@@ -97,8 +102,7 @@ func TestHealthHandler_RedisDown(t *testing.T) {
 
 	mock.ExpectPing()
 
-	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1"})
-	redisPinger := &redisPingAdapter{client: rdb}
+	redisPinger := &fakeRedisPinger{err: errors.New("redis down")}
 
 	cfg := &config.Config{}
 	nlpClient := nlp.NewNLPClient(cfg.NLPServiceURL, nil, cfg.RecommendationCacheTTL)

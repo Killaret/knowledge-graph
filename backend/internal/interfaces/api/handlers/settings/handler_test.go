@@ -9,14 +9,12 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/application/user"
+	"knowledge-graph/internal/domain/cache/cachetest"
 	userDomain "knowledge-graph/internal/domain/user"
-	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -55,8 +53,8 @@ func (m *mockUserSettingsRepo) Delete(ctx context.Context, userID uuid.UUID, key
 func setupSettingsHandler() (*gin.Engine, *mockUserSettingsRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := new(mockUserSettingsRepo)
-	rdb := redis.NewClient(&redis.Options{Addr: miniredis.RunT(&testing.T{}).Addr()})
-	service := user.NewSettingsService(repo, infracache.NewRedisCacheClient(rdb))
+	cacheClient := cachetest.NewFakeCacheClient()
+	service := user.NewSettingsService(repo, cacheClient)
 	h := NewHandler(service)
 
 	r := gin.New()

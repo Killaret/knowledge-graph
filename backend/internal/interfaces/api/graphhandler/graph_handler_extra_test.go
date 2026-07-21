@@ -9,15 +9,13 @@ import (
 
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/config"
+	"knowledge-graph/internal/domain/cache/cachetest"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
-	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -79,9 +77,7 @@ func TestPreserveCachedPositions(t *testing.T) {
 
 func setupGraphRouterWithCache() (*gin.Engine, *cache.GraphCache, *mockNoteRepo, *mockLinkRepo) {
 	gin.SetMode(gin.TestMode)
-	mr := miniredis.RunT(&testing.T{})
-	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	graphCache := cache.NewGraphCache(infracache.NewRedisCacheClient(rdb))
+	graphCache := cache.NewGraphCache(cachetest.NewFakeCacheClient())
 
 	noteRepo := new(mockNoteRepo)
 	linkRepo := new(mockLinkRepo)
