@@ -61,12 +61,15 @@ Date: 2026-07-20
 The major Clean Architecture violations listed in previous audits have been resolved. The current status and any remaining minor debt are tracked in the **Clean Architecture Refactor Notes** section below.
 
 Key remaining items:
-- Continue i18n coverage for user-facing strings (active pages are covered; `WeltallProtocol.svelte` is unused/placeholder and remains hardcoded in English).
+- Continue i18n coverage for user-facing strings (active pages and new components are covered; `WeltallProtocol.svelte` body and table headers remain hardcoded English placeholders).
 
 ### Frontend architecture notes
 
-- `frontend/src/routes/auth/login/+page.svelte` — `AuthCard` title now uses the `app.title` i18n key instead of the hardcoded "Knowledge Graph".
+- `frontend/src/routes/auth/login/+page.svelte` — `AuthCard` title now uses the `app.title` i18n key instead of the hardcoded "Knowledge Graph"; the card now also renders `PreloadIndicator` below `LoginForm`.
 - `frontend/src/components/organisms/ProfileEditor.svelte` — heading and email label now use `profile.editTitle` and `profile.emailLabel` i18n keys.
+- `frontend/src/components/organisms/AuthCard.svelte` — the `GalaxyIcon` logo is now a focusable button that opens `WeltallProtocol`; `WeltallProtocol` uses a bindable `show` prop and i18n keys for `close` and `protocol.message`.
+- `frontend/src/components/organisms/PreloadIndicator.svelte` — new component that polls `PreloadService` and shows `preload.loading` / `preload.ready` i18n messages.
+- `frontend/src/shared/services/PreloadService.ts` — exported `isPreloadingData` and `getStats` helpers for reactive UI consumption.
 - Production frontend code is now free of explicit `any` type annotations in `src/` (excluding `.test.ts`/`.spec.ts` and mocks).
 - Auth state was split into `src/shared/stores/auth-session.svelte.ts` (low-level reactive state, no API client imports) and `src/shared/stores/auth.svelte.ts` (auth flows). This removes the previous circular dependency between the API client and the auth store.
 - Madge is configured for circular-dependency detection via `npm run check:circular` (`frontend/scripts/check-circular.mjs` + `frontend/tsconfig.madge.json`).

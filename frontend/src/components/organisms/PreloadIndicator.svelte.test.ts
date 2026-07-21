@@ -1,52 +1,67 @@
-// Тесты для компонента PreloadIndicator (если он существует)
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { hasPreloadedData } from "$shared/services/PreloadService";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, cleanup } from "@testing-library/svelte";
+import { tick } from "svelte";
 
-// Мокаем PreloadService
-vi.mock("$shared/services/PreloadService", () => ({
-  hasPreloadedData: vi.fn(() => false),
-  isPreloadingData: vi.fn(() => false),
-  getStats: vi.fn(() => ({
-    hasGraph: false,
-    hasAchievements: false,
-    graphAge: null,
-    achievementsAge: null,
-    isPreloading: false,
-  })),
+const {
+  isPreloadingData,
+  hasPreloadedData,
+  getPreloadedGraph,
+} = vi.hoisted(() => ({
+  isPreloadingData: vi.fn<() => boolean>(() => false),
+  hasPreloadedData: vi.fn<() => boolean>(() => false),
+  getPreloadedGraph: vi.fn<() => { nodes: unknown[]; links: unknown[] } | null>(
+    () => null,
+  ),
 }));
 
-describe.skip("PreloadIndicator Component", () => {
+vi.mock("$shared/services/PreloadService", () => ({
+  isPreloadingData,
+  hasPreloadedData,
+  getPreloadedGraph,
+}));
+
+import PreloadIndicator from "./PreloadIndicator.svelte";
+
+describe("PreloadIndicator Component", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(isPreloadingData).mockReturnValue(false);
+    vi.mocked(hasPreloadedData).mockReturnValue(false);
+    vi.mocked(getPreloadedGraph).mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
-  it("should show loading state when preloading", () => {
-    const mockIsPreloadingData = vi.mocked(vi.fn());
-    mockIsPreloadingData.mockReturnValue(true);
+  it("shows loading state when preloading", async () => {
+    vi.mocked(isPreloadingData).mockReturnValue(true);
 
-    // Тест будет работать когда компонент будет создан
-    // render(PreloadIndicator);
-    // expect(screen.getByText(/preloading/i)).toBeInTheDocument();
+    const { getByText } = render(PreloadIndicator);
+    await tick();
 
-    expect(mockIsPreloadingData).toHaveBeenCalled();
+    expect(getByText("Preparing the universe...")).toBeTruthy();
   });
 
-  it("should show success state when preloaded", () => {
+  it("shows ready state with preloaded star count", async () => {
     vi.mocked(hasPreloadedData).mockReturnValue(true);
+    vi.mocked(getPreloadedGraph).mockReturnValue({
+      nodes: [{ id: "1" }, { id: "2" }, { id: "3" }],
+      links: [],
+    });
 
-    // render(PreloadIndicator);
-    // expect(screen.getByText(/ready/i)).toBeInTheDocument();
+    const { getByText } = render(PreloadIndicator);
+    await tick();
 
-    expect(hasPreloadedData).toHaveBeenCalled();
+    expect(getByText("Universe ready: 3 stars")).toBeTruthy();
   });
 
-  it("should show empty state when no data", () => {
-    vi.mocked(hasPreloadedData).mockReturnValue(false);
+  it("renders nothing when no preload activity", async () => {
+    const { container } = render(PreloadIndicator);
+    await tick();
 
-    // render(PreloadIndicator);
-    // expect(screen.queryByText(/preloading/i)).not.toBeInTheDocument();
-    // expect(screen.queryByText(/ready/i)).not.toBeInTheDocument();
-
-    expect(hasPreloadedData).toHaveBeenCalled();
+    expect(container.textContent?.trim()).toBe("");
   });
 });

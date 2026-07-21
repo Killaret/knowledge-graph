@@ -10,7 +10,7 @@
     show?: boolean;
   }
 
-  const { show = false }: Props = $props();
+  let { show = $bindable(false) }: Props = $props();
 
   let modalRef = $state<HTMLDivElement | null>(null);
   let closeButtonRef = $state<HTMLButtonElement | null>(null);
@@ -43,8 +43,9 @@
     }
   }
 
-  // Custom event dispatcher
+  // Close the modal and notify the parent via the bindable `show` prop.
   function dispatchClose() {
+    show = false;
     const event = new CustomEvent("close", { bubbles: true });
     modalRef?.dispatchEvent(event);
   }
@@ -99,7 +100,7 @@
         </h2>
 
         <div class="protocol-body">
-          <p class="protocol-message">WELTALL PROTOCOL will be later ...</p>
+          <p class="protocol-message">{t("protocol.message")}</p>
 
           <div class="protocol-table">
             <div class="table-header">
@@ -131,7 +132,7 @@
           onclick={dispatchClose}
           aria-label={t("protocol.closePanel")}
         >
-          <span class="button-text">Close</span>
+          <span class="button-text">{t("close")}</span>
           <span class="button-glow"></span>
         </button>
       </div>

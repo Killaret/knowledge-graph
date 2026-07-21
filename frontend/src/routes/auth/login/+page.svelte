@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import LoginForm from "$components/organisms/LoginForm.svelte";
   import AuthCard from "$components/organisms/AuthCard.svelte";
+  import PreloadIndicator from "$components/organisms/PreloadIndicator.svelte";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { startPreload } from "$shared/services/PreloadService";
   import { onMount } from "svelte";
@@ -34,4 +35,5 @@
 
 <AuthCard title={t("app.title")} subtitle={t("auth.subtitle")} showIcon={true}>
   <LoginForm />
+  <PreloadIndicator />
 </AuthCard>

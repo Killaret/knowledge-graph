@@ -3,9 +3,13 @@
   import { fly, fade } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import GalaxyIcon from "$components/atoms/GalaxyIcon.svelte";
+  import WeltallProtocol from "$components/atoms/WeltallProtocol.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { GraphData } from "$shared/api/graph";
+
+  const t = (key: string) => formatMessage(key, getCurrentLocale());
 
   interface Props {
     title: string;
@@ -17,6 +21,7 @@
   const { title, subtitle = "", showIcon = true, children }: Props = $props();
 
   let graphData = $state<GraphData>({ nodes: [], links: [] });
+  let showWeltall = $state(false);
 
   onMount(() => {
     getGraphWithPreload(100)
@@ -49,7 +54,14 @@
   >
     <div class="logo-section">
       {#if showIcon}
-        <GalaxyIcon size={64} class="logo-icon" />
+        <button
+          type="button"
+          class="logo-button"
+          aria-label={t("auth.logoAria")}
+          onclick={() => (showWeltall = true)}
+        >
+          <GalaxyIcon size={64} class="logo-icon" />
+        </button>
       {/if}
       <h1 class="title">{title}</h1>
       {#if subtitle}
@@ -61,6 +73,8 @@
       {@render children?.()}
     </div>
   </div>
+
+  <WeltallProtocol bind:show={showWeltall} />
 </div>
 
 <style>
@@ -98,6 +112,23 @@
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  .logo-button {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-button:focus-visible {
+    outline: 2px solid rgba(255, 204, 0, 0.5);
+    outline-offset: 4px;
+    border-radius: 50%;
   }
 
   .logo-section :global(.logo-icon) {

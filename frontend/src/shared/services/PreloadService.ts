@@ -338,3 +338,17 @@ export function clearPreloadCache(): void {
 export function hasPreloadedData(): boolean {
   return PreloadService.hasPreloadedData();
 }
+
+export function isPreloadingData(): boolean {
+  return PreloadService.isPreloadingData();
+}
+
+export function getStats(): {
+  hasGraph: boolean;
+  hasAchievements: boolean;
+  graphAge: number | null;
+  achievementsAge: number | null;
+  isPreloading: boolean;
+} {
+  return PreloadService.getStats();
+}
