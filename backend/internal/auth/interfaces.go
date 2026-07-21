@@ -39,3 +39,27 @@ type RefreshToken struct {
 type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *RefreshToken) error
 }
+
+// EmailSender abstracts sending password-reset emails.
+type EmailSender interface {
+	// SendPasswordReset sends a password-reset email to the given address.
+	// The resetLink is a fully qualified URL that the user should follow.
+	SendPasswordReset(ctx context.Context, to, resetLink string) error
+}
+
+// OAuthUserInfo represents the subset of an OAuth provider profile needed by auth handlers.
+type OAuthUserInfo struct {
+	ID     string
+	Login  string
+	Email  string
+	Emails []string
+}
+
+// OAuthProvider abstracts OAuth token exchange and user info retrieval.
+type OAuthProvider interface {
+	Exchange(ctx context.Context, code, codeVerifier string) (string, error)
+	UserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error)
+}
+
+// OAuthProviderFactory creates an OAuth provider with runtime redirect URI.
+type OAuthProviderFactory func(clientID, clientSecret, redirectURI string) OAuthProvider

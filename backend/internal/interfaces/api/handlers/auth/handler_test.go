@@ -61,7 +61,7 @@ func setupTestHandler(t *testing.T) *Handler {
 
 	userRepo := postgres.NewUserRepository(db, nil)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
-	return NewHandler(userRepo, refreshTokenRepo, nil, jwtManager, cfg, email.NewConsole())
+	return NewHandler(userRepo, refreshTokenRepo, nil, jwtManager, cfg, email.NewConsole(), nil)
 }
 
 func TestRegister(t *testing.T) {

@@ -61,7 +61,6 @@ The major Clean Architecture violations listed in previous audits have been reso
 
 Key remaining items:
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Some backend unit tests still import concrete infrastructure (`*redis.Client`, `postgres` repositories) and should use ports or test doubles.
 - Continue i18n coverage for user-facing strings.
 
 ### Frontend architecture notes
@@ -145,7 +144,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `cmd/server/main.go` — `run()` extracted with dependency injection; wired through constructors.
 - `internal/interfaces/api/handlers/user/handler.go` — now depends on `domainuser.Repository` and `domainuser.APIKeyRepository`; no `*gorm.DB` or `postgres` model usage.
-- `internal/interfaces/api/handlers/auth/handler.go` — now depends on `domainuser.Repository`, `auth.RefreshTokenRepository`, and `auth.TokenStore`; no direct `postgres` usage.
+- `internal/interfaces/api/handlers/auth/handler.go` — now depends on `domainuser.Repository`, `auth.RefreshTokenRepository`, `auth.TokenStore`, `auth.EmailSender`, and `auth.OAuthProvider` ports; no direct `infrastructure/email`, `infrastructure/oauth`, or `postgres` usage.
 - `internal/interfaces/api/handlers/share/handler.go` — now depends on `domainnote.Repository`, `domainuser.Repository`, and `domainshare.Repository`; no `*gorm.DB` or `postgres` model usage.
 - `internal/application/achievement/engine.go` — now depends on `domain/achievement.Counter` port implemented in `postgres.AchievementCounter`; no `*gorm.DB`.
 - `internal/application/recommendation/refresh_service.go` and `affected_notes.go` — now depend on `note.Repository` and `recommendation.Repository` ports; no `*gorm.DB` or direct `postgres` usage.
@@ -157,6 +156,8 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `internal/application/achievement/service.go` — no longer imports `asynq`; uses the `common.TaskQueue` port's `EnqueueNotification` method.
 - `internal/interfaces/api/handlers/backup/handler.go`, `internal/interfaces/api/notehandler/note_handler.go`, and `internal/interfaces/api/linkhandler/link_handler.go` — no longer import `internal/infrastructure/queue/tasks`; task enqueueing goes through the `common.TaskQueue` port.
 - `internal/infrastructure/db/postgres/user_repo.go` — role lookup extracted to `domain/user.RoleRepository` port implemented in `postgres.RoleRepository`; no direct `UserRoleModel` queries from `UserRepository`.
+- `internal/auth/interfaces.go` — added `EmailSender` and `OAuthProvider`/`OAuthUserInfo`/`OAuthProviderFactory` ports; `internal/infrastructure/email` and `internal/infrastructure/oauth` now implement these auth-level ports.
+- `internal/interfaces/api/handlers/auth/handler_unit_test.go` — no longer imports `internal/infrastructure/oauth`; uses the `auth.OAuthProvider` port with a test double.
 - New domain packages:
   - `internal/domain/user` — `User`, `APIKey` aggregates and repository ports.
   - `internal/domain/share` — `NoteShare`, `ShareLink` aggregates and repository port.
@@ -217,14 +218,13 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 ### Frontend coverage snapshot
 
 - Frontend unit tests pass: 800 passed, 37 skipped.
-- Statements: **85.19%**, Branches: **85.7%**, Functions: **89.2%**, Lines: **85.19%**.
+- Statements: **85.2%**, Branches: **85.76%**, Functions: **89.25%**, Lines: **85.2%**.
 - Biggest gaps: `shared/utils/deviceCapabilities.ts` (29.29% stmts), `components/organisms/GraphCanvas/delta.ts` (51.16% stmts), `components/organisms/GraphCanvas.svelte` (18.19% funcs), `components/atoms/SpaceBackground.svelte` (0% stmts).
 
 ### Remaining debt
 
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but the `GraphCache` service itself is application-layer; consider whether graph-cache orchestration belongs in `application` or a specialized service.
 - Full regression cycle and E2E stack verification are pending.
-- Frontend coverage and E2E stack not covered by these notes.
 
 ### Verification checklist
 

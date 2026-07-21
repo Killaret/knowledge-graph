@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"knowledge-graph/internal/auth"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,8 +41,8 @@ func NewYandex(clientID, clientSecret, redirectURI string) *YandexProvider {
 	}
 }
 
-// UserInfo represents the subset of the Yandex Passport response we need.
-type UserInfo struct {
+// yandexUserInfo matches the Yandex Passport JSON response.
+type yandexUserInfo struct {
 	ID     string   `json:"id"`
 	Login  string   `json:"login"`
 	Email  string   `json:"default_email"`
@@ -100,7 +101,7 @@ func (p *YandexProvider) Exchange(ctx context.Context, code, codeVerifier string
 }
 
 // UserInfo fetches the user profile from Yandex Passport.
-func (p *YandexProvider) UserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
+func (p *YandexProvider) UserInfo(ctx context.Context, accessToken string) (*auth.OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.infoURL+"?format=json", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build info request: %w", err)
@@ -121,12 +122,17 @@ func (p *YandexProvider) UserInfo(ctx context.Context, accessToken string) (*Use
 		return nil, fmt.Errorf("userinfo failed: status %d, body %s", resp.StatusCode, string(body))
 	}
 
-	var info UserInfo
-	if err := json.Unmarshal(body, &info); err != nil {
+	var raw yandexUserInfo
+	if err := json.Unmarshal(body, &raw); err != nil {
 		return nil, fmt.Errorf("parse userinfo response: %w", err)
 	}
-	if info.Email == "" && len(info.Emails) > 0 {
-		info.Email = info.Emails[0]
+	if raw.Email == "" && len(raw.Emails) > 0 {
+		raw.Email = raw.Emails[0]
 	}
-	return &info, nil
+	return &auth.OAuthUserInfo{
+		ID:     raw.ID,
+		Login:  raw.Login,
+		Email:  raw.Email,
+		Emails: raw.Emails,
+	}, nil
 }

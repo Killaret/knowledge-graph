@@ -32,6 +32,7 @@ import (
 	"knowledge-graph/internal/infrastructure/email"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
+	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
@@ -257,7 +258,10 @@ func run(
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(database)
 	apiKeyRepo := postgres.NewAPIKeyRepository(database)
 	emailSender := email.FromConfig(cfg)
-	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg, emailSender)
+	oauthProviderFactory := func(clientID, clientSecret, redirectURI string) auth.OAuthProvider {
+		return oauthpkg.NewYandex(clientID, clientSecret, redirectURI)
+	}
+	authHandler := authhandler.NewHandler(userRepo, refreshTokenRepo, tokenStore, jwtManager, cfg, emailSender, oauthProviderFactory)
 
 	// User handler
 	passwordConfig := &auth.PasswordConfig{

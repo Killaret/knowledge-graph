@@ -2,7 +2,6 @@
 package auth
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -15,8 +14,6 @@ import (
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	domainuser "knowledge-graph/internal/domain/user"
-	emailpkg "knowledge-graph/internal/infrastructure/email"
-	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -28,23 +25,18 @@ const (
 	refreshTokenCookieName = "refresh_token"
 )
 
-// OAuthProvider abstracts Yandex OAuth token exchange and user info retrieval.
-type OAuthProvider interface {
-	Exchange(ctx context.Context, code, codeVerifier string) (string, error)
-	UserInfo(ctx context.Context, accessToken string) (*oauthpkg.UserInfo, error)
-}
-
 // Handler handles authentication requests
 type Handler struct {
-	userRepo         domainuser.Repository
-	refreshTokenRepo authpkg.RefreshTokenRepository
-	jwtManager       *authpkg.JWTManager
-	tokenStore       authpkg.TokenStore
-	passwordConfig   *authpkg.PasswordConfig
-	passwordPolicy   *authpkg.PasswordPolicy
-	emailSender      emailpkg.Sender
-	oauthProvider    OAuthProvider
-	cfg              *config.Config
+	userRepo             domainuser.Repository
+	refreshTokenRepo     authpkg.RefreshTokenRepository
+	jwtManager           *authpkg.JWTManager
+	tokenStore           authpkg.TokenStore
+	passwordConfig       *authpkg.PasswordConfig
+	passwordPolicy       *authpkg.PasswordPolicy
+	emailSender          authpkg.EmailSender
+	oauthProvider        authpkg.OAuthProvider
+	oauthProviderFactory authpkg.OAuthProviderFactory
+	cfg                  *config.Config
 }
 
 // NewHandler creates a new auth handler
@@ -54,7 +46,8 @@ func NewHandler(
 	tokenStore authpkg.TokenStore,
 	jwtManager *authpkg.JWTManager,
 	cfg *config.Config,
-	emailSender emailpkg.Sender,
+	emailSender authpkg.EmailSender,
+	oauthProviderFactory authpkg.OAuthProviderFactory,
 ) *Handler {
 	return &Handler{
 		userRepo:         userRepo,
@@ -74,13 +67,14 @@ func NewHandler(
 			RequireDigit:   cfg.PasswordPolicyRequireDigit,
 			RequireSpecial: cfg.PasswordPolicyRequireSpecial,
 		},
-		emailSender: emailSender,
-		cfg:         cfg,
+		emailSender:          emailSender,
+		oauthProviderFactory: oauthProviderFactory,
+		cfg:                  cfg,
 	}
 }
 
 // SetOAuthProvider is used by tests to inject a mock OAuth provider.
-func (h *Handler) SetOAuthProvider(p OAuthProvider) {
+func (h *Handler) SetOAuthProvider(p authpkg.OAuthProvider) {
 	h.oauthProvider = p
 }
 
@@ -680,9 +674,13 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 		redirectURI = scheme + "://" + c.Request.Host + "/auth/yandex/callback"
 	}
 
-	var provider OAuthProvider = h.oauthProvider
+	provider := h.oauthProvider
+	if provider == nil && h.oauthProviderFactory != nil {
+		provider = h.oauthProviderFactory(h.cfg.YandexClientID, h.cfg.YandexClientSecret, redirectURI)
+	}
 	if provider == nil {
-		provider = oauthpkg.NewYandex(h.cfg.YandexClientID, h.cfg.YandexClientSecret, redirectURI)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Yandex OAuth provider not configured"})
+		return
 	}
 
 	ctx := c.Request.Context()

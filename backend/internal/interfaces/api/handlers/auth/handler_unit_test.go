@@ -16,7 +16,6 @@ import (
 	authpkg "knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	domainuser "knowledge-graph/internal/domain/user"
-	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -163,12 +162,12 @@ func (m *mockOAuthProvider) Exchange(ctx context.Context, code, codeVerifier str
 	return args.String(0), args.Error(1)
 }
 
-func (m *mockOAuthProvider) UserInfo(ctx context.Context, accessToken string) (*oauthpkg.UserInfo, error) {
+func (m *mockOAuthProvider) UserInfo(ctx context.Context, accessToken string) (*authpkg.OAuthUserInfo, error) {
 	args := m.Called(ctx, accessToken)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*oauthpkg.UserInfo), args.Error(1)
+	return args.Get(0).(*authpkg.OAuthUserInfo), args.Error(1)
 }
 
 func setupUnitHandler(t *testing.T) (*Handler, *mockUserRepo, *mockRefreshTokenRepo, *mockTokenStore, *mockEmailSender) {
@@ -194,7 +193,7 @@ func setupUnitHandler(t *testing.T) (*Handler, *mockUserRepo, *mockRefreshTokenR
 	tokenStore := new(mockTokenStore)
 	emailSender := new(mockEmailSender)
 
-	h := NewHandler(userRepo, refreshRepo, tokenStore, jwtManager, cfg, emailSender)
+	h := NewHandler(userRepo, refreshRepo, tokenStore, jwtManager, cfg, emailSender, nil)
 	return h, userRepo, refreshRepo, tokenStore, emailSender
 }
 
@@ -246,7 +245,7 @@ func TestYandexCallback_NewUser(t *testing.T) {
 	provider := h.oauthProvider.(*mockOAuthProvider)
 
 	provider.On("Exchange", mock.Anything, "code", "").Return("access-token", nil)
-	provider.On("UserInfo", mock.Anything, "access-token").Return(&oauthpkg.UserInfo{
+	provider.On("UserInfo", mock.Anything, "access-token").Return(&authpkg.OAuthUserInfo{
 		ID:    "yandex-1",
 		Login: "yandexuser",
 		Email: "oauth@example.com",
@@ -281,7 +280,7 @@ func TestYandexCallback_ExistingUser(t *testing.T) {
 	require.NoError(t, err)
 
 	provider.On("Exchange", mock.Anything, "code", "").Return("access-token", nil)
-	provider.On("UserInfo", mock.Anything, "access-token").Return(&oauthpkg.UserInfo{
+	provider.On("UserInfo", mock.Anything, "access-token").Return(&authpkg.OAuthUserInfo{
 		ID:    "yandex-2",
 		Login: "existing",
 		Email: "oauth@example.com",
