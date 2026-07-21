@@ -524,8 +524,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.resetPasswordFailed": "Failed to reset password",
 
     // UI labels
+    "app.title": "Knowledge Graph",
     "create.note": "Create Note",
-    "edit.note": "Edit Profile",
+    "profile.editTitle": "Edit Profile",
     "delete.note": "Delete Note",
     cancel: "Cancel",
     save: "Save",
@@ -547,6 +548,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirm.delete": "Confirm Delete",
     "delete.account": "Delete Account",
     "profile.languageLabel": "Language",
+    "profile.emailLabel": "Email",
     "profile.languageHint": "Select your preferred language",
     "profile.deleteWarning":
       "Warning! This action is irreversible. All your data will be deleted.",
@@ -1080,8 +1082,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.resetPasswordFailed": "Не удалось сбросить пароль",
 
     // UI labels
+    "app.title": "Граф знаний",
     "create.note": "Создать заметку",
-    "edit.note": "Редактировать профиль",
+    "profile.editTitle": "Редактировать профиль",
     "delete.note": "Удалить заметку",
     cancel: "Отмена",
     save: "Сохранить",
@@ -1103,6 +1106,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "confirm.delete": "Подтвердить удаление",
     "delete.account": "Удалить аккаунт",
     "profile.languageLabel": "Язык",
+    "profile.emailLabel": "Электронная почта",
     "profile.languageHint": "Выберите предпочитаемый язык",
     "profile.deleteWarning":
       "Внимание! Это действие необратимо. Все ваши данные будут удалены.",

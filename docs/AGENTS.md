@@ -61,10 +61,12 @@ The major Clean Architecture violations listed in previous audits have been reso
 
 Key remaining items:
 - `internal/application/cache/graph_cache.go` uses `cache.CacheClient`, but consider whether graph-cache orchestration belongs in `application` or a specialized service.
-- Continue i18n coverage for user-facing strings.
+- Continue i18n coverage for user-facing strings (most active pages are now covered; placeholder/unused components such as `WeltallProtocol.svelte` still have hardcoded English strings).
 
 ### Frontend architecture notes
 
+- `frontend/src/routes/auth/login/+page.svelte` — `AuthCard` title now uses the `app.title` i18n key instead of the hardcoded "Knowledge Graph".
+- `frontend/src/components/organisms/ProfileEditor.svelte` — heading and email label now use `profile.editTitle` and `profile.emailLabel` i18n keys.
 - Production frontend code is now free of explicit `any` type annotations in `src/` (excluding `.test.ts`/`.spec.ts` and mocks).
 - Auth state was split into `src/shared/stores/auth-session.svelte.ts` (low-level reactive state, no API client imports) and `src/shared/stores/auth.svelte.ts` (auth flows). This removes the previous circular dependency between the API client and the auth store.
 - Madge is configured for circular-dependency detection via `npm run check:circular` (`frontend/scripts/check-circular.mjs` + `frontend/tsconfig.madge.json`).

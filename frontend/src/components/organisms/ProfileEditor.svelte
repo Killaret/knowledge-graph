@@ -108,7 +108,7 @@
 </script>
 
 <div class="profile-editor">
-  <h2>{formatMessage("edit.note", selectedLocale)}</h2>
+  <h2>{formatMessage("profile.editTitle", selectedLocale)}</h2>
 
   {#if successMessage}
     <div class="success-message">{successMessage}</div>
@@ -126,7 +126,7 @@
   </div>
 
   <div class="form-group">
-    <label for="email">Email</label>
+    <label for="email">{formatMessage("profile.emailLabel", selectedLocale)}</label>
     <input
       type="email"
       id="email"
