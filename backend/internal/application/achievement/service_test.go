@@ -3,6 +3,7 @@ package achievement
 import (
 	"context"
 	"testing"
+	"time"
 
 	achievementDomain "knowledge-graph/internal/domain/achievement"
 	"knowledge-graph/internal/domain/cache/cachetest"
@@ -262,6 +263,43 @@ func TestMarkNotificationSeen(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
+func TestSendNotification_NoSettingsNoQueue(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	condition := achievementDomain.Condition{Type: "count", Entity: "note", Action: "create", Threshold: 1}
+	achievement, _ := achievementDomain.NewAchievement("first_note", "First Note", "Description", "⭐", condition, 10, false)
+
+	s := NewService(nil, nil, nil, nil, nil)
+	err := s.sendNotification(ctx, userID, *achievement)
+
+	assert.NoError(t, err)
+}
+
+func TestParseTriggerKey_AllCases(t *testing.T) {
+	cases := map[string]map[string]string{
+		"note.create":    {"entity": "note", "action": "create"},
+		"link.create":    {"entity": "link", "action": "create"},
+		"login":          {"action": "login"},
+		"search.execute": {"entity": "search", "action": "execute"},
+		"share.create":   {"entity": "share", "action": "create"},
+	}
+
+	for input, expected := range cases {
+		assert.Equal(t, expected, parseTriggerKey(input))
+	}
+
+	assert.Nil(t, parseTriggerKey("unknown"))
+}
+
+func TestMatchesTrigger_NonCountType(t *testing.T) {
+	cond := achievementDomain.Condition{Type: "streak", Action: "login"}
+	trigger := map[string]string{"action": "login"}
+
+	ok := matchesTrigger(cond, trigger)
+	assert.True(t, ok)
+}
+
 func TestCheckTrigger_WithInvalidTrigger(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
@@ -344,4 +382,94 @@ func TestGetUserAchievements(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, "first_note", result[0].Code())
+}
+
+type mockTaskQueue struct {
+	mock.Mock
+}
+
+func (m *mockTaskQueue) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
+	return m.Called(ctx, localPath, remoteKey, backupDate).Error(0)
+}
+
+func (m *mockTaskQueue) EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	return m.Called(ctx, noteID, delay).Error(0)
+}
+
+func (m *mockTaskQueue) EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error {
+	return m.Called(ctx, noteID, topN).Error(0)
+}
+
+func (m *mockTaskQueue) EnqueueComputeEmbedding(ctx context.Context, noteID string) error {
+	return m.Called(ctx, noteID).Error(0)
+}
+
+func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error {
+	return m.Called(ctx, payload).Error(0)
+}
+
+func TestSendNotification_WithTaskQueue(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	condition := achievementDomain.Condition{Type: "count", Entity: "note", Action: "create", Threshold: 1}
+	achievement, _ := achievementDomain.NewAchievement("first_note", "First Note", "Description", "⭐", condition, 10, false)
+
+	tq := new(mockTaskQueue)
+	tq.On("EnqueueNotification", ctx, mock.AnythingOfType("[]uint8")).Return(nil)
+
+	s := NewService(nil, nil, nil, nil, tq)
+	err := s.sendNotification(ctx, userID, *achievement)
+
+	assert.NoError(t, err)
+	tq.AssertExpectations(t)
+}
+
+func TestSendNotification_TaskQueueError(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	condition := achievementDomain.Condition{Type: "count", Entity: "note", Action: "create", Threshold: 1}
+	achievement, _ := achievementDomain.NewAchievement("first_note", "First Note", "Description", "⭐", condition, 10, false)
+
+	tq := new(mockTaskQueue)
+	tq.On("EnqueueNotification", ctx, mock.AnythingOfType("[]uint8")).Return(assert.AnError)
+
+	s := NewService(nil, nil, nil, nil, tq)
+	err := s.sendNotification(ctx, userID, *achievement)
+
+	assert.Error(t, err)
+}
+
+func TestCheckTrigger_FindAllError(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mockRepo := new(MockAchievementRepository)
+	mockRepo.On("FindAll", ctx).Return(nil, assert.AnError)
+
+	service := NewService(nil, mockRepo, nil, nil, nil)
+
+	err := service.CheckTrigger(ctx, userID, "note.create")
+	assert.Error(t, err)
+}
+
+func TestCheckTrigger_UserHasAchievementError(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mockRepo := new(MockAchievementRepository)
+	mockEngine := new(MockEngine)
+
+	condition := achievementDomain.Condition{Type: "count", Entity: "note", Action: "create", Threshold: 1}
+	achievement, _ := achievementDomain.NewAchievement("first_note", "First Note", "Description", "⭐", condition, 10, false)
+
+	mockRepo.On("FindAll", ctx).Return([]achievementDomain.Achievement{*achievement}, nil)
+	mockRepo.On("UserHasAchievement", ctx, userID, achievement.ID()).Return(false, assert.AnError)
+
+	service := NewService(mockEngine, mockRepo, nil, nil, nil)
+
+	err := service.CheckTrigger(ctx, userID, "note.create")
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
 }

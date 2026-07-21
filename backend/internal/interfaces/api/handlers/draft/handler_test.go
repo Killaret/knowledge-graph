@@ -252,3 +252,137 @@ func TestGetActiveDrafts(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.Len(t, resp["drafts"], 1)
 }
+
+func TestSaveDraft_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	noteID := uuid.New()
+
+	repo.On("FindByNoteAndUser", mock.Anything, noteID, mock.Anything).Return(nil, assert.AnError)
+
+	body, _ := json.Marshal(map[string]string{"content": "c"})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+noteID.String()+"/draft", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestGetDraft_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	noteID := uuid.New()
+
+	repo.On("FindByNoteAndUser", mock.Anything, noteID, mock.Anything).Return(nil, assert.AnError)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/notes/"+noteID.String()+"/draft", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestSyncDraft_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	draftID := uuid.New()
+
+	repo.On("FindByID", mock.Anything, draftID).Return(nil, assert.AnError)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/drafts/"+draftID.String()+"/sync", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestResolveConflict_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	draftID := uuid.New()
+
+	repo.On("FindByID", mock.Anything, draftID).Return(nil, assert.AnError)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/drafts/"+draftID.String()+"/resolve", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestDeleteDraft_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	draftID := uuid.New()
+
+	repo.On("DeleteByID", mock.Anything, draftID).Return(assert.AnError)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/drafts/"+draftID.String(), nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestGetActiveDrafts_ServiceError(t *testing.T) {
+	r, repo := setupDraftHandler()
+	uid := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+
+	repo.On("FindActiveByUser", mock.Anything, uid).Return(nil, assert.AnError)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/drafts", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestSaveDraft_InvalidNoteID(t *testing.T) {
+	r, _ := setupDraftHandler()
+
+	body, _ := json.Marshal(map[string]string{"content": "c"})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/notes/bad-uuid/draft", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestSaveDraft_InvalidBody(t *testing.T) {
+	r, _ := setupDraftHandler()
+	noteID := uuid.New()
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+noteID.String()+"/draft", bytes.NewBuffer([]byte(`{}`)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestSyncDraft_InvalidID(t *testing.T) {
+	r, _ := setupDraftHandler()
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/drafts/bad-uuid/sync", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestDeleteDraft_InvalidID(t *testing.T) {
+	r, _ := setupDraftHandler()
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/drafts/bad-uuid", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestResolveConflict_InvalidID(t *testing.T) {
+	r, _ := setupDraftHandler()
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/drafts/bad-uuid/resolve", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}

@@ -933,3 +933,59 @@ func TestDeleteLinkInvalidUUID(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+func TestGetLink_NotFound(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("GET", "/links/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestDeleteLink_NotFound(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("DELETE", "/links/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestDeleteByNote_InvalidUUID(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("DELETE", "/notes/bad-uuid/links", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCreateLink_InvalidJSON(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer([]byte(`{invalid`)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetByNote_SourceNotFound(t *testing.T) {
+	r, _, _ := setupLinkRouter()
+
+	req := httptest.NewRequest("GET", "/notes/"+uuid.New().String()+"/links", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}

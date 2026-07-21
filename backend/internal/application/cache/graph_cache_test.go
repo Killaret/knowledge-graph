@@ -186,6 +186,19 @@ func TestInvalidateAll(t *testing.T) {
 	}
 }
 
+func TestGetCachedUserGraph_InvalidJSON(t *testing.T) {
+	ctx := context.Background()
+	cacheClient := newTestCacheClient(t)
+	graphCache := NewGraphCache(cacheClient)
+	userID := "test-user-bad-json"
+
+	require.NoError(t, cacheClient.Set(ctx, graphCache.key(userID), "not-json", time.Minute))
+
+	_, found, err := graphCache.GetCachedUserGraph(ctx, userID)
+	assert.Error(t, err)
+	assert.False(t, found)
+}
+
 func TestCacheKeyGeneration(t *testing.T) {
 	cacheClient := newTestCacheClient(t)
 	graphCache := NewGraphCache(cacheClient)

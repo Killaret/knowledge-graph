@@ -8,11 +8,12 @@ import (
 
 // SMTPSender sends emails via an SMTP server.
 type SMTPSender struct {
-	host     string
-	port     int
-	user     string
-	password string
-	from     string
+	host         string
+	port         int
+	user         string
+	password     string
+	from         string
+	sendMailFunc func(string, smtp.Auth, string, []string, []byte) error
 }
 
 // NewSMTP creates a new SMTP email sender.
@@ -39,6 +40,10 @@ func (s *SMTPSender) SendPasswordReset(ctx context.Context, to, resetLink string
 	var auth smtp.Auth
 	if s.user != "" && s.password != "" {
 		auth = smtp.PlainAuth("", s.user, s.password, s.host)
+	}
+
+	if s.sendMailFunc != nil {
+		return s.sendMailFunc(addr, auth, s.from, []string{to}, msg)
 	}
 
 	return smtp.SendMail(addr, auth, s.from, []string{to}, msg)

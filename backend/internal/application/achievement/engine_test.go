@@ -186,3 +186,9 @@ func TestEngine_Evaluate_Streak_Condition(t *testing.T) {
 		assert.False(t, result)
 	})
 }
+
+func TestEngine_TrackLogin(t *testing.T) {
+	engine := NewEngine(&fakeCounter{})
+	err := engine.TrackLogin(context.Background(), uuid.New(), nil)
+	assert.NoError(t, err)
+}

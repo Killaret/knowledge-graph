@@ -212,7 +212,7 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **61.2%** (target 70%; enforced minimum 60%).
+- Aggregated backend coverage: **70.0%** (target 70%; enforced minimum 60%).
 
 ### Frontend coverage snapshot
 

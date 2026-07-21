@@ -29,6 +29,11 @@ func NewService(repo noteDomain.DraftRepository, noteRepo noteDomain.Repository,
 	}
 }
 
+// SetMaxRetries is used by tests to avoid long retry sleeps.
+func (s *Service) SetMaxRetries(n int) {
+	s.maxRetries = n
+}
+
 // SaveDraft saves a draft for a note
 func (s *Service) SaveDraft(ctx context.Context, noteID, userID uuid.UUID, content, title string) (*noteDomain.Draft, error) {
 	// Check if draft already exists

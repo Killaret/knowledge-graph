@@ -381,3 +381,188 @@ func TestHandler_GetTagsByNote(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }
+
+func TestHandler_CreateInvalid(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	body, _ := json.Marshal(map[string]string{"name": ""})
+	req := httptest.NewRequest(http.MethodPost, "/tags", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_GetInvalidUUID(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/tags/not-a-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_UpdateInvalid(t *testing.T) {
+	r, tagRepo, _ := setupTagRouter()
+	tag := createTestTag(t, tagRepo, "old")
+
+	body, _ := json.Marshal(map[string]string{"name": ""})
+	req := httptest.NewRequest(http.MethodPut, "/tags/"+tag.ID().String(), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_UpdateNotFound(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	body, _ := json.Marshal(map[string]string{"name": "new"})
+	req := httptest.NewRequest(http.MethodPut, "/tags/"+uuid.New().String(), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHandler_DeleteInvalidUUID(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/tags/not-a-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_AddTagToNoteInvalid(t *testing.T) {
+	r, _, noteRepo := setupTagRouter()
+	n := createTestNote(t, noteRepo, "note")
+
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/tags", bytes.NewBuffer([]byte(`{}`)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_RemoveTagFromNoteInvalidNoteID(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/notes/not-a-uuid/tags/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_RemoveTagFromNoteInvalidTagID(t *testing.T) {
+	r, _, noteRepo := setupTagRouter()
+	n := createTestNote(t, noteRepo, "note")
+
+	req := httptest.NewRequest(http.MethodDelete, "/notes/"+n.ID().String()+"/tags/not-a-uuid", nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_GetTag_NotFound(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/tags/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHandler_DeleteTag_NotFound(t *testing.T) {
+	r, _, _ := setupTagRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/tags/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHandler_UpdateTag_DuplicateName(t *testing.T) {
+	r, tagRepo, _ := setupTagRouter()
+	tag1 := createTestTag(t, tagRepo, "existing")
+	tag2 := createTestTag(t, tagRepo, "old")
+
+	body, _ := json.Marshal(UpdateRequest{Name: "existing"})
+	req := httptest.NewRequest(http.MethodPut, "/tags/"+tag2.ID().String(), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+	_ = tag1
+}
+
+func TestHandler_AddTagToNote_NoteNotFound(t *testing.T) {
+	r, tagRepo, _ := setupTagRouter()
+	tag := createTestTag(t, tagRepo, "tag")
+
+	body, _ := json.Marshal(map[string]string{"tag_id": tag.ID().String()})
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+uuid.New().String()+"/tags", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHandler_AddTagToNote_TagNotFound(t *testing.T) {
+	r, _, noteRepo := setupTagRouter()
+	n := createTestNote(t, noteRepo, "note")
+
+	body, _ := json.Marshal(map[string]string{"tag_id": uuid.New().String()})
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/tags", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHandler_AddTagToNote_AlreadyAssigned(t *testing.T) {
+	r, tagRepo, noteRepo := setupTagRouter()
+	n := createTestNote(t, noteRepo, "note")
+	tag := createTestTag(t, tagRepo, "tag")
+
+	// First assignment
+	body, _ := json.Marshal(map[string]string{"tag_id": tag.ID().String()})
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/tags", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Duplicate assignment
+	req2 := httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/tags", bytes.NewBuffer(body))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusConflict, w2.Code)
+}

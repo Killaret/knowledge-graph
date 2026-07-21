@@ -292,6 +292,83 @@ func TestSyncDraft_Success(t *testing.T) {
 	mockDraftRepo.AssertExpectations(t)
 }
 
+func TestSyncDraft_NoteNotFound(t *testing.T) {
+	mockDraftRepo := new(MockDraftRepository)
+	mockNoteRepo := new(MockNoteRepository)
+
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
+	service.SetMaxRetries(1)
+
+	ctx := context.Background()
+	draftID := uuid.New()
+
+	draft := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
+	draft = noteDomain.ReconstructDraft(draftID, draft.NoteID(), draft.UserID(), draft.Content(), draft.Title(), noteDomain.DraftStateActive, draft.CreatedAt(), draft.UpdatedAt())
+
+	mockDraftRepo.On("FindByID", ctx, draftID).Return(draft, nil)
+	mockDraftRepo.On("Update", ctx, draft).Return(nil).Twice()
+	mockNoteRepo.On("FindByID", ctx, draft.NoteID()).Return(nil, nil)
+
+	err := service.SyncDraft(ctx, draftID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "note not found")
+}
+
+func TestSyncDraft_DifferentCreator(t *testing.T) {
+	mockDraftRepo := new(MockDraftRepository)
+	mockNoteRepo := new(MockNoteRepository)
+
+	service := NewService(mockDraftRepo, mockNoteRepo, "")
+	service.SetMaxRetries(1)
+
+	ctx := context.Background()
+	draftID := uuid.New()
+
+	draft := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
+	draft = noteDomain.ReconstructDraft(draftID, draft.NoteID(), draft.UserID(), draft.Content(), draft.Title(), noteDomain.DraftStateActive, draft.CreatedAt(), draft.UpdatedAt())
+
+	title, _ := noteDomain.NewTitle("Old title")
+	content, _ := noteDomain.NewContent("Old content")
+	metadata, _ := noteDomain.NewMetadata(nil)
+	differentCreator := uuid.New()
+	existingNote := noteDomain.ReconstructNoteWithCreator(
+		draft.NoteID(), title, content, "star", metadata, &differentCreator,
+		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
+	)
+
+	mockDraftRepo.On("FindByID", ctx, draftID).Return(draft, nil)
+	mockDraftRepo.On("Update", ctx, draft).Return(nil).Twice()
+	mockNoteRepo.On("FindByID", ctx, draft.NoteID()).Return(existingNote, nil)
+
+	err := service.SyncDraft(ctx, draftID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "owner")
+}
+
+func TestSyncDraft_RemoteEndpoint(t *testing.T) {
+	mockDraftRepo := new(MockDraftRepository)
+	mockNoteRepo := new(MockNoteRepository)
+
+	service := NewService(mockDraftRepo, mockNoteRepo, "http://sync")
+	service.SetMaxRetries(1)
+
+	ctx := context.Background()
+	draftID := uuid.New()
+
+	draft := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
+	draft = noteDomain.ReconstructDraft(draftID, draft.NoteID(), draft.UserID(), draft.Content(), draft.Title(), noteDomain.DraftStateActive, draft.CreatedAt(), draft.UpdatedAt())
+
+	mockDraftRepo.On("FindByID", ctx, draftID).Return(draft, nil)
+	mockDraftRepo.On("Update", ctx, draft).Return(nil).Twice()
+
+	err := service.SyncDraft(ctx, draftID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "remote sync endpoint not implemented")
+}
+
 func TestSyncDraft_NotFound(t *testing.T) {
 	mockDraftRepo := new(MockDraftRepository)
 	mockNoteRepo := new(MockNoteRepository)
