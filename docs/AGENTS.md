@@ -216,9 +216,9 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Frontend coverage snapshot
 
-- Frontend unit tests pass: 580 passed, 37 skipped.
-- Statements: **63.63%**, Branches: **78.74%**, Functions: **56.91%**, Lines: **63.63%**.
-- Biggest gaps: `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%), `shared/stores` (~43%).
+- Frontend unit tests pass: 688 passed, 37 skipped.
+- Statements: **71.35%**, Branches: **82.05%**, Functions: **70.01%**, Lines: **71.35%**.
+- Biggest gaps: `features/graph-interaction` (~28%), `components/organisms/GraphCanvas` (~40% stmts, ~36% funcs), `shared/api/client.ts` (~46% stmts, 50% funcs).
 
 ### Remaining debt
 
