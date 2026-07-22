@@ -1,0 +1,37 @@
+sequenceDiagram
+    autonumber
+    participant P as +page.svelte
+    participant Notes as Notes API
+    participant Graph as Graph API
+    participant FS as FilterState
+    participant GC as GraphCanvas
+    participant LV as Note list
+
+    P->>Notes: getNotes()
+    P->>Graph: getFreshGraph() / getGraphWithPreload()
+    Notes-->>P: allNotes
+    Graph-->>P: graphResult
+
+    P->>P: validate graphResult structure
+    alt graphResult empty or node IDs do not intersect allNotes
+        P->>P: graphData = build from allNotes
+    else valid and intersecting
+        P->>P: graphData = normalize(graphResult)
+    end
+
+    P->>Graph: getFullGraphData() (after notes loaded)
+    Graph-->>P: rawData
+    P->>P: validate + normalize + intersection check
+
+    P->>FS: filterState.filterGraphData(graphData, allNotes)
+    FS-->>P: filteredGraphData
+    P->>FS: filterState.applyFiltersAndSort(allNotes)
+    FS-->>P: filteredNotes
+
+    GC->>P: render filteredGraphData.nodes
+    LV->>P: render filteredNotes
+
+    Note over GC,LV: FloatingControls triggers filterState.with({...})
+    GC->>P: request update
+    LV->>P: request update
+    P->>FS: re-derive filtered data

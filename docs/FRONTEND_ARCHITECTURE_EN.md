@@ -266,6 +266,11 @@ On the main page (`/`) `+page.svelte` loads notes and graph data, normalizes the
 
 ### Loading sequence
 
+![Graph Data Loading and Filtering Flow](assets/graph-loading-flow.png)
+
+<details>
+<summary>Source (Mermaid)</summary>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -305,6 +310,8 @@ sequenceDiagram
     LV->>P: request update
     P->>FS: re-derive filtered data
 ```
+
+</details>
 
 ### Key resilience rules
 
