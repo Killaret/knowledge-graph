@@ -260,6 +260,66 @@ onMount(async () => {
 - `toggleAutoRotation()`: Enable/disable automatic camera rotation
 - `exportView()`: Export current camera position as shareable URL
 
+## Graph Data Loading and Filtering Flow
+
+On the main page (`/`) `+page.svelte` loads notes and graph data, normalizes the API response, falls back to a note-derived graph when the API returns empty or non-intersecting IDs, and then filters both the list and the graph reactively.
+
+### Loading sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as +page.svelte
+    participant Notes as Notes API
+    participant Graph as Graph API
+    participant FS as FilterState
+    participant GC as GraphCanvas
+    participant LV as Note list
+
+    P->>Notes: getNotes()
+    P->>Graph: getFreshGraph() / getGraphWithPreload()
+    Notes-->>P: allNotes
+    Graph-->>P: graphResult
+
+    P->>P: validate graphResult structure
+    alt graphResult empty or node IDs do not intersect allNotes
+        P->>P: graphData = build from allNotes
+    else valid and intersecting
+        P->>P: graphData = normalize(graphResult)
+    end
+
+    P->>Graph: getFullGraphData() (after notes loaded)
+    Graph-->>P: rawData
+    P->>P: validate + normalize + intersection check
+
+    P->>FS: filterState.filterGraphData(graphData, allNotes)
+    FS-->>P: filteredGraphData
+    P->>FS: filterState.applyFiltersAndSort(allNotes)
+    FS-->>P: filteredNotes
+
+    GC->>P: render filteredGraphData.nodes
+    LV->>P: render filteredNotes
+
+    Note over GC,LV: FloatingControls triggers filterState.with({...})
+    GC->>P: request update
+    LV->>P: request update
+    P->>FS: re-derive filtered data
+```
+
+### Key resilience rules
+
+1. **Empty graph fallback**: when `graphResult.nodes` is empty, missing, or invalid, `graphData` is built directly from `allNotes`.
+2. **Intersection fallback**: even when the graph API returns nodes, if none of the returned node IDs match the IDs in `allNotes`, the graph is rebuilt from `allNotes` to keep filtering consistent.
+3. **Reactive filtering**: `filteredNotes` and `filteredGraphData` are derived from `filterState`; `FloatingControls` updates `filterState` immutably via `filterState.with({...})`.
+4. **Cache busting**: `getNotes`, `getFreshGraph`, and `getGraphWithPreload` use `cache: "no-store"` so that tests and reloads never reuse stale responses.
+
+### Related code
+
+- `frontend/src/routes/+page.svelte` — `loadDataParallel()`, `loadGraphData()`, `applyFiltersAndSort()`
+- `frontend/src/shared/lib/domain/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
+- `frontend/src/shared/api/notes.ts` — `getNotes()`
+- `frontend/src/shared/api/graph.ts` — `getFreshGraph()`, `getGraphWithPreload()`, `getFullGraphData()`
+
 ## State Management
 
 ### Graph Store (`$shared/stores/graph.ts`)
