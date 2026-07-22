@@ -15,6 +15,7 @@ import (
 	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/email"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/gin-gonic/gin"

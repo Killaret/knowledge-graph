@@ -14,6 +14,7 @@ Write-Host "⚠️  WARNING: Dev and personal stacks will be stopped during test
 Write-Host ""
 
 $scriptDir = $PSScriptRoot
+$repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotBase = Join-Path $scriptDir "temp" "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp
@@ -23,7 +24,7 @@ function Restore-Stacks {
     Write-Host "`nRestoring dev and personal stacks..." -ForegroundColor Yellow
     $restoreDir = if ($PWD.Path) { $PWD.Path } else { $scriptDir }
     try {
-        Set-Location $scriptDir\..
+        Set-Location $repoDir
         # Build dev/personal images only if they are missing (e.g., after full cleanup)
         $devBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend:latest$' -Quiet
         if ($devBackendImage) {
@@ -125,11 +126,11 @@ try {
     # Step 8: Backend Unit Tests
     Write-Host "`n[Step 8/25] Backend Unit Tests..." -ForegroundColor Yellow
     Write-Host "  Running backend unit tests..." -ForegroundColor Yellow
-    Set-Location $scriptDir\..\backend
+    Set-Location $repoDir\backend
     # Run packages sequentially to reduce concurrent testcontainers load on Docker Desktop
     go test -p=1 -count=1 ./...
     $backendTestExit = $LASTEXITCODE
-    Set-Location $scriptDir\..
+    Set-Location $repoDir
     if ($backendTestExit -ne 0) {
         Write-Host "  ERROR: Backend unit tests failed" -ForegroundColor Red
         exit 1
@@ -139,10 +140,10 @@ try {
     # Step 9: Backend Integration Tests
     Write-Host "`n[Step 9/25] Backend Integration Tests..." -ForegroundColor Yellow
     Write-Host "  Running backend integration tests (requires Linux/WSL Docker)..." -ForegroundColor Yellow
-    Set-Location $scriptDir\..\backend
+    Set-Location $repoDir\backend
     go test -tags=integration -p=1 -count=1 ./...
     $backendIntegrationExit = $LASTEXITCODE
-    Set-Location $scriptDir\..
+    Set-Location $repoDir
     if ($backendIntegrationExit -ne 0) {
         Write-Host "  WARNING: Backend integration tests failed (exit code $backendIntegrationExit)" -ForegroundColor Yellow
         Write-Host "  This is often testcontainers on Windows rootless Docker; use WSL2 or CI." -ForegroundColor Yellow
@@ -198,10 +199,10 @@ try {
     Write-Host "`n[Step 14/25] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
     Write-Host "  Running frontend unit tests with coverage (npm run test:coverage)..." -ForegroundColor Yellow
     Write-Host "  Tip: coverage report can be regenerated anytime with: cd frontend && npm run test:coverage" -ForegroundColor Cyan
-    Set-Location $scriptDir\..\frontend
+    Set-Location $repoDir\frontend
     npm run test:coverage
     $frontendTestExit = $LASTEXITCODE
-    Set-Location $scriptDir\..
+    Set-Location $repoDir
     if ($frontendTestExit -ne 0) {
         Write-Host "  ERROR: Frontend unit tests or coverage check failed" -ForegroundColor Red
         exit 1

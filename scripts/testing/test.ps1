@@ -6,7 +6,7 @@ param(
 )
 
 $scriptDir = $PSScriptRoot
-$root = Join-Path $scriptDir .. | Resolve-Path
+$root = Split-Path -Parent (Split-Path -Parent $scriptDir)
 
 switch ($Target) {
     'unit' {

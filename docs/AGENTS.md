@@ -218,17 +218,31 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- Aggregated backend coverage: **70.0%** (target 70%; enforced minimum 60%).
+- Aggregated backend coverage: **71.3%** (target 70%; enforced minimum 60%).
 
 ### Frontend coverage snapshot
 
-- Frontend unit tests pass: 800 passed, 37 skipped.
-- Statements: **85.2%**, Branches: **85.76%**, Functions: **89.25%**, Lines: **85.2%**.
+- Frontend unit + coverage tests pass: 803 passed, 34 skipped.
+- Statements: **85.51%**, Branches: **85.72%**, Functions: **88.84%**, Lines: **85.51%**.
 - Biggest gaps: `shared/utils/deviceCapabilities.ts` (29.29% stmts), `components/organisms/GraphCanvas/delta.ts` (51.16% stmts), `components/organisms/GraphCanvas.svelte` (18.19% funcs), `components/atoms/SpaceBackground.svelte` (0% stmts).
+
+### Full regression test results (latest run)
+
+Test stack started with `JWT_SECRET` set, test data seeded (100 notes, 60 links, 100 embeddings, 100 keyword notes):
+
+| Layer | Command | Result |
+|-------|---------|--------|
+| Backend unit | `go test -p=1 -count=1 ./...` | **PASS** |
+| Backend integration | `go test -tags=integration -p=1 -count=1 ./...` | **PASS** |
+| Frontend unit + coverage | `npm run test:coverage` | **PASS** (803 passed, 34 skipped, 85.51% lines) |
+| E2E (Playwright) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test` | **88 passed, 9 skipped, 15 failed** |
+| BDD (Cucumber) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:bdd` | **2 scenarios passed, 3 failed** |
+
+E2E/BDD failures are mainly caused by running the SKIP_AUTH-enabled test stack against tests that expect real auth flows (`smoke-real-auth.spec.ts`, login-form tests) and by seeded test data conflicting with scenarios that expect specific note titles/counts. Running E2E with `SKIP_AUTH=false` or against a dedicated real-auth stack would resolve the auth-related failures.
 
 ### Remaining debt
 
-- Full regression cycle and E2E stack verification are pending.
+- E2E/BDD test suite needs tuning for the SKIP_AUTH test stack (or a separate real-auth test configuration) and deterministic test data isolation.
 
 ### Verification checklist
 
