@@ -23,7 +23,10 @@ export interface Suggestion {
 // API возвращает { notes: Note[], total, limit, offset }
 export async function getNotes(): Promise<Note[]> {
   const response = await api
-    .get("v1/notes", { searchParams: { limit: 10000 } })
+    .get("v1/notes", {
+      searchParams: { limit: 10000 },
+      cache: "no-store",
+    })
     .json<{ notes: Note[]; total: number; limit: number; offset: number }>();
   return response.notes;
 }

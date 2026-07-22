@@ -185,7 +185,7 @@ export async function getFreshGraph(
     }
 
     const response = await api
-      .get("v1/me/graph/fresh")
+      .get("v1/me/graph/fresh", { cache: "no-store" })
       .json<FreshGraphApiResponse>();
     return response.data || { fresh: { nodes: [], links: [] } };
   } catch (error) {

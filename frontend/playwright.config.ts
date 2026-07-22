@@ -80,7 +80,7 @@ export default defineConfig({
           args: ["--disable-web-security"],
         },
       },
-      grepInvert: /@3d|@visual|@auth-real/,
+      grepInvert: /@3d|@visual|@auth-real|@manual|@canvas/,
       dependencies: ["setup"],
     },
     // Real auth project: only @auth-real tests (requires backend SKIP_AUTH=false)

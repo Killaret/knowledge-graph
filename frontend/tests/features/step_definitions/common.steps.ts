@@ -6,6 +6,8 @@ import {
   After,
   type IWorld,
 } from "@cucumber/cucumber";
+
+
 import { expect } from "@playwright/test";
 import type { Page, APIRequestContext } from "@playwright/test";
 import { createNote, createLink } from "../../helpers/testData";
@@ -28,6 +30,31 @@ Before(async function (this: ITestWorld) {
     await this.page.addInitScript(() => {
       (window as any).__SKIP_AUTH__ = true;
     });
+  }
+
+  // Clean up any leftover notes from previous runs so each scenario is isolated
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:8083";
+  try {
+    const listResp = await this.request.get(
+      `${backendUrl}/api/v1/notes?limit=1000`,
+    );
+    if (listResp.ok()) {
+      const listData = (await listResp.json()) as {
+        notes?: Array<{ id: string }>;
+        data?: { notes?: Array<{ id: string }> };
+      };
+      const notes =
+        listData.notes ?? listData.data?.notes ?? [];
+      for (const note of notes) {
+        try {
+          await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`);
+        } catch {
+          // ignore individual cleanup errors
+        }
+      }
+    }
+  } catch {
+    // ignore cleanup errors
   }
 });
 
@@ -61,7 +88,6 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
   }
 
   this.centerNoteId = String(centerData.data.id);
-  console.log(`[DEBUG] Created center note with ID: ${this.centerNoteId}`);
 
   this.testNotes.push({
     id: String(centerData.data.id),
@@ -93,7 +119,6 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
     }
 
     const noteId = String(noteData.data.id);
-    console.log(`[DEBUG] Created note ${i} with ID: ${noteId}`);
 
     this.testNotes.push({
       id: noteId,
@@ -109,7 +134,6 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
     }
 
     // Create link to center using helper
-    console.log(`[DEBUG] Creating link: ${this.centerNoteId} -> ${noteId}`);
     await createLink(
       this.request,
       this.centerNoteId,
@@ -199,9 +223,6 @@ Given(
       }
 
       this.centerNoteId = String(centerData.data.id);
-      console.log(
-        `[DEBUG] 3D graph page: Created center note with ID: ${this.centerNoteId}`,
-      );
       this.testNotes.push({
         id: String(centerData.data.id),
         title: String(centerData.data.title || ""),
@@ -349,16 +370,20 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
     const graphBtnActive = document
       .querySelector('[data-testid="view-toggle-graph"]')
       ?.classList.contains("active");
+    const loadingEl = document.querySelector(".loading-overlay");
+    const apiErrorEl = document.querySelector(".error-container");
+    const noteCardEls = document.querySelectorAll(".note-card");
 
     return {
       listContainerExists: !!listContainer,
       graphContainerExists: !!graphContainer,
       listBtnActive,
       graphBtnActive,
+      loadingVisible: !!loadingEl,
+      apiErrorVisible: !!apiErrorEl,
+      noteCardCount: noteCardEls.length,
     };
   });
-
-  console.log("[TEST] Current view state:", currentView);
 
   // Try multiple selectors for note cards
   const grid = this.page
@@ -383,9 +408,6 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
   const isEmptyVisible = await emptyState.isVisible().catch(() => false);
 
   if (isEmptyVisible) {
-    console.log(
-      "[TEST] Empty state shown - no notes in database (valid state)",
-    );
     // This is valid if database is empty
     return;
   }
@@ -399,7 +421,6 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
     .catch(() => false);
 
   if (listContainerVisible || currentView.listContainerExists) {
-    console.log("[TEST] List container found - view switched successfully");
     return; // Valid - list view is active
   }
 
@@ -518,9 +539,7 @@ Then(
       }
     }
 
-    console.log(
-      `[TEST] Filter "${type}": checked ${Math.min(count, 10)} of ${count} visible cards, all match`,
-    );
+
   },
 );
 
@@ -534,7 +553,6 @@ Then(
     const badge = activeChip.locator(".filter-count");
     const count = await badge.textContent();
 
-    console.log(`[TEST] Count badge shows: ${count}`);
     expect(parseInt(count || "0")).toBeGreaterThan(0);
   },
 );
@@ -552,10 +570,14 @@ Then(
 
     if (count === 0) {
       // Empty state is valid for no matches
-      const emptyState = this.page
-        .locator(".empty-state, text=/No notes found/i")
+      const emptyByClass = this.page.locator(".empty-state").first();
+      const emptyByText = this.page
+        .locator("text=/No notes found/i")
         .first();
-      await expect(emptyState).toBeVisible({ timeout: 5000 });
+      const hasEmpty =
+        (await emptyByClass.isVisible().catch(() => false)) ||
+        (await emptyByText.isVisible().catch(() => false));
+      expect(hasEmpty).toBe(true);
       return;
     }
 

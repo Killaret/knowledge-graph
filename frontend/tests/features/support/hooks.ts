@@ -63,12 +63,21 @@ Before(async function (this: ITestWorld) {
   // Add SKIP_AUTH init script only when running against a SKIP_AUTH stack
   if (process.env.SKIP_AUTH === "true") {
     await this.context.addInitScript(() => {
-      localStorage.setItem("__SKIP_AUTH__", "true");
+      try {
+        localStorage.setItem("__SKIP_AUTH__", "true");
+      } catch {
+        // localStorage may be unavailable in some contexts (e.g. about:blank)
+      }
       (window as any).__SKIP_AUTH__ = true;
     });
   }
 
   this.page = await this.context.newPage();
+  this.page.on("console", (msg) => {
+    if (msg.type() === "error" || msg.type() === "warn") {
+      console.log(`[BROWSER ${msg.type().toUpperCase()}]`, msg.text());
+    }
+  });
   this.request = this.context.request;
   this.testNotes = [];
 });

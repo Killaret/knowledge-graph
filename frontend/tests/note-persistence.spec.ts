@@ -29,23 +29,28 @@ test.describe("Note persistence", () => {
     const timestamp = Date.now();
     const title = `Persistence Test Note ${timestamp}`;
 
-    // 1. Login
-    const loginResp = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
-      data: { login: "testuser", password: "TestPassword123!" },
-      headers: { "Content-Type": "application/json" },
-    });
-    expect(loginResp.ok()).toBe(true);
-    const loginJson = (await loginResp.json()) as LoginResponse;
-    const accessToken = loginJson.access_token;
-    expect(accessToken).toBeTruthy();
+    // Use skip-auth for the test stack; no real login required.
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
-    // 2. Create note via authenticated API
+    if (process.env.SKIP_AUTH !== "true") {
+      // 1. Login
+      const loginResp = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
+        data: { login: "testuser", password: "TestPassword123!" },
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(loginResp.ok()).toBe(true);
+      const loginJson = (await loginResp.json()) as LoginResponse;
+      const accessToken = loginJson.access_token;
+      expect(accessToken).toBeTruthy();
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    // 2. Create note via API
     const createResp = await request.post(`${BACKEND_URL}/api/v1/notes`, {
       data: { title, content: "persistence check", type: "star", metadata: {} },
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
     });
     expect(createResp.ok()).toBe(true);
     const createJson = (await createResp.json()) as CreateNoteResponse;
@@ -55,8 +60,12 @@ test.describe("Note persistence", () => {
     expect(noteTitle).toBe(title);
 
     // 3. Verify it can be fetched back
+    const getHeaders: Record<string, string> = {};
+    if (process.env.SKIP_AUTH !== "true" && headers.Authorization) {
+      getHeaders.Authorization = headers.Authorization;
+    }
     const getResp = await request.get(`${BACKEND_URL}/api/v1/notes/${noteId}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: getHeaders,
     });
     expect(getResp.ok()).toBe(true);
     const getJson = (await getResp.json()) as { data?: { title: string } };

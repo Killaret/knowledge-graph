@@ -251,7 +251,7 @@ test.describe(
 
       // Verify via API that note was updated
       const updatedNote = await request.get(
-        `${getBackendUrl()}/notes/${noteId}`,
+        `${getBackendUrl()}/api/v1/notes/${noteId}`,
       );
       const noteData = await updatedNote.json();
       expect(noteData.data.title).toBe("Edited " + timestamp);
@@ -296,7 +296,7 @@ test.describe(
 
       // Verify via API that note is deleted
       const checkResponse = await request.get(
-        `${getBackendUrl()}/notes/${noteId}`,
+        `${getBackendUrl()}/api/v1/notes/${noteId}`,
       );
       expect(checkResponse.status()).toBe(404);
     });
@@ -403,7 +403,7 @@ test.describe(
 
       // Verify search works via API
       const searchResponse = await request.get(
-        `${getBackendUrl()}/notes/search?q=Unique+search+content`,
+        `${getBackendUrl()}/api/v1/notes/search?q=Unique+search+content`,
       );
       const searchData = await searchResponse.json();
       expect(searchData.total).toBeGreaterThan(0);

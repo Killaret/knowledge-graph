@@ -138,6 +138,10 @@
       currentView,
     });
   });
+
+  $effect(() => {
+    filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
+  });
   const selectedNoteIds = $state<Set<string>>(new Set());
   let selectionMode = $state(false);
   let lastDeletedNote: Note | null = $state(null);
@@ -207,16 +211,27 @@
 
       // Load notes and graph data in parallel
       const isAuth = isAuthenticated();
+      const graphTimeoutMs = 3000;
       const [notesResult, freshGraphResult] = await Promise.all([
         isAuth ? getNotes() : Promise.resolve([] as Note[]),
         isAuth
-          ? getFreshGraph().catch((e: unknown) => {
+          ? Promise.race([
+              getFreshGraph(),
+              new Promise<null>((resolve) =>
+                setTimeout(() => resolve(null), graphTimeoutMs),
+              ),
+            ]).catch((e: unknown) => {
               if (import.meta.env.DEV) {
                 console.error("[+page] Failed to load fresh graph:", e);
               }
               return null;
             })
-          : getGraphWithPreload().catch((e: unknown) => {
+          : Promise.race([
+              getGraphWithPreload(),
+              new Promise<null>((resolve) =>
+                setTimeout(() => resolve(null), graphTimeoutMs),
+              ),
+            ]).catch((e: unknown) => {
               if (import.meta.env.DEV) {
                 console.error("[+page] Failed to load public graph:", e);
               }
@@ -257,11 +272,12 @@
 
       graphDelta = graphDeltaResult;
 
-      // Set graph data if successful
+      // Set graph data if successful and non-empty; otherwise build from notes
       if (
         graphResult &&
         graphResult.nodes &&
-        Array.isArray(graphResult.nodes)
+        Array.isArray(graphResult.nodes) &&
+        graphResult.nodes.length > 0
       ) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map(
@@ -313,6 +329,27 @@
           links: [],
         };
       }
+
+      // Defensive: ensure graph nodes correspond to loaded notes (fresh graph may be stale)
+      if (allNotes.length > 0 && graphData.nodes.length > 0) {
+        const noteIds = new Set(allNotes.map((n) => n.id));
+        const hasIntersection = graphData.nodes.some((n) => noteIds.has(n.id));
+        if (!hasIntersection) {
+          if (import.meta.env.DEV) {
+            console.warn(
+              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+            );
+          }
+          graphData = {
+            nodes: allNotes.map((n) => ({
+              id: n.id,
+              title: n.title,
+              type: n.type || "unknown",
+            })),
+            links: [],
+          };
+        }
+      }
     } catch (e: unknown) {
       apiError = toErrorResponse(e);
       if (import.meta.env.DEV) {
@@ -350,11 +387,16 @@
       // Always load full graph on main page
       const rawData = await getFullGraphData();
 
-      // Defensive check for API response structure
-      if (!rawData || !rawData.nodes || !Array.isArray(rawData.nodes)) {
+      // Defensive check for API response structure (empty graphs also fall back)
+      if (
+        !rawData ||
+        !rawData.nodes ||
+        !Array.isArray(rawData.nodes) ||
+        rawData.nodes.length === 0
+      ) {
         if (import.meta.env.DEV) {
           console.warn(
-            "[+page] Graph API returned invalid data structure:",
+            "[+page] Graph API returned empty or invalid data structure:",
             rawData,
           );
         }
@@ -404,6 +446,30 @@
         nodes: transformedNodes,
         links: transformedLinks,
       };
+
+      // Defensive: ensure graph nodes correspond to loaded notes
+      if (allNotes.length > 0 && transformedNodes.length > 0) {
+        const noteIds = new Set(allNotes.map((n) => n.id));
+        const hasIntersection = transformedNodes.some((n) =>
+          noteIds.has(n.id),
+        );
+        if (!hasIntersection) {
+          if (import.meta.env.DEV) {
+            console.warn(
+              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+            );
+          }
+          graphData = {
+            nodes: allNotes.map((n) => ({
+              id: n.id,
+              title: n.title,
+              type: n.type || "unknown",
+            })),
+            links: [],
+          };
+          return;
+        }
+      }
 
       if (import.meta.env.DEV) {
         console.log(
@@ -474,15 +540,7 @@
   );
 
   function applyFiltersAndSort() {
-    const result = filterState.applyFiltersAndSort(allNotes, getNoteType);
-
-    // Expose to window for tests
-    if (browser) {
-      (window as typeof window & { filteredNotes?: Note[] }).filteredNotes =
-        result;
-    }
-
-    filteredNotes = result;
+    filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
   }
 
   async function handleSearch() {
@@ -661,11 +719,13 @@
       showCreateModal = true;
     }}
     onSearch={(query: string) => {
+      filterState = filterState.with({ searchQuery: query });
       searchQuery = query;
       handleSearch();
     }}
     onToggleView={handleToggleView}
     onFilter={(type: string) => {
+      filterState = filterState.with({ selectedType: type });
       selectedType = type;
       applyFiltersAndSort();
     }}
@@ -721,7 +781,7 @@
           <div class="spinner"></div>
           <p>{t("page.loadingGraph")}</p>
         </div>
-      {:else if filteredGraphData.nodes.length > 0}
+      {:else}
         <GraphCanvas
           nodes={filteredGraphData.nodes}
           links={filteredGraphData.links}
@@ -730,21 +790,6 @@
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
         />
-      {:else}
-        <div class="empty-state">
-          <StateIllustration type="no-links" />
-          <h2>{t("page.emptyGraphTitle")}</h2>
-          <p>
-            {!filterState.isTypeActive
-              ? t("page.emptyGraphNoNotes")
-              : t("page.emptyGraphNoType", {
-                  type:
-                    filterState
-                      .getSelectedTypeLabel(typeFilters)
-                      ?.toLowerCase() ?? "",
-                })}
-          </p>
-        </div>
       {/if}
     {:else if currentView === "list"}
       <!-- List View -->

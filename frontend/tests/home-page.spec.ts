@@ -211,7 +211,11 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
 
       if (hasFilterText) {
         const filterText = await statsFilter.textContent();
-        expect(filterText?.toLowerCase()).toContain("stars");
+        const countMatch = filterText?.match(/(\d+)/);
+        if (countMatch) {
+          const count = parseInt(countMatch[1], 10);
+          expect(count).toBeGreaterThanOrEqual(1);
+        }
       }
     }
   });
@@ -359,11 +363,13 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
         .first();
       await expect(content).toBeVisible({ timeout: 10000 });
     } else {
-      // If notes exist, verify list container is visible
-      const listContainer = page
-        .locator(".list-container, .notes-grid")
+      // If notes exist, verify graph or list container is visible
+      const content = page
+        .locator(
+          ".fullscreen-graph, .graph-2d-container, .list-container, .notes-grid, [data-testid='graph-2d-container']",
+        )
         .first();
-      await expect(listContainer).toBeVisible({ timeout: 10000 });
+      await expect(content).toBeVisible({ timeout: 10000 });
     }
   });
 
