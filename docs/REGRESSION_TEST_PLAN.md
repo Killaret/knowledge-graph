@@ -506,29 +506,44 @@ npm run test:unit 2>&1 | tee ../logs/test-outputs/test-frontend-unit.log
 
 **Expected:** All frontend unit tests pass (0 failures, skipped tests allowed). UI uses Russian (`ru`) locale by default; tests should rely on i18n keys or `data-testid` selectors.
 
-### 9.2 Run Frontend E2E Tests
+### 9.2 Run Frontend E2E Tests (two-phase)
+
+Phase 1 — `SKIP_AUTH=true` test stack (skip-auth tests):
 ```bash
 cd frontend
-npx playwright test 2>&1 | tee ../logs/test-outputs/test-frontend-e2e.log
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:skipauth
 ```
 
-**Expected:** 122 tests collected; all non-skipped pass (skips allowed for known environment limitations)
+**Expected:** All non-`@auth-real` E2E tests pass (skips allowed).
+
+Phase 2 — `SKIP_AUTH=false` test stack (real auth tests):
+```bash
+# Rebuild the test stack with SKIP_AUTH=false first, then:
+cd frontend
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:realauth
+```
+
+**Expected:** All `@auth-real` tests pass.
 
 ### 9.3 Run Frontend Visual Tests
 ```bash
 cd frontend
-npx playwright test --grep="@visual" 2>&1 | tee ../logs/test-outputs/test-frontend-visual.log
+npx playwright test --project=visual 2>&1 | tee ../logs/test-outputs/test-frontend-visual.log
 ```
 
 **Expected:** Visual tests pass
 
 ### 9.4 Run Frontend BDD Tests
+
+SKIP_AUTH mode:
 ```bash
 cd frontend
-npm run test:cucumber 2>&1 | tee ../logs/test-outputs/test-frontend-bdd.log
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:bdd:skipauth
 ```
 
-**Expected:** 127 scenarios collected; all non-skipped pass (skips allowed)
+**Expected:** All scenarios pass against `SKIP_AUTH=true` stack.
+
+Real-auth BDD is not yet implemented; skip or add login-based step definitions when needed.
 
 ---
 

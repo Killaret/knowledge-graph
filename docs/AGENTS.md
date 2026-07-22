@@ -228,21 +228,23 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Full regression test results (latest run)
 
-Test stack started with `JWT_SECRET` set, test data seeded (100 notes, 60 links, 100 embeddings, 100 keyword notes):
+Test stack configured with `JWT_SECRET` set. E2E/BDD is now run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests.
 
 | Layer | Command | Result |
 |-------|---------|--------|
 | Backend unit | `go test -p=1 -count=1 ./...` | **PASS** |
 | Backend integration | `go test -tags=integration -p=1 -count=1 ./...` | **PASS** |
 | Frontend unit + coverage | `npm run test:coverage` | **PASS** (803 passed, 34 skipped, 85.51% lines) |
-| E2E (Playwright) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test` | **88 passed, 9 skipped, 15 failed** |
-| BDD (Cucumber) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:bdd` | **2 scenarios passed, 3 failed** |
+| E2E skip-auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=true npm run test:skipauth` | **73 passed, 9 skipped, 11 failed** |
+| BDD skip-auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=true npm run test:bdd:skipauth` | **2 scenarios passed, 3 failed** |
+| E2E real auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=false npm run test:realauth` | **1 passed, 0 failed** |
 
-E2E/BDD failures are mainly caused by running the SKIP_AUTH-enabled test stack against tests that expect real auth flows (`smoke-real-auth.spec.ts`, login-form tests) and by seeded test data conflicting with scenarios that expect specific note titles/counts. Running E2E with `SKIP_AUTH=false` or against a dedicated real-auth stack would resolve the auth-related failures.
+Real-auth E2E is now stable (`smoke-real-auth.spec.ts` passes). The remaining skip-auth E2E/BDD failures are UI/test-debt issues (selectors/stats assertions/type-filter expectations) unrelated to auth mode and not caused by seeded data. They need targeted test maintenance.
 
 ### Remaining debt
 
-- E2E/BDD test suite needs tuning for the SKIP_AUTH test stack (or a separate real-auth test configuration) and deterministic test data isolation.
+- Real-auth E2E is stable; BDD real-auth mode is not yet implemented.
+- Skip-auth E2E/BDD still has ~11 failing tests/scenarios that need UI selector and assertion fixes (`type-filters.spec.ts`, `notes.spec.ts`, `smoke.spec.ts` login form, BDD "select type" step, etc.).
 
 ### Verification checklist
 

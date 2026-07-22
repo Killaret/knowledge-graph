@@ -60,11 +60,13 @@ Before(async function (this: ITestWorld) {
     viewport: { width: 1280, height: 720 },
   });
 
-  // Add SKIP_AUTH init script to bypass authentication
-  await this.context.addInitScript(() => {
-    localStorage.setItem("__SKIP_AUTH__", "true");
-    (window as any).__SKIP_AUTH__ = true;
-  });
+  // Add SKIP_AUTH init script only when running against a SKIP_AUTH stack
+  if (process.env.SKIP_AUTH === "true") {
+    await this.context.addInitScript(() => {
+      localStorage.setItem("__SKIP_AUTH__", "true");
+      (window as any).__SKIP_AUTH__ = true;
+    });
+  }
 
   this.page = await this.context.newPage();
   this.request = this.context.request;

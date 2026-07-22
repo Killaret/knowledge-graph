@@ -66,25 +66,33 @@ export default defineConfig({
     },
   },
   projects: [
-    // Setup project for auth bypass
+    // Setup project for auth bypass (used by skip-auth projects)
     {
       name: "setup",
       testMatch: "**/setup/*.setup.ts",
     },
-    // Default project: all tests (auth-functional will auto-skip if backend has SKIP_AUTH)
+    // SKIP_AUTH mode project: skip-auth tests only, excludes real-auth tests
     {
-      name: "chromium",
+      name: "chromium-skip-auth",
       use: {
         ...devices["Desktop Chrome"],
-        // Inject SKIP_AUTH flag for all tests
         launchOptions: {
           args: ["--disable-web-security"],
         },
       },
-      // Note: auth-functional tests will auto-skip if backend has SKIP_AUTH enabled
-      // Skip 3D and visual tests in default project
-      grepInvert: /@3d|@visual/,
+      grepInvert: /@3d|@visual|@auth-real/,
       dependencies: ["setup"],
+    },
+    // Real auth project: only @auth-real tests (requires backend SKIP_AUTH=false)
+    {
+      name: "chromium-real-auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      grep: /@auth-real/,
     },
     // Visual regression project (runs only @visual tests)
     {
@@ -97,21 +105,6 @@ export default defineConfig({
       },
       grep: /@visual/,
       dependencies: ["setup"],
-    },
-    // Auth project: only auth-functional tests (auth_skipped=false)
-    {
-      name: "chromium-auth",
-      use: {
-        ...devices["Desktop Chrome"],
-        // No SKIP_AUTH injection — real auth required
-        launchOptions: {
-          args: ["--disable-web-security"],
-        },
-      },
-      // Only auth-functional tests
-      grep: /auth-functional/,
-      // Note: this project requires backend with SKIP_AUTH=false
-      // Run separately: SKIP_AUTH=false docker compose up backend
     },
   ],
   // Auto-start dev server for tests - enable with PLAYWRIGHT_DEV_SERVER=true

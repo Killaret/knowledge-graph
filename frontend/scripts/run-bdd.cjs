@@ -5,10 +5,15 @@ const root = path.resolve(__dirname, "..", "..");
 const frontend = path.resolve(__dirname, "..");
 let devServer;
 
+const getTargetUrl = () => {
+    const url = process.env.FRONTEND_URL || "http://localhost:5173";
+    return url.endsWith("/") ? url : `${url}/`;
+};
+
 const isDevServerReady = () => {
     return new Promise((resolve) => {
         const http = require("http");
-        const req = http.get("http://localhost:5173/", (res) => {
+        const req = http.get(getTargetUrl(), (res) => {
             resolve(res.statusCode === 200);
         });
         req.on("error", () => resolve(false));
@@ -20,10 +25,11 @@ const isDevServerReady = () => {
 };
 
 const startDevServer = () => {
+    const skipAuth = process.env.SKIP_AUTH || "true";
     devServer = spawn("npm", ["run", "dev"], {
         cwd: frontend,
         stdio: "pipe",
-        env: { ...process.env, SKIP_AUTH: "true" },
+        env: { ...process.env, SKIP_AUTH: skipAuth },
         shell: true,
     });
     devServer.stdout.on("data", (data) => process.stdout.write(data));
@@ -32,6 +38,11 @@ const startDevServer = () => {
 
 const waitForDevServer = async () => {
     if (await isDevServerReady()) return;
+    // If an explicit FRONTEND_URL is set, do not start a local dev server here;
+    // the external stack must be ready.
+    if (process.env.FRONTEND_URL) {
+        throw new Error(`FRONTEND_URL=${process.env.FRONTEND_URL} is not reachable`);
+    }
     startDevServer();
     const start = Date.now();
     while (Date.now() - start < 120000) {

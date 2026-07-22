@@ -209,8 +209,53 @@ try {
     }
     Write-Host "  ✓ Frontend unit tests + coverage completed" -ForegroundColor Green
 
-    # Step 15: Manual testing instructions
-    Write-Host "`n[Step 15/25] Test environment ready for manual testing" -ForegroundColor Green
+    # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
+    Write-Host "`n[Step 15/25] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
+    $env:FRONTEND_URL = "http://localhost:3002"
+    $env:BACKEND_URL = "http://localhost:8083"
+    Set-Location $repoDir\frontend
+    npm run test:skipauth
+    $e2eSkipAuthExit = $LASTEXITCODE
+    if ($e2eSkipAuthExit -ne 0) {
+        Write-Host "  WARNING: SKIP_AUTH E2E tests failed (exit $e2eSkipAuthExit)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  ✓ SKIP_AUTH E2E tests completed" -ForegroundColor Green
+    }
+
+    npm run test:bdd:skipauth
+    $bddSkipAuthExit = $LASTEXITCODE
+    if ($bddSkipAuthExit -ne 0) {
+        Write-Host "  WARNING: SKIP_AUTH BDD tests failed (exit $bddSkipAuthExit)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  ✓ SKIP_AUTH BDD tests completed" -ForegroundColor Green
+    }
+    Set-Location $repoDir
+
+    # Step 16: E2E Phase 2 — real auth (SKIP_AUTH=false) test stack
+    Write-Host "`n[Step 16/25] E2E Phase 2 — real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
+    Write-Host "  Stopping SKIP_AUTH test stack and rebuilding with SKIP_AUTH=false..." -ForegroundColor Yellow
+    Set-Location $repoDir
+    & $scriptDir\stop-test.ps1
+    $env:SKIP_AUTH = "false"
+    $env:VITE_SKIP_AUTH = "false"
+    & $scriptDir\start-test.ps1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  ERROR: Real auth test stack failed to start" -ForegroundColor Red
+        exit 1
+    }
+
+    Set-Location $repoDir\frontend
+    npm run test:realauth
+    $e2eRealAuthExit = $LASTEXITCODE
+    if ($e2eRealAuthExit -ne 0) {
+        Write-Host "  WARNING: Real auth E2E tests failed (exit $e2eRealAuthExit)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  ✓ Real auth E2E tests completed" -ForegroundColor Green
+    }
+    Set-Location $repoDir
+
+    # Step 17: Manual testing instructions
+    Write-Host "`n[Step 17/25] Test environment ready for manual testing" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "  MANUAL TESTING INSTRUCTIONS" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
