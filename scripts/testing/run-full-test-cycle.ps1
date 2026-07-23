@@ -472,21 +472,29 @@ try {
     Write-Host ""
 
     try {
-        $null = Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
         Write-Host "  ✓ Dev notes snapshot saved" -ForegroundColor Green
     } catch {
-        Write-Host "  ERROR: Failed to get dev notes" -ForegroundColor Red
-        exit 1
+        try {
+            Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
+            Write-Host "  ✓ Dev public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+        } catch {
+            Write-Host "  ERROR: Failed to get dev notes or public graph" -ForegroundColor Red
+            exit 1
+        }
     }
 
     try {
-        $null = Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
         Write-Host "  ✓ Personal notes snapshot saved" -ForegroundColor Green
     } catch {
-        Write-Host "  ERROR: Failed to get personal notes" -ForegroundColor Red
-        exit 1
+        try {
+            Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
+            Write-Host "  ✓ Personal public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+        } catch {
+            Write-Host "  ERROR: Failed to get personal notes or public graph" -ForegroundColor Red
+            exit 1
+        }
     }
 
     if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
