@@ -7,7 +7,7 @@ This document describes the testing infrastructure and procedures for Knowledge 
 Knowledge Graph uses three Docker stacks:
 - **Dev stack** (docker-compose.yml) - Development environment (frontend 5173, backend 9000, nginx 8080/8081)
 - **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend 8085, nginx 8082/8083)
-- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 8083)
+- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083)
 
 ## Test Stack
 
@@ -27,7 +27,7 @@ The test stack is fully isolated from dev and personal stacks:
 | redis-test | kg-test-redis | 6381 | Test cache/queue |
 | mongo-test | kg-test-mongo | 27018 | Test drafts |
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
-| backend-test | kg-test-backend | 8083 | Test backend API |
+| backend-test | kg-test-backend | 18083 | Test backend API |
 | frontend-test | kg-test-frontend | 3002 | Test frontend |
 
 ### Configuration
@@ -39,7 +39,7 @@ The test stack is fully isolated from dev and personal stacks:
 ### Test Stack URLs
 
 - **Frontend:** http://localhost:3002
-- **Backend API:** http://localhost:8083
+- **Backend API:** http://localhost:18083
 
 ## Isolated Testing Model
 
@@ -267,7 +267,7 @@ git push
 
 After starting the test stack, access the test environment at:
 - **Frontend:** http://localhost:3002
-- **Backend API:** http://localhost:8083
+- **Backend API:** http://localhost:18083
 
 ### Test User Credentials
 
@@ -427,7 +427,7 @@ The test stack ensures complete isolation:
 - Separate database (knowledge_test vs knowledge_base/knowledge_personal)
 - Separate volumes (test_postgres_data vs postgres_data)
 - Separate container names (kg-test-* vs kg-*)
-- Separate ports (3002/8083 vs 5173/9000 and 3001/8085)
+- Separate ports (3002/18083 vs 5173/9000 and 3001/8085)
 
 ## Cleanup
 
@@ -483,7 +483,7 @@ docker compose -f docker-compose.test.yml logs
 ```
 
 **Common issues:**
-- Port conflicts (3002, 8083, 5434, 6381, 27018, 15002)
+- Port conflicts (3002, 18083, 5434, 6381, 27018, 15002)
 - Docker Desktop not running
 - Insufficient resources
 
@@ -491,12 +491,12 @@ docker compose -f docker-compose.test.yml logs
 
 **Check backend health:**
 ```bash
-curl http://localhost:8083/health
+curl http://localhost:18083/health
 ```
 
 **Check API:**
 ```bash
-curl http://localhost:8083/api/v1/notes
+curl http://localhost:18083/api/v1/notes
 ```
 
 **Common issues:**
@@ -523,7 +523,7 @@ docker compose -f docker-compose.test.yml down -v
 
 ### Multiple stacks cause Docker/Playwright failures
 
-**Issue:** Docker becomes unstable, test stack containers fail health checks, or Playwright reports `ECONNREFUSED ::1:8083` / `net::ERR_CONNECTION_REFUSED`.
+**Issue:** Docker becomes unstable, test stack containers fail health checks, or Playwright reports `ECONNREFUSED ::1:18083` / `net::ERR_CONNECTION_REFUSED`.
 
 **Root Cause:** Running dev, personal, and test stacks simultaneously exhausts Docker resources and creates port/network conflicts. On Windows, Node/Playwright resolves `localhost` to `::1` first, but Docker Desktop binds published ports to `127.0.0.1` by default.
 
@@ -537,11 +537,11 @@ docker compose -f docker-compose.test.yml down -v
 3. Use `127.0.0.1` URLs for Playwright/BDD:
    ```powershell
    $env:FRONTEND_URL = "http://127.0.0.1:3002"
-   $env:BACKEND_URL = "http://127.0.0.1:8083"
+   $env:BACKEND_URL = "http://127.0.0.1:18083"
    ```
-4. Or rebuild the test frontend image with `VITE_API_URL=http://127.0.0.1:8083`:
+4. Or rebuild the test frontend image with `VITE_API_URL=http://127.0.0.1:18083`:
    ```bash
-   docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:8083 frontend-test
+   docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:18083 frontend-test
    ```
 
 ### Dev/personal PostgreSQL password mismatch
@@ -601,7 +601,7 @@ The test stack can be integrated into CI/CD pipelines:
 ### Test Stack Automation (July 2026)
 - **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
 - **Isolation:** Complete separation from dev/personal stacks
-- **Ports:** Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 5434, Redis 6381
 - **Status:** ✅ Fully automated and verified
 
 ### Smoke Tests (July 2026)

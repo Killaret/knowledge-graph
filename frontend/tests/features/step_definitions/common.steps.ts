@@ -33,7 +33,7 @@ Before(async function (this: ITestWorld) {
   }
 
   // Clean up any leftover notes from previous runs so each scenario is isolated
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:8083";
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:18083";
   try {
     const listResp = await this.request.get(
       `${backendUrl}/api/v1/notes?limit=1000`,

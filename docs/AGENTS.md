@@ -228,16 +228,16 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Full regression test results (latest run)
 
-Run: 2026-07-23. Test stack was started in isolation (dev/personal stopped). E2E/BDD was run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests. On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`, so tests used `FRONTEND_URL=http://127.0.0.1:3002` and `BACKEND_URL=http://127.0.0.1:8083`; the test frontend was rebuilt with `VITE_API_URL=http://127.0.0.1:8083`.
+Run: 2026-07-23. Test stack was started in isolation (dev/personal stopped). E2E/BDD was run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests. On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`, so tests used `FRONTEND_URL=http://127.0.0.1:3002` and `BACKEND_URL=http://127.0.0.1:18083`; the test frontend was rebuilt with `VITE_API_URL=http://127.0.0.1:18083`.
 
 | Layer | Command | Result |
 |-------|---------|--------|
 | Backend unit | `go test -p=1 -count=1 ./...` | **PASS** |
 | Backend integration | `go test -tags=integration -p=1 -count=1 ./...` | **PASS** |
 | Frontend unit + coverage | `npm run test:coverage` | **PASS** |
-| E2E skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=true npx playwright test --project=chromium-skip-auth` | **72 passed, 10 skipped, 0 failed** |
-| BDD skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=true node scripts/run-bdd.cjs` | **5 scenarios, 43 steps passed** |
-| E2E real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=false npx playwright test --project=chromium-real-auth` | **1 passed, 0 failed** |
+| E2E skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true npx playwright test --project=chromium-skip-auth` | **72 passed, 10 skipped, 0 failed** |
+| BDD skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true node scripts/run-bdd.cjs` | **5 scenarios, 43 steps passed** |
+| E2E real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=false npx playwright test --project=chromium-real-auth` | **1 passed, 0 failed** |
 
 ### Environment isolation findings
 

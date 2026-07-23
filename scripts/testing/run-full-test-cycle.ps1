@@ -160,14 +160,14 @@ try {
     # Step 10: Backend API Verification
     Write-Host "`n[Step 10/25] Backend API Verification..." -ForegroundColor Yellow
     try {
-        $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:8083/health" -Method Get -TimeoutSec 5
+        $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend health: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend health: FAILED" -ForegroundColor Red
     }
 
     try {
-        $testNotes = Invoke-RestMethod -Uri "http://127.0.0.1:8083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        $testNotes = Invoke-RestMethod -Uri "http://127.0.0.1:18083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend API: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend API: FAILED" -ForegroundColor Red
@@ -216,7 +216,7 @@ try {
     # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
     Write-Host "`n[Step 15/25] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
     $env:FRONTEND_URL = "http://127.0.0.1:3002"
-    $env:BACKEND_URL = "http://127.0.0.1:8083"
+    $env:BACKEND_URL = "http://127.0.0.1:18083"
     $env:SKIP_AUTH = "true"
     Set-Location $repoDir\frontend
     npx playwright test --project=chromium-skip-auth
@@ -264,7 +264,7 @@ try {
     Write-Host "`n[Step 17/25] Visual Regression (Argos)..." -ForegroundColor Yellow
     if ($env:ARGOS_TOKEN -or $env:ARGOS_UPLOAD_LOCAL) {
         $env:FRONTEND_URL = "http://127.0.0.1:3002"
-        $env:BACKEND_URL = "http://127.0.0.1:8083"
+        $env:BACKEND_URL = "http://127.0.0.1:18083"
         $env:SKIP_AUTH = "true"
         Set-Location $repoDir\frontend
         npx playwright test --project=visual
@@ -287,7 +287,7 @@ try {
     Write-Host ""
     Write-Host "Test stack URLs:" -ForegroundColor Yellow
     Write-Host "  Frontend: http://127.0.0.1:3002" -ForegroundColor White
-    Write-Host "  Backend API: http://127.0.0.1:8083" -ForegroundColor White
+    Write-Host "  Backend API: http://127.0.0.1:18083" -ForegroundColor White
     Write-Host ""
     Write-Host "Follow the manual test checklist:" -ForegroundColor Yellow
     Write-Host "  docs/MANUAL_TEST_CHECKLISTS_RU.md" -ForegroundColor White

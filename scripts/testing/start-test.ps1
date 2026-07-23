@@ -40,5 +40,5 @@ Write-Host "`nTest stack status:" -ForegroundColor Cyan
 Write-Host $finalCheck
 
 Write-Host "`nTest stack ready: http://127.0.0.1:3002" -ForegroundColor Green
-Write-Host "Backend API: http://127.0.0.1:8083" -ForegroundColor Green
+Write-Host "Backend API: http://127.0.0.1:18083" -ForegroundColor Green
 Write-Host "Frontend: http://127.0.0.1:3002" -ForegroundColor Green

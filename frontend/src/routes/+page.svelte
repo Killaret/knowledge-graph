@@ -26,6 +26,7 @@
     type GraphNode,
     type GraphLink,
   } from "$shared/api/graph";
+  import { apiConfig } from "$shared/config/config";
   import {
     getGraphWithPreload,
     useInstantData,
@@ -198,49 +199,54 @@
       // Reset error state before loading
       apiError = null;
 
-      // Check for instant preloaded data first
-      const instantData = useInstantData();
-      let graphResult: GraphData | null = null;
-      let graphDeltaResult: GraphDeltaData | undefined = undefined;
+      const isAuth = isAuthenticated();
+      const graphTimeoutMs = 10000;
 
-      if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
-        graphResult = instantData.graph;
-        graphDeltaResult = instantData.delta ?? undefined;
-        graphData = graphResult;
+      // Start notes and graph loading in parallel
+      const notesPromise = isAuth ? getNotes() : Promise.resolve([] as Note[]);
+      const graphPromise = isAuth
+        ? Promise.race([
+            getFreshGraph(),
+            new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), graphTimeoutMs),
+            ),
+          ]).catch((e: unknown) => {
+            if (import.meta.env.DEV) {
+              console.error("[+page] Failed to load fresh graph:", e);
+            }
+            return null;
+          })
+        : Promise.race([
+            getGraphWithPreload(),
+            new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), graphTimeoutMs),
+            ),
+          ]).catch((e: unknown) => {
+            if (import.meta.env.DEV) {
+              console.error("[+page] Failed to load public graph:", e);
+            }
+            return null;
+          });
+
+      if (isAuth) {
+        // Authenticated: render notes and a note-based graph immediately so the
+        // UI is responsive and tests can assert on filter counts right away.
+        allNotes = await notesPromise;
+        applyFiltersAndSort();
+        graphData = {
+          nodes: allNotes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            type: n.type || "unknown",
+          })),
+          links: [],
+        };
+        loading = false;
       }
 
-      // Load notes and graph data in parallel
-      const isAuth = isAuthenticated();
-      const graphTimeoutMs = 3000;
-      const [notesResult, freshGraphResult] = await Promise.all([
-        isAuth ? getNotes() : Promise.resolve([] as Note[]),
-        isAuth
-          ? Promise.race([
-              getFreshGraph(),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), graphTimeoutMs),
-              ),
-            ]).catch((e: unknown) => {
-              if (import.meta.env.DEV) {
-                console.error("[+page] Failed to load fresh graph:", e);
-              }
-              return null;
-            })
-          : Promise.race([
-              getGraphWithPreload(),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), graphTimeoutMs),
-              ),
-            ]).catch((e: unknown) => {
-              if (import.meta.env.DEV) {
-                console.error("[+page] Failed to load public graph:", e);
-              }
-              return null;
-            }),
-      ]);
+      const freshGraphResult = await graphPromise;
 
-      // For public (unauthenticated) view, derive the note list from the public graph
-      // because the notes API is protected.
+      // For public view, derive the note list from the public graph.
       if (!isAuth && freshGraphResult && "nodes" in freshGraphResult) {
         allNotes = (freshGraphResult as GraphData).nodes.map((n) => {
           const raw = n as RawNode;
@@ -254,99 +260,55 @@
             updated_at: "",
           };
         });
-      } else {
-        allNotes = notesResult;
+        applyFiltersAndSort();
       }
-      applyFiltersAndSort();
 
-      // Apply fresh graph data when available
+      // Update graph data with fresh or preloaded graph when available.
+      // We always keep all loaded notes represented in the graph so filter
+      // counts and node visibility stay consistent with the note list.
       if (freshGraphResult) {
+        let freshGraph: GraphData | null = null;
         if (isAuth && "fresh" in freshGraphResult) {
-          graphResult = freshGraphResult.fresh;
-          graphDeltaResult = freshGraphResult.delta ?? undefined;
+          freshGraph = freshGraphResult.fresh;
+          graphDelta = freshGraphResult.delta ?? undefined;
         } else if (!isAuth) {
-          graphResult = freshGraphResult as GraphData;
-          graphDeltaResult = undefined;
-        }
-      }
-
-      graphDelta = graphDeltaResult;
-
-      // Set graph data if successful and non-empty; otherwise build from notes
-      if (
-        graphResult &&
-        graphResult.nodes &&
-        Array.isArray(graphResult.nodes) &&
-        graphResult.nodes.length > 0
-      ) {
-        // Debug: check what types come from API
-        const apiTypes = graphResult.nodes.map(
-          (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
-        );
-        if (import.meta.env.DEV) {
-          console.log(
-            "[+page] loadDataParallel API types:",
-            [...new Set(apiTypes)],
-            "Total:",
-            apiTypes.length,
-          );
-          console.log(
-            "[+page] loadDataParallel First 3 nodes:",
-            graphResult.nodes.slice(0, 3).map((n) => {
-              const raw = n as RawNode;
-              return { id: raw.id, type: raw.type, Type: raw.Type };
-            }),
-          );
+          freshGraph = freshGraphResult as GraphData;
+          graphDelta = undefined;
         }
 
-        // Transform nodes to ensure correct type field
-        graphData = {
-          nodes: graphResult.nodes.map((n) => normalizeNode(n as RawNode)),
-          links: (graphResult.links || []).map((l) =>
-            normalizeLink(l as RawLink),
-          ),
-        };
-        if (import.meta.env.DEV) {
-          console.log(
-            "[+page] Full graph loaded:",
-            graphData.nodes.length,
-            "nodes,",
-            graphData.links.length,
-            "links",
+        if (freshGraph && freshGraph.nodes && freshGraph.nodes.length > 0) {
+          // Merge fresh graph links with the note list so we never drop notes
+          // that the graph service/backend cache hasn't picked up yet.
+          const noteMap = new Map(allNotes.map((n) => [n.id, n]));
+          const freshNodeMap = new Map(
+            freshGraph.nodes.map((n) => [normalizeNode(n as RawNode).id, n as RawNode]),
           );
-          console.log("[+page] Transformed types:", [
-            ...new Set(graphData.nodes.map((n) => n.type)),
-          ]);
-        }
-      } else {
-        // Fallback: build simple graph from notes
-        graphData = {
-          nodes: allNotes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            type: n.type || "unknown",
-          })),
-          links: [],
-        };
-      }
 
-      // Defensive: ensure graph nodes correspond to loaded notes (fresh graph may be stale)
-      if (allNotes.length > 0 && graphData.nodes.length > 0) {
-        const noteIds = new Set(allNotes.map((n) => n.id));
-        const hasIntersection = graphData.nodes.some((n) => noteIds.has(n.id));
-        if (!hasIntersection) {
-          if (import.meta.env.DEV) {
-            console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+          // Use all current notes as nodes, preferring titles/types from the note list
+          const mergedNodes = allNotes.map((n) => {
+            const fresh = freshNodeMap.get(n.id) as RawNode | undefined;
+            return normalizeNode(
+              fresh
+                ? { ...fresh, title: n.title, type: n.type || fresh.type || "unknown" }
+                : ({
+                    id: n.id,
+                    title: n.title,
+                    type: n.type || "unknown",
+                  } as RawNode),
             );
+          });
+
+          // Add any extra graph nodes that are not in the note list (e.g. public graph)
+          for (const node of freshGraph.nodes) {
+            const normalized = normalizeNode(node as RawNode);
+            if (!noteMap.has(normalized.id)) {
+              mergedNodes.push(normalized);
+            }
           }
+
           graphData = {
-            nodes: allNotes.map((n) => ({
-              id: n.id,
-              title: n.title,
-              type: n.type || "unknown",
-            })),
-            links: [],
+            nodes: mergedNodes,
+            links: (freshGraph.links || []).map((l) => normalizeLink(l as RawLink)),
           };
         }
       }
@@ -385,7 +347,7 @@
     graphLoading = true;
     try {
       // Always load full graph on main page
-      const rawData = await getFullGraphData();
+      const rawData = await getFullGraphData(apiConfig.default_limit, undefined, true);
 
       // Defensive check for API response structure (empty graphs also fall back)
       if (

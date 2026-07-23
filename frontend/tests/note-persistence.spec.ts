@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { execSync } from "node:child_process";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8083";
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:18083";
 const DB_CONTAINER = process.env.DB_CONTAINER || "kg-test-postgres";
 const DB_NAME = process.env.DB_NAME || "knowledge_test";
 const DB_USER = process.env.DB_USER || "kb_user";

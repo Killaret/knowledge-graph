@@ -1,6 +1,6 @@
 # Seed Test Data - Windows PowerShell
 # Creates a known set of test notes and links for manual/automated testing.
-# Requires the test stack to be running at localhost:8083.
+# Requires the test stack to be running at localhost:18083.
 
 param(
     [int]$NoteCount = 100,
@@ -14,7 +14,7 @@ if ($Seed -gt 0) {
     Get-Random -SetSeed $Seed | Out-Null
 }
 
-$apiUrl = "http://127.0.0.1:8083/api/v1"
+$apiUrl = "http://127.0.0.1:18083/api/v1"
 $postgresContainer = "kg-test-postgres"
 
 $testUser = @{
