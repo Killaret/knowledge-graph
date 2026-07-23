@@ -156,15 +156,15 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
       args:
-        VITE_API_URL: http://localhost:8083
-        VITE_BACKEND_URL: http://localhost:8083
+        VITE_API_URL: http://127.0.0.1:8083
+        VITE_BACKEND_URL: http://127.0.0.1:8083
         VITE_GRAPH_SERVICE_URL: /graph-service/api
         VITE_SKIP_AUTH: ${SKIP_AUTH:-true}
     container_name: kg-test-frontend
     ports:
       - "127.0.0.1:3002:3000"
     environment:
-      - VITE_API_URL=http://localhost:8083
+      - VITE_API_URL=http://127.0.0.1:8083
       - VITE_SKIP_AUTH=${SKIP_AUTH:-true}
       - GRAPH_SERVICE_URL=http://graph-service-test:9091
     depends_on:

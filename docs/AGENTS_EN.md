@@ -222,6 +222,9 @@ backend:
 
 **Test Stack (MANDATORY for E2E/BDD):**
 - **ALWAYS** use `docker-compose.test.yml` for E2E and BDD tests
+- **Stop dev and personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright failures
+- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- Ensure `.env` contains `JWT_SECRET` and DB passwords matching existing `postgres_data` / `pgdata_personal` volumes
 - Never run E2E/BDD against dev or personal stacks
 - Start test stack: `.\scripts\testing\start-test.ps1`
 - Seed test data: `.\scripts\testing\seed-test-data.ps1`
@@ -370,6 +373,9 @@ docker compose -f docker-compose.test.yml down -v       # Manual cleanup
 - Containers: `kg-test-*` (unique names)
 - Volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - Auth: SKIP_AUTH enabled for testing
+- **Isolation:** Stop dev/personal stacks before testing; concurrent stacks cause Docker instability and Windows `localhost` → `::1` Playwright failures
+- **Windows URLs:** Use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- **`.env` requirements:** `JWT_SECRET`, `POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD` must match existing volumes
 - See `docs/TESTING.md` for complete documentation
 
 ### Health Checks

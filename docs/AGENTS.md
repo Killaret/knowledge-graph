@@ -228,23 +228,27 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Full regression test results (latest run)
 
-Test stack configured with `JWT_SECRET` set. E2E/BDD is now run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests.
+Run: 2026-07-23. Test stack was started in isolation (dev/personal stopped). E2E/BDD was run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests. On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`, so tests used `FRONTEND_URL=http://127.0.0.1:3002` and `BACKEND_URL=http://127.0.0.1:8083`; the test frontend was rebuilt with `VITE_API_URL=http://127.0.0.1:8083`.
 
 | Layer | Command | Result |
 |-------|---------|--------|
 | Backend unit | `go test -p=1 -count=1 ./...` | **PASS** |
 | Backend integration | `go test -tags=integration -p=1 -count=1 ./...` | **PASS** |
-| Frontend unit + coverage | `npm run test:coverage` | **PASS** (803 passed, 34 skipped, 85.51% lines) |
-| E2E skip-auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=true npm run test:skipauth` | **73 passed, 9 skipped, 11 failed** |
-| BDD skip-auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=true npm run test:bdd:skipauth` | **2 scenarios passed, 3 failed** |
-| E2E real auth (clean stack) | `FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 SKIP_AUTH=false npm run test:realauth` | **1 passed, 0 failed** |
+| Frontend unit + coverage | `npm run test:coverage` | **PASS** |
+| E2E skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=true npx playwright test --project=chromium-skip-auth` | **72 passed, 10 skipped, 0 failed** |
+| BDD skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=true node scripts/run-bdd.cjs` | **5 scenarios, 43 steps passed** |
+| E2E real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:8083 SKIP_AUTH=false npx playwright test --project=chromium-real-auth` | **1 passed, 0 failed** |
 
-Real-auth E2E is now stable (`smoke-real-auth.spec.ts` passes). The remaining skip-auth E2E/BDD failures are UI/test-debt issues (selectors/stats assertions/type-filter expectations) unrelated to auth mode and not caused by seeded data. They need targeted test maintenance.
+### Environment isolation findings
+
+- **Do not run dev/personal/test stacks simultaneously.** Concurrent stacks cause Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright connection failures.
+- **Use only the test stack during E2E/BDD/regression.** Stop dev and personal stacks first.
+- **`.env` must be present** with `JWT_SECRET`, `POSTGRES_PASSWORD`, and `PERSONAL_POSTGRES_PASSWORD` matching the existing `postgres_data` / `pgdata_personal` volumes; otherwise dev/personal backend fails to connect.
 
 ### Remaining debt
 
-- Real-auth E2E is stable; BDD real-auth mode is not yet implemented.
-- Skip-auth E2E/BDD still has ~11 failing tests/scenarios that need UI selector and assertion fixes (`type-filters.spec.ts`, `notes.spec.ts`, `smoke.spec.ts` login form, BDD "select type" step, etc.).
+- BDD real-auth mode is not yet implemented.
+- Full `run-full-test-cycle.ps1` 25-step script has manual verification steps (public graph, CI/CD, docs) that are not automated.
 
 ### Verification checklist
 

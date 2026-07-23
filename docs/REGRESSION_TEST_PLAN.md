@@ -36,6 +36,12 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 - `scripts/testing/test.ps1/.sh` (unified test entry point)
 - `scripts/cleanup/cleanup-test-artifacts.py/.sh` (temporary artifact cleanup)
 
+### Environment Isolation Notes
+
+- **Only the test stack may run during E2E/BDD/regression.** Stop dev and personal stacks before the cycle to prevent Docker instability, resource exhaustion, and port/network conflicts.
+- On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`. Use `http://127.0.0.1:3002` and `http://127.0.0.1:8083`, or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`.
+- `.env` must contain `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes (`POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD`).
+
 ---
 
 ## PART 0: Stacks Identity Check

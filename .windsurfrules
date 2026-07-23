@@ -218,6 +218,9 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 - Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
+- **Stop dev/personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` resolution issues in Node/Playwright
+- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:8083` for Playwright/BDD or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- Ensure `.env` contains `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes
 - See `docs/TESTING.md` for complete test stack documentation
 
 **Regression Testing (MANDATORY before production deployment):**
@@ -335,6 +338,8 @@ CMD ["/server"]
 - Unique container names: `kg-test-*`
 - Test database: `knowledge_test` with test credentials
 - Scripts: `.\scripts\testing\start-test.ps1`, `.\scripts\testing\stop-test.ps1`, `.\scripts\testing\seed-test-data.ps1`
+- **Stop dev/personal stacks before starting test stack** — running all stacks at once causes Docker instability and Windows `localhost` → `::1` issues
+- On Windows, use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild frontend with `VITE_API_URL=http://127.0.0.1:8083`
 - Always destroy with `down -v` to remove test data
 
 ---

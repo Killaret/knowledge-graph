@@ -346,3 +346,20 @@ cd nlp-service && pytest --cov=app tests/        # With coverage
 4. Mock external dependencies (DB, Redis, HTTP clients)
 5. Integration tests use build tag `//go:build integration`
 6. Always test error paths, not just happy paths
+7. **Stop dev/personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability and Windows `localhost` → `::1` Playwright failures
+8. On Windows, use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+9. Ensure `.env` contains `JWT_SECRET` and DB passwords matching existing `postgres_data` / `pgdata_personal` volumes
+
+### Windows Playwright/BDD URL workaround
+
+```powershell
+$env:FRONTEND_URL = "http://127.0.0.1:3002"
+$env:BACKEND_URL = "http://127.0.0.1:8083"
+npx playwright test --project=chromium-skip-auth
+```
+
+### Rebuild test frontend for IPv4
+
+```bash
+docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:8083 frontend-test
+```

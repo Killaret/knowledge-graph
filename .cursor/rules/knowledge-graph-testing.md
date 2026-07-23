@@ -363,3 +363,16 @@ expect(component.internalState).toBe(true)  // test DOM/output, not internals
 // ❌ Missing mock cleanup between tests
 // Always use beforeEach to reset mocks: vi.clearAllMocks()
 ```
+
+---
+
+## Stack Isolation & Windows Network Notes
+
+- **Stop dev and personal stacks before E2E/BDD/regression.** Running dev, personal, and test stacks simultaneously causes Docker instability, port/resource conflicts, and flaky health checks.
+- On Windows, Node/Playwright resolves `localhost` to `::1` first, but Docker Desktop binds published ports to `127.0.0.1`. This produces `ECONNREFUSED ::1:8083` or `net::ERR_CONNECTION_REFUSED`.
+  - Use `FRONTEND_URL=http://127.0.0.1:3002` and `BACKEND_URL=http://127.0.0.1:8083` for Playwright/BDD, or
+  - Rebuild the test frontend image with `VITE_API_URL=http://127.0.0.1:8083`:
+    ```bash
+    docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:8083 frontend-test
+    ```
+- `.env` must be present with `JWT_SECRET`, `POSTGRES_PASSWORD`, and `PERSONAL_POSTGRES_PASSWORD` matching the existing `postgres_data` / `pgdata_personal` volumes, otherwise dev/personal backends fail to authenticate.

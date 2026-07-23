@@ -98,6 +98,7 @@ backend, graph-service (healthy) ──► frontend (healthy)
 ### Backend (.env)
 
 ```bash
+JWT_SECRET=your-dev-jwt-secret
 DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
 REDIS_URL=redis:6379
 NLP_SERVICE_URL=http://nlp:5000
@@ -121,6 +122,17 @@ VITE_API_URL=http://localhost:8080
 VITE_GRAPH_SERVICE_URL=http://localhost:8080/graph-service
 ARGOS_TOKEN=<your-argos-token>  # set via env / GitHub secret
 ```
+
+### PostgreSQL passwords
+
+Dev/personal `postgres` services load `env_file: .env`. The passwords in `.env` must match the passwords used when the volumes were initialized:
+
+```env
+POSTGRES_PASSWORD=<password for postgres_data volume>
+PERSONAL_POSTGRES_PASSWORD=<password for pgdata_personal volume>
+```
+
+If the volume was initialized with the example values, use `change_me_in_production` and `change_me_personal` respectively. Mismatched passwords cause `password authentication failed` in backend logs.
 
 ## Health Checks
 
@@ -201,6 +213,24 @@ docker exec -it kg-postgres psql -U kb_user -d knowledge_base
 # Check redis health
 docker exec kg-redis redis-cli ping
 ```
+
+### Multiple Stacks Running Simultaneously
+
+Running dev, personal, and test stacks at the same time causes Docker instability, port/resource conflicts, and flaky health checks. During E2E/BDD/regression, stop dev and personal stacks:
+
+```bash
+docker compose down
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.test.yml up -d
+```
+
+### PostgreSQL Password Mismatch
+
+If backend logs show `password authentication failed for user "kb_user"` or `"personal"`, the `.env` `POSTGRES_PASSWORD` / `PERSONAL_POSTGRES_PASSWORD` does not match the password stored in the existing `postgres_data` / `pgdata_personal` volume. Align `.env` with the volume's original password (or reset the volume with `docker compose down -v`, which deletes data).
+
+### Windows `localhost` Resolves to `::1`
+
+On Windows, Docker Desktop binds published ports to `127.0.0.1`, but Node/Playwright resolves `localhost` to `::1` first. This causes `ECONNREFUSED ::1:8083` in tests. Use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`.
 
 ## Stopping Services
 

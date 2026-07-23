@@ -175,5 +175,22 @@ curl http://localhost:15002/health          # Test NLP service
 - **ALWAYS** use the full test cycle script for regression testing (isolated model)
 - **ALWAYS** check dev stack state before/after testing for data leakage
 - **ALWAYS** verify dev/personal identity after testing
+- **ALWAYS** stop dev/personal stacks before E2E/BDD; running all stacks together causes Docker instability and Windows `localhost` → `::1` Playwright failures
+- **ALWAYS** use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` on Windows, or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- **ALWAYS** keep `.env` aligned with existing `postgres_data` / `pgdata_personal` volume passwords (`POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD`) and set `JWT_SECRET`
+
+### Windows E2E/BDD URL workaround
+
+```powershell
+$env:FRONTEND_URL = "http://127.0.0.1:3002"
+$env:BACKEND_URL = "http://127.0.0.1:8083"
+npx playwright test --project=chromium-skip-auth
+```
+
+### Rebuild test frontend for IPv4
+
+```bash
+docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:8083 frontend-test
+```
 
 ---

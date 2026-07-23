@@ -3,6 +3,10 @@
 # Dev and personal stacks are stopped during testing to prevent resource conflicts.
 # All temporary snapshots are saved to scripts/testing/temp/snapshots/.
 
+param(
+    [switch]$SkipManual
+)
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Knowledge Graph Full Test Cycle" -ForegroundColor Cyan
 Write-Host "  (Isolated Testing Model)" -ForegroundColor Cyan
@@ -53,14 +57,14 @@ try {
     Write-Host "  ✓ Container snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
     try {
-        Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
         Write-Host "  ✓ Health snapshot saved to $snapshotDir\pre-test-health.json" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev health endpoint not available (stack may be stopped)" -ForegroundColor Yellow
     }
 
     try {
-        Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-notes.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-notes.json"
         Write-Host "  ✓ Notes snapshot saved to $snapshotDir\pre-test-notes.json" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev API not available (stack may be stopped)" -ForegroundColor Yellow
@@ -117,7 +121,7 @@ try {
     # Step 7: NLP Service Tests
     Write-Host "`n[Step 7/25] NLP Service Tests..." -ForegroundColor Yellow
     try {
-        $nlpHealth = Invoke-RestMethod -Uri "http://localhost:15002/health" -Method Get -TimeoutSec 5
+        $nlpHealth = Invoke-RestMethod -Uri "http://127.0.0.1:15002/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ NLP health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ NLP health endpoint: FAILED" -ForegroundColor Yellow
@@ -156,14 +160,14 @@ try {
     # Step 10: Backend API Verification
     Write-Host "`n[Step 10/25] Backend API Verification..." -ForegroundColor Yellow
     try {
-        $testHealth = Invoke-RestMethod -Uri "http://localhost:8083/health" -Method Get -TimeoutSec 5
+        $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:8083/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend health: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend health: FAILED" -ForegroundColor Red
     }
 
     try {
-        $testNotes = Invoke-RestMethod -Uri "http://localhost:8083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        $testNotes = Invoke-RestMethod -Uri "http://127.0.0.1:8083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend API: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend API: FAILED" -ForegroundColor Red
@@ -211,10 +215,11 @@ try {
 
     # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
     Write-Host "`n[Step 15/25] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
-    $env:FRONTEND_URL = "http://localhost:3002"
-    $env:BACKEND_URL = "http://localhost:8083"
+    $env:FRONTEND_URL = "http://127.0.0.1:3002"
+    $env:BACKEND_URL = "http://127.0.0.1:8083"
+    $env:SKIP_AUTH = "true"
     Set-Location $repoDir\frontend
-    npm run test:skipauth
+    npx playwright test --project=chromium-skip-auth
     $e2eSkipAuthExit = $LASTEXITCODE
     if ($e2eSkipAuthExit -ne 0) {
         Write-Host "  WARNING: SKIP_AUTH E2E tests failed (exit $e2eSkipAuthExit)" -ForegroundColor Yellow
@@ -222,7 +227,7 @@ try {
         Write-Host "  ✓ SKIP_AUTH E2E tests completed" -ForegroundColor Green
     }
 
-    npm run test:bdd:skipauth
+    node scripts/run-bdd.cjs
     $bddSkipAuthExit = $LASTEXITCODE
     if ($bddSkipAuthExit -ne 0) {
         Write-Host "  WARNING: SKIP_AUTH BDD tests failed (exit $bddSkipAuthExit)" -ForegroundColor Yellow
@@ -245,7 +250,7 @@ try {
     }
 
     Set-Location $repoDir\frontend
-    npm run test:realauth
+    npx playwright test --project=chromium-real-auth
     $e2eRealAuthExit = $LASTEXITCODE
     if ($e2eRealAuthExit -ne 0) {
         Write-Host "  WARNING: Real auth E2E tests failed (exit $e2eRealAuthExit)" -ForegroundColor Yellow
@@ -254,15 +259,34 @@ try {
     }
     Set-Location $repoDir
 
-    # Step 17: Manual testing instructions
+    # Step 17: Visual Regression (Argos)
+    Write-Host "`n[Step 17/25] Visual Regression (Argos)..." -ForegroundColor Yellow
+    if ($env:ARGOS_TOKEN -or $env:ARGOS_UPLOAD_LOCAL) {
+        $env:FRONTEND_URL = "http://127.0.0.1:3002"
+        $env:BACKEND_URL = "http://127.0.0.1:8083"
+        $env:SKIP_AUTH = "true"
+        Set-Location $repoDir\frontend
+        npx playwright test --project=visual
+        $argosExit = $LASTEXITCODE
+        if ($argosExit -ne 0) {
+            Write-Host "  WARNING: Argos visual tests failed (exit $argosExit)" -ForegroundColor Yellow
+        } else {
+            Write-Host "  ✓ Argos visual tests completed" -ForegroundColor Green
+        }
+        Set-Location $repoDir
+    } else {
+        Write-Host "  ℹ Skipping Argos visual tests (ARGOS_TOKEN or ARGOS_UPLOAD_LOCAL not set)" -ForegroundColor Cyan
+    }
+
+    # Step 18: Manual testing instructions
     Write-Host "`n[Step 17/25] Test environment ready for manual testing" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "  MANUAL TESTING INSTRUCTIONS" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Test stack URLs:" -ForegroundColor Yellow
-    Write-Host "  Frontend: http://localhost:3002" -ForegroundColor White
-    Write-Host "  Backend API: http://localhost:8083" -ForegroundColor White
+    Write-Host "  Frontend: http://127.0.0.1:3002" -ForegroundColor White
+    Write-Host "  Backend API: http://127.0.0.1:8083" -ForegroundColor White
     Write-Host ""
     Write-Host "Follow the manual test checklist:" -ForegroundColor Yellow
     Write-Host "  docs/MANUAL_TEST_CHECKLISTS_RU.md" -ForegroundColor White
@@ -272,10 +296,15 @@ try {
     Write-Host "  Password: TestPassword123!" -ForegroundColor White
     Write-Host ""
     $manualTestFlag = "$snapshotDir\continue-manual-test.flag"
-    Write-Host "  Manual testing in progress..." -ForegroundColor Cyan
-    Write-Host "  Press Enter in the interactive terminal, or create the flag file:" -ForegroundColor Cyan
-    Write-Host "  $manualTestFlag" -ForegroundColor Cyan
-    Write-Host "  The script will continue automatically when the flag is created." -ForegroundColor Cyan
+    if ($SkipManual) {
+        Write-Host "  SkipManual enabled: skipping interactive manual testing" -ForegroundColor Cyan
+        New-Item -ItemType File -Path $manualTestFlag -Force | Out-Null
+    } else {
+        Write-Host "  Manual testing in progress..." -ForegroundColor Cyan
+        Write-Host "  Press Enter in the interactive terminal, or create the flag file:" -ForegroundColor Cyan
+        Write-Host "  $manualTestFlag" -ForegroundColor Cyan
+        Write-Host "  The script will continue automatically when the flag is created." -ForegroundColor Cyan
+    }
     while (-not (Test-Path $manualTestFlag)) {
         try {
             if ([Console]::KeyAvailable -and ([Console]::ReadKey($true).Key -eq 'Enter')) {
@@ -373,7 +402,7 @@ try {
     Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
 
     try {
-        Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
         Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
@@ -382,7 +411,7 @@ try {
     }
 
     try {
-        Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
         Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Red
@@ -439,8 +468,8 @@ try {
     Write-Host ""
 
     try {
-        $null = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Invoke-RestMethod -Uri "http://localhost:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
         Write-Host "  ✓ Dev notes snapshot saved" -ForegroundColor Green
     } catch {
         Write-Host "  ERROR: Failed to get dev notes" -ForegroundColor Red
@@ -448,8 +477,8 @@ try {
     }
 
     try {
-        $null = Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Invoke-RestMethod -Uri "http://localhost:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
         Write-Host "  ✓ Personal notes snapshot saved" -ForegroundColor Green
     } catch {
         Write-Host "  ERROR: Failed to get personal notes" -ForegroundColor Red

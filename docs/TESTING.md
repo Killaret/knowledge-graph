@@ -521,6 +521,42 @@ docker ps --filter "name=kg-test"
 docker compose -f docker-compose.test.yml down -v
 ```
 
+### Multiple stacks cause Docker/Playwright failures
+
+**Issue:** Docker becomes unstable, test stack containers fail health checks, or Playwright reports `ECONNREFUSED ::1:8083` / `net::ERR_CONNECTION_REFUSED`.
+
+**Root Cause:** Running dev, personal, and test stacks simultaneously exhausts Docker resources and creates port/network conflicts. On Windows, Node/Playwright resolves `localhost` to `::1` first, but Docker Desktop binds published ports to `127.0.0.1` by default.
+
+**Fix:**
+1. Stop dev and personal stacks before E2E/BDD/regression:
+   ```bash
+   docker compose down
+   docker compose -f docker-compose.personal.yml down
+   ```
+2. Start only the isolated test stack.
+3. Use `127.0.0.1` URLs for Playwright/BDD:
+   ```powershell
+   $env:FRONTEND_URL = "http://127.0.0.1:3002"
+   $env:BACKEND_URL = "http://127.0.0.1:8083"
+   ```
+4. Or rebuild the test frontend image with `VITE_API_URL=http://127.0.0.1:8083`:
+   ```bash
+   docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:8083 frontend-test
+   ```
+
+### Dev/personal PostgreSQL password mismatch
+
+**Issue:** Backend fails with `password authentication failed for user "kb_user"` or `"personal"` after restoring dev/personal stacks.
+
+**Root Cause:** Dev/personal `postgres` services load `env_file: .env`. If `.env` is missing or its `POSTGRES_PASSWORD` / `PERSONAL_POSTGRES_PASSWORD` does not match the password used when the `postgres_data` / `pgdata_personal` volume was initialized, authentication fails.
+
+**Fix:** Ensure `.env` contains:
+```env
+JWT_SECRET=your-dev-jwt-secret
+POSTGRES_PASSWORD=<password matching postgres_data volume>
+PERSONAL_POSTGRES_PASSWORD=<password matching pgdata_personal volume>
+```
+
 ## Best Practices
 
 1. **Always check stacks health before testing** - Ensures dev/personal stacks are stable

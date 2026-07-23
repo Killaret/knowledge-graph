@@ -49,13 +49,16 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - Always run `npm run test:unit` after frontend changes
 - Coverage MUST be >60%
 - **ALWAYS use test stack for E2E/BDD testing:** `.\scripts\testing\start-test.ps1`
+- **Stop dev and personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright failures
+- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
 - Never run E2E/BDD tests against dev or personal stacks
 - Use table-driven tests in Go with testify/require (not assert)
 
 ### Regression Testing (MANDATORY before production deployment)
 - **ALWAYS run full regression cycle before production deployment**
 - Run: `.\scripts\testing\run-full-test-cycle.ps1` (Windows) or `./scripts/testing/run-full-test-cycle.sh` (Linux/Mac)
-- **Isolated Testing Model:** Dev and personal stacks are stopped during testing
+- **Isolated Testing Model:** Dev and personal stacks are stopped during testing; only test stack runs
+- Ensure `.env` contains `JWT_SECRET` and DB passwords matching existing `postgres_data` / `pgdata_personal` volumes
 - Regression plan: 24-step comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
 - Steps: State snapshot, stack isolation, test execution, state comparison, auto-commit
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
