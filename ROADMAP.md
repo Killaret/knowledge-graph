@@ -1,6 +1,6 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 18, 2026  
+**Updated:** July 23, 2026  
 **Status:** System stabilized, regression testing complete, manual testing in progress  
 **Version:** v2.5
 
@@ -314,10 +314,10 @@
 - **Planned:** 20+ (38%)
 
 ### Testing Coverage
-- **Frontend Unit Tests:** 526 tests ✅
+- **Frontend Unit Tests:** 803 tests ✅
 - **Backend Unit Tests:** All packages ✅
 - **Frontend E2E Tests:** ⏳ Pending
-- **Backend Integration Tests:** ⏳ Pending
+- **Backend Integration Tests:** ✅ Done (2026-07-23)
 - **Regression Testing:** 11/14 parts ✅
 
 ### System Stability
@@ -379,5 +379,5 @@
 
 ---
 
-**Last Updated:** July 18, 2026  
+**Last Updated:** July 23, 2026  
 **Next Review:** After manual testing completion

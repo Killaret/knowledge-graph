@@ -1,4 +1,4 @@
-import type { GraphDeltaData, GraphLink, GraphNode } from "$shared/api/graph";
+import type { GraphDeltaData, GraphLink, GraphNode } from "./graph-node";
 
 export interface GraphDeltaProps {
   addedNodes: GraphNode[];

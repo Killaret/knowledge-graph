@@ -1,6 +1,6 @@
-import { SearchQuery } from "./search-query";
-import type { Note } from "$shared/api/notes";
-import type { GraphData } from "$shared/api/graph";
+import { SearchQuery } from "$entities/search/model";
+import type { Note } from "$entities/note/model";
+import type { GraphData } from "./graph-node";
 
 export type FilterView = "graph" | "list";
 export type SortBy = "created" | "updated" | "type";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import "$shared/styles/global.css";
-  import Sidebar from "$components/organisms/Sidebar.svelte";
+  import SidebarWidget from "$widgets/sidebar/SidebarWidget.svelte";
   import QuickCaptureWidget from "$components/organisms/QuickCaptureWidget.svelte";
   import ToastNotification from "$components/atoms/ToastNotification.svelte";
   import { page } from "$app/stores";
@@ -151,7 +151,7 @@
     </div>
   {/if}
 
-  <Sidebar />
+  <SidebarWidget />
   <main class="app-main">
     {@render children()}
   </main>
