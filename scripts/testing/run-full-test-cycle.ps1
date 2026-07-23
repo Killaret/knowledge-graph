@@ -398,6 +398,7 @@ try {
 
     # Step 23: State, identity and health checks
     Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
+    $devStateChanged = $false
     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
     docker ps --filter "name=kg-" > "$snapshotDir\post-test-ps.txt"
     Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
@@ -415,15 +416,17 @@ try {
         Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
         Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Red
-        Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
-        exit 1
+        try {
+            Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+            Write-Host "  ✓ Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+        } catch {
+            Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Yellow
+            $devStateChanged = $true
+        }
     }
 
     # Step 23: (continued)
     Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
-
-    $devStateChanged = $false
 
     $prePs = "$snapshotDir\pre-test-ps.txt"
     $postPs = "$snapshotDir\post-test-ps.txt"
