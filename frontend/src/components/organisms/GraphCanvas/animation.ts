@@ -3,7 +3,7 @@
  */
 
 import { getVariation } from "$shared/utils/variation";
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 export interface AnimationState {
   animationId: number;

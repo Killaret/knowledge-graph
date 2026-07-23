@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createNote } from "$shared/api/notes";
-  import { CelestialBody } from "$shared/lib/domain";
+  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

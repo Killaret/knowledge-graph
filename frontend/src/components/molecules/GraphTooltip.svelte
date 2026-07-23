@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import type { Instance } from "tippy.js";
   import "tippy.js/dist/tippy.css";
-  import { CelestialBody, LinkType } from "$shared/lib/domain";
+  import { CelestialBody, LinkType } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

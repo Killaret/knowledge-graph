@@ -194,15 +194,15 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 - `frontend/src/components/molecules/SearchBar.svelte` — placeholder, aria-label, and button text now use i18n keys.
 - `frontend/src/components/organisms/FloatingControls.svelte` — all titles, aria-labels, placeholders, and menu items now use i18n keys.
 - `frontend/src/components/molecules/NoteCard.svelte` — tooltip and card labels (links, edit/delete, indicators, dates) now use i18n keys.
-- `frontend/src/shared/lib/domain/celestial-body.ts` — `CelestialBody.label` now resolves through i18n keys (`celestialBody.type.*`), removing hardcoded English user-facing labels.
+- `frontend/src/entities/celestial-body.ts` — `CelestialBody.label` now resolves through i18n keys (`celestialBody.type.*`), removing hardcoded English user-facing labels.
 - `frontend/src/components/organisms/NoteSidePanel.svelte` — panel labels, dates, links section, and delete-links modal now use i18n keys.
-- `frontend/src/shared/lib/domain/link-type.ts` — `LinkType.label` now resolves through i18n keys (`linkType.*`).
+- `frontend/src/entities/link-type.ts` — `LinkType.label` now resolves through i18n keys (`linkType.*`).
 - `frontend/src/components/organisms/LinkCreator.svelte` and `LinkTooltip.svelte` — link creation form and tooltip labels now use i18n keys.
 - `frontend/src/components/organisms/ConfirmModal.svelte` — default/galactic confirm/cancel/title labels now use i18n keys.
 - `frontend/src/components/molecules/TypeSelector.svelte` — aria-label now uses i18n key.
 - `frontend/src/components/atoms/ToastNotification.svelte` and `ApiErrorDisplay.svelte` — close/error labels now use i18n keys.
 - `frontend/src/components/organisms/Sidebar.svelte` — placeholder text now uses i18n keys.
-- `frontend/src/shared/lib/domain/graph-mode.ts` — mode labels (`label`/`focusLabel`) now resolve through i18n keys.
+- `frontend/src/entities/graph-mode.ts` — mode labels (`label`/`focusLabel`) now resolve through i18n keys.
 - `frontend/src/features/graph-ui/controls.svelte`, `modals.svelte`, and `overlay.svelte` — button titles, modal titles/placeholders, search placeholder, hotkey tooltip, undo toast, and graph stats now use i18n keys.
 - `frontend/src/features/graph-canvas/canvas-state.svelte.ts` — hotkey help list and duplicate-link warning now use i18n keys.
 - `frontend/src/components/molecules/GraphTooltip.svelte` — node type and link type labels now resolve through `CelestialBody`/`LinkType` i18n keys; tooltip weight label uses an i18n key.

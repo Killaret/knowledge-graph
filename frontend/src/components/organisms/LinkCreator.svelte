@@ -1,7 +1,7 @@
 <script lang="ts">
   import { searchNotes } from "$shared/api/notes";
   import { createLink, type CreateLinkData } from "$shared/api/links";
-  import { LinkType, SearchQuery } from "$shared/lib/domain";
+  import { LinkType, SearchQuery } from "$entities";
   import { addJitter } from "$shared/utils/jitter";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

@@ -2,7 +2,7 @@
   import GraphTooltip from "$components/molecules/GraphTooltip.svelte";
   import LinkTooltip from "$components/molecules/LinkTooltip.svelte";
   import type { HotkeysState } from "$features/graph-interaction/hotkeys";
-  import { CelestialBody } from "$shared/lib/domain";
+  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

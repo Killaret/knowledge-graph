@@ -74,7 +74,7 @@ Before(async function (this: ITestWorld) {
 
   this.page = await this.context.newPage();
   this.page.on("console", (msg) => {
-    if (msg.type() === "error" || msg.type() === "warn") {
+    if (msg.type() === "error" || msg.type() === "warning") {
       console.log(`[BROWSER ${msg.type().toUpperCase()}]`, msg.text());
     }
   });

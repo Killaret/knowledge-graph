@@ -31,12 +31,12 @@
 - `frontend/src/shared/config/` — единый runtime-конфиг.
 - `frontend/src/components/` — UI-компоненты по Atomic Design.
 - `frontend/src/features/` — feature-модули (`graph-interaction/`, `graph-forms/`).
-- `frontend/src/shared/lib/domain/` — Value Objects и чистые доменные модели, не зависящие от UI или Canvas (`CelestialBody`).
-- `frontend/src/shared/lib/graph/` — вспомогательные графовые утилиты/рендерер (legacy-остаток после FSD); адаптеры рендеринга внедряются из этих модулей, но сами доменные данные хранятся в `domain/`.
+- `frontend/src/entities/` — Value Objects и чистые доменные модели, не зависящие от UI или Canvas (`CelestialBody`).
+- `frontend/src/shared/lib/graph/` — вспомогательные графовые утилиты/рендерер (legacy-остаток после FSD); адаптеры рендеринга внедряются из этих модулей, но сами доменные данные хранятся в `entities/`.
 
 ### 1.2.1 Domain Value Object — CelestialBody
 
-- Визуальные параметры узлов графа (тип, label, emoji, цвет, glow-цвет, радиусы, масса, скорость вращения, смещение гравитации) централизованы в `frontend/src/shared/lib/domain/celestial-body.ts`.
+- Визуальные параметры узлов графа (тип, label, emoji, цвет, glow-цвет, радиусы, масса, скорость вращения, смещение гравитации) централизованы в `frontend/src/entities/celestial-body.ts`.
 - `CelestialBody` — immutable Value Object с `static readonly` экземплярами (`STAR`, `PLANET`, `COMET`, `GALAXY`, `NEBULA`, `ASTEROID`, `SATELLITE`, `BLACKHOLE`, `MOON`, `DEBRIS`, `DUST`, `TECHNICAL`, `UNKNOWN`) и четырьмя аномалиями (`REALITY_RIFT`, `CHROMATIC_MAW`, `VOID_WHISPER`, `COSMIC_ABOMINATION`).
 - `CelestialBody.fromString(type)` используется для безопасного, регистронезависимого разрешения типа с fallback на `UNKNOWN`.
 - Canvas-функции отрисовки подключаются к `CelestialBody` из `GraphCanvas/renderer.ts` через поле `drawFunction`, чтобы доменный объект оставался чистым от Canvas-зависимостей.

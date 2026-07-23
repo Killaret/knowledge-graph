@@ -53,7 +53,7 @@
 
 11. Domain Value Objects
 
-- Визуальные/доменные параметры celestial-узлов (`CelestialBody`) хранятся в `src/shared/lib/domain/`.
+- Визуальные/доменные параметры celestial-узлов (`CelestialBody`) хранятся в `src/entities/`.
 - Запрещено дублировать цвета, emoji, label или switch-ветви по типам в компонентах/рендерерах — использовать `CelestialBody.fromString()` и `CelestialBody.UI_TYPES`.
 
 ---

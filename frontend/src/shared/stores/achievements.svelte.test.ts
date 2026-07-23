@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { Achievement } from "$shared/lib/domain";
+import { Achievement } from "$entities";
 import {
   state,
   startPolling,

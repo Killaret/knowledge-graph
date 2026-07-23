@@ -7,7 +7,7 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import { getMessage, mode } from "$shared/stores/lexicon-settings";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import { CelestialBody, Theme } from "$shared/lib/domain";
+  import { CelestialBody, Theme } from "$entities";
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
   let {

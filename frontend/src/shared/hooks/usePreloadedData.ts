@@ -7,7 +7,7 @@ import {
 import { getFullGraphData } from "$shared/api/graph";
 import { getAllAchievements, getMyAchievements } from "$shared/api/users";
 import type { GraphData } from "$shared/api/graph";
-import { UserPoints } from "$shared/lib/domain";
+import { UserPoints } from "$entities";
 
 /**
  * Хук для получения данных графа с использованием предзагруженных данных

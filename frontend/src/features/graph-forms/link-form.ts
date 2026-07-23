@@ -1,4 +1,4 @@
-import { LinkType } from "$shared/lib/domain";
+import { LinkType } from "$entities";
 
 export interface LinkFormState {
   showLinkForm: boolean;

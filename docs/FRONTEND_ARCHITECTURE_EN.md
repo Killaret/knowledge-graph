@@ -323,7 +323,7 @@ sequenceDiagram
 ### Related code
 
 - `frontend/src/routes/+page.svelte` — `loadDataParallel()`, `loadGraphData()`, `applyFiltersAndSort()`
-- `frontend/src/shared/lib/domain/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
+- `frontend/src/entities/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
 - `frontend/src/shared/api/notes.ts` — `getNotes()`
 - `frontend/src/shared/api/graph.ts` — `getFreshGraph()`, `getGraphWithPreload()`, `getFullGraphData()`
 

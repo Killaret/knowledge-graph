@@ -30,7 +30,7 @@ C4Container
     System_Boundary(saas, "Knowledge Graph SaaS") {
         Container(frontend, "Svelte SPA", "SvelteKit, TypeScript", "Note editor, graph visualization, search")
         
-        Container(backend, "Go API", "Go 1.21, Chi Router", "Business logic, CQRS handlers, auth")
+        Container(backend, "Go API", "Go 1.25, Gin", "Business logic, CQRS handlers, auth")
         
         ContainerDb(postgres, "PostgreSQL", "PostgreSQL 15", "Notes, links, users, tenants, RBAC<br/>RLS-enforced, transactional")
         
@@ -41,18 +41,18 @@ C4Container
         Container(worker, "Background Workers", "Go", "Audit log persistence<br/>Draft sync, cleanup jobs")
     }
     
-    System_Ext(auth0, "Auth0", "OIDC/OAuth2 provider<br/>JWT issuance")
-    System_Ext(openai, "OpenAI API", "Embedding generation<br/>Subject to circuit breaker")
+    System_Ext(jwt, "JWT Library", "golang-jwt/v5<br/>JWT issuance")
+    System_Ext(nlp, "NLP Service", "Python FastAPI + sentence-transformers<br/>Embedding generation")
     
     Rel(user, frontend, "Uses", "HTTPS")
     Rel(frontend, backend, "API calls", "HTTPS/JSON, Bearer JWT")
-    Rel(frontend, auth0, "Authenticates", "OAuth2 PKCE")
+    Rel(frontend, jwt, "Authenticates", "JWT")
     
     Rel(backend, postgres, "Read/Write", "SQL with RLS")
     Rel(backend, mongo, "Write logs/drafts", "BSON")
     Rel(backend, redis, "Enqueue jobs", "LPUSH/BRPOP")
     Rel(backend, redis, "Cache permissions", "GET/SET")
-    Rel(backend, openai, "Generate embeddings", "HTTPS (CB protected)")
+    Rel(backend, nlp, "Generate embeddings", "HTTPS (CB protected)")
     
     Rel(worker, postgres, "Process jobs", "SQL")
     Rel(worker, mongo, "Persist audit logs", "BSON bulk insert")
@@ -118,13 +118,13 @@ sequenceDiagram
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | **Frontend** | SvelteKit + TypeScript | SPA with graph visualization |
-| **API** | Go 1.21 + Chi | REST API, CQRS handlers |
+| **API** | Go 1.25 + Gin | REST API, CQRS handlers |
 | **Domain** | Pure Go structs | Rich entities, value objects |
 | **Primary DB** | PostgreSQL 15 | Notes, links, users, tenants |
 | **NoSQL** | MongoDB 6 | Audit logs, draft autosaves |
 | **Cache/Queue** | Redis 7 | Job queues, permission cache |
-| **Auth** | Auth0 (OIDC) | JWT issuance, MFA support |
-| **Embeddings** | OpenAI API | Vector generation (CB protected) |
+| **Auth** | golang-jwt/v5 | JWT issuance, signing, validation |
+| **Embeddings** | NLP Service (Python FastAPI + sentence-transformers) | Vector generation (CB protected) |
 | **Circuit Breaker** | sony/gobreaker | Resilience patterns |
 
 ## Security Architecture
@@ -143,7 +143,7 @@ sequenceDiagram
 │  - Resource ownership checks        │
 ├─────────────────────────────────────┤
 │  Layer 2: Authentication            │
-│  - Auth0 OIDC validates JWT         │
+│  - golang-jwt validates JWT         │
 │  - Token expiration enforced          │
 ├─────────────────────────────────────┤
 │  Layer 1: Transport Security        │

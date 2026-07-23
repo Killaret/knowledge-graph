@@ -59,7 +59,7 @@ The Knowledge Graph visualization system includes **4 anomaly types** that are a
 The system automatically selects anomaly types for nodes with `type: 'unknown'`. Rendering is driven by the `CelestialBody` Value Object; the renderer no longer contains a `switch` over raw type strings.
 
 ```typescript
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 // In renderer.ts drawNode
 const body = CelestialBody.fromString(node.type);
@@ -190,7 +190,7 @@ anomaly: {
 Nodes without a recognized type automatically resolve to `CelestialBody.UNKNOWN`, which dispatches to an anomaly renderer:
 
 ```typescript
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 // In +page.svelte
 nodes: allNotes.map((n) => ({
@@ -205,7 +205,7 @@ nodes: allNotes.map((n) => ({
 The TypeSelector component lists only non-anomaly, user-selectable celestial bodies. This set is derived from `CelestialBody.UI_TYPES`:
 
 ```typescript
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 const types = CelestialBody.UI_TYPES; // star, planet, comet, galaxy, etc.
 ```
@@ -339,7 +339,7 @@ anomaly: {
 **Solution:** Check that node types are normalized through `CelestialBody`:
 
 ```typescript
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 // Ensure types resolve to a known body; tyros will become UNKNOWN/anomaly
 type: CelestialBody.fromString(n.type).type; // Should be 'star', 'planet', etc.
@@ -371,7 +371,7 @@ const hash = stringHash(nodeId);
 ## Related Documentation
 
 - [GraphCanvas Renderer](../frontend/src/components/organisms/GraphCanvas/renderer.ts)
-- [CelestialBody Value Object](../frontend/src/shared/lib/domain/celestial-body.ts)
+- [CelestialBody Value Object](../frontend/src/entities/celestial-body.ts)
 - [Configuration](../frontend/src/shared/config/config.ts)
 - [Node Types](./NODE_TYPES.md)
 - [Visual Testing](./ARGOS.md)

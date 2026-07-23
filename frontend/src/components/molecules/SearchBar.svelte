@@ -3,7 +3,7 @@
   import { page } from "$app/stores";
   import { browser } from "$app/environment";
   import { onMount, untrack } from "svelte";
-  import { SearchQuery } from "$shared/lib/domain";
+  import { SearchQuery } from "$entities";
   import { addJitter } from "$shared/utils/jitter";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

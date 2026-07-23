@@ -78,8 +78,8 @@
 |----------|--------|------------|
 | `shared/` не импортирует `components`/`features` | **PASS** | `grep "\$components/\|\$features/"` в `src/shared` — 0 результатов. |
 | `features/` импортирует `components/organisms/GraphCanvas` | **PASS** | Границы FSD зафиксированы в `.windsurfrules` с явным добавлением `entities/` и `widgets/`; исключение больше не применяется. |
-| Доменные объекты в `shared/lib/domain` | **PASS** | `CelestialBody`, `LinkType`, `FilterState`, `GraphMode` и др. локализованы там. |
-| Алиасы `svelte.config.js`, `vite.config.ts`, `tsconfig.json` | **PASS** | `$shared`, `$components`, `$features`, `$entities` настроены. |
+| Доменные объекты в `entities/` | **PASS** | `CelestialBody`, `LinkType`, `FilterState`, `GraphMode` и др. перенесены в `frontend/src/entities/`. |
+| Алиасы `svelte.config.js`, `vite.config.ts`, `tsconfig.json` | **PASS** | `$shared`, `$components`, `$features`, `$entities` настроены во `svelte.config.js`, `vite.config.ts` и `vitest.config.ts`. |
 | `any` в production-коде | **PASS** | 0 явных `any` в production `.ts/.svelte` (за исключением `.test.ts`/`.spec.ts` и `__mocks__`). |
 | Циклические зависимости (`madge`) | **PASS** | Настроен `npm run check:circular` (`scripts/check-circular.mjs` + `tsconfig.madge.json`); madge проверяет 140 файлов и не обнаруживает циклов. |
 

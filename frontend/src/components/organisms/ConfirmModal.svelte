@@ -2,7 +2,7 @@
   import Button from "$components/atoms/Button.svelte";
   import Modal from "$components/atoms/Modal.svelte";
   import { mode } from "$shared/stores/lexicon-settings";
-  import { Theme } from "$shared/lib/domain";
+  import { Theme } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

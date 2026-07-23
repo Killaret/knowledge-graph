@@ -63,6 +63,10 @@ export default defineConfig({
         find: /^\$components/,
         replacement: path.resolve(__dirname, "./src/components"),
       },
+      {
+        find: /^\$entities/,
+        replacement: path.resolve(__dirname, "./src/entities"),
+      },
     ],
     conditions: ["browser", "default"],
   },

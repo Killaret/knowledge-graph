@@ -10,7 +10,7 @@
 
 import type { SimulationNode } from "./types";
 import { graphConfig2D } from "$shared/config";
-import { CelestialBody } from "$shared/lib/domain";
+import { CelestialBody } from "$entities";
 
 /** Physics spring constant — controls attraction force magnitude */
 const GRAVITY_COEFFICIENT = 0.0001;

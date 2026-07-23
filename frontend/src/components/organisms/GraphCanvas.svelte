@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import type { GraphDeltaData } from "$shared/api/graph";
-  import { GraphMode } from "$shared/lib/domain";
+  import { GraphMode } from "$entities";
   import {
     GraphCanvasOverlay,
     GraphCanvasModals,

@@ -34,7 +34,7 @@
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
-  import { CelestialBody, FilterState } from "$shared/lib/domain";
+  import { CelestialBody, FilterState } from "$entities";
   import {
     formatMessage,
     getCurrentLocale,

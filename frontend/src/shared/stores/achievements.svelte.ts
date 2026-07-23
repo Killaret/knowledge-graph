@@ -1,4 +1,4 @@
-import { Achievement } from "$shared/lib/domain";
+import { Achievement } from "$entities";
 import * as svc from "$shared/services/achievements";
 import { ACHIEVEMENT_POLL_INTERVAL_MS } from "$shared/config";
 import { isAuthenticated } from "./auth.svelte";

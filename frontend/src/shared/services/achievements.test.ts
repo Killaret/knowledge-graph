@@ -6,7 +6,7 @@ import {
   fetchUserAchievements,
   markAchievementSeen,
 } from "./achievements";
-import { Achievement } from "$shared/lib/domain";
+import { Achievement } from "$entities";
 
 const baseUrl = "http://localhost:8080/api";
 

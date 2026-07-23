@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GraphMode } from "$shared/lib/domain";
+  import { GraphMode } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

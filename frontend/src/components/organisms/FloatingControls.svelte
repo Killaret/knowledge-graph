@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
-  import { SearchQuery } from "$shared/lib/domain";
+  import { SearchQuery } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 

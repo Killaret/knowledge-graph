@@ -10,7 +10,7 @@ import {
 import { PreloadService } from "$shared/services/PreloadService";
 import * as graphApi from "$shared/api/graph";
 import * as usersApi from "$shared/api/users";
-import { UserPoints } from "$shared/lib/domain";
+import { UserPoints } from "$entities";
 import {
   mockGraphData,
   mockAchievementsData,

@@ -3,7 +3,7 @@
   import { shareNote, createShareLink } from "$shared/api/sharing.js";
   import type { NoteShare, ShareLink } from "$shared/types";
   import { mode } from "$shared/stores/lexicon-settings";
-  import { Theme } from "$shared/lib/domain";
+  import { Theme } from "$entities";
 
   interface Props {
     noteId: string;

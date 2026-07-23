@@ -24,7 +24,7 @@ import { drawVoidWhisper } from "$shared/lib/graph/renderer/anomalies/void-whisp
 import { drawCosmicAbomination } from "$shared/lib/graph/renderer/anomalies/cosmic-abomination";
 export { drawChromaticMaw, drawVoidWhisper, drawCosmicAbomination };
 import { getNodeGradient } from "$shared/lib/graph/node-gradient";
-import { CelestialBody, LinkType } from "$shared/lib/domain";
+import { CelestialBody, LinkType } from "$entities";
 
 export type { SimulationNode, SimulationLink };
 export type { BlackHoleState } from "./black-hole";

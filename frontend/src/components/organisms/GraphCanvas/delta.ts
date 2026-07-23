@@ -4,7 +4,7 @@
  */
 
 import type { GraphDeltaData } from "$shared/api/graph";
-import { GraphDelta } from "$shared/lib/domain";
+import { GraphDelta } from "$entities";
 import type {
   SimulationNode,
   SimulationLink,

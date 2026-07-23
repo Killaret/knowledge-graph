@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { searchNotes, type Note } from "$shared/api/notes";
-  import { SearchQuery } from "$shared/lib/domain";
+  import { SearchQuery } from "$entities";
   import SearchBar from "$components/molecules/SearchBar.svelte";
   import NoteCard from "$components/molecules/NoteCard.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";

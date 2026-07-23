@@ -21,7 +21,7 @@
     dismiss as dismissAchievement,
   } from "$shared/stores/achievements.svelte.js";
   import { mode, getMessage } from "$shared/stores/lexicon-settings";
-  import { Theme } from "$shared/lib/domain";
+  import { Theme } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

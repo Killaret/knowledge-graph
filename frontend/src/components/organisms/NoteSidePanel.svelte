@@ -7,7 +7,7 @@
   } from "$shared/api/links";
   import { goto } from "$app/navigation";
   import { formatDate } from "$shared/utils/date";
-  import { CelestialBody } from "$shared/lib/domain";
+  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import ShareModal from "$components/organisms/ShareModal.svelte";
 

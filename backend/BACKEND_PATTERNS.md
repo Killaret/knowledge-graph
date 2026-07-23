@@ -6,7 +6,7 @@
 - Clean Architecture / DDD: слои Domain → Application → Interfaces → Infrastructure.
 - Domain содержит сущности, value objects, интерфейсы репозиториев и минимальную бизнес-логику (без зависимостей на инфраструктуру).
 - Infrastructure реализует адаптеры: Postgres (GORM), MongoDB, Redis, очереди (asynq), внешние API (NLP/embedding).
-- Interfaces предоставляет HTTP handlers (Gin/Chi), unified response helpers и middleware.
+- Interfaces предоставляет HTTP handlers (Gin), unified response helpers и middleware.
 
 ## 2. DDD-паттерны в коде
 - Aggregates: `Note` и `Link` — отдельные агрегаты с собственными репозиториями.
