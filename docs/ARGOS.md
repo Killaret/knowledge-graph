@@ -124,7 +124,7 @@ Playwright configuration is in `frontend/playwright.config.ts`:
 1. **Verify the test stack is running:**
    ```bash
    docker compose -f docker-compose.test.yml ps
-   curl http://localhost:8083/health
+   curl http://localhost:18083/health
    ```
 
 2. **Seed data with the deterministic fixture:**

@@ -7,7 +7,7 @@ This document describes the testing infrastructure and procedures for Knowledge 
 Knowledge Graph uses three Docker stacks:
 - **Dev stack** (docker-compose.yml) - Development environment (frontend 5173, backend 9000, nginx 8080/8081)
 - **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend 8085, nginx 8082/8083)
-- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083)
+- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 9095)
 
 ## Test Stack
 
@@ -23,9 +23,9 @@ The test stack is fully isolated from dev and personal stacks:
 
 | Service | Container Name | Port | Purpose |
 |---------|---------------|------|---------|
-| postgres-test | kg-test-postgres | 5434 | Test database |
-| redis-test | kg-test-redis | 6381 | Test cache/queue |
-| mongo-test | kg-test-mongo | 27018 | Test drafts |
+| postgres-test | kg-test-postgres | 15434 | Test database |
+| redis-test | kg-test-redis | 16381 | Test cache/queue |
+| mongo-test | kg-test-mongo | 27019 | Test drafts |
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
 | backend-test | kg-test-backend | 18083 | Test backend API |
 | frontend-test | kg-test-frontend | 3002 | Test frontend |
@@ -483,7 +483,7 @@ docker compose -f docker-compose.test.yml logs
 ```
 
 **Common issues:**
-- Port conflicts (3002, 18083, 5434, 6381, 27018, 15002)
+- Port conflicts (3002, 18083, 15434, 16381, 27019, 15002)
 - Docker Desktop not running
 - Insufficient resources
 
@@ -601,7 +601,7 @@ The test stack can be integrated into CI/CD pipelines:
 ### Test Stack Automation (July 2026)
 - **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
 - **Isolation:** Complete separation from dev/personal stacks
-- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 5434, Redis 6381
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
 - **Status:** ✅ Fully automated and verified
 
 ### Smoke Tests (July 2026)

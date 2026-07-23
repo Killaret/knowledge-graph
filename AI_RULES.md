@@ -42,7 +42,7 @@ Knowledge Graph - система управления заметками с гр
 ### 4.1 Test Stack (Isolated Testing Environment)
 - **ALWAYS** use `docker-compose.test.yml` for automated testing
 - Test stack is completely isolated from dev/personal environments
-- Unique ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Unique ports: Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
 - Separate volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - Test database: `knowledge_test` with test credentials
 - SKIP_AUTH enabled for testing

@@ -148,13 +148,13 @@ cd "$PROJECT_ROOT"
 # Step 10: Backend API Verification
 echo ""
 echo "[Step 10/25] Backend API Verification..."
-if curl -s -f http://localhost:8083/health > /dev/null; then
+if curl -s -f http://localhost:18083/health > /dev/null; then
     echo "  ✓ Test backend health: OK"
 else
     echo "  ⚠ Test backend health: FAILED"
 fi
 
-if curl -s -f "http://localhost:8083/api/v1/notes?limit=1" > /dev/null; then
+if curl -s -f "http://localhost:18083/api/v1/notes?limit=1" > /dev/null; then
     echo "  ✓ Test backend API: OK"
 else
     echo "  ⚠ Test backend API: FAILED"
@@ -197,7 +197,7 @@ echo "========================================"
 echo ""
 echo "Test stack URLs:"
 echo "  Frontend: http://localhost:3002"
-echo "  Backend API: http://localhost:8083"
+echo "  Backend API: http://localhost:18083"
 echo ""
 echo "Follow the manual test checklist:"
 echo "  docs/MANUAL_TEST_CHECKLISTS_RU.md"

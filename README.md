@@ -60,7 +60,7 @@ docker compose -f docker compose.test.yml up -d --build
 **Access services:**
 - **Dev Stack**: Frontend http://localhost:5173, API Gateway http://localhost:8080
 - **Personal Stack**: API Gateway http://localhost:8082, Backend http://localhost:8085
-- **Test Stack**: Frontend http://localhost:3002, Backend http://localhost:8083 (isolated, destroyed after use)
+- **Test Stack**: Frontend http://localhost:3002, Backend http://localhost:18083 (isolated, destroyed after use)
 
 ### Development Mode
 
@@ -358,7 +358,7 @@ For automated testing, use the dedicated test stack that is completely isolated 
 ```
 
 **Test Stack Details:**
-- **Ports:** Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
 - **Database:** Separate `knowledge_test` database
 - **Volumes:** Isolated `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - **Auth:** SKIP_AUTH enabled for testing

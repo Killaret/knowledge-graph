@@ -113,14 +113,14 @@ check_test_stack() {
         echo "  Test containers: $test_containers running"
     fi
 
-    if curl -s -f http://localhost:8083/health > /dev/null; then
+    if curl -s -f http://localhost:18083/health > /dev/null; then
         echo "  Test health endpoint: OK"
     else
         echo "  Test health endpoint: FAILED"
         return 1
     fi
 
-    check_api 8083 || return 1
+    check_api 18083 || return 1
 
     return 0
 }

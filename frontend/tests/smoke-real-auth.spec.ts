@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8083";
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:18083";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3002";
 
 test.describe(

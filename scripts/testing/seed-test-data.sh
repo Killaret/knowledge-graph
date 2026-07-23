@@ -1,7 +1,7 @@
 #!/bin/bash
 # Seed Test Data - Linux/Mac
 # Creates a known set of test notes and links for manual/automated testing.
-# Requires the test stack to be running at localhost:8083.
+# Requires the test stack to be running at localhost:18083.
 
 set -e
 
@@ -16,7 +16,7 @@ if [ -n "$SEED" ]; then
     RANDOM=$SEED
 fi
 
-API_URL="http://localhost:8083/api/v1"
+API_URL="http://localhost:18083/api/v1"
 POSTGRES_CONTAINER="kg-test-postgres"
 
 TEST_USER='{

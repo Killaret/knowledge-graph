@@ -97,7 +97,7 @@ function Check-TestStack {
     
     # Check test health endpoint
     try {
-        $testHealth = Invoke-RestMethod -Uri "http://localhost:8083/health" -Method Get -TimeoutSec 5
+        $testHealth = Invoke-RestMethod -Uri "http://localhost:18083/health" -Method Get -TimeoutSec 5
         Write-Host "  Test health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  Test health endpoint: FAILED" -ForegroundColor Red
@@ -105,7 +105,7 @@ function Check-TestStack {
     }
     
     # Check test API
-    return (Check-Api -Port 8083 -Name "Test")
+    return (Check-Api -Port 18083 -Name "Test")
 }
 
 # Check requested stacks

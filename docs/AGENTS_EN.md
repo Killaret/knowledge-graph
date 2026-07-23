@@ -223,13 +223,13 @@ backend:
 **Test Stack (MANDATORY for E2E/BDD):**
 - **ALWAYS** use `docker-compose.test.yml` for E2E and BDD tests
 - **Stop dev and personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright failures
-- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:18083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`
 - Ensure `.env` contains `JWT_SECRET` and DB passwords matching existing `postgres_data` / `pgdata_personal` volumes
 - Never run E2E/BDD against dev or personal stacks
 - Start test stack: `.\scripts\testing\start-test.ps1`
 - Seed test data: `.\scripts\testing\seed-test-data.ps1`
 - Stop and destroy: `.\scripts\testing\stop-test.ps1` (removes all data with `-v`)
-- Test stack ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Test stack ports: Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
 - Test database: `knowledge_test` (separate from dev/personal)
 - Test stack completely isolated with unique container names (`kg-test-*`)
 - See `docs/TESTING.md` for complete test stack documentation
@@ -368,13 +368,13 @@ docker compose -f docker-compose.test.yml down -v       # Manual cleanup
 ```
 
 **Test Stack Details:**
-- Ports: Frontend 3002, Backend 8083, PostgreSQL 5434, Redis 6381
+- Ports: Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
 - Database: `knowledge_test` (separate from dev/personal)
 - Containers: `kg-test-*` (unique names)
 - Volumes: `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - Auth: SKIP_AUTH enabled for testing
 - **Isolation:** Stop dev/personal stacks before testing; concurrent stacks cause Docker instability and Windows `localhost` → `::1` Playwright failures
-- **Windows URLs:** Use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- **Windows URLs:** Use `http://127.0.0.1:3002` / `http://127.0.0.1:18083` or rebuild frontend with `VITE_API_URL=http://127.0.0.1:18083`
 - **`.env` requirements:** `JWT_SECRET`, `POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD` must match existing volumes
 - See `docs/TESTING.md` for complete documentation
 

@@ -14,7 +14,7 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 |-------|----------------|----------------|---------------|----------|---------|
 | Dev | docker-compose.yml | 3000 (5173) | 8080 (9000) | knowledge_base | Development |
 | Personal | docker-compose.personal.yml | 3001 | 8082 (8085) | knowledge_personal | Personal use |
-| Test | docker-compose.test.yml | 3002 (3000) | 8083 (8080) | knowledge_test | Isolated testing |
+| Test | docker-compose.test.yml | 3002 (3000) | 18083 (8080) | knowledge_test | Isolated testing |
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 ### Environment Isolation Notes
 
 - **Only the test stack may run during E2E/BDD/regression.** Stop dev and personal stacks before the cycle to prevent Docker instability, resource exhaustion, and port/network conflicts.
-- On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`. Use `http://127.0.0.1:3002` and `http://127.0.0.1:8083`, or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`.
+- On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`. Use `http://127.0.0.1:3002` and `http://127.0.0.1:18083`, or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`.
 - `.env` must contain `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes (`POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD`).
 
 ---
@@ -224,8 +224,8 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 ### 2.3 Verify Test Stack Health
 **Checks:**
-- [ ] Test health: http://localhost:8083/health → 200
-- [ ] Test API: http://localhost:8083/api/v1/notes?limit=1 → JSON (5 notes)
+- [ ] Test health: http://localhost:18083/health → 200
+- [ ] Test API: http://localhost:18083/api/v1/notes?limit=1 → JSON (5 notes)
 - [ ] Test frontend: http://localhost:3002 → loads
 
 **Expected Result:** Test stack ready for testing
@@ -316,7 +316,7 @@ go test -tags=integration ./... -count=1 -p=1 2>&1 | tee ../logs/test-outputs/te
 ## PART 5: Backend API Verification
 
 ### 5.1 Authentication Endpoints
-**Base URL:** http://localhost:8083
+**Base URL:** http://localhost:18083
 
 **Checks:**
 - [ ] POST /api/v1/auth/register → 201
@@ -365,7 +365,7 @@ go test -tags=integration ./... -count=1 -p=1 2>&1 | tee ../logs/test-outputs/te
 
 ### 5.5.1 Check CORS Headers
 ```bash
-curl -I http://localhost:8083/api/v1/notes
+curl -I http://localhost:18083/api/v1/notes
 ```
 **Expected:** CORS headers present
 
@@ -517,7 +517,7 @@ npm run test:unit 2>&1 | tee ../logs/test-outputs/test-frontend-unit.log
 Phase 1 — `SKIP_AUTH=true` test stack (skip-auth tests):
 ```bash
 cd frontend
-FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:skipauth
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run test:skipauth
 ```
 
 **Expected:** All non-`@auth-real` E2E tests pass (skips allowed).
@@ -526,7 +526,7 @@ Phase 2 — `SKIP_AUTH=false` test stack (real auth tests):
 ```bash
 # Rebuild the test stack with SKIP_AUTH=false first, then:
 cd frontend
-FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:realauth
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run test:realauth
 ```
 
 **Expected:** All `@auth-real` tests pass.
@@ -544,7 +544,7 @@ npx playwright test --project=visual 2>&1 | tee ../logs/test-outputs/test-fronte
 SKIP_AUTH mode:
 ```bash
 cd frontend
-FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:8083 npm run test:bdd:skipauth
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run test:bdd:skipauth
 ```
 
 **Expected:** All scenarios pass against `SKIP_AUTH=true` stack.
@@ -562,7 +562,7 @@ Real-auth BDD is not yet implemented; skip or add login-based step definitions w
 
 ### 10.2 Check Public API
 ```bash
-curl http://localhost:8083/graph-service/api/v1/graph/full?limit=100
+curl http://localhost:18083/graph-service/api/v1/graph/full?limit=100
 ```
 **Expected:** JSON with 3 nodes and 2 links
 
@@ -606,7 +606,7 @@ curl http://localhost:8083/graph-service/api/v1/graph/full?limit=100
 
 ### 11.4.1 Check OpenAPI Spec
 ```bash
-curl http://localhost:8083/openapi.yaml
+curl http://localhost:18083/openapi.yaml
 ```
 **Expected:** Valid OpenAPI 3.0 spec
 

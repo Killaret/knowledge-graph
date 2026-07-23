@@ -5,7 +5,7 @@
 **Окружение**
 
 - Frontend: `http://localhost:3002`
-- Backend: `http://localhost:8083`
+- Backend: `http://localhost:18083`
 - Тестовый пользователь: `testuser` / `TestPassword123!`
 - Тестовые данные: 100 notes + 60 links
 - `hover_delay_ms` в `knowledge-graph.config.json` → `frontend.graph.2d.hover_delay_ms` = 150
@@ -13,7 +13,7 @@
 **Перед стартом**
 
 - [ ] `docker ps` показывает все `kg-test-*` контейнеры healthy.
-- [ ] `curl http://localhost:8083/health` → `{"status":"ok"}`.
+- [ ] `curl http://localhost:18083/health` → `{"status":"ok"}`.
 - [ ] `curl http://localhost:3002` → HTTP 200.
 - [ ] Открыть DevTools → Network и Console, держать их открытыми во время тестов.
 
@@ -44,8 +44,8 @@
 ## 2. Проверка публичного графа (без аутентификации)
 
 - [ ] Открыть `http://localhost:3002` в инкогнито.
-- [ ] `GET http://localhost:8083/api/v1/graph/all` без Authorization → 200, публичные данные.
-- [ ] `GET http://localhost:8083/api/v1/notes?is_public=true` без auth → 401 (список заметок требует auth; публичный граф отдаётся через `/api/v1/graph/all`).
+- [ ] `GET http://localhost:18083/api/v1/graph/all` без Authorization → 200, публичные данные.
+- [ ] `GET http://localhost:18083/api/v1/notes?is_public=true` без auth → 401 (список заметок требует auth; публичный граф отдаётся через `/api/v1/graph/all`).
 - [ ] Приватные заметки не отображаются и не возвращаются.
 - [ ] Попытка перейти на `/profile` без auth → редирект на login или 401.
 - [ ] Повторный hard refresh (`Ctrl+F5`) не вызывает 401-циклов.

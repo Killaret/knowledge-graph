@@ -789,10 +789,12 @@ def get_embedding_model():
 | Personal | API gateway | `8082` |
 | Personal | Graph Service | `8092` |
 | Test | Frontend | `3002` |
-| Test | Backend | `8083` |
+| Test | Backend | `18083` |
 | Test | Graph Service | `9095` |
-| Test | PostgreSQL | `5434` |
-| Test | Redis | `6381` |
+| Test | PostgreSQL | `15434` |
+| Test | Redis | `16381` |
+| Test | MongoDB | `27019` |
+| Test | NLP | `15002` |
 
 ---
 

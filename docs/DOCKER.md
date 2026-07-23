@@ -230,7 +230,7 @@ If backend logs show `password authentication failed for user "kb_user"` or `"pe
 
 ### Windows `localhost` Resolves to `::1`
 
-On Windows, Docker Desktop binds published ports to `127.0.0.1`, but Node/Playwright resolves `localhost` to `::1` first. This causes `ECONNREFUSED ::1:8083` in tests. Use `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`.
+On Windows, Docker Desktop binds published ports to `127.0.0.1`, but Node/Playwright resolves `localhost` to `::1` first. This causes `ECONNREFUSED ::1:18083` in tests. Use `http://127.0.0.1:3002` / `http://127.0.0.1:18083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`.
 
 ## Stopping Services
 
