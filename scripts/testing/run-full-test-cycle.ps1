@@ -333,7 +333,7 @@ try {
     Write-Host "`n[Step 18/25] Documentation Verification..." -ForegroundColor Yellow
     $docFiles = @("docs/AGENTS.md", ".windsurfrules")
     $docFiles | ForEach-Object {
-        $p = Join-Path $scriptDir .. $_
+        $p = Join-Path $repoDir $_
         if (Test-Path $p) {
             Write-Host "  ✓ $_ exists" -ForegroundColor Green
         } else {
@@ -362,10 +362,10 @@ try {
         Write-Host "✓ Test stack destroyed" -ForegroundColor Green
     }
 
-    # Step 20: Cleanup Temporary Files
-    Write-Host "`n[Step 20/25] Cleanup Temporary Files..." -ForegroundColor Yellow
-    python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
-    Write-Host "  ✓ Temporary files cleaned" -ForegroundColor Green
+    # Step 20: Prepare for dev stack restoration
+    Write-Host "`n[Step 20/25] Preparing for dev stack restoration..." -ForegroundColor Yellow
+    # Cleanup moved to after state checks / auto-commit
+    # (temporary files will be cleaned after final verification)
 
 
     # Step 21: Start dev stack
@@ -398,6 +398,7 @@ try {
 
     # Step 23: State, identity and health checks
     Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
     docker ps --filter "name=kg-" > "$snapshotDir\post-test-ps.txt"
     Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
 
@@ -536,6 +537,11 @@ try {
         Write-Host "  WARNING: Dev stack state changed - skipping auto-commit" -ForegroundColor Yellow
         Write-Host "  Please investigate the changes manually before committing" -ForegroundColor Yellow
     }
+
+    # Step 25: Cleanup Temporary Files
+    Write-Host "`n[Step 25/25] Cleanup Temporary Files..." -ForegroundColor Yellow
+    python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
+    Write-Host "  ✓ Temporary files cleaned" -ForegroundColor Green
 
     # Final Summary:
     Write-Host "`n[Final Summary] Test cycle summary" -ForegroundColor Cyan
