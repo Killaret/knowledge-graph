@@ -238,16 +238,17 @@ try {
 
     # Step 16: E2E Phase 2 — real auth (SKIP_AUTH=false) test stack
     Write-Host "`n[Step 16/25] E2E Phase 2 — real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
-    Write-Host "  Stopping SKIP_AUTH test stack and rebuilding with SKIP_AUTH=false..." -ForegroundColor Yellow
+    Write-Host "  Stopping SKIP_AUTH test stack and restarting with SKIP_AUTH=false..." -ForegroundColor Yellow
     Set-Location $repoDir
     & $scriptDir\stop-test.ps1
     $env:SKIP_AUTH = "false"
     $env:VITE_SKIP_AUTH = "false"
-    & $scriptDir\start-test.ps1
+    docker compose -f docker-compose.test.yml up -d --wait
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR: Real auth test stack failed to start" -ForegroundColor Red
         exit 1
     }
+    Write-Host "  Test stack started with SKIP_AUTH=false" -ForegroundColor Green
 
     Set-Location $repoDir\frontend
     npx playwright test --project=chromium-real-auth
