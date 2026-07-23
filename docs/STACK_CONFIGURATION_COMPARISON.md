@@ -13,8 +13,8 @@
 
 | Service | Dev stack host port | Personal stack host port |
 |---------|---------------------|--------------------------|
-| nginx | `8080` (API), `8081` (frontend) | `8082` (API), `8083` (frontend) |
-| backend | `9000` → container `8080` | `8085` → container `8080` |
+| nginx | `18080` (API), `18081` (frontend) | `18082` (API), `18084` (frontend) |
+| backend | `9000` → container `8080` | `18085` → container `8080` |
 | graph-service (HTTP) | `9091` → `9091` | `9092` → `9091` |
 | graph-service (gRPC) | `9090` → `9090` | not exposed on host |
 | postgres | `15432` → `5432` | `5433` → `5432` |
@@ -29,7 +29,7 @@
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Browser   │────▶│ nginx:8080  │────▶│ backend:8080│
+│   Browser   │────▶│ nginx:18080 │────▶│ backend:8080│
 └─────────────┘     └─────────────┘     └─────────────┘
                             │
                             ▼
@@ -39,7 +39,7 @@
                     └─────────────────┘
 ```
 
-- Client-side API calls go directly to `nginx:8080`.
+- Client-side API calls go directly to `nginx:18080`.
 - SSR `hooks.server.ts` proxies `/api/v1` to `backend:8080` and `/graph-service` to `graph-service:9091`.
 - Nginx is an explicit gateway for both browser and frontend container requests.
 
@@ -60,14 +60,14 @@
 
 - Client-side API calls use relative URLs (`/api`, `/graph-service`) and hit the SvelteKit frontend server.
 - SSR `hooks.server.ts` proxies to `backend_personal:8080` and `graph-service-personal:9091`.
-- Nginx is available on `8082/8083` but the frontend can also be used standalone on `3001`.
+- Nginx is available on `18082/18084` but the frontend can also be used standalone on `3001`.
 
 ## Frontend Configuration Differences
 
 | Setting | Dev stack | Personal stack |
 |---------|-----------|----------------|
-| `VITE_API_URL` (browser) | `http://localhost:8080` | `/api` (relative) |
-| `VITE_GRAPH_SERVICE_URL` (browser) | `http://localhost:8080/graph-service` | `/graph-service` (relative) |
+| `VITE_API_URL` (browser) | `http://localhost:18080` | `/api` (relative) |
+| `VITE_GRAPH_SERVICE_URL` (browser) | `http://localhost:18080/graph-service` | `/graph-service` (relative) |
 | `VITE_API_TARGET` (SSR) | `http://backend:8080` | `http://backend_personal:8080` |
 | `GRAPH_SERVICE_URL` (SSR) | `http://graph-service:9091` | `http://graph-service-personal:9091` |
 

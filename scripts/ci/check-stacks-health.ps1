@@ -18,12 +18,12 @@ function Check-Api {
         [string]$Name
     )
     try {
-        $null = Invoke-RestMethod -Uri "http://localhost:$Port/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Write-Host "  $Name API: OK" -ForegroundColor Green
         return 0
     } catch {
         try {
-            $null = Invoke-RestMethod -Uri "http://localhost:$Port/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5
+            $null = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5
             Write-Host "  $Name API: OK (via public graph)" -ForegroundColor Green
             return 0
         } catch {
@@ -47,7 +47,7 @@ function Check-DevStack {
     
     # Check dev health endpoint
     try {
-        $devHealth = Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get -TimeoutSec 5
+        $devHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5
         Write-Host "  Dev health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  Dev health endpoint: FAILED" -ForegroundColor Red
@@ -55,7 +55,7 @@ function Check-DevStack {
     }
     
     # Check dev API (notes if public, fallback to public graph)
-    return (Check-Api -Port 8080 -Name "Dev")
+    return (Check-Api -Port 18080 -Name "Dev")
 }
 
 function Check-PersonalStack {
@@ -72,7 +72,7 @@ function Check-PersonalStack {
     
     # Check personal health endpoint
     try {
-        $personalHealth = Invoke-RestMethod -Uri "http://localhost:8082/health" -Method Get -TimeoutSec 5
+        $personalHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18082/health" -Method Get -TimeoutSec 5
         Write-Host "  Personal health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  Personal health endpoint: FAILED" -ForegroundColor Red
@@ -80,7 +80,7 @@ function Check-PersonalStack {
     }
     
     # Check personal API
-    return (Check-Api -Port 8082 -Name "Personal")
+    return (Check-Api -Port 18082 -Name "Personal")
 }
 
 function Check-TestStack {
@@ -97,7 +97,7 @@ function Check-TestStack {
     
     # Check test health endpoint
     try {
-        $testHealth = Invoke-RestMethod -Uri "http://localhost:18083/health" -Method Get -TimeoutSec 5
+        $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
         Write-Host "  Test health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  Test health endpoint: FAILED" -ForegroundColor Red

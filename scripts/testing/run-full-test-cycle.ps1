@@ -57,14 +57,14 @@ try {
     Write-Host "  ✓ Container snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
     try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
         Write-Host "  ✓ Health snapshot saved to $snapshotDir\pre-test-health.json" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev health endpoint not available (stack may be stopped)" -ForegroundColor Yellow
     }
 
     try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-notes.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-notes.json"
         Write-Host "  ✓ Notes snapshot saved to $snapshotDir\pre-test-notes.json" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev API not available (stack may be stopped)" -ForegroundColor Yellow
@@ -405,7 +405,7 @@ try {
     Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
 
     try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
         Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
@@ -414,11 +414,11 @@ try {
     }
 
     try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+        Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
         Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
     } catch {
         try {
-            Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+            Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
             Write-Host "  ✓ Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
         } catch {
             Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Yellow
@@ -443,7 +443,7 @@ try {
         }
     }
 
-    foreach ($stack in @(@{ Url = "http://127.0.0.1:8080"; Name = "dev" }, @{ Url = "http://127.0.0.1:8082"; Name = "personal" })) {
+    foreach ($stack in @(@{ Url = "http://127.0.0.1:18080"; Name = "dev" }, @{ Url = "http://127.0.0.1:18082"; Name = "personal" })) {
         $notesUrl = "$($stack.Url)/api/v1/notes?limit=1"
         $graphUrl = "$($stack.Url)/api/v1/graph/all?limit=1"
         $output = "$snapshotDir\$($stack.Name)-notes.json"

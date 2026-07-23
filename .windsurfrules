@@ -323,8 +323,8 @@ CMD ["/server"]
 **All services must have `/health` endpoint.**
 
 **Port mapping:**
-- Dev: nginx:8080, backend:9000, graph-service:9091
-- Personal: backend:8085, gateway:8082, graph-service:8092
+- Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service:9091
+- Personal: backend direct:18085, nginx API/gateway:18082, nginx frontend:18084, graph-service:8092
 - Test: frontend:3002, backend:18083, graph-service:9095, postgres:15434, redis:16381, mongo:27019, nlp:15002
 
 **Volume names:**
@@ -378,9 +378,11 @@ docker compose -f docker-compose.test.yml up -d --build  # Manual start
 docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 
 # Health checks
-curl http://localhost:8080/health
-curl http://localhost:9000/health
-curl http://127.0.0.1:18083/health                   # Test stack backend
+curl http://127.0.0.1:18080/health                    # Dev nginx gateway
+curl http://127.0.0.1:18082/health                    # Personal nginx gateway
+curl http://127.0.0.1:18085/health                    # Personal backend direct
+curl http://127.0.0.1:9000/health                     # Dev backend direct
+curl http://127.0.0.1:18083/health                    # Test stack backend
 ```
 
 ---

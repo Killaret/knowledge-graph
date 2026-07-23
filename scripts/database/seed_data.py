@@ -7,7 +7,7 @@ Run:
     python scripts/database/seed_data.py -i
 
     # CLI arguments
-    python scripts/database/seed_data.py --notes-per-category 50 --api-url http://localhost:8080
+    python scripts/database/seed_data.py --notes-per-category 50 --api-url http://127.0.0.1:18080
 
     # Default values
     python scripts/database/seed_data.py
@@ -81,7 +81,7 @@ def interactive_config(args) -> argparse.Namespace:
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-DEFAULT_API_URL = "http://localhost:8080"
+DEFAULT_API_URL = "http://127.0.0.1:18080"
 CATEGORIES = ["book", "movie", "anime", "manga", "adaptation"]
 NOTES_PER_CATEGORY = 30
 TOTAL_NOTES = NOTES_PER_CATEGORY * len(CATEGORIES)

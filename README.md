@@ -58,8 +58,8 @@ docker compose -f docker compose.test.yml up -d --build
 ```
 
 **Access services:**
-- **Dev Stack**: Frontend http://localhost:5173, API Gateway http://localhost:8080
-- **Personal Stack**: API Gateway http://localhost:8082, Backend http://localhost:8085
+- **Dev Stack**: Frontend dev server http://localhost:5173, Nginx API http://localhost:18080, Nginx frontend http://localhost:18081
+- **Personal Stack**: Nginx API http://localhost:18082, Nginx frontend http://localhost:18084, Backend direct http://localhost:18085
 - **Test Stack**: Frontend http://localhost:3002, Backend http://localhost:18083 (isolated, destroyed after use)
 
 ### Development Mode
@@ -157,9 +157,9 @@ cd nlp-service && uvicorn app.main:app --reload
 ### Proxy Architecture
 
 **Docker Environment:**
-- **Nginx** (port 8080): API gateway
-  - `/api/*` → Backend (localhost:8080)
-  - `/graph-service/api/*` → Graph Service (localhost:9091)
+- **Nginx** (port 18080): API gateway
+  - `/api/*` → Backend (localhost:18080)
+  - `/graph-service/api/*` → Graph Service (localhost:18080)
 
 **Development Environment:**
 - **Vite Proxy** (vite.config.ts): Dev mode proxy

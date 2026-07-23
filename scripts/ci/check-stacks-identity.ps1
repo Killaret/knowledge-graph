@@ -132,7 +132,7 @@ Write-Host "`n[Step 5/6] Checking stack health..." -ForegroundColor Yellow
 
 # Check dev stack
 try {
-    $devHealth = Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get -TimeoutSec 5
+    $devHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5
     Write-Host "  Dev stack: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Dev stack: FAILED" -ForegroundColor Red
@@ -141,7 +141,7 @@ try {
 
 # Check personal stack
 try {
-    $personalHealth = Invoke-RestMethod -Uri "http://localhost:8082/health" -Method Get -TimeoutSec 5
+    $personalHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18082/health" -Method Get -TimeoutSec 5
     Write-Host "  Personal stack: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Personal stack: FAILED" -ForegroundColor Red
@@ -153,7 +153,7 @@ Write-Host "`n[Step 6/6] Verifying healthcheck endpoints..." -ForegroundColor Ye
 
 # Check backend health endpoint
 try {
-    $backendHealth = Invoke-RestMethod -Uri "http://localhost:9000/health" -Method Get -TimeoutSec 5
+    $backendHealth = Invoke-RestMethod -Uri "http://127.0.0.1:9000/health" -Method Get -TimeoutSec 5
     Write-Host "  Backend health endpoint: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Backend health endpoint: FAILED (backend may not be running)" -ForegroundColor Yellow

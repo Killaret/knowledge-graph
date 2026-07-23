@@ -148,14 +148,15 @@ docker exec kg-test-mongo mongosh --eval "db.getCollectionNames()"
 ### Health Checks
 ```bash
 # Dev stack
-curl http://localhost:8080/health           # Nginx gateway
+curl http://localhost:18080/health           # Nginx gateway
 curl http://localhost:9000/health           # Backend
 curl http://localhost:9091/health           # Graph service
-curl http://localhost:8080/api/v1/notes     # Notes API
+curl http://localhost:18080/api/v1/notes     # Notes API
 
 # Personal stack
-curl http://localhost:8085/health           # Personal backend
-curl http://localhost:8082/health           # Personal API gateway
+curl http://localhost:18085/health           # Personal backend
+curl http://localhost:18082/health           # Personal API gateway
+curl http://localhost:18084/health           # Personal frontend gateway
 curl http://localhost:8092/health           # Personal graph service
 
 # Test stack

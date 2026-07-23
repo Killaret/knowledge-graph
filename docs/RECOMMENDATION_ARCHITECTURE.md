@@ -320,5 +320,5 @@ Weights are automatically normalized to sum to 1.0. Set `gamma > 0` to enable ke
 Recommended to deploy `asynqmon` for visual monitoring:
 
 ```bash
-docker run -p 8080:8080 hibiken/asynqmon --redis-addr=localhost:6379
+docker run -p 18088:8080 hibiken/asynqmon --redis-addr=localhost:6379
 ```

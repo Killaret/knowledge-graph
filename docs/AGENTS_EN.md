@@ -380,10 +380,10 @@ docker compose -f docker-compose.test.yml down -v       # Manual cleanup
 
 ### Health Checks
 ```bash
-curl http://localhost:8080/health                       # Nginx gateway
+curl http://localhost:18080/health                       # Dev nginx gateway
 curl http://localhost:9000/health                       # Backend
 curl http://localhost:9091/health                       # Graph service
-curl http://localhost:8085/health                       # Personal backend
+curl http://localhost:18085/health                       # Personal backend
 ```
 
 ---

@@ -49,7 +49,7 @@ build:
 ### Frontend (SvelteKit) — `frontend/Dockerfile`
 ```dockerfile
 FROM node:20-alpine AS builder
-ARG VITE_API_URL=http://localhost:8080   # baked into client bundle at build time
+ARG VITE_API_URL=http://localhost:18080   # baked into client bundle at build time
 ENV VITE_API_URL=${VITE_API_URL}
 WORKDIR /app
 COPY frontend/package*.json ./
@@ -122,9 +122,9 @@ This allows the cache to be pre-populated on the host without rebuilding images.
 | Redis port | 6379 | 6380 |
 | Mongo port | 27017 | 27018 |
 | NLP port | 5000 | 5001 |
-| Backend port | 9000 (127.0.0.1) | 8085 |
-| Nginx API port | 8080 | 8082 |
-| Nginx frontend port | 8081 | 8083 |
+| Backend port | 9000 (127.0.0.1) | 18085 (127.0.0.1) |
+| Nginx API port | 18080 (127.0.0.1) | 18082 (127.0.0.1) |
+| Nginx frontend port | 18081 (127.0.0.1) | 18084 (127.0.0.1) |
 | Backup scheduler | no | **yes** (`backup_scheduler` service) |
 | Nginx config | `nginx.conf` | `nginx.personal.conf` |
 | DB name | `knowledge_base` | `knowledge_personal` |

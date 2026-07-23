@@ -118,18 +118,19 @@ Key log patterns to watch:
 docker compose ps
 
 # Manual health checks
-curl -f http://localhost:8080/health          # nginx / backend gateway
+curl -f http://localhost:18080/health         # nginx / backend gateway (dev)
 curl -f http://localhost:9000/health          # backend direct (dev only)
 curl -f http://localhost:9091/health          # graph-service direct
 curl -f http://localhost:5000/health          # nlp service (triggers model load)
 
 # Personal stack ports
-curl -f http://localhost:8082/health          # nginx personal
+curl -f http://localhost:18082/health         # nginx personal
+curl -f http://localhost:18085/health         # personal backend direct
 curl -f http://localhost:9092/health          # graph-service personal
 curl -f http://localhost:5001/health          # nlp personal
 
 # Batch health check script
-for svc in 8080 9000 9091 5000; do
+for svc in 18080 9000 9091 5000; do
   echo -n "Port $svc: "
   curl -sf http://localhost:$svc/health && echo OK || echo FAIL
 done

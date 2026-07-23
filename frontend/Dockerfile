@@ -2,13 +2,13 @@
 FROM node:20-alpine AS builder
 
 # Accept build argument for API target
-ARG VITE_API_URL=http://localhost:8080
+ARG VITE_API_URL=http://localhost:18080
 ENV VITE_API_URL=${VITE_API_URL}
-ARG VITE_API_TARGET=http://localhost:8080
+ARG VITE_API_TARGET=http://localhost:18080
 ENV VITE_API_TARGET=${VITE_API_TARGET}
-ARG VITE_BACKEND_URL=http://localhost:8080
+ARG VITE_BACKEND_URL=http://localhost:18080
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
-ARG VITE_GRAPH_SERVICE_URL=http://localhost:9091/graph-service
+ARG VITE_GRAPH_SERVICE_URL=http://localhost:18080/graph-service
 ENV VITE_GRAPH_SERVICE_URL=${VITE_GRAPH_SERVICE_URL}
 
 WORKDIR /app

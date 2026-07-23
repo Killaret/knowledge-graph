@@ -133,7 +133,7 @@ if [ -n "$CI" ]; then
     echo "  CI environment detected: skipping live stack health checks"
 else
     # Check dev stack
-    if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -s http://127.0.0.1:18080/health > /dev/null 2>&1; then
         echo "  Dev stack: OK"
     else
         echo "  Dev stack: FAILED"
@@ -141,7 +141,7 @@ else
     fi
 
     # Check personal stack
-    if curl -s http://localhost:8082/health > /dev/null 2>&1; then
+    if curl -s http://127.0.0.1:18082/health > /dev/null 2>&1; then
         echo "  Personal stack: OK"
     else
         echo "  Personal stack: FAILED"
@@ -154,7 +154,7 @@ echo ""
 echo "[Step 6/6] Verifying healthcheck endpoints..."
 
 # Check backend health endpoint
-if curl -s http://localhost:9000/health > /dev/null 2>&1; then
+if curl -s http://127.0.0.1:9000/health > /dev/null 2>&1; then
     echo "  Backend health endpoint: OK"
 else
     echo "  Backend health endpoint: FAILED (backend may not be running)"
@@ -162,7 +162,7 @@ else
 fi
 
 # Check NLP service health endpoint (if running)
-if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+if curl -s http://127.0.0.1:8000/health > /dev/null 2>&1; then
     echo "  NLP service health endpoint: OK"
 else
     echo "  NLP service health endpoint: FAILED (NLP may not be running)"

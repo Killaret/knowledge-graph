@@ -137,7 +137,7 @@ resolved at runtime via `resolver 127.0.0.11`.
 
 | Variable | Dev (local) | Docker compose |
 |----------|-------------|----------------|
-| `VITE_API_URL` | `http://localhost:8080` | `http://localhost:8080` |
+| `VITE_API_URL` | `http://localhost:18080` | `http://localhost:18080` |
 | `VITE_API_TARGET` (SSR) | `http://localhost:9000` | `http://backend:8080` |
 | `GRAPH_SERVICE_URL` (SSR) | `http://localhost:9091` | `http://graph-service:9091` |
 | `DATABASE_URL` | `postgresql://...@localhost:15432/...` | `postgresql://...@postgres:5432/...` |
@@ -182,7 +182,7 @@ The graph-service (`services/graph-service/`) exposes its own HTTP API on port
 - Browser client: via nginx `/graph-service/` prefix
 
 ```typescript
-// frontend: VITE_GRAPH_SERVICE_URL = http://localhost:8080/graph-service
+// frontend: VITE_GRAPH_SERVICE_URL = http://localhost:18080/graph-service
 // SSR:      GRAPH_SERVICE_URL      = http://graph-service:9091
 ```
 

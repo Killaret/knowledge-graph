@@ -785,13 +785,13 @@ if resp.StatusCode == http.StatusTooManyRequests {
 Interactive API documentation is available at:
 
 ```
-http://localhost:8080/swagger/index.html
+http://localhost:18080/swagger/index.html
 ```
 
 OpenAPI specification is available at:
 
 ```
-http://localhost:8080/openapi.yaml
+http://localhost:18080/openapi.yaml
 ```
 
 ---

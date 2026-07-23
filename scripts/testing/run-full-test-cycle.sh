@@ -50,15 +50,15 @@ echo "[Step 0/25] Capturing dev stack state snapshot..."
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/pre-test-ps.txt"
 echo "  ✓ Container snapshot saved to $SNAPSHOT_DIR/pre-test-ps.txt"
 
-if curl -s -f http://localhost:8080/health > /dev/null; then
-    curl -s http://localhost:8080/health > "$SNAPSHOT_DIR/pre-test-health.json"
+if curl -s -f http://127.0.0.1:18080/health > /dev/null; then
+    curl -s http://127.0.0.1:18080/health > "$SNAPSHOT_DIR/pre-test-health.json"
     echo "  ✓ Health snapshot saved to $SNAPSHOT_DIR/pre-test-health.json"
 else
     echo "  ⚠ Dev health endpoint not available (stack may be stopped)"
 fi
 
-if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
-    curl -s "http://localhost:8080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/pre-test-notes.json"
+if curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/pre-test-notes.json"
     echo "  ✓ Notes snapshot saved to $SNAPSHOT_DIR/pre-test-notes.json"
 else
     echo "  ⚠ Dev API not available (stack may be stopped)"
@@ -116,7 +116,7 @@ echo "  ✓ Docker images checked"
 # Step 7: NLP Service Tests
 echo ""
 echo "[Step 7/25] NLP Service Tests..."
-if curl -s -f http://localhost:15002/health > /dev/null; then
+if curl -s -f http://127.0.0.1:15002/health > /dev/null; then
     echo "  ✓ NLP health endpoint: OK"
 else
     echo "  ⚠ NLP health endpoint: FAILED"
@@ -148,13 +148,13 @@ cd "$PROJECT_ROOT"
 # Step 10: Backend API Verification
 echo ""
 echo "[Step 10/25] Backend API Verification..."
-if curl -s -f http://localhost:18083/health > /dev/null; then
+if curl -s -f http://127.0.0.1:18083/health > /dev/null; then
     echo "  ✓ Test backend health: OK"
 else
     echo "  ⚠ Test backend health: FAILED"
 fi
 
-if curl -s -f "http://localhost:18083/api/v1/notes?limit=1" > /dev/null; then
+if curl -s -f "http://127.0.0.1:18083/api/v1/notes?limit=1" > /dev/null; then
     echo "  ✓ Test backend API: OK"
 else
     echo "  ⚠ Test backend API: FAILED"
@@ -196,8 +196,8 @@ echo "  MANUAL TESTING INSTRUCTIONS"
 echo "========================================"
 echo ""
 echo "Test stack URLs:"
-echo "  Frontend: http://localhost:3002"
-echo "  Backend API: http://localhost:18083"
+echo "  Frontend: http://127.0.0.1:3002"
+echo "  Backend API: http://127.0.0.1:18083"
 echo ""
 echo "Follow the manual test checklist:"
 echo "  docs/MANUAL_TEST_CHECKLISTS_RU.md"
@@ -292,8 +292,8 @@ echo "[Step 23/25] State, identity and health checks"
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/post-test-ps.txt"
 echo "  ✓ Post-test container snapshot saved"
 
-if curl -s -f http://localhost:8080/health > /dev/null; then
-    curl -s http://localhost:8080/health > "$SNAPSHOT_DIR/post-test-health.json"
+if curl -s -f http://127.0.0.1:18080/health > /dev/null; then
+    curl -s http://127.0.0.1:18080/health > "$SNAPSHOT_DIR/post-test-health.json"
     echo "  ✓ Post-test health snapshot saved"
 else
     echo "  ⚠ Dev health endpoint not available after restoration"
@@ -301,8 +301,8 @@ else
     exit 1
 fi
 
-if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
-    curl -s "http://localhost:8080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/post-test-notes.json"
+if curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/post-test-notes.json"
     echo "  ✓ Post-test notes snapshot saved"
 else
     echo "  ⚠ Dev API not available after restoration"
@@ -348,16 +348,16 @@ fi
 # Step 23: (continued)
 echo ""
 
-if curl -s -f "http://localhost:8080/api/v1/notes?limit=1" > /dev/null; then
-    curl -s "http://localhost:8080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/dev-notes.json"
+if curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/dev-notes.json"
     echo "  ✓ Dev notes snapshot saved"
 else
     echo "  ERROR: Failed to get dev notes"
     exit 1
 fi
 
-if curl -s -f "http://localhost:8082/api/v1/notes?limit=1" > /dev/null; then
-    curl -s "http://localhost:8082/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/personal-notes.json"
+if curl -s -f "http://127.0.0.1:18082/api/v1/notes?limit=1" > /dev/null; then
+    curl -s "http://127.0.0.1:18082/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/personal-notes.json"
     echo "  ✓ Personal notes snapshot saved"
 else
     echo "  ERROR: Failed to get personal notes"

@@ -294,7 +294,7 @@ MongoDB используется для хранения черновиков з
 
 **SERVER_PORT** — порт, на котором слушает бэкенд:
 - Внутри Docker Compose: `8080`
-- Снаружи: `8080:8080`
+- Снаружи: `18080:8080`
 
 **REDIS_URL** — хранилище для:
 - Очередей задач asynq (воркер читает отсюда)
@@ -782,11 +782,13 @@ def get_embedding_model():
 
 | Окружение | Компонент | Хост:Порт |
 |-----------|-----------|-----------|
-| Dev | Nginx gateway | `8080` |
-| Dev | Backend | `9000` (внутри контейнера) |
+| Dev | Nginx API gateway | `18080` |
+| Dev | Nginx frontend | `18081` |
+| Dev | Backend | `9000` (внутри контейнера `8080`) |
 | Dev | Graph Service HTTP | `9091` |
-| Personal | Backend | `8085` |
-| Personal | API gateway | `8082` |
+| Personal | Backend direct | `18085` |
+| Personal | API gateway | `18082` |
+| Personal | Frontend gateway | `18084` |
 | Personal | Graph Service | `8092` |
 | Test | Frontend | `3002` |
 | Test | Backend | `18083` |

@@ -13,7 +13,7 @@ Knowledge Graph uses Docker Compose for containerization with microservices arch
 | Frontend | kg-frontend | 5173 | SvelteKit production build (adapter-node) |
 | Backend | kg-backend | 9000 (127.0.0.1) | Go API server (Gin + GORM) |
 | Graph Service | kg-graph-service | 9091 | gRPC layout service (Go 1.24) |
-| Nginx | kg-nginx | 8080, 8081 | API gateway & reverse proxy |
+| Nginx | kg-nginx | 18080, 18081 | API gateway & reverse proxy |
 | Worker | kg-worker | - | Background worker for async tasks |
 
 ### Data Services
@@ -49,8 +49,9 @@ docker logs kg-nginx
 docker-compose -f docker-compose.personal.yml up -d
 
 # Personal ports:
-# Backend: 8085
-# API Gateway: 8082
+# Backend direct: 18085
+# API Gateway: 18082
+# Frontend Gateway: 18084
 # Graph Service: 9092
 ```
 
@@ -58,10 +59,10 @@ docker-compose -f docker-compose.personal.yml up -d
 
 ### Proxy Configuration
 
-**Nginx API Gateway (port 8080):**
+**Nginx API Gateway (port 18080):**
 
 ```
-Frontend (5173) → Nginx (8080) → Backend (8080)
+Frontend (5173) → Nginx (18080) → Backend (8080)
                           → Graph Service (9091)
 ```
 
@@ -118,8 +119,8 @@ GRAPH_FULL_LIMIT=1000
 ### Frontend (.env)
 
 ```bash
-VITE_API_URL=http://localhost:8080
-VITE_GRAPH_SERVICE_URL=http://localhost:8080/graph-service
+VITE_API_URL=http://localhost:18080
+VITE_GRAPH_SERVICE_URL=http://localhost:18080/graph-service
 ARGOS_TOKEN=<your-argos-token>  # set via env / GitHub secret
 ```
 
@@ -146,20 +147,20 @@ curl http://localhost:9000/health
 curl http://localhost:9091/health
 
 # Nginx Gateway
-curl http://localhost:8080/health
+curl http://localhost:18080/health
 ```
 
 ### Through Nginx Proxy
 
 ```bash
 # Backend API
-curl http://localhost:8080/api/v1/notes
+curl http://localhost:18080/api/v1/notes
 
 # Graph Service API
-curl http://localhost:8080/graph-service/api/v1/graph/full
+curl http://localhost:18080/graph-service/api/v1/graph/full
 
 # Full graph data
-curl http://localhost:8080/api/v1/graph/all
+curl http://localhost:18080/api/v1/graph/all
 ```
 
 ## Troubleshooting
@@ -181,7 +182,7 @@ docker-compose restart graph-service
 
 ```bash
 # Check what's using the port
-netstat -ano | findstr :8080
+netstat -ano | findstr :18080
 netstat -ano | findstr :5173
 
 # Kill process on port (Windows)
@@ -252,10 +253,11 @@ The personal stack uses different ports to avoid conflicts:
 
 | Service | Dev Stack | Personal Stack |
 |---------|-----------|---------------|
-| Backend | 9000 | 8085 |
-| Nginx API | 8080 | 8082 |
+| Backend direct | 9000 | 18085 |
+| Nginx API | 18080 | 18082 |
+| Nginx frontend | 18081 | 18084 |
 | Graph Service | 9091 | 9092 |
-| Frontend | 5173 | (uses nginx:8081) |
+| Frontend | 5173 | 3001 |
 | PostgreSQL | 15432 | 5433 |
 | Redis | 6379 | 6380 |
 | MongoDB | 27017 | 27018 |

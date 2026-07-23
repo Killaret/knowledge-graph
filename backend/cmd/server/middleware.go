@@ -21,15 +21,17 @@ func corsMiddleware() gin.HandlerFunc {
 		"http://localhost:3000": true,
 		"http://localhost:3001": true,
 		"http://localhost:5173": true,
-		"http://localhost:8080": true,
-		"http://localhost:8081": true,
-		"http://localhost:8082": true,
-		"http://localhost:8083": true,
+		"http://localhost:18080": true,
+		"http://localhost:18081": true,
+		"http://localhost:18082": true,
+		"http://localhost:18084": true,
 		"http://127.0.0.1:3000": true,
 		"http://127.0.0.1:3001": true,
 		"http://127.0.0.1:5173": true,
-		"http://127.0.0.1:8080": true,
-		"http://127.0.0.1:8082": true,
+		"http://127.0.0.1:18080": true,
+		"http://127.0.0.1:18081": true,
+		"http://127.0.0.1:18082": true,
+		"http://127.0.0.1:18084": true,
 	}
 
 	// Read CORS_ALLOWED_ORIGINS from environment variable

@@ -133,7 +133,7 @@ export CLOUD_BACKUP_ENABLED=true
 После настройки backend, можно вызвать API для запуска облачного бэкапа:
 
 ```bash
-curl -X POST http://localhost:8081/api/v1/admin/backup/cloud \
+curl -X POST http://localhost:18085/api/v1/admin/backup/cloud \
   -H "Content-Type: application/json" \
   -d '{"local_path": "./backups/backup-personal-2024-05-17.sql.gz"}'
 ```

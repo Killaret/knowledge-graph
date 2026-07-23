@@ -5,8 +5,8 @@ This document describes the testing infrastructure and procedures for Knowledge 
 ## Overview
 
 Knowledge Graph uses three Docker stacks:
-- **Dev stack** (docker-compose.yml) - Development environment (frontend 5173, backend 9000, nginx 8080/8081)
-- **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend 8085, nginx 8082/8083)
+- **Dev stack** (docker-compose.yml) - Development environment (frontend dev server 5173, backend 9000, nginx API 18080/frontend 18081)
+- **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend direct 18085, nginx API 18082/frontend 18084)
 - **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 9095)
 
 ## Test Stack
@@ -427,7 +427,7 @@ The test stack ensures complete isolation:
 - Separate database (knowledge_test vs knowledge_base/knowledge_personal)
 - Separate volumes (test_postgres_data vs postgres_data)
 - Separate container names (kg-test-* vs kg-*)
-- Separate ports (3002/18083 vs 5173/9000 and 3001/8085)
+- Separate ports (3002/18083 vs 5173/9000/18080/18081 and 3001/18085/18082/18084)
 
 ## Cleanup
 

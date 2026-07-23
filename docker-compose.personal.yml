@@ -102,7 +102,7 @@ services:
       target: server
     container_name: kg-backend-personal
     ports:
-      - "8085:8080"
+      - "127.0.0.1:18085:8080"
     env_file:
       - .env
     environment:
@@ -111,7 +111,7 @@ services:
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
       SKIP_AUTH: ${SKIP_AUTH:-false}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:8080,http://127.0.0.1:8082}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:18080,http://localhost:18081,http://localhost:18082,http://localhost:18084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:18080,http://127.0.0.1:18081,http://127.0.0.1:18082,http://127.0.0.1:18084}
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -184,8 +184,8 @@ services:
     image: nginx:alpine
     container_name: kg-nginx-personal
     ports:
-      - "8082:8080"
-      - "8083:8081"
+      - "127.0.0.1:18082:8080"
+      - "127.0.0.1:18084:8081"
     volumes:
       - ./nginx.personal.conf:/etc/nginx/nginx.conf:ro
     depends_on:

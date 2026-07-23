@@ -124,11 +124,11 @@ docker-compose exec backend ./seed
 
 ```bash
 # Health check backend
-curl http://localhost:8080/health
+curl http://localhost:18086/health
 # → {"status":"ok"}
 
 # Health check DB
-curl http://localhost:8080/db-check
+curl http://localhost:18086/db-check
 # → {"status":"db ok"}
 
 # NLP service
@@ -142,9 +142,9 @@ curl http://localhost:5173
 
 ### 6. Application Access
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8080
-- **API Docs** (if configured): http://localhost:8080/swagger
+- **Frontend**: http://localhost:5173 (dev server) or http://localhost:18081 (nginx)
+- **Backend API**: http://localhost:18080
+- **API Docs** (if configured): http://localhost:18080/swagger
 
 ---
 
@@ -188,14 +188,14 @@ docker compose -f docker-compose.personal.yml down
 | PostgreSQL | 5432 | **5433** | kg-postgres-personal |
 | MongoDB | 27017 | **27018** | kg-mongo-personal |
 | Redis | 6379 | **6380** | kg-redis-personal |
-| Backend | 8080 | **8081** | kg-backend-personal |
-| Frontend | 3000 | **3001** | kg-frontend-personal |
+| Backend | 9000 | **18085** | kg-backend-personal |
+| Frontend | 5173 / 18081 | **3001 / 18084** | kg-frontend-personal |
 | NLP | 5000 | **5001** | kg-nlp-personal |
 
 ### Access Points
 
-- **Personal Frontend**: http://localhost:3001
-- **Personal API**: http://localhost:8081
+- **Personal Frontend**: http://localhost:3001 or http://localhost:18084
+- **Personal API**: http://localhost:18082 (nginx) or http://localhost:18085 (backend direct)
 
 ### Data Isolation
 
@@ -300,7 +300,7 @@ services:
       - RECOMMENDATION_BETA=${RECOMMENDATION_BETA:-0.5}
       - SERVER_PORT=8080
     ports:
-      - "8080:8080"
+      - "18086:8080"
     depends_on:
       - postgres
       - redis
@@ -576,8 +576,8 @@ docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_U
 ./scripts/health-check.sh
 
 # Manual check of all components
-curl http://localhost:8080/health
-curl http://localhost:8080/db-check
+curl http://localhost:18086/health
+curl http://localhost:18086/db-check
 curl http://localhost:5000/health
 docker-compose exec redis redis-cli ping
 ```
@@ -668,7 +668,7 @@ docker-compose restart worker
 The `/health` endpoint provides detailed status of all service dependencies:
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:18086/health
 ```
 
 **Healthy Response (200):**
@@ -707,7 +707,7 @@ curl http://localhost:8080/health
 ```bash
 # Check every 30s
 while true; do
-  curl -s http://localhost:8080/health | jq -r '.status'
+  curl -s http://localhost:18086/health | jq -r '.status'
   sleep 30
 done
 ```

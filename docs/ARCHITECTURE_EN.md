@@ -564,9 +564,9 @@ users          — Users
 3. `mongo_personal` — MongoDB 7 (port 27018) [see ADR 011](architecture/decisions/011-drafts-autosave-mongodb.md) — drafts
 4. `nlp` — Python service (port 5001)
 5. `graph-service-personal` — Graph service (port 9092) [see ADR 013](architecture/decisions/013-graph-service-isolation.md)
-6. `backend_personal` — Go API (port 8081)
+6. `backend_personal` — Go API (port 8080)
 7. `worker_personal` — Background worker
-8. `nginx_personal` — Reverse proxy (ports 8082, 8083)
+8. `nginx_personal` — Reverse proxy (ports 18082, 18084)
 9. `frontend_personal` — SvelteKit (port 3001)
 10. `backup_scheduler` — Automatic backup service
 

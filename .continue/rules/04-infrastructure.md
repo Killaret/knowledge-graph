@@ -216,13 +216,13 @@ backend:
 backend:
   build: ./backend
   ports:
-    - "8080:8080"
+    - "9000:8080"
 
 # ✅ Good — health check + depends_on conditions
 backend:
   build: ./backend
   ports:
-    - "8080:8080"
+    - "9000:8080"
   healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
     interval: 10s

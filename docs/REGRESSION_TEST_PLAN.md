@@ -12,9 +12,9 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 
 | Stack | Docker Compose | Frontend Port | Backend Port | Database | Purpose |
 |-------|----------------|----------------|---------------|----------|---------|
-| Dev | docker-compose.yml | 3000 (5173) | 8080 (9000) | knowledge_base | Development |
-| Personal | docker-compose.personal.yml | 3001 | 8082 (8085) | knowledge_personal | Personal use |
-| Test | docker-compose.test.yml | 3002 (3000) | 18083 (8080) | knowledge_test | Isolated testing |
+| Dev | docker-compose.yml | 5173 (3001 dev container) | 18080 (9000 backend) | knowledge_base | Development |
+| Personal | docker-compose.personal.yml | 3001 | 18082 (18085 backend) | knowledge_personal | Personal use |
+| Test | docker-compose.test.yml | 3002 (3000) | 18083 (8080 backend) | knowledge_test | Isolated testing |
 
 ## Prerequisites
 
@@ -103,12 +103,12 @@ This document provides a comprehensive regression testing plan for Knowledge Gra
 
 ### 0.5 Check Health and API
 **Dev Stack:**
-- [ ] curl http://localhost:8080/health → 200
-- [ ] curl http://localhost:8080/api/v1/notes?limit=1 → JSON
+- [ ] curl http://localhost:18080/health → 200
+- [ ] curl http://localhost:18080/api/v1/notes?limit=1 → JSON
 
 **Personal Stack:**
-- [ ] curl http://localhost:8082/health → 200
-- [ ] curl http://localhost:8082/api/v1/notes?limit=1 → JSON
+- [ ] curl http://localhost:18082/health → 200
+- [ ] curl http://localhost:18082/api/v1/notes?limit=1 → JSON
 
 **Expected Result:** All stacks healthy and accessible
 
@@ -185,13 +185,13 @@ docker compose -f docker-compose.test.yml build --no-cache
 
 **Checks:**
 - [ ] Dev containers running (9 containers)
-- [ ] Dev health endpoint: http://localhost:8080/health → 200
-- [ ] Dev API: http://localhost:8080/api/v1/notes?limit=1 → JSON
+- [ ] Dev health endpoint: http://localhost:18080/health → 200
+- [ ] Dev API: http://localhost:18080/api/v1/notes?limit=1 → JSON
 - [ ] Personal containers running (9 containers)
-- [ ] Personal health endpoint: http://localhost:8082/health → 200
-- [ ] Personal API: http://localhost:8082/api/v1/notes?limit=1 → JSON
-- [ ] Dev frontend: http://localhost:5173 → loads
-- [ ] Personal frontend: http://localhost:3001 → loads
+- [ ] Personal health endpoint: http://localhost:18082/health → 200
+- [ ] Personal API: http://localhost:18082/api/v1/notes?limit=1 → JSON
+- [ ] Dev frontend: http://localhost:18081 → loads
+- [ ] Personal frontend: http://localhost:18084 → loads
 
 **Expected Result:** All stacks healthy
 

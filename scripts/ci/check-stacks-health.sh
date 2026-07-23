@@ -44,7 +44,7 @@ errors=0
 
 check_api() {
     local port=$1
-    if curl -s -f "http://localhost:$port/api/v1/notes?limit=1" > /dev/null || curl -s -f "http://localhost:$port/api/v1/graph/all?limit=1" > /dev/null; then
+    if curl -s -f "http://127.0.0.1:$port/api/v1/notes?limit=1" > /dev/null || curl -s -f "http://127.0.0.1:$port/api/v1/graph/all?limit=1" > /dev/null; then
         echo "  API: OK"
         return 0
     else
@@ -65,14 +65,14 @@ check_dev_stack() {
         echo "  Dev containers: $dev_containers running"
     fi
 
-    if curl -s -f http://localhost:8080/health > /dev/null; then
+    if curl -s -f http://127.0.0.1:18080/health > /dev/null; then
         echo "  Dev health endpoint: OK"
     else
         echo "  Dev health endpoint: FAILED"
         return 1
     fi
 
-    check_api 8080 || return 1
+    check_api 18080 || return 1
 
     return 0
 }
@@ -89,14 +89,14 @@ check_personal_stack() {
         echo "  Personal containers: $personal_containers running"
     fi
 
-    if curl -s -f http://localhost:8082/health > /dev/null; then
+    if curl -s -f http://127.0.0.1:18082/health > /dev/null; then
         echo "  Personal health endpoint: OK"
     else
         echo "  Personal health endpoint: FAILED"
         return 1
     fi
 
-    check_api 8082 || return 1
+    check_api 18082 || return 1
 
     return 0
 }
@@ -113,7 +113,7 @@ check_test_stack() {
         echo "  Test containers: $test_containers running"
     fi
 
-    if curl -s -f http://localhost:18083/health > /dev/null; then
+    if curl -s -f http://127.0.0.1:18083/health > /dev/null; then
         echo "  Test health endpoint: OK"
     else
         echo "  Test health endpoint: FAILED"
