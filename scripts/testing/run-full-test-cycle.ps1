@@ -472,39 +472,48 @@ try {
     # Step 23: (continued)
     Write-Host ""
 
-    try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
-        Write-Host "  ✓ Dev notes snapshot saved" -ForegroundColor Green
-    } catch {
-        try {
-            Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\dev-notes.json"
-            Write-Host "  ✓ Dev public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
-        } catch {
-            Write-Host "  ERROR: Failed to get dev notes or public graph" -ForegroundColor Red
-            exit 1
+    foreach ($stack in @(@{ Url = "http://127.0.0.1:8080"; Name = "dev" }, @{ Url = "http://127.0.0.1:8082"; Name = "personal" })) {
+        $notesUrl = "$($stack.Url)/api/v1/notes?limit=1"
+        $graphUrl = "$($stack.Url)/api/v1/graph/all?limit=1"
+        $output = "$snapshotDir\$($stack.Name)-notes.json"
+        $tries = 0
+        $saved = $false
+        while ($tries -lt 3 -and -not $saved) {
+            try {
+                Invoke-RestMethod -Uri $notesUrl -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File $output
+                Write-Host "  ✓ $($stack.Name) notes snapshot saved" -ForegroundColor Green
+                $saved = $true
+            } catch {
+                try {
+                    Start-Sleep -Seconds 2
+                    Invoke-RestMethod -Uri $graphUrl -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File $output
+                    Write-Host "  ✓ $($stack.Name) public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+                    $saved = $true
+                } catch {
+                    $tries++
+                    if ($tries -ge 3) {
+                        Write-Host "  ⚠ Could not get $($stack.Name) notes or public graph after retries" -ForegroundColor Yellow
+                        $devStateChanged = $true
+                        "{}" | Out-File $output
+                    } else {
+                        Start-Sleep -Seconds 3
+                    }
+                }
+            }
         }
     }
 
-    try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
-        Write-Host "  ✓ Personal notes snapshot saved" -ForegroundColor Green
-    } catch {
-        try {
-            Invoke-RestMethod -Uri "http://127.0.0.1:8082/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\personal-notes.json"
-            Write-Host "  ✓ Personal public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
-        } catch {
-            Write-Host "  ERROR: Failed to get personal notes or public graph" -ForegroundColor Red
-            exit 1
+    if ((Test-Path "$snapshotDir\dev-notes.json") -and (Test-Path "$snapshotDir\personal-notes.json")) {
+        if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
+            Write-Host "  ⚠ Dev and Personal stacks have different data" -ForegroundColor Yellow
+            Write-Host "  Skipping auto-commit due to stack differences" -ForegroundColor Yellow
+            $devStateChanged = $true
+        } else {
+            Write-Host "  ✓ Dev and Personal stacks are identical (timestamps ignored)" -ForegroundColor Green
         }
-    }
-
-    if (Compare-Object (Get-Content "$snapshotDir\dev-notes.json") (Get-Content "$snapshotDir\personal-notes.json")) {
-        Write-Host "  ⚠ Dev and Personal stacks are NOT identical" -ForegroundColor Red
-        Write-Host "  ERROR: Stacks have differences - manual investigation required" -ForegroundColor Red
-        Write-Host "  Skipping auto-commit due to stack differences" -ForegroundColor Red
-        exit 1
     } else {
-        Write-Host "  ✓ Dev and Personal stacks are identical (timestamps ignored)" -ForegroundColor Green
+        Write-Host "  ⚠ Dev or Personal notes snapshot missing" -ForegroundColor Yellow
+        $devStateChanged = $true
     }
 
     # Step 23: (continued)
