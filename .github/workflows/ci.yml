@@ -45,7 +45,7 @@ jobs:
 
       - name: Check config loads successfully
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
         run: |
           go mod download
           go run cmd/checkconfig/main.go ../knowledge-graph.config.json
@@ -150,7 +150,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
@@ -173,7 +173,7 @@ jobs:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
           REDIS_FLUSH_ON_STARTUP: "true"
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
           SKIP_AUTH: "true"
         run: |
           cd ../backend

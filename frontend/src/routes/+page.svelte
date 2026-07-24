@@ -27,10 +27,7 @@
     type GraphLink,
   } from "$shared/api/graph";
   import { apiConfig } from "$shared/config/config";
-  import {
-    getGraphWithPreload,
-    useInstantData,
-  } from "$shared/hooks/usePreloadedData";
+  import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
