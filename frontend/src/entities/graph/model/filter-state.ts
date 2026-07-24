@@ -2,7 +2,7 @@ import { SearchQuery } from "$entities/search/model";
 import type { Note } from "$entities/note/model";
 import type { GraphData } from "./graph-node";
 
-export type FilterView = "graph" | "list";
+export type FilterView = "graph" | "list" | "3d";
 export type SortBy = "created" | "updated" | "type";
 
 export interface FilterStateProps {

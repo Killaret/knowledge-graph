@@ -81,12 +81,15 @@ describe("FloatingControls", () => {
     expect(mockCallbacks.onToggleView).toHaveBeenCalledTimes(1);
   });
 
-  it("does not render 3D toolbar toggle while 3D is frozen", () => {
+  it("calls onToggleView when 3D view button is clicked", async () => {
     render(FloatingControls, {
-      props: mockCallbacks,
+      props: { ...mockCallbacks, currentView: "graph" },
     });
 
-    expect(screen.queryByTestId("view-toggle-3d")).not.toBeInTheDocument();
+    const view3dBtn = screen.getByTestId("view-toggle-3d");
+    await fireEvent.click(view3dBtn);
+
+    expect(mockCallbacks.onToggleView).toHaveBeenCalledWith("3d");
   });
 
   it("calls onSearch when search is submitted", async () => {
@@ -213,7 +216,7 @@ describe("FloatingControls", () => {
     const createBtn = screen.getByTestId("create-note-button");
     await fireEvent.click(createBtn); // Should not throw
 
-    expect(screen.queryByTestId("view-toggle-3d")).not.toBeInTheDocument();
+    expect(screen.getByTestId("view-toggle-3d")).toBeInTheDocument();
   });
 
   it("does not show 3D menu entry while 3D is frozen", async () => {

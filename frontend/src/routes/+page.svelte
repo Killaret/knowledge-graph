@@ -32,6 +32,7 @@
   } from "$shared/hooks/usePreloadedData";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import GraphCanvas3D from "$components/organisms/GraphCanvas3D.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$entities";
@@ -111,7 +112,7 @@
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let currentView: "graph" | "list" = $state("graph"); // Graph-first interface
+  let currentView: "graph" | "list" | "3d" = $state("graph"); // Graph-first interface
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -702,7 +703,7 @@
     loadNotes();
   }
 
-  function handleToggleView(view: "graph" | "list") {
+  function handleToggleView(view: "graph" | "list" | "3d") {
     currentView = view;
   }
 </script>
@@ -791,6 +792,15 @@
           onNoteDelete={handleDeleteRequest}
         />
       {/if}
+    {:else if currentView === "3d"}
+      <!-- Fullscreen 3D Graph View -->
+      <GraphCanvas3D
+        nodes={filteredGraphData.nodes}
+        links={filteredGraphData.links}
+        centerNodeId={selectedNodeId}
+        selectedNodeId={selectedNodeId}
+        onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
+      />
     {:else if currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
