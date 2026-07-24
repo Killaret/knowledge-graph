@@ -62,7 +62,7 @@ export default defineConfig({
     conditions: ["browser", "default"],
   },
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     pool: "threads",
     globals: true,
     include: ["src/**/*.{test,spec}.{js,ts}"],
