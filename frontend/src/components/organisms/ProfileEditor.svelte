@@ -3,18 +3,9 @@
   import Button from "$components/atoms/Button.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import Modal from "$components/atoms/Modal.svelte";
-  import {
-    currentUser,
-    updateUserInfo,
-    logout,
-  } from "$shared/stores/auth.svelte.js";
+  import { currentUser, updateUserInfo, logout } from "$shared/stores/auth.svelte.js";
   import * as usersApi from "$shared/api/users";
-  import {
-    getCurrentLocale,
-    setLocale,
-    formatMessage,
-    type Locale,
-  } from "$shared/utils/i18n";
+  import { getCurrentLocale, setLocale, formatMessage, type Locale } from "$shared/utils/i18n";
 
   let name = $state("");
   let email = $state("");
@@ -46,10 +37,7 @@
       await updateUserInfo();
       successMessage = formatMessage("settings.saved", selectedLocale);
     } catch (e) {
-      localError =
-        e instanceof Error
-          ? e.message
-          : formatMessage("server.error", selectedLocale);
+      localError = e instanceof Error ? e.message : formatMessage("server.error", selectedLocale);
     } finally {
       isSaving = false;
     }
@@ -69,10 +57,7 @@
       await logout();
       goto("/auth/login");
     } catch (e) {
-      localError =
-        e instanceof Error
-          ? e.message
-          : formatMessage("server.error", selectedLocale);
+      localError = e instanceof Error ? e.message : formatMessage("server.error", selectedLocale);
       isDeleting = false;
     }
   }
@@ -116,10 +101,7 @@
 
   <div class="form-group">
     <label for="name"
-      >{formatMessage("title", selectedLocale)} ({formatMessage(
-        "readonly",
-        selectedLocale,
-      )})</label
+      >{formatMessage("title", selectedLocale)} ({formatMessage("readonly", selectedLocale)})</label
     >
     <input type="text" id="name" value={name} readonly disabled />
     <span class="hint">{formatMessage("login.readonly", selectedLocale)}</span>
@@ -136,9 +118,7 @@
   </div>
 
   <div class="form-group">
-    <label for="locale"
-      >{formatMessage("profile.languageLabel", selectedLocale)}</label
-    >
+    <label for="locale">{formatMessage("profile.languageLabel", selectedLocale)}</label>
     <select
       id="locale"
       bind:value={selectedLocale}
@@ -147,9 +127,7 @@
       <option value="en">{formatMessage("locale.en", selectedLocale)}</option>
       <option value="ru">{formatMessage("locale.ru", selectedLocale)}</option>
     </select>
-    <span class="hint"
-      >{formatMessage("profile.languageHint", selectedLocale)}</span
-    >
+    <span class="hint">{formatMessage("profile.languageHint", selectedLocale)}</span>
   </div>
 
   {#if localError}
@@ -158,9 +136,7 @@
 
   <div class="actions">
     <Button variant="primary" disabled={isSaving} onClick={handleSave}>
-      {isSaving
-        ? formatMessage("saving", selectedLocale)
-        : formatMessage("save", selectedLocale)}
+      {isSaving ? formatMessage("saving", selectedLocale) : formatMessage("save", selectedLocale)}
     </Button>
 
     <Button variant="danger" onClick={openDeleteConfirm}>
@@ -181,35 +157,24 @@
       </p>
 
       <div class="form-group">
-        <label for="delete-password"
-          >{formatMessage("password.confirm", selectedLocale)}</label
-        >
+        <label for="delete-password">{formatMessage("password.confirm", selectedLocale)}</label>
         <input
           type="password"
           id="delete-password"
           bind:value={deletePassword}
-          placeholder={formatMessage(
-            "profile.passwordPlaceholder",
-            selectedLocale,
-          )}
+          placeholder={formatMessage("profile.passwordPlaceholder", selectedLocale)}
         />
       </div>
 
       {#if localError}
-        <ApiErrorDisplay
-          error={{ message: localError, code: "DELETE_ERROR" }}
-        />
+        <ApiErrorDisplay error={{ message: localError, code: "DELETE_ERROR" }} />
       {/if}
 
       <div class="modal-actions">
         <Button variant="secondary" onClick={closeDeleteConfirm}>
           {formatMessage("cancel", selectedLocale)}
         </Button>
-        <Button
-          variant="danger"
-          disabled={isDeleting || !deletePassword}
-          onClick={handleDelete}
-        >
+        <Button variant="danger" disabled={isDeleting || !deletePassword} onClick={handleDelete}>
           {isDeleting
             ? formatMessage("deleting", selectedLocale)
             : formatMessage("confirm.delete", selectedLocale)}

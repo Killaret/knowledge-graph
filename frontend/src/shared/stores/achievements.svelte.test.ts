@@ -1,12 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Achievement } from "$entities";
-import {
-  state,
-  startPolling,
-  stopPolling,
-  refreshNow,
-  dismiss,
-} from "./achievements.svelte";
+import { state, startPolling, stopPolling, refreshNow, dismiss } from "./achievements.svelte";
 import { ACHIEVEMENT_POLL_INTERVAL_MS } from "$shared/config";
 
 vi.mock("./auth.svelte", () => ({

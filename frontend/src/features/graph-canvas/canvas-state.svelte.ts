@@ -1,25 +1,8 @@
-import {
-  getSimulationNodes,
-  resetView,
-} from "$components/organisms/GraphCanvas";
-import type {
-  SimulationState,
-  TransformState,
-} from "$components/organisms/GraphCanvas/types";
-import {
-  createNote,
-  closeNoteForm,
-  type NoteFormState,
-} from "$features/graph-forms/note-form";
-import {
-  createLink,
-  closeLinkForm,
-  type LinkFormState,
-} from "$features/graph-forms/link-form";
-import {
-  updateSearch,
-  type HotkeysState,
-} from "$features/graph-interaction/hotkeys";
+import { getSimulationNodes, resetView } from "$components/organisms/GraphCanvas";
+import type { SimulationState, TransformState } from "$components/organisms/GraphCanvas/types";
+import { createNote, closeNoteForm, type NoteFormState } from "$features/graph-forms/note-form";
+import { createLink, closeLinkForm, type LinkFormState } from "$features/graph-forms/link-form";
+import { updateSearch, type HotkeysState } from "$features/graph-interaction/hotkeys";
 import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
 const locale = getCurrentLocale();
@@ -63,13 +46,9 @@ export function createGraphCanvasState() {
   let hoveredNodeId = $state<string | null>(null);
 
   let duplicateWarning = $state<DuplicateWarning | null>(null);
-  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
   let highlightedLinkId = $state<string | null>(null);
-  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
 
   let lastDeletedNodeId = $state<string | null>(null);
   let showUndoToast = $state(false);
@@ -98,7 +77,7 @@ export function createGraphCanvasState() {
     target: string,
     linkType: string,
     x: number,
-    y: number,
+    y: number
   ) {
     const stableLinkId = `${source}-${target}-${linkType}`;
     highlightedLinkId = stableLinkId;
@@ -156,12 +135,8 @@ export function createGraphCanvasState() {
 
   function handleCreateNote(
     noteFormState: NoteFormState,
-    onNoteCreate?: (data: {
-      title: string;
-      content: string;
-      type: string;
-    }) => void,
-    redraw?: () => void,
+    onNoteCreate?: (data: { title: string; content: string; type: string }) => void,
+    redraw?: () => void
   ) {
     createNote(noteFormState, {
       onNoteCreate: (data) => {
@@ -175,10 +150,7 @@ export function createGraphCanvasState() {
     });
   }
 
-  function handleNoteFormClose(
-    noteFormState: NoteFormState,
-    redraw?: () => void,
-  ) {
+  function handleNoteFormClose(noteFormState: NoteFormState, redraw?: () => void) {
     closeNoteForm(noteFormState);
     redraw?.();
   }
@@ -192,7 +164,7 @@ export function createGraphCanvasState() {
       link_type: string;
       weight: number;
     }) => void,
-    redraw?: () => void,
+    redraw?: () => void
   ) {
     createLink(linkFormState, links, {
       onLinkCreate: (link) => {
@@ -209,10 +181,7 @@ export function createGraphCanvasState() {
     });
   }
 
-  function handleLinkFormClose(
-    linkFormState: LinkFormState,
-    redraw?: () => void,
-  ) {
+  function handleLinkFormClose(linkFormState: LinkFormState, redraw?: () => void) {
     closeLinkForm(linkFormState);
     redraw?.();
   }
@@ -223,7 +192,7 @@ export function createGraphCanvasState() {
       target: string;
       link_type: string;
       weight: number;
-    }) => void,
+    }) => void
   ) {
     if (hoveredLink && onLinkEdit) {
       onLinkEdit(hoveredLink);
@@ -232,11 +201,7 @@ export function createGraphCanvasState() {
   }
 
   function handleLinkDelete(
-    onLinkDelete?: (link: {
-      source: string;
-      target: string;
-      link_type: string;
-    }) => void,
+    onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void
   ) {
     if (hoveredLink && onLinkDelete) {
       onLinkDelete({
@@ -251,7 +216,7 @@ export function createGraphCanvasState() {
   function handleUpdateSearch(
     hotkeysState: HotkeysState,
     simState: SimulationState,
-    redraw?: () => void,
+    redraw?: () => void
   ) {
     updateSearch(hotkeysState, getSimulationNodes(simState));
     redraw?.();
@@ -291,7 +256,7 @@ export function createGraphCanvasState() {
     width: number,
     height: number,
     simState: SimulationState,
-    transform: TransformState,
+    transform: TransformState
   ) {
     const simNodes = getSimulationNodes(simState);
     if (ctx && simNodes.length > 0) {
@@ -377,7 +342,7 @@ export function createGraphCanvasState() {
 
 export function isTechnicalNode(
   nodes: Array<{ id: string; type?: string }>,
-  nodeId: string,
+  nodeId: string
 ): boolean {
   return nodes.some((n) => n.id === nodeId && n.type === "technical");
 }
@@ -390,9 +355,7 @@ export function pinTechnicalNodes<
     createdAt?: string;
     created_at?: string;
   },
->(
-  nodeList: T[],
-): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
+>(nodeList: T[]): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
   return nodeList.map((n) => {
     if (n.type === "technical") {
       const padding = 60;

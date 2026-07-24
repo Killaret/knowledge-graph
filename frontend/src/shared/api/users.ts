@@ -46,10 +46,7 @@ export async function getSettings(): Promise<{
 /**
  * Update a setting
  */
-export async function updateSetting(
-  key: string,
-  value: unknown,
-): Promise<void> {
+export async function updateSetting(key: string, value: unknown): Promise<void> {
   await api.put("v1/users/me/settings", {
     json: { key, value },
   });
@@ -91,9 +88,7 @@ export async function toggleGalacticMode(): Promise<{
  * List API keys
  */
 export async function listAPIKeys(): Promise<{ api_keys: APIKey[] }> {
-  const response = await api
-    .get("v1/users/me/api-keys")
-    .json<{ api_keys: APIKey[] }>();
+  const response = await api.get("v1/users/me/api-keys").json<{ api_keys: APIKey[] }>();
   return response;
 }
 
@@ -102,7 +97,7 @@ export async function listAPIKeys(): Promise<{ api_keys: APIKey[] }> {
  */
 export async function createAPIKey(
   name: string,
-  scopes?: string[],
+  scopes?: string[]
 ): Promise<{ id: string; api_key: string; name: string }> {
   const response = await api
     .post("v1/users/me/api-keys", {

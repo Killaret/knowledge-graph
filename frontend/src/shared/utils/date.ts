@@ -20,20 +20,16 @@ const DEFAULT_LOCALE = "ru-RU";
 export function formatDate(
   dateString: string | Date,
   options?: Intl.DateTimeFormatOptions,
-  locale: string = DEFAULT_LOCALE,
+  locale: string = DEFAULT_LOCALE
 ): string {
   try {
-    const date =
-      typeof dateString === "string" ? new Date(dateString) : dateString;
+    const date = typeof dateString === "string" ? new Date(dateString) : dateString;
 
     if (isNaN(date.getTime())) {
       return "Некорректная дата";
     }
 
-    const formatter = new Intl.DateTimeFormat(
-      locale,
-      options ?? DEFAULT_OPTIONS,
-    );
+    const formatter = new Intl.DateTimeFormat(locale, options ?? DEFAULT_OPTIONS);
     return formatter.format(date);
   } catch (error) {
     if (import.meta.env.DEV) {
@@ -49,10 +45,7 @@ export function formatDate(
  * @param locale - Локаль (по умолчанию 'ru-RU')
  * @returns Отформатированная строка даты и времени
  */
-export function formatDateTime(
-  dateString: string | Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function formatDateTime(dateString: string | Date, locale: string = DEFAULT_LOCALE): string {
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "long",
@@ -70,8 +63,7 @@ export function formatDateTime(
  * @returns Относительная строка даты
  */
 export function formatRelativeDate(dateString: string | Date): string {
-  const date =
-    typeof dateString === "string" ? new Date(dateString) : dateString;
+  const date = typeof dateString === "string" ? new Date(dateString) : dateString;
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));

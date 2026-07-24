@@ -159,21 +159,17 @@
       allowHTML: true,
       appendTo: document.body,
       onShown: (instance) => {
-        const editBtn = instance.popper.querySelector(
-          '[data-action="edit"]',
-        ) as HTMLElement | null;
+        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector(
-          '[data-action="delete"]',
+          '[data-action="delete"]'
         ) as HTMLElement | null;
         editBtn?.addEventListener("click", editListener);
         deleteBtn?.addEventListener("click", deleteListener);
       },
       onHidden: (instance) => {
-        const editBtn = instance.popper.querySelector(
-          '[data-action="edit"]',
-        ) as HTMLElement | null;
+        const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector(
-          '[data-action="delete"]',
+          '[data-action="delete"]'
         ) as HTMLElement | null;
         editBtn?.removeEventListener("click", editListener);
         deleteBtn?.removeEventListener("click", deleteListener);
@@ -195,9 +191,7 @@
   data-testid="note-card"
   data-note-id={note.id}
   data-note-type={note.type || "unknown"}
-  style="--type-color: {getTypeColor(
-    note.type,
-  )}; --stagger-delay: {animationIndex * 50}ms"
+  style="--type-color: {getTypeColor(note.type)}; --stagger-delay: {animationIndex * 50}ms"
   onclick={handleClick}
   onkeydown={handleKeyDown}
   tabindex="0"
@@ -238,9 +232,7 @@
     </div>
 
     <h3 class="note-card__title" data-testid="note-title">
-      {@html highlightQuery
-        ? highlightText(note.title, highlightQuery)
-        : note.title}
+      {@html highlightQuery ? highlightText(note.title, highlightQuery) : note.title}
     </h3>
 
     <div class="note-card__body" data-testid="note-content">
@@ -250,11 +242,7 @@
     </div>
 
     <div class="note-card__footer">
-      <span
-        class="note-card__date"
-        data-testid="note-date"
-        data-visual-test="transparent"
-      >
+      <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
         {t("noteCard.starLit", { date: formatDate(note.created_at) })}
       </span>
       {#if isRecentlyUpdated()}
@@ -296,11 +284,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-      circle at 20% 30%,
-      rgba(255, 255, 255, 0.04) 0%,
-      transparent 60%
-    );
+    background: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
     pointer-events: none;
     opacity: 0.6;
     transition: opacity 0.25s ease;
@@ -537,11 +521,7 @@
   }
 
   :global(mark) {
-    background: linear-gradient(
-      120deg,
-      rgba(254, 240, 138, 0.3) 0%,
-      rgba(253, 224, 71, 0.3) 100%
-    );
+    background: linear-gradient(120deg, rgba(254, 240, 138, 0.3) 0%, rgba(253, 224, 71, 0.3) 100%);
     color: #ffcc00;
     padding: 0.1em 0.2em;
     border-radius: 0.2em;

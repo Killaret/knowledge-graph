@@ -21,10 +21,6 @@
   });
 </script>
 
-<AuthCard
-  title={t("auth.registerTitle")}
-  subtitle={t("auth.registerSubtitle")}
-  showIcon={true}
->
+<AuthCard title={t("auth.registerTitle")} subtitle={t("auth.registerSubtitle")} showIcon={true}>
   <RegisterForm />
 </AuthCard>

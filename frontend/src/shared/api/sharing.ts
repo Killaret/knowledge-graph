@@ -13,7 +13,7 @@ import type {
 export async function shareNote(
   noteId: string,
   userId: string,
-  permission: "read" | "write" = "read",
+  permission: "read" | "write" = "read"
 ): Promise<NoteShare> {
   const response = await api
     .post(`v1/notes/${noteId}/share`, {
@@ -30,7 +30,7 @@ export async function createShareLink(
   noteId: string,
   permission: "read" | "write" = "read",
   expiresAt?: string,
-  maxUses?: number,
+  maxUses?: number
 ): Promise<ShareLink> {
   const body: CreateShareLinkRequest = { permission };
   if (expiresAt) {
@@ -52,7 +52,7 @@ export async function createShareLink(
  * Get all shares for a note
  */
 export async function getNoteShares(
-  noteId: string,
+  noteId: string
 ): Promise<{ user_shares: NoteShare[]; share_links: ShareLink[] }> {
   const response = await api
     .get(`v1/notes/${noteId}/shares`)
@@ -63,10 +63,7 @@ export async function getNoteShares(
 /**
  * Revoke a share (remove user's access)
  */
-export async function revokeShare(
-  noteId: string,
-  shareId: string,
-): Promise<void> {
+export async function revokeShare(noteId: string, shareId: string): Promise<void> {
   await api.delete(`v1/notes/${noteId}/shares/${shareId}`);
 }
 
@@ -111,7 +108,7 @@ export async function accessSharedNote(token: string): Promise<{
  * Search users to share with
  */
 export async function searchUsers(
-  query: string,
+  query: string
 ): Promise<{ users: Array<{ id: string; login: string; email?: string }> }> {
   const response = await api
     .get("v1/users", {

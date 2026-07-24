@@ -23,9 +23,7 @@ describe("lexicon-settings", () => {
 
   it("mode update derives new value from current", () => {
     mode.set("standard");
-    mode.update((current) =>
-      current === "standard" ? "galactic" : "standard",
-    );
+    mode.update((current) => (current === "standard" ? "galactic" : "standard"));
 
     const values: string[] = [];
     mode.subscribe((m) => values.push(m))();

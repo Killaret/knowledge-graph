@@ -6,8 +6,7 @@
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: Record<string, string>) =>
-    formatMessage(key, locale, params);
+  const t = (key: string, params?: Record<string, string>) => formatMessage(key, locale, params);
 
   const {
     onCreate,
@@ -192,12 +191,7 @@
       data-testid="search-input"
       aria-label={t("search.inputAriaLabel")}
     />
-    <button
-      type="button"
-      class="search-btn"
-      onclick={handleSearch}
-      aria-label={t("search.label")}
-    >
+    <button type="button" class="search-btn" onclick={handleSearch} aria-label={t("search.label")}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="18"

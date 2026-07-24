@@ -48,8 +48,7 @@ export default defineConfig({
       "@argos-ci/playwright/reporter",
       createArgosReporterOptions({
         uploadToArgos:
-          (!!process.env.CI && !!process.env.ARGOS_TOKEN) ||
-          !!process.env.ARGOS_UPLOAD_LOCAL,
+          (!!process.env.CI && !!process.env.ARGOS_TOKEN) || !!process.env.ARGOS_UPLOAD_LOCAL,
         token: process.env.ARGOS_TOKEN,
       }),
     ],

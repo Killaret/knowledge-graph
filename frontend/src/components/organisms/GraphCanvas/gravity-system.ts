@@ -25,7 +25,7 @@ export interface GravitySystem {
     x: number,
     y: number,
     nodes: SimulationNode[],
-    maxDistance?: number,
+    maxDistance?: number
   ) => { dx: number; dy: number };
   isEnabled: (nodeCount: number) => boolean;
 }
@@ -48,10 +48,7 @@ export function createGravitySystem(): GravitySystem {
           const dy = nodeB.y - nodeA.y;
           const distanceSq = dx * dx + dy * dy;
 
-          if (
-            distanceSq === 0 ||
-            distanceSq > MAX_GRAVITY_DISTANCE * MAX_GRAVITY_DISTANCE
-          )
+          if (distanceSq === 0 || distanceSq > MAX_GRAVITY_DISTANCE * MAX_GRAVITY_DISTANCE)
             continue;
 
           const distance = Math.sqrt(distanceSq);
@@ -71,7 +68,7 @@ export function createGravitySystem(): GravitySystem {
       x: number,
       y: number,
       nodes: SimulationNode[],
-      maxDistance: number = 100,
+      maxDistance: number = 100
     ): { dx: number; dy: number } {
       if (!this.isEnabled(nodes.length)) return { dx: 0, dy: 0 };
 
@@ -117,7 +114,7 @@ export function drawDistortedBackgroundGrid(
   height: number,
   nodes: SimulationNode[],
   animationTime: number,
-  gridSize: number = 100,
+  gridSize: number = 100
 ): void {
   const gravity = createGravitySystem();
   if (!gravity.isEnabled(nodes.length)) return;

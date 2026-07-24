@@ -1,12 +1,4 @@
-import {
-  Given,
-  When,
-  Then,
-  Before,
-  After,
-  type IWorld,
-} from "@cucumber/cucumber";
-
+import { Given, When, Then, Before, After, type IWorld } from "@cucumber/cucumber";
 
 import { expect } from "@playwright/test";
 import type { Page, APIRequestContext } from "@playwright/test";
@@ -35,16 +27,13 @@ Before(async function (this: ITestWorld) {
   // Clean up any leftover notes from previous runs so each scenario is isolated
   const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:18083";
   try {
-    const listResp = await this.request.get(
-      `${backendUrl}/api/v1/notes?limit=1000`,
-    );
+    const listResp = await this.request.get(`${backendUrl}/api/v1/notes?limit=1000`);
     if (listResp.ok()) {
       const listData = (await listResp.json()) as {
         notes?: Array<{ id: string }>;
         data?: { notes?: Array<{ id: string }> };
       };
-      const notes =
-        listData.notes ?? listData.data?.notes ?? [];
+      const notes = listData.notes ?? listData.data?.notes ?? [];
       for (const note of notes) {
         try {
           await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`);
@@ -63,7 +52,7 @@ After(async function (this: ITestWorld) {
   for (const note of this.testNotes) {
     try {
       await this.request.delete(
-        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`,
+        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`
       );
     } catch {
       // Ignore cleanup errors
@@ -82,9 +71,7 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
 
   // Validate center note creation - API returns { data: {...}, message: "..." }
   if (!centerData || !centerData.data || !centerData.data.id) {
-    throw new Error(
-      `Failed to create center note: ${JSON.stringify(centerData)}`,
-    );
+    throw new Error(`Failed to create center note: ${JSON.stringify(centerData)}`);
   }
 
   this.centerNoteId = String(centerData.data.id);
@@ -96,15 +83,7 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
   });
 
   // Create connected notes
-  const types = [
-    "planet",
-    "comet",
-    "galaxy",
-    "asteroid",
-    "satellite",
-    "debris",
-    "nebula",
-  ];
+  const types = ["planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula"];
   for (let i = 0; i < 4; i++) {
     const noteData = await createNote(this.request, {
       title: `Connected Note ${i}`,
@@ -128,122 +107,86 @@ Given("I have test notes with connections", async function (this: ITestWorld) {
 
     // Validate IDs before creating link
     if (!this.centerNoteId) {
-      throw new Error(
-        `[ERROR] centerNoteId is undefined when creating link for note ${i}`,
-      );
+      throw new Error(`[ERROR] centerNoteId is undefined when creating link for note ${i}`);
     }
 
     // Create link to center using helper
-    await createLink(
-      this.request,
-      this.centerNoteId,
-      noteId,
-      0.5 + Math.random() * 0.5,
-      "related",
-    );
+    await createLink(this.request, this.centerNoteId, noteId, 0.5 + Math.random() * 0.5, "related");
   }
 });
 
-Given(
-  "there are notes of various types in the database",
-  async function (this: ITestWorld) {
-    const types = [
-      "star",
-      "planet",
-      "comet",
-      "galaxy",
-      "asteroid",
-      "satellite",
-      "debris",
-      "nebula",
-    ];
-    for (let i = 0; i < types.length; i++) {
-      const noteData = await createNote(this.request, {
-        title: `Test ${types[i]} ${Date.now()}`,
-        content: `Content for ${types[i]}`,
-        type: types[i],
-      });
-      this.testNotes.push({
-        id: String(noteData.data.id),
-        title: String(noteData.data.title || ""),
-        type: types[i],
-      });
-    }
-    // Reload page to fetch newly created notes
-    await this.page.reload();
-    await this.page.waitForLoadState("domcontentloaded");
-    await this.page.waitForTimeout(500);
-  },
-);
+Given("there are notes of various types in the database", async function (this: ITestWorld) {
+  const types = ["star", "planet", "comet", "galaxy", "asteroid", "satellite", "debris", "nebula"];
+  for (let i = 0; i < types.length; i++) {
+    const noteData = await createNote(this.request, {
+      title: `Test ${types[i]} ${Date.now()}`,
+      content: `Content for ${types[i]}`,
+      type: types[i],
+    });
+    this.testNotes.push({
+      id: String(noteData.data.id),
+      title: String(noteData.data.title || ""),
+      type: types[i],
+    });
+  }
+  // Reload page to fetch newly created notes
+  await this.page.reload();
+  await this.page.waitForLoadState("domcontentloaded");
+  await this.page.waitForTimeout(500);
+});
 
 // Navigation steps
-Given(
-  "I am on the main page {string}",
-  async function (this: ITestWorld, path: string) {
-    const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    await this.page.goto(`${baseUrl}${path}`);
-    await this.page.waitForLoadState("domcontentloaded");
-    // Give Svelte time to hydrate the page
-    await this.page.waitForTimeout(1000);
-  },
-);
+Given("I am on the main page {string}", async function (this: ITestWorld, path: string) {
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  await this.page.goto(`${baseUrl}${path}`);
+  await this.page.waitForLoadState("domcontentloaded");
+  // Give Svelte time to hydrate the page
+  await this.page.waitForTimeout(1000);
+});
 
-Given(
-  "I navigate to {string}",
-  async function (this: ITestWorld, path: string) {
-    // Replace {centerNoteId} placeholder
-    const resolvedPath = path.replace(
-      "{centerNoteId}",
-      this.centerNoteId || "test-id",
-    );
-    const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    await this.page.goto(`${baseUrl}${resolvedPath}`);
-    await this.page.waitForLoadState("domcontentloaded");
-    await this.page.waitForTimeout(500);
-  },
-);
+Given("I navigate to {string}", async function (this: ITestWorld, path: string) {
+  // Replace {centerNoteId} placeholder
+  const resolvedPath = path.replace("{centerNoteId}", this.centerNoteId || "test-id");
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  await this.page.goto(`${baseUrl}${resolvedPath}`);
+  await this.page.waitForLoadState("domcontentloaded");
+  await this.page.waitForTimeout(500);
+});
 
-Given(
-  "I am on the 3D graph page for a note with connections",
-  async function (this: ITestWorld) {
-    // Create notes if needed
-    if (!this.centerNoteId) {
-      // Create center note using helper
-      const centerData = await createNote(this.request, {
-        title: "Center Test Note",
-        content: "Center note",
-        type: "star",
-      });
+Given("I am on the 3D graph page for a note with connections", async function (this: ITestWorld) {
+  // Create notes if needed
+  if (!this.centerNoteId) {
+    // Create center note using helper
+    const centerData = await createNote(this.request, {
+      title: "Center Test Note",
+      content: "Center note",
+      type: "star",
+    });
 
-      // Validate center note was created - API returns { data: {...}, message: "..." }
-      if (!centerData || !centerData.data || !centerData.data.id) {
-        throw new Error(
-          `Failed to create center note for 3D graph: ${JSON.stringify(centerData)}`,
-        );
-      }
-
-      this.centerNoteId = String(centerData.data.id);
-      this.testNotes.push({
-        id: String(centerData.data.id),
-        title: String(centerData.data.title || ""),
-        type: "star",
-      });
+    // Validate center note was created - API returns { data: {...}, message: "..." }
+    if (!centerData || !centerData.data || !centerData.data.id) {
+      throw new Error(`Failed to create center note for 3D graph: ${JSON.stringify(centerData)}`);
     }
 
-    // Validate we have a valid ID before navigating
-    if (!this.centerNoteId) {
-      throw new Error(
-        "[ERROR] centerNoteId is undefined when navigating to 3D graph page",
-      );
-    }
+    this.centerNoteId = String(centerData.data.id);
+    this.testNotes.push({
+      id: String(centerData.data.id),
+      title: String(centerData.data.title || ""),
+      type: "star",
+    });
+  }
 
-    // Navigate to 3D graph
-    const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    await this.page.goto(`${baseUrl}/graph/3d/${this.centerNoteId}`);
-    await this.page.waitForLoadState("domcontentloaded");
-    await this.page.waitForTimeout(500);
-  },
-);
+  // Validate we have a valid ID before navigating
+  if (!this.centerNoteId) {
+    throw new Error("[ERROR] centerNoteId is undefined when navigating to 3D graph page");
+  }
+
+  // Navigate to 3D graph
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  await this.page.goto(`${baseUrl}/graph/3d/${this.centerNoteId}`);
+  await this.page.waitForLoadState("domcontentloaded");
+  await this.page.waitForTimeout(500);
+});
 
 // UI interaction steps
 When(
@@ -263,42 +206,34 @@ When(
     await button.click();
 
     // Wait for aria-pressed to change
-    const expectedPressed =
-      viewName.toLowerCase() === "list" ? "true" : "false";
+    const expectedPressed = viewName.toLowerCase() === "list" ? "true" : "false";
     await expect(button).toHaveAttribute("aria-pressed", expectedPressed, {
       timeout: 5000,
     });
 
     // Additional wait for view to render
     await this.page.waitForTimeout(3000);
-  },
+  }
 );
 
 When(
   "I click the {string} filter chip in floating controls",
   async function (this: ITestWorld, filterName: string) {
     const filterId = filterName.toLowerCase().replace("s", ""); // stars -> star
-    const chip = this.page
-      .locator(`[data-testid="filter-chip-${filterId}"]`)
-      .first();
+    const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
     await expect(chip).toBeVisible({ timeout: 5000 });
     await chip.click();
     await this.page.waitForTimeout(1000); // Wait for list to filter
-  },
+  }
 );
 
-When(
-  "I type {string} in the search input",
-  async function (this: ITestWorld, searchText: string) {
-    const searchInput = this.page
-      .locator('[data-testid="search-input"]')
-      .first();
-    await expect(searchInput).toBeVisible({ timeout: 5000 });
-    await searchInput.fill(searchText);
-    await searchInput.press("Enter"); // Trigger search
-    await this.page.waitForTimeout(1000); // Wait for search filtering
-  },
-);
+When("I type {string} in the search input", async function (this: ITestWorld, searchText: string) {
+  const searchInput = this.page.locator('[data-testid="search-input"]').first();
+  await expect(searchInput).toBeVisible({ timeout: 5000 });
+  await searchInput.fill(searchText);
+  await searchInput.press("Enter"); // Trigger search
+  await this.page.waitForTimeout(1000); // Wait for search filtering
+});
 
 When("I clear the search input", async function (this: ITestWorld) {
   const searchInput = this.page.locator('[data-testid="search-input"]').first();
@@ -326,7 +261,7 @@ When(
       await this.page.evaluate((text) => {
         const buttons = Array.from(document.querySelectorAll("button"));
         const button = buttons.find((b) =>
-          b.textContent?.toLowerCase().includes(text.toLowerCase()),
+          b.textContent?.toLowerCase().includes(text.toLowerCase())
         );
         if (button) button.click();
         else throw new Error(`Button with text "${text}" not found`);
@@ -339,19 +274,14 @@ When(
       if (button) (button as HTMLElement).click();
       else throw new Error(`Button with data-testid="${id}" not found`);
     }, testId);
-  },
+  }
 );
 
 // View state assertions
-Then(
-  "I should see the 2D force graph by default",
-  async function (this: ITestWorld) {
-    const graph = this.page
-      .locator('[data-testid="graph-2d-container"]')
-      .first();
-    await expect(graph).toBeVisible({ timeout: 10000 });
-  },
-);
+Then("I should see the 2D force graph by default", async function (this: ITestWorld) {
+  const graph = this.page.locator('[data-testid="graph-2d-container"]').first();
+  await expect(graph).toBeVisible({ timeout: 10000 });
+});
 
 Then("I should see a grid of note cards", async function (this: ITestWorld) {
   // Wait for list view to fully render
@@ -360,9 +290,7 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
   // Check current view state in the app
   const currentView = await this.page.evaluate(() => {
     // Try to get current view from DOM
-    const listContainer = document.querySelector(
-      '[data-testid="list-container"]',
-    );
+    const listContainer = document.querySelector('[data-testid="list-container"]');
     const graphContainer = document.querySelector(".fullscreen-graph");
     const listBtnActive = document
       .querySelector('[data-testid="view-toggle-list"]')
@@ -386,9 +314,7 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
   });
 
   // Try multiple selectors for note cards
-  const grid = this.page
-    .locator('[data-testid="notes-grid"], .notes-grid')
-    .first();
+  const grid = this.page.locator('[data-testid="notes-grid"], .notes-grid').first();
   const gridVisible = await grid.isVisible().catch(() => false);
 
   if (gridVisible) {
@@ -402,9 +328,7 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
   }
 
   // If no grid, check if empty state is shown (valid state)
-  const emptyState = this.page
-    .locator('.empty-state, [data-testid="empty-state"]')
-    .first();
+  const emptyState = this.page.locator('.empty-state, [data-testid="empty-state"]').first();
   const isEmptyVisible = await emptyState.isVisible().catch(() => false);
 
   if (isEmptyVisible) {
@@ -413,35 +337,24 @@ Then("I should see a grid of note cards", async function (this: ITestWorld) {
   }
 
   // Check if list container exists but is empty
-  const listContainer = this.page
-    .locator('[data-testid="list-container"]')
-    .first();
-  const listContainerVisible = await listContainer
-    .isVisible()
-    .catch(() => false);
+  const listContainer = this.page.locator('[data-testid="list-container"]').first();
+  const listContainerVisible = await listContainer.isVisible().catch(() => false);
 
   if (listContainerVisible || currentView.listContainerExists) {
     return; // Valid - list view is active
   }
 
   throw new Error(
-    `List view not active - neither grid, empty state, nor list container found. View state: ${JSON.stringify(currentView)}`,
+    `List view not active - neither grid, empty state, nor list container found. View state: ${JSON.stringify(currentView)}`
   );
 });
 
-Then(
-  "I should see the fullscreen 2D force graph",
-  async function (this: ITestWorld) {
-    const graph = this.page
-      .locator('[data-testid="graph-2d-container"]')
-      .first();
-    await expect(graph).toBeVisible({ timeout: 10000 });
-    const canvas = this.page
-      .locator('[data-testid="graph-2d-container"] canvas')
-      .first();
-    await expect(canvas).toBeVisible({ timeout: 5000 });
-  },
-);
+Then("I should see the fullscreen 2D force graph", async function (this: ITestWorld) {
+  const graph = this.page.locator('[data-testid="graph-2d-container"]').first();
+  await expect(graph).toBeVisible({ timeout: 10000 });
+  const canvas = this.page.locator('[data-testid="graph-2d-container"] canvas').first();
+  await expect(canvas).toBeVisible({ timeout: 5000 });
+});
 
 Then("I am in list view", async function (this: ITestWorld) {
   // First ensure we're on main page
@@ -451,17 +364,13 @@ Then("I am in list view", async function (this: ITestWorld) {
   await this.page.waitForTimeout(2000);
 
   // Click the list view toggle button
-  const listToggleButton = this.page
-    .locator('[data-testid="view-toggle-list"]')
-    .first();
+  const listToggleButton = this.page.locator('[data-testid="view-toggle-list"]').first();
   await expect(listToggleButton).toBeVisible({ timeout: 5000 });
   await listToggleButton.click();
   await this.page.waitForTimeout(3000);
 
   // Now check for list container or note cards
-  const listContainer = this.page
-    .locator('[data-testid="list-container"]')
-    .first();
+  const listContainer = this.page.locator('[data-testid="list-container"]').first();
   const notesGrid = this.page.locator('[data-testid="notes-grid"]').first();
   const noteCards = this.page.locator(".note-card").first();
 
@@ -471,9 +380,7 @@ Then("I am in list view", async function (this: ITestWorld) {
   const isCardVisible = await noteCards.isVisible().catch(() => false);
 
   if (!isListVisible && !isGridVisible && !isCardVisible) {
-    throw new Error(
-      "List view not visible: no list container, notes grid, or note cards found",
-    );
+    throw new Error("List view not visible: no list container, notes grid, or note cards found");
   }
 });
 
@@ -482,9 +389,7 @@ Then("I am in graph view", async function (this: ITestWorld) {
   const isVisible = await graph.isVisible().catch(() => false);
   if (!isVisible) {
     // Click graph toggle
-    const button = this.page
-      .locator('[data-testid="view-toggle-graph"]')
-      .first();
+    const button = this.page.locator('[data-testid="view-toggle-graph"]').first();
     await button.click();
     await this.page.waitForTimeout(500);
   }
@@ -509,7 +414,7 @@ Then(
     }
     const button = this.page.locator(selector).first();
     await expect(button).toBeVisible({ timeout: 5000 });
-  },
+  }
 );
 
 // Filter and search assertions
@@ -533,29 +438,22 @@ Then(
       const card = noteCards.nth(i);
       const cardType = await card.getAttribute("data-note-type");
       if (cardType !== typeLower) {
-        throw new Error(
-          `Note card ${i} has type ${cardType}, expected ${typeLower}`,
-        );
+        throw new Error(`Note card ${i} has type ${cardType}, expected ${typeLower}`);
       }
     }
-
-
-  },
+  }
 );
 
-Then(
-  "the count badge should show the correct number",
-  async function (this: ITestWorld) {
-    // Count badge is inside the active filter chip
-    const activeChip = this.page.locator(".filter-chip.active").first();
-    await expect(activeChip).toBeVisible({ timeout: 5000 });
+Then("the count badge should show the correct number", async function (this: ITestWorld) {
+  // Count badge is inside the active filter chip
+  const activeChip = this.page.locator(".filter-chip.active").first();
+  await expect(activeChip).toBeVisible({ timeout: 5000 });
 
-    const badge = activeChip.locator(".filter-count");
-    const count = await badge.textContent();
+  const badge = activeChip.locator(".filter-count");
+  const count = await badge.textContent();
 
-    expect(parseInt(count || "0")).toBeGreaterThan(0);
-  },
-);
+  expect(parseInt(count || "0")).toBeGreaterThan(0);
+});
 
 Then("all notes should be displayed", async function (this: ITestWorld) {
   const cards = this.page.locator(".note-card");
@@ -571,9 +469,7 @@ Then(
     if (count === 0) {
       // Empty state is valid for no matches
       const emptyByClass = this.page.locator(".empty-state").first();
-      const emptyByText = this.page
-        .locator("text=/No notes found/i")
-        .first();
+      const emptyByText = this.page.locator("text=/No notes found/i").first();
       const hasEmpty =
         (await emptyByClass.isVisible().catch(() => false)) ||
         (await emptyByText.isVisible().catch(() => false));
@@ -582,45 +478,29 @@ Then(
     }
 
     for (let i = 0; i < count; i++) {
-      const title = await cards
-        .nth(i)
-        .locator(".note-title, h3")
-        .first()
-        .textContent();
+      const title = await cards.nth(i).locator(".note-title, h3").first().textContent();
       expect(title?.toLowerCase()).toContain(searchTerm.toLowerCase());
     }
-  },
+  }
 );
 
-Then(
-  "the note cards should highlight the matching text",
-  async function (this: ITestWorld) {
-    const highlighted = this.page
-      .locator(
-        '.note-card mark, .note-card .highlight, .note-card [style*="background"]',
-      )
-      .first();
-    await expect(highlighted).toBeVisible({ timeout: 5000 });
-  },
-);
+Then("the note cards should highlight the matching text", async function (this: ITestWorld) {
+  const highlighted = this.page
+    .locator('.note-card mark, .note-card .highlight, .note-card [style*="background"]')
+    .first();
+  await expect(highlighted).toBeVisible({ timeout: 5000 });
+});
 
 // Create note modal steps
 Then("a create note modal should open", async function (this: ITestWorld) {
-  const modal = this.page
-    .locator('.modal, [role="dialog"], .create-note-modal')
-    .first();
+  const modal = this.page.locator('.modal, [role="dialog"], .create-note-modal').first();
   await expect(modal).toBeVisible({ timeout: 5000 });
 });
 
-When(
-  "I fill in the title {string}",
-  async function (this: ITestWorld, title: string) {
-    const input = this.page
-      .locator('input[name="title"], [data-testid="note-title-input"]')
-      .first();
-    await input.fill(title);
-  },
-);
+When("I fill in the title {string}", async function (this: ITestWorld, title: string) {
+  const input = this.page.locator('input[name="title"], [data-testid="note-title-input"]').first();
+  await input.fill(title);
+});
 
 When("I select type {string}", async function (this: ITestWorld, type: string) {
   // Type selector uses .type-btn with .label inside
@@ -641,34 +521,28 @@ Then("the modal should close", async function (this: ITestWorld) {
   await expect(modal).not.toBeVisible({ timeout: 10000 });
 });
 
-Then(
-  "the new note should appear in the graph",
-  async function (this: ITestWorld) {
-    // Wait for graph to update
-    await this.page.waitForTimeout(1000);
-    const canvas = this.page.locator("canvas").first();
-    await expect(canvas).toBeVisible({ timeout: 5000 });
-  },
-);
+Then("the new note should appear in the graph", async function (this: ITestWorld) {
+  // Wait for graph to update
+  await this.page.waitForTimeout(1000);
+  const canvas = this.page.locator("canvas").first();
+  await expect(canvas).toBeVisible({ timeout: 5000 });
+});
 
 // Missing undefined steps for search filtering
-Then(
-  "non-matching nodes should be dimmed or hidden",
-  async function (this: ITestWorld) {
-    // In 2D graph view, non-matching nodes should have reduced opacity or be hidden
-    const canvas = this.page.locator("canvas").first();
-    await expect(canvas).toBeVisible({ timeout: 5000 });
-    // Verify by checking that some nodes are dimmed
-    // This is visual verification - nodes exist but with lower opacity
-    const nodeCount = await this.page.evaluate(() => {
-      const scene = (window as any).scene;
-      if (!scene) return 0;
-      return scene.children.filter((c: any) => c.userData?.nodeData).length;
-    });
-    // Just verify graph is rendering
-    expect(nodeCount).toBeGreaterThanOrEqual(0);
-  },
-);
+Then("non-matching nodes should be dimmed or hidden", async function (this: ITestWorld) {
+  // In 2D graph view, non-matching nodes should have reduced opacity or be hidden
+  const canvas = this.page.locator("canvas").first();
+  await expect(canvas).toBeVisible({ timeout: 5000 });
+  // Verify by checking that some nodes are dimmed
+  // This is visual verification - nodes exist but with lower opacity
+  const nodeCount = await this.page.evaluate(() => {
+    const scene = (window as any).scene;
+    if (!scene) return 0;
+    return scene.children.filter((c: any) => c.userData?.nodeData).length;
+  });
+  // Just verify graph is rendering
+  expect(nodeCount).toBeGreaterThanOrEqual(0);
+});
 
 Then("all nodes should be visible", async function (this: ITestWorld) {
   const canvas = this.page.locator("canvas, .fullscreen-graph canvas").first();
@@ -691,40 +565,35 @@ Given("I am on the main page", async function (this: ITestWorld) {
 });
 
 // Toggle button variations
-When(
-  "I click the {string} toggle button",
-  async function (this: ITestWorld, viewName: string) {
-    // Map view names to data-testid selectors
-    const name = viewName.toLowerCase();
-    let testId: string;
-    if (name.includes("list")) {
-      testId = "view-toggle-list";
-    } else if (name.includes("graph")) {
-      testId = "view-toggle-graph";
-    } else if (name.includes("3d")) {
-      testId = "view-toggle-3d";
-    } else {
-      // Fallback - use text search with JavaScript click
-      await this.page.evaluate((text) => {
-        const buttons = Array.from(document.querySelectorAll("button"));
-        const button = buttons.find((b) =>
-          b.textContent?.toLowerCase().includes(text.toLowerCase()),
-        );
-        if (button) button.click();
-        else throw new Error(`Button with text "${text}" not found`);
-      }, viewName);
-      await this.page.waitForTimeout(500);
-      return;
-    }
-    // Use JavaScript click to bypass viewport checks for fixed positioned elements
-    await this.page.evaluate((id) => {
-      const button = document.querySelector(`[data-testid="${id}"]`);
-      if (button) (button as HTMLElement).click();
-      else throw new Error(`Button with data-testid="${id}" not found`);
-    }, testId);
+When("I click the {string} toggle button", async function (this: ITestWorld, viewName: string) {
+  // Map view names to data-testid selectors
+  const name = viewName.toLowerCase();
+  let testId: string;
+  if (name.includes("list")) {
+    testId = "view-toggle-list";
+  } else if (name.includes("graph")) {
+    testId = "view-toggle-graph";
+  } else if (name.includes("3d")) {
+    testId = "view-toggle-3d";
+  } else {
+    // Fallback - use text search with JavaScript click
+    await this.page.evaluate((text) => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      const button = buttons.find((b) => b.textContent?.toLowerCase().includes(text.toLowerCase()));
+      if (button) button.click();
+      else throw new Error(`Button with text "${text}" not found`);
+    }, viewName);
     await this.page.waitForTimeout(500);
-  },
-);
+    return;
+  }
+  // Use JavaScript click to bypass viewport checks for fixed positioned elements
+  await this.page.evaluate((id) => {
+    const button = document.querySelector(`[data-testid="${id}"]`);
+    if (button) (button as HTMLElement).click();
+    else throw new Error(`Button with data-testid="${id}" not found`);
+  }, testId);
+  await this.page.waitForTimeout(500);
+});
 
 // Graph canvas visibility
 Then("the graph canvas should be visible", async function (this: ITestWorld) {
@@ -733,30 +602,25 @@ Then("the graph canvas should be visible", async function (this: ITestWorld) {
 });
 
 // Filter chip variations
-When(
-  "I click the {string} filter chip",
-  async function (this: ITestWorld, filterName: string) {
-    // Map filter names to data-testid
-    const filterMap: Record<string, string> = {
-      star: "filter-chip-star",
-      stars: "filter-chip-star",
-      planet: "filter-chip-planet",
-      planets: "filter-chip-planet",
-      comet: "filter-chip-comet",
-      comets: "filter-chip-comet",
-      galaxy: "filter-chip-galaxy",
-      galaxies: "filter-chip-galaxy",
-      all: "filter-chip-all",
-    };
-    const filterId =
-      filterMap[filterName.toLowerCase()] ||
-      `filter-chip-${filterName.toLowerCase()}`;
-    const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
-    await expect(chip).toBeVisible({ timeout: 5000 });
-    await chip.click();
-    await this.page.waitForTimeout(1000); // Wait for list to filter
-  },
-);
+When("I click the {string} filter chip", async function (this: ITestWorld, filterName: string) {
+  // Map filter names to data-testid
+  const filterMap: Record<string, string> = {
+    star: "filter-chip-star",
+    stars: "filter-chip-star",
+    planet: "filter-chip-planet",
+    planets: "filter-chip-planet",
+    comet: "filter-chip-comet",
+    comets: "filter-chip-comet",
+    galaxy: "filter-chip-galaxy",
+    galaxies: "filter-chip-galaxy",
+    all: "filter-chip-all",
+  };
+  const filterId = filterMap[filterName.toLowerCase()] || `filter-chip-${filterName.toLowerCase()}`;
+  const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
+  await expect(chip).toBeVisible({ timeout: 5000 });
+  await chip.click();
+  await this.page.waitForTimeout(1000); // Wait for list to filter
+});
 
 // All notes displayed again after clearing
 Then("all notes should be displayed again", async function (this: ITestWorld) {
@@ -778,10 +642,8 @@ Then(
       if (!scene) return [];
       return scene.children
         .filter((c: any) => c.userData?.nodeData)
-        .filter((c: any) =>
-          c.userData.nodeData.title.toLowerCase().includes(term.toLowerCase()),
-        );
+        .filter((c: any) => c.userData.nodeData.title.toLowerCase().includes(term.toLowerCase()));
     }, searchTerm);
     expect(visibleNodes.length).toBeGreaterThanOrEqual(0);
-  },
+  }
 );

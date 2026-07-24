@@ -15,9 +15,7 @@ test.describe("SKIP_AUTH Verification", () => {
     await page.waitForTimeout(500);
 
     // Verify SKIP_AUTH flag is set after navigation
-    const skipAuthFlag = await page.evaluate(
-      () => (window as any).__SKIP_AUTH__,
-    );
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
     expect(skipAuthFlag).toBe(true);
 
     // Should NOT redirect to login
@@ -38,9 +36,7 @@ test.describe("SKIP_AUTH Verification", () => {
     await page.waitForTimeout(2000);
 
     // Verify SKIP_AUTH flag is set after navigation
-    const skipAuthFlag = await page.evaluate(
-      () => (window as any).__SKIP_AUTH__,
-    );
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
     expect(skipAuthFlag).toBe(true);
 
     // Should NOT redirect to login

@@ -121,7 +121,6 @@ export const anomalyConfig = config.frontend.graph.anomaly;
 export const apiConfig = config.frontend.api;
 export const testConfig = config.frontend.test;
 export const ciCdConfig = config.ci_cd;
-export const ACHIEVEMENT_POLL_INTERVAL_MS =
-  config.frontend.achievements.poll_interval_ms;
+export const ACHIEVEMENT_POLL_INTERVAL_MS = config.frontend.achievements.poll_interval_ms;
 
 export default config;

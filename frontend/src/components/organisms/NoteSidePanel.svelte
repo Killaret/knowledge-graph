@@ -1,10 +1,6 @@
 <script lang="ts">
   import { getNote, type Note } from "$shared/api/notes";
-  import {
-    getNoteLinks,
-    deleteAllNoteLinks,
-    type Link,
-  } from "$shared/api/links";
+  import { getNoteLinks, deleteAllNoteLinks, type Link } from "$shared/api/links";
   import { goto } from "$app/navigation";
   import { formatDate } from "$shared/utils/date";
   import { CelestialBody } from "$entities";
@@ -78,15 +74,11 @@
   }
 
   function getTypeIcon(type: string | undefined): string {
-    return type
-      ? CelestialBody.fromString(type).emoji
-      : CelestialBody.STAR.emoji;
+    return type ? CelestialBody.fromString(type).emoji : CelestialBody.STAR.emoji;
   }
 
   function getTypeLabel(type: string | undefined): string {
-    return type
-      ? CelestialBody.fromString(type).label
-      : t("noteSidePanel.fallbackType");
+    return type ? CelestialBody.fromString(type).label : t("noteSidePanel.fallbackType");
   }
 </script>
 
@@ -150,9 +142,7 @@
             stroke="currentColor"
             stroke-width="2"
           >
-            <path
-              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-            />
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </button>
@@ -267,11 +257,7 @@
 </div>
 
 {#if showShareModal && note}
-  <ShareModal
-    noteId={note.id}
-    noteTitle={note.title}
-    on:close={() => (showShareModal = false)}
-  />
+  <ShareModal noteId={note.id} noteTitle={note.title} on:close={() => (showShareModal = false)} />
 {/if}
 
 {#if showDeleteLinksConfirm}
@@ -284,11 +270,7 @@
     onkeydown={(e) => e.key === "Escape" && (showDeleteLinksConfirm = false)}
   >
     <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-    <div
-      class="modal"
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
-    >
+    <div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <h3>{t("noteSidePanel.deleteLinksTitle")}</h3>
       <p>
         {t("noteSidePanel.deleteLinksMessage", { count: links.length })}
@@ -301,14 +283,8 @@
         >
           {t("noteSidePanel.cancel")}
         </button>
-        <button
-          class="modal-btn delete"
-          onclick={handleDeleteAllLinks}
-          disabled={deletingLinks}
-        >
-          {deletingLinks
-            ? t("noteSidePanel.delete") + "..."
-            : t("noteSidePanel.deleteAll")}
+        <button class="modal-btn delete" onclick={handleDeleteAllLinks} disabled={deletingLinks}>
+          {deletingLinks ? t("noteSidePanel.delete") + "..." : t("noteSidePanel.deleteAll")}
         </button>
       </div>
     </div>

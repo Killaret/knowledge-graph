@@ -76,7 +76,7 @@
       0,
       nebula.x,
       nebula.y,
-      nebula.radius,
+      nebula.radius
     );
 
     gradient.addColorStop(0, nebula.color);
@@ -227,8 +227,7 @@
   });
 </script>
 
-<canvas bind:this={canvas} class="cosmic-background" aria-hidden="true"
-></canvas>
+<canvas bind:this={canvas} class="cosmic-background" aria-hidden="true"></canvas>
 
 <style>
   .cosmic-background {

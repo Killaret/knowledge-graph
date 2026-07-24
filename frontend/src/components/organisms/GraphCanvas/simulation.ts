@@ -3,12 +3,7 @@
  */
 import * as d3Force from "d3-force";
 import { filterValidLinks } from "$shared/utils/graphUtils";
-import type {
-  SimulationNode,
-  SimulationLink,
-  SimulationState,
-  TransformState,
-} from "./types";
+import type { SimulationNode, SimulationLink, SimulationState, TransformState } from "./types";
 
 export type { SimulationNode, SimulationLink, SimulationState, TransformState };
 
@@ -31,7 +26,7 @@ function anyOpacityBelowOne(state: SimulationState): boolean {
 function initializeOpacityMaps(
   nodes: SimulationNode[],
   links: SimulationLink[],
-  state: SimulationState,
+  state: SimulationState
 ): void {
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
@@ -51,7 +46,7 @@ function initializeOpacityMaps(
 function startFadeAnimation(
   state: SimulationState,
   totalNodes: number,
-  onStable?: () => void,
+  onStable?: () => void
 ): void {
   if (state.fadeAnimationId !== null) {
     cancelAnimationFrame(state.fadeAnimationId);
@@ -73,16 +68,14 @@ function startFadeAnimation(
     // Update node opacity
     state.nodeOpacity.forEach((currentOpacity, nodeId) => {
       const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
-      const newOpacity =
-        currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
       state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
     });
 
     // Update link opacity (links fade in after nodes)
     state.linkOpacity.forEach((currentOpacity, linkId) => {
       const targetOpacity = easeOutCubic(Math.min(waveProgress, 1));
-      const newOpacity =
-        currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
+      const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.3; // Faster interpolation
       state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
     });
 
@@ -115,7 +108,7 @@ export function startSimulation(
   transform: TransformState,
   onTick: () => void,
   onResetView: () => void,
-  onStable?: () => void,
+  onStable?: () => void
 ): void {
   if (!d3Force) {
     return;
@@ -144,16 +137,14 @@ export function startSimulation(
   if (import.meta.env.DEV) {
     console.log(
       "[simulation] Initial node coordinates:",
-      simulationNodes.slice(0, 3).map((n) => ({ id: n.id, x: n.x, y: n.y })),
+      simulationNodes.slice(0, 3).map((n) => ({ id: n.id, x: n.x, y: n.y }))
     );
   }
 
   // Filter links to only include those where both source and target nodes exist
   const validLinks = filterValidLinks(nodes, links);
   if (validLinks.length !== links.length && import.meta.env.DEV) {
-    console.warn(
-      `[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`,
-    );
+    console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
   }
 
   const edges: SimulationLink[] = validLinks.map((l) => ({
@@ -187,7 +178,7 @@ export function startSimulation(
         .forceLink<SimulationNode, SimulationLink>(edges)
         .id((d) => d.id)
         .distance(100)
-        .strength(0.2),
+        .strength(0.2)
     )
     .force("charge", d3Force.forceManyBody().strength(-100)) // Further reduced repulsion
     .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.3))

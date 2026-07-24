@@ -17,7 +17,7 @@ export class SearchQuery {
 
   constructor(
     public readonly raw: string,
-    options: { minLength?: number; maxLength?: number } = {},
+    options: { minLength?: number; maxLength?: number } = {}
   ) {
     this.minLength = options.minLength ?? 2;
     this.maxLength = options.maxLength ?? 200;

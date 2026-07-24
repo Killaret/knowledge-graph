@@ -26,8 +26,8 @@
   <div
     class="note-form"
     data-testid="ghost-note-form"
-    style="position: absolute; left: {noteFormState.noteFormPosition
-      .x}px; top: {noteFormState.noteFormPosition
+    style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState
+      .noteFormPosition
       .y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div
@@ -93,8 +93,8 @@
   <div
     class="link-form"
     data-testid="link-form"
-    style="position: absolute; left: {linkFormState.linkFormPosition
-      .x}px; top: {linkFormState.linkFormPosition
+    style="position: absolute; left: {linkFormState.linkFormPosition.x}px; top: {linkFormState
+      .linkFormPosition
       .y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
   >
     <div

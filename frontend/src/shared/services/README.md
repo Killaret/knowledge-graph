@@ -13,10 +13,7 @@ PreloadService - это сервис для фоновой загрузки пу
 ### Базовое использование в компонентах
 
 ```typescript
-import {
-  getGraphWithPreload,
-  getAchievementsWithPreload,
-} from "$shared/hooks/usePreloadedData";
+import { getGraphWithPreload, getAchievementsWithPreload } from "$shared/hooks/usePreloadedData";
 
 // Получение графа с приоритетом на предзагруженные данные
 const graphData = await getGraphWithPreload(1000);
@@ -138,10 +135,7 @@ export async function logout(): Promise<void> {
 ### 3. Главная страница (+page.svelte)
 
 ```typescript
-import {
-  getGraphWithPreload,
-  useInstantData,
-} from "$shared/hooks/usePreloadedData";
+import { getGraphWithPreload, useInstantData } from "$shared/hooks/usePreloadedData";
 
 async function loadDataParallel() {
   // Мгновенное получение предзагруженных данных

@@ -528,7 +528,7 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	if h.emailSender != nil {
 		if err := h.emailSender.SendPasswordReset(c.Request.Context(), u.Email(), resetLink); err != nil {
 			// Log the error but do not leak it to the caller.
-			c.Error(err)
+			_ = c.Error(err)
 		}
 	}
 

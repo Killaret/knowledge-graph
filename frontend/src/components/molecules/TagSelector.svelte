@@ -78,11 +78,7 @@
     if (event.key === "Enter") {
       event.preventDefault();
       addTag();
-    } else if (
-      event.key === "Backspace" &&
-      !inputValue &&
-      localTags.length > 0
-    ) {
+    } else if (event.key === "Backspace" && !inputValue && localTags.length > 0) {
       // Удаляем последний тег при Backspace на пустом поле
       removeTag(localTags[localTags.length - 1]);
     } else {

@@ -23,9 +23,7 @@ describe("SearchBar", () => {
   it("navigates to search page on button click", async () => {
     render(SearchBar);
 
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
     const button = screen.getByRole("button", { name: /search/i });
 
     await userEvent.type(input, "test query");
@@ -39,9 +37,7 @@ describe("SearchBar", () => {
   it("navigates on Enter key press", async () => {
     render(SearchBar);
 
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
     await userEvent.type(input, "enter query");
     await userEvent.keyboard("{Enter}");
 
@@ -54,9 +50,7 @@ describe("SearchBar", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(SearchBar);
 
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
 
     // Вводим слово
     await userEvent.type(input, "debounce");
@@ -80,9 +74,7 @@ describe("SearchBar", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(SearchBar);
 
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
 
     // Вводим что-то
     await userEvent.type(input, "partial");
@@ -111,9 +103,7 @@ describe("SearchBar", () => {
     expect(goto).not.toHaveBeenCalled();
 
     // Enter с пустым полем тоже не должен переходить
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
     await userEvent.type(input, "   "); // только пробелы
     await userEvent.keyboard("{Enter}");
 
@@ -123,9 +113,7 @@ describe("SearchBar", () => {
   it("trims whitespace from query", async () => {
     render(SearchBar);
 
-    const input = screen.getByPlaceholderText(
-      /search notes/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search notes/i) as HTMLInputElement;
     await userEvent.type(input, "  trimmed  query  ");
     await userEvent.keyboard("{Enter}");
 

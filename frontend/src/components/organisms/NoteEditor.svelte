@@ -25,19 +25,12 @@
   let titleError = $state<string | null>(null);
 
   function extractApiError(err: unknown): ErrorResponse | undefined {
-    if (typeof err !== "object" || err === null || !("response" in err))
-      return undefined;
+    if (typeof err !== "object" || err === null || !("response" in err)) return undefined;
     const response = (err as { response?: unknown }).response;
-    if (
-      typeof response !== "object" ||
-      response === null ||
-      !("data" in response)
-    )
+    if (typeof response !== "object" || response === null || !("data" in response))
       return undefined;
     const data = (response as { data?: unknown }).data;
-    return typeof data === "object" && data !== null
-      ? (data as ErrorResponse)
-      : undefined;
+    return typeof data === "object" && data !== null ? (data as ErrorResponse) : undefined;
   }
 
   // Загрузка данных при редактировании
@@ -135,19 +128,13 @@
           disabled={isSaving}
         />
         {#if titleError}
-          <span class="field-error" data-testid="title-error">{titleError}</span
-          >
+          <span class="field-error" data-testid="title-error">{titleError}</span>
         {/if}
       </div>
 
       <div class="field">
         <label for="type">{t("noteEditor.typeLabel")}</label>
-        <select
-          id="type"
-          bind:value={noteType}
-          data-testid="type-select"
-          disabled={isSaving}
-        >
+        <select id="type" bind:value={noteType} data-testid="type-select" disabled={isSaving}>
           <option value="star">{t("celestialBody.type.star")}</option>
           <option value="planet">{t("celestialBody.type.planet")}</option>
           <option value="comet">{t("celestialBody.type.comet")}</option>
@@ -167,12 +154,7 @@
       </div>
 
       <div class="actions">
-        <button
-          type="submit"
-          class="btn-primary"
-          disabled={isSaving}
-          data-testid="save-button"
-        >
+        <button type="submit" class="btn-primary" disabled={isSaving} data-testid="save-button">
           {isSaving
             ? t("noteEditor.saving")
             : noteId

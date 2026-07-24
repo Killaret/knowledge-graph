@@ -49,12 +49,8 @@ describe("usePreloadedData Hooks", () => {
     service.clearCache();
 
     vi.mocked(graphApi.getFullGraphData).mockResolvedValue(mockGraphData);
-    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(
-      mockAchievementsData,
-    );
-    vi.mocked(usersApi.getMyAchievements).mockResolvedValue(
-      mockPersonalAchievementsData,
-    );
+    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
+    vi.mocked(usersApi.getMyAchievements).mockResolvedValue(mockPersonalAchievementsData);
   });
 
   afterEach(() => {
@@ -99,9 +95,7 @@ describe("usePreloadedData Hooks", () => {
       await PreloadService.startPreload();
       await getGraphWithPreload();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[usePreloadedData] Using preloaded graph data",
-      );
+      expect(consoleSpy).toHaveBeenCalledWith("[usePreloadedData] Using preloaded graph data");
 
       consoleSpy.mockRestore();
     });
@@ -111,9 +105,7 @@ describe("usePreloadedData Hooks", () => {
 
       await getGraphWithPreload();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[usePreloadedData] Loading graph data from server",
-      );
+      expect(consoleSpy).toHaveBeenCalledWith("[usePreloadedData] Loading graph data from server");
 
       consoleSpy.mockRestore();
     });
@@ -139,13 +131,9 @@ describe("usePreloadedData Hooks", () => {
     });
 
     it("should handle API errors gracefully", async () => {
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(
-        mockAchievementsError,
-      );
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
 
-      await expect(getAchievementsWithPreload(false)).rejects.toThrow(
-        mockAchievementsError,
-      );
+      await expect(getAchievementsWithPreload(false)).rejects.toThrow(mockAchievementsError);
     });
 
     it("should log when loading achievements from server", async () => {
@@ -154,7 +142,7 @@ describe("usePreloadedData Hooks", () => {
       await getAchievementsWithPreload(false);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[usePreloadedData] Loading all achievements from server",
+        "[usePreloadedData] Loading all achievements from server"
       );
 
       consoleSpy.mockRestore();
@@ -211,9 +199,7 @@ describe("usePreloadedData Hooks", () => {
 
     it("should return partial data when only one type is preloaded", async () => {
       // Предзагружаем только граф
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(
-        mockAchievementsError,
-      );
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
 
       await PreloadService.startPreload();
 
@@ -255,9 +241,7 @@ describe("usePreloadedData Hooks", () => {
 
       const result = await loadAppData({ usePersonalAchievements: true });
 
-      expect(result.achievements).toEqual(
-        mockPersonalAchievementsData.achievements,
-      );
+      expect(result.achievements).toEqual(mockPersonalAchievementsData.achievements);
       expect(result.totalPoints).toBe(35);
       expect(result.userPoints).toBeInstanceOf(UserPoints);
       expect(result.userPoints?.total).toBe(35);
@@ -274,9 +258,7 @@ describe("usePreloadedData Hooks", () => {
 
     it("should handle API errors when fallbackToServer is false", async () => {
       vi.mocked(graphApi.getFullGraphData).mockRejectedValue(mockGraphError);
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(
-        mockAchievementsError,
-      );
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
 
       await expect(loadAppData({ fallbackToServer: false })).rejects.toThrow();
     });
@@ -295,15 +277,11 @@ describe("usePreloadedData Hooks", () => {
 
     it("should mix preloaded and fresh data correctly", async () => {
       // Предзагружаем только граф
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(
-        mockAchievementsError,
-      );
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(mockAchievementsError);
       await PreloadService.startPreload();
 
       // Восстанавливаем мок для достижений
-      vi.mocked(usersApi.getAllAchievements).mockResolvedValue(
-        mockAchievementsData,
-      );
+      vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
 
       const result = await loadAppData();
 

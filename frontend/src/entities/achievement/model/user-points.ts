@@ -23,13 +23,11 @@ export class UserPoints {
 
   constructor(
     public readonly achievements: Achievement[],
-    public readonly reportedTotal?: number,
+    public readonly reportedTotal?: number
   ) {}
 
   get computedTotal(): number {
-    return this.achievements
-      .filter((a) => a.earned)
-      .reduce((sum, a) => sum + a.points, 0);
+    return this.achievements.filter((a) => a.earned).reduce((sum, a) => sum + a.points, 0);
   }
 
   /** Total points to display. Prefers server-reported value when available. */
@@ -39,10 +37,7 @@ export class UserPoints {
 
   /** True when the reported total matches the sum of earned achievements. */
   get isConsistent(): boolean {
-    return (
-      this.reportedTotal === undefined ||
-      this.reportedTotal === this.computedTotal
-    );
+    return this.reportedTotal === undefined || this.reportedTotal === this.computedTotal;
   }
 
   get earnedCount(): number {
@@ -69,9 +64,7 @@ export class UserPoints {
   }
 
   static fromApi(data: UserPointsApiData): UserPoints {
-    const achievements = (data.achievements ?? []).map((a) =>
-      Achievement.fromApi(a),
-    );
+    const achievements = (data.achievements ?? []).map((a) => Achievement.fromApi(a));
     return new UserPoints(achievements, data.total_points);
   }
 

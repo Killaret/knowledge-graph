@@ -24,42 +24,28 @@ describe("GraphCanvas - Link Rendering Detailed", () => {
           method: "beginPath",
           args: [],
           fillStyle: lastFillStyle,
-        }),
+        })
       ),
-      moveTo: vi.fn((x, y) =>
-        ctxCalls.push({ method: "moveTo", args: [x, y] }),
-      ),
-      lineTo: vi.fn((x, y) =>
-        ctxCalls.push({ method: "lineTo", args: [x, y] }),
-      ),
+      moveTo: vi.fn((x, y) => ctxCalls.push({ method: "moveTo", args: [x, y] })),
+      lineTo: vi.fn((x, y) => ctxCalls.push({ method: "lineTo", args: [x, y] })),
       stroke: vi.fn(() =>
         ctxCalls.push({
           method: "stroke",
           args: [],
           strokeStyle: lastStrokeStyle,
           lineWidth: lastLineWidth,
-        }),
+        })
       ),
-      fill: vi.fn(() =>
-        ctxCalls.push({ method: "fill", args: [], fillStyle: lastFillStyle }),
-      ),
+      fill: vi.fn(() => ctxCalls.push({ method: "fill", args: [], fillStyle: lastFillStyle })),
       closePath: vi.fn(() => ctxCalls.push({ method: "closePath", args: [] })),
-      arc: vi.fn((x, y, r, s, e) =>
-        ctxCalls.push({ method: "arc", args: [x, y, r, s, e] }),
-      ),
+      arc: vi.fn((x, y, r, s, e) => ctxCalls.push({ method: "arc", args: [x, y, r, s, e] })),
       ellipse: vi.fn((...args) => ctxCalls.push({ method: "ellipse", args })),
-      setLineDash: vi.fn((dash) =>
-        ctxCalls.push({ method: "setLineDash", args: [dash] }),
-      ),
-      fillText: vi.fn((text, x, y) =>
-        ctxCalls.push({ method: "fillText", args: [text, x, y] }),
-      ),
+      setLineDash: vi.fn((dash) => ctxCalls.push({ method: "setLineDash", args: [dash] })),
+      fillText: vi.fn((text, x, y) => ctxCalls.push({ method: "fillText", args: [text, x, y] })),
       measureText: vi.fn(() => ({ width: 50 })),
       save: vi.fn(() => ctxCalls.push({ method: "save", args: [] })),
       restore: vi.fn(() => ctxCalls.push({ method: "restore", args: [] })),
-      translate: vi.fn((...args) =>
-        ctxCalls.push({ method: "translate", args }),
-      ),
+      translate: vi.fn((...args) => ctxCalls.push({ method: "translate", args })),
       scale: vi.fn((...args) => ctxCalls.push({ method: "scale", args })),
       rotate: vi.fn((...args) => ctxCalls.push({ method: "rotate", args })),
       set fillStyle(value: string) {

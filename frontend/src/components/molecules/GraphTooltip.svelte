@@ -38,11 +38,7 @@
     tippyInstance?.destroy();
   });
 
-  export function showNodeTooltip(
-    title: string,
-    type: string,
-    emoji: string,
-  ): void {
+  export function showNodeTooltip(title: string, type: string, emoji: string): void {
     if (!tippyInstance) return;
     const typeLabel = CelestialBody.fromString(type).label;
     currentContent = `

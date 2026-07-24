@@ -3,12 +3,7 @@
   import Button from "$components/atoms/Button.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import YandexLoginButton from "$components/atoms/YandexLoginButton.svelte";
-  import {
-    login,
-    loginWithApiKey,
-    isLoading,
-    error,
-  } from "$shared/stores/auth.svelte.js";
+  import { login, loginWithApiKey, isLoading, error } from "$shared/stores/auth.svelte.js";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

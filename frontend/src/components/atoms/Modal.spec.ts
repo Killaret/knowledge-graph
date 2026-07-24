@@ -97,16 +97,10 @@ describe("Modal", () => {
       },
     });
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith(
-      "keydown",
-      expect.any(Function),
-    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
 
     cleanup();
 
-    expect(removeEventListenerSpy).toHaveBeenCalledWith(
-      "keydown",
-      expect.any(Function),
-    );
+    expect(removeEventListenerSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
   });
 });

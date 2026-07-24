@@ -90,9 +90,7 @@
       <div class="quick-capture-modal">
         <div class="modal-header">
           <h3>{t("quickCapture.title")}</h3>
-          <button class="close-btn" onclick={toggle} aria-label={t("close")}
-            >×</button
-          >
+          <button class="close-btn" onclick={toggle} aria-label={t("close")}>×</button>
         </div>
         <div class="modal-body">
           <textarea
@@ -120,13 +118,7 @@
     </div>
   {/if}
 
-  <button
-    class="quick-capture-btn"
-    onclick={toggle}
-    title={t("quickCapture.tooltip")}
-  >
-    ✨
-  </button>
+  <button class="quick-capture-btn" onclick={toggle} title={t("quickCapture.tooltip")}> ✨ </button>
 </div>
 
 <style>

@@ -48,51 +48,31 @@
   const tabUsers = $derived(theme.choose("To User", "To Traveler"));
   const tabLink = $derived(theme.choose("By Link", "Via Wormhole"));
   const emailLabel = $derived(theme.choose("User Email", "Traveler Email"));
-  const emailPlaceholder = $derived(
-    theme.choose("user@example.com", "traveler@cosmos.net"),
-  );
-  const accessLevelLabel = $derived(
-    theme.choose("Access Level", "Access Level"),
-  );
+  const emailPlaceholder = $derived(theme.choose("user@example.com", "traveler@cosmos.net"));
+  const accessLevelLabel = $derived(theme.choose("Access Level", "Access Level"));
   const viewOnlyText = $derived(theme.choose("View Only", "Observation Only"));
   const editText = $derived(theme.choose("Edit", "Modification"));
   const grantAccessText = $derived(theme.choose("Grant Access", "Open Portal"));
-  const grantingText = $derived(
-    theme.choose("Granting Access...", "Opening Portal..."),
-  );
-  const expiresLabel = $derived(
-    theme.choose("Expires (hours)", "Expires (hours)"),
-  );
+  const grantingText = $derived(theme.choose("Granting Access...", "Opening Portal..."));
+  const expiresLabel = $derived(theme.choose("Expires (hours)", "Expires (hours)"));
   const expiresPlaceholder = $derived(theme.choose("Indefinite", "Indefinite"));
   const maxUsesLabel = $derived(theme.choose("Max Uses", "Max Uses"));
   const maxUsesPlaceholder = $derived(theme.choose("Unlimited", "Unlimited"));
   const linkLabel = $derived(theme.choose("Access Link", "Portal Link"));
   const copyText = $derived(theme.choose("Copy", "Copy"));
   const createLinkText = $derived(theme.choose("Create Link", "Create Portal"));
-  const createNewLinkText = $derived(
-    theme.choose("Create New Link", "Create New Portal"),
-  );
-  const creatingLinkText = $derived(
-    theme.choose("Creating link...", "Opening Portal..."),
-  );
+  const createNewLinkText = $derived(theme.choose("Create New Link", "Create New Portal"));
+  const creatingLinkText = $derived(theme.choose("Creating link...", "Opening Portal..."));
   const accessGrantedMsg = $derived((email: string) =>
-    theme.choose(`Access granted to ${email}`, `Portal opened for ${email}`),
+    theme.choose(`Access granted to ${email}`, `Portal opened for ${email}`)
   );
-  const linkCreatedMsg = $derived(
-    theme.choose("Access link created", "Portal opened"),
-  );
+  const linkCreatedMsg = $derived(theme.choose("Access link created", "Portal opened"));
   const linkCopiedMsg = $derived(
-    theme.choose("Link copied to clipboard", "Portal coordinates copied"),
+    theme.choose("Link copied to clipboard", "Portal coordinates copied")
   );
-  const emailRequiredMsg = $derived(
-    theme.choose("Enter user email", "Enter traveler email"),
-  );
-  const shareErrorMsg = $derived(
-    theme.choose("Access grant failed", "Portal opening failed"),
-  );
-  const linkErrorMsg = $derived(
-    theme.choose("Link creation failed", "Portal creation failed"),
-  );
+  const emailRequiredMsg = $derived(theme.choose("Enter user email", "Enter traveler email"));
+  const shareErrorMsg = $derived(theme.choose("Access grant failed", "Portal opening failed"));
+  const linkErrorMsg = $derived(theme.choose("Link creation failed", "Portal creation failed"));
 
   function closeModal() {
     dispatch("close");
@@ -118,7 +98,7 @@
       const share = await shareNote(
         noteId,
         userEmail.trim(),
-        permission === "view" ? "read" : "write",
+        permission === "view" ? "read" : "write"
       );
       success = accessGrantedMsg(userEmail);
       userEmail = "";
@@ -139,10 +119,8 @@
       const link = await createShareLink(
         noteId,
         linkPermission === "view" ? "read" : "write",
-        expiresIn
-          ? new Date(Date.now() + expiresIn * 60 * 60 * 1000).toISOString()
-          : undefined,
-        maxUses,
+        expiresIn ? new Date(Date.now() + expiresIn * 60 * 60 * 1000).toISOString() : undefined,
+        maxUses
       );
       generatedLink = link;
       success = linkCreatedMsg;
@@ -276,9 +254,7 @@
                   <button
                     class="copy-button"
                     onclick={() =>
-                      copyToClipboard(
-                        `${window.location.origin}/shared/${generatedLink?.token}`,
-                      )}
+                      copyToClipboard(`${window.location.origin}/shared/${generatedLink?.token}`)}
                   >
                     {copyText}
                   </button>
@@ -287,16 +263,8 @@
             </div>
           {/if}
 
-          <button
-            class="action-button"
-            onclick={handleCreateLink}
-            disabled={isLoading}
-          >
-            {isLoading
-              ? creatingLinkText
-              : generatedLink
-                ? createNewLinkText
-                : createLinkText}
+          <button class="action-button" onclick={handleCreateLink} disabled={isLoading}>
+            {isLoading ? creatingLinkText : generatedLink ? createNewLinkText : createLinkText}
           </button>
         </div>
       {/if}

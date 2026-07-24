@@ -75,7 +75,7 @@ test.describe("Note persistence", () => {
     const dbQuery = `SELECT title FROM notes WHERE id = '${noteId}'`;
     const dbResult = execSync(
       `docker exec ${DB_CONTAINER} psql -U ${DB_USER} -d ${DB_NAME} -t -A -c "${dbQuery}"`,
-      { encoding: "utf-8", timeout: 15000 },
+      { encoding: "utf-8", timeout: 15000 }
     ).trim();
     expect(dbResult).toBe(title);
   });

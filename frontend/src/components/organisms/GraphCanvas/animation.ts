@@ -25,7 +25,7 @@ export function updateNodeAngles(
   nodes: Array<{ id: string; type?: string }>,
   angles: Map<string, number>,
   speeds: Map<string, number>,
-  disableVariation: boolean = false,
+  disableVariation: boolean = false
 ): void {
   for (const node of nodes) {
     const id = node.id;
@@ -60,7 +60,7 @@ export function updateNodeAngles(
 export function startAnimationLoop(
   getNodes: () => Array<{ id: string; type?: string }>,
   onUpdate: () => void,
-  disableVariation: boolean = false,
+  disableVariation: boolean = false
 ): { stop: () => void } {
   let animationId: number;
   const angles = new Map<string, number>();
@@ -87,7 +87,7 @@ export function startAnimationLoop(
  */
 export function clearAnimationState(
   angles: Map<string, number>,
-  speeds: Map<string, number>,
+  speeds: Map<string, number>
 ): void {
   angles.clear();
   speeds.clear();

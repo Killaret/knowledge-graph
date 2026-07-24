@@ -5,7 +5,7 @@ export function drawVoidWhisper(
   x: number,
   y: number,
   r: number,
-  _params: AnomalyParams,
+  _params: AnomalyParams
 ): void {
   ctx.save();
   ctx.translate(x, y);

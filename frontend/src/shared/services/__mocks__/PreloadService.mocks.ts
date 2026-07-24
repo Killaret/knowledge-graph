@@ -114,31 +114,21 @@ export const mockPersonalAchievementsData = {
 
 // Моковые функции API
 export const mockGetFullGraphData = vi.fn().mockResolvedValue(mockGraphData);
-export const mockGetAllAchievements = vi
-  .fn()
-  .mockResolvedValue(mockAchievementsData);
-export const mockGetMyAchievements = vi
-  .fn()
-  .mockResolvedValue(mockPersonalAchievementsData);
+export const mockGetAllAchievements = vi.fn().mockResolvedValue(mockAchievementsData);
+export const mockGetMyAchievements = vi.fn().mockResolvedValue(mockPersonalAchievementsData);
 
 // Моки для ошибок
 export const mockGraphError = new Error("Failed to load graph");
 export const mockAchievementsError = new Error("Failed to load achievements");
 
-export const mockGetFullGraphDataError = vi
-  .fn()
-  .mockRejectedValue(mockGraphError);
-export const mockGetAllAchievementsError = vi
-  .fn()
-  .mockRejectedValue(mockAchievementsError);
+export const mockGetFullGraphDataError = vi.fn().mockRejectedValue(mockGraphError);
+export const mockGetAllAchievementsError = vi.fn().mockRejectedValue(mockAchievementsError);
 
 // Мок для задержки (имитация сетевого запроса)
 export const createDelayedMock = <T>(data: T, delay: number = 100) => {
   return vi
     .fn()
-    .mockImplementation(
-      () => new Promise<T>((resolve) => setTimeout(() => resolve(data), delay)),
-    );
+    .mockImplementation(() => new Promise<T>((resolve) => setTimeout(() => resolve(data), delay)));
 };
 
 // Мок для ошибки с задержкой
@@ -146,9 +136,6 @@ export const createDelayedError = (error: Error, delay: number = 100) => {
   return vi
     .fn()
     .mockImplementation(
-      () =>
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(error), delay),
-        ),
+      () => new Promise<never>((_, reject) => setTimeout(() => reject(error), delay))
     );
 };

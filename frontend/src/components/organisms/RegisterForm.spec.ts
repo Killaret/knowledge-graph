@@ -27,9 +27,7 @@ describe("RegisterForm", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /register/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /register/i })).toBeInTheDocument();
   });
 
   it("updates all form fields", async () => {
@@ -103,11 +101,7 @@ describe("RegisterForm", () => {
     await fireEvent.input(confirmInput, { target: { value: "Password123!" } });
     await fireEvent.click(submitButton);
 
-    expect(mockRegister).toHaveBeenCalledWith(
-      "newuser",
-      "Password123!",
-      "newuser@example.com",
-    );
+    expect(mockRegister).toHaveBeenCalledWith("newuser", "Password123!", "newuser@example.com");
   });
 
   it("has link to login page", () => {

@@ -1,11 +1,7 @@
 /**
  * Shared types for GraphCanvas modules
  */
-import type {
-  Simulation,
-  SimulationNodeDatum,
-  SimulationLinkDatum,
-} from "d3-force";
+import type { Simulation, SimulationNodeDatum, SimulationLinkDatum } from "d3-force";
 
 export interface SimulationNode extends SimulationNodeDatum {
   id: string;
@@ -60,7 +56,7 @@ export interface ResizeState {
  */
 export function resolveLinkEndpoint(
   ref: string | number | SimulationNode,
-  nodes: SimulationNode[],
+  nodes: SimulationNode[]
 ): SimulationNode | undefined {
   if (typeof ref === "object" && ref !== null) {
     return ref;
@@ -72,9 +68,7 @@ export function resolveLinkEndpoint(
 }
 
 /** Extract the node id from a link endpoint reference. */
-export function getLinkEndpointId(
-  ref: string | number | { id: string },
-): string {
+export function getLinkEndpointId(ref: string | number | { id: string }): string {
   if (typeof ref === "string") return ref;
   if (typeof ref === "number") return String(ref);
   return ref.id;

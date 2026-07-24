@@ -33,15 +33,10 @@
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$entities";
-  import {
-    formatMessage,
-    getCurrentLocale,
-    type MessageParams,
-  } from "$shared/utils/i18n";
+  import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: MessageParams) =>
-    formatMessage(key, locale, params);
+  const t = (key: string, params?: MessageParams) => formatMessage(key, locale, params);
 
   // Raw API shapes that backend may return with alternative casing
   interface RawNode {
@@ -126,7 +121,7 @@
       sortBy: "created",
       searchQuery: "",
       currentView: "graph",
-    }),
+    })
   );
   $effect(() => {
     filterState = new FilterState({
@@ -204,9 +199,7 @@
       const graphPromise = isAuth
         ? Promise.race([
             getFreshGraph(),
-            new Promise<null>((resolve) =>
-              setTimeout(() => resolve(null), graphTimeoutMs),
-            ),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
           ]).catch((e: unknown) => {
             if (import.meta.env.DEV) {
               console.error("[+page] Failed to load fresh graph:", e);
@@ -215,9 +208,7 @@
           })
         : Promise.race([
             getGraphWithPreload(),
-            new Promise<null>((resolve) =>
-              setTimeout(() => resolve(null), graphTimeoutMs),
-            ),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
           ]).catch((e: unknown) => {
             if (import.meta.env.DEV) {
               console.error("[+page] Failed to load public graph:", e);
@@ -278,7 +269,7 @@
           // that the graph service/backend cache hasn't picked up yet.
           const noteMap = new Map(allNotes.map((n) => [n.id, n]));
           const freshNodeMap = new Map(
-            freshGraph.nodes.map((n) => [normalizeNode(n as RawNode).id, n as RawNode]),
+            freshGraph.nodes.map((n) => [normalizeNode(n as RawNode).id, n as RawNode])
           );
 
           // Use all current notes as nodes, preferring titles/types from the note list
@@ -291,7 +282,7 @@
                     id: n.id,
                     title: n.title,
                     type: n.type || "unknown",
-                  } as RawNode),
+                  } as RawNode)
             );
           });
 
@@ -354,10 +345,7 @@
         rawData.nodes.length === 0
       ) {
         if (import.meta.env.DEV) {
-          console.warn(
-            "[+page] Graph API returned empty or invalid data structure:",
-            rawData,
-          );
+          console.warn("[+page] Graph API returned empty or invalid data structure:", rawData);
         }
         // Fallback: build simple graph from notes
         graphData = {
@@ -373,33 +361,24 @@
 
       // Debug: check what types come from API
       const apiTypes = rawData.nodes.map(
-        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
+        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
       );
       if (import.meta.env.DEV) {
-        console.log(
-          "[+page] API node types:",
-          [...new Set(apiTypes)],
-          "Total:",
-          apiTypes.length,
-        );
+        console.log("[+page] API node types:", [...new Set(apiTypes)], "Total:", apiTypes.length);
         console.log(
           "[+page] First 5 raw nodes:",
           rawData.nodes.slice(0, 5).map((n) => {
             const raw = n as RawNode;
             return { id: raw.id, type: raw.type, Type: raw.Type };
-          }),
+          })
         );
       }
 
       // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n) =>
-        normalizeNode(n as RawNode),
-      );
+      const transformedNodes = rawData.nodes.map((n) => normalizeNode(n as RawNode));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links || []).map((l) =>
-        normalizeLink(l as RawLink),
-      );
+      const transformedLinks = (rawData.links || []).map((l) => normalizeLink(l as RawLink));
 
       graphData = {
         nodes: transformedNodes,
@@ -409,13 +388,11 @@
       // Defensive: ensure graph nodes correspond to loaded notes
       if (allNotes.length > 0 && transformedNodes.length > 0) {
         const noteIds = new Set(allNotes.map((n) => n.id));
-        const hasIntersection = transformedNodes.some((n) =>
-          noteIds.has(n.id),
-        );
+        const hasIntersection = transformedNodes.some((n) => noteIds.has(n.id));
         if (!hasIntersection) {
           if (import.meta.env.DEV) {
             console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
             );
           }
           graphData = {
@@ -431,35 +408,26 @@
       }
 
       if (import.meta.env.DEV) {
-        console.log(
-          "[+page] Transformed links:",
-          transformedLinks.length,
-          "links",
-        );
-        console.log(
-          "[+page] First 3 transformed links:",
-          transformedLinks.slice(0, 3),
-        );
+        console.log("[+page] Transformed links:", transformedLinks.length, "links");
+        console.log("[+page] First 3 transformed links:", transformedLinks.slice(0, 3));
 
         // Check if links match node IDs
         const nodeIds = new Set(transformedNodes.map((n) => n.id));
         const validLinks = transformedLinks.filter(
-          (l) => nodeIds.has(l.source) && nodeIds.has(l.target),
+          (l) => nodeIds.has(l.source) && nodeIds.has(l.target)
         );
         console.log("[+page] Node IDs:", Array.from(nodeIds).slice(0, 5));
         console.log(
           "[+page] Valid links (matching node IDs):",
           validLinks.length,
           "of",
-          transformedLinks.length,
+          transformedLinks.length
         );
 
         if (validLinks.length < transformedLinks.length) {
           console.warn(
             "[+page] Some links have invalid node IDs:",
-            transformedLinks.filter(
-              (l) => !nodeIds.has(l.source) || !nodeIds.has(l.target),
-            ),
+            transformedLinks.filter((l) => !nodeIds.has(l.source) || !nodeIds.has(l.target))
           );
         }
       }
@@ -494,9 +462,7 @@
   }
 
   // Reactive filtered graph data based on filter state
-  const filteredGraphData = $derived(
-    filterState.filterGraphData(graphData, allNotes, getNoteType),
-  );
+  const filteredGraphData = $derived(filterState.filterGraphData(graphData, allNotes, getNoteType));
 
   function applyFiltersAndSort() {
     filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
@@ -578,7 +544,7 @@
     // Confirmation dialog
     if (browser) {
       const confirmed = confirm(
-        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`,
+        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`
       );
       if (!confirmed) return;
     }
@@ -636,11 +602,7 @@
     }
   }
 
-  async function handleNoteCreate(data: {
-    title: string;
-    content: string;
-    type: string;
-  }) {
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
     try {
       await createNote({
         title: data.title,
@@ -694,10 +656,8 @@
     typeCounts={Object.fromEntries(
       typeFilters.map((f) => [
         f.id,
-        f.id === "all"
-          ? allNotes.length
-          : allNotes.filter((n) => n.type === f.id).length,
-      ]),
+        f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+      ])
     )}
   />
 
@@ -776,9 +736,7 @@
             {/if}
           </div>
           <div class="list-sort">
-            <label for="sort-select" class="sort-label"
-              >{t("page.sortBy")}</label
-            >
+            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
             <select
               id="sort-select"
               class="sort-select"
@@ -816,16 +774,10 @@
                       query: filterState.searchQuery.value,
                     })
                   : t("page.noTypeResults", {
-                      type:
-                        filterState
-                          .getSelectedTypeLabel(typeFilters)
-                          ?.toLowerCase() ?? "",
+                      type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
                     })}
             </p>
-            <button
-              class="new-note-button"
-              onclick={() => (showCreateModal = true)}
-            >
+            <button class="new-note-button" onclick={() => (showCreateModal = true)}>
               {t("page.createFirstNote")}
             </button>
           </div>
@@ -967,10 +919,7 @@
 
 <!-- Undo toast -->
 {#if showUndoToast}
-  <div
-    class="undo-toast"
-    class:undo-toast--restore={undoToastStage === "restore"}
-  >
+  <div class="undo-toast" class:undo-toast--restore={undoToastStage === "restore"}>
     {#if undoToastStage === "done"}
       <span class="undo-toast-message">{t("toast.done")}</span>
     {:else}

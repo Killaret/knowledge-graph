@@ -91,68 +91,27 @@
 
   <!-- Static stars around the galaxy -->
   <circle cx="20" cy="20" r="1.5" fill="#40a9ff" opacity="0.8">
-    <animate
-      attributeName="opacity"
-      values="0.8;1;0.8"
-      dur="2s"
-      repeatCount="indefinite"
-    />
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
   </circle>
   <circle cx="80" cy="25" r="1" fill="#ffcc00" opacity="0.7">
-    <animate
-      attributeName="opacity"
-      values="0.7;1;0.7"
-      dur="1.5s"
-      repeatCount="indefinite"
-    />
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
   </circle>
   <circle cx="25" cy="75" r="1" fill="#ff3333" opacity="0.6">
-    <animate
-      attributeName="opacity"
-      values="0.6;1;0.6"
-      dur="2.5s"
-      repeatCount="indefinite"
-    />
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite" />
   </circle>
   <circle cx="75" cy="80" r="1.5" fill="#a78bfa" opacity="0.7">
-    <animate
-      attributeName="opacity"
-      values="0.7;1;0.7"
-      dur="1.8s"
-      repeatCount="indefinite"
-    />
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="1.8s" repeatCount="indefinite" />
   </circle>
 
   <!-- Central core -->
-  <circle
-    cx="50"
-    cy="50"
-    r="8"
-    fill="url(#galaxyGradient)"
-    filter="url(#galaxyGlow)"
-  >
-    <animate
-      attributeName="r"
-      values="8;9;8"
-      dur="3s"
-      repeatCount="indefinite"
-    />
-    <animate
-      attributeName="opacity"
-      values="0.9;1;0.9"
-      dur="3s"
-      repeatCount="indefinite"
-    />
+  <circle cx="50" cy="50" r="8" fill="url(#galaxyGradient)" filter="url(#galaxyGlow)">
+    <animate attributeName="r" values="8;9;8" dur="3s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" repeatCount="indefinite" />
   </circle>
 
   <!-- Inner core highlight -->
   <circle cx="50" cy="50" r="4" fill="#ffffff" opacity="0.9">
-    <animate
-      attributeName="opacity"
-      values="0.9;1;0.9"
-      dur="2s"
-      repeatCount="indefinite"
-    />
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="2s" repeatCount="indefinite" />
   </circle>
 </svg>
 

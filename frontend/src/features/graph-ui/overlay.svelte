@@ -78,11 +78,7 @@
     if (hoveredNodeId) {
       const node = nodes.find((n) => n.id === hoveredNodeId);
       if (node) {
-        graphTooltip.showNodeTooltip(
-          node.title,
-          node.type || "Unknown",
-          getNodeEmoji(node.type),
-        );
+        graphTooltip.showNodeTooltip(node.title, node.type || "Unknown", getNodeEmoji(node.type));
       } else {
         graphTooltip.hide();
       }
@@ -195,8 +191,7 @@
     />
     {#if hotkeysState.searchMatchIds.length > 0}
       <span style="color: rgba(255,255,255,0.6); font-size: 12px;"
-        >{hotkeysState.searchCurrentIndex + 1}/{hotkeysState.searchMatchIds
-          .length}</span
+        >{hotkeysState.searchCurrentIndex + 1}/{hotkeysState.searchMatchIds.length}</span
       >
     {/if}
     <button
@@ -234,8 +229,8 @@
 {:else if hotkeysState.showHelpTooltip}
   <div
     class="help-tooltip"
-    style="position: fixed; left: {hotkeysState.helpTooltipPosition
-      .x}px; top: {hotkeysState.helpTooltipPosition
+    style="position: fixed; left: {hotkeysState.helpTooltipPosition.x}px; top: {hotkeysState
+      .helpTooltipPosition
       .y}px; transform: translate(-50%, -100%); background: rgba(10, 26, 58, 0.95); border: 1px solid rgba(138, 43, 226, 0.5); border-radius: 8px; padding: 10px 14px; color: white; font-size: 13px; max-width: 320px; z-index: 1000; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);"
   >
     {hotkeysState.helpTooltipMessage}

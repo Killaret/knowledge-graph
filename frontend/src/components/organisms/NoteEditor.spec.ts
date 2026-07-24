@@ -55,9 +55,7 @@ describe("NoteEditor", () => {
       await fireEvent.click(saveButton);
       await tick();
 
-      expect(screen.getByTestId("title-error")).toHaveTextContent(
-        "Title is required",
-      );
+      expect(screen.getByTestId("title-error")).toHaveTextContent("Title is required");
       expect(mockCreateNote).not.toHaveBeenCalled();
     });
 
@@ -74,9 +72,7 @@ describe("NoteEditor", () => {
 
       // Заполняем форму
       const titleInput = screen.getByTestId("title-input") as HTMLInputElement;
-      const contentInput = screen.getByTestId(
-        "content-input",
-      ) as HTMLTextAreaElement;
+      const contentInput = screen.getByTestId("content-input") as HTMLTextAreaElement;
 
       titleInput.value = "Test Note";
       await fireEvent.input(titleInput);
@@ -117,9 +113,7 @@ describe("NoteEditor", () => {
       await fireEvent.click(saveButton);
 
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent(
-          "Failed to save note",
-        );
+        expect(screen.getByRole("alert")).toHaveTextContent("Failed to save note");
       });
 
       expect(mockGoto).not.toHaveBeenCalled();
@@ -165,9 +159,7 @@ describe("NoteEditor", () => {
         expect(screen.getByTestId("title-input")).toHaveValue("Existing Note");
       });
 
-      expect(screen.getByTestId("content-input")).toHaveValue(
-        "Existing content",
-      );
+      expect(screen.getByTestId("content-input")).toHaveValue("Existing content");
       expect(screen.getByTestId("type-select")).toHaveValue("planet");
       expect(screen.getByTestId("save-button")).toHaveTextContent("Update");
       expect(mockGetNote).toHaveBeenCalledWith("456");
@@ -179,9 +171,7 @@ describe("NoteEditor", () => {
       render(NoteEditor, { props: { noteId: "456" } });
 
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent(
-          "Failed to load note",
-        );
+        expect(screen.getByRole("alert")).toHaveTextContent("Failed to load note");
       });
     });
 
@@ -271,9 +261,7 @@ describe("NoteEditor", () => {
       render(NoteEditor, { props: {} });
 
       const titleInput = screen.getByTestId("title-input") as HTMLInputElement;
-      const contentInput = screen.getByTestId(
-        "content-input",
-      ) as HTMLTextAreaElement;
+      const contentInput = screen.getByTestId("content-input") as HTMLTextAreaElement;
 
       titleInput.value = "  Trimmed Title  ";
       await fireEvent.input(titleInput);

@@ -154,7 +154,7 @@ describe("GraphCanvas - Interactions", () => {
       vi.fn().mockImplementation((cb: FrameRequestCallback) => {
         setTimeout(cb, 16);
         return 1;
-      }),
+      })
     );
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
   });
@@ -229,21 +229,15 @@ describe("GraphCanvas - Interactions", () => {
     const canvas = container.querySelector("canvas");
     if (canvas) {
       // Simulate mouse down on node
-      canvas.dispatchEvent(
-        new MouseEvent("mousedown", { clientX: 400, clientY: 300 }),
-      );
+      canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: 400, clientY: 300 }));
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Simulate drag to another node
-      canvas.dispatchEvent(
-        new MouseEvent("mousemove", { clientX: 450, clientY: 330 }),
-      );
+      canvas.dispatchEvent(new MouseEvent("mousemove", { clientX: 450, clientY: 330 }));
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Simulate mouse up
-      canvas.dispatchEvent(
-        new MouseEvent("mouseup", { clientX: 450, clientY: 330 }),
-      );
+      canvas.dispatchEvent(new MouseEvent("mouseup", { clientX: 450, clientY: 330 }));
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 

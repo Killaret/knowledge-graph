@@ -30,16 +30,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "network.error": "Connection error. Check your internet.",
     "invalid.credentials": "Invalid username or password.",
     "graph.notFound": "Graph not found. The note may have been deleted.",
-    "graph.serverError":
-      "Server error while loading the graph. Please try again later.",
-    "graph.networkError":
-      "Could not connect to the server. Check your internet connection.",
+    "graph.serverError": "Server error while loading the graph. Please try again later.",
+    "graph.networkError": "Could not connect to the server. Check your internet connection.",
     "graph.loadError": "Graph loading error: {{message}}.",
     "graph.unknownError": "Unknown error while loading the graph.",
 
     // Info messages
-    "empty.graph":
-      "Graph is empty. Create your first note to see the starry sky.",
+    "empty.graph": "Graph is empty. Create your first note to see the starry sky.",
     loading: "Loading data...",
     "no.results": "Nothing found.",
     "search.hint": "Enter search query to search the universe.",
@@ -111,16 +108,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Failed to delete selected notes",
     "page.restoreError": "Failed to restore note",
     "page.emptyGraphNoNotes": "Create some notes to see the knowledge graph",
-    "page.emptyGraphNoType":
-      "No {{type}} in the graph. Try selecting a different type.",
+    "page.emptyGraphNoType": "No {{type}} in the graph. Try selecting a different type.",
     "page.emptyGraphTitle": "No graph data",
     "page.emptyListNoNotes": "Your star chart is empty",
     "page.emptyListNoSearch": "No cosmic objects found",
-    "page.emptyListPrompt":
-      "Ignite your first star to begin your knowledge galaxy.",
+    "page.emptyListPrompt": "Ignite your first star to begin your knowledge galaxy.",
     "page.emptyListSearchPrompt": "Try a different search or clear the filter.",
-    "page.noSearchResults":
-      'No objects match "{{query}}". Try different coordinates.',
+    "page.noSearchResults": 'No objects match "{{query}}". Try different coordinates.',
     "page.noTypeResults": "No {{type}} found in this sector.",
     "page.createFirstNote": "Create your first note",
     "page.sortBy": "Sort by:",
@@ -178,8 +172,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.frozenTitle": "3D Graph Feature Frozen",
     "graph.frozenMessage1":
       "The 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead.",
-    "graph.frozenMessage2":
-      "You will be automatically redirected to the 2D graph view.",
+    "graph.frozenMessage2": "You will be automatically redirected to the 2D graph view.",
     "graph.frozenRedirectWithId":
       "You will be automatically redirected to 2D graph view for note {{id}}.",
     "graph.entireGraph": "the entire graph",
@@ -341,8 +334,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // QuickCapture
     "quickCapture.title": "✨ Quick Capture",
-    "quickCapture.placeholder":
-      "Capture your thought... (Ctrl+Enter to submit)",
+    "quickCapture.placeholder": "Capture your thought... (Ctrl+Enter to submit)",
     "quickCapture.saved": "✓ Saved!",
     "quickCapture.cancel": "Cancel",
     "quickCapture.save": "Save",
@@ -382,8 +374,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.createLink": "Create Link",
 
     // Graph overlay
-    "graphOverlay.focusActive":
-      "Focus mode is active. Press Esc to restore effects.",
+    "graphOverlay.focusActive": "Focus mode is active. Press Esc to restore effects.",
     "graphOverlay.focus": "Focus",
     "graphOverlay.noteDeleted": "Note deleted.",
     "graphOverlay.restore": "Restore",
@@ -506,10 +497,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.forgotPasswordLink": "Forgot password?",
     "auth.orDivider": "or",
     "auth.forgotPasswordTitle": "Password Recovery",
-    "auth.forgotPasswordSuccess1":
-      "A password reset email has been sent to the specified address.",
-    "auth.forgotPasswordSuccess2":
-      "Check your inbox and follow the instructions.",
+    "auth.forgotPasswordSuccess1": "A password reset email has been sent to the specified address.",
+    "auth.forgotPasswordSuccess2": "Check your inbox and follow the instructions.",
     "auth.backToLogin": "Back to login",
     "auth.forgotPasswordDescription":
       "Enter your email and we will send you a password reset link.",
@@ -552,8 +541,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "profile.languageLabel": "Language",
     "profile.emailLabel": "Email",
     "profile.languageHint": "Select your preferred language",
-    "profile.deleteWarning":
-      "Warning! This action is irreversible. All your data will be deleted.",
+    "profile.deleteWarning": "Warning! This action is irreversible. All your data will be deleted.",
     "profile.passwordPlaceholder": "Your password",
     "locale.en": "English",
     "locale.ru": "Russian",
@@ -586,14 +574,12 @@ const messages: Record<Locale, Record<string, string>> = {
     "invalid.credentials": "Неверный логин или пароль.",
     "graph.notFound": "Граф не найден. Возможно, заметка была удалена.",
     "graph.serverError": "Ошибка сервера при загрузке графа. Попробуйте позже.",
-    "graph.networkError":
-      "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
+    "graph.networkError": "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
     "graph.loadError": "Ошибка загрузки графа: {{message}}.",
     "graph.unknownError": "Неизвестная ошибка при загрузке графа.",
 
     // Info messages
-    "empty.graph":
-      "Граф пуст. Создайте первую заметку, чтобы увидеть звёздное небо.",
+    "empty.graph": "Граф пуст. Создайте первую заметку, чтобы увидеть звёздное небо.",
     loading: "Загрузка данных...",
     "no.results": "Ничего не найдено.",
     "search.hint": "Введите поисковый запрос для поиска по вселенной.",
@@ -665,15 +651,12 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.batchDeleteError": "Не удалось удалить выбранные заметки",
     "page.restoreError": "Не удалось восстановить заметку",
     "page.emptyGraphNoNotes": "Создайте заметки, чтобы увидеть граф знаний",
-    "page.emptyGraphNoType":
-      "В графе нет {{type}}. Попробуйте выбрать другой тип.",
+    "page.emptyGraphNoType": "В графе нет {{type}}. Попробуйте выбрать другой тип.",
     "page.emptyGraphTitle": "Нет данных графа",
     "page.emptyListNoNotes": "Ваша звёздная карта пуста",
     "page.emptyListNoSearch": "Космических объектов не найдено",
-    "page.emptyListPrompt":
-      "Зажгите первую звезду, чтобы начать галактику знаний.",
-    "page.emptyListSearchPrompt":
-      "Попробуйте другой поиск или сбросьте фильтр.",
+    "page.emptyListPrompt": "Зажгите первую звезду, чтобы начать галактику знаний.",
+    "page.emptyListSearchPrompt": "Попробуйте другой поиск или сбросьте фильтр.",
     "page.noSearchResults":
       'Нет объектов, соответствующих "{{query}}". Попробуйте другие координаты.',
     "page.noTypeResults": "В этом секторе нет {{type}}.",
@@ -700,18 +683,15 @@ const messages: Record<Locale, Record<string, string>> = {
     "page.retry": "Повторить",
 
     // Routes
-    "layout.skipAuthTitle":
-      "Авторизация отключена для тестирования (SKIP_AUTH=true)",
+    "layout.skipAuthTitle": "Авторизация отключена для тестирования (SKIP_AUTH=true)",
 
     "auth.subtitle": "Ваш личная мультивселенная знаний",
     "auth.logoAria": "Открыть секретный протокол Weltall",
     "auth.registerSubtitle": "Присоединяйтесь к вселенной знаний",
-    "auth.forgotPasswordSubtitle":
-      "Введите email, чтобы получить ссылку для сброса",
+    "auth.forgotPasswordSubtitle": "Введите email, чтобы получить ссылку для сброса",
     "auth.resetPasswordSubtitle": "Создайте новый пароль для аккаунта",
     "auth.resetTokenMissing": "Токен сброса пароля не найден",
-    "auth.requestNewLink":
-      "Пожалуйста, запросите новую ссылку для сброса пароля.",
+    "auth.requestNewLink": "Пожалуйста, запросите новую ссылку для сброса пароля.",
     "auth.requestResetLink": "Запросить сброс пароля",
 
     "yandex.missingParams": "Отсутствуют обязательные параметры авторизации",
@@ -737,8 +717,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.frozenTitle": "3D граф временно заморожен",
     "graph.frozenMessage1":
       "3D функциональность графа временно заморожена в версии 1.0 для повышения стабильности и снижения нагрузки на поддержку.",
-    "graph.frozenMessage2":
-      "Вы будете автоматически перенаправлены на 2D вид графа.",
+    "graph.frozenMessage2": "Вы будете автоматически перенаправлены на 2D вид графа.",
     "graph.frozenRedirectWithId":
       "Вы будете автоматически перенаправлены на 2D вид графа для заметки {{id}}.",
     "graph.entireGraph": "весь граф",
@@ -752,8 +731,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "note.showConstellation": "✨ Показать созвездие",
     "note.similarNotes": "Похожие заметки",
     "note.score": "score: {{score}}",
-    "note.contentPlaceholderWiki":
-      "Содержание (поддерживаются [[wiki-ссылки]])",
+    "note.contentPlaceholderWiki": "Содержание (поддерживаются [[wiki-ссылки]])",
 
     "search.title": "Поиск заметок",
     "search.pagePlaceholder": "Введите поисковый запрос...",
@@ -761,8 +739,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.error": "Не удалось выполнить поиск. Попробуйте позже.",
     "search.noResultsTitle": "Ничего не найдено",
     "search.noResultsForQuery": 'Нет заметок по запросу "{{query}}".',
-    "search.tryDifferent":
-      "Попробуйте другие ключевые слова или проверьте правописание.",
+    "search.tryDifferent": "Попробуйте другие ключевые слова или проверьте правописание.",
     "search.found": "Найдено:",
     "search.noteOne": "заметка",
     "search.noteFew": "заметки",
@@ -772,8 +749,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.next": "Вперёд",
     "search.emptyTitle": "Поиск заметок",
     "search.emptyPrompt": "Введите ключевые слова выше, чтобы найти заметки.",
-    "search.supports":
-      "Поиск поддерживает русский и английский языки с автоматическим стеммингом.",
+    "search.supports": "Поиск поддерживает русский и английский языки с автоматическим стеммингом.",
 
     "profile.title": "Профиль",
     "profile.subtitle": "Управление аккаунтом",
@@ -902,8 +878,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // QuickCapture
     "quickCapture.title": "✨ Быстрая заметка",
-    "quickCapture.placeholder":
-      "Запишите мысль... (Ctrl+Enter чтобы сохранить)",
+    "quickCapture.placeholder": "Запишите мысль... (Ctrl+Enter чтобы сохранить)",
     "quickCapture.saved": "✓ Сохранено!",
     "quickCapture.cancel": "Отмена",
     "quickCapture.save": "Сохранить",
@@ -943,8 +918,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.createLink": "Создать связь",
 
     // Graph overlay
-    "graphOverlay.focusActive":
-      "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",
+    "graphOverlay.focusActive": "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",
     "graphOverlay.focus": "Фокус",
     "graphOverlay.noteDeleted": "Заметка удалена.",
     "graphOverlay.restore": "Восстановить",
@@ -1067,22 +1041,18 @@ const messages: Record<Locale, Record<string, string>> = {
     "auth.forgotPasswordLink": "Забыли пароль?",
     "auth.orDivider": "или",
     "auth.forgotPasswordTitle": "Восстановление пароля",
-    "auth.forgotPasswordSuccess1":
-      "Письмо для сброса пароля отправлено на указанный адрес.",
+    "auth.forgotPasswordSuccess1": "Письмо для сброса пароля отправлено на указанный адрес.",
     "auth.forgotPasswordSuccess2": "Проверьте почту и следуйте инструкциям.",
     "auth.backToLogin": "Вернуться к входу",
-    "auth.forgotPasswordDescription":
-      "Введите email, и мы отправим вам ссылку для сброса пароля.",
+    "auth.forgotPasswordDescription": "Введите email, и мы отправим вам ссылку для сброса пароля.",
     "auth.sendButton": "Отправить",
     "auth.sendingButton": "Отправка...",
-    "auth.forgotPasswordFailed":
-      "Не удалось отправить письмо для сброса пароля",
+    "auth.forgotPasswordFailed": "Не удалось отправить письмо для сброса пароля",
     "auth.rememberedPasswordLink": "Вспомнили пароль? Войдите",
     "auth.resetPasswordTitle": "Сброс пароля",
     "auth.newPasswordLabel": "Новый пароль",
     "auth.resetPasswordSuccess": "Пароль успешно изменён!",
-    "auth.resetPasswordRedirect":
-      "Вы будете перенаправлены на страницу входа...",
+    "auth.resetPasswordRedirect": "Вы будете перенаправлены на страницу входа...",
     "auth.saveNewPasswordButton": "Сохранить новый пароль",
     "auth.savingButton": "Сохранение...",
     "auth.resetPasswordFailed": "Не удалось сбросить пароль",
@@ -1114,8 +1084,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "profile.languageLabel": "Язык",
     "profile.emailLabel": "Электронная почта",
     "profile.languageHint": "Выберите предпочитаемый язык",
-    "profile.deleteWarning":
-      "Внимание! Это действие необратимо. Все ваши данные будут удалены.",
+    "profile.deleteWarning": "Внимание! Это действие необратимо. Все ваши данные будут удалены.",
     "profile.passwordPlaceholder": "Ваш пароль",
     "locale.en": "English",
     "locale.ru": "Русский",
@@ -1133,11 +1102,7 @@ const messages: Record<Locale, Record<string, string>> = {
  * @param params - Parameters to replace in message (optional)
  * @returns Formatted message
  */
-export function formatMessage(
-  key: string,
-  locale: Locale = "en",
-  params?: MessageParams,
-): string {
+export function formatMessage(key: string, locale: Locale = "en", params?: MessageParams): string {
   const message = messages[locale]?.[key] || messages.en[key] || key;
 
   if (!params) {
@@ -1146,10 +1111,7 @@ export function formatMessage(
 
   // Replace {{param}} placeholders
   return Object.entries(params).reduce((result, [paramKey, paramValue]) => {
-    return result.replace(
-      new RegExp(`{{${paramKey}}}`, "g"),
-      String(paramValue),
-    );
+    return result.replace(new RegExp(`{{${paramKey}}}`, "g"), String(paramValue));
   }, message);
 }
 

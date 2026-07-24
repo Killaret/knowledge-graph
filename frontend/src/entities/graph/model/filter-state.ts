@@ -44,19 +44,14 @@ export class FilterState {
     return this.selectedType === "inbox";
   }
 
-  getSelectedTypeLabel(
-    typeFilters: Array<{ id: string; label: string }>,
-  ): string | undefined {
+  getSelectedTypeLabel(typeFilters: Array<{ id: string; label: string }>): string | undefined {
     return typeFilters.find((f) => f.id === this.selectedType)?.label;
   }
 
   matchesSearch(note: { title: string; content?: string | null }): boolean {
     if (!this.isSearchActive) return true;
     const q = this.searchQuery.value.toLowerCase();
-    return (
-      note.title.toLowerCase().includes(q) ||
-      (note.content ?? "").toLowerCase().includes(q)
-    );
+    return note.title.toLowerCase().includes(q) || (note.content ?? "").toLowerCase().includes(q);
   }
 
   matchesType(note: Note, getNoteType: (note: Note) => string): boolean {
@@ -69,61 +64,46 @@ export class FilterState {
   }
 
   filterNotes(notes: Note[], getNoteType: (note: Note) => string): Note[] {
-    return notes.filter(
-      (n) => this.matchesType(n, getNoteType) && this.matchesSearch(n),
-    );
+    return notes.filter((n) => this.matchesType(n, getNoteType) && this.matchesSearch(n));
   }
 
   sortNotes(notes: Note[]): Note[] {
     const sorted = [...notes];
     switch (this.sortBy) {
       case "created":
-        sorted.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case "updated":
-        sorted.sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        );
+        sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
         break;
       case "type":
-        sorted.sort((a, b) =>
-          (a.type || "unknown").localeCompare(b.type || "unknown"),
-        );
+        sorted.sort((a, b) => (a.type || "unknown").localeCompare(b.type || "unknown"));
         break;
     }
     return sorted;
   }
 
-  applyFiltersAndSort(
-    notes: Note[],
-    getNoteType: (note: Note) => string,
-  ): Note[] {
+  applyFiltersAndSort(notes: Note[], getNoteType: (note: Note) => string): Note[] {
     return this.sortNotes(this.filterNotes(notes, getNoteType));
   }
 
   filterGraphData(
     graphData: GraphData,
     allNotes: Note[],
-    getNoteType: (note: Note) => string,
+    getNoteType: (note: Note) => string
   ): GraphData {
     if (!graphData.nodes.length) return graphData;
 
     const allowedIds = new Set(
       allNotes
-        .filter(
-          (n) => this.matchesType(n, getNoteType) && this.matchesSearch(n),
-        )
-        .map((n) => n.id),
+        .filter((n) => this.matchesType(n, getNoteType) && this.matchesSearch(n))
+        .map((n) => n.id)
     );
 
     const filteredNodes = graphData.nodes.filter((n) => allowedIds.has(n.id));
     const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
     const filteredLinks = graphData.links.filter(
-      (l) => filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target),
+      (l) => filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
     );
 
     return { nodes: filteredNodes, links: filteredLinks };

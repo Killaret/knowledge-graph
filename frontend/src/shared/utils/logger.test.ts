@@ -21,11 +21,7 @@ describe("logger", () => {
   it("creates loggers with different contexts", () => {
     const testLogger = createLogger("test");
     testLogger.info("hello");
-    expect(infoSpy).toHaveBeenCalledWith(
-      expect.stringContaining("[test]"),
-      "hello",
-      "",
-    );
+    expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining("[test]"), "hello", "");
   });
 
   it("logs at all levels", () => {
@@ -72,10 +68,6 @@ describe("logger", () => {
 
   it("exposes a global logger", () => {
     logger.info("global");
-    expect(infoSpy).toHaveBeenCalledWith(
-      expect.stringContaining("[app]"),
-      "global",
-      "",
-    );
+    expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining("[app]"), "global", "");
   });
 });

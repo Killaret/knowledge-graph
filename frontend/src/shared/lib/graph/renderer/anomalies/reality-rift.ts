@@ -12,7 +12,7 @@ export function drawRealityRift(
   x: number,
   y: number,
   r: number,
-  params: import("./helpers").AnomalyParams,
+  params: import("./helpers").AnomalyParams
 ): void {
   const { crackCount, deformAmount, rotationOffset } = params;
   const rr = globalThis.anomalyConfig?.reality_rift || {
@@ -38,8 +38,7 @@ export function drawRealityRift(
   const points = 24;
   for (let i = 0; i <= points; i++) {
     const angle = (i / points) * 2 * Math.PI;
-    const deformation =
-      1 + deformAmount * Math.sin(angle * 5 + rotationOffset * 2);
+    const deformation = 1 + deformAmount * Math.sin(angle * 5 + rotationOffset * 2);
     const radius = r * deformation;
     const px = Math.cos(angle) * radius;
     const py = Math.sin(angle) * radius;
@@ -67,13 +66,9 @@ export function drawRealityRift(
     const segments = 3;
     for (let j = 0; j < segments; j++) {
       const segProgress = (j + 1) / segments;
-      const segAngle =
-        angle + (seededRandom(seedBase + i * 17 + j * 23 + 7) - 0.5) * 0.3;
+      const segAngle = angle + (seededRandom(seedBase + i * 17 + j * 23 + 7) - 0.5) * 0.3;
       const segRadius = crackLength * segProgress;
-      ctx.lineTo(
-        Math.cos(segAngle) * segRadius,
-        Math.sin(segAngle) * segRadius,
-      );
+      ctx.lineTo(Math.cos(segAngle) * segRadius, Math.sin(segAngle) * segRadius);
     }
 
     ctx.strokeStyle = hexToRgba(rr.glow_color, 0.4);

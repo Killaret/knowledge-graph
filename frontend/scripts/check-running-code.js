@@ -30,10 +30,7 @@ const urls = [
           while (idx !== -1) {
             const start = Math.max(0, idx - 80);
             const end = Math.min(text.length, idx + m.length + 80);
-            console.log(
-              `  MATCH ${m} at ${idx}:`,
-              text.slice(start, end).replace(/\n/g, " "),
-            );
+            console.log(`  MATCH ${m} at ${idx}:`, text.slice(start, end).replace(/\n/g, " "));
             idx = text.indexOf(m, idx + 1);
           }
         }

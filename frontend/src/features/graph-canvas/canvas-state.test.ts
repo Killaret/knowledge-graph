@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  createGraphCanvasState,
-  isTechnicalNode,
-  pinTechnicalNodes,
-} from "./canvas-state.svelte";
+import { createGraphCanvasState, isTechnicalNode, pinTechnicalNodes } from "./canvas-state.svelte";
 import { createNoteFormState } from "$features/graph-forms/note-form";
 import { createLinkFormState } from "$features/graph-forms/link-form";
 import { createHotkeysState } from "$features/graph-interaction/hotkeys";
@@ -13,8 +9,7 @@ vi.mock("$components/organisms/GraphCanvas", () => ({
   resetView: vi.fn(),
 }));
 
-const { getSimulationNodes, resetView } =
-  await import("$components/organisms/GraphCanvas");
+const { getSimulationNodes, resetView } = await import("$components/organisms/GraphCanvas");
 
 describe("canvas-state helpers", () => {
   it("isTechnicalNode detects technical node types", () => {
@@ -209,9 +204,7 @@ describe("createGraphCanvasState", () => {
     const simState = {
       simulation: { nodes: () => [{ id: "n1", title: "Test", x: 0, y: 0 }] },
     } as any;
-    vi.mocked(getSimulationNodes).mockReturnValue([
-      { id: "n1", title: "Test", x: 0, y: 0 },
-    ]);
+    vi.mocked(getSimulationNodes).mockReturnValue([{ id: "n1", title: "Test", x: 0, y: 0 }]);
     hotkeys.searchQuery = "Test";
     state.handleUpdateSearch(hotkeys, simState, redraw);
     expect(hotkeys.searchMatchIds).toEqual(["n1"]);
@@ -237,18 +230,10 @@ describe("createGraphCanvasState", () => {
     const transform = { x: 0, y: 0, k: 1 };
     const ctx = {} as CanvasRenderingContext2D;
 
-    vi.mocked(getSimulationNodes).mockReturnValue([
-      { id: "n1", title: "Test", x: 0, y: 0 },
-    ]);
+    vi.mocked(getSimulationNodes).mockReturnValue([{ id: "n1", title: "Test", x: 0, y: 0 }]);
     state.handleResetView(ctx, 800, 600, simState, transform);
 
     expect(getSimulationNodes).toHaveBeenCalledWith(simState);
-    expect(resetView).toHaveBeenCalledWith(
-      ctx,
-      800,
-      600,
-      expect.any(Array),
-      transform,
-    );
+    expect(resetView).toHaveBeenCalledWith(ctx, 800, 600, expect.any(Array), transform);
   });
 });

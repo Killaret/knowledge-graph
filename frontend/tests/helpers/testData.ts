@@ -70,12 +70,8 @@ export function getBackendUrl(): string {
 export async function createNote(
   request: APIRequestContext,
   data: Partial<NoteData>,
-  retryCount = 0,
-): Promise<
-  ApiResponse<
-    NoteData & { id: string; created_at?: string; updated_at?: string }
-  >
-> {
+  retryCount = 0
+): Promise<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>> {
   const payload = {
     title: data.title || "Test Note",
     content: data.content || "Test content",
@@ -95,7 +91,7 @@ export async function createNote(
     if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
       const delay = getRetryAfter(errorText) + retryCount * BASE_DELAY_MS;
       console.log(
-        `[createNote] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`,
+        `[createNote] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`
       );
       await sleep(delay);
       return createNote(request, data, retryCount + 1);
@@ -115,13 +111,9 @@ export async function createNote(
 export async function createNotes(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
-  delayMs = 100,
+  delayMs = 100
 ): Promise<
-  Array<
-    ApiResponse<
-      NoteData & { id: string; created_at?: string; updated_at?: string }
-    >
-  >
+  Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>
 > {
   const created = [];
   for (const noteData of notes) {
@@ -144,7 +136,7 @@ export async function createLink(
   targetId: string,
   weight = 0.5,
   linkType = "related",
-  retryCount = 0,
+  retryCount = 0
 ): Promise<{ id: string; [key: string]: unknown }> {
   // Debug logging
   console.log("[createLink] Creating link:", {
@@ -156,9 +148,7 @@ export async function createLink(
 
   // Validate inputs
   if (!sourceId || !targetId) {
-    throw new Error(
-      `Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`,
-    );
+    throw new Error(`Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`);
   }
 
   // Go backend expects snake_case field names in JSON (based on struct tags)
@@ -190,17 +180,10 @@ export async function createLink(
     if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
       const delay = getRetryAfter(errorText) + retryCount * BASE_DELAY_MS;
       console.log(
-        `[createLink] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`,
+        `[createLink] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`
       );
       await sleep(delay);
-      return createLink(
-        request,
-        sourceId,
-        targetId,
-        weight,
-        linkType,
-        retryCount + 1,
-      );
+      return createLink(request, sourceId, targetId, weight, linkType, retryCount + 1);
     }
 
     throw new Error(`Failed to create link: ${status} - ${errorText}`);
@@ -216,15 +199,11 @@ export async function createStarTopology(
   request: APIRequestContext,
   centerNote: Partial<NoteData>,
   surroundingNotes: Partial<NoteData>[],
-  linkWeight = 0.7,
+  linkWeight = 0.7
 ): Promise<{
-  center: ApiResponse<
-    NoteData & { id: string; created_at?: string; updated_at?: string }
-  >;
+  center: ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>;
   surrounding: Array<
-    ApiResponse<
-      NoteData & { id: string; created_at?: string; updated_at?: string }
-    >
+    ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>
   >;
 }> {
   const center = await createNote(request, centerNote);
@@ -245,13 +224,9 @@ export async function createStarTopology(
 export async function createChainTopology(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
-  linkWeight = 0.8,
+  linkWeight = 0.8
 ): Promise<
-  Array<
-    ApiResponse<
-      NoteData & { id: string; created_at?: string; updated_at?: string }
-    >
-  >
+  Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>
 > {
   const created = [];
 
@@ -261,12 +236,7 @@ export async function createChainTopology(
 
     // Link to previous note
     if (i > 0) {
-      await createLink(
-        request,
-        created[i - 1].data.id,
-        note.data.id,
-        linkWeight,
-      );
+      await createLink(request, created[i - 1].data.id, note.data.id, linkWeight);
     }
   }
 
@@ -276,19 +246,12 @@ export async function createChainTopology(
 /**
  * Delete a note via API
  */
-export async function deleteNote(
-  request: APIRequestContext,
-  noteId: string,
-): Promise<void> {
-  const response = await request.delete(
-    `${getBackendUrl()}/api/v1/notes/${noteId}`,
-  );
+export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
+  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`);
 
   if (!response.ok() && response.status() !== 404) {
     const errorText = await response.text();
-    throw new Error(
-      `Failed to delete note: ${response.status()} - ${errorText}`,
-    );
+    throw new Error(`Failed to delete note: ${response.status()} - ${errorText}`);
   }
 }
 
@@ -297,7 +260,7 @@ export async function deleteNote(
  */
 export async function cleanupTestData(
   request: APIRequestContext,
-  noteIds: string[],
+  noteIds: string[]
 ): Promise<void> {
   for (const id of noteIds) {
     try {
@@ -312,9 +275,7 @@ export async function cleanupTestData(
 /**
  * Check if backend is available
  */
-export async function isBackendAvailable(
-  request: APIRequestContext,
-): Promise<boolean> {
+export async function isBackendAvailable(request: APIRequestContext): Promise<boolean> {
   try {
     const response = await request.get(`${getBackendUrl()}/api/v1/notes`, {
       timeout: 5000,
@@ -340,16 +301,13 @@ export const TEST_USER = {
 export async function getOrCreateTestUser(request: APIRequestContext) {
   try {
     // Try to register
-    const response = await request.post(
-      `${getBackendUrl()}/api/v1/auth/register`,
-      {
-        data: {
-          login: TEST_USER.login,
-          email: TEST_USER.email,
-          password: TEST_USER.password,
-        },
+    const response = await request.post(`${getBackendUrl()}/api/v1/auth/register`, {
+      data: {
+        login: TEST_USER.login,
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
-    );
+    });
 
     if (response.ok()) {
       const result = await response.json();

@@ -46,17 +46,17 @@
   const displayTitle = $derived(
     theme.transformLabel(title, {
       [t("confirmModal.title")]: t("confirmModal.titleGalactic"),
-    }),
+    })
   );
   const displayConfirmText = $derived(
     theme.transformLabel(confirmText, {
       [t("confirmModal.confirm")]: t("confirmModal.confirmGalactic"),
-    }),
+    })
   );
   const displayCancelText = $derived(
     theme.transformLabel(cancelText, {
       [t("confirmModal.cancel")]: t("confirmModal.cancelGalactic"),
-    }),
+    })
   );
 
   function handleConfirm() {

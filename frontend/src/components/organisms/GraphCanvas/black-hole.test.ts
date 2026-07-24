@@ -61,8 +61,6 @@ describe("black-hole", () => {
   it("should detect point over black hole", () => {
     const blackHole = createBlackHole(800, 600);
     const transform = { x: 0, y: 0, k: 1 };
-    expect(
-      isPointOverBlackHole(blackHole.x, blackHole.y, blackHole, transform),
-    ).toBe(true);
+    expect(isPointOverBlackHole(blackHole.x, blackHole.y, blackHole, transform)).toBe(true);
   });
 });

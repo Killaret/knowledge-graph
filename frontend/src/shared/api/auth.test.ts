@@ -76,11 +76,7 @@ describe("auth API", () => {
       const mockJson = vi.fn().mockResolvedValue(mockResponse);
       mockPost.mockReturnValue({ json: mockJson });
 
-      const result = await register(
-        "testuser",
-        "password123",
-        "test@example.com",
-      );
+      const result = await register("testuser", "password123", "test@example.com");
 
       expect(mockPost).toHaveBeenCalledWith("v1/auth/register", {
         json: {

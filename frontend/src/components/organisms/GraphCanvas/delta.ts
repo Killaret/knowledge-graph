@@ -5,12 +5,7 @@
 
 import type { GraphDeltaData } from "$shared/api/graph";
 import { GraphDelta } from "$entities";
-import type {
-  SimulationNode,
-  SimulationLink,
-  SimulationState,
-  TransformState,
-} from "./types";
+import type { SimulationNode, SimulationLink, SimulationState, TransformState } from "./types";
 import * as d3Force from "d3-force";
 
 // Easing function for smooth fade animation
@@ -18,10 +13,7 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function computeStableProgress(
-  currentNodes: SimulationNode[],
-  totalNodes: number,
-): number {
+function computeStableProgress(currentNodes: SimulationNode[], totalNodes: number): number {
   if (totalNodes === 0) return 1;
 
   const stableNodes = currentNodes.filter(
@@ -30,7 +22,7 @@ function computeStableProgress(
       !isNaN(n.x) &&
       n.y !== undefined &&
       !isNaN(n.y) &&
-      Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2,
+      Math.hypot(n.vx ?? 0, n.vy ?? 0) < 0.2
   ).length;
 
   return Math.min(stableNodes / totalNodes, 1);
@@ -39,7 +31,7 @@ function computeStableProgress(
 function initializeOpacityMaps(
   nodes: SimulationNode[],
   links: SimulationLink[],
-  state: SimulationState,
+  state: SimulationState
 ): void {
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
@@ -57,11 +49,10 @@ function initializeOpacityMaps(
 function interpolateOpacity(
   opacityMap: Map<string, number>,
   targetOpacity: number,
-  factor: number = 0.1,
+  factor: number = 0.1
 ): void {
   opacityMap.forEach((currentOpacity, key) => {
-    const newOpacity =
-      currentOpacity + (targetOpacity - currentOpacity) * factor;
+    const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * factor;
     opacityMap.set(key, Math.min(Math.max(newOpacity, 0), 1));
   });
 }
@@ -120,18 +111,11 @@ export interface DeltaUpdateOptions {
  * Apply delta updates to the graph simulation
  * Returns true if simulation was restarted, false otherwise
  */
-export function applyDelta(
-  delta: GraphDeltaData,
-  options: DeltaUpdateOptions,
-): boolean {
+export function applyDelta(delta: GraphDeltaData, options: DeltaUpdateOptions): boolean {
   const domainDelta = GraphDelta.fromAPI(delta);
 
   if (import.meta.env.DEV) {
-    console.log(
-      "[Delta] Applying delta with",
-      domainDelta.totalChanges,
-      "changes",
-    );
+    console.log("[Delta] Applying delta with", domainDelta.totalChanges, "changes");
   }
 
   // Если изменений много (>10), перезапускаем симуляцию полностью
@@ -146,10 +130,7 @@ export function applyDelta(
 /**
  * Full simulation restart for large deltas
  */
-function applyFullRestart(
-  delta: GraphDelta,
-  options: DeltaUpdateOptions,
-): boolean {
+function applyFullRestart(delta: GraphDelta, options: DeltaUpdateOptions): boolean {
   const { nodes, links, width, height, state, onTick, onResetView } = options;
 
   if (import.meta.env.DEV) {
@@ -157,9 +138,7 @@ function applyFullRestart(
   }
 
   // Фильтруем удаленные узлы
-  const filteredNodes = nodes.filter(
-    (n) => !delta.removedNodeIds.includes(n.id),
-  );
+  const filteredNodes = nodes.filter((n) => !delta.removedNodeIds.includes(n.id));
 
   // Добавляем новые узлы
   if (delta.addedNodes.length > 0) {
@@ -180,7 +159,7 @@ function applyFullRestart(
   const filteredLinks = links.filter((l) => {
     if (delta.removedLinks.length > 0) {
       const isRemoved = delta.removedLinks.some(
-        (removed) => removed.source === l.source && removed.target === l.target,
+        (removed) => removed.source === l.source && removed.target === l.target
       );
       if (isRemoved) return false;
     }
@@ -240,7 +219,7 @@ function applyFullRestart(
         .forceLink<SimulationNode, SimulationLink>(state.simLinks)
         .id((d) => d.id)
         .distance(100)
-        .strength(0.3),
+        .strength(0.3)
     )
     .force("charge", d3Force.forceManyBody().strength(-150))
     .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.5))
@@ -276,15 +255,13 @@ function applyFullRestart(
 
         state.nodeOpacity.forEach((_, nodeId) => {
           const currentOpacity = state.nodeOpacity.get(nodeId) || 0;
-          const newOpacity =
-            currentOpacity + (targetOpacity - currentOpacity) * 0.15;
+          const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.15;
           state.nodeOpacity.set(nodeId, Math.min(Math.max(newOpacity, 0), 1));
         });
 
         state.linkOpacity.forEach((_, linkId) => {
           const currentOpacity = state.linkOpacity.get(linkId) || 0;
-          const newOpacity =
-            currentOpacity + (targetOpacity - currentOpacity) * 0.15;
+          const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * 0.15;
           state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
         });
 
@@ -314,10 +291,7 @@ function applyFullRestart(
 /**
  * Incremental delta application for small changes
  */
-function applyIncremental(
-  delta: GraphDelta,
-  options: DeltaUpdateOptions,
-): boolean {
+function applyIncremental(delta: GraphDelta, options: DeltaUpdateOptions): boolean {
   const { state } = options;
 
   if (import.meta.env.DEV) {

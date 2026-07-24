@@ -68,7 +68,7 @@ export function drawStar(
   variation?: { sizeMultiplier: number; hueShift: number },
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   const points = 5;
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
@@ -144,14 +144,12 @@ export function drawPlanet(
   variation?: { sizeMultiplier: number; hueShift: number },
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const adjustedR = r * sizeMultiplier;
   const hueShift = variation?.hueShift ?? 0;
-  const planetColor = color
-    ? applyHueShift(color, hueShift)
-    : applyHueShift("#d6aa5d", hueShift);
+  const planetColor = color ? applyHueShift(color, hueShift) : applyHueShift("#d6aa5d", hueShift);
 
   // Apply glow effect
   if (time && nodeId && nodeCount !== undefined) {
@@ -171,15 +169,7 @@ export function drawPlanet(
   // Draw bands
   for (let i = -adjustedR / 2; i <= adjustedR / 2; i += adjustedR / 4) {
     ctx.beginPath();
-    ctx.ellipse(
-      x,
-      y + i,
-      adjustedR * 0.8,
-      adjustedR * 0.15,
-      angle,
-      0,
-      2 * Math.PI,
-    );
+    ctx.ellipse(x, y + i, adjustedR * 0.8, adjustedR * 0.15, angle, 0, 2 * Math.PI);
     ctx.fillStyle = color ? "rgba(100,100,100,0.3)" : "#b07a3a";
     ctx.fill();
   }
@@ -227,7 +217,7 @@ export function drawComet(
   variation?: { sizeMultiplier: number; hueShift: number },
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const adjustedR = r * sizeMultiplier;
@@ -271,12 +261,7 @@ export function drawComet(
 /**
  * Helper function to apply hue shift to RGBA values
  */
-function applyHueShiftToRGBA(
-  r: number,
-  g: number,
-  b: number,
-  hueShift: number,
-): string {
+function applyHueShiftToRGBA(r: number, g: number, b: number, hueShift: number): string {
   const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
   const shifted = applyHueShift(hex, hueShift);
   const r2 = parseInt(shifted.slice(1, 3), 16);
@@ -301,7 +286,7 @@ export function drawGalaxy(
   variation?: { sizeMultiplier: number; hueShift: number },
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const hueShift = variation?.hueShift ?? 0;
@@ -361,7 +346,7 @@ export function drawNebula(
   x: number,
   y: number,
   r: number,
-  angle: number,
+  angle: number
 ): void {
   ctx.save();
   ctx.translate(x, y);
@@ -389,7 +374,7 @@ export function drawAsteroid(
   disableVariation: boolean = false,
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const hueShift = variation?.hueShift ?? 0;
@@ -410,9 +395,7 @@ export function drawAsteroid(
   const points = 7;
   for (let i = 0; i < points; i++) {
     const theta = (i / points) * 2 * Math.PI;
-    const radiusVariation = disableVariation
-      ? 0.85
-      : 0.7 + seededRand(seed, i) * 0.3;
+    const radiusVariation = disableVariation ? 0.85 : 0.7 + seededRand(seed, i) * 0.3;
     const px = x + Math.cos(theta) * adjustedR * radiusVariation;
     const py = y + Math.sin(theta) * adjustedR * radiusVariation;
     if (i === 0) ctx.moveTo(px, py);
@@ -456,15 +439,13 @@ export function drawDebris(
   r: number,
   _angle: number,
   disableVariation: boolean = false,
-  nodeId?: string,
+  nodeId?: string
 ): void {
   const seed = nodeId ?? "debris";
   // Scattered small particles — deterministic positions per node
   ctx.fillStyle = "rgba(150, 150, 150, 0.6)";
   for (let i = 0; i < 5; i++) {
-    const offsetX = disableVariation
-      ? (i - 2) * (r * 0.25)
-      : (seededRand(seed, i) - 0.5) * r * 2;
+    const offsetX = disableVariation ? (i - 2) * (r * 0.25) : (seededRand(seed, i) - 0.5) * r * 2;
     const offsetY = disableVariation
       ? (i % 2 === 0 ? -1 : 1) * r * 0.2
       : (seededRand(seed, 10 + i) - 0.5) * r * 2;
@@ -485,7 +466,7 @@ export function drawBlackhole(
   _angle: number,
   nodeId?: string,
   nodeCount?: number,
-  time?: number,
+  time?: number
 ): void {
   // Apply glow effect
   if (time && nodeId && nodeCount !== undefined) {
@@ -527,7 +508,7 @@ export function drawBackground(
   width: number,
   height: number,
   nodes: SimulationNode[],
-  time: number,
+  time: number
 ): void {
   // Draw subtle grid
   const gridSize = 100;
@@ -562,7 +543,7 @@ export function drawBackground(
         0,
         nebulaX,
         nebulaY,
-        nebulaRadius,
+        nebulaRadius
       );
       gradient.addColorStop(0, "rgba(139, 92, 246, 0.05)");
       gradient.addColorStop(0.5, "rgba(59, 130, 246, 0.03)");
@@ -583,7 +564,7 @@ export function drawAnimatedLink(
   nodes: Map<string, SimulationNode>,
   time: number,
   linkCount: number,
-  hoveredNodeId?: string | null,
+  hoveredNodeId?: string | null
 ): void {
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
@@ -608,8 +589,7 @@ export function drawAnimatedLink(
   }
 
   // Check if this link should be highlighted
-  const isHighlighted =
-    hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
+  const isHighlighted = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
   const opacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : 1;
 
   const linkType = LinkType.fromString(link.link_type);
@@ -646,12 +626,11 @@ export function drawLink(
   targetNode: SimulationNode,
   opacity: number = 1,
   hoveredNodeId?: string | null,
-  isDuplicateHighlighted?: boolean,
+  isDuplicateHighlighted?: boolean
 ): void {
   // Check if this link should be highlighted
   const isHovered =
-    hoveredNodeId &&
-    (link.source === hoveredNodeId || link.target === hoveredNodeId);
+    hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
   const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
 
   ctx.beginPath();
@@ -661,8 +640,7 @@ export function drawLink(
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
 
-  const lineWidth =
-    Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
+  const lineWidth = Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = isDuplicateHighlighted
     ? `rgba(255, 204, 0, ${finalOpacity})`
@@ -691,11 +669,9 @@ export function drawTechnicalNode(
   x: number,
   y: number,
   r: number,
-  animationTime?: number,
+  animationTime?: number
 ): void {
-  const pulse = animationTime
-    ? 0.7 + 0.3 * Math.abs(Math.sin(animationTime / 800))
-    : 1;
+  const pulse = animationTime ? 0.7 + 0.3 * Math.abs(Math.sin(animationTime / 800)) : 1;
   const radius = r * 1.2;
 
   ctx.save();
@@ -714,7 +690,7 @@ export function drawTechnicalNode(
     radius * 0.1,
     x,
     y,
-    radius,
+    radius
   );
   gradient.addColorStop(0, "rgba(167, 139, 250, 0.4)");
   gradient.addColorStop(1, "rgba(138, 43, 226, 0.15)");
@@ -745,7 +721,7 @@ export function drawMoon(
   x: number,
   y: number,
   r: number,
-  _angle: number,
+  _angle: number
 ): void {
   // Moon body (grey circle)
   ctx.beginPath();
@@ -796,7 +772,7 @@ export function drawUnknown(
   r: number,
   angle: number,
   nodeId: string,
-  customRenderers?: Record<number, AnomalyRenderer>,
+  customRenderers?: Record<number, AnomalyRenderer>
 ): void {
   // Select anomaly type based on hash of nodeId (deterministic)
   const hash = stringHash(nodeId);
@@ -826,32 +802,11 @@ function registerCelestialBodyDrawers(): void {
       ctx.shadowBlur = 10;
       ctx.shadowColor = "rgba(255, 200, 100, 0.8)";
     }
-    drawStar(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      c.variation,
-      c.nodeId,
-      c.nodeCount,
-      c.time,
-    );
+    drawStar(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.PLANET.drawFunction = (ctx, c) => {
-    drawPlanet(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      undefined,
-      c.variation,
-      c.nodeId,
-      c.nodeCount,
-      c.time,
-    );
+    drawPlanet(ctx, c.x, c.y, c.r, c.angle, undefined, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.SATELLITE.drawFunction = (ctx, c) => {
@@ -865,36 +820,16 @@ function registerCelestialBodyDrawers(): void {
       c.variation,
       c.nodeId,
       c.nodeCount,
-      c.time,
+      c.time
     );
   };
 
   CelestialBody.COMET.drawFunction = (ctx, c) => {
-    drawComet(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      c.variation,
-      c.nodeId,
-      c.nodeCount,
-      c.time,
-    );
+    drawComet(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.GALAXY.drawFunction = (ctx, c) => {
-    drawGalaxy(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      c.variation,
-      c.nodeId,
-      c.nodeCount,
-      c.time,
-    );
+    drawGalaxy(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.NEBULA.drawFunction = (ctx, c) => {
@@ -912,20 +847,12 @@ function registerCelestialBodyDrawers(): void {
       c.disableVariation || c.focusMode,
       c.nodeId,
       c.nodeCount,
-      c.time,
+      c.time
     );
   };
 
   CelestialBody.DEBRIS.drawFunction = (ctx, c) => {
-    drawDebris(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      c.disableVariation || c.focusMode,
-      c.nodeId,
-    );
+    drawDebris(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId);
   };
 
   CelestialBody.BLACKHOLE.drawFunction = (ctx, c) => {
@@ -971,15 +898,13 @@ export function drawAllLinks(
   linkOpacity?: Map<string, number>,
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
-  highlightedLinkId?: string | null,
+  highlightedLinkId?: string | null
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
 
   if (import.meta.env.DEV) {
-    console.log(
-      `[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`,
-    );
+    console.log(`[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`);
   }
 
   simLinks.forEach((link, index) => {
@@ -1005,9 +930,7 @@ export function drawAllLinks(
     // Highlight duplicate links with a yellow pulse
     const stableLinkId = `${link.source}-${link.target}-${link.link_type || "related"}`;
     const isHighlighted = highlightedLinkId === stableLinkId;
-    const pulseOpacity = isHighlighted
-      ? 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 150))
-      : 1;
+    const pulseOpacity = isHighlighted ? 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 150)) : 1;
 
     // Use animated link drawing
     drawLink(
@@ -1017,14 +940,14 @@ export function drawAllLinks(
       targetNode,
       opacity * pulseOpacity,
       hoveredNodeId,
-      isHighlighted,
+      isHighlighted
     );
     drawnCount++;
   });
 
   if (import.meta.env.DEV && (drawnCount === 0 || skippedCount > 0)) {
     console.log(
-      `[drawAllLinks] Total: ${simLinks.length}, Drawn: ${drawnCount}, Skipped: ${skippedCount}`,
+      `[drawAllLinks] Total: ${simLinks.length}, Drawn: ${drawnCount}, Skipped: ${skippedCount}`
     );
   }
 }
@@ -1042,7 +965,7 @@ export function drawNode(
   nodeId?: string,
   nodeCount?: number,
   animationTime?: number,
-  focusMode: boolean = false,
+  focusMode: boolean = false
 ): void {
   const body = CelestialBody.fromString(node.type);
 
@@ -1098,12 +1021,10 @@ export function drawNodeTitle(
   node: SimulationNode,
   r: number,
   opacity: number = 1,
-  disableVariation: boolean = false,
+  disableVariation: boolean = false
 ): void {
   // Round font size for deterministic rendering in stable mode
-  const fontSize = disableVariation
-    ? Math.round(Math.min(14, r * 0.65))
-    : Math.min(14, r * 0.65);
+  const fontSize = disableVariation ? Math.round(Math.min(14, r * 0.65)) : Math.min(14, r * 0.65);
   ctx.font = `bold ${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
@@ -1118,9 +1039,7 @@ export function drawNodeTitle(
 
   ctx.fillStyle = `rgba(255,255,255,${opacity})`;
   const titleX = disableVariation ? Math.round(node.x!) : node.x!;
-  const titleY = disableVariation
-    ? Math.round(node.y! + r + 6)
-    : node.y! + r + 6;
+  const titleY = disableVariation ? Math.round(node.y! + r + 6) : node.y! + r + 6;
   ctx.fillText(title, titleX, titleY);
   ctx.shadowBlur = 0;
 }
@@ -1148,7 +1067,7 @@ export function drawAllNodes(
     isEnabled: () => boolean;
   } | null,
   focusMode: boolean = false,
-  searchMatchIds?: string[],
+  searchMatchIds?: string[]
 ): void {
   const r = 16;
   const nodeCount = nodes.length;
@@ -1167,7 +1086,7 @@ export function drawAllNodes(
         node.id,
         node.x || 0,
         node.y || 0,
-        CelestialBody.fromString(node.type).color,
+        CelestialBody.fromString(node.type).color
       );
     }
   }
@@ -1192,7 +1111,7 @@ export function drawAllNodes(
       node.id,
       nodeCount,
       animationTime,
-      focusMode,
+      focusMode
     );
     drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
@@ -1211,13 +1130,7 @@ export function drawAllNodes(
 
     // New note indicator (pulsing turquoise outline for 24 hours)
     // Disabled in stable render mode to keep screenshots deterministic
-    if (
-      !disableVariation &&
-      !focusMode &&
-      isNewNode(node) &&
-      node.x != null &&
-      node.y != null
-    ) {
+    if (!disableVariation && !focusMode && isNewNode(node) && node.x != null && node.y != null) {
       const pulse = 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 1000));
       ctx.save();
       ctx.beginPath();
@@ -1259,7 +1172,7 @@ export function drawPreviewLink(
   sourceY: number,
   targetX: number,
   targetY: number,
-  opacity: number = 0.6,
+  opacity: number = 0.6
 ): void {
   ctx.beginPath();
   ctx.moveTo(sourceX, sourceY);
@@ -1314,7 +1227,7 @@ export function draw(
       x: number,
       y: number,
       nodes: SimulationNode[],
-      maxDistance?: number,
+      maxDistance?: number
     ) => { dx: number; dy: number };
     isEnabled: (nodeCount: number) => boolean;
   } | null,
@@ -1322,7 +1235,7 @@ export function draw(
   searchMatchIds?: string[],
   highlightedLinkId?: string | null,
   linkPreviewTarget?: { sourceId: string; targetId: string } | null,
-  linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
+  linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -1349,15 +1262,7 @@ export function draw(
   ctx.scale(transform.k, transform.k);
 
   // Draw links with animation
-  drawAllLinks(
-    ctx,
-    simLinks,
-    nodes,
-    linkOpacity,
-    animationTime,
-    hoveredNodeId,
-    highlightedLinkId,
-  );
+  drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId, highlightedLinkId);
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {
@@ -1372,14 +1277,7 @@ export function draw(
       targetNode.x != null &&
       targetNode.y != null
     ) {
-      drawPreviewLink(
-        ctx,
-        sourceNode.x,
-        sourceNode.y,
-        targetNode.x,
-        targetNode.y,
-        0.6,
-      );
+      drawPreviewLink(ctx, sourceNode.x, sourceNode.y, targetNode.x, targetNode.y, 0.6);
     }
   } else if (linkPreviewMousePos) {
     // No target node yet — draw line from dragged node to current mouse world position
@@ -1391,15 +1289,14 @@ export function draw(
         sourceNode.y,
         linkPreviewMousePos.x,
         linkPreviewMousePos.y,
-        0.35,
+        0.35
       );
     }
   }
 
   // Draw nodes with CSS shadows only when node count is below the threshold (performance).
   // Threshold: frontend.graph.2d.shadows_threshold in knowledge-graph.config.json
-  const enableShadows =
-    !focusMode && nodes.length < graphConfig2D.shadows_threshold;
+  const enableShadows = !focusMode && nodes.length < graphConfig2D.shadows_threshold;
   drawAllNodes(
     ctx,
     nodes,
@@ -1411,7 +1308,7 @@ export function draw(
     hoveredNodeId,
     particleSystem,
     focusMode,
-    searchMatchIds,
+    searchMatchIds
   );
 
   // Draw interactive UI elements in world coordinates (hidden in focus mode)
@@ -1441,7 +1338,7 @@ export function resetView(
   width: number,
   height: number,
   nodes: SimulationNode[],
-  transform: { x: number; y: number; k: number },
+  transform: { x: number; y: number; k: number }
 ): void {
   if (nodes.length === 0) return;
 

@@ -26,10 +26,7 @@ export default defineConfig({
     // Defaults target the dev stack (docker-compose.yml) services on host ports
     proxy: {
       "/api/v1": {
-        target:
-          process.env.VITE_API_TARGET ||
-          process.env.VITE_API_URL ||
-          "http://127.0.0.1:9000",
+        target: process.env.VITE_API_TARGET || process.env.VITE_API_URL || "http://127.0.0.1:9000",
         changeOrigin: true,
       },
       "/graph-service/api": {

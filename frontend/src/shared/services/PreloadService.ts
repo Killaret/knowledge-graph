@@ -136,17 +136,12 @@ class PreloadServiceClass {
 
       if (freshResult.delta) {
         if (import.meta.env.DEV) {
-          console.log(
-            "[PreloadService] Delta available for authenticated update",
-          );
+          console.log("[PreloadService] Delta available for authenticated update");
         }
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error(
-          "[PreloadService] Error during authenticated graph preload:",
-          error,
-        );
+        console.error("[PreloadService] Error during authenticated graph preload:", error);
       }
       throw error;
     }
@@ -217,10 +212,7 @@ class PreloadServiceClass {
     }
 
     const now = Date.now();
-    if (
-      now - this.preloadedAchievements.timestamp >
-      this.preloadedAchievements.ttl
-    ) {
+    if (now - this.preloadedAchievements.timestamp > this.preloadedAchievements.ttl) {
       // Кэш устарел
       this.preloadedAchievements = null;
       return null;
@@ -283,9 +275,7 @@ class PreloadServiceClass {
     return {
       hasGraph: !!this.preloadedGraph,
       hasAchievements: !!this.preloadedAchievements,
-      graphAge: this.preloadedGraph
-        ? now - this.preloadedGraph.timestamp
-        : null,
+      graphAge: this.preloadedGraph ? now - this.preloadedGraph.timestamp : null,
       achievementsAge: this.preloadedAchievements
         ? now - this.preloadedAchievements.timestamp
         : null,

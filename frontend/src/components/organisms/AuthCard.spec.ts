@@ -35,15 +35,12 @@ describe("AuthCard", () => {
     } as unknown as CanvasRenderingContext2D;
 
     HTMLCanvasElement.prototype.getContext = vi.fn(
-      () => mockContext,
+      () => mockContext
     ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
     // Mock requestAnimationFrame
-    global.requestAnimationFrame = vi.fn(
-      () => 1,
-    ) as unknown as typeof window.requestAnimationFrame;
-    global.cancelAnimationFrame =
-      vi.fn() as unknown as typeof window.cancelAnimationFrame;
+    global.requestAnimationFrame = vi.fn(() => 1) as unknown as typeof window.requestAnimationFrame;
+    global.cancelAnimationFrame = vi.fn() as unknown as typeof window.cancelAnimationFrame;
   });
 
   afterEach(() => {

@@ -21,14 +21,7 @@
     aria-hidden="true"
     focusable="false"
   >
-    <rect
-      x="0"
-      y="0"
-      width="240"
-      height="180"
-      rx="24"
-      fill="var(--color-surface, #000)"
-    />
+    <rect x="0" y="0" width="240" height="180" rx="24" fill="var(--color-surface, #000)" />
 
     {#if currentType === "empty"}
       <g fill="#fff" opacity="0.9">
@@ -38,31 +31,15 @@
         <circle cx="56" cy="100" r="1.8" />
         <circle cx="122" cy="152" r="2.2" />
       </g>
-      <path
-        d="M28 66L34 66M31 62L31 70"
-        stroke="#fff"
-        stroke-width="1.2"
-        stroke-linecap="round"
-      />
-      <path
-        d="M72 18L76 24M76 18L72 24"
-        stroke="#fff"
-        stroke-width="1.2"
-        stroke-linecap="round"
-      />
+      <path d="M28 66L34 66M31 62L31 70" stroke="#fff" stroke-width="1.2" stroke-linecap="round" />
+      <path d="M72 18L76 24M76 18L72 24" stroke="#fff" stroke-width="1.2" stroke-linecap="round" />
       <path
         d="M182 86L186 86M184 82L184 90"
         stroke="#fff"
         stroke-width="1.2"
         stroke-linecap="round"
       />
-      <circle
-        cx="148"
-        cy="108"
-        r="10"
-        fill="var(--color-primary, #7c3aed)"
-        opacity="0.24"
-      />
+      <circle cx="148" cy="108" r="10" fill="var(--color-primary, #7c3aed)" opacity="0.24" />
       <path
         d="M40 140C90 110 150 110 200 80"
         fill="none"
@@ -70,20 +47,8 @@
         stroke-width="2"
         opacity="0.7"
       />
-      <circle
-        cx="62"
-        cy="126"
-        r="6"
-        fill="var(--color-primary, #7c3aed)"
-        opacity="0.3"
-      />
-      <circle
-        cx="176"
-        cy="50"
-        r="6"
-        fill="var(--color-info, #14b8a6)"
-        opacity="0.35"
-      />
+      <circle cx="62" cy="126" r="6" fill="var(--color-primary, #7c3aed)" opacity="0.3" />
+      <circle cx="176" cy="50" r="6" fill="var(--color-info, #14b8a6)" opacity="0.35" />
     {:else if currentType === "error"}
       <polygon
         points="56,148 120,32 184,148"
@@ -104,37 +69,20 @@
         stroke-width="4"
         stroke-linecap="round"
       />
-      <circle
-        cx="120"
-        cy="150"
-        r="9"
-        fill="var(--color-info, #14b8a6)"
-        opacity="0.6"
-      />
+      <circle cx="120" cy="150" r="9" fill="var(--color-info, #14b8a6)" opacity="0.6" />
       <path
         d="M70 40L74 50M80 30L84 40M160 46L156 54"
         stroke="#fff"
         stroke-width="1.5"
         stroke-linecap="round"
       />
-      <rect
-        x="48"
-        y="148"
-        width="144"
-        height="10"
-        rx="5"
-        fill="rgba(255,255,255,0.08)"
-      />
+      <rect x="48" y="148" width="144" height="10" rx="5" fill="rgba(255,255,255,0.08)" />
     {:else if currentType === "404"}
       <g opacity="0.95">
         <circle cx="72" cy="86" r="22" fill="var(--color-info, #14b8a6)" />
         <circle cx="72" cy="86" r="14" fill="var(--color-surface, #000)" />
       </g>
-      <path
-        d="M100 72L220 34L220 66L100 104Z"
-        fill="var(--color-primary, #7c3aed)"
-        opacity="0.9"
-      />
+      <path d="M100 72L220 34L220 66L100 104Z" fill="var(--color-primary, #7c3aed)" opacity="0.9" />
       <path
         d="M100 72C132 60 170 52 220 48"
         fill="none"
@@ -189,13 +137,7 @@
         stroke-width="5"
         stroke-linecap="round"
       />
-      <circle
-        cx="120"
-        cy="90"
-        r="10"
-        fill="var(--color-primary, #7c3aed)"
-        opacity="0.35"
-      />
+      <circle cx="120" cy="90" r="10" fill="var(--color-primary, #7c3aed)" opacity="0.35" />
       <path
         d="M32 60L24 48M216 60L224 48"
         stroke="#fff"
@@ -224,27 +166,9 @@
       />
     {:else if currentType === "no-results"}
       <g transform="translate(36, 36)">
-        <rect
-          x="0"
-          y="30"
-          width="96"
-          height="26"
-          rx="13"
-          fill="var(--color-primary, #7c3aed)"
-        />
-        <rect
-          x="74"
-          y="-4"
-          width="22"
-          height="46"
-          rx="11"
-          fill="var(--color-surface, #000)"
-        />
-        <path
-          d="M20 32L10 18L12 16L22 30Z"
-          fill="var(--color-info, #14b8a6)"
-          opacity="0.8"
-        />
+        <rect x="0" y="30" width="96" height="26" rx="13" fill="var(--color-primary, #7c3aed)" />
+        <rect x="74" y="-4" width="22" height="46" rx="11" fill="var(--color-surface, #000)" />
+        <path d="M20 32L10 18L12 16L22 30Z" fill="var(--color-info, #14b8a6)" opacity="0.8" />
         <line
           x1="22"
           y1="55"
@@ -263,12 +187,7 @@
           stroke-width="8"
           stroke-linecap="round"
         />
-        <path
-          d="M64 18L90 6"
-          stroke="#fff"
-          stroke-width="4"
-          stroke-linecap="round"
-        />
+        <path d="M64 18L90 6" stroke="#fff" stroke-width="4" stroke-linecap="round" />
       </g>
       <circle cx="190" cy="40" r="2" fill="#fff" opacity="0.9" />
       <circle cx="196" cy="66" r="2" fill="#fff" opacity="0.82" />

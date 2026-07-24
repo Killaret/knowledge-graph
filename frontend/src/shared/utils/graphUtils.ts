@@ -7,9 +7,7 @@ export function filterValidLinks<
 >(nodes: Node[], links: Link[]): Link[] {
   const nodeIds = new Set(nodes.map((n) => n.id));
 
-  function endpointId(
-    value: string | number | { id?: string },
-  ): string | undefined {
+  function endpointId(value: string | number | { id?: string }): string | undefined {
     if (typeof value === "string") return value;
     if (typeof value === "number") return nodes[value]?.id;
     return value.id;

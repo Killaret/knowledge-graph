@@ -134,9 +134,7 @@ describe("TagSelector", () => {
     await userEvent.keyboard("{Enter}");
 
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /can only contain letters/i,
-    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/can only contain letters/i);
   });
 
   it("enforces max tags limit", async () => {
@@ -231,9 +229,7 @@ describe("TagSelector", () => {
 
     // Каждый тег должен иметь кнопку удаления с aria-label
     defaultTags.forEach((tag) => {
-      expect(
-        screen.getByLabelText(new RegExp(`remove tag ${tag}`, "i")),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText(new RegExp(`remove tag ${tag}`, "i"))).toBeInTheDocument();
     });
 
     // Поле ввода должно иметь aria-label

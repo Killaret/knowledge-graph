@@ -11,10 +11,7 @@
     id?: string;
   }
 
-  let {
-    selected = $bindable(CelestialBody.STAR.type),
-    id = "type-selector",
-  }: Props = $props();
+  let { selected = $bindable(CelestialBody.STAR.type), id = "type-selector" }: Props = $props();
 
   const types = CelestialBody.UI_TYPES;
 
@@ -23,12 +20,7 @@
   }
 </script>
 
-<div
-  class="type-selector"
-  {id}
-  role="group"
-  aria-label={t("typeSelector.ariaLabel")}
->
+<div class="type-selector" {id} role="group" aria-label={t("typeSelector.ariaLabel")}>
   {#each types as type}
     <button
       type="button"

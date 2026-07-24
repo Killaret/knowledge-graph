@@ -71,13 +71,7 @@ describe("link-form", () => {
     const links = [{ source: "n1", target: "n2", link_type: "reference" }];
     createLink(state, links, callbacks);
 
-    expect(callbacks.onDuplicateWarning).toHaveBeenCalledWith(
-      "n1",
-      "n2",
-      "reference",
-      10,
-      20,
-    );
+    expect(callbacks.onDuplicateWarning).toHaveBeenCalledWith("n1", "n2", "reference", 10, 20);
     expect(callbacks.onLinkCreate).not.toHaveBeenCalled();
     expect(state.showLinkForm).toBe(false);
   });
@@ -89,9 +83,7 @@ describe("link-form", () => {
   });
 
   it("detects duplicate links with object node references", () => {
-    const links = [
-      { source: { id: "n1" }, target: { id: "n2" }, link_type: "related" },
-    ];
+    const links = [{ source: { id: "n1" }, target: { id: "n2" }, link_type: "related" }];
     expect(isDuplicateLink("n1", "n2", "related", links)).toBe(true);
   });
 

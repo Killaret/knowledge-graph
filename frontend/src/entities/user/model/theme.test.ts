@@ -21,25 +21,15 @@ describe("Theme", () => {
   });
 
   it("labels by mode", () => {
-    expect(Theme.standard().label("Share Note", "Open Portal")).toBe(
-      "Share Note",
-    );
-    expect(Theme.galactic().label("Share Note", "Open Portal")).toBe(
-      "Open Portal",
-    );
+    expect(Theme.standard().label("Share Note", "Open Portal")).toBe("Share Note");
+    expect(Theme.galactic().label("Share Note", "Open Portal")).toBe("Open Portal");
   });
 
   it("transforms known labels in galactic mode", () => {
     const galacticMap = { Confirm: "Engage", Cancel: "Abort" };
-    expect(Theme.galactic().transformLabel("Confirm", galacticMap)).toBe(
-      "Engage",
-    );
-    expect(Theme.standard().transformLabel("Confirm", galacticMap)).toBe(
-      "Confirm",
-    );
-    expect(Theme.galactic().transformLabel("Unknown", galacticMap)).toBe(
-      "Unknown",
-    );
+    expect(Theme.galactic().transformLabel("Confirm", galacticMap)).toBe("Engage");
+    expect(Theme.standard().transformLabel("Confirm", galacticMap)).toBe("Confirm");
+    expect(Theme.galactic().transformLabel("Unknown", galacticMap)).toBe("Unknown");
   });
 
   it("can be created from boolean", () => {

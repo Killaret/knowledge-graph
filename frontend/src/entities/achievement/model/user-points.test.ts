@@ -17,7 +17,7 @@ describe("UserPoints", () => {
       hidden: boolean;
       obtainedAt: string | null;
       notificationSeen: boolean;
-    }> = {},
+    }> = {}
   ) =>
     new Achievement({
       id: "1",
@@ -49,10 +49,7 @@ describe("UserPoints", () => {
   });
 
   it("prefers reported total over computed total", () => {
-    const up = new UserPoints(
-      [makeAchievement({ earned: true, points: 10 })],
-      100,
-    );
+    const up = new UserPoints([makeAchievement({ earned: true, points: 10 })], 100);
     expect(up.total).toBe(100);
     expect(up.isConsistent).toBe(false);
   });

@@ -122,17 +122,13 @@ describe("ApiErrorDisplay", () => {
     };
 
     render(ApiErrorDisplay, { props: { error: notFoundError } });
-    expect(
-      screen.getByRole("img", { name: "404 illustration" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "404 illustration" })).toBeInTheDocument();
   });
 
   it("renders custom illustrationType when provided", () => {
     render(ApiErrorDisplay, {
       props: { error: mockError, illustrationType: "offline" },
     });
-    expect(
-      screen.getByRole("img", { name: "Offline illustration" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Offline illustration" })).toBeInTheDocument();
   });
 });

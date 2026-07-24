@@ -3,11 +3,7 @@
   import { browser } from "$app/environment";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphMode } from "$entities";
-  import {
-    GraphCanvasOverlay,
-    GraphCanvasModals,
-    GraphCanvasControls,
-  } from "$features/graph-ui";
+  import { GraphCanvasOverlay, GraphCanvasModals, GraphCanvasControls } from "$features/graph-ui";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "./GraphCanvas/particle-system";
   import {
@@ -48,10 +44,7 @@
     showRandomTip,
     type HotkeysState,
   } from "$features/graph-interaction/hotkeys";
-  import {
-    createZoomPanState,
-    type ZoomPanState,
-  } from "$features/graph-interaction/zoom-pan";
+  import { createZoomPanState, type ZoomPanState } from "$features/graph-interaction/zoom-pan";
   import {
     attachEvents,
     type GraphCanvasEventContext,
@@ -61,14 +54,8 @@
     isTechnicalNode,
     pinTechnicalNodes,
   } from "$features/graph-canvas/canvas-state.svelte";
-  import {
-    createNoteFormState,
-    type NoteFormState,
-  } from "$features/graph-forms/note-form";
-  import {
-    createLinkFormState,
-    type LinkFormState,
-  } from "$features/graph-forms/link-form";
+  import { createNoteFormState, type NoteFormState } from "$features/graph-forms/note-form";
+  import { createLinkFormState, type LinkFormState } from "$features/graph-forms/link-form";
 
   const {
     nodes,
@@ -107,16 +94,8 @@
       link_type: string;
       weight: number;
     }) => void;
-    onLinkDelete?: (link: {
-      source: string;
-      target: string;
-      link_type: string;
-    }) => void;
-    onNoteCreate?: (data: {
-      title: string;
-      content: string;
-      type: string;
-    }) => void;
+    onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void;
+    onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
     onLinkCreate?: (link: {
       source: string;
       target: string;
@@ -136,9 +115,7 @@
   $effect(() => {
     stableRender =
       disableVariation ||
-      (browser &&
-        new URL(window.location.href).searchParams.get("stableRender") ===
-          "true");
+      (browser && new URL(window.location.href).searchParams.get("stableRender") === "true");
   });
 
   // Debug: проверяем типы узлов при изменении (dev only)
@@ -147,12 +124,7 @@
       const types = nodes.map((n) => n.type || "undefined");
       const uniqueTypes = [...new Set(types)];
       if (import.meta.env.DEV) {
-        console.log(
-          "[GraphCanvas] Received nodes types:",
-          uniqueTypes,
-          "Total:",
-          nodes.length,
-        );
+        console.log("[GraphCanvas] Received nodes types:", uniqueTypes, "Total:", nodes.length);
       }
       if (import.meta.env.DEV) {
         console.log("[GraphCanvas] First node:", nodes[0]);
@@ -302,14 +274,12 @@
           redraw();
         }
       },
-      stableRender,
+      stableRender
     );
 
     mounted = true; // triggers $effect re-run since it's $state
 
-    resetInactivityTimer(hotkeysState, () =>
-      showRandomTip(hotkeysState, canvasState.hotkeyLines),
-    );
+    resetInactivityTimer(hotkeysState, () => showRandomTip(hotkeysState, canvasState.hotkeyLines));
 
     detachEvents = attachEvents(canvas!, eventContext, window);
 
@@ -323,14 +293,10 @@
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
-      if (hotkeysState.inactivityTimeout)
-        clearTimeout(hotkeysState.inactivityTimeout);
-      if (canvasState.duplicateWarningTimeout)
-        clearTimeout(canvasState.duplicateWarningTimeout);
-      if (canvasState.highlightedLinkTimeout)
-        clearTimeout(canvasState.highlightedLinkTimeout);
-      if (canvasState.undoToastTimeout)
-        clearTimeout(canvasState.undoToastTimeout);
+      if (hotkeysState.inactivityTimeout) clearTimeout(hotkeysState.inactivityTimeout);
+      if (canvasState.duplicateWarningTimeout) clearTimeout(canvasState.duplicateWarningTimeout);
+      if (canvasState.highlightedLinkTimeout) clearTimeout(canvasState.highlightedLinkTimeout);
+      if (canvasState.undoToastTimeout) clearTimeout(canvasState.undoToastTimeout);
     };
   });
 
@@ -385,7 +351,7 @@
       },
       () => {
         graphStable = true;
-      },
+      }
     );
   });
 
@@ -447,7 +413,7 @@
         hotkeysState.searchMatchIds,
         canvasState.highlightedLinkId,
         dragDropState.linkPreviewTarget,
-        linkMousePos,
+        linkMousePos
       );
     }
   }
@@ -526,30 +492,20 @@
 
 <GraphCanvasControls
   mode={GraphMode.fromFocus(canvasState.focusMode)}
-  onReset={() =>
-    canvasState.handleResetView(ctx, width, height, simState, transform)}
+  onReset={() => canvasState.handleResetView(ctx, width, height, simState, transform)}
   onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
   onToggleMode={() => canvasState.handleToggleFocus(redraw)}
   onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
 />
 
 <GraphCanvasModals
-  activeForm={noteFormState.showNoteForm
-    ? "note"
-    : linkFormState.showLinkForm
-      ? "link"
-      : null}
+  activeForm={noteFormState.showNoteForm ? "note" : linkFormState.showLinkForm ? "link" : null}
   {noteFormState}
   {linkFormState}
   onSave={(form) =>
     form === "note"
       ? canvasState.handleCreateNote(noteFormState, onNoteCreate, redraw)
-      : canvasState.handleCreateLink(
-          linkFormState,
-          links,
-          onLinkCreate,
-          redraw,
-        )}
+      : canvasState.handleCreateLink(linkFormState, links, onLinkCreate, redraw)}
   onCancel={(form) =>
     form === "note"
       ? canvasState.handleNoteFormClose(noteFormState, redraw)
@@ -572,14 +528,9 @@
   onCloseSearch={() => canvasState.handleCloseSearch(hotkeysState, redraw)}
   onRestoreDeletedNode={() => canvasState.restoreDeletedNode(onNoteRestore)}
   onCancelUndo={canvasState.cancelUndo}
-  onUpdateSearch={() =>
-    canvasState.handleUpdateSearch(hotkeysState, simState, redraw)}
-  onLinkEdit={onLinkEdit
-    ? () => canvasState.handleLinkEdit(onLinkEdit)
-    : undefined}
-  onLinkDelete={onLinkDelete
-    ? () => canvasState.handleLinkDelete(onLinkDelete)
-    : undefined}
+  onUpdateSearch={() => canvasState.handleUpdateSearch(hotkeysState, simState, redraw)}
+  onLinkEdit={onLinkEdit ? () => canvasState.handleLinkEdit(onLinkEdit) : undefined}
+  onLinkDelete={onLinkDelete ? () => canvasState.handleLinkDelete(onLinkDelete) : undefined}
 />
 {#if hotkeysState.showHelpModal}
   <HelpHotkeysModal

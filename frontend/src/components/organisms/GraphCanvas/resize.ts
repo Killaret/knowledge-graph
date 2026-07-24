@@ -8,10 +8,7 @@ export type { ResizeState };
 /**
  * Resize canvas to fit parent container or window
  */
-export function resizeCanvas(
-  canvas: HTMLCanvasElement,
-  state: ResizeState,
-): void {
+export function resizeCanvas(canvas: HTMLCanvasElement, state: ResizeState): void {
   const rect = canvas.parentElement?.getBoundingClientRect();
   if (rect && rect.width > 0 && rect.height > 0) {
     state.width = rect.width;
@@ -60,7 +57,7 @@ export function resizeCanvas(
  */
 export function setupResizeObserver(
   canvas: HTMLCanvasElement,
-  onResize: () => void,
+  onResize: () => void
 ): { disconnect: () => void } {
   const resizeObserver = new ResizeObserver(() => {
     onResize();
@@ -82,7 +79,7 @@ export function setupResizeObserver(
  */
 export function scheduleDelayedResize(
   callback: () => void,
-  delayMs: number = 100,
+  delayMs: number = 100
 ): { clear: () => void } {
   const timer = setTimeout(callback, delayMs);
 

@@ -1,12 +1,4 @@
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeAll,
-  beforeEach,
-  afterEach,
-} from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { render, cleanup, fireEvent } from "@testing-library/svelte";
 import { tick } from "svelte";
 import type { GraphDeltaData, GraphNode, GraphLink } from "$shared/api/graph";
@@ -148,8 +140,7 @@ function getScreenPoint(worldX: number, worldY: number, transform: any) {
 }
 
 beforeAll(async () => {
-  GraphCanvas = (await import("$components/organisms/GraphCanvas.svelte"))
-    .default;
+  GraphCanvas = (await import("$components/organisms/GraphCanvas.svelte")).default;
 });
 
 describe("GraphCanvas events", () => {
@@ -211,8 +202,8 @@ describe("GraphCanvas events", () => {
       lineJoin: "miter",
     };
 
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-      (contextId) => (contextId === "2d" ? ctx : null),
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId) =>
+      contextId === "2d" ? ctx : null
     );
 
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
@@ -254,7 +245,10 @@ describe("GraphCanvas events", () => {
     }
 
     vi.stubGlobal("ResizeObserver", MockResizeObserver);
-    vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn(() => 1)
+    );
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     vi.stubGlobal("Touch", MockTouch);
     vi.stubGlobal("TouchEvent", MockTouchEvent);
@@ -305,15 +299,9 @@ describe("GraphCanvas events", () => {
     const transform = window.__graphCanvas!.transform;
     const p1 = getScreenPoint(200, 300, transform);
 
-    canvas.dispatchEvent(
-      new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mouseup", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("click", { clientX: p1.x, clientY: p1.y }),
-    );
+    canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("mouseup", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("click", { clientX: p1.x, clientY: p1.y }));
 
     expect(onNodeClick).toHaveBeenCalledWith({
       id: "1",
@@ -338,15 +326,9 @@ describe("GraphCanvas events", () => {
     const transform = window.__graphCanvas!.transform;
     const p1 = getScreenPoint(200, 300, transform);
 
-    canvas.dispatchEvent(
-      new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mouseup", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("click", { clientX: p1.x, clientY: p1.y }),
-    );
+    canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("mouseup", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("click", { clientX: p1.x, clientY: p1.y }));
 
     fireEvent.keyDown(window, { key: "Delete" });
 
@@ -386,15 +368,13 @@ describe("GraphCanvas events", () => {
     await flushMicrotasks();
 
     const titleInput = container.querySelector(
-      '[data-testid="ghost-note-title"]',
+      '[data-testid="ghost-note-title"]'
     ) as HTMLInputElement;
     expect(titleInput).toBeTruthy();
 
     await fireEvent.input(titleInput, { target: { value: "New Note" } });
 
-    const createBtn = container.querySelector(
-      '[data-testid="ghost-note-create"]',
-    );
+    const createBtn = container.querySelector('[data-testid="ghost-note-create"]');
     expect(createBtn).toBeTruthy();
     (createBtn as HTMLElement).click();
 
@@ -418,9 +398,7 @@ describe("GraphCanvas events", () => {
     fireEvent.keyDown(window, { key: "n" });
     await flushMicrotasks();
 
-    const cancelBtn = container.querySelector(
-      '[data-testid="ghost-note-cancel"]',
-    );
+    const cancelBtn = container.querySelector('[data-testid="ghost-note-cancel"]');
     expect(cancelBtn).toBeTruthy();
     (cancelBtn as HTMLElement).click();
     await flushMicrotasks();
@@ -444,20 +422,12 @@ describe("GraphCanvas events", () => {
     const p1 = getScreenPoint(200, 300, transform);
     const p2 = getScreenPoint(600, 300, transform);
 
-    canvas.dispatchEvent(
-      new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mousemove", { clientX: p2.x, clientY: p2.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mouseup", { clientX: p2.x, clientY: p2.y }),
-    );
+    canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("mousemove", { clientX: p2.x, clientY: p2.y }));
+    canvas.dispatchEvent(new MouseEvent("mouseup", { clientX: p2.x, clientY: p2.y }));
     await flushMicrotasks();
 
-    const createBtn = container.querySelector(
-      '[data-testid="link-form-create"]',
-    );
+    const createBtn = container.querySelector('[data-testid="link-form-create"]');
     expect(createBtn).toBeTruthy();
     (createBtn as HTMLElement).click();
 
@@ -484,15 +454,9 @@ describe("GraphCanvas events", () => {
     const p1 = getScreenPoint(200, 300, transform);
     const p2 = getScreenPoint(600, 300, transform);
 
-    canvas.dispatchEvent(
-      new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mousemove", { clientX: p2.x, clientY: p2.y }),
-    );
-    canvas.dispatchEvent(
-      new MouseEvent("mouseup", { clientX: p2.x, clientY: p2.y }),
-    );
+    canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: p1.x, clientY: p1.y }));
+    canvas.dispatchEvent(new MouseEvent("mousemove", { clientX: p2.x, clientY: p2.y }));
+    canvas.dispatchEvent(new MouseEvent("mouseup", { clientX: p2.x, clientY: p2.y }));
     await flushMicrotasks();
 
     const cancelBtn = container.querySelector('[data-testid="link-form-cancel"]');
@@ -525,7 +489,7 @@ describe("GraphCanvas events", () => {
       new MouseEvent("mousemove", {
         clientX: midpoint.x,
         clientY: midpoint.y,
-      }),
+      })
     );
 
     vi.advanceTimersByTime(150);
@@ -540,7 +504,7 @@ describe("GraphCanvas events", () => {
         source: "1",
         target: "2",
         link_type: "reference",
-      }),
+      })
     );
 
     // Hover the link again to test delete
@@ -548,7 +512,7 @@ describe("GraphCanvas events", () => {
       new MouseEvent("mousemove", {
         clientX: midpoint.x,
         clientY: midpoint.y,
-      }),
+      })
     );
     vi.advanceTimersByTime(150);
     await flushMicrotasks();
@@ -638,7 +602,7 @@ describe("GraphCanvas events", () => {
       new (window as any).TouchEvent("touchstart", {
         touches: [new (window as any).Touch({ clientX: 60, clientY: 60 })],
         bubbles: true,
-      }),
+      })
     );
 
     // Touchstart should not throw and should exercise getCtx/getWidth/getHeight.
@@ -671,9 +635,7 @@ describe("GraphCanvas events", () => {
     await flushMicrotasks();
 
     // Trigger updateActivity to schedule the getKeyLines inactivity callback.
-    canvas.dispatchEvent(
-      new MouseEvent("mousemove", { clientX: 100, clientY: 100 }),
-    );
+    canvas.dispatchEvent(new MouseEvent("mousemove", { clientX: 100, clientY: 100 }));
 
     vi.advanceTimersByTime(10000);
     await flushMicrotasks();

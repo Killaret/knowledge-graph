@@ -19,8 +19,7 @@ const messages = {
           `Link from "${source}" to "${target}" created.`,
         linkDeleted: () => "Link deleted.",
         settingsSaved: () => "Settings saved.",
-        achievementUnlocked: (title: string) =>
-          `Achievement unlocked: ${title}!`,
+        achievementUnlocked: (title: string) => `Achievement unlocked: ${title}!`,
         shareCreated: () => "Share link created.",
         shareRevoked: () => "Access revoked.",
         loginSuccess: () => "Login successful.",
@@ -43,42 +42,32 @@ const messages = {
         maxSharesReached: () => "Maximum number of share links reached.",
       },
       info: {
-        emptyGraph: () =>
-          "The graph is empty. Create your first note to see the starry sky.",
+        emptyGraph: () => "The graph is empty. Create your first note to see the starry sky.",
         loading: () => "Loading data...",
         noResults: () => "Nothing found.",
         searchHint: () => "Enter a search query to explore the universe.",
-        firstNoteHint: () =>
-          "Create your first star in the universe of knowledge!",
-        achievementProgress: (current: number, target: number) =>
-          `Progress: ${current}/${target}`,
-        streakActive: (days: number) =>
-          `You have been active for ${days} days in a row!`,
+        firstNoteHint: () => "Create your first star in the universe of knowledge!",
+        achievementProgress: (current: number, target: number) => `Progress: ${current}/${target}`,
+        streakActive: (days: number) => `You have been active for ${days} days in a row!`,
         newFeature: (feature: string) => `New feature available: ${feature}`,
       },
       warning: {
         unsavedChanges: () => "There are unsaved changes.",
-        deleteConfirm: (item: string) =>
-          `Are you sure you want to delete "${item}"?`,
+        deleteConfirm: (item: string) => `Are you sure you want to delete "${item}"?`,
         leavePage: () => "Leaving the page will lose unsaved changes.",
-        sessionExpiring: () =>
-          "Your session is expiring soon. Please save your data.",
+        sessionExpiring: () => "Your session is expiring soon. Please save your data.",
       },
     },
     galactic: {
       success: {
-        noteCreated: (title: string) =>
-          `Star "${title}" ignited in your galaxy. ✨`,
-        noteUpdated: (title: string) =>
-          `The glow of star "${title}" has changed. 🌟`,
-        noteDeleted: () =>
-          "A star has faded, but its light continues to travel. 💫",
+        noteCreated: (title: string) => `Star "${title}" ignited in your galaxy. ✨`,
+        noteUpdated: (title: string) => `The glow of star "${title}" has changed. 🌟`,
+        noteDeleted: () => "A star has faded, but its light continues to travel. 💫",
         linkCreated: (source: string, target: string) =>
           `A gravity beam stretches from "${source}" to "${target}". 🌌`,
         linkDeleted: () => "The gravitational bridge has collapsed. 🌑",
         settingsSaved: () => "Galactic coordinates updated. 📍",
-        achievementUnlocked: (title: string) =>
-          `⭐ New star on the achievement map: ${title}!`,
+        achievementUnlocked: (title: string) => `⭐ New star on the achievement map: ${title}!`,
         shareCreated: () => "A portal to another galaxy has opened. 🚪",
         shareRevoked: () => "The portal has closed forever. 🔒",
         loginSuccess: () => "Teleportation into the galaxy complete. 🚀",
@@ -90,51 +79,40 @@ const messages = {
       error: {
         validation: (field: string) =>
           `Sensors detected an anomaly in the field "${field}". Signal distorted. 📡`,
-        duplicateLink: () =>
-          "This gravitational bridge already exists in spacetime. 🌉",
-        noteNotFound: () =>
-          "Star not found in the constellation. Check the coordinates. 🌠",
-        linkNotFound: () =>
-          "Gravitational bridge not detected. It may have collapsed. ⚫",
-        unauthorized: () =>
-          "Access to the star system denied. Authorization required. 🛡️",
-        forbidden: () =>
-          "This region of the galaxy is shielded. Access forbidden. ⛔",
+        duplicateLink: () => "This gravitational bridge already exists in spacetime. 🌉",
+        noteNotFound: () => "Star not found in the constellation. Check the coordinates. 🌠",
+        linkNotFound: () => "Gravitational bridge not detected. It may have collapsed. ⚫",
+        unauthorized: () => "Access to the star system denied. Authorization required. 🛡️",
+        forbidden: () => "This region of the galaxy is shielded. Access forbidden. ⛔",
         serverError: () =>
           "Cosmic anomaly! Servers consumed by a supernova flare. Please try later. 🌋",
-        networkError: () =>
-          "Connection to the cosmic network lost. Check the hyperchannel. 📡",
+        networkError: () => "Connection to the cosmic network lost. Check the hyperchannel. 📡",
         invalidCredentials: () =>
           "Invalid access code for the starship. The captain does not recognize you. 👨‍🚀",
-        duplicateNote: () =>
-          "A star with this name already shines in this galaxy. ☀️",
+        duplicateNote: () => "A star with this name already shines in this galaxy. ☀️",
         shareNotFound: () => "Portal not found or vanished into a wormhole. 🌀",
-        maxSharesReached: () =>
-          "Limit of portals to other galaxies reached. 🚫",
+        maxSharesReached: () => "Limit of portals to other galaxies reached. 🚫",
       },
       info: {
         emptyGraph: () =>
           "Your starry sky is empty. Create your first star to begin building the universe! 🌌",
         loading: () => "Scanning the galaxy... Calibrating the telescope. 🔭",
         noResults: () => "Sensors detected nothing in this part of space. 🛰️",
-        searchHint: () =>
-          "Enter coordinates to search for stars in our universe. 🌟",
+        searchHint: () => "Enter coordinates to search for stars in our universe. 🌟",
         firstNoteHint: () =>
           "Be a pioneer! Create your first star in the universe of knowledge! ⭐",
         achievementProgress: (current: number, target: number) =>
           `Stellar map filling: ${current} of ${target} objects discovered 🗺️`,
         streakActive: (days: number) =>
           `Continuous journey: ${days} days without losing contact with base! 🚀`,
-        newFeature: (feature: string) =>
-          `New technology available on board: ${feature} 🛸`,
+        newFeature: (feature: string) => `New technology available on board: ${feature} 🛸`,
       },
       warning: {
         unsavedChanges: () => "There are unsaved entries in the ship log. 📓",
         deleteConfirm: (item: string) =>
           `Are you sure you want to send "${item}" into a black hole? This is irreversible. 🕳️`,
         leavePage: () => "Exiting hyperspace will lose unsaved data. ⚠️",
-        sessionExpiring: () =>
-          "Teleportation fuel is running low. Save your coordinates! ⛽",
+        sessionExpiring: () => "Teleportation fuel is running low. Save your coordinates! ⛽",
       },
     },
   },
@@ -148,8 +126,7 @@ const messages = {
           `Связь от "${source}" к "${target}" создана.`,
         linkDeleted: () => "Связь удалена.",
         settingsSaved: () => "Настройки сохранены.",
-        achievementUnlocked: (title: string) =>
-          `Достижение получено: ${title}!`,
+        achievementUnlocked: (title: string) => `Достижение получено: ${title}!`,
         shareCreated: () => "Ссылка для доступа создана.",
         shareRevoked: () => "Доступ отозван.",
         loginSuccess: () => "Вход выполнен успешно.",
@@ -172,99 +149,76 @@ const messages = {
         maxSharesReached: () => "Достигнут лимит количества ссылок доступа.",
       },
       info: {
-        emptyGraph: () =>
-          "Граф пуст. Создайте первую заметку, чтобы увидеть звёздное небо.",
+        emptyGraph: () => "Граф пуст. Создайте первую заметку, чтобы увидеть звёздное небо.",
         loading: () => "Загрузка данных...",
         noResults: () => "Ничего не найдено.",
         searchHint: () => "Введите поисковый запрос для поиска по вселенной.",
         firstNoteHint: () => "Создайте свою первую звезду во вселенной знаний!",
-        achievementProgress: (current: number, target: number) =>
-          `Прогресс: ${current}/${target}`,
+        achievementProgress: (current: number, target: number) => `Прогресс: ${current}/${target}`,
         streakActive: (days: number) => `Вы активны уже ${days} дней подряд!`,
         newFeature: (feature: string) => `Новая функция доступна: ${feature}`,
       },
       warning: {
         unsavedChanges: () => "Есть несохраненные изменения.",
-        deleteConfirm: (item: string) =>
-          `Вы уверены, что хотите удалить "${item}"?`,
+        deleteConfirm: (item: string) => `Вы уверены, что хотите удалить "${item}"?`,
         leavePage: () => "При уходе со страницы изменения будут потеряны.",
         sessionExpiring: () => "Сессия скоро закончится. Сохраните данные.",
       },
     },
     galactic: {
       success: {
-        noteCreated: (title: string) =>
-          `Звезда «${title}» зажжена в вашей галактике. ✨`,
-        noteUpdated: (title: string) =>
-          `Свечение звезды «${title}» изменилось. 🌟`,
-        noteDeleted: () =>
-          "Звезда погасла, но её свет продолжает путешествовать. 💫",
+        noteCreated: (title: string) => `Звезда «${title}» зажжена в вашей галактике. ✨`,
+        noteUpdated: (title: string) => `Свечение звезды «${title}» изменилось. 🌟`,
+        noteDeleted: () => "Звезда погасла, но её свет продолжает путешествовать. 💫",
         linkCreated: (source: string, target: string) =>
           `Луч гравитации протянут от «${source}» к «${target}». 🌌`,
         linkDeleted: () => "Гравитационный мост разрушен. 🌑",
         settingsSaved: () => "Координаты галактики обновлены. 📍",
-        achievementUnlocked: (title: string) =>
-          `⭐ Новая звезда на карте достижений: ${title}!`,
+        achievementUnlocked: (title: string) => `⭐ Новая звезда на карте достижений: ${title}!`,
         shareCreated: () => "Портал в другую галактику открыт. 🚪",
         shareRevoked: () => "Портал закрыт навсегда. 🔒",
         loginSuccess: () => "Телепортация в галактику завершена. 🚀",
         logoutSuccess: () => "Возвращение на родную планету. 🌍",
         accountDeleted: () =>
           "Галактика поглощена чёрной дырой. Всё, что было создано, остаётся в звёздах. 🌌",
-        passwordChanged: () =>
-          "Код доступа к космическому кораблю обновлён. 🔐",
+        passwordChanged: () => "Код доступа к космическому кораблю обновлён. 🔐",
       },
       error: {
         validation: (field: string) =>
           `Сенсоры зафиксировали аномалию в поле «${field}». Сигнал искажён. 📡`,
-        duplicateLink: () =>
-          "Этот гравитационный мост уже существует в пространстве-времени. 🌉",
-        noteNotFound: () =>
-          "Звезда не найдена в созвездии. Проверьте координаты. 🌠",
-        linkNotFound: () =>
-          "Гравитационный мост не обнаружен. Возможно, он коллапсировал. ⚫",
-        unauthorized: () =>
-          "Отказано в доступе к звёздной системе. Требуется авторизация. 🛡️",
-        forbidden: () =>
-          "Эта область галактики под защитой щита. Доступ запрещён. ⛔",
+        duplicateLink: () => "Этот гравитационный мост уже существует в пространстве-времени. 🌉",
+        noteNotFound: () => "Звезда не найдена в созвездии. Проверьте координаты. 🌠",
+        linkNotFound: () => "Гравитационный мост не обнаружен. Возможно, он коллапсировал. ⚫",
+        unauthorized: () => "Отказано в доступе к звёздной системе. Требуется авторизация. 🛡️",
+        forbidden: () => "Эта область галактики под защитой щита. Доступ запрещён. ⛔",
         serverError: () =>
           "Космическая аномалия! Сервера поглощены вспышкой сверхновой. Попробуйте позже. 🌋",
-        networkError: () =>
-          "Потеряно соединение с космической сетью. Проверьте гиперканал. 📡",
-        invalidCredentials: () =>
-          "Неверный код доступа к звездолёту. Капитан не узнаёт вас. 👨‍🚀",
-        duplicateNote: () =>
-          "Звезда с таким именем уже светит в этой галактике. ☀️",
+        networkError: () => "Потеряно соединение с космической сетью. Проверьте гиперканал. 📡",
+        invalidCredentials: () => "Неверный код доступа к звездолёту. Капитан не узнаёт вас. 👨‍🚀",
+        duplicateNote: () => "Звезда с таким именем уже светит в этой галактике. ☀️",
         shareNotFound: () => "Портал не найден или исчез в червоточине. 🌀",
-        maxSharesReached: () =>
-          "Достигнут лимит порталов в другие галактики. 🚫",
+        maxSharesReached: () => "Достигнут лимит порталов в другие галактики. 🚫",
       },
       info: {
         emptyGraph: () =>
           "Ваше звёздное небо пусто. Создайте первую звезду, чтобы начать создавать вселенную! 🌌",
         loading: () => "Сканируем галактику... Телескоп настраивается. 🔭",
-        noResults: () =>
-          "Сенсоры ничего не обнаружили в этой части космоса. 🛰️",
-        searchHint: () =>
-          "Введите координаты для поиска звёзд в нашей вселенной. 🌟",
+        noResults: () => "Сенсоры ничего не обнаружили в этой части космоса. 🛰️",
+        searchHint: () => "Введите координаты для поиска звёзд в нашей вселенной. 🌟",
         firstNoteHint: () =>
           "Будьте первооткрывателем! Создайте свою первую звезду во вселенной знаний! ⭐",
         achievementProgress: (current: number, target: number) =>
           `Звёздная карта заполняется: ${current} из ${target} объектов открыто 🗺️`,
         streakActive: (days: number) =>
           `Непрерывное путешествие: ${days} дней без потери связи с базой! 🚀`,
-        newFeature: (feature: string) =>
-          `Новая технология доступна на борту: ${feature} 🛸`,
+        newFeature: (feature: string) => `Новая технология доступна на борту: ${feature} 🛸`,
       },
       warning: {
-        unsavedChanges: () =>
-          "В бортовом журнале есть несохранённые записи. 📓",
+        unsavedChanges: () => "В бортовом журнале есть несохранённые записи. 📓",
         deleteConfirm: (item: string) =>
           `Вы уверены, что хотите отправить «${item}» в чёрную дыру? Это необратимо. 🕳️`,
-        leavePage: () =>
-          "При выходе из гиперпространства несохранённые данные будут потеряны. ⚠️",
-        sessionExpiring: () =>
-          "Топливо для телепортации заканчивается. Сохраните координаты! ⛽",
+        leavePage: () => "При выходе из гиперпространства несохранённые данные будут потеряны. ⚠️",
+        sessionExpiring: () => "Топливо для телепортации заканчивается. Сохраните координаты! ⛽",
       },
     },
   },
@@ -285,11 +239,7 @@ export class MessageFormatter {
   /**
    * Format a message with the current locale and mode
    */
-  format(
-    category: MessageCategory,
-    key: MessageKey,
-    ...args: unknown[]
-  ): string {
+  format(category: MessageCategory, key: MessageKey, ...args: unknown[]): string {
     const mode: Mode = this.useGalacticMode ? "galactic" : "standard";
     const localeMessages = messages[this.locale];
 
@@ -304,9 +254,9 @@ export class MessageFormatter {
       return `[${this.locale}.${mode}.${category}.${key}]`;
     }
 
-    const formatter = categoryMessages[
-      key as keyof typeof categoryMessages
-    ] as (...args: unknown[]) => string;
+    const formatter = categoryMessages[key as keyof typeof categoryMessages] as (
+      ...args: unknown[]
+    ) => string;
     return formatter(...args);
   }
 
@@ -370,10 +320,7 @@ export class MessageFormatter {
 /**
  * Create a formatter with galactic mode and locale settings
  */
-export function createFormatter(
-  galacticMode: boolean,
-  locale: Locale = "en",
-): MessageFormatter {
+export function createFormatter(galacticMode: boolean, locale: Locale = "en"): MessageFormatter {
   return new MessageFormatter(galacticMode, locale);
 }
 
@@ -393,8 +340,7 @@ export function getMessageKeys(): Record<MessageCategory, string[]> {
  * Legacy compatibility function for lexicon-settings.ts
  * Maps old API to new MessageFormatter system
  */
-export type LegacyCategory =
-  "success" | "error" | "info" | "warning" | "achievement";
+export type LegacyCategory = "success" | "error" | "info" | "warning" | "achievement";
 
 const keyToMethodMap: Record<LegacyCategory, Record<string, string>> = {
   success: { unlocked: "achievementUnlocked" },
@@ -412,13 +358,8 @@ export function getLexiconMessage(
   ...params: unknown[]
 ): string {
   const methodKey = keyToMethodMap[category]?.[key] || key;
-  const targetCategory: MessageCategory =
-    category === "achievement" ? "success" : category;
-  return createFormatter(mode === "galactic", locale).format(
-    targetCategory,
-    methodKey,
-    ...params,
-  );
+  const targetCategory: MessageCategory = category === "achievement" ? "success" : category;
+  return createFormatter(mode === "galactic", locale).format(targetCategory, methodKey, ...params);
 }
 
 /**
@@ -426,42 +367,24 @@ export function getLexiconMessage(
  */
 export const GalacticLexicon = {
   success: {
-    noteCreated: (
-      title: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).success("noteCreated", title),
-    noteUpdated: (
-      title: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).success("noteUpdated", title),
+    noteCreated: (title: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).success("noteCreated", title),
+    noteUpdated: (title: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).success("noteUpdated", title),
     noteDeleted: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).success("noteDeleted"),
     linkCreated: (
       source: string,
       target: string,
       useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) =>
-      createFormatter(useGalactic, locale).success(
-        "linkCreated",
-        source,
-        target,
-      ),
+      locale: Locale = "en"
+    ) => createFormatter(useGalactic, locale).success("linkCreated", source, target),
     linkDeleted: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).success("linkDeleted"),
     settingsSaved: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).success("settingsSaved"),
-    achievementUnlocked: (
-      title: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) =>
-      createFormatter(useGalactic, locale).success(
-        "achievementUnlocked",
-        title,
-      ),
+    achievementUnlocked: (title: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).success("achievementUnlocked", title),
     shareCreated: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).success("shareCreated"),
     shareRevoked: (useGalactic: boolean = false, locale: Locale = "en") =>
@@ -476,11 +399,8 @@ export const GalacticLexicon = {
       createFormatter(useGalactic, locale).success("passwordChanged"),
   },
   error: {
-    validation: (
-      field: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).error("validation", field),
+    validation: (field: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).error("validation", field),
     duplicateLink: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).error("duplicateLink"),
     noteNotFound: (useGalactic: boolean = false, locale: Locale = "en") =>
@@ -519,32 +439,18 @@ export const GalacticLexicon = {
       current: number,
       target: number,
       useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) =>
-      createFormatter(useGalactic, locale).info(
-        "achievementProgress",
-        current,
-        target,
-      ),
-    streakActive: (
-      days: number,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).info("streakActive", days),
-    newFeature: (
-      feature: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).info("newFeature", feature),
+      locale: Locale = "en"
+    ) => createFormatter(useGalactic, locale).info("achievementProgress", current, target),
+    streakActive: (days: number, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).info("streakActive", days),
+    newFeature: (feature: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).info("newFeature", feature),
   },
   warning: {
     unsavedChanges: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).warning("unsavedChanges"),
-    deleteConfirm: (
-      item: string,
-      useGalactic: boolean = false,
-      locale: Locale = "en",
-    ) => createFormatter(useGalactic, locale).warning("deleteConfirm", item),
+    deleteConfirm: (item: string, useGalactic: boolean = false, locale: Locale = "en") =>
+      createFormatter(useGalactic, locale).warning("deleteConfirm", item),
     leavePage: (useGalactic: boolean = false, locale: Locale = "en") =>
       createFormatter(useGalactic, locale).warning("leavePage"),
     sessionExpiring: (useGalactic: boolean = false, locale: Locale = "en") =>

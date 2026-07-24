@@ -1,10 +1,5 @@
 import { test, expect } from "@playwright/test";
-import {
-  createNote,
-  createLink,
-  deleteNote,
-  getBackendUrl,
-} from "./helpers/testData";
+import { createNote, createLink, deleteNote, getBackendUrl } from "./helpers/testData";
 import {
   clickCreateNoteButton,
   fillSearchInput,
@@ -28,9 +23,7 @@ test.describe(
       await page.waitForLoadState("networkidle");
 
       // Verify SKIP_AUTH flag is set after navigation
-      const skipAuthFlag = await page.evaluate(
-        () => (window as any).__SKIP_AUTH__,
-      );
+      const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
       expect(skipAuthFlag).toBe(true);
     });
 
@@ -72,28 +65,16 @@ test.describe(
         await page.waitForSelector('[data-testid="create-note-title"]', {
           timeout: 15000,
         });
-        await page.fill(
-          '[data-testid="create-note-title"]',
-          "Playwright Test " + Date.now(),
-        );
-        await page.fill(
-          '[data-testid="create-note-content"]',
-          "Automated content",
-        );
+        await page.fill('[data-testid="create-note-title"]', "Playwright Test " + Date.now());
+        await page.fill('[data-testid="create-note-content"]', "Automated content");
       } catch {
         // Fallback to class-based selectors
         console.log("[DEBUG] Falling back to class selectors for create modal");
         await page.waitForSelector('.modal-content input[name="title"]', {
           timeout: 15000,
         });
-        await page.fill(
-          '.modal-content input[name="title"]',
-          "Playwright Test " + Date.now(),
-        );
-        await page.fill(
-          '.modal-content textarea[name="content"]',
-          "Automated content",
-        );
+        await page.fill('.modal-content input[name="title"]', "Playwright Test " + Date.now());
+        await page.fill('.modal-content textarea[name="content"]', "Automated content");
       }
 
       // Click Save button using data-testid
@@ -104,9 +85,7 @@ test.describe(
         await page.click('[data-testid="create-note-submit"]');
       } catch {
         // Fallback to class-based selectors
-        console.log(
-          "[DEBUG] Falling back to class selectors for submit button",
-        );
+        console.log("[DEBUG] Falling back to class selectors for submit button");
         await page.waitForSelector('.modal-content button[type="submit"]', {
           timeout: 15000,
         });
@@ -117,9 +96,7 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify via API that note was created
-      const notesResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes`,
-      );
+      const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
       const notesData = await notesResponse.json();
       expect(notesData.total).toBeGreaterThan(0);
 
@@ -142,9 +119,7 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify note exists via API before navigating
-      const verifyResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       expect(verifyResponse.status()).toBe(200);
 
       // Navigate to note page
@@ -152,12 +127,8 @@ test.describe(
       await page.waitForLoadState("networkidle");
 
       // Listen to console messages
-      page.on("console", (msg) =>
-        console.log("[BROWSER]", msg.type(), msg.text()),
-      );
-      page.on("pageerror", (error) =>
-        console.log("[BROWSER ERROR]", error.message),
-      );
+      page.on("console", (msg) => console.log("[BROWSER]", msg.type(), msg.text()));
+      page.on("pageerror", (error) => console.log("[BROWSER ERROR]", error.message));
 
       await page.waitForTimeout(3000); // Wait for client-side rendering
 
@@ -176,44 +147,35 @@ test.describe(
           const h1 = document.querySelector("h1");
           return h1 && window.getComputedStyle(h1).display !== "none";
         },
-        { timeout: 20000 },
+        { timeout: 20000 }
       );
 
       // Wait for edit button using multiple selectors
-      await page.waitForSelector(
-        '[data-testid="edit-note-btn"], button.edit-btn',
-        { timeout: 20000 },
-      );
+      await page.waitForSelector('[data-testid="edit-note-btn"], button.edit-btn', {
+        timeout: 20000,
+      });
 
       // Click Edit button to open modal
       await page.click('[data-testid="edit-note-btn"], button.edit-btn');
 
       // Wait for modal to open
-      await page.waitForSelector(
-        '.modal-container[role="dialog"], .modal[role="dialog"]',
-        { timeout: 15000 },
-      );
+      await page.waitForSelector('.modal-container[role="dialog"], .modal[role="dialog"]', {
+        timeout: 15000,
+      });
 
-      const modal = page
-        .locator('.modal-container[role="dialog"], .modal[role="dialog"]')
-        .first();
+      const modal = page.locator('.modal-container[role="dialog"], .modal[role="dialog"]').first();
       await expect(modal).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(300); // Wait for animation
 
       // Update note in modal - use fill() to trigger Svelte bindings
-      await page.fill(
-        '[data-testid="edit-title-input"]',
-        `Edited ${timestamp}`,
-      );
+      await page.fill('[data-testid="edit-title-input"]', `Edited ${timestamp}`);
       console.log("[DEBUG] Set title input to:", "Edited " + timestamp);
 
       await page.fill('[data-testid="edit-content-input"]', "Updated content");
       console.log("[DEBUG] Set content input to:", "Updated content");
 
       // Save changes
-      const saveButton = page
-        .locator('.modal-content button[type="submit"]')
-        .first();
+      const saveButton = page.locator('.modal-content button[type="submit"]').first();
 
       const [response] = await Promise.all([
         page.waitForResponse(async (resp) => {
@@ -250,9 +212,7 @@ test.describe(
       await page.waitForTimeout(1000);
 
       // Verify via API that note was updated
-      const updatedNote = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const updatedNote = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       const noteData = await updatedNote.json();
       expect(noteData.data.title).toBe("Edited " + timestamp);
     });
@@ -270,9 +230,7 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify note exists via API before navigating
-      const verifyResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       expect(verifyResponse.status()).toBe(200);
 
       // Navigate directly to note page
@@ -288,23 +246,17 @@ test.describe(
       await page.click('[data-testid="delete-note-btn"]');
 
       // Wait for navigation away from note page (either redirect or URL change)
-      await page.waitForFunction(
-        () => !window.location.pathname.includes("/notes/"),
-        { timeout: 15000 },
-      );
+      await page.waitForFunction(() => !window.location.pathname.includes("/notes/"), {
+        timeout: 15000,
+      });
       await page.waitForTimeout(1000);
 
       // Verify via API that note is deleted
-      const checkResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const checkResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       expect(checkResponse.status()).toBe(404);
     });
 
-    test("should open 3D graph for a note with links", async ({
-      page,
-      request,
-    }) => {
+    test("should open 3D graph for a note with links", async ({ page, request }) => {
       // 3D graph is frozen for v1.0 - the page redirects to 2D graph
 
       // Create two notes and a link via API using helper
@@ -329,15 +281,11 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify 2D graph canvas is visible after redirect
-      const graphContainer = page
-        .locator(".graph-container, .graph-3d-container, canvas")
-        .first();
+      const graphContainer = page.locator(".graph-container, .graph-3d-container, canvas").first();
       await expect(graphContainer).toBeVisible({ timeout: 15000 });
 
       // Verify stats bar shows node and link counts
-      const statsBar = page
-        .locator('[data-testid="graph-stats"], .stats-bar')
-        .first();
+      const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
       await expect(statsBar).toBeVisible({ timeout: 10000 });
 
       const statsText = await statsBar.textContent();
@@ -345,10 +293,7 @@ test.describe(
       expect(statsText).toMatch(/\d+\s*links?/i);
     });
 
-    test("should show back button on note detail page", async ({
-      page,
-      request,
-    }) => {
+    test("should show back button on note detail page", async ({ page, request }) => {
       // Create a note via API using helper
       const note = await createNote(request, {
         title: "Back Button Test",
@@ -361,9 +306,7 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify note exists via API before navigating
-      const verifyResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       expect(verifyResponse.status()).toBe(200);
 
       // Navigate to note detail page
@@ -403,16 +346,13 @@ test.describe(
 
       // Verify search works via API
       const searchResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/search?q=Unique+search+content`,
+        `${getBackendUrl()}/api/v1/notes/search?q=Unique+search+content`
       );
       const searchData = await searchResponse.json();
       expect(searchData.total).toBeGreaterThan(0);
     });
 
-    test("should use browser back when history exists", async ({
-      page,
-      request,
-    }) => {
+    test("should use browser back when history exists", async ({ page, request }) => {
       // Create a note via API using helper
       const note = await createNote(request, {
         title: "History Test",
@@ -425,9 +365,7 @@ test.describe(
       await page.waitForTimeout(2000);
 
       // Verify note exists via API before navigating
-      const verifyResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/${noteId}`,
-      );
+      const verifyResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${noteId}`);
       expect(verifyResponse.status()).toBe(200);
 
       // Navigate to note page
@@ -453,5 +391,5 @@ test.describe(
       // Should be back on home page
       await expect(page).toHaveURL("/");
     });
-  },
+  }
 );

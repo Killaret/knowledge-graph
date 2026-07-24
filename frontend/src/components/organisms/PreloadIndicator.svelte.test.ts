@@ -2,16 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
 import { tick } from "svelte";
 
-const {
-  isPreloadingData,
-  hasPreloadedData,
-  getPreloadedGraph,
-} = vi.hoisted(() => ({
+const { isPreloadingData, hasPreloadedData, getPreloadedGraph } = vi.hoisted(() => ({
   isPreloadingData: vi.fn<() => boolean>(() => false),
   hasPreloadedData: vi.fn<() => boolean>(() => false),
-  getPreloadedGraph: vi.fn<() => { nodes: unknown[]; links: unknown[] } | null>(
-    () => null,
-  ),
+  getPreloadedGraph: vi.fn<() => { nodes: unknown[]; links: unknown[] } | null>(() => null),
 }));
 
 vi.mock("$shared/services/PreloadService", () => ({

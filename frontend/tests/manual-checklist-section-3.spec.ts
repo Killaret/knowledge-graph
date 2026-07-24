@@ -33,20 +33,19 @@ async function waitForGraphCanvas(page: Page): Promise<Locator> {
   // Wait for simulation to assign coordinates
   await page.waitForFunction(
     () => {
-      const api = (window as any).__graphCanvas as
-        GraphCanvasExposed | undefined;
+      const api = (window as any).__graphCanvas as GraphCanvasExposed | undefined;
       if (!api) return false;
       const nodes = api.getSimulationNodes();
       return nodes.length > 0 && nodes.some((n) => n.x != null && n.y != null);
     },
-    { timeout: 20000 },
+    { timeout: 20000 }
   );
   return canvas;
 }
 
 async function getNodePositions(
   page: Page,
-  filterNonTechnical = true,
+  filterNonTechnical = true
 ): Promise<{
   nodes: SimNode[];
   transform: { x: number; y: number; k: number };
@@ -59,9 +58,7 @@ async function getNodePositions(
     return { nodes: api.getSimulationNodes(), transform: api.transform };
   });
   return {
-    nodes: filterNonTechnical
-      ? nodes.filter((n) => n.type !== "technical")
-      : nodes,
+    nodes: filterNonTechnical ? nodes.filter((n) => n.type !== "technical") : nodes,
     transform,
     box,
   };
@@ -70,7 +67,7 @@ async function getNodePositions(
 function toScreen(
   node: SimNode,
   transform: { x: number; y: number; k: number },
-  box: { x: number; y: number },
+  box: { x: number; y: number }
 ) {
   return {
     x: box.x + (node.x ?? 0) * transform.k + transform.x,
@@ -81,14 +78,10 @@ function toScreen(
 async function clickNodeByIndex(page: Page, index: number) {
   await page.evaluate((idx: number) => {
     const api = (window as any).__graphCanvas as GraphCanvasExposed;
-    const nodes = api
-      .getSimulationNodes()
-      .filter((n: SimNode) => n.type !== "technical");
+    const nodes = api.getSimulationNodes().filter((n: SimNode) => n.type !== "technical");
     const node = nodes[idx];
     if (!node) throw new Error(`Node at index ${idx} not found`);
-    const canvas = document.querySelector(
-      '[data-testid="graph-canvas"]',
-    ) as HTMLCanvasElement;
+    const canvas = document.querySelector('[data-testid="graph-canvas"]') as HTMLCanvasElement;
     const rect = canvas.getBoundingClientRect();
     const x = rect.left + (node.x ?? 0) * api.transform.k + api.transform.x;
     const y = rect.top + (node.y ?? 0) * api.transform.k + api.transform.y;
@@ -98,14 +91,12 @@ async function clickNodeByIndex(page: Page, index: number) {
         clientX: x,
         clientY: y,
         button: 0,
-      }),
+      })
     );
   }, index);
 }
 
-async function getStatsCount(
-  page: Page,
-): Promise<{ nodes: number; links: number }> {
+async function getStatsCount(page: Page): Promise<{ nodes: number; links: number }> {
   const stats = page.locator('[data-testid="graph-stats"]');
   const text = (await stats.textContent()) || "";
   const nodesMatch = text.match(/(\d+)\s*nodes/);
@@ -116,157 +107,129 @@ async function getStatsCount(
   };
 }
 
-test.describe(
-  "Section 3 - Canvas Features",
-  { tag: ["@manual", "@canvas"] },
-  () => {
-    test.beforeEach(async ({ page, request }) => {
-      await loginAsTestUser(page, request);
-      await gotoGraph(page);
-      await waitForGraphCanvas(page);
+test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas"] }, () => {
+  test.beforeEach(async ({ page, request }) => {
+    await loginAsTestUser(page, request);
+    await gotoGraph(page);
+    await waitForGraphCanvas(page);
+  });
+
+  test("canvas loads with nodes and links", async ({ page }) => {
+    const stats = await getStatsCount(page);
+    expect(stats.nodes).toBeGreaterThan(0);
+    expect(stats.links).toBeGreaterThanOrEqual(0);
+  });
+
+  test("hotkeys open and close help, ghost form, and search", async ({ page }) => {
+    // Help modal: ? then Esc
+    await page.keyboard.press("Shift+Slash");
+    await expect(page.locator('[data-testid="help-modal"]')).toBeVisible({
+      timeout: 5000,
+    });
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[data-testid="help-modal"]')).toBeHidden({
+      timeout: 5000,
     });
 
-    test("canvas loads with nodes and links", async ({ page }) => {
-      const stats = await getStatsCount(page);
-      expect(stats.nodes).toBeGreaterThan(0);
-      expect(stats.links).toBeGreaterThanOrEqual(0);
+    // Ghost note form: N then Esc
+    await page.keyboard.press("n");
+    await expect(page.locator('[data-testid="ghost-note-form"]')).toBeVisible({ timeout: 5000 });
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[data-testid="ghost-note-form"]')).toBeHidden({
+      timeout: 5000,
     });
 
-    test("hotkeys open and close help, ghost form, and search", async ({
-      page,
-    }) => {
-      // Help modal: ? then Esc
-      await page.keyboard.press("Shift+Slash");
-      await expect(page.locator('[data-testid="help-modal"]')).toBeVisible({
-        timeout: 5000,
-      });
-      await page.keyboard.press("Escape");
-      await expect(page.locator('[data-testid="help-modal"]')).toBeHidden({
-        timeout: 5000,
-      });
+    // Search box: F then Esc
+    await page.keyboard.press("f");
+    await expect(page.locator('[data-testid="search-box"]')).toBeVisible({
+      timeout: 5000,
+    });
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[data-testid="search-box"]')).toBeHidden({
+      timeout: 5000,
+    });
+  });
 
-      // Ghost note form: N then Esc
-      await page.keyboard.press("n");
-      await expect(page.locator('[data-testid="ghost-note-form"]')).toBeVisible(
-        { timeout: 5000 },
-      );
-      await page.keyboard.press("Escape");
-      await expect(page.locator('[data-testid="ghost-note-form"]')).toBeHidden({
-        timeout: 5000,
-      });
+  test("ghost node creation adds a node to the graph", async ({ page }) => {
+    const beforeStats = await getStatsCount(page);
+    const timestamp = Date.now();
 
-      // Search box: F then Esc
-      await page.keyboard.press("f");
-      await expect(page.locator('[data-testid="search-box"]')).toBeVisible({
-        timeout: 5000,
-      });
-      await page.keyboard.press("Escape");
-      await expect(page.locator('[data-testid="search-box"]')).toBeHidden({
-        timeout: 5000,
-      });
+    await page.keyboard.press("n");
+    await expect(page.locator('[data-testid="ghost-note-form"]')).toBeVisible({ timeout: 5000 });
+
+    await page.locator('[data-testid="ghost-note-title"]').fill(`Ghost Test ${timestamp}`);
+    await page.locator('[data-testid="ghost-note-content"]').fill("Created via canvas hotkey");
+    await page.locator('[data-testid="ghost-note-type"]').selectOption("comet");
+
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes("/api/v1/notes") && res.request().method() === "POST"
+      ),
+      page.locator('[data-testid="ghost-note-create"]').click(),
+    ]);
+    expect(response.ok()).toBe(true);
+
+    // After creation the graph should reload; wait for stats to reflect the new node
+    await expect(async () => {
+      const after = await getStatsCount(page);
+      expect(after.nodes).toBe(beforeStats.nodes + 1);
+    }).toPass({ timeout: 15000, intervals: [500] });
+  });
+
+  test("clicking a node opens the side panel", async ({ page }) => {
+    await clickNodeByIndex(page, 0);
+    await expect(page.locator('[data-testid="note-side-panel"]')).toBeVisible({ timeout: 10000 });
+  });
+
+  test("Delete key removes a selected node", async ({ page }) => {
+    const beforeStats = await getStatsCount(page);
+    await clickNodeByIndex(page, 0);
+    await expect(page.locator('[data-testid="note-side-panel"]')).toBeVisible({ timeout: 10000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes("/api/v1/notes/") && res.request().method() === "DELETE"
+      ),
+      page.keyboard.press("Delete"),
+    ]);
+    expect(response.ok()).toBe(true);
+
+    await expect(async () => {
+      const after = await getStatsCount(page);
+      expect(after.nodes).toBe(beforeStats.nodes - 1);
+    }).toPass({ timeout: 15000, intervals: [500] });
+  });
+
+  test("drag-and-drop between nodes opens link form and creates a link", async ({ page }) => {
+    const beforeStats = await getStatsCount(page);
+    const { nodes, transform, box } = await getNodePositions(page);
+    expect(nodes.length).toBeGreaterThan(1);
+
+    const source = nodes[1];
+    const target = nodes[0];
+    const sourcePos = toScreen(source, transform, box);
+    const targetPos = toScreen(target, transform, box);
+
+    await page.mouse.move(sourcePos.x, sourcePos.y);
+    await page.mouse.down();
+    await page.mouse.move(targetPos.x, targetPos.y, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(page.locator('[data-testid="link-form"]')).toBeVisible({
+      timeout: 10000,
     });
 
-    test("ghost node creation adds a node to the graph", async ({ page }) => {
-      const beforeStats = await getStatsCount(page);
-      const timestamp = Date.now();
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes("/api/v1/links") && res.request().method() === "POST"
+      ),
+      page.locator('[data-testid="link-form-create"]').click(),
+    ]);
+    expect(response.ok()).toBe(true);
 
-      await page.keyboard.press("n");
-      await expect(page.locator('[data-testid="ghost-note-form"]')).toBeVisible(
-        { timeout: 5000 },
-      );
-
-      await page
-        .locator('[data-testid="ghost-note-title"]')
-        .fill(`Ghost Test ${timestamp}`);
-      await page
-        .locator('[data-testid="ghost-note-content"]')
-        .fill("Created via canvas hotkey");
-      await page
-        .locator('[data-testid="ghost-note-type"]')
-        .selectOption("comet");
-
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          (res) =>
-            res.url().includes("/api/v1/notes") &&
-            res.request().method() === "POST",
-        ),
-        page.locator('[data-testid="ghost-note-create"]').click(),
-      ]);
-      expect(response.ok()).toBe(true);
-
-      // After creation the graph should reload; wait for stats to reflect the new node
-      await expect(async () => {
-        const after = await getStatsCount(page);
-        expect(after.nodes).toBe(beforeStats.nodes + 1);
-      }).toPass({ timeout: 15000, intervals: [500] });
-    });
-
-    test("clicking a node opens the side panel", async ({ page }) => {
-      await clickNodeByIndex(page, 0);
-      await expect(page.locator('[data-testid="note-side-panel"]')).toBeVisible(
-        { timeout: 10000 },
-      );
-    });
-
-    test("Delete key removes a selected node", async ({ page }) => {
-      const beforeStats = await getStatsCount(page);
-      await clickNodeByIndex(page, 0);
-      await expect(page.locator('[data-testid="note-side-panel"]')).toBeVisible(
-        { timeout: 10000 },
-      );
-
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          (res) =>
-            res.url().includes("/api/v1/notes/") &&
-            res.request().method() === "DELETE",
-        ),
-        page.keyboard.press("Delete"),
-      ]);
-      expect(response.ok()).toBe(true);
-
-      await expect(async () => {
-        const after = await getStatsCount(page);
-        expect(after.nodes).toBe(beforeStats.nodes - 1);
-      }).toPass({ timeout: 15000, intervals: [500] });
-    });
-
-    test("drag-and-drop between nodes opens link form and creates a link", async ({
-      page,
-    }) => {
-      const beforeStats = await getStatsCount(page);
-      const { nodes, transform, box } = await getNodePositions(page);
-      expect(nodes.length).toBeGreaterThan(1);
-
-      const source = nodes[1];
-      const target = nodes[0];
-      const sourcePos = toScreen(source, transform, box);
-      const targetPos = toScreen(target, transform, box);
-
-      await page.mouse.move(sourcePos.x, sourcePos.y);
-      await page.mouse.down();
-      await page.mouse.move(targetPos.x, targetPos.y, { steps: 10 });
-      await page.mouse.up();
-
-      await expect(page.locator('[data-testid="link-form"]')).toBeVisible({
-        timeout: 10000,
-      });
-
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          (res) =>
-            res.url().includes("/api/v1/links") &&
-            res.request().method() === "POST",
-        ),
-        page.locator('[data-testid="link-form-create"]').click(),
-      ]);
-      expect(response.ok()).toBe(true);
-
-      await expect(async () => {
-        const after = await getStatsCount(page);
-        expect(after.links).toBe(beforeStats.links + 1);
-      }).toPass({ timeout: 15000, intervals: [500] });
-    });
-  },
-);
+    await expect(async () => {
+      const after = await getStatsCount(page);
+      expect(after.links).toBe(beforeStats.links + 1);
+    }).toPass({ timeout: 15000, intervals: [500] });
+  });
+});

@@ -207,10 +207,7 @@ describe("renderer anomaly functions", () => {
 
       // Anomaly renderers use save/translate/restore pattern
       expect(mockCtx.save).toHaveBeenCalled();
-      expect(mockCtx.translate).toHaveBeenCalledWith(
-        expect.any(Number),
-        expect.any(Number),
-      );
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
       expect(mockCtx.restore).toHaveBeenCalled();
     });
 
@@ -228,10 +225,7 @@ describe("renderer anomaly functions", () => {
 
       // Anomaly renderers use save/translate/restore
       expect(mockCtx.save).toHaveBeenCalled();
-      expect(mockCtx.translate).toHaveBeenCalledWith(
-        expect.any(Number),
-        expect.any(Number),
-      );
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
       expect(mockCtx.restore).toHaveBeenCalled();
     });
 
@@ -304,51 +298,23 @@ describe("renderer anomaly functions", () => {
 
   describe("getNodeGradient", () => {
     it("should create a radial gradient", () => {
-      const gradient = getNodeGradient(
-        mockCtx,
-        100,
-        100,
-        30,
-        "star",
-        "#ffcc00",
-      );
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "star", "#ffcc00");
       expect(mockCtx.createRadialGradient).toHaveBeenCalled();
       expect(gradient).toBeDefined();
     });
 
     it("should add color stops for star type", () => {
-      const gradient = getNodeGradient(
-        mockCtx,
-        100,
-        100,
-        30,
-        "star",
-        "#ffcc00",
-      );
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "star", "#ffcc00");
       expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
 
     it("should add color stops for planet type", () => {
-      const gradient = getNodeGradient(
-        mockCtx,
-        100,
-        100,
-        30,
-        "planet",
-        "#d6aa5d",
-      );
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "planet", "#d6aa5d");
       expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
 
     it("should add color stops for galaxy type", () => {
-      const gradient = getNodeGradient(
-        mockCtx,
-        100,
-        100,
-        30,
-        "galaxy",
-        "#8b5cf6",
-      );
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "galaxy", "#8b5cf6");
       expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
     });
   });

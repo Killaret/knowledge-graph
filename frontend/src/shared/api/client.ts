@@ -2,11 +2,7 @@
 import ky from "ky";
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import {
-  getApiKey,
-  saveTokens,
-  clearAuthState,
-} from "$shared/stores/auth-session.svelte";
+import { getApiKey, saveTokens, clearAuthState } from "$shared/stores/auth-session.svelte";
 import type { AuthTokens } from "$shared/types";
 
 // Redirect to login after an unrecoverable auth failure (browser only)
@@ -34,11 +30,7 @@ try {
 // Если backendUrl относительный (начинается с /), используем его как есть
 const isRelativeUrl = backendUrl.startsWith("/");
 const prefixUrl =
-  isTest && !isRelativeUrl
-    ? `${backendUrl}/api`
-    : isRelativeUrl
-      ? backendUrl
-      : `${backendUrl}/api`;
+  isTest && !isRelativeUrl ? `${backendUrl}/api` : isRelativeUrl ? backendUrl : `${backendUrl}/api`;
 
 // Flag to prevent infinite refresh loops
 let isRefreshing = false;

@@ -1,11 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import ProfileEditor from "$components/organisms/ProfileEditor.svelte";
-  import {
-    isAuthenticated,
-    currentUser,
-    initAuth,
-  } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, currentUser, initAuth } from "$shared/stores/auth.svelte.js";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

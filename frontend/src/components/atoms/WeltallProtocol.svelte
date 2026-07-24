@@ -27,12 +27,10 @@
     if (e.key !== "Tab" || !modalRef) return;
 
     const focusableElements = modalRef.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[
-      focusableElements.length - 1
-    ] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     if (e.shiftKey && document.activeElement === firstElement) {
       e.preventDefault();
@@ -312,11 +310,7 @@
   .button-glow {
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 204, 0, 0.2) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle at center, rgba(255, 204, 0, 0.2) 0%, transparent 70%);
     opacity: 0;
     transition: opacity 0.3s ease;
   }

@@ -22,7 +22,7 @@ function pointToLineDistance(
   x1: number,
   y1: number,
   x2: number,
-  y2: number,
+  y2: number
 ): number {
   const A = px - x1;
   const B = py - y1;
@@ -65,7 +65,7 @@ export function findLinkAtPosition(
   links: SimulationLink[],
   nodes: SimulationNode[],
   transform: TransformState,
-  tolerance: number = 8,
+  tolerance: number = 8
 ): SimulationLink | null {
   for (const link of links) {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
@@ -86,7 +86,7 @@ export function findLinkAtPosition(
       sourceNode.x,
       sourceNode.y,
       targetNode.x,
-      targetNode.y,
+      targetNode.y
     );
 
     if (distance <= tolerance) {
@@ -103,7 +103,7 @@ export function handleZoom(
   e: WheelEvent,
   transform: TransformState,
   canvas: HTMLCanvasElement,
-  onDraw: () => void,
+  onDraw: () => void
 ): void {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.95 : 1.05;
@@ -131,7 +131,7 @@ export function handlePanStart(
   e: MouseEvent,
   dragState: DragState,
   transform: TransformState,
-  canvas: HTMLCanvasElement,
+  canvas: HTMLCanvasElement
 ): void {
   dragState.dragging = true;
   dragState.dragStart = {
@@ -148,7 +148,7 @@ export function handlePanMove(
   e: MouseEvent,
   dragState: DragState,
   transform: TransformState,
-  onDraw: () => void,
+  onDraw: () => void
 ): void {
   if (!dragState.dragging) return;
   transform.x = e.clientX - dragState.dragStart.x;
@@ -159,10 +159,7 @@ export function handlePanMove(
 /**
  * Handle pan end (mouseup)
  */
-export function handlePanEnd(
-  dragState: DragState,
-  canvas: HTMLCanvasElement,
-): void {
+export function handlePanEnd(dragState: DragState, canvas: HTMLCanvasElement): void {
   dragState.dragging = false;
   canvas.style.cursor = "grab";
 }
@@ -175,7 +172,7 @@ export function handleClick(
   canvas: HTMLCanvasElement,
   transform: TransformState,
   nodes: SimulationNode[],
-  onNodeClick?: (node: { id: string; title: string; type?: string }) => void,
+  onNodeClick?: (node: { id: string; title: string; type?: string }) => void
 ): void {
   const rect = canvas.getBoundingClientRect();
   const clickX = (e.clientX - rect.left - transform.x) / transform.k;

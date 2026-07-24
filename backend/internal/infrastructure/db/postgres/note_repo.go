@@ -33,7 +33,9 @@ func NewNoteRepository(db *gorm.DB, cacheClient cache.CacheClient) *NoteReposito
 // invalidateCache удаляет кэш списка заметок
 func (r *NoteRepository) invalidateCache(ctx context.Context) {
 	if r.cache != nil {
-		r.cache.Del(ctx, notesCacheKey)
+		if err := r.cache.Del(ctx, notesCacheKey); err != nil {
+			log.Printf("failed to invalidate notes cache: %v", err)
+		}
 	}
 }
 
@@ -167,7 +169,9 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
 	if r.cache != nil {
 		if data, err := json.Marshal(models); err == nil {
-			r.cache.Set(ctx, notesCacheKey, string(data), notesCacheTTL)
+			if err := r.cache.Set(ctx, notesCacheKey, string(data), notesCacheTTL); err != nil {
+				log.Printf("failed to cache notes: %v", err)
+			}
 		}
 	}
 

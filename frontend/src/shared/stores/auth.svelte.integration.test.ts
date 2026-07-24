@@ -158,9 +158,7 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
       preloadMocks.hasPreloadedData.mockReturnValue(true);
 
       // Мокаем ошибку входа
-      vi.mocked(authApi.login).mockRejectedValue(
-        new Error("Invalid credentials"),
-      );
+      vi.mocked(authApi.login).mockRejectedValue(new Error("Invalid credentials"));
 
       // Выполняем вход
       const loginResult = await login("testuser", "wrongpassword");
@@ -256,11 +254,7 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
       preloadMocks.hasPreloadedData.mockReturnValue(true);
 
       // Запускаем несколько операций параллельно
-      const operations = [
-        login("user1", "pass1"),
-        login("user2", "pass2"),
-        logout(),
-      ];
+      const operations = [login("user1", "pass1"), login("user2", "pass2"), logout()];
 
       const results = await Promise.allSettled(operations);
 

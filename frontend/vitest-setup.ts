@@ -26,7 +26,7 @@ export const server = setupServer(
   // Глобальный fallback для всех API запросов
   http.all("http://localhost:8080/api/*", () => {
     return HttpResponse.json({ error: "Not mocked" }, { status: 501 });
-  }),
+  })
 );
 
 // Запускаем сервер перед всеми тестами

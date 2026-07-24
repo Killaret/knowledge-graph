@@ -10,13 +10,10 @@ describe("StateIllustration", () => {
     ["offline", "Offline illustration"],
     ["no-links", "No links illustration"],
     ["no-results", "No results illustration"],
-  ] as const)(
-    "renders %s illustration with accessible label",
-    (type, label) => {
-      render(StateIllustration, { props: { type } });
-      expect(screen.getByRole("img", { name: label })).toBeInTheDocument();
-    },
-  );
+  ] as const)("renders %s illustration with accessible label", (type, label) => {
+    render(StateIllustration, { props: { type } });
+    expect(screen.getByRole("img", { name: label })).toBeInTheDocument();
+  });
 
   it("renders an svg element inside the wrapper", () => {
     const { container } = render(StateIllustration, {
