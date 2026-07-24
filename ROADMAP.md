@@ -83,6 +83,8 @@
 - Zoom levels and navigation controls
 - Search and filtering in navigator
 - Integration with existing graph view
+- [ ] **Hybrid 3D Layout via Graph Service**  
+  *Use graph-service to precompute initial 3D coordinates for large graphs, reducing client-side simulation time. Client retains interactivity after initial load. Target: v2.1.*
 
 ### 🔗 Link Improvements
 
