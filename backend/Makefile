@@ -18,7 +18,7 @@ seed:
 # Development
 
 dev:
-	go run cmd/server/main.go
+	go run ./cmd/server
 
 # Run tests
 test:
@@ -26,10 +26,10 @@ test:
 
 # Build
 build:
-	go build -ldflags="-s -w" -o bin/server cmd/server/main.go
+	go build -ldflags="-s -w" -o bin/server ./cmd/server
 
 build-worker:
-	go build -ldflags="-s -w" -o bin/worker cmd/worker/main.go
+	go build -ldflags="-s -w" -o bin/worker ./cmd/worker
 
 # Configuration validation
 build-config:
