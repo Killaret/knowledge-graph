@@ -167,6 +167,19 @@ class PreloadServiceClass {
   }
 
   /**
+   * Сохраняет данные графа, полученные извне (например, из +page.svelte), в кэш.
+   * Сохраняет timestamp, TTL и lastHash из graphData.hash для дальнейших дельта-обновлений.
+   */
+  public seedGraph(graphData: GraphData): void {
+    this.preloadedGraph = {
+      data: graphData,
+      timestamp: Date.now(),
+      ttl: this.GRAPH_TTL,
+      lastHash: graphData.hash,
+    };
+  }
+
+  /**
    * Запрашивает дельта-обновление графа от graph-service и применяет его
    * к сохранённым предзагруженным данным.
    */
@@ -366,6 +379,10 @@ export function getPreloadedGraphDelta(): GraphDeltaData | null {
 
 export function updateGraphWithDelta(): Promise<GraphDeltaData | null> {
   return PreloadService.updateWithDelta();
+}
+
+export function seedGraph(graphData: GraphData): void {
+  PreloadService.seedGraph(graphData);
 }
 
 export function getPreloadedAchievements(): Array<{

@@ -3,6 +3,7 @@ import {
   getPreloadedGraph,
   getPreloadedGraphDelta,
   hasPreloadedData,
+  seedGraph,
 } from "$shared/services/PreloadService";
 import { getFullGraphData } from "$shared/api/graph";
 import { getAllAchievements, getMyAchievements } from "$shared/api/users";
@@ -24,11 +25,13 @@ export async function getGraphWithPreload(limit: number = 1000): Promise<GraphDa
     return preloadedData;
   }
 
-  // Если нет предзагруженных данных, загружаем с сервера
+  // Если нет предзагруженных данных, загружаем с сервера и сохраняем в кэш
   if (import.meta.env.DEV) {
     console.log("[usePreloadedData] Loading graph data from server");
   }
-  return await getFullGraphData(limit);
+  const graphData = await getFullGraphData(limit);
+  seedGraph(graphData);
+  return graphData;
 }
 
 /**
@@ -121,6 +124,11 @@ export async function loadAppData(
 }> {
   const { limit = 1000, usePersonalAchievements = false } = options;
 
+  // Determine whether the graph was already cached before this call so
+  // `usedPreloaded` semantics stay accurate even though `getGraphWithPreload`
+  // seeds the cache after a network fetch.
+  const hadPreloadedGraph = !!getPreloadedGraph();
+
   // Загружаем граф и достижения параллельно
   const [graphPromise, achievementsPromise] = [
     getGraphWithPreload(limit),
@@ -135,7 +143,7 @@ export async function loadAppData(
   });
 
   const usedPreloaded = {
-    graph: !!getPreloadedGraph(),
+    graph: hadPreloadedGraph,
     achievements: false,
   };
 

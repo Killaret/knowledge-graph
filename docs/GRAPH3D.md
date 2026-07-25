@@ -54,6 +54,17 @@ shared/
 
 `shared/stores/graph.svelte.ts` owns `selectedNodeId`, `currentView`, `searchQuery`, `selectedType`, `graphData`, and `hoveredNodeId`. Both `routes/+page.svelte`, `routes/graph/3d/[id]/+page.svelte`, and `features/graph-canvas/canvas-state.svelte.ts` proxy through this store, so selection and active view are consistent between 2D and 3D modes.
 
+## Graph API unification ✅
+
+`routes/+page.svelte` now treats `graph-service` as the single source of truth for graph data on the home page:
+
+- `loadData()` fetches notes and graph in parallel with `Promise.all([getNotes(), getGraphWithPreload()])` for authenticated users, or just `getGraphWithPreload()` for anonymous users.
+- `getGraphWithPreload()` returns cached data from `PreloadService` when available; otherwise it calls `getFullGraphData()` once and seeds the result via `PreloadService.seedGraph(graphData)`.
+- After note mutations, `refreshAfterMutation()` first tries `PreloadService.updateWithDelta()` using `lastHash`; if no hash/preloaded data exists, or the delta call fails, it falls back to `loadData()`.
+- The old `loadGraphData()`, sequential `loadDataParallel()`, and defensive "rebuild graph from notes" fallback were removed.
+
+This means the 2D canvas, the 3D viewer, and the list view all consume the same normalized graph payload from `graph-service`.
+
 ## Layout providers
 
 `features/graph-3d/model/layout-provider.ts` defines the `GraphLayoutProvider` adapter and two implementations:

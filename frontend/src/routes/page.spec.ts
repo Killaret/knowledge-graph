@@ -71,6 +71,9 @@ describe("Page list view - batch operations", () => {
       ),
       http.get("http://localhost:9091/api/v1/graph/full", () =>
         HttpResponse.json({ nodes: [], links: [] })
+      ),
+      http.get("http://localhost:9091/api/v1/graph/public", () =>
+        HttpResponse.json({ nodes: [], links: [] })
       )
     );
   });
@@ -233,6 +236,9 @@ describe("Page list view - undo toast", () => {
         HttpResponse.json({ nodes: [], links: [] })
       ),
       http.get("http://localhost:9091/api/v1/graph/full", () =>
+        HttpResponse.json({ nodes: [], links: [] })
+      ),
+      http.get("http://localhost:9091/api/v1/graph/public", () =>
         HttpResponse.json({ nodes: [], links: [] })
       )
     );

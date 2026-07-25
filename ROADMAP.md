@@ -1,7 +1,7 @@
 # Knowledge Graph Roadmap
 
 **Updated:** July 25, 2026  
-**Status:** System stabilized, regression testing complete, manual testing in progress  
+**Status:** Graph API unification completed; awaiting verification  
 **Version:** v2.5
 
 ---
@@ -44,7 +44,7 @@
 |------|--------|----------|-------------|
 | Event-driven invalidation & fallback model | ✅ Done | 🔴 Critical | 📝 Yes |
 | Auth & user-scoped filtering in graph-service | ✅ Done | 🔴 Critical | 📝 Yes |
-| Graph API unification & double-load removal | 🔄 In Progress | 🟠 High | 📝 Yes |
+| Graph API unification & double-load removal | ✅ Done | 🟠 High | 📝 Yes |
 | Graph analytics API (Neighbors, Path, Recommendations) | ✅ Done | 🟡 Medium | 📝 Yes |
 | Materialized view / graph index | ✅ Done | 🟡 Medium | 📝 Yes |
 | gRPC-web / SSE full-graph streaming | ⏳ Planned | 🟡 Medium | 📝 No |
@@ -65,12 +65,13 @@
 - `frontend/src/hooks.server.ts` proxy must forward `authorization` or a signed `x-internal-auth` header to `graph-service`.
 - Public graph moves to a separate endpoint (`/api/v1/graph/public`) filtering `is_public = true`.
 
-### 3. Graph API unification & double-load removal
+### 3. Graph API unification & double-load removal ✅
 
 - Standardize graph-service response fields: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
 - Remove fallback normalization (`id/Id/ID`, `source/source_note_id`) in `frontend/src/routes/+page.svelte`.
-- `+page.svelte` calls `getFullGraphData()` once after `getNotes()`; remove the sequential `getFreshGraph()` + repeated `loadGraphData()` flow.
+- `+page.svelte` calls `getGraphWithPreload()` once (which loads `getFullGraphData()` when no cached data) and uses `Promise.all([getNotes(), getGraphWithPreload()])` for authenticated users; the sequential `getFreshGraph()` + repeated `loadGraphData()` flow is removed.
 - Use `/api/v1/graph/delta?last_hash=` for incremental updates via `PreloadService`.
+- `PreloadService` exposes `seedGraph(graphData)` so any full-graph response is cached with `lastHash` and can drive delta updates.
 
 ### 4. Graph analytics API
 

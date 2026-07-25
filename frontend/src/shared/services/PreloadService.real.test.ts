@@ -51,6 +51,26 @@ describe("PreloadService (real)", () => {
     expect(PreloadService.hasPreloadedData()).toBe(true);
   });
 
+  it("seeds graph data from an external source", () => {
+    const data = { ...mockGraphData, hash: "seeded-hash" };
+    PreloadService.seedGraph(data);
+
+    expect(PreloadService.getPreloadedGraph()).toEqual(data);
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("seeded-hash");
+    expect(PreloadService.hasPreloadedData()).toBe(true);
+  });
+
+  it("expires seeded graph after TTL", () => {
+    const data = { ...mockGraphData, hash: "seeded-hash" };
+    PreloadService.seedGraph(data);
+    expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
+
+    vi.advanceTimersByTime(6 * 60 * 1000); // TTL is 5 minutes
+
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
+    expect(PreloadService.getPreloadedGraph()).toBeNull();
+  });
+
   it("does not preload in non-browser environment", async () => {
     mockEnv.browser = false;
 
@@ -123,6 +143,44 @@ describe("PreloadService (real)", () => {
     expect(result).toEqual(delta);
     expect(PreloadService.getPreloadedGraphDelta()).toEqual(delta);
     expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("hash-2");
+    expect(PreloadService.getPreloadedGraph()?.nodes).toContainEqual(
+      expect.objectContaining({ id: "n4", title: "New", type: "star" })
+    );
+  });
+
+  it("applies delta add/remove/update without a full reload", async () => {
+    const seeded = {
+      ...mockGraphData,
+      nodes: [
+        { id: "n1", title: "Alpha", type: "star" },
+        { id: "n2", title: "Beta", type: "planet" },
+      ],
+      links: [{ source: "n1", target: "n2", link_type: "related" }],
+      hash: "seed-hash",
+    };
+    PreloadService.seedGraph(seeded);
+
+    const delta = {
+      added_nodes: [{ id: "n3", title: "Gamma", type: "comet" }],
+      updated_nodes: [{ id: "n1", title: "Alpha Updated", type: "star" }],
+      removed_nodes: ["n2"],
+      added_links: [{ source: "n1", target: "n3", link_type: "reference" }],
+      removed_links: [{ source: "n1", target: "n2", link_type: "related" }],
+      current_hash: "seed-hash-2",
+    };
+    mockGraphApi.getGraphDelta.mockResolvedValue(delta);
+
+    const result = await PreloadService.updateWithDelta();
+
+    expect(result).toEqual(delta);
+    const graph = PreloadService.getPreloadedGraph();
+    expect(graph?.nodes.map((n: any) => n.id).sort()).toEqual(["n1", "n3"]);
+    expect(graph?.nodes.find((n: any) => n.id === "n1")?.title).toBe("Alpha Updated");
+    expect(graph?.links).toHaveLength(1);
+    expect(graph?.links[0]).toEqual(
+      expect.objectContaining({ source: "n1", target: "n3", link_type: "reference" })
+    );
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("seed-hash-2");
   });
 
   it("handles public preload errors gracefully", async () => {

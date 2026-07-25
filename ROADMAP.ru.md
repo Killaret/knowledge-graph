@@ -1,7 +1,7 @@
 # Дорожная карта Knowledge Graph
 
 **Обновлено:** 25 июля 2026 г.  
-**Статус:** Система стабилизирована, регрессионное тестирование завершено, ручное тестирование в процессе  
+**Статус:** Унификация графового API завершена; ожидается верификация  
 **Версия:** v2.5
 
 ---
@@ -44,7 +44,7 @@
 |--------|--------|-----------|-------------|
 | Событийная инвалидация и fallback-модель | ✅ Выполнено | 🔴 Критический | 📝 Да |
 | Авторизация и user-scoped фильтрация в graph-service | ✅ Выполнено | 🔴 Критический | 📝 Да |
-| Унификация графового API и устранение двойной загрузки | 🔄 В процессе | 🟠 Высокий | 📝 Да |
+| Унификация графового API и устранение двойной загрузки | ✅ Выполнено | 🟠 Высокий | 📝 Да |
 | Реализация graph analytics API (Neighbors, Path, Recommendations) | ✅ Выполнено | 🟡 Средний | 📝 Да |
 | Materialized view / графовый индекс | ✅ Выполнено | 🟡 Средний | 📝 Да |
 | gRPC-web / SSE стриминг полного графа | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
@@ -65,12 +65,13 @@
 - Прокси `frontend/src/hooks.server.ts` должен передавать `authorization` либо signed `x-internal-auth` header в `graph-service`.
 - Публичный граф вынести в отдельный endpoint (`/api/v1/graph/public`) с фильтром `is_public = true`.
 
-### 3. Унификация графового API и устранение двойной загрузки
+### 3. Унификация графового API и устранение двойной загрузки ✅
 
 - Стандартизировать поля ответа graph-service: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
 - Убрать fallback-нормализацию (`id/Id/ID`, `source/source_note_id`) в `frontend/src/routes/+page.svelte`.
-- `+page.svelte` делает один запрос `getFullGraphData()` после `getNotes()`; убрать последовательный вызов `getFreshGraph()` + повторный `loadGraphData()`.
+- `+page.svelte` делает один запрос `getGraphWithPreload()` (который при отсутствии кэша загружает `getFullGraphData()`) в `Promise.all([getNotes(), getGraphWithPreload()])` для аутентифицированных пользователей; последовательный `getFreshGraph()` и повторный `loadGraphData()` удалены.
 - Использовать `/api/v1/graph/delta?last_hash=` для инкрементальных обновлений через `PreloadService`.
+- В `PreloadService` добавлен `seedGraph(graphData)`, чтобы любой ответ полного графа кэшировался с `lastHash` и мог применяться в дельта-обновлениях.
 
 ### 4. Graph analytics API
 

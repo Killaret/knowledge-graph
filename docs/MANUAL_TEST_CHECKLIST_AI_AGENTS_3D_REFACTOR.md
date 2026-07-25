@@ -64,9 +64,11 @@
 - [ ] Параметр `layout=3d` не кэшируется под тем же ключом, что и 2D (проверить Redis).
 
 ### Главная страница в 3D
-- [ ] На `/` переключить в **3D**. Граф строится из `filteredGraphData`, которая приходит из `getFullGraphData()` (`+page.svelte`).
+- [ ] На `/` переключить в **3D**. Граф строится из `filteredGraphData`, которая приходит из `getFullGraphData()` (`+page.svelte`) — запрос выполняется один раз.
 - [ ] Узлы имеют координаты `x/y/z` от graph-service (в Console `[+page] First 5 raw nodes` должны содержать `x`, `y`, `z`).
 - [ ] Если позиции пришли, `Graph3DEngine` делает `warmStartTicks=10` вместо 80 (быстрый старт).
+- [ ] На главной **2D** и **List** используется тот же единый запрос к `getFullGraphData()` через `getGraphWithPreload()`, а fallback-нормализация и повторный `loadGraphData()` удалены.
+- [ ] После создания/изменения/удаления заметки `+page.svelte` сначала пробует `/api/v1/graph/delta?last_hash=` через `PreloadService.updateWithDelta()`, и только при отсутствии `lastHash` или ошибке делает полную перезагрузку `loadData()`.
 
 ### Формат ответа
 - [ ] Связи возвращаются с полями `source`, `target`, `weight`, `link_type` (не `source_note_id`/`target_note_id`).
