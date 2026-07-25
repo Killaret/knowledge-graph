@@ -28,6 +28,7 @@ The test stack is fully isolated from dev and personal stacks:
 | mongo-test | kg-test-mongo | 27019 | Test drafts |
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
 | backend-test | kg-test-backend | 18083 | Test backend API |
+| graph-service-test | kg-test-graph-service | 19090/19091 | Test graph analytics service |
 | frontend-test | kg-test-frontend | 3002 | Test frontend |
 
 ### Configuration
@@ -40,6 +41,12 @@ The test stack is fully isolated from dev and personal stacks:
 
 - **Frontend:** http://localhost:3002
 - **Backend API:** http://localhost:18083
+- **Graph Service (HTTP):** http://localhost:19091
+
+### Health Checks
+
+- **Backend:** `curl http://127.0.0.1:18083/health`
+- **Graph Service:** `curl http://127.0.0.1:19091/health`
 
 ## Isolated Testing Model
 
@@ -348,6 +355,14 @@ go test ./...
 ```bash
 cd backend
 go test -tags=integration ./...
+```
+
+### Graph Service Tests
+
+**Unit tests:**
+```bash
+cd services/graph-service
+go test ./...
 ```
 
 ### Frontend Tests
