@@ -1,7 +1,7 @@
 import ky, { HTTPError, TimeoutError } from "ky";
 import { api, refreshAccessToken } from "./client";
 import { apiConfig } from "$shared/config";
-import { accessToken, clearAuthState } from "$shared/stores/auth-session.svelte";
+import { accessToken, clearAuthState, isAuthenticated } from "$shared/stores/auth-session.svelte";
 import { formatMessage } from "$shared/utils/i18n";
 
 const userLocale = "ru";
@@ -29,6 +29,31 @@ export interface GraphLink {
 export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
+  // Layout hash returned by graph-service for delta updates
+  hash?: string;
+}
+
+/** Normalize a graph node to the canonical shape expected by the UI. */
+export function normalizeNode(node: Partial<GraphNode>): GraphNode {
+  return {
+    id: node.id ?? "",
+    title: node.title ?? "",
+    type: node.type || "unknown",
+    x: node.x,
+    y: node.y,
+    z: node.z,
+    size: node.size,
+  };
+}
+
+/** Normalize a graph link to the canonical shape expected by the UI. */
+export function normalizeLink(link: Partial<GraphLink>): GraphLink {
+  return {
+    source: link.source ?? "",
+    target: link.target ?? "",
+    weight: link.weight ?? 0.5,
+    link_type: link.link_type ?? "related",
+  };
 }
 
 /**
@@ -62,6 +87,7 @@ interface GraphApiResponse {
     total_nodes?: number;
     total_links?: number;
     limit?: number;
+    hash?: string;
   };
 }
 
@@ -198,10 +224,14 @@ export async function getFullGraphData(
     nocache: nocache ? 1 : undefined,
   });
   try {
+    // graph-service exposes a dedicated public endpoint for unauthenticated users
+    const endpoint = isAuthenticated() ? "v1/graph/full" : "v1/graph/public";
     const raw = await getGraphApi()
-      .get(`v1/graph/full${query ? `?${query}` : ""}`)
+      .get(`${endpoint}${query ? `?${query}` : ""}`)
       .json<unknown>();
-    return normalizeGraphData(raw);
+    const result = normalizeGraphData(raw);
+    result.hash = (raw as GraphApiResponse).meta?.hash ?? result.hash;
+    return result;
   } catch (error) {
     if (shouldFallback(error)) {
       return callBackendFallback(
@@ -216,6 +246,27 @@ export async function getFullGraphData(
   }
 }
 
+// Запросить инкрементальное дельта-обновление графа от graph-service
+export async function getGraphDelta(lastHash: string): Promise<GraphDeltaData> {
+  const query = buildQuery({ last_hash: lastHash });
+  try {
+    const raw = await getGraphApi()
+      .get(`v1/graph/delta${query ? `?${query}` : ""}`)
+      .json<unknown>();
+
+    if (raw && typeof raw === "object") {
+      const delta = raw as GraphDeltaData & { current_hash?: string };
+      if (delta.current_hash) {
+        (delta as GraphDeltaData).current_hash = delta.current_hash;
+      }
+      return delta;
+    }
+    return {};
+  } catch (error) {
+    handleGraphError(error, "Failed to load graph delta");
+  }
+}
+
 // Graph delta structure for incremental updates
 export interface GraphDeltaData {
   added_nodes?: GraphNode[];
@@ -223,6 +274,8 @@ export interface GraphDeltaData {
   updated_nodes?: GraphNode[];
   added_links?: GraphLink[];
   removed_links?: GraphLink[];
+  // Hash of the graph version this delta transitions to
+  current_hash?: string;
 }
 
 // Fresh graph response with optional delta

@@ -20,11 +20,10 @@
   } from "$shared/api/notes";
   import {
     getFullGraphData,
-    getFreshGraph,
+    normalizeNode,
+    normalizeLink,
     type GraphData,
     type GraphDeltaData,
-    type GraphNode,
-    type GraphLink,
   } from "$shared/api/graph";
   import { getGraphWithPreload, useInstantData } from "$shared/hooks/usePreloadedData";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
@@ -38,51 +37,6 @@
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: MessageParams) => formatMessage(key, locale, params);
-
-  // Raw API shapes that backend may return with alternative casing
-  interface RawNode {
-    id?: string;
-    Id?: string;
-    ID?: string;
-    title?: string;
-    Title?: string;
-    type?: string;
-    Type?: string;
-    x?: number;
-    y?: number;
-    z?: number;
-    size?: number;
-  }
-
-  interface RawLink {
-    source?: string;
-    source_note_id?: string;
-    target?: string;
-    target_note_id?: string;
-    weight?: number;
-    link_type?: string;
-  }
-
-  function normalizeNode(raw: RawNode): GraphNode {
-    return {
-      id: raw.id ?? raw.Id ?? raw.ID ?? "",
-      title: raw.title ?? raw.Title ?? "",
-      type: raw.type ?? raw.Type ?? "unknown",
-      x: raw.x,
-      y: raw.y,
-      z: raw.z,
-      size: raw.size,
-    };
-  }
-
-  function normalizeLink(raw: RawLink): GraphLink {
-    return {
-      source: raw.source_note_id ?? raw.source ?? "",
-      target: raw.target_note_id ?? raw.target ?? "",
-      weight: raw.weight,
-      link_type: raw.link_type,
-    };
-  }
 
   function toErrorResponse(e: unknown): ErrorResponse {
     if (e && typeof e === "object") {
@@ -187,10 +141,8 @@
 
   async function loadDataParallel() {
     try {
-      // Reset error state before loading
       apiError = null;
 
-      // Check for instant preloaded data first
       const instantData = useInstantData();
       let graphResult: GraphData | null = null;
       let graphDeltaResult: GraphDeltaData | undefined = undefined;
@@ -198,114 +150,62 @@
       if (instantData.hasInstantData && instantData.graph.nodes.length > 0) {
         graphResult = instantData.graph;
         graphDeltaResult = instantData.delta ?? undefined;
-        graphData = graphResult;
       }
 
-      // Load notes and graph data in parallel
       const isAuth = isAuthenticated();
       const graphTimeoutMs = 3000;
-      const [notesResult, freshGraphResult] = await Promise.all([
-        isAuth ? getNotes() : Promise.resolve([] as Note[]),
-        isAuth
-          ? Promise.race([
-              getFreshGraph(),
-              new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
-            ]).catch((e: unknown) => {
-              if (import.meta.env.DEV) {
-                console.error("[+page] Failed to load fresh graph:", e);
-              }
-              return null;
-            })
-          : Promise.race([
-              getGraphWithPreload(),
-              new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
-            ]).catch((e: unknown) => {
-              if (import.meta.env.DEV) {
-                console.error("[+page] Failed to load public graph:", e);
-              }
-              return null;
-            }),
-      ]);
+      const graphLoader = Promise.race([
+        getFullGraphData(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
+      ]).catch((e: unknown) => {
+        if (import.meta.env.DEV) {
+          console.error("[+page] Failed to load full graph:", e);
+        }
+        return null;
+      });
+
+      if (isAuth) {
+        const [notesResult, loadedGraph] = await Promise.all([getNotes(), graphLoader]);
+        allNotes = notesResult;
+        if (loadedGraph) {
+          graphResult = loadedGraph;
+        }
+      } else {
+        const loadedGraph = await graphLoader;
+        if (loadedGraph) {
+          graphResult = loadedGraph;
+        }
+      }
 
       // For public (unauthenticated) view, derive the note list from the public graph
       // because the notes API is protected.
-      if (!isAuth && freshGraphResult && "nodes" in freshGraphResult) {
-        allNotes = (freshGraphResult as GraphData).nodes.map((n) => {
-          const raw = n as RawNode;
-          return {
-            id: raw.id ?? raw.Id ?? raw.ID ?? "",
-            title: raw.title ?? raw.Title ?? "",
-            content: "",
-            metadata: {},
-            type: raw.type ?? raw.Type ?? "unknown",
-            created_at: "",
-            updated_at: "",
-          };
-        });
-      } else {
-        allNotes = notesResult;
+      if (!isAuth && graphResult && graphResult.nodes.length > 0) {
+        allNotes = graphResult.nodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          content: "",
+          metadata: {},
+          type: n.type || "unknown",
+          created_at: "",
+          updated_at: "",
+        }));
       }
       applyFiltersAndSort();
 
-      // Apply fresh graph data when available
-      if (freshGraphResult) {
-        if (isAuth && "fresh" in freshGraphResult) {
-          graphResult = freshGraphResult.fresh;
-          graphDeltaResult = freshGraphResult.delta ?? undefined;
-        } else if (!isAuth) {
-          graphResult = freshGraphResult as GraphData;
-          graphDeltaResult = undefined;
-        }
-      }
-
       graphDelta = graphDeltaResult;
 
-      // Set graph data if successful and non-empty; otherwise build from notes
-      if (
-        graphResult &&
-        graphResult.nodes &&
-        Array.isArray(graphResult.nodes) &&
-        graphResult.nodes.length > 0
-      ) {
-        // Debug: check what types come from API
-        const apiTypes = graphResult.nodes.map(
-          (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
-        );
+      if (graphResult && graphResult.nodes.length > 0) {
         if (import.meta.env.DEV) {
-          console.log(
-            "[+page] loadDataParallel API types:",
-            [...new Set(apiTypes)],
-            "Total:",
-            apiTypes.length
-          );
-          console.log(
-            "[+page] loadDataParallel First 3 nodes:",
-            graphResult.nodes.slice(0, 3).map((n) => {
-              const raw = n as RawNode;
-              return { id: raw.id, type: raw.type, Type: raw.Type };
-            })
-          );
+          const apiTypes = [...new Set(graphResult.nodes.map((n) => n.type))];
+          console.log("[+page] Full graph loaded:", graphResult.nodes.length, "nodes,", graphResult.links.length, "links");
+          console.log("[+page] API node types:", apiTypes);
         }
 
-        // Transform nodes to ensure correct type field
         graphData = {
-          nodes: graphResult.nodes.map((n) => normalizeNode(n as RawNode)),
-          links: (graphResult.links || []).map((l) => normalizeLink(l as RawLink)),
+          nodes: graphResult.nodes.map(normalizeNode),
+          links: (graphResult.links || []).map(normalizeLink),
         };
-        if (import.meta.env.DEV) {
-          console.log(
-            "[+page] Full graph loaded:",
-            graphData.nodes.length,
-            "nodes,",
-            graphData.links.length,
-            "links"
-          );
-          console.log("[+page] Transformed types:", [
-            ...new Set(graphData.nodes.map((n) => n.type)),
-          ]);
-        }
-      } else {
-        // Fallback: build simple graph from notes
+      } else if (allNotes.length > 0) {
         graphData = {
           nodes: allNotes.map((n) => ({
             id: n.id,
@@ -314,17 +214,17 @@
           })),
           links: [],
         };
+      } else {
+        graphData = { nodes: [], links: [] };
       }
 
-      // Defensive: ensure graph nodes correspond to loaded notes (fresh graph may be stale)
+      // Defensive: ensure graph nodes correspond to loaded notes (graph may be stale)
       if (allNotes.length > 0 && graphData.nodes.length > 0) {
         const noteIds = new Set(allNotes.map((n) => n.id));
         const hasIntersection = graphData.nodes.some((n) => noteIds.has(n.id));
         if (!hasIntersection) {
           if (import.meta.env.DEV) {
-            console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
-            );
+            console.warn("[+page] Loaded graph does not intersect with notes; rebuilding from notes");
           }
           graphData = {
             nodes: allNotes.map((n) => ({
@@ -370,20 +270,12 @@
 
     graphLoading = true;
     try {
-      // Always load full graph on main page
       const rawData = await getFullGraphData();
 
-      // Defensive check for API response structure (empty graphs also fall back)
-      if (
-        !rawData ||
-        !rawData.nodes ||
-        !Array.isArray(rawData.nodes) ||
-        rawData.nodes.length === 0
-      ) {
+      if (!rawData || !rawData.nodes || rawData.nodes.length === 0) {
         if (import.meta.env.DEV) {
           console.warn("[+page] Graph API returned empty or invalid data structure:", rawData);
         }
-        // Fallback: build simple graph from notes
         graphData = {
           nodes: allNotes.map((n) => ({
             id: n.id,
@@ -395,41 +287,22 @@
         return;
       }
 
-      // Debug: check what types come from API
-      const apiTypes = rawData.nodes.map(
-        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
-      );
       if (import.meta.env.DEV) {
-        console.log("[+page] API node types:", [...new Set(apiTypes)], "Total:", apiTypes.length);
-        console.log(
-          "[+page] First 5 raw nodes:",
-          rawData.nodes.slice(0, 5).map((n) => {
-            const raw = n as RawNode;
-            return { id: raw.id, type: raw.type, Type: raw.Type };
-          })
-        );
+        console.log("[+page] API node types:", [...new Set(rawData.nodes.map((n) => n.type))]);
       }
 
-      // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n) => normalizeNode(n as RawNode));
-
-      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links || []).map((l) => normalizeLink(l as RawLink));
-
       graphData = {
-        nodes: transformedNodes,
-        links: transformedLinks,
+        nodes: rawData.nodes.map(normalizeNode),
+        links: (rawData.links || []).map(normalizeLink),
       };
 
       // Defensive: ensure graph nodes correspond to loaded notes
-      if (allNotes.length > 0 && transformedNodes.length > 0) {
+      if (allNotes.length > 0 && graphData.nodes.length > 0) {
         const noteIds = new Set(allNotes.map((n) => n.id));
-        const hasIntersection = transformedNodes.some((n) => noteIds.has(n.id));
+        const hasIntersection = graphData.nodes.some((n) => noteIds.has(n.id));
         if (!hasIntersection) {
           if (import.meta.env.DEV) {
-            console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
-            );
+            console.warn("[+page] Loaded graph does not intersect with notes; rebuilding from notes");
           }
           graphData = {
             nodes: allNotes.map((n) => ({
@@ -442,36 +315,10 @@
           return;
         }
       }
-
-      if (import.meta.env.DEV) {
-        console.log("[+page] Transformed links:", transformedLinks.length, "links");
-        console.log("[+page] First 3 transformed links:", transformedLinks.slice(0, 3));
-
-        // Check if links match node IDs
-        const nodeIds = new Set(transformedNodes.map((n) => n.id));
-        const validLinks = transformedLinks.filter(
-          (l) => nodeIds.has(l.source) && nodeIds.has(l.target)
-        );
-        console.log("[+page] Node IDs:", Array.from(nodeIds).slice(0, 5));
-        console.log(
-          "[+page] Valid links (matching node IDs):",
-          validLinks.length,
-          "of",
-          transformedLinks.length
-        );
-
-        if (validLinks.length < transformedLinks.length) {
-          console.warn(
-            "[+page] Some links have invalid node IDs:",
-            transformedLinks.filter((l) => !nodeIds.has(l.source) || !nodeIds.has(l.target))
-          );
-        }
-      }
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("[+page] Failed to load graph:", e);
       }
-      // Fallback: build simple graph from notes
       graphData = {
         nodes: allNotes.map((n) => ({
           id: n.id,
@@ -484,13 +331,6 @@
       graphLoading = false;
     }
   }
-
-  // Reload graph when allNotes changes (notes added/deleted)
-  $effect(() => {
-    if (browser && allNotes.length > 0) {
-      loadGraphData();
-    }
-  });
 
   // Helper to get note type - unified with renderer.ts logic via CelestialBody
   function getNoteType(note: Note): string {

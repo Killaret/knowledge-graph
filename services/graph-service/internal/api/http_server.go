@@ -356,31 +356,13 @@ func (s *HTTPServer) sendGraphData(w http.ResponseWriter, layout *engine.LayoutR
 	}
 }
 
-// sendDeltaData sends the delta data as JSON response
+// sendDeltaData sends the delta data as JSON response with the canonical
+// added_nodes/removed_nodes/updated_nodes/added_links/removed_links shape.
 func (s *HTTPServer) sendDeltaData(w http.ResponseWriter, delta *engine.DeltaResponse) {
-	// Create a flat list of all nodes (added + updated, removed are just IDs)
-	allNodes := append([]*engine.LayoutNode{}, delta.AddedNodes...)
-	allNodes = append(allNodes, delta.UpdatedNodes...)
-
-	response := GraphApiResponse{
-		Data: GraphData{
-			Nodes: allNodes,
-			Links: append([]*engine.LayoutLink{}, delta.AddedLinks...),
-		},
-		Meta: &struct {
-			TotalNodes int    `json:"total_nodes,omitempty"`
-			TotalLinks int    `json:"total_links,omitempty"`
-			Hash       string `json:"hash,omitempty"`
-		}{
-			TotalNodes: len(allNodes),
-			TotalLinks: len(delta.AddedLinks),
-			Hash:       delta.CurrentHash,
-		},
-	}
-
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Layout-Hash", delta.CurrentHash)
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	if err := json.NewEncoder(w).Encode(delta); err != nil {
 		log.Printf("[GraphService] Failed to encode delta response: %v", err)
 	}
 }
