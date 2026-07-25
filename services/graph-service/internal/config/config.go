@@ -70,6 +70,11 @@ type Config struct {
 
 	// Hash
 	LayoutHashLength int
+
+	// Auth
+	JWTSecret         string
+	InternalAuthToken string
+	SkipAuth          bool
 }
 
 // ── Load ───────────────────────────────────────────────────────────
@@ -108,6 +113,11 @@ func Load() (*Config, error) {
 
 		// Hash
 		LayoutHashLength: 32,
+
+		// Auth (env only; secrets are never read from JSON)
+		JWTSecret:         getEnv("JWT_SECRET", ""),
+		InternalAuthToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
+		SkipAuth:          getBoolEnv("SKIP_AUTH", false),
 	}
 
 	return cfg, nil
@@ -160,6 +170,19 @@ func getIntEnv(key string, defaultValue int) int {
 	if s := os.Getenv(key); s != "" {
 		if v, err := strconv.Atoi(s); err == nil {
 			return v
+		}
+	}
+	return defaultValue
+}
+
+func getBoolEnv(key string, defaultValue bool) bool {
+	if s := os.Getenv(key); s != "" {
+		s = strings.ToLower(s)
+		if s == "true" || s == "1" || s == "yes" || s == "on" {
+			return true
+		}
+		if s == "false" || s == "0" || s == "no" || s == "off" {
+			return false
 		}
 	}
 	return defaultValue

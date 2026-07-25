@@ -213,6 +213,15 @@ const messages: Record<Locale, Record<string, string>> = {
 
     "controls.view2D": "2D",
     "controls.viewList": "List",
+    "controls.view3D": "3D",
+
+    // 3D Graph
+    "graph3d.loadingTitle": "The universe is forming...",
+    "graph3d.loadingSubtitle": "First celestial bodies are appearing",
+    "graph3d.errorLoad": "Failed to load 3D visualization",
+    "graph3d.errorHint": "Make sure WebGL is enabled in your browser.",
+    "graph3d.noDataTitle": "No connections yet",
+    "graph3d.noDataMessage": "This note has no links to other notes.",
 
     // Modal
     "modal.deleteTitle": "Delete Note?",
@@ -237,6 +246,8 @@ const messages: Record<Locale, Record<string, string>> = {
     // Controls / FloatingControls
     "controls.graph2DTitle": "2D Graph",
     "controls.graph2DAria": "Switch to 2D graph view",
+    "controls.graph3DTitle": "3D Graph",
+    "controls.graph3DAria": "Switch to 3D graph view",
     "controls.listViewTitle": "List View",
     "controls.listViewAria": "Switch to list view",
     "controls.scrollLeft": "Scroll left",
@@ -327,6 +338,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.create": "Create",
     "noteEditor.cancel": "Cancel",
     "noteEditor.saveError": "Failed to save note. Please try again.",
+    "noteEditor.publicLabel": "Public access",
+    "noteEditor.publicHint": "Visible to everyone in the public graph",
+    "noteEditor.publicToggleError": "Failed to change public access. Please try again.",
 
     // SmartGraph
     "smartGraph.loading": "Loading visualization...",
@@ -423,6 +437,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteCard.selectNote": "Select note {{title}}",
     "noteCard.starLit": "Star lit: {{date}}",
     "noteCard.orbitCorrected": "Orbit corrected: {{date}}",
+    "noteCard.public": "Public",
+    "noteCard.publicAria": "Public note",
 
     // NoteSidePanel
     "noteSidePanel.loading": "Loading note...",
@@ -757,6 +773,15 @@ const messages: Record<Locale, Record<string, string>> = {
 
     "controls.view2D": "2D",
     "controls.viewList": "Список",
+    "controls.view3D": "3D",
+
+    // 3D Graph
+    "graph3d.loadingTitle": "Вселенная формируется...",
+    "graph3d.loadingSubtitle": "Первые небесные тела появляются",
+    "graph3d.errorLoad": "Не удалось загрузить 3D-визуализацию",
+    "graph3d.errorHint": "Убедитесь, что WebGL включен в вашем браузере.",
+    "graph3d.noDataTitle": "Пока нет связей",
+    "graph3d.noDataMessage": "У этой заметки нет ссылок на другие заметки.",
 
     // Modal
     "modal.deleteTitle": "Удалить заметку?",
@@ -781,6 +806,8 @@ const messages: Record<Locale, Record<string, string>> = {
     // Controls / FloatingControls
     "controls.graph2DTitle": "2D-граф",
     "controls.graph2DAria": "Переключиться на 2D-граф",
+    "controls.graph3DTitle": "3D-граф",
+    "controls.graph3DAria": "Переключиться на 3D-граф",
     "controls.listViewTitle": "Список",
     "controls.listViewAria": "Переключиться на список",
     "controls.scrollLeft": "Прокрутить влево",
@@ -871,6 +898,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.create": "Создать",
     "noteEditor.cancel": "Отмена",
     "noteEditor.saveError": "Не удалось сохранить заметку. Попробуйте ещё раз.",
+    "noteEditor.publicLabel": "Публичный доступ",
+    "noteEditor.publicHint": "Видна всем в публичном графе",
+    "noteEditor.publicToggleError": "Не удалось изменить публичный доступ. Попробуйте ещё раз.",
 
     // SmartGraph
     "smartGraph.loading": "Загрузка визуализации...",
@@ -967,6 +997,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteCard.selectNote": "Выбрать заметку {{title}}",
     "noteCard.starLit": "Звезда зажжена: {{date}}",
     "noteCard.orbitCorrected": "Орбита скорректирована: {{date}}",
+    "noteCard.public": "Публичная",
+    "noteCard.publicAria": "Публичная заметка",
 
     // NoteSidePanel
     "noteSidePanel.loading": "Загрузка заметки...",

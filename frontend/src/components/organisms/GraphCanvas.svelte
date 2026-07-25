@@ -42,6 +42,7 @@
     createHotkeysState,
     resetInactivityTimer,
     showRandomTip,
+    updateSearch,
     type HotkeysState,
   } from "$features/graph-interaction/hotkeys";
   import { createZoomPanState, type ZoomPanState } from "$features/graph-interaction/zoom-pan";
@@ -54,8 +55,18 @@
     isTechnicalNode,
     pinTechnicalNodes,
   } from "$features/graph-canvas/canvas-state.svelte";
-  import { createNoteFormState, type NoteFormState } from "$features/graph-forms/note-form";
-  import { createLinkFormState, type LinkFormState } from "$features/graph-forms/link-form";
+  import {
+    createNoteFormState,
+    createNote,
+    closeNoteForm,
+    type NoteFormState,
+  } from "$features/graph-forms/note-form";
+  import {
+    createLinkFormState,
+    createLink,
+    closeLinkForm,
+    type LinkFormState,
+  } from "$features/graph-forms/link-form";
 
   const {
     nodes,
@@ -492,7 +503,12 @@
 
 <GraphCanvasControls
   mode={GraphMode.fromFocus(canvasState.focusMode)}
-  onReset={() => canvasState.handleResetView(ctx, width, height, simState, transform)}
+  onReset={() => {
+    const simNodes = getSimulationNodes(simState);
+    if (ctx && simNodes.length > 0) {
+      resetView(ctx, width, height, simNodes, transform);
+    }
+  }}
   onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
   onToggleMode={() => canvasState.handleToggleFocus(redraw)}
   onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
@@ -504,12 +520,20 @@
   {linkFormState}
   onSave={(form) =>
     form === "note"
-      ? canvasState.handleCreateNote(noteFormState, onNoteCreate, redraw)
-      : canvasState.handleCreateLink(linkFormState, links, onLinkCreate, redraw)}
+      ? createNote(noteFormState, {
+          onNoteCreate,
+          onFormClose: redraw,
+        })
+      : createLink(linkFormState, links, {
+          onLinkCreate,
+          onFormClose: redraw,
+          onDuplicateWarning: (source, target, linkType, x, y) =>
+            canvasState.showDuplicateWarning(source, target, linkType, x, y),
+        })}
   onCancel={(form) =>
     form === "note"
-      ? canvasState.handleNoteFormClose(noteFormState, redraw)
-      : canvasState.handleLinkFormClose(linkFormState, redraw)}
+      ? (closeNoteForm(noteFormState), redraw())
+      : (closeLinkForm(linkFormState), redraw())}
 />
 
 <GraphCanvasOverlay
@@ -528,7 +552,10 @@
   onCloseSearch={() => canvasState.handleCloseSearch(hotkeysState, redraw)}
   onRestoreDeletedNode={() => canvasState.restoreDeletedNode(onNoteRestore)}
   onCancelUndo={canvasState.cancelUndo}
-  onUpdateSearch={() => canvasState.handleUpdateSearch(hotkeysState, simState, redraw)}
+  onUpdateSearch={() => {
+    updateSearch(hotkeysState, getSimulationNodes(simState));
+    redraw();
+  }}
   onLinkEdit={onLinkEdit ? () => canvasState.handleLinkEdit(onLinkEdit) : undefined}
   onLinkDelete={onLinkDelete ? () => canvasState.handleLinkDelete(onLinkDelete) : undefined}
 />

@@ -3,7 +3,9 @@ import { browser } from "$app/environment";
 import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import {
   getFullGraphData,
-  getFreshGraph,
+  getGraphDelta,
+  normalizeNode,
+  normalizeLink,
   type GraphData,
   type GraphDeltaData,
 } from "$shared/api/graph";
@@ -13,6 +15,7 @@ interface PreloadedGraphData {
   data: GraphData;
   timestamp: number;
   ttl: number; // Time to live в миллисекундах
+  lastHash?: string; // Layout hash from graph-service for delta updates
   delta?: GraphDeltaData; // Delta for incremental updates
 }
 
@@ -124,21 +127,14 @@ class PreloadServiceClass {
     }
 
     try {
-      // Получаем только свежий граф (cached не нужен, так как fresh перезапишет)
-      const freshResult = await getFreshGraph();
+      const graphData = await getFullGraphData();
 
       this.preloadedGraph = {
-        data: freshResult.fresh,
+        data: graphData,
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
-        delta: freshResult.delta,
+        lastHash: graphData.hash,
       };
-
-      if (freshResult.delta) {
-        if (import.meta.env.DEV) {
-          console.log("[PreloadService] Delta available for authenticated update");
-        }
-      }
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error("[PreloadService] Error during authenticated graph preload:", error);
@@ -157,6 +153,7 @@ class PreloadServiceClass {
         data: graphData,
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
+        lastHash: graphData.hash,
       };
       if (import.meta.env.DEV) {
         console.log("[PreloadService] Public graph preloaded successfully");
@@ -167,6 +164,78 @@ class PreloadServiceClass {
       }
       throw error;
     }
+  }
+
+  /**
+   * Сохраняет данные графа, полученные извне (например, из +page.svelte), в кэш.
+   * Сохраняет timestamp, TTL и lastHash из graphData.hash для дальнейших дельта-обновлений.
+   */
+  public seedGraph(graphData: GraphData): void {
+    this.preloadedGraph = {
+      data: graphData,
+      timestamp: Date.now(),
+      ttl: this.GRAPH_TTL,
+      lastHash: graphData.hash,
+    };
+  }
+
+  /**
+   * Запрашивает дельта-обновление графа от graph-service и применяет его
+   * к сохранённым предзагруженным данным.
+   */
+  public async updateWithDelta(): Promise<GraphDeltaData | null> {
+    if (!this.preloadedGraph?.lastHash) {
+      return null;
+    }
+
+    try {
+      const delta = await getGraphDelta(this.preloadedGraph.lastHash);
+      this.applyDelta(delta);
+      this.preloadedGraph.delta = delta;
+      if (delta.current_hash) {
+        this.preloadedGraph.lastHash = delta.current_hash;
+      }
+      this.preloadedGraph.timestamp = Date.now();
+      return delta;
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn("[PreloadService] Failed to update graph with delta:", error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Применяет дельта-обновление к сохранённому графу.
+   */
+  private applyDelta(delta: GraphDeltaData): void {
+    if (!this.preloadedGraph) return;
+
+    const data = this.preloadedGraph.data;
+
+    const nodeMap = new Map(data.nodes.map((n) => [n.id, n]));
+    for (const node of delta.added_nodes || []) {
+      nodeMap.set(node.id, normalizeNode(node));
+    }
+    for (const node of delta.updated_nodes || []) {
+      const existing = nodeMap.get(node.id);
+      nodeMap.set(node.id, { ...existing, ...normalizeNode(node) });
+    }
+    for (const id of delta.removed_nodes || []) {
+      nodeMap.delete(id);
+    }
+    data.nodes = Array.from(nodeMap.values());
+
+    const linkKey = (link: { source: string; target: string; link_type?: string }) =>
+      `${link.source}:${link.target}:${link.link_type ?? "related"}`;
+    const linkMap = new Map(data.links.map((l) => [linkKey(l), l]));
+    for (const link of delta.added_links || []) {
+      linkMap.set(linkKey(link), normalizeLink(link));
+    }
+    for (const link of delta.removed_links || []) {
+      linkMap.delete(linkKey(link));
+    }
+    data.links = Array.from(linkMap.values());
   }
 
   /**
@@ -306,6 +375,14 @@ export function getPreloadedGraphData(): PreloadedGraphData | null {
 
 export function getPreloadedGraphDelta(): GraphDeltaData | null {
   return PreloadService.getPreloadedGraphDelta();
+}
+
+export function updateGraphWithDelta(): Promise<GraphDeltaData | null> {
+  return PreloadService.updateWithDelta();
+}
+
+export function seedGraph(graphData: GraphData): void {
+  PreloadService.seedGraph(graphData);
 }
 
 export function getPreloadedAchievements(): Array<{

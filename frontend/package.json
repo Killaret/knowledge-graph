@@ -38,12 +38,16 @@
   "dependencies": {
     "@sveltejs/kit": "^2.69.1",
     "d3-force": "^3.0.0",
+    "d3-force-3d": "^3.0.6",
     "happy-dom": "^20.10.6",
     "ky": "^1.14.3",
     "three": "^0.184.0",
     "tippy.js": "^6.3.7",
     "vite-tsconfig-paths": "^6.1.1",
     "web-streams-polyfill": "^4.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@argos-ci/playwright": "^6.6.1",

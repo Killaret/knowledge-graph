@@ -131,7 +131,7 @@ func (s *RedisSubscriber) handleEvent(ctx context.Context, payload string) {
 	}
 
 	trackingData, _ := json.Marshal(tracking)
-	if err := s.redisClient.HSet(ctx, eventKey, trackingData).Err(); err != nil {
+	if err := s.redisClient.HSet(ctx, eventKey, "data", trackingData).Err(); err != nil {
 		log.Printf("[GraphService] Failed to record event receipt: %v", err)
 	}
 
@@ -143,7 +143,7 @@ func (s *RedisSubscriber) handleEvent(ctx context.Context, payload string) {
 		log.Printf("[GraphService] Failed to process event %s: %v", event.EventID, err)
 		tracking.ErrorMessage = err.Error()
 		trackingData, _ = json.Marshal(tracking)
-		s.redisClient.HSet(ctx, eventKey, trackingData)
+		s.redisClient.HSet(ctx, eventKey, "data", trackingData)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (s *RedisSubscriber) handleEvent(ctx context.Context, payload string) {
 	tracking.IsAcknowledged = true
 	tracking.TimestampProcessed = time.Now()
 	trackingData, _ = json.Marshal(tracking)
-	if err := s.redisClient.HSet(ctx, eventKey, trackingData).Err(); err != nil {
+	if err := s.redisClient.HSet(ctx, eventKey, "data", trackingData).Err(); err != nil {
 		log.Printf("[GraphService] Failed to mark event as acknowledged: %v", err)
 	}
 
@@ -183,17 +183,31 @@ func (s *RedisSubscriber) handleNoteEvent(ctx context.Context, event Event) erro
 
 	log.Printf("[GraphService] Handling note event %s for user %s, note %s", event.Event, userID, payload.NoteID)
 
-	// Invalidate note-specific cache
-	noteCacheKey := fmt.Sprintf("graph-service:note:%s:*", payload.NoteID)
+	// Invalidate note-specific cache for all users/depths
+	noteCacheKey := config.CacheKey("note", "*", payload.NoteID, "*")
 	s.invalidatePattern(ctx, noteCacheKey)
 
 	// Invalidate user's full layout cache
-	fullLayoutKey := fmt.Sprintf("graph-service:full:%s", userID)
+	fullLayoutKey := config.CacheKey("full", userID)
 	s.redisClient.Del(ctx, fullLayoutKey)
 
 	// Invalidate user's delta cache
-	deltaPattern := fmt.Sprintf("graph-service:delta:%s:*", userID)
+	deltaPattern := config.CacheKey("delta", userID, "*")
 	s.invalidatePattern(ctx, deltaPattern)
+
+	// Publish/unpublish affects the public graph, so invalidate public caches too.
+	publicFullLayoutKey := config.CacheKey("full", "public")
+	s.redisClient.Del(ctx, publicFullLayoutKey)
+
+	publicDeltaPattern := config.CacheKey("delta", "public", "*")
+	s.invalidatePattern(ctx, publicDeltaPattern)
+
+	// Note deletion may cascade to links, so refresh the closure view.
+	if event.Event == "NoteDeleted" {
+		if err := s.postgres.RefreshClosureView(ctx); err != nil {
+			log.Printf("[GraphService] Failed to refresh closure view after note event: %v", err)
+		}
+	}
 
 	log.Printf("[GraphService] Cache invalidated for note event %s", event.Event)
 	return nil
@@ -213,18 +227,27 @@ func (s *RedisSubscriber) handleLinkEvent(ctx context.Context, event Event) erro
 	log.Printf("[GraphService] Handling link event %s for user %s", event.Event, userID)
 
 	// Invalidate user's full layout cache
-	fullLayoutKey := fmt.Sprintf("graph-service:full:%s", userID)
+	fullLayoutKey := config.CacheKey("full", userID)
 	s.redisClient.Del(ctx, fullLayoutKey)
 
 	// Invalidate user's delta cache
-	deltaPattern := fmt.Sprintf("graph-service:delta:%s:*", userID)
+	deltaPattern := config.CacheKey("delta", userID, "*")
 	s.invalidatePattern(ctx, deltaPattern)
 
 	// Invalidate note-specific caches for both source and target
-	noteCachePattern1 := fmt.Sprintf("graph-service:note:%s:*", payload.SourceNoteID)
-	noteCachePattern2 := fmt.Sprintf("graph-service:note:%s:*", payload.TargetNoteID)
-	s.invalidatePattern(ctx, noteCachePattern1)
-	s.invalidatePattern(ctx, noteCachePattern2)
+	if payload.SourceNoteID != "" {
+		noteCachePattern1 := config.CacheKey("note", "*", payload.SourceNoteID, "*")
+		s.invalidatePattern(ctx, noteCachePattern1)
+	}
+	if payload.TargetNoteID != "" {
+		noteCachePattern2 := config.CacheKey("note", "*", payload.TargetNoteID, "*")
+		s.invalidatePattern(ctx, noteCachePattern2)
+	}
+
+	// Links change the transitive closure, so refresh the materialized view.
+	if err := s.postgres.RefreshClosureView(ctx); err != nil {
+		log.Printf("[GraphService] Failed to refresh closure view after link event: %v", err)
+	}
 
 	log.Printf("[GraphService] Cache invalidated for link event %s", event.Event)
 	return nil
@@ -279,11 +302,7 @@ func (s *RedisSubscriber) scanAndRetryEvents(ctx context.Context) {
 		}
 
 		var tracking EventTracking
-		trackingData := []byte(data[""] + data["data"]) // Handle different Redis versions
-		if len(trackingData) == 0 {
-			// Try to get as simple value
-			trackingData = []byte(data["timestamp_received"] + data["is_acknowledged"])
-		}
+		trackingData := []byte(data["data"])
 
 		if len(trackingData) > 0 {
 			if err := json.Unmarshal(trackingData, &tracking); err == nil {

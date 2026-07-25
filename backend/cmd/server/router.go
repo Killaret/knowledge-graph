@@ -147,6 +147,8 @@ func setupRouter(
 		v1.POST("/notes", writeLimiter, noteHandler.Create)
 		v1.GET("/notes/:id", cacheControlMiddleware(60), noteHandler.Get)
 		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
+		v1.POST("/notes/:id/publish", writeLimiter, noteHandler.Publish)
+		v1.POST("/notes/:id/unpublish", writeLimiter, noteHandler.Unpublish)
 		v1.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
 		v1.POST("/notes/batch", writeLimiter, noteHandler.DeleteBatch)
 		v1.POST("/notes/:id/restore", writeLimiter, noteHandler.Restore)

@@ -144,6 +144,7 @@ type Config struct {
 	// Redis
 	RedisURL            string
 	RedisFlushOnStartup bool
+	EventChannel        string
 
 	// NLP
 	NLPServiceURL string
@@ -173,6 +174,11 @@ type Config struct {
 	GraphMaxLimit         int
 	GraphLinkDefaultLimit int
 	GraphLinkMaxLimit     int
+
+	// Graph service integration
+	GraphServiceURL           string        // HTTP URL of the graph analytics service
+	GraphServiceInternalToken string        // Shared secret for internal service calls
+	GraphServiceTimeout       time.Duration // HTTP client timeout for graph service calls
 
 	// New parameters for improved recommendation algorithm
 	RecommendationGamma                   float64       // Coefficient for additional component
@@ -378,6 +384,7 @@ func Load() (*Config, error) {
 		// Redis & NLP
 		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
 		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
 		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
 
 		// Search
@@ -405,6 +412,11 @@ func Load() (*Config, error) {
 		GraphMaxLimit:         getIntEnv("GRAPH_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.MaxLimit }, 1000)),
 		GraphLinkDefaultLimit: getIntEnv("GRAPH_LINK_DEFAULT_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkDefaultLimit }, 500)),
 		GraphLinkMaxLimit:     getIntEnv("GRAPH_LINK_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkMaxLimit }, 5000)),
+
+		// Graph service integration
+		GraphServiceURL:           getEnv("GRAPH_SERVICE_URL", "http://graph-service:9091"),
+		GraphServiceInternalToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
+		GraphServiceTimeout:       time.Duration(getIntEnv("GRAPH_SERVICE_TIMEOUT_SECONDS", 5)) * time.Second,
 
 		// New parameters
 		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Gamma }, 0.2)),

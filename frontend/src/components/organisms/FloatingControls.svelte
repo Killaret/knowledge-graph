@@ -22,14 +22,14 @@
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
-    onToggleView?: (view: "graph" | "list") => void;
+    onToggleView?: (view: "graph" | "list" | "3d") => void;
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
-    currentView?: "graph" | "list";
+    currentView?: "graph" | "list" | "3d";
   } = $props();
 
   let searchQuery = $state("");
@@ -50,7 +50,7 @@
     onSearch?.(q.value);
   }
 
-  function toggleView(targetView: "graph" | "list") {
+  function toggleView(targetView: "graph" | "list" | "3d") {
     onToggleView?.(targetView);
   }
 
@@ -97,24 +97,30 @@
       </svg>
       <span class="btn-label">{t("controls.view2D")}</span>
     </button>
-    <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
-    <!--
     <button
       type="button"
-      class="toggle-btn"
-      onclick={handleToggle3D}
-      title={noteId ? "3D Graph for selected note" : "Full 3D Graph"}
+      class="toggle-btn {currentView === '3d' ? 'active' : ''}"
+      onclick={() => toggleView("3d")}
+      title={t("controls.graph3DTitle")}
       data-testid="view-toggle-3d"
-      aria-label={noteId ? "Open 3D graph for selected note" : "Open full 3D graph"}
+      aria-pressed={currentView === "3d"}
+      aria-label={t("controls.graph3DAria")}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-        <path d="M2 17l10 5 10-5"/>
-        <path d="M2 12l10 5 10-5"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
       </svg>
-      <span class="btn-label">3D</span>
+      <span class="btn-label">{t("controls.view3D")}</span>
     </button>
-    -->
     <button
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"

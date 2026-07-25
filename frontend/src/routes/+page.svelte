@@ -18,18 +18,17 @@
     searchNotes,
     type Note,
   } from "$shared/api/notes";
-  import {
-    getFullGraphData,
-    getFreshGraph,
-    type GraphData,
-    type GraphDeltaData,
-    type GraphNode,
-    type GraphLink,
-  } from "$shared/api/graph";
-  import { apiConfig } from "$shared/config/config";
+  import { type GraphData } from "$shared/api/graph";
   import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+  import {
+    hasPreloadedData,
+    updateGraphWithDelta,
+    getPreloadedGraph,
+  } from "$shared/services/PreloadService";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$entities";
@@ -37,51 +36,6 @@
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: MessageParams) => formatMessage(key, locale, params);
-
-  // Raw API shapes that backend may return with alternative casing
-  interface RawNode {
-    id?: string;
-    Id?: string;
-    ID?: string;
-    title?: string;
-    Title?: string;
-    type?: string;
-    Type?: string;
-    x?: number;
-    y?: number;
-    z?: number;
-    size?: number;
-  }
-
-  interface RawLink {
-    source?: string;
-    source_note_id?: string;
-    target?: string;
-    target_note_id?: string;
-    weight?: number;
-    link_type?: string;
-  }
-
-  function normalizeNode(raw: RawNode): GraphNode {
-    return {
-      id: raw.id ?? raw.Id ?? raw.ID ?? "",
-      title: raw.title ?? raw.Title ?? "",
-      type: raw.type ?? raw.Type ?? "unknown",
-      x: raw.x,
-      y: raw.y,
-      z: raw.z,
-      size: raw.size,
-    };
-  }
-
-  function normalizeLink(raw: RawLink): GraphLink {
-    return {
-      source: raw.source_note_id ?? raw.source ?? "",
-      target: raw.target_note_id ?? raw.target ?? "",
-      weight: raw.weight,
-      link_type: raw.link_type,
-    };
-  }
 
   function toErrorResponse(e: unknown): ErrorResponse {
     if (e && typeof e === "object") {
@@ -98,18 +52,14 @@
   let filteredNotes: Note[] = $state([]);
   let loading = $state(true);
   let apiError = $state<ErrorResponse | null>(null);
-  let selectedNodeId: string | null = $state(null);
   let showCreateModal = $state(false);
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let currentView: "graph" | "list" = $state("graph"); // Graph-first interface
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
-  let graphDelta: GraphDeltaData | undefined = $state(undefined);
-  let graphLoading = $state(false);
   let searchQuery = $state("");
 
   // Filter and sort state
@@ -128,7 +78,7 @@
       selectedType,
       sortBy,
       searchQuery,
-      currentView,
+      currentView: graphStore.currentView,
     });
   });
 
@@ -181,141 +131,74 @@
   // - oldest: Sort by creation date, oldest first
   // - az: Alphabetical sorting A-Z
   // - za: Alphabetical sorting Z-A
-  onMount(async () => {
+  onMount(() => {
     if (!browser) return;
-    await loadDataParallel();
+    void loadData();
+
+    // Periodically sync the graph via delta updates from graph-service.
+    const deltaInterval = setInterval(() => {
+      void refreshAfterMutation();
+    }, 30000);
+
+    const handleFocus = () => {
+      void refreshAfterMutation();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(deltaInterval);
+      window.removeEventListener("focus", handleFocus);
+    };
   });
 
-  async function loadDataParallel() {
+  /**
+   * Single source of truth load: graph-service full graph + notes.
+   * For unauthenticated users the note list is derived from the public graph.
+   */
+  async function loadData() {
     try {
-      // Reset error state before loading
       apiError = null;
+      loading = true;
 
       const isAuth = isAuthenticated();
-      const graphTimeoutMs = 10000;
-
-      // Start notes and graph loading in parallel
-      const notesPromise = isAuth ? getNotes() : Promise.resolve([] as Note[]);
-      const graphPromise = isAuth
-        ? Promise.race([
-            getFreshGraph(),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
-          ]).catch((e: unknown) => {
-            if (import.meta.env.DEV) {
-              console.error("[+page] Failed to load fresh graph:", e);
-            }
-            return null;
-          })
-        : Promise.race([
-            getGraphWithPreload(),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
-          ]).catch((e: unknown) => {
-            if (import.meta.env.DEV) {
-              console.error("[+page] Failed to load public graph:", e);
-            }
-            return null;
-          });
+      let graphResult: GraphData | null = null;
 
       if (isAuth) {
-        // Authenticated: render notes and a note-based graph immediately so the
-        // UI is responsive and tests can assert on filter counts right away.
-        allNotes = await notesPromise;
-        applyFiltersAndSort();
-        graphData = {
-          nodes: allNotes.map((n) => ({
+        const [notesResult, loadedGraph] = await Promise.all([getNotes(), getGraphWithPreload()]);
+        allNotes = notesResult;
+        graphResult = loadedGraph;
+      } else {
+        graphResult = await getGraphWithPreload();
+        // Public graph is the single source of notes for anonymous users.
+        if (graphResult && graphResult.nodes.length > 0) {
+          allNotes = graphResult.nodes.map((n) => ({
             id: n.id,
             title: n.title,
-            type: n.type || "unknown",
-          })),
-          links: [],
-        };
-        loading = false;
-      }
-
-      const freshGraphResult = await graphPromise;
-
-      // For public view, derive the note list from the public graph.
-      if (!isAuth && freshGraphResult && "nodes" in freshGraphResult) {
-        allNotes = (freshGraphResult as GraphData).nodes.map((n) => {
-          const raw = n as RawNode;
-          return {
-            id: raw.id ?? raw.Id ?? raw.ID ?? "",
-            title: raw.title ?? raw.Title ?? "",
             content: "",
             metadata: {},
-            type: raw.type ?? raw.Type ?? "unknown",
+            type: n.type || "unknown",
             created_at: "",
             updated_at: "",
-          };
-        });
-        applyFiltersAndSort();
-      }
-
-      // Update graph data with fresh or preloaded graph when available.
-      // We always keep all loaded notes represented in the graph so filter
-      // counts and node visibility stay consistent with the note list.
-      if (freshGraphResult) {
-        let freshGraph: GraphData | null = null;
-        if (isAuth && "fresh" in freshGraphResult) {
-          freshGraph = freshGraphResult.fresh;
-          graphDelta = freshGraphResult.delta ?? undefined;
-        } else if (!isAuth) {
-          freshGraph = freshGraphResult as GraphData;
-          graphDelta = undefined;
-        }
-
-        if (freshGraph && freshGraph.nodes && freshGraph.nodes.length > 0) {
-          // Merge fresh graph links with the note list so we never drop notes
-          // that the graph service/backend cache hasn't picked up yet.
-          const noteMap = new Map(allNotes.map((n) => [n.id, n]));
-          const freshNodeMap = new Map(
-            freshGraph.nodes.map((n) => [normalizeNode(n as RawNode).id, n as RawNode])
-          );
-
-          // Use all current notes as nodes, preferring titles/types from the note list
-          const mergedNodes = allNotes.map((n) => {
-            const fresh = freshNodeMap.get(n.id) as RawNode | undefined;
-            return normalizeNode(
-              fresh
-                ? { ...fresh, title: n.title, type: n.type || fresh.type || "unknown" }
-                : ({
-                    id: n.id,
-                    title: n.title,
-                    type: n.type || "unknown",
-                  } as RawNode)
-            );
-          });
-
-          // Add any extra graph nodes that are not in the note list (e.g. public graph)
-          for (const node of freshGraph.nodes) {
-            const normalized = normalizeNode(node as RawNode);
-            if (!noteMap.has(normalized.id)) {
-              mergedNodes.push(normalized);
-            }
-          }
-
-          graphData = {
-            nodes: mergedNodes,
-            links: (freshGraph.links || []).map((l) => normalizeLink(l as RawLink)),
-          };
+          }));
+        } else {
+          allNotes = [];
         }
       }
-    } catch (e: unknown) {
-      apiError = toErrorResponse(e);
-      if (import.meta.env.DEV) {
-        console.error(e);
-      }
-    } finally {
-      loading = false;
-    }
-  }
 
-  async function loadNotes() {
-    try {
-      allNotes = await getNotes();
       applyFiltersAndSort();
-      // Also load graph data when notes are loaded
-      await loadGraphData();
+
+      if (graphResult && graphResult.nodes.length > 0) {
+        if (import.meta.env.DEV) {
+          const apiTypes = [...new Set(graphResult.nodes.map((n) => n.type))];
+          console.log("[+page] Full graph loaded:", graphResult.nodes.length, "nodes,", graphResult.links.length, "links");
+          console.log("[+page] API node types:", apiTypes);
+        }
+
+        graphData = graphResult;
+      } else {
+        // Minimal fallback for empty/invalid graph-service result.
+        graphData = { nodes: [], links: [] };
+      }
     } catch (e: unknown) {
       apiError = toErrorResponse(e);
       if (import.meta.env.DEV) {
@@ -326,135 +209,23 @@
     }
   }
 
-  async function loadGraphData() {
-    if (allNotes.length === 0) {
-      graphData = { nodes: [], links: [] };
-      return;
-    }
-
-    graphLoading = true;
-    try {
-      // Always load full graph on main page
-      const rawData = await getFullGraphData(apiConfig.default_limit, undefined, true);
-
-      // Defensive check for API response structure (empty graphs also fall back)
-      if (
-        !rawData ||
-        !rawData.nodes ||
-        !Array.isArray(rawData.nodes) ||
-        rawData.nodes.length === 0
-      ) {
-        if (import.meta.env.DEV) {
-          console.warn("[+page] Graph API returned empty or invalid data structure:", rawData);
+  /**
+   * After mutations try to apply a graph delta first; if no hash/preloaded data
+   * or delta fails, fall back to a full reload.
+   */
+  async function refreshAfterMutation() {
+    if (graphData.hash && hasPreloadedData()) {
+      const delta = await updateGraphWithDelta();
+      if (delta) {
+        const updated = getPreloadedGraph();
+        if (updated) {
+          graphData = updated;
         }
-        // Fallback: build simple graph from notes
-        graphData = {
-          nodes: allNotes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            type: n.type || "unknown",
-          })),
-          links: [],
-        };
         return;
       }
-
-      // Debug: check what types come from API
-      const apiTypes = rawData.nodes.map(
-        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
-      );
-      if (import.meta.env.DEV) {
-        console.log("[+page] API node types:", [...new Set(apiTypes)], "Total:", apiTypes.length);
-        console.log(
-          "[+page] First 5 raw nodes:",
-          rawData.nodes.slice(0, 5).map((n) => {
-            const raw = n as RawNode;
-            return { id: raw.id, type: raw.type, Type: raw.Type };
-          })
-        );
-      }
-
-      // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n) => normalizeNode(n as RawNode));
-
-      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links || []).map((l) => normalizeLink(l as RawLink));
-
-      graphData = {
-        nodes: transformedNodes,
-        links: transformedLinks,
-      };
-
-      // Defensive: ensure graph nodes correspond to loaded notes
-      if (allNotes.length > 0 && transformedNodes.length > 0) {
-        const noteIds = new Set(allNotes.map((n) => n.id));
-        const hasIntersection = transformedNodes.some((n) => noteIds.has(n.id));
-        if (!hasIntersection) {
-          if (import.meta.env.DEV) {
-            console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
-            );
-          }
-          graphData = {
-            nodes: allNotes.map((n) => ({
-              id: n.id,
-              title: n.title,
-              type: n.type || "unknown",
-            })),
-            links: [],
-          };
-          return;
-        }
-      }
-
-      if (import.meta.env.DEV) {
-        console.log("[+page] Transformed links:", transformedLinks.length, "links");
-        console.log("[+page] First 3 transformed links:", transformedLinks.slice(0, 3));
-
-        // Check if links match node IDs
-        const nodeIds = new Set(transformedNodes.map((n) => n.id));
-        const validLinks = transformedLinks.filter(
-          (l) => nodeIds.has(l.source) && nodeIds.has(l.target)
-        );
-        console.log("[+page] Node IDs:", Array.from(nodeIds).slice(0, 5));
-        console.log(
-          "[+page] Valid links (matching node IDs):",
-          validLinks.length,
-          "of",
-          transformedLinks.length
-        );
-
-        if (validLinks.length < transformedLinks.length) {
-          console.warn(
-            "[+page] Some links have invalid node IDs:",
-            transformedLinks.filter((l) => !nodeIds.has(l.source) || !nodeIds.has(l.target))
-          );
-        }
-      }
-    } catch (e) {
-      if (import.meta.env.DEV) {
-        console.error("[+page] Failed to load graph:", e);
-      }
-      // Fallback: build simple graph from notes
-      graphData = {
-        nodes: allNotes.map((n) => ({
-          id: n.id,
-          title: n.title,
-          type: n.type || "unknown",
-        })),
-        links: [],
-      };
-    } finally {
-      graphLoading = false;
     }
+    await loadData();
   }
-
-  // Reload graph when allNotes changes (notes added/deleted)
-  $effect(() => {
-    if (browser && allNotes.length > 0) {
-      loadGraphData();
-    }
-  });
 
   // Helper to get note type - unified with renderer.ts logic via CelestialBody
   function getNoteType(note: Note): string {
@@ -499,12 +270,12 @@
 
     try {
       await deleteNote(noteToDelete);
-      selectedNodeId = null;
+      graphStore.selectedNodeId = null;
       // Remove deleted note from local arrays immediately
       allNotes = allNotes.filter((n) => n.id !== noteToDelete);
       filteredNotes = filteredNotes.filter((n) => n.id !== noteToDelete);
       // Then reload from server to ensure sync
-      await loadNotes();
+      await refreshAfterMutation();
     } catch {
       if (browser) {
         alert(t("page.deleteError"));
@@ -558,7 +329,7 @@
       selectionMode = false;
       showBulkActionsMenu = false;
       // Reload to ensure sync
-      await loadNotes();
+      await refreshAfterMutation();
     } catch {
       if (browser) {
         alert(t("page.batchDeleteError"));
@@ -576,7 +347,7 @@
     await deleteNote(note.id);
     allNotes = allNotes.filter((n) => n.id !== note.id);
     filteredNotes = filteredNotes.filter((n) => n.id !== note.id);
-    await loadNotes();
+    await refreshAfterMutation();
     showUndoToast = true;
     undoToastStage = "done";
     setTimeout(() => {
@@ -594,7 +365,7 @@
       await restoreNote(lastDeletedNote.id);
       showUndoToast = false;
       lastDeletedNote = null;
-      await loadNotes();
+      await refreshAfterMutation();
     } catch {
       if (browser) {
         alert(t("page.restoreError"));
@@ -609,7 +380,7 @@
         content: data.content,
         type: data.type,
       });
-      await loadNotes();
+      await refreshAfterMutation();
     } catch {
       if (browser) {
         alert(t("note.createError"));
@@ -619,12 +390,12 @@
 
   function handleNoteCreated(note: Note) {
     showCreateModal = false;
-    selectedNodeId = note.id;
-    loadNotes();
+    graphStore.selectedNodeId = note.id;
+    refreshAfterMutation();
   }
 
-  function handleToggleView(view: "graph" | "list") {
-    currentView = view;
+  function handleToggleView(view: "graph" | "list" | "3d") {
+    graphStore.currentView = view;
   }
 </script>
 
@@ -652,7 +423,7 @@
     }}
     {typeFilters}
     {selectedType}
-    {currentView}
+    currentView={graphStore.currentView}
     typeCounts={Object.fromEntries(
       typeFilters.map((f) => [
         f.id,
@@ -673,10 +444,10 @@
       <button
         onclick={() => {
           apiError = null;
-          loadDataParallel();
+          loadData();
         }}>{t("page.retry")}</button
       >
-    {:else if currentView === "graph"}
+    {:else if graphStore.currentView === "graph"}
       <!-- Debug info - remove in production -->
       {#if import.meta.env.DEV}
         <div
@@ -688,29 +459,29 @@
           <div>filtered: {filteredGraphData.nodes.length}</div>
           <div>selectedType: {selectedType}</div>
           <div>loading: {loading}</div>
-          <div>graphLoading: {graphLoading}</div>
           <div>
             apiError: {(apiError as ErrorResponse | null)?.message ?? "none"}
           </div>
         </div>
       {/if}
       <!-- Fullscreen 2D Graph View -->
-      {#if graphLoading}
-        <div class="center">
-          <div class="spinner"></div>
-          <p>{t("page.loadingGraph")}</p>
-        </div>
-      {:else}
-        <GraphCanvas
-          nodes={filteredGraphData.nodes}
-          links={filteredGraphData.links}
-          delta={graphDelta}
-          onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
-          onNoteCreate={handleNoteCreate}
-          onNoteDelete={handleDeleteRequest}
-        />
-      {/if}
-    {:else if currentView === "list"}
+      <GraphCanvas
+        nodes={filteredGraphData.nodes}
+        links={filteredGraphData.links}
+        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+        onNoteCreate={handleNoteCreate}
+        onNoteDelete={handleDeleteRequest}
+      />
+    {:else if graphStore.currentView === "3d"}
+      <!-- Fullscreen 3D Graph View -->
+      <Graph3DViewer
+        nodes={filteredGraphData.nodes}
+        links={filteredGraphData.links}
+        centerNodeId={graphStore.selectedNodeId}
+        selectedNodeId={graphStore.selectedNodeId}
+        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+      />
+    {:else if graphStore.currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
         <div class="list-header">
@@ -792,7 +563,7 @@
                 onSelect={handleNoteSelect}
                 onEdit={handleNoteEdit}
                 onDelete={handleNoteDelete}
-                onClick={() => (selectedNodeId = note.id)}
+                onClick={() => (graphStore.selectedNodeId = note.id)}
                 highlightQuery={filterState.searchQuery.value}
               />
             {/each}
@@ -875,10 +646,10 @@
 </div>
 
 <!-- Side Panel for selected note -->
-{#if selectedNodeId}
+{#if graphStore.selectedNodeId}
   <NoteSidePanel
-    nodeId={selectedNodeId}
-    onClose={() => (selectedNodeId = null)}
+    nodeId={graphStore.selectedNodeId}
+    onClose={() => (graphStore.selectedNodeId = null)}
     onEdit={(id: string) => {
       noteToEdit = id;
       showEditModal = true;
@@ -1194,15 +965,6 @@
     gap: 16px;
     z-index: 1000;
     color: white;
-  }
-
-  .center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    color: #64748b;
   }
 
   .spinner {

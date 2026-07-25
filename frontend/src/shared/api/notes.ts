@@ -8,6 +8,7 @@ export interface Note {
   content: string;
   metadata: Record<string, unknown>;
   type?: string;
+  is_public?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +66,16 @@ export async function deleteNotesBatch(ids: string[]): Promise<void> {
 // Restore a deleted note
 export async function restoreNote(id: string): Promise<void> {
   await api.post(`v1/notes/${id}/restore`);
+}
+
+// Publish a note to the public graph
+export async function publishNote(id: string): Promise<Note> {
+  return api.post(`v1/notes/${id}/publish`).json<Note>();
+}
+
+// Unpublish a note from the public graph
+export async function unpublishNote(id: string): Promise<Note> {
+  return api.post(`v1/notes/${id}/unpublish`).json<Note>();
 }
 
 // Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)

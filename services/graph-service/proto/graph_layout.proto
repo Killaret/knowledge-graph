@@ -58,8 +58,59 @@ message DeltaResponse {
   string current_hash = 6;
 }
 
+message NeighborRequest {
+  string note_id = 1;
+  int32 depth = 2;
+  string user_id = 3;
+}
+
+message NeighborNode {
+  string id = 1;
+  string title = 2;
+  string type = 3;
+  double weight = 4;
+  int32 distance = 5;
+}
+
+message NeighborResponse {
+  repeated NeighborNode nodes = 1;
+}
+
+message PathRequest {
+  string from_id = 1;
+  string to_id = 2;
+  string user_id = 3;
+}
+
+message PathResponse {
+  repeated string note_ids = 1;
+  int32 distance = 2;
+  double weight = 3;
+}
+
+message RecommendationsRequest {
+  string note_id = 1;
+  string user_id = 2;
+  int32 limit = 3;
+}
+
+message Recommendation {
+  string note_id = 1;
+  string title = 2;
+  double score = 3;
+  double graph_score = 4;
+  double semantic_score = 5;
+}
+
+message RecommendationsResponse {
+  repeated Recommendation recommendations = 1;
+}
+
 service GraphService {
   rpc GetNoteLayout(NoteLayoutRequest) returns (LayoutResponse);
   rpc GetFullLayout(FullLayoutRequest) returns (stream LayoutChunk);
   rpc GetDelta(DeltaRequest) returns (DeltaResponse);
+  rpc GetNeighbors(NeighborRequest) returns (NeighborResponse);
+  rpc GetPath(PathRequest) returns (PathResponse);
+  rpc GetRecommendations(RecommendationsRequest) returns (RecommendationsResponse);
 }

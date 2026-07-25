@@ -1,7 +1,7 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 23, 2026  
-**Status:** System stabilized, regression testing complete, manual testing in progress  
+**Updated:** July 25, 2026  
+**Status:** Graph API unification completed; awaiting verification  
 **Version:** v2.5
 
 ---
@@ -28,11 +28,77 @@
 
 **Subtasks:**
 - [ ] Frontend E2E tests (`cd frontend && npx playwright test`)
-- [ ] Backend integration tests (`cd backend && go test -tags=integration ./...`)
-- [ ] CI/CD workflows verification
+- [x] Backend integration tests (`cd backend && go test -tags=integration ./...`)
+- [x] CI/CD workflows verification
 - [ ] NLP API testing
 - [ ] Backend auth API testing
-- [ ] Public graph verification
+- [x] Public graph verification
+
+---
+
+## 🧩 Graph Service: Stabilization & Evolution Plan
+
+> **Context:** per ADR 013, the main backend should publish `Note*`/`Link*` events and stop being the primary graph source. `graph-service` owns layout computation, caching, and analytics. The main backend remains a **fallback** when `graph-service` is unavailable.
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Event-driven invalidation & fallback model | ✅ Done | 🔴 Critical | 📝 Yes |
+| Auth & user-scoped filtering in graph-service | ✅ Done | 🔴 Critical | 📝 Yes |
+| Graph API unification & double-load removal | ✅ Done | 🟠 High | 📝 Yes |
+| Graph analytics API (Neighbors, Path, Recommendations) | ✅ Done | 🟡 Medium | 📝 Yes |
+| Materialized view / graph index | ✅ Done | 🟡 Medium | 📝 Yes |
+| gRPC-web / SSE full-graph streaming | ⏳ Planned | 🟡 Medium | 📝 No |
+| Improved layout algorithms (Honeycomb, force-directed, Cosmic Navigator) | 🔄 In Progress | 🟠 High | 📝 Yes |
+
+### 1. Event-driven invalidation & fallback model
+
+- `note_handler` and `link_handler` publish `NoteCreated`/`Updated`/`Deleted` and `LinkCreated`/`Updated`/`Deleted` events via `internal/infrastructure/events/publisher.go` to the Redis `graph:events` channel.
+- `graph-service` (`internal/subscriber/pubsub.go`) listens and invalidates keys `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
+- Main backend endpoints `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
+- This is critical because `events.Publisher` is currently not wired to handlers, so `graph-service` cache only expires by TTL.
+
+### 2. Auth & user-scoped filtering in graph-service
+
+- Add JWT middleware to `graph-service` HTTP and gRPC.
+- Derive `user_id` from token and remove public `user_id` query parameter.
+- Add `creator_id` filter in `services/graph-service/internal/db/postgres_client.go` for all `notes`/`links` queries.
+- `frontend/src/hooks.server.ts` proxy must forward `authorization` or a signed `x-internal-auth` header to `graph-service`.
+- Public graph moves to a separate endpoint (`/api/v1/graph/public`) filtering `is_public = true`.
+
+### 3. Graph API unification & double-load removal ✅
+
+- Standardize graph-service response fields: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
+- Remove fallback normalization (`id/Id/ID`, `source/source_note_id`) in `frontend/src/routes/+page.svelte`.
+- `+page.svelte` calls `getGraphWithPreload()` once (which loads `getFullGraphData()` when no cached data) and uses `Promise.all([getNotes(), getGraphWithPreload()])` for authenticated users; the sequential `getFreshGraph()` + repeated `loadGraphData()` flow is removed.
+- Use `/api/v1/graph/delta?last_hash=` for incremental updates via `PreloadService`.
+- `PreloadService` exposes `seedGraph(graphData)` so any full-graph response is cached with `lastHash` and can drive delta updates.
+
+### 4. Graph analytics API
+
+- Implement gRPC/HTTP methods `GetNeighbors`, `GetPath`, `GetRecommendations` in `graph-service`.
+- HTTP endpoints:
+  - `GET /api/v1/graph/note/:id/neighbors?depth=`
+  - `GET /api/v1/graph/path?from=&to=`
+  - `GET /api/v1/graph/recommendations?note_id=&limit=`
+- Replace backend BFS (`backend/internal/domain/graph/bfs.go`) and recommendation traversal with calls to `graph-service`.
+
+### 5. Materialized view / graph index
+
+- Create materialized view `note_links_closure` for transitive link closure.
+- Refresh the view on `LinkCreated`/`LinkDeleted` events (async via trigger or ASYNQ).
+- Use the view for `GetPath`, degree computation, semantic clustering, and Honeycomb layout.
+
+### 6. gRPC-web / SSE full-graph streaming
+
+- For graphs >500 nodes, stream `GetFullLayout` in chunks via gRPC streaming or Server-Sent Events.
+- Frontend progressively renders nodes and links.
+- Alternative for JSON API: NDJSON streaming.
+
+### 7. Improved layout algorithms
+
+- **Honeycomb View:** radial layout centered at the node with maximum `sum(weight)`, with concentric circles by weight thresholds.
+- **Force-directed 2D/3D:** replace/augment current circle/helix with server-side physical simulation.
+- **Cosmic Navigator:** hybrid server-side 3D layout (`layout=3d`) plus client-side `d3-force-3d` relaxation.
 
 ---
 
@@ -57,7 +123,7 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Implement publish/unpublish functionality | ⏳ Planned | 🟠 High | 📝 Yes |
+| Implement publish/unpublish functionality | ✅ Done | 🟠 High | 📝 Yes |
 
 **Scope:**
 - Backend API for publish/unpublish
@@ -75,7 +141,7 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Implement cosmic navigation interface | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Implement cosmic navigation interface | ✅ Implemented | 🟡 Medium | 📝 Yes |
 
 **Scope:**
 - 3D navigation metaphor
@@ -83,6 +149,8 @@
 - Zoom levels and navigation controls
 - Search and filtering in navigator
 - Integration with existing graph view
+- [ ] **Hybrid 3D Layout via Graph Service**  
+  *Use graph-service to precompute initial 3D coordinates for large graphs, reducing client-side simulation time. Client retains interactivity after initial load. Target: v2.1.*
 
 ### 🔗 Link Improvements
 
@@ -243,6 +311,18 @@
 | Automatic state verification (dev pre/post-test) | ✅ Done | 🔴 Critical | July 2026 |
 | Auto-commit on successful regression cycle | ✅ Done | 🔴 Critical | July 2026 |
 | Dev/Personal identity verification | ✅ Done | 🔴 Critical | July 2026 |
+| CI/CD service containers, timeouts and Docker health checks | ✅ Done | 🔴 Critical | July 2026 |
+
+### 🌌 Graph Service, Analytics & Public Graph
+
+| Task | Status | Priority | Completion Date |
+|------|--------|----------|-----------------|
+| Event-driven invalidation & fallback model | ✅ Done | 🔴 Critical | July 2026 |
+| Auth & user-scoped filtering in graph-service | ✅ Done | 🔴 Critical | July 2026 |
+| Graph analytics API (Neighbors, Path, Recommendations) | ✅ Done | 🟡 Medium | July 2026 |
+| Materialized view / graph index (`note_links_closure`) | ✅ Done | 🟡 Medium | July 2026 |
+| Public Note Pool (publish/unpublish) | ✅ Done | 🟠 High | July 2026 |
+| 3D graph via graph-service (`GraphServiceLayoutProvider`) | ✅ Done | 🟠 High | July 2026 |
 
 ### 🎨 Frontend Improvements
 

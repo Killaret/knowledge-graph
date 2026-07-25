@@ -1,43 +1,78 @@
 <script lang="ts">
-  import { page } from "$app/stores";
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import BackButton from "$components/atoms/BackButton.svelte";
+  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
+  import { GraphServiceLayoutProvider } from "$features/graph-3d";
+  import { type GraphData } from "$shared/api/graph";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const layoutProvider = new GraphServiceLayoutProvider();
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  let currentNoteId: string | null = $state(null);
+  let graphData: GraphData = $state({ nodes: [], links: [] });
+  let loading = $state(true);
+  let error = $state("");
 
-  onMount(() => {
-    const id = $page.params.id as string;
-    currentNoteId = id;
+  function getRouteId(): string {
+    const id = $page.params.id;
+    if (!id) throw new Error("Missing route parameter: id");
+    return id;
+  }
 
-    // 3D functionality frozen for v1 - redirecting to 2D graph
-    setTimeout(() => {
-      if (id) {
-        goto(`/graph/${id}`);
-      } else {
-        goto("/graph");
+  onMount(async () => {
+    if (!browser) return;
+    try {
+      const id = getRouteId();
+      graphStore.selectedNodeId = id;
+      graphData = await layoutProvider.load({ noteId: id, depth: 3 });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to load 3D graph:", e);
       }
-    }, 500);
+      error = t("graph.loadDataError");
+    } finally {
+      loading = false;
+    }
   });
 </script>
 
 <div class="page">
-  <div class="center">
-    <div class="frozen-notice">
-      <h2>{t("graph.frozenTitle")}</h2>
-      <p>{t("graph.frozenMessage1")}</p>
-      <p>
-        {t("graph.frozenRedirectWithId", {
-          id: currentNoteId || t("graph.entireGraph"),
-        })}
-      </p>
-      <div class="spinner"></div>
-    </div>
+  <div class="top-controls">
+    <BackButton href="/graph" />
+    <button class="home-btn" onclick={() => goto("/")}>{t("graph.goHome")}</button>
   </div>
+
+  {#if loading}
+    <div class="center">
+      <div class="spinner"></div>
+      <p>{t("page.loadingGraph")}</p>
+    </div>
+  {:else if error}
+    <div class="center error">
+      <p>{error}</p>
+      <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+    </div>
+  {:else if graphData.nodes.length === 0}
+    <div class="center">
+      <h2>{t("graph3d.noDataTitle")}</h2>
+      <p>{t("graph3d.noDataMessage")}</p>
+    </div>
+  {:else}
+    <Graph3DViewer
+      nodes={graphData.nodes}
+      links={graphData.links}
+      centerNodeId={$page.params.id}
+      selectedNodeId={graphStore.selectedNodeId}
+      onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+    />
+  {/if}
 </div>
 
 <style>
@@ -47,37 +82,54 @@
     height: 100vh;
     overflow: hidden;
     background: #050510;
-  }
-
-  .center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
     color: white;
   }
 
-  .frozen-notice {
-    text-align: center;
-    max-width: 500px;
-    padding: 40px;
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 16px;
+  .top-controls {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+  }
+
+  .home-btn {
+    padding: 8px 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    background: rgba(5, 5, 16, 0.7);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
   }
 
-  .frozen-notice h2 {
-    color: #88aaff;
-    margin-bottom: 16px;
-    font-size: 24px;
-    font-weight: 600;
+  .home-btn:hover {
+    background: rgba(136, 170, 255, 0.2);
   }
 
-  .frozen-notice p {
-    margin-bottom: 16px;
-    line-height: 1.6;
-    color: #94a3b8;
+  .center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .error {
+    color: #ff6b6b;
+  }
+
+  .error button {
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
   }
 
   .spinner {
@@ -87,7 +139,6 @@
     border-top-color: #88aaff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 20px auto 0;
   }
 
   @keyframes spin {

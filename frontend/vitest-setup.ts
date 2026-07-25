@@ -54,6 +54,8 @@ vi.mock("three", async () => {
     WebGLRenderer: vi.fn().mockImplementation(() => ({
       render: vi.fn(),
       setSize: vi.fn(),
+      setPixelRatio: vi.fn(),
+      dispose: vi.fn(),
       domElement: document.createElement("canvas"),
     })),
   };
@@ -169,17 +171,27 @@ Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
 });
 
 // Мокируем CSS2DRenderer и CSS2DObject из three/examples/jsm
-vi.mock("three/examples/jsm/renderers/CSS2DRenderer.js", () => ({
-  CSS2DRenderer: vi.fn().mockImplementation(() => ({
-    setSize: vi.fn(),
-    render: vi.fn(),
-    domElement: document.createElement("div"),
-  })),
-  CSS2DObject: vi.fn().mockImplementation((element: HTMLElement) => ({
-    element,
-    position: { set: vi.fn() },
-  })),
-}));
+vi.mock("three/examples/jsm/renderers/CSS2DRenderer.js", async () => {
+  const actualThree = await vi.importActual<typeof import("three")>("three");
+
+  class CSS2DObject extends actualThree.Object3D {
+    element: HTMLElement;
+    constructor(element: HTMLElement) {
+      super();
+      this.element = element;
+    }
+  }
+
+  return {
+    CSS2DRenderer: vi.fn().mockImplementation(() => ({
+      setSize: vi.fn(),
+      render: vi.fn(),
+      dispose: vi.fn(),
+      domElement: document.createElement("div"),
+    })),
+    CSS2DObject,
+  };
+});
 
 // Мокируем GraphCanvas animation модуль
 vi.mock("$components/organisms/GraphCanvas/animation.ts", () => ({

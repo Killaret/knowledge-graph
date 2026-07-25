@@ -65,6 +65,7 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 			sqlmock.AnyArg(), // type
 			sqlmock.AnyArg(), // metadata
 			sqlmock.AnyArg(), // creator_id
+			sqlmock.AnyArg(), // is_public
 			sqlmock.AnyArg(), // created_at
 			sqlmock.AnyArg(), // updated_at
 			sqlmock.AnyArg(), // deleted_at
@@ -324,6 +325,7 @@ func TestToGormNote(t *testing.T) {
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{"key": "value"})
 	n := note.NewNote(title, content, "star", metadata)
+	n.SetIsPublic(true)
 
 	model, err := toGormNote(n)
 
@@ -342,6 +344,9 @@ func TestToGormNote(t *testing.T) {
 	if model.Type != "star" {
 		t.Errorf("expected type 'star', got %s", model.Type)
 	}
+	if !model.IsPublic {
+		t.Errorf("expected is_public true, got %v", model.IsPublic)
+	}
 }
 
 // TestToDomainNote тестирует конвертацию GORM модели в доменную заметку
@@ -355,6 +360,7 @@ func TestToDomainNote(t *testing.T) {
 		Content:   "Content",
 		Type:      "star",
 		Metadata:  []byte(`{"key":"value"}`),
+		IsPublic:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -369,6 +375,9 @@ func TestToDomainNote(t *testing.T) {
 	}
 	if n.Title().String() != "Test" {
 		t.Errorf("expected title 'Test', got %s", n.Title().String())
+	}
+	if !n.IsPublic() {
+		t.Errorf("expected is_public true, got %v", n.IsPublic())
 	}
 }
 

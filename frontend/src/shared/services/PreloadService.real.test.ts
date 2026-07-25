@@ -11,7 +11,9 @@ vi.mock("$shared/stores/auth-session.svelte", () => mockAuth);
 
 const mockGraphApi = vi.hoisted(() => ({
   getFullGraphData: vi.fn(),
-  getFreshGraph: vi.fn(),
+  getGraphDelta: vi.fn(),
+  normalizeNode: vi.fn((n) => n),
+  normalizeLink: vi.fn((l) => l),
 }));
 vi.mock("$shared/api/graph", () => mockGraphApi);
 
@@ -25,11 +27,8 @@ describe("PreloadService (real)", () => {
 
     mockEnv.browser = true;
     mockAuth.isAuthenticated.mockReturnValue(false);
-    mockGraphApi.getFullGraphData.mockResolvedValue(mockGraphData);
-    mockGraphApi.getFreshGraph.mockResolvedValue({
-      fresh: mockGraphData,
-      delta: undefined,
-    });
+    mockGraphApi.getFullGraphData.mockResolvedValue({ ...mockGraphData, hash: "hash-1" });
+    mockGraphApi.getGraphDelta.mockResolvedValue({ current_hash: "hash-2" });
 
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -48,8 +47,28 @@ describe("PreloadService (real)", () => {
     await PreloadService.startPreload();
 
     expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(1);
-    expect(PreloadService.getPreloadedGraph()).toEqual(mockGraphData);
+    expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "hash-1" });
     expect(PreloadService.hasPreloadedData()).toBe(true);
+  });
+
+  it("seeds graph data from an external source", () => {
+    const data = { ...mockGraphData, hash: "seeded-hash" };
+    PreloadService.seedGraph(data);
+
+    expect(PreloadService.getPreloadedGraph()).toEqual(data);
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("seeded-hash");
+    expect(PreloadService.hasPreloadedData()).toBe(true);
+  });
+
+  it("expires seeded graph after TTL", () => {
+    const data = { ...mockGraphData, hash: "seeded-hash" };
+    PreloadService.seedGraph(data);
+    expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
+
+    vi.advanceTimersByTime(6 * 60 * 1000); // TTL is 5 minutes
+
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
+    expect(PreloadService.getPreloadedGraph()).toBeNull();
   });
 
   it("does not preload in non-browser environment", async () => {
@@ -75,8 +94,9 @@ describe("PreloadService (real)", () => {
 
     await PreloadService.preloadAuthenticatedGraph();
 
-    expect(mockGraphApi.getFreshGraph).toHaveBeenCalledTimes(1);
-    expect(PreloadService.getPreloadedGraph()).toEqual(mockGraphData);
+    expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(1);
+    expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "hash-1" });
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("hash-1");
   });
 
   it("deduplicates concurrent preload calls", async () => {
@@ -103,23 +123,64 @@ describe("PreloadService (real)", () => {
     expect(PreloadService.getPreloadedGraph()).toBeNull();
   });
 
-  it("returns graph delta when available", async () => {
+  it("updates preloaded graph with delta", async () => {
     const delta = {
       added_nodes: [{ id: "n4", title: "New", type: "star" }],
       removed_nodes: [],
       updated_nodes: [],
       added_links: [],
       removed_links: [],
+      current_hash: "hash-2",
     };
-    mockGraphApi.getFreshGraph.mockResolvedValue({
-      fresh: mockGraphData,
-      delta,
-    });
+    mockGraphApi.getGraphDelta.mockResolvedValue(delta);
 
-    mockAuth.isAuthenticated.mockReturnValue(true);
-    await PreloadService.preloadAuthenticatedGraph();
+    await PreloadService.startPreload();
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("hash-1");
 
+    const result = await PreloadService.updateWithDelta();
+
+    expect(mockGraphApi.getGraphDelta).toHaveBeenCalledWith("hash-1");
+    expect(result).toEqual(delta);
     expect(PreloadService.getPreloadedGraphDelta()).toEqual(delta);
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("hash-2");
+    expect(PreloadService.getPreloadedGraph()?.nodes).toContainEqual(
+      expect.objectContaining({ id: "n4", title: "New", type: "star" })
+    );
+  });
+
+  it("applies delta add/remove/update without a full reload", async () => {
+    const seeded = {
+      ...mockGraphData,
+      nodes: [
+        { id: "n1", title: "Alpha", type: "star" },
+        { id: "n2", title: "Beta", type: "planet" },
+      ],
+      links: [{ source: "n1", target: "n2", link_type: "related" }],
+      hash: "seed-hash",
+    };
+    PreloadService.seedGraph(seeded);
+
+    const delta = {
+      added_nodes: [{ id: "n3", title: "Gamma", type: "comet" }],
+      updated_nodes: [{ id: "n1", title: "Alpha Updated", type: "star" }],
+      removed_nodes: ["n2"],
+      added_links: [{ source: "n1", target: "n3", link_type: "reference" }],
+      removed_links: [{ source: "n1", target: "n2", link_type: "related" }],
+      current_hash: "seed-hash-2",
+    };
+    mockGraphApi.getGraphDelta.mockResolvedValue(delta);
+
+    const result = await PreloadService.updateWithDelta();
+
+    expect(result).toEqual(delta);
+    const graph = PreloadService.getPreloadedGraph();
+    expect(graph?.nodes.map((n: any) => n.id).sort()).toEqual(["n1", "n3"]);
+    expect(graph?.nodes.find((n: any) => n.id === "n1")?.title).toBe("Alpha Updated");
+    expect(graph?.links).toHaveLength(1);
+    expect(graph?.links[0]).toEqual(
+      expect.objectContaining({ source: "n1", target: "n3", link_type: "reference" })
+    );
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("seed-hash-2");
   });
 
   it("handles public preload errors gracefully", async () => {

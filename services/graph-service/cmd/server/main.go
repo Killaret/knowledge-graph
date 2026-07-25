@@ -80,12 +80,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to start gRPC listener: %v", err)
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(api.GRPCAuthUnaryInterceptor(cfg)),
+		grpc.StreamInterceptor(api.GRPCAuthStreamInterceptor(cfg)),
+	)
 	graphservice.RegisterGraphServiceServer(grpcServer, service)
 
 	// Start HTTP fallback server
 	httpMux := http.NewServeMux()
-	api.RegisterHTTPHandlers(httpMux, service)
+	api.RegisterHTTPHandlers(httpMux, service, cfg)
 
 	subscriberSvc := subscriber.NewRedisSubscriberWithConfig(redisClient, pgClient, cacheClient, cfg)
 	if err := subscriberSvc.Start(ctx); err != nil {

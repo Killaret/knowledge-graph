@@ -17,17 +17,33 @@ import (
 
 type mockPostgresClient struct{}
 
-func (m *mockPostgresClient) GetNotes(ctx context.Context, rootID string, depth int) ([]*db.Note, []*db.Link, error) {
+func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter) ([]*db.Note, []*db.Link, error) {
 	return []*db.Note{
-		{ID: "note-1", Title: "Note 1"},
-		{ID: "note-2", Title: "Note 2"},
-	}, []*db.Link{
-		{Source: "note-1", Target: "note-2", LinkType: "related", Weight: 0.5},
-	}, nil
+			{ID: "note-1", Title: "Note 1"},
+			{ID: "note-2", Title: "Note 2"},
+		}, []*db.Link{
+			{Source: "note-1", Target: "note-2", LinkType: "related", Weight: 0.5},
+		}, nil
 }
 
 func (m *mockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
 	return make(map[string][]float32), nil
+}
+
+func (m *mockPostgresClient) GetNoteNeighbors(ctx context.Context, filter db.NotesFilter, noteID string, depth int) ([]*db.Neighbor, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) GetShortestPath(ctx context.Context, filter db.NotesFilter, fromID, toID string) ([]string, int, float64, error) {
+	return nil, 0, 0, nil
+}
+
+func (m *mockPostgresClient) GetRecommendationCandidates(ctx context.Context, filter db.NotesFilter, noteID string, depth, limit int) ([]*db.RecommendationCandidate, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) RefreshClosureView(ctx context.Context) error {
+	return nil
 }
 
 func TestEventParsing(t *testing.T) {

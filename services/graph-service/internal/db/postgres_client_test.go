@@ -33,12 +33,35 @@ func NewMockPostgresClient() *MockPostgresClient {
 	}
 }
 
-func (m *MockPostgresClient) GetNotes(ctx context.Context, rootID string, depth int) ([]*Note, []*Link, error) {
-	if rootID == "" || depth <= 0 {
+func (m *MockPostgresClient) GetNotes(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
+	if filter.RootID == "" || filter.Depth <= 0 {
 		return m.notes, m.links, nil
 	}
 	// Simple mock implementation
-	return m.notes[:1], m.links, nil
+	if len(m.notes) > 0 {
+		return m.notes[:1], m.links, nil
+	}
+	return m.notes, m.links, nil
+}
+
+func (m *MockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
+	return make(map[string][]float32), nil
+}
+
+func (m *MockPostgresClient) GetNoteNeighbors(ctx context.Context, filter NotesFilter, noteID string, depth int) ([]*Neighbor, error) {
+	return nil, nil
+}
+
+func (m *MockPostgresClient) GetShortestPath(ctx context.Context, filter NotesFilter, fromID, toID string) ([]string, int, float64, error) {
+	return nil, 0, 0, nil
+}
+
+func (m *MockPostgresClient) GetRecommendationCandidates(ctx context.Context, filter NotesFilter, noteID string, depth, limit int) ([]*RecommendationCandidate, error) {
+	return nil, nil
+}
+
+func (m *MockPostgresClient) RefreshClosureView(ctx context.Context) error {
+	return nil
 }
 
 func (m *MockPostgresClient) AddNote(note *Note) {
@@ -60,13 +83,14 @@ func TestMockPostgresClient(t *testing.T) {
 	mock.AddLink(&Link{Source: "1", Target: "2", LinkType: "reference", Weight: 1.0})
 
 	// Test GetNotes with no root ID (should return all)
-	notes, links, err := mock.GetNotes(ctx, "", 0)
+	notes, links, err := mock.GetNotes(ctx, NotesFilter{})
 	require.NoError(t, err)
 	assert.Len(t, notes, 2)
 	assert.Len(t, links, 1)
 
 	// Test GetNotes with root ID (depth limited)
-	notes, links, err = mock.GetNotes(ctx, "1", 1)
+	notes, links, err = mock.GetNotes(ctx, NotesFilter{RootID: "1", Depth: 1})
 	require.NoError(t, err)
 	assert.Len(t, notes, 1)
+	assert.Len(t, links, 1)
 }
