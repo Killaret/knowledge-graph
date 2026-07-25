@@ -9,7 +9,7 @@ import { filterValidLinks } from "$shared/utils/graphUtils";
 import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
 import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
 import { toSimulationNodes } from "../config";
-import { applyFogPreset, getLowerFogPreset, getHigherFogPreset } from "./fog";
+import { applyFogPreset } from "./fog";
 import type {
   Graph3DCallbacks,
   Graph3DConfig,

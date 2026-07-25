@@ -17,7 +17,7 @@ function createContainer() {
 }
 
 function stubRenderer(engine: Graph3DEngine) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const bundle = (engine as any).sceneBundle;
   bundle.renderer.render = vi.fn();
   bundle.labelRenderer.render = vi.fn();

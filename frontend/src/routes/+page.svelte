@@ -61,7 +61,6 @@
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
-  let graphLoading = $state(false);
   let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
   let searchQuery = $state("");
 
@@ -404,7 +403,6 @@
   async function handleToggleLayoutProvider(provider: "d3" | "graph-service") {
     if (provider === layoutProvider) return;
     layoutProvider = provider;
-    graphLoading = true;
     try {
       const runtime = { ...toRuntimeConfig(), layoutProvider: provider };
       graphData = await createLayoutProvider(runtime).load({ limit: 100 });
@@ -413,8 +411,6 @@
       if (import.meta.env.DEV) {
         console.error("Failed to load 3D graph with layout provider:", provider, e);
       }
-    } finally {
-      graphLoading = false;
     }
   }
 </script>
