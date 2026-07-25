@@ -376,4 +376,23 @@ func TestNote_Getters(t *testing.T) {
 	assert.Equal(t, createdAt, note.CreatedAt())
 	assert.Equal(t, updatedAt, note.UpdatedAt())
 	assert.Equal(t, map[string]interface{}{"key": "value"}, note.Metadata().Value())
+	assert.False(t, note.IsPublic())
+}
+
+func TestNote_SetIsPublic(t *testing.T) {
+	title, _ := NewTitle("Test")
+	content, _ := NewContent("Content")
+	metadata, _ := NewMetadata(map[string]interface{}{"key": "value"})
+	note := NewNote(title, content, "star", metadata)
+
+	assert.False(t, note.IsPublic())
+
+	beforeUpdate := note.UpdatedAt()
+	note.SetIsPublic(true)
+
+	assert.True(t, note.IsPublic())
+	assert.False(t, note.UpdatedAt().Before(beforeUpdate))
+
+	note.SetIsPublic(false)
+	assert.False(t, note.IsPublic())
 }

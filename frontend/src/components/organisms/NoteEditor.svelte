@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { createNote, updateNote, getNote } from "$shared/api/notes";
+  import { createNote, updateNote, getNote, publishNote, unpublishNote } from "$shared/api/notes";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -19,8 +19,10 @@
   let title = $state("");
   let content = $state("");
   let noteType = $state("star");
+  let isPublic = $state(false);
   let isLoading = $state(false);
   let isSaving = $state(false);
+  let isTogglingPublic = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
   let titleError = $state<string | null>(null);
 
@@ -48,6 +50,7 @@
       title = note.title;
       content = note.content || "";
       noteType = note.type || "star";
+      isPublic = note.is_public ?? false;
     } catch (err: unknown) {
       apiError = extractApiError(err) || {
         code: "API_ERROR",
@@ -93,6 +96,29 @@
       };
     } finally {
       isSaving = false;
+    }
+  }
+
+  async function togglePublic(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const nextPublic = target.checked;
+    if (!noteId) return;
+
+    isTogglingPublic = true;
+    apiError = null;
+    try {
+      const updated = nextPublic
+        ? await publishNote(noteId)
+        : await unpublishNote(noteId);
+      isPublic = updated.is_public ?? nextPublic;
+    } catch (err: unknown) {
+      target.checked = isPublic;
+      apiError = extractApiError(err) || {
+        code: "API_ERROR",
+        message: t("noteEditor.publicToggleError"),
+      };
+    } finally {
+      isTogglingPublic = false;
     }
   }
 
@@ -152,6 +178,23 @@
           disabled={isSaving}
         ></textarea>
       </div>
+
+      {#if noteId}
+        <div class="field field--inline">
+          <label for="is-public" class="toggle-label">
+            <input
+              id="is-public"
+              type="checkbox"
+              checked={isPublic}
+              onchange={togglePublic}
+              disabled={isTogglingPublic}
+              data-testid="public-toggle"
+            />
+            {t("noteEditor.publicLabel")}
+          </label>
+          <span class="hint">{t("noteEditor.publicHint")}</span>
+        </div>
+      {/if}
 
       <div class="actions">
         <button type="submit" class="btn-primary" disabled={isSaving} data-testid="save-button">
@@ -250,5 +293,28 @@
     background: var(--color-surface-elevated);
     color: var(--color-text);
     border: 1px solid var(--color-border);
+  }
+
+  .field--inline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .toggle-label input[type="checkbox"] {
+    width: auto;
+  }
+
+  .hint {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
 </style>

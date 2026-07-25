@@ -195,6 +195,13 @@ func (s *RedisSubscriber) handleNoteEvent(ctx context.Context, event Event) erro
 	deltaPattern := config.CacheKey("delta", userID, "*")
 	s.invalidatePattern(ctx, deltaPattern)
 
+	// Publish/unpublish affects the public graph, so invalidate public caches too.
+	publicFullLayoutKey := config.CacheKey("full", "public")
+	s.redisClient.Del(ctx, publicFullLayoutKey)
+
+	publicDeltaPattern := config.CacheKey("delta", "public", "*")
+	s.invalidatePattern(ctx, publicDeltaPattern)
+
 	log.Printf("[GraphService] Cache invalidated for note event %s", event.Event)
 	return nil
 }

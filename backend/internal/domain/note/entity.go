@@ -14,16 +14,27 @@ type Note struct {
 	type_     string
 	metadata  Metadata
 	creatorID *uuid.UUID
+	isPublic  bool
 	createdAt time.Time
 	updatedAt time.Time
 }
 
-func NewNote(title Title, content Content, noteType string, metadata Metadata) *Note {
+// NoteOption configures a Note during construction.
+type NoteOption func(*Note)
+
+// WithIsPublic sets the public visibility flag on a reconstructed note.
+func WithIsPublic(isPublic bool) NoteOption {
+	return func(n *Note) {
+		n.isPublic = isPublic
+	}
+}
+
+func NewNote(title Title, content Content, noteType string, metadata Metadata, opts ...NoteOption) *Note {
 	now := time.Now()
 	if noteType == "" {
 		noteType = "star"
 	}
-	return &Note{
+	n := &Note{
 		id:        uuid.New(),
 		title:     title,
 		content:   content,
@@ -33,15 +44,19 @@ func NewNote(title Title, content Content, noteType string, metadata Metadata) *
 		createdAt: now,
 		updatedAt: now,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
 // NewNoteWithCreator creates a new note with a creator ID
-func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID) *Note {
+func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID, opts ...NoteOption) *Note {
 	now := time.Now()
 	if noteType == "" {
 		noteType = "star"
 	}
-	return &Note{
+	n := &Note{
 		id:        uuid.New(),
 		title:     title,
 		content:   content,
@@ -51,14 +66,18 @@ func NewNoteWithCreator(title Title, content Content, noteType string, metadata 
 		createdAt: now,
 		updatedAt: now,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
 // ReconstructNote reconstructs a note from saved data (used by repository)
-func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time) *Note {
+func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
 	if noteType == "" {
 		noteType = "star"
 	}
-	return &Note{
+	n := &Note{
 		id:        id,
 		title:     title,
 		content:   content,
@@ -68,14 +87,18 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
 // ReconstructNoteWithCreator reconstructs a note with creator ID
-func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time) *Note {
+func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
 	if noteType == "" {
 		noteType = "star"
 	}
-	return &Note{
+	n := &Note{
 		id:        id,
 		title:     title,
 		content:   content,
@@ -85,6 +108,10 @@ func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, note
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
 // Getters
@@ -112,6 +139,10 @@ func (n *Note) CreatorID() *uuid.UUID {
 	return n.creatorID
 }
 
+func (n *Note) IsPublic() bool {
+	return n.isPublic
+}
+
 func (n *Note) SetCreatorID(creatorID uuid.UUID) {
 	n.creatorID = &creatorID
 	n.updatedAt = time.Now()
@@ -122,6 +153,11 @@ func (n *Note) SetType(noteType string) {
 		n.type_ = noteType
 		n.updatedAt = time.Now()
 	}
+}
+
+func (n *Note) SetIsPublic(isPublic bool) {
+	n.isPublic = isPublic
+	n.updatedAt = time.Now()
 }
 
 func (n *Note) CreatedAt() time.Time {

@@ -338,6 +338,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.create": "Create",
     "noteEditor.cancel": "Cancel",
     "noteEditor.saveError": "Failed to save note. Please try again.",
+    "noteEditor.publicLabel": "Public access",
+    "noteEditor.publicHint": "Visible to everyone in the public graph",
+    "noteEditor.publicToggleError": "Failed to change public access. Please try again.",
 
     // SmartGraph
     "smartGraph.loading": "Loading visualization...",
@@ -434,6 +437,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteCard.selectNote": "Select note {{title}}",
     "noteCard.starLit": "Star lit: {{date}}",
     "noteCard.orbitCorrected": "Orbit corrected: {{date}}",
+    "noteCard.public": "Public",
+    "noteCard.publicAria": "Public note",
 
     // NoteSidePanel
     "noteSidePanel.loading": "Loading note...",
@@ -893,6 +898,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteEditor.create": "Создать",
     "noteEditor.cancel": "Отмена",
     "noteEditor.saveError": "Не удалось сохранить заметку. Попробуйте ещё раз.",
+    "noteEditor.publicLabel": "Публичный доступ",
+    "noteEditor.publicHint": "Видна всем в публичном графе",
+    "noteEditor.publicToggleError": "Не удалось изменить публичный доступ. Попробуйте ещё раз.",
 
     // SmartGraph
     "smartGraph.loading": "Загрузка визуализации...",
@@ -989,6 +997,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "noteCard.selectNote": "Выбрать заметку {{title}}",
     "noteCard.starLit": "Звезда зажжена: {{date}}",
     "noteCard.orbitCorrected": "Орбита скорректирована: {{date}}",
+    "noteCard.public": "Публичная",
+    "noteCard.publicAria": "Публичная заметка",
 
     // NoteSidePanel
     "noteSidePanel.loading": "Загрузка заметки...",

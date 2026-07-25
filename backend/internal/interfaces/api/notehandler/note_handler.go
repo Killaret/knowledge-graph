@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -245,6 +246,7 @@ func (h *Handler) Create(c *gin.Context) {
 		"content":    newNote.Content().String(),
 		"type":       newNote.Type(),
 		"metadata":   newNote.Metadata().Value(),
+		"is_public":  newNote.IsPublic(),
 		"created_at": newNote.CreatedAt(),
 		"updated_at": newNote.UpdatedAt(),
 	}
@@ -385,10 +387,127 @@ func (h *Handler) Update(c *gin.Context) {
 		"content":    existing.Content().String(),
 		"type":       existing.Type(),
 		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
 		"created_at": existing.CreatedAt(),
 		"updated_at": existing.UpdatedAt(),
 	}
 	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+}
+
+// Publish makes a note publicly visible.
+func (h *Handler) Publish(c *gin.Context) {
+	h.setNotePublic(c, true)
+}
+
+// Unpublish hides a note from the public graph.
+func (h *Handler) Unpublish(c *gin.Context) {
+	h.setNotePublic(c, false)
+}
+
+func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
+	middleware.SetDBEntity(c, "notes")
+	if isPublic {
+		middleware.SetDBOperation(c, "publish")
+	} else {
+		middleware.SetDBOperation(c, "unpublish")
+	}
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	existing, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if existing == nil {
+		apicommon.NotFound(c, "Note")
+		return
+	}
+
+	if existing.CreatorID() == nil || *existing.CreatorID() != userID {
+		apicommon.Forbidden(c)
+		return
+	}
+
+	existing.SetIsPublic(isPublic)
+	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for publish/unpublish: %v", err)
+		}
+	}
+
+	h.invalidateGraphServiceCaches(c.Request.Context(), userID.String(), id.String())
+
+	if h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	responseData := gin.H{
+		"id":         existing.ID(),
+		"title":      existing.Title().String(),
+		"content":    existing.Content().String(),
+		"type":       existing.Type(),
+		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
+		"created_at": existing.CreatedAt(),
+		"updated_at": existing.UpdatedAt(),
+	}
+	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+}
+
+func (h *Handler) invalidateGraphServiceCaches(ctx context.Context, userID, noteID string) {
+	if h.cacheClient == nil {
+		return
+	}
+
+	patterns := []string{
+		fmt.Sprintf("graph-service:full:%s", userID),
+		fmt.Sprintf("graph-service:delta:%s:*", userID),
+		"graph-service:full:public",
+		"graph-service:delta:public:*",
+		"graph-service:public:*",
+		fmt.Sprintf("graph-service:note:*:%s:*", noteID),
+	}
+
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := h.cacheClient.Scan(ctx, cursor, pattern, 100)
+			if err != nil {
+				log.Printf("[NoteHandler] Failed to scan cache pattern %s: %v", pattern, err)
+				break
+			}
+			if len(keys) > 0 {
+				if err := h.cacheClient.Del(ctx, keys...); err != nil {
+					log.Printf("[NoteHandler] Failed to delete cache keys for pattern %s: %v", pattern, err)
+				}
+			}
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
+		}
+	}
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -557,6 +676,7 @@ func (h *Handler) Get(c *gin.Context) {
 		"content":    n.Content().String(),
 		"type":       n.Type(),
 		"metadata":   n.Metadata().Value(),
+		"is_public":  n.IsPublic(),
 		"created_at": n.CreatedAt(),
 		"updated_at": n.UpdatedAt(),
 	}
@@ -766,6 +886,7 @@ func (h *Handler) Search(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}
@@ -821,6 +942,7 @@ func (h *Handler) List(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}
