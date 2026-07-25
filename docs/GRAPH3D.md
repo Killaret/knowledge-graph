@@ -72,16 +72,11 @@ This means the 2D canvas, the 3D viewer, and the list view all consume the same 
 - `D3ForceLayoutProvider` — calls the same endpoints as the 2D view and lets the client-side `d3-force-3d` engine seed and refine positions.
 - `GraphServiceLayoutProvider` — calls `getFullGraphData` or `getGraphData(..., layout="3d")` to retrieve server-computed 3D positions.
 
-### How to switch providers
+`createLayoutProvider(runtime: Graph3DRuntimeConfig)` selects the active provider at runtime based on `frontend.graph.3d.layout_provider` in `knowledge-graph.config.json`. Routes `/graph/3d` and `/graph/3d/[id]` use `toRuntimeConfig()` + `createLayoutProvider()` instead of hard-coding a provider.
 
-`Graph3DRuntimeConfig` in `features/graph-3d/config.ts` exposes `layoutProvider: "d3" | "graph-service"`, but the current route pages (`routes/graph/3d/+page.svelte` and `routes/graph/3d/[id]/page.svelte`) instantiate `GraphServiceLayoutProvider` directly. To use the D3 provider, replace the import and instance in those route files:
+On the home page, `FloatingControls` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
 
-```ts
-import { D3ForceLayoutProvider } from "$features/graph-3d";
-const layoutProvider = new D3ForceLayoutProvider();
-```
-
-A future runtime switcher can read `layoutProvider` from `Graph3DRuntimeConfig` and instantiate the correct provider.
+The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
 ### Backend fallback
 
@@ -91,22 +86,27 @@ A future runtime switcher can read `layoutProvider` from `Graph3DRuntimeConfig` 
 
 ## Fog and performance presets
 
-Currently the 3D feature does **not** expose named fog or performance presets. The configuration model already supports them:
+Named fog presets and FPS-based performance presets are implemented and driven by `frontend.graph.3d` in `knowledge-graph.config.json`.
 
-- `Graph3DConfig.fogDensityInitial` / `fogDensityFinal` drive a smooth fog transition while the simulation stabilizes (see `lib/scene.ts` and `lib/engine.ts`).
-- `shared/lib/performance-monitor.ts` exposes `fps` and `frameTimeMs` that future quality presets can consume.
+## Fog presets
 
-When presets are added, the typical pattern is:
+`features/graph-3d/lib/fog.ts` exposes named fog presets driven by `frontend.graph.3d.fog.presets`:
 
-```ts
-const presets = {
-  low:    { fogDensityInitial: 0.12, fogDensityFinal: 0.015, enableLabels: false, warmStartTicks: 20 },
-  medium: { fogDensityInitial: 0.08, fogDensityFinal: 0.005, enableLabels: true,  warmStartTicks: 80 },
-  high:   { fogDensityInitial: 0.04, fogDensityFinal: 0.001, enableLabels: true,  warmStartTicks: 120 },
-};
-```
+- `birth` — dense initial fog (`density_initial`) that thins to `density_final` as the simulation stabilizes.
+- `nebula` — medium fog.
+- `deep-space` — no fog.
 
-A preset can be merged into `Graph3DConfig` when constructing `Graph3DEngine` or via `Graph3DRuntimeConfig`.
+`applyFogPreset(scene, presetName, config)` returns `{ initial, final }` so `Graph3DEngine` can smoothly interpolate density as the graph settles. The default preset is configured via `frontend.graph.3d.fog.default_preset`.
+
+## Performance presets
+
+`Graph3DEngine` uses `shared/lib/performance-monitor.ts` to track FPS. When FPS stays below `fps_threshold_low` for `low_fps_sample_count` frames, it:
+
+- switches to a lighter fog preset (`birth` → `nebula` → `deep-space`);
+- reduces the starfield particle count (`high` → `medium` → `low`);
+- disables `autoRotate`.
+
+When FPS rises above `fps_threshold_high` for the same sample count, quality steps back up. Thresholds and starfield counts are configured in `frontend.graph.3d.performance`.
 
 ## Performance notes
 
@@ -141,6 +141,10 @@ Runtime provider selection:
 - Unit tests:
   - `frontend/src/features/graph-3d/ui/Graph3DScene.spec.ts`
   - `frontend/src/features/graph-3d/config.test.ts`
+  - `frontend/src/widgets/graph-3d-viewer/Graph3DViewer.spec.ts`
+  - `frontend/src/features/graph-3d/model/layout-provider.test.ts`
+  - `frontend/src/features/graph-3d/lib/fog.test.ts`
+  - `frontend/src/features/graph-3d/lib/engine.performance.test.ts`
 - Mocks:
   - `frontend/src/__mocks__/d3-force-3d.ts` provides a deterministic `d3-force-3d` mock.
   - `vitest-setup.ts` mocks `three` (`WebGLRenderer`), `OrbitControls`, and `CSS2DRenderer`.

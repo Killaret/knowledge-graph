@@ -4,12 +4,13 @@
   import { goto } from "$app/navigation";
   import BackButton from "$components/atoms/BackButton.svelte";
   import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
-  import { GraphServiceLayoutProvider } from "$features/graph-3d";
+  import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import { type GraphData } from "$shared/api/graph";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
-  const layoutProvider = new GraphServiceLayoutProvider();
+  const runtimeConfig = toRuntimeConfig();
+  const layoutProvider = createLayoutProvider(runtimeConfig);
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>

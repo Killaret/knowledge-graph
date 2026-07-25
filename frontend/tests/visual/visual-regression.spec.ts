@@ -145,11 +145,11 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await argosScreenshot(page, "empty-state", { fullPage: true });
   });
 
-  test("3D Graph - frozen notice (redirects to 2D)", async ({ page }) => {
+  test("3D Graph - renders 3D view", async ({ page }) => {
     await page.goto("/graph/3d" + STABLE_RENDER);
-    await page.waitForURL("**/graph", { timeout: 5000 });
-    await waitForGraph(page);
-    await argosScreenshot(page, "3d-frozen-notice", { fullPage: true });
+    const viewer = page.locator('[data-testid="graph-3d-viewer"]');
+    await expect(viewer).toBeVisible({ timeout: 15000 });
+    await argosScreenshot(page, "3d-graph-view", { fullPage: true });
   });
 
   test("Home responsive viewports", async ({ page }) => {

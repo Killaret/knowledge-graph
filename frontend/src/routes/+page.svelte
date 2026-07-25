@@ -29,6 +29,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
+  import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$entities";
@@ -60,6 +61,8 @@
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
+  let graphLoading = $state(false);
+  let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
   let searchQuery = $state("");
 
   // Filter and sort state
@@ -397,6 +400,23 @@
   function handleToggleView(view: "graph" | "list" | "3d") {
     graphStore.currentView = view;
   }
+
+  async function handleToggleLayoutProvider(provider: "d3" | "graph-service") {
+    if (provider === layoutProvider) return;
+    layoutProvider = provider;
+    graphLoading = true;
+    try {
+      const runtime = { ...toRuntimeConfig(), layoutProvider: provider };
+      graphData = await createLayoutProvider(runtime).load({ limit: 100 });
+    } catch (e) {
+      apiError = toErrorResponse(e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to load 3D graph with layout provider:", provider, e);
+      }
+    } finally {
+      graphLoading = false;
+    }
+  }
 </script>
 
 <!-- Splash Screen on initial load -->
@@ -416,6 +436,8 @@
       handleSearch();
     }}
     onToggleView={handleToggleView}
+    onToggleLayoutProvider={handleToggleLayoutProvider}
+    {layoutProvider}
     onFilter={(type: string) => {
       filterState = filterState.with({ selectedType: type });
       selectedType = type;

@@ -1,4 +1,5 @@
 import type { GraphNode, GraphLink } from "$shared/api/graph";
+import { graphConfig3D } from "$shared/config/config";
 import type { SimulationNode } from "./model/types";
 
 /**
@@ -12,7 +13,7 @@ export interface Graph3DRuntimeConfig {
   useGraphServiceLayout: boolean;
   /** Number of warm-up ticks for the D3 force simulation (0 = start from provided positions). */
   warmStartTicks: number;
-  /** Fallback initial layout when graph-service is not used. */
+  /** Initial layout provider: d3 (client-side force simulation) or graph-service. */
   layoutProvider: "d3" | "graph-service";
 }
 
@@ -21,6 +22,19 @@ export const DEFAULT_RUNTIME_CONFIG: Graph3DRuntimeConfig = {
   warmStartTicks: 80,
   layoutProvider: "d3",
 };
+
+/**
+ * Build a runtime configuration from the centralized project config.
+ * Falls back to sensible defaults when values are missing.
+ */
+export function toRuntimeConfig(): Graph3DRuntimeConfig {
+  const provider = graphConfig3D.layout_provider;
+  return {
+    useGraphServiceLayout: provider === "graph-service",
+    warmStartTicks: DEFAULT_RUNTIME_CONFIG.warmStartTicks,
+    layoutProvider: provider === "graph-service" || provider === "d3" ? provider : "d3",
+  };
+}
 
 /**
  * Convert plain API nodes into simulation-ready nodes. Preserves x/y/z from the

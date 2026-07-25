@@ -258,6 +258,11 @@ const messages: Record<Locale, Record<string, string>> = {
     "controls.export": "Export",
     "controls.createTitle": "Create new note",
     "controls.createAria": "Create new note",
+    "controls.layoutProviderTitle": "Layout provider",
+    "controls.layoutD3": "D3",
+    "controls.layoutD3Title": "Client-side D3 force layout",
+    "controls.layoutGraphService": "Service",
+    "controls.layoutGraphServiceTitle": "Server-side graph-service layout",
 
     // Filter
     "filter.filterBy": "Filter by {{type}}",
@@ -818,6 +823,11 @@ const messages: Record<Locale, Record<string, string>> = {
     "controls.export": "Экспорт",
     "controls.createTitle": "Создать новую заметку",
     "controls.createAria": "Создать новую заметку",
+    "controls.layoutProviderTitle": "Раскладка",
+    "controls.layoutD3": "D3",
+    "controls.layoutD3Title": "Клиентская раскладка D3",
+    "controls.layoutGraphService": "Сервис",
+    "controls.layoutGraphServiceTitle": "Серверная раскладка graph-service",
 
     // Filter
     "filter.filterBy": "Фильтр по {{type}}",

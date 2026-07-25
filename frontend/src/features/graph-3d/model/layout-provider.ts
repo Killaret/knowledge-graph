@@ -1,6 +1,6 @@
 import type { GraphData, GraphLink } from "$shared/api/graph";
 import { getFullGraphData, getGraphData } from "$shared/api/graph";
-import { toSimulationNodes } from "../config";
+import { toSimulationNodes, type Graph3DRuntimeConfig } from "../config";
 import type { SimulationNode } from "./types";
 
 /**
@@ -62,4 +62,15 @@ export function prepareSimulationData(data: GraphData): {
     nodes: toSimulationNodes(data.nodes, data.links),
     links: data.links,
   };
+}
+
+/**
+ * Factory that picks the correct layout provider at runtime based on the
+ * project configuration. This allows switching between client-side D3 force
+ * layout and server-side graph-service layouts without changing route code.
+ */
+export function createLayoutProvider(runtime: Graph3DRuntimeConfig): GraphLayoutProvider {
+  return runtime.layoutProvider === "graph-service"
+    ? new GraphServiceLayoutProvider()
+    : new D3ForceLayoutProvider();
 }

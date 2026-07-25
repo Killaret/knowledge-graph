@@ -3,6 +3,7 @@ export {
   D3ForceLayoutProvider,
   GraphServiceLayoutProvider,
   prepareSimulationData,
+  createLayoutProvider,
 } from "./model/layout-provider";
 export type {
   Graph3DCallbacks,
@@ -13,4 +14,4 @@ export type {
 } from "./model/types";
 export { DEFAULT_GRAPH3D_CONFIG } from "./model/types";
 export type { Graph3DRuntimeConfig } from "./config";
-export { DEFAULT_RUNTIME_CONFIG, toSimulationNodes } from "./config";
+export { DEFAULT_RUNTIME_CONFIG, toRuntimeConfig, toSimulationNodes } from "./config";
