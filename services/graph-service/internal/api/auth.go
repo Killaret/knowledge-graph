@@ -34,8 +34,8 @@ type TokenClaims struct {
 func AuthMiddleware(cfg *config.Config, public bool, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if cfg.SkipAuth {
-			log.Printf("[Auth] SKIP_AUTH enabled, request allowed as user_id=public")
-			next(w, r.WithContext(withUserID(r.Context(), "")))
+			log.Printf("[Auth] SKIP_AUTH enabled, request allowed as public")
+			next(w, r.WithContext(withPublic(r.Context())))
 			return
 		}
 

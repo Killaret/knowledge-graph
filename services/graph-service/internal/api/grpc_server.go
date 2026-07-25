@@ -52,6 +52,9 @@ func (s *graphService) grpcFilter(ctx context.Context, reqUserID string) db.Note
 		filter.UserID = userID
 	} else if reqUserID != "" && reqUserID != "public" {
 		filter.UserID = reqUserID
+	} else {
+		// No authenticated user -> public-only to avoid leaking private notes.
+		filter.IsPublic = true
 	}
 	return filter
 }
