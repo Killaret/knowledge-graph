@@ -21,6 +21,8 @@ export interface Graph3DCallbacks {
   onError?: (message: string) => void;
 }
 
+export type FogPresetName = "birth" | "nebula" | "deep-space";
+
 export interface Graph3DConfig {
   maxNodes: number;
   baseNodeScale: number;
@@ -32,6 +34,7 @@ export interface Graph3DConfig {
   enableLabels: boolean;
   autoRotate: boolean;
   disableAnimation: boolean;
+  fog_presets?: Partial<Record<FogPresetName, { density: number }>>;
 }
 
 export const DEFAULT_GRAPH3D_CONFIG: Graph3DConfig = {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import { graphPerformanceConfig } from "$shared/config/config";
 import type { Graph3DConfig } from "../model/types";
 
 export interface SceneBundle {
@@ -9,6 +10,7 @@ export interface SceneBundle {
   renderer: THREE.WebGLRenderer;
   labelRenderer: CSS2DRenderer;
   controls: OrbitControls;
+  starfield: THREE.Points;
   dispose: () => void;
 }
 
@@ -60,7 +62,7 @@ export function createScene(container: HTMLElement, config: Graph3DConfig): Scen
   fillLight.position.set(-20, -10, 20);
   scene.add(fillLight);
 
-  const starfield = createStarfield();
+  const starfield = createStarfield(graphPerformanceConfig?.starfield_counts?.high ?? 1500);
   scene.add(starfield);
 
   return {
@@ -69,6 +71,7 @@ export function createScene(container: HTMLElement, config: Graph3DConfig): Scen
     renderer,
     labelRenderer,
     controls,
+    starfield,
     dispose: () => {
       controls.dispose();
       renderer.dispose();
@@ -85,7 +88,7 @@ export function createScene(container: HTMLElement, config: Graph3DConfig): Scen
   };
 }
 
-function createStarfield(count = 1500): THREE.Points {
+export function createStarfield(count = 1500): THREE.Points {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
@@ -105,6 +108,24 @@ function createStarfield(count = 1500): THREE.Points {
     sizeAttenuation: true,
   });
   return new THREE.Points(geometry, material);
+}
+
+/**
+ * Replace a starfield Points object with a new one that has the requested particle count.
+ * Disposes the old geometry/material and updates the scene graph.
+ */
+export function setStarfieldCount(scene: THREE.Scene, starfield: THREE.Points, count: number): THREE.Points {
+  scene.remove(starfield);
+  starfield.geometry.dispose();
+  if (Array.isArray(starfield.material)) {
+    starfield.material.forEach((m) => m.dispose());
+  } else {
+    starfield.material.dispose();
+  }
+
+  const replacement = createStarfield(count);
+  scene.add(replacement);
+  return replacement;
 }
 
 export function setFogDensity(scene: THREE.Scene, density: number): void {

@@ -1,13 +1,15 @@
 import * as THREE from "three";
-import { createScene, setFogDensity, resizeScene } from "./scene";
+import { createScene, setFogDensity, resizeScene, setStarfieldCount } from "./scene";
 import { NodeManager } from "./nodes";
 import { LinkManager } from "./links";
 import { LabelManager } from "./labels";
 import { createGraphSimulation } from "./simulation";
 import { autoZoomToFit, centerCameraOnNode } from "./camera";
 import { filterValidLinks } from "$shared/utils/graphUtils";
-import { graphConfig3D } from "$shared/config/config";
+import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
+import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
 import { toSimulationNodes } from "../config";
+import { applyFogPreset, getLowerFogPreset, getHigherFogPreset } from "./fog";
 import type {
   Graph3DCallbacks,
   Graph3DConfig,
@@ -15,7 +17,7 @@ import type {
   GraphLink,
   SimulationNode,
 } from "../model/types";
-import { DEFAULT_GRAPH3D_CONFIG } from "../model/types";
+import { DEFAULT_GRAPH3D_CONFIG, type FogPresetName } from "../model/types";
 
 export class Graph3DEngine {
   private container: HTMLElement;
@@ -33,8 +35,16 @@ export class Graph3DEngine {
   private isReady = false;
   private currentFogDensity: number;
   private targetFogDensity: number;
+  private fogInitial: number;
+  private fogFinal: number;
   private lastFrameTime = 0;
   private readonly frameInterval = 33; // ~30 fps
+  private monitor = createPerformanceMonitor();
+  private performanceConfig = graphPerformanceConfig;
+  private currentPerformanceLevel: "high" | "medium" | "low" = "high";
+  private currentFogPreset: FogPresetName = "birth";
+  private lowFpsStreak = 0;
+  private highFpsStreak = 0;
 
   constructor(
     container: HTMLElement,
@@ -46,6 +56,7 @@ export class Graph3DEngine {
     this.config = {
       ...DEFAULT_GRAPH3D_CONFIG,
       maxNodes: graphConfig3D.max_nodes,
+      fog_presets: graphPerformanceConfig.fog_presets,
       ...partialConfig,
     };
 
@@ -55,6 +66,8 @@ export class Graph3DEngine {
     this.labelManager = new LabelManager(this.sceneBundle.scene, this.config);
     this.currentFogDensity = this.config.fogDensityInitial;
     this.targetFogDensity = this.config.fogDensityInitial;
+    this.fogInitial = this.config.fogDensityInitial;
+    this.fogFinal = this.config.fogDensityFinal;
   }
 
   setData(nodes: GraphNode[], links: GraphLink[]) {
@@ -90,9 +103,13 @@ export class Graph3DEngine {
       this.updateScene();
       this.centerCamera();
 
-      this.currentFogDensity = this.config.fogDensityInitial;
-      this.targetFogDensity = this.config.fogDensityInitial;
-      setFogDensity(this.sceneBundle.scene, this.currentFogDensity);
+      this.currentFogPreset = "birth";
+      this.currentPerformanceLevel = "high";
+      const birthDensity = applyFogPreset(this.sceneBundle.scene, "birth", this.config);
+      this.fogInitial = birthDensity;
+      this.fogFinal = Math.min(birthDensity, this.config.fogDensityFinal);
+      this.currentFogDensity = birthDensity;
+      this.targetFogDensity = birthDensity;
 
       if (this.config.disableAnimation) {
         this.simulateToStable();
@@ -126,6 +143,12 @@ export class Graph3DEngine {
     if (this.disposed || this.config.disableAnimation) return;
 
     const now = performance.now();
+
+    // Sample every animation frame so the monitor can see the actual FPS,
+    // even when rendering is throttled to ~30 fps.
+    this.monitor.tick(now);
+    this.adaptPerformance();
+
     if (now - this.lastFrameTime < this.frameInterval) {
       this.rafId = requestAnimationFrame(() => this.frame());
       return;
@@ -137,9 +160,7 @@ export class Graph3DEngine {
       this.updateScene();
 
       const progress = Math.min(1 - this.sim.alpha(), 1);
-      this.targetFogDensity =
-        this.config.fogDensityInitial -
-        (this.config.fogDensityInitial - this.config.fogDensityFinal) * progress;
+      this.targetFogDensity = this.fogInitial - (this.fogInitial - this.fogFinal) * progress;
     } else if (!this.isReady) {
       this.simulateToStable();
       this.updateScene();
@@ -156,6 +177,79 @@ export class Graph3DEngine {
     this.sceneBundle.labelRenderer.render(this.sceneBundle.scene, this.sceneBundle.camera);
 
     this.rafId = requestAnimationFrame(() => this.frame());
+  }
+
+  private adaptPerformance() {
+    const fps = this.monitor.fps;
+    if (fps < this.performanceConfig.fps_threshold_low) {
+      this.lowFpsStreak++;
+      this.highFpsStreak = 0;
+    } else if (fps > this.performanceConfig.fps_threshold_high) {
+      this.highFpsStreak++;
+      this.lowFpsStreak = 0;
+    } else {
+      this.lowFpsStreak = 0;
+      this.highFpsStreak = 0;
+    }
+
+    if (this.lowFpsStreak >= this.performanceConfig.low_fps_sample_count) {
+      this.downgradePerformance();
+      this.lowFpsStreak = 0;
+    }
+
+    if (this.highFpsStreak >= this.performanceConfig.low_fps_sample_count) {
+      this.upgradePerformance();
+      this.highFpsStreak = 0;
+    }
+  }
+
+  private downgradePerformance() {
+    const levels: ("high" | "medium" | "low")[] = ["high", "medium", "low"];
+    const presets: FogPresetName[] = ["birth", "nebula", "deep-space"];
+    const idx = levels.indexOf(this.currentPerformanceLevel);
+    if (idx >= levels.length - 1) return;
+
+    this.currentPerformanceLevel = levels[idx + 1];
+    this.currentFogPreset = presets[idx + 1];
+    this.applyPerformancePreset();
+
+    this.sceneBundle.controls.autoRotate = false;
+    this.sceneBundle.controls.autoRotateSpeed = 0;
+  }
+
+  private upgradePerformance() {
+    const levels: ("high" | "medium" | "low")[] = ["high", "medium", "low"];
+    const presets: FogPresetName[] = ["birth", "nebula", "deep-space"];
+    const idx = levels.indexOf(this.currentPerformanceLevel);
+    if (idx <= 0) return;
+
+    this.currentPerformanceLevel = levels[idx - 1];
+    this.currentFogPreset = presets[idx - 1];
+    this.applyPerformancePreset();
+
+    if (this.config.autoRotate) {
+      this.sceneBundle.controls.autoRotate = true;
+      this.sceneBundle.controls.autoRotateSpeed = 0.8;
+    }
+  }
+
+  private applyPerformancePreset() {
+    const density = applyFogPreset(
+      this.sceneBundle.scene,
+      this.currentFogPreset,
+      this.config
+    );
+    this.fogInitial = density;
+    this.fogFinal = density;
+    this.currentFogDensity = density;
+    this.targetFogDensity = density;
+
+    const starfieldCount = this.performanceConfig.starfield_counts[this.currentPerformanceLevel];
+    this.sceneBundle.starfield = setStarfieldCount(
+      this.sceneBundle.scene,
+      this.sceneBundle.starfield,
+      starfieldCount
+    );
   }
 
   private simulateToStable() {
@@ -177,7 +271,7 @@ export class Graph3DEngine {
   private finishLoading() {
     if (this.isReady) return;
     this.isReady = true;
-    this.targetFogDensity = this.config.fogDensityFinal;
+    this.targetFogDensity = this.fogFinal;
     this.callbacks.onReady?.();
     this.callbacks.onLoadingChange?.(false);
   }

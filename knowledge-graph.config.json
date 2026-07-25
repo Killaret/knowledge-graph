@@ -146,6 +146,21 @@
       "3d": {
         "max_nodes": 500
       },
+      "performance": {
+        "fps_threshold_low": 20,
+        "fps_threshold_high": 45,
+        "low_fps_sample_count": 30,
+        "fog_presets": {
+          "birth": { "density": 0.08 },
+          "nebula": { "density": 0.02 },
+          "deep-space": { "density": 0 }
+        },
+        "starfield_counts": {
+          "high": 1500,
+          "medium": 800,
+          "low": 300
+        }
+      },
       "anomaly": {
         "reality_rift": {
           "core_color": "#0a0a0f",
