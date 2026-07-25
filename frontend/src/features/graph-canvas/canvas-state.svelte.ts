@@ -1,26 +1,15 @@
-import {
-  getSimulationNodes,
-  resetView,
-} from "$components/organisms/GraphCanvas";
-import type {
-  SimulationState,
-  TransformState,
-} from "$components/organisms/GraphCanvas/types";
-import {
-  createNote,
-  closeNoteForm,
-  type NoteFormState,
-} from "$features/graph-forms/note-form";
-import {
-  createLink,
-  closeLinkForm,
-  type LinkFormState,
-} from "$features/graph-forms/link-form";
-import {
-  updateSearch,
-  type HotkeysState,
-} from "$features/graph-interaction/hotkeys";
+import { graphStore } from "$shared/stores/graph.svelte";
 import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+// Types used only for public API signatures; no runtime dependency on other features or components.
+export interface HotkeysState {
+  showSearchBox: boolean;
+  searchQuery: string;
+  searchMatchIds: string[];
+  searchCurrentIndex: number;
+  showHelpModal: boolean;
+  showHelpTooltip: boolean;
+}
 
 const locale = getCurrentLocale();
 const t = (key: string, params?: Record<string, string | number>) =>
@@ -41,35 +30,15 @@ export interface DuplicateWarning {
   linkId: string;
 }
 
-export interface GraphLinkInput {
-  source: string;
-  target: string;
-  link_type?: string;
-  weight?: number;
-  source_type?: string;
-}
-
-export interface NoteNodeInput {
-  id: string;
-  title: string;
-  type?: string;
-  createdAt?: string;
-  created_at?: string;
-}
-
 export function createGraphCanvasState() {
   let hoveredLink = $state<HoveredLinkInfo | null>(null);
   let tooltipPosition = $state({ x: 0, y: 0 });
   let hoveredNodeId = $state<string | null>(null);
 
   let duplicateWarning = $state<DuplicateWarning | null>(null);
-  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  let duplicateWarningTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
   let highlightedLinkId = $state<string | null>(null);
-  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  let highlightedLinkTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
 
   let lastDeletedNodeId = $state<string | null>(null);
   let showUndoToast = $state(false);
@@ -77,7 +46,6 @@ export function createGraphCanvasState() {
   let undoToastTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
 
   let focusMode = $state(false);
-  let selectedNodeId = $state<string | null>(null);
 
   const hotkeyLines = [
     t("hotkey.search"),
@@ -98,7 +66,7 @@ export function createGraphCanvasState() {
     target: string,
     linkType: string,
     x: number,
-    y: number,
+    y: number
   ) {
     const stableLinkId = `${source}-${target}-${linkType}`;
     highlightedLinkId = stableLinkId;
@@ -154,76 +122,13 @@ export function createGraphCanvasState() {
     if (undoToastTimeout) clearTimeout(undoToastTimeout);
   }
 
-  function handleCreateNote(
-    noteFormState: NoteFormState,
-    onNoteCreate?: (data: {
-      title: string;
-      content: string;
-      type: string;
-    }) => void,
-    redraw?: () => void,
-  ) {
-    createNote(noteFormState, {
-      onNoteCreate: (data) => {
-        if (onNoteCreate) {
-          onNoteCreate(data);
-        }
-      },
-      onFormClose: () => {
-        redraw?.();
-      },
-    });
-  }
-
-  function handleNoteFormClose(
-    noteFormState: NoteFormState,
-    redraw?: () => void,
-  ) {
-    closeNoteForm(noteFormState);
-    redraw?.();
-  }
-
-  function handleCreateLink(
-    linkFormState: LinkFormState,
-    links: GraphLinkInput[],
-    onLinkCreate?: (link: {
-      source: string;
-      target: string;
-      link_type: string;
-      weight: number;
-    }) => void,
-    redraw?: () => void,
-  ) {
-    createLink(linkFormState, links, {
-      onLinkCreate: (link) => {
-        if (onLinkCreate) {
-          onLinkCreate(link);
-        }
-      },
-      onFormClose: () => {
-        redraw?.();
-      },
-      onDuplicateWarning: (source, target, linkType, x, y) => {
-        showDuplicateWarning(source, target, linkType, x, y);
-      },
-    });
-  }
-
-  function handleLinkFormClose(
-    linkFormState: LinkFormState,
-    redraw?: () => void,
-  ) {
-    closeLinkForm(linkFormState);
-    redraw?.();
-  }
-
   function handleLinkEdit(
     onLinkEdit?: (link: {
       source: string;
       target: string;
       link_type: string;
       weight: number;
-    }) => void,
+    }) => void
   ) {
     if (hoveredLink && onLinkEdit) {
       onLinkEdit(hoveredLink);
@@ -232,11 +137,7 @@ export function createGraphCanvasState() {
   }
 
   function handleLinkDelete(
-    onLinkDelete?: (link: {
-      source: string;
-      target: string;
-      link_type: string;
-    }) => void,
+    onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void
   ) {
     if (hoveredLink && onLinkDelete) {
       onLinkDelete({
@@ -246,15 +147,6 @@ export function createGraphCanvasState() {
       });
     }
     hoveredLink = null;
-  }
-
-  function handleUpdateSearch(
-    hotkeysState: HotkeysState,
-    simState: SimulationState,
-    redraw?: () => void,
-  ) {
-    updateSearch(hotkeysState, getSimulationNodes(simState));
-    redraw?.();
   }
 
   function openHelpModal(hotkeysState: HotkeysState) {
@@ -284,19 +176,6 @@ export function createGraphCanvasState() {
   function handleToggleFocus(redraw?: () => void) {
     focusMode = !focusMode;
     redraw?.();
-  }
-
-  function handleResetView(
-    ctx: CanvasRenderingContext2D | null,
-    width: number,
-    height: number,
-    simState: SimulationState,
-    transform: TransformState,
-  ) {
-    const simNodes = getSimulationNodes(simState);
-    if (ctx && simNodes.length > 0) {
-      resetView(ctx, width, height, simNodes, transform);
-    }
   }
 
   return {
@@ -349,35 +228,29 @@ export function createGraphCanvasState() {
       focusMode = value;
     },
     get selectedNodeId() {
-      return selectedNodeId;
+      return graphStore.selectedNodeId;
     },
     set selectedNodeId(value) {
-      selectedNodeId = value;
+      graphStore.selectedNodeId = value;
     },
     hotkeyLines,
     showDuplicateWarning,
     showUndoToastFor,
     restoreDeletedNode,
     cancelUndo,
-    handleCreateNote,
-    handleNoteFormClose,
-    handleCreateLink,
-    handleLinkFormClose,
     handleLinkEdit,
     handleLinkDelete,
-    handleUpdateSearch,
     openHelpModal,
     closeHelpModal,
     handleCloseSearch,
     handleOpenSearch,
     handleToggleFocus,
-    handleResetView,
   };
 }
 
 export function isTechnicalNode(
   nodes: Array<{ id: string; type?: string }>,
-  nodeId: string,
+  nodeId: string
 ): boolean {
   return nodes.some((n) => n.id === nodeId && n.type === "technical");
 }
@@ -390,9 +263,7 @@ export function pinTechnicalNodes<
     createdAt?: string;
     created_at?: string;
   },
->(
-  nodeList: T[],
-): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
+>(nodeList: T[]): Array<T & { x?: number; y?: number; fx?: number; fy?: number }> {
   return nodeList.map((n) => {
     if (n.type === "technical") {
       const padding = 60;

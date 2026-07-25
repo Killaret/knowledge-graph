@@ -31,7 +31,7 @@ export interface CelestialBodyDrawContext {
 
 export type CelestialBodyDrawFunction = (
   ctx: CanvasRenderingContext2D,
-  context: CelestialBodyDrawContext,
+  context: CelestialBodyDrawContext
 ) => void;
 
 export interface CelestialBodyProps {
@@ -68,8 +68,7 @@ export interface CelestialBodyProps {
   isAnomaly?: boolean;
   /** True for types that should appear in the note creation TypeSelector. */
   isUi?: boolean;
-  anomalyType?:
-    "reality_rift" | "chromatic_maw" | "void_whisper" | "cosmic_abomination";
+  anomalyType?: "reality_rift" | "chromatic_maw" | "void_whisper" | "cosmic_abomination";
   drawFunction?: CelestialBodyDrawFunction;
 }
 
@@ -124,19 +123,13 @@ export class CelestialBody {
     return this.props.isUi ?? false;
   }
   get anomalyType():
-    | "reality_rift"
-    | "chromatic_maw"
-    | "void_whisper"
-    | "cosmic_abomination"
-    | undefined {
+    "reality_rift" | "chromatic_maw" | "void_whisper" | "cosmic_abomination" | undefined {
     return this.props.anomalyType;
   }
 
   draw(ctx: CanvasRenderingContext2D, context: CelestialBodyDrawContext): void {
     if (!this.drawFunction) {
-      throw new Error(
-        `Draw function not registered for celestial body type "${this.type}"`,
-      );
+      throw new Error(`Draw function not registered for celestial body type "${this.type}"`);
     }
     this.drawFunction(ctx, context);
   }
@@ -453,12 +446,8 @@ export class CelestialBody {
     CelestialBody.COSMIC_ABOMINATION,
   ] as const;
 
-  private static readonly MAP = new Map(
-    CelestialBody.ALL.map((body) => [body.type, body]),
-  );
+  private static readonly MAP = new Map(CelestialBody.ALL.map((body) => [body.type, body]));
 
   static readonly UI_TYPES = CelestialBody.ALL.filter((body) => body.isUi);
-  static readonly ANOMALIES = CelestialBody.ALL.filter(
-    (body) => body.isAnomaly,
-  );
+  static readonly ANOMALIES = CelestialBody.ALL.filter((body) => body.isAnomaly);
 }

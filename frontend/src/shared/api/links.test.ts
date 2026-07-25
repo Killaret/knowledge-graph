@@ -28,9 +28,7 @@ describe("links API", () => {
       const mockResponse = { data: [mockLink] };
 
       server.use(
-        http.get("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json(mockResponse),
-        ),
+        http.get("http://localhost:8080/api/v1/links", () => HttpResponse.json(mockResponse))
       );
 
       const result = await getLinks();
@@ -40,9 +38,7 @@ describe("links API", () => {
 
     it("should handle empty links array", async () => {
       server.use(
-        http.get("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json({ data: [] }),
-        ),
+        http.get("http://localhost:8080/api/v1/links", () => HttpResponse.json({ data: [] }))
       );
 
       const result = await getLinks();
@@ -53,8 +49,8 @@ describe("links API", () => {
     it("should throw on 404 error", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json({ error: "Not found" }, { status: 404 }),
-        ),
+          HttpResponse.json({ error: "Not found" }, { status: 404 })
+        )
       );
 
       await expect(getLinks()).rejects.toThrow();
@@ -63,19 +59,15 @@ describe("links API", () => {
     it("should throw on 500 error", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(getLinks()).rejects.toThrow();
     });
 
     it("should handle network errors", async () => {
-      server.use(
-        http.get("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.error(),
-        ),
-      );
+      server.use(http.get("http://localhost:8080/api/v1/links", () => HttpResponse.error()));
 
       await expect(getLinks()).rejects.toThrow();
     });
@@ -85,8 +77,8 @@ describe("links API", () => {
     it("should return a single link", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/links/link-1", () =>
-          HttpResponse.json({ data: mockLink }),
-        ),
+          HttpResponse.json({ data: mockLink })
+        )
       );
 
       const result = await getLink("link-1");
@@ -97,8 +89,8 @@ describe("links API", () => {
     it("should throw on 404 when link not found", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/links/nonexistent", () =>
-          HttpResponse.json({ error: "Link not found" }, { status: 404 }),
-        ),
+          HttpResponse.json({ error: "Link not found" }, { status: 404 })
+        )
       );
 
       await expect(getLink("nonexistent")).rejects.toThrow();
@@ -107,8 +99,8 @@ describe("links API", () => {
     it("should throw on 500 error", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/links/link-1", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(getLink("link-1")).rejects.toThrow();
@@ -126,11 +118,8 @@ describe("links API", () => {
 
       server.use(
         http.post("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json(
-            { data: { ...mockLink, ...createData } },
-            { status: 201 },
-          ),
-        ),
+          HttpResponse.json({ data: { ...mockLink, ...createData } }, { status: 201 })
+        )
       );
 
       const result = await createLink(createData);
@@ -155,9 +144,9 @@ describe("links API", () => {
               code: "DUPLICATE_LINK",
               message: "Link already exists",
             },
-            { status: 409 },
-          ),
-        ),
+            { status: 409 }
+          )
+        )
       );
 
       await expect(createLink(createData)).rejects.toThrow();
@@ -174,9 +163,9 @@ describe("links API", () => {
         http.post("http://localhost:8080/api/v1/links", () =>
           HttpResponse.json(
             { error: "Bad Request", message: "Invalid source_note_id" },
-            { status: 400 },
-          ),
-        ),
+            { status: 400 }
+          )
+        )
       );
 
       await expect(createLink(createData)).rejects.toThrow();
@@ -191,8 +180,8 @@ describe("links API", () => {
 
       server.use(
         http.post("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(createLink(createData)).rejects.toThrow();
@@ -205,11 +194,7 @@ describe("links API", () => {
         link_type: "reference",
       };
 
-      server.use(
-        http.post("http://localhost:8080/api/v1/links", () =>
-          HttpResponse.error(),
-        ),
-      );
+      server.use(http.post("http://localhost:8080/api/v1/links", () => HttpResponse.error()));
 
       await expect(createLink(createData)).rejects.toThrow();
     });
@@ -220,8 +205,8 @@ describe("links API", () => {
       server.use(
         http.delete(
           "http://localhost:8080/api/v1/links/link-1",
-          () => new HttpResponse(null, { status: 204 }),
-        ),
+          () => new HttpResponse(null, { status: 204 })
+        )
       );
 
       // Should not throw
@@ -231,8 +216,8 @@ describe("links API", () => {
     it("should throw on 404 when link not found", async () => {
       server.use(
         http.delete("http://localhost:8080/api/v1/links/nonexistent", () =>
-          HttpResponse.json({ error: "Link not found" }, { status: 404 }),
-        ),
+          HttpResponse.json({ error: "Link not found" }, { status: 404 })
+        )
       );
 
       await expect(deleteLink("nonexistent")).rejects.toThrow();
@@ -241,8 +226,8 @@ describe("links API", () => {
     it("should throw on 500 error", async () => {
       server.use(
         http.delete("http://localhost:8080/api/v1/links/link-1", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(deleteLink("link-1")).rejects.toThrow();
@@ -250,9 +235,7 @@ describe("links API", () => {
 
     it("should handle network errors", async () => {
       server.use(
-        http.delete("http://localhost:8080/api/v1/links/link-1", () =>
-          HttpResponse.error(),
-        ),
+        http.delete("http://localhost:8080/api/v1/links/link-1", () => HttpResponse.error())
       );
 
       await expect(deleteLink("link-1")).rejects.toThrow();
@@ -263,8 +246,8 @@ describe("links API", () => {
     it("should return links for a note", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>
-          HttpResponse.json({ data: [mockLink] }),
-        ),
+          HttpResponse.json({ data: [mockLink] })
+        )
       );
 
       const result = await getNoteLinks("note-1");
@@ -276,8 +259,8 @@ describe("links API", () => {
     it("should return empty array when note has no links", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>
-          HttpResponse.json({ data: [] }),
-        ),
+          HttpResponse.json({ data: [] })
+        )
       );
 
       const result = await getNoteLinks("note-1");
@@ -288,8 +271,8 @@ describe("links API", () => {
     it("should throw on 404 when note not found", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes/nonexistent/links", () =>
-          HttpResponse.json({ error: "Note not found" }, { status: 404 }),
-        ),
+          HttpResponse.json({ error: "Note not found" }, { status: 404 })
+        )
       );
 
       await expect(getNoteLinks("nonexistent")).rejects.toThrow();
@@ -298,8 +281,8 @@ describe("links API", () => {
     it("should throw on 500 error", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(getNoteLinks("note-1")).rejects.toThrow();
@@ -307,9 +290,7 @@ describe("links API", () => {
 
     it("should handle network errors", async () => {
       server.use(
-        http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>
-          HttpResponse.error(),
-        ),
+        http.get("http://localhost:8080/api/v1/notes/note-1/links", () => HttpResponse.error())
       );
 
       await expect(getNoteLinks("note-1")).rejects.toThrow();

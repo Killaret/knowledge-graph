@@ -4,10 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe("PreloadService Full Cycle E2E", () => {
   test.beforeEach(async ({ page }) => {
     // Skip all preload tests in SKIP_AUTH mode (no login flow)
-    test.skip(
-      process.env.SKIP_AUTH === "true",
-      "Preload tests skipped in SKIP_AUTH mode",
-    );
+    test.skip(process.env.SKIP_AUTH === "true", "Preload tests skipped in SKIP_AUTH mode");
 
     // Clear localStorage before each test
     await page.context().clearCookies();
@@ -19,9 +16,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
     });
   });
 
-  test("should preload data on login page and display instantly after login", async ({
-    page,
-  }) => {
+  test("should preload data on login page and display instantly after login", async ({ page }) => {
     // Navigate to login page
     await page.goto("/auth/login");
 
@@ -39,9 +34,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
 
     // Check that preload logs exist
     const preloadLogs = consoleMessages.filter(
-      (msg) =>
-        msg.includes("[PreloadService]") &&
-        msg.includes("Starting background preload"),
+      (msg) => msg.includes("[PreloadService]") && msg.includes("Starting background preload")
     );
     expect(preloadLogs.length).toBeGreaterThan(0);
 
@@ -67,8 +60,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
 
     // Check that preloaded data usage logs exist
     const usePreloadedLogs = consoleMessages.filter(
-      (msg) =>
-        msg.includes("[usePreloadedData]") && msg.includes("Using preloaded"),
+      (msg) => msg.includes("[usePreloadedData]") && msg.includes("Using preloaded")
     );
     expect(usePreloadedLogs.length).toBeGreaterThan(0);
   });
@@ -106,8 +98,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
     await page.waitForTimeout(1000);
 
     const errorLogs = consoleMessages.filter(
-      (msg) =>
-        msg.includes("[PreloadService]") && msg.includes("Failed to preload"),
+      (msg) => msg.includes("[PreloadService]") && msg.includes("Failed to preload")
     );
     expect(errorLogs.length).toBeGreaterThan(0);
 
@@ -179,9 +170,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
     await page.waitForTimeout(2000);
 
     const preloadLogs = consoleMessages.filter(
-      (msg) =>
-        msg.includes("[PreloadService]") &&
-        msg.includes("Starting background preload"),
+      (msg) => msg.includes("[PreloadService]") && msg.includes("Starting background preload")
     );
     expect(preloadLogs.length).toBe(0);
   });
@@ -284,9 +273,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
       await testPage.waitForURL("/");
 
       // Check that interface displays correctly
-      await expect(
-        testPage.locator('[data-testid="graph-canvas"]'),
-      ).toBeVisible();
+      await expect(testPage.locator('[data-testid="graph-canvas"]')).toBeVisible();
 
       // For admin there may be additional elements
       if (role === "admin") {

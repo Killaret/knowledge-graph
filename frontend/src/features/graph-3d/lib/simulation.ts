@@ -1,7 +1,7 @@
 import { forceSimulation, forceLink, forceManyBody, forceCenter } from "d3-force-3d";
 import type { SimulationLinkDatum } from "d3-force-3d";
 import type { GraphLink } from "$shared/api/graph";
-import type { SimulationNode } from "./types";
+import type { SimulationNode } from "../model/types";
 
 type D3Simulation = ReturnType<typeof forceSimulation<SimulationNode>>;
 

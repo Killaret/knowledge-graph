@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  createGraphEventBridge,
-  type GraphCanvasEventContext,
-} from "./event-bridge";
+import { createGraphEventBridge, type GraphCanvasEventContext } from "./event-bridge";
 import { createHotkeysState } from "./hotkeys";
 import { createZoomPanState } from "./zoom-pan";
 import { createDragDropState } from "./drag-and-drop";
@@ -10,10 +7,7 @@ import { createNoteFormState } from "$features/graph-forms/note-form";
 import { createLinkFormState } from "$features/graph-forms/link-form";
 import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
 import { createBlackHole } from "$components/organisms/GraphCanvas/black-hole";
-import type {
-  SimulationNode,
-  SimulationLink,
-} from "$components/organisms/GraphCanvas/types";
+import type { SimulationNode, SimulationLink } from "$components/organisms/GraphCanvas/types";
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -121,9 +115,7 @@ describe("event-bridge", () => {
     vi.useFakeTimers();
     canvas = createCanvas();
     context = createMockContext(canvas);
-    bridge = createGraphEventBridge(
-      context as unknown as GraphCanvasEventContext,
-    );
+    bridge = createGraphEventBridge(context as unknown as GraphCanvasEventContext);
   });
 
   afterEach(() => {
@@ -139,9 +131,7 @@ describe("event-bridge", () => {
   });
 
   it("handles mouse down on a node and opens link form on drop", () => {
-    bridge.onMouseDown(
-      new MouseEvent("mousedown", { clientX: 1, clientY: 11 }),
-    );
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
     expect(context.dragDropState.draggedNodeId).toBe("n1");
 
     bridge.onMouseUp(new MouseEvent("mouseup", { clientX: 50, clientY: 10 }));
@@ -151,40 +141,28 @@ describe("event-bridge", () => {
   });
 
   it("handles ghost node click to open note form", () => {
-    bridge.onMouseDown(
-      new MouseEvent("mousedown", { clientX: 60, clientY: 60 }),
-    );
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 60, clientY: 60 }));
     expect(context.noteFormState.showNoteForm).toBe(true);
   });
 
   it("pans canvas", () => {
-    bridge.onMouseDown(
-      new MouseEvent("mousedown", { clientX: 400, clientY: 300 }),
-    );
-    bridge.onMouseMove(
-      new MouseEvent("mousemove", { clientX: 100, clientY: 50 }),
-    );
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 400, clientY: 300 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 50 }));
 
     expect(context.transform.x).toBe(-300);
     expect(context.transform.y).toBe(-250);
   });
 
   it("drags a node and detects link target", () => {
-    bridge.onMouseDown(
-      new MouseEvent("mousedown", { clientX: 1, clientY: 11 }),
-    );
-    bridge.onMouseMove(
-      new MouseEvent("mousemove", { clientX: 50, clientY: 10 }),
-    );
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
 
     expect(context.dragDropState.isDraggingForLink).toBe(true);
     expect(context.dragDropState.linkTargetNodeId).toBe("n2");
   });
 
   it("schedules node hover", () => {
-    bridge.onMouseMove(
-      new MouseEvent("mousemove", { clientX: 50, clientY: 10 }),
-    );
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
     expect(context.getHoveredNodeId()).toBeNull();
 
     vi.advanceTimersByTime(150);
@@ -192,9 +170,7 @@ describe("event-bridge", () => {
   });
 
   it("schedules link hover", () => {
-    bridge.onMouseMove(
-      new MouseEvent("mousemove", { clientX: 25, clientY: 12 }),
-    );
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 25, clientY: 12 }));
     expect(context.getHoveredLink()).toBeNull();
 
     vi.advanceTimersByTime(150);
@@ -212,17 +188,13 @@ describe("event-bridge", () => {
   });
 
   it("zooms on double click", () => {
-    bridge.onDblClick(
-      new MouseEvent("dblclick", { clientX: 400, clientY: 300 }),
-    );
+    bridge.onDblClick(new MouseEvent("dblclick", { clientX: 400, clientY: 300 }));
     expect(context.transform.k).toBeGreaterThan(1);
     expect(context.redraw).toHaveBeenCalled();
   });
 
   it("zooms on wheel", () => {
-    bridge.onZoom(
-      new WheelEvent("wheel", { deltaY: -100, clientX: 400, clientY: 300 }),
-    );
+    bridge.onZoom(new WheelEvent("wheel", { deltaY: -100, clientX: 400, clientY: 300 }));
     expect(context.transform.k).toBeGreaterThan(1);
   });
 
@@ -259,9 +231,7 @@ describe("event-bridge", () => {
   });
 
   it("cleanup cancels hover timeouts", () => {
-    bridge.onMouseMove(
-      new MouseEvent("mousemove", { clientX: 50, clientY: 10 }),
-    );
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
     bridge.cleanup();
     vi.advanceTimersByTime(1000);
     expect(context.getHoveredNodeId()).toBeNull();

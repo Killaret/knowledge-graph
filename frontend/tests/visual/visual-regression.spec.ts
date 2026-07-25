@@ -38,9 +38,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
   }
 
   async function waitForGraph(page: Page) {
-    const canvas = page.locator(
-      '[data-testid="graph-canvas"][data-test-stable="true"]',
-    );
+    const canvas = page.locator('[data-testid="graph-canvas"][data-test-stable="true"]');
     await canvas.waitFor({ timeout: 15000 });
   }
 

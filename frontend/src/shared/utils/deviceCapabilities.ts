@@ -28,9 +28,8 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
 
   // Check for mobile device
   const isMobile =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent,
-    ) || window.innerWidth < 768;
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth < 768;
 
   // Check hardware concurrency (CPU cores)
   const cpuCores = navigator.hardwareConcurrency || 2;
@@ -48,23 +47,14 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
 
   if (gl) {
     const debugInfo = gl.getExtension(
-      "WEBGL_debug_renderer_info",
+      "WEBGL_debug_renderer_info"
     ) as WEBGL_debug_renderer_info | null;
     if (debugInfo) {
-      const renderer = String(
-        gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL),
-      );
+      const renderer = String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
 
       // Check for software renderer or low-end GPUs
-      const lowEndGPUs = [
-        "swiftshader",
-        "llvmpipe",
-        "software",
-        "microsoft basic render",
-      ];
-      const isSoftwareRenderer = lowEndGPUs.some((gpu) =>
-        renderer.toLowerCase().includes(gpu),
-      );
+      const lowEndGPUs = ["swiftshader", "llvmpipe", "software", "microsoft basic render"];
+      const isSoftwareRenderer = lowEndGPUs.some((gpu) => renderer.toLowerCase().includes(gpu));
 
       if (isSoftwareRenderer) {
         gpuTier = "low";
@@ -85,8 +75,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   }
 
   // Determine if low power mode
-  const isLowPower =
-    isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === "low";
+  const isLowPower = isMobile || cpuCores <= 4 || deviceMemory <= 4 || gpuTier === "low";
 
   // Set optimization parameters based on capabilities
   if (isLowPower || gpuTier === "low") {

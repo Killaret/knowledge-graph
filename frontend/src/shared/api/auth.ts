@@ -11,10 +11,7 @@ import type {
 /**
  * Login with credentials
  */
-export async function login(
-  login: string,
-  password: string,
-): Promise<AuthTokens> {
+export async function login(login: string, password: string): Promise<AuthTokens> {
   const response = await api
     .post("v1/auth/login", {
       json: { login, password } as LoginRequest,
@@ -29,7 +26,7 @@ export async function login(
 export async function register(
   login: string,
   password: string,
-  email?: string,
+  email?: string
 ): Promise<AuthTokens> {
   const body: RegisterRequest & { email?: string } = { login, password };
   if (email) {
@@ -72,10 +69,7 @@ export async function forgotPassword(email: string): Promise<void> {
 /**
  * Reset password with token
  */
-export async function resetPassword(
-  token: string,
-  newPassword: string,
-): Promise<void> {
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
   await api.post("v1/auth/reset-password", {
     json: { token, new_password: newPassword } as ResetPasswordRequest,
   });
@@ -85,19 +79,14 @@ export async function resetPassword(
  * Get Yandex OAuth login URL
  */
 export async function getYandexLoginUrl(): Promise<{ url: string }> {
-  const response = await api
-    .get("v1/auth/yandex/login")
-    .json<{ url: string }>();
+  const response = await api.get("v1/auth/yandex/login").json<{ url: string }>();
   return response;
 }
 
 /**
  * Handle Yandex OAuth callback
  */
-export async function handleYandexCallback(
-  code: string,
-  state: string,
-): Promise<AuthTokens> {
+export async function handleYandexCallback(code: string, state: string): Promise<AuthTokens> {
   const response = await api
     .get("v1/auth/yandex/callback", {
       searchParams: { code, state },

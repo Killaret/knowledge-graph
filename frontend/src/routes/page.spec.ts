@@ -5,9 +5,9 @@ import { server } from "../../vitest-setup";
 import Page from "./+page.svelte";
 
 vi.mock("$shared/stores/auth.svelte", async () => {
-  const actual = await vi.importActual<
-    typeof import("$shared/stores/auth.svelte")
-  >("$shared/stores/auth.svelte");
+  const actual = await vi.importActual<typeof import("$shared/stores/auth.svelte")>(
+    "$shared/stores/auth.svelte"
+  );
   return {
     ...actual,
     isAuthenticated: vi.fn(() => true),
@@ -53,25 +53,25 @@ describe("Page list view - batch operations", () => {
           total: 3,
           limit: 10000,
           offset: 0,
-        }),
+        })
       ),
       http.post(
         "http://localhost:8080/api/v1/notes/batch",
-        () => new HttpResponse(null, { status: 204 }),
+        () => new HttpResponse(null, { status: 204 })
       ),
       http.post(
         "http://localhost:8080/api/v1/notes/:id/restore",
-        () => new HttpResponse(null, { status: 204 }),
+        () => new HttpResponse(null, { status: 204 })
       ),
       http.get("http://localhost:8080/api/v1/graph/all", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
+        HttpResponse.json({ nodes: [], links: [] })
       ),
       http.get("http://localhost:8080/api/v1/me/graph/fresh", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
+        HttpResponse.json({ nodes: [], links: [] })
       ),
       http.get("http://localhost:9091/api/v1/graph/full", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
-      ),
+        HttpResponse.json({ nodes: [], links: [] })
+      )
     );
   });
 
@@ -216,25 +216,25 @@ describe("Page list view - undo toast", () => {
           total: 1,
           limit: 10000,
           offset: 0,
-        }),
+        })
       ),
       http.delete(
         "http://localhost:8080/api/v1/notes/1",
-        () => new HttpResponse(null, { status: 204 }),
+        () => new HttpResponse(null, { status: 204 })
       ),
       http.post(
         "http://localhost:8080/api/v1/notes/1/restore",
-        () => new HttpResponse(null, { status: 204 }),
+        () => new HttpResponse(null, { status: 204 })
       ),
       http.get("http://localhost:8080/api/v1/graph/all", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
+        HttpResponse.json({ nodes: [], links: [] })
       ),
       http.get("http://localhost:8080/api/v1/me/graph/fresh", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
+        HttpResponse.json({ nodes: [], links: [] })
       ),
       http.get("http://localhost:9091/api/v1/graph/full", () =>
-        HttpResponse.json({ nodes: [], links: [] }),
-      ),
+        HttpResponse.json({ nodes: [], links: [] })
+      )
     );
   });
 

@@ -4,10 +4,7 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import * as authApi from "$shared/api/auth";
 import * as usersApi from "$shared/api/users";
-import {
-  clearPreloadCache,
-  preloadAuthenticatedGraph,
-} from "$shared/services/PreloadService";
+import { clearPreloadCache, preloadAuthenticatedGraph } from "$shared/services/PreloadService";
 import { setLocale, type Locale } from "$shared/utils/i18n";
 import type { User } from "$shared/types";
 import {
@@ -46,10 +43,7 @@ async function applyUserSettings(): Promise<void> {
   try {
     const { settings } = await usersApi.getSettings();
     const localeSetting = settings.find((s) => s.key === "preferred_language");
-    if (
-      localeSetting?.value &&
-      (localeSetting.value === "en" || localeSetting.value === "ru")
-    ) {
+    if (localeSetting?.value && (localeSetting.value === "en" || localeSetting.value === "ru")) {
       setLocale(localeSetting.value as Locale);
     }
   } catch (e) {
@@ -191,11 +185,7 @@ export async function login(login: string, password: string): Promise<boolean> {
 /**
  * Register new user
  */
-export async function register(
-  login: string,
-  password: string,
-  email?: string,
-): Promise<boolean> {
+export async function register(login: string, password: string, email?: string): Promise<boolean> {
   authState.isLoading = true;
   authState.error = null;
 
@@ -250,10 +240,7 @@ export async function logout(): Promise<void> {
 /**
  * Handle Yandex OAuth callback
  */
-export async function handleYandexCallback(
-  code: string,
-  state: string,
-): Promise<boolean> {
+export async function handleYandexCallback(code: string, state: string): Promise<boolean> {
   authState.isLoading = true;
   authState.error = null;
 
@@ -271,8 +258,7 @@ export async function handleYandexCallback(
 
     return true;
   } catch (e) {
-    authState.error =
-      e instanceof Error ? e.message : "Yandex authentication failed";
+    authState.error = e instanceof Error ? e.message : "Yandex authentication failed";
     clearAuthState();
     return false;
   } finally {

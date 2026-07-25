@@ -21,8 +21,7 @@ declare global {
     deviceMemory?: number;
   }
 
-  var anomalyConfig:
-    { reality_rift?: { core_color: string; glow_color: string } } | undefined;
+  var anomalyConfig: { reality_rift?: { core_color: string; glow_color: string } } | undefined;
 
   interface ImportMeta {
     readonly env: ImportMetaEnv;

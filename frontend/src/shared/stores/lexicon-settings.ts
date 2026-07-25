@@ -1,8 +1,4 @@
-import type {
-  Locale,
-  Mode,
-  LegacyCategory,
-} from "$shared/utils/galactic-lexicon";
+import type { Locale, Mode, LegacyCategory } from "$shared/utils/galactic-lexicon";
 import { getLexiconMessage } from "$shared/utils/galactic-lexicon";
 import { getCurrentLocale, setLocale as setUiLocale } from "$shared/utils/i18n";
 
@@ -38,19 +34,9 @@ export function setMode(m: Mode) {
   mode.set(m);
 }
 
-export async function getMessage(
-  category: string,
-  key: string,
-  ...params: unknown[]
-) {
+export async function getMessage(category: string, key: string, ...params: unknown[]) {
   const locale = getCurrentLocale();
   let md: Mode = "standard";
   mode.subscribe((m) => (md = m))();
-  return getLexiconMessage(
-    locale,
-    md,
-    category as LegacyCategory,
-    key,
-    ...params,
-  );
+  return getLexiconMessage(locale, md, category as LegacyCategory, key, ...params);
 }

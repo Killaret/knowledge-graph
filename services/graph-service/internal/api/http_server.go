@@ -96,14 +96,23 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 		userID = "public"
 	}
 
-	log.Printf("[GraphService] HTTP GetNoteGraph: noteID=%s, depth=%d, userID=%s", noteID, depth, userID)
+	// Parse layout parameter (2d or 3d). 3D layouts use a different engine
+	// and are not cached with the 2D key to avoid collisions.
+	layoutType := r.URL.Query().Get("layout")
+	if layoutType != "3d" {
+		layoutType = "2d"
+	}
 
-	// Try cache first
+	log.Printf("[GraphService] HTTP GetNoteGraph: noteID=%s, depth=%d, layout=%s, userID=%s", noteID, depth, layoutType, userID)
+
+	// Try cache first (2D only)
 	cacheKey := fmt.Sprintf("note:%s:depth-%d", noteID, depth)
-	if cached, hash, err := s.cache.LoadNoteLayout(ctx, noteID, depth); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for %s (took %v)", cacheKey, time.Since(startTime))
-		s.sendGraphData(w, cached, hash)
-		return
+	if layoutType == "2d" {
+		if cached, hash, err := s.cache.LoadNoteLayout(ctx, noteID, depth); err == nil && cached != nil {
+			log.Printf("[GraphService] Cache hit for %s (took %v)", cacheKey, time.Since(startTime))
+			s.sendGraphData(w, cached, hash)
+			return
+		}
 	}
 
 	// Load from database
@@ -115,12 +124,19 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Generate layout
-	layout := engine.Layout2D(notes, links, noteID)
+	var layout *engine.LayoutResponse
+	if layoutType == "3d" {
+		layout = engine.Layout3D(notes, links)
+	} else {
+		layout = engine.Layout2D(notes, links, noteID)
+	}
 	hash := computeLayoutHash(layout)
 
-	// Cache the result
-	if err := s.cache.SaveNoteLayout(ctx, noteID, depth, layout, hash); err != nil {
-		log.Printf("[GraphService] Failed to cache layout: %v", err)
+	// Cache the result (2D only)
+	if layoutType == "2d" {
+		if err := s.cache.SaveNoteLayout(ctx, noteID, depth, layout, hash); err != nil {
+			log.Printf("[GraphService] Failed to cache layout: %v", err)
+		}
 	}
 
 	log.Printf("[GraphService] GetNoteGraph completed in %v", time.Since(startTime))

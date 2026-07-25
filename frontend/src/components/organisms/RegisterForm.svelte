@@ -36,9 +36,7 @@
   });
 
   const isPasswordValid = $derived(passwordErrors().length === 0);
-  const passwordsMatch = $derived(
-    password === confirmPassword && confirmPassword.length > 0,
-  );
+  const passwordsMatch = $derived(password === confirmPassword && confirmPassword.length > 0);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();

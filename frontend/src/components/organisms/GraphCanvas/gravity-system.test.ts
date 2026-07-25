@@ -2,10 +2,7 @@
  * Unit tests for gravity-system module
  */
 import { describe, it, expect } from "vitest";
-import {
-  createGravitySystem,
-  drawDistortedBackgroundGrid,
-} from "./gravity-system";
+import { createGravitySystem, drawDistortedBackgroundGrid } from "./gravity-system";
 import type { SimulationNode } from "./types";
 
 describe("gravity-system", () => {
@@ -75,9 +72,7 @@ describe("gravity-system", () => {
     const ctx = canvas.getContext("2d")!;
     const nodes: SimulationNode[] = [{ id: "a", title: "A", x: 50, y: 50 }];
 
-    expect(() =>
-      drawDistortedBackgroundGrid(ctx, 200, 200, nodes, 0),
-    ).not.toThrow();
+    expect(() => drawDistortedBackgroundGrid(ctx, 200, 200, nodes, 0)).not.toThrow();
   });
 
   it("should skip background grid drawing when too many nodes", () => {
@@ -92,8 +87,6 @@ describe("gravity-system", () => {
       y: 0,
     }));
 
-    expect(() =>
-      drawDistortedBackgroundGrid(ctx, 200, 200, nodes, 0),
-    ).not.toThrow();
+    expect(() => drawDistortedBackgroundGrid(ctx, 200, 200, nodes, 0)).not.toThrow();
   });
 });

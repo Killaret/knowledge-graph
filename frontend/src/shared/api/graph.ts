@@ -6,8 +6,7 @@ const userLocale = "ru";
 
 function getGraphApi() {
   // В тестовом окружении (Vitest) используем полный URL напрямую
-  const isTest =
-    typeof process !== "undefined" && process.env?.VITEST === "true";
+  const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 
   const baseUrl = isTest
     ? "http://localhost:9091/api"
@@ -58,15 +57,10 @@ function handleGraphError(error: unknown, context: string): never {
     if (error.message.includes("500")) {
       throw new Error(formatMessage("graph.serverError", userLocale));
     }
-    if (
-      error.message.includes("Failed to fetch") ||
-      error.message.includes("NetworkError")
-    ) {
+    if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
       throw new Error(formatMessage("graph.networkError", userLocale));
     }
-    throw new Error(
-      formatMessage("graph.loadError", userLocale, { message: error.message }),
-    );
+    throw new Error(formatMessage("graph.loadError", userLocale, { message: error.message }));
   }
 
   throw new Error(formatMessage("graph.unknownError", userLocale));
@@ -82,15 +76,10 @@ interface GraphApiResponse {
   };
 }
 
-function buildQuery(
-  params: Record<string, string | number | undefined>,
-): string {
+function buildQuery(params: Record<string, string | number | undefined>): string {
   return Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== "")
-    .map(
-      ([key, value]) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-    )
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
     .join("&");
 }
 
@@ -99,13 +88,12 @@ export async function getGraphData(
   noteId: string,
   depth: number = 2,
   userId?: string,
+  layout: "2d" | "3d" = "2d"
 ): Promise<GraphData> {
   try {
-    const query = buildQuery({ depth, user_id: userId });
+    const query = buildQuery({ depth, user_id: userId, layout });
     const response = await getGraphApi()
-      .get(
-        `v1/graph/note/${encodeURIComponent(noteId)}${query ? `?${query}` : ""}`,
-      )
+      .get(`v1/graph/note/${encodeURIComponent(noteId)}${query ? `?${query}` : ""}`)
       .json<GraphApiResponse>();
     return response.data || { nodes: [], links: [] };
   } catch (error) {
@@ -117,7 +105,7 @@ export async function getGraphData(
 export async function getFullGraphData(
   limit: number = apiConfig.default_limit,
   userId?: string,
-  nocache?: boolean,
+  nocache?: boolean
 ): Promise<GraphData> {
   try {
     const query = buildQuery({
@@ -172,14 +160,10 @@ export async function getCachedGraph(): Promise<GraphData | null> {
 }
 
 // Запросить свежий граф с опциональным дельта-обновлением
-export async function getFreshGraph(
-  userId?: string,
-): Promise<FreshGraphResponse> {
+export async function getFreshGraph(userId?: string): Promise<FreshGraphResponse> {
   try {
     if (userId) {
-      const response = await getGraphApi().get(
-        `v1/graph/full?${buildQuery({ user_id: userId })}`,
-      );
+      const response = await getGraphApi().get(`v1/graph/full?${buildQuery({ user_id: userId })}`);
       const body = await response.json<GraphApiResponse>();
       return { fresh: body.data || { nodes: [], links: [] } };
     }

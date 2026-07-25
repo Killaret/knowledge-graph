@@ -54,15 +54,11 @@
   let loading = $state(true);
   let error = $state("");
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(
-    browser && new URL(window.location.href).searchParams.has("full"),
-  );
+  let showFullGraph = $state(browser && new URL(window.location.href).searchParams.has("full"));
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
 
-  async function loadGraphData({
-    nocache = false,
-  }: { nocache?: boolean } = {}) {
+  async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
     loading = true;
     error = "";
     try {
@@ -103,10 +99,7 @@
       }));
 
       // Ensure the Knowledge Core is always present on the canvas
-      if (
-        knowledgeCore &&
-        !transformedNodes.some((n) => n.id === knowledgeCore?.id)
-      ) {
+      if (knowledgeCore && !transformedNodes.some((n) => n.id === knowledgeCore?.id)) {
         transformedNodes.push({
           id: knowledgeCore.id,
           title: knowledgeCore.title,
@@ -135,7 +128,7 @@
           graphData.nodes.length,
           "nodes,",
           graphData.links.length,
-          "links",
+          "links"
         );
         console.log("[graph/+page] Sample node:", transformedNodes[0]);
         console.log("[graph/+page] Sample link:", transformedLinks[0]);
@@ -183,11 +176,7 @@
     }
   }
 
-  async function handleNoteCreate(data: {
-    title: string;
-    content: string;
-    type: string;
-  }) {
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
     try {
       await createNote(data);
       await loadGraphData({ nocache: true });
@@ -236,11 +225,7 @@
   <BackButton href="/" />
 
   <div class="top-right-controls">
-    <button
-      class="login-btn"
-      onclick={() => goto("/auth/login")}
-      title={t("graph.loginTitle")}
-    >
+    <button class="login-btn" onclick={() => goto("/auth/login")} title={t("graph.loginTitle")}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="20"
@@ -261,11 +246,7 @@
 
   <div class="controls">
     <label class="toggle">
-      <input
-        type="checkbox"
-        bind:checked={showFullGraph}
-        data-testid="full-graph-toggle"
-      />
+      <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
       <span
         >{t("graph.showAllNotes")} ({showFullGraph
           ? t("graph.enabled")
@@ -285,10 +266,7 @@
       <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
     </div>
   {:else}
-    <div
-      class="graph-container graph-3d-container"
-      data-testid="graph-container"
-    >
+    <div class="graph-container graph-3d-container" data-testid="graph-container">
       {#if graphData.nodes.length > 0}
         {#key graphData.nodes.length + "-" + graphData.links.length}
           <GraphCanvas

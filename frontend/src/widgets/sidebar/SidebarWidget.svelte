@@ -1,10 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import {
-    isAuthenticated,
-    currentUser,
-  } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, currentUser } from "$shared/stores/auth.svelte.js";
 
   let collapsed = $state(true);
 
@@ -189,7 +186,9 @@
     border-radius: 0.5rem;
     color: var(--color-text-secondary);
     text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
     min-height: 2.5rem;
   }
 

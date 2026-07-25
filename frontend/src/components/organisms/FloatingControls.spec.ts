@@ -114,9 +114,7 @@ describe("FloatingControls", () => {
     });
 
     mockTypeFilters.forEach((filter) => {
-      expect(
-        screen.getByTestId(`filter-chip-${filter.id}`),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId(`filter-chip-${filter.id}`)).toBeInTheDocument();
     });
   });
 

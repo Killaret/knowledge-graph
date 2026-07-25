@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { fade } from "svelte/transition";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { isWebGLAvailable } from "$shared/lib/webgl-detector";
   import type { GraphNode, GraphLink } from "$shared/api/graph";
   import type { Component } from "svelte";
 
@@ -22,7 +23,7 @@
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  let Graph3DComponent: Component<{
+  let Graph3DScene: Component<{
     nodes: GraphNode[];
     links: GraphLink[];
     centerNodeId?: string | null;
@@ -39,12 +40,17 @@
 
   onMount(async () => {
     if (!browser) return;
+    if (!isWebGLAvailable()) {
+      error = t("graph3d.errorLoad");
+      isLoading = false;
+      return;
+    }
     try {
-      const module = await import("$components/organisms/Graph3D.svelte");
-      Graph3DComponent = module.default;
+      const module = await import("$features/graph-3d/ui/Graph3DScene.svelte");
+      Graph3DScene = module.default;
     } catch (e) {
       if (import.meta.env.DEV) {
-        console.error("[GraphCanvas3D] Failed to load 3D component:", e);
+        console.error("[Graph3DViewer] Failed to load 3D scene:", e);
       }
       error = t("graph3d.errorLoad");
       isLoading = false;
@@ -65,11 +71,10 @@
   }
 </script>
 
-<div class="graph-canvas-3d" data-testid="graph-canvas-3d">
+<div class="graph-3d-viewer" data-testid="graph-3d-viewer">
   {#if error}
     <div class="error-overlay" data-testid="graph-3d-error">
       <div class="error-content">
-        <span class="error-icon">🌌</span>
         <h2>{error}</h2>
         <p>{t("graph3d.errorHint")}</p>
       </div>
@@ -82,8 +87,8 @@
     </div>
   {/if}
 
-  {#if Graph3DComponent}
-    <Graph3DComponent
+  {#if Graph3DScene}
+    <Graph3DScene
       {nodes}
       {links}
       {centerNodeId}
@@ -98,7 +103,7 @@
 </div>
 
 <style>
-  .graph-canvas-3d {
+  .graph-3d-viewer {
     width: 100%;
     height: 100%;
     position: relative;
@@ -152,12 +157,6 @@
   .error-content {
     text-align: center;
     padding: 2rem;
-  }
-
-  .error-icon {
-    font-size: 48px;
-    display: block;
-    margin-bottom: 1rem;
   }
 
   .error-content h2 {

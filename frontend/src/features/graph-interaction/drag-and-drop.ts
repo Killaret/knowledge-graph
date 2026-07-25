@@ -3,10 +3,7 @@ import type {
   DragState,
   SimulationNode,
 } from "$components/organisms/GraphCanvas/types";
-import type {
-  BlackHoleState,
-  GhostNodeState,
-} from "$components/organisms/GraphCanvas";
+import type { BlackHoleState, GhostNodeState } from "$components/organisms/GraphCanvas";
 import { isPointOverGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
 import {
   isPointOverBlackHole,
@@ -45,7 +42,7 @@ export function createDragDropState(): DragDropState {
 export function getMouseWorldPosition(
   e: MouseEvent,
   canvas: HTMLCanvasElement,
-  transform: TransformState,
+  transform: TransformState
 ): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -57,7 +54,7 @@ export function getMouseWorldPosition(
 export function findNodeAtPosition(
   x: number,
   y: number,
-  simNodes: SimulationNode[],
+  simNodes: SimulationNode[]
 ): SimulationNode | undefined {
   for (const node of simNodes) {
     if (node.x == null || node.y == null) continue;
@@ -79,7 +76,7 @@ export function handleMouseDown(
   simNodes: SimulationNode[],
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
-  callbacks: DragDropCallbacks,
+  callbacks: DragDropCallbacks
 ): void {
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;
@@ -129,24 +126,14 @@ export function handleMouseMove(
   blackHole: BlackHoleState,
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
-  redraw: () => void,
+  redraw: () => void
 ): void {
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;
 
   // Update hover states for interactive elements
-  blackHole.hovered = isPointOverBlackHole(
-    e.clientX,
-    e.clientY,
-    blackHole,
-    transform,
-  );
-  ghostNode.hovered = isPointOverGhostNode(
-    e.clientX,
-    e.clientY,
-    ghostNode,
-    transform,
-  );
+  blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, transform);
+  ghostNode.hovered = isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform);
 
   // Dragging a node
   if (dragDropState.draggedNodeId && dragState.dragging) {
@@ -202,7 +189,7 @@ export function handleMouseUp(
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
   callbacks: DragDropCallbacks,
-  redraw: () => void,
+  redraw: () => void
 ): void {
   dragState.dragging = false;
   canvas.style.cursor = "grab";
@@ -215,14 +202,8 @@ export function handleMouseUp(
         callbacks.onBlackHoleDrop?.(node.id);
       }
       // Check if dropped on another node for link creation
-      else if (
-        dragDropState.isDraggingForLink &&
-        dragDropState.linkTargetNodeId
-      ) {
-        callbacks.onLinkPreview?.(
-          dragDropState.draggedNodeId,
-          dragDropState.linkTargetNodeId,
-        );
+      else if (dragDropState.isDraggingForLink && dragDropState.linkTargetNodeId) {
+        callbacks.onLinkPreview?.(dragDropState.draggedNodeId, dragDropState.linkTargetNodeId);
       }
       // Otherwise, release the node
       else {
@@ -248,7 +229,7 @@ export function handleClick(
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
   onNodeClick?: (node: { id: string; title: string; type?: string }) => void,
-  onGhostNodeClick?: () => void,
+  onGhostNodeClick?: () => void
 ): void {
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;

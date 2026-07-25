@@ -64,12 +64,7 @@
           </linearGradient>
           <!-- Roughness filter for organic feel -->
           <filter id="roughness">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.04"
-              numOctaves="3"
-              result="noise"
-            />
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
             <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
           </filter>
           <!-- Glow filter -->
@@ -98,33 +93,14 @@
         <!-- The cross symbol -->
         <g filter="url(#roughness)">
           <!-- Vertical bar -->
-          <rect
-            x="46"
-            y="20"
-            width="8"
-            height="60"
-            fill="url(#grad-x)"
-            rx="1"
-          />
+          <rect x="46" y="20" width="8" height="60" fill="url(#grad-x)" rx="1" />
           <!-- Horizontal bar -->
-          <rect
-            x="20"
-            y="46"
-            width="60"
-            height="8"
-            fill="url(#grad-x)"
-            rx="1"
-          />
+          <rect x="20" y="46" width="60" height="8" fill="url(#grad-x)" rx="1" />
         </g>
 
         <!-- Center gem -->
         <circle cx="50" cy="50" r="8" fill="#ffcc00" filter="url(#glow)">
-          <animate
-            attributeName="opacity"
-            values="0.8;1;0.8"
-            dur="2s"
-            repeatCount="indefinite"
-          />
+          <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>

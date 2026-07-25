@@ -54,18 +54,14 @@
   const modalTitle = $derived(tx("note.editTitle", "note.editTitleGalactic"));
   const titleLabel = $derived(tx("note.titleLabel", "note.titleLabelGalactic"));
   const typeLabel = $derived(tx("note.typeLabel", "note.typeLabelGalactic"));
-  const contentLabel = $derived(
-    tx("note.contentLabel", "note.contentLabelGalactic"),
-  );
+  const contentLabel = $derived(tx("note.contentLabel", "note.contentLabelGalactic"));
   const cancelText = $derived(tx("note.cancel", "note.cancelGalactic"));
   const saveText = $derived(tx("note.save", "note.saveGalactic"));
   const savingText = $derived(tx("note.saving", "note.savingGalactic"));
   const loadingText = $derived(tx("note.loading", "note.loadingGalactic"));
-  const titlePlaceholder = $derived(
-    tx("note.titlePlaceholder", "note.titlePlaceholderGalactic"),
-  );
+  const titlePlaceholder = $derived(tx("note.titlePlaceholder", "note.titlePlaceholderGalactic"));
   const contentPlaceholder = $derived(
-    tx("note.contentPlaceholder", "note.contentPlaceholderGalactic"),
+    tx("note.contentPlaceholder", "note.contentPlaceholderGalactic")
   );
 
   // Загрузка данных при открытии

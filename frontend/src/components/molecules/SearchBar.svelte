@@ -70,12 +70,7 @@
     aria-label={t("search.label")}
     class="search-input"
   />
-  <button
-    type="button"
-    onclick={doSearch}
-    class="search-button"
-    aria-label={t("search.label")}
-  >
+  <button type="button" onclick={doSearch} class="search-button" aria-label={t("search.label")}>
     {t("search.label")}
   </button>
 </div>

@@ -4,10 +4,7 @@ import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import * as graphApi from "$shared/api/graph";
 import * as usersApi from "$shared/api/users";
 import type { GraphData } from "$shared/api/graph";
-import {
-  mockGraphData,
-  mockAchievementsData,
-} from "./__mocks__/PreloadService.mocks";
+import { mockGraphData, mockAchievementsData } from "./__mocks__/PreloadService.mocks";
 
 // Мокаем зависимости
 vi.mock("$app/environment", () => ({
@@ -72,9 +69,7 @@ const mockPreloadService = {
   getPreloadedGraph: vi.fn(() => preloadedGraph),
   getPreloadedAchievements: vi.fn(() => preloadedAchievements),
   isPreloadingData: vi.fn(() => isPreloading),
-  hasPreloadedData: vi.fn(
-    () => preloadedGraph !== null || preloadedAchievements !== null,
-  ),
+  hasPreloadedData: vi.fn(() => preloadedGraph !== null || preloadedAchievements !== null),
   getStats: vi.fn(() => ({
     hasGraph: preloadedGraph !== null,
     hasAchievements: preloadedAchievements !== null,
@@ -115,9 +110,7 @@ describe.skip("PreloadService Edge Cases", () => {
     mockPreloadService.getStats.mockClear();
 
     vi.mocked(graphApi.getFullGraphData).mockResolvedValue(mockGraphData);
-    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(
-      mockAchievementsData,
-    );
+    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
   });
 
   afterEach(() => {
@@ -175,11 +168,9 @@ describe.skip("PreloadService Edge Cases", () => {
     it("should handle timeout scenarios", async () => {
       // Мокаем очень медленный ответ
       const slowGraphPromise = new Promise<GraphData>((resolve) =>
-        setTimeout(() => resolve(mockGraphData), 10000),
+        setTimeout(() => resolve(mockGraphData), 10000)
       );
-      vi.mocked(graphApi.getFullGraphData).mockReturnValueOnce(
-        slowGraphPromise,
-      );
+      vi.mocked(graphApi.getFullGraphData).mockReturnValueOnce(slowGraphPromise);
 
       const startTime = Date.now();
       await mockPreloadService.startPreload();
@@ -216,7 +207,7 @@ describe.skip("PreloadService Edge Cases", () => {
       // Сервис должен обработать CORS ошибку
       expect(mockPreloadService.getPreloadedGraph()).toBeNull();
       expect(mockPreloadService.getPreloadedAchievements()).toEqual(
-        mockAchievementsData.achievements,
+        mockAchievementsData.achievements
       );
     });
   });
@@ -243,28 +234,26 @@ describe.skip("PreloadService Edge Cases", () => {
 
       // Множественная инвалидация кэша
       const invalidations = Array.from({ length: 100 }, () =>
-        Promise.resolve(mockPreloadService.invalidateGraphCache()),
+        Promise.resolve(mockPreloadService.invalidateGraphCache())
       );
 
       await Promise.all(invalidations);
 
       expect(mockPreloadService.getPreloadedGraph()).toBeNull();
       expect(mockPreloadService.getPreloadedAchievements()).toEqual(
-        mockAchievementsData.achievements,
+        mockAchievementsData.achievements
       );
     });
 
     it("should handle race conditions in cache access", async () => {
       const accessPromises = Array.from({ length: 1000 }, () =>
-        Promise.resolve(mockPreloadService.getPreloadedGraph()),
+        Promise.resolve(mockPreloadService.getPreloadedGraph())
       );
 
       const results = await Promise.all(accessPromises);
 
       // Все результаты должны быть консистентны
-      expect(
-        results.every((result) => result === null || result === mockGraphData),
-      ).toBe(true);
+      expect(results.every((result) => result === null || result === mockGraphData)).toBe(true);
     });
   });
 
@@ -422,12 +411,8 @@ describe.skip("PreloadService Edge Cases", () => {
 
     it("should handle cascading failures", async () => {
       // Все API возвращают ошибки
-      vi.mocked(graphApi.getFullGraphData).mockRejectedValue(
-        new Error("Graph failed"),
-      );
-      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(
-        new Error("Achievements failed"),
-      );
+      vi.mocked(graphApi.getFullGraphData).mockRejectedValue(new Error("Graph failed"));
+      vi.mocked(usersApi.getAllAchievements).mockRejectedValue(new Error("Achievements failed"));
 
       await mockPreloadService.startPreload();
 

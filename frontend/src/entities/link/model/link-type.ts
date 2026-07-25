@@ -133,9 +133,7 @@ export class LinkType {
     LinkType.CHILD,
   ] as const;
 
-  private static readonly MAP = new Map(
-    LinkType.ALL.map((linkType) => [linkType.type, linkType]),
-  );
+  private static readonly MAP = new Map(LinkType.ALL.map((linkType) => [linkType.type, linkType]));
 
   static readonly UI_TYPES = LinkType.ALL.filter((linkType) => linkType.isUi);
 }

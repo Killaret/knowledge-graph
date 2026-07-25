@@ -36,6 +36,71 @@
 
 ---
 
+## 🧩 Graph Service: план стабилизации и развития
+
+> **Контекст:** согласно ADR 013, основной бэкенд должен публиковать события `Note*`/`Link*` и перестать быть основным источником графа — `graph-service` берёт на себя расчёт раскладок, кэширование и аналитику. Основной бэкенд сохраняется только как **fallback** при недоступности `graph-service`.
+
+| Задача | Статус | Приоритет | Промт готов |
+|--------|--------|-----------|-------------|
+| Событийная инвалидация и fallback-модель | ⏳ Запланировано | 🔴 Критический | 📝 Да |
+| Авторизация и user-scoped фильтрация в graph-service | ⏳ Запланировано | 🔴 Критический | 📝 Да |
+| Унификация графового API и устранение двойной загрузки | ⏳ Запланировано | 🟠 Высокий | 📝 Да |
+| Реализация graph analytics API (Neighbors, Path, Recommendations) | ⏳ Запланировано | 🟡 Средний | 📝 Да |
+| Materialized view / графовый индекс | ⏳ Запланировано | 🟡 Средний | 📝 Да |
+| gRPC-web / SSE стриминг полного графа | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
+| Улучшение layout-алгоритмов (Honeycomb, force-directed, Cosmic Navigator) | 🔄 В процессе | 🟠 Высокий | 📝 Да |
+
+### 1. Событийная инвалидация и fallback-модель
+
+- `note_handler` и `link_handler` публикуют события `NoteCreated`/`Updated`/`Deleted` и `LinkCreated`/`Updated`/`Deleted` через `internal/infrastructure/events/publisher.go` в Redis channel `graph:events`.
+- `graph-service` (`internal/subscriber/pubsub.go`) слушает channel и инвалидирует ключи `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
+- Эндпоинты основного бэкенда `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` становятся **fallback**: frontend/graphql proxy проверяет health `graph-service` и переключается на backend только при недоступности.
+- Задача критическая, так как сейчас `events.Publisher` не подключён к хендлерам, и кэш `graph-service` инвалидируется только по TTL.
+
+### 2. Авторизация и user-scoped фильтрация в graph-service
+
+- Добавить JWT-middleware в `graph-service` для HTTP и gRPC.
+- `user_id` брать из токена, убрать query-param `user_id` из публичных HTTP-запросов.
+- Добавить фильтр `creator_id` в SQL-запросы `postgres_client.go` (`services/graph-service/internal/db/postgres_client.go`) для всех `notes`/`links`.
+- Прокси `frontend/src/hooks.server.ts` должен передавать `authorization` либо signed `x-internal-auth` header в `graph-service`.
+- Публичный граф вынести в отдельный endpoint (`/api/v1/graph/public`) с фильтром `is_public = true`.
+
+### 3. Унификация графового API и устранение двойной загрузки
+
+- Стандартизировать поля ответа graph-service: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
+- Убрать fallback-нормализацию (`id/Id/ID`, `source/source_note_id`) в `frontend/src/routes/+page.svelte`.
+- `+page.svelte` делает один запрос `getFullGraphData()` после `getNotes()`; убрать последовательный вызов `getFreshGraph()` + повторный `loadGraphData()`.
+- Использовать `/api/v1/graph/delta?last_hash=` для инкрементальных обновлений через `PreloadService`.
+
+### 4. Graph analytics API
+
+- Реализовать gRPC/HTTP методы `GetNeighbors`, `GetPath`, `GetRecommendations` в `graph-service`.
+- HTTP endpoints:
+  - `GET /api/v1/graph/note/:id/neighbors?depth=`
+  - `GET /api/v1/graph/path?from=&to=`
+  - `GET /api/v1/graph/recommendations?note_id=&limit=`
+- Заменить backend BFS (`backend/internal/domain/graph/bfs.go`) и traversal-логику recommendation на вызовы `graph-service`.
+
+### 5. Materialized view / графовый индекс
+
+- Создать materialized view `note_links_closure` для транзитивного замыкания связей.
+- Обновлять view по событиям `LinkCreated`/`LinkDeleted` (async через trigger или ASYNQ).
+- Использовать view для `GetPath`, подсчёта `degree`, семантической кластеризации и Honeycomb-раскладки.
+
+### 6. gRPC-web / SSE стриминг полного графа
+
+- Для графов >500 узлов стримить `GetFullLayout` по чанкам через gRPC streaming или Server-Sent Events.
+- Frontend постепенно отрисовывает узлы и связи (progressive rendering).
+- Альтернатива для JSON-API: NDJSON streaming.
+
+### 7. Улучшение layout-алгоритмов
+
+- **Honeycomb View:** радиальная раскладка с центром в узле с максимальным `sum(weight)` и концентрическими кругами по порогам веса.
+- **Force-directed 2D/3D:** заменить/дополнить текущий круг/спираль на физическую симуляцию на сервере.
+- **Cosmic Navigator:** гибридная серверная 3D-раскладка (`layout=3d`) + клиентская релаксация `d3-force-3d`.
+
+---
+
 ## 🚀 ДАЛЬШЕ: Ближайшие цели
 
 ### 📝 Документация по self-hosted развёртыванию

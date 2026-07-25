@@ -8,8 +8,7 @@
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  type IllustrationType =
-    "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
+  type IllustrationType = "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
 
   interface Props {
     error: ErrorResponse | null;
@@ -19,9 +18,7 @@
 
   const { error, onClose, illustrationType }: Props = $props();
   let displayMessage = $state<string | null>(null);
-  let resolvedIllustrationType = $state<IllustrationType | undefined>(
-    undefined,
-  );
+  let resolvedIllustrationType = $state<IllustrationType | undefined>(undefined);
 
   const errorIllustrationMap: Record<string, IllustrationType> = {
     NOT_FOUND: "404",
@@ -32,18 +29,14 @@
 
   $effect(() => {
     resolvedIllustrationType =
-      illustrationType ??
-      (error ? errorIllustrationMap[error.code] : undefined);
+      illustrationType ?? (error ? errorIllustrationMap[error.code] : undefined);
   });
 
   function handleClose() {
     onClose?.();
   }
 
-  const codeToLexiconKey: Record<
-    string,
-    { category: string; key: string; params?: unknown[] }
-  > = {
+  const codeToLexiconKey: Record<string, { category: string; key: string; params?: unknown[] }> = {
     connection_exists: { category: "error", key: "connectionExists" },
     // add mappings as needed
   };
@@ -53,7 +46,7 @@
       const mapped = codeToLexiconKey[error.code || ""];
       if (mapped) {
         getMessage(mapped.category, mapped.key, ...(mapped.params || [])).then(
-          (m) => (displayMessage = m),
+          (m) => (displayMessage = m)
         );
       } else {
         // fallback to error.message (server-provided)
@@ -84,9 +77,7 @@
 
     <div class="error-header">
       <span class="error-icon" aria-hidden="true">⚠️</span>
-      <span class="error-code"
-        >{t("error.codeLabel", { code: error.code })}</span
-      >
+      <span class="error-code">{t("error.codeLabel", { code: error.code })}</span>
     </div>
 
     <p class="error-message">{displayMessage || error.message}</p>

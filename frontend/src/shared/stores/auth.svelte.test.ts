@@ -12,10 +12,7 @@ import {
   updateUserInfo,
   getApiKey,
 } from "./auth.svelte";
-import {
-  clearPreloadCache,
-  hasPreloadedData,
-} from "$shared/services/PreloadService";
+import { clearPreloadCache, hasPreloadedData } from "$shared/services/PreloadService";
 import * as authApi from "$shared/api/auth";
 import * as usersApi from "$shared/api/users";
 import * as graphApi from "$shared/api/graph";
@@ -121,9 +118,7 @@ describe("Auth Store Integration with PreloadService", () => {
     vi.mocked(graphApi.getFreshGraph).mockResolvedValue({
       fresh: mockGraphData,
     });
-    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(
-      mockAchievementsPayload,
-    );
+    vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsPayload);
   });
 
   afterEach(() => {
@@ -205,9 +200,7 @@ describe("Auth Store Integration with PreloadService", () => {
       expect(hasPreloadedData()).toBe(true);
 
       // Мокаем ошибку входа
-      vi.mocked(authApi.login).mockRejectedValue(
-        new Error("Invalid credentials"),
-      );
+      vi.mocked(authApi.login).mockRejectedValue(new Error("Invalid credentials"));
 
       // Выполняем вход
       const loginResult = await login("testuser", "wrongpassword");
@@ -350,16 +343,11 @@ describe("Auth Store Integration with PreloadService", () => {
 
       expect(result).toBe(true);
       expect(isAuthenticated()).toBe(true);
-      expect(authApi.handleYandexCallback).toHaveBeenCalledWith(
-        "code",
-        "state",
-      );
+      expect(authApi.handleYandexCallback).toHaveBeenCalledWith("code", "state");
     });
 
     it("handles Yandex callback failure", async () => {
-      vi.mocked(authApi.handleYandexCallback).mockRejectedValue(
-        new Error("OAuth failed"),
-      );
+      vi.mocked(authApi.handleYandexCallback).mockRejectedValue(new Error("OAuth failed"));
 
       const result = await handleYandexCallback("code", "state");
 

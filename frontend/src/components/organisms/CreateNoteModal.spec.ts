@@ -40,9 +40,7 @@ describe("CreateNoteModal", () => {
     render(CreateNoteModal, { props: { open: true } });
 
     expect(screen.getByText("Create New Note")).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("Enter note title..."),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Enter note title...")).toBeInTheDocument();
     expect(screen.getByText("Create Note")).toBeInTheDocument();
   });
 
@@ -75,15 +73,13 @@ describe("CreateNoteModal", () => {
     });
 
     // Заполняем форму используя паттерн для Svelte 5
-    const titleInput = screen.getByPlaceholderText(
-      "Enter note title...",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
     titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
 
     const contentInput = screen.getByPlaceholderText(
-      "Enter note content...",
+      "Enter note content..."
     ) as HTMLTextAreaElement;
     contentInput.value = "Test content";
     await fireEvent.input(contentInput);
@@ -113,9 +109,7 @@ describe("CreateNoteModal", () => {
     render(CreateNoteModal, { props: { open: true } });
 
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText(
-      "Enter note title...",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
     titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
@@ -170,9 +164,7 @@ describe("CreateNoteModal", () => {
     await tick();
 
     // Заполняем и отправляем
-    const titleInput = screen.getByPlaceholderText(
-      "Enter note title...",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
     titleInput.value = "Planet Note";
     await fireEvent.input(titleInput);
     await tick();
@@ -184,7 +176,7 @@ describe("CreateNoteModal", () => {
       expect(createNote).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "planet",
-        }),
+        })
       );
     });
   });
@@ -194,15 +186,13 @@ describe("CreateNoteModal", () => {
       () =>
         new Promise((resolve) => {
           setTimeout(() => resolve(mockNote), 100);
-        }),
+        })
     );
 
     render(CreateNoteModal, { props: { open: true } });
 
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText(
-      "Enter note title...",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
     titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
@@ -213,9 +203,7 @@ describe("CreateNoteModal", () => {
 
     // Кнопка должна быть disabled и показывать "Creating..."
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Creating..." }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Creating..." })).toBeInTheDocument();
     });
 
     expect(submitButton).toBeDisabled();
@@ -227,15 +215,13 @@ describe("CreateNoteModal", () => {
     render(CreateNoteModal, { props: { open: true } });
 
     // Заполняем форму
-    const titleInput = screen.getByPlaceholderText(
-      "Enter note title...",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
     titleInput.value = "Test Note";
     await fireEvent.input(titleInput);
     await tick();
 
     const contentInput = screen.getByPlaceholderText(
-      "Enter note content...",
+      "Enter note content..."
     ) as HTMLTextAreaElement;
     contentInput.value = "Test content";
     await fireEvent.input(contentInput);

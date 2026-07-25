@@ -193,9 +193,7 @@ describe("GraphCanvas - Link Connection Correctness", () => {
       ];
 
       // Links with string IDs
-      const links: SimulationLink[] = [
-        { source: "node-1", target: "node-2", weight: 0.5 },
-      ];
+      const links: SimulationLink[] = [{ source: "node-1", target: "node-2", weight: 0.5 }];
 
       renderer.drawAllLinks(ctx, links, nodes);
 
@@ -231,22 +229,12 @@ describe("GraphCanvas - Link Connection Correctness", () => {
       };
 
       // A→B
-      renderer.drawLink(
-        ctx,
-        { source: "A", target: "B", weight: 0.5 },
-        nodeA,
-        nodeB,
-      );
+      renderer.drawLink(ctx, { source: "A", target: "B", weight: 0.5 }, nodeA, nodeB);
       expect(ctx.moveTo).toHaveBeenCalledWith(100, 100);
       expect(ctx.lineTo).toHaveBeenCalledWith(200, 200);
 
       // B→A (reverse direction)
-      renderer.drawLink(
-        ctx,
-        { source: "B", target: "A", weight: 0.6 },
-        nodeB,
-        nodeA,
-      );
+      renderer.drawLink(ctx, { source: "B", target: "A", weight: 0.6 }, nodeB, nodeA);
       expect(ctx.moveTo).toHaveBeenCalledWith(200, 200);
       expect(ctx.lineTo).toHaveBeenCalledWith(100, 100);
     });

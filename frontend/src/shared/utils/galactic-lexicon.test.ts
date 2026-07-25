@@ -183,62 +183,38 @@ describe("MessageFormatter", () => {
 describe("GalacticLexicon", () => {
   describe("success messages", () => {
     it("should return English standard note created message", () => {
-      const message = GalacticLexicon.success.noteCreated(
-        "My Note",
-        false,
-        "en",
-      );
+      const message = GalacticLexicon.success.noteCreated("My Note", false, "en");
       expect(message).toContain("My Note");
       expect(message).toContain("created");
       expect(message).not.toContain("Star");
     });
 
     it("should return Russian standard note created message", () => {
-      const message = GalacticLexicon.success.noteCreated(
-        "My Note",
-        false,
-        "ru",
-      );
+      const message = GalacticLexicon.success.noteCreated("My Note", false, "ru");
       expect(message).toContain("My Note");
       expect(message).toContain("создана");
     });
 
     it("should return English galactic note created message", () => {
-      const message = GalacticLexicon.success.noteCreated(
-        "My Note",
-        true,
-        "en",
-      );
+      const message = GalacticLexicon.success.noteCreated("My Note", true, "en");
       expect(message).toContain("My Note");
       expect(message).toContain("Star");
       expect(message).toContain("ignited");
     });
 
     it("should return Russian galactic note created message", () => {
-      const message = GalacticLexicon.success.noteCreated(
-        "My Note",
-        true,
-        "ru",
-      );
+      const message = GalacticLexicon.success.noteCreated("My Note", true, "ru");
       expect(message).toContain("My Note");
       expect(message).toContain("Звезда");
       expect(message).toContain("зажжена");
     });
 
     it("should return achievement unlocked message", () => {
-      const enStandard = GalacticLexicon.success.achievementUnlocked(
-        "Explorer",
-        false,
-        "en",
-      );
+      const enStandard = GalacticLexicon.success.achievementUnlocked("Explorer", false, "en");
       expect(enStandard).toContain("Explorer");
       expect(enStandard).toContain("Achievement");
 
-      const ruGalactic = GalacticLexicon.success.achievementUnlocked(
-        "Explorer",
-        true,
-        "ru",
-      );
+      const ruGalactic = GalacticLexicon.success.achievementUnlocked("Explorer", true, "ru");
       expect(ruGalactic).toContain("Explorer");
       expect(ruGalactic).toContain("звезда");
     });
@@ -335,35 +311,19 @@ describe("GalacticLexicon", () => {
     });
 
     it("should return delete confirm message with item name", () => {
-      const enStandard = GalacticLexicon.warning.deleteConfirm(
-        "My Note",
-        false,
-        "en",
-      );
+      const enStandard = GalacticLexicon.warning.deleteConfirm("My Note", false, "en");
       expect(enStandard).toContain("My Note");
       expect(enStandard).toContain("delete");
 
-      const enGalactic = GalacticLexicon.warning.deleteConfirm(
-        "My Note",
-        true,
-        "en",
-      );
+      const enGalactic = GalacticLexicon.warning.deleteConfirm("My Note", true, "en");
       expect(enGalactic).toContain("My Note");
       expect(enGalactic).toContain("black hole");
 
-      const ruStandard = GalacticLexicon.warning.deleteConfirm(
-        "My Note",
-        false,
-        "ru",
-      );
+      const ruStandard = GalacticLexicon.warning.deleteConfirm("My Note", false, "ru");
       expect(ruStandard).toContain("My Note");
       expect(ruStandard).toContain("удалить");
 
-      const ruGalactic = GalacticLexicon.warning.deleteConfirm(
-        "My Note",
-        true,
-        "ru",
-      );
+      const ruGalactic = GalacticLexicon.warning.deleteConfirm("My Note", true, "ru");
       expect(ruGalactic).toContain("My Note");
       expect(ruGalactic).toContain("чёрную дыру");
     });
@@ -427,33 +387,16 @@ describe("getLexiconMessage compatibility function", () => {
   });
 
   it("should return messages for error category", () => {
-    const msg = getLexiconMessage(
-      "ru",
-      "standard",
-      "error",
-      "connectionExists",
-    );
+    const msg = getLexiconMessage("ru", "standard", "error", "connectionExists");
     expect(msg).toBeTruthy();
   });
 
   it("should return messages for achievement category", () => {
-    const ru = getLexiconMessage(
-      "ru",
-      "galactic",
-      "achievement",
-      "unlocked",
-      "Test Achievement",
-    );
+    const ru = getLexiconMessage("ru", "galactic", "achievement", "unlocked", "Test Achievement");
     expect(ru).toContain("Test Achievement");
     expect(ru).toContain("⭐");
 
-    const en = getLexiconMessage(
-      "en",
-      "galactic",
-      "achievement",
-      "unlocked",
-      "Test Achievement",
-    );
+    const en = getLexiconMessage("en", "galactic", "achievement", "unlocked", "Test Achievement");
     expect(en).toContain("Test Achievement");
     expect(en).toContain("⭐");
   });
@@ -523,11 +466,7 @@ describe("Comprehensive message coverage", () => {
         const args = getArgs(fn as (...args: any[]) => string);
         for (const useGalactic of [false, true]) {
           for (const locale of ["en", "ru"]) {
-            const message = (fn as (...args: any[]) => string)(
-              ...args,
-              useGalactic,
-              locale,
-            );
+            const message = (fn as (...args: any[]) => string)(...args, useGalactic, locale);
             expect(message).toBeTypeOf("string");
             results.push(`${category}.${key}:${message}`);
           }

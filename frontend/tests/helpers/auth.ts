@@ -39,13 +39,11 @@ export async function loginAsTestUser(page: Page, request: APIRequestContext) {
       }
       (window as any).__SKIP_AUTH__ = false;
     },
-    { access: access_token, refresh: refresh_token },
+    { access: access_token, refresh: refresh_token }
   );
 }
 
-export async function getAuthToken(
-  request: APIRequestContext,
-): Promise<string> {
+export async function getAuthToken(request: APIRequestContext): Promise<string> {
   const response = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
     data: TEST_USER,
     headers: { "Content-Type": "application/json" },

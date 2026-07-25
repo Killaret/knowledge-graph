@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createNote, deleteNote, getBackendUrl } from "./helpers/testData";
-import {
-  clickViewToggle,
-  clickCreateNoteButton,
-  setupSkipAuth,
-} from "./helpers/testUtils";
+import { clickViewToggle, clickCreateNoteButton, setupSkipAuth } from "./helpers/testUtils";
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -25,9 +21,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(1000);
 
     // Verify SKIP_AUTH flag is set after navigation
-    const skipAuthFlag = await page.evaluate(
-      () => (window as any).__SKIP_AUTH__,
-    );
+    const skipAuthFlag = await page.evaluate(() => (window as any).__SKIP_AUTH__);
     expect(skipAuthFlag).toBe(true);
   });
 
@@ -43,13 +37,9 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     testNoteIds.length = 0;
   });
 
-  test("should display graph canvas by default on home page", async ({
-    page,
-  }) => {
+  test("should display graph canvas by default on home page", async ({ page }) => {
     // Verify graph container is visible (fullscreen graph)
-    const graphContainer = page
-      .locator('[data-testid="graph-2d-container"]')
-      .first();
+    const graphContainer = page.locator('[data-testid="graph-2d-container"]').first();
     await expect(graphContainer).toBeVisible({ timeout: 10000 });
 
     // Verify the container exists and has proper structure
@@ -61,10 +51,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     expect(hasCanvas || hasSpinner || hasError).toBe(true);
   });
 
-  test("should load notes and display them on graph", async ({
-    page,
-    request,
-  }) => {
+  test("should load notes and display them on graph", async ({ page, request }) => {
     // Create a test note via API using helper
     const timestamp = Date.now();
     await createNote(request, {
@@ -79,15 +66,11 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(2000);
 
     // Verify something is visible (graph, empty state, list, or loading)
-    const graphContainer = page
-      .locator('[data-testid="graph-2d-container"]')
-      .first();
+    const graphContainer = page.locator('[data-testid="graph-2d-container"]').first();
     const emptyState = page
       .locator("text=No graph data, text=Create some notes, text=empty")
       .first();
-    const listContainer = page
-      .locator('[data-testid="list-container"], .notes-grid')
-      .first();
+    const listContainer = page.locator('[data-testid="list-container"], .notes-grid').first();
     const loadingState = page.locator("text=Loading, .spinner").first();
 
     const hasGraph = await graphContainer.isVisible().catch(() => false);
@@ -103,15 +86,11 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
       const canvas = page.locator("canvas").first();
       const hasCanvas = await canvas.isVisible().catch(() => false);
       // Canvas might still be loading, so we just log it
-      console.log(
-        `[TEST] Graph container visible, canvas visible: ${hasCanvas}`,
-      );
+      console.log(`[TEST] Graph container visible, canvas visible: ${hasCanvas}`);
     }
   });
 
-  test("should display list view when toggled from graph view", async ({
-    page,
-  }) => {
+  test("should display list view when toggled from graph view", async ({ page }) => {
     // Create a note first
     await clickCreateNoteButton(page);
     await page.fill('input[name="title"]', "List View Test Note");
@@ -130,7 +109,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     // Verify any content is visible (graph, list, loading, or error states)
     const content = page
       .locator(
-        '[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card, [data-testid="loading-overlay"], .error-overlay',
+        '[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card, [data-testid="loading-overlay"], .error-overlay'
       )
       .first();
     await expect(content).toBeVisible({ timeout: 10000 });
@@ -176,10 +155,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     }
   });
 
-  test("should filter notes by type from home page", async ({
-    page,
-    request,
-  }) => {
+  test("should filter notes by type from home page", async ({ page, request }) => {
     // Create notes of different types using helper
     const timestamp = Date.now();
     await createNote(request, {
@@ -198,9 +174,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(2000);
 
     // Click on "Stars" filter
-    const starsFilter = page
-      .locator('[data-testid="filter-chip-star"]')
-      .first();
+    const starsFilter = page.locator('[data-testid="filter-chip-star"]').first();
     if (await starsFilter.isVisible().catch(() => false)) {
       await starsFilter.click();
       await page.waitForTimeout(500);
@@ -236,9 +210,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(2000);
 
     // Fill search input
-    const searchInput = page
-      .locator('.search-input, input[type="search"]')
-      .first();
+    const searchInput = page.locator('.search-input, input[type="search"]').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill(searchTerm);
       await page.waitForTimeout(2000);
@@ -250,19 +222,14 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
       if (!hasStats) {
         // If stats not visible, verify any content is showing
         const content = page
-          .locator(
-            '[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card',
-          )
+          .locator('[data-testid="graph-2d-container"], [data-testid="list-container"], .note-card')
           .first();
         await expect(content).toBeVisible({ timeout: 5000 });
       }
     }
   });
 
-  test("should open side panel when clicking on graph node", async ({
-    page,
-    request,
-  }) => {
+  test("should open side panel when clicking on graph node", async ({ page, request }) => {
     // Create a note using helper
     const timestamp = Date.now();
     await createNote(request, {
@@ -286,10 +253,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     }
   });
 
-  test("should navigate to graph view for specific note", async ({
-    page,
-    request,
-  }) => {
+  test("should navigate to graph view for specific note", async ({ page, request }) => {
     // Create a note using helper
     const timestamp = Date.now();
     const note = await createNote(request, {
@@ -326,12 +290,8 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     expect(has404).toBe(false);
 
     // Verify graph container, empty state, or error state is visible
-    const graphContainer = page
-      .locator(".fullscreen-graph, .graph-3d-container, canvas")
-      .first();
-    const emptyState = page
-      .locator("text=No notes found, text=No graph data")
-      .first();
+    const graphContainer = page.locator(".fullscreen-graph, .graph-3d-container, canvas").first();
+    const emptyState = page.locator("text=No notes found, text=No graph data").first();
     const errorState = page.locator("text=Failed to load graph data").first();
 
     const hasGraph = await graphContainer.isVisible().catch(() => false);
@@ -341,10 +301,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     expect(hasGraph || hasEmpty || hasError).toBe(true);
   });
 
-  test("should handle empty state when no notes exist", async ({
-    page,
-    request,
-  }) => {
+  test("should handle empty state when no notes exist", async ({ page, request }) => {
     // Check current notes count
     const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
@@ -358,7 +315,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
       // If no notes, verify some content is visible (empty state, graph container, or error)
       const content = page
         .locator(
-          ".fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i",
+          ".fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i"
         )
         .first();
       await expect(content).toBeVisible({ timeout: 10000 });
@@ -366,17 +323,14 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
       // If notes exist, verify graph or list container is visible
       const content = page
         .locator(
-          ".fullscreen-graph, .graph-2d-container, .list-container, .notes-grid, [data-testid='graph-2d-container']",
+          ".fullscreen-graph, .graph-2d-container, .list-container, .notes-grid, [data-testid='graph-2d-container']"
         )
         .first();
       await expect(content).toBeVisible({ timeout: 10000 });
     }
   });
 
-  test("should toggle full graph mode on home page", async ({
-    page,
-    request,
-  }) => {
+  test("should toggle full graph mode on home page", async ({ page, request }) => {
     // Create test notes if needed
     const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();
@@ -398,9 +352,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     }
 
     // Find and click the full graph toggle
-    const toggle = page
-      .locator('.graph-mode-toggle input[type="checkbox"]')
-      .first();
+    const toggle = page.locator('.graph-mode-toggle input[type="checkbox"]').first();
     const hasToggle = await toggle.isVisible().catch(() => false);
 
     if (!hasToggle) {
@@ -416,9 +368,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(2000);
 
     // Verify graph still renders after toggle
-    const container = page
-      .locator(".fullscreen-graph, canvas, .loading-overlay")
-      .first();
+    const container = page.locator(".fullscreen-graph, canvas, .loading-overlay").first();
     await expect(container).toBeVisible();
 
     // Click again to toggle back
@@ -429,10 +379,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await expect(container).toBeVisible();
   });
 
-  test("should display correct note count in stats", async ({
-    page,
-    request,
-  }) => {
+  test("should display correct note count in stats", async ({ page, request }) => {
     // Get actual note count from API
     const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
     const notesData = await notesResponse.json();

@@ -154,7 +154,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
       vi.fn().mockImplementation((cb: FrameRequestCallback) => {
         setTimeout(cb, 16);
         return 1;
-      }),
+      })
     );
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
   });
@@ -182,9 +182,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
 
       expect(ctx.createRadialGradient).toHaveBeenCalled();
       const gradient = (ctx.createRadialGradient as any).mock.results[0].value;
-      const colors = gradient
-        .getColorStops()
-        .map((stop: { color: string }) => stop.color);
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
       expect(colors).toContain("#d6aa5d");
     });
 
@@ -205,14 +203,9 @@ describe("GraphCanvas - Node Type Rendering", () => {
 
       expect(ctx.createRadialGradient).toHaveBeenCalled();
       const gradient = (ctx.createRadialGradient as any).mock.results[0].value;
-      const colors = gradient
-        .getColorStops()
-        .map((stop: { color: string }) => stop.color);
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
       expect(
-        colors.some(
-          (color: string) =>
-            color.includes("192, 132, 252") || color === "#8b5cf6",
-        ),
+        colors.some((color: string) => color.includes("192, 132, 252") || color === "#8b5cf6")
       ).toBe(true);
     });
 
@@ -233,7 +226,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
         { id: "1", x: 100, y: 100, title: "Star", type: "star" },
         20,
         0,
-        false,
+        false
       );
       expect(starCtx.createRadialGradient).toHaveBeenCalled();
 
@@ -244,7 +237,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
         { id: "2", x: 100, y: 100, title: "Planet", type: "planet" },
         20,
         0,
-        false,
+        false
       );
       expect(planetCtx.createRadialGradient).toHaveBeenCalled();
 
@@ -255,7 +248,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
         { id: "3", x: 100, y: 100, title: "Comet", type: "comet" },
         20,
         0,
-        false,
+        false
       );
       expect(cometCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
 
@@ -266,7 +259,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
         { id: "4", x: 100, y: 100, title: "Galaxy", type: "galaxy" },
         20,
         0,
-        false,
+        false
       );
       expect(galaxyCtx.createRadialGradient).toHaveBeenCalled();
 
@@ -277,7 +270,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
         { id: "5", x: 100, y: 100, title: "Asteroid", type: "asteroid" },
         20,
         0,
-        false,
+        false
       );
       expect(asteroidCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
     });
@@ -625,7 +618,7 @@ describe.skip("Anomaly Rendering (Unknown Node Types)", () => {
       20,
       0,
       "deterministic-node",
-      customRenderers,
+      customRenderers
     );
     drawUnknown(
       {} as CanvasRenderingContext2D,
@@ -634,7 +627,7 @@ describe.skip("Anomaly Rendering (Unknown Node Types)", () => {
       20,
       0,
       "deterministic-node",
-      customRenderers,
+      customRenderers
     );
 
     const counts = [

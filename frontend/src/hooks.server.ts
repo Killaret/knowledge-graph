@@ -73,13 +73,10 @@ const backendApiProxy: Handle = async ({ event, resolve }) => {
       if (import.meta.env.DEV) {
         console.error("[Backend API Proxy] Error:", error);
       }
-      return new Response(
-        JSON.stringify({ error: "Failed to connect to backend" }),
-        {
-          status: 502,
-          headers: { "content-type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Failed to connect to backend" }), {
+        status: 502,
+        headers: { "content-type": "application/json" },
+      });
     }
   }
 
@@ -176,13 +173,10 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
       if (import.meta.env.DEV) {
         console.error("[Graph Service Proxy] Error:", error);
       }
-      return new Response(
-        JSON.stringify({ error: "Failed to connect to graph service" }),
-        {
-          status: 502,
-          headers: { "content-type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Failed to connect to graph service" }), {
+        status: 502,
+        headers: { "content-type": "application/json" },
+      });
     }
   }
 

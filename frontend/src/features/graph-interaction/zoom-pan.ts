@@ -1,7 +1,4 @@
-import type {
-  TransformState,
-  SimulationNode,
-} from "$components/organisms/GraphCanvas/types";
+import type { TransformState, SimulationNode } from "$components/organisms/GraphCanvas/types";
 import { resetView } from "$components/organisms/GraphCanvas";
 
 export interface ZoomPanState {
@@ -22,7 +19,7 @@ export function handleZoom(
   e: WheelEvent,
   transform: TransformState,
   canvas: HTMLCanvasElement,
-  redraw: () => void,
+  redraw: () => void
 ): void {
   e.preventDefault();
 
@@ -52,7 +49,7 @@ export function handleTouchStart(
   simNodes: SimulationNode[],
   ctx: CanvasRenderingContext2D | null,
   width: number,
-  height: number,
+  height: number
 ): void {
   if (e.touches.length === 1) {
     const now = Date.now();
@@ -71,7 +68,7 @@ export function handleTouchStart(
         simNodes,
         ctx,
         width,
-        height,
+        height
       );
       e.preventDefault();
     } else {
@@ -92,7 +89,7 @@ function handleDoubleTap(
   simNodes: SimulationNode[],
   ctx: CanvasRenderingContext2D | null,
   width: number,
-  height: number,
+  height: number
 ): void {
   const rect = canvas.getBoundingClientRect();
   const x = (clientX - rect.left - transform.x) / transform.k;
@@ -120,7 +117,7 @@ export function resetViewToCenter(
   transform: TransformState,
   width: number,
   height: number,
-  simNodes: SimulationNode[],
+  simNodes: SimulationNode[]
 ): void {
   if (simNodes.length === 0) return;
 

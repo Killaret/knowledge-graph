@@ -73,17 +73,9 @@
   // Route protection — wait for initAuth(); isLoading() is only for login/register actions, not bootstrap
   $effect(() => {
     const currentPath = $page.url.pathname;
-    const isPublicRoute = publicRoutes.some((route) =>
-      currentPath.startsWith(route),
-    );
+    const isPublicRoute = publicRoutes.some((route) => currentPath.startsWith(route));
 
-    if (
-      isInitialized() &&
-      !isLoading() &&
-      !isPublicRoute &&
-      !isAuthenticated() &&
-      !isSkipAuth
-    ) {
+    if (isInitialized() && !isLoading() && !isPublicRoute && !isAuthenticated() && !isSkipAuth) {
       const returnUrl = encodeURIComponent(currentPath);
       goto(`/auth/login?redirect=${returnUrl}`);
     }
@@ -119,11 +111,7 @@
 
   async function showAchievementNotification(achievement: { title: string }) {
     try {
-      const msg = await getMessage(
-        "achievement",
-        "unlocked",
-        achievement.title,
-      );
+      const msg = await getMessage("achievement", "unlocked", achievement.title);
       toastMessage = msg;
       toastType = "success";
       showToast = true;
@@ -146,9 +134,7 @@
 -->
 <div class="app-shell">
   {#if isSkipAuth}
-    <div class="skip-auth-badge" title={t("layout.skipAuthTitle")}>
-      🔑 SKIP_AUTH
-    </div>
+    <div class="skip-auth-badge" title={t("layout.skipAuthTitle")}>🔑 SKIP_AUTH</div>
   {/if}
 
   <SidebarWidget />

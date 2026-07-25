@@ -28,8 +28,7 @@
       await forgotPassword(email.trim());
       isSent = true;
     } catch (e) {
-      localError =
-        e instanceof Error ? e.message : t("auth.forgotPasswordFailed");
+      localError = e instanceof Error ? e.message : t("auth.forgotPasswordFailed");
     } finally {
       isLoading = false;
     }
@@ -62,9 +61,7 @@
     </div>
 
     {#if localError}
-      <ApiErrorDisplay
-        error={{ message: localError, code: "FORGOT_PASSWORD_ERROR" }}
-      />
+      <ApiErrorDisplay error={{ message: localError, code: "FORGOT_PASSWORD_ERROR" }} />
     {/if}
 
     <Button type="submit" variant="primary" disabled={isLoading}>

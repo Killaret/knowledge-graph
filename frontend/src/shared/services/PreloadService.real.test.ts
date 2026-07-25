@@ -81,9 +81,7 @@ describe("PreloadService (real)", () => {
 
   it("deduplicates concurrent preload calls", async () => {
     let resolve: (value: any) => void = () => {};
-    mockGraphApi.getFullGraphData.mockImplementation(
-      () => new Promise((r) => (resolve = r)),
-    );
+    mockGraphApi.getFullGraphData.mockImplementation(() => new Promise((r) => (resolve = r)));
 
     const p1 = PreloadService.startPreload();
     const p2 = PreloadService.startPreload();
@@ -137,8 +135,7 @@ describe("PreloadService (real)", () => {
     expect(PreloadService.hasPreloadedData()).toBe(false);
 
     mockGraphApi.getFullGraphData.mockImplementation(
-      () =>
-        new Promise((resolve) => setTimeout(() => resolve(mockGraphData), 100)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockGraphData), 100))
     );
 
     const promise = PreloadService.startPreload();

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
-  import { Graph3DEngine } from "$features/graph-canvas/graph3d";
-  import type { GraphNode, GraphLink, Graph3DCallbacks } from "$features/graph-canvas/graph3d";
+  import { Graph3DEngine } from "../lib/engine";
+  import type { GraphNode, GraphLink, Graph3DCallbacks } from "../model/types";
 
   interface Props {
     nodes: GraphNode[];

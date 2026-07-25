@@ -31,26 +31,18 @@ describe("users API", () => {
   };
 
   it("getMe returns current user", async () => {
-    server.use(
-      http.get(`${baseUrl}/v1/users/me`, () => HttpResponse.json(mockUser)),
-    );
+    server.use(http.get(`${baseUrl}/v1/users/me`, () => HttpResponse.json(mockUser)));
     expect(await getMe()).toEqual(mockUser);
   });
 
   it("updateMe updates and returns user", async () => {
     const payload: UpdateUserRequest = { email: "new@example.com" };
-    server.use(
-      http.put(`${baseUrl}/v1/users/me`, () => HttpResponse.json(mockUser)),
-    );
+    server.use(http.put(`${baseUrl}/v1/users/me`, () => HttpResponse.json(mockUser)));
     expect(await updateMe(payload)).toEqual(mockUser);
   });
 
   it("deleteMe sends delete request", async () => {
-    server.use(
-      http.delete(`${baseUrl}/v1/users/me`, () =>
-        HttpResponse.json({}, { status: 204 }),
-      ),
-    );
+    server.use(http.delete(`${baseUrl}/v1/users/me`, () => HttpResponse.json({}, { status: 204 })));
     await expect(deleteMe("secret")).resolves.toBeUndefined();
   });
 
@@ -58,19 +50,13 @@ describe("users API", () => {
     const response = {
       settings: [{ key: "theme", value: "dark", updated_at: "" }],
     };
-    server.use(
-      http.get(`${baseUrl}/v1/users/me/settings`, () =>
-        HttpResponse.json(response),
-      ),
-    );
+    server.use(http.get(`${baseUrl}/v1/users/me/settings`, () => HttpResponse.json(response)));
     expect(await getSettings()).toEqual(response);
   });
 
   it("updateSetting sends put request", async () => {
     server.use(
-      http.put(`${baseUrl}/v1/users/me/settings`, () =>
-        HttpResponse.json({}, { status: 204 }),
-      ),
+      http.put(`${baseUrl}/v1/users/me/settings`, () => HttpResponse.json({}, { status: 204 }))
     );
     await expect(updateSetting("theme", "light")).resolves.toBeUndefined();
   });
@@ -78,8 +64,8 @@ describe("users API", () => {
   it("deleteSetting removes a setting", async () => {
     server.use(
       http.delete(`${baseUrl}/v1/users/me/settings/theme`, () =>
-        HttpResponse.json({}, { status: 204 }),
-      ),
+        HttpResponse.json({}, { status: 204 })
+      )
     );
     await expect(deleteSetting("theme")).resolves.toBeUndefined();
   });
@@ -87,9 +73,7 @@ describe("users API", () => {
   it("getGalacticMode returns galactic mode setting", async () => {
     const response = { galactic_mode: true };
     server.use(
-      http.get(`${baseUrl}/v1/users/me/settings/galactic_mode`, () =>
-        HttpResponse.json(response),
-      ),
+      http.get(`${baseUrl}/v1/users/me/settings/galactic_mode`, () => HttpResponse.json(response))
     );
     expect(await getGalacticMode()).toEqual(response);
   });
@@ -98,8 +82,8 @@ describe("users API", () => {
     const response = { message: "ok", galactic_mode: false };
     server.use(
       http.post(`${baseUrl}/v1/users/me/settings/galactic_mode/toggle`, () =>
-        HttpResponse.json(response),
-      ),
+        HttpResponse.json(response)
+      )
     );
     expect(await toggleGalacticMode()).toEqual(response);
   });
@@ -112,9 +96,7 @@ describe("users API", () => {
       created_at: "",
     };
     server.use(
-      http.get(`${baseUrl}/v1/users/me/api-keys`, () =>
-        HttpResponse.json({ api_keys: [mockKey] }),
-      ),
+      http.get(`${baseUrl}/v1/users/me/api-keys`, () => HttpResponse.json({ api_keys: [mockKey] }))
     );
     const result = await listAPIKeys();
     expect(result.api_keys).toHaveLength(1);
@@ -125,8 +107,8 @@ describe("users API", () => {
     const response = { id: "k1", api_key: "secret", name: "dev" };
     server.use(
       http.post(`${baseUrl}/v1/users/me/api-keys`, () =>
-        HttpResponse.json(response, { status: 201 }),
-      ),
+        HttpResponse.json(response, { status: 201 })
+      )
     );
     expect(await createAPIKey("dev", ["read"])).toEqual(response);
   });
@@ -134,8 +116,8 @@ describe("users API", () => {
   it("revokeAPIKey deletes key", async () => {
     server.use(
       http.delete(`${baseUrl}/v1/users/me/api-keys/k1`, () =>
-        HttpResponse.json({}, { status: 204 }),
-      ),
+        HttpResponse.json({}, { status: 204 })
+      )
     );
     await expect(revokeAPIKey("k1")).resolves.toBeUndefined();
   });
@@ -154,11 +136,7 @@ describe("users API", () => {
       ],
       total_points: 10,
     };
-    server.use(
-      http.get(`${baseUrl}/v1/users/me/achievements`, () =>
-        HttpResponse.json(response),
-      ),
-    );
+    server.use(http.get(`${baseUrl}/v1/users/me/achievements`, () => HttpResponse.json(response)));
     expect(await getMyAchievements()).toEqual(response);
   });
 
@@ -177,19 +155,13 @@ describe("users API", () => {
         },
       ],
     };
-    server.use(
-      http.get(`${baseUrl}/v1/achievements`, () => HttpResponse.json(response)),
-    );
+    server.use(http.get(`${baseUrl}/v1/achievements`, () => HttpResponse.json(response)));
     expect(await getAllAchievements()).toEqual(response);
   });
 
   it("getStreak returns login streak", async () => {
     const response = { streak: 5, next_reward: true };
-    server.use(
-      http.get(`${baseUrl}/v1/users/me/streak`, () =>
-        HttpResponse.json(response),
-      ),
-    );
+    server.use(http.get(`${baseUrl}/v1/users/me/streak`, () => HttpResponse.json(response)));
     expect(await getStreak()).toEqual(response);
   });
 });

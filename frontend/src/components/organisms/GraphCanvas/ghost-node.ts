@@ -26,7 +26,7 @@ export const GHOST_NODE_RADIUS = graphConfig2D.ghost_node_radius;
 export function createGhostNode(
   width: number,
   height: number,
-  nodes: SimulationNode[],
+  nodes: SimulationNode[]
 ): GhostNodeState {
   // Show in top-left if there are notes, otherwise center
   const hasNotes = nodes.length > 0;
@@ -44,17 +44,14 @@ export function updateGhostNodePosition(
   state: GhostNodeState,
   width: number,
   height: number,
-  nodes: SimulationNode[],
+  nodes: SimulationNode[]
 ): void {
   const hasNotes = nodes.length > 0;
   state.x = hasNotes ? 60 : width / 2;
   state.y = hasNotes ? 60 : height / 2;
 }
 
-export function updateGhostNodePulse(
-  state: GhostNodeState,
-  animationTime: number,
-): void {
+export function updateGhostNodePulse(state: GhostNodeState, animationTime: number): void {
   const pulseSpeed = 0.002;
   state.pulsePhase = Math.sin(animationTime * pulseSpeed) * 0.5 + 0.5;
 }
@@ -63,7 +60,7 @@ export function isPointOverGhostNode(
   x: number,
   y: number,
   ghostNode: GhostNodeState,
-  transform: { x: number; y: number; k: number },
+  transform: { x: number; y: number; k: number }
 ): boolean {
   const worldX = (x - transform.x) / transform.k;
   const worldY = (y - transform.y) / transform.k;
@@ -76,7 +73,7 @@ export function isPointOverGhostNode(
 export function drawGhostNode(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  _animationTime: number,
+  _animationTime: number
 ): void {
   const { x, y, radius, hovered, pulsePhase } = ghostNode;
 
@@ -96,7 +93,7 @@ export function drawGhostNode(
     0,
     x,
     y,
-    radius * scale,
+    radius * scale
   );
   gradient.addColorStop(0, `rgba(255, 255, 255, ${baseOpacity + 0.2})`);
   gradient.addColorStop(0.5, `rgba(200, 220, 255, ${baseOpacity})`);
@@ -129,7 +126,7 @@ export function drawGhostNode(
 export function drawGhostNodeScreen(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  _animationTime: number,
+  _animationTime: number
 ): void {
   const x = 60;
   const y = 60;
@@ -150,7 +147,7 @@ export function drawGhostNodeScreen(
     0,
     x,
     y,
-    radius * scale,
+    radius * scale
   );
   gradient.addColorStop(0, `rgba(255, 255, 255, ${baseOpacity + 0.2})`);
   gradient.addColorStop(0.5, `rgba(200, 220, 255, ${baseOpacity})`);
@@ -177,7 +174,7 @@ export function drawGhostNodeScreen(
 export function drawGhostNodeTooltipScreen(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  text: string = "Create new note",
+  text: string = "Create new note"
 ): void {
   const x = 60;
   const y = 60;
@@ -210,7 +207,7 @@ export function drawGhostNodeTooltipScreen(
 export function drawGhostNodeTooltip(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
-  text: string = "Create new note",
+  text: string = "Create new note"
 ): void {
   const { x, y, radius } = ghostNode;
 

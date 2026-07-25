@@ -56,9 +56,7 @@ describe("EditNoteModal", () => {
     expect(screen.getByText("Edit Note")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Save Changes" }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save Changes" })).toBeInTheDocument();
     });
   });
 
@@ -126,9 +124,7 @@ describe("EditNoteModal", () => {
     });
 
     // Очищаем заголовок
-    const titleInput = screen.getByTestId(
-      "edit-title-input",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByTestId("edit-title-input") as HTMLInputElement;
     titleInput.value = "";
     await fireEvent.input(titleInput);
     await tick();
@@ -142,7 +138,7 @@ describe("EditNoteModal", () => {
       () => {
         expect(screen.getByText("Error: VALIDATION_ERROR")).toBeInTheDocument();
       },
-      { timeout: 1000 },
+      { timeout: 1000 }
     );
 
     expect(mockUpdateNote).not.toHaveBeenCalled();
@@ -166,16 +162,12 @@ describe("EditNoteModal", () => {
     });
 
     // Изменяем данные
-    const titleInput = screen.getByTestId(
-      "edit-title-input",
-    ) as HTMLInputElement;
+    const titleInput = screen.getByTestId("edit-title-input") as HTMLInputElement;
     titleInput.value = "Updated Title";
     await fireEvent.input(titleInput);
     await tick();
 
-    const contentInput = screen.getByTestId(
-      "edit-content-input",
-    ) as HTMLTextAreaElement;
+    const contentInput = screen.getByTestId("edit-content-input") as HTMLTextAreaElement;
     contentInput.value = "Updated content";
     await fireEvent.input(contentInput);
     await tick();

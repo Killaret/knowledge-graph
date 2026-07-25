@@ -22,7 +22,7 @@ export { getBackendUrl };
  */
 export async function createNote(
   request: APIRequestContext,
-  data: { title: string; content?: string; type?: string; email?: string },
+  data: { title: string; content?: string; type?: string; email?: string }
 ): Promise<{ data: { id: string; title: string } }> {
   const result = await createNoteAdvanced(request, {
     title: data.title,
@@ -43,14 +43,14 @@ export async function createLink(
     target_note_id: string;
     link_type?: string;
     weight?: number;
-  },
+  }
 ): Promise<void> {
   await createLinkAdvanced(
     request,
     data.source_note_id,
     data.target_note_id,
     data.weight ?? 0.5,
-    data.link_type ?? "related",
+    data.link_type ?? "related"
   );
 }
 
@@ -68,10 +68,7 @@ export { isBackendAvailable } from "./testData";
  * Click an element using JavaScript to bypass viewport checks.
  * Useful for position:fixed elements that Playwright considers outside viewport.
  */
-export async function clickBySelector(
-  page: Page,
-  selector: string,
-): Promise<void> {
+export async function clickBySelector(page: Page, selector: string): Promise<void> {
   await page.evaluate((sel) => {
     const element = document.querySelector(sel);
     if (element) {
@@ -86,10 +83,7 @@ export async function clickBySelector(
  * Click a floating controls button using JavaScript to bypass viewport checks.
  * Floating controls use position:fixed which Playwright considers outside viewport.
  */
-export async function clickFloatingControl(
-  page: Page,
-  dataTestId: string,
-): Promise<void> {
+export async function clickFloatingControl(page: Page, dataTestId: string): Promise<void> {
   await clickBySelector(page, `[data-testid="${dataTestId}"]`);
 }
 
@@ -103,10 +97,7 @@ export async function clickCreateNoteButton(page: Page): Promise<void> {
 /**
  * Click view toggle button in floating controls
  */
-export async function clickViewToggle(
-  page: Page,
-  view: "list" | "graph" | "3d",
-): Promise<void> {
+export async function clickViewToggle(page: Page, view: "list" | "graph" | "3d"): Promise<void> {
   const testId = `view-toggle-${view}`;
   await clickFloatingControl(page, testId);
 }
@@ -114,10 +105,7 @@ export async function clickViewToggle(
 /**
  * Click filter chip in floating controls
  */
-export async function clickFilterChip(
-  page: Page,
-  filter: string,
-): Promise<void> {
+export async function clickFilterChip(page: Page, filter: string): Promise<void> {
   const filterId = filter.toLowerCase().replace(/s$/, ""); // stars -> star
   await clickFloatingControl(page, `filter-chip-${filterId}`);
 }
@@ -125,14 +113,9 @@ export async function clickFilterChip(
 /**
  * Fill search input in floating controls
  */
-export async function fillSearchInput(
-  page: Page,
-  query: string,
-): Promise<void> {
+export async function fillSearchInput(page: Page, query: string): Promise<void> {
   await page.evaluate((q) => {
-    const input = document.querySelector(
-      '[data-testid="search-input"]',
-    ) as HTMLInputElement;
+    const input = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
     if (input) {
       input.value = q;
       input.dispatchEvent(new Event("input", { bubbles: true }));

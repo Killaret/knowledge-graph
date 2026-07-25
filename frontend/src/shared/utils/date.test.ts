@@ -22,7 +22,7 @@ describe("date utils", () => {
       const result = formatDate(
         new Date("2026-07-21T10:00:00.000Z"),
         { month: "short", day: "2-digit" },
-        "en-US",
+        "en-US"
       );
       expect(result).toMatch(/Jul/);
       expect(result).toMatch(/21/);
@@ -60,9 +60,7 @@ describe("date utils", () => {
     });
 
     it('returns "N дня назад" for recent dates', () => {
-      expect(formatRelativeDate("2026-07-18T10:00:00.000Z")).toBe(
-        "3 дня назад",
-      );
+      expect(formatRelativeDate("2026-07-18T10:00:00.000Z")).toBe("3 дня назад");
     });
 
     it("falls back to formatDate for older dates", () => {

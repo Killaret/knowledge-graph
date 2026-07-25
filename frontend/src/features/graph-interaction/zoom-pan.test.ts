@@ -1,10 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  createZoomPanState,
-  handleZoom,
-  handleTouchStart,
-  resetViewToCenter,
-} from "./zoom-pan";
+import { createZoomPanState, handleZoom, handleTouchStart, resetViewToCenter } from "./zoom-pan";
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");

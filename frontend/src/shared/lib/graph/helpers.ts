@@ -54,12 +54,7 @@ export function hexToRgba(hex: string, alpha: number): string {
 /**
  * Helper function to apply hue shift to RGBA values
  */
-export function applyHueShiftToRGBA(
-  r: number,
-  g: number,
-  b: number,
-  hueShift: number,
-): string {
+export function applyHueShiftToRGBA(r: number, g: number, b: number, hueShift: number): string {
   const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
   const shifted = applyHueShift(hex, hueShift);
   const r2 = parseInt(shifted.slice(1, 3), 16);

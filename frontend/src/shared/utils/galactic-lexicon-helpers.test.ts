@@ -15,9 +15,7 @@ const argMap: Record<string, unknown[]> = {
 
 describe("GalacticLexicon helpers", () => {
   for (const [category, methods] of Object.entries(GalacticLexicon)) {
-    for (const [key, fn] of Object.entries(
-      methods as Record<string, unknown>,
-    )) {
+    for (const [key, fn] of Object.entries(methods as Record<string, unknown>)) {
       it(`${category}.${key} returns a localized string`, () => {
         const args = argMap[key] ?? [];
         const result = (fn as (...args: unknown[]) => string)(...args);

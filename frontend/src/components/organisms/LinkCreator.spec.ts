@@ -41,9 +41,7 @@ describe("LinkCreator", () => {
 
     expect(screen.getByLabelText(/search target note/i)).toBeInTheDocument();
     expect(screen.getByText(/reference/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /create link/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create link/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
 
@@ -59,7 +57,7 @@ describe("LinkCreator", () => {
           size: 20,
           totalPages: 1,
         });
-      }),
+      })
     );
 
     render(LinkCreator, { props: { sourceNoteId } });
@@ -90,7 +88,7 @@ describe("LinkCreator", () => {
           size: 20,
           totalPages: 1,
         });
-      }),
+      })
     );
 
     render(LinkCreator, { props: { sourceNoteId } });
@@ -157,9 +155,9 @@ describe("LinkCreator", () => {
               updated_at: new Date().toISOString(),
             },
           },
-          { status: 201 },
+          { status: 201 }
         );
-      }),
+      })
     );
 
     render(LinkCreator, {
@@ -186,7 +184,7 @@ describe("LinkCreator", () => {
         expect.objectContaining({
           id: "new-link-123",
           target_note_id: "target-1",
-        }),
+        })
       );
     });
 
@@ -213,9 +211,9 @@ describe("LinkCreator", () => {
             code: "DUPLICATE_LINK",
             message: "Link already exists",
           },
-          { status: 409 },
+          { status: 409 }
         );
-      }),
+      })
     );
 
     render(LinkCreator, { props: { sourceNoteId } });
@@ -236,9 +234,7 @@ describe("LinkCreator", () => {
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        /link already exists/i,
-      );
+      expect(screen.getByRole("alert")).toHaveTextContent(/link already exists/i);
     });
 
     vi.useRealTimers();
@@ -293,7 +289,7 @@ describe("LinkCreator", () => {
           size: 20,
           totalPages: 1,
         });
-      }),
+      })
     );
 
     render(LinkCreator, { props: { sourceNoteId } });

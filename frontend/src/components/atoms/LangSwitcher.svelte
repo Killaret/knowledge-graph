@@ -1,10 +1,5 @@
 <script lang="ts">
-  import {
-    formatMessage,
-    getCurrentLocale,
-    setLocale,
-    type Locale,
-  } from "$shared/utils/i18n";
+  import { formatMessage, getCurrentLocale, setLocale, type Locale } from "$shared/utils/i18n";
 
   const t = (key: string) => formatMessage(key, getCurrentLocale());
 

@@ -48,10 +48,7 @@ export async function createNote(data: {
 }
 
 // Обновить существующую заметку
-export async function updateNote(
-  id: string,
-  data: Partial<Note>,
-): Promise<Note> {
+export async function updateNote(id: string, data: Partial<Note>): Promise<Note> {
   return api.put(`v1/notes/${id}`, { json: data }).json();
 }
 
@@ -71,13 +68,8 @@ export async function restoreNote(id: string): Promise<void> {
 }
 
 // Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
-export async function getSuggestions(
-  id: string,
-  limit = 10,
-): Promise<Suggestion[]> {
-  return api
-    .get(`v1/notes/${id}/suggestions`, { searchParams: { limit } })
-    .json();
+export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
+  return api.get(`v1/notes/${id}/suggestions`, { searchParams: { limit } }).json();
 }
 
 // Search response type
@@ -90,11 +82,7 @@ export interface SearchResponse {
 }
 
 // Search notes with full-text search
-export async function searchNotes(
-  query: string,
-  page = 1,
-  size = 20,
-): Promise<SearchResponse> {
+export async function searchNotes(query: string, page = 1, size = 20): Promise<SearchResponse> {
   const searchParams = new URLSearchParams({
     q: query,
     page: page.toString(),

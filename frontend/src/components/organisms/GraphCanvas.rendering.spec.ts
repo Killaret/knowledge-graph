@@ -117,46 +117,38 @@ const createMockContext = () => {
         method: "beginPath",
         args: [],
         fillStyle: lastFillStyle,
-      }),
+      })
     ),
     moveTo: vi.fn((...args) => ctxCalls.push({ method: "moveTo", args })),
     lineTo: vi.fn((...args) => ctxCalls.push({ method: "lineTo", args })),
-    quadraticCurveTo: vi.fn((...args) =>
-      ctxCalls.push({ method: "quadraticCurveTo", args }),
-    ),
+    quadraticCurveTo: vi.fn((...args) => ctxCalls.push({ method: "quadraticCurveTo", args })),
     stroke: vi.fn(() =>
       ctxCalls.push({
         method: "stroke",
         args: [],
         strokeStyle: lastStrokeStyle,
-      }),
+      })
     ),
-    fill: vi.fn(() =>
-      ctxCalls.push({ method: "fill", args: [], fillStyle: lastFillStyle }),
-    ),
+    fill: vi.fn(() => ctxCalls.push({ method: "fill", args: [], fillStyle: lastFillStyle })),
     closePath: vi.fn(() => ctxCalls.push({ method: "closePath", args: [] })),
     arc: vi.fn((x, y, r, s, e) =>
       ctxCalls.push({
         method: "arc",
         args: [x, y, r, s, e],
         fillStyle: lastFillStyle,
-      }),
+      })
     ),
     ellipse: vi.fn((...args) => ctxCalls.push({ method: "ellipse", args })),
     rotate: vi.fn((...args) => ctxCalls.push({ method: "rotate", args })),
     fillRect: vi.fn((...args) => ctxCalls.push({ method: "fillRect", args })),
-    strokeRect: vi.fn((...args) =>
-      ctxCalls.push({ method: "strokeRect", args }),
-    ),
-    setLineDash: vi.fn((...args) =>
-      ctxCalls.push({ method: "setLineDash", args }),
-    ),
+    strokeRect: vi.fn((...args) => ctxCalls.push({ method: "strokeRect", args })),
+    setLineDash: vi.fn((...args) => ctxCalls.push({ method: "setLineDash", args })),
     fillText: vi.fn((text, x, y) =>
       ctxCalls.push({
         method: "fillText",
         args: [text, x, y],
         fillStyle: lastFillStyle,
-      }),
+      })
     ),
     measureText: vi.fn(() => ({ width: 50 })),
     createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
@@ -236,7 +228,7 @@ describe("GraphCanvas - Rendering", () => {
       vi.fn().mockImplementation((cb: FrameRequestCallback) => {
         setTimeout(cb, 16);
         return 1;
-      }),
+      })
     );
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
   });

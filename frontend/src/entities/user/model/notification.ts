@@ -69,10 +69,7 @@ export class Notification {
     return `toast-notification ${this.typeClass}${visible ? " visible" : ""}`;
   }
 
-  static achievement(
-    title: string,
-    useGalacticMode: boolean = false,
-  ): Notification {
+  static achievement(title: string, useGalacticMode: boolean = false): Notification {
     return new Notification({
       message: `Achievement unlocked: ${title}`,
       type: "success",

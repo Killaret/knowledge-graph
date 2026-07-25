@@ -48,8 +48,7 @@
       // Исключаем текущую заметку из результатов
       searchResults = result.data.filter((note) => note.id !== sourceNoteId);
     } catch (err) {
-      error =
-        err instanceof Error ? err.message : t("linkCreator.searchFailed");
+      error = err instanceof Error ? err.message : t("linkCreator.searchFailed");
       searchResults = [];
     } finally {
       isSearching = false;
@@ -91,8 +90,7 @@
       if (err instanceof Error && err.message.includes("409")) {
         error = t("linkCreator.linkExists");
       } else {
-        error =
-          err instanceof Error ? err.message : t("linkCreator.createFailed");
+        error = err instanceof Error ? err.message : t("linkCreator.createFailed");
       }
     } finally {
       isSubmitting = false;
@@ -132,11 +130,7 @@
     </div>
 
     {#if searchResults.length > 0}
-      <ul
-        class="search-results"
-        role="listbox"
-        aria-label={t("linkCreator.searchResults")}
-      >
+      <ul class="search-results" role="listbox" aria-label={t("linkCreator.searchResults")}>
         {#each searchResults as note}
           <li role="option" aria-selected="false">
             <button
@@ -164,17 +158,12 @@
         aria-expanded={showTypeDropdown}
         aria-haspopup="listbox"
       >
-        {linkTypes.find((t) => t.type === linkType)?.label ||
-          t("linkCreator.selectType")}
+        {linkTypes.find((t) => t.type === linkType)?.label || t("linkCreator.selectType")}
         <span class="dropdown-arrow">▼</span>
       </button>
 
       {#if showTypeDropdown}
-        <ul
-          class="type-dropdown"
-          role="listbox"
-          aria-label={t("linkCreator.linkTypes")}
-        >
+        <ul class="type-dropdown" role="listbox" aria-label={t("linkCreator.linkTypes")}>
           {#each linkTypes as type}
             <li role="option" aria-selected={type.type === linkType}>
               <button
@@ -215,12 +204,7 @@
         {t("linkCreator.createLink")}
       {/if}
     </button>
-    <button
-      type="button"
-      class="btn-secondary"
-      onclick={handleCancel}
-      disabled={isSubmitting}
-    >
+    <button type="button" class="btn-secondary" onclick={handleCancel} disabled={isSubmitting}>
       {t("linkCreator.cancel")}
     </button>
   </div>

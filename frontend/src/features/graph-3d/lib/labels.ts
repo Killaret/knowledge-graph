@@ -1,7 +1,7 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import * as THREE from "three";
 import { CelestialBody } from "$entities";
-import type { Graph3DConfig, SimulationNode } from "./types";
+import type { Graph3DConfig, SimulationNode } from "../model/types";
 
 export class LabelManager {
   private scene: THREE.Scene;

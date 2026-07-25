@@ -12,7 +12,7 @@ export function createApiResponse<T>(
   options?: {
     status?: number;
     headers?: Record<string, string>;
-  },
+  }
 ) {
   const { status = 200, headers = {} } = options || {};
   return new Response(JSON.stringify(data), {

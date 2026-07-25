@@ -16,14 +16,10 @@ describe("Notification", () => {
   });
 
   it("selects galactic icons when requested", () => {
-    expect(
-      new Notification({ message: "", type: "success", useGalacticMode: true })
-        .icon,
-    ).toBe("⭐");
-    expect(
-      new Notification({ message: "", type: "error", useGalacticMode: true })
-        .icon,
-    ).toBe("💥");
+    expect(new Notification({ message: "", type: "success", useGalacticMode: true }).icon).toBe(
+      "⭐"
+    );
+    expect(new Notification({ message: "", type: "error", useGalacticMode: true }).icon).toBe("💥");
   });
 
   it("produces correct CSS classes", () => {

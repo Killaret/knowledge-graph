@@ -7,11 +7,7 @@ export interface NoteFormState {
 }
 
 export interface NoteFormCallbacks {
-  onNoteCreate?: (data: {
-    title: string;
-    content: string;
-    type: string;
-  }) => void;
+  onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
   onFormClose?: () => void;
 }
 
@@ -40,10 +36,7 @@ export function closeNoteForm(state: NoteFormState): void {
   state.newNoteType = "planet";
 }
 
-export function createNote(
-  state: NoteFormState,
-  callbacks: NoteFormCallbacks,
-): void {
+export function createNote(state: NoteFormState, callbacks: NoteFormCallbacks): void {
   if (state.newNoteTitle.trim() && callbacks.onNoteCreate) {
     callbacks.onNoteCreate({
       title: state.newNoteTitle.trim(),

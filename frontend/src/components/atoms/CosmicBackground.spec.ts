@@ -28,14 +28,9 @@ describe("CosmicBackground", () => {
 
     // Mock requestAnimationFrame
     global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-      return window.setTimeout(
-        () => callback(performance.now()),
-        16,
-      ) as unknown as number;
+      return window.setTimeout(() => callback(performance.now()), 16) as unknown as number;
     });
-    global.cancelAnimationFrame = vi.fn((id: number) =>
-      window.clearTimeout(id),
-    );
+    global.cancelAnimationFrame = vi.fn((id: number) => window.clearTimeout(id));
 
     // Mock window dimensions
     Object.defineProperty(window, "innerWidth", {

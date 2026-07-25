@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/svelte";
 import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
-import {
-  startSimulation,
-  type SimulationState,
-  type TransformState,
-} from "./GraphCanvas";
+import { startSimulation, type SimulationState, type TransformState } from "./GraphCanvas";
 
 // Shared state для мока d3-force
 const mockState = {
@@ -211,17 +207,17 @@ describe("GraphCanvas - Fade Effect", () => {
         const handle = setTimeout(() => cb(animationTime), 16);
         animationFrameHandles.push(handle);
         return handle as unknown as number;
-      }),
+      })
     );
     vi.stubGlobal(
       "cancelAnimationFrame",
       vi.fn().mockImplementation((handle: number) => {
         clearTimeout(handle as unknown as ReturnType<typeof setTimeout>);
         const index = animationFrameHandles.indexOf(
-          handle as unknown as ReturnType<typeof setTimeout>,
+          handle as unknown as ReturnType<typeof setTimeout>
         );
         if (index >= 0) animationFrameHandles.splice(index, 1);
-      }),
+      })
     );
   });
 
@@ -253,7 +249,7 @@ describe("GraphCanvas - Fade Effect", () => {
       state,
       transform,
       () => {},
-      () => {},
+      () => {}
     );
 
     expect([...state.nodeOpacity.values()]).toEqual([0, 0, 0]);
@@ -261,12 +257,8 @@ describe("GraphCanvas - Fade Effect", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 120));
 
-    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(
-      true,
-    );
-    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(
-      true,
-    );
+    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(true);
+    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(true);
   });
 
   it("updates opacity during simulation ticks", async () => {
@@ -281,7 +273,7 @@ describe("GraphCanvas - Fade Effect", () => {
       state,
       transform,
       () => {},
-      () => {},
+      () => {}
     );
     await new Promise((resolve) => setTimeout(resolve, 120));
 
@@ -293,12 +285,8 @@ describe("GraphCanvas - Fade Effect", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(
-      true,
-    );
-    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(
-      true,
-    );
+    expect([...state.nodeOpacity.values()].some((value) => value > 0)).toBe(true);
+    expect([...state.linkOpacity.values()].some((value) => value > 0)).toBe(true);
   });
 
   it("triggers final fade animation on simulation end", async () => {

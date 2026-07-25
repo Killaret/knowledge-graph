@@ -12,9 +12,7 @@ describe("SplashScreen", () => {
       props: {},
     });
 
-    expect(
-      screen.getByRole("img", { name: /weltall protocol/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /weltall protocol/i })).toBeInTheDocument();
     expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
     expect(screen.getByText("Explore the cosmos of ideas")).toBeInTheDocument();
   });

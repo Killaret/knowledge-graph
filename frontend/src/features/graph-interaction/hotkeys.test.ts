@@ -63,7 +63,7 @@ describe("hotkeys", () => {
       false,
       false,
       searchInput,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onSearchOpen).toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onFocusModeToggle).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onFocusModeToggle).not.toHaveBeenCalled();
@@ -162,7 +162,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onGhostNodeCreate).toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onNodeDelete).toHaveBeenCalledWith("node-1");
@@ -204,7 +204,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onUndo).toHaveBeenCalled();
@@ -225,7 +225,7 @@ describe("hotkeys", () => {
       false,
       false,
       null,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onHelpToggle).toHaveBeenCalled();

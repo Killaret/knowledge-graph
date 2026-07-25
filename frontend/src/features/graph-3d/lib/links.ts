@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { LinkType } from "$entities";
 import type { GraphLink } from "$shared/api/graph";
-import type { Graph3DConfig } from "./types";
+import type { Graph3DConfig } from "../model/types";
 
 export class LinkManager {
   private scene: THREE.Scene;

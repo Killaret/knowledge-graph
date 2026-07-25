@@ -120,11 +120,7 @@ describe("ghost-node", () => {
     const ghost = createGhostNode(800, 600, []);
     drawGhostNodeTooltip(ctx, ghost, "Add note");
     expect(ctx.roundRect).toHaveBeenCalled();
-    expect(ctx.fillText).toHaveBeenCalledWith(
-      "Add note",
-      expect.any(Number),
-      expect.any(Number),
-    );
+    expect(ctx.fillText).toHaveBeenCalledWith("Add note", expect.any(Number), expect.any(Number));
     expect(ctx.restore).toHaveBeenCalled();
   });
 
@@ -133,11 +129,7 @@ describe("ghost-node", () => {
     const ghost = createGhostNode(800, 600, []);
     drawGhostNodeTooltipScreen(ctx, ghost, "New star");
     expect(ctx.roundRect).toHaveBeenCalled();
-    expect(ctx.fillText).toHaveBeenCalledWith(
-      "New star",
-      expect.any(Number),
-      expect.any(Number),
-    );
+    expect(ctx.fillText).toHaveBeenCalledWith("New star", expect.any(Number), expect.any(Number));
     expect(ctx.restore).toHaveBeenCalled();
   });
 });

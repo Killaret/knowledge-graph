@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare module "d3-force-3d" {
-   
   export interface Simulation<
     NodeDatum extends SimulationNodeDatum,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

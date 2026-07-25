@@ -80,9 +80,7 @@ export class ParticleSystem {
     for (const particle of particles) {
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fillStyle = particle.color
-        .replace(")", `, ${particle.alpha})`)
-        .replace("rgb", "rgba");
+      ctx.fillStyle = particle.color.replace(")", `, ${particle.alpha})`).replace("rgb", "rgba");
       ctx.fill();
     }
   }

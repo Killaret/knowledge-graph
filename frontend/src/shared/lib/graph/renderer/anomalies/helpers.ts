@@ -31,7 +31,7 @@ export type AnomalyRenderer = (
   x: number,
   y: number,
   r: number,
-  params: AnomalyParams,
+  params: AnomalyParams
 ) => void;
 
 export function getAnomalyParams(nodeId: string): AnomalyParams {
@@ -51,23 +51,17 @@ export function getAnomalyParams(nodeId: string): AnomalyParams {
 
   return {
     crackCount:
-      ca.crack_count_min +
-      Math.floor((hash1 / 1000) * (ca.crack_count_max - ca.crack_count_min)),
+      ca.crack_count_min + Math.floor((hash1 / 1000) * (ca.crack_count_max - ca.crack_count_min)),
     tentacleCount:
       ca.tentacle_count_min +
-      Math.floor(
-        (hash2 / 1000) * (ca.tentacle_count_max - ca.tentacle_count_min),
-      ),
+      Math.floor((hash2 / 1000) * (ca.tentacle_count_max - ca.tentacle_count_min)),
     particleCount:
       ca.particle_count_min +
-      Math.floor(
-        (hash3 / 1000) * (ca.particle_count_max - ca.particle_count_min),
-      ),
+      Math.floor((hash3 / 1000) * (ca.particle_count_max - ca.particle_count_min)),
     colorShift1: (hash4 / 1000) * cm.hue_shift_range,
     colorShift2: (hash5 / 1000) * vw.hue_shift_range,
     deformAmount:
-      rr.deform_amount_min +
-      (hash1 / 1000) * (rr.deform_amount_max - rr.deform_amount_min),
+      rr.deform_amount_min + (hash1 / 1000) * (rr.deform_amount_max - rr.deform_amount_min),
     rotationOffset: (hash2 / 1000) * Math.PI * 2,
     seedBase: hash,
   };

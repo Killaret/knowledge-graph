@@ -5,10 +5,7 @@
 
   const t = (key: string) => formatMessage(key, getCurrentLocale());
 
-  const {
-    href = "/",
-    text = t("backButton.back"),
-  }: { href?: string; text?: string } = $props();
+  const { href = "/", text = t("backButton.back") }: { href?: string; text?: string } = $props();
 
   function handleBack() {
     if (browser && window.history.length > 1) {

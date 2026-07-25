@@ -30,35 +30,21 @@
   const offsetY = $derived((mouseY - 0.5) * parallaxIntensity * 20);
 </script>
 
-<div
-  class="weltall-background"
-  bind:this={containerRef}
-  role="presentation"
-  aria-hidden="true"
->
+<div class="weltall-background" bind:this={containerRef} role="presentation" aria-hidden="true">
   <!-- Nebula layer with slow drift animation -->
-  <div
-    class="nebula-layer"
-    style="transform: translate({offsetX * 0.5}px, {offsetY * 0.5}px)"
-  >
+  <div class="nebula-layer" style="transform: translate({offsetX * 0.5}px, {offsetY * 0.5}px)">
     <div class="nebula-blob blob-1"></div>
     <div class="nebula-blob blob-2"></div>
     <div class="nebula-blob blob-3"></div>
   </div>
 
   <!-- Embers layer (static pattern) -->
-  <div
-    class="embers-layer"
-    style="transform: translate({offsetX * 0.3}px, {offsetY * 0.3}px)"
-  >
+  <div class="embers-layer" style="transform: translate({offsetX * 0.3}px, {offsetY * 0.3}px)">
     <div class="embers-pattern"></div>
   </div>
 
   <!-- Cross watermark (very subtle) -->
-  <div
-    class="cross-watermark"
-    style="transform: translate({offsetX * 0.1}px, {offsetY * 0.1}px)"
-  >
+  <div class="cross-watermark" style="transform: translate({offsetX * 0.1}px, {offsetY * 0.1}px)">
     <svg viewBox="0 0 100 100" width="300" height="300" opacity="0.03">
       <g stroke="#ffcc00" stroke-width="2" fill="none">
         <line x1="50" y1="20" x2="50" y2="80" />
@@ -99,11 +85,7 @@
   .blob-1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(
-      circle,
-      rgba(64, 169, 255, 0.3) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle, rgba(64, 169, 255, 0.3) 0%, transparent 70%);
     top: 10%;
     left: 20%;
     animation: drift 20s ease-in-out infinite;
@@ -112,11 +94,7 @@
   .blob-2 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(
-      circle,
-      rgba(255, 51, 51, 0.2) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle, rgba(255, 51, 51, 0.2) 0%, transparent 70%);
     top: 50%;
     right: 10%;
     animation: drift 25s ease-in-out infinite reverse;
@@ -125,11 +103,7 @@
   .blob-3 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(
-      circle,
-      rgba(255, 204, 0, 0.15) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle, rgba(255, 204, 0, 0.15) 0%, transparent 70%);
     bottom: 20%;
     left: 30%;
     animation: drift 30s ease-in-out infinite;
@@ -159,21 +133,9 @@
     position: absolute;
     inset: 0;
     background-image:
-      radial-gradient(
-        circle at 20% 30%,
-        rgba(255, 204, 0, 0.03) 0%,
-        transparent 2px
-      ),
-      radial-gradient(
-        circle at 80% 70%,
-        rgba(64, 169, 255, 0.03) 0%,
-        transparent 2px
-      ),
-      radial-gradient(
-        circle at 50% 50%,
-        rgba(255, 51, 51, 0.02) 0%,
-        transparent 3px
-      );
+      radial-gradient(circle at 20% 30%, rgba(255, 204, 0, 0.03) 0%, transparent 2px),
+      radial-gradient(circle at 80% 70%, rgba(64, 169, 255, 0.03) 0%, transparent 2px),
+      radial-gradient(circle at 50% 50%, rgba(255, 51, 51, 0.02) 0%, transparent 3px);
     background-size:
       100px 100px,
       150px 150px,
@@ -210,11 +172,7 @@
       linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
     background-size: 50px 50px;
     mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
-    -webkit-mask-image: radial-gradient(
-      ellipse at 50% 50%,
-      black 0%,
-      transparent 70%
-    );
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
   }
 
   /* Reduced motion support */

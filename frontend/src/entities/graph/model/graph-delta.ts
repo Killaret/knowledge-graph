@@ -68,9 +68,7 @@ export class GraphDelta {
   merge(other: GraphDelta): GraphDelta {
     return new GraphDelta({
       addedNodes: [...this.addedNodes, ...other.addedNodes],
-      removedNodeIds: [
-        ...new Set([...this.removedNodeIds, ...other.removedNodeIds]),
-      ],
+      removedNodeIds: [...new Set([...this.removedNodeIds, ...other.removedNodeIds])],
       updatedNodes: [...this.updatedNodes, ...other.updatedNodes],
       addedLinks: [...this.addedLinks, ...other.addedLinks],
       removedLinks: [...this.removedLinks, ...other.removedLinks],

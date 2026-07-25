@@ -83,7 +83,7 @@ describe("drag-and-drop", () => {
       simNodes as any,
       ghostNode,
       () => false,
-      callbacks,
+      callbacks
     );
 
     expect(dragDropState.draggedNodeId).toBe("n1");
@@ -116,7 +116,7 @@ describe("drag-and-drop", () => {
       simNodes as any,
       ghostNode,
       () => true,
-      {},
+      {}
     );
 
     expect(preventDefault).toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe("drag-and-drop", () => {
       [],
       ghostNode,
       () => false,
-      {},
+      {}
     );
 
     expect(dragState.dragging).toBe(true);
@@ -176,7 +176,7 @@ describe("drag-and-drop", () => {
       [],
       ghostNode,
       () => false,
-      callbacks,
+      callbacks
     );
 
     expect(callbacks.onNodeDragStart).toHaveBeenCalledWith("ghost");
@@ -220,7 +220,7 @@ describe("drag-and-drop", () => {
       blackHole,
       ghostNode,
       () => false,
-      redraw,
+      redraw
     );
 
     expect(dragDropState.isDraggingForLink).toBe(true);
@@ -261,7 +261,7 @@ describe("drag-and-drop", () => {
       blackHole,
       ghostNode,
       () => false,
-      redraw,
+      redraw
     );
 
     expect(transform.x).toBe(100);
@@ -304,7 +304,7 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       callbacks,
-      redraw,
+      redraw
     );
 
     expect(callbacks.onBlackHoleDrop).toHaveBeenCalledWith("n1");
@@ -352,7 +352,7 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       callbacks,
-      redraw,
+      redraw
     );
 
     expect(callbacks.onLinkPreview).toHaveBeenCalledWith("n1", "n2");
@@ -392,7 +392,7 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       {},
-      redraw,
+      redraw
     );
 
     expect((simNodes[0] as any).fx).toBeUndefined();
@@ -424,7 +424,7 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       onNodeClick,
-      onGhostNodeClick,
+      onGhostNodeClick
     );
 
     expect(onNodeClick).toHaveBeenCalledWith({
@@ -442,7 +442,7 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       onNodeClick,
-      onGhostNodeClick,
+      onGhostNodeClick
     );
 
     expect(onGhostNodeClick).toHaveBeenCalled();

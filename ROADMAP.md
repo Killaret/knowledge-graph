@@ -36,6 +36,71 @@
 
 ---
 
+## 🧩 Graph Service: Stabilization & Evolution Plan
+
+> **Context:** per ADR 013, the main backend should publish `Note*`/`Link*` events and stop being the primary graph source. `graph-service` owns layout computation, caching, and analytics. The main backend remains a **fallback** when `graph-service` is unavailable.
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Event-driven invalidation & fallback model | ⏳ Planned | 🔴 Critical | 📝 Yes |
+| Auth & user-scoped filtering in graph-service | ⏳ Planned | 🔴 Critical | 📝 Yes |
+| Graph API unification & double-load removal | ⏳ Planned | 🟠 High | 📝 Yes |
+| Graph analytics API (Neighbors, Path, Recommendations) | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Materialized view / graph index | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| gRPC-web / SSE full-graph streaming | ⏳ Planned | 🟡 Medium | 📝 No |
+| Improved layout algorithms (Honeycomb, force-directed, Cosmic Navigator) | 🔄 In Progress | 🟠 High | 📝 Yes |
+
+### 1. Event-driven invalidation & fallback model
+
+- `note_handler` and `link_handler` publish `NoteCreated`/`Updated`/`Deleted` and `LinkCreated`/`Updated`/`Deleted` events via `internal/infrastructure/events/publisher.go` to the Redis `graph:events` channel.
+- `graph-service` (`internal/subscriber/pubsub.go`) listens and invalidates keys `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
+- Main backend endpoints `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
+- This is critical because `events.Publisher` is currently not wired to handlers, so `graph-service` cache only expires by TTL.
+
+### 2. Auth & user-scoped filtering in graph-service
+
+- Add JWT middleware to `graph-service` HTTP and gRPC.
+- Derive `user_id` from token and remove public `user_id` query parameter.
+- Add `creator_id` filter in `services/graph-service/internal/db/postgres_client.go` for all `notes`/`links` queries.
+- `frontend/src/hooks.server.ts` proxy must forward `authorization` or a signed `x-internal-auth` header to `graph-service`.
+- Public graph moves to a separate endpoint (`/api/v1/graph/public`) filtering `is_public = true`.
+
+### 3. Graph API unification & double-load removal
+
+- Standardize graph-service response fields: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
+- Remove fallback normalization (`id/Id/ID`, `source/source_note_id`) in `frontend/src/routes/+page.svelte`.
+- `+page.svelte` calls `getFullGraphData()` once after `getNotes()`; remove the sequential `getFreshGraph()` + repeated `loadGraphData()` flow.
+- Use `/api/v1/graph/delta?last_hash=` for incremental updates via `PreloadService`.
+
+### 4. Graph analytics API
+
+- Implement gRPC/HTTP methods `GetNeighbors`, `GetPath`, `GetRecommendations` in `graph-service`.
+- HTTP endpoints:
+  - `GET /api/v1/graph/note/:id/neighbors?depth=`
+  - `GET /api/v1/graph/path?from=&to=`
+  - `GET /api/v1/graph/recommendations?note_id=&limit=`
+- Replace backend BFS (`backend/internal/domain/graph/bfs.go`) and recommendation traversal with calls to `graph-service`.
+
+### 5. Materialized view / graph index
+
+- Create materialized view `note_links_closure` for transitive link closure.
+- Refresh the view on `LinkCreated`/`LinkDeleted` events (async via trigger or ASYNQ).
+- Use the view for `GetPath`, degree computation, semantic clustering, and Honeycomb layout.
+
+### 6. gRPC-web / SSE full-graph streaming
+
+- For graphs >500 nodes, stream `GetFullLayout` in chunks via gRPC streaming or Server-Sent Events.
+- Frontend progressively renders nodes and links.
+- Alternative for JSON API: NDJSON streaming.
+
+### 7. Improved layout algorithms
+
+- **Honeycomb View:** radial layout centered at the node with maximum `sum(weight)`, with concentric circles by weight thresholds.
+- **Force-directed 2D/3D:** replace/augment current circle/helix with server-side physical simulation.
+- **Cosmic Navigator:** hybrid server-side 3D layout (`layout=3d`) plus client-side `d3-force-3d` relaxation.
+
+---
+
 ## 🚀 NEXT: Immediate Goals
 
 ### 📝 Self-Hosted Deployment Documentation

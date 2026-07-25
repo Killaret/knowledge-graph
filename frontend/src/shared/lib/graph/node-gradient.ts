@@ -12,16 +12,9 @@ export function getNodeGradient(
   y: number,
   r: number,
   type: string,
-  color: string,
+  color: string
 ): CanvasGradient {
-  const gradient = ctx.createRadialGradient(
-    x - r * 0.3,
-    y - r * 0.3,
-    0,
-    x,
-    y,
-    r,
-  );
+  const gradient = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
 
   switch (type) {
     case "star":

@@ -1,7 +1,4 @@
-import type {
-  TransformState,
-  SimulationNode,
-} from "$components/organisms/GraphCanvas/types";
+import type { TransformState, SimulationNode } from "$components/organisms/GraphCanvas/types";
 import type { GhostNodeState } from "$components/organisms/GraphCanvas";
 
 export interface HotkeysState {
@@ -55,7 +52,7 @@ export function handleKeyDownEvent(
   showNoteForm: boolean,
   showLinkForm: boolean,
   searchInput: HTMLInputElement | null,
-  callbacks: HotkeysCallbacks,
+  callbacks: HotkeysCallbacks
 ): void {
   // Ignore hotkeys when typing in a form or search input
   const active = document.activeElement;
@@ -127,10 +124,7 @@ export function handleKeyDownEvent(
   }
 }
 
-export function updateSearch(
-  state: HotkeysState,
-  simNodes: SimulationNode[],
-): void {
+export function updateSearch(state: HotkeysState, simNodes: SimulationNode[]): void {
   const query = state.searchQuery.trim().toLowerCase();
   if (!query) {
     state.searchMatchIds = [];
@@ -148,11 +142,10 @@ export function focusNextSearchMatch(
   state: HotkeysState,
   transform: TransformState,
   simNodes: SimulationNode[],
-  canvas: HTMLCanvasElement | null,
+  canvas: HTMLCanvasElement | null
 ): void {
   if (state.searchMatchIds.length === 0) return;
-  state.searchCurrentIndex =
-    (state.searchCurrentIndex + 1) % state.searchMatchIds.length;
+  state.searchCurrentIndex = (state.searchCurrentIndex + 1) % state.searchMatchIds.length;
   const nodeId = state.searchMatchIds[state.searchCurrentIndex];
   const node = simNodes.find((n) => n.id === nodeId);
   if (node && node.x != null && node.y != null && canvas) {
@@ -163,20 +156,14 @@ export function focusNextSearchMatch(
   }
 }
 
-export function resetInactivityTimer(
-  state: HotkeysState,
-  onTipShow: () => void,
-): void {
+export function resetInactivityTimer(state: HotkeysState, onTipShow: () => void): void {
   if (state.inactivityTimeout) clearTimeout(state.inactivityTimeout);
   state.inactivityTimeout = setTimeout(() => {
     onTipShow();
   }, 10000);
 }
 
-export function updateActivity(
-  state: HotkeysState,
-  onInactivityTip: () => void,
-): void {
+export function updateActivity(state: HotkeysState, onInactivityTip: () => void): void {
   state.lastActivityTime = Date.now();
   // Hide tip on activity (not show it)
   if (state.showHelpTooltip && state.helpTooltipPosition.x === -1) {

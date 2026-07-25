@@ -32,7 +32,7 @@ export function getVariation(
   nodeId: string,
   type: string,
   minSize?: number,
-  maxSize?: number,
+  maxSize?: number
 ): NodeVariation {
   const hash = stringHash(nodeId);
 
@@ -50,9 +50,7 @@ export function getVariation(
     sizeMin = minSize;
     sizeMax = maxSize;
   } else {
-    const isCompactType = ["star", "planet", "satellite", "moon"].includes(
-      type,
-    );
+    const isCompactType = ["star", "planet", "satellite", "moon"].includes(type);
     sizeMin = isCompactType ? 0.8 : 0.7;
     sizeMax = isCompactType ? 1.2 : 1.3;
   }

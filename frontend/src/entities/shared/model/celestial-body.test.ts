@@ -5,9 +5,7 @@ describe("CelestialBody", () => {
   it("returns the correct body for known types (case-insensitive)", () => {
     expect(CelestialBody.fromString("STAR")).toBe(CelestialBody.STAR);
     expect(CelestialBody.fromString("Planet")).toBe(CelestialBody.PLANET);
-    expect(CelestialBody.fromString("  BLACKHOLE ")).toBe(
-      CelestialBody.BLACKHOLE,
-    );
+    expect(CelestialBody.fromString("  BLACKHOLE ")).toBe(CelestialBody.BLACKHOLE);
   });
 
   it("falls back to UNKNOWN for unrecognized or missing types", () => {
@@ -66,9 +64,9 @@ describe("CelestialBody", () => {
     });
 
     const mockCtx = {} as CanvasRenderingContext2D;
-    expect(() =>
-      body.draw(mockCtx, { x: 0, y: 0, r: 10, angle: 0, nodeId: "n1" }),
-    ).toThrow('Draw function not registered for celestial body type "test"');
+    expect(() => body.draw(mockCtx, { x: 0, y: 0, r: 10, angle: 0, nodeId: "n1" })).toThrow(
+      'Draw function not registered for celestial body type "test"'
+    );
   });
 
   it("delegates to the registered draw function", () => {

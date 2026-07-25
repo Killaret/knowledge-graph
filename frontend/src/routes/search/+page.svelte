@@ -60,24 +60,12 @@
     goto(`/search?q=${q.toURL()}&page=${newPage}`);
   }
 
-  function getPluralForm(
-    count: number,
-    one: string,
-    few: string,
-    many: string,
-  ): string {
+  function getPluralForm(count: number, one: string, few: string, many: string): string {
     // Use i18n keys search.noteOne, search.noteFew, search.noteMany
-    return [one, few, many].join("").length === 0
-      ? ""
-      : getPluralFormRaw(count, one, few, many);
+    return [one, few, many].join("").length === 0 ? "" : getPluralFormRaw(count, one, few, many);
   }
 
-  function getPluralFormRaw(
-    count: number,
-    one: string,
-    few: string,
-    many: string,
-  ): string {
+  function getPluralFormRaw(count: number, one: string, few: string, many: string): string {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
 
@@ -122,12 +110,7 @@
     <div class="search-stats">
       {t("search.found")}
       {total}
-      {getPluralForm(
-        total,
-        t("search.noteOne"),
-        t("search.noteFew"),
-        t("search.noteMany"),
-      )}
+      {getPluralForm(total, t("search.noteOne"), t("search.noteFew"), t("search.noteMany"))}
     </div>
 
     <div class="notes-grid">

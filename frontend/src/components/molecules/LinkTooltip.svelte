@@ -90,9 +90,7 @@
     </div>
     <div class="tooltip-actions">
       {#if onEdit}
-        <button class="action-btn edit-btn" onmousedown={onEdit}
-          >{t("linkTooltip.edit")}</button
-        >
+        <button class="action-btn edit-btn" onmousedown={onEdit}>{t("linkTooltip.edit")}</button>
       {/if}
       {#if onDelete}
         <button class="action-btn delete-btn" onmousedown={onDelete}

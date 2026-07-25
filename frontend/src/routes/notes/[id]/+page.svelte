@@ -28,14 +28,9 @@
   }
 
   function getErrorStatus(err: unknown): number | undefined {
-    if (typeof err !== "object" || err === null || !("response" in err))
-      return undefined;
+    if (typeof err !== "object" || err === null || !("response" in err)) return undefined;
     const response = (err as { response?: unknown }).response;
-    if (
-      typeof response !== "object" ||
-      response === null ||
-      !("status" in response)
-    )
+    if (typeof response !== "object" || response === null || !("status" in response))
       return undefined;
     const status = (response as { status?: unknown }).status;
     return typeof status === "number" ? status : undefined;
@@ -71,9 +66,7 @@
   <p>{t("note.loading")}</p>
 {:else if error}
   <div class="note-error">
-    <StateIllustration
-      type={error === t("note.notFoundShort") ? "404" : "error"}
-    />
+    <StateIllustration type={error === t("note.notFoundShort") ? "404" : "error"} />
     <p class="error">{error}</p>
   </div>
 {:else if note}
@@ -85,17 +78,11 @@
     </div>
     <div class="content" data-testid="note-detail-content">{note.content}</div>
     <div class="actions">
-      <button
-        onclick={() => (editModalOpen = true)}
-        class="edit-btn"
-        data-testid="edit-note-btn">{t("note.editButton")}</button
+      <button onclick={() => (editModalOpen = true)} class="edit-btn" data-testid="edit-note-btn"
+        >{t("note.editButton")}</button
       >
-      <button onclick={handleDelete} data-testid="delete-note-btn"
-        >{t("note.deleteButton")}</button
-      >
-      <a href={`/graph/3d/${note.id}`} class="graph-link"
-        >{t("note.showConstellation")}</a
-      >
+      <button onclick={handleDelete} data-testid="delete-note-btn">{t("note.deleteButton")}</button>
+      <a href={`/graph/3d/${note.id}`} class="graph-link">{t("note.showConstellation")}</a>
     </div>
 
     <EditNoteModal
@@ -110,9 +97,7 @@
         {#each suggestions as s}
           <li>
             <a href={`/notes/${s.note_id}`}>{s.title}</a>
-            <span class="score"
-              >{t("note.score", { score: s.score.toFixed(3) })}</span
-            >
+            <span class="score">{t("note.score", { score: s.score.toFixed(3) })}</span>
           </li>
         {/each}
       </ul>

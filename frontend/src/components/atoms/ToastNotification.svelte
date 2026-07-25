@@ -27,9 +27,7 @@
   let intervalId: ReturnType<typeof setInterval>;
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  const notification = $derived(
-    new Notification({ message, type, duration, useGalacticMode }),
-  );
+  const notification = $derived(new Notification({ message, type, duration, useGalacticMode }));
 
   onMount(() => {
     // Animate in
@@ -85,13 +83,7 @@
     <span class="toast-message">{message}</span>
   </div>
 
-  <button
-    class="toast-close"
-    onclick={closeToast}
-    aria-label={t("toast.closeAria")}
-  >
-    ×
-  </button>
+  <button class="toast-close" onclick={closeToast} aria-label={t("toast.closeAria")}> × </button>
 
   <div class="toast-progress">
     <div class="toast-progress-bar" style="width: {progress}%"></div>
@@ -131,38 +123,22 @@
   }
 
   .toast-success {
-    background: linear-gradient(
-      135deg,
-      rgba(34, 197, 94, 0.95),
-      rgba(21, 128, 61, 0.95)
-    );
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(21, 128, 61, 0.95));
     border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .toast-error {
-    background: linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.95),
-      rgba(185, 28, 28, 0.95)
-    );
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95));
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .toast-info {
-    background: linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.95),
-      rgba(37, 99, 235, 0.95)
-    );
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
     border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .toast-warning {
-    background: linear-gradient(
-      135deg,
-      rgba(245, 158, 11, 0.95),
-      rgba(217, 119, 6, 0.95)
-    );
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
@@ -225,11 +201,7 @@
 
   /* Galactic theme enhancements */
   .toast-success:global(.galactic) {
-    background: linear-gradient(
-      135deg,
-      rgba(139, 92, 246, 0.95),
-      rgba(124, 58, 237, 0.95)
-    );
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.95));
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
   }
 

@@ -49,9 +49,7 @@ describe("NoteCard", () => {
     expect(onClick).not.toHaveBeenCalled();
 
     await fireEvent.click(card!);
-    expect(onClick).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Test Note Title" }),
-    );
+    expect(onClick).toHaveBeenCalledWith(expect.objectContaining({ title: "Test Note Title" }));
   });
 
   it("renders with minimal note data", () => {
@@ -123,7 +121,7 @@ describe("NoteCard", () => {
     await fireEvent.click(checkbox);
     expect(onSelect).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Test Note Title" }),
-      true,
+      true
     );
   });
 

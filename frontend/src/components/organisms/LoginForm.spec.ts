@@ -27,9 +27,7 @@ describe("LoginForm", () => {
 
     expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /sign in/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
   it("updates login and password fields", async () => {
@@ -51,9 +49,7 @@ describe("LoginForm", () => {
     const form = container.querySelector("form");
     await fireEvent.submit(form!);
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /please enter login and password/i,
-    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/please enter login and password/i);
   });
 
   it("submits login with valid credentials", async () => {

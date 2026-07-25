@@ -51,7 +51,7 @@ describe("graph API", () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/1", () => {
           return HttpResponse.json({ data: mockGraphData });
-        }),
+        })
       );
 
       const result = await getGraphData("1", 2);
@@ -69,15 +69,13 @@ describe("graph API", () => {
           { id: "1", title: "Node 1", type: "star" },
           { id: "2", title: "Node 2", type: "planet" },
         ],
-        links: [
-          { source: "1", target: "2", weight: 1.0, link_type: "reference" },
-        ],
+        links: [{ source: "1", target: "2", weight: 1.0, link_type: "reference" }],
       };
 
       server.use(
         http.get("http://localhost:9091/api/v1/graph/full", () => {
           return HttpResponse.json({ data: mockGraphData });
-        }),
+        })
       );
 
       const result = await getFullGraphData(50);
@@ -101,8 +99,8 @@ describe("graph API", () => {
 
       server.use(
         http.get("http://localhost:9091/api/v1/graph/full", () =>
-          HttpResponse.json({ data: { nodes: manyNodes, links: manyLinks } }),
-        ),
+          HttpResponse.json({ data: { nodes: manyNodes, links: manyLinks } })
+        )
       );
 
       const result = await getFullGraphData(100);
@@ -116,8 +114,8 @@ describe("graph API", () => {
     it("should handle empty graph", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/999", () =>
-          HttpResponse.json({ nodes: [], links: [] }),
-        ),
+          HttpResponse.json({ nodes: [], links: [] })
+        )
       );
 
       const result = await getGraphData("999", 1);
@@ -129,11 +127,7 @@ describe("graph API", () => {
 
   describe("error handling", () => {
     it("should handle network errors for getGraphData", async () => {
-      server.use(
-        http.get("http://localhost:9091/api/v1/graph/note/1", () =>
-          HttpResponse.error(),
-        ),
-      );
+      server.use(http.get("http://localhost:9091/api/v1/graph/note/1", () => HttpResponse.error()));
 
       await expect(getGraphData("1")).rejects.toThrow();
     });
@@ -141,8 +135,8 @@ describe("graph API", () => {
     it("should handle HTTP 404 errors for getGraphData", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/999", () =>
-          HttpResponse.json({ error: "Not found" }, { status: 404 }),
-        ),
+          HttpResponse.json({ error: "Not found" }, { status: 404 })
+        )
       );
 
       await expect(getGraphData("999")).rejects.toThrow("Граф не найден");
@@ -151,8 +145,8 @@ describe("graph API", () => {
     it("should handle HTTP 500 errors for getGraphData", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/1", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(getGraphData("1")).rejects.toThrow();
@@ -161,22 +155,15 @@ describe("graph API", () => {
     it("should handle 400 for invalid depth parameter", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/1", () =>
-          HttpResponse.json(
-            { error: "Invalid depth parameter" },
-            { status: 400 },
-          ),
-        ),
+          HttpResponse.json({ error: "Invalid depth parameter" }, { status: 400 })
+        )
       );
 
       await expect(getGraphData("1", -1)).rejects.toThrow();
     });
 
     it("should handle network errors for getFullGraphData", async () => {
-      server.use(
-        http.get("http://localhost:9091/api/v1/graph/full", () =>
-          HttpResponse.error(),
-        ),
-      );
+      server.use(http.get("http://localhost:9091/api/v1/graph/full", () => HttpResponse.error()));
 
       await expect(getFullGraphData()).rejects.toThrow();
     });
@@ -184,8 +171,8 @@ describe("graph API", () => {
     it("should handle HTTP 500 errors for getFullGraphData", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/full", () =>
-          HttpResponse.json({ error: "Server error" }, { status: 500 }),
-        ),
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
       );
 
       await expect(getFullGraphData(1000)).rejects.toThrow();
@@ -194,8 +181,8 @@ describe("graph API", () => {
     it("should handle 503 when graph service is unavailable", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/1", () =>
-          HttpResponse.json({ error: "Service Unavailable" }, { status: 503 }),
-        ),
+          HttpResponse.json({ error: "Service Unavailable" }, { status: 503 })
+        )
       );
 
       await expect(getGraphData("1")).rejects.toThrow();
@@ -204,8 +191,8 @@ describe("graph API", () => {
     it("should handle timeout errors", async () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/note/1", () =>
-          HttpResponse.json({ error: "Request timeout" }, { status: 504 }),
-        ),
+          HttpResponse.json({ error: "Request timeout" }, { status: 504 })
+        )
       );
 
       await expect(getGraphData("1")).rejects.toThrow();
@@ -219,9 +206,7 @@ describe("graph API", () => {
           { id: "1", title: "Node 1", type: "star" },
           { id: "2", title: "Node 2", type: "planet" },
         ],
-        links: [
-          { source: "1", target: "2", weight: 1.0, link_type: "reference" },
-        ],
+        links: [{ source: "1", target: "2", weight: 1.0, link_type: "reference" }],
       };
 
       server.use(
@@ -231,7 +216,7 @@ describe("graph API", () => {
           // Default limit from config is expected
           expect(limit).toBeTruthy();
           return HttpResponse.json({ data: mockGraphData });
-        }),
+        })
       );
 
       const result = await getFullGraphData();

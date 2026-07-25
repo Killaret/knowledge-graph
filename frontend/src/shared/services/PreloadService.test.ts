@@ -2,10 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { isAuthenticated } from "$shared/stores/auth-session.svelte";
 import * as graphApi from "$shared/api/graph";
-import {
-  mockGraphData,
-  mockGraphError,
-} from "./__mocks__/PreloadService.mocks";
+import { mockGraphData, mockGraphError } from "./__mocks__/PreloadService.mocks";
 
 // Мокаем зависимости
 vi.mock("$app/environment", () => ({
@@ -70,9 +67,7 @@ const mockPreloadService = {
   getPreloadedGraph: vi.fn(() => preloadedGraph),
   getPreloadedAchievements: vi.fn(() => preloadedAchievements),
   isPreloadingData: vi.fn(() => isPreloading),
-  hasPreloadedData: vi.fn(
-    () => preloadedGraph !== null || preloadedAchievements !== null,
-  ),
+  hasPreloadedData: vi.fn(() => preloadedGraph !== null || preloadedAchievements !== null),
   getStats: vi.fn(() => ({
     hasGraph: preloadedGraph !== null,
     hasAchievements: preloadedAchievements !== null,

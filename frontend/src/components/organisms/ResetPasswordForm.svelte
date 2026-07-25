@@ -43,9 +43,7 @@
   });
 
   const isPasswordValid = $derived(passwordErrors().length === 0);
-  const passwordsMatch = $derived(
-    newPassword === confirmPassword && confirmPassword.length > 0,
-  );
+  const passwordsMatch = $derived(newPassword === confirmPassword && confirmPassword.length > 0);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -72,8 +70,7 @@
         goto("/auth/login");
       }, 3000);
     } catch (e) {
-      localError =
-        e instanceof Error ? e.message : t("auth.resetPasswordFailed");
+      localError = e instanceof Error ? e.message : t("auth.resetPasswordFailed");
     } finally {
       isLoading = false;
     }
@@ -138,9 +135,7 @@
     </div>
 
     {#if localError}
-      <ApiErrorDisplay
-        error={{ message: localError, code: "RESET_PASSWORD_ERROR" }}
-      />
+      <ApiErrorDisplay error={{ message: localError, code: "RESET_PASSWORD_ERROR" }} />
     {/if}
 
     <Button

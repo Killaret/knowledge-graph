@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CelestialBody } from "$entities";
-import type { Graph3DConfig, SimulationNode } from "./types";
+import type { Graph3DConfig, SimulationNode } from "../model/types";
 
 interface NodeInstance {
   mesh: THREE.InstancedMesh;

@@ -41,9 +41,8 @@ test.describe("Auth Pages - Cosmic Theme", { tag: ["@smoke", "@auth"] }, () => {
     // Check for backdrop blur style (may not be available in all browsers/contexts)
     const hasBackdrop = await card.evaluate((el) => {
       const style = window.getComputedStyle(el);
-      const backdropFilter = (
-        style as CSSStyleDeclaration & { webkitBackdropFilter?: string }
-      ).backdropFilter;
+      const backdropFilter = (style as CSSStyleDeclaration & { webkitBackdropFilter?: string })
+        .backdropFilter;
       const webkitBackdropFilter = (
         style as CSSStyleDeclaration & { webkitBackdropFilter?: string }
       ).webkitBackdropFilter;
@@ -128,9 +127,7 @@ test.describe("Auth Pages - Cosmic Theme", { tag: ["@smoke", "@auth"] }, () => {
     await expect(title).toBeVisible();
   });
 
-  test("reset-password page without token should show error", async ({
-    page,
-  }) => {
+  test("reset-password page without token should show error", async ({ page }) => {
     await page.goto("/auth/reset-password", { timeout: 15000 });
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);
@@ -189,9 +186,7 @@ test.describe("Auth Pages - Cosmic Theme", { tag: ["@smoke", "@auth"] }, () => {
     expect(await passwordInput.inputValue()).toBe("testpassword123!");
   });
 
-  test("register form should validate password requirements", async ({
-    page,
-  }) => {
+  test("register form should validate password requirements", async ({ page }) => {
     await page.goto("/auth/register", { timeout: 15000 });
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);
@@ -248,9 +243,7 @@ test.describe("Auth Pages - Cosmic Theme", { tag: ["@smoke", "@auth"] }, () => {
     }
   });
 
-  test("auth forms should have glowing input focus effect", async ({
-    page,
-  }) => {
+  test("auth forms should have glowing input focus effect", async ({ page }) => {
     await page.goto("/auth/login", { timeout: 15000 });
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);

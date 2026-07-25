@@ -1,8 +1,4 @@
-import {
-  setWorldConstructor,
-  setDefaultTimeout,
-  World,
-} from "@cucumber/cucumber";
+import { setWorldConstructor, setDefaultTimeout, World } from "@cucumber/cucumber";
 import {
   type Browser,
   type BrowserContext,

@@ -22,9 +22,7 @@
   } = $props();
 
   const graphMode = $derived(mode);
-  const focusGraphMode = $derived(
-    GraphMode.fromFocus(focusMode ?? graphMode.isFocus),
-  );
+  const focusGraphMode = $derived(GraphMode.fromFocus(focusMode ?? graphMode.isFocus));
 </script>
 
 <div

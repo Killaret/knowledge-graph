@@ -5,9 +5,7 @@ export type { AchievementApiData } from "$entities";
 export { Achievement } from "$entities";
 
 export async function fetchAllAchievements(): Promise<Achievement[]> {
-  const data = await api
-    .get("v1/achievements")
-    .json<{ achievements: AchievementApiData[] }>();
+  const data = await api.get("v1/achievements").json<{ achievements: AchievementApiData[] }>();
   return (data.achievements ?? []).map((a) => Achievement.fromApi(a));
 }
 

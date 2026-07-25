@@ -17,11 +17,7 @@ async function waitForRouteContent(page: Page, route: string) {
   }
 }
 
-function attachConsoleAndDialogListeners(
-  page: Page,
-  errors: string[],
-  dialogs: string[],
-) {
+function attachConsoleAndDialogListeners(page: Page, errors: string[], dialogs: string[]) {
   page.on("console", (msg) => {
     if (msg.type() === "error") {
       errors.push(msg.text());
@@ -41,9 +37,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     await loginAsTestUser(page, request);
   });
 
-  test("authenticated navigation across main routes returns no 401", async ({
-    page,
-  }) => {
+  test("authenticated navigation across main routes returns no 401", async ({ page }) => {
     const unauthorized: string[] = [];
     page.on("response", (res) => {
       if (res.status() === 401) {
@@ -59,17 +53,12 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     expect(unauthorized).toEqual([]);
   });
 
-  test("logout and re-login preserves graph data", async ({
-    page,
-    request,
-  }) => {
+  test("logout and re-login preserves graph data", async ({ page, request }) => {
     await page.goto("/graph?nocache=1", {
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
-    const beforeStats = await page
-      .locator('[data-testid="graph-stats"]')
-      .textContent();
+    const beforeStats = await page.locator('[data-testid="graph-stats"]').textContent();
 
     // Logout via UI: the auth store clears tokens and redirects
     const logoutBtn = page.locator("text=Logout").first();
@@ -88,15 +77,11 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
       timeout: 20000,
     });
 
-    const afterStats = await page
-      .locator('[data-testid="graph-stats"]')
-      .textContent();
+    const afterStats = await page.locator('[data-testid="graph-stats"]').textContent();
     expect(afterStats).toBe(beforeStats);
   });
 
-  test("basic actions do not trigger console errors or browser dialogs", async ({
-    page,
-  }) => {
+  test("basic actions do not trigger console errors or browser dialogs", async ({ page }) => {
     const consoleErrors: string[] = [];
     const dialogs: string[] = [];
     const resource404s: string[] = [];
@@ -130,10 +115,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     expect(dialogs).toEqual([]);
     // Allow known, non-critical warnings and network 404s from placeholder system notes
     const criticalErrors = consoleErrors.filter(
-      (e) =>
-        !e.includes("a11y") &&
-        !e.includes("List") &&
-        !e.includes("Failed to load resource"),
+      (e) => !e.includes("a11y") && !e.includes("List") && !e.includes("Failed to load resource")
     );
     expect(criticalErrors).toEqual([]);
   });
@@ -154,9 +136,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     page.on("response", async (res) => {
       if (res.status() >= 400) {
         const body = await res.text().catch(() => "");
-        responses.push(
-          `${res.status()} ${res.request().method()} ${res.url()} ${body}`,
-        );
+        responses.push(`${res.status()} ${res.request().method()} ${res.url()} ${body}`);
       }
     });
 
@@ -173,14 +153,12 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     await expect(localeSelect).toBeVisible({ timeout: 10000 });
 
     // ProfileEditor re-renders in Russian after reload
-    await expect(
-      page.locator("h2", { hasText: "Редактировать профиль" }),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("h2", { hasText: "Редактировать профиль" })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test("responsive layout keeps canvas visible on narrow viewport", async ({
-    page,
-  }) => {
+  test("responsive layout keeps canvas visible on narrow viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/graph?nocache=1", {
       timeout: 60000,

@@ -13,9 +13,7 @@ import { UserPoints } from "$entities";
  * Хук для получения данных графа с использованием предзагруженных данных
  * Возвращает предзагруженные данные если они есть, иначе загружает с сервера
  */
-export async function getGraphWithPreload(
-  limit: number = 1000,
-): Promise<GraphData> {
+export async function getGraphWithPreload(limit: number = 1000): Promise<GraphData> {
   // Сначала пробуем получить предзагруженные данные
   const preloadedData = getPreloadedGraph();
 
@@ -37,9 +35,7 @@ export async function getGraphWithPreload(
  * Хук для получения достижений с сервера
  * Достижения больше не предзагружаются для неаутентифицированных пользователей
  */
-export async function getAchievementsWithPreload(
-  usePersonal: boolean = false,
-): Promise<{
+export async function getAchievementsWithPreload(usePersonal: boolean = false): Promise<{
   achievements: Array<{
     id: string;
     code: string;
@@ -55,7 +51,7 @@ export async function getAchievementsWithPreload(
 }> {
   if (import.meta.env.DEV) {
     console.log(
-      `[usePreloadedData] Loading ${usePersonal ? "personal" : "all"} achievements from server`,
+      `[usePreloadedData] Loading ${usePersonal ? "personal" : "all"} achievements from server`
     );
   }
 
@@ -102,7 +98,7 @@ export async function loadAppData(
     limit?: number;
     usePersonalAchievements?: boolean;
     fallbackToServer?: boolean;
-  } = {},
+  } = {}
 ): Promise<{
   graph: GraphData;
   achievements: Array<{
@@ -131,10 +127,7 @@ export async function loadAppData(
     getAchievementsWithPreload(usePersonalAchievements),
   ];
 
-  const [graph, achievementsResult] = await Promise.all([
-    graphPromise,
-    achievementsPromise,
-  ]);
+  const [graph, achievementsResult] = await Promise.all([graphPromise, achievementsPromise]);
 
   const userPoints = UserPoints.fromApi({
     achievements: achievementsResult.achievements,

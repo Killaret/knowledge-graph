@@ -20,11 +20,7 @@ class Logger {
     this.context = context;
   }
 
-  private createLogEntry(
-    level: LogLevel,
-    message: string,
-    data?: unknown,
-  ): LogEntry {
+  private createLogEntry(level: LogLevel, message: string, data?: unknown): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,

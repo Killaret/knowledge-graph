@@ -3,9 +3,13 @@
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import BackButton from "$components/atoms/BackButton.svelte";
-  import GraphCanvas3D from "$components/organisms/GraphCanvas3D.svelte";
-  import { getFullGraphData, type GraphData } from "$shared/api/graph";
+  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
+  import { GraphServiceLayoutProvider } from "$features/graph-3d";
+  import { type GraphData } from "$shared/api/graph";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const layoutProvider = new GraphServiceLayoutProvider();
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -14,12 +18,11 @@
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let loading = $state(true);
   let error = $state("");
-  let selectedNodeId: string | null = $state(null);
 
   onMount(async () => {
     if (!browser) return;
     try {
-      graphData = await getFullGraphData();
+      graphData = await layoutProvider.load({});
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to load 3D graph:", e);
@@ -53,11 +56,11 @@
       <p>{t("graph3d.noDataMessage")}</p>
     </div>
   {:else}
-    <GraphCanvas3D
+    <Graph3DViewer
       nodes={graphData.nodes}
       links={graphData.links}
-      {selectedNodeId}
-      onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
+      selectedNodeId={graphStore.selectedNodeId}
+      onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
     />
   {/if}
 </div>

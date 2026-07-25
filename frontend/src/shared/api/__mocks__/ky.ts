@@ -11,11 +11,7 @@ interface MockResponse<T = unknown> {
 }
 
 // Фабрика для создания mock response
-export function createMockResponse<T>(
-  data: T,
-  ok = true,
-  status = 200,
-): MockResponse<T> {
+export function createMockResponse<T>(data: T, ok = true, status = 200): MockResponse<T> {
   return {
     ok,
     status,

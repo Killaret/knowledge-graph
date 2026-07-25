@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { api } from "./client";
-import {
-  getApiKey,
-  saveTokens,
-  clearAuthState,
-} from "$shared/stores/auth-session.svelte";
+import { getApiKey, saveTokens, clearAuthState } from "$shared/stores/auth-session.svelte";
 import { goto } from "$app/navigation";
 
 vi.mock("$app/navigation", () => ({
@@ -84,7 +80,7 @@ describe("API Client", () => {
     expect(response.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(saveTokens).toHaveBeenCalledWith(
-      expect.objectContaining({ access_token: "new-access" }),
+      expect.objectContaining({ access_token: "new-access" })
     );
     expect(clearAuthState).not.toHaveBeenCalled();
     expect(goto).not.toHaveBeenCalled();
@@ -118,12 +114,10 @@ describe("API Client", () => {
         refresh_token: "refresh",
         token_type: "Bearer",
         expires_at: "2025-01-01T00:00:00Z",
-      }),
+      })
     );
 
-    const response = await api
-      .post("v1/auth/refresh")
-      .json<{ access_token: string }>();
+    const response = await api.post("v1/auth/refresh").json<{ access_token: string }>();
 
     expect(response.access_token).toBe("token");
     expect(fetchMock).toHaveBeenCalledTimes(1);

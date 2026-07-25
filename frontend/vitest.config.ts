@@ -27,24 +27,15 @@ export default defineConfig({
     alias: [
       {
         find: /^\$app\/environment$/,
-        replacement: path.resolve(
-          __dirname,
-          "./src/shared/mocks/app/environment.ts",
-        ),
+        replacement: path.resolve(__dirname, "./src/shared/mocks/app/environment.ts"),
       },
       {
         find: /^\$app\/navigation$/,
-        replacement: path.resolve(
-          __dirname,
-          "./src/shared/mocks/app/navigation.ts",
-        ),
+        replacement: path.resolve(__dirname, "./src/shared/mocks/app/navigation.ts"),
       },
       {
         find: /^\$app\/stores$/,
-        replacement: path.resolve(
-          __dirname,
-          "./src/shared/mocks/app/stores.ts",
-        ),
+        replacement: path.resolve(__dirname, "./src/shared/mocks/app/stores.ts"),
       },
       {
         find: /^\$config$/,
@@ -66,6 +57,10 @@ export default defineConfig({
       {
         find: /^\$entities/,
         replacement: path.resolve(__dirname, "./src/entities"),
+      },
+      {
+        find: /^\$widgets/,
+        replacement: path.resolve(__dirname, "./src/widgets"),
       },
     ],
     conditions: ["browser", "default"],

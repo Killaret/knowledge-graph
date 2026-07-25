@@ -28,10 +28,7 @@ describe("FilterState", () => {
   });
 
   it("filters by type", () => {
-    const notes = [
-      note({ id: "1", type: "star" }),
-      note({ id: "2", type: "planet" }),
-    ];
+    const notes = [note({ id: "1", type: "star" }), note({ id: "2", type: "planet" })];
     const f = new FilterState({ selectedType: "star" });
     const filtered = f.filterNotes(notes, getNoteType);
     expect(filtered).toHaveLength(1);
@@ -61,10 +58,7 @@ describe("FilterState", () => {
   });
 
   it("sorts by type", () => {
-    const notes = [
-      note({ id: "1", type: "nebula" }),
-      note({ id: "2", type: "asteroid" }),
-    ];
+    const notes = [note({ id: "1", type: "nebula" }), note({ id: "2", type: "asteroid" })];
     const f = new FilterState({ sortBy: "type" });
     const sorted = f.sortNotes(notes);
     expect(sorted[0].type).toBe("asteroid");
@@ -79,10 +73,7 @@ describe("FilterState", () => {
       ],
       links: [{ source: "1", target: "2" }],
     };
-    const notes = [
-      note({ id: "1", type: "star" }),
-      note({ id: "2", type: "planet" }),
-    ];
+    const notes = [note({ id: "1", type: "star" }), note({ id: "2", type: "planet" })];
     const f = new FilterState({ selectedType: "star" });
     const result = f.filterGraphData(graphData, notes, getNoteType);
     expect(result.nodes).toHaveLength(1);

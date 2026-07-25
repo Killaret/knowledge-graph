@@ -33,13 +33,11 @@ export function createMockSimulation() {
     }),
     tick: vi.fn().mockImplementation((_iterations?: number) => {
       // Immediately update node positions
-      mockState.simulationNodes = mockState.simulationNodes.map(
-        (n: any, _i: number) => ({
-          ...n,
-          x: (n.x || 400) + (Math.random() - 0.5) * 10,
-          y: (n.y || 300) + (Math.random() - 0.5) * 10,
-        }),
-      );
+      mockState.simulationNodes = mockState.simulationNodes.map((n: any, _i: number) => ({
+        ...n,
+        x: (n.x || 400) + (Math.random() - 0.5) * 10,
+        y: (n.y || 300) + (Math.random() - 0.5) * 10,
+      }));
       // Trigger tick callback synchronously
       if (mockState.tickCallback) {
         mockState.tickCallback();
@@ -49,11 +47,7 @@ export function createMockSimulation() {
     force: vi.fn().mockReturnThis(),
     alphaDecay: vi.fn().mockReturnThis(),
     velocityDecay: vi.fn().mockReturnThis(),
-    on: vi.fn().mockImplementation(function (
-      this: any,
-      event: string,
-      callback: () => void,
-    ) {
+    on: vi.fn().mockImplementation(function (this: any, event: string, callback: () => void) {
       if (event === "tick") {
         mockState.tickCallback = callback;
       }

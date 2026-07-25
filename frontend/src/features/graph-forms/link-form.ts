@@ -22,7 +22,7 @@ export interface LinkFormCallbacks {
     target: string,
     linkType: string,
     x: number,
-    y: number,
+    y: number
   ) => void;
 }
 
@@ -42,7 +42,7 @@ export function openLinkForm(
   sourceId: string,
   targetId: string,
   x: number,
-  y: number,
+  y: number
 ): void {
   state.showLinkForm = true;
   state.linkFormPosition = { x, y };
@@ -63,24 +63,17 @@ export function closeLinkForm(state: LinkFormState): void {
 export function createLink(
   state: LinkFormState,
   links: Array<{ source: string; target: string; link_type?: string }>,
-  callbacks: LinkFormCallbacks,
+  callbacks: LinkFormCallbacks
 ): void {
   if (state.linkSourceNodeId && state.linkTargetNodeId) {
     const linkType = state.newLinkType;
-    if (
-      isDuplicateLink(
-        state.linkSourceNodeId,
-        state.linkTargetNodeId,
-        linkType,
-        links,
-      )
-    ) {
+    if (isDuplicateLink(state.linkSourceNodeId, state.linkTargetNodeId, linkType, links)) {
       callbacks.onDuplicateWarning?.(
         state.linkSourceNodeId,
         state.linkTargetNodeId,
         linkType,
         state.linkFormPosition.x,
-        state.linkFormPosition.y,
+        state.linkFormPosition.y
       );
       closeLinkForm(state);
       return;
@@ -106,7 +99,7 @@ export function isDuplicateLink(
     source: string | { id: string };
     target: string | { id: string };
     link_type?: string;
-  }>,
+  }>
 ): boolean {
   return links.some((link) => {
     const s = typeof link.source === "string" ? link.source : link.source.id;

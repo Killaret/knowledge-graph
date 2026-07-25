@@ -29,24 +29,18 @@ export function createBlackHole(width: number, height: number): BlackHoleState {
 export function updateBlackHolePosition(
   state: BlackHoleState,
   width: number,
-  height: number,
+  height: number
 ): void {
   state.x = width - 60;
   state.y = height - 60;
 }
 
-export function updateBlackHolePulse(
-  state: BlackHoleState,
-  animationTime: number,
-): void {
+export function updateBlackHolePulse(state: BlackHoleState, animationTime: number): void {
   const pulseSpeed = 0.003;
   state.pulsePhase = Math.sin(animationTime * pulseSpeed) * 0.5 + 0.5;
 }
 
-export function isNodeOverBlackHole(
-  node: SimulationNode,
-  blackHole: BlackHoleState,
-): boolean {
+export function isNodeOverBlackHole(node: SimulationNode, blackHole: BlackHoleState): boolean {
   if (node.x == null || node.y == null) return false;
   const dx = node.x - blackHole.x;
   const dy = node.y - blackHole.y;
@@ -58,7 +52,7 @@ export function isPointOverBlackHole(
   x: number,
   y: number,
   blackHole: BlackHoleState,
-  transform: { x: number; y: number; k: number },
+  transform: { x: number; y: number; k: number }
 ): boolean {
   const worldX = (x - transform.x) / transform.k;
   const worldY = (y - transform.y) / transform.k;
@@ -71,7 +65,7 @@ export function isPointOverBlackHole(
 export function drawBlackHole(
   ctx: CanvasRenderingContext2D,
   blackHole: BlackHoleState,
-  _animationTime: number,
+  _animationTime: number
 ): void {
   const { x, y, radius, pulsePhase, hovered } = blackHole;
 
@@ -110,7 +104,7 @@ export function drawBlackHole(
 export function drawBlackHoleTooltip(
   ctx: CanvasRenderingContext2D,
   blackHole: BlackHoleState,
-  text: string = "Drop here to delete",
+  text: string = "Drop here to delete"
 ): void {
   const { x, y, radius } = blackHole;
 

@@ -26,25 +26,18 @@
     type GraphNode,
     type GraphLink,
   } from "$shared/api/graph";
-  import {
-    getGraphWithPreload,
-    useInstantData,
-  } from "$shared/hooks/usePreloadedData";
+  import { getGraphWithPreload, useInstantData } from "$shared/hooks/usePreloadedData";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
-  import GraphCanvas3D from "$components/organisms/GraphCanvas3D.svelte";
+  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
   import { CelestialBody, FilterState } from "$entities";
-  import {
-    formatMessage,
-    getCurrentLocale,
-    type MessageParams,
-  } from "$shared/utils/i18n";
+  import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: MessageParams) =>
-    formatMessage(key, locale, params);
+  const t = (key: string, params?: MessageParams) => formatMessage(key, locale, params);
 
   // Raw API shapes that backend may return with alternative casing
   interface RawNode {
@@ -106,13 +99,11 @@
   let filteredNotes: Note[] = $state([]);
   let loading = $state(true);
   let apiError = $state<ErrorResponse | null>(null);
-  let selectedNodeId: string | null = $state(null);
   let showCreateModal = $state(false);
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let currentView: "graph" | "list" | "3d" = $state("graph"); // Graph-first interface
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -129,14 +120,14 @@
       sortBy: "created",
       searchQuery: "",
       currentView: "graph",
-    }),
+    })
   );
   $effect(() => {
     filterState = new FilterState({
       selectedType,
       sortBy,
       searchQuery,
-      currentView,
+      currentView: graphStore.currentView,
     });
   });
 
@@ -218,9 +209,7 @@
         isAuth
           ? Promise.race([
               getFreshGraph(),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), graphTimeoutMs),
-              ),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
             ]).catch((e: unknown) => {
               if (import.meta.env.DEV) {
                 console.error("[+page] Failed to load fresh graph:", e);
@@ -229,9 +218,7 @@
             })
           : Promise.race([
               getGraphWithPreload(),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), graphTimeoutMs),
-              ),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), graphTimeoutMs)),
             ]).catch((e: unknown) => {
               if (import.meta.env.DEV) {
                 console.error("[+page] Failed to load public graph:", e);
@@ -282,30 +269,28 @@
       ) {
         // Debug: check what types come from API
         const apiTypes = graphResult.nodes.map(
-          (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
+          (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
         );
         if (import.meta.env.DEV) {
           console.log(
             "[+page] loadDataParallel API types:",
             [...new Set(apiTypes)],
             "Total:",
-            apiTypes.length,
+            apiTypes.length
           );
           console.log(
             "[+page] loadDataParallel First 3 nodes:",
             graphResult.nodes.slice(0, 3).map((n) => {
               const raw = n as RawNode;
               return { id: raw.id, type: raw.type, Type: raw.Type };
-            }),
+            })
           );
         }
 
         // Transform nodes to ensure correct type field
         graphData = {
           nodes: graphResult.nodes.map((n) => normalizeNode(n as RawNode)),
-          links: (graphResult.links || []).map((l) =>
-            normalizeLink(l as RawLink),
-          ),
+          links: (graphResult.links || []).map((l) => normalizeLink(l as RawLink)),
         };
         if (import.meta.env.DEV) {
           console.log(
@@ -313,7 +298,7 @@
             graphData.nodes.length,
             "nodes,",
             graphData.links.length,
-            "links",
+            "links"
           );
           console.log("[+page] Transformed types:", [
             ...new Set(graphData.nodes.map((n) => n.type)),
@@ -338,7 +323,7 @@
         if (!hasIntersection) {
           if (import.meta.env.DEV) {
             console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
             );
           }
           graphData = {
@@ -396,10 +381,7 @@
         rawData.nodes.length === 0
       ) {
         if (import.meta.env.DEV) {
-          console.warn(
-            "[+page] Graph API returned empty or invalid data structure:",
-            rawData,
-          );
+          console.warn("[+page] Graph API returned empty or invalid data structure:", rawData);
         }
         // Fallback: build simple graph from notes
         graphData = {
@@ -415,33 +397,24 @@
 
       // Debug: check what types come from API
       const apiTypes = rawData.nodes.map(
-        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING",
+        (n) => (n as RawNode).type ?? (n as RawNode).Type ?? "MISSING"
       );
       if (import.meta.env.DEV) {
-        console.log(
-          "[+page] API node types:",
-          [...new Set(apiTypes)],
-          "Total:",
-          apiTypes.length,
-        );
+        console.log("[+page] API node types:", [...new Set(apiTypes)], "Total:", apiTypes.length);
         console.log(
           "[+page] First 5 raw nodes:",
           rawData.nodes.slice(0, 5).map((n) => {
             const raw = n as RawNode;
             return { id: raw.id, type: raw.type, Type: raw.Type };
-          }),
+          })
         );
       }
 
       // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n) =>
-        normalizeNode(n as RawNode),
-      );
+      const transformedNodes = rawData.nodes.map((n) => normalizeNode(n as RawNode));
 
       // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links || []).map((l) =>
-        normalizeLink(l as RawLink),
-      );
+      const transformedLinks = (rawData.links || []).map((l) => normalizeLink(l as RawLink));
 
       graphData = {
         nodes: transformedNodes,
@@ -451,13 +424,11 @@
       // Defensive: ensure graph nodes correspond to loaded notes
       if (allNotes.length > 0 && transformedNodes.length > 0) {
         const noteIds = new Set(allNotes.map((n) => n.id));
-        const hasIntersection = transformedNodes.some((n) =>
-          noteIds.has(n.id),
-        );
+        const hasIntersection = transformedNodes.some((n) => noteIds.has(n.id));
         if (!hasIntersection) {
           if (import.meta.env.DEV) {
             console.warn(
-              "[+page] Loaded graph does not intersect with notes; rebuilding from notes",
+              "[+page] Loaded graph does not intersect with notes; rebuilding from notes"
             );
           }
           graphData = {
@@ -473,35 +444,26 @@
       }
 
       if (import.meta.env.DEV) {
-        console.log(
-          "[+page] Transformed links:",
-          transformedLinks.length,
-          "links",
-        );
-        console.log(
-          "[+page] First 3 transformed links:",
-          transformedLinks.slice(0, 3),
-        );
+        console.log("[+page] Transformed links:", transformedLinks.length, "links");
+        console.log("[+page] First 3 transformed links:", transformedLinks.slice(0, 3));
 
         // Check if links match node IDs
         const nodeIds = new Set(transformedNodes.map((n) => n.id));
         const validLinks = transformedLinks.filter(
-          (l) => nodeIds.has(l.source) && nodeIds.has(l.target),
+          (l) => nodeIds.has(l.source) && nodeIds.has(l.target)
         );
         console.log("[+page] Node IDs:", Array.from(nodeIds).slice(0, 5));
         console.log(
           "[+page] Valid links (matching node IDs):",
           validLinks.length,
           "of",
-          transformedLinks.length,
+          transformedLinks.length
         );
 
         if (validLinks.length < transformedLinks.length) {
           console.warn(
             "[+page] Some links have invalid node IDs:",
-            transformedLinks.filter(
-              (l) => !nodeIds.has(l.source) || !nodeIds.has(l.target),
-            ),
+            transformedLinks.filter((l) => !nodeIds.has(l.source) || !nodeIds.has(l.target))
           );
         }
       }
@@ -536,9 +498,7 @@
   }
 
   // Reactive filtered graph data based on filter state
-  const filteredGraphData = $derived(
-    filterState.filterGraphData(graphData, allNotes, getNoteType),
-  );
+  const filteredGraphData = $derived(filterState.filterGraphData(graphData, allNotes, getNoteType));
 
   function applyFiltersAndSort() {
     filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
@@ -575,7 +535,7 @@
 
     try {
       await deleteNote(noteToDelete);
-      selectedNodeId = null;
+      graphStore.selectedNodeId = null;
       // Remove deleted note from local arrays immediately
       allNotes = allNotes.filter((n) => n.id !== noteToDelete);
       filteredNotes = filteredNotes.filter((n) => n.id !== noteToDelete);
@@ -620,7 +580,7 @@
     // Confirmation dialog
     if (browser) {
       const confirmed = confirm(
-        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`,
+        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`
       );
       if (!confirmed) return;
     }
@@ -678,11 +638,7 @@
     }
   }
 
-  async function handleNoteCreate(data: {
-    title: string;
-    content: string;
-    type: string;
-  }) {
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
     try {
       await createNote({
         title: data.title,
@@ -699,12 +655,12 @@
 
   function handleNoteCreated(note: Note) {
     showCreateModal = false;
-    selectedNodeId = note.id;
+    graphStore.selectedNodeId = note.id;
     loadNotes();
   }
 
   function handleToggleView(view: "graph" | "list" | "3d") {
-    currentView = view;
+    graphStore.currentView = view;
   }
 </script>
 
@@ -732,14 +688,12 @@
     }}
     {typeFilters}
     {selectedType}
-    {currentView}
+    currentView={graphStore.currentView}
     typeCounts={Object.fromEntries(
       typeFilters.map((f) => [
         f.id,
-        f.id === "all"
-          ? allNotes.length
-          : allNotes.filter((n) => n.type === f.id).length,
-      ]),
+        f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+      ])
     )}
   />
 
@@ -758,7 +712,7 @@
           loadDataParallel();
         }}>{t("page.retry")}</button
       >
-    {:else if currentView === "graph"}
+    {:else if graphStore.currentView === "graph"}
       <!-- Debug info - remove in production -->
       {#if import.meta.env.DEV}
         <div
@@ -787,21 +741,21 @@
           nodes={filteredGraphData.nodes}
           links={filteredGraphData.links}
           delta={graphDelta}
-          onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
+          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
         />
       {/if}
-    {:else if currentView === "3d"}
+    {:else if graphStore.currentView === "3d"}
       <!-- Fullscreen 3D Graph View -->
-      <GraphCanvas3D
+      <Graph3DViewer
         nodes={filteredGraphData.nodes}
         links={filteredGraphData.links}
-        centerNodeId={selectedNodeId}
-        selectedNodeId={selectedNodeId}
-        onNodeClick={(node: { id: string }) => (selectedNodeId = node.id)}
+        centerNodeId={graphStore.selectedNodeId}
+        selectedNodeId={graphStore.selectedNodeId}
+        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
       />
-    {:else if currentView === "list"}
+    {:else if graphStore.currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
         <div class="list-header">
@@ -827,9 +781,7 @@
             {/if}
           </div>
           <div class="list-sort">
-            <label for="sort-select" class="sort-label"
-              >{t("page.sortBy")}</label
-            >
+            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
             <select
               id="sort-select"
               class="sort-select"
@@ -867,16 +819,10 @@
                       query: filterState.searchQuery.value,
                     })
                   : t("page.noTypeResults", {
-                      type:
-                        filterState
-                          .getSelectedTypeLabel(typeFilters)
-                          ?.toLowerCase() ?? "",
+                      type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
                     })}
             </p>
-            <button
-              class="new-note-button"
-              onclick={() => (showCreateModal = true)}
-            >
+            <button class="new-note-button" onclick={() => (showCreateModal = true)}>
               {t("page.createFirstNote")}
             </button>
           </div>
@@ -891,7 +837,7 @@
                 onSelect={handleNoteSelect}
                 onEdit={handleNoteEdit}
                 onDelete={handleNoteDelete}
-                onClick={() => (selectedNodeId = note.id)}
+                onClick={() => (graphStore.selectedNodeId = note.id)}
                 highlightQuery={filterState.searchQuery.value}
               />
             {/each}
@@ -974,10 +920,10 @@
 </div>
 
 <!-- Side Panel for selected note -->
-{#if selectedNodeId}
+{#if graphStore.selectedNodeId}
   <NoteSidePanel
-    nodeId={selectedNodeId}
-    onClose={() => (selectedNodeId = null)}
+    nodeId={graphStore.selectedNodeId}
+    onClose={() => (graphStore.selectedNodeId = null)}
     onEdit={(id: string) => {
       noteToEdit = id;
       showEditModal = true;
@@ -1018,10 +964,7 @@
 
 <!-- Undo toast -->
 {#if showUndoToast}
-  <div
-    class="undo-toast"
-    class:undo-toast--restore={undoToastStage === "restore"}
-  >
+  <div class="undo-toast" class:undo-toast--restore={undoToastStage === "restore"}>
     {#if undoToastStage === "done"}
       <span class="undo-toast-message">{t("toast.done")}</span>
     {:else}

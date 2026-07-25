@@ -94,8 +94,7 @@ export class Achievement {
   }
 
   getDescription(locale: "en" | "ru" = "en"): string {
-    if (locale === "ru" && this.props.descriptionRu)
-      return this.props.descriptionRu;
+    if (locale === "ru" && this.props.descriptionRu) return this.props.descriptionRu;
     return this.props.description;
   }
 
@@ -105,8 +104,7 @@ export class Achievement {
 
   static fromApi(data: AchievementApiData): Achievement {
     const earned = data.earned ?? (!!data.unlocked_at || !!data.obtained_at);
-    const title =
-      data.title ?? data.name_en ?? data.code ?? "Unknown achievement";
+    const title = data.title ?? data.name_en ?? data.code ?? "Unknown achievement";
     const titleRu = data.name_ru ?? title;
     const description = data.description ?? data.description_en ?? "";
     const descriptionRu = data.description_ru ?? description;

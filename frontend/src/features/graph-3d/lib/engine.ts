@@ -7,14 +7,15 @@ import { createGraphSimulation } from "./simulation";
 import { autoZoomToFit, centerCameraOnNode } from "./camera";
 import { filterValidLinks } from "$shared/utils/graphUtils";
 import { graphConfig3D } from "$shared/config/config";
+import { toSimulationNodes } from "../config";
 import type {
   Graph3DCallbacks,
   Graph3DConfig,
   GraphNode,
   GraphLink,
   SimulationNode,
-} from "./types";
-import { DEFAULT_GRAPH3D_CONFIG } from "./types";
+} from "../model/types";
+import { DEFAULT_GRAPH3D_CONFIG } from "../model/types";
 
 export class Graph3DEngine {
   private container: HTMLElement;
@@ -64,6 +65,9 @@ export class Graph3DEngine {
     this.stopLoop();
 
     const validLinks = filterValidLinks(nodes, links);
+    const hasPositions = nodes.every(
+      (n) => typeof n.x === "number" && typeof n.y === "number" && typeof n.z === "number"
+    );
 
     if (nodes.length > this.config.maxNodes) {
       console.warn(
@@ -71,20 +75,13 @@ export class Graph3DEngine {
       );
     }
 
-    this.simNodes = nodes.map((n) => ({
-      ...n,
-      x: n.x ?? 0,
-      y: n.y ?? 0,
-      z: n.z ?? 0,
-      vx: 0,
-      vy: 0,
-      vz: 0,
-    })) as SimulationNode[];
+    this.simNodes = toSimulationNodes(nodes, validLinks);
     this.simLinks = validLinks;
 
     try {
       this.sim = createGraphSimulation(this.simNodes, this.simLinks);
-      this.sim.tick(this.config.warmStartTicks);
+      const warmStartTicks = hasPositions ? 10 : this.config.warmStartTicks;
+      this.sim.tick(warmStartTicks);
 
       this.nodeManager.setNodes(this.simNodes);
       this.linkManager.setLinks(this.simLinks, this.nodeManager.getPositionMap(this.simNodes));

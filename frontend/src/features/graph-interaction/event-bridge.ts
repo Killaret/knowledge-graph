@@ -31,10 +31,7 @@ import {
   showRandomTip,
 } from "$features/graph-interaction/hotkeys";
 import type { ZoomPanState } from "$features/graph-interaction/zoom-pan";
-import {
-  handleZoom,
-  handleTouchStart,
-} from "$features/graph-interaction/zoom-pan";
+import { handleZoom, handleTouchStart } from "$features/graph-interaction/zoom-pan";
 import type { NoteFormState } from "$features/graph-forms/note-form";
 import { openNoteForm, closeNoteForm } from "$features/graph-forms/note-form";
 import type { LinkFormState } from "$features/graph-forms/link-form";
@@ -110,9 +107,7 @@ export interface GraphEventBridge {
   cleanup: () => void;
 }
 
-export function createGraphEventBridge(
-  context: GraphCanvasEventContext,
-): GraphEventBridge {
+export function createGraphEventBridge(context: GraphCanvasEventContext): GraphEventBridge {
   const HOVER_DELAY_MS = graphConfig2D.hover_delay_ms;
 
   let hoverNodeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -125,7 +120,7 @@ export function createGraphEventBridge(
     link:
       | HoveredLinkInfo
       | SimulationLink
-      | { source: string | { id: string }; target: string | { id: string } },
+      | { source: string | { id: string }; target: string | { id: string } }
   ): string {
     const s = getLinkEndpointId(link.source);
     const t = getLinkEndpointId(link.target);
@@ -167,11 +162,7 @@ export function createGraphEventBridge(
     context.setHoveredLink(null);
   }
 
-  function scheduleLinkHover(
-    link: HoveredLinkInfo,
-    mouseX: number,
-    mouseY: number,
-  ) {
+  function scheduleLinkHover(link: HoveredLinkInfo, mouseX: number, mouseY: number) {
     const linkKey = getLinkKey(link);
     if (hoverCandidateLinkKey === linkKey && hoverLinkTimeout) {
       return;
@@ -193,7 +184,7 @@ export function createGraphEventBridge(
   function onMouseDown(e: MouseEvent) {
     if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -214,12 +205,12 @@ export function createGraphEventBridge(
             context.redraw();
           }
         },
-      },
+      }
     );
 
     if (context.dragDropState.draggedNodeId) {
       const node = getSimulationNodes(context.simState).find(
-        (n) => n.id === context.dragDropState.draggedNodeId,
+        (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node && node.x != null && node.y != null) {
         node.fx = node.x;
@@ -234,7 +225,7 @@ export function createGraphEventBridge(
   function onMouseMove(e: MouseEvent) {
     if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -245,12 +236,7 @@ export function createGraphEventBridge(
     const blackHole = context.getBlackHole();
     const ghostNode = context.getGhostNode();
 
-    blackHole.hovered = isPointOverBlackHole(
-      e.clientX,
-      e.clientY,
-      blackHole,
-      context.transform,
-    );
+    blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, context.transform);
 
     const canvasRect = canvas.getBoundingClientRect();
     const screenX = e.clientX - canvasRect.left;
@@ -261,16 +247,12 @@ export function createGraphEventBridge(
 
     if (context.dragDropState.draggedNodeId && context.dragState.dragging) {
       const node = getSimulationNodes(context.simState).find(
-        (n) => n.id === context.dragDropState.draggedNodeId,
+        (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node && node.x != null && node.y != null) {
         blackHole.hovered = isNodeOverBlackHole(node, blackHole);
 
-        const targetNode = findNodeAtPosition(
-          pos.x,
-          pos.y,
-          getSimulationNodes(context.simState),
-        );
+        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
         if (
           targetNode &&
           targetNode.id !== context.dragDropState.draggedNodeId &&
@@ -304,7 +286,7 @@ export function createGraphEventBridge(
       pos.y,
       context.simState.simLinks,
       getSimulationNodes(context.simState),
-      context.transform,
+      context.transform
     );
 
     let foundHoveredNode = false;
@@ -331,8 +313,7 @@ export function createGraphEventBridge(
     }
 
     if (hoveredTechnicalNode) {
-      context.hotkeysState.helpTooltipMessage =
-        "Click to open help, or press ?";
+      context.hotkeysState.helpTooltipMessage = "Click to open help, or press ?";
       context.hotkeysState.helpTooltipPosition = {
         x: e.clientX,
         y: e.clientY - 10,
@@ -340,8 +321,7 @@ export function createGraphEventBridge(
       context.hotkeysState.showHelpTooltip = true;
     } else if (
       context.hotkeysState.showHelpTooltip &&
-      context.hotkeysState.helpTooltipMessage ===
-        "Click to open help, or press ?"
+      context.hotkeysState.helpTooltipMessage === "Click to open help, or press ?"
     ) {
       context.hotkeysState.showHelpTooltip = false;
     }
@@ -368,18 +348,13 @@ export function createGraphEventBridge(
               : (hovered.target as { id: string }).id,
           link_type: hovered.link_type || "related",
           weight: hovered.weight ?? 0.5,
-          source_type:
-            (hovered as { source_type?: string }).source_type || "user",
+          source_type: (hovered as { source_type?: string }).source_type || "user",
         };
 
         const centerX =
-          ((sourceNode.x! + targetNode.x!) / 2) * context.transform.k +
-          context.transform.x +
-          10;
+          ((sourceNode.x! + targetNode.x!) / 2) * context.transform.k + context.transform.x + 10;
         const centerY =
-          ((sourceNode.y! + targetNode.y!) / 2) * context.transform.k +
-          context.transform.y +
-          10;
+          ((sourceNode.y! + targetNode.y!) / 2) * context.transform.k + context.transform.y + 10;
 
         if (
           !context.getHoveredLink() ||
@@ -396,7 +371,7 @@ export function createGraphEventBridge(
   function onMouseUp(e: MouseEvent) {
     if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -406,17 +381,13 @@ export function createGraphEventBridge(
 
     if (context.dragDropState.draggedNodeId) {
       const node = getSimulationNodes(context.simState).find(
-        (n) => n.id === context.dragDropState.draggedNodeId,
+        (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node) {
         node.fx = undefined;
         node.fy = undefined;
 
-        const targetNode = findNodeAtPosition(
-          pos.x,
-          pos.y,
-          getSimulationNodes(context.simState),
-        );
+        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
         if (
           targetNode &&
           targetNode.id !== context.dragDropState.draggedNodeId &&
@@ -427,7 +398,7 @@ export function createGraphEventBridge(
             context.dragDropState.draggedNodeId,
             targetNode.id,
             e.clientX,
-            e.clientY,
+            e.clientY
           );
         }
       }
@@ -441,11 +412,7 @@ export function createGraphEventBridge(
     context.getBlackHole().hovered = false;
 
     if (!wasDraggingNode && !context.getGhostNode().hovered) {
-      const clickedNode = findNodeAtPosition(
-        pos.x,
-        pos.y,
-        getSimulationNodes(context.simState),
-      );
+      const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
       if (!clickedNode) {
         context.setHoveredLink(null);
       }
@@ -457,7 +424,7 @@ export function createGraphEventBridge(
   function onClick(e: MouseEvent) {
     if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -465,11 +432,7 @@ export function createGraphEventBridge(
     const pos = getMouseWorldPosition(e, canvas, context.transform);
     context.dragDropState.mouseWorldPosition = pos;
 
-    const clickedNode = findNodeAtPosition(
-      pos.x,
-      pos.y,
-      getSimulationNodes(context.simState),
-    );
+    const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
     if (clickedNode) {
       if (context.isTechnicalNode(clickedNode.id)) {
         context.openHelp();
@@ -514,7 +477,7 @@ export function createGraphEventBridge(
   function onZoom(e: WheelEvent) {
     if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -524,7 +487,7 @@ export function createGraphEventBridge(
   function onTouchStart(e: TouchEvent) {
     if (context.readonly || !context.browser) return;
     updateActivity(context.hotkeysState, () =>
-      showRandomTip(context.hotkeysState, context.getKeyLines()),
+      showRandomTip(context.hotkeysState, context.getKeyLines())
     );
     const canvas = context.getCanvas();
     if (!canvas) return;
@@ -536,7 +499,7 @@ export function createGraphEventBridge(
       getSimulationNodes(context.simState),
       context.getCtx(),
       context.getWidth(),
-      context.getHeight(),
+      context.getHeight()
     );
   }
 
@@ -570,16 +533,10 @@ export function createGraphEventBridge(
           const canvas = context.getCanvas();
           if (!canvas) return;
           const rect = canvas.getBoundingClientRect();
-          const centerX =
-            (rect.width / 2 - context.transform.x) / context.transform.k;
-          const centerY =
-            (rect.height / 2 - context.transform.y) / context.transform.k;
+          const centerX = (rect.width / 2 - context.transform.x) / context.transform.k;
+          const centerY = (rect.height / 2 - context.transform.y) / context.transform.k;
           context.setGhostNode(
-            createGhostNode(
-              rect.width,
-              rect.height,
-              getSimulationNodes(context.simState),
-            ),
+            createGhostNode(rect.width, rect.height, getSimulationNodes(context.simState))
           );
           openNoteForm(context.noteFormState, centerX, centerY);
           context.redraw();
@@ -590,7 +547,7 @@ export function createGraphEventBridge(
           context.redraw();
         },
         onUndo: () => {},
-      },
+      }
     );
   }
 
@@ -625,7 +582,7 @@ export function createGraphEventBridge(
 export function attachEvents(
   canvas: HTMLCanvasElement,
   context: GraphCanvasEventContext,
-  windowImpl: Window = globalThis.window,
+  windowImpl: Window = globalThis.window
 ): () => void {
   const bridge = createGraphEventBridge(context);
 

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { SimulationNode } from "./types";
+import type { SimulationNode } from "../model/types";
 
 export function centerCameraOnNode(
   nodeId: string,

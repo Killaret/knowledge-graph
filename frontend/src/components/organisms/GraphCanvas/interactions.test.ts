@@ -8,12 +8,7 @@ import {
   handlePanEnd,
   handleClick,
 } from "./interactions";
-import type {
-  SimulationNode,
-  SimulationLink,
-  TransformState,
-  DragState,
-} from "./types";
+import type { SimulationNode, SimulationLink, TransformState, DragState } from "./types";
 
 const makeCanvas = () => {
   const canvas = document.createElement("canvas");
@@ -115,14 +110,7 @@ describe("GraphCanvas interactions", () => {
 
     it("respects custom tolerance", () => {
       const link: SimulationLink = { source: "a", target: "b" };
-      const result = findLinkAtPosition(
-        50,
-        20,
-        [link],
-        nodes,
-        { x: 0, y: 0, k: 1 },
-        25,
-      );
+      const result = findLinkAtPosition(50, 20, [link], nodes, { x: 0, y: 0, k: 1 }, 25);
       expect(result).toBe(link);
     });
   });
@@ -277,9 +265,7 @@ describe("GraphCanvas interactions", () => {
     it("navigates to note when no onNodeClick provided", () => {
       const canvas = makeCanvas();
       const transform: TransformState = { x: 0, y: 0, k: 1 };
-      const nodes: SimulationNode[] = [
-        { id: "n2", title: "n2", x: 200, y: 200 },
-      ];
+      const nodes: SimulationNode[] = [{ id: "n2", title: "n2", x: 200, y: 200 }];
       const event = new MouseEvent("click", { clientX: 205, clientY: 205 });
 
       handleClick(event, canvas, transform, nodes);

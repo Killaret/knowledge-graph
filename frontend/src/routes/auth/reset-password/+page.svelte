@@ -35,17 +35,11 @@
     <ResetPasswordForm {token} />
   </AuthCard>
 {:else}
-  <AuthCard
-    title={t("error.fallback")}
-    subtitle={t("auth.resetTokenMissing")}
-    showIcon={false}
-  >
+  <AuthCard title={t("error.fallback")} subtitle={t("auth.resetTokenMissing")} showIcon={false}>
     <div class="error-content">
       <ConstellationIcon size={48} class="error-icon" />
       <p class="error-text">{t("auth.requestNewLink")}</p>
-      <a href="/auth/forgot-password" class="back-link"
-        >{t("auth.requestResetLink")}</a
-      >
+      <a href="/auth/forgot-password" class="back-link">{t("auth.requestResetLink")}</a>
     </div>
   </AuthCard>
 {/if}

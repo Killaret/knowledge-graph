@@ -3,18 +3,19 @@ import {
   createGraphCanvasState,
   isTechnicalNode,
   pinTechnicalNodes,
+  type HotkeysState,
 } from "./canvas-state.svelte";
-import { createNoteFormState } from "$features/graph-forms/note-form";
-import { createLinkFormState } from "$features/graph-forms/link-form";
-import { createHotkeysState } from "$features/graph-interaction/hotkeys";
 
-vi.mock("$components/organisms/GraphCanvas", () => ({
-  getSimulationNodes: vi.fn(() => []),
-  resetView: vi.fn(),
-}));
-
-const { getSimulationNodes, resetView } =
-  await import("$components/organisms/GraphCanvas");
+function createTestHotkeysState(): HotkeysState {
+  return {
+    showSearchBox: false,
+    searchQuery: "",
+    searchMatchIds: [],
+    searchCurrentIndex: 0,
+    showHelpModal: false,
+    showHelpTooltip: false,
+  };
+}
 
 describe("canvas-state helpers", () => {
   it("isTechnicalNode detects technical node types", () => {
@@ -46,82 +47,10 @@ describe("canvas-state helpers", () => {
 describe("createGraphCanvasState", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.clearAllMocks();
   });
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it("creates a note via handleCreateNote", () => {
-    const state = createGraphCanvasState();
-    const noteForm = createNoteFormState();
-    noteForm.newNoteTitle = "New note";
-    noteForm.newNoteContent = "Content";
-    noteForm.newNoteType = "star";
-    const onNoteCreate = vi.fn();
-    const redraw = vi.fn();
-
-    state.handleCreateNote(noteForm, onNoteCreate, redraw);
-
-    expect(onNoteCreate).toHaveBeenCalledWith({
-      title: "New note",
-      content: "Content",
-      type: "star",
-    });
-    expect(redraw).toHaveBeenCalled();
-    expect(noteForm.showNoteForm).toBe(false);
-  });
-
-  it("closes note form via handleNoteFormClose", () => {
-    const state = createGraphCanvasState();
-    const noteForm = createNoteFormState();
-    noteForm.newNoteTitle = "draft";
-    const redraw = vi.fn();
-
-    state.handleNoteFormClose(noteForm, redraw);
-
-    expect(noteForm.showNoteForm).toBe(false);
-    expect(noteForm.newNoteTitle).toBe("");
-    expect(redraw).toHaveBeenCalled();
-  });
-
-  it("creates a link via handleCreateLink", () => {
-    const state = createGraphCanvasState();
-    const linkForm = createLinkFormState();
-    linkForm.linkSourceNodeId = "a";
-    linkForm.linkTargetNodeId = "b";
-    linkForm.newLinkType = "related";
-    linkForm.newLinkWeight = 1;
-    const onLinkCreate = vi.fn();
-    const redraw = vi.fn();
-
-    state.handleCreateLink(linkForm, [], onLinkCreate, redraw);
-
-    expect(onLinkCreate).toHaveBeenCalledWith({
-      source: "a",
-      target: "b",
-      link_type: "related",
-      weight: 1,
-    });
-    expect(redraw).toHaveBeenCalled();
-  });
-
-  it("shows duplicate warning for existing link", () => {
-    const state = createGraphCanvasState();
-    const linkForm = createLinkFormState();
-    linkForm.linkSourceNodeId = "a";
-    linkForm.linkTargetNodeId = "b";
-    linkForm.linkFormPosition = { x: 100, y: 200 };
-    const onLinkCreate = vi.fn();
-    const redraw = vi.fn();
-    const links = [{ source: "a", target: "b", link_type: "related" }];
-
-    state.handleCreateLink(linkForm, links, onLinkCreate, redraw);
-
-    expect(onLinkCreate).not.toHaveBeenCalled();
-    expect(state.duplicateWarning).not.toBeNull();
-    expect(state.highlightedLinkId).toBe("a-b-related");
   });
 
   it("clears duplicate warning after timeout", () => {
@@ -194,32 +123,9 @@ describe("createGraphCanvasState", () => {
     expect(redraw).toHaveBeenCalled();
   });
 
-  it("handles search open/close/update", () => {
-    const state = createGraphCanvasState();
-    const hotkeys = createHotkeysState();
-    const redraw = vi.fn();
-
-    state.handleOpenSearch(hotkeys);
-    expect(hotkeys.showSearchBox).toBe(true);
-
-    state.handleCloseSearch(hotkeys, redraw);
-    expect(hotkeys.showSearchBox).toBe(false);
-    expect(redraw).toHaveBeenCalled();
-
-    const simState = {
-      simulation: { nodes: () => [{ id: "n1", title: "Test", x: 0, y: 0 }] },
-    } as any;
-    vi.mocked(getSimulationNodes).mockReturnValue([
-      { id: "n1", title: "Test", x: 0, y: 0 },
-    ]);
-    hotkeys.searchQuery = "Test";
-    state.handleUpdateSearch(hotkeys, simState, redraw);
-    expect(hotkeys.searchMatchIds).toEqual(["n1"]);
-  });
-
   it("opens and closes help modal", () => {
     const state = createGraphCanvasState();
-    const hotkeys = createHotkeysState();
+    const hotkeys = createTestHotkeysState();
 
     state.openHelpModal(hotkeys);
     expect(hotkeys.showHelpModal).toBe(true);
@@ -229,26 +135,17 @@ describe("createGraphCanvasState", () => {
     expect(hotkeys.showHelpModal).toBe(false);
   });
 
-  it("resets view when canvas and nodes exist", () => {
+  it("opens and closes search box", () => {
     const state = createGraphCanvasState();
-    const simState = {
-      simulation: { nodes: () => [{ id: "n1", title: "Test", x: 0, y: 0 }] },
-    } as any;
-    const transform = { x: 0, y: 0, k: 1 };
-    const ctx = {} as CanvasRenderingContext2D;
+    const hotkeys = createTestHotkeysState();
+    const redraw = vi.fn();
 
-    vi.mocked(getSimulationNodes).mockReturnValue([
-      { id: "n1", title: "Test", x: 0, y: 0 },
-    ]);
-    state.handleResetView(ctx, 800, 600, simState, transform);
+    state.handleOpenSearch(hotkeys);
+    expect(hotkeys.showSearchBox).toBe(true);
 
-    expect(getSimulationNodes).toHaveBeenCalledWith(simState);
-    expect(resetView).toHaveBeenCalledWith(
-      ctx,
-      800,
-      600,
-      expect.any(Array),
-      transform,
-    );
+    state.handleCloseSearch(hotkeys, redraw);
+    expect(hotkeys.showSearchBox).toBe(false);
+    expect(hotkeys.searchQuery).toBe("");
+    expect(redraw).toHaveBeenCalled();
   });
 });

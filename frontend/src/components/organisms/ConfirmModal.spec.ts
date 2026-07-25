@@ -17,9 +17,7 @@ describe("ConfirmModal", () => {
 
     expect(screen.getByText("Delete Note?")).toBeInTheDocument();
 
-    expect(
-      screen.getByText("Are you sure you want to delete this note?"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Are you sure you want to delete this note?")).toBeInTheDocument();
   });
 
   it("calls onConfirm when confirm button clicked", async () => {
