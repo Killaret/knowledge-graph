@@ -55,21 +55,7 @@ describe("CosmicBackground", () => {
     expect(canvas).toHaveClass("cosmic-background");
   });
 
-  it.skip("should have correct CSS positioning", () => {
-    // NOTE: This test is skipped because jsdom doesn't properly compute
-    // all CSS styles. The positioning is verified through E2E tests.
-    const { container } = render(CosmicBackground);
-    const canvas = container.querySelector("canvas");
 
-    expect(canvas).toBeTruthy();
-    expect(canvas).toHaveClass("cosmic-background");
-
-    // In real browser:
-    // const styles = window.getComputedStyle(canvas!);
-    // expect(styles.position).toBe('fixed');
-    // expect(styles.zIndex).toBe('0');
-    // expect(styles.pointerEvents).toBe('none');
-  });
 
   it("should be hidden from screen readers", () => {
     const { container } = render(CosmicBackground);

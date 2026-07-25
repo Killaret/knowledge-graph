@@ -344,7 +344,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
       expect(mockState.simulationNodes[0].y).toBeDefined();
     });
 
-    it.skip("renders unknown type nodes without type property", async () => {
+    it("renders unknown type nodes without type property", async () => {
       render(GraphCanvas, {
         props: { nodes: [{ id: "1", title: "Unknown" }], links: [] },
       });
@@ -353,7 +353,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
       expect(mockState.simulationNodes[0].type).toBeUndefined();
     });
 
-    it.skip("falls back to unknown for undefined type", async () => {
+    it("falls back to unknown for undefined type", async () => {
       render(GraphCanvas, {
         props: {
           nodes: [{ id: "1", title: "No Type", type: undefined }],
@@ -367,7 +367,7 @@ describe("GraphCanvas - Node Type Rendering", () => {
   });
 });
 
-describe.skip("Anomaly Rendering (Unknown Node Types)", () => {
+describe("Anomaly Rendering (Unknown Node Types)", () => {
   it("drawRealityRift renders without errors", () => {
     const ctx = {
       save: vi.fn(),
@@ -448,8 +448,10 @@ describe.skip("Anomaly Rendering (Unknown Node Types)", () => {
     drawChromaticMaw(ctx, 100, 100, 20, params);
 
     expect(ctx.save).toHaveBeenCalled();
-    expect(ctx.bezierCurveTo).toHaveBeenCalled();
     expect(ctx.createRadialGradient).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
   });
 
   it("drawVoidWhisper renders particles with connections", () => {
@@ -531,8 +533,10 @@ describe.skip("Anomaly Rendering (Unknown Node Types)", () => {
     drawCosmicAbomination(ctx, 100, 100, 20, params);
 
     expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.createRadialGradient).toHaveBeenCalled();
     expect(ctx.arc).toHaveBeenCalled();
-    expect(ctx.bezierCurveTo).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
   });
 
   it("drawUnknown dispatches to one anomaly renderer based on nodeId", () => {

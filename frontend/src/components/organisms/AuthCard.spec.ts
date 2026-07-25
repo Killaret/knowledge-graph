@@ -119,23 +119,5 @@ describe("AuthCard", () => {
     expect(card).toBeTruthy();
   });
 
-  it.skip("should have glass morphism effect on card", () => {
-    // NOTE: This test is skipped because jsdom doesn't properly compute
-    // backdrop-filter CSS property. The glass morphism effect is verified
-    // visually through E2E tests and by checking the CSS source.
-    const { container } = render(AuthCard, {
-      props: {
-        title: "Login",
-        subtitle: "Test",
-        showIcon: true,
-      },
-    });
 
-    const card = container.querySelector(".card");
-    expect(card).toBeTruthy();
-
-    // In real browser, this would be: backdrop-filter: blur(12px)
-    // const styles = window.getComputedStyle(card!);
-    // expect(styles.backdropFilter).toContain('blur');
-  });
 });
