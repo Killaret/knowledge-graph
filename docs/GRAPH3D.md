@@ -59,6 +59,8 @@ shared/
 
 `createLayoutProvider(runtime: Graph3DRuntimeConfig)` selects the active provider at runtime based on `frontend.graph.3d.layout_provider` in `knowledge-graph.config.json`. Routes `/graph/3d` and `/graph/3d/[id]` use `toRuntimeConfig()` + `createLayoutProvider()` instead of hard-coding a provider.
 
+On the home page, `FloatingControls` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
+
 The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
 `Graph3DEngine` detects when all nodes already carry x/y/z coordinates and shortens `warmStartTicks` from the default 80 to 10, preserving the service layout while still allowing a brief physical relaxation.

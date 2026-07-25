@@ -15,10 +15,12 @@
     onFilter,
     onImport,
     onExport,
+    onToggleLayoutProvider,
     typeFilters = [],
     selectedType = "all",
     typeCounts = {},
     currentView = "graph",
+    layoutProvider = "graph-service",
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
@@ -26,10 +28,12 @@
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
+    onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
     currentView?: "graph" | "list" | "3d";
+    layoutProvider?: "d3" | "graph-service";
   } = $props();
 
   let searchQuery = $state("");
@@ -56,6 +60,10 @@
 
   function handleFilter(typeId: string) {
     onFilter?.(typeId);
+  }
+
+  function toggleLayoutProvider(provider: "d3" | "graph-service") {
+    onToggleLayoutProvider?.(provider);
   }
 
   function handleLogin() {
@@ -146,6 +154,33 @@
       <span class="btn-label">{t("controls.viewList")}</span>
     </button>
   </div>
+
+  <!-- 3D Layout Provider Toggle -->
+  {#if currentView === "3d"}
+    <div class="layout-provider-toggle" data-testid="layout-provider-toggle">
+      <span class="layout-provider-label">{t("controls.layoutProviderTitle")}</span>
+      <button
+        type="button"
+        class="toggle-btn {layoutProvider === 'd3' ? 'active' : ''}"
+        onclick={() => toggleLayoutProvider("d3")}
+        title={t("controls.layoutD3Title")}
+        data-testid="layout-provider-d3"
+        aria-pressed={layoutProvider === "d3"}
+      >
+        {t("controls.layoutD3")}
+      </button>
+      <button
+        type="button"
+        class="toggle-btn {layoutProvider === 'graph-service' ? 'active' : ''}"
+        onclick={() => toggleLayoutProvider("graph-service")}
+        title={t("controls.layoutGraphServiceTitle")}
+        data-testid="layout-provider-graph-service"
+        aria-pressed={layoutProvider === "graph-service"}
+      >
+        {t("controls.layoutGraphService")}
+      </button>
+    </div>
+  {/if}
 
   <!-- Type Filters -->
   {#if typeFilters.length > 0}
@@ -368,6 +403,23 @@
     background: #f1f5f9;
     border-radius: 25px;
     flex-shrink: 0;
+  }
+
+  .layout-provider-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #f1f5f9;
+    border-radius: 25px;
+    flex-shrink: 0;
+  }
+
+  .layout-provider-label {
+    font-size: 12px;
+    color: #64748b;
+    padding: 0 4px;
+    white-space: nowrap;
   }
 
   .toggle-btn {
