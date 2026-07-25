@@ -33,6 +33,21 @@ function Check-Api {
     }
 }
 
+function Check-GraphService {
+    param(
+        [string]$Port,
+        [string]$Name
+    )
+    try {
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/health" -Method Get -TimeoutSec 5
+        Write-Host "  $Name graph-service: OK" -ForegroundColor Green
+        return 0
+    } catch {
+        Write-Host "  $Name graph-service: FAILED" -ForegroundColor Red
+        return 1
+    }
+}
+
 function Check-DevStack {
     Write-Host "`nChecking dev stack..." -ForegroundColor Yellow
     
@@ -55,7 +70,10 @@ function Check-DevStack {
     }
     
     # Check dev API (notes if public, fallback to public graph)
-    return (Check-Api -Port 18080 -Name "Dev")
+    $errors = 0
+    $errors += Check-Api -Port 18080 -Name "Dev"
+    $errors += Check-GraphService -Port 9091 -Name "Dev"
+    return $errors
 }
 
 function Check-PersonalStack {
@@ -79,8 +97,11 @@ function Check-PersonalStack {
         return 1
     }
     
-    # Check personal API
-    return (Check-Api -Port 18082 -Name "Personal")
+    # Check personal API and graph-service
+    $errors = 0
+    $errors += Check-Api -Port 18082 -Name "Personal"
+    $errors += Check-GraphService -Port 9092 -Name "Personal"
+    return $errors
 }
 
 function Check-TestStack {
@@ -104,8 +125,11 @@ function Check-TestStack {
         return 1
     }
     
-    # Check test API
-    return (Check-Api -Port 18083 -Name "Test")
+    # Check test API and graph-service
+    $errors = 0
+    $errors += Check-Api -Port 18083 -Name "Test"
+    $errors += Check-GraphService -Port 19091 -Name "Test"
+    return $errors
 }
 
 # Check requested stacks

@@ -29,6 +29,7 @@
     "test:smoke": "cross-env FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 playwright test --project=chromium-skip-auth --grep='@smoke'",
     "test:smoke:stack": "cross-env FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 playwright test --project=chromium-skip-auth --grep='@smoke'",
     "test:visual": "cross-env FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 playwright test --project=visual",
+    "test:visual:local": "cross-env FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 ARGOS_UPLOAD_LOCAL= playwright test --project=visual --update-snapshots",
     "test:visual:upload": "cross-env FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 ARGOS_UPLOAD_LOCAL=true playwright test --project=visual",
     "test:lighthouse": "lhci autorun",
     "test:all": "npm run test:unit && npm run test:skipauth && npm run test:bdd:skipauth && npm run test:realauth",
