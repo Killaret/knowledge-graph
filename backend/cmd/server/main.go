@@ -30,6 +30,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/email"
+	"knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
@@ -238,9 +239,19 @@ func run(
 		}
 	}
 
+	// Graph event publisher (nil when Redis is unavailable)
+	var eventPublisher *events.Publisher
+	if redisClient != nil {
+		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
+	}
+
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
+	if eventPublisher != nil {
+		noteHandler.SetEventPublisher(eventPublisher)
+		linkHandler.SetEventPublisher(eventPublisher)
+	}
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)

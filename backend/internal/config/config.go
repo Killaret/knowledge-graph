@@ -144,6 +144,7 @@ type Config struct {
 	// Redis
 	RedisURL            string
 	RedisFlushOnStartup bool
+	EventChannel        string
 
 	// NLP
 	NLPServiceURL string
@@ -378,6 +379,7 @@ func Load() (*Config, error) {
 		// Redis & NLP
 		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
 		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
 		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
 
 		// Search

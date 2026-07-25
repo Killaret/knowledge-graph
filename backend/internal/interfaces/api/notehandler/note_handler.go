@@ -12,6 +12,7 @@ import (
 	"knowledge-graph/internal/application/achievement"
 	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
+	appevents "knowledge-graph/internal/application/events"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
@@ -37,6 +38,7 @@ type Handler struct {
 	cfg                *config.Config
 	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
+	eventPublisher     appevents.Publisher
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -50,6 +52,13 @@ type Suggestion struct {
 	NoteID string  `json:"note_id"`
 	Title  string  `json:"title"`
 	Score  float64 `json:"score"`
+}
+
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
 }
 
 func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service) *Handler {
@@ -66,6 +75,11 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		graphCache:         graphCache,
 		achievementService: achievementService,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
 }
 
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
@@ -191,6 +205,13 @@ func (h *Handler) Create(c *gin.Context) {
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
+	}
+
+	// Notify graph-service cache invalidation subscribers
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
 	}
 
 	// Ставим задачи в очередь
@@ -337,6 +358,12 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event: %v", err)
+		}
+	}
+
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
@@ -392,6 +419,12 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
+		}
+	}
+
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -438,6 +471,15 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		userID := getUserIDString(c)
+		for _, id := range ids {
+			if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), userID); err != nil {
+				log.Printf("[NoteHandler] Failed to publish NoteDeleted event for batch: %v", err)
+			}
+		}
+	}
+
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -468,6 +510,12 @@ func (h *Handler) Restore(c *gin.Context) {
 		}
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for restore: %v", err)
+		}
 	}
 
 	// Invalidate graph cache for the user

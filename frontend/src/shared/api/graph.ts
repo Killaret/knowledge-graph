@@ -1,21 +1,10 @@
-import { api } from "./client";
+import ky, { HTTPError, TimeoutError } from "ky";
+import { api, refreshAccessToken } from "./client";
 import { apiConfig } from "$shared/config";
+import { accessToken, clearAuthState } from "$shared/stores/auth-session.svelte";
 import { formatMessage } from "$shared/utils/i18n";
 
 const userLocale = "ru";
-
-function getGraphApi() {
-  // В тестовом окружении (Vitest) используем полный URL напрямую
-  const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
-
-  const baseUrl = isTest
-    ? "http://localhost:9091/api"
-    : import.meta.env.DEV
-      ? "/graph-service/api"
-      : import.meta.env.VITE_GRAPH_SERVICE_URL || "/graph-service";
-
-  return api.extend({ prefixUrl: baseUrl, cache: "no-store" });
-}
 
 // Узел графа – заметка (звезда)
 export interface GraphNode {
@@ -66,7 +55,7 @@ function handleGraphError(error: unknown, context: string): never {
   throw new Error(formatMessage("graph.unknownError", userLocale));
 }
 
-// API response wrapper structure
+// API response wrapper structure used by graph-service
 interface GraphApiResponse {
   data: GraphData;
   meta?: {
@@ -83,42 +72,147 @@ function buildQuery(params: Record<string, string | number | undefined>): string
     .join("&");
 }
 
+function shouldFallback(error: unknown): boolean {
+  if (error instanceof TimeoutError) return true;
+  if (error instanceof HTTPError) {
+    return error.response.status >= 500 || error.response.status === 408 || error.response.status === 429;
+  }
+  if (error instanceof Error) {
+    return (
+      error.message.includes("Failed to fetch") ||
+      error.message.includes("NetworkError") ||
+      error.message.includes("network") ||
+      error.message.includes("timeout")
+    );
+  }
+  return false;
+}
+
+function normalizeGraphData(raw: unknown): GraphData {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "data" in raw &&
+    raw.data &&
+    typeof raw.data === "object" &&
+    "nodes" in (raw as { data: object }).data
+  ) {
+    return (raw as GraphApiResponse).data;
+  }
+  if (raw && typeof raw === "object" && "nodes" in (raw as GraphData) && Array.isArray((raw as GraphData).nodes)) {
+    return raw as GraphData;
+  }
+  return { nodes: [], links: [] };
+}
+
+function getGraphApi() {
+  const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
+
+  let baseUrl: string;
+  if (isTest) {
+    baseUrl = "http://localhost:9091/api";
+  } else if (import.meta.env.DEV) {
+    baseUrl = "/graph-service/api";
+  } else {
+    const configured = import.meta.env.VITE_GRAPH_SERVICE_URL || "/graph-service";
+    baseUrl = configured.endsWith("/api") ? configured : `${configured}/api`;
+  }
+
+  return ky.create({
+    prefixUrl: baseUrl,
+    timeout: 30000,
+    credentials: "include",
+    retry: {
+      limit: 0,
+    },
+    hooks: {
+      beforeRequest: [
+        (request) => {
+          const token = accessToken();
+          if (token) {
+            request.headers.set("Authorization", `Bearer ${token}`);
+          }
+        },
+      ],
+      afterResponse: [
+        async (request, options, response) => {
+          if (response.status !== 401) return response;
+          if (request.headers.get("X-Graph-Retry")) return response;
+
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            request.headers.set("X-Graph-Retry", "1");
+            return ky(request);
+          }
+          clearAuthState();
+          return response;
+        },
+      ],
+    },
+  });
+}
+
+async function callBackendFallback<T>(fn: () => Promise<T>, context: string): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    handleGraphError(error, context);
+  }
+}
+
 // Запросить граф для заметки (возвращает все прямые связи и связанные заметки)
 export async function getGraphData(
   noteId: string,
   depth: number = 2,
-  userId?: string,
+  _userId?: string,
   layout: "2d" | "3d" = "2d"
 ): Promise<GraphData> {
+  const query = buildQuery({ depth, layout });
   try {
-    const query = buildQuery({ depth, user_id: userId, layout });
-    const response = await getGraphApi()
+    const raw = await getGraphApi()
       .get(`v1/graph/note/${encodeURIComponent(noteId)}${query ? `?${query}` : ""}`)
-      .json<GraphApiResponse>();
-    return response.data || { nodes: [], links: [] };
+      .json<unknown>();
+    return normalizeGraphData(raw);
   } catch (error) {
-    return handleGraphError(error, `Failed to load graph for note ${noteId}`);
+    if (shouldFallback(error)) {
+      return callBackendFallback(
+        async () => {
+          const raw = await api.get(`v1/notes/${encodeURIComponent(noteId)}/graph?${buildQuery({ depth })}`).json<unknown>();
+          return normalizeGraphData(raw);
+        },
+        `Failed to load graph for note ${noteId}`
+      );
+    }
+    handleGraphError(error, `Failed to load graph for note ${noteId}`);
   }
 }
 
 // Запросить полный граф всех заметок и связей
 export async function getFullGraphData(
   limit: number = apiConfig.default_limit,
-  userId?: string,
+  _userId?: string,
   nocache?: boolean
 ): Promise<GraphData> {
+  const query = buildQuery({
+    limit,
+    nocache: nocache ? 1 : undefined,
+  });
   try {
-    const query = buildQuery({
-      limit,
-      user_id: userId,
-      nocache: nocache ? 1 : undefined,
-    });
-    const response = await getGraphApi()
+    const raw = await getGraphApi()
       .get(`v1/graph/full${query ? `?${query}` : ""}`)
-      .json<GraphApiResponse>();
-    return response.data || { nodes: [], links: [] };
+      .json<unknown>();
+    return normalizeGraphData(raw);
   } catch (error) {
-    return handleGraphError(error, "Failed to load full graph");
+    if (shouldFallback(error)) {
+      return callBackendFallback(
+        async () => {
+          const raw = await api.get(`v1/graph/all?${buildQuery({ limit })}`).json<unknown>();
+          return normalizeGraphData(raw);
+        },
+        "Failed to load full graph"
+      );
+    }
+    handleGraphError(error, "Failed to load full graph");
   }
 }
 
@@ -160,17 +254,9 @@ export async function getCachedGraph(): Promise<GraphData | null> {
 }
 
 // Запросить свежий граф с опциональным дельта-обновлением
-export async function getFreshGraph(userId?: string): Promise<FreshGraphResponse> {
+export async function getFreshGraph(): Promise<FreshGraphResponse> {
   try {
-    if (userId) {
-      const response = await getGraphApi().get(`v1/graph/full?${buildQuery({ user_id: userId })}`);
-      const body = await response.json<GraphApiResponse>();
-      return { fresh: body.data || { nodes: [], links: [] } };
-    }
-
-    const response = await api
-      .get("v1/me/graph/fresh", { cache: "no-store" })
-      .json<FreshGraphApiResponse>();
+    const response = await api.get("v1/me/graph/fresh", { cache: "no-store" }).json<FreshGraphApiResponse>();
     return response.data || { fresh: { nodes: [], links: [] } };
   } catch (error) {
     return handleGraphError(error, "Failed to load fresh graph");

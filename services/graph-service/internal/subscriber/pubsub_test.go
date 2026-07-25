@@ -17,13 +17,13 @@ import (
 
 type mockPostgresClient struct{}
 
-func (m *mockPostgresClient) GetNotes(ctx context.Context, rootID string, depth int) ([]*db.Note, []*db.Link, error) {
+func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter) ([]*db.Note, []*db.Link, error) {
 	return []*db.Note{
-		{ID: "note-1", Title: "Note 1"},
-		{ID: "note-2", Title: "Note 2"},
-	}, []*db.Link{
-		{Source: "note-1", Target: "note-2", LinkType: "related", Weight: 0.5},
-	}, nil
+			{ID: "note-1", Title: "Note 1"},
+			{ID: "note-2", Title: "Note 2"},
+		}, []*db.Link{
+			{Source: "note-1", Target: "note-2", LinkType: "related", Weight: 0.5},
+		}, nil
 }
 
 func (m *mockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {

@@ -56,7 +56,10 @@ func TestPostgresClient_Integration(t *testing.T) {
 			id UUID PRIMARY KEY,
 			title TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT NOW(),
-			updated_at TIMESTAMP DEFAULT NOW()
+			updated_at TIMESTAMP DEFAULT NOW(),
+			deleted_at TIMESTAMP,
+			creator_id UUID,
+			is_public BOOLEAN NOT NULL DEFAULT false
 		);
 
 		CREATE TABLE IF NOT EXISTS links (
@@ -65,7 +68,9 @@ func TestPostgresClient_Integration(t *testing.T) {
 			target_note_id UUID NOT NULL REFERENCES notes(id),
 			link_type TEXT NOT NULL,
 			weight FLOAT NOT NULL DEFAULT 0.5,
-			created_at TIMESTAMP DEFAULT NOW()
+			created_at TIMESTAMP DEFAULT NOW(),
+			deleted_at TIMESTAMP,
+			creator_id UUID
 		);
 
 		CREATE TABLE IF NOT EXISTS note_embeddings (
@@ -77,12 +82,12 @@ func TestPostgresClient_Integration(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	// Insert test data
+	// Insert test data (include required visibility columns)
 	_, err = pool.Exec(ctx, `
-		INSERT INTO notes (id, title) VALUES 
-			('550e8400-e29b-41d4-a716-446655440000', 'Note 1'),
-			('550e8400-e29b-41d4-a716-446655440001', 'Note 2'),
-			('550e8400-e29b-41d4-a716-446655440002', 'Note 3');
+		INSERT INTO notes (id, title, creator_id, is_public) VALUES 
+			('550e8400-e29b-41d4-a716-446655440000', 'Note 1', NULL, true),
+			('550e8400-e29b-41d4-a716-446655440001', 'Note 2', NULL, true),
+			('550e8400-e29b-41d4-a716-446655440002', 'Note 3', NULL, true);
 	`)
 	require.NoError(t, err)
 
@@ -97,14 +102,21 @@ func TestPostgresClient_Integration(t *testing.T) {
 	client := NewPostgresClient(pool)
 
 	t.Run("GetNotes_All", func(t *testing.T) {
-		notes, links, err := client.GetNotes(ctx, "", 0)
+		notes, links, err := client.GetNotes(ctx, NotesFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, 3, len(notes))
+		assert.Equal(t, 2, len(links))
+	})
+
+	t.Run("GetNotes_Public", func(t *testing.T) {
+		notes, links, err := client.GetNotes(ctx, NotesFilter{IsPublic: true})
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(notes))
 		assert.Equal(t, 2, len(links))
 	})
 
 	t.Run("GetNotes_WithRootAndDepth", func(t *testing.T) {
-		notes, links, err := client.GetNotes(ctx, "550e8400-e29b-41d4-a716-446655440000", 2)
+		notes, links, err := client.GetNotes(ctx, NotesFilter{RootID: "550e8400-e29b-41d4-a716-446655440000", Depth: 2})
 		require.NoError(t, err)
 		assert.Greater(t, len(notes), 0)
 		assert.Greater(t, len(links), 0)

@@ -36,6 +36,26 @@ func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLi
 	}
 }
 
+func (s *graphService) grpcUserID(ctx context.Context, reqUserID string) string {
+	if userID, ok := userIDFromContext(ctx); ok && userID != "" {
+		return userID
+	}
+	if reqUserID != "" {
+		return reqUserID
+	}
+	return "public"
+}
+
+func (s *graphService) grpcFilter(ctx context.Context, reqUserID string) db.NotesFilter {
+	filter := db.NotesFilter{}
+	if userID, ok := userIDFromContext(ctx); ok && userID != "" {
+		filter.UserID = userID
+	} else if reqUserID != "" && reqUserID != "public" {
+		filter.UserID = reqUserID
+	}
+	return filter
+}
+
 // GetNoteLayout returns the layout for a specific note and its neighbors
 func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.NoteLayoutRequest) (*graphservice.LayoutResponse, error) {
 	if req == nil {
@@ -44,26 +64,25 @@ func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.Note
 
 	noteID := req.NoteId
 	depth := req.Depth
-	userID := req.UserId
-
-	if userID == "" {
-		userID = "public"
-	}
-
 	if depth <= 0 {
 		depth = int32(s.defaultDepth)
 	}
 
-	log.Printf("[GraphService] GetNoteLayout: noteID=%s, depth=%d, userID=%s", noteID, depth, userID)
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+	filter.RootID = noteID
+	filter.Depth = int(depth)
+
+	log.Printf("[GraphService] GetNoteLayout: noteID=%s, depth=%d, userID=%s", noteID, depth, cacheUserID)
 
 	// Try cache first
-	if cached, hash, err := s.cache.LoadNoteLayout(ctx, noteID, int(depth)); err == nil && cached != nil {
+	if cached, hash, err := s.cache.LoadNoteLayout(ctx, cacheUserID, noteID, int(depth)); err == nil && cached != nil {
 		log.Printf("[GraphService] Cache hit for note layout: %s", noteID)
 		return convertLayoutResponse(cached, hash), nil
 	}
 
 	// Load from database
-	notes, links, err := s.postgres.GetNotes(ctx, noteID, int(depth))
+	notes, links, err := s.postgres.GetNotes(ctx, filter)
 	if err != nil {
 		log.Printf("[GraphService] Failed to load notes from DB: %v", err)
 		return nil, status.Errorf(codes.Internal, "failed to load graph: %v", err)
@@ -74,7 +93,7 @@ func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.Note
 	hash := computeLayoutHash(layout)
 
 	// Cache the result
-	if err := s.cache.SaveNoteLayout(ctx, noteID, int(depth), layout, hash); err != nil {
+	if err := s.cache.SaveNoteLayout(ctx, cacheUserID, noteID, int(depth), layout, hash); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache note layout: %v", err)
 	}
 
@@ -88,27 +107,25 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 	}
 
 	ctx := stream.Context()
-	userID := req.UserId
 	limit := req.Limit
-
-	if userID == "" {
-		userID = "public"
-	}
 
 	if limit <= 0 {
 		limit = int32(s.fullLimit)
 	}
 
-	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d", userID, limit)
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+
+	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d", cacheUserID, limit)
 
 	// Try cache first
-	if cached, hash, err := s.cache.LoadFullLayout(ctx, userID); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for full layout: user=%s", userID)
+	if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
+		log.Printf("[GraphService] Cache hit for full layout: user=%s", cacheUserID)
 		return s.streamLayout(cached, hash, stream)
 	}
 
 	// Load from database
-	notes, links, err := s.postgres.GetNotes(ctx, "", 0)
+	notes, links, err := s.postgres.GetNotes(ctx, filter)
 	if err != nil {
 		log.Printf("[GraphService] Failed to load full graph from DB: %v", err)
 		return status.Errorf(codes.Internal, "failed to load full graph: %v", err)
@@ -124,7 +141,7 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 	hash := computeLayoutHash(layout)
 
 	// Cache the result
-	if err := s.cache.SaveFullLayout(ctx, userID, layout, hash); err != nil {
+	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
 	}
 
@@ -186,27 +203,24 @@ func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequ
 		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
 	}
 
-	userID := req.UserId
 	lastHash := req.LastHash
-
-	if userID == "" {
-		userID = "public"
-	}
-
 	if lastHash == "" {
 		return nil, status.Error(codes.InvalidArgument, "last_hash is required")
 	}
 
-	log.Printf("[GraphService] GetDelta: userID=%s, lastHash=%s", userID, lastHash)
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+
+	log.Printf("[GraphService] GetDelta: userID=%s, lastHash=%s", cacheUserID, lastHash)
 
 	// Try to load delta from cache first
-	if delta, err := s.cache.LoadDelta(ctx, userID, lastHash); err == nil && delta != nil {
+	if delta, err := s.cache.LoadDelta(ctx, cacheUserID, lastHash); err == nil && delta != nil {
 		log.Printf("[GraphService] Cache hit for delta: %s", lastHash)
 		return convertDeltaResponse(delta), nil
 	}
 
 	// Load current layout
-	notes, links, err := s.postgres.GetNotes(ctx, "", 0)
+	notes, links, err := s.postgres.GetNotes(ctx, filter)
 	if err != nil {
 		log.Printf("[GraphService] Failed to load current layout: %v", err)
 		return nil, status.Errorf(codes.Internal, "failed to load current layout: %v", err)
@@ -216,7 +230,7 @@ func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequ
 	currentHash := computeLayoutHash(current)
 
 	// Load old layout for comparison
-	oldLayout, _, err := s.cache.LoadFullLayout(ctx, userID)
+	oldLayout, _, err := s.cache.LoadFullLayout(ctx, cacheUserID)
 	if err != nil {
 		log.Printf("[GraphService] Failed to load old layout for delta: %v", err)
 		// If no old layout, return everything as added
@@ -232,12 +246,12 @@ func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequ
 	delta.CurrentHash = currentHash
 
 	// Cache the delta
-	if err := s.cache.SaveDelta(ctx, userID, lastHash, delta); err != nil {
+	if err := s.cache.SaveDelta(ctx, cacheUserID, lastHash, delta); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
 	}
 
 	// Update cached full layout
-	if err := s.cache.SaveFullLayout(ctx, userID, current, currentHash); err != nil {
+	if err := s.cache.SaveFullLayout(ctx, cacheUserID, current, currentHash); err != nil {
 		log.Printf("[GraphService] Warning: failed to update full layout cache: %v", err)
 	}
 

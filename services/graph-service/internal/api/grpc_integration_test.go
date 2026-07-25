@@ -10,7 +10,6 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,14 +22,14 @@ import (
 
 type GRPCIntegrationTestSuite struct {
 	suite.Suite
-	redis     *miniredis.Miniredis
-	server    *grpc.Server
-	client    graphservice.GraphServiceClient
-	conn      *grpc.ClientConn
-	listener  *bufconn.Listener
-	pgPool    *pgxpool.Pool
-	cache     *cache.RedisCache
-	postgres  db.PostgresClient
+	redis    *miniredis.Miniredis
+	server   *grpc.Server
+	client   graphservice.GraphServiceClient
+	conn     *grpc.ClientConn
+	listener *bufconn.Listener
+	pgPool   *pgxpool.Pool
+	cache    *cache.RedisCache
+	postgres db.PostgresClient
 }
 
 func (s *GRPCIntegrationTestSuite) SetupSuite() {
@@ -41,7 +40,7 @@ func (s *GRPCIntegrationTestSuite) SetupSuite() {
 	// In a real integration test, we would use testcontainers-go
 	// For now, we'll skip actual PostgreSQL and use a mock
 	// This is a placeholder for a proper integration test
-	
+
 	// Create bufconn listener for in-memory gRPC
 	s.listener = bufconn.Listen(1024 << 10)
 
@@ -169,7 +168,7 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 	defer cancel()
 
 	userID := "test-user-delta"
-	
+
 	// First, ensure we have a cached layout
 	req := &graphservice.FullLayoutRequest{
 		UserId: userID,
@@ -177,7 +176,7 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 	}
 	stream, err := s.client.GetFullLayout(ctx, req)
 	s.Require().NoError(err)
-	
+
 	// Consume the stream
 	for {
 		_, err := stream.Recv()
@@ -217,13 +216,13 @@ func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {
 // mockPostgresClient is a mock implementation for testing
 type mockPostgresClient struct{}
 
-func (m *mockPostgresClient) GetNotes(ctx context.Context, rootID string, depth int) ([]*db.Note, []*db.Link, error) {
+func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter) ([]*db.Note, []*db.Link, error) {
 	notes := []*db.Note{
 		{ID: "note-1", Title: "Note 1"},
 		{ID: "note-2", Title: "Note 2"},
 		{ID: "note-3", Title: "Note 3"},
 	}
-	
+
 	links := []*db.Link{
 		{Source: "note-1", Target: "note-2", LinkType: "related", Weight: 0.5},
 		{Source: "note-2", Target: "note-3", LinkType: "related", Weight: 0.7},

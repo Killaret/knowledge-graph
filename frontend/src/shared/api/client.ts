@@ -43,7 +43,7 @@ let refreshPromise: Promise<boolean> | null = null;
  * avoid a static circular dependency: the auth store imports this client through
  * API modules, and this client needs to persist tokens after refresh.
  */
-async function refreshAccessToken(): Promise<boolean> {
+export async function refreshAccessToken(): Promise<boolean> {
   try {
     const tokens = await api.post("v1/auth/refresh").json<AuthTokens>();
     saveTokens(tokens);
