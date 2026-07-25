@@ -14,7 +14,7 @@
     onError?: (message: string) => void;
   }
 
-  let { onReady }: Props = $props();
+  const { onReady }: Props = $props();
 
   onMount(() => {
     onReady?.();
