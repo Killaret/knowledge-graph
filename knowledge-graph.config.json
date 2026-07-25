@@ -144,7 +144,22 @@
         "hover_delay_ms": 150
       },
       "3d": {
-        "max_nodes": 500
+        "max_nodes": 500,
+        "layout_provider": "graph-service",
+        "fog": {
+          "presets": {
+            "birth": { "density_initial": 0.08, "density_final": 0.005 },
+            "nebula": { "density_initial": 0.04, "density_final": 0.015 },
+            "deep-space": { "density_initial": 0.0, "density_final": 0.0 }
+          },
+          "default_preset": "birth"
+        },
+        "performance": {
+          "fps_threshold_low": 20,
+          "fps_threshold_high": 45,
+          "low_fps_sample_count": 30,
+          "starfield_counts": { "high": 1500, "medium": 800, "low": 300 }
+        }
       },
       "anomaly": {
         "reality_rift": {

@@ -204,6 +204,9 @@
     <div class="note-card__header">
       <div class="note-card__type" aria-hidden="true">
         <span class="note-card__emoji">{getTypeEmoji(note.type)}</span>
+        {#if note.is_public}
+          <span class="note-card__public" title={t("noteCard.public")} aria-label={t("noteCard.publicAria")}>🌐</span>
+        {/if}
         {#if isNew()}
           <span
             class="note-card__indicator note-card__indicator--new"
@@ -377,6 +380,12 @@
     font-size: 1.25rem;
     line-height: 1;
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
+  }
+
+  .note-card__public {
+    font-size: 0.875rem;
+    line-height: 1;
+    opacity: 0.8;
   }
 
   .note-card__indicator {

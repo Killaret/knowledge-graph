@@ -1,7 +1,7 @@
 # Дорожная карта Knowledge Graph
 
-**Обновлено:** 23 июля 2026 г.  
-**Статус:** Система стабилизирована, регрессионное тестирование завершено, ручное тестирование в процессе  
+**Обновлено:** 25 июля 2026 г.  
+**Статус:** Унификация графового API завершена; ожидается верификация  
 **Версия:** v2.5
 
 ---
@@ -28,11 +28,77 @@
 
 **Подзадачи:**
 - [ ] Frontend E2E тесты (`cd frontend && npx playwright test`)
-- [ ] Backend интеграционные тесты (`cd backend && go test -tags=integration ./...`)
-- [ ] Проверка CI/CD workflows
+- [x] Backend интеграционные тесты (`cd backend && go test -tags=integration ./...`)
+- [x] Проверка CI/CD workflows
 - [ ] Тестирование NLP API
 - [ ] Тестирование backend auth API
-- [ ] Проверка публичного графа
+- [x] Проверка публичного графа
+
+---
+
+## 🧩 Graph Service: план стабилизации и развития
+
+> **Контекст:** согласно ADR 013, основной бэкенд должен публиковать события `Note*`/`Link*` и перестать быть основным источником графа — `graph-service` берёт на себя расчёт раскладок, кэширование и аналитику. Основной бэкенд сохраняется только как **fallback** при недоступности `graph-service`.
+
+| Задача | Статус | Приоритет | Промт готов |
+|--------|--------|-----------|-------------|
+| Событийная инвалидация и fallback-модель | ✅ Выполнено | 🔴 Критический | 📝 Да |
+| Авторизация и user-scoped фильтрация в graph-service | ✅ Выполнено | 🔴 Критический | 📝 Да |
+| Унификация графового API и устранение двойной загрузки | ✅ Выполнено | 🟠 Высокий | 📝 Да |
+| Реализация graph analytics API (Neighbors, Path, Recommendations) | ✅ Выполнено | 🟡 Средний | 📝 Да |
+| Materialized view / графовый индекс | ✅ Выполнено | 🟡 Средний | 📝 Да |
+| gRPC-web / SSE стриминг полного графа | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
+| Улучшение layout-алгоритмов (Honeycomb, force-directed, Cosmic Navigator) | 🔄 В процессе | 🟠 Высокий | 📝 Да |
+
+### 1. Событийная инвалидация и fallback-модель
+
+- `note_handler` и `link_handler` публикуют события `NoteCreated`/`Updated`/`Deleted` и `LinkCreated`/`Updated`/`Deleted` через `internal/infrastructure/events/publisher.go` в Redis channel `graph:events`.
+- `graph-service` (`internal/subscriber/pubsub.go`) слушает channel и инвалидирует ключи `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
+- Эндпоинты основного бэкенда `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` становятся **fallback**: frontend/graphql proxy проверяет health `graph-service` и переключается на backend только при недоступности.
+- Задача критическая, так как сейчас `events.Publisher` не подключён к хендлерам, и кэш `graph-service` инвалидируется только по TTL.
+
+### 2. Авторизация и user-scoped фильтрация в graph-service
+
+- Добавить JWT-middleware в `graph-service` для HTTP и gRPC.
+- `user_id` брать из токена, убрать query-param `user_id` из публичных HTTP-запросов.
+- Добавить фильтр `creator_id` в SQL-запросы `postgres_client.go` (`services/graph-service/internal/db/postgres_client.go`) для всех `notes`/`links`.
+- Прокси `frontend/src/hooks.server.ts` должен передавать `authorization` либо signed `x-internal-auth` header в `graph-service`.
+- Публичный граф вынести в отдельный endpoint (`/api/v1/graph/public`) с фильтром `is_public = true`.
+
+### 3. Унификация графового API и устранение двойной загрузки ✅
+
+- Стандартизировать поля ответа graph-service: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
+- Убрать fallback-нормализацию (`id/Id/ID`, `source/source_note_id`) в `frontend/src/routes/+page.svelte`.
+- `+page.svelte` делает один запрос `getGraphWithPreload()` (который при отсутствии кэша загружает `getFullGraphData()`) в `Promise.all([getNotes(), getGraphWithPreload()])` для аутентифицированных пользователей; последовательный `getFreshGraph()` и повторный `loadGraphData()` удалены.
+- Использовать `/api/v1/graph/delta?last_hash=` для инкрементальных обновлений через `PreloadService`.
+- В `PreloadService` добавлен `seedGraph(graphData)`, чтобы любой ответ полного графа кэшировался с `lastHash` и мог применяться в дельта-обновлениях.
+
+### 4. Graph analytics API
+
+- Реализовать gRPC/HTTP методы `GetNeighbors`, `GetPath`, `GetRecommendations` в `graph-service`.
+- HTTP endpoints:
+  - `GET /api/v1/graph/note/:id/neighbors?depth=`
+  - `GET /api/v1/graph/path?from=&to=`
+  - `GET /api/v1/graph/recommendations?note_id=&limit=`
+- Заменить backend BFS (`backend/internal/domain/graph/bfs.go`) и traversal-логику recommendation на вызовы `graph-service`.
+
+### 5. Materialized view / графовый индекс
+
+- Создать materialized view `note_links_closure` для транзитивного замыкания связей.
+- Обновлять view по событиям `LinkCreated`/`LinkDeleted` (async через trigger или ASYNQ).
+- Использовать view для `GetPath`, подсчёта `degree`, семантической кластеризации и Honeycomb-раскладки.
+
+### 6. gRPC-web / SSE стриминг полного графа
+
+- Для графов >500 узлов стримить `GetFullLayout` по чанкам через gRPC streaming или Server-Sent Events.
+- Frontend постепенно отрисовывает узлы и связи (progressive rendering).
+- Альтернатива для JSON-API: NDJSON streaming.
+
+### 7. Улучшение layout-алгоритмов
+
+- **Honeycomb View:** радиальная раскладка с центром в узле с максимальным `sum(weight)` и концентрическими кругами по порогам веса.
+- **Force-directed 2D/3D:** заменить/дополнить текущий круг/спираль на физическую симуляцию на сервере.
+- **Cosmic Navigator:** гибридная серверная 3D-раскладка (`layout=3d`) + клиентская релаксация `d3-force-3d`.
 
 ---
 
@@ -57,7 +123,7 @@
 
 | Задача | Статус | Приоритет | Промт готов |
 |--------|--------|-----------|-------------|
-| Реализовать publish/unpublish функциональность | ⏳ Запланировано | 🟠 Высокий | 📝 Да |
+| Реализовать publish/unpublish функциональность | ✅ Выполнено | 🟠 Высокий | 📝 Да |
 
 **Объём:**
 - Backend API для publish/unpublish
@@ -83,6 +149,9 @@
 - Уровни зума и элементы управления
 - Поиск и фильтрация в навигаторе
 - Интеграция с существующим графом
+- [x] **Гибридная 3D-раскладка через graph-service** — runtime-переключение провайдера через `createLayoutProvider` / `toRuntimeConfig`.
+- [x] **Пресеты тумана** — настраиваемые пресеты `birth` / `nebula` / `deep-space` с плавным переходом initial→final.
+- [x] **Пресеты производительности** — автоматическое снижение/повышение качества по FPS: туман, звёздное поле, auto-rotate.
 
 ### 🔗 Улучшение связей
 
@@ -245,6 +314,18 @@
 | Автоматическая проверка состояния dev pre/post-test | ✅ Done | 🔴 Critical | Июль 2026 |
 | Auto-commit при успешном цикле регрессии | ✅ Done | 🔴 Critical | Июль 2026 |
 | Проверка идентичности dev/personal стеков | ✅ Done | 🔴 Critical | Июль 2026 |
+| CI/CD service-контейнеры, таймауты и Docker health-checks | ✅ Done | 🔴 Critical | Июль 2026 |
+
+### 🌌 Graph Service, аналитика и публичный граф
+
+| Задача | Статус | Приоритет | Дата завершения |
+|--------|--------|-----------|-----------------|
+| Событийная инвалидация и fallback-модель | ✅ Выполнено | 🔴 Критический | Июль 2026 |
+| Авторизация и user-scoped фильтрация в graph-service | ✅ Выполнено | 🔴 Критический | Июль 2026 |
+| Реализация graph analytics API (Neighbors, Path, Recommendations) | ✅ Выполнено | 🟡 Средний | Июль 2026 |
+| Materialized view / графовый индекс (`note_links_closure`) | ✅ Выполнено | 🟡 Средний | Июль 2026 |
+| Публичный пул заметок (publish/unpublish) | ✅ Выполнено | 🟠 Высокий | Июль 2026 |
+| 3D-граф через graph-service (`GraphServiceLayoutProvider`) | ✅ Выполнено | 🟠 Высокий | Июль 2026 |
 
 ### 🎨 Улучшения frontend
 

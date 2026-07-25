@@ -6,6 +6,8 @@ import type { GraphNode, GraphLink, GraphData } from "./graph";
 
 describe("graph API", () => {
   beforeEach(() => {
+    // Treat tests as authenticated so getFullGraphData targets /v1/graph/full
+    (window as { __SKIP_AUTH__?: boolean }).__SKIP_AUTH__ = true;
     // Reset any default handlers
     server.resetHandlers();
   });

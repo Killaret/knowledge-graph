@@ -15,21 +15,25 @@
     onFilter,
     onImport,
     onExport,
+    onToggleLayoutProvider,
     typeFilters = [],
     selectedType = "all",
     typeCounts = {},
     currentView = "graph",
+    layoutProvider = "graph-service",
   }: {
     onCreate?: () => void;
     onSearch?: (query: string) => void;
-    onToggleView?: (view: "graph" | "list") => void;
+    onToggleView?: (view: "graph" | "list" | "3d") => void;
     onFilter?: (type: string) => void;
     onImport?: () => void;
     onExport?: () => void;
+    onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
-    currentView?: "graph" | "list";
+    currentView?: "graph" | "list" | "3d";
+    layoutProvider?: "d3" | "graph-service";
   } = $props();
 
   let searchQuery = $state("");
@@ -50,12 +54,16 @@
     onSearch?.(q.value);
   }
 
-  function toggleView(targetView: "graph" | "list") {
+  function toggleView(targetView: "graph" | "list" | "3d") {
     onToggleView?.(targetView);
   }
 
   function handleFilter(typeId: string) {
     onFilter?.(typeId);
+  }
+
+  function toggleLayoutProvider(provider: "d3" | "graph-service") {
+    onToggleLayoutProvider?.(provider);
   }
 
   function handleLogin() {
@@ -97,24 +105,30 @@
       </svg>
       <span class="btn-label">{t("controls.view2D")}</span>
     </button>
-    <!-- 3D functionality frozen for v1 - see CHANGELOG.md -->
-    <!--
     <button
       type="button"
-      class="toggle-btn"
-      onclick={handleToggle3D}
-      title={noteId ? "3D Graph for selected note" : "Full 3D Graph"}
+      class="toggle-btn {currentView === '3d' ? 'active' : ''}"
+      onclick={() => toggleView("3d")}
+      title={t("controls.graph3DTitle")}
       data-testid="view-toggle-3d"
-      aria-label={noteId ? "Open 3D graph for selected note" : "Open full 3D graph"}
+      aria-pressed={currentView === "3d"}
+      aria-label={t("controls.graph3DAria")}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-        <path d="M2 17l10 5 10-5"/>
-        <path d="M2 12l10 5 10-5"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
       </svg>
-      <span class="btn-label">3D</span>
+      <span class="btn-label">{t("controls.view3D")}</span>
     </button>
-    -->
     <button
       type="button"
       class="toggle-btn {currentView === 'list' ? 'active' : ''}"
@@ -140,6 +154,33 @@
       <span class="btn-label">{t("controls.viewList")}</span>
     </button>
   </div>
+
+  <!-- 3D Layout Provider Toggle -->
+  {#if currentView === "3d"}
+    <div class="layout-provider-toggle" data-testid="layout-provider-toggle">
+      <span class="layout-provider-label">{t("controls.layoutProviderTitle")}</span>
+      <button
+        type="button"
+        class="toggle-btn {layoutProvider === 'd3' ? 'active' : ''}"
+        onclick={() => toggleLayoutProvider("d3")}
+        title={t("controls.layoutD3Title")}
+        data-testid="layout-provider-d3"
+        aria-pressed={layoutProvider === "d3"}
+      >
+        {t("controls.layoutD3")}
+      </button>
+      <button
+        type="button"
+        class="toggle-btn {layoutProvider === 'graph-service' ? 'active' : ''}"
+        onclick={() => toggleLayoutProvider("graph-service")}
+        title={t("controls.layoutGraphServiceTitle")}
+        data-testid="layout-provider-graph-service"
+        aria-pressed={layoutProvider === "graph-service"}
+      >
+        {t("controls.layoutGraphService")}
+      </button>
+    </div>
+  {/if}
 
   <!-- Type Filters -->
   {#if typeFilters.length > 0}
@@ -362,6 +403,23 @@
     background: #f1f5f9;
     border-radius: 25px;
     flex-shrink: 0;
+  }
+
+  .layout-provider-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #f1f5f9;
+    border-radius: 25px;
+    flex-shrink: 0;
+  }
+
+  .layout-provider-label {
+    font-size: 12px;
+    color: #64748b;
+    padding: 0 4px;
+    white-space: nowrap;
   }
 
   .toggle-btn {

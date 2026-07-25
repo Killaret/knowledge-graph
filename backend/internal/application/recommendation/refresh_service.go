@@ -67,6 +67,11 @@ func (s *RefreshService) RefreshRecommendations(ctx context.Context, noteID uuid
 		return fmt.Errorf("note not found: %s", noteID)
 	}
 
+	// Pass the note's creator so graph-service visibility filtering is applied.
+	if n.CreatorID() != nil {
+		ctx = graph.WithUserID(ctx, n.CreatorID().String())
+	}
+
 	// Get fresh recommendations via BFS traversal
 	suggestions, err := s.traversalSvc.GetSuggestions(ctx, noteID, s.topN)
 	if err != nil {

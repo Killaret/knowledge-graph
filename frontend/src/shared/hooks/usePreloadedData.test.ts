@@ -74,6 +74,8 @@ describe("usePreloadedData Hooks", () => {
 
       expect(result).toEqual(mockGraphData);
       expect(graphApi.getFullGraphData).toHaveBeenCalledWith(500);
+      // The fetched graph is seeded into PreloadService for future delta updates.
+      expect(PreloadService.getPreloadedGraph()).toEqual(mockGraphData);
     });
 
     it("should use default limit when not specified", async () => {

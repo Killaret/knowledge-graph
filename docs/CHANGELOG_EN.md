@@ -10,6 +10,20 @@
 
 ## [Unreleased]
 
+### 🌌 3D Graph Unfreeze
+
+- **Re-integrated 3D graph view** into the main page and `/graph/3d` routes.
+  - New `Graph3D.svelte` and `GraphCanvas3D.svelte` components.
+  - Lazy-loaded via dynamic `import()` to avoid impacting the 2D bundle.
+  - New `features/graph-canvas/graph3d/` engine with scene, node/link/label managers, camera helpers, and `d3-force-3d` simulation.
+  - Uses `CelestialBody` and `LinkType` value objects for consistent styling.
+  - Respects the existing `FilterState` (type filter and search).
+  - Added 3D toggle to `FloatingControls` with updated i18n keys.
+  - Added `d3-force-3d` dependency, type declarations, and Vitest mocks.
+  - Removed frozen redirect behavior from `/graph/3d` and `/graph/3d/:id`.
+  - Added unit test coverage: `Graph3D.spec.ts`.
+  - Documented in `docs/GRAPH3D.md`.
+
 ### 🚀 Graph Service Configuration
 
 - **Unified Configuration for graph-service**: All parameters now sourced from `knowledge-graph.config.json`

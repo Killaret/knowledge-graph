@@ -63,7 +63,8 @@ func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
 		if err != nil {
 			return err
 		}
-		return tx.Model(&existing).Updates(model).Error
+		// Select("*") ensures boolean zero values (e.g. is_public=false) are persisted.
+		return tx.Model(&existing).Select("*").Updates(model).Error
 	})
 }
 
@@ -287,6 +288,7 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 		Type:      noteType,
 		Metadata:  datatypes.JSON(metadataJSON),
 		CreatorID: n.CreatorID(),
+		IsPublic:  n.IsPublic(),
 		CreatedAt: n.CreatedAt(),
 		UpdatedAt: n.UpdatedAt(),
 	}, nil
@@ -316,7 +318,7 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	if noteType == "" {
 		noteType = "star"
 	}
-	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt), nil
+	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt, note.WithIsPublic(m.IsPublic)), nil
 }
 
 // toDomainNotes преобразует список GORM-моделей в список доменных сущностей

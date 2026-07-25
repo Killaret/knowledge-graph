@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -12,10 +13,12 @@ import (
 	"knowledge-graph/internal/application/achievement"
 	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
+	appevents "knowledge-graph/internal/application/events"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	dcache "knowledge-graph/internal/domain/cache"
+	graphdomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/domain/note"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
@@ -37,6 +40,7 @@ type Handler struct {
 	cfg                *config.Config
 	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
+	eventPublisher     appevents.Publisher
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -50,6 +54,13 @@ type Suggestion struct {
 	NoteID string  `json:"note_id"`
 	Title  string  `json:"title"`
 	Score  float64 `json:"score"`
+}
+
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
 }
 
 func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service) *Handler {
@@ -66,6 +77,11 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		graphCache:         graphCache,
 		achievementService: achievementService,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
 }
 
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
@@ -193,6 +209,13 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
+	// Notify graph-service cache invalidation subscribers
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
 	// Ставим задачи в очередь
 	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
 	if h.taskQueue != nil {
@@ -224,6 +247,7 @@ func (h *Handler) Create(c *gin.Context) {
 		"content":    newNote.Content().String(),
 		"type":       newNote.Type(),
 		"metadata":   newNote.Metadata().Value(),
+		"is_public":  newNote.IsPublic(),
 		"created_at": newNote.CreatedAt(),
 		"updated_at": newNote.UpdatedAt(),
 	}
@@ -337,6 +361,12 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event: %v", err)
+		}
+	}
+
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
@@ -358,10 +388,127 @@ func (h *Handler) Update(c *gin.Context) {
 		"content":    existing.Content().String(),
 		"type":       existing.Type(),
 		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
 		"created_at": existing.CreatedAt(),
 		"updated_at": existing.UpdatedAt(),
 	}
 	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+}
+
+// Publish makes a note publicly visible.
+func (h *Handler) Publish(c *gin.Context) {
+	h.setNotePublic(c, true)
+}
+
+// Unpublish hides a note from the public graph.
+func (h *Handler) Unpublish(c *gin.Context) {
+	h.setNotePublic(c, false)
+}
+
+func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
+	middleware.SetDBEntity(c, "notes")
+	if isPublic {
+		middleware.SetDBOperation(c, "publish")
+	} else {
+		middleware.SetDBOperation(c, "unpublish")
+	}
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	existing, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if existing == nil {
+		apicommon.NotFound(c, "Note")
+		return
+	}
+
+	if existing.CreatorID() == nil || *existing.CreatorID() != userID {
+		apicommon.Forbidden(c)
+		return
+	}
+
+	existing.SetIsPublic(isPublic)
+	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for publish/unpublish: %v", err)
+		}
+	}
+
+	h.invalidateGraphServiceCaches(c.Request.Context(), userID.String(), id.String())
+
+	if h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	responseData := gin.H{
+		"id":         existing.ID(),
+		"title":      existing.Title().String(),
+		"content":    existing.Content().String(),
+		"type":       existing.Type(),
+		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
+		"created_at": existing.CreatedAt(),
+		"updated_at": existing.UpdatedAt(),
+	}
+	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+}
+
+func (h *Handler) invalidateGraphServiceCaches(ctx context.Context, userID, noteID string) {
+	if h.cacheClient == nil {
+		return
+	}
+
+	patterns := []string{
+		fmt.Sprintf("graph-service:full:%s", userID),
+		fmt.Sprintf("graph-service:delta:%s:*", userID),
+		"graph-service:full:public",
+		"graph-service:delta:public:*",
+		"graph-service:public:*",
+		fmt.Sprintf("graph-service:note:*:%s:*", noteID),
+	}
+
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := h.cacheClient.Scan(ctx, cursor, pattern, 100)
+			if err != nil {
+				log.Printf("[NoteHandler] Failed to scan cache pattern %s: %v", pattern, err)
+				break
+			}
+			if len(keys) > 0 {
+				if err := h.cacheClient.Del(ctx, keys...); err != nil {
+					log.Printf("[NoteHandler] Failed to delete cache keys for pattern %s: %v", pattern, err)
+				}
+			}
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
+		}
+	}
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -390,6 +537,12 @@ func (h *Handler) Delete(c *gin.Context) {
 	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
+		}
 	}
 
 	// Invalidate graph cache for the user
@@ -438,6 +591,15 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		userID := getUserIDString(c)
+		for _, id := range ids {
+			if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), userID); err != nil {
+				log.Printf("[NoteHandler] Failed to publish NoteDeleted event for batch: %v", err)
+			}
+		}
+	}
+
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -468,6 +630,12 @@ func (h *Handler) Restore(c *gin.Context) {
 		}
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for restore: %v", err)
+		}
 	}
 
 	// Invalidate graph cache for the user
@@ -509,6 +677,7 @@ func (h *Handler) Get(c *gin.Context) {
 		"content":    n.Content().String(),
 		"type":       n.Type(),
 		"metadata":   n.Metadata().Value(),
+		"is_public":  n.IsPublic(),
 		"created_at": n.CreatedAt(),
 		"updated_at": n.UpdatedAt(),
 	}
@@ -537,6 +706,9 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 			limit = parsed
 		}
 	}
+
+	// Pass the authenticated user ID to downstream graph-service calls.
+	ctx = graphdomain.WithUserID(ctx, getUserIDString(c))
 
 	// 1. Try to get precomputed recommendations from database
 	if h.recRepo != nil {
@@ -574,7 +746,27 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
-	// 2. Fallback to semantic neighbors (if enabled)
+	// 2. Try live graph analytics via graph-service (with in-memory BFS fallback).
+	if h.suggestionsHandler != nil {
+		dtos, err := h.suggestionsHandler.Handle(ctx, graphQueries.GetSuggestionsQuery{NoteID: noteID, Limit: limit})
+		if err == nil && len(dtos) > 0 {
+			suggestions := make([]Suggestion, 0, len(dtos))
+			for _, s := range dtos {
+				suggestions = append(suggestions, Suggestion{
+					NoteID: s.NoteID.String(),
+					Title:  s.Title,
+					Score:  s.Score,
+				})
+			}
+
+			c.Header("X-Recommendations-Source", "graph-service")
+			c.Header("X-Recommendations-Stale", "true")
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions, GeneratedAt: time.Now()})
+			return
+		}
+	}
+
+	// 3. Fallback to semantic neighbors (if enabled)
 	if h.cfg.RecommendationFallbackSemanticEnabled && h.embeddingRepo != nil {
 		neighbors, err := h.embeddingRepo.FindSimilarNotes(ctx, noteID, limit)
 		if err == nil && len(neighbors) > 0 {
@@ -718,6 +910,7 @@ func (h *Handler) Search(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}
@@ -773,6 +966,7 @@ func (h *Handler) List(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}

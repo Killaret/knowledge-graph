@@ -9,6 +9,7 @@ import (
 
 	"knowledge-graph/internal/application/achievement"
 	"knowledge-graph/internal/application/cache"
+	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
@@ -23,6 +24,14 @@ type Handler struct {
 	noteRepo           note.Repository
 	achievementService *achievement.Service
 	graphCache         *cache.GraphCache
+	eventPublisher     appevents.Publisher
+}
+
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
 }
 
 func New(linkRepo link.Repository, noteRepo note.Repository, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
@@ -32,6 +41,11 @@ func New(linkRepo link.Repository, noteRepo note.Repository, achievementService 
 		achievementService: achievementService,
 		graphCache:         graphCache,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
 }
 
 type createLinkRequest struct {
@@ -164,6 +178,12 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkCreated event: %v", err)
+		}
+	}
+
 	// Check for achievements asynchronously with bounded context
 	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
 		go func(ctx context.Context) {
@@ -291,6 +311,12 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event: %v", err)
+		}
+	}
+
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -316,5 +342,12 @@ func (h *Handler) DeleteByNote(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), noteID.String(), "", getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event for DeleteByNote: %v", err)
+		}
+	}
+
 	apicommon.NoContent(c)
 }

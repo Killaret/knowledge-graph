@@ -58,6 +58,10 @@ export default defineConfig({
         find: /^\$entities/,
         replacement: path.resolve(__dirname, "./src/entities"),
       },
+      {
+        find: /^\$widgets/,
+        replacement: path.resolve(__dirname, "./src/widgets"),
+      },
     ],
     conditions: ["browser", "default"],
   },

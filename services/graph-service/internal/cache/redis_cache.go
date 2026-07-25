@@ -38,8 +38,8 @@ func (c *RedisCache) cacheKey(parts ...string) string {
 	return fmt.Sprintf("graph-service:%s", strings.Join(parts, ":"))
 }
 
-func (c *RedisCache) LoadNoteLayout(ctx context.Context, noteID string, depth int) (*engine.LayoutResponse, string, error) {
-	key := c.cacheKey("note", noteID, fmt.Sprintf("depth-%d", depth))
+func (c *RedisCache) LoadNoteLayout(ctx context.Context, userID, noteID string, depth int) (*engine.LayoutResponse, string, error) {
+	key := c.cacheKey("note", userID, noteID, fmt.Sprintf("depth-%d", depth))
 	raw, err := c.client.Get(ctx, key).Bytes()
 	if err != nil {
 		return nil, "", err
@@ -54,8 +54,8 @@ func (c *RedisCache) LoadNoteLayout(ctx context.Context, noteID string, depth in
 	return stored.Layout, stored.Hash, nil
 }
 
-func (c *RedisCache) SaveNoteLayout(ctx context.Context, noteID string, depth int, layout *engine.LayoutResponse, hash string) error {
-	key := c.cacheKey("note", noteID, fmt.Sprintf("depth-%d", depth))
+func (c *RedisCache) SaveNoteLayout(ctx context.Context, userID, noteID string, depth int, layout *engine.LayoutResponse, hash string) error {
+	key := c.cacheKey("note", userID, noteID, fmt.Sprintf("depth-%d", depth))
 	payload, err := json.Marshal(map[string]interface{}{
 		"layout": layout,
 		"hash":   hash,

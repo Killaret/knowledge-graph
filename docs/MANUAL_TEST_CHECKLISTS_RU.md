@@ -1,5 +1,7 @@
 # Актуальный чек-лист ручного тестирования
 
+> **Дополнение:** для ветки `ai-agents` / 3D-рефакторинга см. [MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md](MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md).
+
 **Последнее обновление:** текущий test stack с исправлениями auth, canvas, hover-delay и ghost-node.
 
 **Окружение**
