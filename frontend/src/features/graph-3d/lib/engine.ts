@@ -56,7 +56,8 @@ export class Graph3DEngine {
     this.config = {
       ...DEFAULT_GRAPH3D_CONFIG,
       maxNodes: graphConfig3D.max_nodes,
-      fog_presets: graphPerformanceConfig.fog_presets,
+      defaultFogPreset: graphConfig3D.fog.default_preset,
+      fog_presets: graphConfig3D.fog.presets,
       ...partialConfig,
     };
 
@@ -103,13 +104,17 @@ export class Graph3DEngine {
       this.updateScene();
       this.centerCamera();
 
-      this.currentFogPreset = "birth";
+      this.currentFogPreset = this.config.defaultFogPreset;
       this.currentPerformanceLevel = "high";
-      const birthDensity = applyFogPreset(this.sceneBundle.scene, "birth", this.config);
-      this.fogInitial = birthDensity;
-      this.fogFinal = Math.min(birthDensity, this.config.fogDensityFinal);
-      this.currentFogDensity = birthDensity;
-      this.targetFogDensity = birthDensity;
+      const { initial, final } = applyFogPreset(
+        this.sceneBundle.scene,
+        this.config.defaultFogPreset,
+        this.config
+      );
+      this.fogInitial = initial;
+      this.fogFinal = final;
+      this.currentFogDensity = initial;
+      this.targetFogDensity = initial;
 
       if (this.config.disableAnimation) {
         this.simulateToStable();
@@ -234,15 +239,15 @@ export class Graph3DEngine {
   }
 
   private applyPerformancePreset() {
-    const density = applyFogPreset(
+    const { initial, final } = applyFogPreset(
       this.sceneBundle.scene,
       this.currentFogPreset,
       this.config
     );
-    this.fogInitial = density;
-    this.fogFinal = density;
-    this.currentFogDensity = density;
-    this.targetFogDensity = density;
+    this.fogInitial = initial;
+    this.fogFinal = final;
+    this.currentFogDensity = initial;
+    this.targetFogDensity = initial;
 
     const starfieldCount = this.performanceConfig.starfield_counts[this.currentPerformanceLevel];
     this.sceneBundle.starfield = setStarfieldCount(

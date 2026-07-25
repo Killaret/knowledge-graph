@@ -58,19 +58,23 @@ export interface Config {
       };
       "3d": {
         max_nodes: number;
-      };
-      performance: {
-        fps_threshold_low: number;
-        fps_threshold_high: number;
-        low_fps_sample_count: number;
-        fog_presets: Record<
-          "birth" | "nebula" | "deep-space",
-          { density: number }
-        >;
-        starfield_counts: {
-          high: number;
-          medium: number;
-          low: number;
+        layout_provider: "d3" | "graph-service";
+        fog: {
+          presets: Record<
+            "birth" | "nebula" | "deep-space",
+            { density_initial: number; density_final: number }
+          >;
+          default_preset: "birth" | "nebula" | "deep-space";
+        };
+        performance: {
+          fps_threshold_low: number;
+          fps_threshold_high: number;
+          low_fps_sample_count: number;
+          starfield_counts: {
+            high: number;
+            medium: number;
+            low: number;
+          };
         };
       };
       anomaly: {
@@ -131,7 +135,7 @@ export const config: Config = configData as Config;
 // Convenience exports for common values
 export const graphConfig2D = config.frontend.graph["2d"];
 export const graphConfig3D = config.frontend.graph["3d"];
-export const graphPerformanceConfig = config.frontend.graph.performance;
+export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
 export const anomalyConfig = config.frontend.graph.anomaly;
 export const apiConfig = config.frontend.api;
 export const testConfig = config.frontend.test;

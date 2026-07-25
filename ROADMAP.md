@@ -148,8 +148,9 @@
 - Zoom levels and navigation controls
 - Search and filtering in navigator
 - Integration with existing graph view
-- [ ] **Hybrid 3D Layout via Graph Service**  
-  *Use graph-service to precompute initial 3D coordinates for large graphs, reducing client-side simulation time. Client retains interactivity after initial load. Target: v2.1.*
+- [x] **Hybrid 3D Layout via Graph Service** — runtime layout provider switching via `createLayoutProvider` / `toRuntimeConfig`.
+- [x] **3D Fog Presets** — configurable `birth` / `nebula` / `deep-space` fog presets with smooth initial→final transitions.
+- [x] **3D Performance Presets** — FPS-based auto-downgrade/upgrade of fog quality, starfield count, and auto-rotate.
 
 ### 🔗 Link Improvements
 

@@ -9,29 +9,32 @@ const baseConfig: FogConfig = {
 };
 
 describe("applyFogPreset", () => {
-  it("applies the birth preset using fogDensityInitial", () => {
+  it("applies the birth preset using density_initial/final", () => {
     const scene = new THREE.Scene();
-    const density = applyFogPreset(scene, "birth", baseConfig);
+    const result = applyFogPreset(scene, "birth", baseConfig);
 
     expect(scene.fog).toBeInstanceOf(THREE.FogExp2);
     expect((scene.fog as THREE.FogExp2).density).toBeCloseTo(0.08, 5);
-    expect(density).toBeCloseTo(0.08, 5);
+    expect(result.initial).toBeCloseTo(0.08, 5);
+    expect(result.final).toBeCloseTo(0.005, 5);
   });
 
-  it("applies the nebula preset with an intermediate density", () => {
+  it("applies the nebula preset with an intermediate initial and configured final", () => {
     const scene = new THREE.Scene();
-    const density = applyFogPreset(scene, "nebula", baseConfig);
+    const result = applyFogPreset(scene, "nebula", baseConfig);
 
     expect((scene.fog as THREE.FogExp2).density).toBeCloseTo(0.0425, 5);
-    expect(density).toBeCloseTo(0.0425, 5);
+    expect(result.initial).toBeCloseTo(0.0425, 5);
+    expect(result.final).toBeCloseTo(0.005, 5);
   });
 
-  it("applies the deep-space preset with density 0", () => {
+  it("applies the deep-space preset with zero density", () => {
     const scene = new THREE.Scene();
-    const density = applyFogPreset(scene, "deep-space", baseConfig);
+    const result = applyFogPreset(scene, "deep-space", baseConfig);
 
     expect((scene.fog as THREE.FogExp2).density).toBeCloseTo(0, 5);
-    expect(density).toBeCloseTo(0, 5);
+    expect(result.initial).toBeCloseTo(0, 5);
+    expect(result.final).toBeCloseTo(0, 5);
   });
 
   it("uses fog_presets overrides when provided", () => {
@@ -39,15 +42,15 @@ describe("applyFogPreset", () => {
     const config: FogConfig = {
       ...baseConfig,
       fog_presets: {
-        birth: { density: 0.1 },
-        nebula: { density: 0.03 },
-        "deep-space": { density: 0.001 },
+        birth: { density_initial: 0.1, density_final: 0.01 },
+        nebula: { density_initial: 0.05, density_final: 0.02 },
+        "deep-space": { density_initial: 0.001, density_final: 0.001 },
       },
     };
 
-    expect(applyFogPreset(scene, "birth", config)).toBeCloseTo(0.1, 5);
-    expect(applyFogPreset(scene, "nebula", config)).toBeCloseTo(0.03, 5);
-    expect(applyFogPreset(scene, "deep-space", config)).toBeCloseTo(0.001, 5);
+    expect(applyFogPreset(scene, "birth", config).initial).toBeCloseTo(0.1, 5);
+    expect(applyFogPreset(scene, "nebula", config).initial).toBeCloseTo(0.05, 5);
+    expect(applyFogPreset(scene, "deep-space", config).initial).toBeCloseTo(0.001, 5);
   });
 
   it("creates FogExp2 if scene has no fog", () => {

@@ -57,9 +57,31 @@ shared/
 - `D3ForceLayoutProvider` — returns API data and lets the client-side `d3-force-3d` engine seed positions.
 - `GraphServiceLayoutProvider` — calls `getFullGraphData` or `getGraphData(..., layout="3d")` to retrieve server-computed 3D positions.
 
+`createLayoutProvider(runtime: Graph3DRuntimeConfig)` selects the active provider at runtime based on `frontend.graph.3d.layout_provider` in `knowledge-graph.config.json`. Routes `/graph/3d` and `/graph/3d/[id]` use `toRuntimeConfig()` + `createLayoutProvider()` instead of hard-coding a provider.
+
 The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
 `Graph3DEngine` detects when all nodes already carry x/y/z coordinates and shortens `warmStartTicks` from the default 80 to 10, preserving the service layout while still allowing a brief physical relaxation.
+
+## Fog presets
+
+`features/graph-3d/lib/fog.ts` exposes named fog presets driven by `frontend.graph.3d.fog.presets`:
+
+- `birth` — dense initial fog (`density_initial`) that thins to `density_final` as the simulation stabilizes.
+- `nebula` — medium fog.
+- `deep-space` — no fog.
+
+`applyFogPreset(scene, presetName, config)` returns `{ initial, final }` so `Graph3DEngine` can smoothly interpolate density as the graph settles. The default preset is configured via `frontend.graph.3d.fog.default_preset`.
+
+## Performance presets
+
+`Graph3DEngine` uses `shared/lib/performance-monitor.ts` to track FPS. When FPS stays below `fps_threshold_low` for `low_fps_sample_count` frames, it:
+
+- switches to a lighter fog preset (`birth` → `nebula` → `deep-space`);
+- reduces the starfield particle count (`high` → `medium` → `low`);
+- disables `autoRotate`.
+
+When FPS rises above `fps_threshold_high` for the same sample count, quality steps back up. Thresholds and starfield counts are configured in `frontend.graph.3d.performance`.
 
 ## Performance notes
 
@@ -85,7 +107,10 @@ Key values live in `frontend/src/features/graph-3d/model/types.ts` and are bound
 
 - Unit tests:
   - `frontend/src/features/graph-3d/ui/Graph3DScene.spec.ts`
-  - `frontend/src/widgets/graph-3d-viewer/Graph3DViewer.spec.ts` (todo)
+  - `frontend/src/widgets/graph-3d-viewer/Graph3DViewer.spec.ts`
+  - `frontend/src/features/graph-3d/model/layout-provider.test.ts`
+  - `frontend/src/features/graph-3d/lib/fog.test.ts`
+  - `frontend/src/features/graph-3d/lib/engine.performance.test.ts`
 - Mocks:
   - `frontend/src/__mocks__/d3-force-3d.ts` provides a deterministic `d3-force-3d` mock.
   - `vitest-setup.ts` mocks `three` (`WebGLRenderer`), `OrbitControls`, and `CSS2DRenderer`.

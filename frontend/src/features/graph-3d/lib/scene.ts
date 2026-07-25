@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { graphPerformanceConfig } from "$shared/config/config";
+import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
 import type { Graph3DConfig } from "../model/types";
+import { applyFogPreset } from "./fog";
+import type { FogConfig } from "./fog";
 
 export interface SceneBundle {
   scene: THREE.Scene;
@@ -17,7 +19,13 @@ export interface SceneBundle {
 export function createScene(container: HTMLElement, config: Graph3DConfig): SceneBundle {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050510);
-  scene.fog = new THREE.FogExp2(0x050510, config.fogDensityInitial);
+
+  const fogConfig: FogConfig = {
+    fogDensityInitial: config.fogDensityInitial,
+    fogDensityFinal: config.fogDensityFinal,
+    fog_presets: graphConfig3D.fog.presets,
+  };
+  applyFogPreset(scene, graphConfig3D.fog.default_preset ?? "birth", fogConfig);
 
   const aspect = container.clientWidth / container.clientHeight || 1;
   const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 2000);
