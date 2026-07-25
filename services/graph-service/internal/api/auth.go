@@ -64,7 +64,7 @@ func authenticateRequest(r *http.Request, cfg *config.Config) (string, bool) {
 	}
 
 	if internal := r.Header.Get("X-Internal-Auth"); internal != "" {
-		return validateInternalAuth(internal, cfg)
+		return validateInternalAuthWithRequest(r, internal, cfg)
 	}
 
 	return "", false
@@ -106,21 +106,34 @@ func validateJWT(tokenString, secret string) (string, bool) {
 	return "", false
 }
 
-func validateInternalAuth(token string, cfg *config.Config) (string, bool) {
+func validateInternalAuthWithRequest(r *http.Request, token string, cfg *config.Config) (string, bool) {
 	if cfg.InternalAuthToken == "" {
 		return "", false
 	}
 
 	// Exact match with the configured internal token means the request is coming
-	// from a trusted internal proxy but carries no user identity. A private
-	// endpoint must also supply a signed token with a user_id, so an empty user
-	// is returned here; callers that require an identity will reject it.
+	// from a trusted internal proxy. If an X-User-Id header is also present,
+	// trust it for server-to-server calls; otherwise a private endpoint must
+	// also supply a signed token with a user_id.
 	if subtle.ConstantTimeCompare([]byte(token), []byte(cfg.InternalAuthToken)) == 1 {
+		if userID := r.Header.Get("X-User-Id"); userID != "" {
+			return userID, true
+		}
 		return "", true
 	}
 
 	// Alternatively the header may contain a JWT signed with the internal token
 	// and carrying a concrete user_id for server-to-server calls.
+	return validateJWT(token, cfg.InternalAuthToken)
+}
+
+func validateInternalAuth(token string, cfg *config.Config) (string, bool) {
+	if cfg.InternalAuthToken == "" {
+		return "", false
+	}
+	if subtle.ConstantTimeCompare([]byte(token), []byte(cfg.InternalAuthToken)) == 1 {
+		return "", true
+	}
 	return validateJWT(token, cfg.InternalAuthToken)
 }
 
@@ -146,7 +159,16 @@ func grpcAuth(ctx context.Context, cfg *config.Config) (string, bool) {
 	}
 
 	if vals := md.Get("x-internal-auth"); len(vals) > 0 {
-		return validateInternalAuth(vals[0], cfg)
+		if cfg.InternalAuthToken == "" {
+			return "", false
+		}
+		if subtle.ConstantTimeCompare([]byte(vals[0]), []byte(cfg.InternalAuthToken)) == 1 {
+			if userVals := md.Get("x-user-id"); len(userVals) > 0 && userVals[0] != "" {
+				return userVals[0], true
+			}
+			return "", true
+		}
+		return validateJWT(vals[0], cfg.InternalAuthToken)
 	}
 
 	return "", false

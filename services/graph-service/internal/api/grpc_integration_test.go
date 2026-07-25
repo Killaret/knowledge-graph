@@ -10,6 +10,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -45,7 +46,7 @@ func (s *GRPCIntegrationTestSuite) SetupSuite() {
 	s.listener = bufconn.Listen(1024 << 10)
 
 	// Create Redis client
-	redisClient := s.redis.RedisClient()
+	redisClient := redis.NewClient(&redis.Options{Addr: s.redis.Addr()})
 	s.cache = cache.NewRedisCache(redisClient)
 
 	// Create mock PostgreSQL client (placeholder)
@@ -54,7 +55,7 @@ func (s *GRPCIntegrationTestSuite) SetupSuite() {
 
 	// Create gRPC server
 	s.server = grpc.NewServer()
-	service := NewGraphService(s.postgres, s.cache, 1000)
+	service := NewGraphService(s.postgres, s.cache, 1000, 2, 100)
 	graphservice.RegisterGraphServiceServer(s.server, service)
 
 	go func() {
@@ -69,7 +70,7 @@ func (s *GRPCIntegrationTestSuite) SetupSuite() {
 	}
 
 	var err error
-	s.conn, err = grpc.NewClient("bufnet", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	s.conn, err = grpc.NewClient("passthrough:///bufnet", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	s.Require().NoError(err)
 
 	s.client = graphservice.NewGraphServiceClient(s.conn)
@@ -233,6 +234,22 @@ func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter
 
 func (m *mockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
 	return make(map[string][]float32), nil
+}
+
+func (m *mockPostgresClient) GetNoteNeighbors(ctx context.Context, filter db.NotesFilter, noteID string, depth int) ([]*db.Neighbor, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) GetShortestPath(ctx context.Context, filter db.NotesFilter, fromID, toID string) ([]string, int, float64, error) {
+	return nil, 0, 0, nil
+}
+
+func (m *mockPostgresClient) GetRecommendationCandidates(ctx context.Context, filter db.NotesFilter, noteID string, depth, limit int) ([]*db.RecommendationCandidate, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) RefreshClosureView(ctx context.Context) error {
+	return nil
 }
 
 func TestGRPCIntegrationTestSuite(t *testing.T) {

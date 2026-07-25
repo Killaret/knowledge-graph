@@ -30,6 +30,22 @@ func (m *mockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string
 	return make(map[string][]float32), nil
 }
 
+func (m *mockPostgresClient) GetNoteNeighbors(ctx context.Context, filter db.NotesFilter, noteID string, depth int) ([]*db.Neighbor, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) GetShortestPath(ctx context.Context, filter db.NotesFilter, fromID, toID string) ([]string, int, float64, error) {
+	return nil, 0, 0, nil
+}
+
+func (m *mockPostgresClient) GetRecommendationCandidates(ctx context.Context, filter db.NotesFilter, noteID string, depth, limit int) ([]*db.RecommendationCandidate, error) {
+	return nil, nil
+}
+
+func (m *mockPostgresClient) RefreshClosureView(ctx context.Context) error {
+	return nil
+}
+
 func TestEventParsing(t *testing.T) {
 	tests := []struct {
 		name    string

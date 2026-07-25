@@ -31,10 +31,11 @@ func Layout3D(notes []*db.Note, links []*db.Link) *LayoutResponse {
 	linksOut := make([]*LayoutLink, 0, len(links))
 	for _, link := range links {
 		linksOut = append(linksOut, &LayoutLink{
-			Source:   link.Source,
-			Target:   link.Target,
-			Weight:   link.Weight,
-			LinkType: link.LinkType,
+			Source:     link.Source,
+			Target:     link.Target,
+			Weight:     link.Weight,
+			LinkType:   link.LinkType,
+			SourceType: link.SourceType,
 		})
 	}
 

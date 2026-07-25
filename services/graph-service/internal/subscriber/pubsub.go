@@ -202,6 +202,13 @@ func (s *RedisSubscriber) handleNoteEvent(ctx context.Context, event Event) erro
 	publicDeltaPattern := config.CacheKey("delta", "public", "*")
 	s.invalidatePattern(ctx, publicDeltaPattern)
 
+	// Note deletion may cascade to links, so refresh the closure view.
+	if event.Event == "NoteDeleted" {
+		if err := s.postgres.RefreshClosureView(ctx); err != nil {
+			log.Printf("[GraphService] Failed to refresh closure view after note event: %v", err)
+		}
+	}
+
 	log.Printf("[GraphService] Cache invalidated for note event %s", event.Event)
 	return nil
 }
@@ -235,6 +242,11 @@ func (s *RedisSubscriber) handleLinkEvent(ctx context.Context, event Event) erro
 	if payload.TargetNoteID != "" {
 		noteCachePattern2 := config.CacheKey("note", "*", payload.TargetNoteID, "*")
 		s.invalidatePattern(ctx, noteCachePattern2)
+	}
+
+	// Links change the transitive closure, so refresh the materialized view.
+	if err := s.postgres.RefreshClosureView(ctx); err != nil {
+		log.Printf("[GraphService] Failed to refresh closure view after link event: %v", err)
 	}
 
 	log.Printf("[GraphService] Cache invalidated for link event %s", event.Event)

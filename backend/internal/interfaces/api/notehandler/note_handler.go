@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	dcache "knowledge-graph/internal/domain/cache"
+	graphdomain "knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/domain/note"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
@@ -706,6 +707,9 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
+	// Pass the authenticated user ID to downstream graph-service calls.
+	ctx = graphdomain.WithUserID(ctx, getUserIDString(c))
+
 	// 1. Try to get precomputed recommendations from database
 	if h.recRepo != nil {
 		recs, err := h.recRepo.GetRecommendations(ctx, noteID, limit)
@@ -742,7 +746,27 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
-	// 2. Fallback to semantic neighbors (if enabled)
+	// 2. Try live graph analytics via graph-service (with in-memory BFS fallback).
+	if h.suggestionsHandler != nil {
+		dtos, err := h.suggestionsHandler.Handle(ctx, graphQueries.GetSuggestionsQuery{NoteID: noteID, Limit: limit})
+		if err == nil && len(dtos) > 0 {
+			suggestions := make([]Suggestion, 0, len(dtos))
+			for _, s := range dtos {
+				suggestions = append(suggestions, Suggestion{
+					NoteID: s.NoteID.String(),
+					Title:  s.Title,
+					Score:  s.Score,
+				})
+			}
+
+			c.Header("X-Recommendations-Source", "graph-service")
+			c.Header("X-Recommendations-Stale", "true")
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions, GeneratedAt: time.Now()})
+			return
+		}
+	}
+
+	// 3. Fallback to semantic neighbors (if enabled)
 	if h.cfg.RecommendationFallbackSemanticEnabled && h.embeddingRepo != nil {
 		neighbors, err := h.embeddingRepo.FindSimilarNotes(ctx, noteID, limit)
 		if err == nil && len(neighbors) > 0 {

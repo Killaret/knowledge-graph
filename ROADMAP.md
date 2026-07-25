@@ -1,6 +1,6 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 23, 2026  
+**Updated:** July 25, 2026  
 **Status:** System stabilized, regression testing complete, manual testing in progress  
 **Version:** v2.5
 
@@ -28,11 +28,11 @@
 
 **Subtasks:**
 - [ ] Frontend E2E tests (`cd frontend && npx playwright test`)
-- [ ] Backend integration tests (`cd backend && go test -tags=integration ./...`)
-- [ ] CI/CD workflows verification
+- [x] Backend integration tests (`cd backend && go test -tags=integration ./...`)
+- [x] CI/CD workflows verification
 - [ ] NLP API testing
 - [ ] Backend auth API testing
-- [ ] Public graph verification
+- [x] Public graph verification
 
 ---
 
@@ -42,11 +42,11 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Event-driven invalidation & fallback model | ⏳ Planned | 🔴 Critical | 📝 Yes |
-| Auth & user-scoped filtering in graph-service | ⏳ Planned | 🔴 Critical | 📝 Yes |
-| Graph API unification & double-load removal | ⏳ Planned | 🟠 High | 📝 Yes |
-| Graph analytics API (Neighbors, Path, Recommendations) | ⏳ Planned | 🟡 Medium | 📝 Yes |
-| Materialized view / graph index | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Event-driven invalidation & fallback model | ✅ Done | 🔴 Critical | 📝 Yes |
+| Auth & user-scoped filtering in graph-service | ✅ Done | 🔴 Critical | 📝 Yes |
+| Graph API unification & double-load removal | 🔄 In Progress | 🟠 High | 📝 Yes |
+| Graph analytics API (Neighbors, Path, Recommendations) | ✅ Done | 🟡 Medium | 📝 Yes |
+| Materialized view / graph index | ✅ Done | 🟡 Medium | 📝 Yes |
 | gRPC-web / SSE full-graph streaming | ⏳ Planned | 🟡 Medium | 📝 No |
 | Improved layout algorithms (Honeycomb, force-directed, Cosmic Navigator) | 🔄 In Progress | 🟠 High | 📝 Yes |
 
@@ -122,7 +122,7 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Implement publish/unpublish functionality | ⏳ Planned | 🟠 High | 📝 Yes |
+| Implement publish/unpublish functionality | ✅ Done | 🟠 High | 📝 Yes |
 
 **Scope:**
 - Backend API for publish/unpublish
@@ -310,6 +310,18 @@
 | Automatic state verification (dev pre/post-test) | ✅ Done | 🔴 Critical | July 2026 |
 | Auto-commit on successful regression cycle | ✅ Done | 🔴 Critical | July 2026 |
 | Dev/Personal identity verification | ✅ Done | 🔴 Critical | July 2026 |
+| CI/CD service containers, timeouts and Docker health checks | ✅ Done | 🔴 Critical | July 2026 |
+
+### 🌌 Graph Service, Analytics & Public Graph
+
+| Task | Status | Priority | Completion Date |
+|------|--------|----------|-----------------|
+| Event-driven invalidation & fallback model | ✅ Done | 🔴 Critical | July 2026 |
+| Auth & user-scoped filtering in graph-service | ✅ Done | 🔴 Critical | July 2026 |
+| Graph analytics API (Neighbors, Path, Recommendations) | ✅ Done | 🟡 Medium | July 2026 |
+| Materialized view / graph index (`note_links_closure`) | ✅ Done | 🟡 Medium | July 2026 |
+| Public Note Pool (publish/unpublish) | ✅ Done | 🟠 High | July 2026 |
+| 3D graph via graph-service (`GraphServiceLayoutProvider`) | ✅ Done | 🟠 High | July 2026 |
 
 ### 🎨 Frontend Improvements
 

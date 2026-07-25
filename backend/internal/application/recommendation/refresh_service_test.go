@@ -33,12 +33,13 @@ func TestRefreshService_RefreshRecommendations(t *testing.T) {
 		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
 		n := makeNote()
+		expectedCtx := graph.WithUserID(ctx, n.CreatorID().String())
 		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
 
 		suggestions := []graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}
-		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
+		traversalSvc.On("GetSuggestions", expectedCtx, noteID, 10).Return(suggestions, nil).Once()
 
-		recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
+		recRepo.On("ReplaceRecommendations", expectedCtx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
 
@@ -88,8 +89,9 @@ func TestRefreshService_RefreshRecommendations(t *testing.T) {
 		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
 		n := makeNote()
+		expectedCtx := graph.WithUserID(ctx, n.CreatorID().String())
 		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
-		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(nil, errors.New("traversal failed")).Once()
+		traversalSvc.On("GetSuggestions", expectedCtx, noteID, 10).Return(nil, errors.New("traversal failed")).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
 
@@ -107,12 +109,13 @@ func TestRefreshService_RefreshRecommendations(t *testing.T) {
 		svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
 		n := makeNote()
+		expectedCtx := graph.WithUserID(ctx, n.CreatorID().String())
 		noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
 
 		suggestions := []graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}
-		traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return(suggestions, nil).Once()
+		traversalSvc.On("GetSuggestions", expectedCtx, noteID, 10).Return(suggestions, nil).Once()
 
-		recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(errors.New("db error")).Once()
+		recRepo.On("ReplaceRecommendations", expectedCtx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(errors.New("db error")).Once()
 
 		err := svc.RefreshRecommendations(ctx, noteID)
 
@@ -138,11 +141,12 @@ func TestRefreshService_RefreshRecommendationsBatch(t *testing.T) {
 	recRepo := new(mockRecommendationRepository)
 	traversalSvc := new(MockTraversalService)
 
+	expectedCtx := graph.WithUserID(ctx, n.CreatorID().String())
 	svc := NewRefreshService(noteRepo, recRepo, traversalSvc, 10)
 
 	noteRepo.On("FindByID", ctx, noteID).Return(n, nil).Once()
-	traversalSvc.On("GetSuggestions", ctx, noteID, 10).Return([]graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}, nil).Once()
-	recRepo.On("ReplaceRecommendations", ctx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
+	traversalSvc.On("GetSuggestions", expectedCtx, noteID, 10).Return([]graph.SuggestionResult{{NodeID: targetID, Score: 0.9}}, nil).Once()
+	recRepo.On("ReplaceRecommendations", expectedCtx, noteID, map[uuid.UUID]float64{targetID: 0.9}).Return(nil).Once()
 
 	err := svc.RefreshRecommendationsBatch(ctx, []uuid.UUID{noteID}, 1)
 

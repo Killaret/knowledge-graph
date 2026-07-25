@@ -83,11 +83,7 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	startTime := time.Now()
 
-	path := strings.TrimPrefix(r.URL.Path, "/api/v1/graph/note/")
-	if idx := strings.Index(path, "?"); idx != -1 {
-		path = path[:idx]
-	}
-	noteID := strings.TrimSpace(path)
+	noteID := extractNoteIDFromPath(r.URL.Path, "/api/v1/graph/note/")
 	if noteID == "" {
 		http.Error(w, "Note ID is required", http.StatusBadRequest)
 		return
@@ -367,6 +363,147 @@ func (s *HTTPServer) sendDeltaData(w http.ResponseWriter, delta *engine.DeltaRes
 	}
 }
 
+// NoteGraphRouter dispatches GET /api/v1/graph/note/:id/* requests to the
+// appropriate note-centric handler.
+func (s *HTTPServer) NoteGraphRouter(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/graph/note/")
+	if idx := strings.Index(path, "?"); idx != -1 {
+		path = path[:idx]
+	}
+	path = strings.Trim(path, "/")
+	segments := strings.Split(path, "/")
+	if len(segments) == 0 || strings.TrimSpace(segments[0]) == "" {
+		http.Error(w, "Note ID is required", http.StatusBadRequest)
+		return
+	}
+	noteID := strings.TrimSpace(segments[0])
+	if _, err := uuid.Parse(noteID); err != nil {
+		http.Error(w, "Invalid note ID format (must be UUID)", http.StatusBadRequest)
+		return
+	}
+
+	if len(segments) > 1 && segments[1] == "neighbors" {
+		s.GetNoteNeighborsHandler(w, r.WithContext(ctx))
+		return
+	}
+
+	s.GetNoteGraphHandler(w, r.WithContext(ctx))
+}
+
+// GetNoteNeighborsHandler handles GET /api/v1/graph/note/:id/neighbors?depth=
+func (s *HTTPServer) GetNoteNeighborsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	startTime := time.Now()
+
+	noteID := extractNoteIDFromPath(r.URL.Path, "/api/v1/graph/note/")
+	if noteID == "" {
+		http.Error(w, "Note ID is required", http.StatusBadRequest)
+		return
+	}
+
+	depth := s.defaultDepth
+	if d := r.URL.Query().Get("depth"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
+			depth = parsed
+		}
+	}
+
+	filter := s.notesFilter(ctx)
+
+	log.Printf("[GraphService] HTTP GetNeighbors: noteID=%s, depth=%d, userID=%s, public=%v", noteID, depth, filter.UserID, filter.IsPublic)
+
+	neighbors, err := engine.Neighbors(ctx, s.postgres, filter, noteID, depth)
+	if err != nil {
+		log.Printf("[GraphService] Failed to get neighbors: %v", err)
+		http.Error(w, "Failed to get neighbors", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[GraphService] GetNeighbors completed in %v", time.Since(startTime))
+	s.sendJSON(w, http.StatusOK, map[string]interface{}{"nodes": neighbors})
+}
+
+// GetPathHandler handles GET /api/v1/graph/path?from=&to=
+func (s *HTTPServer) GetPathHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	startTime := time.Now()
+
+	fromID := strings.TrimSpace(r.URL.Query().Get("from"))
+	toID := strings.TrimSpace(r.URL.Query().Get("to"))
+	if fromID == "" || toID == "" {
+		http.Error(w, "from and to are required", http.StatusBadRequest)
+		return
+	}
+	if _, err := uuid.Parse(fromID); err != nil {
+		http.Error(w, "Invalid from note ID", http.StatusBadRequest)
+		return
+	}
+	if _, err := uuid.Parse(toID); err != nil {
+		http.Error(w, "Invalid to note ID", http.StatusBadRequest)
+		return
+	}
+
+	filter := s.notesFilter(ctx)
+
+	log.Printf("[GraphService] HTTP GetPath: from=%s, to=%s, userID=%s, public=%v", fromID, toID, filter.UserID, filter.IsPublic)
+
+	path, err := engine.GetPath(ctx, s.postgres, filter, fromID, toID)
+	if err != nil {
+		log.Printf("[GraphService] Failed to get path: %v", err)
+		http.Error(w, "Failed to get path", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[GraphService] GetPath completed in %v", time.Since(startTime))
+	s.sendJSON(w, http.StatusOK, path)
+}
+
+// GetRecommendationsHandler handles GET /api/v1/graph/recommendations?note_id=&limit=
+func (s *HTTPServer) GetRecommendationsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	startTime := time.Now()
+
+	noteID := strings.TrimSpace(r.URL.Query().Get("note_id"))
+	if noteID == "" {
+		http.Error(w, "note_id is required", http.StatusBadRequest)
+		return
+	}
+	if _, err := uuid.Parse(noteID); err != nil {
+		http.Error(w, "Invalid note ID", http.StatusBadRequest)
+		return
+	}
+
+	limit := 10
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	depth := s.defaultDepth
+	if d := r.URL.Query().Get("depth"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
+			depth = parsed
+		}
+	}
+
+	filter := s.notesFilter(ctx)
+
+	log.Printf("[GraphService] HTTP GetRecommendations: noteID=%s, depth=%d, limit=%d, userID=%s, public=%v", noteID, depth, limit, filter.UserID, filter.IsPublic)
+
+	recommendations, err := engine.Recommendations(ctx, s.postgres, filter, noteID, depth, limit, 0, 0)
+	if err != nil {
+		log.Printf("[GraphService] Failed to get recommendations: %v", err)
+		http.Error(w, "Failed to get recommendations", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[GraphService] GetRecommendations completed in %v", time.Since(startTime))
+	s.sendJSON(w, http.StatusOK, map[string]interface{}{"recommendations": recommendations})
+}
+
 // RegisterHTTPHandlers registers all HTTP handlers
 func RegisterHTTPHandlers(mux *http.ServeMux, srv graphservice.GraphServiceServer, cfg *config.Config) {
 	if gs, ok := srv.(*graphService); ok {
@@ -383,8 +520,32 @@ func RegisterHTTPHandlers(mux *http.ServeMux, srv graphservice.GraphServiceServe
 		mux.HandleFunc("/api/v1/graph/public", AuthMiddleware(cfg, true, httpServer.GetPublicGraphHandler))
 
 		// Private graph endpoints (require authentication)
-		mux.HandleFunc("/api/v1/graph/note/", AuthMiddleware(cfg, false, httpServer.GetNoteGraphHandler))
+		mux.HandleFunc("/api/v1/graph/note/", AuthMiddleware(cfg, false, httpServer.NoteGraphRouter))
 		mux.HandleFunc("/api/v1/graph/full", AuthMiddleware(cfg, false, httpServer.GetFullGraphHandler))
 		mux.HandleFunc("/api/v1/graph/delta", AuthMiddleware(cfg, false, httpServer.GetDeltaHandler))
+		mux.HandleFunc("/api/v1/graph/path", AuthMiddleware(cfg, false, httpServer.GetPathHandler))
+		mux.HandleFunc("/api/v1/graph/recommendations", AuthMiddleware(cfg, false, httpServer.GetRecommendationsHandler))
 	}
+}
+
+// sendJSON writes v as JSON with the given status code.
+func (s *HTTPServer) sendJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("[GraphService] Failed to encode JSON response: %v", err)
+	}
+}
+
+// extractNoteIDFromPath returns the first path segment after prefix.
+func extractNoteIDFromPath(path, prefix string) string {
+	p := strings.TrimPrefix(path, prefix)
+	if idx := strings.Index(p, "?"); idx != -1 {
+		p = p[:idx]
+	}
+	p = strings.Trim(p, "/")
+	if idx := strings.Index(p, "/"); idx != -1 {
+		p = p[:idx]
+	}
+	return strings.TrimSpace(p)
 }

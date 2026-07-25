@@ -31,6 +31,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/email"
 	"knowledge-graph/internal/infrastructure/events"
+	graphinfra "knowledge-graph/internal/infrastructure/graph"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
@@ -210,6 +211,13 @@ func run(
 	)
 
 	traversalSvc := graphDomain.NewTraversalService(compositeLoader, cfg.RecommendationDepth, cfg.RecommendationDecay, cfg.BFSAggregation, cfg.BFSNormalize)
+
+	// Graph-service client for analytics (falls back to in-memory BFS if unavailable).
+	if cfg.GraphServiceURL != "" {
+		graphServiceClient := graphinfra.NewClient(cfg)
+		traversalSvc.SetGraphServiceClient(graphServiceClient)
+		log.Printf("[GraphService] Graph service client configured: %s", cfg.GraphServiceURL)
+	}
 
 	suggestionsHandler := graph.NewGetSuggestionsHandler(traversalSvc, noteRepo, cacheClient, cfg.RecommendationCacheTTL)
 

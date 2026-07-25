@@ -46,6 +46,9 @@
     "vite-tsconfig-paths": "^6.1.1",
     "web-streams-polyfill": "^4.3.0"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
     "@argos-ci/playwright": "^6.6.1",
     "@cucumber/cucumber": "^12.8.0",

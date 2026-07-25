@@ -63,6 +63,9 @@ func (s *graphService) GetNoteLayout(ctx context.Context, req *graphservice.Note
 	}
 
 	noteID := req.NoteId
+	if noteID == "" {
+		return nil, status.Error(codes.InvalidArgument, "note_id is required")
+	}
 	depth := req.Depth
 	if depth <= 0 {
 		depth = int32(s.defaultDepth)
@@ -288,10 +291,11 @@ func convertLayoutLinks(links []*engine.LayoutLink) []*graphservice.LayoutLink {
 	result := make([]*graphservice.LayoutLink, len(links))
 	for i, link := range links {
 		result[i] = &graphservice.LayoutLink{
-			Source:   link.Source,
-			Target:   link.Target,
-			Weight:   link.Weight,
-			LinkType: link.LinkType,
+			Source:     link.Source,
+			Target:     link.Target,
+			Weight:     link.Weight,
+			LinkType:   link.LinkType,
+			SourceType: link.SourceType,
 		}
 	}
 	return result
@@ -312,6 +316,112 @@ func convertDeltaResponse(delta *engine.DeltaResponse) *graphservice.DeltaRespon
 func computeLayoutHash(layout *engine.LayoutResponse) string {
 	data, _ := json.Marshal(layout)
 	return fmt.Sprintf("%x", data)[:32]
+}
+
+// GetNeighbors returns the neighbors of a note within a given depth.
+func (s *graphService) GetNeighbors(ctx context.Context, req *graphservice.NeighborRequest) (*graphservice.NeighborResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+	depth := req.Depth
+	if depth <= 0 {
+		depth = int32(s.defaultDepth)
+	}
+
+	log.Printf("[GraphService] GetNeighbors: noteID=%s, depth=%d, userID=%s", req.NoteId, depth, cacheUserID)
+
+	nodes, err := engine.Neighbors(ctx, s.postgres, filter, req.NoteId, int(depth))
+	if err != nil {
+		log.Printf("[GraphService] Failed to get neighbors: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get neighbors: %v", err)
+	}
+
+	return &graphservice.NeighborResponse{Nodes: convertAnalyticsNodes(nodes)}, nil
+}
+
+// GetPath returns the shortest path between two notes.
+func (s *graphService) GetPath(ctx context.Context, req *graphservice.PathRequest) (*graphservice.PathResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+	if req.FromId == "" || req.ToId == "" {
+		return nil, status.Error(codes.InvalidArgument, "from_id and to_id are required")
+	}
+
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+
+	log.Printf("[GraphService] GetPath: from=%s, to=%s, userID=%s", req.FromId, req.ToId, cacheUserID)
+
+	path, err := engine.GetPath(ctx, s.postgres, filter, req.FromId, req.ToId)
+	if err != nil {
+		log.Printf("[GraphService] Failed to get path: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get path: %v", err)
+	}
+
+	return &graphservice.PathResponse{
+		NoteIds:  path.NoteIDs,
+		Distance: int32(path.Distance),
+		Weight:   path.Weight,
+	}, nil
+}
+
+// GetRecommendations returns ranked note recommendations.
+func (s *graphService) GetRecommendations(ctx context.Context, req *graphservice.RecommendationsRequest) (*graphservice.RecommendationsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+	if req.NoteId == "" {
+		return nil, status.Error(codes.InvalidArgument, "note_id is required")
+	}
+
+	cacheUserID := s.grpcUserID(ctx, req.UserId)
+	filter := s.grpcFilter(ctx, req.UserId)
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+
+	log.Printf("[GraphService] GetRecommendations: noteID=%s, limit=%d, userID=%s", req.NoteId, limit, cacheUserID)
+
+	recommendations, err := engine.Recommendations(ctx, s.postgres, filter, req.NoteId, s.defaultDepth, int(limit), 0, 0)
+	if err != nil {
+		log.Printf("[GraphService] Failed to get recommendations: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get recommendations: %v", err)
+	}
+
+	return &graphservice.RecommendationsResponse{Recommendations: convertAnalyticsRecommendations(recommendations)}, nil
+}
+
+func convertAnalyticsNodes(nodes []*engine.AnalyticsNode) []*graphservice.NeighborNode {
+	result := make([]*graphservice.NeighborNode, len(nodes))
+	for i, n := range nodes {
+		result[i] = &graphservice.NeighborNode{
+			Id:       n.ID,
+			Title:    n.Title,
+			Type:     n.Type,
+			Weight:   n.Weight,
+			Distance: int32(n.Distance),
+		}
+	}
+	return result
+}
+
+func convertAnalyticsRecommendations(recs []*engine.AnalyticsRecommendation) []*graphservice.Recommendation {
+	result := make([]*graphservice.Recommendation, len(recs))
+	for i, r := range recs {
+		result[i] = &graphservice.Recommendation{
+			NoteId:        r.NoteID,
+			Title:         r.Title,
+			Score:         r.Score,
+			GraphScore:    r.GraphScore,
+			SemanticScore: r.SemanticScore,
+		}
+	}
+	return result
 }
 
 // RegisterGraphServiceServer is a wrapper for the generated registration function
