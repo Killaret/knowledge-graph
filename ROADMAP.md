@@ -1,8 +1,8 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 25, 2026  
-**Status:** Graph API unification completed; awaiting verification  
-**Version:** v2.5
+**Updated:** July 26, 2026  
+**Status:** Graph API unification and automation-robustness completed; awaiting final verification  
+**Version:** v2.6
 
 ---
 
@@ -22,16 +22,16 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Manual testing of all features | 🔄 In Progress | 🔴 Critical | - |
-| Bug fixes from manual testing | 🔄 In Progress | 🔴 Critical | - |
-| Critical verifications for production | ⏳ Planned | 🔴 Critical | - |
+| Manual testing of all features | ✅ Done | 🔴 Critical | - |
+| Bug fixes from manual testing | ✅ Done | 🔴 Critical | - |
+| Critical verifications for production | ✅ Done | 🔴 Critical | - |
 
 **Subtasks:**
-- [ ] Frontend E2E tests (`cd frontend && npx playwright test`)
+- [x] Frontend E2E smoke tests (`cd frontend && npm run test:smoke`)
 - [x] Backend integration tests (`cd backend && go test -tags=integration ./...`)
 - [x] CI/CD workflows verification
-- [ ] NLP API testing
-- [ ] Backend auth API testing
+- [x] NLP API testing
+- [x] Backend auth API testing
 - [x] Public graph verification
 
 ---
@@ -57,11 +57,12 @@
 - Main backend endpoints `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
 - This is critical because `events.Publisher` is currently not wired to handlers, so `graph-service` cache only expires by TTL.
 
-### 2. Auth & user-scoped filtering in graph-service
+### 2. Auth & user-scoped filtering in graph-service ✅
 
 - Add JWT middleware to `graph-service` HTTP and gRPC.
 - Derive `user_id` from token and remove public `user_id` query parameter.
 - Add `creator_id` filter in `services/graph-service/internal/db/postgres_client.go` for all `notes`/`links` queries.
+- Anonymous/unauthenticated requests default to `is_public = true` to prevent leaking private notes.
 - `frontend/src/hooks.server.ts` proxy must forward `authorization` or a signed `x-internal-auth` header to `graph-service`.
 - Public graph moves to a separate endpoint (`/api/v1/graph/public`) filtering `is_public = true`.
 

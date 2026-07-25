@@ -195,8 +195,8 @@ jobs:
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
-          GRAPH_SERVICE_URL: ""
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
+          GRAPH_SERVICE_URL: http://localhost:9091
           SKIP_AUTH: "true"
         run: |
           cd ../backend
@@ -215,17 +215,49 @@ jobs:
             exit 1
           fi
 
+      - name: Start graph-service for smoke tests
+        env:
+          POSTGRES_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          HTTP_PORT: "9091"
+          GRPC_PORT: "9090"
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
+          SKIP_AUTH: "true"
+        run: |
+          cd ../services/graph-service
+          go mod download
+          go run ./cmd/server &
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
+              echo "✅ Graph-service is ready!"
+              break
+            fi
+            echo "Waiting for graph-service... attempt $i/30"
+            sleep 2
+          done
+          if ! curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
+            echo "❌ Graph-service failed to start"
+            exit 1
+          fi
+
       - name: Run smoke tests only
         env:
           PLAYWRIGHT_DEV_SERVER: true
+          FRONTEND_URL: http://127.0.0.1:5173
           VITE_API_TARGET: http://127.0.0.1:8080
+          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
           BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
         run: npx playwright test --grep="@smoke"
 
       - name: Run smoke BDD tests
         env:
+          FRONTEND_URL: http://127.0.0.1:5173
           VITE_API_TARGET: http://127.0.0.1:8080
+          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
           BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
         run: npm run test:cucumber -- --tags="@smoke"
 
       - name: Upload smoke test results

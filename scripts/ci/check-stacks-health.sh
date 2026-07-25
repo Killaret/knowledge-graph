@@ -53,6 +53,17 @@ check_api() {
     fi
 }
 
+check_graph_service() {
+    local port=$1
+    if curl -s -f "http://127.0.0.1:$port/health" > /dev/null; then
+        echo "  Graph-service: OK"
+        return 0
+    else
+        echo "  Graph-service: FAILED"
+        return 1
+    fi
+}
+
 check_dev_stack() {
     echo ""
     echo "Checking dev stack..."
@@ -73,6 +84,7 @@ check_dev_stack() {
     fi
 
     check_api 18080 || return 1
+    check_graph_service 9091 || return 1
 
     return 0
 }
@@ -97,6 +109,7 @@ check_personal_stack() {
     fi
 
     check_api 18082 || return 1
+    check_graph_service 9092 || return 1
 
     return 0
 }
@@ -121,6 +134,7 @@ check_test_stack() {
     fi
 
     check_api 18083 || return 1
+    check_graph_service 19091 || return 1
 
     return 0
 }

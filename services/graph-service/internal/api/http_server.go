@@ -65,6 +65,10 @@ func (s *HTTPServer) notesFilter(ctx context.Context) db.NotesFilter {
 		filter.IsPublic = true
 	} else if userID, ok := userIDFromContext(ctx); ok && userID != "" {
 		filter.UserID = userID
+	} else {
+		// No user ID and not explicitly public -> treat as anonymous/public
+		// to avoid leaking private notes when auth is disabled or bypassed.
+		filter.IsPublic = true
 	}
 	return filter
 }

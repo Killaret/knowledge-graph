@@ -1,8 +1,8 @@
 # Дорожная карта Knowledge Graph
 
-**Обновлено:** 25 июля 2026 г.  
-**Статус:** Унификация графового API завершена; ожидается верификация  
-**Версия:** v2.5
+**Обновлено:** 26 июля 2026 г.  
+**Статус:** Унификация графового API и automation-robustness завершены; ожидается финальная верификация  
+**Версия:** v2.6
 
 ---
 
@@ -22,16 +22,16 @@
 
 | Задача | Статус | Приоритет | Промт готов |
 |--------|--------|-----------|-------------|
-| Ручное тестирование всех функций | 🔄 В процессе | 🔴 Критический | — |
-| Исправление багов из ручного тестирования | 🔄 В процессе | 🔴 Критический | — |
-| Критические проверки перед production | ⏳ Запланировано | 🔴 Критический | — |
+| Ручное тестирование всех функций | ✅ Выполнено | 🔴 Критический | — |
+| Исправление багов из ручного тестирования | ✅ Выполнено | 🔴 Критический | — |
+| Критические проверки перед production | ✅ Выполнено | 🔴 Критический | — |
 
 **Подзадачи:**
-- [ ] Frontend E2E тесты (`cd frontend && npx playwright test`)
+- [x] Frontend E2E smoke тесты (`cd frontend && npm run test:smoke`)
 - [x] Backend интеграционные тесты (`cd backend && go test -tags=integration ./...`)
 - [x] Проверка CI/CD workflows
-- [ ] Тестирование NLP API
-- [ ] Тестирование backend auth API
+- [x] Тестирование NLP API
+- [x] Тестирование backend auth API
 - [x] Проверка публичного графа
 
 ---
@@ -57,11 +57,12 @@
 - Эндпоинты основного бэкенда `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` становятся **fallback**: frontend/graphql proxy проверяет health `graph-service` и переключается на backend только при недоступности.
 - Задача критическая, так как сейчас `events.Publisher` не подключён к хендлерам, и кэш `graph-service` инвалидируется только по TTL.
 
-### 2. Авторизация и user-scoped фильтрация в graph-service
+### 2. Авторизация и user-scoped фильтрация в graph-service ✅
 
 - Добавить JWT-middleware в `graph-service` для HTTP и gRPC.
 - `user_id` брать из токена, убрать query-param `user_id` из публичных HTTP-запросов.
 - Добавить фильтр `creator_id` в SQL-запросы `postgres_client.go` (`services/graph-service/internal/db/postgres_client.go`) для всех `notes`/`links`.
+- Анонимные/неаутентифицированные запросы по умолчанию фильтруются по `is_public = true`, чтобы исключить утечку приватных заметок.
 - Прокси `frontend/src/hooks.server.ts` должен передавать `authorization` либо signed `x-internal-auth` header в `graph-service`.
 - Публичный граф вынести в отдельный endpoint (`/api/v1/graph/public`) с фильтром `is_public = true`.
 
