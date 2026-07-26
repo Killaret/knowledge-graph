@@ -41,8 +41,8 @@ const API_KEY = "api_key";
  */
 async function applyUserSettings(): Promise<void> {
   try {
-    const { settings } = await usersApi.getSettings();
-    const localeSetting = settings.find((s) => s.key === "preferred_language");
+    const { settings } = (await usersApi.getSettings()) ?? { settings: [] };
+    const localeSetting = settings?.find((s) => s.key === "preferred_language");
     if (localeSetting?.value && (localeSetting.value === "en" || localeSetting.value === "ru")) {
       setLocale(localeSetting.value as Locale);
     }
@@ -68,7 +68,18 @@ export async function initAuth(): Promise<void> {
     return initAuthPromise;
   }
 
+  // Auth init only needs to run once per app session. Subsequent calls from
+  // other pages/layouts can rely on the existing state (login sets it directly).
+  if (authState.isInitialized && authState.currentUser) {
+    return;
+  }
+
   initAuthPromise = (async () => {
+    // Capture whether we already had a token at the start. This is used to
+    // avoid wiping a token set by a concurrent login while initAuth is still
+    // running.
+    let hadTokenAtStart = false;
+
     try {
       // Restore API key (user-provided, not a JWT)
       const storedApiKey = browser ? localStorage.getItem(API_KEY) : null;
@@ -105,26 +116,57 @@ export async function initAuth(): Promise<void> {
         return;
       }
 
+      // Allow test harnesses to inject an access token via window.__ACCESS_TOKEN__
+      // (e.g. Playwright/Cucumber real-auth scenarios). This avoids the need to
+      // share HttpOnly refresh cookies across origins.
+      if (browser && !(window as any).__SKIP_AUTH__) {
+        const injectedToken = (window as any).__ACCESS_TOKEN__ as string | undefined;
+        if (injectedToken && !authState.accessToken) {
+          saveTokens({
+            access_token: injectedToken,
+            refresh_token: "",
+            token_type: "Bearer",
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          });
+        }
+      }
+
+      // If we already have an access token, try to use it directly. This
+      // handles the common case where the user just logged in and the
+      // HttpOnly refresh cookie may not be available (cross-origin / test env).
+      // Only fall back to the refresh flow if the token is invalid.
+      hadTokenAtStart = !!authState.accessToken;
+      if (hadTokenAtStart) {
+        try {
+          const user = await usersApi.getMe();
+          await applyUserSettings();
+          authState.currentUser = user;
+          void preloadAuthenticatedGraph();
+          return;
+        } catch {
+          // existing token didn't work, fall through to refresh
+        }
+      }
+
       // Try to refresh the session (refresh token is sent as HttpOnly cookie).
-      // If the user is not logged in, this will fail with 401 and we leave the
-      // state cleared.
+      // If the user is not logged in, this will fail and we leave the state
+      // cleared.
       const tokens = await authApi.refreshTokens();
       saveTokens(tokens);
 
-      try {
-        const user = await usersApi.getMe();
-        await applyUserSettings();
-        authState.currentUser = user;
-        void preloadAuthenticatedGraph();
-      } catch {
-        // If getting user fails, clear auth state
-        clearAuthState();
-      }
+      const user = await usersApi.getMe();
+      await applyUserSettings();
+      authState.currentUser = user;
+      void preloadAuthenticatedGraph();
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to initialize auth:", e);
       }
-      clearAuthState();
+      // Clear state if we started with a token (it is invalid) or if no login
+      // completed in the meantime.
+      if (hadTokenAtStart || !authState.accessToken) {
+        clearAuthState();
+      }
     } finally {
       authState.isInitialized = true;
       initAuthPromise = null;

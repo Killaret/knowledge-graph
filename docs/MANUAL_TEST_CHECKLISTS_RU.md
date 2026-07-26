@@ -2,21 +2,23 @@
 
 > **Дополнение:** для ветки `ai-agents` / 3D-рефакторинга см. [MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md](MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md).
 
-**Последнее обновление:** текущий test stack с исправлениями auth, canvas, hover-delay и ghost-node.
+**Последнее обновление:** test stack с исправлениями real-auth, auth init race, canvas, hover-delay и ghost-node; добавлен раздел режима real-auth.
 
 **Окружение**
 
-- Frontend: `http://localhost:3002`
-- Backend: `http://localhost:18083`
+- Frontend: `http://127.0.0.1:3002` (или `FRONTEND_PORT`, если 3002 занят Hyper-V excluded range); на Windows используйте `127.0.0.1` вместо `localhost`, чтобы избежать проблем с `::1`.
+- Backend: `http://127.0.0.1:18083`
 - Тестовый пользователь: `testuser` / `TestPassword123!`
-- Тестовые данные: 100 notes + 60 links
+- Тестовые данные: 100 notes + 60 links (по умолчанию); можно переопределить параметрами `seed-test-data.ps1`
 - `hover_delay_ms` в `knowledge-graph.config.json` → `frontend.graph.2d.hover_delay_ms` = 150
+- В режиме real-auth фронтенд обращается к бэкенду через same-origin прокси `/api` и `/graph-service/api`; серверный прокси (`frontend/src/hooks.server.ts`) пробрасывает заголовки `Authorization` и `Cookie`, включая HttpOnly auth cookies.
+- **Для real-auth тестов стек запускается с `SKIP_AUTH=false`**, и `seed-test-data.ps1` выполняется в том же режиме; иначе заметки создадутся под анонимным владельцем и граф в real-auth режиме окажется пустым.
 
 **Перед стартом**
 
 - [ ] `docker ps` показывает все `kg-test-*` контейнеры healthy.
-- [ ] `curl http://localhost:18083/health` → `{"status":"ok"}`.
-- [ ] `curl http://localhost:3002` → HTTP 200.
+- [ ] `curl http://127.0.0.1:18083/health` → `{"status":"ok"}`.
+- [ ] `curl http://127.0.0.1:3002` → HTTP 200.
 - [ ] Открыть DevTools → Network и Console, держать их открытыми во время тестов.
 
 ---
@@ -158,7 +160,34 @@
 
 ---
 
-## 6. Очистка после тестирования
+## 6. Режим real-auth (дополнительно)
+
+> Для проверки JWT-аутентификации запустите test stack с `SKIP_AUTH=false` и выполните `seed-test-data.ps1`.
+
+### Подготовка
+- [ ] `docker compose -f docker-compose.test.yml down -v` (убедиться, что старый skip-auth стек удалён).
+- [ ] `$env:SKIP_AUTH="false"; .\scripts\testing\start-test.ps1` (Windows) или `SKIP_AUTH=false ./scripts/testing/start-test.sh` (Linux/Mac).
+- [ ] `scripts/testing/seed-test-data.ps1` — создаёт `testuser` / `TestPassword123!` и 100 заметок.
+- [ ] `curl http://127.0.0.1:18083/health` → `{"status":"ok"}`.
+- [ ] `curl http://127.0.0.1:19091/health` → `{"status":"ok","service":"graph-service"}`.
+
+### Проверки real-auth
+- [ ] Открыть `http://127.0.0.1:3002` в инкогнито — публичный граф загружается без 401-циклов.
+  - До входа одиночный `POST /api/v1/auth/refresh` с кодом `400` является ожидаемым (нет refresh cookie).
+- [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` без `Authorization` → `401`.
+- [ ] Войти как `testuser` / `TestPassword123!`.
+- [ ] После входа на главной (`/`) загружаются заметки `testuser`.
+- [ ] В Network запросы к `/api/v1/...` содержат `Authorization: Bearer <token>` или корректный `Cookie` (пробрасывается через SvelteKit proxy).
+- [ ] Запросы к `/graph-service/api/v1/graph/full` содержат `Authorization: Bearer <token>` (graph-service в текущей сборке читает только header; cookie пробрасывается, но не используется для авторизации).
+- [ ] Переключиться в списочный вид — фильтр по типу оставляет только заметки выбранного типа.
+- [ ] Открыть `/graph` — 2D-граф отрисовывает пользовательские ноды.
+- [ ] Создать заметку с графа (`N`) — она появляется в списке и на графе.
+- [ ] Logout — возврат на публичный вид, приватные заметки не отображаются.
+- [ ] Повторный hard refresh (`Ctrl+F5`) после логина не вызывает 401 (cookie с access_token пробрасываются через SvelteKit proxy).
+
+---
+
+## 7. Очистка после тестирования
 
 - [ ] Запустить `scripts/testing/stop-test.ps1` (Windows) или `scripts/testing/stop-test.sh` (Linux/Mac).
 - [ ] Тестовые контейнеры остановлены, volume'ы удалены.
@@ -174,6 +203,8 @@
 - **Перемещение нод:** drag используется для создания связей; свободное перемещение нод по canvas не поддерживается.
 - **Ctrl+Z:** placeholder — undo в canvas не реализован.
 - **Создание связей на главной (`/`):** GraphCanvas на `/` не получает `onLinkCreate`, поэтому форма связи откроется, но callback не сработает. Для создания связей используйте `/graph`.
+- **Real-auth smoke:** до входа в Network может быть один `400` на `/api/v1/auth/refresh` (нет refresh cookie) — ожидаемо. После входа граф может запросить `/api/v1/notes/00000000-0000-0000-0000-000000000001` и получить `404` (default Knowledge Core-нода отсутствует в notes) — не блокирует тестирование.
+- **Переход login → `/`:** в момент анимации страницы в DOM может ненадолго появиться два `data-testid="graph-stats"` (фоновый граф `AuthCard` + главный граф); Playwright-тесты используют `.first()`.
 
 ---
 

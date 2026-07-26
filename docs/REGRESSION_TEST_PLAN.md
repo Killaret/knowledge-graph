@@ -549,7 +549,13 @@ FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run te
 
 **Expected:** All scenarios pass against `SKIP_AUTH=true` stack.
 
-Real-auth BDD is not yet implemented; skip or add login-based step definitions when needed.
+Real-auth mode:
+```bash
+cd frontend
+FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run test:bdd:realauth
+```
+
+**Expected:** All scenarios pass against `SKIP_AUTH=false` stack. This includes the `@auth-real` scenarios in `frontend/tests/features/login.feature` (valid/invalid login, registration, protected page redirect).
 
 ---
 

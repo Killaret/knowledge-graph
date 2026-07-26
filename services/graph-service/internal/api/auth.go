@@ -30,12 +30,12 @@ type TokenClaims struct {
 // AuthMiddleware returns an http.HandlerFunc wrapper that authenticates the
 // request before passing it to next. Public endpoints (public=true) skip auth
 // and mark the request context as public. When SKIP_AUTH is enabled, every
-// request is allowed and user_id is set to "public".
+// request is allowed and the graph service should not restrict visibility.
 func AuthMiddleware(cfg *config.Config, public bool, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if cfg.SkipAuth {
-			log.Printf("[Auth] SKIP_AUTH enabled, request allowed as public")
-			next(w, r.WithContext(withPublic(r.Context())))
+			log.Printf("[Auth] SKIP_AUTH enabled, request allowed without visibility filter")
+			next(w, r.WithContext(withSkipAuth(r.Context())))
 			return
 		}
 
@@ -178,6 +178,10 @@ func grpcAuth(ctx context.Context, cfg *config.Config) (string, bool) {
 // attaches the user ID to the request context.
 func GRPCAuthUnaryInterceptor(cfg *config.Config) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if cfg.SkipAuth {
+			ctx = withSkipAuth(ctx)
+			return handler(ctx, req)
+		}
 		userID, ok := grpcAuth(ctx, cfg)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "unauthenticated")
@@ -191,6 +195,10 @@ func GRPCAuthUnaryInterceptor(cfg *config.Config) grpc.UnaryServerInterceptor {
 // attaches the user ID to the stream context.
 func GRPCAuthStreamInterceptor(cfg *config.Config) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if cfg.SkipAuth {
+			stream = &contextServerStream{ServerStream: stream, ctx: withSkipAuth(stream.Context())}
+			return handler(srv, stream)
+		}
 		userID, ok := grpcAuth(stream.Context(), cfg)
 		if !ok {
 			return status.Error(codes.Unauthenticated, "unauthenticated")

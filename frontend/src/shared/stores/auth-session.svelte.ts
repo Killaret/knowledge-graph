@@ -21,6 +21,11 @@ export function currentUser(): User | null {
   return authState.currentUser;
 }
 export function accessToken(): string | null {
+  // Support injected test tokens before initAuth completes (Playwright/Cucumber real-auth flows).
+  if (!authState.accessToken && browser) {
+    const injected = (window as any).__ACCESS_TOKEN__ as string | undefined;
+    if (injected) return injected;
+  }
   return authState.accessToken;
 }
 export function refreshToken(): string | null {
@@ -88,7 +93,7 @@ export function isAuthenticated(): boolean {
       }
     }
   }
-  return !!authState.currentUser || !!authState.apiKey;
+  return !!authState.currentUser || !!accessToken() || !!authState.apiKey;
 }
 
 /**

@@ -27,9 +27,10 @@ func generateTestToken(userID, secret, tokenType string) string {
 func contextDumpHandler(w http.ResponseWriter, r *http.Request) {
 	uid, _ := userIDFromContext(r.Context())
 	public := isPublicRequest(r.Context())
+	skip := isSkipAuthRequest(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"user_id":"` + uid + `","public":` + boolString(public) + `}`))
+	w.Write([]byte(`{"user_id":"` + uid + `","public":` + boolString(public) + `,"skip_auth":` + boolString(skip) + `}`))
 }
 
 func boolString(b bool) string {
@@ -133,7 +134,7 @@ func TestAuthMiddlewarePublicEndpointSkipsAuth(t *testing.T) {
 	}
 }
 
-func TestAuthMiddlewareSkipAuthDefaultsToPublic(t *testing.T) {
+func TestAuthMiddlewareSkipAuthAllowsAll(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", SkipAuth: true}
 	handler := AuthMiddleware(cfg, false, contextDumpHandler)
 
@@ -144,8 +145,12 @@ func TestAuthMiddlewareSkipAuthDefaultsToPublic(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
-	if !contains(rr.Body.String(), `"public":true`) {
-		t.Fatalf("expected SKIP_AUTH to result in public context, got %s", rr.Body.String())
+	body := rr.Body.String()
+	if !contains(body, `"skip_auth":true`) {
+		t.Fatalf("expected SKIP_AUTH to be marked in context, got %s", body)
+	}
+	if contains(body, `"public":true`) {
+		t.Fatalf("expected SKIP_AUTH not to be treated as public-only, got %s", body)
 	}
 }
 

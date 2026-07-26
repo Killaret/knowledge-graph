@@ -101,7 +101,9 @@ function buildQuery(params: Record<string, string | number | undefined>): string
 function shouldFallback(error: unknown): boolean {
   if (error instanceof TimeoutError) return true;
   if (error instanceof HTTPError) {
-    return error.response.status >= 500 || error.response.status === 408 || error.response.status === 429;
+    return (
+      error.response.status >= 500 || error.response.status === 408 || error.response.status === 429
+    );
   }
   if (error instanceof Error) {
     return (
@@ -125,7 +127,12 @@ function normalizeGraphData(raw: unknown): GraphData {
   ) {
     return (raw as GraphApiResponse).data;
   }
-  if (raw && typeof raw === "object" && "nodes" in (raw as GraphData) && Array.isArray((raw as GraphData).nodes)) {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "nodes" in (raw as GraphData) &&
+    Array.isArray((raw as GraphData).nodes)
+  ) {
     return raw as GraphData;
   }
   return { nodes: [], links: [] };
@@ -201,13 +208,12 @@ export async function getGraphData(
     return normalizeGraphData(raw);
   } catch (error) {
     if (shouldFallback(error)) {
-      return callBackendFallback(
-        async () => {
-          const raw = await api.get(`v1/notes/${encodeURIComponent(noteId)}/graph?${buildQuery({ depth })}`).json<unknown>();
-          return normalizeGraphData(raw);
-        },
-        `Failed to load graph for note ${noteId}`
-      );
+      return callBackendFallback(async () => {
+        const raw = await api
+          .get(`v1/notes/${encodeURIComponent(noteId)}/graph?${buildQuery({ depth })}`)
+          .json<unknown>();
+        return normalizeGraphData(raw);
+      }, `Failed to load graph for note ${noteId}`);
     }
     handleGraphError(error, `Failed to load graph for note ${noteId}`);
   }
@@ -234,13 +240,10 @@ export async function getFullGraphData(
     return result;
   } catch (error) {
     if (shouldFallback(error)) {
-      return callBackendFallback(
-        async () => {
-          const raw = await api.get(`v1/graph/all?${buildQuery({ limit })}`).json<unknown>();
-          return normalizeGraphData(raw);
-        },
-        "Failed to load full graph"
-      );
+      return callBackendFallback(async () => {
+        const raw = await api.get(`v1/graph/all?${buildQuery({ limit })}`).json<unknown>();
+        return normalizeGraphData(raw);
+      }, "Failed to load full graph");
     }
     handleGraphError(error, "Failed to load full graph");
   }
@@ -309,7 +312,9 @@ export async function getCachedGraph(): Promise<GraphData | null> {
 // Запросить свежий граф с опциональным дельта-обновлением
 export async function getFreshGraph(): Promise<FreshGraphResponse> {
   try {
-    const response = await api.get("v1/me/graph/fresh", { cache: "no-store" }).json<FreshGraphApiResponse>();
+    const response = await api
+      .get("v1/me/graph/fresh", { cache: "no-store" })
+      .json<FreshGraphApiResponse>();
     return response.data || { fresh: { nodes: [], links: [] } };
   } catch (error) {
     return handleGraphError(error, "Failed to load fresh graph");

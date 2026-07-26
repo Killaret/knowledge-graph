@@ -53,6 +53,9 @@ type GraphApiResponse struct {
 }
 
 func (s *HTTPServer) cacheUserID(ctx context.Context) string {
+	if isSkipAuthRequest(ctx) {
+		return "skip-auth"
+	}
 	if userID, ok := userIDFromContext(ctx); ok && userID != "" {
 		return userID
 	}
@@ -61,6 +64,10 @@ func (s *HTTPServer) cacheUserID(ctx context.Context) string {
 
 func (s *HTTPServer) notesFilter(ctx context.Context) db.NotesFilter {
 	filter := db.NotesFilter{}
+	if isSkipAuthRequest(ctx) {
+		// SKIP_AUTH is a trusted test mode: do not restrict visibility.
+		return filter
+	}
 	if isPublicRequest(ctx) {
 		filter.IsPublic = true
 	} else if userID, ok := userIDFromContext(ctx); ok && userID != "" {

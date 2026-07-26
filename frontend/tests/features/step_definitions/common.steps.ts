@@ -17,8 +17,8 @@ interface ITestWorld extends IWorld {
 Before(async function (this: ITestWorld) {
   this.testNotes = [];
 
-  // Inject SKIP_AUTH flag to bypass authentication
-  if (this.page) {
+  // Inject SKIP_AUTH flag only when running against a SKIP_AUTH stack
+  if (process.env.SKIP_AUTH === "true" && this.page) {
     await this.page.addInitScript(() => {
       (window as any).__SKIP_AUTH__ = true;
     });
@@ -503,11 +503,9 @@ When("I fill in the title {string}", async function (this: ITestWorld, title: st
 });
 
 When("I select type {string}", async function (this: ITestWorld, type: string) {
-  // Type selector uses .type-btn with .label inside
-  const typeButton = this.page
-    .locator(`.type-btn .label:has-text("${type}")`)
-    .or(this.page.locator(`.type-btn:has-text("${type}")`))
-    .first();
+  // Type selector is localized, so match by the machine-readable type key.
+  const typeKey = type.toLowerCase();
+  const typeButton = this.page.locator(`.type-btn[data-type="${typeKey}"]`).first();
 
   await expect(typeButton).toBeVisible({ timeout: 5000 });
   await typeButton.click();

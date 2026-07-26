@@ -17,7 +17,6 @@ function createContainer() {
 }
 
 function stubRenderer(engine: Graph3DEngine) {
-   
   const bundle = (engine as any).sceneBundle;
   bundle.renderer.render = vi.fn();
   bundle.labelRenderer.render = vi.fn();

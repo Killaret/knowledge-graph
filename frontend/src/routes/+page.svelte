@@ -25,7 +25,7 @@
     updateGraphWithDelta,
     getPreloadedGraph,
   } from "$shared/services/PreloadService";
-  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
   import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
@@ -135,21 +135,28 @@
   // - za: Alphabetical sorting Z-A
   onMount(() => {
     if (!browser) return;
-    void loadData();
 
-    // Periodically sync the graph via delta updates from graph-service.
-    const deltaInterval = setInterval(() => {
-      void refreshAfterMutation();
-    }, 30000);
+    let deltaInterval: ReturnType<typeof setInterval> | undefined;
+    let handleFocus: (() => void) | undefined;
 
-    const handleFocus = () => {
-      void refreshAfterMutation();
-    };
-    window.addEventListener("focus", handleFocus);
+    (async () => {
+      await initAuth();
+      void loadData();
+
+      // Periodically sync the graph via delta updates from graph-service.
+      deltaInterval = setInterval(() => {
+        void refreshAfterMutation();
+      }, 30000);
+
+      handleFocus = () => {
+        void refreshAfterMutation();
+      };
+      window.addEventListener("focus", handleFocus);
+    })();
 
     return () => {
-      clearInterval(deltaInterval);
-      window.removeEventListener("focus", handleFocus);
+      if (deltaInterval) clearInterval(deltaInterval);
+      if (handleFocus) window.removeEventListener("focus", handleFocus);
     };
   });
 
@@ -192,7 +199,13 @@
       if (graphResult && graphResult.nodes.length > 0) {
         if (import.meta.env.DEV) {
           const apiTypes = [...new Set(graphResult.nodes.map((n) => n.type))];
-          console.log("[+page] Full graph loaded:", graphResult.nodes.length, "nodes,", graphResult.links.length, "links");
+          console.log(
+            "[+page] Full graph loaded:",
+            graphResult.nodes.length,
+            "nodes,",
+            graphResult.links.length,
+            "links"
+          );
           console.log("[+page] API node types:", apiTypes);
         }
 

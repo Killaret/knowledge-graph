@@ -82,11 +82,11 @@ func (c *postgresClient) GetNotes(ctx context.Context, filter NotesFilter) ([]*N
 }
 
 func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
-	noteVis, noteArgs := noteVisibilitySQL(filter, 2)
+	noteVis, noteArgs := noteVisibilitySQLWithAlias(filter, 2, "n")
 	query := fmt.Sprintf(`WITH RECURSIVE nodes AS (
-    SELECT id, title, type, 1 AS level
-    FROM notes
-    WHERE id = $1 AND deleted_at IS NULL AND %s
+    SELECT n.id, n.title, n.type, 1 AS level
+    FROM notes n
+    WHERE n.id = $1 AND n.deleted_at IS NULL AND %s
   UNION ALL
     SELECT n.id, n.title, n.type, nodes.level + 1
     FROM links l

@@ -277,7 +277,7 @@ $graphStart = Get-Date
 Write-Host "Verifying graph service..." -ForegroundColor Yellow
 
 try {
-    $graphResponse = Invoke-RestMethod -Uri "http://127.0.0.1:19091/api/v1/graph/full" -Method Get -TimeoutSec 30
+    $graphResponse = Invoke-RestMethod -Uri "http://127.0.0.1:19091/api/v1/graph/full" -Method Get -Headers $headers -TimeoutSec 30
     $report.graphNodes = $graphResponse.meta.total_nodes
     $report.graphLinks = $graphResponse.meta.total_links
     Write-Host "Graph service: $($graphResponse.meta.total_nodes) nodes, $($graphResponse.meta.total_links) links." -ForegroundColor Green

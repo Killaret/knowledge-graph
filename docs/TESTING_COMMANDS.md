@@ -16,6 +16,20 @@ cd frontend && npx playwright test --grep="@visual"
 # BDD tests (Cucumber)
 cd frontend && npm run test:bdd
 
+# Real-auth Playwright / BDD (requires SKIP_AUTH=false test stack)
+cd frontend && npm run test:realauth
+cd frontend && npm run test:bdd:realauth
+
+# If the frontend is on a custom port (e.g. FRONTEND_PORT=50070 due to Hyper-V):
+# PowerShell
+cd frontend; $env:SKIP_AUTH='false'; $env:FRONTEND_URL='http://127.0.0.1:50070'; $env:BACKEND_URL='http://127.0.0.1:18083'; node scripts/run-bdd.cjs
+# Bash
+SKIP_AUTH=false FRONTEND_URL=http://127.0.0.1:50070 BACKEND_URL=http://127.0.0.1:18083 node scripts/run-bdd.cjs
+
+# Skip-auth Playwright / BDD (default test stack)
+cd frontend && npm run test:skipauth
+cd frontend && npm run test:bdd:skipauth
+
 # Build verification
 cd frontend && npm run build
 ```
@@ -69,13 +83,28 @@ curl -X POST http://localhost:5000/embed -H "Content-Type: application/json" -d 
 .\scripts\testing\run-full-test-cycle.ps1      # Windows
 ./scripts/testing/run-full-test-cycle.sh       # Linux/Mac
 
-# Start test stack
+# Start test stack (skip-auth by default)
 .\scripts\testing\start-test.ps1              # Windows
 ./scripts/testing/start-test.sh               # Linux/Mac
 
+# Start test stack with real authentication
+# The test frontend is built with VITE_API_URL=/api so browser API calls are
+# proxied through SvelteKit to the backend and graph service.
+# All services (backend, graph-service, worker, frontend) must see SKIP_AUTH=false.
+$env:SKIP_AUTH="false"; .\scripts\testing\start-test.ps1   # Windows PowerShell
+SKIP_AUTH=false ./scripts/testing/start-test.sh           # Linux/Mac
+
+# If the default frontend port 3002 is blocked (e.g. inside a Windows Hyper-V
+# excluded range), override it with FRONTEND_PORT:
+$env:FRONTEND_PORT="50070"; docker compose -f docker-compose.test.yml up -d --build   # Windows
+FRONTEND_PORT=50070 docker compose -f docker-compose.test.yml up -d --build          # Linux/Mac
+
 # Seed test data
-.\scripts\testing\seed-test-data.ps1          # Windows
-./scripts\testing\seed-test-data.sh           # Linux/Mac
+# IMPORTANT: for real-auth testing the test stack must be running with SKIP_AUTH=false,
+# otherwise the seeded notes are owned by the anonymous skip-auth user and real-auth
+# graph requests will return an empty graph.
+$env:SKIP_AUTH="false"; .\scripts\testing\seed-test-data.ps1          # Windows
+SKIP_AUTH=false ./scripts/testing/seed-test-data.sh                   # Linux/Mac
 
 # Stop and destroy test stack
 .\scripts\testing\stop-test.ps1               # Windows
@@ -163,6 +192,7 @@ curl http://localhost:8092/health           # Personal graph service
 curl http://localhost:18083/health           # Test backend
 curl http://localhost:3002                  # Test frontend
 curl http://localhost:15002/health          # Test NLP service
+curl http://localhost:19091/health          # Test graph service (HTTP)
 ```
 
 ### Testing Best Practices
@@ -179,13 +209,26 @@ curl http://localhost:15002/health          # Test NLP service
 - **ALWAYS** stop dev/personal stacks before E2E/BDD; running all stacks together causes Docker instability and Windows `localhost` → `::1` Playwright failures
 - **ALWAYS** use `http://127.0.0.1:3002` / `http://127.0.0.1:18083` on Windows, or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`
 - **ALWAYS** keep `.env` aligned with existing `postgres_data` / `pgdata_personal` volume passwords (`POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD`) and set `JWT_SECRET`
+- **For real-auth tests** start the test stack with `SKIP_AUTH=false`; otherwise `/api/v1/users/me` returns 500 and `/api/v1/auth/refresh` returns 400
+- **If Windows Hyper-V blocks port 3002**, set `FRONTEND_PORT` (e.g. `50070`) and matching `FRONTEND_URL`
+- **Playwright is configured with `workers: 2`** to keep real-auth manual-checklist tests stable on Windows; do not override above 2 workers for real-auth runs
 
 ### Windows E2E/BDD URL workaround
 
 ```powershell
-$env:FRONTEND_URL = "http://127.0.0.1:3002"
+$env:FRONTEND_URL = "http://127.0.0.1:3002"   # or the FRONTEND_PORT you used, e.g. 50070
 $env:BACKEND_URL = "http://127.0.0.1:18083"
 npx playwright test --project=chromium-skip-auth
+```
+
+### Real-auth Playwright run
+
+```powershell
+# Start stack first with SKIP_AUTH=false and (if needed) FRONTEND_PORT=50070
+$env:FRONTEND_URL = "http://127.0.0.1:50070"
+$env:BACKEND_URL = "http://127.0.0.1:18083"
+$env:SKIP_AUTH = "false"
+npx playwright test --project=chromium-real-auth
 ```
 
 ### Rebuild test frontend for IPv4

@@ -29,19 +29,20 @@ The test stack is fully isolated from dev and personal stacks:
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
 | backend-test | kg-test-backend | 18083 | Test backend API |
 | graph-service-test | kg-test-graph-service | 19090/19091 | Test graph analytics service |
-| frontend-test | kg-test-frontend | 3002 | Test frontend |
+| frontend-test | kg-test-frontend | 3002 (override with `FRONTEND_PORT`) | Test frontend |
 
 ### Configuration
 
-- **SKIP_AUTH: true** - Authentication bypassed for testing
+- **SKIP_AUTH: true** - Authentication bypassed for skip-auth testing (default)
+- **SKIP_AUTH: false** - Required for `@auth-real` Playwright/BDD tests
 - **REDIS_FLUSH_ON_STARTUP: true** - Redis cleared on startup
 - **Database: knowledge_test** - Separate test database
 
 ### Test Stack URLs
 
-- **Frontend:** http://localhost:3002
-- **Backend API:** http://localhost:18083
-- **Graph Service (HTTP):** http://localhost:19091
+- **Frontend:** `http://127.0.0.1:<FRONTEND_PORT>` (default 3002; browser API calls are proxied through `/api` and `/graph-service/api`)
+- **Backend API:** http://127.0.0.1:18083 (direct access for health/setup)
+- **Graph Service (HTTP):** http://127.0.0.1:19091
 
 ### Health Checks
 
@@ -273,8 +274,8 @@ git push
 ### Test Environment
 
 After starting the test stack, access the test environment at:
-- **Frontend:** http://localhost:3002
-- **Backend API:** http://localhost:18083
+- **Frontend:** http://127.0.0.1:3002
+- **Backend API:** http://127.0.0.1:18083
 
 ### Test User Credentials
 
@@ -308,7 +309,8 @@ The manual test checklist covers:
 | Backend | Integration Tests | - | - | - | - | ⚠️ Not run — requires Linux/WSL Docker (`-tags=integration`) |
 | Frontend | Unit Tests | 617 | 580 | 0 | 37 | ✅ Good |
 | Frontend | E2E Tests | - | - | - | - | ⚠️ Run separately with `npm run test` |
-| Frontend | BDD Tests | - | - | - | - | ⚠️ Run separately with `npm run test:bdd` |
+| Frontend | BDD Tests (skip-auth) | 5 | 5 | 0 | 0 | ✅ Good |
+| Frontend | BDD Tests (real-auth) | 9 | 9 | 0 | 0 | ✅ Good |
 | NLP | API + Utils Tests | 46 | 46 | 0 | 0 | ✅ Excellent |
 | **NLP Total** | - | **46** | **46** | **0** | **0** | ✅ **Excellent** |
 
@@ -383,6 +385,12 @@ npm run test
 ```bash
 cd frontend
 npm run test:bdd
+
+# Skip-auth stack (default)
+npm run test:bdd:skipauth
+
+# Real-auth stack (SKIP_AUTH=false)
+npm run test:bdd:realauth
 ```
 
 ### NLP Tests
@@ -403,7 +411,7 @@ Visual regression tests are located in `frontend/tests/visual/visual-regression.
 ./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
 
 cd frontend
-$env:FRONTEND_URL = "http://localhost:3002"
+$env:FRONTEND_URL = "http://127.0.0.1:3002"
 npm run test:visual:upload   # requires ARGOS_TOKEN env variable
 ```
 
@@ -413,12 +421,12 @@ SKIP_AUTH=true ./scripts/testing/start-test.sh
 NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
 
 cd frontend
-FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
+FRONTEND_URL=http://127.0.0.1:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
 ```
 
 **Configuration:**
 - `ARGOS_TOKEN` — required for upload.
-- `FRONTEND_URL` — defaults to `http://localhost:3002` (test stack).
+- `FRONTEND_URL` — defaults to `http://127.0.0.1:3002` (test stack).
 - `ARGOS_REFERENCE_BRANCH` — baseline branch (`ai-agents` for this work).
 - `ARGOS_UPLOAD_LOCAL` — set to `true` to upload from a local run.
 
@@ -478,8 +486,8 @@ This ensures:
 
 **Verification:**
 ```bash
-curl http://localhost:9000/health
-curl http://localhost:9000/api/v1/notes?limit=1
+curl http://127.0.0.1:9000/health
+curl http://127.0.0.1:9000/api/v1/notes?limit=1
 ```
 
 **Status:** ✅ Resolved - Dev stack API is now accessible
@@ -506,12 +514,12 @@ docker compose -f docker-compose.test.yml logs
 
 **Check backend health:**
 ```bash
-curl http://localhost:18083/health
+curl http://127.0.0.1:18083/health
 ```
 
 **Check API:**
 ```bash
-curl http://localhost:18083/api/v1/notes
+curl http://127.0.0.1:18083/api/v1/notes
 ```
 
 **Common issues:**
@@ -536,6 +544,16 @@ docker ps --filter "name=kg-test"
 docker compose -f docker-compose.test.yml down -v
 ```
 
+### Real-auth smoke test notes
+
+**Expected non-blocking errors in `smoke-real-auth.spec.ts`:**
+- `400` on `POST /api/v1/auth/refresh` before login — the browser has no refresh cookie yet.
+- `404` on `GET /api/v1/notes/00000000-0000-0000-0000-000000000001` — graph-service may include a default `Knowledge Core` node whose ID does not exist in the `notes` table.
+
+**Strict mode violation for `data-testid="graph-stats"`:**
+- During the `/auth/login` → `/` transition, the old `AuthCard` background graph can briefly remain in the DOM alongside the main graph, causing two `graph-stats` elements.
+- `tests/smoke-real-auth.spec.ts` uses `.first()` to handle this, matching the pattern in `tests/type-filters.spec.ts` and `tests/home-page.spec.ts`.
+
 ### Multiple stacks cause Docker/Playwright failures
 
 **Issue:** Docker becomes unstable, test stack containers fail health checks, or Playwright reports `ECONNREFUSED ::1:18083` / `net::ERR_CONNECTION_REFUSED`.
@@ -554,7 +572,7 @@ docker compose -f docker-compose.test.yml down -v
    $env:FRONTEND_URL = "http://127.0.0.1:3002"
    $env:BACKEND_URL = "http://127.0.0.1:18083"
    ```
-4. Or rebuild the test frontend image with `VITE_API_URL=http://127.0.0.1:18083`:
+4. The test frontend image is built with `VITE_API_URL=/api` by default, so browser API calls go through the SvelteKit proxy. Only rebuild with a different `VITE_API_URL` if you need to bypass the proxy:
    ```bash
    docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:18083 frontend-test
    ```

@@ -26,6 +26,7 @@ vi.mock("$shared/api/auth", () => ({
 
 vi.mock("$shared/api/users", () => ({
   getMe: vi.fn(),
+  getSettings: vi.fn(),
 }));
 
 vi.mock("$shared/services/PreloadService", () => ({
@@ -44,6 +45,7 @@ vi.mock("$shared/services/PreloadService", () => ({
 
 // Импортируем auth.svelte ПОСЛЕ моков
 import { initAuth, login, logout, isAuthenticated } from "./auth.svelte";
+import { clearAuthState } from "./auth-session.svelte";
 
 // Мокаем localStorage
 const localStorageMock = {
@@ -60,6 +62,7 @@ Object.defineProperty(window, "localStorage", {
 describe("Auth Store Integration with PreloadService (Simplified)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearAuthState();
 
     // Сбрасываем моки PreloadService
     preloadMocks.clearPreloadCache.mockReset();

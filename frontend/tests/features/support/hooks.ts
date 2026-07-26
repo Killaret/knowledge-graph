@@ -2,6 +2,7 @@ import { Before, After, BeforeAll, AfterAll } from "@cucumber/cucumber";
 import { chromium, type Browser } from "playwright";
 import { spawn, type ChildProcess } from "child_process";
 import type { ITestWorld } from "./world";
+import { loginOrCreateTestUser } from "../../helpers/auth";
 
 let browser: Browser;
 let devServer: ChildProcess | null = null;
@@ -55,9 +56,25 @@ AfterAll(async function () {
 });
 
 Before(async function (this: ITestWorld) {
+  let extraHeaders: Record<string, string> | undefined;
+
+  // For real-auth stacks, log in as the seeded test user and inject the
+  // access token as a default header for both page and API requests.
+  let accessToken: string | undefined;
+  if (process.env.SKIP_AUTH !== "true") {
+    const tempContext = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+    });
+    const tempRequest = tempContext.request;
+    accessToken = await loginOrCreateTestUser(tempRequest);
+    await tempContext.close();
+    extraHeaders = { Authorization: `Bearer ${accessToken}` };
+  }
+
   // Create new context and page for each scenario
   this.context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
+    extraHTTPHeaders: extraHeaders,
   });
 
   // Add SKIP_AUTH init script only when running against a SKIP_AUTH stack
@@ -70,6 +87,12 @@ Before(async function (this: ITestWorld) {
       }
       (window as any).__SKIP_AUTH__ = true;
     });
+  } else if (accessToken) {
+    // For real-auth stacks, expose the access token to the frontend so
+    // auth init can bootstrap the user session without a refresh cookie.
+    await this.context.addInitScript((token: string) => {
+      (window as any).__ACCESS_TOKEN__ = token;
+    }, accessToken);
   }
 
   this.page = await this.context.newPage();

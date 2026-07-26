@@ -229,26 +229,30 @@ This section tracks the ongoing migration from direct `*gorm.DB` usage in handle
 
 ### Full regression test results (latest run)
 
-Run: 2026-07-23. Test stack was started in isolation (dev/personal stopped). E2E/BDD was run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests. On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`, so tests used `FRONTEND_URL=http://127.0.0.1:3002` and `BACKEND_URL=http://127.0.0.1:18083`; the test frontend was rebuilt with `VITE_API_URL=http://127.0.0.1:18083`.
+Run: 2026-07-26. Test stack was started in isolation (dev/personal stopped). E2E/BDD was run in two phases: a clean `SKIP_AUTH=true` stack for skip-auth tests, then a clean `SKIP_AUTH=false` stack for `@auth-real` tests. On Windows, Playwright/Node resolves `localhost` to `::1` while Docker binds published ports to `127.0.0.1`, so tests used `FRONTEND_URL=http://127.0.0.1:<port>` and `BACKEND_URL=http://127.0.0.1:18083`. On some Windows hosts port `3002` is inside a Hyper-V excluded range; use `FRONTEND_PORT` (e.g. `50070`) when starting the test stack and matching `FRONTEND_URL`.
 
 | Layer | Command | Result |
 |-------|---------|--------|
 | Backend unit | `go test -p=1 -count=1 ./...` | **PASS** |
 | Backend integration | `go test -tags=integration -p=1 -count=1 ./...` | **PASS** |
-| Frontend unit + coverage | `npm run test:coverage` | **PASS** |
-| E2E skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true npx playwright test --project=chromium-skip-auth` | **72 passed, 10 skipped, 0 failed** |
-| BDD skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true node scripts/run-bdd.cjs` | **5 scenarios, 43 steps passed** |
-| E2E real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=false npx playwright test --project=chromium-real-auth` | **1 passed, 0 failed** |
+| Frontend unit | `npm run test:unit` | **837 passed, 0 failed** |
+| E2E skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:50070 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true npx playwright test --project=chromium-skip-auth` | **74 passed, 10 skipped, 0 failed** |
+| BDD skip-auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:50070 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=true node scripts/run-bdd.cjs` | **5 scenarios, 43 steps passed** |
+| E2E real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:50070 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=false npx playwright test --project=chromium-real-auth` | **12 passed, 0 failed** |
+| BDD real auth (clean stack) | `FRONTEND_URL=http://127.0.0.1:50070 BACKEND_URL=http://127.0.0.1:18083 SKIP_AUTH=false node scripts/run-bdd.cjs` | **9 scenarios, 65 steps passed** |
 
 ### Environment isolation findings
 
 - **Do not run dev/personal/test stacks simultaneously.** Concurrent stacks cause Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright connection failures.
 - **Use only the test stack during E2E/BDD/regression.** Stop dev and personal stacks first.
 - **`.env` must be present** with `JWT_SECRET`, `POSTGRES_PASSWORD`, and `PERSONAL_POSTGRES_PASSWORD` matching the existing `postgres_data` / `pgdata_personal` volumes; otherwise dev/personal backend fails to connect.
+- **For real-auth tests the test stack must be started with `SKIP_AUTH=false`.** Backend, graph-service, worker and frontend all read this flag; if it is `true`, `/api/v1/users/me` returns 500 and `/api/v1/auth/refresh` returns 400.
+- **If `127.0.0.1:3002` is blocked by Hyper-V**, start the stack with `$env:FRONTEND_PORT="50070"` and point Playwright at `FRONTEND_URL=http://127.0.0.1:50070`.
+- **Seed test data with `SKIP_AUTH=false` for real-auth runs.** The `seed-test-data.ps1` script authenticates as `testuser`; if the backend is in skip-auth mode, notes are created with the anonymous `00000000-0000-0000-0000-000000000000` owner and real-auth graph requests return an empty graph.
 
 ### Remaining debt
 
-- BDD real-auth mode is not yet implemented.
+- BDD real-auth mode is implemented in `frontend/tests/features/login.feature` and `auth.steps.ts`; run it with `npm run test:bdd:realauth` against a `SKIP_AUTH=false` stack.
 - Full `run-full-test-cycle.ps1` 25-step script has manual verification steps (public graph, CI/CD, docs) that are not automated.
 
 ### Verification checklist

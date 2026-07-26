@@ -118,6 +118,4 @@ describe("AuthCard", () => {
     const card = container.querySelector(".card");
     expect(card).toBeTruthy();
   });
-
-
 });

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { initAuth } from "$shared/stores/auth.svelte";
   import {
     getNotes,
     getNote,
@@ -145,6 +146,9 @@
 
   onMount(async () => {
     if (!browser) return;
+    // Make sure auth is initialized before loading graph data so the token is
+    // available for graph-service requests.
+    await initAuth();
     // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
     const url = new URL(window.location.href);
     await loadGraphData({ nocache: url.searchParams.has("nocache") });
@@ -209,10 +213,16 @@
   }
 
   // Отслеживаем изменение showFullGraph и загружаем данные
+  // (skip the initial run, onMount already loads once).
+  let showFullGraphInitialized = false;
   $effect(() => {
     if (browser) {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       showFullGraph;
+      if (!showFullGraphInitialized) {
+        showFullGraphInitialized = true;
+        return;
+      }
       loadGraphData();
     }
   });

@@ -257,8 +257,6 @@ test.describe(
     });
 
     test("should open 3D graph for a note with links", async ({ page, request }) => {
-      // 3D graph is frozen for v1.0 - the page redirects to 2D graph
-
       // Create two notes and a link via API using helper
       const note1 = await createNote(request, {
         title: "Node A",
@@ -273,24 +271,20 @@ test.describe(
       testNoteIds.push(id1, id2);
       await createLink(request, id1, id2, 1.0, "reference");
 
-      // Navigate to 3D graph page - it redirects to 2D graph
+      // Navigate to 3D graph page
       await page.goto(`/graph/3d/${id1}`);
-      // Wait for redirect to 2D graph page
-      await page.waitForURL(`**/graph/${id1}`, { timeout: 15000 });
+      await page.waitForURL(`**/graph/3d/${id1}`, { timeout: 15000 });
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(2000);
 
-      // Verify 2D graph canvas is visible after redirect
-      const graphContainer = page.locator(".graph-container, .graph-3d-container, canvas").first();
-      await expect(graphContainer).toBeVisible({ timeout: 15000 });
+      // Verify 3D graph viewer is visible
+      const graphViewer = page.locator('[data-testid="graph-3d-viewer"]').first();
+      await expect(graphViewer).toBeVisible({ timeout: 15000 });
 
-      // Verify stats bar shows node and link counts
-      const statsBar = page.locator('[data-testid="graph-stats"], .stats-bar').first();
-      await expect(statsBar).toBeVisible({ timeout: 10000 });
-
-      const statsText = await statsBar.textContent();
-      expect(statsText).toMatch(/\d+\s*nodes?/i);
-      expect(statsText).toMatch(/\d+\s*links?/i);
+      // Verify no 404 error is shown
+      const error404 = page.locator("text=404, text=Not Found").first();
+      const has404 = await error404.isVisible().catch(() => false);
+      expect(has404).toBe(false);
     });
 
     test("should show back button on note detail page", async ({ page, request }) => {

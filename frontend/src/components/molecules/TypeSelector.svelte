@@ -25,6 +25,7 @@
     <button
       type="button"
       class="type-btn"
+      data-type={type.type}
       class:active={selected === type.type}
       onclick={() => selectType(type.type)}
       style="--type-color: {type.toCSSColor()}; --type-bg: {type.color}33"

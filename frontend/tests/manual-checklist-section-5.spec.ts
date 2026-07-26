@@ -1,10 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { loginAsTestUser } from "./helpers/auth";
 
-const ROUTES = ["/", "/graph", "/profile"];
+const ROUTES = ["/", "/graph?full=1", "/profile"];
 
 async function waitForRouteContent(page: Page, route: string) {
-  if (route === "/graph") {
+  if (route.startsWith("/graph")) {
     await expect(page.locator('[data-testid="graph-stats"]')).toBeVisible({
       timeout: 20000,
     });
@@ -32,7 +32,7 @@ function attachConsoleAndDialogListeners(page: Page, errors: string[], dialogs: 
   });
 }
 
-test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
+test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] }, () => {
   test.beforeEach(async ({ page, request }) => {
     await loginAsTestUser(page, request);
   });
@@ -54,7 +54,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
   });
 
   test("logout and re-login preserves graph data", async ({ page, request }) => {
-    await page.goto("/graph?nocache=1", {
+    await page.goto("/graph?nocache=1&full=1", {
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
@@ -69,7 +69,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
 
     // Re-login by setting fresh tokens and navigating back
     await loginAsTestUser(page, request);
-    await page.goto("/graph?nocache=1", {
+    await page.goto("/graph?nocache=1&full=1", {
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
@@ -92,7 +92,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
     });
     attachConsoleAndDialogListeners(page, consoleErrors, dialogs);
 
-    await page.goto("/graph?nocache=1", {
+    await page.goto("/graph?nocache=1&full=1", {
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
@@ -160,7 +160,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux"] }, () => {
 
   test("responsive layout keeps canvas visible on narrow viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/graph?nocache=1", {
+    await page.goto("/graph?nocache=1&full=1", {
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });

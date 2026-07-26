@@ -3,7 +3,7 @@
 **Ветка:** `ai-agents` / `feature/graph3d-unfreeze`  
 **Базовый коммит:** `025777e`  
 **Фокус:** только доработки ветки и их взаимодействие с остальной системой.  
-**Окружение:** isolated test stack (`scripts/testing/start-test.ps1`).
+**Окружение:** isolated test stack (`scripts/testing/start-test.ps1`). При блокировке `3002` Hyper-V используйте `FRONTEND_PORT=50070`; для real-auth тестов стек и `seed-test-data.ps1` запускаются с `SKIP_AUTH=false`.
 
 > Этот чек-лист **дополняет** [MANUAL_TEST_CHECKLISTS_RU.md](MANUAL_TEST_CHECKLISTS_RU.md), а не заменяет его.
 
@@ -14,9 +14,10 @@
 - [ ] `scripts/testing/stop-test.ps1` — убедиться, что dev/personal стеки остановлены.
 - [ ] `scripts/testing/start-test.ps1` — test stack поднят.
 - [ ] `scripts/testing/seed-test-data.ps1` — 100 notes + 60 links созданы.
-- [ ] `curl http://localhost:8083/health` → `{"status":"ok"}`.
-- [ ] `curl http://localhost:9095/health` → `OK` (graph-service, порт из `docker-compose.test.yml`).
-- [ ] `curl http://localhost:3002` → HTTP 200.
+- [ ] `curl http://127.0.0.1:18083/health` → `{"status":"ok"}`.
+- [ ] `curl http://127.0.0.1:19091/health` → `{"status":"ok","service":"graph-service"}` (graph-service, порт из `docker-compose.test.yml`).
+- [ ] `curl http://127.0.0.1:3002` → HTTP 200.
+- [ ] Для real-auth (`SKIP_AUTH=false`): создать `testuser` / `TestPassword123!` и выполнить login перед открытием `/graph/3d`.
 - [ ] Открыть DevTools Network + Console.
 
 ---
@@ -52,7 +53,8 @@
 
 ### Полный 3D-граф
 - [ ] Перейти на `/graph/3d`. В Network виден запрос к `graph-service`:
-  - `GET http://localhost:8083/graph-service/api/v1/graph/full` (через SvelteKit proxy) **или** напрямую `http://localhost:9095/api/v1/graph/full`.
+  - `GET http://127.0.0.1:3002/graph-service/api/v1/graph/full` (через SvelteKit proxy) **или** напрямую `http://127.0.0.1:19091/api/v1/graph/full`.
+  - В режиме real-auth запрос должен содержать `Authorization: Bearer <token>` или корректный `Cookie` (пробрасывается через `frontend/src/hooks.server.ts`).
 - [ ] Ответ содержит `nodes` с полями `id`, `title`, `type`, `x`, `y`, `z`.
 - [ ] Узлы отрисовываются в 3D, камера авто-фитит сцену.
 - [ ] Повторное открытие `/graph/3d` при наличии кэша в Redis (`graph-service:full:public` / `:userID`) отдаётся быстрее (по логам graph-service `Cache hit`).
@@ -105,6 +107,8 @@
 ### Авторизация
 - [ ] Аутентифицированный пользователь видит только свои заметки в graph-service (запросы фильтруются по `creator_id`).
 - [ ] `user_id` не передаётся в query string к graph-service.
+- [ ] Валидный токен передаётся в `Authorization: Bearer <token>` (фронтенд добавляет header через `ky` `beforeRequest`).
+- [ ] SvelteKit proxy пробрасывает `Cookie` с `access_token`, но graph-service в текущей сборке читает только `Authorization`-header; при полной перезагрузке фронтенд делает refresh перед вызовом graph-service.
 - [ ] Запрос без валидного токена к приватному endpoint graph-service возвращает 401.
 - [ ] Публичный endpoint graph-service (`/api/v1/graph/public` или аналог) отдаёт только `is_public = true` без auth.
 

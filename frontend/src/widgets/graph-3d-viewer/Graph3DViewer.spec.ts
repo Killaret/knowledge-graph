@@ -7,8 +7,9 @@ vi.mock("$shared/lib/webgl-detector", () => ({
   isWebGLAvailable: vi.fn(),
 }));
 
-vi.mock("$features/graph-3d/ui/Graph3DScene.svelte", () =>
-  import("$features/graph-3d/ui/__mocks__/Graph3DScene.svelte")
+vi.mock(
+  "$features/graph-3d/ui/Graph3DScene.svelte",
+  () => import("$features/graph-3d/ui/__mocks__/Graph3DScene.svelte")
 );
 
 describe("Graph3DViewer", () => {

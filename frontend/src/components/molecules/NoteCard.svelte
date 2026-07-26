@@ -205,7 +205,11 @@
       <div class="note-card__type" aria-hidden="true">
         <span class="note-card__emoji">{getTypeEmoji(note.type)}</span>
         {#if note.is_public}
-          <span class="note-card__public" title={t("noteCard.public")} aria-label={t("noteCard.publicAria")}>🌐</span>
+          <span
+            class="note-card__public"
+            title={t("noteCard.public")}
+            aria-label={t("noteCard.publicAria")}>🌐</span
+          >
         {/if}
         {#if isNew()}
           <span

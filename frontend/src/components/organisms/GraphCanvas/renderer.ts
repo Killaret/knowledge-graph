@@ -456,6 +456,34 @@ export function drawDebris(
 }
 
 /**
+ * Draw a dust node as a soft, diffuse particle cloud.
+ */
+export function drawDust(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  _angle: number,
+  disableVariation: boolean = false,
+  nodeId?: string
+): void {
+  const seed = nodeId ?? "dust";
+  ctx.fillStyle = "rgba(160, 160, 160, 0.4)";
+  for (let i = 0; i < 7; i++) {
+    const offsetX = disableVariation
+      ? (i - 3) * (r * 0.2)
+      : (seededRand(seed, i) - 0.5) * r * 2.5;
+    const offsetY = disableVariation
+      ? (i % 2 === 0 ? -1 : 1) * (r * 0.15)
+      : (seededRand(seed, 20 + i) - 0.5) * r * 2.5;
+    const radius = disableVariation ? r * 0.2 : r * (0.25 + seededRand(seed, 40 + i) * 0.2);
+    ctx.beginPath();
+    ctx.arc(x + offsetX, y + offsetY, radius, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}
+
+/**
  * Draw a black hole node with glow
  */
 export function drawBlackhole(
@@ -853,6 +881,10 @@ function registerCelestialBodyDrawers(): void {
 
   CelestialBody.DEBRIS.drawFunction = (ctx, c) => {
     drawDebris(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId);
+  };
+
+  CelestialBody.DUST.drawFunction = (ctx, c) => {
+    drawDust(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId);
   };
 
   CelestialBody.BLACKHOLE.drawFunction = (ctx, c) => {

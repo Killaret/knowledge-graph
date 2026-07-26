@@ -122,7 +122,11 @@ export function createStarfield(count = 1500): THREE.Points {
  * Replace a starfield Points object with a new one that has the requested particle count.
  * Disposes the old geometry/material and updates the scene graph.
  */
-export function setStarfieldCount(scene: THREE.Scene, starfield: THREE.Points, count: number): THREE.Points {
+export function setStarfieldCount(
+  scene: THREE.Scene,
+  starfield: THREE.Points,
+  count: number
+): THREE.Points {
   scene.remove(starfield);
   starfield.geometry.dispose();
   if (Array.isArray(starfield.material)) {

@@ -6,6 +6,12 @@ info:
     Knowledge Graph API with unified REST responses.
     All responses follow the standard SuccessResponse and ErrorResponse formats.
 
+    ## Authentication
+
+    Authenticated endpoints accept either:
+    - `Authorization: Bearer <JWT>` header, or
+    - HttpOnly `access_token` cookie (sent automatically by the browser).
+
     ## Response format
 
     ### Success (200, 201):
@@ -34,8 +40,12 @@ info:
     ```
 
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local development API gateway
+  - url: http://127.0.0.1:18080
+    description: Dev nginx gateway (host port)
+  - url: http://127.0.0.1:18083
+    description: Test backend direct (SKIP_AUTH=false test stack)
+  - url: http://127.0.0.1:9000
+    description: Dev backend direct
 
 paths:
   /health:
@@ -130,9 +140,12 @@ paths:
   /api/v1/auth/refresh:
     post:
       summary: Refresh access token
+      description: |
+        Refresh token can be supplied either in the request body or as an HttpOnly cookie.
+        The frontend typically sends no body and relies on the browser sending the `refresh_token` cookie.
       tags: [Auth]
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -1054,6 +1067,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
 
   schemas:
     SuccessResponse:
@@ -1293,11 +1310,10 @@ components:
 
     RefreshRequest:
       type: object
-      required:
-        - refresh_token
       properties:
         refresh_token:
           type: string
+          description: Optional when the refresh token is provided as an HttpOnly cookie.
 
     ForgotPasswordRequest:
       type: object

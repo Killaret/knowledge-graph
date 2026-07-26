@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import { loginAsTestUser } from "./helpers/auth";
 
+test.describe.configure({ mode: "serial" });
+
 interface SimNode {
   id: string;
   title: string;
@@ -27,7 +29,10 @@ async function gotoGraph(page: Page) {
 async function waitForGraphCanvas(page: Page): Promise<Locator> {
   const canvas = page.locator('[data-testid="graph-canvas"]');
   await expect(canvas).toBeVisible({ timeout: 20000 });
-  await expect(page.locator('[data-testid="graph-stats"]')).toBeVisible({
+  const stats = page.locator('[data-testid="graph-stats"]');
+  await expect(stats).toBeVisible({ timeout: 20000 });
+  // Wait for graph data to actually load (non-zero node count in English or Russian)
+  await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
     timeout: 20000,
   });
   // Wait for simulation to assign coordinates
@@ -99,15 +104,15 @@ async function clickNodeByIndex(page: Page, index: number) {
 async function getStatsCount(page: Page): Promise<{ nodes: number; links: number }> {
   const stats = page.locator('[data-testid="graph-stats"]');
   const text = (await stats.textContent()) || "";
-  const nodesMatch = text.match(/(\d+)\s*nodes/);
-  const linksMatch = text.match(/(\d+)\s*links/);
+  const nodesMatch = text.match(/(\d+)\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i);
+  const linksMatch = text.match(/(\d+)\s*(?:links?|связ(?:ей|и|ь)?)/i);
   return {
     nodes: nodesMatch ? parseInt(nodesMatch[1], 10) : 0,
     links: linksMatch ? parseInt(linksMatch[1], 10) : 0,
   };
 }
 
-test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas"] }, () => {
+test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@auth-real"] }, () => {
   test.beforeEach(async ({ page, request }) => {
     await loginAsTestUser(page, request);
     await gotoGraph(page);

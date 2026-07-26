@@ -64,7 +64,9 @@ test.describe("Graph API unification", { tag: ["@graph-api"] }, () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.locator('[data-testid="graph-2d-container"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-testid="graph-2d-container"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Switch to list view to assert the note title is rendered from the graph data.
     await clickViewToggle(page, "list");
@@ -124,5 +126,4 @@ test.describe("Graph API unification", { tag: ["@graph-api"] }, () => {
     // graph was already preloaded on the server / cached by PreloadService.
     expect(fullGraphRequestCount).toBeLessThanOrEqual(1);
   });
-
 });

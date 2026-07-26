@@ -39,7 +39,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: 2,
   timeout: 120 * 1000, // 120s per test (increased from 90s)
   globalSetup: "./tests/setup/global-setup.ts",
   reporter: [

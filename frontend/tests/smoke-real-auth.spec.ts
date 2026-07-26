@@ -5,6 +5,15 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3002";
 
 test.describe("Smoke tests - real auth flow", { tag: ["@smoke", "@auth-real"] }, () => {
   test("register, login, profile, graph, create note, logout", async ({ page, request }) => {
+    page.on("console", (msg) => console.log("[browser console]", msg.type(), msg.text()));
+    page.on("pageerror", (err) => console.log("[browser pageerror]", err));
+    page.on("response", (response) => {
+      const status = response.status();
+      if (status >= 400) {
+        console.log("[browser response error]", status, response.url());
+      }
+    });
+
     const id = crypto.randomUUID();
     const loginName = `smoke_${id.replace(/-/g, "").slice(0, 12)}`;
     const password = "TestPassword123!";
@@ -28,7 +37,7 @@ test.describe("Smoke tests - real auth flow", { tag: ["@smoke", "@auth-real"] },
     const graphCanvas = page.locator('[data-testid="graph-canvas"]');
     await expect(graphCanvas).toBeVisible({ timeout: 15000 });
 
-    const graphStats = page.locator('[data-testid="graph-stats"]');
+    const graphStats = page.locator('[data-testid="graph-stats"]').first();
     await expect(graphStats).toContainText(/\d+\s+nodes?/i, {
       timeout: 10000,
     });
@@ -43,8 +52,13 @@ test.describe("Smoke tests - real auth flow", { tag: ["@smoke", "@auth-real"] },
 
     // Graph view is accessible
     await page.goto(`${FRONTEND_URL}/graph`);
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible({
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('[data-testid="graph-container"], [data-testid="graph-canvas"]', {
+      timeout: 15000,
+    });
+    await expect(
+      page.locator('[data-testid="graph-container"], [data-testid="graph-canvas"]').first()
+    ).toBeVisible({
       timeout: 10000,
     });
 

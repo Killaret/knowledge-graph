@@ -19,13 +19,11 @@ const backendApiProxy: Handle = async ({ event, resolve }) => {
 
     try {
       // Security: Only forward safe headers to prevent data leakage
-      // Note: cookie and authorization are intentionally excluded
-      // Auth tokens are managed client-side and added by API client
+      // Note: both Authorization and HttpOnly auth cookies are forwarded so
+      // authenticated backend requests work through the server-side proxy.
       const safeHeaders: Record<string, string> = {};
-      const allowedHeaders = ["accept", "content-type", "x-request-id"];
+      const allowedHeaders = ["accept", "content-type", "x-request-id", "authorization", "cookie"];
       const blockedHeaders = [
-        "cookie",
-        "authorization",
         "connection",
         "proxy-",
         "transfer-encoding",
@@ -110,12 +108,11 @@ const graphServiceProxy: Handle = async ({ event, resolve }) => {
 
     try {
       // Security: Only forward safe headers to prevent data leakage
-      // Allowlist: accept, content-type, x-request-id
-      // Block: cookie, authorization, hop-by-hop headers
+      // Allowlist: accept, content-type, x-request-id, authorization, cookie
+      // Block: hop-by-hop headers
       const safeHeaders: Record<string, string> = {};
-      const allowedHeaders = ["accept", "content-type", "x-request-id", "authorization"];
+      const allowedHeaders = ["accept", "content-type", "x-request-id", "authorization", "cookie"];
       const blockedHeaders = [
-        "cookie",
         "connection",
         "proxy-",
         "transfer-encoding",

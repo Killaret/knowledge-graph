@@ -2,7 +2,12 @@
 import ky from "ky";
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
-import { getApiKey, saveTokens, clearAuthState } from "$shared/stores/auth-session.svelte";
+import {
+  getApiKey,
+  saveTokens,
+  clearAuthState,
+  accessToken,
+} from "$shared/stores/auth-session.svelte";
 import type { AuthTokens } from "$shared/types";
 
 // Redirect to login after an unrecoverable auth failure (browser only)
@@ -75,6 +80,12 @@ export const api = ky.create({
   hooks: {
     beforeRequest: [
       async (request) => {
+        // Add access token for JWT auth.
+        const token = accessToken();
+        if (token) {
+          request.headers.set("Authorization", `Bearer ${token}`);
+        }
+
         // Add API Key header if exists (for API key auth).
         const key = getApiKey();
         if (key) {

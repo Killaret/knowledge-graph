@@ -37,6 +37,9 @@ func NewGraphService(postgres db.PostgresClient, cache *cache.RedisCache, fullLi
 }
 
 func (s *graphService) grpcUserID(ctx context.Context, reqUserID string) string {
+	if isSkipAuthRequest(ctx) {
+		return "skip-auth"
+	}
 	if userID, ok := userIDFromContext(ctx); ok && userID != "" {
 		return userID
 	}
@@ -48,6 +51,10 @@ func (s *graphService) grpcUserID(ctx context.Context, reqUserID string) string 
 
 func (s *graphService) grpcFilter(ctx context.Context, reqUserID string) db.NotesFilter {
 	filter := db.NotesFilter{}
+	if isSkipAuthRequest(ctx) {
+		// SKIP_AUTH is a trusted test mode: do not restrict visibility.
+		return filter
+	}
 	if userID, ok := userIDFromContext(ctx); ok && userID != "" {
 		filter.UserID = userID
 	} else if reqUserID != "" && reqUserID != "public" {

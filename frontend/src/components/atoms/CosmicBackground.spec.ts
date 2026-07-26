@@ -55,8 +55,6 @@ describe("CosmicBackground", () => {
     expect(canvas).toHaveClass("cosmic-background");
   });
 
-
-
   it("should be hidden from screen readers", () => {
     const { container } = render(CosmicBackground);
     const canvas = container.querySelector("canvas");

@@ -107,9 +107,7 @@
     isTogglingPublic = true;
     apiError = null;
     try {
-      const updated = nextPublic
-        ? await publishNote(noteId)
-        : await unpublishNote(noteId);
+      const updated = nextPublic ? await publishNote(noteId) : await unpublishNote(noteId);
       isPublic = updated.is_public ?? nextPublic;
     } catch (err: unknown) {
       target.checked = isPublic;

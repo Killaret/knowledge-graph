@@ -167,10 +167,13 @@ Then("the loading overlay should not block the interaction", async function (thi
 
 // Camera reset
 When("I click the {string} button", async function (this: ITestWorld, buttonText: string) {
-  // Use data-testid for reset camera button, or fallback to text search
+  // Use data-testid for known buttons, or fallback to text search
   let button;
-  if (buttonText.toLowerCase().includes("reset") || buttonText.toLowerCase().includes("camera")) {
+  const lower = buttonText.toLowerCase();
+  if (lower.includes("reset") || lower.includes("camera")) {
     button = this.page.locator('[data-testid="reset-camera-button"]').first();
+  } else if (lower === "create") {
+    button = this.page.locator('[data-testid="create-note-submit"]').first();
   } else {
     button = this.page
       .locator("button")
