@@ -39,7 +39,7 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - Docker multi-stage builds
 - Dev stack: docker-compose.yml (nginx:8080, backend:9000, graph-service:9091)
 - Personal stack: docker-compose.personal.yml (backend:8085, gateway:8082, graph-service:8092)
-- **Test stack: docker-compose.test.yml (frontend:3002, backend:8083, postgres:5434, redis:6381)**
+- **Test stack: docker-compose.test.yml (frontend:3002, backend:18083, postgres:15434, redis:16381, mongo:27019, nlp:15002, graph-service:19091/19090)**
 - All services must have /health endpoint
 
 ## Key Rules
@@ -50,7 +50,7 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - Coverage MUST be >60%
 - **ALWAYS use test stack for E2E/BDD testing:** `.\scripts\testing\start-test.ps1`
 - **Stop dev and personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright failures
-- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:8083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:8083`
+- On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:18083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`
 - Never run E2E/BDD tests against dev or personal stacks
 - Use table-driven tests in Go with testify/require (not assert)
 
@@ -82,15 +82,32 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - CORS configured correctly
 - JWT validation in middleware, not in handlers
 
-### Language Policy (ENGLISH ONLY)
-All user-facing content MUST be in English:
+### Language Policy (RU UI via i18n, English for code/API/commits/public docs)
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
 - UI strings (buttons, labels, placeholders, error messages)
 - Toast messages and tooltips (GalacticLexicon)
-- Note titles and content (user-created)
-- Code comments in public documentation
-- Commit messages
+- Note titles and content (where the app renders labels; user-created content may be in any language)
 
+**MUST be in English:**
+- Code identifiers and variable names
+- API error codes
+- Commit messages
+- Public code comments and authoritative documentation
+
+**User content (note titles/bodies) may be in any language.**
 **Exceptions:** Internal code comments (brief explanations in any language OK)
+
+```typescript
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
+placeholder="Поиск по графу знаний...";
+
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+
+// ❌ Bad — hardcoded string without i18n key
+toast.success("Note created successfully");
+```
 
 ## Common Commands
 
@@ -130,7 +147,7 @@ docker compose -f docker-compose.test.yml down -v            # Manual cleanup
 curl http://localhost:8080/health                    # Dev stack nginx
 curl http://localhost:9000/health                    # Dev stack backend
 curl http://localhost:8082/health                    # Personal stack
-curl http://localhost:8083/health                    # Test stack backend
+curl http://localhost:18083/health                   # Test stack backend
 curl http://localhost:3002                           # Test stack frontend
 ```
 
@@ -194,6 +211,95 @@ nlp-service/
 **Koda rules:** `.continue/rules/` (Koda VSCode extension — based on Continue.dev)
 **Devin skill:** `.devin/skills/knowledge-graph/SKILL.md` (this file)
 
+## Orchestrator Routing Matrix
+
+When a task touches multiple layers, route to the **primary** agent first, then the **secondary** agent.
+
+| Task type | Primary agent | Secondary agent |
+|-----------|--------------|-----------------|
+| New Go endpoint / handler | `backend-go` | `integration` (OpenAPI spec) |
+| GORM model / migration | `backend-go` | `data` |
+| Redis cache / asynq task | `backend-go` | `performance` |
+| Svelte component / route | `frontend-svelte` | — |
+| D3-force / Three.js graph | `frontend-svelte` | `performance` |
+| API contract change | `integration` | `backend-go` + `frontend-svelte` |
+| Docker / docker-compose | `infrastructure` | `devops` |
+| Nginx routing | `infrastructure` | `integration` |
+| CI/CD pipeline | `devops` | — |
+| Logs / rollback | `devops` | — |
+| JWT / CORS / rate-limit | `security` | `backend-go` |
+| pgvector / embedding query | `data` | `performance` |
+| Redis key naming / pooling | `data` | `performance` |
+| Go table-driven tests | `testing` | `backend-go` |
+| Vitest / Playwright tests | `testing` | `frontend-svelte` |
+| NLP FastAPI endpoint | `nlp` | `integration` |
+| HuggingFace model loading | `nlp` | `infrastructure` |
+| P95 / caching strategy | `performance` | `backend-go` |
+| Secret management | `security` | `infrastructure` |
+| Yandex OAuth | `security` | `backend-go` |
+
+## Escalation Scenarios
+
+Invoke multiple agents sequentially when a task crosses boundaries:
+
+1. **New feature end-to-end** (e.g., "Add note sharing"):
+   - `backend-go` → domain entity + repository + handler
+   - `integration` → DTO + OpenAPI annotation
+   - `frontend-svelte` → component + API client call
+   - `testing` → unit + integration + E2E tests
+   - `security` → verify auth guard on new endpoint
+
+2. **Schema migration**:
+   - `data` → write raw SQL migration file
+   - `backend-go` → update GORM model + repository
+   - `testing` → testcontainers integration test
+
+3. **Performance regression**:
+   - `performance` → identify hot path
+   - `backend-go` → fix query / add index
+   - `data` → confirm pgvector index strategy
+   - `devops` → verify with `docker compose logs -f backend`
+
+4. **Security audit**:
+   - `security` → JWT middleware + CORS + rate-limit review
+   - `backend-go` → confirm no global state, proper error propagation
+   - `devops` → confirm no secrets in image layers
+
+## Agent Priority Hierarchy
+
+When agents conflict, apply this order:
+
+1. **Security** — never weaken auth, validation, rate limiting, or secret handling for performance or convenience.
+2. **Correctness** — domain invariants, data integrity, and API contracts come before optimization.
+3. **Performance** — caching, indexing, async offloading, bundle size.
+4. **Convenience** — developer experience, helper scripts, optional shortcuts.
+
+**Default resolution:** if `performance-agent` wants a change that `security-agent` rejects, keep the security requirement unless the user explicitly overrides it.
+
+## Cross-Agent Handoff
+
+When delegating from one subagent to another, include a brief handoff block:
+
+```
+Handoff to: <agent-name>
+Scope: <one-line summary>
+Changed files:
+- <path>
+- <path>
+Affected contracts:
+- OpenAPI: <endpoint>
+- DTO: <struct/path>
+- TS type: <path>
+Tests added/updated:
+- <test path>
+Open questions:
+- <anything the next agent must decide>
+Next step:
+- <concrete instruction>
+```
+
+The receiving agent MUST read the listed files before acting.
+
 ## Workflows
 
 ### Backend Tasks
@@ -226,7 +332,7 @@ nlp-service/
 ### Testing Tasks (E2E/BDD)
 1. **ALWAYS start test stack:** `.\scripts\testing\start-test.ps1`
 2. Seed test data if needed: `.\scripts\testing\seed-test-data.ps1`
-3. Run E2E/BDD tests against test stack (ports 3002/8083)
+3. Run E2E/BDD tests against test stack (ports 3002/18083)
 4. **ALWAYS destroy test stack after testing:** `.\scripts\testing\stop-test.ps1`
 5. Never test against dev/personal stacks (data contamination risk)
 

@@ -118,7 +118,7 @@ the TTL; `security` confirms no PII in key names.
 
 ## Hard Rules (enforce on every task)
 
-- All user-facing text and code comments MUST be in **English**.
+- User-facing runtime text uses Russian via i18n (`ru` locale) with English (`en`) fallback; code identifiers, API error codes, commit messages, and public docs MUST be in **English**.
 - **No global variables** — pass dependencies explicitly.
 - Coverage target: **>60%** for every new package.
 - Repositories return **domain entities only** (`*note.Note`, not `NoteModel`).

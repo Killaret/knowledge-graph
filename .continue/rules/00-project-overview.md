@@ -110,6 +110,6 @@ docker compose -f docker-compose.personal.yml up -d  # Personal
 2. Repositories return domain entities (never `*NoteModel`)
 3. Svelte 5 runes syntax only ($state, $derived, $effect, $props)
 4. Never commit secrets (.env, tokens)
-5. English only for user-facing text
+5. Russian UI via i18n; English for code/API/commits/public docs
 6. Health checks on all Docker services
 7. Context (`ctx context.Context`) passed through all Go methods
