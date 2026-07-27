@@ -30,7 +30,7 @@ class HybridChunkerTest {
     @Test
     @DisplayName("Must create single chunk for short paragraph longer than minChunkLength")
     void mustCreateSingleChunkForParagraphLongerThanMin() {
-        // Текст длиной ~60 символов, что больше 50
+        // Текст длиной 60 символов
         String text = "This is a paragraph that is long enough to exceed fifty characters.";
         ImportOptions options = opts(100, 10, 50);
         List<DocumentChunk> chunks = chunker.chunk(text, options);
@@ -59,7 +59,7 @@ class HybridChunkerTest {
     @Test
     @DisplayName("Must split long paragraph with sliding window")
     void mustSplitLongParagraph() {
-        // 70 слов "longword" (длинное слово), chunkSize=50, minChunkLength=50
+        // 70 слов , chunkSize=50, minChunkLength=50
         String text = "longword ".repeat(70).trim();
         ImportOptions options = opts(50, 0, 50);
         List<DocumentChunk> chunks = chunker.chunk(text, options);
@@ -73,7 +73,7 @@ class HybridChunkerTest {
     @Test
     @DisplayName("Must apply overlap correctly")
     void mustApplyOverlap() {
-        // 110 слов "longword1".."longword110", chunkSize=50, overlap=10, minChunkLength=50
+        // 110 слов "longword" от "longword1" до "longword110", chunkSize=50, overlap=10, minChunkLength=50
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i <= 110; i++) sb.append("longword").append(i).append(" ");
         String text = sb.toString().trim();
@@ -128,7 +128,7 @@ class HybridChunkerTest {
         List<DocumentChunk> chunks = chunker.chunk(text, options);
 
         assertThat(chunks).hasSize(3);
-        // Проверим первые слова каждого чанка
+        // Проверяем первые слова каждого чанка
         assertThat(chunks.get(0).text()).startsWith("Word0001").endsWith("Word0050");
         assertThat(chunks.get(1).text()).startsWith("Word0051").endsWith("Word0100");
         assertThat(chunks.get(2).text()).startsWith("Word0101").endsWith("Word0150");
@@ -143,7 +143,6 @@ class HybridChunkerTest {
         String sentence2 = (longWord + " ").repeat(30).trim() + ". ";
         String sentence3 = (longWord + " ").repeat(20).trim() + ".";
         String text = sentence1 + sentence2 + sentence3;
-        // chunkSize=50, overlap=0, minChunkLength=50
         ImportOptions options = opts(50, 0, 50);
         List<DocumentChunk> chunks = chunker.chunk(text, options);
 
@@ -151,7 +150,7 @@ class HybridChunkerTest {
         assertThat(chunks).hasSize(2);
         assertThat(chunks.get(0).text().split("\\s+")).hasSize(50);
         assertThat(chunks.get(1).text().split("\\s+")).hasSize(50);
-        // Убедимся, что второе предложение начинается с того же слова
+        // Проверка, что второе предложение начинается с того же слова
         assertThat(chunks.get(1).text()).contains(longWord);
     }
 
@@ -202,7 +201,7 @@ class HybridChunkerTest {
     }
 
     @Test
-    @DisplayName("Multiple short paragraphs in a row are all lost (current behaviour)")
+    @DisplayName("Multiple short paragraphs in a row are all lost (normal behaviour)")
     void multipleShortParagraphsLost() {
         String text = "Tiny.\n\nSmall.\n\nShort."; // все <50 символов
         ImportOptions options = opts(100, 10, 50);
