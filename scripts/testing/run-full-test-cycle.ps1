@@ -7,6 +7,9 @@ param(
     [switch]$SkipManual
 )
 
+$frontendPort = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { "3002" }
+$frontendUrl = "http://127.0.0.1:$frontendPort"
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Knowledge Graph Full Test Cycle" -ForegroundColor Cyan
 Write-Host "  (Isolated Testing Model)" -ForegroundColor Cyan
@@ -215,7 +218,7 @@ try {
 
     # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
     Write-Host "`n[Step 15/25] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
-    $env:FRONTEND_URL = "http://127.0.0.1:3002"
+    $env:FRONTEND_URL = $frontendUrl
     $env:BACKEND_URL = "http://127.0.0.1:18083"
     $env:SKIP_AUTH = "true"
     Set-Location $repoDir\frontend
@@ -272,7 +275,7 @@ try {
     # Step 17: Visual Regression (Argos)
     Write-Host "`n[Step 17/25] Visual Regression (Argos)..." -ForegroundColor Yellow
     if ($env:ARGOS_TOKEN -or $env:ARGOS_UPLOAD_LOCAL) {
-        $env:FRONTEND_URL = "http://127.0.0.1:3002"
+        $env:FRONTEND_URL = $frontendUrl
         $env:BACKEND_URL = "http://127.0.0.1:18083"
         $env:SKIP_AUTH = "true"
         Set-Location $repoDir\frontend
@@ -295,7 +298,7 @@ try {
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Test stack URLs:" -ForegroundColor Yellow
-    Write-Host "  Frontend: http://127.0.0.1:3002" -ForegroundColor White
+    Write-Host "  Frontend: $frontendUrl" -ForegroundColor White
     Write-Host "  Backend API: http://127.0.0.1:18083" -ForegroundColor White
     Write-Host ""
     Write-Host "Follow the manual test checklist:" -ForegroundColor Yellow
