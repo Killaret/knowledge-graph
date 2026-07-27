@@ -138,21 +138,17 @@
 
 ## 🔜 SOON: Medium-Term Goals
 
-### 🚀 Spaceship Navigator (Cosmic Navigator)
+### Phase 4: Cosmic Navigator (Spaceship) 🔴 Critical
 
-| Task | Status | Priority | Prompt Ready |
-|------|--------|----------|-------------|
-| Implement cosmic navigation interface | ✅ Implemented | 🟡 Medium | 📝 Yes |
+Status: ⏳ Planned
+Description: 3D-визуализация графа знаний в виде космоса.
 
-**Scope:**
-- 3D navigation metaphor
-- Galaxy/constellation view
-- Zoom levels and navigation controls
-- Search and filtering in navigator
-- Integration with existing graph view
-- [x] **Hybrid 3D Layout via Graph Service** — runtime layout provider switching via `createLayoutProvider` / `toRuntimeConfig`.
-- [x] **3D Fog Presets** — configurable `birth` / `nebula` / `deep-space` fog presets with smooth initial→final transitions.
-- [x] **3D Performance Presets** — FPS-based auto-downgrade/upgrade of fog quality, starfield count, and auto-rotate.
+☑ Базовый 3D-рендеринг (Three.js) — разморожен и отрефакторен в features/graph-3d.
+□ Orbital / Solar System 3D-режим — узлы распределены по орбитам, удалённым от центральной заметки или центра кластера. Орбиты = смысловые слои. Связи опциональны.
+□ Honeycomb Stellaris 3D-режим — гексагональная сетка в 3D с изогнутыми светящимися трубками (гиперпространственные маршруты), как в Stellaris.
+□ Динамическое переключение между режимами (2D/3D).
+□ Серверная кластеризация (Louvain) для автоматического выделения смысловых слоёв и центров.
+□ Кэширование кластеров в Redis, инвалидация по событиям.
 
 ### 🔗 Link Improvements
 
@@ -184,22 +180,14 @@
 
 ---
 
-### 🍯 Honeycomb View (Graph Visualization Mode)
+### Phase 10: Honeycomb View 🟡 Medium
 
-| Task | Status | Priority | Prompt Ready |
-|------|--------|----------|-------------|
-| Implement radial node placement by link weight | ⏳ Planned | 🟡 Medium | 📝 Yes |
-| Add view mode switcher (Free / Honeycomb / Clusters) | ⏳ Planned | 🟡 Medium | 📝 Yes |
-| Implement hover-reveal link visualization | ⏳ Planned | 🟡 Medium | 📝 Yes |
+Status: ⏳ Planned
+Description: Представление графа в виде сот (гексагональной сетки).
 
-**Scope:**
-- Center node selected by max `sum(weight)` across all links
-- Radial placement on concentric rings by link weight thresholds (>0.7, 0.3-0.7, <0.3)
-- Line thickness, opacity, and color based on weight and link type
-- Hidden links by default in Honeycomb mode; reveal on node hover with 300ms fade-out
-- Mode switcher in FloatingControls with Free / Honeycomb / Clusters options
-- Persist selected mode in `graphSettings` (localStorage / user settings)
-- Use D3 force.find or spatial hash for fast cursor-to-node lookup
+□ 2D Honeycomb — узлы привязаны к ячейкам сетки, связи — прямые линии. Веса связей влияют на близость ячеек.
+□ 3D Honeycomb (Stellaris) — плоская гексагональная сетка в 3D-пространстве, связи — изогнутые трубки с неоновым свечением.
+□ Переключение в режим сот из тулбара (2D и 3D).
 
 ---
 
@@ -279,19 +267,15 @@
 
 ---
 
-### 🌌 Galactic Clusters (Semantic Clustering)
+### Phase 11: Galactic Clusters 🟢 Low
 
-| Task | Status | Priority | Prompt Ready |
-|------|--------|----------|-------------|
-| Backend clustering service for semantic grouping | ⏳ Planned | 🟢 Low | 📝 No |
-| Background cluster recalculation | ⏳ Planned | 🟢 Low | 📝 No |
-| Canvas visualization for clusters | ⏳ Planned | 🟢 Low | 📝 No |
+Status: ⏳ Backlog
+Description: Кластеризация графа и визуализация галактических скоплений.
 
-**Scope:**
-- Semantic clustering of notes based on link relationships and embeddings
-- Dedicated backend clustering service with background recalculation (ASYNQ)
-- Cluster rendering on canvas
-- Integration with view mode switcher (Clusters mode)
+□ Серверная кластеризация (graph-service) — алгоритм Louvain, API /clusters, поле cluster_id в /full.
+□ 3D Orbital-режим с кластерами — каждый кластер образует свою «солнечную систему», центральная заметка кластера — звезда, остальные — планеты на орбитах.
+□ LOD для дальних кластеров (отображение как единое тело).
+□ Цветовое кодирование и размер кластеров в зависимости от числа заметок и суммарного веса.
 
 ---
 
