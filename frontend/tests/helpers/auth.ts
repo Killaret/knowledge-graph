@@ -10,57 +10,76 @@ const TEST_USER = {
   password: "TestPassword123!",
 };
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Log in as the seeded test user and return an access token.
  * If the user does not exist, register them first.
+ *
+ * Uses a small retry loop so parallel Playwright workers do not race when
+ * creating the shared test user.
  */
 export async function loginOrCreateTestUser(request: APIRequestContext): Promise<string> {
   const backendUrl = getBackendUrl();
+  const maxAttempts = 5;
 
-  // Try to log in first
-  const loginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
-    data: {
-      login: TEST_USER.login,
-      password: TEST_USER.password,
-    },
-  });
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Try to log in first
+    const loginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
+      data: {
+        login: TEST_USER.login,
+        password: TEST_USER.password,
+      },
+    });
 
-  if (loginResp.ok()) {
-    const tokens = await loginResp.json();
-    return tokens.access_token as string;
-  }
+    if (loginResp.ok()) {
+      const tokens = await loginResp.json();
+      return tokens.access_token as string;
+    }
 
-  // User may not exist; register and then log in
-  const registerResp = await request.post(`${backendUrl}/api/v1/auth/register`, {
-    data: {
-      login: TEST_USER.login,
-      email: TEST_USER.email,
-      password: TEST_USER.password,
-    },
-  });
+    // User may not exist; register and then log in
+    const registerResp = await request.post(`${backendUrl}/api/v1/auth/register`, {
+      data: {
+        login: TEST_USER.login,
+        email: TEST_USER.email,
+        password: TEST_USER.password,
+      },
+    });
 
-  if (!registerResp.ok()) {
+    if (registerResp.ok()) {
+      const secondLoginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
+        data: {
+          login: TEST_USER.login,
+          password: TEST_USER.password,
+        },
+      });
+
+      if (secondLoginResp.ok()) {
+        const tokens = await secondLoginResp.json();
+        return tokens.access_token as string;
+      }
+
+      const errorText = await secondLoginResp.text();
+      throw new Error(
+        `Failed to login test user after registration: ${secondLoginResp.status()} - ${errorText}`
+      );
+    }
+
+    const status = registerResp.status();
     const errorText = await registerResp.text();
-    throw new Error(`Failed to register test user: ${registerResp.status()} - ${errorText}`);
+
+    // Another worker may have created the user in the meantime; retry login.
+    if (status === 409 || status === 500) {
+      await sleep(100 * (attempt + 1));
+      continue;
+    }
+
+    throw new Error(`Failed to register test user: ${status} - ${errorText}`);
   }
 
-  // Login after registration
-  const secondLoginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
-    data: {
-      login: TEST_USER.login,
-      password: TEST_USER.password,
-    },
-  });
-
-  if (!secondLoginResp.ok()) {
-    const errorText = await secondLoginResp.text();
-    throw new Error(
-      `Failed to login test user after registration: ${secondLoginResp.status()} - ${errorText}`
-    );
-  }
-
-  const tokens = await secondLoginResp.json();
-  return tokens.access_token as string;
+  throw new Error(`Failed to login or create test user after ${maxAttempts} attempts`);
 }
 
 /**

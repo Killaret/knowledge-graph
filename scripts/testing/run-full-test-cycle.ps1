@@ -53,8 +53,8 @@ function Restore-Stacks {
 try {
     # Step 0: Capture dev stack state snapshot
     Write-Host "[Step 0/25] Capturing dev stack state snapshot..." -ForegroundColor Yellow
-    docker ps --filter "name=kg-" > "$snapshotDir\pre-test-ps.txt"
-    Write-Host "  ✓ Container snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
+    docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\pre-test-ps.txt"
+    Write-Host "  ✓ Container names snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
     try {
         Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
@@ -250,6 +250,15 @@ try {
     }
     Write-Host "  Test stack started with SKIP_AUTH=false" -ForegroundColor Green
 
+    # Seed test data for the real-auth test user so @manual/@canvas tests have graph nodes
+    Write-Host "  Seeding real-auth test data..." -ForegroundColor Yellow
+    & $scriptDir\seed-test-data.ps1 -NoteCount 50 -LinkCount 20
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  WARNING: Failed to seed real-auth test data" -ForegroundColor Yellow
+    } else {
+        Write-Host "  Real-auth test data seeded" -ForegroundColor Green
+    }
+
     Set-Location $repoDir\frontend
     npx playwright test --project=chromium-real-auth
     $e2eRealAuthExit = $LASTEXITCODE
@@ -401,8 +410,8 @@ try {
     Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
     $devStateChanged = $false
     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
-    docker ps --filter "name=kg-" > "$snapshotDir\post-test-ps.txt"
-    Write-Host "  ✓ Post-test container snapshot saved" -ForegroundColor Green
+    docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\post-test-ps.txt"
+    Write-Host "  ✓ Post-test container names snapshot saved" -ForegroundColor Green
 
     try {
         Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
