@@ -498,3 +498,82 @@ Description: Кластеризация графа и визуализация �
 
 **Last Updated:** July 23, 2026  
 **Next Review:** After manual testing completion
+
+---
+
+## 🧪 Experimental & Ideas
+
+### Phase 13: Factory Line 🟢 Low — Hypothesis
+**Priority:** 🟡 Medium (after clustering and honeycomb)
+**Status:** 💡 Idea
+**Description:** Graph visualization as a production chain (Factorio / Shapez).
+- Notes displayed as "machines" with inputs and outputs.
+- Links are conveyors with movement animations.
+- Note types: raw material (draft), processor (analysis), product (conclusion).
+- Broken chain highlighted as "defect".
+- Productivity metric: number of completed chains.
+- **Hypothesis:** factory metaphor motivates closing chains and maintaining note hygiene.
+- **MVP:** display mode with rectangular nodes and animated arrows.
+- **Dependencies:** none (separate visualization mode).
+
+### Phase 14: Semantic Guardians 🟢 Low — Hypothesis
+**Priority:** 🟢 Low (after archive and hygiene)
+**Status:** 💡 Idea
+**Target:** Mobile (PWA first, native later)
+**Description:** Passive gamification of knowledge hygiene through personified cluster guardians. Main interface — mobile app (PWA or native).
+- Each cluster gets one guardian — a semantic figure reflecting the cluster's essence (hero, god, author, subject). User names the guardian.
+- Guardian is bound to the cluster and can be moved between clusters (drag-and-drop, touch-optimized).
+- Guardian strength depends on note freshness, connection count, completeness.
+- **Waves of oblivion** passively attack clusters (daily/weekly). Guardians automatically defend (auto-animation).
+- Push notifications: "Wave of oblivion approaching cluster 'Philosophy'. Dostoevsky ready to defend."
+- Moving guardian = reprioritization: donor cluster dims, acceptor cluster strengthens.
+- **Semantic feedback:** guardian serves as reminder of abandoned topic.
+- **Mobile-first:** main guardian interface — mobile companion app. Desktop — view state only.
+- **Hypothesis:** mobile app with guardians increases retention and motivates returning to notes.
+- **MVP:** PWA with cluster display, drag-and-drop guardians, wave animations, push notifications.
+- **Dependencies:** none (independent feature).
+
+### Phase 15: Archive & Note Hygiene 🟡 Medium — Planned
+**Priority:** 🟡 Medium (before Semantic Guardians)
+**Status:** ⏳ Planned
+**Description:** Automatic archiving of unused notes.
+- Note not updated for N days automatically marked as "forgotten".
+- Forgotten notes dim in graph, connections break.
+- At critical threshold, note moves to **Archive** (hidden from main graph).
+- Archive — separate graph layer, not affecting main navigation. Archive view mode.
+- User can manually archive/unarchive notes.
+- "Graph health" metric: percentage of active notes to total.
+- **Hypothesis:** automatic archiving reduces cognitive load and keeps graph current.
+- **MVP:** scheduled task on backend to mark "forgotten" notes, UI toggle for archive, endpoint for manual archiving.
+- **Dependencies:** none (basic mechanic over existing note model).
+
+---
+
+## ⚠️ Technical Debt & Research
+
+### TD-1: CelestialBody Auto-Assignment (MVP)
+**Priority:** 🟡 Medium
+**Status:** ⏳ Planned
+**Description:** Temporary automatic assignment of celestial body type based on note size and connection count. Problem: currently CelestialBody types are assigned manually and lack semantic binding. Automatic determination via clustering and NLP is complex, requiring real usage data. Need temporary rule so types have at least basic meaning.
+- **Character count grading:**
+  - 0–100 → Fragment (asteroid)
+  - 100–500 → Comet
+  - 500–2000 → Planet
+  - 2000–10000 → Star
+  - 10000+ → Galaxy
+- **Modifiers:**
+  - >5 connections → raise type one level (Planet → Star)
+  - No connections → lower type (Star → Comet)
+  - Orphan and <100 characters → Cosmic dust (barely visible)
+- Type recalculated on each note save.
+- **Important:** this is temporary solution. After clustering implementation and user behavior data accumulation, logic will be revised.
+- **Dependencies:** none (uses existing size and connections fields).
+
+### TD-2: CelestialBody Semantics Research
+**Priority:** 🟢 Low
+**Status:** ⚠️ Requires Research
+**Description:** Research of semantic binding of CelestialBody types to cluster context.
+- How do users manually assign types?
+- Can a note be a "Star" in one cluster and a "Planet" in another?
+- Is batch edit tool needed for type reassignment?
+- Defer until real usage data available.
