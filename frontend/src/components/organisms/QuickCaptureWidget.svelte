@@ -12,6 +12,7 @@
   let content = $state("");
   let isSubmitting = $state(false);
   let showSuccess = $state(false);
+  const MAX_TITLE_LENGTH = 200;
 
   // Toggle widget
   function toggle() {
@@ -29,11 +30,22 @@
     isSubmitting = true;
     try {
       const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
-      await createNote({
-        title,
-        content,
-        type: CelestialBody.DUST.type,
-      });
+      
+      // Validate title length
+      if (title.length > MAX_TITLE_LENGTH) {
+        const truncatedTitle = content.slice(0, MAX_TITLE_LENGTH - 3) + "...";
+        await createNote({
+          title: truncatedTitle,
+          content,
+          type: CelestialBody.DUST.type,
+        });
+      } else {
+        await createNote({
+          title,
+          content,
+          type: CelestialBody.DUST.type,
+        });
+      }
 
       showSuccess = true;
       content = "";

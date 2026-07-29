@@ -25,6 +25,7 @@
   let apiError = $state<ErrorResponse | null>(null);
   let currentMode = $state("standard");
   const theme = $derived(Theme.fromString(currentMode));
+  const MAX_TITLE_LENGTH = 200;
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
@@ -58,11 +59,21 @@
   const contentPlaceholder = $derived(
     tx("note.contentPlaceholder", "note.contentPlaceholderGalactic")
   );
+  const titleLength = $derived(title.trim().length);
+  const titleLengthClass = $derived(
+    titleLength > MAX_TITLE_LENGTH ? "length-error" : titleLength > MAX_TITLE_LENGTH * 0.9 ? "length-warning" : "length-ok"
+  );
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!title.trim()) {
       const msg = await getMessage("error", "validation", "title");
+      apiError = { code: "VALIDATION_ERROR", message: msg };
+      return;
+    }
+
+    if (title.trim().length > MAX_TITLE_LENGTH) {
+      const msg = t("note.titleTooLong").replace("{max}", MAX_TITLE_LENGTH.toString());
       apiError = { code: "VALIDATION_ERROR", message: msg };
       return;
     }
@@ -108,7 +119,12 @@
         placeholder={titlePlaceholder}
         disabled={loading}
         data-testid="create-note-title"
+        maxlength={MAX_TITLE_LENGTH}
+        class:titleLengthClass
       />
+      <div class="length-indicator" class:titleLengthClass>
+        {titleLength}/{MAX_TITLE_LENGTH}
+      </div>
     </div>
 
     <div class="form-group">
@@ -183,5 +199,31 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+  }
+
+  .length-indicator {
+    font-size: 12px;
+    margin-top: 4px;
+    text-align: right;
+  }
+
+  .length-ok {
+    color: var(--color-text-secondary, #6b7280);
+  }
+
+  .length-warning {
+    color: var(--color-warning, #f59e0b);
+  }
+
+  .length-error {
+    color: var(--color-error, #ef4444);
+  }
+
+  input.length-warning {
+    border-color: var(--color-warning, #f59e0b);
+  }
+
+  input.length-error {
+    border-color: var(--color-error, #ef4444);
   }
 </style>
