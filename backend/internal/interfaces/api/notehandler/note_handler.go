@@ -106,8 +106,8 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
-	Content  string                 `json:"content" binding:"max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy asteroid satellite debris nebula dust unknown blackhole"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -129,7 +129,7 @@ var noteValidationMessages = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula, dust, unknown, blackhole",
+	"type.oneof":     "Type must be one of: star, planet, comet, nebula, galaxy, asteroid, debris, blackhole, satellite, dust, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
 }
 
 // NoteValidationErrors defines human-readable error messages for note validation
@@ -255,9 +255,9 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 type updateNoteRequest struct {
-	Title    string                 `json:"title" binding:"omitempty,min=1,max=200"`
+	Title    string                 `json:"title" binding:"omitempty,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris pulsar blackhole"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -305,6 +305,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	textChanged := false
 
+	// Update title if provided
 	if req.Title != "" {
 		title, err := note.NewTitle(req.Title)
 		if err != nil {
@@ -321,6 +322,7 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 		textChanged = true
 	}
+	// Update content if provided
 	if req.Content != "" {
 		content, err := note.NewContent(req.Content)
 		if err != nil {

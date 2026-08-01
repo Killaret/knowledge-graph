@@ -61,6 +61,20 @@ export SKIP_AUTH=false
 - [ ] Creating a note from the graph works
 - [ ] Public graph toggle shows only public notes (when public notes exist)
 
+## Validation & Error Messages
+
+- [ ] Title length validation: entering >200 characters shows error before API call
+- [ ] Title length indicator shows `X/200` and turns red at limit
+- [ ] Submit button disabled when validation fails
+- [ ] Error message clearly explains the limit (localized i18n)
+- [ ] QuickCaptureWidget auto-truncates long titles (>200 chars)
+- [ ] Empty title validation shows clear error message
+- [ ] API error responses include `VALIDATION_ERROR` code and field details
+- [ ] HTTP 422 status for validation errors
+- [ ] Form data preserved when validation fails
+- [ ] Users can retry after fixing validation errors
+- [ ] `ApiErrorDisplay` component shows errors in user-friendly format
+
 ## Real-auth mode
 
 Run after `SKIP_AUTH=false` start:

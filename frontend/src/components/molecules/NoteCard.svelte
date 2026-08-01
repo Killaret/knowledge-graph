@@ -113,14 +113,22 @@
     tippyInstance?.hide();
   }
 
+  function handleView(e: MouseEvent) {
+    e.stopPropagation();
+    handleClick();
+    tippyInstance?.hide();
+  }
+
   const editListener = (e: Event) => handleEdit(e as MouseEvent);
   const deleteListener = (e: Event) => handleDelete(e as MouseEvent);
+  const viewListener = (e: Event) => handleView(e as MouseEvent);
 
   function buildTooltipContent(): string {
     const emoji = getTypeEmoji(note.type);
-    const title = truncateText(note.title, 60);
+    const title = note.title; // Полный заголовок без обрезки
+    const contentPreview = truncateText(note.content, 200); // Больше контента для превью
     const keywordChips = keywords
-      .slice(0, 3)
+      .slice(0, 5)
       .map((k) => `<span class="nc-tooltip-keyword">${k}</span>`)
       .join("");
 
@@ -130,11 +138,14 @@
           <span class="nc-tooltip-emoji">${emoji}</span>
           <span class="nc-tooltip-title">${title}</span>
         </div>
+        <div class="nc-tooltip-content">${contentPreview}</div>
         <div class="nc-tooltip-meta">
           <span class="nc-tooltip-links">${t("noteCard.links", { count: linkCount })}</span>
+          <span class="nc-tooltip-date">${formatDate(note.created_at)}</span>
           ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ""}
         </div>
         <div class="nc-tooltip-actions">
+          <button class="nc-tooltip-btn nc-tooltip-btn--view" data-action="view" aria-label="${t("noteCard.viewAria")}">${t("noteCard.view")}</button>
           <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="${t("noteCard.editAria")}">${t("noteCard.edit")}</button>
           <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="${t("noteCard.deleteAria")}">${t("noteCard.delete")}</button>
         </div>
@@ -159,18 +170,22 @@
       allowHTML: true,
       appendTo: document.body,
       onShown: (instance) => {
+        const viewBtn = instance.popper.querySelector('[data-action="view"]') as HTMLElement | null;
         const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector(
           '[data-action="delete"]'
         ) as HTMLElement | null;
+        viewBtn?.addEventListener("click", viewListener);
         editBtn?.addEventListener("click", editListener);
         deleteBtn?.addEventListener("click", deleteListener);
       },
       onHidden: (instance) => {
+        const viewBtn = instance.popper.querySelector('[data-action="view"]') as HTMLElement | null;
         const editBtn = instance.popper.querySelector('[data-action="edit"]') as HTMLElement | null;
         const deleteBtn = instance.popper.querySelector(
           '[data-action="delete"]'
         ) as HTMLElement | null;
+        viewBtn?.removeEventListener("click", viewListener);
         editBtn?.removeEventListener("click", editListener);
         deleteBtn?.removeEventListener("click", deleteListener);
       },
@@ -490,6 +505,23 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
+  :global(.nc-tooltip-content) {
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.4;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  :global(.nc-tooltip-date) {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
   :global(.nc-tooltip-keywords) {
     display: flex;
     flex-wrap: wrap;
@@ -521,6 +553,11 @@
 
   :global(.nc-tooltip-btn:hover) {
     opacity: 0.85;
+  }
+
+  :global(.nc-tooltip-btn--view) {
+    background: rgba(59, 130, 246, 0.85);
+    color: white;
   }
 
   :global(.nc-tooltip-btn--edit) {

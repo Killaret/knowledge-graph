@@ -433,6 +433,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // NoteCard
     "noteCard.links": "Links: {{count}}",
+    "noteCard.view": "View",
+    "noteCard.viewAria": "View note",
     "noteCard.edit": "Edit",
     "noteCard.delete": "Delete",
     "noteCard.editAria": "Edit note",
@@ -999,6 +1001,8 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // NoteCard
     "noteCard.links": "Связи: {{count}}",
+    "noteCard.view": "Просмотр",
+    "noteCard.viewAria": "Просмотреть заметку",
     "noteCard.edit": "Редактировать",
     "noteCard.delete": "Удалить",
     "noteCard.editAria": "Редактировать заметку",

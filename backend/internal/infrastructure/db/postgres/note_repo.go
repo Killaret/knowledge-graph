@@ -279,7 +279,7 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 	}
 	noteType := n.Type()
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	return NoteModel{
 		ID:        n.ID(),
@@ -316,7 +316,7 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	}
 	noteType := m.Type
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt, note.WithIsPublic(m.IsPublic)), nil
 }

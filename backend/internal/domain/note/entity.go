@@ -32,7 +32,7 @@ func WithIsPublic(isPublic bool) NoteOption {
 func NewNote(title Title, content Content, noteType string, metadata Metadata, opts ...NoteOption) *Note {
 	now := time.Now()
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	n := &Note{
 		id:        uuid.New(),
@@ -54,7 +54,7 @@ func NewNote(title Title, content Content, noteType string, metadata Metadata, o
 func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID, opts ...NoteOption) *Note {
 	now := time.Now()
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	n := &Note{
 		id:        uuid.New(),
@@ -75,7 +75,7 @@ func NewNoteWithCreator(title Title, content Content, noteType string, metadata 
 // ReconstructNote reconstructs a note from saved data (used by repository)
 func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	n := &Note{
 		id:        id,
@@ -96,7 +96,7 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 // ReconstructNoteWithCreator reconstructs a note with creator ID
 func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	n := &Note{
 		id:        id,

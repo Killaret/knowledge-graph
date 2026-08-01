@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { isAuthenticated, currentUser } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte.js";
 
   let collapsed = $state(true);
 
@@ -89,6 +89,20 @@
           <span class="user-email">{user?.email ?? "Пользователь"}</span>
         {/if}
       </div>
+      <a
+        href="/auth/login"
+        class="nav-link auth-link"
+        onclick={(e: MouseEvent) => {
+          e.preventDefault();
+          logout();
+          goto("/auth/login");
+        }}
+      >
+        <span class="nav-short">↩</span>
+        {#if !collapsed}
+          <span class="nav-label">Выйти</span>
+        {/if}
+      </a>
     {:else}
       <a
         href="/auth/login"
