@@ -258,10 +258,17 @@
     }
 
     if (graphData.hash && hasPreloadedData()) {
+      const previousHash = graphData.hash;
       const delta = await updateGraphWithDelta();
       if (delta) {
         const updated = getPreloadedGraph();
-        if (updated && updated.hash !== graphData.hash) {
+        const hasChanges =
+          (delta.added_nodes?.length ?? 0) > 0 ||
+          (delta.updated_nodes?.length ?? 0) > 0 ||
+          (delta.removed_nodes?.length ?? 0) > 0 ||
+          (delta.added_links?.length ?? 0) > 0 ||
+          (delta.removed_links?.length ?? 0) > 0;
+        if (updated && (hasChanges || updated.hash !== previousHash)) {
           graphData = updated;
           // The list view derives from allNotes, not graphData, so we must
           // refresh the notes list after a delta update.
