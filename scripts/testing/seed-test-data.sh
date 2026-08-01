@@ -10,6 +10,10 @@ LINK_COUNT=${LINK_COUNT:-60}
 NLP_WAIT_SECONDS=${NLP_WAIT_SECONDS:-600}
 REPORT_PATH=${REPORT_PATH:-"$(dirname "$0")/seed-report.json"}
 SEED=${SEED:-}
+# Percentage of created notes to publish (make public) so the anonymous/public
+# graph view has data to render in real-auth mode. Set to 0 to keep all notes
+# private (previous behavior).
+PUBLIC_PERCENT=${PUBLIC_PERCENT:-20}
 
 # Optional deterministic seed for reproducible visual regression fixtures
 if [ -n "$SEED" ]; then
@@ -38,6 +42,7 @@ REPORT=$(jq -n \
         startedAt: $startedAt,
         noteCount: 0,
         linkCount: 0,
+        publicNoteCount: 0,
         embeddingCount: 0,
         keywordNoteCount: 0,
         noteIds: [],
@@ -140,6 +145,37 @@ REPORT=$(echo "$REPORT" | jq \
     '.noteCount = ($noteIds | length) | .noteIds = $noteIds | .typeDistribution = $typeDist | .durations.createNotesSeconds = ($v | tonumber)')
 
 echo "Created ${#NOTE_IDS[@]} notes."
+
+# ---------------------------------------------------------------------------
+# 3.5. Publish a subset of notes so the anonymous/public graph view has data
+#      (previously all seeded notes stayed private, leaving the public graph
+#      empty in real-auth mode — see docs/MANUAL_TEST_ISSUES.md).
+# ---------------------------------------------------------------------------
+PUBLISH_START=$(date +%s)
+PUBLIC_COUNT=$(( (${#NOTE_IDS[@]} * PUBLIC_PERCENT + 99) / 100 ))
+PUBLISHED_COUNT=0
+
+if [ "$PUBLIC_COUNT" -gt 0 ]; then
+    echo "Publishing $PUBLIC_COUNT of ${#NOTE_IDS[@]} notes ($PUBLIC_PERCENT%) for the public graph..."
+    for ((i = 0; i < PUBLIC_COUNT && i < ${#NOTE_IDS[@]}; i++)); do
+        NOTE_ID=${NOTE_IDS[$i]}
+        if curl -s -f -X POST "$API_URL/notes/$NOTE_ID/publish" \
+            -H "Authorization: Bearer $TOKEN" >/dev/null 2>&1; then
+            PUBLISHED_COUNT=$((PUBLISHED_COUNT + 1))
+        else
+            add_error "publish-note" "Failed to publish note $NOTE_ID"
+        fi
+    done
+    echo "Published $PUBLISHED_COUNT notes."
+else
+    echo "PUBLIC_PERCENT is 0 — all notes remain private."
+fi
+
+PUBLISH_END=$(date +%s)
+REPORT=$(echo "$REPORT" | jq \
+    --arg pc "$PUBLISHED_COUNT" \
+    --arg v "$((PUBLISH_END - PUBLISH_START))" \
+    '.publicNoteCount = ($pc | tonumber) | .durations.publishSeconds = ($v | tonumber)')
 
 # ---------------------------------------------------------------------------
 # 4. Wait for NLP processing
@@ -277,7 +313,7 @@ echo "$REPORT" | jq . > "$REPORT_PATH"
 
 echo ""
 echo "Seed report saved to: $REPORT_PATH"
-echo "Notes: $(echo "$REPORT" | jq -r '.noteCount') | Links: $(echo "$REPORT" | jq -r '.linkCount') | Embeddings: $(echo "$REPORT" | jq -r '.embeddingCount') | Keyword notes: $(echo "$REPORT" | jq -r '.keywordNoteCount') | Graph nodes: $(echo "$REPORT" | jq -r '.graphNodes // 0') | Graph links: $(echo "$REPORT" | jq -r '.graphLinks // 0')"
+echo "Notes: $(echo "$REPORT" | jq -r '.noteCount') (public: $(echo "$REPORT" | jq -r '.publicNoteCount // 0')) | Links: $(echo "$REPORT" | jq -r '.linkCount') | Embeddings: $(echo "$REPORT" | jq -r '.embeddingCount') | Keyword notes: $(echo "$REPORT" | jq -r '.keywordNoteCount') | Graph nodes: $(echo "$REPORT" | jq -r '.graphNodes // 0') | Graph links: $(echo "$REPORT" | jq -r '.graphLinks // 0')"
 echo "Total duration: $(echo "$REPORT" | jq -r '.durations.totalSeconds // 0') seconds"
 
 if [ "$(echo "$REPORT" | jq '.errors | length')" -gt 0 ]; then

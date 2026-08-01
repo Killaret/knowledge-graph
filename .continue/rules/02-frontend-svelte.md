@@ -7,6 +7,16 @@ description: Svelte 5 runes, TypeScript strict, atomic design, SvelteKit pattern
 
 # Frontend Svelte 5 Rules
 
+## Manual Found → Automated Covered
+
+If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue. Choose the test level by severity and scope:
+
+- **unit** — pure logic, validators, or utilities (e.g. `errorMessage.ts`, email validation).
+- **integration** — handlers, repositories, or routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+- **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+
+The test should fail before the fix (where safe) and pass after the fix. If the defect depends on manual data or config setup, fix the seed or config script — not only the instructions.
+
 ## Svelte 5 Runes — MANDATORY
 
 This project uses Svelte 5 runes syntax exclusively. Never use Svelte 4 syntax.

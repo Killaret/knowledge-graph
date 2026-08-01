@@ -239,12 +239,12 @@ func TestUpdateMe(t *testing.T) {
 			wantStatus: http.StatusOK, // No updates, returns current user
 		},
 		{
-			name: "invalid json",
+			name: "invalid email format",
 			request: UpdateUserRequest{
 				Email: "invalid-email",
 			},
 			userID:     testUser.ID,
-			wantStatus: http.StatusOK, // Email validation not enforced
+			wantStatus: http.StatusBadRequest,
 		},
 	}
 

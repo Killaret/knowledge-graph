@@ -3,6 +3,16 @@
 Testing standards for all layers: Go unit/integration, Svelte/Vitest, and
 Playwright E2E. Coverage target: **>60%** per package.
 
+## Manual Found → Automated Covered
+
+If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue. Choose the level by severity and scope:
+
+- **unit** — pure logic, validators, or utilities (e.g. `errorMessage.ts`, email validation).
+- **integration** — handlers, repositories, or routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+- **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+
+The test should fail before the fix (where safe) and pass after the fix. If the defect depends on manual data or config setup, fix the seed or config script — not only the instructions.
+
 ---
 
 ## Go Unit Tests — Table-Driven with testify/require

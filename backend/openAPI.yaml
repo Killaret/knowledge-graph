@@ -269,6 +269,302 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+    put:
+      summary: Update current user profile (email and/or password)
+      description: |
+        Updates the email and/or password of the authenticated user.
+        Both fields are optional; omitted fields are left unchanged.
+        Changing the password requires `old_password` to be supplied and
+        correct; `new_password` must satisfy the server's password policy.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: |
+            Invalid email format, missing old_password when new_password is
+            set, or new_password fails the password policy.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Authentication required, or old_password is incorrect.
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Email is already in use by another account.
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete current user account (soft delete)
+      description: Requires the current password to confirm the deletion.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Authentication required, or password is incorrect.
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/api-keys:
+    get:
+      summary: List API keys for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of API keys (key hashes are never returned)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create a new API key
+      description: |
+        The plaintext `api_key` value is returned only once, in this
+        response. It cannot be retrieved again afterwards.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAPIKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/api-keys/{id}:
+    delete:
+      summary: Revoke an API key
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings:
+    get:
+      summary: Get all settings for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Setting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update (or create) a setting for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingRequest'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Missing/invalid key or value, or unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings/{key}:
+    get:
+      summary: Get a single setting value
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting value
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  value: {}
+        '400':
+          description: Unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete a setting
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings/galactic_mode:
+    get:
+      summary: Get the galactic mode setting (convenience endpoint)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Galactic mode state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  galactic_mode:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/settings/galactic_mode/toggle:
+    post:
+      summary: Toggle the galactic mode setting
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Galactic mode toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  galactic_mode:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/achievements:
     get:
       summary: List all achievements
@@ -467,6 +763,70 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/publish:
+    post:
+      summary: Publish a note (make it visible in the public graph)
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can publish it.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/unpublish:
+    post:
+      summary: Unpublish a note (hide it from the public graph)
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can unpublish it.
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
@@ -743,6 +1103,413 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/share:
+    post:
+      summary: Share a note with another user
+      description: |
+        Only the note's creator can share it. Sharing the same note with the
+        same user again updates the existing share (e.g. to change
+        permission or expiration) instead of creating a duplicate.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareNoteRequest'
+      responses:
+        '200':
+          description: Existing share updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareNoteResponse'
+        '201':
+          description: Share created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareNoteResponse'
+        '400':
+          description: Invalid note ID, invalid user ID, or invalid request body.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can share it.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Note or target user not found.
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/share-link:
+    post:
+      summary: Create a public share link for a note
+      description: Only the note's creator can create share links for it.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareLinkRequest'
+      responses:
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can create share links.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/shares:
+    get:
+      summary: List all shares (user shares and share links) for a note
+      description: Only the note's creator can view its shares.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User shares and share links for the note
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_shares:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShareNoteResponse'
+                  share_links:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShareLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can view shares.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/shares/{shareId}:
+    delete:
+      summary: Revoke a direct user-to-user share
+      description: Only the note's creator can revoke shares.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Share revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can revoke shares.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/share-links/{id}:
+    delete:
+      summary: Revoke a share link
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Share link revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/share/{token}:
+    get:
+      summary: Access a shared note via a public share-link token
+      description: |
+        Public endpoint (no authentication required). Increments the share
+        link's use counter on each successful access.
+      tags: [Sharing]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shared note content and the granted permission
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  note:
+                    $ref: '#/components/schemas/Note'
+                  permission:
+                    type: string
+                    enum: [read, write]
+        '400':
+          description: Missing share token.
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Invalid, expired share link, or note not found.
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Share link has expired or reached its maximum uses.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/draft:
+    get:
+      summary: Get the latest draft for a note
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest draft for the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draft'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Save (create or update) a draft for a note
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveDraftRequest'
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  state:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}/sync:
+    post:
+      summary: Synchronize a draft with the server
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draft synced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}/resolve:
+    post:
+      summary: Resolve a conflict in a draft
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conflict resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}:
+    delete:
+      summary: Delete a draft
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draft deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/drafts:
+    get:
+      summary: List active drafts for the current user
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active drafts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drafts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Draft'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -1342,10 +2109,12 @@ components:
         id:
           type: string
           format: uuid
+        login:
+          type: string
         email:
           type: string
           format: email
-        name:
+        role:
           type: string
         created_at:
           type: string
@@ -1397,6 +2166,210 @@ components:
         tag_id:
           type: string
           format: uuid
+
+    UpdateUserRequest:
+      type: object
+      description: |
+        All fields are optional. To change the password, both
+        `old_password` and `new_password` must be provided.
+      properties:
+        email:
+          type: string
+          format: email
+        old_password:
+          type: string
+          description: Required when new_password is set.
+        new_password:
+          type: string
+          minLength: 10
+          description: Must satisfy the server's password policy.
+
+    DeleteAccountRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+
+    APIKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+        last_used_at:
+          type: [string, 'null']
+          format: date-time
+
+    CreateAPIKeyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    CreateAPIKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        api_key:
+          type: string
+          description: Plaintext API key, shown only once.
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Setting:
+      type: object
+      properties:
+        key:
+          type: string
+        value: {}
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateSettingRequest:
+      type: object
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+        value: {}
+
+    ShareNoteRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        permission:
+          type: string
+          enum: [read, write]
+          default: read
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+
+    ShareNoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        note_id:
+          type: string
+          format: uuid
+        shared_with_user_id:
+          type: string
+          format: uuid
+        shared_with_login:
+          type: string
+        permission:
+          type: string
+          enum: [read, write]
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+
+    CreateShareLinkRequest:
+      type: object
+      properties:
+        permission:
+          type: string
+          enum: [read, write]
+          default: read
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+        max_uses:
+          type: [integer, 'null']
+
+    ShareLinkResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        permission:
+          type: string
+          enum: [read, write]
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+        max_uses:
+          type: [integer, 'null']
+        created_at:
+          type: string
+          format: date-time
+
+    SaveDraftRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+
+    Draft:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        note_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        title:
+          type: string
+        state:
+          type: string
+          enum: [active, synced, conflict]
+        updated_at:
+          type: string
+          format: date-time
 
     HealthResponse:
       type: object

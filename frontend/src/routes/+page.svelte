@@ -144,14 +144,24 @@
       void loadData();
 
       // Periodically sync the graph via delta updates from graph-service.
-      deltaInterval = setInterval(() => {
-        void refreshAfterMutation();
-      }, 30000);
+      // Public/anonymous users have no writeable graph to sync and the
+      // /v1/graph/delta endpoint requires authentication, so polling it would
+      // fire 401 -> auth/refresh 400 cycles and trigger unnecessary re-renders.
+      if (isAuthenticated()) {
+        deltaInterval = setInterval(() => {
+          void refreshAfterMutation();
+        }, 30000);
 
-      handleFocus = () => {
-        void refreshAfterMutation();
-      };
-      window.addEventListener("focus", handleFocus);
+        handleFocus = () => {
+          void refreshAfterMutation();
+        };
+        window.addEventListener("focus", handleFocus);
+      }
+
+      // Expose flag for E2E tests to assert background sync is gated by auth.
+      if (browser) {
+        (window as any).__kgGraphPollingActive = !!isAuthenticated();
+      }
     })();
 
     return () => {
@@ -164,10 +174,12 @@
    * Single source of truth load: graph-service full graph + notes.
    * For unauthenticated users the note list is derived from the public graph.
    */
-  async function loadData() {
+  async function loadData({ silent = false }: { silent?: boolean } = {}) {
     try {
       apiError = null;
-      loading = true;
+      if (!silent) {
+        loading = true;
+      }
 
       const isAuth = isAuthenticated();
       let graphResult: GraphData | null = null;
@@ -210,25 +222,41 @@
         }
 
         graphData = graphResult;
-      } else {
-        // Minimal fallback for empty/invalid graph-service result.
+      } else if (!silent || graphData.nodes.length === 0) {
+        // Minimal fallback for empty/invalid graph-service result. When
+        // refreshing silently in the background, keep showing the last known
+        // graph instead of blanking it out on a transient empty response.
         graphData = { nodes: [], links: [] };
       }
     } catch (e: unknown) {
-      apiError = toErrorResponse(e);
+      // Background refreshes shouldn't surface a full-page error and wipe
+      // out an already-rendered graph; just log and keep the current state.
+      if (!silent) {
+        apiError = toErrorResponse(e);
+      }
       if (import.meta.env.DEV) {
         console.error(e);
       }
     } finally {
-      loading = false;
+      if (!silent) {
+        loading = false;
+      }
     }
   }
 
   /**
    * After mutations try to apply a graph delta first; if no hash/preloaded data
-   * or delta fails, fall back to a full reload.
+   * or delta fails, fall back to a full reload. This always runs silently so
+   * the graph doesn't flash a loading overlay on periodic background syncs.
+   *
+   * Anonymous users have no private graph to sync; /v1/graph/delta requires
+   * auth and would return 401, so we skip background sync entirely for them.
    */
   async function refreshAfterMutation() {
+    if (!isAuthenticated()) {
+      return;
+    }
+
     if (graphData.hash && hasPreloadedData()) {
       const delta = await updateGraphWithDelta();
       if (delta) {
@@ -239,7 +267,7 @@
         return;
       }
     }
-    await loadData();
+    await loadData({ silent: true });
   }
 
   // Helper to get note type - unified with renderer.ts logic via CelestialBody

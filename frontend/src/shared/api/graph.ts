@@ -172,6 +172,16 @@ function getGraphApi() {
           if (response.status !== 401) return response;
           if (request.headers.get("X-Graph-Retry")) return response;
 
+          // If the request was made without credentials, the caller is either
+          // an anonymous user on a public page or an unauthenticated visitor
+          // hitting a protected endpoint. Do not try to refresh the token and
+          // do not redirect to login; let the caller handle the 401.
+          const hadAuth =
+            request.headers.has("Authorization") || request.headers.has("X-API-Key");
+          if (!hadAuth) {
+            return response;
+          }
+
           const refreshed = await refreshAccessToken();
           if (refreshed) {
             request.headers.set("X-Graph-Retry", "1");

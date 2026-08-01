@@ -17,6 +17,22 @@ Knowledge Graph - система управления заметками с гр
 - E2E: `npm run test` for Playwright
 - Coverage must be >60%
 
+### 1.1 Manual Found → Automated Covered
+- If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
+- Choose the test level by severity:
+  - **unit** — pure logic, validators, or utilities (e.g., `errorMessage.ts`, email validation).
+  - **integration** — handlers, repositories, or routes (e.g., `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+  - **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g., public graph, achievements, SSE fallback).
+- The test should actually fail before the fix (where safe) and pass after the fix.
+- If the defect is related to manual data preparation (seed scripts, config files), fix the script or config — not just the instruction.
+- If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
+- Choose the test level by severity:
+  - **unit** — pure logic, validators, or utilities (e.g., `errorMessage.ts`, email validation).
+  - **integration** — handlers, repositories, or routes (e.g., `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+  - **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g., public graph, achievements, SSE fallback).
+- The test should actually fail before the fix (where safe) and pass after the fix.
+- If the defect is related to manual data preparation (seed scripts, config files), fix the script or config — not just the instruction.
+
 ### 2. Go Conventions
 - Clean Architecture: domain/application/infrastructure/interfaces layers
 - Private fields in entities + factory functions

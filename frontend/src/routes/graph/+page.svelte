@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
-  import { initAuth } from "$shared/stores/auth.svelte";
+  import { initAuth, isAuthenticated } from "$shared/stores/auth.svelte";
   import {
     getNotes,
     getNote,
@@ -55,7 +55,11 @@
   let loading = $state(true);
   let error = $state("");
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(browser && new URL(window.location.href).searchParams.has("full"));
+  // Default to the full graph (same behavior as the main "/" page) unless the
+  // caller explicitly asks for the local/centered view via ?full=false.
+  let showFullGraph = $state(
+    !browser || new URL(window.location.href).searchParams.get("full") !== "false"
+  );
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
 
@@ -69,9 +73,13 @@
         rawData = await getFullGraphData(0, undefined, nocache);
       } else {
         // Load the local graph
-        try {
-          notes = await getNotes();
-        } catch {
+        if (isAuthenticated()) {
+          try {
+            notes = await getNotes();
+          } catch {
+            notes = [];
+          }
+        } else {
           notes = [];
         }
 
@@ -84,10 +92,17 @@
         }
       }
 
-      // Fetch the Knowledge Core system note for in-app help
-      try {
-        knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
-      } catch {
+      // Fetch the Knowledge Core system note for in-app help.
+      // Anonymous users cannot access individual notes, so skip this call
+      // to avoid a 401 -> auth/refresh -> redirect-to-login cascade on the
+      // public graph page.
+      if (isAuthenticated()) {
+        try {
+          knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
+        } catch {
+          knowledgeCore = null;
+        }
+      } else {
         knowledgeCore = null;
       }
 
@@ -152,6 +167,10 @@
     // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
     const url = new URL(window.location.href);
     await loadGraphData({ nocache: url.searchParams.has("nocache") });
+
+    // Expose flag for E2E tests to assert background sync is gated by auth.
+    // This page never polls for delta updates, so the flag is always false.
+    (window as any).__kgGraphPollingActive = false;
   });
 
   function handleNodeSelect(nodeId: string) {

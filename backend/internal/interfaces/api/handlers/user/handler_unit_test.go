@@ -295,6 +295,24 @@ func TestUpdateMe_EmailTaken(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, w.Code)
 }
 
+func TestUpdateMe_InvalidEmailFormat(t *testing.T) {
+	h, repo, _ := setupUserHandler(t)
+	u := newTestUser(t)
+
+	body, _ := json.Marshal(UpdateUserRequest{Email: "not-an-email"})
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPut, "/me", bytes.NewBuffer(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set(middleware.ContextUserIDKey, u.ID())
+	h.UpdateMe(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	repo.AssertNotCalled(t, "FindByID", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "EmailExists", mock.Anything, mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
 func TestUpdateMe_WrongOldPassword(t *testing.T) {
 	h, repo, _ := setupUserHandler(t)
 	u := newTestUser(t)

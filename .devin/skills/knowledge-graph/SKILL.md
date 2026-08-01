@@ -48,6 +48,15 @@ Stack: Go 1.25, Svelte 5, Python FastAPI, PostgreSQL, Redis, MongoDB, Docker.
 - Always run `go test ./...` after backend changes
 - Always run `npm run test:unit` after frontend changes
 - Coverage MUST be >60%
+
+### Manual Found → Automated Covered
+- If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
+- Choose the test level by severity:
+  - **unit** — pure logic, validators, or utilities (e.g. `errorMessage.ts`, email validation).
+  - **integration** — handlers, repositories, or routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+  - **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+- The test should fail before the fix (where safe) and pass after the fix.
+- If the defect is related to manual data preparation (seed scripts, config files), fix the script or config rather than only documenting.
 - **ALWAYS use test stack for E2E/BDD testing:** `.\scripts\testing\start-test.ps1`
 - **Stop dev and personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` Playwright failures
 - On Windows, prefer `http://127.0.0.1:3002` / `http://127.0.0.1:18083` or rebuild the test frontend with `VITE_API_URL=http://127.0.0.1:18083`

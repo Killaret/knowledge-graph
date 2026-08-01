@@ -577,3 +577,68 @@ Description: Кластеризация графа и визуализация �
 - Can a note be a "Star" in one cluster and a "Planet" in another?
 - Is batch edit tool needed for type reassignment?
 - Defer until real usage data available.
+
+### TD-3: Full SSE Implementation to Replace HTTP Polling
+**Priority:** 🟡 Medium (fixes a real performance/load problem)
+**Status:** ⏳ Planned
+**Context:** The application currently has **no** push channel to the browser at all. What
+looks like "events" is actually plain HTTP polling:
+- `GET /graph-service/api/v1/graph/delta?last_hash=...` — polled by the frontend every 30s
+  plus on window focus (`refreshAfterMutation` in `frontend/src/routes/+page.svelte`).
+- `GET /api/v1/users/me/achievements` — previously polled at `poll_interval_ms`
+  (bug: a config value of `0` was treated by JS as "poll as fast as possible" rather than
+  "disabled" — `setInterval(fn, 0)` fired ~125 times/sec instead of never firing; fixed by
+  switching to event-driven refresh after user actions instead of an interval).
+- The only real pub/sub in the project is the Redis Pub/Sub between backend and graph-service
+  (`backend/internal/infrastructure/events/publisher.go` → `services/graph-service/internal/subscriber/pubsub.go`),
+  used solely for graph-service cache invalidation — it never reaches the browser.
+- ADR-015 already flagged SSE for achievements as TODO at decision time, but it was never
+  implemented — polling stuck around instead.
+
+**Description:** Design and implement a unified SSE layer (`text/event-stream`,
+`EventSource` on the frontend) for every scenario that currently relies on polling or that
+needs real-time notifications, reusing the existing Redis Pub/Sub infrastructure as the
+transport between service instances.
+
+**Candidates to migrate from polling/refresh-after-action to SSE:**
+1. **Achievements** (`/api/v1/users/me/achievements`) — push an `AchievementUnlocked` event
+   right after `achievement.Service.CheckTrigger` saves a `UserAchievement` (currently run in
+   a background goroutine after the create note/link response — an ideal place to publish from).
+2. **Graph delta** (`graph-service/api/v1/graph/delta`) — a `GraphChanged` event on
+   NoteCreated/NoteUpdated/NoteDeleted/LinkCreated/LinkDeleted instead of polling every 30s;
+   removes both the polling itself and the related "graph flicker" from failed deltas.
+3. **Login streak progress** (`GetStreak`, which doesn't even have its own backend route yet —
+   see the missing `GET /api/v1/users/me/streak` found during the OpenAPI audit) — can be
+   designed push-first from the start.
+4. **Sharing notifications** — when a note is shared with a user (`ShareNote`), the recipient
+   could get an instant notification instead of discovering it on the next list load.
+5. **Draft conflicts** (`draft.SyncDraft` / `ResolveConflict`) — the client currently has to
+   discover sync conflicts itself; SSE could proactively notify about draft state changes from
+   another client/tab.
+6. **Cross-tab achievement/streak toasts in real time** — each tab currently runs its own
+   independent polling; a single SSE connection per user removes the duplication.
+
+**Architecture (plan):**
+- Backend: a single SSE hub (e.g. `internal/infrastructure/sse`) — a registry of active
+  connections keyed by `user_id`, with graceful disconnect/reconnect handling.
+- Cross-instance transport: the same Redis Pub/Sub (`internal/infrastructure/events`),
+  extended with new event types (`AchievementUnlocked`, `GraphChanged`, `ShareCreated`,
+  `DraftConflict`) published from the relevant application services.
+- Endpoint: `GET /api/v1/events/stream` (a single multiplexed stream for all event types for
+  one user, using the SSE `event:` field for client-side routing) — preferred over one stream
+  per feature.
+- Frontend: a single `EventSource` client in `shared/services` with auto-reconnect
+  (retry/backoff) that components subscribe to for the event types they need; on disconnect,
+  temporarily fall back to the existing polling/refresh-after-action logic so functionality
+  isn't lost when SSE is unavailable (proxy/firewall/old browser).
+- Both nginx gateways (dev/personal) need to support long-lived HTTP connections without
+  buffering (`proxy_buffering off`, increased `proxy_read_timeout`) — verify `docker/nginx/*`
+  configs.
+
+**MVP:** a single SSE endpoint (`/api/v1/events/stream`) for achievements only
+(`AchievementUnlocked`), reusing the existing Redis Pub/Sub channel; expand to `GraphChanged`
+and the remaining candidates above after it stabilizes.
+
+**Dependencies:** no new external services (reuses existing Redis); needs sign-off from
+`knowledge-graph-security` on authenticating long-lived SSE connections (JWT via query
+parameter or a separate short-lived token, since `EventSource` doesn't support custom headers).

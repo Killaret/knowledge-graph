@@ -111,6 +111,13 @@ func setupRouter(
 
 		// User routes
 		v1.GET("/users/me", userHandler.GetMe)
+		v1.PUT("/users/me", writeLimiter, userHandler.UpdateMe)
+		v1.DELETE("/users/me", writeLimiter, userHandler.DeleteMe)
+
+		// API key routes
+		v1.GET("/users/me/api-keys", userHandler.ListAPIKeys)
+		v1.POST("/users/me/api-keys", writeLimiter, userHandler.CreateAPIKey)
+		v1.DELETE("/users/me/api-keys/:id", writeLimiter, userHandler.RevokeAPIKey)
 
 		// Settings routes
 		v1.GET("/users/me/settings", settingsHandler.GetMySettings)
@@ -181,15 +188,6 @@ func setupRouter(
 		v1.POST("/backup/cloud", writeLimiter, backupHandler.TriggerCloudBackup)
 		v1.GET("/backup/status", backupHandler.GetBackupStatus)
 	}
-
-	// Tag routes
-	r.GET("/tags", tagHandler.List)
-	r.GET("/tags/:id", tagHandler.Get)
-	r.PUT("/tags/:id", writeLimiter, tagHandler.Update)
-	r.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
-	r.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
-	r.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
-	r.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
 
 	return r
 }

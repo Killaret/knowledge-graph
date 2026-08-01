@@ -88,6 +88,20 @@ Key remaining items:
 
 ---
 
+## Manual Found → Automated Covered
+
+When an AI agent or developer discovers a defect or questionable behavior during manual testing, the following must happen before the issue is closed:
+
+1. **Create at least one regression test** that reproduces the issue.
+2. **Choose the test level by severity and scope:**
+   - **unit** — pure logic, validators, utilities (e.g. `errorMessage.ts`, email validation).
+   - **integration** — handlers, repositories, routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+   - **E2E / Playwright** — full user scenario spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+3. **The test must fail before the fix and pass after the fix** (where it is safe to leave the bug uncommitted).
+4. **If the defect depends on manual data or config setup, fix the seed/config script** rather than only adding instructions.
+
+---
+
 ## Service Health Checks
 
 ### Dev Stack (docker-compose.yml)

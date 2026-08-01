@@ -223,6 +223,15 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 - Ensure `.env` contains `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes
 - See `docs/TESTING.md` for complete test stack documentation
 
+**Manual Found → Automated Covered (MANDATORY):**
+- If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
+- Choose the test level by severity and scope:
+  - **unit** — pure logic, validators, utilities (e.g. `errorMessage.ts`, email validation).
+  - **integration** — handlers, repositories, routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+  - **E2E / Playwright** — full user scenario spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+- The test should fail before the fix (where safe) and pass after the fix.
+- If the defect depends on manual data or config setup, fix the seed/config script — not just the instructions.
+
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
 - Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)

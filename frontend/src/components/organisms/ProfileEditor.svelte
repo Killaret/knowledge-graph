@@ -5,6 +5,7 @@
   import Modal from "$components/atoms/Modal.svelte";
   import { currentUser, updateUserInfo, logout } from "$shared/stores/auth.svelte.js";
   import * as usersApi from "$shared/api/users";
+  import { getApiErrorMessage } from "$shared/api/errorMessage";
   import { getCurrentLocale, setLocale, formatMessage, type Locale } from "$shared/utils/i18n";
 
   let name = $state("");
@@ -37,7 +38,7 @@
       await updateUserInfo();
       successMessage = formatMessage("settings.saved", selectedLocale);
     } catch (e) {
-      localError = e instanceof Error ? e.message : formatMessage("server.error", selectedLocale);
+      localError = await getApiErrorMessage(e, selectedLocale);
     } finally {
       isSaving = false;
     }
@@ -57,7 +58,7 @@
       await logout();
       goto("/auth/login");
     } catch (e) {
-      localError = e instanceof Error ? e.message : formatMessage("server.error", selectedLocale);
+      localError = await getApiErrorMessage(e, selectedLocale);
       isDeleting = false;
     }
   }

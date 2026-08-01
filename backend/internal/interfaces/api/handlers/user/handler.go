@@ -49,7 +49,7 @@ type UserResponse struct {
 
 // UpdateUserRequest represents a request to update user data
 type UpdateUserRequest struct {
-	Email       string `json:"email,omitempty"`
+	Email       string `json:"email,omitempty" binding:"omitempty,email"`
 	OldPassword string `json:"old_password,omitempty"`
 	NewPassword string `json:"new_password,omitempty"`
 }

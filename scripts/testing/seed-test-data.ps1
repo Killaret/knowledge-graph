@@ -7,7 +7,11 @@ param(
     [int]$LinkCount = 60,
     [int]$NlpWaitSeconds = 600,
     [int]$Seed = 0,
-    [string]$ReportPath = "$PSScriptRoot\seed-report.json"
+    [string]$ReportPath = "$PSScriptRoot\seed-report.json",
+    # Percentage of created notes to publish (make public) so the anonymous/public
+    # graph view has data to render in real-auth mode. Set to 0 to keep all notes
+    # private (previous behavior).
+    [int]$PublicPercent = 20
 )
 
 if ($Seed -gt 0) {
@@ -35,6 +39,7 @@ $report = @{
     startedAt = (Get-Date -Format o)
     noteCount = 0
     linkCount = 0
+    publicNoteCount = 0
     embeddingCount = 0
     keywordNoteCount = 0
     noteIds = @()
@@ -162,6 +167,38 @@ $report.noteIds = $noteIds
 $report.durations.createNotesSeconds = [math]::Round(((Get-Date) - $notesStart).TotalSeconds, 2)
 
 Write-Host "Created $($noteIds.Count) notes." -ForegroundColor Green
+
+# ---------------------------------------------------------------------------
+# 3.5. Publish a subset of notes so the anonymous/public graph view has data
+#      (previously all seeded notes stayed private, leaving the public graph
+#      empty in real-auth mode — see docs/MANUAL_TEST_ISSUES.md).
+# ---------------------------------------------------------------------------
+$publishStart = Get-Date
+$publicCount = [int][math]::Ceiling($noteIds.Count * ($PublicPercent / 100))
+
+if ($publicCount -gt 0) {
+    Write-Host "Publishing $publicCount of $($noteIds.Count) notes ($PublicPercent%) for the public graph..." -ForegroundColor Yellow
+    $publishedCount = 0
+
+    for ($i = 0; $i -lt $publicCount; $i++) {
+        try {
+            Invoke-RestMethod -Uri "$apiUrl/notes/$($noteIds[$i])/publish" -Method Post `
+                -Headers $headers | Out-Null
+            $publishedCount++
+        }
+        catch {
+            Add-ReportError -Context "publish-note" -Message "Failed to publish note $($noteIds[$i]): $_"
+        }
+    }
+
+    $report.publicNoteCount = $publishedCount
+    Write-Host "Published $publishedCount notes." -ForegroundColor Green
+}
+else {
+    Write-Host "PublicPercent is 0 — all notes remain private." -ForegroundColor DarkGray
+}
+
+$report.durations.publishSeconds = [math]::Round(((Get-Date) - $publishStart).TotalSeconds, 2)
 
 # ---------------------------------------------------------------------------
 # 4. Wait for NLP processing (embeddings + keywords)
@@ -293,7 +330,7 @@ $report.durations.graphCheckSeconds = [math]::Round(((Get-Date) - $graphStart).T
 # ---------------------------------------------------------------------------
 $report.finishedAt = (Get-Date -Format o)
 $report.durations.totalSeconds = [math]::Round(
-    ($report.durations.cleanSeconds + $report.durations.authSeconds + $report.durations.createNotesSeconds + $report.durations.nlpWaitSeconds + $report.durations.createLinksSeconds + $report.durations.graphCheckSeconds),
+    ($report.durations.cleanSeconds + $report.durations.authSeconds + $report.durations.createNotesSeconds + $report.durations.publishSeconds + $report.durations.nlpWaitSeconds + $report.durations.createLinksSeconds + $report.durations.graphCheckSeconds),
     2
 )
 
@@ -301,7 +338,7 @@ $report | ConvertTo-Json -Depth 10 | Out-File -FilePath $ReportPath -Encoding UT
 
 Write-Host ""
 Write-Host "Seed report saved to: $ReportPath" -ForegroundColor Cyan
-Write-Host "Notes: $($report.noteCount) | Links: $($report.linkCount) | Embeddings: $($report.embeddingCount) | Keyword notes: $($report.keywordNoteCount) | Graph nodes: $($report.graphNodes) | Graph links: $($report.graphLinks)" -ForegroundColor Cyan
+Write-Host "Notes: $($report.noteCount) (public: $($report.publicNoteCount)) | Links: $($report.linkCount) | Embeddings: $($report.embeddingCount) | Keyword notes: $($report.keywordNoteCount) | Graph nodes: $($report.graphNodes) | Graph links: $($report.graphLinks)" -ForegroundColor Cyan
 Write-Host "Total duration: $($report.durations.totalSeconds) seconds" -ForegroundColor Cyan
 
 if ($report.errors.Count -gt 0) {

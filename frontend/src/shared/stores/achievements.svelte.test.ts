@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Achievement } from "$entities";
 import { state, startPolling, stopPolling, refreshNow, dismiss } from "./achievements.svelte";
-import { ACHIEVEMENT_POLL_INTERVAL_MS } from "$shared/config";
+
+// Use a fixed, positive interval for these tests so behavior doesn't depend
+// on the real project config (which currently sets poll_interval_ms to 0 to
+// disable polling entirely — see the dedicated test below for that case).
+const ACHIEVEMENT_POLL_INTERVAL_MS = 5000;
+vi.mock("$shared/config", () => ({
+  ACHIEVEMENT_POLL_INTERVAL_MS: 5000,
+}));
 
 vi.mock("./auth.svelte", () => ({
   isAuthenticated: vi.fn(() => true),
@@ -101,5 +108,47 @@ describe("achievements store", () => {
 
     expect(svc.markAchievementSeen).toHaveBeenCalledWith("a1");
     expect(svc.fetchUserAchievements).toHaveBeenCalled();
+  });
+});
+
+// Regression test: a poll interval of 0 previously caused setInterval(fn, 0)
+// to be scheduled, which fires essentially continuously (browsers clamp to a
+// few ms) instead of disabling polling — hammering the API hundreds of times
+// per second. Verified via a real Playwright run against /graph: ~125
+// requests/sec to /api/v1/users/me/achievements before the fix.
+describe("achievements store with polling disabled (poll_interval_ms: 0)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.doUnmock("$shared/config");
+    vi.resetModules();
+  });
+
+  it("does not schedule a recurring timer when the configured interval is 0", async () => {
+    vi.doMock("$shared/config", () => ({ ACHIEVEMENT_POLL_INTERVAL_MS: 0 }));
+    vi.doMock("./auth.svelte", () => ({ isAuthenticated: vi.fn(() => true) }));
+    vi.doMock("$shared/services/achievements", () => ({
+      fetchUserAchievements: vi.fn().mockResolvedValue([]),
+      markAchievementSeen: vi.fn(),
+    }));
+
+    const store = await import("./achievements.svelte");
+    const svc = await import("$shared/services/achievements");
+
+    store.startPolling();
+    // Flush the initial refresh() call triggered synchronously by startPolling.
+    await vi.runOnlyPendingTimersAsync();
+    expect(svc.fetchUserAchievements).toHaveBeenCalledTimes(1);
+
+    // Advancing time should not trigger any further calls since no interval
+    // was scheduled (a setInterval(fn, 0) bug would fire many more here).
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(svc.fetchUserAchievements).toHaveBeenCalledTimes(1);
+
+    store.stopPolling();
   });
 });

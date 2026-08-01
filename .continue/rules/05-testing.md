@@ -11,6 +11,16 @@ description: Testing patterns - Go table-driven tests, Vitest, Playwright E2E, p
 
 **Minimum coverage: >60% for all modules.** This is mandatory and non-negotiable.
 
+## Manual Found → Automated Covered
+
+If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue:
+
+- **unit** — pure logic, validators, or utilities (e.g. `errorMessage.ts`, email validation).
+- **integration** — handlers, repositories, or routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+- **E2E / Playwright** — user-facing scenarios spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+
+The test must fail before the fix (where safe) and pass after the fix. If the defect depends on manual data or config setup, fix the seed/config script, not only the instructions.
+
 ## Go — Table-Driven Tests with Testify
 
 ### Unit Test Pattern

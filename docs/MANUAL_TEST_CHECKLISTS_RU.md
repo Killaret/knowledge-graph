@@ -13,6 +13,7 @@
 - `hover_delay_ms` в `knowledge-graph.config.json` → `frontend.graph.2d.hover_delay_ms` = 150
 - В режиме real-auth фронтенд обращается к бэкенду через same-origin прокси `/api` и `/graph-service/api`; серверный прокси (`frontend/src/hooks.server.ts`) пробрасывает заголовки `Authorization` и `Cookie`, включая HttpOnly auth cookies.
 - **Для real-auth тестов стек запускается с `SKIP_AUTH=false`**, и `seed-test-data.ps1` выполняется в том же режиме; иначе заметки создадутся под анонимным владельцем и граф в real-auth режиме окажется пустым.
+- `seed-test-data.ps1`/`.sh` публикуют `-PublicPercent` (по умолчанию 20%) заметок через `POST /notes/:id/publish`, чтобы публичный (анонимный) граф не был пустым в real-auth режиме.
 
 **Перед стартом**
 
@@ -53,6 +54,8 @@
 - [ ] Приватные заметки не отображаются и не возвращаются.
 - [ ] Попытка перейти на `/profile` без auth → редирект на login или 401.
 - [ ] Повторный hard refresh (`Ctrl+F5`) не вызывает 401-циклов.
+- [ ] В DevTools → Network нет повторяющихся `GET /graph-service/api/v1/graph/delta` (401) и `POST /api/v1/auth/refresh` (400/401).
+- [ ] Переход на `/graph` без auth не редиректит на `/auth/login`, публичный граф рендерится.
 
 ---
 
@@ -224,6 +227,8 @@
 ### Проверки real-auth
 - [ ] Открыть `http://127.0.0.1:3002` в инкогнито — публичный граф загружается без 401-циклов.
   - До входа одиночный `POST /api/v1/auth/refresh` с кодом `400` является ожидаемым (нет refresh cookie).
+- [ ] Открыть DevTools → Network, перейти на `/graph` — публичный граф не редиректит на `/auth/login`.
+- [ ] На `/` и `/graph` нет повторяющихся `GET /graph-service/api/v1/graph/delta` (401) и `POST /api/v1/auth/refresh` (400/401).
 - [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` без `Authorization` → `401`.
 - [ ] Войти как `testuser` / `TestPassword123!`.
 - [ ] После входа на главной (`/`) загружаются заметки `testuser`.

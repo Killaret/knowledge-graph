@@ -40,7 +40,12 @@ export function startPolling() {
   if (timer) return;
   consecutiveErrors = 0;
   refresh();
-  timer = setInterval(refresh, ACHIEVEMENT_POLL_INTERVAL_MS);
+  // A poll interval of 0 (or negative) means polling is disabled via config,
+  // not "poll as fast as possible" — setInterval(fn, 0) would otherwise fire
+  // essentially continuously (browsers clamp to a few ms), hammering the API.
+  if (ACHIEVEMENT_POLL_INTERVAL_MS > 0) {
+    timer = setInterval(refresh, ACHIEVEMENT_POLL_INTERVAL_MS);
+  }
 }
 
 export function stopPolling() {
