@@ -207,22 +207,28 @@
     text-align: right;
   }
 
+  /* Length validation styles - applied dynamically via class:titleLengthClass */
+  /* svelte-ignore css_unused_selector */
   .length-ok {
     color: var(--color-text-secondary, #6b7280);
   }
 
+  /* svelte-ignore css_unused_selector */
   .length-warning {
     color: var(--color-warning, #f59e0b);
   }
 
+  /* svelte-ignore css_unused_selector */
   .length-error {
     color: var(--color-error, #ef4444);
   }
 
+  /* svelte-ignore css_unused_selector */
   input.length-warning {
     border-color: var(--color-warning, #f59e0b);
   }
 
+  /* svelte-ignore css_unused_selector */
   input.length-error {
     border-color: var(--color-error, #ef4444);
   }
