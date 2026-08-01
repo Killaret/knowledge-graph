@@ -164,7 +164,7 @@ test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@aut
 
     await page.locator('[data-testid="ghost-note-title"]').fill(`Ghost Test ${timestamp}`);
     await page.locator('[data-testid="ghost-note-content"]').fill("Created via canvas hotkey");
-    await page.locator('[data-testid="ghost-note-type"]').selectOption("comet");
+    await page.locator('[data-testid="ghost-note-form"] [data-type="comet"]').click();
 
     const [response] = await Promise.all([
       page.waitForResponse(

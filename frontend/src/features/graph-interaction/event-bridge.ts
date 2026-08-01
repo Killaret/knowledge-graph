@@ -533,12 +533,25 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           const canvas = context.getCanvas();
           if (!canvas) return;
           const rect = canvas.getBoundingClientRect();
-          const centerX = (rect.width / 2 - context.transform.x) / context.transform.k;
-          const centerY = (rect.height / 2 - context.transform.y) / context.transform.k;
+
+          // Position the ghost form in a safe screen area so it does not overlap
+          // the top floating controls, the left graph controls, or the edges.
+          const FORM_WIDTH = 360;
+          const FORM_HEIGHT = 480;
+          const MARGIN_LEFT = 88; // left graph-controls + padding
+          const MARGIN_TOP = 80;  // top floating-controls + padding
+          const MARGIN_RIGHT = 24;
+          const MARGIN_BOTTOM = 24;
+
+          const maxX = Math.max(MARGIN_LEFT, rect.width - FORM_WIDTH - MARGIN_RIGHT);
+          const maxY = Math.max(MARGIN_TOP, rect.height - FORM_HEIGHT - MARGIN_BOTTOM);
+          const x = Math.max(MARGIN_LEFT, Math.min(maxX, (rect.width - FORM_WIDTH) / 2));
+          const y = Math.max(MARGIN_TOP, Math.min(maxY, (rect.height - FORM_HEIGHT) / 2));
+
           context.setGhostNode(
             createGhostNode(rect.width, rect.height, getSimulationNodes(context.simState))
           );
-          openNoteForm(context.noteFormState, centerX, centerY);
+          openNoteForm(context.noteFormState, x, y);
           context.redraw();
         },
         onNodeDelete: (nodeId) => {

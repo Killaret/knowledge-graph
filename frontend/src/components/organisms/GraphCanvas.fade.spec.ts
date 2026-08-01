@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/svelte";
-import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
 import { startSimulation, type SimulationState, type TransformState } from "./GraphCanvas";
 
 // Shared state для мока d3-force

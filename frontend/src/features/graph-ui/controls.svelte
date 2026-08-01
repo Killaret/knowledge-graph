@@ -43,7 +43,7 @@
     title={t("graphControls.search")}
     style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
   >
-    🔍
+    🎯
   </button>
   <button
     data-testid="graph-controls-mode"

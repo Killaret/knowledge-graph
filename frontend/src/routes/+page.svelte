@@ -27,7 +27,7 @@
   } from "$shared/services/PreloadService";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
-  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import type { ErrorResponse } from "$shared/types/errors";
@@ -261,8 +261,12 @@
       const delta = await updateGraphWithDelta();
       if (delta) {
         const updated = getPreloadedGraph();
-        if (updated) {
+        if (updated && updated.hash !== graphData.hash) {
           graphData = updated;
+          // The list view derives from allNotes, not graphData, so we must
+          // refresh the notes list after a delta update.
+          allNotes = await getNotes();
+          applyFiltersAndSort();
         }
         return;
       }
@@ -431,10 +435,10 @@
     }
   }
 
-  function handleNoteCreated(note: Note) {
+  async function handleNoteCreated(note: Note) {
     showCreateModal = false;
     graphStore.selectedNodeId = note.id;
-    refreshAfterMutation();
+    await refreshAfterMutation();
   }
 
   function handleToggleView(view: "graph" | "list" | "3d") {

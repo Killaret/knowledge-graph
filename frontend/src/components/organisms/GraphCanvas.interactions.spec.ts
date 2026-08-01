@@ -87,7 +87,7 @@ vi.mock("d3-force", () => {
   };
 });
 
-import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
 
 const mockNodes = [
   { id: "1", title: "Node 1", type: "star" },

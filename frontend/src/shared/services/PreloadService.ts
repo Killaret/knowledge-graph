@@ -194,6 +194,7 @@ class PreloadServiceClass {
       this.preloadedGraph.delta = delta;
       if (delta.current_hash) {
         this.preloadedGraph.lastHash = delta.current_hash;
+        this.preloadedGraph.data.hash = delta.current_hash;
       }
       this.preloadedGraph.timestamp = Date.now();
       return delta;

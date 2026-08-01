@@ -8,7 +8,7 @@ vi.mock("$app/environment", () => ({
 }));
 
 // Mock GraphCanvas to avoid canvas dependencies in unit tests
-vi.mock("./GraphCanvas.svelte", () => ({
+vi.mock("$widgets/graph-canvas/GraphCanvas.svelte", () => ({
   default: vi.fn().mockImplementation(() => {
     const div = document.createElement("div");
     div.setAttribute("data-testid", "graph-canvas");

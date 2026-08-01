@@ -120,6 +120,7 @@
   <div class="form-links">
     <a href="/auth/register">{t("auth.registerLink")}</a>
     <a href="/auth/forgot-password">{t("auth.forgotPasswordLink")}</a>
+    <a href="/">{t("backButton.back")}</a>
   </div>
 
   {#if yandexEnabled && !useApiKey}

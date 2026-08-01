@@ -47,6 +47,7 @@
   .type-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 8px 14px;
     border: 2px solid var(--color-border, #e5e7eb);
@@ -91,5 +92,21 @@
 
   .label {
     line-height: 1;
+  }
+
+  @media (max-width: 420px) {
+    .type-selector {
+      gap: 6px;
+    }
+
+    .type-btn {
+      padding: 6px 8px;
+      min-width: 36px;
+      min-height: 36px;
+    }
+
+    .label {
+      display: none;
+    }
   }
 </style>

@@ -96,7 +96,7 @@ vi.mock("d3-force", () => {
   };
 });
 
-import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
 
 const createMockContext = () => {
   ctxCalls = [];

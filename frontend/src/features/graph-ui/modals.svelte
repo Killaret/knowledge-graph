@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { NoteFormState } from "$features/graph-forms/note-form";
   import type { LinkFormState } from "$features/graph-forms/link-form";
+  import NoteForm from "$components/molecules/NoteForm.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -9,8 +10,8 @@
 
   const {
     activeForm,
-    noteFormState,
-    linkFormState,
+    noteFormState = $bindable(),
+    linkFormState = $bindable(),
     onSave,
     onCancel,
   }: {
@@ -24,70 +25,100 @@
 
 {#if activeForm === "note"}
   <div
-    class="note-form"
+    class="ghost-note-form"
     data-testid="ghost-note-form"
     style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState
       .noteFormPosition
-      .y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(138, 43, 226, 0.6); border-radius: 12px; padding: 20px; min-width: 320px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
+      .y}px;"
   >
-    <div
-      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"
-    >
-      <h3 style="margin: 0; color: #a78bfa; font-size: 16px; font-weight: 600;">
-        {t("graphModals.createNoteTitle")}
-      </h3>
+    <div class="ghost-note-header">
+      <h3 class="ghost-note-title">{t("graphModals.createNoteTitle")}</h3>
       <button
+        class="ghost-note-close"
         data-testid="ghost-note-close"
         onclick={() => onCancel("note")}
-        style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
         aria-label={t("close")}
+        type="button"
       >
-        ×
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
       </button>
     </div>
-    <input
-      data-testid="ghost-note-title"
-      type="text"
-      placeholder={t("graphModals.noteTitlePlaceholder")}
-      bind:value={noteFormState.newNoteTitle}
-      style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; font-size: 14px; transition: border-color 0.2s;"
-      onkeydown={(e) => e.key === "Enter" && onSave("note")}
+    <NoteForm
+      ghost
+      bind:title={noteFormState.newNoteTitle}
+      bind:content={noteFormState.newNoteContent}
+      bind:type={noteFormState.newNoteType}
+      onSubmit={() => onSave("note")}
+      onCancel={() => onCancel("note")}
+      titlePlaceholder={t("graphModals.noteTitlePlaceholder")}
+      contentPlaceholder={t("graphModals.noteContentPlaceholder")}
+      submitLabel={t("graphModals.create")}
+      cancelLabel={t("cancel")}
+      titleTestId="ghost-note-title"
+      contentTestId="ghost-note-content"
+      submitTestId="ghost-note-create"
+      cancelTestId="ghost-note-cancel"
     />
-    <textarea
-      data-testid="ghost-note-content"
-      placeholder={t("graphModals.noteContentPlaceholder")}
-      bind:value={noteFormState.newNoteContent}
-      style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; min-height: 100px; box-sizing: border-box; font-size: 14px; resize: vertical; transition: border-color 0.2s;"
-    ></textarea>
-    <select
-      data-testid="ghost-note-type"
-      bind:value={noteFormState.newNoteType}
-      style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
-    >
-      <option value="star">⭐ {t("celestialBody.type.star")}</option>
-      <option value="planet">🪐 {t("celestialBody.type.planet")}</option>
-      <option value="comet">☄️ {t("celestialBody.type.comet")}</option>
-      <option value="galaxy">🌀 {t("celestialBody.type.galaxy")}</option>
-      <option value="asteroid">🌑 {t("celestialBody.type.asteroid")}</option>
-    </select>
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button
-        data-testid="ghost-note-cancel"
-        onclick={() => onCancel("note")}
-        style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
-      >
-        {t("cancel")}
-      </button>
-      <button
-        data-testid="ghost-note-create"
-        onclick={() => onSave("note")}
-        style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
-      >
-        {t("graphModals.create")}
-      </button>
-    </div>
   </div>
 {/if}
+
+<style>
+  .ghost-note-form {
+    background: rgba(10, 26, 58, 0.98);
+    border: 1px solid rgba(138, 43, 226, 0.6);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 360px;
+    max-width: min(420px, calc(100vw - 140px));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    color: white;
+  }
+
+  .ghost-note-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .ghost-note-title {
+    margin: 0;
+    color: #a78bfa;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .ghost-note-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .ghost-note-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+</style>
 
 {#if activeForm === "link"}
   <div

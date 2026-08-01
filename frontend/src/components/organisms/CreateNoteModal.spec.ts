@@ -53,8 +53,14 @@ describe("CreateNoteModal", () => {
   it("shows validation error when title is empty", async () => {
     render(CreateNoteModal, { props: { open: true } });
 
-    const submitButton = screen.getByText("Create Note");
-    await fireEvent.click(submitButton);
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
+    titleInput.value = "";
+    await fireEvent.input(titleInput);
+    await tick();
+
+    const form = titleInput.form;
+    expect(form).toBeTruthy();
+    await fireEvent.submit(form!);
     await tick();
 
     expect(screen.getByText("Title is required")).toBeInTheDocument();
@@ -93,7 +99,7 @@ describe("CreateNoteModal", () => {
       expect(createNote).toHaveBeenCalledWith({
         title: "Test Note",
         content: "Test content",
-        type: "star",
+        type: "planet",
         metadata: {},
       });
     });

@@ -23,6 +23,13 @@
     { href: "/settings", label: "Настройки", short: "Н" },
   ];
 
+  // The graph pages have their own top floating controls, so the collapsed
+  // sidebar hamburger looks like an empty, useless menu button there.
+  const hiddenRoutes = ["/graph", "/graph/3d"];
+  const isHidden = $derived(
+    hiddenRoutes.some((route) => currentPath === route || currentPath.startsWith(`${route}/`))
+  );
+
   function toggle() {
     collapsed = !collapsed;
   }
@@ -36,17 +43,19 @@
   }
 </script>
 
-<aside
-  class="sidebar-widget"
-  class:collapsed
-  class:expanded={!collapsed}
-  data-testid="sidebar-widget"
-  aria-label="Боковая панель навигации"
->
+{#if !isHidden}
+  <aside
+    class="sidebar-widget"
+    class:collapsed
+    class:expanded={!collapsed}
+    data-testid="sidebar-widget"
+    aria-label="Боковая панель навигации"
+  >
   <div class="sidebar-header">
     <button
       class="toggle-button"
       type="button"
+      title={collapsed ? "Развернуть меню" : "Свернуть меню"}
       aria-label={collapsed ? "Развернуть панель" : "Свернуть панель"}
       onclick={toggle}
     >
@@ -120,6 +129,7 @@
     {/if}
   </div>
 </aside>
+{/if}
 
 <style>
   .sidebar-widget {

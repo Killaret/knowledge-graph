@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();

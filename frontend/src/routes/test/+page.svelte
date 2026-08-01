@@ -2,7 +2,7 @@
   /**
    * Test index page
    */
-  import GraphCanvas from "$components/organisms/GraphCanvas.svelte";
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import type { GraphLink } from "$shared/api/graph";
 
   const nodes = [{ id: "1", title: "Test Star", type: "star" }];

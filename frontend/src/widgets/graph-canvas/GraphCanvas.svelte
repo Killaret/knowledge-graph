@@ -5,7 +5,7 @@
   import { GraphMode } from "$entities";
   import { GraphCanvasOverlay, GraphCanvasModals, GraphCanvasControls } from "$features/graph-ui";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
-  import { ParticleSystem } from "./GraphCanvas/particle-system";
+  import { ParticleSystem } from "$components/organisms/GraphCanvas/particle-system";
   import {
     resizeCanvas,
     setupResizeObserver,
@@ -29,9 +29,9 @@
     updateGhostNodePulse,
     type GravitySystem,
     applyDelta as applyDeltaToSimulation,
-  } from "./GraphCanvas";
-  import { createGhostNode } from "./GraphCanvas/ghost-node";
-  import { createGravitySystem } from "./GraphCanvas/gravity-system";
+  } from "$components/organisms/GraphCanvas";
+  import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
+  import { createGravitySystem } from "$components/organisms/GraphCanvas/gravity-system";
 
   // FSD imports
   import {
@@ -212,10 +212,10 @@
   const dragDropState: DragDropState = $state(createDragDropState());
 
   // Note creation form state (FSD)
-  const noteFormState: NoteFormState = $state(createNoteFormState());
+  let noteFormState: NoteFormState = $state(createNoteFormState());
 
   // Link creation form state (FSD)
-  const linkFormState: LinkFormState = $state(createLinkFormState());
+  let linkFormState: LinkFormState = $state(createLinkFormState());
 
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
@@ -446,8 +446,12 @@
     dragDropState,
     simState,
     hotkeysState,
-    noteFormState,
-    linkFormState,
+    get noteFormState() {
+      return noteFormState;
+    },
+    get linkFormState() {
+      return linkFormState;
+    },
     zoomPanState,
     getGhostNode: () => ghostNode,
     getBlackHole: () => blackHole,
@@ -516,8 +520,8 @@
 
 <GraphCanvasModals
   activeForm={noteFormState.showNoteForm ? "note" : linkFormState.showLinkForm ? "link" : null}
-  {noteFormState}
-  {linkFormState}
+  bind:noteFormState
+  bind:linkFormState
   onSave={(form) =>
     form === "note"
       ? createNote(noteFormState, {

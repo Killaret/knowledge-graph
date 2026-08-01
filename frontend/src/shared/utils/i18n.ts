@@ -382,7 +382,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Graph UI
     "graphControls.resetView": "Reset view",
-    "graphControls.search": "Search (F)",
+    "graphControls.search": "Find on graph (F)",
     "graphMode.normal": "Normal mode",
     "graphMode.focus": "Focus mode",
     "graphMode.focused": "Focused",
@@ -955,7 +955,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Graph UI
     "graphControls.resetView": "Сбросить вид",
-    "graphControls.search": "Поиск (F)",
+    "graphControls.search": "Найти на графе (F)",
     "graphMode.normal": "Обычный режим",
     "graphMode.focus": "Режим фокуса",
     "graphMode.focused": "Сфокусирован",

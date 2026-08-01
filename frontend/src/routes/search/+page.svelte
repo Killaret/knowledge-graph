@@ -29,9 +29,6 @@
 
     if (!q.isEmpty()) {
       performSearch(q.value, currentPage);
-    } else {
-      // If query is empty, redirect to home page
-      goto("/");
     }
   });
 

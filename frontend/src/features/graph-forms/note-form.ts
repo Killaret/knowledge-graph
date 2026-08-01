@@ -11,13 +11,15 @@ export interface NoteFormCallbacks {
   onFormClose?: () => void;
 }
 
+export const NOTE_DEFAULT_TYPE = "planet";
+
 export function createNoteFormState(): NoteFormState {
   return {
     showNoteForm: false,
     noteFormPosition: { x: 0, y: 0 },
     newNoteTitle: "",
     newNoteContent: "",
-    newNoteType: "planet",
+    newNoteType: NOTE_DEFAULT_TYPE,
   };
 }
 
@@ -26,14 +28,14 @@ export function openNoteForm(state: NoteFormState, x: number, y: number): void {
   state.noteFormPosition = { x, y };
   state.newNoteTitle = "";
   state.newNoteContent = "";
-  state.newNoteType = "planet";
+  state.newNoteType = NOTE_DEFAULT_TYPE;
 }
 
 export function closeNoteForm(state: NoteFormState): void {
   state.showNoteForm = false;
   state.newNoteTitle = "";
   state.newNoteContent = "";
-  state.newNoteType = "planet";
+  state.newNoteType = NOTE_DEFAULT_TYPE;
 }
 
 export function createNote(state: NoteFormState, callbacks: NoteFormCallbacks): void {

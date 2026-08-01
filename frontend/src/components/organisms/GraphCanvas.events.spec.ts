@@ -140,7 +140,7 @@ function getScreenPoint(worldX: number, worldY: number, transform: any) {
 }
 
 beforeAll(async () => {
-  GraphCanvas = (await import("$components/organisms/GraphCanvas.svelte")).default;
+  GraphCanvas = (await import("$widgets/graph-canvas/GraphCanvas.svelte")).default;
 });
 
 describe("GraphCanvas events", () => {
