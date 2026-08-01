@@ -18,7 +18,6 @@
     type GraphNode,
     type GraphLink,
   } from "$shared/api/graph";
-  import { apiConfig } from "$shared/config";
 
   const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
   import { createLink } from "$shared/api/links";
@@ -71,7 +70,9 @@
       let rawData: GraphData;
       if (showFullGraph) {
         // Load the full graph of all notes; bypass cache after mutations
-        rawData = await getFullGraphData(apiConfig.default_limit, undefined, nocache);
+        // limit=0 means no cap — a positive default_limit would hide new nodes
+        // when the total exceeds the configured page size.
+        rawData = await getFullGraphData(0, undefined, nocache);
       } else {
         // Load the local graph
         if (isAuthenticated()) {
@@ -89,7 +90,7 @@
           rawData = await getGraphData(centerNote.id, 3);
         } else {
           // If there are no notes, load the full graph (public notes)
-          rawData = await getFullGraphData(apiConfig.default_limit, undefined, nocache);
+          rawData = await getFullGraphData(0, undefined, nocache);
         }
       }
 
