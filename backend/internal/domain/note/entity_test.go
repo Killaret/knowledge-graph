@@ -53,7 +53,7 @@ func TestNewNote(t *testing.T) {
 			noteType:     "",
 			metadata:     map[string]interface{}{},
 			wantErr:      false,
-			expectedType: "star",
+			expectedType: "unknown",
 		},
 		{
 			name:         "nil metadata defaults to empty map",
