@@ -57,7 +57,9 @@
 - First-person mode.
 - Basic slide-out animation.
 
-**Dependencies:** FSD widget refactoring, graph store, Cosmic Notification System.
+**Dependencies:** FSD widget refactoring, graph store.
+
+**Note:** Cosmic notifications/toasts are not part of the Cosmic Cockpit MVP; they will be handled by a separate optional notification system.
 
 ---
 
