@@ -118,6 +118,8 @@ function createSimulationState(): SimulationState {
     stable: false,
     nodeOpacity: new Map(),
     linkOpacity: new Map(),
+    dyingLinks: [],
+    dyingLinkOpacity: new Map(),
     fadeAnimationId: null,
   };
 }

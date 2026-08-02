@@ -3,9 +3,17 @@
  */
 import * as d3Force from "d3-force";
 import { filterValidLinks } from "$shared/utils/graphUtils";
+import { getLinkEndpointId } from "./types";
 import type { SimulationNode, SimulationLink, SimulationState, TransformState } from "./types";
 
 export type { SimulationNode, SimulationLink, SimulationState, TransformState };
+
+function getLinkId(link: SimulationLink): string {
+  if (link.id) return link.id;
+  const sourceId = getLinkEndpointId(link.source);
+  const targetId = getLinkEndpointId(link.target);
+  return `${sourceId}-${targetId}-${link.link_type ?? "related"}`;
+}
 
 // Easing function for smooth fade animation
 function easeOutCubic(t: number): number {
@@ -22,24 +30,28 @@ function anyOpacityBelowOne(state: SimulationState): boolean {
   return false;
 }
 
-// Initialize opacity maps with 0 for all nodes and links
+// Initialize opacity maps, preserving existing values so existing nodes/links
+// stay visible while new ones fade in and removed links fade out.
 function initializeOpacityMaps(
   nodes: SimulationNode[],
   links: SimulationLink[],
   state: SimulationState
 ): void {
+  const prevNodeOpacity = state.nodeOpacity;
+  const prevLinkOpacity = state.linkOpacity;
+
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
 
-  // Initialize link opacity (links fade in after their source/target nodes)
-  links.forEach((link, index) => {
-    const linkId = `${link.source}-${link.target}-${index}`;
-    state.linkOpacity.set(linkId, 0);
+  // Preserve node opacity for existing nodes, start at 0 for new ones.
+  nodes.forEach((node) => {
+    state.nodeOpacity.set(node.id, prevNodeOpacity.get(node.id) ?? 0);
   });
 
-  // Initialize node opacity
-  nodes.forEach((node) => {
-    state.nodeOpacity.set(node.id, 0);
+  // Preserve link opacity for existing links, start at 0 for new ones.
+  links.forEach((link) => {
+    const linkId = getLinkId(link);
+    state.linkOpacity.set(linkId, prevLinkOpacity.get(linkId) ?? 0);
   });
 }
 
@@ -79,7 +91,22 @@ function startFadeAnimation(
       state.linkOpacity.set(linkId, Math.min(Math.max(newOpacity, 0), 1));
     });
 
-    if (waveProgress < 1 || anyOpacityBelowOne(state)) {
+    // Fade out removed (dying) links
+    const stillDying: SimulationLink[] = [];
+    const stillDyingOpacity = new Map<string, number>();
+    state.dyingLinks.forEach((link) => {
+      const linkId = getLinkId(link);
+      const currentOpacity = state.dyingLinkOpacity.get(linkId) ?? 1;
+      const newOpacity = Math.max(0, currentOpacity - 0.05);
+      if (newOpacity > 0.01) {
+        stillDying.push(link);
+        stillDyingOpacity.set(linkId, newOpacity);
+      }
+    });
+    state.dyingLinks = stillDying;
+    state.dyingLinkOpacity = stillDyingOpacity;
+
+    if (waveProgress < 1 || anyOpacityBelowOne(state) || stillDying.length > 0) {
       state.fadeAnimationId = requestAnimationFrame(animateFade);
     } else {
       state.fadeAnimationId = null;
@@ -145,6 +172,20 @@ export function startSimulation(
   const validLinks = filterValidLinks(nodes, links);
   if (validLinks.length !== links.length && import.meta.env.DEV) {
     console.warn(`[GraphCanvas] Filtered out ${links.length - validLinks.length} orphan links`);
+  }
+
+  // Find links that disappeared since the last simulation and keep them for a fade-out.
+  const newLinkIds = new Set(validLinks.map((l) => getLinkId(l)));
+  const newlyDying = state.simLinks
+    .filter((l) => !newLinkIds.has(getLinkId(l)))
+    .map((l) => ({ ...l }));
+
+  for (const link of newlyDying) {
+    const linkId = getLinkId(link);
+    if (!state.dyingLinkOpacity.has(linkId)) {
+      state.dyingLinkOpacity.set(linkId, 1);
+      state.dyingLinks = [...state.dyingLinks, link];
+    }
   }
 
   const edges: SimulationLink[] = validLinks.map((l) => ({
@@ -261,6 +302,8 @@ export function clearSimulation(state: SimulationState): void {
   state.simLinks = [];
   state.nodeOpacity = new Map();
   state.linkOpacity = new Map();
+  state.dyingLinks = [];
+  state.dyingLinkOpacity = new Map();
   state.isRunning = false;
   state.stable = false;
 }

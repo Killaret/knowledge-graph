@@ -589,19 +589,24 @@ const BIDIRECTIONAL_LINK_OFFSET = 24;
  */
 function drawCurvedLinkPath(
   ctx: CanvasRenderingContext2D,
-  source: { x: number; y: number },
-  target: { x: number; y: number },
+  source: { x?: number; y?: number },
+  target: { x?: number; y?: number },
   curveOffset: number
 ): void {
-  const dx = target.x - source.x;
-  const dy = target.y - source.y;
+  const sx = source.x!;
+  const sy = source.y!;
+  const tx = target.x!;
+  const ty = target.y!;
+
+  const dx = tx - sx;
+  const dy = ty - sy;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const midX = (source.x + target.x) / 2;
-  const midY = (source.y + target.y) / 2;
+  const midX = (sx + tx) / 2;
+  const midY = (sy + ty) / 2;
 
   if (curveOffset === 0) {
-    ctx.moveTo(source.x, source.y);
-    ctx.lineTo(target.x, target.y);
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(tx, ty);
     return;
   }
 
@@ -609,8 +614,8 @@ function drawCurvedLinkPath(
   const perpX = (-dy / len) * curveOffset;
   const perpY = (dx / len) * curveOffset;
 
-  ctx.moveTo(source.x, source.y);
-  ctx.quadraticCurveTo(midX + perpX, midY + perpY, target.x, target.y);
+  ctx.moveTo(sx, sy);
+  ctx.quadraticCurveTo(midX + perpX, midY + perpY, tx, ty);
 }
 
 /**
@@ -717,8 +722,7 @@ export function drawLink(
   const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
 
   ctx.beginPath();
-  ctx.moveTo(sourceNode.x!, sourceNode.y!);
-  ctx.lineTo(targetNode.x!, targetNode.y!);
+  drawCurvedLinkPath(ctx, sourceNode, targetNode, curveOffset);
 
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
@@ -985,7 +989,9 @@ export function drawAllLinks(
   linkOpacity?: Map<string, number>,
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
-  highlightedLinkId?: string | null
+  highlightedLinkId?: string | null,
+  dyingLinks: SimulationLink[] = [],
+  dyingLinkOpacity: Map<string, number> = new Map()
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
@@ -993,6 +999,8 @@ export function drawAllLinks(
   if (import.meta.env.DEV) {
     console.log(`[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`);
   }
+
+  const bidirectionalPairs = buildBidirectionalPairSet(simLinks);
 
   simLinks.forEach((link, index) => {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
@@ -1019,6 +1027,15 @@ export function drawAllLinks(
     const isHighlighted = highlightedLinkId === stableLinkId;
     const pulseOpacity = isHighlighted ? 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 150)) : 1;
 
+    // Apply bidirectional curve offset when a reverse link exists
+    const sourceId = getLinkEndpointId(link.source);
+    const targetId = getLinkEndpointId(link.target);
+    const [a, b] = sourceId < targetId ? [sourceId, targetId] : [targetId, sourceId];
+    const isBidirectional = bidirectionalPairs.has(`${a}|${b}`);
+    const curveOffset = isBidirectional
+      ? (sourceId < targetId ? 1 : -1) * BIDIRECTIONAL_LINK_OFFSET
+      : 0;
+
     // Use animated link drawing
     drawLink(
       ctx,
@@ -1027,9 +1044,37 @@ export function drawAllLinks(
       targetNode,
       opacity * pulseOpacity,
       hoveredNodeId,
-      isHighlighted
+      isHighlighted,
+      curveOffset
     );
     drawnCount++;
+  });
+
+  // Draw dying (removed) links fading out
+  dyingLinks.forEach((link) => {
+    const sourceNode = resolveLinkEndpoint(link.source, nodes);
+    const targetNode = resolveLinkEndpoint(link.target, nodes);
+    if (
+      !sourceNode ||
+      !targetNode ||
+      sourceNode.x == null ||
+      sourceNode.y == null ||
+      targetNode.x == null ||
+      targetNode.y == null
+    ) {
+      return;
+    }
+    const linkId =
+      link.id ??
+      getLinkEndpointId(link.source) +
+        "-" +
+        getLinkEndpointId(link.target) +
+        "-" +
+        (link.link_type || "related");
+    const opacity = dyingLinkOpacity.get(linkId) ?? 0;
+    if (opacity > 0) {
+      drawLink(ctx, link, sourceNode, targetNode, opacity, null, false, 0);
+    }
   });
 
   if (import.meta.env.DEV && (drawnCount === 0 || skippedCount > 0)) {
@@ -1297,6 +1342,8 @@ export function draw(
   transform: { x: number; y: number; k: number },
   nodeOpacity?: Map<string, number>,
   linkOpacity?: Map<string, number>,
+  dyingLinks?: SimulationLink[],
+  dyingLinkOpacity?: Map<string, number>,
   disableVariation: boolean = false,
   animationTime: number = 0,
   hoveredNodeId: string | null = null,
@@ -1349,7 +1396,17 @@ export function draw(
   ctx.scale(transform.k, transform.k);
 
   // Draw links with animation
-  drawAllLinks(ctx, simLinks, nodes, linkOpacity, animationTime, hoveredNodeId, highlightedLinkId);
+  drawAllLinks(
+    ctx,
+    simLinks,
+    nodes,
+    linkOpacity,
+    animationTime,
+    hoveredNodeId,
+    highlightedLinkId,
+    dyingLinks,
+    dyingLinkOpacity
+  );
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {

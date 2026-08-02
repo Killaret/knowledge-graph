@@ -347,22 +347,64 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Celestial bodies (singular)
     "celestialBody.type.star": "Star",
+    "celestialBody.type.star.description":
+      "A central topic or pillar idea that anchors a cluster of notes.",
+    "celestialBody.type.star.example": "Culture, Anime, Backend",
     "celestialBody.type.planet": "Planet",
+    "celestialBody.type.planet.description": "A major sub-topic orbiting a central star.",
+    "celestialBody.type.planet.example": "Manga, Manhwa, Authentication",
     "celestialBody.type.moon": "Moon",
+    "celestialBody.type.moon.description": "A detail or aspect tied to a specific planet.",
+    "celestialBody.type.moon.example": "Manga genres, Publishers",
     "celestialBody.type.comet": "Comet",
+    "celestialBody.type.comet.description":
+      "A temporary or event-bound note: sprints, meetings, releases.",
+    "celestialBody.type.comet.example": "Sprint 42 retrospective, Anime Expo 2026",
     "celestialBody.type.galaxy": "Galaxy",
+    "celestialBody.type.galaxy.description":
+      "A broad domain that groups several star-level topics.",
+    "celestialBody.type.galaxy.example": "Media, Software Architecture",
     "celestialBody.type.nebula": "Nebula",
+    "celestialBody.type.nebula.description": "A fuzzy, forming idea or draft not yet crystallized.",
+    "celestialBody.type.nebula.example": "Future product ideas, Unsorted concepts",
     "celestialBody.type.asteroid": "Asteroid",
+    "celestialBody.type.asteroid.description":
+      "A raw fragment: quote, bookmark, quick thought, or TODO.",
+    "celestialBody.type.asteroid.example": "Interesting quote, TODO: check this",
     "celestialBody.type.satellite": "Satellite",
+    "celestialBody.type.satellite.description":
+      "A utility note: checklist, template, config, or snippet.",
+    "celestialBody.type.satellite.example": "Deploy checklist, .env.example",
     "celestialBody.type.blackhole": "Black Hole",
+    "celestialBody.type.blackhole.description":
+      "A hard problem, open question, or large unclear task.",
+    "celestialBody.type.blackhole.example": "How to scale ingestion?, Unsolved bug",
     "celestialBody.type.debris": "Debris",
+    "celestialBody.type.debris.description": "An archived or outdated note, kept for history.",
+    "celestialBody.type.debris.example": "API v1 (deprecated), Rejected proposal",
     "celestialBody.type.dust": "Cosmic Dust",
+    "celestialBody.type.dust.description": "A quick-captured, unprocessed note waiting for triage.",
+    "celestialBody.type.dust.example": "Late-night idea, Quick bookmark",
     "celestialBody.type.technical": "Technical",
+    "celestialBody.type.technical.description": "A system or meta note used by the app itself.",
+    "celestialBody.type.technical.example": "Tagging rules, CI/CD notes",
     "celestialBody.type.unknown": "Unknown",
+    "celestialBody.type.unknown.description":
+      "Fallback type for notes without a known classification.",
+    "celestialBody.type.unknown.example": "—",
     "celestialBody.type.reality_rift": "Reality Rift",
+    "celestialBody.type.reality_rift.description": "A special marker for an unusual graph state.",
+    "celestialBody.type.reality_rift.example": "—",
     "celestialBody.type.chromatic_maw": "Chromatic Maw",
+    "celestialBody.type.chromatic_maw.description": "A special marker for an unusual graph state.",
+    "celestialBody.type.chromatic_maw.example": "—",
     "celestialBody.type.void_whisper": "Void Whisper",
+    "celestialBody.type.void_whisper.description": "A special marker for an unusual graph state.",
+    "celestialBody.type.void_whisper.example": "—",
     "celestialBody.type.cosmic_abomination": "Cosmic Abomination",
+    "celestialBody.type.cosmic_abomination.description":
+      "A special marker for an unusual graph state.",
+    "celestialBody.type.cosmic_abomination.example": "—",
 
     // Link types
     "linkType.reference": "Reference",
@@ -522,6 +564,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
+    "typeSelector.example": "Example",
     "toast.closeAria": "Close notification",
 
     // Error display
@@ -1016,22 +1059,68 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Celestial bodies (singular)
     "celestialBody.type.star": "Звезда",
+    "celestialBody.type.star.description":
+      "Центральная тема или столп, вокруг которого строится кластер заметок.",
+    "celestialBody.type.star.example": "Культура, Аниме, Backend",
     "celestialBody.type.planet": "Планета",
+    "celestialBody.type.planet.description": "Крупный подраздел темы, связанный со звездой.",
+    "celestialBody.type.planet.example": "Манга, Манхва, Аутентификация",
     "celestialBody.type.moon": "Луна",
+    "celestialBody.type.moon.description": "Деталь или аспект, привязанный к конкретной планете.",
+    "celestialBody.type.moon.example": "Жанры манги, Издательства",
     "celestialBody.type.comet": "Комета",
+    "celestialBody.type.comet.description":
+      "Временная или событийная заметка: спринты, встречи, релизы.",
+    "celestialBody.type.comet.example": "Ретроспектива спринта 42, Anime Expo 2026",
     "celestialBody.type.galaxy": "Галактика",
+    "celestialBody.type.galaxy.description": "Широкий контекст, объединяющий несколько звёзд-тем.",
+    "celestialBody.type.galaxy.example": "Медиа, Архитектура ПО",
     "celestialBody.type.nebula": "Туманность",
+    "celestialBody.type.nebula.description":
+      "Размытая, формирующаяся идея или черновик без чётких границ.",
+    "celestialBody.type.nebula.example": "Идеи для продукта, Несортированные концепции",
     "celestialBody.type.asteroid": "Астероид",
+    "celestialBody.type.asteroid.description":
+      "Сырой фрагмент: цитата, закладка, быстрая мысль или TODO.",
+    "celestialBody.type.asteroid.example": "Интересная цитата, TODO: проверить",
     "celestialBody.type.satellite": "Спутник",
+    "celestialBody.type.satellite.description":
+      "Вспомогательная заметка: чек-лист, шаблон, конфиг или сниппет.",
+    "celestialBody.type.satellite.example": "Чек-лист деплоя, .env.example",
     "celestialBody.type.blackhole": "Чёрная дыра",
+    "celestialBody.type.blackhole.description":
+      "Сложная неразрешённая задача, открытый вопрос или большой баг.",
+    "celestialBody.type.blackhole.example": "Как масштабировать индексацию?, Нерешённый баг",
     "celestialBody.type.debris": "Обломки",
+    "celestialBody.type.debris.description":
+      "Устаревший или архивный материал, сохранённый для истории.",
+    "celestialBody.type.debris.example": "API v1 (deprecated), Отклонённое предложение",
     "celestialBody.type.dust": "Космическая пыль",
+    "celestialBody.type.dust.description":
+      "Быстро захваченная необработанная заметка, ожидающая классификации.",
+    "celestialBody.type.dust.example": "Мысль в 3 ночи, Быстрая закладка",
     "celestialBody.type.technical": "Техническое",
+    "celestialBody.type.technical.description":
+      "Системная или мета-заметка, используемая самим приложением.",
+    "celestialBody.type.technical.example": "Правила тегирования, CI/CD notes",
     "celestialBody.type.unknown": "Неизвестное",
+    "celestialBody.type.unknown.description":
+      "Резервный тип для заметок без известной классификации.",
+    "celestialBody.type.unknown.example": "—",
     "celestialBody.type.reality_rift": "Разлом реальности",
+    "celestialBody.type.reality_rift.description": "Специальный маркер необычного состояния графа.",
+    "celestialBody.type.reality_rift.example": "—",
     "celestialBody.type.chromatic_maw": "Хроматическая пасть",
+    "celestialBody.type.chromatic_maw.description":
+      "Специальный маркер необычного состояния графа.",
+    "celestialBody.type.chromatic_maw.example": "—",
     "celestialBody.type.void_whisper": "Шёпот пустоты",
+    "celestialBody.type.void_whisper.description": "Специальный маркер необычного состояния графа.",
+    "celestialBody.type.void_whisper.example": "—",
     "celestialBody.type.cosmic_abomination": "Космическое чудовище",
+    "celestialBody.type.cosmic_abomination.description":
+      "Специальный маркер необычного состояния графа.",
+    "celestialBody.type.cosmic_abomination.example": "—",
 
     // Link types
     "linkType.reference": "Ссылка",
@@ -1192,6 +1281,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",
+    "typeSelector.example": "Пример",
     "toast.closeAria": "Закрыть уведомление",
 
     // Error display

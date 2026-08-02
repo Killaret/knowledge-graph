@@ -68,6 +68,10 @@ export interface CelestialBodyProps {
   isAnomaly?: boolean;
   /** True for types that should appear in the note creation TypeSelector. */
   isUi?: boolean;
+  /** i18n key for a short human-readable description of the semantic role. */
+  description?: string;
+  /** i18n key for a concrete usage example shown to the user. */
+  example?: string;
   anomalyType?: "reality_rift" | "chromatic_maw" | "void_whisper" | "cosmic_abomination";
   drawFunction?: CelestialBodyDrawFunction;
 }
@@ -85,6 +89,12 @@ export class CelestialBody {
   }
   get label(): string {
     return formatMessage(this.props.label, getCurrentLocale());
+  }
+  get description(): string {
+    return this.props.description ? formatMessage(this.props.description, getCurrentLocale()) : "";
+  }
+  get example(): string {
+    return this.props.example ? formatMessage(this.props.example, getCurrentLocale()) : "";
   }
   get emoji(): string {
     return this.props.emoji;
@@ -148,6 +158,8 @@ export class CelestialBody {
   static readonly STAR = new CelestialBody({
     type: "star",
     label: "celestialBody.type.star",
+    description: "celestialBody.type.star.description",
+    example: "celestialBody.type.star.example",
     emoji: "⭐",
     color: "#ffcc00",
     glowColor: "#ffcc00",
@@ -164,6 +176,8 @@ export class CelestialBody {
   static readonly PLANET = new CelestialBody({
     type: "planet",
     label: "celestialBody.type.planet",
+    description: "celestialBody.type.planet.description",
+    example: "celestialBody.type.planet.example",
     emoji: "🪐",
     color: "#d6aa5d",
     glowColor: "#d6aa5d",
@@ -180,6 +194,8 @@ export class CelestialBody {
   static readonly MOON = new CelestialBody({
     type: "moon",
     label: "celestialBody.type.moon",
+    description: "celestialBody.type.moon.description",
+    example: "celestialBody.type.moon.example",
     emoji: "🌙",
     color: "#cccccc",
     glowColor: "#aaaaaa",
@@ -196,6 +212,8 @@ export class CelestialBody {
   static readonly COMET = new CelestialBody({
     type: "comet",
     label: "celestialBody.type.comet",
+    description: "celestialBody.type.comet.description",
+    example: "celestialBody.type.comet.example",
     emoji: "☄️",
     color: "#e879f9",
     glowColor: "#e879f9",
@@ -212,6 +230,8 @@ export class CelestialBody {
   static readonly GALAXY = new CelestialBody({
     type: "galaxy",
     label: "celestialBody.type.galaxy",
+    description: "celestialBody.type.galaxy.description",
+    example: "celestialBody.type.galaxy.example",
     emoji: "🌀",
     color: "#8b5cf6",
     glowColor: "#8b5cf6",
@@ -228,6 +248,8 @@ export class CelestialBody {
   static readonly NEBULA = new CelestialBody({
     type: "nebula",
     label: "celestialBody.type.nebula",
+    description: "celestialBody.type.nebula.description",
+    example: "celestialBody.type.nebula.example",
     emoji: "💫",
     color: "#2dd4bf",
     glowColor: "#2dd4bf",
@@ -244,6 +266,8 @@ export class CelestialBody {
   static readonly ASTEROID = new CelestialBody({
     type: "asteroid",
     label: "celestialBody.type.asteroid",
+    description: "celestialBody.type.asteroid.description",
+    example: "celestialBody.type.asteroid.example",
     emoji: "🌑",
     color: "#94a3b8",
     glowColor: "#94a3b8",
@@ -260,6 +284,8 @@ export class CelestialBody {
   static readonly SATELLITE = new CelestialBody({
     type: "satellite",
     label: "celestialBody.type.satellite",
+    description: "celestialBody.type.satellite.description",
+    example: "celestialBody.type.satellite.example",
     emoji: "🛰️",
     color: "#a1a1aa",
     glowColor: "#a1a1aa",
@@ -276,6 +302,8 @@ export class CelestialBody {
   static readonly BLACKHOLE = new CelestialBody({
     type: "blackhole",
     label: "celestialBody.type.blackhole",
+    description: "celestialBody.type.blackhole.description",
+    example: "celestialBody.type.blackhole.example",
     emoji: "⚫",
     color: "#000000",
     glowColor: "#ff6600",
@@ -286,12 +314,14 @@ export class CelestialBody {
     baseSpeed: 0,
     gravityOffset: 25,
     cssVarName: "--color-blackhole",
-    isUi: false,
+    isUi: true,
   });
 
   static readonly DEBRIS = new CelestialBody({
     type: "debris",
     label: "celestialBody.type.debris",
+    description: "celestialBody.type.debris.description",
+    example: "celestialBody.type.debris.example",
     emoji: "🌌",
     color: "#71717a",
     glowColor: "#71717a",
@@ -308,6 +338,8 @@ export class CelestialBody {
   static readonly DUST = new CelestialBody({
     type: "dust",
     label: "celestialBody.type.dust",
+    description: "celestialBody.type.dust.description",
+    example: "celestialBody.type.dust.example",
     emoji: "🌫️",
     color: "#a0a0a0",
     glowColor: "#a0a0a0",
@@ -324,6 +356,8 @@ export class CelestialBody {
   static readonly TECHNICAL = new CelestialBody({
     type: "technical",
     label: "celestialBody.type.technical",
+    description: "celestialBody.type.technical.description",
+    example: "celestialBody.type.technical.example",
     emoji: "❓",
     color: "#8a2be2",
     glowColor: "#a78bfa",
@@ -340,6 +374,8 @@ export class CelestialBody {
   static readonly UNKNOWN = new CelestialBody({
     type: "unknown",
     label: "celestialBody.type.unknown",
+    description: "celestialBody.type.unknown.description",
+    example: "celestialBody.type.unknown.example",
     emoji: "❓",
     color: "#94a3b8",
     glowColor: "#94a3b8",
@@ -357,6 +393,8 @@ export class CelestialBody {
   static readonly REALITY_RIFT = new CelestialBody({
     type: "reality_rift",
     label: "celestialBody.type.reality_rift",
+    description: "celestialBody.type.reality_rift.description",
+    example: "celestialBody.type.reality_rift.example",
     emoji: "🌑",
     color: "#6b21a8",
     glowColor: "#a855f7",
@@ -375,6 +413,8 @@ export class CelestialBody {
   static readonly CHROMATIC_MAW = new CelestialBody({
     type: "chromatic_maw",
     label: "celestialBody.type.chromatic_maw",
+    description: "celestialBody.type.chromatic_maw.description",
+    example: "celestialBody.type.chromatic_maw.example",
     emoji: "🐙",
     color: "#ff00aa",
     glowColor: "#ff66cc",
@@ -393,6 +433,8 @@ export class CelestialBody {
   static readonly VOID_WHISPER = new CelestialBody({
     type: "void_whisper",
     label: "celestialBody.type.void_whisper",
+    description: "celestialBody.type.void_whisper.description",
+    example: "celestialBody.type.void_whisper.example",
     emoji: "👁️",
     color: "#00ffff",
     glowColor: "#66ffff",
@@ -411,6 +453,8 @@ export class CelestialBody {
   static readonly COSMIC_ABOMINATION = new CelestialBody({
     type: "cosmic_abomination",
     label: "celestialBody.type.cosmic_abomination",
+    description: "celestialBody.type.cosmic_abomination.description",
+    example: "celestialBody.type.cosmic_abomination.example",
     emoji: "🌀",
     color: "#6600ff",
     glowColor: "#9966ff",

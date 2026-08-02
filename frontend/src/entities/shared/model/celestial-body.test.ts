@@ -18,6 +18,10 @@ describe("CelestialBody", () => {
     const star = CelestialBody.STAR;
     expect(star.type).toBe("star");
     expect(star.label).toBe("Star");
+    expect(star.description).toBe(
+      "A central topic or pillar idea that anchors a cluster of notes."
+    );
+    expect(star.example).toBe("Culture, Anime, Backend");
     expect(star.emoji).toBe("⭐");
     expect(star.color).toBe("#ffcc00");
     expect(star.glowColor).toBe("#ffcc00");
@@ -35,7 +39,8 @@ describe("CelestialBody", () => {
     const uiTypes = CelestialBody.UI_TYPES.map((b) => b.type);
     expect(uiTypes).toContain("star");
     expect(uiTypes).toContain("planet");
-    expect(uiTypes).not.toContain("blackhole");
+    expect(uiTypes).toContain("blackhole");
+    expect(uiTypes).not.toContain("moon");
     expect(uiTypes).not.toContain("unknown");
 
     const anomalies = CelestialBody.ANOMALIES.map((b) => b.type);
@@ -52,6 +57,8 @@ describe("CelestialBody", () => {
     const body = new CelestialBody({
       type: "test",
       label: "Test",
+      description: "celestialBody.type.test.description",
+      example: "celestialBody.type.test.example",
       emoji: "✨",
       color: "#ffffff",
       glowColor: "#ffffff",
@@ -74,6 +81,8 @@ describe("CelestialBody", () => {
     const body = new CelestialBody({
       type: "test",
       label: "Test",
+      description: "celestialBody.type.test.description",
+      example: "celestialBody.type.test.example",
       emoji: "✨",
       color: "#ffffff",
       glowColor: "#ffffff",

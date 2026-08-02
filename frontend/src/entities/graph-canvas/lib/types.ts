@@ -32,6 +32,8 @@ export interface SimulationState {
   stable: boolean;
   nodeOpacity: Map<string, number>;
   linkOpacity: Map<string, number>;
+  dyingLinks: SimulationLink[];
+  dyingLinkOpacity: Map<string, number>;
   fadeAnimationId: number | null;
 }
 

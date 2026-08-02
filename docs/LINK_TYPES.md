@@ -1,188 +1,151 @@
-# Типы связей в Knowledge Graph
+# Link Types in Knowledge Graph
 
-**Обновлено:** 29 июля 2026 г.
+**Updated:** July 2026
 
-## Обзор
+## Overview
 
-Типы связей определяют природу отношений между заметками в графе знаний. Правильный выбор типа связи помогает структурировать знания и улучшает навигацию по графу.
+Link types define the nature of relationships between notes in the knowledge graph. Choosing the right type helps structure knowledge, improves navigation, and makes the graph visually meaningful.
 
-## Доступные типы связей
+The following types are available:
 
-### 1. Reference (Ссылка/Цитата)
+| Type | Icon | Default weight | Line style | Color |
+|------|------|----------------|------------|-------|
+| Reference | 📖 | 0.8 | solid | `#3366ff` |
+| Dependency | 🔗 | 0.7 | dashed `[10, 3]` | `#ff6600` |
+| Related | 🔀 | 0.5 | solid, weak → dashed `[6, 4]` under 0.3 | `#999999` |
+| Custom | ✨ | 0.5 | dashed `[2, 6]` | `#ff66ff` |
+| Parent | ⬆️ | 0.9 | solid | `#2dd4bf` |
+| Child | ⬇️ | 0.9 | solid | `#f472b6` |
 
-**Описание:** Одна заметка ссылается на другую или цитирует её содержимое.
+## Available types
 
-**Когда использовать:**
-- Одна заметка явно упоминает или цитирует другую
-- Есть прямая ссылка на источник информации
-- Кросс-референс между связанными концепциями
+### Reference
 
-**Примеры:**
-- Заметка "React Hooks" → ссылка на заметку "useState Hook"
-- Заметка "История древнего Рима" → ссылка на заметку "Юлий Цезарь"
-- Заметка "Квантовая физика" → ссылка на заметку "Принцип неопределённости"
+- **Icon:** 📖
+- **Meaning:** One note simply mentions another.
+- **When to use:** Cross-references, citations, "see also" links.
+- **Example:** "Quantum physics" → Reference → "Uncertainty principle".
+- **Visual:** Blue solid line.
 
-**Визуализация:** Синяя сплошная линия со стрелкой
+### Dependency
 
----
+- **Icon:** 🔗
+- **Meaning:** The target note depends on the source note for understanding or execution.
+- **When to use:** Prerequisites, ordered steps, learning paths.
+- **Example:** "Docker Compose" → Dependency → "Docker Basics".
+- **Visual:** Orange dashed line.
 
-### 2. Dependency (Зависимость)
+### Related
 
-**Описание:** Одна заметка зависит от другой для понимания или выполнения.
+- **Icon:** 🔀
+- **Meaning:** Notes are thematically connected, but neither strictly depends on the other.
+- **When to use:** Similar topics, alternative approaches, related concepts.
+- **Example:** "JavaScript" → Related → "TypeScript".
+- **Visual:** Grey solid line; becomes dashed when the weight drops below 0.3.
 
-**Когда использовать:**
-- Понимание одной заметки требует знания другой
-- Задача зависит от выполнения другой задачи
-- Последовательность обучения или выполнения
+### Custom
 
-**Примеры:**
-- Заметка "React State Management" → зависит от "React Basics"
-- Заметка "Docker Compose" → зависит от "Docker Basics"
-- Заметка "Advanced SQL" → зависит от "SQL Fundamentals"
+- **Icon:** ✨
+- **Meaning:** A user-defined type for relationships that do not fit the standard set.
+- **When to use:** Project-specific relations, experimental categories.
+- **Example:** "Follow-up", "contradicts", "inspired by".
+- **Visual:** Magenta dashed line.
 
-**Визуализация:** Зелёная пунктирная линия со стрелкой
+### Parent
 
----
+- **Icon:** ⬆️
+- **Meaning:** The source note is the broader topic that contains the target.
+- **When to use:** Hierarchies, categories, parent–child topic trees.
+- **Example:** "Programming" → Parent → "Functional programming".
+- **Visual:** Teal solid line.
 
-### 3. Related (Родственная связь)
+### Child
 
-**Описание:** Заметки тематически связаны, но без строгой иерархии или зависимости.
+- **Icon:** ⬇️
+- **Meaning:** The source note is a subtopic of the target.
+- **When to use:** Subtopics, subcategories, drill-down relationships.
+- **Example:** "Functional programming" → Child → "Programming".
+- **Visual:** Pink solid line.
 
-**Когда использовать:**
-- Заметки относятся к одной теме или категории
-- Связанные концепции или идеи
-- Альтернативные подходы к решению одной проблемы
+## Choosing a type
 
-**Примеры:**
-- Заметка "Мониторинг приложений" → связана с "Логирование"
-- Заметка "JavaScript" → связана с "TypeScript"
-- Заметка "Machine Learning" → связана с "Data Science"
+```
+Is one note a prerequisite for the other?
+  Yes → Dependency
+  No →
+    Is one note a broader / narrower topic?
+      Yes → Parent / Child
+      No →
+        Is one note a simple mention or source?
+          Yes → Reference
+          No →
+            Are the notes thematically close?
+              Yes → Related
+              No → Custom
+```
 
-**Визуализация:** Фиолетовая сплошная линия без стрелки
+## Visual encoding
 
----
+- **Color** is taken from the type definition (`LinkType.color`).
+- **Line dash pattern** is taken from `LinkType.lineDash`. `related` switches to `[6, 4]` when `weight < 0.3`.
+- **Line width** is `Math.max(1, weight * 4)` and multiplied by `1.5` while a duplicate link warning is active.
+- **Opacity** uses `LinkType.getColor(weight, fadeOpacity)` with a base opacity of `0.4 + weight * 0.4`.
+- **Bidirectional links** (A→B and B→A) are rendered as two mirrored quadratic curves so they do not overlap.
+- **Deleted links** fade out; **new links** fade in through the opacity map animation.
 
-### 4. Custom (Пользовательский тип)
+## UI integration
 
-**Описание:** Пользовательский тип связи для специфических случаев, не покрытых стандартными типами.
+- `LinkTypeSelector` (in `frontend/src/components/molecules/LinkTypeSelector.svelte`) shows all creatable types with icon, label, color and a short description.
+- `CockpitNoteDetails` lists links with type icon, weight bar, `source_type` badge and `last_weight_update`.
+- `LinkTooltip` on the graph shows the type icon, color, weight, source/target, `source_type` and `last_weight_update`.
+- `LinkTypeLegend` on the graph shows all types and allows filtering by type and minimum weight.
 
-**Когда использовать:**
-- Специфические для вашего проекта типы отношений
-- Временные связи для особых задач
-- Экспериментальные категории связей
+## API
 
-**Примеры:**
-- "follows-up" — заметка является продолжением другой
-- "contradicts" — заметка противоречит другой
-- "inspired-by" — заметка вдохновлена другой
-
-**Визуализация:** Оранжевая линия с пользовательским стилем
-
----
-
-## Рекомендации по выбору типа связи
-
-### Дерево принятия решений
-
-1. **Есть ли прямая цитата или ссылка?**
-   - Да → **Reference**
-   - Нет → продолжите
-
-2. **Является ли одна заметка предусловием для другой?**
-   - Да → **Dependency**
-   - Нет → продолжите
-
-3. **Относятся ли заметки к одной теме без строгой иерархии?**
-   - Да → **Related**
-   - Нет → используйте **Custom**
-
-### Частые сценарии
-
-**Сценарий: Изучение технологии**
-- "Основы языка" → Dependency → "Продвинутые техники"
-- "Фреймворк A" → Related → "Фреймворк B" (альтернативы)
-- "Официальная документация" → Reference → "Учебник"
-
-**Сценарий: Проектная документация**
-- "Требования" → Dependency → "Архитектура"
-- "Архитектура" → Dependency → "Реализация"
-- "Реализация" → Related → "Тестирование"
-- "Баг-репорт" → Reference → "Коммит в репозитории"
-
-**Сценарий: Исследования**
-- "Гипотеза" → Related → "Эксперимент"
-- "Результаты эксперимента" → Reference → "Статья"
-- "Литературный обзор" → Dependency → "Основная публикация"
-
----
-
-## Визуализация связей на графе
-
-### Цветовая кодировка
-
-| Тип связи | Цвет | Стиль линии | Ориентация |
-|-----------|------|-------------|------------|
-| Reference | Синий (#3b82f6) | Сплошная | Со стрелкой |
-| Dependency | Зелёный (#10b981) | Пунктирная | Со стрелкой |
-| Related | Фиолетовый (#8b5cf6) | Сплошная | Без стрелки |
-| Custom | Оранжевый (#f59e0b) | Пользовательский | По выбору |
-
-### Интерактивность
-
-- **Hover на связи:** Показывает тип связи и вес
-- **Клик на связь:** Открывает детали связи (тип, вес, метаданные)
-- **Фильтрация:** Можно скрывать/показывать связи определённого типа
-- **Поиск:** Можно найти все связи определённого типа
-
----
-
-## API работа с типами связей
-
-### Создание связи с указанием типа
+### Create a link
 
 ```bash
 POST /api/v1/links
 {
   "source_note_id": "uuid-1",
   "target_note_id": "uuid-2",
-  "link_type": "reference",  // reference, dependency, related, custom
+  "link_type": "reference",
   "weight": 0.8
 }
 ```
 
-### Валидация типов связей
+### Update a link
 
-Бэкенд валидирует типы связей и возвращает ошибку для недопустимых типов:
-
-```json
+```bash
+PUT /api/v1/links/:id
 {
-  "code": "VALIDATION_ERROR",
-  "message": "Invalid input data",
-  "details": [
-    {
-      "field": "link_type",
-      "reason": "invalid_value",
-      "message": "Link type must be one of: reference, dependency, related, custom"
-    }
-  ]
+  "link_type": "dependency",
+  "weight": 0.9
 }
 ```
 
----
+### Graph data
 
-## Планируемые улучшения
+Graph responses (`/api/v1/graph/all`, `/api/v1/notes/:id/graph`) include:
 
-- [ ] UI для выбора типа связи с описаниями и иконками
-- [ ] Автосуггестии типа связи на основе контекста
-- [ ] Создание пользовательских типов связей через UI
-- [ ] Более детальная визуализация разных типов связей
-- [ ] Фильтрация и поиск по типам связей
-- [ ] Аналитика по использованию типов связей
+```json
+{
+  "id": "uuid",
+  "source": "uuid-1",
+  "target": "uuid-2",
+  "weight": 0.8,
+  "link_type": "reference",
+  "source_type": "user",
+  "last_weight_update": "2026-07-29T12:00:00Z"
+}
+```
 
----
+## Related files
 
-## Связанная документация
-
-- [ROADMAP.md](../ROADMAP.md) — План разработки
-- [MANUAL_TEST_CHECKLISTS_RU.md](MANUAL_TEST_CHECKLISTS_RU.md) — Тестирование связей
-- [ARCHITECTURE_EN.md](ARCHITECTURE_EN.md) — Архитектура системы
+- `frontend/src/entities/link/model/link-type.ts` — type definitions.
+- `frontend/src/components/molecules/LinkTypeSelector.svelte` — type selector.
+- `frontend/src/features/graph-ui/LinkTooltip.svelte` — graph hover tooltip.
+- `frontend/src/features/graph-ui/LinkTypeLegend.svelte` — graph legend and filters.
+- `frontend/src/widgets/cosmic-cockpit/CockpitNoteDetails.svelte` — note links panel.
+- `frontend/src/entities/graph-canvas/lib/renderer.ts` — graph rendering.
+- `docs/LINK_TYPES_RU.md` — Russian translation.

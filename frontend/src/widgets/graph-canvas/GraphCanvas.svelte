@@ -183,6 +183,8 @@
     stable: false,
     nodeOpacity: new Map(),
     linkOpacity: new Map(),
+    dyingLinks: [],
+    dyingLinkOpacity: new Map(),
     fadeAnimationId: null,
   };
 
@@ -440,6 +442,8 @@
         transform,
         simState.nodeOpacity,
         simState.linkOpacity,
+        simState.dyingLinks,
+        simState.dyingLinkOpacity,
         stableRender,
         animationTime,
         canvasState.hoveredNodeId,

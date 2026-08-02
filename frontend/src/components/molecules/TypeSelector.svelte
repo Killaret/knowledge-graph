@@ -10,6 +10,8 @@
     emoji: string;
     label: string;
     color: string;
+    description?: string;
+    example?: string;
     toCSSColor(): string;
   }
 
@@ -42,9 +44,17 @@
       onclick={() => selectType(type.type)}
       style="--type-color: {type.toCSSColor()}; --type-bg: {type.color}33"
       aria-pressed={selected === type.type}
+      title={type.example
+        ? `${type.description}\n${t("typeSelector.example")}: ${type.example}`
+        : type.description}
     >
       <span class="emoji">{type.emoji}</span>
-      <span class="label">{type.label}</span>
+      <span class="type-text">
+        <span class="label">{type.label}</span>
+        {#if type.description}
+          <span class="description">{type.description}</span>
+        {/if}
+      </span>
     </button>
   {/each}
 </div>
@@ -102,8 +112,31 @@
     line-height: 1;
   }
 
+  .type-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    line-height: 1.2;
+  }
+
   .label {
     line-height: 1;
+  }
+
+  .description {
+    max-width: 160px;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--color-text-tertiary, #9ca3af);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .type-btn:hover .description,
+  .type-btn.active .description {
+    color: var(--color-text-secondary, #6b7280);
   }
 
   @media (max-width: 420px) {
