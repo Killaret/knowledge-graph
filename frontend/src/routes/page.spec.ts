@@ -1,8 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
-import { http, HttpResponse } from "msw";
-import { server } from "../../vitest-setup";
 import Page from "./+page.svelte";
+import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote } from "$shared/api/notes";
+import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+
+vi.mock("$shared/api/notes", () => ({
+  getNotes: vi.fn(),
+  createNote: vi.fn(),
+  deleteNote: vi.fn(),
+  deleteNotesBatch: vi.fn(),
+  restoreNote: vi.fn(),
+}));
+
+vi.mock("$shared/hooks/usePreloadedData", () => ({
+  getGraphWithPreload: vi.fn(),
+}));
 
 vi.mock("$shared/stores/auth.svelte", async () => {
   const actual = await vi.importActual<typeof import("$shared/stores/auth.svelte")>(
@@ -11,6 +23,7 @@ vi.mock("$shared/stores/auth.svelte", async () => {
   return {
     ...actual,
     isAuthenticated: vi.fn(() => true),
+    initAuth: vi.fn(),
   };
 });
 
@@ -46,50 +59,24 @@ describe("Page list view - batch operations", () => {
   ];
 
   beforeEach(() => {
-    server.use(
-      http.get("http://localhost:8080/api/v1/notes", () =>
-        HttpResponse.json({
-          notes: mockNotes,
-          total: 3,
-          limit: 10000,
-          offset: 0,
-        })
-      ),
-      http.post(
-        "http://localhost:8080/api/v1/notes/batch",
-        () => new HttpResponse(null, { status: 204 })
-      ),
-      http.post(
-        "http://localhost:8080/api/v1/notes/:id/restore",
-        () => new HttpResponse(null, { status: 204 })
-      ),
-      http.get("http://localhost:8080/api/v1/graph/all", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:8080/api/v1/me/graph/fresh", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:9091/api/v1/graph/full", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:9091/api/v1/graph/public", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      )
-    );
-  });
-
-  afterEach(() => {
-    server.resetHandlers();
+    vi.mocked(getNotes).mockResolvedValue(mockNotes);
+    vi.mocked(getGraphWithPreload).mockResolvedValue({ nodes: [], links: [] });
+    vi.mocked(createNote).mockResolvedValue({
+      ...mockNotes[0],
+      id: "new-note",
+      title: "New Note",
+    });
+    vi.mocked(deleteNote).mockResolvedValue(undefined);
+    vi.mocked(deleteNotesBatch).mockResolvedValue(undefined);
+    vi.mocked(restoreNote).mockResolvedValue(mockNotes[0]);
   });
 
   it("renders sorting dropdown in list view", async () => {
     render(Page);
 
-    // Switch to list view
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
@@ -101,10 +88,9 @@ describe("Page list view - batch operations", () => {
   it("sorts notes by created date", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
@@ -119,33 +105,30 @@ describe("Page list view - batch operations", () => {
   it("toggles selection mode", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
 
-    const selectButton = screen.getByRole("button", { name: /select/i });
+    const selectButton = screen.getByTestId("select-mode-toggle");
     await fireEvent.click(selectButton);
 
-    // Button text changes but aria-label stays the same
     expect(selectButton).toHaveTextContent("Cancel selection");
   });
 
   it("selects all notes when select all is clicked", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
 
-    const selectButton = screen.getByRole("button", { name: /select/i });
+    const selectButton = screen.getByTestId("select-mode-toggle");
     await fireEvent.click(selectButton);
 
     const selectAllButton = screen.getByRole("button", {
@@ -157,18 +140,16 @@ describe("Page list view - batch operations", () => {
   it("shows batch delete panel when notes are selected", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
 
-    const selectButton = screen.getByRole("button", { name: /select/i });
+    const selectButton = screen.getByTestId("select-mode-toggle");
     await fireEvent.click(selectButton);
 
-    // Verify select all button is present
     const selectAllButton = screen.getByRole("button", {
       name: /select all notes/i,
     });
@@ -178,24 +159,20 @@ describe("Page list view - batch operations", () => {
   it("clears selection when cancel is clicked", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Wait for notes to load
     await waitFor(() => {
       expect(screen.getAllByTestId("note-title")).toHaveLength(3);
     });
 
-    const selectButton = screen.getByRole("button", { name: /select/i });
+    const selectButton = screen.getByTestId("select-mode-toggle");
     await fireEvent.click(selectButton);
 
-    // Verify selection mode is on
     expect(selectButton).toHaveTextContent("Cancel selection");
 
-    // Click the same button to cancel (it toggles)
     await fireEvent.click(selectButton);
 
-    // Verify selection mode is off
     expect(selectButton).toHaveTextContent("Select");
   });
 });
@@ -212,52 +189,17 @@ describe("Page list view - undo toast", () => {
   };
 
   beforeEach(() => {
-    server.use(
-      http.get("http://localhost:8080/api/v1/notes", () =>
-        HttpResponse.json({
-          notes: [mockNote],
-          total: 1,
-          limit: 10000,
-          offset: 0,
-        })
-      ),
-      http.delete(
-        "http://localhost:8080/api/v1/notes/1",
-        () => new HttpResponse(null, { status: 204 })
-      ),
-      http.post(
-        "http://localhost:8080/api/v1/notes/1/restore",
-        () => new HttpResponse(null, { status: 204 })
-      ),
-      http.get("http://localhost:8080/api/v1/graph/all", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:8080/api/v1/me/graph/fresh", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:9091/api/v1/graph/full", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      ),
-      http.get("http://localhost:9091/api/v1/graph/public", () =>
-        HttpResponse.json({ nodes: [], links: [] })
-      )
-    );
-  });
-
-  afterEach(() => {
-    server.resetHandlers();
+    vi.mocked(getNotes).mockResolvedValue([mockNote]);
+    vi.mocked(getGraphWithPreload).mockResolvedValue({ nodes: [], links: [] });
   });
 
   it("shows two-stage undo toast after note deletion", async () => {
     render(Page);
 
-    const listButton = screen.getByRole("button", { name: /list/i });
+    const listButton = screen.getByTestId("view-toggle-list");
     await fireEvent.click(listButton);
 
-    // Simulate delete via NoteCard tooltip delete button
-    // This would require deeper integration testing with NoteCard internals
-    // For now, we verify the toast UI structure exists in the component
     const undoToast = document.querySelector(".undo-toast");
-    expect(undoToast).toBeNull(); // No toast initially
+    expect(undoToast).toBeNull();
   });
 });

@@ -25,7 +25,7 @@
 
   // The graph pages have their own top floating controls, so the collapsed
   // sidebar hamburger looks like an empty, useless menu button there.
-  const hiddenRoutes = ["/graph", "/graph/3d"];
+  const hiddenRoutes = ["/", "/graph", "/graph/3d"];
   const isHidden = $derived(
     hiddenRoutes.some((route) => currentPath === route || currentPath.startsWith(`${route}/`))
   );

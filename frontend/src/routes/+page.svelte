@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import FloatingControls from "$components/organisms/FloatingControls.svelte";
-  import NoteSidePanel from "$components/organisms/NoteSidePanel.svelte";
   import CreateNoteModal from "$components/organisms/CreateNoteModal.svelte";
+  import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
   import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
   import ConfirmModal from "$components/organisms/ConfirmModal.svelte";
   import NoteCard from "$components/molecules/NoteCard.svelte";
@@ -484,47 +483,44 @@
 
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
-<div class="page-container">
-  <!-- Floating Controls with Filters -->
-  <FloatingControls
-    onCreate={() => {
-      showCreateModal = true;
-    }}
-    onSearch={(query: string) => {
-      filterState = filterState.with({ searchQuery: query });
-      searchQuery = query;
-      handleSearch();
-    }}
-    onToggleView={handleToggleView}
-    onToggleLayoutProvider={handleToggleLayoutProvider}
-    onOpenAuth={openAuthPanel}
-    {layoutProvider}
-    onFilter={(type: string) => {
-      filterState = filterState.with({ selectedType: type });
-      selectedType = type;
-      applyFiltersAndSort();
-    }}
-    {typeFilters}
-    {selectedType}
-    currentView={graphStore.currentView}
-    typeCounts={Object.fromEntries(
-      typeFilters.map((f) => [
-        f.id,
-        f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
-      ])
-    )}
-  />
-
-  <!-- Floating Auth Panel (draggable, non-blocking) -->
-  <FloatingAuthPanel
-    open={showAuthPanel}
-    initialTab={authPanelTab}
-    onClose={() => (showAuthPanel = false)}
-    onSuccess={handleAuthSuccess}
-  />
-
-  <!-- Fullscreen Graph Container -->
-  <div class="fullscreen-graph" data-testid="graph-2d-container">
+<CosmicCockpit
+  onSearch={(query: string) => {
+    filterState = filterState.with({ searchQuery: query });
+    searchQuery = query;
+    handleSearch();
+  }}
+  onToggleView={handleToggleView}
+  onToggleLayoutProvider={handleToggleLayoutProvider}
+  onOpenAuth={openAuthPanel}
+  {layoutProvider}
+  onFilter={(type: string) => {
+    filterState = filterState.with({ selectedType: type });
+    selectedType = type;
+    applyFiltersAndSort();
+  }}
+  {typeFilters}
+  {selectedType}
+  currentView={graphStore.currentView}
+  typeCounts={Object.fromEntries(
+    typeFilters.map((f) => [
+      f.id,
+      f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+    ])
+  )}
+  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  onNoteCreate={() => (showCreateModal = true)}
+  onNoteEdit={(id: string) => {
+    noteToEdit = id;
+    showEditModal = true;
+  }}
+  onNoteDelete={handleDeleteRequest}
+  selectedNodeId={graphStore.selectedNodeId}
+  nodeCount={filteredGraphData.nodes.length}
+  linkCount={filteredGraphData.links.length}
+  notes={allNotes}
+>
+  <!-- Graph/List Container -->
+  <div class="graph-content" data-testid="graph-2d-container">
     {#if loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
@@ -734,20 +730,15 @@
       {/if}
     {/if}
   </div>
-</div>
+</CosmicCockpit>
 
-<!-- Side Panel for selected note -->
-{#if graphStore.selectedNodeId}
-  <NoteSidePanel
-    nodeId={graphStore.selectedNodeId}
-    onClose={() => (graphStore.selectedNodeId = null)}
-    onEdit={(id: string) => {
-      noteToEdit = id;
-      showEditModal = true;
-    }}
-    onDelete={handleDeleteRequest}
-  />
-{/if}
+<!-- Floating Auth Panel -->
+<FloatingAuthPanel
+  open={showAuthPanel}
+  initialTab={authPanelTab}
+  onClose={() => (showAuthPanel = false)}
+  onSuccess={handleAuthSuccess}
+/>
 
 <!-- Create Note Modal -->
 <CreateNoteModal bind:open={showCreateModal} onSuccess={handleNoteCreated} />
@@ -798,27 +789,15 @@
 {/if}
 
 <style>
-  .page-container {
-    height: 100vh;
-    width: 100vw;
+  .graph-content {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    position: relative;
     background: var(--gradient-cosmic-bg);
     color: var(--color-text-dark);
   }
 
-  /* Fullscreen Graph Container */
-  .fullscreen-graph {
-    position: fixed;
-    top: 60px; /* Space for floating controls (56px + margin) */
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: calc(100vh - 60px);
-  }
-
-  .fullscreen-graph :global(canvas) {
+  .graph-content :global(canvas) {
     width: 100% !important;
     height: 100% !important;
   }
@@ -828,8 +807,9 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
-    height: calc(100vh - 60px);
+    height: 100%;
     overflow-y: auto;
+    box-sizing: border-box;
   }
 
   .list-header {
@@ -1128,14 +1108,9 @@
       padding: 16px 0;
     }
 
-    .fullscreen-graph {
-      top: 50px;
-      height: calc(100vh - 50px);
-    }
-
     .list-container {
       padding: 16px;
-      height: calc(100vh - 50px);
+      height: 100%;
     }
   }
 </style>

@@ -36,6 +36,7 @@ describe("notes API", () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes", () => HttpResponse.json(mockResponse))
       );
+      console.log("[MSW] notes handlers:", server.listHandlers().length);
 
       const result = await getNotes();
 

@@ -98,10 +98,11 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
 
     // The graph should eventually reload and the note count should change.
     await expect
-      .poll(async () =>
-        page.locator('[data-testid="filter-count-all"]').textContent()
+      .poll(
+        async () => page.locator('[data-testid="filter-count-all"]').textContent(),
+        { timeout: 20000 }
       )
-      .not.toBe(countBefore, { timeout: 20000 });
+      .not.toBe(countBefore);
   });
 
   test("drags the floating panel across the viewport", async ({ page }) => {
