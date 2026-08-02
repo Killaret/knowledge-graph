@@ -48,6 +48,7 @@
 | Исправление загрузки 3D-графа (устранение цикла "долго грузится → пустой → опять грузится") | ⏳ Запланировано | 🟠 Высокий | 📝 Нет |
 | Система рекомендаций Pure Precomputed (убрать fallback механизмы) | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
 | Добавление публичных сидов для тестирования пустого графа в real-auth режиме | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
+| Аудит и оптимизация потребления ресурсов (память, CPU, bundle size) | ⏳ Запланировано | 🟠 Высокий | 📝 Нет |
 
 > Подробности всех проблем и статус исправлений: [docs/MANUAL_TEST_ISSUES.md](docs/MANUAL_TEST_ISSUES.md)
 
@@ -82,6 +83,25 @@
 **Зависимости:** FSD-рефакторинг виджетов, Graph-store.
 
 **Примечание:** Космические уведомления/тосты не входят в MVP Cosmic Cockpit; они реализуются отдельной необязательной подсистемой.
+
+### Аудит и оптимизация потребления ресурсов
+
+**Найденные проблемы (быстрый аудит):**
+
+- **Frontend bundle:** `three` импортируется как `import * as THREE from "three"` в 7+ файлах — в bundle может попасть вся библиотека. Bundle analyzer не настроен.
+- **Frontend runtime:** `+page.svelte` использует `setInterval` для delta-polling; `CockpitViewport` использует `requestAnimationFrame`-цикл — нужно проверить корректную очистку при уничтожении компонентов.
+- **Лимиты графа:** на фронте `max_nodes: 500`, а в `graph_service.full_limit: 1000` — разрыв лимитов может приводить к OOM или таймаутам.
+- **Backend поиск:** `note_repo.go` использует `plainto_tsquery` + `ts_rank` — требуется проверка индексов и стоимости запросов.
+- **Backend кэш:** `graph_service` кэширует full layout с TTL 300 секунд; большие графы давят на память Redis.
+- **Docker dev stack:** для backend/frontend в `docker-compose.yml` нет memory limits (только test stack имеет 512M–2G).
+- **Тестирование:** performance- и memory-тесты в `API_TEST_COVERAGE_PLAN.md` отмечены как `⏳`; в CI нет проверки bundle size.
+
+**План действий:**
+1. Добавить `rollup-plugin-visualizer` или `vite-bundle-analyzer` в `frontend/package.json`.
+2. Профилировать загрузку 3D-графа на 500+ нодах и замерить FPS по порогам из `knowledge-graph.config.json`.
+3. Проверить/добавить `GIN`/`tsvector` индексы для full-text search.
+4. Поставить memory limits для backend/frontend в `docker-compose.yml` (dev).
+5. Добавить baseline performance smoke tests (загрузка большого графа, бюджет bundle size).
 
 ### Типы связей: документация и нативный UI
 

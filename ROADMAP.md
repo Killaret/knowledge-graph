@@ -61,6 +61,28 @@
 
 **Note:** Cosmic notifications/toasts are not part of the Cosmic Cockpit MVP; they will be handled by a separate optional notification system.
 
+### ⚡ Performance & Resource Optimization
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Resource usage audit and optimization (memory, CPU, bundle size) | ⏳ Planned | 🟠 High | 📝 No |
+
+**Audit findings:**
+- **Frontend bundle:** `three` is imported as `import * as THREE from "three"` in 7+ files — full library may end up in the bundle. Bundle analyzer is not configured.
+- **Frontend runtime:** `+page.svelte` uses `setInterval` for delta polling; `CockpitViewport` uses `requestAnimationFrame` loop — both need lifecycle cleanup checks.
+- **Frontend limits:** `max_nodes: 500` on the client, but `graph_service.full_limit: 1000` on the backend — mismatch may cause out-of-memory or timeouts.
+- **Backend search:** `note_repo.go` uses `plainto_tsquery` + `ts_rank` full-text search — indexes and query cost need verification.
+- **Backend cache:** `graph_service` caches full layout with 300s TTL; large graphs may pressure Redis memory.
+- **Docker dev stack:** no memory limits for backend/frontend services (test stack has 512M–2G limits).
+- **Testing:** performance and memory-usage tests are marked as `⏳` in `API_TEST_COVERAGE_PLAN.md`; no CI bundle-size check.
+
+**Action plan:**
+1. Add `rollup-plugin-visualizer` or `vite-bundle-analyzer` to `frontend/package.json`.
+2. Profile 3D graph load with 500+ nodes and measure FPS against `knowledge-graph.config.json` thresholds.
+3. Audit and add `GIN`/`tsvector` indexes for full-text search.
+4. Set memory limits for dev stack backend/frontend in `docker-compose.yml`.
+5. Add baseline performance smoke tests (large graph load, bundle size budget).
+
 ---
 
 ## 🧩 Graph Service: Stabilization & Evolution Plan
