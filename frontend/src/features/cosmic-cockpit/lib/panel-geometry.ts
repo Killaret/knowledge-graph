@@ -47,7 +47,7 @@ export function dragDistance(
   position: CockpitPanelPosition,
   start: Point,
   current: Point,
-  rect: { width: number; height: number }
+  _rect: { width: number; height: number }
 ): number {
   switch (position) {
     case "top":

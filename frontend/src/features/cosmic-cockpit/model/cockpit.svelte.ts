@@ -4,7 +4,6 @@ import type {
   CockpitPanelState,
   CockpitPanelsState,
   CockpitSettings,
-  CockpitState,
 } from "./cockpit.types";
 
 const STORAGE_KEY = "cockpit-settings";

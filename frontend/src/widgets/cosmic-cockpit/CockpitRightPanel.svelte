@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { cockpitStore } from "$features/cosmic-cockpit";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import CockpitNoteDetails from "$components/organisms/CockpitNoteDetails.svelte";
+  import CockpitNoteDetails from "./CockpitNoteDetails.svelte";
 
   interface Props {
     nodeId: string | null;

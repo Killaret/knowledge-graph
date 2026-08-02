@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import { cockpitStore } from "$features/cosmic-cockpit";
 
   interface Props {
     /** Optional external nodes to render as distant stars. */

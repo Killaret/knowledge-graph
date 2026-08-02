@@ -1,7 +1,7 @@
 <script lang="ts">
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import CockpitViewport from "./viewport/CockpitViewport.svelte";
-  import CockpitHUD from "$components/organisms/CockpitHUD.svelte";
+  import CockpitHUD from "./CockpitHUD.svelte";
 
   interface Props {
     nodeCount?: number;

@@ -13,7 +13,7 @@
     onSuccess?: () => void;
     onLogin?: () => void;
   }
-  let { redirectTo = "/", onSuccess, onLogin }: Props = $props();
+  const { redirectTo = "/", onSuccess, onLogin }: Props = $props();
 
   let login = $state("");
   let email = $state("");

@@ -171,7 +171,7 @@
 
       // Expose flag for E2E tests to assert background sync is gated by auth.
       if (browser) {
-        (window as any).__kgGraphPollingActive = !!isAuthenticated();
+        ((window as unknown) as Record<string, unknown>).__kgGraphPollingActive = !!isAuthenticated();
       }
     })();
 

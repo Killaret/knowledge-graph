@@ -13,7 +13,7 @@
     onClose: () => void;
     onSuccess?: () => void;
   }
-  let {
+  const {
     open,
     initialTab = "login",
     onClose,
@@ -54,8 +54,8 @@
 
   function handleDrag(e: PointerEvent) {
     if (!dragging || !browser) return;
-    let nextX = e.clientX - startX;
-    let nextY = e.clientY - startY;
+    const nextX = e.clientX - startX;
+    const nextY = e.clientY - startY;
 
     // Keep at least a 40 px grab-handle visible in the viewport.
     const maxX = window.innerWidth - 40;

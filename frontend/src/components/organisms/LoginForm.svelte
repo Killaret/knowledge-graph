@@ -14,7 +14,7 @@
     onSuccess?: () => void;
     onRegister?: () => void;
   }
-  let { redirectTo = "/", onSuccess, onRegister }: Props = $props();
+  const { redirectTo = "/", onSuccess, onRegister }: Props = $props();
 
   // Check if API Key mode is enabled
   const apiKeyEnabled = import.meta.env.VITE_API_KEY_ENABLED === "true";

@@ -22,8 +22,9 @@
   const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
   import { createLink } from "$shared/api/links";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
-  import NoteSidePanel from "$components/organisms/NoteSidePanel.svelte";
+  import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
   import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
+  import CreateNoteModal from "$components/organisms/CreateNoteModal.svelte";
   import BackButton from "$components/atoms/BackButton.svelte";
   import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
@@ -62,6 +63,7 @@
   );
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
+  let showCreateModal = $state(false);
 
   async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
     loading = true;
@@ -172,16 +174,17 @@
 
     // Expose flag for E2E tests to assert background sync is gated by auth.
     // This page never polls for delta updates, so the flag is always false.
-    (window as any).__kgGraphPollingActive = false;
+    ((window as unknown) as Record<string, unknown>).__kgGraphPollingActive = false;
   });
 
-  function handleNodeSelect(nodeId: string) {
+  function handleNodeSelect(nodeId: string | null) {
     selectedNodeId = nodeId;
   }
 
   async function handleNoteDelete(nodeId: string) {
     try {
       await deleteNote(nodeId);
+      selectedNodeId = null;
       await loadGraphData({ nocache: true });
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -210,6 +213,16 @@
         console.error("Failed to create note:", e);
       }
     }
+  }
+
+  function handleNoteCreatedSuccess() {
+    showCreateModal = false;
+    loadGraphData({ nocache: true });
+  }
+
+  function handleNoteEdit(id: string) {
+    noteToEdit = id;
+    showEditModal = true;
   }
 
   async function handleLinkCreate(link: {
@@ -252,90 +265,67 @@
 <!-- Cosmic Background -->
 <WeltallBackground />
 
-<div class="graph-page">
-  <BackButton href="/" />
+<CosmicCockpit
+  currentView="graph"
+  layoutProvider="d3"
+  onToggleView={(view) => {
+    if (view === "list") goto("/");
+    else if (view === "3d") goto("/graph/3d");
+  }}
+  onNoteCreate={() => (showCreateModal = true)}
+  onNoteDelete={handleNoteDelete}
+  onNoteEdit={handleNoteEdit}
+  onNodeSelect={handleNodeSelect}
+  onOpenAuth={(tab) => goto(`/auth/${tab}`)}
+  selectedNodeId={selectedNodeId ?? null}
+  nodeCount={graphData.nodes.length}
+  linkCount={graphData.links.length}
+  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
+>
+  <div class="graph-cockpit-content">
+    <div class="graph-controls-overlay">
+      <BackButton href="/" />
+      <label class="toggle">
+        <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
+        <span
+          >{t("graph.showAllNotes")} ({showFullGraph
+            ? t("graph.enabled")
+            : t("graph.disabled")})</span
+        >
+      </label>
+    </div>
 
-  <div class="top-right-controls">
-    <button class="login-btn" onclick={() => goto("/auth/login")} title={t("graph.loginTitle")}>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-        <polyline points="10 17 15 12 10 7" />
-        <line x1="15" y1="12" x2="3" y2="12" />
-      </svg>
-    </button>
+    {#if loading}
+      <div class="loading-overlay" data-testid="loading-overlay">
+        <div class="spinner"></div>
+        <p>{t("graph.loading")}</p>
+      </div>
+    {:else if error}
+      <div class="error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
+    {:else if graphData.nodes.length > 0}
+      {#key graphData.nodes.length + "-" + graphData.links.length}
+        <GraphCanvas
+          nodes={graphData.nodes}
+          links={graphData.links}
+          onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+          onNoteDelete={handleNoteDelete}
+          onNoteRestore={handleNoteRestore}
+          onNoteCreate={handleNoteCreate}
+          onLinkCreate={handleLinkCreate}
+          helpContent={knowledgeCore?.content}
+        />
+      {/key}
+    {:else}
+      <div class="empty">
+        <StateIllustration type="no-links" />
+        <p>{t("graph.noData")}</p>
+      </div>
+    {/if}
   </div>
-
-  <h1>{t("graph.title")}</h1>
-
-  <div class="controls">
-    <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
-      <span
-        >{t("graph.showAllNotes")} ({showFullGraph
-          ? t("graph.enabled")
-          : t("graph.disabled")})</span
-      >
-    </label>
-  </div>
-
-  {#if loading}
-    <div class="loading-overlay" data-testid="loading-overlay">
-      <div class="spinner"></div>
-      <p>{t("graph.loading")}</p>
-    </div>
-  {:else if error}
-    <div class="error">
-      <p>{error}</p>
-      <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
-    </div>
-  {:else}
-    <div class="graph-container graph-3d-container" data-testid="graph-container">
-      {#if graphData.nodes.length > 0}
-        {#key graphData.nodes.length + "-" + graphData.links.length}
-          <GraphCanvas
-            nodes={graphData.nodes}
-            links={graphData.links}
-            onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
-            onNoteDelete={handleNoteDelete}
-            onNoteRestore={handleNoteRestore}
-            onNoteCreate={handleNoteCreate}
-            onLinkCreate={handleLinkCreate}
-            helpContent={knowledgeCore?.content}
-          />
-        {/key}
-      {:else}
-        <div class="empty">
-          <StateIllustration type="no-links" />
-          <p>{t("graph.noData")}</p>
-        </div>
-      {/if}
-    </div>
-  {/if}
-</div>
-
-{#if selectedNodeId}
-  <NoteSidePanel
-    nodeId={selectedNodeId}
-    onClose={() => (selectedNodeId = null)}
-    onEdit={(id: string) => {
-      noteToEdit = id;
-      showEditModal = true;
-    }}
-    onDelete={() => {
-      selectedNodeId = null;
-      // Reload graph
-      window.location.reload();
-    }}
-  />
-{/if}
+</CosmicCockpit>
 
 {#if noteToEdit}
   <EditNoteModal
@@ -344,67 +334,39 @@
     onSuccess={() => {
       showEditModal = false;
       noteToEdit = null;
-      window.location.reload();
+      loadGraphData({ nocache: true });
     }}
   />
 {/if}
 
+{#if showCreateModal}
+  <CreateNoteModal bind:open={showCreateModal} onSuccess={handleNoteCreatedSuccess} />
+{/if}
+
 <style>
-  .graph-page {
-    padding: 20px;
+  .graph-cockpit-content {
+    position: relative;
     width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 100vh;
+    height: 100%;
     background: var(--gradient-cosmic-bg);
     color: var(--color-text-dark);
+    overflow: hidden;
   }
 
-  .top-right-controls {
+  .graph-controls-overlay {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-  }
-
-  .login-btn {
-    padding: 10px;
-    border: none;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    top: 12px;
+    left: 12px;
+    right: 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: space-between;
+    z-index: 5;
+    pointer-events: none;
   }
 
-  .login-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
-  }
-
-  h1 {
-    margin: 0 0 20px 0;
-    font-size: 1.5rem;
-  }
-
-  .controls {
-    position: absolute;
-    top: 80px;
-    right: 20px;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+  .graph-controls-overlay > :global(*) {
+    pointer-events: auto;
   }
 
   .toggle {
@@ -413,6 +375,13 @@
     gap: 8px;
     cursor: pointer;
     font-size: 14px;
+    color: white;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    pointer-events: auto;
   }
 
   .toggle input {
@@ -421,21 +390,9 @@
     height: 18px;
   }
 
-  .graph-container {
-    flex: 1;
-    position: relative;
-    min-height: 0;
-    height: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
   .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: absolute;
+    inset: 0;
     background: rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
@@ -462,11 +419,12 @@
   }
 
   .error {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     gap: 16px;
     color: #ef4444;
   }
@@ -481,10 +439,12 @@
   }
 
   .empty {
+    position: absolute;
+    inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     color: #94a3b8;
   }
 </style>

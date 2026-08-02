@@ -6,7 +6,7 @@
   import CockpitBottomPanel from "./CockpitBottomPanel.svelte";
   import CockpitLeftPanel from "./CockpitLeftPanel.svelte";
   import CockpitRightPanel from "./CockpitRightPanel.svelte";
-  import CockpitFirstPersonButton from "$components/atoms/CockpitFirstPersonButton.svelte";
+  import CockpitFirstPersonButton from "./CockpitFirstPersonButton.svelte";
 
   interface Props {
     /** Main graph/content slot. */
