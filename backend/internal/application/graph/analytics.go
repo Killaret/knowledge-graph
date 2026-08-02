@@ -13,9 +13,9 @@ import (
 
 // AnalyticsResult contains computed graph metrics for a set of nodes and links.
 type AnalyticsResult struct {
-	PageRank     map[string]float64 `json:"page_rank"`
-	Clusters     [][]string         `json:"clusters"`
-	TopCenters   []string             `json:"top_centers"`
+	PageRank   map[string]float64 `json:"page_rank"`
+	Clusters   [][]string         `json:"clusters"`
+	TopCenters []string           `json:"top_centers"`
 }
 
 // Analytics computes graph analytics for the whole visible graph.
