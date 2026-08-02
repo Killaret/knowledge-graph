@@ -61,6 +61,9 @@
 
 **Note:** Cosmic notifications/toasts are not part of the Cosmic Cockpit MVP; they will be handled by a separate optional notification system.
 
+**Related analysis:**
+- [UI Duplication and Note Creation Analysis](docs/UI_DUPLICATION_AND_NOTE_CREATION_ANALYSIS.md) — describes the legacy UI duplication this redesign addresses
+
 ### ⚡ Performance & Resource Optimization
 
 | Task | Status | Priority | Prompt Ready |
@@ -169,6 +172,9 @@
 - Backup procedures
 - Monitoring setup
 
+**Related docs:**
+- [Docker Deployment Guide](docs/DOCKER.md)
+
 ### 🌐 Public Note Pool (Publish/Unpublish)
 
 | Task | Status | Priority | Prompt Ready |
@@ -206,6 +212,7 @@ Description: 3D-визуализация графа знаний в виде к�
 | Add tooltips for links | ⏳ Planned | 🟡 Medium | 📝 Yes |
 | Improve link animations | ⏳ Planned | 🟡 Medium | 📝 Yes |
 | Implement gamma-coding for link strength | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Auto-link creation based on NLP | ⏳ Planned | 🟡 Medium | 📝 Yes |
 
 **Scope:**
 - Hover tooltips showing link metadata
@@ -213,6 +220,10 @@ Description: 3D-визуализация графа знаний в виде к�
 - Visual strength indicators (gamma-coding)
 - Link type differentiation
 - Bidirectional link visualization
+- Auto-create links on note creation when recommendation score is above threshold
+
+**Related docs:**
+- [Auto Link Creation Plan](docs/AUTO_LINK_CREATION_PLAN.md)
 
 ### 🧹 Dust Processor (Quick Notes Handler)
 
@@ -226,6 +237,27 @@ Description: 3D-визуализация графа знаний в виде к�
 - Dust note to regular note conversion
 - Batch dust note processing
 - Dust note analytics
+- Dust inbox panel and dust → note enrichment
+
+**Related docs:**
+- [Note Error Correction Plan](docs/NOTE_ERROR_CORRECTION_PLAN.md) (Quick Edit, autocompletion, dust inbox)
+
+### 📝 Quick Edit & Note Autocompletion
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Quick inline note editing (Ctrl+E) | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Note title/content autocompletion | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| NLP keyword/embedding correction | ⏳ Planned | 🟡 Medium | 📝 Yes |
+
+**Scope:**
+- Inline editing of title and content without opening full note page
+- Autosave on blur with optimistic update and rollback on error
+- Autocomplete suggestions for title, type, tags, and related notes
+- User correction of NLP keywords and manual recomputation of embeddings
+
+**Related docs:**
+- [Note Error Correction Plan](docs/NOTE_ERROR_CORRECTION_PLAN.md)
 
 ---
 
@@ -284,6 +316,9 @@ Description: Представление графа в виде сот (гекс�
 - Tag mapping
 - Metadata preservation
 - Two-way sync
+
+**Related docs:**
+- [Obsidian Import Spec](docs/OBSIDIAN_IMPORT_SPEC.md)
 
 ### 📱 PWA Capture (Mobile Quick Notes)
 
