@@ -34,6 +34,31 @@
 - [x] Backend auth API testing
 - [x] Public graph verification
 
+### 🎨 UI/UX: Cosmic Cockpit
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Cosmic Cockpit UI — starship cockpit layout with slide-out panels, HUD, and first-person mode | ⏳ Planned | 🟠 High | 📝 No |
+
+**Scope:**
+- Four slide-out panels (top, bottom, left, right) emulating a starship cockpit dashboard inspired by "Space Rangers".
+- Hover with 200–300 ms delay; drag-to-open by panel edge/corner; anchor to pin panels.
+- "First-person" (fullscreen) mode button hides all panels, showing only the graph.
+- Left panel: cluster navigation, note tree, graph mode switcher, type filters with multi-select and top-down expand animation.
+- Right panel: selected note details, link mini-graph, contextual actions (edit, add link, publish).
+- Top panel: search, global filters, 2D/3D toggle, sync status.
+- Bottom panel: HUD — current cluster, note/link count, graph health, FPS, delta sync indicator, first-person button.
+- UI settings: sensitivity, auto-collapse, reduced motion.
+
+**MVP:**
+- Static layout with four panels.
+- Bottom HUD bar.
+- Type filters in left panel with multi-select.
+- First-person mode.
+- Basic slide-out animation.
+
+**Dependencies:** FSD widget refactoring, graph store, Cosmic Notification System.
+
 ---
 
 ## 🧩 Graph Service: Stabilization & Evolution Plan
