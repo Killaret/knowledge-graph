@@ -76,7 +76,7 @@
   const user = $derived(currentUser());
 </script>
 
-<div class="cockpit-top-panel" data-testid="cockpit-top-panel">
+<div class="cockpit-top-panel floating-controls" data-testid="cockpit-top-panel">
   <div class="left-cluster">
     <a
       href="/"

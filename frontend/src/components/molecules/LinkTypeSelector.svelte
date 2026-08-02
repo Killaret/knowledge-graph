@@ -50,7 +50,6 @@
     if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
 
     event.preventDefault();
-    const isHorizontal = size === "sm";
     const direction = ["ArrowRight", "ArrowDown"].includes(event.key) ? 1 : -1;
     const nextIndex = (index + direction + types.length) % types.length;
     const nextButton = container?.querySelector<HTMLButtonElement>(`[data-index="${nextIndex}"]`);

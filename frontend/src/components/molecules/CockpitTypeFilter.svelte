@@ -31,7 +31,7 @@
         class:has-count={typeCounts[filter.id] !== undefined}
         onclick={() => onSelect(filter.id)}
         aria-pressed={selected === filter.id}
-        data-testid="cockpit-type-filter-{filter.id}"
+        data-testid="filter-chip-{filter.id}"
         title={filter.description
           ? `${filter.description}${filter.example ? `\n${t("typeSelector.example")}: ${filter.example}` : ""}`
           : t("filter.filterBy", { type: filter.label })}

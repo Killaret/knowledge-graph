@@ -25,10 +25,12 @@
   import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import BackButton from "$components/atoms/BackButton.svelte";
   import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { CelestialBody } from "$entities";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -64,6 +66,9 @@
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showCreateModal = $state(false);
+  let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
+  let showConfirmDelete = $state(false);
+  let noteToDelete: string | null = $state(null);
 
   async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
     loading = true;
@@ -181,15 +186,24 @@
     selectedNodeId = nodeId;
   }
 
-  async function handleNoteDelete(nodeId: string) {
+  function handleDeleteRequest(nodeId: string) {
+    noteToDelete = nodeId;
+    showConfirmDelete = true;
+  }
+
+  async function handleConfirmDelete() {
+    if (!noteToDelete) return;
     try {
-      await deleteNote(nodeId);
+      await deleteNote(noteToDelete);
       selectedNodeId = null;
       await loadGraphData({ nocache: true });
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to delete note:", e);
       }
+    } finally {
+      noteToDelete = null;
+      showConfirmDelete = false;
     }
   }
 
@@ -215,9 +229,30 @@
     }
   }
 
-  function handleNoteCreatedSuccess() {
+  async function handleNoteCreatedSuccess(note: Note) {
     showCreateModal = false;
-    loadGraphData({ nocache: true });
+    if (createChildParent) {
+      try {
+        await createLink({
+          source_note_id: createChildParent.id,
+          target_note_id: note.id,
+          link_type: "parent",
+          weight: 0.9,
+        });
+      } catch {
+        if (browser) {
+          alert(t("note.createChildLinkError"));
+        }
+      }
+      createChildParent = null;
+    }
+    selectedNodeId = note.id;
+    await loadGraphData({ nocache: true });
+  }
+
+  function handleCreateChildNote(parent: { id: string; title: string; type?: string }) {
+    createChildParent = parent;
+    showCreateModal = true;
   }
 
   function handleNoteEdit(id: string) {
@@ -321,9 +356,10 @@
     else if (view === "3d") goto("/graph/3d");
   }}
   onNoteCreate={() => (showCreateModal = true)}
-  onNoteDelete={handleNoteDelete}
+  onNoteDelete={handleDeleteRequest}
   onNoteEdit={handleNoteEdit}
   onNodeSelect={handleNodeSelect}
+  onCreateChildNote={handleCreateChildNote}
   onOpenAuth={(tab) => goto(`/auth/${tab}`)}
   selectedNodeId={selectedNodeId ?? null}
   nodeCount={graphData.nodes.length}
@@ -359,9 +395,10 @@
           nodes={graphData.nodes}
           links={graphData.links}
           onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
-          onNoteDelete={handleNoteDelete}
+          onNoteDelete={handleDeleteRequest}
           onNoteRestore={handleNoteRestore}
           onNoteCreate={handleNoteCreate}
+          onCreateChildNote={handleCreateChildNote}
           onLinkCreate={handleLinkCreate}
           onLinkEdit={handleLinkEdit}
           onLinkDelete={handleLinkDelete}
@@ -390,7 +427,29 @@
 {/if}
 
 {#if showCreateModal}
-  <CreateNoteModal bind:open={showCreateModal} onSuccess={handleNoteCreatedSuccess} />
+  <CreateNoteModal
+    bind:open={showCreateModal}
+    onSuccess={handleNoteCreatedSuccess}
+    onClose={() => (createChildParent = null)}
+    parentNote={createChildParent ?? undefined}
+    defaultType={createChildParent
+      ? CelestialBody.getChildSuggestion(createChildParent.type)
+      : undefined}
+  />
+{/if}
+
+{#if showConfirmDelete}
+  <ConfirmModal
+    bind:open={showConfirmDelete}
+    title={t("confirmModal.title")}
+    message={t("note.deleteConfirm")}
+    danger={true}
+    onConfirm={handleConfirmDelete}
+    onCancel={() => {
+      noteToDelete = null;
+      showConfirmDelete = false;
+    }}
+  />
 {/if}
 
 <style>

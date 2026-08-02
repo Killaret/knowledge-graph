@@ -9,6 +9,8 @@
     GraphCanvasControls,
     LinkTypeLegend,
   } from "$features/graph-ui";
+  import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
+  import { SingularityDropZone } from "$features/cosmic-ui";
   import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
@@ -84,6 +86,7 @@
     onLinkCreate,
     onNoteDelete,
     onNoteRestore,
+    onCreateChildNote,
     helpContent,
     delta,
     disableVariation = false,
@@ -129,6 +132,7 @@
     }) => void;
     onNoteDelete?: (nodeId: string) => void;
     onNoteRestore?: (nodeId: string) => void;
+    onCreateChildNote?: (node: { id: string; title: string; type?: string }) => void;
     helpContent?: string;
     delta?: GraphDeltaData;
     disableVariation?: boolean;
@@ -243,6 +247,22 @@
 
   // Link creation form state (FSD)
   let linkFormState: LinkFormState = $state(createLinkFormState());
+
+  // Context menu for right-clicked node
+  let contextMenu = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    node: { id: string; title: string; type?: string } | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    node: null,
+  });
+
+  // Singularity archive/delete drop zone
+  const singularity = $state({ hovered: false });
 
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
@@ -522,8 +542,29 @@
     get onNodeClick() {
       return onNodeClick;
     },
+    get onNodeContextMenu() {
+      return (node: { id: string; title: string; type?: string }, x: number, y: number) => {
+        contextMenu = { visible: true, x, y, node };
+      };
+    },
     get onNoteDelete() {
       return onNoteDelete;
+    },
+    get onSingularityDrop() {
+      return onNoteDelete;
+    },
+    isOverSingularity: (clientX: number, clientY: number) => {
+      if (typeof window === "undefined") return false;
+      const size = 120;
+      const padding = 24;
+      const zoneX = window.innerWidth - size - padding;
+      const zoneY = window.innerHeight - size - padding;
+      return (
+        clientX >= zoneX && clientX <= zoneX + size && clientY >= zoneY && clientY <= zoneY + size
+      );
+    },
+    setSingularityHovered: (hovered: boolean) => {
+      singularity.hovered = hovered;
     },
     getKeyLines: () => canvasState.hotkeyLines,
   };
@@ -535,6 +576,29 @@
   class={className}
   style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
 ></canvas>
+
+<GraphNodeContextMenu
+  x={contextMenu.x}
+  y={contextMenu.y}
+  visible={contextMenu.visible}
+  node={contextMenu.node ?? undefined}
+  onClose={() => (contextMenu = { ...contextMenu, visible: false })}
+  onCreateChild={() => {
+    if (contextMenu.node && onCreateChildNote) {
+      onCreateChildNote(contextMenu.node);
+    }
+    contextMenu = { ...contextMenu, visible: false };
+  }}
+  onViewDetails={() => {
+    if (contextMenu.node && onNodeClick) {
+      onNodeClick(contextMenu.node);
+      canvasState.selectedNodeId = contextMenu.node.id;
+    }
+    contextMenu = { ...contextMenu, visible: false };
+  }}
+/>
+
+<SingularityDropZone visible={dragDropState.draggedNodeId !== null} hovered={singularity.hovered} />
 
 <GraphCanvasControls
   mode={GraphMode.fromFocus(canvasState.focusMode)}

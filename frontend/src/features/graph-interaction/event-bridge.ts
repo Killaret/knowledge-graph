@@ -87,7 +87,15 @@ export interface GraphCanvasEventContext {
   setGhostNode(node: GhostNodeState): void;
 
   onNodeClick?(node: { id: string; title: string; type?: string }): void;
+  onNodeContextMenu?(
+    node: { id: string; title: string; type?: string },
+    x: number,
+    y: number
+  ): void;
   onNoteDelete?(nodeId: string): void;
+  onSingularityDrop?(nodeId: string): void;
+  isOverSingularity(clientX: number, clientY: number): boolean;
+  setSingularityHovered(hovered: boolean): void;
 
   getKeyLines(): string[];
 }
@@ -98,6 +106,7 @@ export interface GraphEventBridge {
   onMouseUp: (e: MouseEvent) => void;
   onClick: (e: MouseEvent) => void;
   onDblClick: (e: MouseEvent) => void;
+  onContextMenu: (e: MouseEvent) => void;
   onZoom: (e: WheelEvent) => void;
   onTouchStart: (e: TouchEvent) => void;
   onWindowMouseUp: (e: MouseEvent) => void;
@@ -211,6 +220,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
         (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node && node.x != null && node.y != null) {
+        context.dragDropState.dragStartPosition = { x: node.x, y: node.y };
         node.fx = node.x;
         node.fy = node.y;
       }
@@ -242,6 +252,8 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     const dx = screenX - 60;
     const dy = screenY - 60;
     ghostNode.hovered = Math.sqrt(dx * dx + dy * dy) < ghostNode.radius;
+
+    context.setSingularityHovered(context.isOverSingularity(e.clientX, e.clientY));
 
     if (context.dragDropState.draggedNodeId && context.dragState.dragging) {
       const node = getSimulationNodes(context.simState).find(
@@ -384,22 +396,28 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
         (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node) {
-        node.fx = undefined;
-        node.fy = undefined;
+        if (context.isOverSingularity(e.clientX, e.clientY)) {
+          node.x = context.dragDropState.dragStartPosition.x;
+          node.y = context.dragDropState.dragStartPosition.y;
+          context.onSingularityDrop?.(node.id);
+        } else {
+          node.fx = undefined;
+          node.fy = undefined;
 
-        const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
-        if (
-          targetNode &&
-          targetNode.id !== context.dragDropState.draggedNodeId &&
-          !context.isTechnicalNode(targetNode.id)
-        ) {
-          openLinkForm(
-            context.linkFormState,
-            context.dragDropState.draggedNodeId,
-            targetNode.id,
-            e.clientX,
-            e.clientY
-          );
+          const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
+          if (
+            targetNode &&
+            targetNode.id !== context.dragDropState.draggedNodeId &&
+            !context.isTechnicalNode(targetNode.id)
+          ) {
+            openLinkForm(
+              context.linkFormState,
+              context.dragDropState.draggedNodeId,
+              targetNode.id,
+              e.clientX,
+              e.clientY
+            );
+          }
         }
       }
       context.dragDropState.draggedNodeId = null;
@@ -410,6 +428,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     context.dragState.dragging = false;
     canvas.style.cursor = "grab";
     context.getBlackHole().hovered = false;
+    context.setSingularityHovered(false);
 
     if (!wasDraggingNode && !context.getGhostNode().hovered) {
       const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
@@ -472,6 +491,27 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     if (context.readonly) return;
     if (!context.dragState.dragging) return;
     onMouseUp(e);
+  }
+
+  function onContextMenu(e: MouseEvent) {
+    if (context.readonly) return;
+    const canvas = context.getCanvas();
+    if (!canvas) return;
+
+    const pos = getMouseWorldPosition(e, canvas, context.transform);
+    const clickedNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
+    if (clickedNode) {
+      e.preventDefault();
+      context.onNodeContextMenu?.(
+        {
+          id: clickedNode.id,
+          title: clickedNode.title,
+          type: clickedNode.type,
+        },
+        e.clientX,
+        e.clientY
+      );
+    }
   }
 
   function onZoom(e: WheelEvent) {
@@ -584,6 +624,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     onMouseUp,
     onClick,
     onDblClick,
+    onContextMenu,
     onWindowMouseUp,
     onZoom,
     onTouchStart,
@@ -604,6 +645,7 @@ export function attachEvents(
   canvas.addEventListener("mouseup", bridge.onMouseUp);
   canvas.addEventListener("click", bridge.onClick);
   canvas.addEventListener("dblclick", bridge.onDblClick);
+  canvas.addEventListener("contextmenu", bridge.onContextMenu, { passive: false });
   canvas.addEventListener("wheel", bridge.onZoom, { passive: false });
   canvas.addEventListener("touchstart", bridge.onTouchStart, {
     passive: false,
@@ -617,6 +659,7 @@ export function attachEvents(
     canvas.removeEventListener("mouseup", bridge.onMouseUp);
     canvas.removeEventListener("click", bridge.onClick);
     canvas.removeEventListener("dblclick", bridge.onDblClick);
+    canvas.removeEventListener("contextmenu", bridge.onContextMenu);
     canvas.removeEventListener("wheel", bridge.onZoom);
     canvas.removeEventListener("touchstart", bridge.onTouchStart);
     windowImpl.removeEventListener("mouseup", bridge.onWindowMouseUp);

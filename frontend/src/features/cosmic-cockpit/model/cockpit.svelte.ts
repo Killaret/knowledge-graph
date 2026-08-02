@@ -9,8 +9,8 @@ import type {
 const STORAGE_KEY = "cockpit-settings";
 
 const defaultPanel: CockpitPanelState = {
-  open: false,
-  pinned: false,
+  open: true,
+  pinned: true,
   hovering: false,
 };
 

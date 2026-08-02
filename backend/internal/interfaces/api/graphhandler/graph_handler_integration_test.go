@@ -7,14 +7,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -22,12 +25,13 @@ import (
 // GraphHandlerIntegrationTestSuite - интеграционные тесты для GraphHandler
 type GraphHandlerIntegrationTestSuite struct {
 	suite.Suite
-	db       *gorm.DB
-	noteRepo *postgres.NoteRepository
-	linkRepo *postgres.LinkRepository
-	router   *gin.Engine
-	handler  *Handler
-	cleanup  func()
+	db         *gorm.DB
+	noteRepo   *postgres.NoteRepository
+	linkRepo   *postgres.LinkRepository
+	router     *gin.Engine
+	handler    *Handler
+	cleanup    func()
+	testUserID uuid.UUID
 }
 
 func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
@@ -64,6 +68,14 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 	s.router = gin.New()
 
+	// Middleware: подставляет тестового пользователя, чтобы полный граф
+	// возвращал заметки текущего пользователя, а не только публичные.
+	s.router.Use(func(c *gin.Context) {
+		c.Set(middleware.ContextUserIDKey, s.testUserID)
+		c.Set(middleware.ContextRoleKey, "user")
+		c.Next()
+	})
+
 	// Регистрируем маршруты
 	s.router.GET("/notes/:id/graph", s.handler.GetGraph)
 	s.router.GET("/graph/all", s.handler.GetFullGraph)
@@ -77,15 +89,26 @@ func (s *GraphHandlerIntegrationTestSuite) SetupTest() {
 	// Очищаем таблицы перед каждым тестом
 	err := testutil.TruncateTables(s.db)
 	s.Require().NoError(err, "failed to truncate tables")
+
+	// Создаем тестового пользователя и фиксируем его ID для middleware.
+	s.testUserID = uuid.New()
+	err = s.db.Create(&postgres.UserModel{
+		ID:           s.testUserID,
+		Login:        "testuser",
+		Email:        "test@example.com",
+		PasswordHash: "test-hash",
+		CreatedAt:    time.Now(),
+	}).Error
+	s.Require().NoError(err, "failed to create test user")
 }
 
-// createTestNote создает тестовую заметку
+// createTestNote создает тестовую заметку от имени тестового пользователя
 func (s *GraphHandlerIntegrationTestSuite) createTestNote(title, content, noteType string) *note.Note {
 	ctx := s.db.Statement.Context
 	noteTitle, _ := note.NewTitle(title)
 	noteContent, _ := note.NewContent(content)
 	metadata, _ := note.NewMetadata(map[string]interface{}{"type": noteType})
-	n := note.NewNote(noteTitle, noteContent, noteType, metadata)
+	n := note.NewNoteWithCreator(noteTitle, noteContent, noteType, metadata, s.testUserID)
 	err := s.noteRepo.Save(ctx, n)
 	s.Require().NoError(err, "failed to create test note")
 	return n

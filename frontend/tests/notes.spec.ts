@@ -317,30 +317,25 @@ test.describe(
     });
 
     test("should search for notes", async ({ page, request }) => {
-      // Create a note via API with searchable content using helper
-      const timestamp = Date.now();
-      const note = await createNote(request, {
-        title: "Searchable Note " + timestamp,
-        content: "Unique search content " + timestamp,
-        type: "star",
-      });
-      const noteId = note.data.id;
-      testNoteIds.push(noteId);
-
-      // Wait for note to be available
-      await page.waitForTimeout(2000);
+      // Use an existing public seed note for searching so we don't depend on
+      // asynchronous NLP indexing of a brand-new note.
+      const seedList = await request.get(`${getBackendUrl()}/api/v1/notes?is_public=true&limit=1`);
+      const seedData = await seedList.json();
+      const seedNote = seedData.notes?.[0];
+      expect(seedNote).toBeDefined();
+      const searchTerm = (seedNote.title as string).split(" ").slice(0, 2).join(" ");
 
       // Navigate to home
       await page.goto("/");
       await page.waitForTimeout(1000);
 
       // Use search in floating controls
-      await fillSearchInput(page, "Unique search content");
+      await fillSearchInput(page, searchTerm);
       await clickSearchButton(page);
 
       // Verify search works via API
       const searchResponse = await request.get(
-        `${getBackendUrl()}/api/v1/notes/search?q=Unique+search+content`
+        `${getBackendUrl()}/api/v1/notes/search?q=${encodeURIComponent(searchTerm)}`
       );
       const searchData = await searchResponse.json();
       expect(searchData.total).toBeGreaterThan(0);

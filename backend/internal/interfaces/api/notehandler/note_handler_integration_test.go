@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +25,11 @@ import (
 // NoteHandlerIntegrationTestSuite - интеграционные тесты для NoteHandler
 type NoteHandlerIntegrationTestSuite struct {
 	suite.Suite
-	db      *gorm.DB
-	repo    *postgres.NoteRepository
-	router  *gin.Engine
-	cleanup func()
+	db         *gorm.DB
+	repo       *postgres.NoteRepository
+	router     *gin.Engine
+	cleanup    func()
+	testUserID uuid.UUID
 }
 
 func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
@@ -74,6 +77,14 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 	s.router = gin.New()
 
+	// Middleware: подставляет тестового пользователя, чтобы List/Search
+	// возвращали заметки текущего пользователя, а не только публичные.
+	s.router.Use(func(c *gin.Context) {
+		c.Set(middleware.ContextUserIDKey, s.testUserID)
+		c.Set(middleware.ContextRoleKey, "user")
+		c.Next()
+	})
+
 	// Регистрируем маршруты
 	s.router.POST("/notes", handler.Create)
 	s.router.GET("/notes", handler.List)
@@ -92,6 +103,17 @@ func (s *NoteHandlerIntegrationTestSuite) SetupTest() {
 	// Очищаем таблицы перед каждым тестом
 	err := testutil.TruncateTables(s.db)
 	s.Require().NoError(err, "failed to truncate tables")
+
+	// Создаем тестового пользователя и фиксируем его ID для middleware.
+	s.testUserID = uuid.New()
+	err = s.db.Create(&postgres.UserModel{
+		ID:           s.testUserID,
+		Login:        "testuser",
+		Email:        "test@example.com",
+		PasswordHash: "test-hash",
+		CreatedAt:    time.Now(),
+	}).Error
+	s.Require().NoError(err, "failed to create test user")
 }
 
 // createTestNote создает тестовую заметку через API

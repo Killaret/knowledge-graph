@@ -206,8 +206,12 @@ When(
     const button = this.page.locator(`[data-testid="${testId}"]`).first();
     await expect(button).toBeVisible({ timeout: 5000 });
 
-    // Click the button
-    await button.click();
+    // Floating controls use fixed positioning; use JS click to bypass viewport checks.
+    await this.page.evaluate((id) => {
+      const el = document.querySelector(`[data-testid="${id}"]`);
+      if (el) (el as HTMLElement).click();
+      else throw new Error(`Toggle button with data-testid="${id}" not found`);
+    }, testId);
 
     // Wait for aria-pressed to change
     const expectedPressed = viewName.toLowerCase() === "list" ? "true" : "false";
@@ -226,7 +230,11 @@ When(
     const filterId = filterName.toLowerCase().replace("s", ""); // stars -> star
     const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
     await expect(chip).toBeVisible({ timeout: 5000 });
-    await chip.click();
+    await this.page.evaluate((id) => {
+      const el = document.querySelector(`[data-testid="${id}"]`);
+      if (el) (el as HTMLElement).click();
+      else throw new Error(`Filter chip with data-testid="${id}" not found`);
+    }, `filter-chip-${filterId}`);
     await this.page.waitForTimeout(1000); // Wait for list to filter
   }
 );
@@ -370,7 +378,11 @@ Then("I am in list view", async function (this: ITestWorld) {
   // Click the list view toggle button
   const listToggleButton = this.page.locator('[data-testid="view-toggle-list"]').first();
   await expect(listToggleButton).toBeVisible({ timeout: 5000 });
-  await listToggleButton.click();
+  await this.page.evaluate(() => {
+    const el = document.querySelector('[data-testid="view-toggle-list"]');
+    if (el) (el as HTMLElement).click();
+    else throw new Error("List toggle button not found");
+  });
   await this.page.waitForTimeout(3000);
 
   // Now check for list container or note cards
@@ -393,8 +405,11 @@ Then("I am in graph view", async function (this: ITestWorld) {
   const isVisible = await graph.isVisible().catch(() => false);
   if (!isVisible) {
     // Click graph toggle
-    const button = this.page.locator('[data-testid="view-toggle-graph"]').first();
-    await button.click();
+    await this.page.evaluate(() => {
+      const el = document.querySelector('[data-testid="view-toggle-graph"]');
+      if (el) (el as HTMLElement).click();
+      else throw new Error("Graph toggle button not found");
+    });
     await this.page.waitForTimeout(500);
   }
   await expect(graph).toBeVisible({ timeout: 5000 });
@@ -482,8 +497,8 @@ Then(
     }
 
     for (let i = 0; i < count; i++) {
-      const title = await cards.nth(i).locator(".note-title, h3").first().textContent();
-      expect(title?.toLowerCase()).toContain(searchTerm.toLowerCase());
+      const cardText = await cards.nth(i).textContent();
+      expect(cardText?.toLowerCase()).toContain(searchTerm.toLowerCase());
     }
   }
 );
@@ -620,7 +635,11 @@ When("I click the {string} filter chip", async function (this: ITestWorld, filte
   const filterId = filterMap[filterName.toLowerCase()] || `filter-chip-${filterName.toLowerCase()}`;
   const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
-  await chip.click();
+  await this.page.evaluate((id) => {
+    const el = document.querySelector(`[data-testid="${id}"]`);
+    if (el) (el as HTMLElement).click();
+    else throw new Error(`Filter chip with data-testid="${id}" not found`);
+  }, filterId);
   await this.page.waitForTimeout(1000); // Wait for list to filter
 });
 

@@ -49,6 +49,15 @@ describe("CelestialBody", () => {
     expect(anomalies).not.toContain("star");
   });
 
+  it("suggests a UI-visible child type for each parent", () => {
+    expect(CelestialBody.getChildSuggestion("star")).toBe("planet");
+    expect(CelestialBody.getChildSuggestion("planet")).toBe("satellite");
+    expect(CelestialBody.getChildSuggestion("galaxy")).toBe("star");
+    expect(CelestialBody.getChildSuggestion("blackhole")).toBe("star");
+    expect(CelestialBody.getChildSuggestion("satellite")).toBe("asteroid");
+    expect(CelestialBody.getChildSuggestion("")).toBe("planet");
+  });
+
   it("produces a CSS color expression with fallback", () => {
     expect(CelestialBody.STAR.toCSSColor()).toBe("var(--color-star, #ffcc00)");
   });

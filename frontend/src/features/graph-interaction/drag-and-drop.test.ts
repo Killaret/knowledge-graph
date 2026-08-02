@@ -269,7 +269,7 @@ describe("drag-and-drop", () => {
     expect(redraw).toHaveBeenCalled();
   });
 
-  it("drops node on black hole", () => {
+  it("drops node on singularity archive zone", () => {
     const canvas = createCanvas();
     const dragState = { dragging: true, dragStart: { x: 0, y: 0 } };
     const dragDropState = createDragDropState();
@@ -290,7 +290,12 @@ describe("drag-and-drop", () => {
       pulsePhase: 0,
       active: true,
     };
-    const callbacks = { onBlackHoleDrop: vi.fn() };
+    dragDropState.dragStartPosition = { x: 0, y: 10 };
+    const singularity = {
+      isOver: (clientX: number, clientY: number) => clientX >= 680 && clientY >= 480,
+      setHovered: vi.fn(),
+    };
+    const callbacks = { onSingularityDrop: vi.fn() };
     const redraw = vi.fn();
 
     handleMouseUp(
@@ -304,10 +309,13 @@ describe("drag-and-drop", () => {
       ghostNode,
       () => false,
       callbacks,
-      redraw
+      redraw,
+      singularity
     );
 
-    expect(callbacks.onBlackHoleDrop).toHaveBeenCalledWith("n1");
+    expect(callbacks.onSingularityDrop).toHaveBeenCalledWith("n1");
+    expect(simNodes[0].x).toBe(0);
+    expect(simNodes[0].y).toBe(10);
     expect(dragDropState.draggedNodeId).toBeNull();
     expect(redraw).toHaveBeenCalled();
   });

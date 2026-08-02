@@ -315,10 +315,14 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
       // If no notes, verify some content is visible (empty state, graph container, or error)
       const content = page
         .locator(
-          ".fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay, text=/No notes|empty|Loading/i"
+          ".fullscreen-graph, .list-container, .empty-state, .loading-overlay, .error-overlay"
         )
         .first();
-      await expect(content).toBeVisible({ timeout: 10000 });
+      const hasContent = await content.isVisible().catch(() => false);
+      if (!hasContent) {
+        const textEl = page.locator("text=/No notes|empty|Loading/i").first();
+        await expect(textEl).toBeVisible({ timeout: 10000 });
+      }
     } else {
       // If notes exist, verify graph or list container is visible
       const content = page

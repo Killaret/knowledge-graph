@@ -101,7 +101,11 @@ function createMockContext(canvas: HTMLCanvasElement) {
       ghostNode = node;
     }),
     onNodeClick: vi.fn(),
+    onNodeContextMenu: vi.fn(),
     onNoteDelete: vi.fn(),
+    onSingularityDrop: vi.fn(),
+    isOverSingularity: vi.fn(() => false),
+    setSingularityHovered: vi.fn(),
     getKeyLines: () => ["tip1"],
   };
 }
@@ -127,6 +131,7 @@ describe("event-bridge", () => {
     expect(bridge.onMouseDown).toBeTypeOf("function");
     expect(bridge.onMouseMove).toBeTypeOf("function");
     expect(bridge.onMouseUp).toBeTypeOf("function");
+    expect(bridge.onContextMenu).toBeTypeOf("function");
     expect(bridge.handleKeyDown).toBeTypeOf("function");
   });
 
@@ -185,6 +190,48 @@ describe("event-bridge", () => {
       title: "A",
       type: undefined,
     });
+  });
+
+  it("handles node context menu", () => {
+    const event = new MouseEvent("contextmenu", { clientX: 1, clientY: 11 });
+    const preventDefault = vi.spyOn(event, "preventDefault");
+    bridge.onContextMenu(event);
+    expect(preventDefault).toHaveBeenCalled();
+    expect(context.onNodeContextMenu).toHaveBeenCalledWith(
+      { id: "n1", title: "A", type: undefined },
+      1,
+      11
+    );
+  });
+
+  it("ignores context menu outside of a node", () => {
+    const event = new MouseEvent("contextmenu", { clientX: 400, clientY: 300 });
+    const preventDefault = vi.spyOn(event, "preventDefault");
+    bridge.onContextMenu(event);
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(context.onNodeContextMenu).not.toHaveBeenCalled();
+  });
+
+  it("highlights singularity zone while dragging node over it", () => {
+    context.isOverSingularity.mockReturnValue(true);
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 750, clientY: 550 }));
+    expect(context.setSingularityHovered).toHaveBeenLastCalledWith(true);
+  });
+
+  it("calls onSingularityDrop when node is dropped on singularity zone", () => {
+    context.isOverSingularity.mockReturnValue(true);
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
+    bridge.onMouseUp(new MouseEvent("mouseup", { clientX: 750, clientY: 550 }));
+    expect(context.onSingularityDrop).toHaveBeenCalledWith("n1");
+    expect(context.setSingularityHovered).toHaveBeenLastCalledWith(false);
+  });
+
+  it("does not call onSingularityDrop outside of singularity zone", () => {
+    context.isOverSingularity.mockReturnValue(false);
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
+    bridge.onMouseUp(new MouseEvent("mouseup", { clientX: 50, clientY: 10 }));
+    expect(context.onSingularityDrop).not.toHaveBeenCalled();
   });
 
   it("zooms on double click", () => {

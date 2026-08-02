@@ -22,9 +22,10 @@
     onClose?: () => void;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
+    onCreateChildNote?: (note: Note) => void;
   }
 
-  const { nodeId, onClose, onEdit, onDelete }: Props = $props();
+  const { nodeId, onClose, onEdit, onDelete, onCreateChildNote }: Props = $props();
 
   let note = $state<Note | null>(null);
   let links = $state<Link[]>([]);
@@ -172,6 +173,16 @@
           aria-label={t("cockpit.noteDetails.edit")}
         >
           ✎
+        </button>
+        <button
+          type="button"
+          class="action-btn create-child"
+          onclick={() => note && onCreateChildNote?.(note)}
+          aria-label={t("cockpit.noteDetails.createChildNote")}
+          title={t("cockpit.noteDetails.createChildNote")}
+          data-testid="note-details-create-child"
+        >
+          ＋
         </button>
         <button
           type="button"

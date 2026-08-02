@@ -7,9 +7,10 @@
     onNodeSelect?: (id: string | null) => void;
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
+    onCreateChildNote?: (note: { id: string; title: string; type?: string }) => void;
   }
 
-  const { nodeId, onNodeSelect, onNoteDelete, onNoteEdit }: Props = $props();
+  const { nodeId, onNodeSelect, onNoteDelete, onNoteEdit, onCreateChildNote }: Props = $props();
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
@@ -27,6 +28,10 @@
     onNoteDelete?.(id);
     handleClose();
   }
+
+  function handleCreateChild(note: { id: string; title: string; type?: string }) {
+    onCreateChildNote?.(note);
+  }
 </script>
 
 <div class="cockpit-right-panel" data-testid="cockpit-right-panel">
@@ -36,6 +41,7 @@
       onClose={handleClose}
       onEdit={handleEdit}
       onDelete={handleDelete}
+      onCreateChildNote={handleCreateChild}
     />
   {:else}
     <div class="empty-state">

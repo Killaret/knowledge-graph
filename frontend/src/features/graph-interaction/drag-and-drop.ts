@@ -17,7 +17,12 @@ export interface DragDropCallbacks {
   onNodeDragStart?: (nodeId: string) => void;
   onNodeDragEnd?: (nodeId: string) => void;
   onLinkPreview?: (sourceId: string, targetId: string) => void;
-  onBlackHoleDrop?: (nodeId: string) => void;
+  onSingularityDrop?: (nodeId: string) => void;
+}
+
+export interface SingularityDropZone {
+  isOver(clientX: number, clientY: number): boolean;
+  setHovered(hovered: boolean): void;
 }
 
 export function createDragDropState(): DragDropState {
@@ -119,7 +124,8 @@ export function handleMouseMove(
   blackHole: BlackHoleState,
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
-  redraw: () => void
+  redraw: () => void,
+  singularity?: SingularityDropZone
 ): void {
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;
@@ -127,6 +133,10 @@ export function handleMouseMove(
   // Update hover states for interactive elements
   blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, transform);
   ghostNode.hovered = isPointOverGhostNode(e.clientX, e.clientY, ghostNode, transform);
+
+  if (singularity) {
+    singularity.setHovered(singularity.isOver(e.clientX, e.clientY));
+  }
 
   // Dragging a node
   if (dragDropState.draggedNodeId && dragState.dragging) {
@@ -182,7 +192,8 @@ export function handleMouseUp(
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
   callbacks: DragDropCallbacks,
-  redraw: () => void
+  redraw: () => void,
+  singularity?: SingularityDropZone
 ): void {
   dragState.dragging = false;
   canvas.style.cursor = "grab";
@@ -190,9 +201,11 @@ export function handleMouseUp(
   if (dragDropState.draggedNodeId) {
     const node = simNodes.find((n) => n.id === dragDropState.draggedNodeId);
     if (node) {
-      // Check if dropped on black hole
-      if (isNodeOverBlackHole(node, blackHole)) {
-        callbacks.onBlackHoleDrop?.(node.id);
+      // Check if dropped on the singularity archive/delete zone
+      if (singularity?.isOver(e.clientX, e.clientY)) {
+        node.x = dragDropState.dragStartPosition.x;
+        node.y = dragDropState.dragStartPosition.y;
+        callbacks.onSingularityDrop?.(node.id);
       }
       // Check if dropped on another node for link creation
       else if (dragDropState.isDraggingForLink && dragDropState.linkTargetNodeId) {
@@ -211,6 +224,8 @@ export function handleMouseUp(
     dragDropState.linkPreviewTarget = null;
     redraw();
   }
+
+  singularity?.setHovered(false);
 }
 
 export function handleClick(

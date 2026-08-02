@@ -39,6 +39,7 @@ export interface NoteData {
   title: string;
   content?: string;
   type?: string;
+  is_public?: boolean;
   metadata?: Record<string, unknown>;
 }
 
@@ -72,12 +73,15 @@ export async function createNote(
   data: Partial<NoteData>,
   retryCount = 0
 ): Promise<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>> {
-  const payload = {
+  const payload: Record<string, unknown> = {
     title: data.title || "Test Note",
     content: data.content || "Test content",
     type: data.type,
     metadata: { ...(data.metadata || {}), __testNote: true },
   };
+  if (data.is_public !== undefined) {
+    payload.is_public = data.is_public;
+  }
 
   const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
     data: payload,

@@ -45,10 +45,12 @@
 - Hover with 200–300 ms delay; drag-to-open by panel edge/corner; anchor to pin panels.
 - "First-person" (fullscreen) mode button hides all panels, showing only the graph.
 - Left panel: cluster navigation, note tree, graph mode switcher, type filters with multi-select and top-down expand animation.
-- Right panel: selected note details, link mini-graph, contextual actions (edit, add link, publish).
+- Right panel: selected note details, link mini-graph, contextual actions (edit, add child note, add link, publish).
 - Top panel: search, global filters, 2D/3D toggle, sync status.
 - Bottom panel: HUD — current cluster, note/link count, graph health, FPS, delta sync indicator, first-person button.
 - UI settings: sensitivity, auto-collapse, reduced motion.
+- Graph node context menu for creating child notes.
+- Singularity drop zone for archive/delete; Black Hole type is strictly an "unresolved problem" note type and no longer implies deletion.
 
 **MVP:**
 - Static layout with four panels.

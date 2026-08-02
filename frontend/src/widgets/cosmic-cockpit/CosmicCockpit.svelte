@@ -16,6 +16,7 @@
     onNoteCreate?: () => void;
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
+    onCreateChildNote?: (note: { id: string; title: string; type?: string }) => void;
     onOpenAuth?: (tab: "login" | "register") => void;
     onSearch?: (query: string) => void;
     onFilter?: (type: string) => void;
@@ -44,6 +45,7 @@
     onNoteCreate,
     onNoteDelete,
     onNoteEdit,
+    onCreateChildNote,
     onOpenAuth,
     onSearch,
     onFilter,
@@ -123,12 +125,18 @@
   </CockpitPanel>
 
   <CockpitPanel position="right" size={COCKPIT_DEFAULT_SIZES.right} title="Details">
-    <CockpitRightPanel nodeId={selectedNodeId} {onNodeSelect} {onNoteDelete} {onNoteEdit} />
+    <CockpitRightPanel
+      nodeId={selectedNodeId}
+      {onNodeSelect}
+      {onNoteDelete}
+      {onNoteEdit}
+      {onCreateChildNote}
+    />
   </CockpitPanel>
 
-  <main class="cockpit-graph" data-testid="cockpit-graph">
+  <section class="cockpit-graph" data-testid="cockpit-graph">
     {@render children?.()}
-  </main>
+  </section>
 
   {#if cockpitStore.firstPerson}
     <CockpitFirstPersonButton />

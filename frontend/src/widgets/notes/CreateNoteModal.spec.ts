@@ -150,6 +150,37 @@ describe("CreateNoteModal", () => {
     expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
   });
 
+  it("shows parent breadcrumb and suggests child type", async () => {
+    render(CreateNoteModal, {
+      props: {
+        open: true,
+        parentNote: { id: "p1", title: "Parent Star", type: "star" },
+      },
+    });
+
+    expect(screen.getByTestId("create-note-parent")).toHaveTextContent(
+      "Child note of: Parent Star"
+    );
+    expect(screen.getByRole("button", { name: /Planet/i })).toBeInTheDocument();
+  });
+
+  it("calls onClose when cancelled", async () => {
+    const mockOnClose = vi.fn();
+    render(CreateNoteModal, {
+      props: {
+        open: true,
+        onClose: mockOnClose,
+        parentNote: { id: "p1", title: "Parent" },
+      },
+    });
+
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
+    await fireEvent.click(cancelButton);
+    await tick();
+
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
   it("allows selecting different note types", async () => {
     const mockOnSuccess = vi.fn();
     vi.mocked(createNote).mockResolvedValueOnce({

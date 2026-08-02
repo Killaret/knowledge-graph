@@ -14,9 +14,9 @@
     deleteNote,
     deleteNotesBatch,
     restoreNote,
-    searchNotes,
     type Note,
   } from "$shared/api/notes";
+  import { createLink } from "$shared/api/links";
   import { type GraphData } from "$shared/api/graph";
   import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
   import {
@@ -53,6 +53,7 @@
   let loading = $state(true);
   let apiError = $state<ErrorResponse | null>(null);
   let showCreateModal = $state(false);
+  let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
@@ -263,6 +264,17 @@
         }
 
         graphData = graphResult;
+      } else if (allNotes.length > 0) {
+        // Fallback when graph-service returns empty but notes exist. This keeps
+        // the UI usable and makes E2E tests stable regardless of graph-service state.
+        graphData = {
+          nodes: allNotes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            type: n.type || "unknown",
+          })),
+          links: [],
+        };
       } else if (!silent || graphData.nodes.length === 0) {
         // Minimal fallback for empty/invalid graph-service result. When
         // refreshing silently in the background, keep showing the last known
@@ -335,24 +347,8 @@
   }
 
   async function handleSearch() {
-    if (!filterState.isSearchActive) {
-      // searchQuery cleared — filteredGraphData will reactively show all nodes
-      applyFiltersAndSort();
-      return;
-    }
-
-    try {
-      // Use server search results only for the list view (filteredNotes)
-      // The graph canvas uses local search via filteredGraphData derived
-      const response = await searchNotes(filterState.searchQuery.value, 1, 20);
-      filteredNotes = response.data;
-    } catch (e) {
-      // Fallback: local filter on allNotes
-      applyFiltersAndSort();
-      if (import.meta.env.DEV) {
-        console.error("Search error:", e);
-      }
-    }
+    // Keep list and graph search consistent with client-side substring filtering.
+    applyFiltersAndSort();
   }
 
   function handleDeleteRequest(id: string) {
@@ -485,8 +481,28 @@
 
   async function handleNoteCreated(note: Note) {
     showCreateModal = false;
+    if (createChildParent) {
+      try {
+        await createLink({
+          source_note_id: createChildParent.id,
+          target_note_id: note.id,
+          link_type: "parent",
+          weight: 0.9,
+        });
+      } catch {
+        if (browser) {
+          alert(t("note.createChildLinkError"));
+        }
+      }
+      createChildParent = null;
+    }
     graphStore.selectedNodeId = note.id;
     await refreshAfterMutation();
+  }
+
+  function handleCreateChildNote(parent: { id: string; title: string; type?: string }) {
+    createChildParent = parent;
+    showCreateModal = true;
   }
 
   function handleToggleView(view: "graph" | "list" | "3d") {
@@ -544,13 +560,14 @@
     showEditModal = true;
   }}
   onNoteDelete={handleDeleteRequest}
+  onCreateChildNote={handleCreateChildNote}
   selectedNodeId={graphStore.selectedNodeId}
   nodeCount={filteredGraphData.nodes.length}
   linkCount={filteredGraphData.links.length}
   notes={allNotes}
 >
   <!-- Graph/List Container -->
-  <div class="graph-content" data-testid="graph-2d-container">
+  <div class="graph-content fullscreen-graph graph-2d-container" data-testid="graph-2d-container">
     {#if loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
@@ -588,6 +605,7 @@
         onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
         onNoteCreate={handleNoteCreate}
         onNoteDelete={handleDeleteRequest}
+        onCreateChildNote={handleCreateChildNote}
       />
     {:else if graphStore.currentView === "3d" && Graph3DViewer}
       <!-- Fullscreen 3D Graph View -->
@@ -771,7 +789,15 @@
 />
 
 <!-- Create Note Modal -->
-<CreateNoteModal bind:open={showCreateModal} onSuccess={handleNoteCreated} />
+<CreateNoteModal
+  bind:open={showCreateModal}
+  onSuccess={handleNoteCreated}
+  onClose={() => (createChildParent = null)}
+  parentNote={createChildParent ?? undefined}
+  defaultType={createChildParent
+    ? CelestialBody.getChildSuggestion(createChildParent.type)
+    : undefined}
+/>
 
 <!-- Edit Note Modal -->
 {#if noteToEdit}

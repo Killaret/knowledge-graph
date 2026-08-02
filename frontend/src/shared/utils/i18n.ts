@@ -107,6 +107,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "note.contentPlaceholder": "Enter note content...",
     "note.contentPlaceholderGalactic": "Enter star data...",
     "note.titleTooLong": "Title must not exceed {max} characters",
+    "note.childOf": "Child note of: {{title}}",
+    "note.createChildLinkError":
+      "Note created, but failed to link it to the parent. You can add the link manually.",
     "note.createError": "Failed to create note",
     "note.updateError": "Failed to update note",
     "note.loadError": "Failed to load note",
@@ -181,6 +184,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "cockpit.right.empty": "Select a node to view details",
     "cockpit.noteDetails.close": "Close details",
     "cockpit.noteDetails.edit": "Edit note",
+    "cockpit.noteDetails.createChildNote": "Create child note",
     "cockpit.noteDetails.share": "Share note",
     "cockpit.noteDetails.deleteNote": "Delete note",
     "cockpit.noteDetails.loading": "Loading note...",
@@ -537,6 +541,15 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.linkStrength": "Link Strength: {{value}}",
     "graphModals.createLink": "Create Link",
 
+    // Graph context menu
+    "graph.contextMenu.ariaLabel": "Node actions",
+    "graph.contextMenu.createChildNote": "Create child note",
+    "graph.contextMenu.viewDetails": "View details",
+
+    // Singularity drop zone
+    "graph.singularity.ariaLabel": "Archive zone",
+    "graph.singularity.label": "Drop to archive",
+
     // Graph overlay
     "graphOverlay.focusActive": "Focus mode is active. Press Esc to restore effects.",
     "graphOverlay.focus": "Focus",
@@ -820,6 +833,9 @@ const messages: Record<Locale, Record<string, string>> = {
     "note.contentPlaceholder": "Введите содержание заметки...",
     "note.contentPlaceholderGalactic": "Введите данные звезды...",
     "note.titleTooLong": "Заголовок не должен превышать {max} символов",
+    "note.childOf": "Дочерняя заметка: {{title}}",
+    "note.createChildLinkError":
+      "Заметка создана, но не удалось связать её с родителем. Связь можно добавить вручную.",
     "note.createError": "Не удалось создать заметку",
     "note.updateError": "Не удалось обновить заметку",
     "note.loadError": "Не удалось загрузить заметку",
@@ -895,6 +911,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "cockpit.right.empty": "Выберите узел, чтобы увидеть детали",
     "cockpit.noteDetails.close": "Закрыть детали",
     "cockpit.noteDetails.edit": "Редактировать",
+    "cockpit.noteDetails.createChildNote": "Создать дочернюю заметку",
     "cockpit.noteDetails.share": "Поделиться",
     "cockpit.noteDetails.deleteNote": "Удалить",
     "cockpit.noteDetails.loading": "Загрузка заметки...",
@@ -1255,6 +1272,15 @@ const messages: Record<Locale, Record<string, string>> = {
     "graphModals.linkTypeLabel": "Тип связи",
     "graphModals.linkStrength": "Сила связи: {{value}}",
     "graphModals.createLink": "Создать связь",
+
+    // Graph context menu
+    "graph.contextMenu.ariaLabel": "Действия с узлом",
+    "graph.contextMenu.createChildNote": "Создать дочернюю заметку",
+    "graph.contextMenu.viewDetails": "Открыть детали",
+
+    // Singularity drop zone
+    "graph.singularity.ariaLabel": "Зона архивирования",
+    "graph.singularity.label": "Перетащите для архивирования",
 
     // Graph overlay
     "graphOverlay.focusActive": "Режим фокуса активен. Нажмите Esc, чтобы восстановить эффекты.",

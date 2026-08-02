@@ -155,6 +155,31 @@ export class CelestialBody {
     return CelestialBody.MAP.get(normalized) ?? CelestialBody.UNKNOWN;
   }
 
+  /**
+   * Suggests a UI-visible child type for a given parent celestial body type.
+   * Moon is intentionally excluded because it is an auto-assigned detail type.
+   */
+  static getChildSuggestion(parentType: string | undefined): string {
+    switch ((parentType ?? "").toLowerCase().trim()) {
+      case "galaxy":
+      case "blackhole":
+        return CelestialBody.STAR.type;
+      case "star":
+        return CelestialBody.PLANET.type;
+      case "planet":
+        return CelestialBody.SATELLITE.type;
+      case "nebula":
+        return CelestialBody.STAR.type;
+      case "satellite":
+      case "comet":
+      case "asteroid":
+        return CelestialBody.ASTEROID.type;
+      case "dust":
+      default:
+        return CelestialBody.PLANET.type;
+    }
+  }
+
   static readonly STAR = new CelestialBody({
     type: "star",
     label: "celestialBody.type.star",

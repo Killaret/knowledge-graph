@@ -11,9 +11,15 @@
   let {
     open = $bindable(false),
     onSuccess,
+    onClose,
+    parentNote,
+    defaultType,
   }: {
     open: boolean;
     onSuccess?: (note: Note) => void;
+    onClose?: () => void;
+    parentNote?: { id: string; title: string; type?: string };
+    defaultType?: string;
   } = $props();
 
   let title = $state("");
@@ -25,8 +31,21 @@
   const theme = $derived(Theme.fromString(currentMode));
   const MAX_TITLE_LENGTH = 200;
 
+  const initialType = $derived(
+    parentNote
+      ? (defaultType ?? CelestialBody.getChildSuggestion(parentNote.type))
+      : CelestialBody.PLANET.type
+  );
+
+  $effect(() => {
+    if (open) {
+      type = initialType;
+    }
+  });
+
   const locale = getCurrentLocale();
-  const t = (key: string) => formatMessage(key, locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
   const tx = (standardKey: string, galacticKey: string) =>
     theme.isGalactic ? t(galacticKey) : t(standardKey);
   const toErrorResponse = (e: unknown): ErrorResponse => {
@@ -95,12 +114,18 @@
     open = false;
     title = "";
     content = "";
-    type = CelestialBody.PLANET.type; // reset to default
+    type = initialType;
     apiError = null;
+    onClose?.();
   }
 </script>
 
 <Modal bind:open title={modalTitle} onClose={close}>
+  {#if parentNote}
+    <p class="parent-breadcrumb" data-testid="create-note-parent">
+      {t("note.childOf", { title: parentNote.title })}
+    </p>
+  {/if}
   <NoteForm
     bind:title
     bind:content
@@ -124,3 +149,11 @@
     cancelTestId="create-note-cancel"
   />
 </Modal>
+
+<style>
+  .parent-breadcrumb {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+</style>

@@ -146,19 +146,20 @@ test.describe("SKIP_AUTH Mode Tests", { tag: ["@auth", "@skip-auth", "@e2e"] }, 
 
     // All requests should succeed
     const responses = await Promise.all(promises);
+    const createdIds: string[] = [];
     for (const response of responses) {
       expect(response.ok()).toBeTruthy();
+      const body = await response.json();
+      createdIds.push(body.data.id);
     }
 
-    // Verify notes are created
-    const notesResponse = await request.get(`${getBackendUrl()}/api/v1/notes`);
-    expect(notesResponse.ok()).toBeTruthy();
-    const notesData = await notesResponse.json();
-
-    const ourNotes = notesData.notes?.filter((note: any) =>
-      note.title.includes(`Concurrent Test ${timestamp}`)
-    );
-    expect(ourNotes?.length).toBe(5);
+    // Verify each created note can be fetched individually.
+    for (const id of createdIds) {
+      const noteResponse = await request.get(`${getBackendUrl()}/api/v1/notes/${id}`);
+      expect(noteResponse.ok()).toBeTruthy();
+      const noteBody = await noteResponse.json();
+      expect(noteBody.data.title).toContain(`Concurrent Test ${timestamp}`);
+    }
   });
 
   test("should maintain SKIP_AUTH state across navigation", async ({ page }) => {
