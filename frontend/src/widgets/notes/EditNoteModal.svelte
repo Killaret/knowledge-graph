@@ -144,7 +144,7 @@
 
       <div class="form-group">
         <label for="edit-note-type">{typeLabel}</label>
-        <TypeSelector id="edit-note-type" bind:selected={type} />
+        <TypeSelector id="edit-note-type" bind:selected={type} types={CelestialBody.UI_TYPES} />
       </div>
 
       <div class="form-group">

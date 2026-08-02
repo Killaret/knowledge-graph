@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import RegisterForm from "$components/organisms/RegisterForm.svelte";
-  import AuthCard from "$components/organisms/AuthCard.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

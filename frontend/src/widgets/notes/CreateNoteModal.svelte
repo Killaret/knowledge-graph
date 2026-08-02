@@ -105,6 +105,7 @@
     bind:title
     bind:content
     bind:type
+    types={CelestialBody.UI_TYPES}
     {loading}
     error={apiError}
     onSubmit={handleSubmit}

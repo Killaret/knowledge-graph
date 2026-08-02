@@ -3,8 +3,8 @@
   import { page } from "$app/stores";
   import { searchNotes, type Note } from "$shared/api/notes";
   import { SearchQuery } from "$entities";
-  import SearchBar from "$components/molecules/SearchBar.svelte";
-  import NoteCard from "$components/molecules/NoteCard.svelte";
+  import SearchBar from "$widgets/search/SearchBar.svelte";
+  import NoteCard from "$widgets/notes/NoteCard.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

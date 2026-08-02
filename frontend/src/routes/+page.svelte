@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import CreateNoteModal from "$components/organisms/CreateNoteModal.svelte";
+  import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
-  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
-  import ConfirmModal from "$components/organisms/ConfirmModal.svelte";
-  import NoteCard from "$components/molecules/NoteCard.svelte";
+  import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
+  import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
+  import NoteCard from "$widgets/notes/NoteCard.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import {

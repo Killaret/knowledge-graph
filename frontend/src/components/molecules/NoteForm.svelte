@@ -2,17 +2,26 @@
   import Button from "$components/atoms/Button.svelte";
   import TypeSelector from "$components/molecules/TypeSelector.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
-  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { ErrorResponse } from "$shared/types/errors";
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
+  interface NoteTypeOption {
+    type: string;
+    emoji: string;
+    label: string;
+    color: string;
+    toCSSColor(): string;
+  }
+
   interface Props {
     title?: string;
     content?: string;
     type?: string;
+    defaultType?: string;
+    types: NoteTypeOption[];
     loading?: boolean;
     error?: ErrorResponse | null;
     titleLabel?: string;
@@ -36,7 +45,9 @@
   let {
     title = $bindable(""),
     content = $bindable(""),
-    type = $bindable(CelestialBody.PLANET.type),
+    defaultType = "planet",
+    type = $bindable(defaultType),
+    types,
     loading = false,
     error = null,
     titleLabel = t("note.titleLabel"),
@@ -92,7 +103,7 @@
 
   <div class="form-group">
     <label for="note-type">{typeLabel}</label>
-    <TypeSelector id="note-type" bind:selected={type} />
+    <TypeSelector id="note-type" bind:selected={type} {types} />
   </div>
 
   <div class="form-group">

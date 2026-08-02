@@ -1,6 +1,6 @@
 <script lang="ts">
-  import GraphTooltip from "$components/molecules/GraphTooltip.svelte";
-  import LinkTooltip from "$components/molecules/LinkTooltip.svelte";
+  import GraphTooltip from "./GraphTooltip.svelte";
+  import LinkTooltip from "./LinkTooltip.svelte";
   import type { HotkeysState } from "$features/graph-interaction/hotkeys";
   import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";

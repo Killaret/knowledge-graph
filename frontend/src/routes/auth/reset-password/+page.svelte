@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import ResetPasswordForm from "$components/organisms/ResetPasswordForm.svelte";
-  import AuthCard from "$components/organisms/AuthCard.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
   import ConstellationIcon from "$components/atoms/ConstellationIcon.svelte";
   import { isAuthenticated } from "$shared/stores/auth.svelte.js";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";

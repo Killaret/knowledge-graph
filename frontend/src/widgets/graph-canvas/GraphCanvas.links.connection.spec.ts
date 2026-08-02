@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import * as renderer from "./GraphCanvas/renderer";
-import type { SimulationNode, SimulationLink } from "./GraphCanvas/types";
+import * as renderer from "$entities/graph-canvas/lib/renderer";
+import type { SimulationNode, SimulationLink } from "$entities/graph-canvas/lib/types";
 
 describe("GraphCanvas - Link Connection Correctness", () => {
   describe("Link coordinate verification", () => {

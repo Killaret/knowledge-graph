@@ -1,19 +1,31 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
-  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
+  export interface TypeOption {
+    type: string;
+    emoji: string;
+    label: string;
+    color: string;
+    toCSSColor(): string;
+  }
+
   interface Props {
-    selected: string;
+    types: TypeOption[];
+    defaultSelected?: string;
+    selected?: string;
     id?: string;
   }
 
-  let { selected = $bindable(CelestialBody.STAR.type), id = "type-selector" }: Props = $props();
-
-  const types = CelestialBody.UI_TYPES;
+  let {
+    types,
+    defaultSelected = types[0]?.type ?? "star",
+    selected = $bindable(defaultSelected),
+    id = "type-selector",
+  }: Props = $props();
 
   function selectType(type: string) {
     selected = type;

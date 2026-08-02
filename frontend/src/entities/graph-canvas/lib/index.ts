@@ -27,5 +27,8 @@ export * from "./delta";
 export * from "./black-hole";
 export * from "./ghost-node";
 
+// Particle system for the background atmosphere
+export * from "./particle-system";
+
 // Gravity and lens distortion
 export * from "./gravity-system";

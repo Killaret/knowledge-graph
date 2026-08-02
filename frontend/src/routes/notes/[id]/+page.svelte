@@ -7,7 +7,7 @@
   import { goto } from "$app/navigation";
   import { formatDateTime } from "$shared/utils/date";
   import BackButton from "$components/atoms/BackButton.svelte";
-  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
+  import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 

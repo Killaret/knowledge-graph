@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import LoginForm from "$components/organisms/LoginForm.svelte";
-  import AuthCard from "$components/organisms/AuthCard.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
   import PreloadIndicator from "$components/organisms/PreloadIndicator.svelte";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { startPreload } from "$shared/services/PreloadService";

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import SmartGraph from "$components/organisms/SmartGraph.svelte";
+  import SmartGraph from "$widgets/graph-canvas/SmartGraph.svelte";
   import { getGraphData } from "$shared/api/graph";
   import BackButton from "$components/atoms/BackButton.svelte";
   import type { GraphNode, GraphLink } from "$shared/api/graph";

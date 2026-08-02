@@ -5,7 +5,7 @@
   import { GraphMode } from "$entities";
   import { GraphCanvasOverlay, GraphCanvasModals, GraphCanvasControls } from "$features/graph-ui";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
-  import { ParticleSystem } from "$components/organisms/GraphCanvas/particle-system";
+  import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
   import {
     resizeCanvas,
     setupResizeObserver,
@@ -29,9 +29,9 @@
     updateGhostNodePulse,
     type GravitySystem,
     applyDelta as applyDeltaToSimulation,
-  } from "$components/organisms/GraphCanvas";
-  import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
-  import { createGravitySystem } from "$components/organisms/GraphCanvas/gravity-system";
+  } from "$entities/graph-canvas/lib";
+  import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
+  import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
   // FSD imports
   import {

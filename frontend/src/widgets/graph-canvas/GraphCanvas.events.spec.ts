@@ -13,7 +13,7 @@ const mockState = {
 
 // Unmock animation.ts so the real onUpdate callback runs; GraphCanvas is loaded
 // dynamically in beforeAll so the unmock takes effect before import.
-vi.unmock("$components/organisms/GraphCanvas/animation.ts");
+vi.unmock("$entities/graph-canvas/lib/animation.ts");
 
 vi.mock("d3-force", () => {
   const createMockSimulation = () => {

@@ -23,8 +23,8 @@
   import { createLink } from "$shared/api/links";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
-  import EditNoteModal from "$components/organisms/EditNoteModal.svelte";
-  import CreateNoteModal from "$components/organisms/CreateNoteModal.svelte";
+  import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
+  import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import BackButton from "$components/atoms/BackButton.svelte";
   import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";

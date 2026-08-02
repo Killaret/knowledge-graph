@@ -2,6 +2,7 @@
   import type { NoteFormState } from "$features/graph-forms/note-form";
   import type { LinkFormState } from "$features/graph-forms/link-form";
   import NoteForm from "$components/molecules/NoteForm.svelte";
+  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -56,6 +57,7 @@
     </div>
     <NoteForm
       ghost
+      types={CelestialBody.UI_TYPES}
       bind:title={noteFormState.newNoteTitle}
       bind:content={noteFormState.newNoteContent}
       bind:type={noteFormState.newNoteType}

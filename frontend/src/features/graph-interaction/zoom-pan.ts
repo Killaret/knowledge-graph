@@ -1,5 +1,5 @@
-import type { TransformState, SimulationNode } from "$components/organisms/GraphCanvas/types";
-import { resetView } from "$components/organisms/GraphCanvas";
+import type { TransformState, SimulationNode } from "$entities/graph-canvas/lib/types";
+import { resetView } from "$entities/graph-canvas/lib";
 
 export interface ZoomPanState {
   lastTouchTime: number;

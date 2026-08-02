@@ -4,19 +4,19 @@ import {
   type SimulationLink,
   type TransformState,
   type DragState,
-} from "$components/organisms/GraphCanvas";
+} from "$entities/graph-canvas/lib";
 import type {
   BlackHoleState,
   GhostNodeState,
   GravitySystem,
-} from "$components/organisms/GraphCanvas";
+} from "$entities/graph-canvas/lib";
 import {
   findLinkAtPosition,
   getSimulationNodes,
   isNodeOverBlackHole,
   isPointOverBlackHole,
-} from "$components/organisms/GraphCanvas";
-import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
+} from "$entities/graph-canvas/lib";
+import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
 import { graphConfig2D } from "$shared/config";
 import type { DragDropState } from "$features/graph-interaction/drag-and-drop";
 import {
@@ -36,7 +36,7 @@ import type { NoteFormState } from "$features/graph-forms/note-form";
 import { openNoteForm, closeNoteForm } from "$features/graph-forms/note-form";
 import type { LinkFormState } from "$features/graph-forms/link-form";
 import { openLinkForm, closeLinkForm } from "$features/graph-forms/link-form";
-import type { SimulationState } from "$components/organisms/GraphCanvas/types";
+import type { SimulationState } from "$entities/graph-canvas/lib/types";
 
 export interface HoveredLinkInfo {
   source: string;

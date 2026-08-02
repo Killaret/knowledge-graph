@@ -117,10 +117,12 @@ global.ResizeObserver = class ResizeObserver {
 const mockCanvasContext = {
   beginPath: vi.fn(),
   arc: vi.fn(),
+  ellipse: vi.fn(),
   fill: vi.fn(),
   stroke: vi.fn(),
   moveTo: vi.fn(),
   lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
   clearRect: vi.fn(),
   save: vi.fn(),
   restore: vi.fn(),
@@ -133,6 +135,7 @@ const mockCanvasContext = {
   measureText: vi.fn().mockReturnValue({ width: 100 }),
   closePath: vi.fn(),
   rect: vi.fn(),
+  roundRect: vi.fn(),
   fillRect: vi.fn(),
   strokeRect: vi.fn(),
   clip: vi.fn(),
@@ -194,7 +197,7 @@ vi.mock("three/examples/jsm/renderers/CSS2DRenderer.js", async () => {
 });
 
 // Мокируем GraphCanvas animation модуль
-vi.mock("$components/organisms/GraphCanvas/animation.ts", () => ({
+vi.mock("$entities/graph-canvas/lib/animation.ts", () => ({
   startAnimationLoop: vi.fn().mockReturnValue({
     stop: vi.fn(),
   }),

@@ -1,8 +1,8 @@
 <script lang="ts">
   import "$shared/styles/global.css";
   import SidebarWidget from "$widgets/sidebar/SidebarWidget.svelte";
-  import QuickCaptureWidget from "$components/organisms/QuickCaptureWidget.svelte";
-  import ToastNotification from "$components/atoms/ToastNotification.svelte";
+  import QuickCaptureWidget from "$widgets/quick-capture/QuickCaptureWidget.svelte";
+  import ToastNotification from "$widgets/notification/ToastNotification.svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";

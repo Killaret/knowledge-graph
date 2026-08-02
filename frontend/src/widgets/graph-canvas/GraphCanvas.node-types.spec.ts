@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
-import * as renderer from "./GraphCanvas/renderer";
+import * as renderer from "$entities/graph-canvas/lib/renderer";
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
 import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
 import {
@@ -8,9 +8,9 @@ import {
   drawVoidWhisper,
   drawCosmicAbomination,
   drawUnknown,
-} from "./GraphCanvas/renderer";
-import type { SimulationNode } from "./GraphCanvas/types";
-import { createMockCanvasContext } from "./GraphCanvas/test-canvas-mock";
+} from "$entities/graph-canvas/lib/renderer";
+import type { SimulationNode } from "$entities/graph-canvas/lib/types";
+import { createMockCanvasContext } from "$entities/graph-canvas/lib/test-canvas-mock";
 
 const mockState = {
   simulationNodes: [] as any[],

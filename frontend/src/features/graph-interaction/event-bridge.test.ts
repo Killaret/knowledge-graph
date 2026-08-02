@@ -5,9 +5,9 @@ import { createZoomPanState } from "./zoom-pan";
 import { createDragDropState } from "./drag-and-drop";
 import { createNoteFormState } from "$features/graph-forms/note-form";
 import { createLinkFormState } from "$features/graph-forms/link-form";
-import { createGhostNode } from "$components/organisms/GraphCanvas/ghost-node";
-import { createBlackHole } from "$components/organisms/GraphCanvas/black-hole";
-import type { SimulationNode, SimulationLink } from "$components/organisms/GraphCanvas/types";
+import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
+import { createBlackHole } from "$entities/graph-canvas/lib/black-hole";
+import type { SimulationNode, SimulationLink } from "$entities/graph-canvas/lib/types";
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");

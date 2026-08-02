@@ -6,9 +6,13 @@ import { state, startPolling, stopPolling, refreshNow, dismiss } from "./achieve
 // on the real project config (which currently sets poll_interval_ms to 0 to
 // disable polling entirely — see the dedicated test below for that case).
 const ACHIEVEMENT_POLL_INTERVAL_MS = 5000;
-vi.mock("$shared/config", () => ({
-  ACHIEVEMENT_POLL_INTERVAL_MS: 5000,
-}));
+vi.mock("$shared/config", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("$shared/config")>();
+  return {
+    ...actual,
+    ACHIEVEMENT_POLL_INTERVAL_MS: 5000,
+  };
+});
 
 vi.mock("./auth.svelte", () => ({
   isAuthenticated: vi.fn(() => true),
