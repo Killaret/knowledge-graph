@@ -208,7 +208,7 @@
   "graph_service": {
     "grpc_port": "9090",
     "http_port": "9091",
-    "full_limit": 1000,
+    "full_limit": 500,
     "default_depth": 2,
     "event_channel": "graph:events",
     "cache": {

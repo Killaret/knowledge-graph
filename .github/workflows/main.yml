@@ -437,7 +437,7 @@ jobs:
             -e GRPC_PORT="$GRPC_PORT" \
             -e GRAPH_SERVICE_INTERNAL_TOKEN="$GRAPH_SERVICE_INTERNAL_TOKEN" \
             -e EVENT_CHANNEL=graph:events \
-            -e GRAPH_FULL_LIMIT=1000 \
+            -e GRAPH_FULL_LIMIT=500 \
             knowledge-graph-graph-service
 
       - name: Start frontend container

@@ -113,7 +113,7 @@ SKIP_AUTH=false
 POSTGRES_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
 REDIS_URL=redis:6379
 EVENT_CHANNEL=graph:events
-GRAPH_FULL_LIMIT=1000
+GRAPH_FULL_LIMIT=500
 ```
 
 ### Frontend (.env)

@@ -132,7 +132,7 @@
       HTTP_PORT: 9091
       GRPC_PORT: 9090
       EVENT_CHANNEL: ${EVENT_CHANNEL:-graph:events}
-      GRAPH_FULL_LIMIT: 1000
+      GRAPH_FULL_LIMIT: 500
     volumes:
       - ./knowledge-graph.config.json:/app/knowledge-graph.config.json:ro
     depends_on:
