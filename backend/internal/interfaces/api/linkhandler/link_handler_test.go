@@ -40,7 +40,7 @@ func (m *mockNoteRepoForLink) FindByID(ctx context.Context, id uuid.UUID) (*note
 func (m *mockNoteRepoForLink) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
 func (m *mockNoteRepoForLink) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
 func (m *mockNoteRepoForLink) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
-func (m *mockNoteRepoForLink) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForLink) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	var allNotes []*note.Note
 	for _, n := range m.notes {
 		allNotes = append(allNotes, n)
@@ -59,7 +59,7 @@ func (m *mockNoteRepoForLink) List(ctx context.Context, limit, offset int) ([]*n
 
 	return allNotes[offset:end], total, nil
 }
-func (m *mockNoteRepoForLink) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForLink) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	var results []*note.Note
 	for _, n := range m.notes {
 		// Simple string matching for mock
@@ -91,7 +91,7 @@ func (m *mockNoteRepoForLink) FindAll(ctx context.Context) ([]*note.Note, error)
 	return allNotes, nil
 }
 
-func (m *mockNoteRepoForLink) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForLink) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	var allNotes []*note.Note
 	for _, n := range m.notes {
 		allNotes = append(allNotes, n)

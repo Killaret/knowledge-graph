@@ -303,4 +303,89 @@ describe("Login Button", () => {
     // Menu should be closed
     expect(screen.queryByText("Import")).not.toBeInTheDocument();
   });
+
+  it("shows Register button in menu when user is not authenticated", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle("Menu");
+    await fireEvent.click(menuBtn);
+
+    const registerBtn = screen.getByTestId("menu-register");
+    expect(registerBtn).toBeInTheDocument();
+  });
+
+  it("hides Register button when user is authenticated", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle("Menu");
+    await fireEvent.click(menuBtn);
+
+    const registerBtn = screen.queryByTestId("menu-register");
+    expect(registerBtn).not.toBeInTheDocument();
+  });
+
+  it("navigates to register page when Register is clicked", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: mockCallbacks });
+
+    const menuBtn = screen.getByTitle("Menu");
+    await fireEvent.click(menuBtn);
+
+    const registerBtn = screen.getByTestId("menu-register");
+    await fireEvent.click(registerBtn);
+
+    expect(goto).toHaveBeenCalledWith("/auth/register");
+  });
+
+  it("calls onOpenAuth with login tab when Login is clicked", async () => {
+    const onOpenAuth = vi.fn();
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: { ...mockCallbacks, onOpenAuth } });
+
+    const menuBtn = screen.getByTitle("Menu");
+    await fireEvent.click(menuBtn);
+
+    const loginBtn = screen.getByTestId("menu-login");
+    await fireEvent.click(loginBtn);
+
+    expect(onOpenAuth).toHaveBeenCalledWith("login");
+  });
+
+  it("calls onOpenAuth with register tab when Register is clicked", async () => {
+    const onOpenAuth = vi.fn();
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: { ...mockCallbacks, onOpenAuth } });
+
+    const menuBtn = screen.getByTitle("Menu");
+    await fireEvent.click(menuBtn);
+
+    const registerBtn = screen.getByTestId("menu-register");
+    await fireEvent.click(registerBtn);
+
+    expect(onOpenAuth).toHaveBeenCalledWith("register");
+  });
+
+  it("calls onOpenAuth with login tab when floating login button is clicked", async () => {
+    const onOpenAuth = vi.fn();
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: { ...mockCallbacks, onOpenAuth } });
+
+    const loginBtn = screen.getByTestId("floating-login-button");
+    await fireEvent.click(loginBtn);
+
+    expect(onOpenAuth).toHaveBeenCalledWith("login");
+  });
+
+  it("calls onOpenAuth with register tab when floating register button is clicked", async () => {
+    const onOpenAuth = vi.fn();
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    render(FloatingControls, { props: { ...mockCallbacks, onOpenAuth } });
+
+    const registerBtn = screen.getByTestId("floating-register-button");
+    await fireEvent.click(registerBtn);
+
+    expect(onOpenAuth).toHaveBeenCalledWith("register");
+  });
 });

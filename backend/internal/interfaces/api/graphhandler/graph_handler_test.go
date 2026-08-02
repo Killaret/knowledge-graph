@@ -51,16 +51,16 @@ func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
 	return args.Error(0)
 }
 
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, limit, offset)
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, query, limit, offset)
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, query, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -75,8 +75,8 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return args.Get(0).([]*note.Note), args.Error(1)
 }
 
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, limit, offset)
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -300,9 +300,6 @@ func TestHandler_GetFullGraph(t *testing.T) {
 	t.Run("successful full graph load", func(t *testing.T) {
 		r, noteRepo, linkRepo := setupGraphRouter()
 
-		note1ID := uuid.New()
-		note2ID := uuid.New()
-
 		title1, _ := note.NewTitle("Note 1")
 		content1, _ := note.NewContent("Content 1")
 		metadata1, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
@@ -316,9 +313,9 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		linkType, _ := link.NewLinkType("reference")
 		weight, _ := link.NewWeight(1.0)
 		linkMetadata, _ := link.NewMetadata(nil)
-		l := link.NewLink(note1ID, note2ID, linkType, weight, linkMetadata)
+		l := link.NewLink(n1.ID(), n2.ID(), linkType, weight, linkMetadata)
 
-		noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1, n2}, int64(2), nil)
+		noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1, n2}, int64(2), nil)
 		linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{l}, int64(1), nil)
 
 		req := httptest.NewRequest("GET", "/graph", nil)
@@ -346,7 +343,7 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		metadata1, _ := note.NewMetadata(nil)
 		n1 := note.NewNote(title1, content1, "star", metadata1)
 
-		noteRepo.On("FindAllPaginated", mock.Anything, 1, 0).Return([]*note.Note{n1}, int64(1), nil)
+		noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 1, 0).Return([]*note.Note{n1}, int64(1), nil)
 		linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), nil)
 
 		req := httptest.NewRequest("GET", "/graph?limit=1", nil)
@@ -368,7 +365,7 @@ func TestHandler_GetFullGraph(t *testing.T) {
 	t.Run("database error - should return 500", func(t *testing.T) {
 		r, noteRepo, _ := setupGraphRouter()
 
-		noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
+		noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
 
 		req := httptest.NewRequest("GET", "/graph", nil)
 		w := httptest.NewRecorder()
@@ -465,7 +462,7 @@ func TestHandler_GetFullGraphLinkLimit(t *testing.T) {
 	metadata1, _ := note.NewMetadata(nil)
 	n1 := note.NewNote(title1, content1, "star", metadata1)
 
-	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 10, 0).Return([]*link.Link{}, int64(0), nil)
 
 	req := httptest.NewRequest("GET", "/graph?link_limit=10", nil)
@@ -484,7 +481,7 @@ func TestHandler_GetFullGraphLinkOffset(t *testing.T) {
 	metadata1, _ := note.NewMetadata(nil)
 	n1 := note.NewNote(title1, content1, "star", metadata1)
 
-	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 500, 10).Return([]*link.Link{}, int64(0), nil)
 
 	req := httptest.NewRequest("GET", "/graph?link_offset=10", nil)
@@ -538,7 +535,7 @@ func TestHandler_GetGraphLinkRepoError(t *testing.T) {
 func TestHandler_GetFullGraphNotesError(t *testing.T) {
 	r, noteRepo, _ := setupGraphRouter()
 
-	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
+	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/graph", nil)
 	w := httptest.NewRecorder()
@@ -556,7 +553,7 @@ func TestHandler_GetFullGraphLinksError(t *testing.T) {
 	metadata1, _ := note.NewMetadata(nil)
 	n1 := note.NewNote(title1, content1, "star", metadata1)
 
-	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
+	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/graph", nil)

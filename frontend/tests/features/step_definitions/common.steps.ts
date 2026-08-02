@@ -24,21 +24,25 @@ Before(async function (this: ITestWorld) {
     });
   }
 
-  // Clean up any leftover notes from previous runs so each scenario is isolated
+  // Clean up any leftover notes from previous BDD runs so each scenario is
+  // isolated, but do not wipe seeded or manually-created notes. Test helpers
+  // mark created notes with metadata.__testNote = true.
   const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:18083";
   try {
     const listResp = await this.request.get(`${backendUrl}/api/v1/notes?limit=1000`);
     if (listResp.ok()) {
       const listData = (await listResp.json()) as {
-        notes?: Array<{ id: string }>;
-        data?: { notes?: Array<{ id: string }> };
+        notes?: Array<{ id: string; metadata?: Record<string, unknown> }>;
+        data?: { notes?: Array<{ id: string; metadata?: Record<string, unknown> }> };
       };
       const notes = listData.notes ?? listData.data?.notes ?? [];
       for (const note of notes) {
-        try {
-          await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`);
-        } catch {
-          // ignore individual cleanup errors
+        if (note.metadata?.__testNote === true) {
+          try {
+            await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`);
+          } catch {
+            // ignore individual cleanup errors
+          }
         }
       }
     }

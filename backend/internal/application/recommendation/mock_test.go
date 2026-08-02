@@ -38,16 +38,16 @@ func (m *mockNoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
 	return m.Called(ctx, id).Error(0)
 }
 
-func (m *mockNoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, limit, offset)
+func (m *mockNoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *mockNoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, query, limit, offset)
+func (m *mockNoteRepository) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, query, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -62,8 +62,8 @@ func (m *mockNoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) 
 	return args.Get(0).([]*note.Note), args.Error(1)
 }
 
-func (m *mockNoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, limit, offset)
+func (m *mockNoteRepository) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}

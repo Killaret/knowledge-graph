@@ -52,16 +52,16 @@ func (m *noteRepoMock) Restore(ctx context.Context, id uuid.UUID) error {
 	return m.Called(ctx, id).Error(0)
 }
 
-func (m *noteRepoMock) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, limit, offset)
+func (m *noteRepoMock) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
 	return args.Get(0).([]*note.Note), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *noteRepoMock) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
-	args := m.Called(ctx, query, limit, offset)
+func (m *noteRepoMock) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
+	args := m.Called(ctx, userID, query, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -72,7 +72,7 @@ func (m *noteRepoMock) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return nil, nil
 }
 
-func (m *noteRepoMock) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *noteRepoMock) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	return nil, int64(0), nil
 }
 
@@ -878,7 +878,7 @@ func TestSearchNotes_Success(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Searchable", "find me here", "star")
 
-	repo.On("Search", mock.Anything, "find", 20, 0).Return([]*note.Note{n}, int64(1), nil)
+	repo.On("Search", mock.Anything, mock.Anything, "find", 20, 0).Return([]*note.Note{n}, int64(1), nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/search?q=find&page=1&size=20", "")
 	h.Search(c)
@@ -914,7 +914,7 @@ func TestSearchNotes_InvalidPage(t *testing.T) {
 func TestSearchNotes_RepoError(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	repo.On("Search", mock.Anything, "find", 20, 0).Return(nil, int64(0), assert.AnError)
+	repo.On("Search", mock.Anything, mock.Anything, "find", 20, 0).Return(nil, int64(0), assert.AnError)
 
 	w, c := newContext(t, http.MethodGet, "/notes/search?q=find", "")
 	h.Search(c)
@@ -927,7 +927,7 @@ func TestListNotes_Success(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Listed", "Content", "star")
 
-	repo.On("List", mock.Anything, 20, 0).Return([]*note.Note{n}, int64(1), nil)
+	repo.On("List", mock.Anything, mock.Anything, 20, 0).Return([]*note.Note{n}, int64(1), nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes?limit=20&offset=0", "")
 	h.List(c)
@@ -940,7 +940,7 @@ func TestListNotes_Success(t *testing.T) {
 func TestListNotes_DefaultPagination(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	repo.On("List", mock.Anything, 20, 0).Return([]*note.Note{}, int64(0), nil)
+	repo.On("List", mock.Anything, mock.Anything, 20, 0).Return([]*note.Note{}, int64(0), nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes", "")
 	h.List(c)
@@ -952,7 +952,7 @@ func TestListNotes_DefaultPagination(t *testing.T) {
 func TestListNotes_MaxLimit(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	repo.On("List", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), nil)
+	repo.On("List", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes?limit=200&offset=0", "")
 	h.List(c)
@@ -964,7 +964,7 @@ func TestListNotes_MaxLimit(t *testing.T) {
 func TestListNotes_InvalidLimitOffset(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	repo.On("List", mock.Anything, 20, 0).Return([]*note.Note{}, int64(0), nil)
+	repo.On("List", mock.Anything, mock.Anything, 20, 0).Return([]*note.Note{}, int64(0), nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes?limit=abc&offset=-5", "")
 	h.List(c)
@@ -976,7 +976,7 @@ func TestListNotes_InvalidLimitOffset(t *testing.T) {
 func TestListNotes_RepoError(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	repo.On("List", mock.Anything, 20, 0).Return(nil, int64(0), assert.AnError)
+	repo.On("List", mock.Anything, mock.Anything, 20, 0).Return(nil, int64(0), assert.AnError)
 
 	w, c := newContext(t, http.MethodGet, "/notes", "")
 	h.List(c)

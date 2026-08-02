@@ -77,14 +77,14 @@ func (d *dummyNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*noteDomain
 func (d *dummyNoteRepo) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
 func (d *dummyNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
 func (d *dummyNoteRepo) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
-func (d *dummyNoteRepo) List(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (d *dummyNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
-func (d *dummyNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (d *dummyNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
 func (d *dummyNoteRepo) FindAll(ctx context.Context) ([]*noteDomain.Note, error) { return nil, nil }
-func (d *dummyNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (d *dummyNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
 
@@ -99,14 +99,14 @@ func (m *mockNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*noteDomain.
 func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
 func (m *mockNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
 func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
 func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*noteDomain.Note, error) { return nil, nil }
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*noteDomain.Note, int64, error) {
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*noteDomain.Note, int64, error) {
 	return nil, 0, nil
 }
 

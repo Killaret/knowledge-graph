@@ -896,8 +896,10 @@ func (h *Handler) Search(c *gin.Context) {
 		req.Size = h.cfg.PaginationMaxLimit
 	}
 
-	// Perform search using repository directly (for simplicity, could use service layer)
-	notes, total, err := h.repo.Search(c.Request.Context(), req.Q, req.Size, (req.Page-1)*req.Size)
+	// Perform search using repository directly (for simplicity, could use service layer).
+	// Scope by current user: uuid.Nil for anonymous means public notes only.
+	userID, _ := middleware.GetUserID(c)
+	notes, total, err := h.repo.Search(c.Request.Context(), userID, req.Q, req.Size, (req.Page-1)*req.Size)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSearchNotes)
 		return
@@ -952,8 +954,10 @@ func (h *Handler) List(c *gin.Context) {
 		limit = h.cfg.PaginationMaxLimit
 	}
 
-	// Получаем заметки из репозитория
-	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
+	// Получаем заметки из репозитория с учётом текущего пользователя.
+	// uuid.Nil для анонима — только публичные заметки.
+	userID, _ := middleware.GetUserID(c)
+	notes, total, err := h.repo.List(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNotes)
 		return

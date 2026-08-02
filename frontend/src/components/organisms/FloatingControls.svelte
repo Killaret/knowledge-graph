@@ -16,6 +16,7 @@
     onImport,
     onExport,
     onToggleLayoutProvider,
+    onOpenAuth,
     typeFilters = [],
     selectedType = "all",
     typeCounts = {},
@@ -29,6 +30,7 @@
     onImport?: () => void;
     onExport?: () => void;
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
+    onOpenAuth?: (tab: "login" | "register") => void;
     typeFilters?: Array<{ id: string; label: string; emoji: string }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
@@ -67,7 +69,20 @@
   }
 
   function handleLogin() {
-    goto("/auth/login");
+    if (onOpenAuth) {
+      onOpenAuth("login");
+    } else {
+      goto("/auth/login");
+    }
+    showMenu = false;
+  }
+
+  function handleRegister() {
+    if (onOpenAuth) {
+      onOpenAuth("register");
+    } else {
+      goto("/auth/register");
+    }
     showMenu = false;
   }
 </script>
@@ -248,11 +263,11 @@
     </button>
   </div>
 
-  <!-- Login Button (visible when not authenticated) -->
+  <!-- Auth Buttons (visible when not authenticated) -->
   {#if !isAuthenticated()}
     <button
       type="button"
-      class="login-btn"
+      class="auth-btn login-btn"
       onclick={handleLogin}
       title={t("auth.signInButton")}
       data-testid="floating-login-button"
@@ -270,6 +285,29 @@
         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
         <polyline points="10 17 15 12 10 7" />
         <line x1="15" y1="12" x2="3" y2="12" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      class="auth-btn register-btn"
+      onclick={handleRegister}
+      title={t("auth.registerLink")}
+      data-testid="floating-register-button"
+      aria-label={t("auth.registerLink")}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <line x1="20" y1="8" x2="20" y2="14" />
+        <line x1="23" y1="11" x2="17" y2="11" />
       </svg>
     </button>
   {/if}
@@ -312,6 +350,15 @@
             data-testid="menu-login"
           >
             🔑 {t("auth.loginMenuItem")}
+          </button>
+          <button
+            type="button"
+            class="menu-item"
+            role="menuitem"
+            onclick={handleRegister}
+            data-testid="menu-register"
+          >
+            ✨ {t("auth.registerLink")}
           </button>
         {/if}
         <button
@@ -567,24 +614,39 @@
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
   }
 
-  .login-btn {
+  .auth-btn {
     padding: 10px;
     border: none;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
     border-radius: 50%;
+    color: white;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
 
-  .login-btn:hover {
+  .auth-btn:hover {
     transform: scale(1.05);
+  }
+
+  .login-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  .login-btn:hover {
     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
+  }
+
+  .register-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  }
+
+  .register-btn:hover {
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
   }
 
   /* Type Filters wrapper — scroll arrows + scrollable row.

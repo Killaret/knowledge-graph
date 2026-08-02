@@ -243,6 +243,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "langSwitcher.switchLanguage": "Switch language",
     "backButton.back": "Back",
     "backButton.goBack": "Go back",
+    "common.close": "Close",
+
+    "auth.floatingAuthTitle": "Authentication",
+    "auth.dragHandle": "Drag to move",
 
     // Search
     "search.placeholder": "Search notes...",
@@ -816,6 +820,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "langSwitcher.switchLanguage": "Переключить язык",
     "backButton.back": "Назад",
     "backButton.goBack": "Назад",
+    "common.close": "Закрыть",
+
+    "auth.floatingAuthTitle": "Авторизация",
+    "auth.dragHandle": "Перетащить",
 
     // Search
     "search.placeholder": "Поиск заметок...",

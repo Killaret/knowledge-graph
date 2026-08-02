@@ -1,4 +1,4 @@
-import type { APIRequestContext } from "@playwright/test";
+ import type { APIRequestContext } from "@playwright/test";
 
 // Retry configuration for rate limit handling
 const MAX_RETRIES = 3;
@@ -76,7 +76,7 @@ export async function createNote(
     title: data.title || "Test Note",
     content: data.content || "Test content",
     type: data.type,
-    metadata: data.metadata || {},
+    metadata: { ...(data.metadata || {}), __testNote: true },
   };
 
   const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {

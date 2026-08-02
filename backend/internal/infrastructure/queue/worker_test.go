@@ -28,14 +28,14 @@ func (m *mockNoteRepoForWorker) FindByID(ctx context.Context, id uuid.UUID) (*no
 func (m *mockNoteRepoForWorker) Delete(ctx context.Context, id uuid.UUID) error         { return nil }
 func (m *mockNoteRepoForWorker) DeleteBatch(ctx context.Context, ids []uuid.UUID) error { return nil }
 func (m *mockNoteRepoForWorker) Restore(ctx context.Context, id uuid.UUID) error        { return nil }
-func (m *mockNoteRepoForWorker) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForWorker) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockNoteRepoForWorker) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForWorker) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	return nil, 0, nil
 }
 func (m *mockNoteRepoForWorker) FindAll(ctx context.Context) ([]*note.Note, error) { return nil, nil }
-func (m *mockNoteRepoForWorker) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepoForWorker) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	return nil, 0, nil
 }
 

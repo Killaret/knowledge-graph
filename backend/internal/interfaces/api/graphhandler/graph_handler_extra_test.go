@@ -133,7 +133,7 @@ func TestGetCachedGraph_Found(t *testing.T) {
 func TestGetFreshGraph(t *testing.T) {
 	r, _, noteRepo, linkRepo := setupGraphRouterWithCache()
 
-	noteRepo.On("FindAllPaginated", mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), nil)
+	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), nil)
 
 	w := httptest.NewRecorder()

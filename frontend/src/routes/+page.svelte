@@ -29,6 +29,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
+  import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
@@ -93,6 +94,17 @@
   let showUndoToast = $state(false);
   let undoToastStage = $state<"done" | "restore">("done");
   let showBulkActionsMenu = $state(false);
+  let showAuthPanel = $state(false);
+  let authPanelTab = $state<"login" | "register">("login");
+
+  function openAuthPanel(tab: "login" | "register") {
+    authPanelTab = tab;
+    showAuthPanel = true;
+  }
+
+  function handleAuthSuccess() {
+    void loadData({ silent: true });
+  }
 
   function filterLabel(body: CelestialBody): string {
     const key = `filter.type.${body.type}`;
@@ -485,6 +497,7 @@
     }}
     onToggleView={handleToggleView}
     onToggleLayoutProvider={handleToggleLayoutProvider}
+    onOpenAuth={openAuthPanel}
     {layoutProvider}
     onFilter={(type: string) => {
       filterState = filterState.with({ selectedType: type });
@@ -500,6 +513,14 @@
         f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
       ])
     )}
+  />
+
+  <!-- Floating Auth Panel (draggable, non-blocking) -->
+  <FloatingAuthPanel
+    open={showAuthPanel}
+    initialTab={authPanelTab}
+    onClose={() => (showAuthPanel = false)}
+    onSuccess={handleAuthSuccess}
   />
 
   <!-- Fullscreen Graph Container -->

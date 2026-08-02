@@ -2,7 +2,7 @@ import { Before, After, BeforeAll, AfterAll } from "@cucumber/cucumber";
 import { chromium, type Browser } from "playwright";
 import { spawn, type ChildProcess } from "child_process";
 import type { ITestWorld } from "./world";
-import { loginOrCreateTestUser } from "../../helpers/auth";
+import { loginOrCreateBDDUser } from "../../helpers/auth";
 
 let browser: Browser;
 let devServer: ChildProcess | null = null;
@@ -58,15 +58,17 @@ AfterAll(async function () {
 Before(async function (this: ITestWorld) {
   let extraHeaders: Record<string, string> | undefined;
 
-  // For real-auth stacks, log in as the seeded test user and inject the
+  // For real-auth stacks, log in as the BDD test user and inject the
   // access token as a default header for both page and API requests.
+  // BDD uses a dedicated account so scenario cleanup does not delete
+  // the seeded data used by manual and Playwright tests.
   let accessToken: string | undefined;
   if (process.env.SKIP_AUTH !== "true") {
     const tempContext = await browser.newContext({
       viewport: { width: 1280, height: 720 },
     });
     const tempRequest = tempContext.request;
-    accessToken = await loginOrCreateTestUser(tempRequest);
+    accessToken = await loginOrCreateBDDUser(tempRequest);
     await tempContext.close();
     extraHeaders = { Authorization: `Bearer ${accessToken}` };
   }

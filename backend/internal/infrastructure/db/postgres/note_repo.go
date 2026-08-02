@@ -30,6 +30,15 @@ func NewNoteRepository(db *gorm.DB, cacheClient cache.CacheClient) *NoteReposito
 	return &NoteRepository{db: db, cache: cacheClient}
 }
 
+// applyNoteScope фильтрует заметки по пользователю: авторизованный — только свои,
+// анонимный — только публичные.
+func applyNoteScope(db *gorm.DB, userID uuid.UUID) *gorm.DB {
+	if userID == uuid.Nil {
+		return db.Where("is_public = ?", true)
+	}
+	return db.Where("creator_id = ?", userID)
+}
+
 // invalidateCache удаляет кэш списка заметок
 func (r *NoteRepository) invalidateCache(ctx context.Context) {
 	if r.cache != nil {
@@ -120,18 +129,20 @@ func (r *NoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// FindAllPaginated возвращает заметки с пагинацией на уровне БД
+// FindAllPaginated возвращает заметки с пагинацией на уровне БД.
+// userID = uuid.Nil — только публичные, иначе только заметки пользователя.
 // limit=0 означает "все записи"
-func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (r *NoteRepository) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	var total int64
 
-	// Считаем общее количество
-	if err := r.db.WithContext(ctx).Model(&NoteModel{}).Count(&total).Error; err != nil {
+	// Считаем общее количество с учётом видимости
+	countQuery := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Запрос с пагинацией
-	query := r.db.WithContext(ctx).Order("created_at DESC")
+	query := applyNoteScope(r.db.WithContext(ctx), userID).Order("created_at DESC")
 	if limit > 0 {
 		query = query.Limit(limit).Offset(offset)
 	}
@@ -179,20 +190,20 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return notes, nil
 }
 
-// List возвращает заметки с пагинацией
-func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+// List возвращает заметки с пагинацией. userID = uuid.Nil — только публичные.
+func (r *NoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
 	var total int64
 
 	// Use explicit transaction to ensure clean state
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Count total
-		if err := tx.Model(&NoteModel{}).Count(&total).Error; err != nil {
+		// Count total with visibility scope
+		if err := applyNoteScope(tx.Model(&NoteModel{}), userID).Count(&total).Error; err != nil {
 			return err
 		}
 
-		// Get paginated results
-		err := tx.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
+		// Get paginated results with visibility scope
+		err := applyNoteScope(tx, userID).Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
 		if err != nil {
 			return err
 		}
@@ -205,21 +216,22 @@ func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.N
 	return toDomainNotes(models), total, nil
 }
 
-// Search performs multilingual full-text search on notes (Russian + English)
+// Search performs multilingual full-text search on notes (Russian + English).
+// userID = uuid.Nil — ищет только по публичным, иначе только по заметкам пользователя.
 // Falls back to ILIKE search if full-text search returns no results
-func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (r *NoteRepository) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
 	var total int64
 
 	// Try full-text search first
 	if query != "" {
-		db := r.db.WithContext(ctx).Model(&NoteModel{})
+		db := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
 
 		// Multilingual search using tsvector
-		db = db.Where(`
-			search_vector @@ plainto_tsquery('russian', ?) OR 
+		db = db.Where(`(
+			search_vector @@ plainto_tsquery('russian', ?) OR
 			search_vector @@ plainto_tsquery('simple', ?)
-		`, query, query)
+		)`, query, query)
 
 		// Безопасная сортировка: используем placeholder для query в ts_rank
 		db = db.Order(clause.Expr{
@@ -242,9 +254,9 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 		}
 
 		// Fallback: use ILIKE search if full-text returned nothing
-		dbLike := r.db.WithContext(ctx).Model(&NoteModel{})
+		dbLike := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
 		dbLike = dbLike.Where(`
-			title ILIKE ? OR content ILIKE ?
+			(title ILIKE ? OR content ILIKE ?)
 		`, "%"+query+"%", "%"+query+"%")
 		dbLike = dbLike.Order("created_at DESC")
 
@@ -259,8 +271,8 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 		return toDomainNotes(models), total, nil
 	}
 
-	// Empty query - return all notes
-	db := r.db.WithContext(ctx).Model(&NoteModel{}).Order("created_at DESC")
+	// Empty query - return all notes scoped by user
+	db := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID).Order("created_at DESC")
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}

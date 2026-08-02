@@ -9,6 +9,13 @@
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
+  interface Props {
+    redirectTo?: string;
+    onSuccess?: () => void;
+    onRegister?: () => void;
+  }
+  let { redirectTo = "/", onSuccess, onRegister }: Props = $props();
+
   // Check if API Key mode is enabled
   const apiKeyEnabled = import.meta.env.VITE_API_KEY_ENABLED === "true";
   const yandexEnabled = import.meta.env.VITE_YANDEX_ENABLED === "true";
@@ -27,7 +34,11 @@
       // Login with API Key
       const success = await loginWithApiKey(apiKeyValue.trim());
       if (success) {
-        goto("/");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          goto(redirectTo);
+        }
       } else {
         localError = error() || t("auth.invalidApiKey");
       }
@@ -40,7 +51,11 @@
 
       const success = await login(loginValue.trim(), password);
       if (success) {
-        goto("/");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          goto(redirectTo);
+        }
       } else {
         localError = error() || t("auth.invalidCredentials");
       }
@@ -118,7 +133,17 @@
   </Button>
 
   <div class="form-links">
-    <a href="/auth/register">{t("auth.registerLink")}</a>
+    <a
+      href="/auth/register"
+      onclick={(e: MouseEvent) => {
+        if (onRegister) {
+          e.preventDefault();
+          onRegister();
+        }
+      }}
+    >
+      {t("auth.registerLink")}
+    </a>
     <a href="/auth/forgot-password">{t("auth.forgotPasswordLink")}</a>
     <a href="/">{t("backButton.back")}</a>
   </div>

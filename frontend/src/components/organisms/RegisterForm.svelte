@@ -8,6 +8,13 @@
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
+  interface Props {
+    redirectTo?: string;
+    onSuccess?: () => void;
+    onLogin?: () => void;
+  }
+  let { redirectTo = "/", onSuccess, onLogin }: Props = $props();
+
   let login = $state("");
   let email = $state("");
   let password = $state("");
@@ -65,7 +72,11 @@
 
     const success = await register(login.trim(), password, email.trim());
     if (success) {
-      goto("/");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        goto(redirectTo);
+      }
     } else {
       localError = error() || t("auth.registrationFailed");
     }
@@ -159,7 +170,17 @@
   </Button>
 
   <div class="form-links">
-    <a href="/auth/login">{t("auth.alreadyHaveAccount")}</a>
+    <a
+      href="/auth/login"
+      onclick={(e: MouseEvent) => {
+        if (onLogin) {
+          e.preventDefault();
+          onLogin();
+        }
+      }}
+    >
+      {t("auth.alreadyHaveAccount")}
+    </a>
   </div>
 </form>
 

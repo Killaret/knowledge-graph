@@ -173,6 +173,8 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 func (h *Handler) GetFullGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	userID, _ := middleware.GetUserID(c)
+
 	limit := h.cfg.GraphDefaultLimit
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed >= 0 {
@@ -213,7 +215,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		}
 	}
 
-	notes, totalNotes, err := h.noteRepo.FindAllPaginated(ctx, limit, offset)
+	notes, totalNotes, err := h.noteRepo.FindAllPaginated(ctx, userID, limit, offset)
 	if err != nil {
 		log.Printf("Error loading notes: %v", err)
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedLoadGraph)
@@ -228,6 +230,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 	}
 
 	nodes := make([]GraphNode, 0, len(notes))
+	visibleNodeIDs := make(map[string]bool, len(notes))
 	debugTypes := make(map[string]int)
 	celestialTypes := []string{"star", "planet", "moon", "asteroid", "nebula", "satellite", "comet", "blackhole", "galaxy"}
 
@@ -251,18 +254,25 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 			Title: n.Title().String(),
 			Type:  nodeType,
 		})
+		visibleNodeIDs[n.ID().String()] = true
 	}
 	log.Printf("[GraphHandler] Node types distribution: %v", debugTypes)
 
 	graphLinks := make([]GraphLink, 0, len(links))
 	log.Printf("[GraphHandler] Raw links from DB: %d, totalLinks: %d", len(links), totalLinks)
 	for i, l := range links {
+		sourceID := l.SourceNoteID().String()
+		targetID := l.TargetNoteID().String()
+		// Skip links to notes that are not visible to the current user.
+		if !visibleNodeIDs[sourceID] || !visibleNodeIDs[targetID] {
+			continue
+		}
 		if i < 3 {
-			log.Printf("[GraphHandler] Link %d: Source=%s, Target=%s, Type=%s", i, l.SourceNoteID().String(), l.TargetNoteID().String(), l.LinkType().String())
+			log.Printf("[GraphHandler] Link %d: Source=%s, Target=%s, Type=%s", i, sourceID, targetID, l.LinkType().String())
 		}
 		graphLinks = append(graphLinks, GraphLink{
-			Source:   l.SourceNoteID().String(),
-			Target:   l.TargetNoteID().String(),
+			Source:   sourceID,
+			Target:   targetID,
 			Weight:   l.Weight().Value(),
 			LinkType: l.LinkType().String(),
 		})
@@ -328,7 +338,7 @@ func (h *Handler) GetFreshGraph(c *gin.Context) {
 	}
 
 	// Get fresh data from database
-	freshData, err := h.loadFullGraph(ctx)
+	freshData, err := h.loadFullGraph(ctx, userID)
 	if err != nil {
 		log.Printf("Error loading fresh graph: %v", err)
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedLoadGraph)
@@ -364,12 +374,13 @@ func (h *Handler) GetFreshGraph(c *gin.Context) {
 	apicommon.JSON(c, 200, response)
 }
 
-// loadFullGraph loads the full graph data from database
-func (h *Handler) loadFullGraph(ctx context.Context) (GraphData, error) {
+// loadFullGraph loads the full graph data from database scoped by user.
+// userID = uuid.Nil — only public notes and their links.
+func (h *Handler) loadFullGraph(ctx context.Context, userID uuid.UUID) (GraphData, error) {
 	limit := h.cfg.GraphDefaultLimit
 	linkLimit := h.cfg.GraphLinkDefaultLimit
 
-	notes, _, err := h.noteRepo.FindAllPaginated(ctx, limit, 0)
+	notes, _, err := h.noteRepo.FindAllPaginated(ctx, userID, limit, 0)
 	if err != nil {
 		return GraphData{}, err
 	}
@@ -380,6 +391,7 @@ func (h *Handler) loadFullGraph(ctx context.Context) (GraphData, error) {
 	}
 
 	nodes := make([]GraphNode, 0, len(notes))
+	visibleNodeIDs := make(map[string]bool, len(notes))
 	celestialTypes := []string{"star", "planet", "moon", "asteroid", "nebula", "satellite", "comet", "blackhole", "galaxy"}
 
 	for i, n := range notes {
@@ -401,13 +413,20 @@ func (h *Handler) loadFullGraph(ctx context.Context) (GraphData, error) {
 			Title: n.Title().String(),
 			Type:  nodeType,
 		})
+		visibleNodeIDs[n.ID().String()] = true
 	}
 
 	graphLinks := make([]GraphLink, 0, len(links))
 	for _, l := range links {
+		sourceID := l.SourceNoteID().String()
+		targetID := l.TargetNoteID().String()
+		// Skip links to notes that are not visible to the current user.
+		if !visibleNodeIDs[sourceID] || !visibleNodeIDs[targetID] {
+			continue
+		}
 		graphLinks = append(graphLinks, GraphLink{
-			Source:   l.SourceNoteID().String(),
-			Target:   l.TargetNoteID().String(),
+			Source:   sourceID,
+			Target:   targetID,
 			Weight:   l.Weight().Value(),
 			LinkType: l.LinkType().String(),
 		})

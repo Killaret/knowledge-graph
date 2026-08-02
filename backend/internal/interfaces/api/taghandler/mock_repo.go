@@ -176,7 +176,7 @@ func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -187,7 +187,7 @@ func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Not
 	return result, int64(len(result)), nil
 }
 
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -211,6 +211,6 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return result, nil
 }
 
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	return m.List(ctx, limit, offset)
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return m.List(ctx, userID, limit, offset)
 }

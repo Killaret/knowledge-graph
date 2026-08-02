@@ -10,18 +10,20 @@ const TEST_USER = {
   password: "TestPassword123!",
 };
 
+export const BDD_USER = {
+  login: "bdduser",
+  email: "bdduser@example.com",
+  password: "BDDPassword123!",
+};
+
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Log in as the seeded test user and return an access token.
- * If the user does not exist, register them first.
- *
- * Uses a small retry loop so parallel Playwright workers do not race when
- * creating the shared test user.
- */
-export async function loginOrCreateTestUser(request: APIRequestContext): Promise<string> {
+async function loginOrCreateUser(
+  request: APIRequestContext,
+  user: { login: string; email: string; password: string }
+): Promise<string> {
   const backendUrl = getBackendUrl();
   const maxAttempts = 5;
 
@@ -29,8 +31,8 @@ export async function loginOrCreateTestUser(request: APIRequestContext): Promise
     // Try to log in first
     const loginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
       data: {
-        login: TEST_USER.login,
-        password: TEST_USER.password,
+        login: user.login,
+        password: user.password,
       },
     });
 
@@ -42,17 +44,17 @@ export async function loginOrCreateTestUser(request: APIRequestContext): Promise
     // User may not exist; register and then log in
     const registerResp = await request.post(`${backendUrl}/api/v1/auth/register`, {
       data: {
-        login: TEST_USER.login,
-        email: TEST_USER.email,
-        password: TEST_USER.password,
+        login: user.login,
+        email: user.email,
+        password: user.password,
       },
     });
 
     if (registerResp.ok()) {
       const secondLoginResp = await request.post(`${backendUrl}/api/v1/auth/login`, {
         data: {
-          login: TEST_USER.login,
-          password: TEST_USER.password,
+          login: user.login,
+          password: user.password,
         },
       });
 
@@ -63,7 +65,7 @@ export async function loginOrCreateTestUser(request: APIRequestContext): Promise
 
       const errorText = await secondLoginResp.text();
       throw new Error(
-        `Failed to login test user after registration: ${secondLoginResp.status()} - ${errorText}`
+        `Failed to login user after registration: ${secondLoginResp.status()} - ${errorText}`
       );
     }
 
@@ -76,10 +78,30 @@ export async function loginOrCreateTestUser(request: APIRequestContext): Promise
       continue;
     }
 
-    throw new Error(`Failed to register test user: ${status} - ${errorText}`);
+    throw new Error(`Failed to register user: ${status} - ${errorText}`);
   }
 
-  throw new Error(`Failed to login or create test user after ${maxAttempts} attempts`);
+  throw new Error(`Failed to login or create user after ${maxAttempts} attempts`);
+}
+
+/**
+ * Log in as the seeded test user and return an access token.
+ * If the user does not exist, register them first.
+ *
+ * Uses a small retry loop so parallel Playwright workers do not race when
+ * creating the shared test user.
+ */
+export async function loginOrCreateTestUser(request: APIRequestContext): Promise<string> {
+  return loginOrCreateUser(request, TEST_USER);
+}
+
+/**
+ * Log in as the BDD test user and return an access token.
+ * BDD uses a separate account from the seeded manual-test user so that
+ * scenario cleanup does not wipe the seeded test data.
+ */
+export async function loginOrCreateBDDUser(request: APIRequestContext): Promise<string> {
+  return loginOrCreateUser(request, BDD_USER);
 }
 
 /**

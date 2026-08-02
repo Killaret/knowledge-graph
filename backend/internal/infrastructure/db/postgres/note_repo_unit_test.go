@@ -220,13 +220,14 @@ func TestNoteRepository_List(t *testing.T) {
 	// Ожидаем BEGIN (transaction)
 	mock.ExpectBegin()
 
-	// Ожидаем COUNT
-	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes"`).
+	// Ожидаем COUNT с фильтром по публичности (uuid.Nil)
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1`).
+		WithArgs(true).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
 
-	// Ожидаем SELECT с LIMIT и OFFSET (GORM использует параметризованные запросы)
-	mock.ExpectQuery(`SELECT \* FROM "notes" ORDER BY created_at DESC LIMIT \$1 OFFSET \$2`).
-		WithArgs(5, 10).
+	// Ожидаем SELECT с фильтром по публичности, LIMIT и OFFSET
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+		WithArgs(true, 5, 10).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
 			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
@@ -235,7 +236,7 @@ func TestNoteRepository_List(t *testing.T) {
 	mock.ExpectCommit()
 
 	ctx := context.Background()
-	notes, total, err := repo.List(ctx, 5, 10)
+	notes, total, err := repo.List(ctx, uuid.Nil, 5, 10)
 
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
@@ -394,6 +395,103 @@ func TestToDomainNotes(t *testing.T) {
 	if len(notes) != 2 {
 		t.Errorf("expected 2 notes, got %d", len(notes))
 	}
+}
+
+// TestNoteRepository_UserScoping verifies that List and Search respect visibility:
+// uuid.Nil returns only public notes, a specific user only sees their own notes.
+// This test should fail with the old unscoped code and pass with the scoped implementation.
+func TestNoteRepository_UserScoping(t *testing.T) {
+	now := time.Now()
+	userID := uuid.New()
+
+	t.Run("List with uuid.Nil only returns public notes", func(t *testing.T) {
+		db, mock, cleanup := setupMockDB(t)
+		defer cleanup()
+		repo := NewNoteRepository(db, nil)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1`).
+			WithArgs(true).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+			WithArgs(true, 5, 10).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+				AddRow(uuid.New(), "Public", "Content", "star", `{}`, now, now))
+		mock.ExpectCommit()
+
+		notes, total, err := repo.List(context.Background(), uuid.Nil, 5, 10)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if total != 1 {
+			t.Errorf("expected total 1, got %d", total)
+		}
+		if len(notes) != 1 {
+			t.Errorf("expected 1 note, got %d", len(notes))
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("unfulfilled expectations: %v", err)
+		}
+	})
+
+	t.Run("List with a user only returns notes with creator_id = userID", func(t *testing.T) {
+		db, mock, cleanup := setupMockDB(t)
+		defer cleanup()
+		repo := NewNoteRepository(db, nil)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1`).
+			WithArgs(userID).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+			WithArgs(userID, 5, 10).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+				AddRow(uuid.New(), "User Note 1", "Content", "star", `{}`, now, now).
+				AddRow(uuid.New(), "User Note 2", "Content", "planet", `{}`, now, now))
+		mock.ExpectCommit()
+
+		notes, total, err := repo.List(context.Background(), userID, 5, 10)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if total != 2 {
+			t.Errorf("expected total 2, got %d", total)
+		}
+		if len(notes) != 2 {
+			t.Errorf("expected 2 notes, got %d", len(notes))
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("unfulfilled expectations: %v", err)
+		}
+	})
+
+	t.Run("Search with a user only matches that user's notes", func(t *testing.T) {
+		db, mock, cleanup := setupMockDB(t)
+		defer cleanup()
+		repo := NewNoteRepository(db, nil)
+
+		// Full-text count scoped by user: the generated SQL must reference creator_id.
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE .*creator_id.*`).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+		// Full-text find scoped by user.
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE .*creator_id.* LIMIT \$.* OFFSET \$.*`).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+				AddRow(uuid.New(), "Searchable", "find me", "star", `{}`, now, now))
+
+		notes, total, err := repo.Search(context.Background(), userID, "find", 5, 10)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if total != 1 {
+			t.Errorf("expected total 1, got %d", total)
+		}
+		if len(notes) != 1 {
+			t.Errorf("expected 1 note, got %d", len(notes))
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("unfulfilled expectations: %v", err)
+		}
+	})
 }
 
 // TestToDomainNotes_WithInvalidData тестирует пропуск невалидных данных

@@ -73,7 +73,7 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return notes, nil
 }
 
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -134,7 +134,7 @@ func contains(s, substr string) bool {
 				findSubstring(s, substr))))
 }
 
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -157,8 +157,8 @@ func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Not
 	return allNotes[offset:end], total, nil
 }
 
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	return m.List(ctx, limit, offset)
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return m.List(ctx, userID, limit, offset)
 }
 
 func findSubstring(s, substr string) bool {

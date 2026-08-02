@@ -126,6 +126,19 @@
           <span class="nav-label">Войти</span>
         {/if}
       </a>
+      <a
+        href="/auth/register"
+        class="nav-link auth-link"
+        onclick={(e: MouseEvent) => {
+          e.preventDefault();
+          navigate("/auth/register");
+        }}
+      >
+        <span class="nav-short">Р</span>
+        {#if !collapsed}
+          <span class="nav-label">Регистрация</span>
+        {/if}
+      </a>
     {/if}
   </div>
 </aside>
@@ -242,6 +255,9 @@
   }
 
   .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 0.75rem 0.5rem;
     border-top: 1px solid var(--color-border);
   }
