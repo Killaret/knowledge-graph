@@ -7,7 +7,8 @@
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: Record<string, string | number>) => formatMessage(key, locale, params);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   interface Props {
     nodeId: string;
@@ -78,18 +79,40 @@
 
 <div class="note-details" data-testid="cockpit-note-details">
   <div class="details-header">
-    <button type="button" class="close-btn" onclick={() => onClose?.()} aria-label={t("cockpit.noteDetails.close")}>
+    <button
+      type="button"
+      class="close-btn"
+      onclick={() => onClose?.()}
+      aria-label={t("cockpit.noteDetails.close")}
+    >
       ✕
     </button>
     {#if note}
       <div class="actions">
-        <button type="button" class="action-btn" onclick={() => onEdit?.(nodeId)} aria-label={t("cockpit.noteDetails.edit")}>
+        <button
+          type="button"
+          class="action-btn"
+          onclick={() => onEdit?.(nodeId)}
+          aria-label={t("cockpit.noteDetails.edit")}
+        >
           ✎
         </button>
-        <button type="button" class="action-btn share" onclick={() => { /* share */ }} aria-label={t("cockpit.noteDetails.share")}>
+        <button
+          type="button"
+          class="action-btn share"
+          onclick={() => {
+            /* share */
+          }}
+          aria-label={t("cockpit.noteDetails.share")}
+        >
           ⇄
         </button>
-        <button type="button" class="action-btn delete" onclick={() => onDelete?.(nodeId)} aria-label={t("cockpit.noteDetails.deleteNote")}>
+        <button
+          type="button"
+          class="action-btn delete"
+          onclick={() => onDelete?.(nodeId)}
+          aria-label={t("cockpit.noteDetails.deleteNote")}
+        >
           🗑
         </button>
       </div>
@@ -112,8 +135,12 @@
       </div>
 
       <div class="meta">
-        <span class="date">{t("cockpit.noteDetails.created", { date: formatDate(note.created_at) })}</span>
-        <span class="date">{t("cockpit.noteDetails.updated", { date: formatDate(note.updated_at) })}</span>
+        <span class="date"
+          >{t("cockpit.noteDetails.created", { date: formatDate(note.created_at) })}</span
+        >
+        <span class="date"
+          >{t("cockpit.noteDetails.updated", { date: formatDate(note.updated_at) })}</span
+        >
       </div>
 
       <div class="content">{note.content}</div>
@@ -130,7 +157,12 @@
         <div class="links-header">
           <h3>{t("cockpit.noteDetails.linksTitle", { count: links.length })}</h3>
           {#if links.length > 0}
-            <button type="button" class="delete-all-links-btn" onclick={() => (showDeleteLinksConfirm = true)} aria-label={t("cockpit.noteDetails.deleteAllAria")}>
+            <button
+              type="button"
+              class="delete-all-links-btn"
+              onclick={() => (showDeleteLinksConfirm = true)}
+              aria-label={t("cockpit.noteDetails.deleteAllAria")}
+            >
               {t("cockpit.noteDetails.deleteAll")}
             </button>
           {/if}
@@ -142,7 +174,9 @@
             {#each links as link}
               <div class="link-item">
                 <span class="link-type">{link.link_type}</span>
-                <span class="link-weight">{t("cockpit.noteDetails.weight", { weight: link.weight.toFixed(1) })}</span>
+                <span class="link-weight"
+                  >{t("cockpit.noteDetails.weight", { weight: link.weight.toFixed(1) })}</span
+                >
               </div>
             {/each}
           </div>
@@ -150,7 +184,11 @@
       </div>
 
       <div class="panel-footer">
-        <button type="button" class="view-full-btn" onclick={() => note && goto(`/notes/${note.id}`)}>
+        <button
+          type="button"
+          class="view-full-btn"
+          onclick={() => note && goto(`/notes/${note.id}`)}
+        >
           {t("cockpit.noteDetails.viewFull")}
         </button>
       </div>
@@ -172,11 +210,23 @@
       <h3>{t("cockpit.noteDetails.deleteLinksTitle")}</h3>
       <p>{t("cockpit.noteDetails.deleteLinksMessage", { count: links.length })}</p>
       <div class="modal-actions">
-        <button type="button" class="modal-btn cancel" onclick={() => (showDeleteLinksConfirm = false)} disabled={deletingLinks}>
+        <button
+          type="button"
+          class="modal-btn cancel"
+          onclick={() => (showDeleteLinksConfirm = false)}
+          disabled={deletingLinks}
+        >
           {t("cockpit.noteDetails.cancel")}
         </button>
-        <button type="button" class="modal-btn delete" onclick={handleDeleteAllLinks} disabled={deletingLinks}>
-          {deletingLinks ? t("cockpit.noteDetails.delete") + "..." : t("cockpit.noteDetails.deleteAll")}
+        <button
+          type="button"
+          class="modal-btn delete"
+          onclick={handleDeleteAllLinks}
+          disabled={deletingLinks}
+        >
+          {deletingLinks
+            ? t("cockpit.noteDetails.delete") + "..."
+            : t("cockpit.noteDetails.deleteAll")}
           <!-- `cockpit.noteDetails.delete` = "Delete" used for in-progress ellipsis -->
         </button>
       </div>

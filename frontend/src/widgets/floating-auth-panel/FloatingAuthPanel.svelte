@@ -13,12 +13,7 @@
     onClose: () => void;
     onSuccess?: () => void;
   }
-  const {
-    open,
-    initialTab = "login",
-    onClose,
-    onSuccess,
-  }: Props = $props();
+  const { open, initialTab = "login", onClose, onSuccess }: Props = $props();
 
   let activeTab = $state<"login" | "register">("login");
   let panelEl: HTMLDivElement | null = $state(null);
@@ -153,15 +148,9 @@
 
     <div class="panel-body" role="tabpanel">
       {#if activeTab === "login"}
-        <LoginForm
-          onSuccess={handleSuccess}
-          onRegister={() => switchTab("register")}
-        />
+        <LoginForm onSuccess={handleSuccess} onRegister={() => switchTab("register")} />
       {:else}
-        <RegisterForm
-          onSuccess={handleSuccess}
-          onLogin={() => switchTab("login")}
-        />
+        <RegisterForm onSuccess={handleSuccess} onLogin={() => switchTab("login")} />
       {/if}
     </div>
   </div>

@@ -22,6 +22,9 @@ type TaskQueue interface {
 	// EnqueueComputeEmbedding schedules embedding computation for a note.
 	EnqueueComputeEmbedding(ctx context.Context, noteID string) error
 
+	// EnqueueRecalculateLinkWeights schedules link weight recalculation for a note.
+	EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
+
 	// EnqueueNotification schedules a notification task with the given payload.
 	EnqueueNotification(ctx context.Context, payload []byte) error
 }

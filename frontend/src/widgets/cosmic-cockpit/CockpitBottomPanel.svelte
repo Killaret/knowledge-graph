@@ -26,7 +26,12 @@
     <CockpitViewport />
   </div>
   <div class="bottom-hud">
-    <CockpitHUD {nodeCount} {linkCount} health={health()} cluster={t("cockpit.hud.defaultCluster")} />
+    <CockpitHUD
+      {nodeCount}
+      {linkCount}
+      health={health()}
+      cluster={t("cockpit.hud.defaultCluster")}
+    />
   </div>
 </div>
 

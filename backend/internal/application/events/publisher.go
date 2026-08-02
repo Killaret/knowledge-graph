@@ -8,5 +8,6 @@ type Publisher interface {
 	PublishNoteUpdated(ctx context.Context, noteID, userID string) error
 	PublishNoteDeleted(ctx context.Context, noteID, userID string) error
 	PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error
+	PublishLinkUpdated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error
 	PublishLinkDeleted(ctx context.Context, sourceNoteID, targetNoteID, userID string) error
 }

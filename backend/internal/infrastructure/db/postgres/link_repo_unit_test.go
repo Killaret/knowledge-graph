@@ -410,10 +410,10 @@ func TestLinkRepository_Save_Update(t *testing.T) {
 	now := time.Now()
 
 	// Ожидаем запрос на проверку существования - запись найдена
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 AND deleted_at IS NULL ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(l.ID(), 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
-			AddRow(l.ID(), sourceID, targetID, "reference", 0.5, `{}`, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "source_type", "creator_id", "created_at", "updated_at", "last_weight_update", "deleted_at"}).
+			AddRow(l.ID(), sourceID, targetID, "reference", 0.5, `{}`, "user", nil, now, now, nil, nil))
 
 	// Ожидаем UPDATE
 	mock.ExpectBegin()

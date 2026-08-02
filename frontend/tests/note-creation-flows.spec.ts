@@ -13,10 +13,7 @@ import { loginAsTestUser } from "./helpers/auth";
  * DOM-based assertion since the graph canvas is a <canvas> element.
  */
 test.describe("Note creation flows @auth-real", () => {
-  test("creates a note via the floating + button on the main page", async ({
-    page,
-    request,
-  }) => {
+  test("creates a note via the floating + button on the main page", async ({ page, request }) => {
     const title = `Modal Note ${Date.now()}`;
     const content = "Created via floating + button";
 
@@ -30,22 +27,18 @@ test.describe("Note creation flows @auth-real", () => {
     await page.locator('[data-testid="create-note-submit"]').click();
 
     // Wait for the modal to close.
-    await expect(page.locator('[data-testid="create-note-title"]')).toHaveCount(
-      0,
-      { timeout: 10000 }
-    );
+    await expect(page.locator('[data-testid="create-note-title"]')).toHaveCount(0, {
+      timeout: 10000,
+    });
 
     // Switch to list view and verify the new note.
     await page.locator('[data-testid="view-toggle-list"]').click();
-    await expect(
-      page.locator('[data-testid="note-title"]').filter({ hasText: title })
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
+      { timeout: 20000 }
+    );
   });
 
-  test("creates a note via the N hotkey ghost form on the main page", async ({
-    page,
-    request,
-  }) => {
+  test("creates a note via the N hotkey ghost form on the main page", async ({ page, request }) => {
     const title = `Ghost Note ${Date.now()}`;
     const content = "Created via N hotkey";
 
@@ -70,15 +63,12 @@ test.describe("Note creation flows @auth-real", () => {
 
     // Switch to list view and verify.
     await page.locator('[data-testid="view-toggle-list"]').click();
-    await expect(
-      page.locator('[data-testid="note-title"]').filter({ hasText: title })
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
+      { timeout: 20000 }
+    );
   });
 
-  test("creates a note via the N hotkey on the /graph page", async ({
-    page,
-    request,
-  }) => {
+  test("creates a note via the N hotkey on the /graph page", async ({ page, request }) => {
     const title = `Graph Ghost Note ${Date.now()}`;
     const content = "Created via N on /graph";
 
@@ -102,8 +92,8 @@ test.describe("Note creation flows @auth-real", () => {
     // /graph has no list view, so we navigate to the main page to verify.
     await page.goto("/?nocache=1", { waitUntil: "networkidle" });
     await page.locator('[data-testid="view-toggle-list"]').click();
-    await expect(
-      page.locator('[data-testid="note-title"]').filter({ hasText: title })
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
+      { timeout: 20000 }
+    );
   });
 });

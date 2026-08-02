@@ -122,6 +122,7 @@ func setupLinkRouter() (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
 	r := gin.Default()
 	r.POST("/links", handler.Create)
 	r.GET("/links/:id", handler.Get)
+	r.PUT("/links/:id", handler.Update)
 	r.GET("/notes/:id/links", handler.GetByNote)
 	r.DELETE("/links/:id", handler.Delete)
 	r.DELETE("/notes/:id/links", handler.DeleteByNote)
@@ -988,4 +989,100 @@ func TestGetByNote_SourceNotFound(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func setupLinkRouterWithUser(userID uuid.UUID) (*gin.Engine, *mockLinkRepo, *mockNoteRepoForLink) {
+	gin.SetMode(gin.TestMode)
+	linkRepo := newMockLinkRepo()
+	noteRepo := newMockNoteRepoForLink()
+	handler := New(linkRepo, noteRepo, nil, nil)
+	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("user_id", userID)
+		c.Next()
+	})
+	r.POST("/links", handler.Create)
+	r.GET("/links/:id", handler.Get)
+	r.PUT("/links/:id", handler.Update)
+	r.GET("/notes/:id/links", handler.GetByNote)
+	r.DELETE("/links/:id", handler.Delete)
+	r.DELETE("/notes/:id/links", handler.DeleteByNote)
+	return r, linkRepo, noteRepo
+}
+
+func TestUpdateLink_Success(t *testing.T) {
+	userID := uuid.New()
+	r, linkRepo, noteRepo := setupLinkRouterWithUser(userID)
+	l, _, _ := createTestLink(t, r, linkRepo, noteRepo)
+
+	body := map[string]interface{}{
+		"link_type": "dependency",
+		"weight":    0.6,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("PUT", "/links/"+l.ID().String(), bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	updated, _ := linkRepo.FindByID(context.Background(), l.ID())
+	assert.Equal(t, "dependency", updated.LinkType().String())
+	assert.Equal(t, 0.6, updated.Weight().Value())
+	assert.NotNil(t, updated.LastWeightUpdate())
+}
+
+func TestUpdateLink_Unauthorized(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+	l, _, _ := createTestLink(t, r, linkRepo, noteRepo)
+
+	body := map[string]interface{}{"weight": 0.6}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("PUT", "/links/"+l.ID().String(), bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestUpdateLink_Forbidden(t *testing.T) {
+	userID := uuid.New()
+	r, linkRepo, noteRepo := setupLinkRouterWithUser(userID)
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, "star", metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, "star", metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	otherUser := uuid.New()
+	linkType, _ := link.NewLinkType("reference")
+	weight, _ := link.NewWeight(0.8)
+	linkMetadata, _ := link.NewMetadata(nil)
+	l := link.NewLinkWithCreator(sourceID, targetID, otherUser, linkType, weight, linkMetadata)
+	linkRepo.Save(context.Background(), l)
+
+	body := map[string]interface{}{"weight": 0.6}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("PUT", "/links/"+l.ID().String(), bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }

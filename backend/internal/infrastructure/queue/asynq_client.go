@@ -44,6 +44,15 @@ func (c *AsynqClient) EnqueueRefreshRecommendations(ctx context.Context, noteID 
 	return err
 }
 
+func (c *AsynqClient) EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	task, err := tasks.NewRecalculateLinkWeightsTask(noteID, delay)
+	if err != nil {
+		return err
+	}
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
 func (c *AsynqClient) EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error {
 	log.Printf("EnqueueExtractKeywords called for note %s", noteID)
 	payload, err := json.Marshal(ExtractKeywordsTaskPayload{NoteID: noteID, TopN: topN})

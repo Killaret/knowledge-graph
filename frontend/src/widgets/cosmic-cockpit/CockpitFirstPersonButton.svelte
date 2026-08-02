@@ -39,7 +39,9 @@
     text-transform: uppercase;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
     pointer-events: none;
   }
 

@@ -174,7 +174,7 @@
 
     // Expose flag for E2E tests to assert background sync is gated by auth.
     // This page never polls for delta updates, so the flag is always false.
-    ((window as unknown) as Record<string, unknown>).__kgGraphPollingActive = false;
+    (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
   });
 
   function handleNodeSelect(nodeId: string | null) {

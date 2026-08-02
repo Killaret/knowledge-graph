@@ -404,6 +404,10 @@ func (m *mockTaskQueue) EnqueueComputeEmbedding(ctx context.Context, noteID stri
 	return m.Called(ctx, noteID).Error(0)
 }
 
+func (m *mockTaskQueue) EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	return m.Called(ctx, noteID, delay).Error(0)
+}
+
 func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error {
 	return m.Called(ctx, payload).Error(0)
 }

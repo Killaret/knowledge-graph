@@ -179,6 +179,70 @@ class TestEmbedEndpoint:
         assert response.status_code == 422  # Validation error
 
 
+class TestSimilarityEndpoint:
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_success(self, mock_get_model):
+        """Test successful similarity computation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+        # Orthogonal unit vectors -> cosine similarity 0 -> mapped to 0.5
+        mock_model.encode.return_value = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ]
+
+        request_data = {
+            "text_a": "First sentence",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "similarity" in data
+        assert data["similarity"] == pytest.approx(0.5, abs=0.001)
+
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_empty_text(self, mock_get_model):
+        """Test similarity with empty text"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+
+        request_data = {
+            "text_a": "",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["similarity"] == 0.0
+
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_error_handling(self, mock_get_model):
+        """Test error handling in similarity computation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+        mock_model.encode.side_effect = Exception("Model error")
+
+        request_data = {
+            "text_a": "First sentence",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 500
+        assert "Model error" in response.json()["detail"]
+
+    def test_similarity_invalid_request(self):
+        """Test similarity with invalid request data"""
+        response = client.post("/similarity", json={})
+        assert response.status_code == 422
+
+
 class TestAPIIntegration:
     """Integration tests for the API endpoints"""
     
@@ -196,6 +260,9 @@ class TestAPIIntegration:
         
         embed_response = client.post("/embed", json={})
         assert embed_response.status_code == 422
+
+        similarity_response = client.post("/similarity", json={})
+        assert similarity_response.status_code == 422
 
     def test_cors_headers(self):
         """Test CORS headers if configured"""

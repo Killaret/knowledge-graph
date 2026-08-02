@@ -51,9 +51,14 @@ func (h *Handler) SetEventPublisher(p appevents.Publisher) {
 type createLinkRequest struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type updateLinkRequest struct {
+	LinkType string  `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
+	Weight   float64 `json:"weight" binding:"omitempty,min=0,max=1"`
 }
 
 // LinkValidationErrors defines human-readable error messages for link validation
@@ -63,7 +68,7 @@ var LinkValidationErrors = map[string]string{
 	"target_note_id.required": "Target note ID is required",
 	"target_note_id.uuid":     "Target note ID must be a valid UUID",
 	"link_type.required":      "Link type is required",
-	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom, parent, child",
 	"weight.min":              "Weight must be between 0 and 1",
 	"weight.max":              "Weight must be between 0 and 1",
 }
@@ -204,6 +209,123 @@ func (h *Handler) Create(c *gin.Context) {
 
 	responseData := toLinkResponse(newLink)
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
+}
+
+func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "update")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	var req updateLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		if strings.Contains(errStr, "link_type") {
+			details = append(details, apicommon.NewFieldError("link_type", apicommon.ReasonInvalidValue, LinkValidationErrors["link_type.oneof"]))
+		}
+		if strings.Contains(errStr, "weight") {
+			details = append(details, apicommon.NewFieldError("weight", apicommon.ReasonOutOfRange, LinkValidationErrors["weight.max"]))
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if req.LinkType == "" && req.Weight == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, "at least one of link_type or weight must be provided"),
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	l, err := h.linkRepo.FindByID(ctx, id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
+		return
+	}
+	if l == nil {
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+		return
+	}
+
+	// Authorization: only the creator can update the link.
+	userID, authenticated := middleware.GetUserID(c)
+	if authenticated {
+		if l.CreatorID() != nil && *l.CreatorID() != userID {
+			apicommon.Forbidden(c)
+			return
+		}
+	} else {
+		// Anonymous users cannot update links.
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	modified := false
+	if req.LinkType != "" {
+		linkType, err := link.NewLinkType(req.LinkType)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
+			})
+			return
+		}
+		l.UpdateLinkType(linkType)
+		modified = true
+	}
+
+	if req.Weight != 0 {
+		weightVO, err := link.NewWeight(req.Weight)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("weight", apicommon.ReasonOutOfRange, err.Error(), req.Weight),
+			})
+			return
+		}
+		l.UpdateWeight(weightVO)
+		modified = true
+	}
+
+	if !modified {
+		apicommon.JSON(c, 200, toLinkResponse(l))
+		return
+	}
+
+	if err := h.linkRepo.Update(ctx, l); err != nil {
+		log.Printf("[LinkHandler.Update] Failed to update link: id=%s error=%v", id, err)
+		if errors.Is(err, link.ErrLinkNotFound) {
+			apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkUpdated(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkUpdated event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID != uuid.Nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.JSON(c, 200, toLinkResponse(l))
 }
 
 func (h *Handler) Get(c *gin.Context) {

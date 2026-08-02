@@ -176,8 +176,7 @@ function getGraphApi() {
           // an anonymous user on a public page or an unauthenticated visitor
           // hitting a protected endpoint. Do not try to refresh the token and
           // do not redirect to login; let the caller handle the 401.
-          const hadAuth =
-            request.headers.has("Authorization") || request.headers.has("X-API-Key");
+          const hadAuth = request.headers.has("Authorization") || request.headers.has("X-API-Key");
           if (!hadAuth) {
             return response;
           }

@@ -66,6 +66,7 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	// Регистрируем маршруты
 	s.router.POST("/links", handler.Create)
 	s.router.GET("/links/:id", handler.Get)
+	s.router.PUT("/links/:id", handler.Update)
 	s.router.DELETE("/links/:id", handler.Delete)
 	s.router.GET("/notes/:id/links", handler.GetByNote)
 	s.router.DELETE("/notes/:id/links", handler.DeleteByNote)

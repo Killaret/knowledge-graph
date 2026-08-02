@@ -227,6 +227,9 @@ func (h *Handler) Create(c *gin.Context) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
 		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
+			log.Printf("Failed to enqueue link weight recalculation: %v", err)
+		}
 	} else {
 		log.Println("taskQueue is nil, tasks not enqueued")
 	}
@@ -373,6 +376,7 @@ func (h *Handler) Update(c *gin.Context) {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		_ = h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), existing.ID(), h.taskDelay)
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())

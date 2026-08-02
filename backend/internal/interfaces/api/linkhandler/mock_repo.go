@@ -79,6 +79,16 @@ func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) e
 	return nil
 }
 
+func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.links[l.ID()]; !ok {
+		return link.ErrLinkNotFound
+	}
+	m.links[l.ID()] = l
+	return nil
+}
+
 func (m *mockLinkRepo) List(ctx context.Context) ([]*link.Link, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

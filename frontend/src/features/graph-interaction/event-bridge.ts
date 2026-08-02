@@ -5,11 +5,7 @@ import {
   type TransformState,
   type DragState,
 } from "$entities/graph-canvas/lib";
-import type {
-  BlackHoleState,
-  GhostNodeState,
-  GravitySystem,
-} from "$entities/graph-canvas/lib";
+import type { BlackHoleState, GhostNodeState, GravitySystem } from "$entities/graph-canvas/lib";
 import {
   findLinkAtPosition,
   getSimulationNodes,
@@ -539,7 +535,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           const FORM_WIDTH = 360;
           const FORM_HEIGHT = 480;
           const MARGIN_LEFT = 88; // left graph-controls + padding
-          const MARGIN_TOP = 80;  // top floating-controls + padding
+          const MARGIN_TOP = 80; // top floating-controls + padding
           const MARGIN_RIGHT = 24;
           const MARGIN_BOTTOM = 24;
 

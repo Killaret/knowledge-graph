@@ -51,97 +51,97 @@
     data-testid="sidebar-widget"
     aria-label="Боковая панель навигации"
   >
-  <div class="sidebar-header">
-    <button
-      class="toggle-button"
-      type="button"
-      title={collapsed ? "Развернуть меню" : "Свернуть меню"}
-      aria-label={collapsed ? "Развернуть панель" : "Свернуть панель"}
-      onclick={toggle}
-    >
-      {collapsed ? "☰" : "✕"}
-    </button>
-    {#if !collapsed}
-      <span class="sidebar-title">Knowledge Graph</span>
-    {/if}
-  </div>
+    <div class="sidebar-header">
+      <button
+        class="toggle-button"
+        type="button"
+        title={collapsed ? "Развернуть меню" : "Свернуть меню"}
+        aria-label={collapsed ? "Развернуть панель" : "Свернуть панель"}
+        onclick={toggle}
+      >
+        {collapsed ? "☰" : "✕"}
+      </button>
+      {#if !collapsed}
+        <span class="sidebar-title">Knowledge Graph</span>
+      {/if}
+    </div>
 
-  <nav class="sidebar-nav" aria-label="Основная навигация">
-    <ul>
-      {#each navItems as item}
-        <li>
-          <a
-            href={item.href}
-            class="nav-link"
-            class:active={isActive(item.href)}
-            aria-current={isActive(item.href) ? "page" : undefined}
-            onclick={(e: MouseEvent) => {
-              e.preventDefault();
-              navigate(item.href);
-            }}
-          >
-            <span class="nav-short">{item.short}</span>
-            {#if !collapsed}
-              <span class="nav-label">{item.label}</span>
-            {/if}
-          </a>
-        </li>
-      {/each}
-    </ul>
-  </nav>
+    <nav class="sidebar-nav" aria-label="Основная навигация">
+      <ul>
+        {#each navItems as item}
+          <li>
+            <a
+              href={item.href}
+              class="nav-link"
+              class:active={isActive(item.href)}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              onclick={(e: MouseEvent) => {
+                e.preventDefault();
+                navigate(item.href);
+              }}
+            >
+              <span class="nav-short">{item.short}</span>
+              {#if !collapsed}
+                <span class="nav-label">{item.label}</span>
+              {/if}
+            </a>
+          </li>
+        {/each}
+      </ul>
+    </nav>
 
-  <div class="sidebar-footer">
-    {#if authenticated}
-      <div class="user-info">
-        <span class="user-avatar">{user?.email?.[0]?.toUpperCase() ?? "?"}</span>
-        {#if !collapsed}
-          <span class="user-email">{user?.email ?? "Пользователь"}</span>
-        {/if}
-      </div>
-      <a
-        href="/auth/login"
-        class="nav-link auth-link"
-        onclick={(e: MouseEvent) => {
-          e.preventDefault();
-          logout();
-          goto("/auth/login");
-        }}
-      >
-        <span class="nav-short">↩</span>
-        {#if !collapsed}
-          <span class="nav-label">Выйти</span>
-        {/if}
-      </a>
-    {:else}
-      <a
-        href="/auth/login"
-        class="nav-link auth-link"
-        onclick={(e: MouseEvent) => {
-          e.preventDefault();
-          navigate("/auth/login");
-        }}
-      >
-        <span class="nav-short">В</span>
-        {#if !collapsed}
-          <span class="nav-label">Войти</span>
-        {/if}
-      </a>
-      <a
-        href="/auth/register"
-        class="nav-link auth-link"
-        onclick={(e: MouseEvent) => {
-          e.preventDefault();
-          navigate("/auth/register");
-        }}
-      >
-        <span class="nav-short">Р</span>
-        {#if !collapsed}
-          <span class="nav-label">Регистрация</span>
-        {/if}
-      </a>
-    {/if}
-  </div>
-</aside>
+    <div class="sidebar-footer">
+      {#if authenticated}
+        <div class="user-info">
+          <span class="user-avatar">{user?.email?.[0]?.toUpperCase() ?? "?"}</span>
+          {#if !collapsed}
+            <span class="user-email">{user?.email ?? "Пользователь"}</span>
+          {/if}
+        </div>
+        <a
+          href="/auth/login"
+          class="nav-link auth-link"
+          onclick={(e: MouseEvent) => {
+            e.preventDefault();
+            logout();
+            goto("/auth/login");
+          }}
+        >
+          <span class="nav-short">↩</span>
+          {#if !collapsed}
+            <span class="nav-label">Выйти</span>
+          {/if}
+        </a>
+      {:else}
+        <a
+          href="/auth/login"
+          class="nav-link auth-link"
+          onclick={(e: MouseEvent) => {
+            e.preventDefault();
+            navigate("/auth/login");
+          }}
+        >
+          <span class="nav-short">В</span>
+          {#if !collapsed}
+            <span class="nav-label">Войти</span>
+          {/if}
+        </a>
+        <a
+          href="/auth/register"
+          class="nav-link auth-link"
+          onclick={(e: MouseEvent) => {
+            e.preventDefault();
+            navigate("/auth/register");
+          }}
+        >
+          <span class="nav-short">Р</span>
+          {#if !collapsed}
+            <span class="nav-label">Регистрация</span>
+          {/if}
+        </a>
+      {/if}
+    </div>
+  </aside>
 {/if}
 
 <style>

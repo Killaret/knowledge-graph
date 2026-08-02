@@ -347,6 +347,99 @@ func TestNLPClient_Embed_RedisCache(t *testing.T) {
 	}
 }
 
+// TestNLPClient_Similarity_Success тестирует успешный подсчет схожести
+func TestNLPClient_Similarity_Success(t *testing.T) {
+	expectedSimilarity := 0.85
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/similarity" {
+			t.Errorf("expected /similarity, got %s", r.URL.Path)
+		}
+
+		var reqBody map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		if reqBody["text_a"] != "text a" || reqBody["text_b"] != "text b" {
+			t.Errorf("unexpected request body: %v", reqBody)
+		}
+
+		response := map[string]interface{}{"similarity": expectedSimilarity}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	similarity, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if similarity != expectedSimilarity {
+		t.Errorf("expected similarity %f, got %f", expectedSimilarity, similarity)
+	}
+}
+
+// TestNLPClient_Similarity_EmptyText тестирует схожесть пустого текста
+func TestNLPClient_Similarity_EmptyText(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("server should not be called for empty text")
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	similarity, err := client.Similarity(ctx, "", "text b")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if similarity != 0.0 {
+		t.Errorf("expected 0.0 for empty text, got %f", similarity)
+	}
+}
+
+// TestNLPClient_Similarity_RedisCache тестирует кэширование схожести в Redis
+func TestNLPClient_Similarity_RedisCache(t *testing.T) {
+	expectedSimilarity := 0.95
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		response := map[string]interface{}{"similarity": expectedSimilarity}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+
+	client := NewNLPClient(server.URL, rdb, time.Hour)
+	ctx := context.Background()
+
+	first, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+
+	second, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("second call failed: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call, got %d", callCount)
+	}
+	if first != second {
+		t.Errorf("expected cached value %f, got %f", first, second)
+	}
+}
+
 // TestNLPClient_ExtractKeywords_Retry тестирует retry при 500
 func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 	callCount := 0

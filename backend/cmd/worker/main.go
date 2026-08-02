@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
+	"knowledge-graph/internal/application/linkweight"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
@@ -97,6 +98,9 @@ func main() {
 	linkRepo := postgres.NewLinkRepository(database)
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
 
+	// Link weight recalculation service
+	weightRecalc := linkweight.NewRecalculator(linkRepo, noteRepo, nlpClient)
+
 	// Create keyword similarity strategy from config
 	keywordSimilarity, err := recommendation.NewKeywordSimilarity(
 		cfg.RecommendationKeywordSimilarityMethod,
@@ -141,6 +145,7 @@ func main() {
 	mux := queue.NewServeMux()
 	mux.HandleFunc(queue.TypeExtractKeywords, worker.HandleExtractKeywords)
 	mux.HandleFunc(queue.TypeComputeEmbedding, worker.HandleComputeEmbedding)
+	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)

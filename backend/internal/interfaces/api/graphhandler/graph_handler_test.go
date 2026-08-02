@@ -100,6 +100,11 @@ func (m *mockLinkRepo) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, 
 	return args.Get(0).(*link.Link), args.Error(1)
 }
 
+func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error {
+	args := m.Called(ctx, l)
+	return args.Error(0)
+}
+
 func (m *mockLinkRepo) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	args := m.Called(ctx, sourceID)
 	if args.Get(0) == nil {

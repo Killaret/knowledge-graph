@@ -8,9 +8,11 @@ export interface Link {
   target_note_id: string;
   link_type: string;
   weight: number;
+  source_type?: string;
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  last_weight_update?: string;
 }
 
 // Данные для создания связи
@@ -18,6 +20,13 @@ export interface CreateLinkData {
   source_note_id: string;
   target_note_id: string;
   link_type: string;
+  weight?: number;
+  metadata?: Record<string, unknown>;
+}
+
+// Данные для обновления связи
+export interface UpdateLinkData {
+  link_type?: string;
   weight?: number;
   metadata?: Record<string, unknown>;
 }
@@ -37,6 +46,12 @@ export async function getLink(id: string): Promise<Link> {
 // Создать новую связь
 export async function createLink(data: CreateLinkData): Promise<Link> {
   const response = await api.post("v1/links", { json: data }).json<{ data: Link }>();
+  return response.data;
+}
+
+// Обновить связь
+export async function updateLink(id: string, data: UpdateLinkData): Promise<Link> {
+  const response = await api.put(`v1/links/${id}`, { json: data }).json<{ data: Link }>();
   return response.data;
 }
 

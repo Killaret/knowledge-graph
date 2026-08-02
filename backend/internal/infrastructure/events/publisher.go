@@ -80,6 +80,16 @@ func (p *Publisher) PublishLinkCreated(ctx context.Context, sourceNoteID, target
 	return p.publishEvent(ctx, "LinkCreated", payload)
 }
 
+// PublishLinkUpdated publishes a LinkUpdated event
+func (p *Publisher) PublishLinkUpdated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	payload := LinkEventPayload{
+		SourceNoteID: sourceNoteID,
+		TargetNoteID: targetNoteID,
+		UserID:       userID,
+	}
+	return p.publishEvent(ctx, "LinkUpdated", payload)
+}
+
 // PublishLinkDeleted publishes a LinkDeleted event
 func (p *Publisher) PublishLinkDeleted(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
 	payload := LinkEventPayload{

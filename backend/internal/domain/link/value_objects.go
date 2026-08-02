@@ -8,7 +8,7 @@ type LinkType struct {
 
 func NewLinkType(value string) (LinkType, error) {
 	switch value {
-	case "reference", "dependency", "related", "custom":
+	case "reference", "dependency", "related", "custom", "parent", "child":
 		return LinkType{value: value}, nil
 	default:
 		return LinkType{}, errors.New("invalid link type")

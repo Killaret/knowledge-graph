@@ -1,4 +1,4 @@
- import type { APIRequestContext } from "@playwright/test";
+import type { APIRequestContext } from "@playwright/test";
 
 // Retry configuration for rate limit handling
 const MAX_RETRIES = 3;

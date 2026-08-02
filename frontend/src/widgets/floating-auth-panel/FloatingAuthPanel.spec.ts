@@ -59,13 +59,11 @@ describe("FloatingAuthPanel", () => {
       props: { ...baseProps, initialTab: "register" },
     });
 
-    expect(
-      screen.getByTestId("floating-auth-tab-register")
-    ).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByTestId("floating-auth-tab-login")).toHaveAttribute(
+    expect(screen.getByTestId("floating-auth-tab-register")).toHaveAttribute(
       "aria-selected",
-      "false"
+      "true"
     );
+    expect(screen.getByTestId("floating-auth-tab-login")).toHaveAttribute("aria-selected", "false");
   });
 
   it("switches to register tab on click and back", async () => {
@@ -75,10 +73,7 @@ describe("FloatingAuthPanel", () => {
     await fireEvent.click(registerTab);
 
     expect(registerTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByTestId("floating-auth-tab-login")).toHaveAttribute(
-      "aria-selected",
-      "false"
-    );
+    expect(screen.getByTestId("floating-auth-tab-login")).toHaveAttribute("aria-selected", "false");
 
     const loginTab = screen.getByTestId("floating-auth-tab-login");
     await fireEvent.click(loginTab);
@@ -123,9 +118,7 @@ describe("FloatingAuthPanel", () => {
     // Open with register tab
     rerender({ ...baseProps, open: true, initialTab: "register" });
 
-    const registerTab = await screen.findByTestId(
-      "floating-auth-tab-register"
-    );
+    const registerTab = await screen.findByTestId("floating-auth-tab-register");
     expect(registerTab).toHaveAttribute("aria-selected", "true");
   });
 });

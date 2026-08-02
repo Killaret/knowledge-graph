@@ -78,7 +78,14 @@
 
 <div class="cockpit-top-panel" data-testid="cockpit-top-panel">
   <div class="left-cluster">
-    <a href="/" class="logo" onclick={(e: MouseEvent) => { e.preventDefault(); goto("/"); }}>
+    <a
+      href="/"
+      class="logo"
+      onclick={(e: MouseEvent) => {
+        e.preventDefault();
+        goto("/");
+      }}
+    >
       <span class="logo-icon">🌌</span>
       <span class="logo-text">KG</span>
     </a>
@@ -92,7 +99,14 @@
         data-testid="view-toggle-graph"
         aria-pressed={currentView === "graph"}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <circle cx="12" cy="12" r="3" />
           <circle cx="5" cy="5" r="2" />
           <circle cx="19" cy="5" r="2" />
@@ -113,7 +127,14 @@
         data-testid="view-toggle-3d"
         aria-pressed={currentView === "3d"}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M12 2L2 7l10 5 10-5-10-5z" />
           <path d="M2 17l10 5 10-5" />
           <path d="M2 12l10 5 10-5" />
@@ -128,7 +149,14 @@
         data-testid="view-toggle-list"
         aria-pressed={currentView === "list"}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
@@ -174,7 +202,14 @@
       aria-label={t("search.inputAriaLabel")}
     />
     <button type="button" class="search-btn" onclick={handleSearch} aria-label={t("search.label")}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
@@ -190,7 +225,14 @@
       data-testid="create-note-button"
       aria-label={t("controls.createAria")}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <line x1="12" y1="5" x2="12" y2="19" />
         <line x1="5" y1="12" x2="19" y2="12" />
       </svg>
@@ -206,7 +248,14 @@
         aria-expanded={showMenu}
         aria-haspopup="true"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="18" x2="21" y2="18" />
@@ -216,22 +265,58 @@
       {#if showMenu}
         <div class="dropdown-menu" role="menu">
           {#if !authenticated}
-            <button type="button" class="menu-item" role="menuitem" onclick={handleLogin} data-testid="menu-login">
+            <button
+              type="button"
+              class="menu-item"
+              role="menuitem"
+              onclick={handleLogin}
+              data-testid="menu-login"
+            >
               🔑 {t("auth.signInButton")}
             </button>
-            <button type="button" class="menu-item" role="menuitem" onclick={handleRegister} data-testid="menu-register">
+            <button
+              type="button"
+              class="menu-item"
+              role="menuitem"
+              onclick={handleRegister}
+              data-testid="menu-register"
+            >
               ✨ {t("auth.registerLink")}
             </button>
           {:else}
             <div class="user-info">{user?.email}</div>
-            <button type="button" class="menu-item" role="menuitem" onclick={handleLogout} data-testid="menu-logout">
+            <button
+              type="button"
+              class="menu-item"
+              role="menuitem"
+              onclick={handleLogout}
+              data-testid="menu-logout"
+            >
               ↩ {t("auth.logout")}
             </button>
           {/if}
-          <button type="button" class="menu-item" role="menuitem" onclick={() => { onImport?.(); showMenu = false; }} data-testid="menu-import">
+          <button
+            type="button"
+            class="menu-item"
+            role="menuitem"
+            onclick={() => {
+              onImport?.();
+              showMenu = false;
+            }}
+            data-testid="menu-import"
+          >
             {t("controls.import")}
           </button>
-          <button type="button" class="menu-item" role="menuitem" onclick={() => { onExport?.(); showMenu = false; }} data-testid="menu-export">
+          <button
+            type="button"
+            class="menu-item"
+            role="menuitem"
+            onclick={() => {
+              onExport?.();
+              showMenu = false;
+            }}
+            data-testid="menu-export"
+          >
             {t("controls.export")}
           </button>
         </div>

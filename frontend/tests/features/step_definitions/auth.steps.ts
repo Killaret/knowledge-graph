@@ -68,15 +68,12 @@ Then("I should be redirected to the main page", async function (this: ITestWorld
   await expect(this.page).toHaveURL(/\/$/);
 });
 
-Then(
-  "I should be redirected to {string}",
-  async function (this: ITestWorld, path: string) {
-    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(escaped);
-    await this.page.waitForURL(regex, { timeout: 10000 });
-    await expect(this.page).toHaveURL(regex);
-  }
-);
+Then("I should be redirected to {string}", async function (this: ITestWorld, path: string) {
+  const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped);
+  await this.page.waitForURL(regex, { timeout: 10000 });
+  await expect(this.page).toHaveURL(regex);
+});
 
 Then("I should see an authentication error", async function (this: ITestWorld) {
   const error = this.page.locator('[role="alert"], .error-container').first();

@@ -3,7 +3,6 @@
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import BackButton from "$components/atoms/BackButton.svelte";
-  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import { type GraphData } from "$shared/api/graph";
   import { graphStore } from "$shared/stores/graph.svelte";
@@ -19,11 +18,17 @@
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let loading = $state(true);
   let error = $state("");
+  let Graph3DViewer: any = $state(null);
 
   onMount(async () => {
     if (!browser) return;
     try {
-      graphData = await layoutProvider.load({});
+      [graphData] = await Promise.all([
+        layoutProvider.load({}),
+        import("$widgets/graph-3d-viewer/Graph3DViewer.svelte").then((mod) => {
+          Graph3DViewer = mod.default;
+        }),
+      ]);
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to load 3D graph:", e);
@@ -56,7 +61,7 @@
       <h2>{t("graph3d.noDataTitle")}</h2>
       <p>{t("graph3d.noDataMessage")}</p>
     </div>
-  {:else}
+  {:else if Graph3DViewer}
     <Graph3DViewer
       nodes={graphData.nodes}
       links={graphData.links}

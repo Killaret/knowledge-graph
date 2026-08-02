@@ -9,8 +9,11 @@ from .models import (
     ExtractKeywordsRequest,
     ExtractKeywordsResponse,
     Keyword,
+    SimilarityRequest,
+    SimilarityResponse,
 )
 from .nlp_utils import (
+    compute_similarity,
     ensure_model_loaded,
     extract_keywords,
     get_embedding_model,
@@ -65,4 +68,14 @@ async def embed_endpoint(req: EmbedRequest):
         return EmbedResponse(embedding=embedding)
     except Exception as e:
         logger.exception("Error computing embedding")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/similarity", response_model=SimilarityResponse)
+async def similarity_endpoint(req: SimilarityRequest):
+    try:
+        similarity = compute_similarity(req.text_a, req.text_b)
+        return SimilarityResponse(similarity=similarity)
+    except Exception as e:
+        logger.exception("Error computing similarity")
         raise HTTPException(status_code=500, detail=str(e))

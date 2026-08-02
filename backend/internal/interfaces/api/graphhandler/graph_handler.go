@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"knowledge-graph/internal/application/cache"
+	"knowledge-graph/internal/application/graph"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
@@ -573,6 +574,19 @@ func convertFromCacheGraphData(data cache.GraphData) GraphData {
 		Nodes: handlerNodes,
 		Links: handlerLinks,
 	}
+}
+
+// GetAnalytics returns PageRank scores, clusters, and top central nodes.
+func (h *Handler) GetAnalytics(c *gin.Context) {
+	analytics := graph.NewAnalytics(h.linkRepo, h.noteRepo)
+	result, err := analytics.ComputeForAll(c.Request.Context())
+	if err != nil {
+		log.Printf("[GraphHandler] Analytics error: %v", err)
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedLoadGraph)
+		return
+	}
+
+	apicommon.JSON(c, 200, result)
 }
 
 // preserveCachedPositions preserves node positions from cached data in fresh data

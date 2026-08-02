@@ -56,9 +56,7 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
 
     // API-level assertion first: fast and unambiguous about what the
     // anonymous graph-service endpoint actually returns.
-    const publicGraphResp = await request.get(
-      `${backendUrl}/api/v1/graph/all?nocache=1`
-    );
+    const publicGraphResp = await request.get(`${backendUrl}/api/v1/graph/all?nocache=1`);
     expect(publicGraphResp.ok(), await publicGraphResp.text()).toBeTruthy();
     const publicGraph = await publicGraphResp.json();
     const publicNodeTitles: string[] = (publicGraph.data?.nodes ?? []).map(
@@ -82,17 +80,12 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
     await expect(stats).toBeVisible({ timeout: 20000 });
     // Require a non-zero node count explicitly — a naive /\d+ nodes?/ regex
     // would incorrectly pass on "0 nodes".
-    await expect(stats).toContainText(
-      /[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i,
-      {
-        timeout: 20000,
-      }
-    );
+    await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
+      timeout: 20000,
+    });
   });
 
-  test("anonymous /graph page does not poll delta or refresh", async ({
-    page,
-  }) => {
+  test("anonymous /graph page does not poll delta or refresh", async ({ page }) => {
     const trackedUrls: string[] = [];
     page.on("request", (req) => {
       trackedUrls.push(req.url());
@@ -119,17 +112,12 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
     // absence of delta/refresh after a realistic window).
     await page.waitForTimeout(2000);
 
-    const deltaRequests = trackedUrls.filter((url) =>
-      url.includes("/v1/graph/delta")
-    );
-    const refreshRequests = trackedUrls.filter((url) =>
-      url.includes("/v1/auth/refresh")
-    );
+    const deltaRequests = trackedUrls.filter((url) => url.includes("/v1/graph/delta"));
+    const refreshRequests = trackedUrls.filter((url) => url.includes("/v1/auth/refresh"));
 
-    expect(
-      deltaRequests,
-      "Anonymous public graph should not request /v1/graph/delta"
-    ).toHaveLength(0);
+    expect(deltaRequests, "Anonymous public graph should not request /v1/graph/delta").toHaveLength(
+      0
+    );
 
     // Exactly one /v1/auth/refresh from initAuth is acceptable (the session
     // bootstrap tries to restore from a refresh cookie), but there must not be
@@ -141,9 +129,7 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
 
     // Main page sets this flag in onMount to expose whether it registered the
     // background sync interval.
-    const pollingActive = await page.evaluate(
-      () => (window as any).__kgGraphPollingActive
-    );
+    const pollingActive = await page.evaluate(() => (window as any).__kgGraphPollingActive);
     expect(pollingActive, "Background graph sync must be off for anonymous").toBe(false);
   });
 
@@ -170,25 +156,16 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
     await page.waitForTimeout(1500);
     await page.waitForTimeout(2000);
 
-    const deltaRequests = trackedUrls.filter((url) =>
-      url.includes("/v1/graph/delta")
-    );
-    const refreshRequests = trackedUrls.filter((url) =>
-      url.includes("/v1/auth/refresh")
-    );
+    const deltaRequests = trackedUrls.filter((url) => url.includes("/v1/graph/delta"));
+    const refreshRequests = trackedUrls.filter((url) => url.includes("/v1/auth/refresh"));
 
-    expect(
-      deltaRequests,
-      "Anonymous main page should not request /v1/graph/delta"
-    ).toHaveLength(0);
+    expect(deltaRequests, "Anonymous main page should not request /v1/graph/delta").toHaveLength(0);
     expect(
       refreshRequests.length,
       "Anonymous main page should not fire repeated /v1/auth/refresh"
     ).toBeLessThanOrEqual(1);
 
-    const pollingActive = await page.evaluate(
-      () => (window as any).__kgGraphPollingActive
-    );
+    const pollingActive = await page.evaluate(() => (window as any).__kgGraphPollingActive);
     expect(pollingActive, "Background graph sync must be off for anonymous").toBe(false);
   });
 });

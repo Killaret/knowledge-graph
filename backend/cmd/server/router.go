@@ -165,12 +165,14 @@ func setupRouter(
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)
+		v1.PUT("/links/:id", writeLimiter, linkHandler.Update)
 		v1.GET("/notes/:id/links", linkHandler.GetByNote)
 		v1.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
 		v1.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
 
 		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), graphHandler.GetGraph)
 		v1.GET("/graph/all", cacheControlMiddleware(300), graphHandler.GetFullGraph)
+		v1.GET("/graph/analytics", cacheControlMiddleware(300), graphHandler.GetAnalytics)
 		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
 		v1.GET("/me/graph/fresh", cacheControlMiddleware(0), graphHandler.GetFreshGraph)
 

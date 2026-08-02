@@ -78,10 +78,7 @@ function createCockpitStore() {
     };
   }
 
-  function setPanel<K extends keyof CockpitPanelsState>(
-    key: K,
-    patch: Partial<CockpitPanelState>
-  ) {
+  function setPanel<K extends keyof CockpitPanelsState>(key: K, patch: Partial<CockpitPanelState>) {
     panels[key] = { ...panels[key], ...patch };
   }
 

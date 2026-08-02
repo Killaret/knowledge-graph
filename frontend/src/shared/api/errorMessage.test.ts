@@ -44,7 +44,8 @@ describe("getApiErrorMessage", () => {
 
   it("maps gin email validator errors to a friendly message", async () => {
     const error = makeHTTPError(400, {
-      error: "Key: 'UpdateUserRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag",
+      error:
+        "Key: 'UpdateUserRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag",
     });
     expect(await getApiErrorMessage(error, "en")).toBe("Please enter a valid email address.");
   });

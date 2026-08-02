@@ -96,7 +96,11 @@
       class:length-error={isTitleError}
       required
     />
-    <div class="length-indicator" class:length-warning={isTitleWarning} class:length-error={isTitleError}>
+    <div
+      class="length-indicator"
+      class:length-warning={isTitleWarning}
+      class:length-error={isTitleError}
+    >
       {titleLength}/{MAX_TITLE_LENGTH}
     </div>
   </div>
@@ -170,7 +174,9 @@
     color: var(--color-text, #1f2937);
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
     box-sizing: border-box;
   }
 

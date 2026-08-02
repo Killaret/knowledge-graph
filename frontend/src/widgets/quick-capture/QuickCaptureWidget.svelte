@@ -30,7 +30,7 @@
     isSubmitting = true;
     try {
       const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
-      
+
       // Validate title length
       if (title.length > MAX_TITLE_LENGTH) {
         const truncatedTitle = content.slice(0, MAX_TITLE_LENGTH - 3) + "...";

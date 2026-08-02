@@ -11,6 +11,9 @@ import (
 // TypeRefreshRecommendations re-exports the tasks package constant so callers only import queue.
 const TypeRefreshRecommendations = tasks.TypeRefreshRecommendations
 
+// TypeRecalculateLinkWeights re-exports the tasks package constant.
+const TypeRecalculateLinkWeights = tasks.TypeRecalculateLinkWeights
+
 // Server wraps an asynq server so that cmd/worker does not import asynq directly.
 type Server struct {
 	srv *asynq.Server
@@ -57,5 +60,12 @@ func (m *ServeMux) HandleFunc(taskType string, handler func(context.Context, *as
 func RefreshRecommendationsHandler(refreshSvc tasks.RefreshServiceInterface) func(context.Context, *asynq.Task) error {
 	return func(ctx context.Context, t *asynq.Task) error {
 		return tasks.HandleRefreshRecommendations(ctx, t, refreshSvc)
+	}
+}
+
+// RecalculateLinkWeightsHandler returns a handler that dispatches to tasks.HandleRecalculateLinkWeights.
+func RecalculateLinkWeightsHandler(svc tasks.LinkWeightRecalculator) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleRecalculateLinkWeights(ctx, t, svc)
 	}
 }

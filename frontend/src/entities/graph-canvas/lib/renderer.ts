@@ -470,9 +470,7 @@ export function drawDust(
   const seed = nodeId ?? "dust";
   ctx.fillStyle = "rgba(160, 160, 160, 0.4)";
   for (let i = 0; i < 7; i++) {
-    const offsetX = disableVariation
-      ? (i - 3) * (r * 0.2)
-      : (seededRand(seed, i) - 0.5) * r * 2.5;
+    const offsetX = disableVariation ? (i - 3) * (r * 0.2) : (seededRand(seed, i) - 0.5) * r * 2.5;
     const offsetY = disableVariation
       ? (i % 2 === 0 ? -1 : 1) * (r * 0.15)
       : (seededRand(seed, 20 + i) - 0.5) * r * 2.5;

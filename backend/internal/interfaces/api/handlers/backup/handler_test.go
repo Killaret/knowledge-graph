@@ -36,7 +36,10 @@ func (m *mockTaskQueue) EnqueueExtractKeywords(ctx context.Context, noteID strin
 	return nil
 }
 func (m *mockTaskQueue) EnqueueComputeEmbedding(ctx context.Context, noteID string) error { return nil }
-func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error    { return nil }
+func (m *mockTaskQueue) EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	return nil
+}
+func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error { return nil }
 
 func TestTriggerCloudBackup(t *testing.T) {
 	gin.SetMode(gin.TestMode)

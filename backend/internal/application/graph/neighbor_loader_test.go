@@ -41,6 +41,7 @@ func (m *mockLinkRepo) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]
 	return m.byTarget[targetID], nil
 }
 
+func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error               { return nil }
 func (m *mockLinkRepo) Delete(ctx context.Context, id uuid.UUID) error               { return nil }
 func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error { return nil }
 func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error)            { return nil, nil }

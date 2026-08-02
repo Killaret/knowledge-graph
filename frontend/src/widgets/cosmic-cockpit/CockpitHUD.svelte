@@ -12,7 +12,8 @@
   const { nodeCount = 0, linkCount = 0, cluster = null, health = 100 }: Props = $props();
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: Record<string, string | number>) => formatMessage(key, locale, params);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const syncText = $derived(() => {
     if (cockpitStore.syncing) return t("cockpit.hud.syncing");
@@ -82,7 +83,9 @@
       aria-pressed={cockpitStore.firstPerson}
       data-testid="first-person-toggle"
     >
-      {cockpitStore.firstPerson ? t("cockpit.hud.exitFirstPerson") : t("cockpit.hud.enterFirstPerson")}
+      {cockpitStore.firstPerson
+        ? t("cockpit.hud.exitFirstPerson")
+        : t("cockpit.hud.enterFirstPerson")}
     </button>
   </div>
 </div>
@@ -158,7 +161,9 @@
   .health-fill {
     height: 100%;
     border-radius: 3px;
-    transition: width 0.3s ease, background 0.3s ease;
+    transition:
+      width 0.3s ease,
+      background 0.3s ease;
   }
 
   .syncing {
@@ -186,7 +191,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {

@@ -54,10 +54,24 @@
     notes = [],
   }: Props = $props();
 
-  const topHeight = $derived(cockpitStore.panels.top.open || cockpitStore.panels.top.pinned ? COCKPIT_DEFAULT_SIZES.top : 0);
-  const bottomHeight = $derived(cockpitStore.panels.bottom.open || cockpitStore.panels.bottom.pinned ? COCKPIT_DEFAULT_SIZES.bottom : 0);
-  const leftWidth = $derived(cockpitStore.panels.left.open || cockpitStore.panels.left.pinned ? COCKPIT_DEFAULT_SIZES.left : 0);
-  const rightWidth = $derived(cockpitStore.panels.right.open || cockpitStore.panels.right.pinned ? COCKPIT_DEFAULT_SIZES.right : 0);
+  const topHeight = $derived(
+    cockpitStore.panels.top.open || cockpitStore.panels.top.pinned ? COCKPIT_DEFAULT_SIZES.top : 0
+  );
+  const bottomHeight = $derived(
+    cockpitStore.panels.bottom.open || cockpitStore.panels.bottom.pinned
+      ? COCKPIT_DEFAULT_SIZES.bottom
+      : 0
+  );
+  const leftWidth = $derived(
+    cockpitStore.panels.left.open || cockpitStore.panels.left.pinned
+      ? COCKPIT_DEFAULT_SIZES.left
+      : 0
+  );
+  const rightWidth = $derived(
+    cockpitStore.panels.right.open || cockpitStore.panels.right.pinned
+      ? COCKPIT_DEFAULT_SIZES.right
+      : 0
+  );
 
   $effect(() => {
     // Persist cockpit settings whenever any of them changes.
@@ -103,7 +117,7 @@
   </CockpitPanel>
 
   <CockpitPanel position="right" size={COCKPIT_DEFAULT_SIZES.right} title="Details">
-    <CockpitRightPanel nodeId={selectedNodeId} {onNodeSelect} onNoteDelete={onNoteDelete} onNoteEdit={onNoteEdit} />
+    <CockpitRightPanel nodeId={selectedNodeId} {onNodeSelect} {onNoteDelete} {onNoteEdit} />
   </CockpitPanel>
 
   <main class="cockpit-graph" data-testid="cockpit-graph">
@@ -135,7 +149,11 @@
     bottom: var(--bottom-height, 0);
     left: var(--left-width, 0);
     overflow: hidden;
-    transition: top 0.3s ease, right 0.3s ease, bottom 0.3s ease, left 0.3s ease;
+    transition:
+      top 0.3s ease,
+      right 0.3s ease,
+      bottom 0.3s ease,
+      left 0.3s ease;
   }
 
   .first-person .cockpit-graph {

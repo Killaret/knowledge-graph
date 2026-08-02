@@ -11,7 +11,7 @@
 - **Development Phase:** Alpha → Beta transition
 - **Regression Testing:** ✅ Partially complete (11/14 parts passed)
 - **System Stability:** ✅ Stable (no critical issues)
-- **Test Coverage:** ✅ Frontend unit tests (526 tests), Backend unit tests (all passed)
+- **Test Coverage:** ✅ Frontend unit tests (866 tests), Backend unit tests (all passed)
 - **Production Readiness:** ⏳ Pending critical verifications (E2E, integration, CI/CD)
 
 ---
@@ -38,7 +38,7 @@
 
 | Task | Status | Priority | Prompt Ready |
 |------|--------|----------|-------------|
-| Cosmic Cockpit UI — starship cockpit layout with slide-out panels, HUD, and first-person mode | ⏳ Planned | 🟠 High | 📝 No |
+| Cosmic Cockpit UI — starship cockpit layout with slide-out panels, HUD, and first-person mode | ✅ Done | 🟠 High | 📝 Yes |
 
 **Scope:**
 - Four slide-out panels (top, bottom, left, right) emulating a starship cockpit dashboard inspired by "Space Rangers".
@@ -469,18 +469,30 @@ Description: Кластеризация графа и визуализация �
 | Testing commands in AGENTS.md | ✅ Done | 🔴 Critical | July 2026 |
 | Testing commands in Devin skill | ✅ Done | 🔴 Critical | July 2026 |
 
+### 🆕 Recently Completed (August 2026)
+
+| Task | Status | Priority | Completion Date |
+|------|--------|----------|-----------------|
+| Cosmic Cockpit UI integration (4 panels, HUD, first-person mode) | ✅ Done | 🟠 High | August 2026 |
+| Floating auth panel (draggable, non-blocking) | ✅ Done | 🟠 High | August 2026 |
+| PUT /links/:id — link update with validation | ✅ Done | 🟠 High | August 2026 |
+| Link weight recalculation (ASYNQ task + migration 028) | ✅ Done | 🟠 High | August 2026 |
+| Backend graph analytics (/graph/analytics: PageRank, clusters, top centers) | ✅ Done | 🟡 Medium | August 2026 |
+| NoteForm / TypeSelector decoupled from CelestialBody | ✅ Done | 🟠 High | August 2026 |
+| FSD migration: components → widgets and entities | ✅ Done | 🟠 High | August 2026 |
+
 ---
 
 ## 📈 Progress Metrics
 
 ### Development Progress
-- **Total Tasks:** 53+
-- **Completed:** 30+ (57%)
-- **In Progress:** 3 (6%)
-- **Planned:** 20+ (38%)
+- **Total Tasks:** 60+
+- **Completed:** 37+ (62%)
+- **In Progress:** 3 (5%)
+- **Planned:** 20+ (33%)
 
 ### Testing Coverage
-- **Frontend Unit Tests:** 803 tests ✅
+- **Frontend Unit Tests:** 866 tests ✅
 - **Backend Unit Tests:** All packages ✅
 - **Frontend E2E Tests:** ⏳ Pending
 - **Backend Integration Tests:** ✅ Done (2026-07-23)

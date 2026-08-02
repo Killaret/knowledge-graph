@@ -35,7 +35,9 @@
         <span class="filter-emoji">{filter.emoji}</span>
         <span class="filter-label">{filter.label}</span>
         {#if typeCounts[filter.id] !== undefined}
-          <span class="filter-count" data-testid="filter-count-{filter.id}">{typeCounts[filter.id]}</span>
+          <span class="filter-count" data-testid="filter-count-{filter.id}"
+            >{typeCounts[filter.id]}</span
+          >
         {/if}
       </button>
     {/each}

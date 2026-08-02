@@ -27,7 +27,6 @@
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
-  import Graph3DViewer from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import type { ErrorResponse } from "$shared/types/errors";
@@ -58,6 +57,21 @@
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
+  let Graph3DViewer: any = $state(null);
+
+  $effect(() => {
+    if (graphStore.currentView === "3d" && !Graph3DViewer) {
+      import("$widgets/graph-3d-viewer/Graph3DViewer.svelte")
+        .then((mod) => {
+          Graph3DViewer = mod.default;
+        })
+        .catch((e) => {
+          if (import.meta.env.DEV) {
+            console.error("[HomePage] Failed to load Graph3DViewer:", e);
+          }
+        });
+    }
+  });
 
   // Graph state - always show full graph on main page
   let graphData: GraphData = $state({ nodes: [], links: [] });
@@ -171,7 +185,7 @@
 
       // Expose flag for E2E tests to assert background sync is gated by auth.
       if (browser) {
-        ((window as unknown) as Record<string, unknown>).__kgGraphPollingActive = !!isAuthenticated();
+        (window as unknown as Record<string, unknown>).__kgGraphPollingActive = !!isAuthenticated();
       }
     })();
 
@@ -559,7 +573,7 @@
         onNoteCreate={handleNoteCreate}
         onNoteDelete={handleDeleteRequest}
       />
-    {:else if graphStore.currentView === "3d"}
+    {:else if graphStore.currentView === "3d" && Graph3DViewer}
       <!-- Fullscreen 3D Graph View -->
       <Graph3DViewer
         nodes={filteredGraphData.nodes}

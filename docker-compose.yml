@@ -73,6 +73,10 @@
       retries: 30
       start_period: 600s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   backend:
     build:
@@ -106,6 +110,10 @@
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   graph-service:
     build:
@@ -139,6 +147,10 @@
       retries: 5
       start_period: 10s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   worker:
     build:
@@ -162,6 +174,10 @@
       nlp:
         condition: service_started
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   frontend:
     build:

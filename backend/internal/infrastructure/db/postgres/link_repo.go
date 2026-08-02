@@ -24,7 +24,7 @@ func NewLinkRepository(db *gorm.DB) *LinkRepository {
 
 func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 	var existing LinkModel
-	err := r.db.WithContext(ctx).Where("id = ?", l.ID()).First(&existing).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		model, err := toGormLink(l)
 		if err != nil {
@@ -45,11 +45,27 @@ func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
 	if err != nil {
 		return err
 	}
+	return r.updateModel(ctx, &existing, l)
+}
+
+func (r *LinkRepository) Update(ctx context.Context, l *link.Link) error {
+	var existing LinkModel
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return link.ErrLinkNotFound
+	}
+	if err != nil {
+		return err
+	}
+	return r.updateModel(ctx, &existing, l)
+}
+
+func (r *LinkRepository) updateModel(ctx context.Context, existing *LinkModel, l *link.Link) error {
 	model, err := toGormLink(l)
 	if err != nil {
 		return err
 	}
-	return r.db.WithContext(ctx).Model(&existing).Updates(model).Error
+	return r.db.WithContext(ctx).Model(existing).Updates(model).Error
 }
 
 func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, error) {
@@ -178,15 +194,17 @@ func toGormLink(l *link.Link) (LinkModel, error) {
 		return LinkModel{}, err
 	}
 	return LinkModel{
-		ID:           l.ID(),
-		SourceNoteID: l.SourceNoteID(),
-		TargetNoteID: l.TargetNoteID(),
-		LinkType:     l.LinkType().String(),
-		Weight:       l.Weight().Value(),
-		Metadata:     datatypes.JSON(metadataJSON),
-		SourceType:   l.SourceType().String(),
-		CreatorID:    l.CreatorID(),
-		CreatedAt:    l.CreatedAt(),
+		ID:               l.ID(),
+		SourceNoteID:     l.SourceNoteID(),
+		TargetNoteID:     l.TargetNoteID(),
+		LinkType:         l.LinkType().String(),
+		Weight:           l.Weight().Value(),
+		Metadata:         datatypes.JSON(metadataJSON),
+		SourceType:       l.SourceType().String(),
+		CreatorID:        l.CreatorID(),
+		CreatedAt:        l.CreatedAt(),
+		UpdatedAt:        l.UpdatedAt(),
+		LastWeightUpdate: l.LastWeightUpdate(),
 	}, nil
 }
 
@@ -215,7 +233,7 @@ func toDomainLink(m *LinkModel) (*link.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	return link.ReconstructLinkWithCreator(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, sourceType, m.CreatorID, m.CreatedAt), nil
+	return link.ReconstructLinkWithCreator(m.ID, m.SourceNoteID, m.TargetNoteID, linkType, weight, metadata, sourceType, m.CreatorID, m.CreatedAt, m.UpdatedAt, m.LastWeightUpdate), nil
 }
 
 // toDomainLinks преобразует список GORM-моделей в список доменных связей

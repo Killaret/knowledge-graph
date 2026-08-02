@@ -108,8 +108,7 @@ export const api = ky.create({
           // X-API-Key header) should not trigger a refresh/redirect cascade.
           // Public pages are expected to catch these 401s gracefully, and
           // protected pages are already guarded by the route guard.
-          const hadAuth =
-            request.headers.has("Authorization") || request.headers.has("X-API-Key");
+          const hadAuth = request.headers.has("Authorization") || request.headers.has("X-API-Key");
           if (!hadAuth) {
             return response;
           }

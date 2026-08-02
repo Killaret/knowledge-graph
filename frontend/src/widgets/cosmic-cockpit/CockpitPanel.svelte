@@ -1,6 +1,10 @@
 <script lang="ts">
   import { browser } from "$app/environment";
-  import { COCKPIT_EDGE_SIZE, cockpitStore, type CockpitPanelPosition } from "$features/cosmic-cockpit";
+  import {
+    COCKPIT_EDGE_SIZE,
+    cockpitStore,
+    type CockpitPanelPosition,
+  } from "$features/cosmic-cockpit";
 
   interface Props {
     position: CockpitPanelPosition;

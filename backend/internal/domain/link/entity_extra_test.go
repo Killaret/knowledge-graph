@@ -50,8 +50,9 @@ func TestReconstructLink(t *testing.T) {
 	metadata, _ := NewMetadata(nil)
 	sourceType, _ := NewSourceType("user")
 	createdAt := time.Now()
+	updatedAt := createdAt
 
-	link := ReconstructLink(id, sourceID, targetID, linkType, weight, metadata, sourceType, createdAt)
+	link := ReconstructLink(id, sourceID, targetID, linkType, weight, metadata, sourceType, createdAt, updatedAt, nil)
 
 	assert.Equal(t, id, link.ID())
 	assert.Equal(t, sourceID, link.SourceNoteID())
@@ -60,6 +61,7 @@ func TestReconstructLink(t *testing.T) {
 	assert.Equal(t, weight, link.Weight())
 	assert.Equal(t, sourceType, link.SourceType())
 	assert.True(t, createdAt.Equal(link.CreatedAt()) || createdAt.Before(link.CreatedAt()))
+	assert.Nil(t, link.LastWeightUpdate())
 }
 
 func TestReconstructLinkWithCreator(t *testing.T) {
@@ -72,11 +74,14 @@ func TestReconstructLinkWithCreator(t *testing.T) {
 	metadata, _ := NewMetadata(nil)
 	sourceType, _ := NewSourceType("gamma")
 	createdAt := time.Now()
+	updatedAt := createdAt
+	lastWeightUpdate := &createdAt
 
-	link := ReconstructLinkWithCreator(id, sourceID, targetID, linkType, weight, metadata, sourceType, &creatorID, createdAt)
+	link := ReconstructLinkWithCreator(id, sourceID, targetID, linkType, weight, metadata, sourceType, &creatorID, createdAt, updatedAt, lastWeightUpdate)
 
 	assert.Equal(t, id, link.ID())
 	assert.Equal(t, &creatorID, link.CreatorID())
+	assert.Equal(t, lastWeightUpdate, link.LastWeightUpdate())
 }
 
 func TestLink_Setters(t *testing.T) {
@@ -100,4 +105,41 @@ func TestLink_Setters(t *testing.T) {
 func TestLink_Metadata_Value(t *testing.T) {
 	metadata, _ := NewMetadata(map[string]interface{}{"key": "value"})
 	assert.Equal(t, "value", metadata.Value()["key"])
+}
+
+func TestLink_UpdateWeight(t *testing.T) {
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	linkType, _ := NewLinkType("reference")
+	weight, _ := NewWeight(0.5)
+	metadata, _ := NewMetadata(nil)
+
+	l := NewLink(sourceID, targetID, linkType, weight, metadata)
+	assert.Nil(t, l.LastWeightUpdate())
+
+	newWeight, _ := NewWeight(0.9)
+	beforeUpdate := time.Now()
+	l.UpdateWeight(newWeight)
+
+	assert.Equal(t, newWeight, l.Weight())
+	assert.NotNil(t, l.LastWeightUpdate())
+	assert.True(t, l.LastWeightUpdate().After(beforeUpdate) || l.LastWeightUpdate().Equal(beforeUpdate))
+	assert.True(t, l.UpdatedAt().After(beforeUpdate) || l.UpdatedAt().Equal(beforeUpdate))
+}
+
+func TestLink_UpdateLinkType(t *testing.T) {
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	linkType, _ := NewLinkType("reference")
+	weight, _ := NewWeight(0.5)
+	metadata, _ := NewMetadata(nil)
+
+	l := NewLink(sourceID, targetID, linkType, weight, metadata)
+
+	newLinkType, _ := NewLinkType("dependency")
+	beforeUpdate := time.Now()
+	l.UpdateLinkType(newLinkType)
+
+	assert.Equal(t, newLinkType, l.LinkType())
+	assert.True(t, l.UpdatedAt().After(beforeUpdate) || l.UpdatedAt().Equal(beforeUpdate))
 }

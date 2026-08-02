@@ -29,8 +29,7 @@
     class="ghost-note-form"
     data-testid="ghost-note-form"
     style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState
-      .noteFormPosition
-      .y}px;"
+      .noteFormPosition.y}px;"
   >
     <div class="ghost-note-header">
       <h3 class="ghost-note-title">{t("graphModals.createNoteTitle")}</h3>
@@ -74,53 +73,6 @@
     />
   </div>
 {/if}
-
-<style>
-  .ghost-note-form {
-    background: rgba(10, 26, 58, 0.98);
-    border: 1px solid rgba(138, 43, 226, 0.6);
-    border-radius: 12px;
-    padding: 20px;
-    min-width: 360px;
-    max-width: min(420px, calc(100vw - 140px));
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    z-index: 100;
-    backdrop-filter: blur(12px);
-    color: white;
-  }
-
-  .ghost-note-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .ghost-note-title {
-    margin: 0;
-    color: #a78bfa;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .ghost-note-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-  }
-
-  .ghost-note-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-  }
-</style>
 
 {#if activeForm === "link"}
   <div
@@ -193,3 +145,50 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .ghost-note-form {
+    background: rgba(10, 26, 58, 0.98);
+    border: 1px solid rgba(138, 43, 226, 0.6);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 360px;
+    max-width: min(420px, calc(100vw - 140px));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    color: white;
+  }
+
+  .ghost-note-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .ghost-note-title {
+    margin: 0;
+    color: #a78bfa;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .ghost-note-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .ghost-note-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+</style>

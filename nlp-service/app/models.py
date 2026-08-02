@@ -17,3 +17,12 @@ class EmbedRequest(BaseModel):
 
 class EmbedResponse(BaseModel):
     embedding: List[float]
+
+
+class SimilarityRequest(BaseModel):
+    text_a: str = Field(..., max_length=10000, description="First text")
+    text_b: str = Field(..., max_length=10000, description="Second text")
+
+
+class SimilarityResponse(BaseModel):
+    similarity: float = Field(..., ge=0.0, le=1.0, description="Cosine similarity in [0, 1]")

@@ -37,7 +37,8 @@
   }: Props = $props();
 
   const locale = getCurrentLocale();
-  const t = (key: string, params?: Record<string, string | number>) => formatMessage(key, locale, params);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   const authenticated = $derived(isAuthenticated());
   const user = $derived(currentUser());
@@ -86,7 +87,10 @@
         <a
           href={item.href}
           class="nav-link"
-          onclick={(e: MouseEvent) => { e.preventDefault(); navigate(item.href); }}
+          onclick={(e: MouseEvent) => {
+            e.preventDefault();
+            navigate(item.href);
+          }}
         >
           <span class="nav-emoji">{item.emoji}</span>
           <span class="nav-label">{item.label}</span>
@@ -96,7 +100,9 @@
     {#if authenticated}
       <div class="user-badge">
         <span class="user-avatar">{user?.email?.[0]?.toUpperCase() ?? "?"}</span>
-        <span class="user-email" title={user?.email ?? ""}>{user?.email ?? t("cockpit.left.user")}</span>
+        <span class="user-email" title={user?.email ?? ""}
+          >{user?.email ?? t("cockpit.left.user")}</span
+        >
       </div>
     {/if}
   </section>
@@ -104,13 +110,28 @@
   <section class="left-section" aria-labelledby="graph-heading">
     <h3 class="section-heading" id="graph-heading">{t("cockpit.left.graphControls")}</h3>
     <div class="graph-controls">
-      <button type="button" class="control-btn" onclick={() => onReset?.()} title={t("cockpit.left.reset")}>
+      <button
+        type="button"
+        class="control-btn"
+        onclick={() => onReset?.()}
+        title={t("cockpit.left.reset")}
+      >
         🔄 {t("cockpit.left.reset")}
       </button>
-      <button type="button" class="control-btn" onclick={() => onSearch?.()} title={t("cockpit.left.search")}>
+      <button
+        type="button"
+        class="control-btn"
+        onclick={() => onSearch?.()}
+        title={t("cockpit.left.search")}
+      >
         🎯 {t("cockpit.left.search")}
       </button>
-      <button type="button" class="control-btn" onclick={() => onFocus?.()} title={t("cockpit.left.focus")}>
+      <button
+        type="button"
+        class="control-btn"
+        onclick={() => onFocus?.()}
+        title={t("cockpit.left.focus")}
+      >
         👁 {t("cockpit.left.focus")}
       </button>
     </div>
@@ -155,7 +176,12 @@
   {#if typeFilters.length > 0}
     <section class="left-section" aria-labelledby="filter-heading">
       <h3 class="section-heading" id="filter-heading">{t("cockpit.left.filters")}</h3>
-      <CockpitTypeFilter filters={typeFilters} selected={selectedType} onSelect={handleFilter} {typeCounts} />
+      <CockpitTypeFilter
+        filters={typeFilters}
+        selected={selectedType}
+        onSelect={handleFilter}
+        {typeCounts}
+      />
     </section>
   {/if}
 

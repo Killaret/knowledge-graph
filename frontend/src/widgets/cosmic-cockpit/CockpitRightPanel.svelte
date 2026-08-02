@@ -31,7 +31,12 @@
 
 <div class="cockpit-right-panel" data-testid="cockpit-right-panel">
   {#if nodeId}
-    <CockpitNoteDetails {nodeId} onClose={handleClose} onEdit={handleEdit} onDelete={handleDelete} />
+    <CockpitNoteDetails
+      {nodeId}
+      onClose={handleClose}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+    />
   {:else}
     <div class="empty-state">
       <span class="empty-icon">🌌</span>

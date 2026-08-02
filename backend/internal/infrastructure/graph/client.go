@@ -18,9 +18,9 @@ import (
 
 // Client is an HTTP client for the graph-service analytics API.
 type Client struct {
-	baseURL      string
+	baseURL       string
 	internalToken string
-	httpClient   *http.Client
+	httpClient    *http.Client
 }
 
 // NewClient creates a graph-service client from configuration.

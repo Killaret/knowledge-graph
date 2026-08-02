@@ -135,6 +135,10 @@ func (m *taskQueueMock) EnqueueComputeEmbedding(ctx context.Context, noteID stri
 	return m.Called(ctx, noteID).Error(0)
 }
 
+func (m *taskQueueMock) EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
+	return m.Called(ctx, noteID, delay).Error(0)
+}
+
 func (m *taskQueueMock) EnqueueNotification(ctx context.Context, payload []byte) error {
 	return nil
 }
@@ -197,6 +201,8 @@ func TestCreateNote_Success(t *testing.T) {
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 	body := `{"title":"Test Note","content":"Hello","type":"star","metadata":{"key":"value"}}`
 	w, c := newContext(t, http.MethodPost, "/notes", body)
@@ -216,6 +222,7 @@ func TestCreateNote_WithUser(t *testing.T) {
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 	body := `{"title":"User Note","content":"content","type":"planet"}`
 	w, c := newContext(t, http.MethodPost, "/notes", body, userID)
@@ -293,6 +300,7 @@ func TestCreateNote_AffectedNotesSvc(t *testing.T) {
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
 	recRepo.On("GetNotesThatRecommend", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return([]uuid.UUID{uuid.New()}, nil)
 	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil).Twice()
 
@@ -319,6 +327,7 @@ func TestCreateNote_AffectedNotesSvcError(t *testing.T) {
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
 	recRepo.On("GetNotesThatRecommend", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil, assert.AnError)
 
 	body := `{"title":"Affected","content":"note"}`
@@ -340,6 +349,7 @@ func TestUpdateNote_Success(t *testing.T) {
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 	body := `{"title":"New Title","content":"New Content","type":"planet"}`
 	w, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)

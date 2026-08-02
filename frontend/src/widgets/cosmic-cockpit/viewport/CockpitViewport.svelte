@@ -143,7 +143,14 @@
     ctx.clearRect(0, 0, width, height);
 
     // deep space background
-    const gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height));
+    const gradient = ctx.createRadialGradient(
+      width / 2,
+      height / 2,
+      0,
+      width / 2,
+      height / 2,
+      Math.max(width, height)
+    );
     gradient.addColorStop(0, "rgba(10, 10, 15, 0)");
     gradient.addColorStop(1, "rgba(20, 20, 43, 0.4)");
     ctx.fillStyle = gradient;
