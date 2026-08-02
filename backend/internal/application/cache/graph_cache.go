@@ -49,10 +49,13 @@ type GraphNode struct {
 
 // GraphLink represents a cached link
 type GraphLink struct {
-	Source   string  `json:"source"`
-	Target   string  `json:"target"`
-	Weight   float64 `json:"weight"`
-	LinkType string  `json:"link_type"`
+	ID               string  `json:"id"`
+	Source           string  `json:"source"`
+	Target           string  `json:"target"`
+	Weight           float64 `json:"weight"`
+	LinkType         string  `json:"link_type"`
+	SourceType       string  `json:"source_type"`
+	LastWeightUpdate *string `json:"last_weight_update,omitempty"`
 }
 
 // CacheUserGraph stores the user's graph data in cache

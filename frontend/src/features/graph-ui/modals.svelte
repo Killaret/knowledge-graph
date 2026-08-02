@@ -2,7 +2,8 @@
   import type { NoteFormState } from "$features/graph-forms/note-form";
   import type { LinkFormState } from "$features/graph-forms/link-form";
   import NoteForm from "$components/molecules/NoteForm.svelte";
-  import { CelestialBody } from "$entities";
+  import LinkTypeSelector from "$components/molecules/LinkTypeSelector.svelte";
+  import { CelestialBody, LinkType } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -22,6 +23,11 @@
     onSave: (form: "note" | "link") => void;
     onCancel: (form: "note" | "link") => void;
   } = $props();
+
+  function handleLinkTypeSelect(type: string) {
+    linkFormState.newLinkType = type;
+    linkFormState.newLinkWeight = LinkType.fromString(type).defaultWeight;
+  }
 </script>
 
 {#if activeForm === "note"}
@@ -101,16 +107,14 @@
       style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
       >{t("graphModals.linkTypeLabel")}</label
     >
-    <select
+    <LinkTypeSelector
       id="link-type"
-      bind:value={linkFormState.newLinkType}
-      style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.4); color: white; font-size: 14px; cursor: pointer; transition: border-color 0.2s;"
-    >
-      <option value="reference">📖 {t("linkType.reference")}</option>
-      <option value="dependency">🔗 {t("linkType.dependency")}</option>
-      <option value="related">🔀 {t("linkType.related")}</option>
-      <option value="custom">✨ {t("linkType.custom")}</option>
-    </select>
+      types={LinkType.CREATABLE_TYPES}
+      selected={linkFormState.newLinkType}
+      size="sm"
+      showDescription={false}
+      onSelect={handleLinkTypeSelect}
+    />
     <label
       for="link-strength"
       style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"

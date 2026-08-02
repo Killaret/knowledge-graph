@@ -20,7 +20,7 @@
   } from "$shared/api/graph";
 
   const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
-  import { createLink } from "$shared/api/links";
+  import { createLink, updateLink, deleteLink } from "$shared/api/links";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
@@ -246,6 +246,54 @@
     }
   }
 
+  async function handleLinkEdit(link: {
+    id?: string;
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
+    if (!link.id) {
+      if (import.meta.env.DEV) {
+        console.error("Cannot edit link without id");
+      }
+      return;
+    }
+    try {
+      await updateLink(link.id, {
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to update link:", e);
+      }
+    }
+  }
+
+  async function handleLinkDelete(link: {
+    id?: string;
+    source: string;
+    target: string;
+    link_type: string;
+  }) {
+    if (!link.id) {
+      if (import.meta.env.DEV) {
+        console.error("Cannot delete link without id");
+      }
+      return;
+    }
+    try {
+      await deleteLink(link.id);
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to delete link:", e);
+      }
+    }
+  }
+
   // Отслеживаем изменение showFullGraph и загружаем данные
   // (skip the initial run, onMount already loads once).
   let showFullGraphInitialized = false;
@@ -315,6 +363,8 @@
           onNoteRestore={handleNoteRestore}
           onNoteCreate={handleNoteCreate}
           onLinkCreate={handleLinkCreate}
+          onLinkEdit={handleLinkEdit}
+          onLinkDelete={handleLinkDelete}
           helpContent={knowledgeCore?.content}
         />
       {/key}

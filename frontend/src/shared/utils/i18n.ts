@@ -197,6 +197,20 @@ const messages: Record<Locale, Record<string, string>> = {
     "cockpit.noteDetails.deleteLinksMessage": "Remove {{count}} link(s)?",
     "cockpit.noteDetails.cancel": "Cancel",
     "cockpit.noteDetails.delete": "Delete",
+    "cockpit.noteDetails.editLink": "Edit link",
+    "cockpit.noteDetails.deleteLink": "Delete link",
+    "cockpit.noteDetails.linkWeight": "Weight: {{weight}}",
+    "cockpit.noteDetails.save": "Save",
+    "cockpit.noteDetails.saving": "Saving",
+    "cockpit.noteDetails.deleting": "Deleting",
+    "cockpit.noteDetails.linkUpdateError": "Failed to update link.",
+    "cockpit.noteDetails.linkDeleteError": "Failed to delete link.",
+
+    // Time
+    "time.justNow": "just now",
+    "time.minutesAgo": "{{count}} min ago",
+    "time.hoursAgo": "{{count}} h ago",
+    "time.daysAgo": "{{count}} days ago",
 
     // Routes
     "layout.skipAuthTitle": "Auth is disabled for testing (SKIP_AUTH=true)",
@@ -352,11 +366,23 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Link types
     "linkType.reference": "Reference",
+    "linkType.reference.description": "One note simply mentions another.",
+    "linkType.reference.example": "See also",
     "linkType.dependency": "Dependency",
+    "linkType.dependency.description": "The target note needs the source to make sense.",
+    "linkType.dependency.example": "Requires",
     "linkType.related": "Related",
+    "linkType.related.description": "Topics are connected, but neither depends on the other.",
+    "linkType.related.example": "Similar topic",
     "linkType.custom": "Custom",
+    "linkType.custom.description": "You define the meaning yourself.",
+    "linkType.custom.example": "Your own label",
     "linkType.parent": "Parent",
+    "linkType.parent.description": "The source is the broader topic that contains the target.",
+    "linkType.parent.example": "Parent topic",
     "linkType.child": "Child",
+    "linkType.child.description": "The source is a subtopic of the target.",
+    "linkType.child.example": "Subtopic",
 
     // LinkCreator
     "linkCreator.title": "Create Link",
@@ -377,6 +403,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkCreator.createLink": "Create Link",
     "linkCreator.cancel": "Cancel",
 
+    // LinkTypeSelector
+    "linkTypeSelector.ariaLabel": "Select link type",
+    "linkTypeSelector.example": "Example",
+
     // LinkTooltip
     "linkTooltip.recommended": "Recommended",
     "linkTooltip.weight": "Weight:",
@@ -384,6 +414,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkTooltip.to": "To:",
     "linkTooltip.edit": "Edit",
     "linkTooltip.delete": "Delete",
+    "linkTooltip.lastWeightUpdate": "Updated:",
+
+    // LinkTypeLegend
+    "linkLegend.title": "Link types",
+    "linkLegend.showAll": "Show all",
+    "linkLegend.hideAll": "Hide all",
+    "linkLegend.minWeight": "Min weight: {{weight}}",
 
     // ConfirmModal
     "confirmModal.title": "Confirm",
@@ -829,6 +866,20 @@ const messages: Record<Locale, Record<string, string>> = {
     "cockpit.noteDetails.deleteLinksMessage": "Удалить {{count}} связь(и)?",
     "cockpit.noteDetails.cancel": "Отмена",
     "cockpit.noteDetails.delete": "Удалить",
+    "cockpit.noteDetails.editLink": "Редактировать связь",
+    "cockpit.noteDetails.deleteLink": "Удалить связь",
+    "cockpit.noteDetails.linkWeight": "Вес: {{weight}}",
+    "cockpit.noteDetails.save": "Сохранить",
+    "cockpit.noteDetails.saving": "Сохранение",
+    "cockpit.noteDetails.deleting": "Удаление",
+    "cockpit.noteDetails.linkUpdateError": "Не удалось обновить связь.",
+    "cockpit.noteDetails.linkDeleteError": "Не удалось удалить связь.",
+
+    // Time
+    "time.justNow": "только что",
+    "time.minutesAgo": "{{count}} мин назад",
+    "time.hoursAgo": "{{count}} ч назад",
+    "time.daysAgo": "{{count}} дн назад",
 
     // Routes
     "layout.skipAuthTitle": "Авторизация отключена для тестирования (SKIP_AUTH=true)",
@@ -984,11 +1035,24 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Link types
     "linkType.reference": "Ссылка",
+    "linkType.reference.description": "Одна заметка просто упоминает другую.",
+    "linkType.reference.example": "См. также",
     "linkType.dependency": "Зависимость",
+    "linkType.dependency.description": "Целевая заметка не работает без исходной.",
+    "linkType.dependency.example": "Требуется",
     "linkType.related": "Связано",
-    "linkType.custom": "Пользовательская",
+    "linkType.related.description": "Темы пересекаются, но не зависят друг от друга.",
+    "linkType.related.example": "Похожая тема",
+    "linkType.custom": "Своя",
+    "linkType.custom.description": "Смысл задаёшь сам.",
+    "linkType.custom.example": "Своя метка",
     "linkType.parent": "Родительская",
+    "linkType.parent.description":
+      "Исходная заметка — более широкая тема, в которую входит целевая.",
+    "linkType.parent.example": "Родительская тема",
     "linkType.child": "Дочерняя",
+    "linkType.child.description": "Исходная заметка — подтема целевой.",
+    "linkType.child.example": "Подтема",
 
     // LinkCreator
     "linkCreator.title": "Создать связь",
@@ -1009,6 +1073,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkCreator.createLink": "Создать связь",
     "linkCreator.cancel": "Отмена",
 
+    // LinkTypeSelector
+    "linkTypeSelector.ariaLabel": "Выберите тип связи",
+    "linkTypeSelector.example": "Пример",
+
     // LinkTooltip
     "linkTooltip.recommended": "Рекомендуется",
     "linkTooltip.weight": "Вес:",
@@ -1016,6 +1084,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "linkTooltip.to": "К:",
     "linkTooltip.edit": "Редактировать",
     "linkTooltip.delete": "Удалить",
+    "linkTooltip.lastWeightUpdate": "Обновлено:",
+
+    // LinkTypeLegend
+    "linkLegend.title": "Типы связей",
+    "linkLegend.showAll": "Показать все",
+    "linkLegend.hideAll": "Скрыть все",
+    "linkLegend.minWeight": "Мин. вес: {{weight}}",
 
     // ConfirmModal
     "confirmModal.title": "Подтвердить",

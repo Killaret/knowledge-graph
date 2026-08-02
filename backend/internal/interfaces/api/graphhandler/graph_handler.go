@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/graph"
@@ -26,15 +27,35 @@ type GraphNode struct {
 }
 
 type GraphLink struct {
-	Source   string  `json:"source"`
-	Target   string  `json:"target"`
-	Weight   float64 `json:"weight"`
-	LinkType string  `json:"link_type"`
+	ID               string  `json:"id"`
+	Source           string  `json:"source"`
+	Target           string  `json:"target"`
+	Weight           float64 `json:"weight"`
+	LinkType         string  `json:"link_type"`
+	SourceType       string  `json:"source_type"`
+	LastWeightUpdate *string `json:"last_weight_update,omitempty"`
 }
 
 type GraphData struct {
 	Nodes []GraphNode `json:"nodes"`
 	Links []GraphLink `json:"links"`
+}
+
+func toGraphLink(l *link.Link) GraphLink {
+	var lastUpdate *string
+	if l.LastWeightUpdate() != nil {
+		formatted := l.LastWeightUpdate().Format(time.RFC3339)
+		lastUpdate = &formatted
+	}
+	return GraphLink{
+		ID:               l.ID().String(),
+		Source:           l.SourceNoteID().String(),
+		Target:           l.TargetNoteID().String(),
+		Weight:           l.Weight().Value(),
+		LinkType:         l.LinkType().String(),
+		SourceType:       l.SourceType().String(),
+		LastWeightUpdate: lastUpdate,
+	}
 }
 
 type Handler struct {
@@ -106,12 +127,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			targetID := l.TargetNoteID()
 			linkKey := l.SourceNoteID().String() + "->" + targetID.String()
 			if _, exists := linkMap[linkKey]; !exists {
-				linkMap[linkKey] = GraphLink{
-					Source:   l.SourceNoteID().String(),
-					Target:   targetID.String(),
-					Weight:   l.Weight().Value(),
-					LinkType: l.LinkType().String(),
-				}
+				linkMap[linkKey] = toGraphLink(l)
 			}
 			if !nodeMap[targetID] {
 				nodeMap[targetID] = true
@@ -128,12 +144,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			sourceID := l.SourceNoteID()
 			linkKey := sourceID.String() + "->" + l.TargetNoteID().String()
 			if _, exists := linkMap[linkKey]; !exists {
-				linkMap[linkKey] = GraphLink{
-					Source:   sourceID.String(),
-					Target:   l.TargetNoteID().String(),
-					Weight:   l.Weight().Value(),
-					LinkType: l.LinkType().String(),
-				}
+				linkMap[linkKey] = toGraphLink(l)
 			}
 			if !nodeMap[sourceID] {
 				nodeMap[sourceID] = true
@@ -271,12 +282,7 @@ func (h *Handler) GetFullGraph(c *gin.Context) {
 		if i < 3 {
 			log.Printf("[GraphHandler] Link %d: Source=%s, Target=%s, Type=%s", i, sourceID, targetID, l.LinkType().String())
 		}
-		graphLinks = append(graphLinks, GraphLink{
-			Source:   sourceID,
-			Target:   targetID,
-			Weight:   l.Weight().Value(),
-			LinkType: l.LinkType().String(),
-		})
+		graphLinks = append(graphLinks, toGraphLink(l))
 	}
 	log.Printf("[GraphHandler] Converted graphLinks: %d", len(graphLinks))
 
@@ -425,12 +431,7 @@ func (h *Handler) loadFullGraph(ctx context.Context, userID uuid.UUID) (GraphDat
 		if !visibleNodeIDs[sourceID] || !visibleNodeIDs[targetID] {
 			continue
 		}
-		graphLinks = append(graphLinks, GraphLink{
-			Source:   sourceID,
-			Target:   targetID,
-			Weight:   l.Weight().Value(),
-			LinkType: l.LinkType().String(),
-		})
+		graphLinks = append(graphLinks, toGraphLink(l))
 	}
 
 	return GraphData{Nodes: nodes, Links: graphLinks}, nil
@@ -534,10 +535,13 @@ func convertToCacheGraphData(data GraphData) cache.GraphData {
 	cacheLinks := make([]cache.GraphLink, len(data.Links))
 	for i, link := range data.Links {
 		cacheLinks[i] = cache.GraphLink{
-			Source:   link.Source,
-			Target:   link.Target,
-			Weight:   link.Weight,
-			LinkType: link.LinkType,
+			ID:               link.ID,
+			Source:           link.Source,
+			Target:           link.Target,
+			Weight:           link.Weight,
+			LinkType:         link.LinkType,
+			SourceType:       link.SourceType,
+			LastWeightUpdate: link.LastWeightUpdate,
 		}
 	}
 
@@ -563,10 +567,13 @@ func convertFromCacheGraphData(data cache.GraphData) GraphData {
 	handlerLinks := make([]GraphLink, len(data.Links))
 	for i, link := range data.Links {
 		handlerLinks[i] = GraphLink{
-			Source:   link.Source,
-			Target:   link.Target,
-			Weight:   link.Weight,
-			LinkType: link.LinkType,
+			ID:               link.ID,
+			Source:           link.Source,
+			Target:           link.Target,
+			Weight:           link.Weight,
+			LinkType:         link.LinkType,
+			SourceType:       link.SourceType,
+			LastWeightUpdate: link.LastWeightUpdate,
 		}
 	}
 

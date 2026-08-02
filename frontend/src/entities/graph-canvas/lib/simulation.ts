@@ -148,10 +148,13 @@ export function startSimulation(
   }
 
   const edges: SimulationLink[] = validLinks.map((l) => ({
+    id: l.id,
     source: l.source,
     target: l.target,
     weight: l.weight ?? 1,
     link_type: l.link_type,
+    source_type: l.source_type,
+    last_weight_update: l.last_weight_update,
   }));
 
   state.simLinks = edges;

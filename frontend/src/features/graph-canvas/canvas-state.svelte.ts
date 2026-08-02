@@ -16,11 +16,13 @@ const t = (key: string, params?: Record<string, string | number>) =>
   formatMessage(key, locale, params);
 
 export interface HoveredLinkInfo {
+  id?: string;
   source: string;
   target: string;
   link_type: string;
   weight: number;
   source_type: string;
+  last_weight_update?: string;
 }
 
 export interface DuplicateWarning {
@@ -124,6 +126,7 @@ export function createGraphCanvasState() {
 
   function handleLinkEdit(
     onLinkEdit?: (link: {
+      id?: string;
       source: string;
       target: string;
       link_type: string;
@@ -137,10 +140,16 @@ export function createGraphCanvasState() {
   }
 
   function handleLinkDelete(
-    onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void
+    onLinkDelete?: (link: {
+      id?: string;
+      source: string;
+      target: string;
+      link_type: string;
+    }) => void
   ) {
     if (hoveredLink && onLinkDelete) {
       onLinkDelete({
+        id: hoveredLink.id,
         source: hoveredLink.source,
         target: hoveredLink.target,
         link_type: hoveredLink.link_type,

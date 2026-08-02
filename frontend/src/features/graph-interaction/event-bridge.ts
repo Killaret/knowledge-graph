@@ -35,11 +35,13 @@ import { openLinkForm, closeLinkForm } from "$features/graph-forms/link-form";
 import type { SimulationState } from "$entities/graph-canvas/lib/types";
 
 export interface HoveredLinkInfo {
+  id?: string;
   source: string;
   target: string;
   link_type: string;
   weight: number;
   source_type: string;
+  last_weight_update?: string;
 }
 
 export interface GraphCanvasEventContext {
@@ -334,6 +336,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
 
       if (sourceNode && targetNode) {
         const linkData: HoveredLinkInfo = {
+          id: (hovered as { id?: string }).id,
           source:
             typeof hovered.source === "string"
               ? hovered.source
@@ -345,6 +348,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           link_type: hovered.link_type || "related",
           weight: hovered.weight ?? 0.5,
           source_type: (hovered as { source_type?: string }).source_type || "user",
+          last_weight_update: (hovered as { last_weight_update?: string }).last_weight_update,
         };
 
         const centerX =

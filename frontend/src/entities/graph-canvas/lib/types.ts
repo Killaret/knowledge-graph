@@ -13,11 +13,13 @@ export interface SimulationNode extends SimulationNodeDatum {
 }
 
 export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {
+  id?: string;
   source: SimulationNode | string | number;
   target: SimulationNode | string | number;
   weight?: number;
   link_type?: string;
   source_type?: string; // 'user' or 'gamma'
+  last_weight_update?: string;
 }
 
 // Re-export node/link datum base properties explicitly for clarity

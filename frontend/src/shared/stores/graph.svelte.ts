@@ -13,6 +13,8 @@ export interface GraphUIState {
   currentView: "graph" | "list" | "3d";
   graphData: GraphData;
   hoveredNodeId: string | null;
+  selectedLinkTypes: string[];
+  minLinkWeight: number;
 }
 
 function createGraphStore(initial: Partial<GraphUIState> = {}) {
@@ -22,6 +24,8 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
   let currentView = $state<"graph" | "list" | "3d">(initial.currentView ?? "graph");
   let graphData = $state<GraphData>(initial.graphData ?? { nodes: [], links: [] });
   let hoveredNodeId = $state<string | null>(initial.hoveredNodeId ?? null);
+  let selectedLinkTypes = $state<string[]>(initial.selectedLinkTypes ?? []);
+  let minLinkWeight = $state(initial.minLinkWeight ?? 0);
 
   return {
     get selectedNodeId() {
@@ -66,6 +70,28 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       hoveredNodeId = value;
     },
 
+    get selectedLinkTypes() {
+      return selectedLinkTypes;
+    },
+    set selectedLinkTypes(value: string[]) {
+      selectedLinkTypes = value;
+    },
+
+    get minLinkWeight() {
+      return minLinkWeight;
+    },
+    set minLinkWeight(value: number) {
+      minLinkWeight = value;
+    },
+
+    toggleLinkType(type: string) {
+      if (selectedLinkTypes.includes(type)) {
+        selectedLinkTypes = selectedLinkTypes.filter((t) => t !== type);
+      } else {
+        selectedLinkTypes = [...selectedLinkTypes, type];
+      }
+    },
+
     selectNode(id: string | null) {
       selectedNodeId = id;
     },
@@ -81,6 +107,8 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       currentView = "graph";
       graphData = { nodes: [], links: [] };
       hoveredNodeId = null;
+      selectedLinkTypes = [];
+      minLinkWeight = 0;
     },
   };
 }

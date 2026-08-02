@@ -19,10 +19,13 @@ export interface GraphNode {
 
 // Ребро графа – связь между заметками
 export interface GraphLink {
+  id?: string; // ID связи (при наличии)
   source: string; // ID исходной заметки
   target: string; // ID целевой заметки
   weight?: number; // вес связи (толщина линии)
   link_type?: string; // тип связи: reference, dependency, related, custom
+  source_type?: string; // источник связи: user или gamma
+  last_weight_update?: string; // дата последнего обновления веса
 }
 
 // Данные графа: список узлов и рёбер
@@ -49,10 +52,13 @@ export function normalizeNode(node: Partial<GraphNode>): GraphNode {
 /** Normalize a graph link to the canonical shape expected by the UI. */
 export function normalizeLink(link: Partial<GraphLink>): GraphLink {
   return {
+    id: link.id,
     source: link.source ?? "",
     target: link.target ?? "",
     weight: link.weight ?? 0.5,
     link_type: link.link_type ?? "related",
+    source_type: link.source_type ?? "user",
+    last_weight_update: link.last_weight_update,
   };
 }
 

@@ -32,20 +32,24 @@
     canvas: HTMLCanvasElement | null;
     nodes: Array<{ id: string; title: string; type?: string }>;
     links: Array<{
+      id?: string;
       source: string;
       target: string;
       link_type?: string;
       weight?: number;
       source_type?: string;
+      last_weight_update?: string;
     }>;
     loading?: boolean;
     hoveredNodeId?: string | null;
     hoveredLink?: {
+      id?: string;
       source: string;
       target: string;
       link_type: string;
       weight: number;
       source_type: string;
+      last_weight_update?: string;
     } | null;
     tooltipPosition?: { x: number; y: number };
     duplicateWarning?: {
@@ -110,6 +114,7 @@
     sourceType={hoveredLink.source_type}
     sourceTitle={sourceNode?.title || t("common.unknown")}
     targetTitle={targetNode?.title || t("common.unknown")}
+    lastWeightUpdate={hoveredLink.last_weight_update}
     onEdit={onLinkEdit}
     onDelete={onLinkDelete}
   />

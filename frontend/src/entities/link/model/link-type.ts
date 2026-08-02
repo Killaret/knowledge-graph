@@ -1,9 +1,9 @@
 /**
  * LinkType — Value Object for a graph link type.
  *
- * Encapsulates the visual style (color, dash pattern) and default weight of a
- * link so that the renderer, forms, and tooltips no longer rely on string
- * literals or scattered switch statements.
+ * Encapsulates the visual style (color, dash pattern), default weight, icon and
+ * human-readable description of a link so that the renderer, forms, tooltips and
+ * legend no longer rely on string literals or scattered switch statements.
  */
 
 import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -11,10 +11,14 @@ import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 export interface LinkTypeProps {
   type: string;
   label: string;
+  icon: string;
   color: string;
+  description: string;
+  example: string;
   lineDash: number[];
   defaultWeight: number;
   isUi?: boolean;
+  creatable?: boolean;
 }
 
 export class LinkType {
@@ -28,8 +32,20 @@ export class LinkType {
     return formatMessage(this.props.label, getCurrentLocale());
   }
 
+  get icon(): string {
+    return this.props.icon;
+  }
+
   get color(): string {
     return this.props.color;
+  }
+
+  get description(): string {
+    return formatMessage(this.props.description, getCurrentLocale());
+  }
+
+  get example(): string {
+    return formatMessage(this.props.example, getCurrentLocale());
   }
 
   get lineDash(): number[] {
@@ -42,6 +58,10 @@ export class LinkType {
 
   get isUi(): boolean {
     return this.props.isUi ?? true;
+  }
+
+  get creatable(): boolean {
+    return this.props.creatable ?? true;
   }
 
   /**
@@ -78,7 +98,10 @@ export class LinkType {
   static readonly REFERENCE = new LinkType({
     type: "reference",
     label: "linkType.reference",
+    icon: "📖",
     color: "#3366ff",
+    description: "linkType.reference.description",
+    example: "linkType.reference.example",
     lineDash: [],
     defaultWeight: 0.8,
   });
@@ -86,7 +109,10 @@ export class LinkType {
   static readonly DEPENDENCY = new LinkType({
     type: "dependency",
     label: "linkType.dependency",
+    icon: "🔗",
     color: "#ff6600",
+    description: "linkType.dependency.description",
+    example: "linkType.dependency.example",
     lineDash: [10, 3],
     defaultWeight: 0.7,
   });
@@ -94,7 +120,10 @@ export class LinkType {
   static readonly RELATED = new LinkType({
     type: "related",
     label: "linkType.related",
+    icon: "🔀",
     color: "#999999",
+    description: "linkType.related.description",
+    example: "linkType.related.example",
     lineDash: [],
     defaultWeight: 0.5,
   });
@@ -102,7 +131,10 @@ export class LinkType {
   static readonly CUSTOM = new LinkType({
     type: "custom",
     label: "linkType.custom",
+    icon: "✨",
     color: "#ff66ff",
+    description: "linkType.custom.description",
+    example: "linkType.custom.example",
     lineDash: [2, 6],
     defaultWeight: 0.5,
     isUi: false,
@@ -111,7 +143,10 @@ export class LinkType {
   static readonly PARENT = new LinkType({
     type: "parent",
     label: "linkType.parent",
-    color: "#3366ff",
+    icon: "⬆️",
+    color: "#2dd4bf",
+    description: "linkType.parent.description",
+    example: "linkType.parent.example",
     lineDash: [],
     defaultWeight: 0.9,
   });
@@ -119,12 +154,15 @@ export class LinkType {
   static readonly CHILD = new LinkType({
     type: "child",
     label: "linkType.child",
-    color: "#3366ff",
+    icon: "⬇️",
+    color: "#f472b6",
+    description: "linkType.child.description",
+    example: "linkType.child.example",
     lineDash: [],
     defaultWeight: 0.9,
   });
 
-  private static readonly ALL = [
+  static readonly ALL_TYPES = [
     LinkType.REFERENCE,
     LinkType.DEPENDENCY,
     LinkType.RELATED,
@@ -133,7 +171,10 @@ export class LinkType {
     LinkType.CHILD,
   ] as const;
 
-  private static readonly MAP = new Map(LinkType.ALL.map((linkType) => [linkType.type, linkType]));
+  private static readonly MAP = new Map(
+    LinkType.ALL_TYPES.map((linkType) => [linkType.type, linkType])
+  );
 
-  static readonly UI_TYPES = LinkType.ALL.filter((linkType) => linkType.isUi);
+  static readonly UI_TYPES = LinkType.ALL_TYPES.filter((linkType) => linkType.isUi);
+  static readonly CREATABLE_TYPES = LinkType.ALL_TYPES.filter((linkType) => linkType.creatable);
 }

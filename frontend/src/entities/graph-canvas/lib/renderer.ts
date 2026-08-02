@@ -581,6 +581,62 @@ export function drawBackground(
   }
 }
 
+const BIDIRECTIONAL_LINK_OFFSET = 24;
+
+/**
+ * Draw a quadratic bezier path between two nodes, optionally curving it
+ * perpendicular to the straight segment by `curveOffset`.
+ */
+function drawCurvedLinkPath(
+  ctx: CanvasRenderingContext2D,
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+  curveOffset: number
+): void {
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const midX = (source.x + target.x) / 2;
+  const midY = (source.y + target.y) / 2;
+
+  if (curveOffset === 0) {
+    ctx.moveTo(source.x, source.y);
+    ctx.lineTo(target.x, target.y);
+    return;
+  }
+
+  // Perpendicular vector (rotated 90° counter-clockwise)
+  const perpX = (-dy / len) * curveOffset;
+  const perpY = (dx / len) * curveOffset;
+
+  ctx.moveTo(source.x, source.y);
+  ctx.quadraticCurveTo(midX + perpX, midY + perpY, target.x, target.y);
+}
+
+/**
+ * Detect links that have a reverse counterpart and build a map
+ * from pair key to the number of reverse links.
+ */
+function buildBidirectionalPairSet(links: SimulationLink[]): Set<string> {
+  const pairKeys = new Set<string>();
+  const reverseKeys = new Set<string>();
+
+  for (const link of links) {
+    const sourceId = getLinkEndpointId(link.source);
+    const targetId = getLinkEndpointId(link.target);
+    const [a, b] = sourceId < targetId ? [sourceId, targetId] : [targetId, sourceId];
+    const pairKey = `${a}|${b}`;
+    const reverseKey = `${targetId}|${sourceId}`;
+
+    if (pairKeys.has(reverseKey)) {
+      reverseKeys.add(pairKey);
+    }
+    pairKeys.add(pairKey);
+  }
+
+  return reverseKeys;
+}
+
 /**
  * Draw animated link with moving dots
  */
@@ -590,7 +646,8 @@ export function drawAnimatedLink(
   nodes: Map<string, SimulationNode>,
   time: number,
   linkCount: number,
-  hoveredNodeId?: string | null
+  hoveredNodeId?: string | null,
+  curveOffset: number = 0
 ): void {
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
@@ -610,7 +667,7 @@ export function drawAnimatedLink(
 
   if (linkCount > PERFORMANCE_THRESHOLD_LINKS) {
     // Fallback to static link for performance
-    drawLink(ctx, link, source, target, 1, hoveredNodeId);
+    drawLink(ctx, link, source, target, 1, hoveredNodeId, false, 0);
     return;
   }
 
@@ -622,10 +679,9 @@ export function drawAnimatedLink(
   const color = linkType.getColor(link.weight ?? 0.5, opacity);
   const dashArray = linkType.getLineDash(link.weight);
 
-  // Draw base line
+  // Draw base curve
   ctx.beginPath();
-  ctx.moveTo(source.x, source.y);
-  ctx.lineTo(target.x, target.y);
+  drawCurvedLinkPath(ctx, source, target, curveOffset);
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.setLineDash(dashArray);
@@ -652,7 +708,8 @@ export function drawLink(
   targetNode: SimulationNode,
   opacity: number = 1,
   hoveredNodeId?: string | null,
-  isDuplicateHighlighted?: boolean
+  isDuplicateHighlighted?: boolean,
+  curveOffset: number = 0
 ): void {
   // Check if this link should be highlighted
   const isHovered =

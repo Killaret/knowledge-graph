@@ -3,7 +3,13 @@
   import { browser } from "$app/environment";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphMode } from "$entities";
-  import { GraphCanvasOverlay, GraphCanvasModals, GraphCanvasControls } from "$features/graph-ui";
+  import {
+    GraphCanvasOverlay,
+    GraphCanvasModals,
+    GraphCanvasControls,
+    LinkTypeLegend,
+  } from "$features/graph-ui";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
   import {
@@ -92,20 +98,28 @@
       created_at?: string;
     }>;
     links: Array<{
+      id?: string;
       source: string;
       target: string;
       weight?: number;
       link_type?: string;
       source_type?: string;
+      last_weight_update?: string;
     }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onLinkEdit?: (link: {
+      id?: string;
       source: string;
       target: string;
       link_type: string;
       weight: number;
     }) => void;
-    onLinkDelete?: (link: { source: string; target: string; link_type: string }) => void;
+    onLinkDelete?: (link: {
+      id?: string;
+      source: string;
+      target: string;
+      link_type: string;
+    }) => void;
     onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
     onLinkCreate?: (link: {
       source: string;
@@ -171,6 +185,17 @@
     linkOpacity: new Map(),
     fadeAnimationId: null,
   };
+
+  // Filter links based on selected types and minimum weight
+  const visibleLinks = $derived(
+    links.filter((l) => {
+      const typeMatch =
+        graphStore.selectedLinkTypes.length === 0 ||
+        graphStore.selectedLinkTypes.includes(l.link_type ?? "related");
+      const weightMatch = (l.weight ?? 0.5) >= graphStore.minLinkWeight;
+      return typeMatch && weightMatch;
+    })
+  );
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = "";
@@ -316,8 +341,10 @@
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _ = mounted; // track mounted state
     const nodesCount = nodes.length;
-    const linksCount = links.length;
-    const dataKey = `${nodesCount}-${linksCount}`;
+    const linksCount = visibleLinks.length;
+    const selectedTypesCount = graphStore.selectedLinkTypes.length;
+    const minWeight = graphStore.minLinkWeight;
+    const dataKey = `${nodesCount}-${linksCount}-${selectedTypesCount}-${minWeight}`;
 
     if (dataKey === lastDataKey && simState.isRunning) {
       return;
@@ -346,7 +373,7 @@
     // Запускаем новую симуляцию
     startSimulation(
       pinnedNodes,
-      links,
+      visibleLinks,
       width,
       height,
       simState,
@@ -516,6 +543,14 @@
   onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
   onToggleMode={() => canvasState.handleToggleFocus(redraw)}
   onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
+/>
+
+<LinkTypeLegend
+  selectedTypes={graphStore.selectedLinkTypes}
+  minWeight={graphStore.minLinkWeight}
+  showMinWeight={true}
+  onToggle={(type) => graphStore.toggleLinkType(type)}
+  onMinWeightChange={(value) => (graphStore.minLinkWeight = value)}
 />
 
 <GraphCanvasModals
