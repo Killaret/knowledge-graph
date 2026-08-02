@@ -126,8 +126,18 @@
   }
 
   const typeFilters = [
-    { id: "inbox", label: t("filter.inbox"), emoji: "📥" },
-    { id: "all", label: t("filter.all"), emoji: "�" },
+    {
+      id: "inbox",
+      label: t("filter.inbox"),
+      emoji: "📥",
+      description: t("filter.inbox.description"),
+    },
+    {
+      id: "all",
+      label: t("filter.all"),
+      emoji: "🌌",
+      description: t("filter.all.description"),
+    },
     ...[
       "star",
       "planet",
@@ -142,7 +152,13 @@
       "unknown",
     ].map((id) => {
       const body = CelestialBody.fromString(id);
-      return { id, label: filterLabel(body), emoji: body.emoji };
+      return {
+        id,
+        label: filterLabel(body),
+        emoji: body.emoji,
+        description: body.description,
+        example: body.example,
+      };
     }),
   ];
 

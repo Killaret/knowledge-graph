@@ -54,7 +54,9 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Filters and sorting
     "filter.all": "All",
+    "filter.all.description": "Show all notes regardless of type.",
     "filter.inbox": "Inbox",
+    "filter.inbox.description": "Quick-captured and unprocessed notes.",
     "filter.type.dust": "Cosmic Dust",
     "filter.type.blackhole": "Black Holes",
     "filter.type.unknown": "Unknown",
@@ -765,7 +767,9 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Filters and sorting
     "filter.all": "Все",
+    "filter.all.description": "Показать все заметки независимо от типа.",
     "filter.inbox": "Входящие",
+    "filter.inbox.description": "Быстро захваченные и необработанные заметки.",
     "filter.type.dust": "Космическая пыль",
     "filter.type.blackhole": "Чёрные дыры",
     "filter.type.unknown": "Неизвестное",

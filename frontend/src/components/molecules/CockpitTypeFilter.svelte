@@ -5,6 +5,8 @@
     id: string;
     label: string;
     emoji: string;
+    description?: string;
+    example?: string;
   }
 
   interface Props {
@@ -30,10 +32,17 @@
         onclick={() => onSelect(filter.id)}
         aria-pressed={selected === filter.id}
         data-testid="cockpit-type-filter-{filter.id}"
-        title={t("filter.filterBy", { type: filter.label })}
+        title={filter.description
+          ? `${filter.description}${filter.example ? `\n${t("typeSelector.example")}: ${filter.example}` : ""}`
+          : t("filter.filterBy", { type: filter.label })}
       >
         <span class="filter-emoji">{filter.emoji}</span>
-        <span class="filter-label">{filter.label}</span>
+        <span class="filter-text">
+          <span class="filter-label">{filter.label}</span>
+          {#if filter.description}
+            <span class="filter-description">{filter.description}</span>
+          {/if}
+        </span>
         {#if typeCounts[filter.id] !== undefined}
           <span class="filter-count" data-testid="filter-count-{filter.id}"
             >{typeCounts[filter.id]}</span
@@ -87,8 +96,24 @@
     font-size: 16px;
   }
 
-  .filter-label {
+  .filter-text {
+    display: flex;
+    flex-direction: column;
     flex: 1;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .filter-label {
+    line-height: 1.2;
+  }
+
+  .filter-description {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .filter-count {

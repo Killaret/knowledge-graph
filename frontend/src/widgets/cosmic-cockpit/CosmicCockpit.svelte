@@ -26,7 +26,13 @@
     selectedNodeId?: string | null;
     nodeCount?: number;
     linkCount?: number;
-    typeFilters?: Array<{ id: string; label: string; emoji: string }>;
+    typeFilters?: Array<{
+      id: string;
+      label: string;
+      emoji: string;
+      description?: string;
+      example?: string;
+    }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
     notes?: Array<{ id: string; title: string; type?: string }>;

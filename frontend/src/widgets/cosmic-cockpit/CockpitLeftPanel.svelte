@@ -5,7 +5,13 @@
   import CockpitTypeFilter from "$components/molecules/CockpitTypeFilter.svelte";
 
   interface Props {
-    typeFilters?: Array<{ id: string; label: string; emoji: string }>;
+    typeFilters?: Array<{
+      id: string;
+      label: string;
+      emoji: string;
+      description?: string;
+      example?: string;
+    }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
     currentView?: "graph" | "list" | "3d";
