@@ -68,7 +68,7 @@ describe("Page list view - batch operations", () => {
     });
     vi.mocked(deleteNote).mockResolvedValue(undefined);
     vi.mocked(deleteNotesBatch).mockResolvedValue(undefined);
-    vi.mocked(restoreNote).mockResolvedValue(mockNotes[0]);
+    vi.mocked(restoreNote).mockResolvedValue(undefined);
   });
 
   it("renders sorting dropdown in list view", async () => {
