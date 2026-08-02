@@ -272,6 +272,26 @@ Description: Представление графа в виде сот (гекс�
 □ 3D Honeycomb (Stellaris) — плоская гексагональная сетка в 3D-пространстве, связи — изогнутые трубки с неоновым свечением.
 □ Переключение в режим сот из тулбара (2D и 3D).
 
+### 🎤 Interactive Onboarding & Breadcrumbs
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Scenario-based narrator (T1-T6) | ⏳ Planned | 🟠 High | 📝 Yes |
+| Breadcrumb progress (scenario + step) | ⏳ Planned | 🟠 High | 📝 Yes |
+| Spotlight and element highlighting | ⏳ Planned | 🟡 Medium | 📝 Yes |
+| Tour state, skip, and localStorage | ⏳ Planned | 🟡 Medium | 📝 Yes |
+
+**Scope:**
+- Guided tours for first graph, first note, first link, search, 3D exploration, public sharing
+- Breadcrumbs showing scenario and current step
+- Narrator panel with Next/Prev/Skip/Done
+- Spotlight overlay highlighting UI elements
+- Integration with collapsed cockpit panels
+- i18n keys for all tour strings
+
+**Related docs:**
+- `.devin/plans/plan-18f8373d959afb70.md` — cockpit redesign plan with onboarding epic
+
 ---
 
 ## 📋 LATER: Backlog
