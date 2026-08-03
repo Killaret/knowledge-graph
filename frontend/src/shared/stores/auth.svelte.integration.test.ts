@@ -175,6 +175,11 @@ describe("Auth Store Integration with PreloadService (Simplified)", () => {
 
   describe("Auth Initialization Integration", () => {
     it("should not start preload when user is already authenticated", async () => {
+      // Mark that the browser already had a successful session (cookie hint).
+      localStorageMock.getItem.mockImplementation((key: string) =>
+        key === "kg_auth_session" ? "1" : null
+      );
+
       // Мокаем успешное обновление токена (refresh передаётся через HttpOnly cookie)
       vi.mocked(authApi.refreshTokens).mockResolvedValue({
         access_token: "new_access_token",

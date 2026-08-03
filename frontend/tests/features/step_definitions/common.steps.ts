@@ -3,6 +3,7 @@ import { Given, When, Then, Before, After, type IWorld } from "@cucumber/cucumbe
 import { expect } from "@playwright/test";
 import type { Page, APIRequestContext } from "@playwright/test";
 import { createNote, createLink } from "../../helpers/testData";
+import { openCockpitPanel } from "../../helpers/testUtils";
 
 // Custom world type
 interface ITestWorld extends IWorld {
@@ -196,6 +197,7 @@ Given("I am on the 3D graph page for a note with connections", async function (t
 When(
   "I click the {string} toggle button in the floating controls",
   async function (this: ITestWorld, viewName: string) {
+    await openCockpitPanel(this.page, "top");
     const testId =
       viewName.toLowerCase() === "list"
         ? "view-toggle-list"
@@ -227,6 +229,7 @@ When(
 When(
   "I click the {string} filter chip in floating controls",
   async function (this: ITestWorld, filterName: string) {
+    await openCockpitPanel(this.page, "left");
     const filterId = filterName.toLowerCase().replace("s", ""); // stars -> star
     const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
     await expect(chip).toBeVisible({ timeout: 5000 });
@@ -240,6 +243,7 @@ When(
 );
 
 When("I type {string} in the search input", async function (this: ITestWorld, searchText: string) {
+  await openCockpitPanel(this.page, "top");
   const searchInput = this.page.locator('[data-testid="search-input"]').first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(searchText);
@@ -248,6 +252,7 @@ When("I type {string} in the search input", async function (this: ITestWorld, se
 });
 
 When("I clear the search input", async function (this: ITestWorld) {
+  await openCockpitPanel(this.page, "top");
   const searchInput = this.page.locator('[data-testid="search-input"]').first();
   await searchInput.clear();
   await this.page.waitForTimeout(300);
@@ -258,6 +263,7 @@ When(
   async function (this: ITestWorld, buttonLabel: string) {
     const label = buttonLabel.toLowerCase();
     let testId: string;
+    let panel: "top" | "left" = "top";
     if (label.includes("list")) {
       testId = "view-toggle-list";
     } else if (label.includes("graph")) {
@@ -265,11 +271,22 @@ When(
     } else if (label.includes("3d") || label.includes("3d view")) {
       testId = "view-toggle-3d";
     } else if (label.includes("reset") || label.includes("camera")) {
-      testId = "reset-camera-button";
+      // Reset/focus controls live in the left panel now
+      await openCockpitPanel(this.page, "left");
+      await this.page.evaluate((text) => {
+        const buttons = Array.from(document.querySelectorAll("button"));
+        const button = buttons.find((b) =>
+          b.textContent?.toLowerCase().includes(text.toLowerCase())
+        );
+        if (button) button.click();
+        else throw new Error(`Button with text "${text}" not found`);
+      }, buttonLabel);
+      return;
     } else if (label.includes("+") || label.includes("create")) {
       testId = "create-note-button";
     } else {
       // Fallback - use text content for other buttons
+      await openCockpitPanel(this.page, panel);
       await this.page.evaluate((text) => {
         const buttons = Array.from(document.querySelectorAll("button"));
         const button = buttons.find((b) =>
@@ -280,6 +297,7 @@ When(
       }, buttonLabel);
       return;
     }
+    await openCockpitPanel(this.page, panel);
     // Use JavaScript click to bypass viewport checks for fixed positioned elements
     await this.page.evaluate((id) => {
       const button = document.querySelector(`[data-testid="${id}"]`);
@@ -376,6 +394,7 @@ Then("I am in list view", async function (this: ITestWorld) {
   await this.page.waitForTimeout(2000);
 
   // Click the list view toggle button
+  await openCockpitPanel(this.page, "top");
   const listToggleButton = this.page.locator('[data-testid="view-toggle-list"]').first();
   await expect(listToggleButton).toBeVisible({ timeout: 5000 });
   await this.page.evaluate(() => {
@@ -401,7 +420,7 @@ Then("I am in list view", async function (this: ITestWorld) {
 });
 
 Then("I am in graph view", async function (this: ITestWorld) {
-  const graph = this.page.locator(".fullscreen-graph").first();
+  const graph = this.page.locator('[data-testid="graph-2d-container"]').first();
   const isVisible = await graph.isVisible().catch(() => false);
   if (!isVisible) {
     // Click graph toggle
@@ -562,7 +581,7 @@ Then("non-matching nodes should be dimmed or hidden", async function (this: ITes
 });
 
 Then("all nodes should be visible", async function (this: ITestWorld) {
-  const canvas = this.page.locator("canvas, .fullscreen-graph canvas").first();
+  const canvas = this.page.locator('[data-testid="graph-canvas"]').first();
   await expect(canvas).toBeVisible({ timeout: 5000 });
   // After clearing search, all nodes should be visible
   const nodeCount = await this.page.evaluate(() => {
@@ -583,6 +602,7 @@ Given("I am on the main page", async function (this: ITestWorld) {
 
 // Toggle button variations
 When("I click the {string} toggle button", async function (this: ITestWorld, viewName: string) {
+  await openCockpitPanel(this.page, "top");
   // Map view names to data-testid selectors
   const name = viewName.toLowerCase();
   let testId: string;
@@ -614,7 +634,7 @@ When("I click the {string} toggle button", async function (this: ITestWorld, vie
 
 // Graph canvas visibility
 Then("the graph canvas should be visible", async function (this: ITestWorld) {
-  const canvas = this.page.locator(".fullscreen-graph canvas, canvas").first();
+  const canvas = this.page.locator('[data-testid="graph-canvas"]').first();
   await expect(canvas).toBeVisible({ timeout: 10000 });
 });
 

@@ -5,17 +5,20 @@
     cockpitStore,
     type CockpitPanelPosition,
   } from "$features/cosmic-cockpit";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   interface Props {
     position: CockpitPanelPosition;
     size: number;
+    handleSize?: number;
     title?: string;
+    delay?: number;
     children?: import("svelte").Snippet;
   }
 
-  const { position, size, title, children }: Props = $props();
+  const { position, size, handleSize = COCKPIT_EDGE_SIZE, title, delay, children }: Props =
+    $props();
 
-  let edgeRef: HTMLDivElement | null = $state(null);
   let panelRef: HTMLDivElement | null = $state(null);
   let dragStartX = $state(0);
   let dragStartY = $state(0);
@@ -25,13 +28,18 @@
 
   const panel = $derived(cockpitStore.panels[position]);
   const isOpen = $derived(panel.open || panel.pinned || panel.hovering);
+  const visibleSize = $derived(isOpen ? size : handleSize);
+  const hoverDelay = $derived(delay ?? cockpitStore.hoverDelay);
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string>) => formatMessage(key, locale, params);
 
   function open() {
-    if (hoverTimer) return; // already queued
+    if (hoverTimer) return;
     hoverTimer = setTimeout(() => {
       cockpitStore.openPanel(position);
       hoverTimer = null;
-    }, cockpitStore.hoverDelay);
+    }, hoverDelay);
   }
 
   function cancelOpen() {
@@ -49,7 +57,7 @@
         cockpitStore.closePanel(position);
       }
       closeTimer = null;
-    }, cockpitStore.hoverDelay);
+    }, hoverDelay);
   }
 
   function cancelClose() {
@@ -59,7 +67,7 @@
     }
   }
 
-  function handleEdgeEnter() {
+  function handleEnter() {
     if (cockpitStore.firstPerson) return;
     cockpitStore.hoverPanel(position, true);
     cancelClose();
@@ -68,22 +76,9 @@
     }
   }
 
-  function handleEdgeLeave() {
+  function handleLeave() {
     cockpitStore.hoverPanel(position, false);
     cancelOpen();
-    if (panel.open && !panel.pinned) {
-      scheduleClose();
-    }
-  }
-
-  function handlePanelEnter() {
-    if (cockpitStore.firstPerson) return;
-    cockpitStore.hoverPanel(position, true);
-    cancelClose();
-  }
-
-  function handlePanelLeave() {
-    cockpitStore.hoverPanel(position, false);
     if (panel.open && !panel.pinned) {
       scheduleClose();
     }
@@ -128,195 +123,175 @@
     cockpitStore.setPanel(position, { open: false, pinned: false });
   }
 
-  function getEdgeStyle(): string {
-    switch (position) {
-      case "top":
-        return `top:0;left:0;width:100vw;height:${COCKPIT_EDGE_SIZE}px;`;
-      case "bottom":
-        return `bottom:0;left:0;width:100vw;height:${COCKPIT_EDGE_SIZE}px;`;
-      case "left":
-        return `top:0;left:0;width:${COCKPIT_EDGE_SIZE}px;height:100vh;`;
-      case "right":
-        return `top:0;right:0;width:${COCKPIT_EDGE_SIZE}px;height:100vh;`;
-    }
-  }
-
   function getPanelStyle(): string {
+    const base =
+      "position:absolute; z-index:150; display:flex; overflow:hidden; pointer-events:auto;";
+    const flexDir =
+      position === "left" || position === "right" ? "row" : "column";
+    const isVertical = flexDir === "row";
+
+    const transform = isVertical
+      ? position === "left"
+        ? "transform: translateX(calc(var(--panel-visible) - var(--panel-full)));"
+        : "transform: translateX(calc(var(--panel-full) - var(--panel-visible)));"
+      : position === "top"
+        ? "transform: translateY(calc(var(--panel-visible) - var(--panel-full)));"
+        : "transform: translateY(calc(var(--panel-full) - var(--panel-visible)));";
+
     switch (position) {
-      case "top":
-        return `top:0;left:0;width:100vw;height:${size}px;transform:translateY(${isOpen ? 0 : -size}px);`;
-      case "bottom":
-        return `bottom:0;left:0;width:100vw;height:${size}px;transform:translateY(${isOpen ? 0 : size}px);`;
       case "left":
-        return `top:0;left:0;width:${size}px;height:100vh;transform:translateX(${isOpen ? 0 : -size}px);`;
+        return `${base} flex-direction:${flexDir}; top:var(--inset-top,0); bottom:var(--inset-bottom,0); left:0; width:var(--panel-full); ${transform}`;
       case "right":
-        return `top:0;right:0;width:${size}px;height:100vh;transform:translateX(${isOpen ? 0 : size}px);`;
+        return `${base} flex-direction:${flexDir}; top:var(--inset-top,0); bottom:var(--inset-bottom,0); right:0; width:var(--panel-full); ${transform}`;
+      case "top":
+        return `${base} flex-direction:${flexDir}; left:var(--inset-left,0); right:var(--inset-right,0); top:0; height:var(--panel-full); ${transform}`;
+      case "bottom":
+        return `${base} flex-direction:${flexDir}; left:var(--inset-left,0); right:var(--inset-right,0); bottom:0; height:var(--panel-full); ${transform}`;
     }
   }
 
   function getTransition(): string {
     return cockpitStore.reducedMotion ? "none" : "transform 0.3s ease";
   }
+
+  const arrowRotation = $derived(
+    ({
+      left: 0,
+      right: 180,
+      top: 90,
+      bottom: -90,
+    } as const)[position]
+  );
 </script>
 
 {#if browser}
-  <!-- Invisible edge trigger for hover and drag-to-open -->
   <div
-    bind:this={edgeRef}
-    class="cockpit-edge cockpit-edge--{position}"
+    bind:this={panelRef}
+    class="cockpit-panel cockpit-panel--{position}"
     class:first-person={cockpitStore.firstPerson}
-    style={getEdgeStyle()}
-    onmouseenter={handleEdgeEnter}
-    onmouseleave={handleEdgeLeave}
-    onpointerdown={handlePointerDown}
-    onpointermove={handlePointerMove}
-    onpointerup={handlePointerUp}
-    onpointercancel={handlePointerUp}
-    role="button"
-    aria-label="Open {position} panel"
-    tabindex="-1"
-  ></div>
+    style="--panel-full:{size}px;--panel-visible:{visibleSize}px;--panel-handle-size:{handleSize}px;{getPanelStyle()} transition:{getTransition()};"
+    onmouseenter={handleEnter}
+    onmouseleave={handleLeave}
+    data-testid="cockpit-panel-{position}"
+    role="region"
+    aria-label="{title ? `${title} — ` : ""}{t('cockpit.panel.ariaLabel', { position })}"
+  >
+    <div class="panel-glow" aria-hidden="true"></div>
+
+    {#if position === "right" || position === "bottom"}
+      <div
+        class="panel-handle panel-handle--{position}"
+        class:open={isOpen}
+        onpointerdown={handlePointerDown}
+        onpointermove={handlePointerMove}
+        onpointerup={handlePointerUp}
+        onpointercancel={handlePointerUp}
+        data-testid="cockpit-handle-{position}"
+        aria-label={t("cockpit.handle.open", { position })}
+        role="button"
+        tabindex="-1"
+      >
+        <svg
+          class="handle-arrow"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="transform: rotate({arrowRotation}deg);"
+          aria-hidden="true"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+    {/if}
+
+    <div class="panel-body">
+      <header class="panel-header">
+        {#if title}
+          <h3 class="panel-title">{title}</h3>
+        {/if}
+        <div class="panel-actions" class:panel-actions--no-title={!title}>
+          <button
+            type="button"
+            class="pin-btn"
+            class:pinned={panel.pinned}
+            onclick={togglePin}
+            aria-pressed={panel.pinned}
+            aria-label={panel.pinned ? t("cockpit.panel.unpin") : t("cockpit.panel.pin")}
+            data-testid="cockpit-panel-pin-{position}"
+            title={panel.pinned ? t("cockpit.panel.unpin") : t("cockpit.panel.pin")}
+          >
+            {panel.pinned ? "📌" : "📎"}
+          </button>
+          <button
+            type="button"
+            class="close-btn"
+            onclick={close}
+            aria-label={t("cockpit.panel.close")}
+            data-testid="cockpit-panel-close-{position}"
+            title={t("cockpit.panel.close")}
+          >
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <div class="panel-content">
+        {@render children?.()}
+      </div>
+    </div>
+
+    {#if position === "left" || position === "top"}
+      <div
+        class="panel-handle panel-handle--{position}"
+        class:open={isOpen}
+        onpointerdown={handlePointerDown}
+        onpointermove={handlePointerMove}
+        onpointerup={handlePointerUp}
+        onpointercancel={handlePointerUp}
+        data-testid="cockpit-handle-{position}"
+        aria-label={t("cockpit.handle.open", { position })}
+        role="button"
+        tabindex="-1"
+      >
+        <svg
+          class="handle-arrow"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="transform: rotate({arrowRotation}deg);"
+          aria-hidden="true"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+    {/if}
+  </div>
 {/if}
 
-<!-- Slide-out panel -->
-<div
-  bind:this={panelRef}
-  class="cockpit-panel cockpit-panel--{position}"
-  class:first-person={cockpitStore.firstPerson}
-  style="{getPanelStyle()} transition: {getTransition()};"
-  onmouseenter={handlePanelEnter}
-  onmouseleave={handlePanelLeave}
-  data-testid="cockpit-panel-{position}"
-  role="region"
-  aria-label="{position} cockpit panel"
->
-  <div class="panel-glow"></div>
-  <header class="panel-header">
-    {#if title}
-      <h3 class="panel-title">{title}</h3>
-    {/if}
-    <div class="panel-actions" class:panel-actions--no-title={!title}>
-      <button
-        type="button"
-        class="pin-btn"
-        class:pinned={panel.pinned}
-        onclick={togglePin}
-        aria-pressed={panel.pinned}
-        aria-label={panel.pinned ? "Unpin panel" : "Pin panel"}
-        data-testid="cockpit-panel-pin-{position}"
-      >
-        {panel.pinned ? "📌" : "📎"}
-      </button>
-      <button
-        type="button"
-        class="close-btn"
-        onclick={close}
-        aria-label="Close panel"
-        data-testid="cockpit-panel-close-{position}"
-      >
-        ✕
-      </button>
-    </div>
-  </header>
-
-  <div class="panel-content">
-    {@render children?.()}
-  </div>
-</div>
-
 <style>
-  .cockpit-edge {
-    position: fixed;
-    z-index: 200;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .cockpit-edge::after {
-    content: "";
-    position: absolute;
-    background: rgba(45, 212, 191, 0.25);
-    box-shadow: 0 0 12px rgba(45, 212, 191, 0.3);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
-  .cockpit-edge--top::after,
-  .cockpit-edge--bottom::after {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 4px;
-    border-radius: 2px;
-  }
-
-  .cockpit-edge--top::after {
-    top: 10px;
-  }
-
-  .cockpit-edge--bottom::after {
-    bottom: 10px;
-  }
-
-  .cockpit-edge--left::after,
-  .cockpit-edge--right::after {
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 120px;
-    border-radius: 2px;
-  }
-
-  .cockpit-edge--left::after {
-    left: 10px;
-  }
-
-  .cockpit-edge--right::after {
-    right: 10px;
-  }
-
-  .cockpit-edge:hover::after {
-    opacity: 1;
-  }
-
-  .cockpit-edge.first-person {
-    opacity: 0;
-    pointer-events: none;
-  }
-
   .cockpit-panel {
-    position: fixed;
-    z-index: 150;
-    display: flex;
-    flex-direction: column;
-    background: rgba(10, 10, 15, 0.88);
-    backdrop-filter: blur(16px);
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(18px);
     border: 1px solid rgba(45, 212, 191, 0.25);
-    box-shadow: 0 0 24px rgba(45, 212, 191, 0.12);
+    box-shadow:
+      0 0 28px rgba(0, 0, 0, 0.55),
+      0 0 12px rgba(45, 212, 191, 0.08);
     color: var(--color-text, #e0e0e0);
-    overflow: hidden;
-    pointer-events: auto;
   }
 
   .cockpit-panel.first-person {
     opacity: 0;
     pointer-events: none;
-  }
-
-  .cockpit-panel--top {
-    border-bottom: 1px solid rgba(45, 212, 191, 0.4);
-  }
-
-  .cockpit-panel--bottom {
-    border-top: 1px solid rgba(45, 212, 191, 0.4);
-  }
-
-  .cockpit-panel--left {
-    border-right: 1px solid rgba(45, 212, 191, 0.4);
-  }
-
-  .cockpit-panel--right {
-    border-left: 1px solid rgba(45, 212, 191, 0.4);
   }
 
   .panel-glow {
@@ -329,6 +304,18 @@
       rgba(192, 38, 211, 0.04) 100%
     );
     pointer-events: none;
+    z-index: 0;
+  }
+
+  .panel-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .panel-header {
@@ -339,6 +326,7 @@
     min-height: 44px;
     border-bottom: 1px solid rgba(45, 212, 191, 0.15);
     user-select: none;
+    flex-shrink: 0;
   }
 
   .panel-title {
@@ -391,11 +379,90 @@
     flex: 1;
     overflow: auto;
     padding: 12px;
+    min-width: 0;
+    min-height: 0;
   }
 
-  @media (max-width: 768px) {
-    .cockpit-edge::after {
+  .panel-handle {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: linear-gradient(
+      180deg,
+      rgba(45, 212, 191, 0.15) 0%,
+      rgba(10, 10, 15, 0.9) 45%,
+      rgba(10, 10, 15, 0.9) 55%,
+      rgba(192, 38, 211, 0.12) 100%
+    );
+    border: 1px solid rgba(45, 212, 191, 0.22);
+    box-shadow:
+      inset 0 0 10px rgba(45, 212, 191, 0.08),
+      0 0 12px rgba(0, 0, 0, 0.5);
+    transition:
+      background 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .panel-handle--left,
+  .panel-handle--right {
+    width: var(--panel-handle-size, 24px);
+    height: auto;
+    align-self: stretch;
+  }
+
+  .panel-handle--top,
+  .panel-handle--bottom {
+    height: var(--panel-handle-size, 24px);
+    width: auto;
+    align-self: stretch;
+  }
+
+  .panel-handle:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(45, 212, 191, 0.28) 0%,
+      rgba(20, 20, 35, 0.95) 45%,
+      rgba(20, 20, 35, 0.95) 55%,
+      rgba(192, 38, 211, 0.2) 100%
+    );
+    box-shadow:
+      inset 0 0 16px rgba(45, 212, 191, 0.15),
+      0 0 18px rgba(45, 212, 191, 0.15);
+  }
+
+  .handle-arrow {
+    color: rgba(45, 212, 191, 0.75);
+    filter: drop-shadow(0 0 4px rgba(45, 212, 191, 0.4));
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  .panel-handle.open .handle-arrow {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    50% {
       opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cockpit-panel {
+      transition: none !important;
+    }
+    .handle-arrow {
+      animation: none;
     }
   }
 </style>

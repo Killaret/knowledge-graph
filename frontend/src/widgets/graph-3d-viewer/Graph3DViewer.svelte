@@ -7,7 +7,7 @@
   import type { GraphNode, GraphLink } from "$shared/api/graph";
   import type { Component } from "svelte";
 
-  interface Props {
+  export interface Props {
     nodes: GraphNode[];
     links: GraphLink[];
     centerNodeId?: string | null;
@@ -108,7 +108,7 @@
     height: 100%;
     position: relative;
     overflow: hidden;
-    background: #050510;
+    background: transparent;
   }
 
   .loading-overlay,

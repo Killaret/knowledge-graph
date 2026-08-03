@@ -1,1 +1,1 @@
-export { default as SingularityDropZone } from "./SingularityDropZone.svelte";
+export { default as CockpitFrame } from "./CockpitFrame.svelte";

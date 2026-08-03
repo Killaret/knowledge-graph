@@ -244,23 +244,23 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     const blackHole = context.getBlackHole();
     const ghostNode = context.getGhostNode();
 
-    blackHole.hovered = isPointOverBlackHole(e.clientX, e.clientY, blackHole, context.transform);
-
     const canvasRect = canvas.getBoundingClientRect();
     const screenX = e.clientX - canvasRect.left;
     const screenY = e.clientY - canvasRect.top;
-    const dx = screenX - 60;
-    const dy = screenY - 60;
-    ghostNode.hovered = Math.sqrt(dx * dx + dy * dy) < ghostNode.radius;
+    blackHole.hovered = isPointOverBlackHole(screenX, screenY, blackHole);
 
-    context.setSingularityHovered(context.isOverSingularity(e.clientX, e.clientY));
+    const gdx = screenX - 60;
+    const gdy = screenY - 60;
+    ghostNode.hovered = Math.sqrt(gdx * gdx + gdy * gdy) < ghostNode.radius;
+
+    context.setSingularityHovered(isPointOverBlackHole(screenX, screenY, blackHole));
 
     if (context.dragDropState.draggedNodeId && context.dragState.dragging) {
       const node = getSimulationNodes(context.simState).find(
         (n) => n.id === context.dragDropState.draggedNodeId
       );
       if (node && node.x != null && node.y != null) {
-        blackHole.hovered = isNodeOverBlackHole(node, blackHole);
+        blackHole.hovered = isNodeOverBlackHole(node, blackHole, context.transform);
 
         const targetNode = findNodeAtPosition(pos.x, pos.y, getSimulationNodes(context.simState));
         if (

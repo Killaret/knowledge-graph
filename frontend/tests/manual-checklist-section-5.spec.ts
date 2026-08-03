@@ -58,10 +58,15 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
-    const beforeStats = await page.locator('[data-testid="graph-stats"]').textContent();
+    const stats = page.locator('[data-testid="graph-stats"]');
+    await expect(stats).toBeVisible({ timeout: 20000 });
+    await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
+      timeout: 20000,
+    });
+    const beforeStats = await stats.textContent();
 
     // Logout via UI: the auth store clears tokens and redirects
-    const logoutBtn = page.locator("text=Logout").first();
+    const logoutBtn = page.locator('[data-testid="menu-logout"]').first();
     if (await logoutBtn.isVisible().catch(() => false)) {
       await logoutBtn.click();
       await page.waitForURL(/\/(auth\/login|)/, { timeout: 10000 });
@@ -73,11 +78,11 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
-    await expect(page.locator('[data-testid="graph-stats"]')).toBeVisible({
+    await expect(stats).toBeVisible({
       timeout: 20000,
     });
 
-    const afterStats = await page.locator('[data-testid="graph-stats"]').textContent();
+    const afterStats = await stats.textContent();
     expect(afterStats).toBe(beforeStats);
   });
 

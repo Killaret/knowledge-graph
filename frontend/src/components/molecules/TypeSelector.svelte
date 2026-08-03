@@ -72,44 +72,46 @@
     justify-content: center;
     gap: 6px;
     padding: 8px 14px;
-    border: 2px solid var(--color-border, #e5e7eb);
-    background: var(--color-surface, white);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: var(--carbon-graphene, #12121a);
     border-radius: 20px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-secondary, #6b7280);
-    transition: all 0.2s ease;
+    color: var(--carbon-text-muted, #8b8b9e);
+    transition: all var(--carbon-transition, 0.25s ease);
     outline: none;
   }
 
   .type-btn:hover {
     border-color: var(--type-color);
     background: var(--type-bg);
-    color: var(--color-text, #1f2937);
+    color: var(--carbon-text, #f0f0f5);
     transform: translateY(-1px);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--type-color) 25%, transparent);
   }
 
-  .type-btn:focus {
-    box-shadow: 0 0 0 3px var(--type-bg);
+  .type-btn:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--type-color) 25%, transparent);
   }
 
   .type-btn.active {
-    border-color: var(--color-primary, #3b82f6);
-    background: var(--color-primary-light, rgba(59, 130, 246, 0.1));
-    color: var(--color-primary, #3b82f6);
-    box-shadow: 0 0 0 2px var(--color-primary, #3b82f6);
+    border-color: var(--type-color);
+    background: color-mix(in srgb, var(--type-color) 18%, var(--carbon-c70, #1a1a24));
+    color: var(--carbon-text, #f0f0f5);
+    box-shadow:
+      0 0 0 1px var(--type-color),
+      0 0 18px color-mix(in srgb, var(--type-color) 30%, transparent);
   }
 
   .type-btn.active:hover {
-    border-color: var(--color-primary-hover, #2563eb);
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--color-primary-hover, #2563eb);
+    filter: brightness(1.1);
   }
 
   .emoji {
     font-size: 16px;
     line-height: 1;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--type-color) 50%, transparent));
   }
 
   .type-text {
@@ -128,7 +130,7 @@
     max-width: 160px;
     font-size: 10px;
     font-weight: 400;
-    color: var(--color-text-tertiary, #9ca3af);
+    color: var(--carbon-text-dim, #5a5a6e);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -136,7 +138,7 @@
 
   .type-btn:hover .description,
   .type-btn.active .description {
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   @media (max-width: 420px) {

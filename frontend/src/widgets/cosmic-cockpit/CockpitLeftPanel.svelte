@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { isAuthenticated, currentUser } from "$shared/stores/auth.svelte";
+  import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import CockpitTypeFilter from "$components/molecules/CockpitTypeFilter.svelte";
 
@@ -14,32 +14,32 @@
     }>;
     selectedType?: string;
     typeCounts?: Record<string, number>;
-    currentView?: "graph" | "list" | "3d";
-    layoutProvider?: "d3" | "graph-service";
-    onToggleView?: (view: "graph" | "list" | "3d") => void;
-    onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     onFilter?: (type: string) => void;
     onFocus?: () => void;
     onReset?: () => void;
     onSearch?: () => void;
     notes?: Array<{ id: string; title: string; type?: string }>;
     onNoteSelect?: (id: string) => void;
+    onImport?: () => void;
+    onExport?: () => void;
+    showFullGraph?: boolean;
+    onToggleFullGraph?: (value: boolean) => void;
   }
 
   const {
     typeFilters = [],
     selectedType = "all",
     typeCounts = {},
-    currentView = "graph",
-    layoutProvider = "graph-service",
-    onToggleView,
-    onToggleLayoutProvider,
     onFilter,
     onFocus,
     onReset,
     onSearch,
     notes = [],
     onNoteSelect,
+    onImport,
+    onExport,
+    showFullGraph = true,
+    onToggleFullGraph,
   }: Props = $props();
 
   const locale = getCurrentLocale();
@@ -65,8 +65,9 @@
     onFilter?.(id);
   }
 
-  function toggleLayoutProvider(provider: "d3" | "graph-service") {
-    onToggleLayoutProvider?.(provider);
+  function handleLogout() {
+    logout();
+    goto("/auth/login");
   }
 
   function getNoteEmoji(type: string | undefined): string {
@@ -142,40 +143,17 @@
       </button>
     </div>
 
-    <h3 class="section-heading sub-heading">{t("cockpit.left.view")}</h3>
-    <div class="view-toggle">
-      {#each ["graph", "list", "3d"] as view}
-        <button
-          type="button"
-          class="toggle-btn {currentView === view ? 'active' : ''}"
-          onclick={() => onToggleView?.(view as "graph" | "list" | "3d")}
-          aria-pressed={currentView === view}
-        >
-          {view.toUpperCase()}
-        </button>
-      {/each}
-    </div>
-
-    {#if currentView === "3d"}
-      <h3 class="section-heading sub-heading">{t("cockpit.left.layoutProvider")}</h3>
-      <div class="view-toggle">
-        <button
-          type="button"
-          class="toggle-btn {layoutProvider === 'd3' ? 'active' : ''}"
-          onclick={() => toggleLayoutProvider("d3")}
-          aria-pressed={layoutProvider === "d3"}
-        >
-          D3
-        </button>
-        <button
-          type="button"
-          class="toggle-btn {layoutProvider === 'graph-service' ? 'active' : ''}"
-          onclick={() => toggleLayoutProvider("graph-service")}
-          aria-pressed={layoutProvider === "graph-service"}
-        >
-          Service
-        </button>
-      </div>
+    {#if onToggleFullGraph}
+      <h3 class="section-heading sub-heading">{t("cockpit.left.graphScope")}</h3>
+      <label class="full-graph-toggle">
+        <input
+          type="checkbox"
+          checked={showFullGraph}
+          onchange={(e) => onToggleFullGraph?.(e.currentTarget.checked)}
+          data-testid="full-graph-toggle"
+        />
+        <span>{t("graph.showAllNotes")}</span>
+      </label>
     {/if}
   </section>
 
@@ -207,6 +185,40 @@
       {:else}
         <p class="empty-note-tree">{t("cockpit.left.noNotes")}</p>
       {/each}
+    </div>
+  </section>
+
+  <section class="left-section" aria-labelledby="system-heading">
+    <h3 class="section-heading" id="system-heading">{t("cockpit.left.system")}</h3>
+    <div class="system-controls">
+      {#if onImport}
+        <button
+          type="button"
+          class="control-btn"
+          onclick={() => onImport?.()}
+          data-testid="menu-import"
+        >
+          📥 {t("controls.import")}
+        </button>
+      {/if}
+      {#if onExport}
+        <button
+          type="button"
+          class="control-btn"
+          onclick={() => onExport?.()}
+          data-testid="menu-export"
+        >
+          📤 {t("controls.export")}
+        </button>
+      {/if}
+      <button
+        type="button"
+        class="control-btn control-btn--danger"
+        onclick={handleLogout}
+        data-testid="menu-logout"
+      >
+        ↩ {t("auth.logout")}
+      </button>
     </div>
   </section>
 </div>
@@ -280,35 +292,42 @@
     text-align: center;
   }
 
-  .view-toggle {
+  .full-graph-toggle {
     display: flex;
-    gap: 4px;
-    padding: 4px;
-    background: rgba(255, 255, 255, 0.03);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
     border: 1px solid rgba(45, 212, 191, 0.1);
     border-radius: 8px;
-  }
-
-  .toggle-btn {
-    flex: 1;
-    padding: 6px 8px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--color-text, #e0e0e0);
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  .toggle-btn:hover {
-    color: white;
+  .full-graph-toggle:hover {
+    background: rgba(45, 212, 191, 0.08);
+    border-color: rgba(45, 212, 191, 0.25);
   }
 
-  .toggle-btn.active {
-    background: rgba(45, 212, 191, 0.2);
-    color: #2dd4bf;
+  .full-graph-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: #2dd4bf;
+    cursor: pointer;
+  }
+
+  .system-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-btn--danger:hover {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.25);
+    color: #f87171;
   }
 
   .user-badge {

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAsTestUser } from "./helpers/auth";
+import { clickViewToggle, clickCreateNoteButton } from "./helpers/testUtils";
 
 test.describe("Child note creation @auth-real", () => {
   test("creates a child note from the note details panel", async ({ page, request }) => {
@@ -11,7 +12,7 @@ test.describe("Child note creation @auth-real", () => {
     await page.goto("/?nocache=1", { waitUntil: "networkidle" });
 
     // Create a parent note.
-    await page.locator('[data-testid="create-note-button"]').click();
+    await clickCreateNoteButton(page);
     await page.locator('[data-testid="create-note-title"]').fill(parentTitle);
     await page.locator('[data-testid="create-note-content"]').fill("Parent content");
     await page.locator('[data-testid="create-note-submit"]').click();
@@ -21,7 +22,7 @@ test.describe("Child note creation @auth-real", () => {
     });
 
     // Switch to list view and select the parent note.
-    await page.locator('[data-testid="view-toggle-list"]').click();
+    await clickViewToggle(page, "list");
     const parentCard = page.locator('[data-testid="note-card"]').filter({ hasText: parentTitle });
     await parentCard.click();
 

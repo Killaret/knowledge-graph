@@ -27,7 +27,8 @@
 
 <div
   data-testid="graph-controls"
-  style="position: absolute; top: 56px; left: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 50;"
+  class="graph-controls"
+  style="display: flex; flex-direction: row; gap: 4px; align-items: center;"
 >
   <button
     data-testid="graph-controls-reset"

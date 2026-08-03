@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { createNote, deleteNote, getBackendUrl } from "./helpers/testData";
-import { clickViewToggle, clickCreateNoteButton, setupSkipAuth } from "./helpers/testUtils";
+import {
+  clickViewToggle,
+  clickCreateNoteButton,
+  setupSkipAuth,
+  openCockpitPanel,
+  clickFilterChip,
+} from "./helpers/testUtils";
 
 /**
  * Tests for Home Page - Graph-first interface
@@ -173,23 +179,20 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.reload();
     await page.waitForTimeout(2000);
 
-    // Click on "Stars" filter
-    const starsFilter = page.locator('[data-testid="filter-chip-star"]').first();
-    if (await starsFilter.isVisible().catch(() => false)) {
-      await starsFilter.click();
-      await page.waitForTimeout(500);
+    // Click on "Stars" filter in the collapsible left panel
+    await clickFilterChip(page, "star");
+    await page.waitForTimeout(500);
 
-      // Verify filter is applied (stats should show 'stars' indicating star filter is active)
-      const statsFilter = page.locator('[data-testid="graph-stats"]').first();
-      const hasFilterText = await statsFilter.isVisible().catch(() => false);
+    // Verify filter is applied (stats should show a count of star notes)
+    const statsFilter = page.locator('[data-testid="graph-stats"]').first();
+    const hasFilterText = await statsFilter.isVisible().catch(() => false);
 
-      if (hasFilterText) {
-        const filterText = await statsFilter.textContent();
-        const countMatch = filterText?.match(/(\d+)/);
-        if (countMatch) {
-          const count = parseInt(countMatch[1], 10);
-          expect(count).toBeGreaterThanOrEqual(1);
-        }
+    if (hasFilterText) {
+      const filterText = await statsFilter.textContent();
+      const countMatch = filterText?.match(/(\d+)/);
+      if (countMatch) {
+        const count = parseInt(countMatch[1], 10);
+        expect(count).toBeGreaterThanOrEqual(1);
       }
     }
   });
@@ -210,6 +213,7 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     await page.waitForTimeout(2000);
 
     // Fill search input
+    await openCockpitPanel(page, "top");
     const searchInput = page.locator('.search-input, input[type="search"]').first();
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill(searchTerm);
@@ -247,8 +251,8 @@ test.describe("Home Page - Graph First", { tag: ["@smoke", "@home"] }, () => {
     if (await noteCard.isVisible().catch(() => false)) {
       await noteCard.click();
 
-      // Verify side panel opens
-      const sidePanel = page.locator(".side-panel, .note-side-panel").first();
+      // Verify note details panel opens
+      const sidePanel = page.locator('[data-testid="cockpit-panel-right"]').first();
       await expect(sidePanel).toBeVisible({ timeout: 5000 });
     }
   });

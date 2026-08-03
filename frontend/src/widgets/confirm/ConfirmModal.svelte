@@ -75,10 +75,10 @@
 <Modal bind:open title={displayTitle} onClose={handleClose}>
   <p class="modal-message">{message}</p>
   <div class="modal-actions">
-    <Button variant="secondary" onClick={handleCancel}>
+    <Button variant="secondary" onClick={handleCancel} data-testid="confirm-modal-cancel">
       {displayCancelText}
     </Button>
-    <Button variant={danger ? "danger" : "primary"} onClick={handleConfirm}>
+    <Button variant={danger ? "danger" : "primary"} onClick={handleConfirm} data-testid="confirm-modal-confirm">
       {displayConfirmText}
     </Button>
   </div>

@@ -179,16 +179,17 @@
     justify-content: center;
     padding: 3rem;
     gap: 1rem;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   .spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid var(--color-border, #e5e7eb);
-    border-top-color: var(--color-primary, #3b82f6);
+    border: 3px solid var(--carbon-border, #2d2d3d);
+    border-top-color: var(--carbon-glow-cyan, #22d3ee);
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    box-shadow: 0 0 10px var(--carbon-glow-cyan, rgba(34, 211, 238, 0.2));
   }
 
   @keyframes spin {
@@ -205,7 +206,7 @@
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: var(--color-text, #374151);
+    color: var(--carbon-text-muted, #8b8b9e);
     font-size: 0.875rem;
   }
 
@@ -213,27 +214,27 @@
   textarea {
     width: 100%;
     padding: 0.625rem 0.875rem;
-    border: 1px solid var(--color-border, #d1d5db);
-    border-radius: 6px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 10px;
     font-size: 0.875rem;
     transition:
       border-color 0.2s,
       box-shadow 0.2s;
     font-family: inherit;
-    color: var(--color-text, #1f2937);
-    background: var(--color-surface, white);
+    color: var(--carbon-text, #f0f0f5);
+    background: var(--carbon-black, #050508);
   }
 
   input:focus,
   textarea:focus {
     outline: none;
-    border-color: var(--color-primary, #3b82f6);
-    box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.1));
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
   }
 
   input:disabled,
   textarea:disabled {
-    background: var(--color-surface-elevated, #f3f4f6);
+    background: var(--carbon-graphite, #0b0b10);
     cursor: not-allowed;
   }
 
@@ -248,6 +249,6 @@
     gap: 0.75rem;
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--color-border, #e5e7eb);
+    border-top: 1px solid var(--carbon-border, #2d2d3d);
   }
 </style>

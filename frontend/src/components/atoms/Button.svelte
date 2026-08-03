@@ -45,106 +45,103 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--carbon-transition, 0.25s ease);
     border: 1px solid transparent;
     outline: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   }
 
-  .button:focus {
-    box-shadow: 0 0 0 3px var(--focus-ring-color);
+  .button:focus-visible {
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
   }
 
-  /* Primary variant - cosmic glow */
+  /* Primary — diamond/cyan + graphene violet */
   .button.primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: var(--carbon-gradient-primary, linear-gradient(135deg, #22d3ee 0%, #8b5cf6 100%));
     color: white;
-    --focus-ring-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    box-shadow: var(--carbon-glow-primary, 0 4px 15px rgba(34, 211, 238, 0.3));
   }
 
   .button.primary:hover:not(.disabled) {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     transform: translateY(-2px);
+    filter: brightness(1.08);
     box-shadow:
-      0 8px 25px rgba(59, 130, 246, 0.4),
-      0 0 30px rgba(64, 169, 255, 0.2);
+      0 8px 25px rgba(34, 211, 238, 0.35),
+      0 0 30px rgba(139, 92, 246, 0.25);
   }
 
   .button.primary:active:not(.disabled) {
     transform: translateY(0);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    filter: brightness(0.95);
   }
 
-  /* Secondary variant */
+  /* Secondary — graphite */
   .button.secondary {
-    background: white;
-    color: var(--color-text, #1f2937);
-    border-color: var(--color-border, #e5e7eb);
-    --focus-ring-color: var(--color-secondary-light, rgba(107, 114, 128, 0.2));
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-text, #f0f0f5);
+    border-color: var(--carbon-border, #2d2d3d);
   }
 
   .button.secondary:hover:not(.disabled) {
-    background: var(--color-surface-elevated, #f9fafb);
-    border-color: var(--color-secondary, #6b7280);
+    background: var(--carbon-c70, #1a1a24);
+    border-color: var(--carbon-border-active, #4b4b5e);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.12);
   }
 
   .button.secondary:active:not(.disabled) {
-    background: var(--color-background, #f3f4f6);
+    background: var(--carbon-black, #050508);
   }
 
-  /* Danger variant */
+  /* Danger — fullerene red */
   .button.danger {
-    background: var(--color-danger, #ef4444);
+    background: var(--carbon-gradient-danger, linear-gradient(135deg, #ff3a2f 0%, #c2410c 100%));
     color: white;
-    --focus-ring-color: var(--color-danger-light, rgba(239, 68, 68, 0.3));
+    box-shadow: var(--carbon-glow-red, 0 4px 15px rgba(255, 58, 47, 0.3));
   }
 
   .button.danger:hover:not(.disabled) {
-    background: var(--color-danger-hover, #dc2626);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 8px 25px rgba(255, 58, 47, 0.4);
   }
 
   .button.danger:active:not(.disabled) {
     transform: translateY(0);
-    box-shadow: var(--shadow-sm);
+    filter: brightness(0.95);
   }
 
-  /* Ghost variant - cosmic theme with backdrop blur */
+  /* Ghost — transparent carbon with amber shimmer */
   .button.ghost {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    color: var(--color-text-dark, #e0e0e0);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    --focus-ring-color: rgba(255, 204, 0, 0.3);
+    color: var(--carbon-text, #f0f0f5);
+    border: 1px solid var(--carbon-border, #2d2d3d);
   }
 
   .button.ghost:hover:not(.disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 204, 0, 0.3);
-    box-shadow:
-      0 0 15px var(--color-glow-subtle, rgba(255, 204, 0, 0.3)),
-      inset 0 0 10px rgba(255, 204, 0, 0.05);
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: var(--carbon-glow-amber, 0 0 16px rgba(245, 158, 11, 0.35));
     transform: translateY(-1px);
   }
 
   .button.ghost:active:not(.disabled) {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(245, 158, 11, 0.12);
     transform: translateY(0);
-    box-shadow: 0 0 10px var(--color-glow-subtle, rgba(255, 204, 0, 0.2));
   }
 
   /* Disabled state */
   .button.disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
+    filter: grayscale(0.5);
   }
 </style>

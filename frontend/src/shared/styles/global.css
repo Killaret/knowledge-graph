@@ -91,6 +91,71 @@
 
   /* Backdrop blur */
   --backdrop-blur: blur(12px);
+
+  /* ================================
+     ALLOTROPIC CARBON THEME
+     Graphene / fullerene / diamond
+     ================================ */
+
+  /* Carbon surfaces */
+  --carbon-black: #050508;
+  --carbon-graphite: #0b0b10;
+  --carbon-graphene: #12121a;
+  --carbon-c70: #1a1a24;
+  --carbon-elevated: #20202c;
+  --carbon-fiber: #2a2a38;
+
+  /* Carbon border */
+  --carbon-border: #2d2d3d;
+  --carbon-border-active: #4b4b5e;
+  --carbon-border-glow: rgba(139, 92, 246, 0.35);
+
+  /* Carbon glows — electric, fullerene, diamond */
+  --carbon-glow-purple: #8b5cf6;
+  --carbon-glow-amber: #f59e0b;
+  --carbon-glow-cyan: #22d3ee;
+  --carbon-glow-red: #ff3a2f;
+
+  /* Carbon text */
+  --carbon-text: #f0f0f5;
+  --carbon-text-muted: #8b8b9e;
+  --carbon-text-dim: #5a5a6e;
+
+  /* Carbon effects */
+  --carbon-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --carbon-glow-sm: 0 0 8px rgba(139, 92, 246, 0.25);
+  --carbon-glow-md: 0 0 18px rgba(139, 92, 246, 0.35);
+  --carbon-glow-amber: 0 0 16px rgba(245, 158, 11, 0.35);
+  --carbon-glow-cyan: 0 0 16px rgba(34, 211, 238, 0.35);
+
+  /* Hexagon carbon mesh */
+  --carbon-hex-fill: rgba(139, 92, 246, 0.04);
+  --carbon-hex-stroke: rgba(139, 92, 246, 0.12);
+
+  /* Alotropic gradients */
+  --carbon-gradient-primary: linear-gradient(135deg, #22d3ee 0%, #8b5cf6 100%);
+  --carbon-gradient-amber: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  --carbon-gradient-danger: linear-gradient(135deg, #ff3a2f 0%, #c2410c 100%);
+  --carbon-gradient-success: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  --carbon-gradient-surface: linear-gradient(135deg, #14141e 0%, #0b0b10 100%);
+  --carbon-gradient-card: linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%);
+
+  /* Alotropic glows (distinct, never overlapping hue roles) */
+  --carbon-glow-primary: 0 0 18px rgba(34, 211, 238, 0.35), 0 0 36px rgba(139, 92, 246, 0.2);
+  --carbon-glow-amber: 0 0 16px rgba(245, 158, 11, 0.35);
+  --carbon-glow-cyan: 0 0 16px rgba(34, 211, 238, 0.35);
+  --carbon-glow-red: 0 0 16px rgba(255, 58, 47, 0.35);
+  --carbon-glow-green: 0 0 16px rgba(52, 211, 153, 0.3);
+  --carbon-glow-purple: 0 0 18px rgba(139, 92, 246, 0.4);
+
+  /* Focus ring */
+  --carbon-focus-ring: 0 0 0 3px rgba(34, 211, 238, 0.15);
+
+  /* Animation */
+  --carbon-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shared carbon surface utility values */
+  --carbon-surface-blur: blur(12px);
 }
 
 /* Base cosmic theme styles */

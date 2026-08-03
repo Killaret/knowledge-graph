@@ -4,6 +4,7 @@ import { browser } from "$app/environment";
 import type { User, AuthTokens } from "$shared/types";
 
 const API_KEY = "api_key";
+const SESSION_KEY = "kg_auth_session";
 
 // Global reactive state - wrapped in object for export
 export const authState = $state({
@@ -55,8 +56,10 @@ export function setApiKey(key: string | null): void {
   if (browser) {
     if (key) {
       localStorage.setItem(API_KEY, key);
+      setSessionHint(true);
     } else {
       localStorage.removeItem(API_KEY);
+      setSessionHint(false);
     }
   }
 }
@@ -71,6 +74,26 @@ export function skipAuthMode(): boolean {
   if (window.__SKIP_AUTH__ === true) return true;
   if (!import.meta.env.DEV) return false;
   return localStorage.getItem("__SKIP_AUTH__") === "true";
+}
+
+/**
+ * Persist a hint that the browser likely has a valid session (cookie or API key).
+ * This lets initAuth avoid an unconditional /v1/auth/refresh probe for anonymous users.
+ */
+export function setSessionHint(value: boolean): void {
+  if (!browser) return;
+  if (value) {
+    localStorage.setItem(SESSION_KEY, "1");
+  } else {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
+/**
+ * Check whether a session hint was saved by a previous successful login.
+ */
+export function hasSessionHint(): boolean {
+  return browser && localStorage.getItem(SESSION_KEY) === "1";
 }
 
 /**
@@ -110,6 +133,7 @@ export function isAdmin(): boolean {
 export function saveTokens(tokens: AuthTokens): void {
   authState.accessToken = tokens.access_token;
   authState.refreshToken = tokens.refresh_token;
+  setSessionHint(true);
 }
 
 /**
@@ -124,5 +148,6 @@ export function clearAuthState(): void {
 
   if (browser) {
     localStorage.removeItem(API_KEY);
+    setSessionHint(false);
   }
 }

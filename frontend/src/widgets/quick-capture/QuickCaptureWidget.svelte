@@ -137,29 +137,43 @@
   .quick-capture-container {
     position: fixed;
     bottom: 30px;
-    right: 30px;
+    left: 30px;
     z-index: 1000;
   }
 
   .quick-capture-btn {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 64px;
+    height: 64px;
+    padding: 0;
     border: none;
-    color: white;
-    font-size: 28px;
+    background:
+      radial-gradient(circle at 30% 30%, var(--carbon-elevated), var(--carbon-graphite) 60%, var(--carbon-black));
+    color: var(--carbon-glow-cyan);
+    font-size: 26px;
+    line-height: 1;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    box-shadow:
+      0 0 0 2px var(--carbon-border),
+      0 0 14px rgba(139, 92, 246, 0.25);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.2));
   }
 
   .quick-capture-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    color: var(--carbon-glow-amber);
+    transform: scale(1.08) rotate(1deg);
+    box-shadow:
+      0 0 0 2px var(--carbon-border-active),
+      0 0 22px rgba(245, 158, 11, 0.35);
+    filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.3));
+  }
+
+  .quick-capture-btn:active {
+    transform: scale(0.97);
   }
 
   /* Backdrop overlay */
@@ -170,21 +184,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    background: rgba(5, 5, 8, 0.65);
+    backdrop-filter: blur(8px);
     animation: fadeIn 0.2s ease;
   }
 
   .quick-capture-modal {
     width: min(420px, calc(100vw - 40px));
     max-height: calc(100vh - 100px);
-    background: white;
+    background:
+      linear-gradient(135deg, var(--carbon-graphene) 0%, var(--carbon-c70) 100%);
+    border: 1px solid var(--carbon-border);
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--carbon-shadow), 0 0 40px rgba(139, 92, 246, 0.15);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     animation: slideUp 0.25s ease;
+    color: var(--carbon-text);
   }
 
   @keyframes slideUp {
@@ -212,8 +229,9 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--carbon-graphite);
+    border-bottom: 1px solid var(--carbon-border);
+    color: var(--carbon-text);
     flex-shrink: 0;
   }
 
@@ -224,23 +242,25 @@
   }
 
   .close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
+    background: transparent;
+    border: 1px solid var(--carbon-border);
+    color: var(--carbon-text-muted);
+    font-size: 22px;
     cursor: pointer;
     padding: 0;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    transition: background 0.2s;
+    border-radius: 8px;
+    transition: all 0.2s;
   }
 
   .close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(139, 92, 246, 0.12);
+    border-color: var(--carbon-border-active);
+    color: var(--carbon-text);
   }
 
   .modal-body {
@@ -254,27 +274,35 @@
     min-height: 140px;
     max-height: 60vh;
     padding: 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--carbon-black);
+    border: 1px solid var(--carbon-border);
+    border-radius: 10px;
+    color: var(--carbon-text);
     font-size: 14px;
     font-family: inherit;
     resize: vertical;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
     box-sizing: border-box;
+  }
+
+  .modal-body textarea::placeholder {
+    color: var(--carbon-text-dim);
   }
 
   .modal-body textarea:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--carbon-glow-cyan);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
   }
 
   .modal-body textarea:disabled {
-    background: #f7fafc;
+    opacity: 0.6;
+    background: var(--carbon-graphite);
   }
 
   .success-message {
     margin-top: 10px;
-    color: #48bb78;
+    color: var(--carbon-glow-cyan);
     font-weight: 600;
     text-align: center;
     animation: fadeIn 0.3s ease;
@@ -284,15 +312,15 @@
     display: flex;
     gap: 10px;
     padding: 16px 20px;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
+    background: var(--carbon-graphite);
+    border-top: 1px solid var(--carbon-border);
     flex-shrink: 0;
   }
 
   .modal-footer button {
     flex: 1;
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -300,29 +328,31 @@
   }
 
   .cancel-btn {
-    background: white;
-    border: 2px solid #e2e8f0;
-    color: #4a5568;
+    background: var(--carbon-graphene);
+    border: 1px solid var(--carbon-border);
+    color: var(--carbon-text-muted);
   }
 
   .cancel-btn:hover:not(:disabled) {
-    background: #f7fafc;
-    border-color: #cbd5e0;
+    background: var(--carbon-elevated);
+    border-color: var(--carbon-border-active);
+    color: var(--carbon-text);
   }
 
   .submit-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--carbon-glow-purple) 0%, var(--carbon-glow-cyan) 100%);
     border: none;
     color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
   .submit-btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
   }
 
   .modal-footer button:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
@@ -330,13 +360,13 @@
   @media (max-width: 480px) {
     .quick-capture-container {
       bottom: 20px;
-      right: 20px;
+      left: 20px;
     }
 
     .quick-capture-btn {
-      width: 52px;
-      height: 52px;
-      font-size: 24px;
+      width: 54px;
+      height: 54px;
+      font-size: 22px;
     }
 
     .quick-capture-modal {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import ProfileEditor from "$components/organisms/ProfileEditor.svelte";
-  import { isAuthenticated, currentUser, initAuth } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, currentUser, initAuth, isInitialized } from "$shared/stores/auth.svelte.js";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
@@ -9,13 +9,13 @@
   const t = (key: string) => formatMessage(key, locale);
 
   // Initialize auth once on mount
-  onMount(() => {
-    initAuth();
+  onMount(async () => {
+    await initAuth();
   });
 
-  // Redirect if not authenticated
+  // Redirect if auth initialized and user is not authenticated
   $effect(() => {
-    if (!isAuthenticated()) {
+    if (isInitialized() && !isAuthenticated()) {
       goto("/auth/login?redirect=/profile");
     }
   });

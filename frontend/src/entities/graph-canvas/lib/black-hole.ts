@@ -11,18 +11,20 @@ export interface BlackHoleState {
   radius: number;
   pulsePhase: number;
   hovered: boolean;
+  label?: string;
 }
 
 export const BLACK_HOLE_RADIUS = 40;
-export const BLACK_HOLE_CATCH_RADIUS = 50;
+export const BLACK_HOLE_CATCH_RADIUS = 60;
 
 export function createBlackHole(width: number, height: number): BlackHoleState {
   return {
-    x: width - 60,
-    y: height - 60,
+    x: width - 84,
+    y: height - 84,
     radius: BLACK_HOLE_RADIUS,
     pulsePhase: 0,
     hovered: false,
+    label: "",
   };
 }
 
@@ -31,8 +33,8 @@ export function updateBlackHolePosition(
   width: number,
   height: number
 ): void {
-  state.x = width - 60;
-  state.y = height - 60;
+  state.x = width - 84;
+  state.y = height - 84;
 }
 
 export function updateBlackHolePulse(state: BlackHoleState, animationTime: number): void {
@@ -40,26 +42,25 @@ export function updateBlackHolePulse(state: BlackHoleState, animationTime: numbe
   state.pulsePhase = Math.sin(animationTime * pulseSpeed) * 0.5 + 0.5;
 }
 
-export function isNodeOverBlackHole(node: SimulationNode, blackHole: BlackHoleState): boolean {
+export function isNodeOverBlackHole(
+  node: SimulationNode,
+  blackHole: BlackHoleState,
+  transform: { x: number; y: number; k: number }
+): boolean {
   if (node.x == null || node.y == null) return false;
-  const dx = node.x - blackHole.x;
-  const dy = node.y - blackHole.y;
+  const screenX = node.x * transform.k + transform.x;
+  const screenY = node.y * transform.k + transform.y;
+  const dx = screenX - blackHole.x;
+  const dy = screenY - blackHole.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
   return distance < BLACK_HOLE_CATCH_RADIUS;
 }
 
-export function isPointOverBlackHole(
-  x: number,
-  y: number,
-  blackHole: BlackHoleState,
-  transform: { x: number; y: number; k: number }
-): boolean {
-  const worldX = (x - transform.x) / transform.k;
-  const worldY = (y - transform.y) / transform.k;
-  const dx = worldX - blackHole.x;
-  const dy = worldY - blackHole.y;
+export function isPointOverBlackHole(x: number, y: number, blackHole: BlackHoleState): boolean {
+  const dx = x - blackHole.x;
+  const dy = y - blackHole.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < blackHole.radius;
+  return distance < BLACK_HOLE_CATCH_RADIUS;
 }
 
 export function drawBlackHole(
@@ -104,13 +105,14 @@ export function drawBlackHole(
 export function drawBlackHoleTooltip(
   ctx: CanvasRenderingContext2D,
   blackHole: BlackHoleState,
-  text: string = "Drop here to delete"
+  text?: string
 ): void {
+  const label = text ?? blackHole.label ?? "Drop here to delete";
   const { x, y, radius } = blackHole;
 
   ctx.save();
   ctx.font = "12px sans-serif";
-  const textMetrics = ctx.measureText(text);
+  const textMetrics = ctx.measureText(label);
   const padding = 8;
   const boxWidth = textMetrics.width + padding * 2;
   const boxHeight = 24;
@@ -128,7 +130,7 @@ export function drawBlackHoleTooltip(
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, x, boxY + boxHeight / 2);
+  ctx.fillText(label, x, boxY + boxHeight / 2);
 
   ctx.restore();
 }

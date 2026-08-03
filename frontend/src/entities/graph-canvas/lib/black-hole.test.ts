@@ -16,8 +16,8 @@ import type { SimulationNode } from "./types";
 describe("black-hole", () => {
   it("should create black hole in bottom-right corner", () => {
     const blackHole = createBlackHole(800, 600);
-    expect(blackHole.x).toBe(800 - 60);
-    expect(blackHole.y).toBe(600 - 60);
+    expect(blackHole.x).toBe(800 - 84);
+    expect(blackHole.y).toBe(600 - 84);
     expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS);
     expect(blackHole.hovered).toBe(false);
   });
@@ -25,8 +25,8 @@ describe("black-hole", () => {
   it("should update position on resize", () => {
     const blackHole = createBlackHole(800, 600);
     updateBlackHolePosition(blackHole, 1024, 768);
-    expect(blackHole.x).toBe(1024 - 60);
-    expect(blackHole.y).toBe(768 - 60);
+    expect(blackHole.x).toBe(1024 - 84);
+    expect(blackHole.y).toBe(768 - 84);
   });
 
   it("should update pulse phase between 0 and 1", () => {
@@ -44,7 +44,8 @@ describe("black-hole", () => {
       x: blackHole.x,
       y: blackHole.y,
     };
-    expect(isNodeOverBlackHole(node, blackHole)).toBe(true);
+    const transform = { x: 0, y: 0, k: 1 };
+    expect(isNodeOverBlackHole(node, blackHole, transform)).toBe(true);
   });
 
   it("should not detect node outside catch radius", () => {
@@ -52,15 +53,39 @@ describe("black-hole", () => {
     const node: SimulationNode = {
       id: "test",
       title: "Test",
-      x: blackHole.x + BLACK_HOLE_CATCH_RADIUS + 10,
+      x: (blackHole.x + BLACK_HOLE_CATCH_RADIUS + 10) / 1,
       y: blackHole.y,
     };
-    expect(isNodeOverBlackHole(node, blackHole)).toBe(false);
+    const transform = { x: 0, y: 0, k: 1 };
+    expect(isNodeOverBlackHole(node, blackHole, transform)).toBe(false);
   });
 
   it("should detect point over black hole", () => {
     const blackHole = createBlackHole(800, 600);
-    const transform = { x: 0, y: 0, k: 1 };
-    expect(isPointOverBlackHole(blackHole.x, blackHole.y, blackHole, transform)).toBe(true);
+    expect(isPointOverBlackHole(blackHole.x, blackHole.y, blackHole)).toBe(true);
+  });
+
+  it("should detect point within catch radius", () => {
+    const blackHole = createBlackHole(800, 600);
+    expect(
+      isPointOverBlackHole(
+        blackHole.x + BLACK_HOLE_CATCH_RADIUS - 1,
+        blackHole.y,
+        blackHole
+      )
+    ).toBe(true);
+  });
+
+  it("should detect node over black hole with zoom/pan transform", () => {
+    const blackHole = createBlackHole(800, 600);
+    const node: SimulationNode = {
+      id: "test",
+      title: "Test",
+      x: (blackHole.x - 20) / 2,
+      y: blackHole.y / 2,
+    };
+    const transform = { x: 20, y: 0, k: 2 };
+    // screen position: ((x-20)/2)*2 + 20 = x
+    expect(isNodeOverBlackHole(node, blackHole, transform)).toBe(true);
   });
 });

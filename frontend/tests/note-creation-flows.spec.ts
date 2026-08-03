@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAsTestUser } from "./helpers/auth";
+import { clickViewToggle, clickCreateNoteButton } from "./helpers/testUtils";
 
 /**
  * Regression tests for the two note-creation flows on the graph page.
@@ -20,7 +21,7 @@ test.describe("Note creation flows @auth-real", () => {
     await loginAsTestUser(page, request);
     await page.goto("/?nocache=1", { waitUntil: "networkidle" });
 
-    await page.locator('[data-testid="create-note-button"]').click();
+    await clickCreateNoteButton(page);
 
     await page.locator('[data-testid="create-note-title"]').fill(title);
     await page.locator('[data-testid="create-note-content"]').fill(content);
@@ -32,7 +33,7 @@ test.describe("Note creation flows @auth-real", () => {
     });
 
     // Switch to list view and verify the new note.
-    await page.locator('[data-testid="view-toggle-list"]').click();
+    await clickViewToggle(page, "list");
     await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
       { timeout: 20000 }
     );
@@ -62,7 +63,7 @@ test.describe("Note creation flows @auth-real", () => {
     });
 
     // Switch to list view and verify.
-    await page.locator('[data-testid="view-toggle-list"]').click();
+    await clickViewToggle(page, "list");
     await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
       { timeout: 20000 }
     );
@@ -91,7 +92,7 @@ test.describe("Note creation flows @auth-real", () => {
 
     // /graph has no list view, so we navigate to the main page to verify.
     await page.goto("/?nocache=1", { waitUntil: "networkidle" });
-    await page.locator('[data-testid="view-toggle-list"]').click();
+    await clickViewToggle(page, "list");
     await expect(page.locator('[data-testid="note-title"]').filter({ hasText: title })).toBeVisible(
       { timeout: 20000 }
     );

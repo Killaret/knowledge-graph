@@ -154,6 +154,11 @@
   .parent-breadcrumb {
     margin: 0 0 12px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--carbon-text-muted, #8b8b9e);
+    padding: 8px 12px;
+    background: var(--carbon-graphene, #12121a);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 8px;
+    box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.04);
   }
 </style>

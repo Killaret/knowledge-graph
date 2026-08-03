@@ -3,9 +3,12 @@
   import { browser } from "$app/environment";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import BackButton from "$components/atoms/BackButton.svelte";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import { type GraphData } from "$shared/api/graph";
+  import type { Component } from "svelte";
+  import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
@@ -19,7 +22,7 @@
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let loading = $state(true);
   let error = $state("");
-  let Graph3DViewer: any = $state(null);
+  let Graph3DViewer: Component<Graph3DViewerProps> | null = $state(null);
 
   function getRouteId(): string {
     const id = $page.params.id;
@@ -49,69 +52,54 @@
   });
 </script>
 
-<div class="page">
-  <div class="top-controls">
-    <BackButton href="/graph" />
-    <button class="home-btn" onclick={() => goto("/")}>{t("graph.goHome")}</button>
+<CosmicCockpitLayout
+  isAuthenticated={isAuthenticated()}
+  currentView="3d"
+  selectedNodeId={graphStore.selectedNodeId}
+  nodeCount={graphData.nodes.length}
+  linkCount={graphData.links.length}
+  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  onToggleView={(view) => {
+    if (view === "graph") goto(`/graph/${$page.params.id}`);
+    else if (view === "list") goto("/");
+  }}
+>
+  <div class="page">
+    {#if loading}
+      <div class="center">
+        <div class="spinner"></div>
+        <p>{t("page.loadingGraph")}</p>
+      </div>
+    {:else if error}
+      <div class="center error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
+    {:else if graphData.nodes.length === 0}
+      <div class="center">
+        <h2>{t("graph3d.noDataTitle")}</h2>
+        <p>{t("graph3d.noDataMessage")}</p>
+      </div>
+    {:else if Graph3DViewer}
+      <Graph3DViewer
+        nodes={graphData.nodes}
+        links={graphData.links}
+        centerNodeId={$page.params.id}
+        selectedNodeId={graphStore.selectedNodeId}
+        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+      />
+    {/if}
   </div>
-
-  {#if loading}
-    <div class="center">
-      <div class="spinner"></div>
-      <p>{t("page.loadingGraph")}</p>
-    </div>
-  {:else if error}
-    <div class="center error">
-      <p>{error}</p>
-      <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
-    </div>
-  {:else if graphData.nodes.length === 0}
-    <div class="center">
-      <h2>{t("graph3d.noDataTitle")}</h2>
-      <p>{t("graph3d.noDataMessage")}</p>
-    </div>
-  {:else if Graph3DViewer}
-    <Graph3DViewer
-      nodes={graphData.nodes}
-      links={graphData.links}
-      centerNodeId={$page.params.id}
-      selectedNodeId={graphStore.selectedNodeId}
-      onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
-    />
-  {/if}
-</div>
+</CosmicCockpitLayout>
 
 <style>
   .page {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
-    background: #050510;
+    background: transparent;
     color: white;
-  }
-
-  .top-controls {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 100;
-    display: flex;
-    gap: 8px;
-  }
-
-  .home-btn {
-    padding: 8px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(5, 5, 16, 0.7);
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-  }
-
-  .home-btn:hover {
-    background: rgba(136, 170, 255, 0.2);
   }
 
   .center {

@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
-  import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
+  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import NoteCard from "$widgets/notes/NoteCard.svelte";
@@ -18,6 +18,8 @@
   } from "$shared/api/notes";
   import { createLink } from "$shared/api/links";
   import { type GraphData } from "$shared/api/graph";
+  import type { Component } from "svelte";
+  import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
   import {
     hasPreloadedData,
@@ -28,6 +30,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
+  import { PublicGraphTopBar } from "$features/graph-ui";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
@@ -58,7 +61,7 @@
   let noteToEdit: string | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let Graph3DViewer: any = $state(null);
+  let Graph3DViewer: Component<Graph3DViewerProps> | null = $state(null);
 
   $effect(() => {
     if (graphStore.currentView === "3d" && !Graph3DViewer) {
@@ -110,6 +113,12 @@
   let showBulkActionsMenu = $state(false);
   let showAuthPanel = $state(false);
   let authPanelTab = $state<"login" | "register">("login");
+  let canvasController: {
+    focusMode: boolean;
+    resetView: () => void;
+    openSearch: () => void;
+    toggleFocus: () => void;
+  } | undefined = $state(undefined);
 
   function openAuthPanel(tab: "login" | "register") {
     authPanelTab = tab;
@@ -117,6 +126,7 @@
   }
 
   function handleAuthSuccess() {
+    showAuthPanel = false;
     void loadData({ silent: true });
   }
 
@@ -230,6 +240,27 @@
         const [notesResult, loadedGraph] = await Promise.all([getNotes(), getGraphWithPreload()]);
         allNotes = notesResult;
         graphResult = loadedGraph;
+
+        // The graph-service layout cache can lag behind note mutations (especially in test stacks).
+        // Make sure every note returned by the backend is represented in the graph so filters and
+        // counts stay consistent.
+        if (graphResult) {
+          const nodeIds = new Set(graphResult.nodes.map((n) => n.id));
+          for (const note of allNotes) {
+            if (!nodeIds.has(note.id)) {
+              graphResult.nodes.push({
+                id: note.id,
+                title: note.title,
+                type: note.type || "unknown",
+                x: 0,
+                y: 0,
+                z: 0,
+                size: 1,
+              });
+              nodeIds.add(note.id);
+            }
+          }
+        }
       } else {
         graphResult = await getGraphWithPreload();
         // Public graph is the single source of notes for anonymous users.
@@ -529,7 +560,8 @@
 
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
-<CosmicCockpit
+<CosmicCockpitLayout
+  isAuthenticated={isAuthenticated()}
   onSearch={(query: string) => {
     filterState = filterState.with({ searchQuery: query });
     searchQuery = query;
@@ -537,7 +569,6 @@
   }}
   onToggleView={handleToggleView}
   onToggleLayoutProvider={handleToggleLayoutProvider}
-  onOpenAuth={openAuthPanel}
   {layoutProvider}
   onFilter={(type: string) => {
     filterState = filterState.with({ selectedType: type });
@@ -567,7 +598,39 @@
   notes={allNotes}
 >
   <!-- Graph/List Container -->
-  <div class="graph-content fullscreen-graph graph-2d-container" data-testid="graph-2d-container">
+  <div class="graph-content" data-testid="graph-2d-container">
+    {#if !isAuthenticated() && !loading && !apiError}
+      <PublicGraphTopBar
+        currentView={graphStore.currentView}
+        {layoutProvider}
+        {searchQuery}
+        {selectedType}
+        {typeFilters}
+        typeCounts={Object.fromEntries(
+          typeFilters.map((f) => [
+            f.id,
+            f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+          ])
+        )}
+        nodeCount={filteredGraphData.nodes.length}
+        linkCount={filteredGraphData.links.length}
+        onSearch={(query: string) => {
+          filterState = filterState.with({ searchQuery: query });
+          searchQuery = query;
+          handleSearch();
+        }}
+        onToggleView={handleToggleView}
+        onToggleLayoutProvider={handleToggleLayoutProvider}
+        onFilter={(type: string) => {
+          filterState = filterState.with({ selectedType: type });
+          selectedType = type;
+          applyFiltersAndSort();
+        }}
+        onSignIn={() => openAuthPanel("login")}
+        onRegister={() => openAuthPanel("register")}
+        {canvasController}
+      />
+    {/if}
     {#if loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
@@ -599,23 +662,30 @@
         </div>
       {/if}
       <!-- Fullscreen 2D Graph View -->
-      <GraphCanvas
-        nodes={filteredGraphData.nodes}
-        links={filteredGraphData.links}
-        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
-        onNoteCreate={handleNoteCreate}
-        onNoteDelete={handleDeleteRequest}
-        onCreateChildNote={handleCreateChildNote}
-      />
+      <div class="graph-view-wrapper">
+        <GraphCanvas
+          nodes={filteredGraphData.nodes}
+          links={filteredGraphData.links}
+          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+          onNoteCreate={handleNoteCreate}
+          onNoteDelete={handleDeleteRequest}
+          onCreateChildNote={handleCreateChildNote}
+          showLinkTypeLegend={isAuthenticated()}
+          showTopBar={isAuthenticated()}
+          bind:controller={canvasController}
+        />
+      </div>
     {:else if graphStore.currentView === "3d" && Graph3DViewer}
       <!-- Fullscreen 3D Graph View -->
-      <Graph3DViewer
-        nodes={filteredGraphData.nodes}
-        links={filteredGraphData.links}
-        centerNodeId={graphStore.selectedNodeId}
-        selectedNodeId={graphStore.selectedNodeId}
-        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
-      />
+      <div class="graph-view-wrapper">
+        <Graph3DViewer
+          nodes={filteredGraphData.nodes}
+          links={filteredGraphData.links}
+          centerNodeId={graphStore.selectedNodeId}
+          selectedNodeId={graphStore.selectedNodeId}
+          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+        />
+      </div>
     {:else if graphStore.currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
@@ -778,15 +848,17 @@
       {/if}
     {/if}
   </div>
-</CosmicCockpit>
+</CosmicCockpitLayout>
 
-<!-- Floating Auth Panel -->
-<FloatingAuthPanel
-  open={showAuthPanel}
-  initialTab={authPanelTab}
-  onClose={() => (showAuthPanel = false)}
-  onSuccess={handleAuthSuccess}
-/>
+<!-- Public auth entry point -->
+{#if !isAuthenticated()}
+  <FloatingAuthPanel
+    open={showAuthPanel}
+    initialTab={authPanelTab}
+    onClose={() => (showAuthPanel = false)}
+    onSuccess={handleAuthSuccess}
+  />
+{/if}
 
 <!-- Create Note Modal -->
 <CreateNoteModal
@@ -846,24 +918,35 @@
 
 <style>
   .graph-content {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: var(--gradient-cosmic-bg);
+    background: transparent;
     color: var(--color-text-dark);
   }
 
-  .graph-content :global(canvas) {
+  .graph-view-wrapper {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .graph-view-wrapper :global(canvas) {
     width: 100% !important;
     height: 100% !important;
   }
 
   /* List Container */
   .list-container {
+    flex: 1 1 auto;
+    min-height: 0;
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
-    height: 100%;
+    width: 100%;
     overflow-y: auto;
     box-sizing: border-box;
   }
@@ -1169,4 +1252,5 @@
       height: 100%;
     }
   }
+
 </style>

@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
   import SmartGraph from "$widgets/graph-canvas/SmartGraph.svelte";
   import { getGraphData } from "$shared/api/graph";
-  import BackButton from "$components/atoms/BackButton.svelte";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import type { GraphNode, GraphLink } from "$shared/api/graph";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
@@ -47,73 +49,70 @@
   });
 </script>
 
-<div class="graph-page">
-  <header class="graph-header">
-    <BackButton href="/" />
-    <h1>{t("graph.constellationTitle")}</h1>
-    <span class="hint">{t("graph.hint")}</span>
-  </header>
-
-  {#if loading}
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>{t("graph.loadingConstellation")}</p>
-    </div>
-  {:else if error}
-    <div class="error-state">
-      <p class="error">{error}</p>
-    </div>
-  {:else}
-    <div class="graph-container graph-3d-container" data-testid="graph-container">
-      <SmartGraph {nodes} {links} />
-    </div>
-    <div class="stats-bar" data-testid="graph-stats">
-      <span class="stats-item"><strong>{nodes.length}</strong> {t("graph.nodes")}</span>
-      <span class="stats-item"><strong>{links.length}</strong> {t("graph.links")}</span>
-    </div>
-  {/if}
-</div>
+<CosmicCockpitLayout
+  isAuthenticated={isAuthenticated()}
+  currentView="graph"
+  nodeCount={nodes.length}
+  linkCount={links.length}
+  onToggleView={(view) => {
+    if (view === "3d") goto(`/graph/3d/${$page.params.id}`);
+    else if (view === "list") goto("/");
+  }}
+>
+  <div class="graph-page">
+    {#if loading}
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>{t("graph.loadingConstellation")}</p>
+      </div>
+    {:else if error}
+      <div class="error-state">
+        <p class="error">{error}</p>
+      </div>
+    {:else}
+      <div class="graph-container graph-3d-container" data-testid="graph-container">
+        <SmartGraph {nodes} {links} />
+      </div>
+      {#if !isAuthenticated()}
+        <div class="graph-stats-bar" data-testid="graph-stats">
+          <span><strong>{nodes.length}</strong> {t("graph.nodes")}</span>
+          <span><strong>{links.length}</strong> {t("graph.links")}</span>
+        </div>
+      {/if}
+    {/if}
+  </div>
+</CosmicCockpitLayout>
 
 <style>
   .graph-page {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background: linear-gradient(145deg, #0a1a3a, #020617);
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: transparent;
     color: #e0e0e0;
   }
 
-  .graph-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(100, 150, 200, 0.2);
-    background: rgba(10, 26, 58, 0.8);
-    backdrop-filter: blur(10px);
-  }
-
-  .graph-header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #ffdd88;
-    text-shadow: 0 0 10px rgba(255, 200, 100, 0.3);
-  }
-
-  .hint {
-    margin-left: auto;
-    font-size: 0.85rem;
-    color: #88aacc;
-    opacity: 0.8;
-  }
-
   .graph-container {
-    flex: 1;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
-    position: relative;
-    min-height: 0;
-    height: 100%;
+  }
+
+  .graph-stats-bar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 12px;
+    padding: 6px 12px;
+    background: rgba(10, 10, 15, 0.75);
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
+    backdrop-filter: blur(8px);
+    z-index: 50;
+    pointer-events: none;
   }
 
   .loading-state,

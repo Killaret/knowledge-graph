@@ -1,16 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphMode } from "$entities";
   import {
     GraphCanvasOverlay,
     GraphCanvasModals,
-    GraphCanvasControls,
     LinkTypeLegend,
   } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
-  import { SingularityDropZone } from "$features/cosmic-ui";
   import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
@@ -32,6 +31,7 @@
     createBlackHole,
     updateBlackHolePosition,
     updateBlackHolePulse,
+    isPointOverBlackHole,
     type GhostNodeState,
     updateGhostNodePosition,
     updateGhostNodePulse,
@@ -40,6 +40,9 @@
   } from "$entities/graph-canvas/lib";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
 
   // FSD imports
   import {
@@ -76,7 +79,7 @@
     type LinkFormState,
   } from "$features/graph-forms/link-form";
 
-  const {
+  let {
     nodes,
     links,
     onNodeClick,
@@ -91,7 +94,15 @@
     delta,
     disableVariation = false,
     readonly = false,
+    showLinkTypeLegend = true,
+    showTopBar = true,
     className = "",
+    controller = $bindable<{
+      focusMode: boolean;
+      resetView: () => void;
+      openSearch: () => void;
+      toggleFocus: () => void;
+    } | undefined>(undefined),
   }: {
     nodes: Array<{
       id: string;
@@ -137,7 +148,15 @@
     delta?: GraphDeltaData;
     disableVariation?: boolean;
     readonly?: boolean;
+    showLinkTypeLegend?: boolean;
+    showTopBar?: boolean;
     className?: string;
+    controller?: {
+      focusMode: boolean;
+      resetView: () => void;
+      openSearch: () => void;
+      toggleFocus: () => void;
+    };
   } = $props();
 
   let stableRender = false;
@@ -261,11 +280,25 @@
     node: null,
   });
 
-  // Singularity archive/delete drop zone
-  const singularity = $state({ hovered: false });
-
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
+
+  // Expose controller for external control panels (e.g. public graph top bar)
+  $effect(() => {
+    controller = {
+      get focusMode() {
+        return canvasState.focusMode;
+      },
+      resetView: () => {
+        const simNodes = getSimulationNodes(simState);
+        if (ctx && simNodes.length > 0) {
+          resetView(ctx, width, height, simNodes, transform);
+        }
+      },
+      openSearch: () => canvasState.handleOpenSearch(hotkeysState),
+      toggleFocus: () => canvasState.handleToggleFocus(redraw),
+    };
+  });
 
   onMount(() => {
     if (!browser || !canvas) return;
@@ -287,6 +320,7 @@
     // Initialize interactive systems
     particleSystem = new ParticleSystem(nodes.length);
     blackHole = createBlackHole(width, height);
+    blackHole.label = t("graph.blackHole.tooltip");
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
@@ -554,17 +588,14 @@
       return onNoteDelete;
     },
     isOverSingularity: (clientX: number, clientY: number) => {
-      if (typeof window === "undefined") return false;
-      const size = 120;
-      const padding = 24;
-      const zoneX = window.innerWidth - size - padding;
-      const zoneY = window.innerHeight - size - padding;
-      return (
-        clientX >= zoneX && clientX <= zoneX + size && clientY >= zoneY && clientY <= zoneY + size
-      );
+      if (!canvas || !blackHole) return false;
+      const rect = canvas.getBoundingClientRect();
+      const screenX = clientX - rect.left;
+      const screenY = clientY - rect.top;
+      return isPointOverBlackHole(screenX, screenY, blackHole);
     },
     setSingularityHovered: (hovered: boolean) => {
-      singularity.hovered = hovered;
+      blackHole.hovered = hovered;
     },
     getKeyLines: () => canvasState.hotkeyLines,
   };
@@ -574,7 +605,7 @@
   bind:this={canvas}
   data-testid="graph-canvas"
   class={className}
-  style="width: 100%; height: 100%; cursor: grab; background: linear-gradient(145deg, #0a1a3a, #020617);"
+  style="width: 100%; height: 100%; cursor: grab; background: transparent;"
 ></canvas>
 
 <GraphNodeContextMenu
@@ -598,28 +629,17 @@
   }}
 />
 
-<SingularityDropZone visible={dragDropState.draggedNodeId !== null} hovered={singularity.hovered} />
 
-<GraphCanvasControls
-  mode={GraphMode.fromFocus(canvasState.focusMode)}
-  onReset={() => {
-    const simNodes = getSimulationNodes(simState);
-    if (ctx && simNodes.length > 0) {
-      resetView(ctx, width, height, simNodes, transform);
-    }
-  }}
-  onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
-  onToggleMode={() => canvasState.handleToggleFocus(redraw)}
-  onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
-/>
 
-<LinkTypeLegend
-  selectedTypes={graphStore.selectedLinkTypes}
-  minWeight={graphStore.minLinkWeight}
-  showMinWeight={true}
-  onToggle={(type) => graphStore.toggleLinkType(type)}
-  onMinWeightChange={(value) => (graphStore.minLinkWeight = value)}
-/>
+{#if showLinkTypeLegend}
+  <LinkTypeLegend
+    selectedTypes={graphStore.selectedLinkTypes}
+    minWeight={graphStore.minLinkWeight}
+    showMinWeight={true}
+    onToggle={(type) => graphStore.toggleLinkType(type)}
+    onMinWeightChange={(value) => (graphStore.minLinkWeight = value)}
+  />
+{/if}
 
 <GraphCanvasModals
   activeForm={noteFormState.showNoteForm ? "note" : linkFormState.showLinkForm ? "link" : null}
@@ -647,6 +667,7 @@
   {canvas}
   {nodes}
   {links}
+  {showTopBar}
   loading={!graphStable && nodes.length > 0}
   hoveredNodeId={canvasState.hoveredNodeId}
   hoveredLink={canvasState.hoveredLink}
@@ -665,6 +686,16 @@
   }}
   onLinkEdit={onLinkEdit ? () => canvasState.handleLinkEdit(onLinkEdit) : undefined}
   onLinkDelete={onLinkDelete ? () => canvasState.handleLinkDelete(onLinkDelete) : undefined}
+  controlsMode={GraphMode.fromFocus(canvasState.focusMode)}
+  onReset={() => {
+    const simNodes = getSimulationNodes(simState);
+    if (ctx && simNodes.length > 0) {
+      resetView(ctx, width, height, simNodes, transform);
+    }
+  }}
+  onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
+  onToggleMode={() => canvasState.handleToggleFocus(redraw)}
+  onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
 />
 {#if hotkeysState.showHelpModal}
   <HelpHotkeysModal

@@ -1,7 +1,7 @@
 # Comprehensive Regression Test Plan
 
-**Version:** 1.0  
-**Last Updated:** 2026-07-20  
+**Version:** 1.1  
+**Last Updated:** 2026-08-03  
 **Status:** Active
 
 ## Overview
@@ -582,6 +582,16 @@ curl http://localhost:18083/graph-service/api/v1/graph/full?limit=100
 2. Create link to private note
 3. Check public graph
 **Expected:** Private note and link not visible
+
+### 10.5 Note Detail Page Verification
+**Steps:**
+1. Open `/notes/{note-id}` for an existing note with links.
+2. Verify the page renders: type chip, visibility chip, created/updated datetime, tags/keywords (if present), connected notes, similar notes, and action buttons.
+3. Click the 2D graph button and verify navigation to `/graph/{note-id}`.
+4. Click the 3D constellation button and verify navigation to `/graph/3d/{note-id}`.
+5. Verify no console errors and no JS exceptions during page load.
+
+**Expected:** Note detail page loads correctly, all metadata and related notes are visible, navigation to graph pages works.
 
 ---
 

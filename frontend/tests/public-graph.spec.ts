@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+// Public graph requires real auth; in SKIP_AUTH stack all notes are private
+// and the graph-service public endpoint returns an empty graph.
+test.skip(process.env.SKIP_AUTH === "true", "Public graph not available in SKIP_AUTH stack");
+
 /**
  * Public graph: unauthenticated users should see the read-only graph.
  */

@@ -161,17 +161,17 @@
   label {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-text, #374151);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   input,
   textarea {
     width: 100%;
     padding: 10px 14px;
-    border: 1px solid var(--color-border, #d1d5db);
-    border-radius: 8px;
-    background: var(--color-surface, white);
-    color: var(--color-text, #1f2937);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 10px;
+    background: var(--carbon-black, #050508);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 14px;
     outline: none;
     transition:
@@ -180,16 +180,22 @@
     box-sizing: border-box;
   }
 
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--carbon-text-dim, #5a5a6e);
+  }
+
   input:focus,
   textarea:focus {
-    border-color: var(--color-primary, #3b82f6);
-    box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.2));
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
   }
 
   input:disabled,
   textarea:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background: var(--carbon-graphite, #0b0b10);
   }
 
   .note-form.ghost input,
@@ -217,22 +223,24 @@
 
   .length-indicator {
     font-size: 12px;
-    color: var(--color-text-tertiary, #9ca3af);
+    color: var(--carbon-text-dim, #5a5a6e);
     text-align: right;
   }
 
   .length-warning {
-    color: var(--color-danger, #ef4444);
+    color: var(--carbon-glow-amber, #f59e0b);
   }
 
   input.length-warning,
   input:focus.length-warning {
-    border-color: var(--color-warning, #f59e0b);
+    border-color: var(--carbon-glow-amber, #f59e0b);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
   }
 
   input.length-error,
   input:focus.length-error {
-    border-color: var(--color-danger, #ef4444);
+    border-color: var(--carbon-glow-red, #ff3a2f);
+    box-shadow: 0 0 0 3px rgba(255, 58, 47, 0.1);
   }
 
   .form-actions {

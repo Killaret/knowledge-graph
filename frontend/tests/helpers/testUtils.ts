@@ -88,32 +88,53 @@ export async function clickFloatingControl(page: Page, dataTestId: string): Prom
 }
 
 /**
- * Click create note button in floating controls
+ * Open a cockpit panel by clicking its visible handle and waiting for the slide-out animation.
+ */
+export async function openCockpitPanel(
+  page: Page,
+  position: "top" | "left" | "right" | "bottom" = "top"
+): Promise<void> {
+  const handle = page.locator(`[data-testid="cockpit-handle-${position}"]`).first();
+  const count = await handle.count();
+  if (count === 0) {
+    // Fallback: if the handle is missing, the panel may already be open
+    return;
+  }
+  await handle.click({ force: true });
+  await page.waitForTimeout(500);
+}
+
+/**
+ * Click create note button in the top cockpit panel
  */
 export async function clickCreateNoteButton(page: Page): Promise<void> {
+  await openCockpitPanel(page, "top");
   await clickFloatingControl(page, "create-note-button");
 }
 
 /**
- * Click view toggle button in floating controls
+ * Click view toggle button in the top cockpit panel
  */
 export async function clickViewToggle(page: Page, view: "list" | "graph" | "3d"): Promise<void> {
+  await openCockpitPanel(page, "top");
   const testId = `view-toggle-${view}`;
   await clickFloatingControl(page, testId);
 }
 
 /**
- * Click filter chip in floating controls
+ * Click filter chip in the left cockpit panel
  */
 export async function clickFilterChip(page: Page, filter: string): Promise<void> {
+  await openCockpitPanel(page, "left");
   const filterId = filter.toLowerCase().replace(/s$/, ""); // stars -> star
   await clickFloatingControl(page, `filter-chip-${filterId}`);
 }
 
 /**
- * Fill search input in floating controls
+ * Fill search input in the top cockpit panel
  */
 export async function fillSearchInput(page: Page, query: string): Promise<void> {
+  await openCockpitPanel(page, "top");
   await page.evaluate((q) => {
     const input = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
     if (input) {
@@ -126,9 +147,10 @@ export async function fillSearchInput(page: Page, query: string): Promise<void> 
 }
 
 /**
- * Click search button in floating controls
+ * Click search button in the top cockpit panel
  */
 export async function clickSearchButton(page: Page): Promise<void> {
+  await openCockpitPanel(page, "top");
   // Search button doesn't have data-testid, use class selector via JS
   await page.evaluate(() => {
     const button = document.querySelector(".search-btn");

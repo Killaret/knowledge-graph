@@ -195,7 +195,7 @@ if ($publicCount -gt 0) {
     Write-Host "Published $publishedCount notes." -ForegroundColor Green
 }
 else {
-    Write-Host "PublicPercent is 0 — all notes remain private." -ForegroundColor DarkGray
+    Write-Host "PublicPercent is 0 - all notes remain private." -ForegroundColor DarkGray
 }
 
 $report.durations.publishSeconds = [math]::Round(((Get-Date) - $publishStart).TotalSeconds, 2)
@@ -212,10 +212,10 @@ $elapsed = 0
 
 while ($elapsed -lt $NlpWaitSeconds) {
     try {
-        $embeddingCount = [int]((docker exec $postgresContainer psql -U kb_user -d knowledge_test -t -A `
-            -c "SELECT COUNT(*) FROM note_embeddings;" 2>&1) -join " ").Trim()
-        $keywordNoteCount = [int]((docker exec $postgresContainer psql -U kb_user -d knowledge_test -t -A `
-            -c "SELECT COUNT(DISTINCT note_id) FROM note_keywords;" 2>&1) -join " ").Trim()
+        $embOutput = docker exec $postgresContainer psql -U kb_user -d knowledge_test -t -A -c "SELECT COUNT(*) FROM note_embeddings;" 2>&1
+        $embeddingCount = [int](($embOutput -join " ").Trim())
+        $kwOutput = docker exec $postgresContainer psql -U kb_user -d knowledge_test -t -A -c "SELECT COUNT(DISTINCT note_id) FROM note_keywords;" 2>&1
+        $keywordNoteCount = [int](($kwOutput -join " ").Trim())
     }
     catch {
         Add-ReportError -Context "nlp-poll" -Message "Failed to poll NLP progress: $_"

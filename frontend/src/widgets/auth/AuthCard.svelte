@@ -139,30 +139,30 @@
     margin: 0;
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--color-text-dark, #e0e0e0);
-    text-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+    color: var(--carbon-text, #f0f0f5);
+    text-shadow: 0 0 24px rgba(34, 211, 238, 0.25);
     letter-spacing: 0.05em;
   }
 
   .subtitle {
     margin: 0;
     font-size: 1rem;
-    color: var(--color-text-secondary, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
     max-width: 300px;
   }
 
   .card {
     width: 100%;
     padding: 2rem;
-    background: rgba(10, 10, 26, 0.7);
+    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--carbon-border, #2d2d3d);
     box-shadow:
-      0 0 0 1px rgba(255, 204, 0, 0.1),
+      0 0 0 1px rgba(139, 92, 246, 0.15),
       0 8px 32px rgba(0, 0, 0, 0.4),
-      0 0 40px rgba(64, 169, 255, 0.1);
+      0 0 40px rgba(34, 211, 238, 0.1);
     transition:
       box-shadow 0.3s ease,
       border-color 0.3s ease;
@@ -170,10 +170,10 @@
 
   .card:hover {
     box-shadow:
-      0 0 0 1px rgba(255, 204, 0, 0.2),
+      0 0 0 1px rgba(139, 92, 246, 0.25),
       0 12px 40px rgba(0, 0, 0, 0.5),
-      0 0 60px rgba(64, 169, 255, 0.15);
-    border-color: rgba(255, 204, 0, 0.2);
+      0 0 60px rgba(34, 211, 238, 0.15);
+    border-color: var(--carbon-border-active, #4b4b5e);
   }
 
   @media (max-width: 640px) {

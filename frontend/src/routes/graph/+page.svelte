@@ -22,12 +22,11 @@
   const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
   import { createLink, updateLink, deleteLink } from "$shared/api/links";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
-  import CosmicCockpit from "$widgets/cosmic-cockpit/CosmicCockpit.svelte";
+  import { PublicGraphTopBar } from "$features/graph-ui";
+  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
-  import BackButton from "$components/atoms/BackButton.svelte";
-  import WeltallBackground from "$components/atoms/WeltallBackground.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { CelestialBody } from "$entities";
@@ -69,6 +68,22 @@
   let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
+  let canvasController: {
+    focusMode: boolean;
+    resetView: () => void;
+    openSearch: () => void;
+    toggleFocus: () => void;
+  } | undefined = $state(undefined);
+
+  const graphTypeFilters = [
+    { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
+    ...["star", "planet", "moon", "comet", "galaxy", "nebula", "asteroid", "satellite", "blackhole", "dust", "unknown"].map(
+      (id) => {
+        const body = CelestialBody.fromString(id);
+        return { id, label: body.label, emoji: body.emoji, description: body.description };
+      }
+    ),
+  ];
 
   async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
     loading = true;
@@ -345,10 +360,8 @@
   });
 </script>
 
-<!-- Cosmic Background -->
-<WeltallBackground />
-
-<CosmicCockpit
+<CosmicCockpitLayout
+  isAuthenticated={isAuthenticated()}
   currentView="graph"
   layoutProvider="d3"
   onToggleView={(view) => {
@@ -360,24 +373,34 @@
   onNoteEdit={handleNoteEdit}
   onNodeSelect={handleNodeSelect}
   onCreateChildNote={handleCreateChildNote}
-  onOpenAuth={(tab) => goto(`/auth/${tab}`)}
   selectedNodeId={selectedNodeId ?? null}
   nodeCount={graphData.nodes.length}
   linkCount={graphData.links.length}
   notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
+  showFullGraph={showFullGraph}
+  onToggleFullGraph={(value) => (showFullGraph = value)}
 >
   <div class="graph-cockpit-content">
-    <div class="graph-controls-overlay">
-      <BackButton href="/" />
-      <label class="toggle">
-        <input type="checkbox" bind:checked={showFullGraph} data-testid="full-graph-toggle" />
-        <span
-          >{t("graph.showAllNotes")} ({showFullGraph
-            ? t("graph.enabled")
-            : t("graph.disabled")})</span
-        >
-      </label>
-    </div>
+    {#if !isAuthenticated() && !loading && !error}
+      <PublicGraphTopBar
+        currentView="graph"
+        layoutProvider="d3"
+        searchQuery=""
+        selectedType="all"
+        typeFilters={graphTypeFilters}
+        nodeCount={graphData.nodes.length}
+        linkCount={graphData.links.length}
+        onSearch={() => {}}
+        onToggleView={(view) => {
+          if (view === "list") goto("/");
+          else if (view === "3d") goto("/graph/3d");
+        }}
+        onFilter={() => {}}
+        onSignIn={() => goto("/auth/login")}
+        onRegister={() => goto("/auth/register")}
+        {canvasController}
+      />
+    {/if}
 
     {#if loading}
       <div class="loading-overlay" data-testid="loading-overlay">
@@ -391,19 +414,24 @@
       </div>
     {:else if graphData.nodes.length > 0}
       {#key graphData.nodes.length + "-" + graphData.links.length}
-        <GraphCanvas
-          nodes={graphData.nodes}
-          links={graphData.links}
-          onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
-          onNoteDelete={handleDeleteRequest}
-          onNoteRestore={handleNoteRestore}
-          onNoteCreate={handleNoteCreate}
-          onCreateChildNote={handleCreateChildNote}
-          onLinkCreate={handleLinkCreate}
-          onLinkEdit={handleLinkEdit}
-          onLinkDelete={handleLinkDelete}
-          helpContent={knowledgeCore?.content}
-        />
+        <div class="graph-view-wrapper">
+          <GraphCanvas
+            nodes={graphData.nodes}
+            links={graphData.links}
+            onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+            onNoteDelete={handleDeleteRequest}
+            onNoteRestore={handleNoteRestore}
+            onNoteCreate={handleNoteCreate}
+            onCreateChildNote={handleCreateChildNote}
+            onLinkCreate={handleLinkCreate}
+            onLinkEdit={handleLinkEdit}
+            onLinkDelete={handleLinkDelete}
+            helpContent={knowledgeCore?.content}
+            showLinkTypeLegend={isAuthenticated()}
+            showTopBar={isAuthenticated()}
+            bind:controller={canvasController}
+          />
+        </div>
       {/key}
     {:else}
       <div class="empty">
@@ -412,7 +440,7 @@
       </div>
     {/if}
   </div>
-</CosmicCockpit>
+</CosmicCockpitLayout>
 
 {#if noteToEdit}
   <EditNoteModal
@@ -454,49 +482,20 @@
 
 <style>
   .graph-cockpit-content {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
-    background: var(--gradient-cosmic-bg);
+    background: transparent;
     color: var(--color-text-dark);
     overflow: hidden;
   }
 
-  .graph-controls-overlay {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    z-index: 5;
-    pointer-events: none;
-  }
-
-  .graph-controls-overlay > :global(*) {
-    pointer-events: auto;
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    color: white;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    pointer-events: auto;
-  }
-
-  .toggle input {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
+  .graph-view-wrapper {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
   }
 
   .loading-overlay {

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
   import { SearchQuery } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
@@ -13,11 +12,8 @@
     onToggleView?: (view: "graph" | "list" | "3d") => void;
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     onNoteCreate?: () => void;
-    onOpenAuth?: (tab: "login" | "register") => void;
     currentView?: "graph" | "list" | "3d";
     layoutProvider?: "d3" | "graph-service";
-    onImport?: () => void;
-    onExport?: () => void;
   }
 
   const {
@@ -25,15 +21,11 @@
     onToggleView,
     onToggleLayoutProvider,
     onNoteCreate,
-    onOpenAuth,
     currentView = "graph",
     layoutProvider = "graph-service",
-    onImport,
-    onExport,
   }: Props = $props();
 
   let searchQuery = $state("");
-  let showMenu = $state(false);
 
   function handleSearch() {
     const q = new SearchQuery(searchQuery);
@@ -47,33 +39,6 @@
   function toggleLayoutProvider(provider: "d3" | "graph-service") {
     onToggleLayoutProvider?.(provider);
   }
-
-  function handleLogin() {
-    if (onOpenAuth) {
-      onOpenAuth("login");
-    } else {
-      goto("/auth/login");
-    }
-    showMenu = false;
-  }
-
-  function handleRegister() {
-    if (onOpenAuth) {
-      onOpenAuth("register");
-    } else {
-      goto("/auth/register");
-    }
-    showMenu = false;
-  }
-
-  function handleLogout() {
-    logout();
-    goto("/auth/login");
-    showMenu = false;
-  }
-
-  const authenticated = $derived(isAuthenticated());
-  const user = $derived(currentUser());
 </script>
 
 <div class="cockpit-top-panel floating-controls" data-testid="cockpit-top-panel">
@@ -238,91 +203,6 @@
       </svg>
     </button>
 
-    <div class="menu-container">
-      <button
-        type="button"
-        class="menu-btn"
-        data-testid="menu-button"
-        onclick={() => (showMenu = !showMenu)}
-        title={t("controls.menuTitle")}
-        aria-expanded={showMenu}
-        aria-haspopup="true"
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
-      {#if showMenu}
-        <div class="dropdown-menu" role="menu">
-          {#if !authenticated}
-            <button
-              type="button"
-              class="menu-item"
-              role="menuitem"
-              onclick={handleLogin}
-              data-testid="menu-login"
-            >
-              🔑 {t("auth.signInButton")}
-            </button>
-            <button
-              type="button"
-              class="menu-item"
-              role="menuitem"
-              onclick={handleRegister}
-              data-testid="menu-register"
-            >
-              ✨ {t("auth.registerLink")}
-            </button>
-          {:else}
-            <div class="user-info">{user?.email}</div>
-            <button
-              type="button"
-              class="menu-item"
-              role="menuitem"
-              onclick={handleLogout}
-              data-testid="menu-logout"
-            >
-              ↩ {t("auth.logout")}
-            </button>
-          {/if}
-          <button
-            type="button"
-            class="menu-item"
-            role="menuitem"
-            onclick={() => {
-              onImport?.();
-              showMenu = false;
-            }}
-            data-testid="menu-import"
-          >
-            {t("controls.import")}
-          </button>
-          <button
-            type="button"
-            class="menu-item"
-            role="menuitem"
-            onclick={() => {
-              onExport?.();
-              showMenu = false;
-            }}
-            data-testid="menu-export"
-          >
-            {t("controls.export")}
-          </button>
-        </div>
-      {/if}
-    </div>
-
     <LangSwitcher />
   </div>
 </div>
@@ -443,8 +323,7 @@
     justify-content: center;
   }
 
-  .create-btn,
-  .menu-btn {
+  .create-btn {
     width: 34px;
     height: 34px;
     border: none;
@@ -458,55 +337,8 @@
     transition: background 0.2s ease;
   }
 
-  .create-btn:hover,
-  .menu-btn:hover {
+  .create-btn:hover {
     background: rgba(45, 212, 191, 0.25);
-  }
-
-  .menu-container {
-    position: relative;
-  }
-
-  .dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: rgba(10, 10, 15, 0.95);
-    border: 1px solid rgba(45, 212, 191, 0.25);
-    border-radius: 10px;
-    padding: 8px;
-    min-width: 160px;
-    z-index: 160;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  }
-
-  .menu-item {
-    width: 100%;
-    padding: 10px 14px;
-    border: none;
-    background: transparent;
-    color: var(--color-text, #e0e0e0);
-    text-align: left;
-    cursor: pointer;
-    border-radius: 6px;
-    font-size: 13px;
-    transition: background 0.2s ease;
-  }
-
-  .menu-item:hover {
-    background: rgba(45, 212, 191, 0.15);
-  }
-
-  .user-info {
-    padding: 8px 14px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    border-bottom: 1px solid rgba(45, 212, 191, 0.1);
-    margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 180px;
   }
 
   @media (max-width: 768px) {

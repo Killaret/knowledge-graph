@@ -166,3 +166,35 @@ Comprehensive plan for interactive canvas, NoteCard redesign, multilingual lexic
 - Iteration 5 completed (visual screenshots updated, unit tests added, integration tests verified, documentation updated with hotkey list and UX guidelines).
 - Iteration 6 completed (FSD refactoring: renderer.ts reduced 97%, GraphCanvas.svelte reduced 7.3%, FSD structure created, build passes).
 
+### Iteration 7 — Carbon (Allotropic) Theme & Note Detail Page
+
+**Completed:**
+- Extended the allotropic-carbon visual theme across shared UI components.
+  - Added carbon gradient/glow CSS custom properties to `frontend/src/shared/styles/global.css`.
+  - Restyled `Button`, `Modal`, `NoteForm`, `TypeSelector`, `NoteCard`, `BackButton`, `SearchBar`, `AuthCard`, `EditNoteModal`, and `CreateNoteModal` with carbon surfaces, gradients, and glows.
+  - Kept type colors (star, planet, comet, galaxy, etc.) distinct from semantic UI colors (primary, warning, danger, success).
+- Fully rebuilt the note detail page (`frontend/src/routes/notes/[id]/+page.svelte`):
+  - Celestial body type chip with emoji and color.
+  - Visibility chip (public / private).
+  - Creation and update datetime chips.
+  - Tags and keywords from `note.metadata` rendered as searchable links.
+  - Related/connected notes section with link type icons, link weight bars, and direction indicators (incoming / outgoing).
+  - Similar notes section using `getSuggestions`.
+  - Action buttons for edit, delete, create child note, 2D graph, and 3D constellation.
+  - Page transitions (`fly`, `fade`) and responsive carbon layout.
+- Added missing i18n keys in `frontend/src/shared/utils/i18n.ts` (Russian and English) for all new note-page labels.
+- Verified with `npm run check`, `npm run test:unit` (838 tests), `npm run build`, and Docker test stack rebuild.
+
+**Pending:**
+- None - Iteration 7 complete.
+
+### Current status
+- Iteration 1 completed.
+- Iteration 2 completed.
+- Iteration 3 completed (keyboard shortcuts, bulk actions menu, visual feedback).
+- Iteration 4 completed (hotkeys added, two-stage undo toast implemented, Delete all links button added, HelpHotkeysModal component extracted, ghost node form enhanced, drag-and-drop link creation UX improved, tests updated).
+- Iteration 4 Multilingual completed (i18n infrastructure created, language toggle added, ProfileEditor internationalized).
+- Iteration 5 completed (visual screenshots updated, unit tests added, integration tests verified, documentation updated with hotkey list and UX guidelines).
+- Iteration 6 completed (FSD refactoring: renderer.ts reduced 97%, GraphCanvas.svelte reduced 7.3%, FSD structure created, build passes).
+- Iteration 7 completed (carbon theme applied to shared components, note detail page rebuilt, i18n updated, build and tests pass).
+

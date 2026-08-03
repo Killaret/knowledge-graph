@@ -191,3 +191,69 @@ Added global box-sizing for better responsive behavior:
 - Zoom animation smoothing
 - Haptic feedback on zoom
 - Customizable zoom sensitivity
+
+---
+
+## Carbon (Allotropic) Theme
+
+### Overview
+
+The application uses a dark "allotropic carbon" visual language: deep carbon surfaces, subtle graphite gradients, and neon glows that map to specific UI semantics. The theme is implemented with CSS custom properties in `frontend/src/shared/styles/global.css` and applied to shared components.
+
+### Design Tokens
+
+**Location:** `frontend/src/shared/styles/global.css`
+
+Key token groups:
+- `--carbon-*` color tokens (backgrounds, surfaces, text, borders)
+- `--carbon-gradient-*` for primary (cyan → violet), amber, danger, success, surface, and card gradients
+- `--carbon-glow-*` for neon glows: cyan, amber, red, green, purple
+
+### Restyled Components
+
+- `Button` (`frontend/src/components/atoms/Button.svelte`) — primary, secondary, danger, ghost variants with glow.
+- `Modal` (`frontend/src/components/atoms/Modal.svelte`) — carbon surface with gradient border and blur.
+- `NoteForm` + `TypeSelector` (`frontend/src/components/molecules/NoteForm.svelte`, `TypeSelector.svelte`) — carbon inputs, cyan focus glow, amber validation glow.
+- `NoteCard` (`frontend/src/widgets/notes/NoteCard.svelte`) — nebula gradient, type-colored left stripe, hover lift and glow, new/updated indicators.
+- `BackButton`, `SearchBar`, `AuthCard`, `EditNoteModal`, `CreateNoteModal` — aligned with carbon surfaces and gradients.
+
+### Color Semantics
+
+- **Primary:** cyan → violet gradient for main CTAs.
+- **Warning / quick capture:** amber glow.
+- **Danger:** red glow for destructive actions.
+- **Success:** green for positive states.
+- **Type colors:** star, planet, comet, galaxy, asteroid, blackhole, etc. remain unique and are used for type chips, NoteCard stripes, and graph nodes.
+
+---
+
+## Note Detail Page
+
+### Overview
+
+The note detail page (`frontend/src/routes/notes/[id]/+page.svelte`) was rebuilt to show richer metadata, related note links, and graph navigation in the carbon theme.
+
+### Features
+
+- **Hero section:** title, type emoji, type label, description, visibility chip (public/private).
+- **Metadata chips:** creation and update datetimes, public/private badge.
+- **Tags and keywords:** rendered from `note.metadata.tags` and `note.metadata.keywords` as links to `/search?q=...`.
+- **Connected notes:** list of related notes derived from `getGraphData` for the current note, showing:
+  - Link type icon and label
+  - Link direction (incoming / outgoing)
+  - Celestial body type emoji
+  - Link weight visual bar
+- **Similar notes:** powered by `getSuggestions` with similarity score.
+- **Actions:** Edit, Delete, Create child note, Open 2D graph, Open 3D constellation.
+- **Transitions:** page and section fly/fade animations using Svelte transitions.
+- **i18n:** all labels use `frontend/src/shared/utils/i18n.ts` keys in Russian and English.
+
+### Manual Testing Notes
+
+1. Open any note at `/notes/{id}`.
+2. Verify the type chip, visibility chip, and datetime chips render.
+3. If the note has `metadata.tags` or `metadata.keywords`, they appear as clickable search links.
+4. If the note has graph links, the related notes section renders with direction arrows and weight bars.
+5. Edit, delete, and child-note actions open the corresponding modals.
+6. Graph/constellation buttons navigate to `/graph/{id}` and `/graph/3d/{id}`.
+7. No console errors and no layout shifts on load.

@@ -1455,15 +1455,15 @@ export function draw(
     searchMatchIds
   );
 
-  // Draw interactive UI elements in world coordinates (hidden in focus mode)
+  ctx.restore();
+
+  // Draw black hole in SCREEN coordinates so it stays fixed regardless of pan/zoom
   if (!focusMode && blackHole) {
     drawBlackHole(ctx, blackHole, animationTime);
     if (blackHole.hovered) {
       drawBlackHoleTooltip(ctx, blackHole);
     }
   }
-
-  ctx.restore();
 
   // Draw ghost node in SCREEN coordinates so it stays fixed regardless of pan/zoom
   if (!focusMode && ghostNode?.active) {

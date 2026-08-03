@@ -237,13 +237,13 @@ test.describe(
       await page.goto(`/notes/${noteId}`);
       await page.waitForTimeout(3000);
 
-      // Setup dialog handler before click
-      page.on("dialog", async (dialog) => {
-        await dialog.accept();
-      });
-
-      // Click Delete button
+      // Click Delete button to open the confirmation modal
       await page.click('[data-testid="delete-note-btn"]');
+
+      // Confirm deletion in the custom modal
+      const confirmBtn = page.locator('[data-testid="confirm-modal-confirm"]');
+      await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+      await confirmBtn.click();
 
       // Wait for navigation away from note page (either redirect or URL change)
       await page.waitForFunction(() => !window.location.pathname.includes("/notes/"), {

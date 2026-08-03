@@ -1,11 +1,18 @@
 package middleware
 
 import (
-	"fmt"
+	"context"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+// IsSkipAuth returns true if the context was created with SKIP_AUTH enabled.
+func IsSkipAuth(ctx context.Context) bool {
+	v, _ := ctx.Value(contextkeys.SkipAuthKey).(bool)
+	return v
+}
 
 // SkipAuthConfig holds configuration for skipping authentication
 type SkipAuthConfig struct {
@@ -37,7 +44,6 @@ func SkipAuth(config *SkipAuthConfig) gin.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("[DEBUG] SkipAuth: Enabled=%t, Path=%s\n", config.Enabled, c.Request.URL.Path)
 		if !config.Enabled {
 			c.Next()
 			return
@@ -48,7 +54,8 @@ func SkipAuth(config *SkipAuthConfig) gin.HandlerFunc {
 		c.Set(ContextUserIDKey, config.DefaultUserID)
 		c.Set(ContextRoleKey, config.DefaultRole)
 		c.Set(ContextLoginKey, config.DefaultLogin)
-		fmt.Printf("[DEBUG] SkipAuth: Set user ID=%s\n", config.DefaultUserID.String())
+		// Propagate skip-auth flag to request context so repositories can opt-out of public-only scoping
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), contextkeys.SkipAuthKey, true))
 		c.Next()
 	}
 }

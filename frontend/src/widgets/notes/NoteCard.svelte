@@ -284,18 +284,18 @@
   .note-card {
     position: relative;
     display: flex;
-    background: var(--color-surface-elevated, rgba(20, 24, 45, 0.85));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 14px;
     overflow: hidden;
     cursor: pointer;
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.3),
-      inset 0 0 24px rgba(255, 255, 255, 0.02);
+      0 4px 12px rgba(0, 0, 0, 0.35),
+      inset 0 0 24px rgba(139, 92, 246, 0.04);
     transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease,
-      border-color 0.25s ease,
+      transform var(--carbon-transition, 0.25s ease),
+      box-shadow var(--carbon-transition, 0.25s ease),
+      border-color var(--carbon-transition, 0.25s ease),
       opacity 0.2s ease;
     animation: note-card-enter 0.4s ease forwards;
     animation-delay: var(--stagger-delay, 0ms);
@@ -306,7 +306,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+    background: radial-gradient(circle at 15% 25%, rgba(34, 211, 238, 0.06) 0%, transparent 55%);
     pointer-events: none;
     opacity: 0.6;
     transition: opacity 0.25s ease;
@@ -315,11 +315,11 @@
   .note-card:hover,
   .note-card:focus {
     transform: translateY(-4px);
-    border-color: color-mix(in srgb, var(--type-color) 40%, transparent);
+    border-color: color-mix(in srgb, var(--type-color) 50%, var(--carbon-border, #2d2d3d));
     box-shadow:
-      0 8px 28px rgba(0, 0, 0, 0.45),
-      0 0 28px color-mix(in srgb, var(--type-color) 18%, transparent),
-      inset 0 0 32px rgba(255, 255, 255, 0.03);
+      0 12px 32px rgba(0, 0, 0, 0.5),
+      0 0 32px color-mix(in srgb, var(--type-color) 22%, transparent),
+      inset 0 0 32px rgba(255, 255, 255, 0.02);
     outline: none;
   }
 
@@ -331,9 +331,9 @@
   .note-card.selected {
     border-color: color-mix(in srgb, var(--type-color) 70%, transparent);
     box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--type-color) 30%, transparent),
-      0 8px 28px rgba(0, 0, 0, 0.45),
-      0 0 28px color-mix(in srgb, var(--type-color) 18%, transparent);
+      0 0 0 2px color-mix(in srgb, var(--type-color) 35%, transparent),
+      0 12px 32px rgba(0, 0, 0, 0.5),
+      0 0 32px color-mix(in srgb, var(--type-color) 22%, transparent);
   }
 
   .note-card.exiting {
@@ -342,12 +342,8 @@
 
   .note-card.dust {
     border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.12);
-    background: color-mix(
-      in srgb,
-      var(--color-surface-elevated, rgba(20, 24, 45, 0.85)) 95%,
-      transparent
-    );
+    border-color: var(--carbon-border, #2d2d3d);
+    background: var(--carbon-graphene, #12121a);
   }
 
   .note-card.dust::after {
@@ -356,20 +352,20 @@
     inset: 0;
     background: repeating-linear-gradient(
       45deg,
-      rgba(255, 255, 255, 0.01) 0px,
-      rgba(255, 255, 255, 0.01) 2px,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.02) 2px,
       transparent 2px,
       transparent 8px
     );
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   .note-card__stripe {
-    width: 4px;
+    width: 5px;
     flex-shrink: 0;
     background: var(--type-color);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--type-color) 60%, transparent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--type-color) 70%, transparent);
   }
 
   .note-card__content {
@@ -398,7 +394,7 @@
   .note-card__emoji {
     font-size: 1.25rem;
     line-height: 1;
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--type-color) 50%, transparent));
   }
 
   .note-card__public {
@@ -420,8 +416,8 @@
   }
 
   .note-card__indicator--updated {
-    background: var(--color-info, #22d3ee);
-    box-shadow: 0 0 8px var(--color-info, #22d3ee);
+    background: var(--carbon-glow-cyan, #22d3ee);
+    box-shadow: 0 0 8px var(--carbon-glow-cyan, #22d3ee);
   }
 
   .note-card__select {
@@ -438,7 +434,7 @@
   .note-card__checkbox {
     width: 18px;
     height: 18px;
-    accent-color: var(--color-primary, #8b5cf6);
+    accent-color: var(--carbon-glow-cyan, #22d3ee);
     cursor: pointer;
   }
 
@@ -446,16 +442,32 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     line-height: 1.4;
     word-break: break-word;
   }
 
+  .note-card__title :global(mark) {
+    background: linear-gradient(120deg, rgba(245, 158, 11, 0.35) 0%, rgba(249, 115, 22, 0.35) 100%);
+    color: var(--carbon-glow-amber, #f59e0b);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+    font-weight: 600;
+  }
+
   .note-card__body {
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--carbon-text-muted, #8b8b9e);
     font-size: 0.875rem;
     line-height: 1.6;
     word-break: break-word;
+  }
+
+  .note-card__body :global(mark) {
+    background: linear-gradient(120deg, rgba(245, 158, 11, 0.35) 0%, rgba(249, 115, 22, 0.35) 100%);
+    color: var(--carbon-glow-amber, #f59e0b);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+    font-weight: 600;
   }
 
   .note-card__footer {
@@ -463,21 +475,21 @@
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--carbon-text-dim, #5a5a6e);
   }
 
   .note-card__date--updated {
-    color: var(--color-info, #22d3ee);
+    color: var(--carbon-glow-cyan, #22d3ee);
   }
 
   :global(.nc-tooltip) {
-    background: rgba(10, 14, 35, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    background: var(--carbon-c70, #1a1a24);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 12px;
     padding: 12px;
-    color: white;
+    color: var(--carbon-text, #f0f0f5);
     min-width: 180px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(139, 92, 246, 0.12);
   }
 
   :global(.nc-tooltip-header) {
@@ -502,16 +514,16 @@
     gap: 6px;
     margin-bottom: 10px;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   :global(.nc-tooltip-content) {
     margin: 8px 0;
     padding: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
+    background: var(--carbon-black, #050508);
+    border-radius: 8px;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--carbon-text, #f0f0f5);
     line-height: 1.4;
     max-height: 150px;
     overflow-y: auto;
@@ -519,7 +531,7 @@
 
   :global(.nc-tooltip-date) {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--carbon-text-dim, #5a5a6e);
   }
 
   :global(.nc-tooltip-keywords) {
@@ -529,10 +541,12 @@
   }
 
   :global(.nc-tooltip-keyword) {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--carbon-graphene, #12121a);
+    border: 1px solid var(--carbon-border, #2d2d3d);
     border-radius: 4px;
     padding: 2px 6px;
     font-size: 0.75rem;
+    color: var(--carbon-glow-cyan, #22d3ee);
   }
 
   :global(.nc-tooltip-actions) {
@@ -543,39 +557,49 @@
   :global(.nc-tooltip-btn) {
     flex: 1;
     padding: 6px 10px;
-    border: none;
-    border-radius: 6px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: all var(--carbon-transition, 0.25s ease);
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-text, #f0f0f5);
   }
 
   :global(.nc-tooltip-btn:hover) {
-    opacity: 0.85;
+    opacity: 1;
+    border-color: var(--carbon-border-active, #4b4b5e);
   }
 
   :global(.nc-tooltip-btn--view) {
-    background: rgba(59, 130, 246, 0.85);
-    color: white;
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-glow-cyan, #22d3ee);
+  }
+
+  :global(.nc-tooltip-btn--view:hover) {
+    background: rgba(34, 211, 238, 0.1);
+    box-shadow: var(--carbon-glow-cyan, 0 0 10px rgba(34, 211, 238, 0.2));
   }
 
   :global(.nc-tooltip-btn--edit) {
-    background: var(--color-primary, #8b5cf6);
-    color: white;
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-glow-amber, #f59e0b);
+  }
+
+  :global(.nc-tooltip-btn--edit:hover) {
+    background: rgba(245, 158, 11, 0.1);
+    box-shadow: var(--carbon-glow-amber, 0 0 10px rgba(245, 158, 11, 0.2));
   }
 
   :global(.nc-tooltip-btn--delete) {
-    background: rgba(239, 68, 68, 0.85);
-    color: white;
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-glow-red, #ff3a2f);
   }
 
-  :global(mark) {
-    background: linear-gradient(120deg, rgba(254, 240, 138, 0.3) 0%, rgba(253, 224, 71, 0.3) 100%);
-    color: #ffcc00;
-    padding: 0.1em 0.2em;
-    border-radius: 0.2em;
-    font-weight: 600;
+  :global(.nc-tooltip-btn--delete:hover) {
+    background: rgba(255, 58, 47, 0.1);
+    box-shadow: var(--carbon-glow-red, 0 0 10px rgba(255, 58, 47, 0.2));
   }
 
   @keyframes note-card-enter {
@@ -607,19 +631,19 @@
       transform: scale(1);
     }
     50% {
-      opacity: 0.6;
-      transform: scale(1.2);
+      opacity: 0.7;
+      transform: scale(1.15);
     }
   }
 
   /* Tippy translucent theme overrides for dark canvas */
   :global(.tippy-box[data-theme~="translucent"]) {
-    background: rgba(10, 14, 35, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    background: var(--carbon-c70, #1a1a24);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(139, 92, 246, 0.12);
   }
 
   :global(.tippy-box[data-theme~="translucent"] .tippy-arrow) {
-    color: rgba(10, 14, 35, 0.96);
+    color: var(--carbon-c70, #1a1a24);
   }
 </style>

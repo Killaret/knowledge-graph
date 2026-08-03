@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { argosScreenshot } from "@argos-ci/playwright";
+import { clickViewToggle, openCockpitPanel } from "../helpers/testUtils";
 
 /**
  * Visual Regression Tests with Argos Playwright SDK
@@ -52,9 +53,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
 
-    const listButton = page.locator('[data-testid="view-toggle-list"]');
-    await expect(listButton).toBeVisible({ timeout: 5000 });
-    await listButton.click();
+    await clickViewToggle(page, "list");
     await page.waitForTimeout(500);
 
     await argosScreenshot(page, "home-list-view", { fullPage: true });
@@ -64,6 +63,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
 
+    await openCockpitPanel(page, "left");
     const filterButton = page.locator('[data-testid="filter-chip-star"]');
     await expect(filterButton).toBeVisible({ timeout: 5000 });
     await filterButton.click();
@@ -103,8 +103,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
 
-    const listButton = page.locator('[data-testid="view-toggle-list"]');
-    await listButton.click();
+    await clickViewToggle(page, "list");
     await page.waitForTimeout(500);
 
     const selectButton = page.locator('[data-testid="select-mode-toggle"]');
@@ -130,6 +129,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.goto("/search" + STABLE_RENDER);
     await waitForApp(page);
 
+    await openCockpitPanel(page, "top");
     const searchInput = page.locator('[data-testid="search-input"]').first();
     await expect(searchInput).toBeVisible({ timeout: 5000 });
     await searchInput.fill("star");

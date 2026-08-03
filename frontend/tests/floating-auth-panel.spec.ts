@@ -11,7 +11,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("opens and closes the floating login panel", async ({ page }) => {
-    const loginBtn = page.locator('[data-testid="floating-login-button"]');
+    const loginBtn = page.locator('[data-testid="public-sign-in"]');
     await expect(loginBtn).toBeVisible();
 
     await loginBtn.click();
@@ -28,7 +28,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("switches between login and register tabs", async ({ page }) => {
-    await page.locator('[data-testid="floating-login-button"]').click();
+    await page.locator('[data-testid="public-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();
@@ -46,7 +46,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("opens the panel on the register tab from the register button", async ({ page }) => {
-    const registerBtn = page.locator('[data-testid="floating-register-button"]');
+    const registerBtn = page.locator('[data-testid="public-register"]');
     await expect(registerBtn).toBeVisible();
 
     await registerBtn.click();
@@ -62,7 +62,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
     // Capture the public note count before login.
     const countBefore = await page.locator('[data-testid="filter-count-all"]').textContent();
 
-    await page.locator('[data-testid="floating-login-button"]').click();
+    await page.locator('[data-testid="public-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();
@@ -77,10 +77,10 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
     await expect(panel).not.toBeVisible({ timeout: 10000 });
 
     // Authenticated UI should appear (sidebar shows user info and log out).
-    await expect(page.locator(".sidebar-footer .user-info")).toBeVisible({
+    await expect(page.locator('[data-testid="cockpit-left-panel"] .user-badge')).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.locator('.sidebar-footer a:has-text("↩")')).toBeVisible();
+    await expect(page.locator('[data-testid="menu-logout"]')).toBeVisible();
 
     // The graph should eventually reload and the note count should change.
     await expect
@@ -91,7 +91,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("drags the floating panel across the viewport", async ({ page }) => {
-    await page.locator('[data-testid="floating-login-button"]').click();
+    await page.locator('[data-testid="public-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();

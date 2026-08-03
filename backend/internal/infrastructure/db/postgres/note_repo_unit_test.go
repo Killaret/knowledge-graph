@@ -217,23 +217,17 @@ func TestNoteRepository_List(t *testing.T) {
 
 	now := time.Now()
 
-	// Ожидаем BEGIN (transaction)
-	mock.ExpectBegin()
-
-	// Ожидаем COUNT с фильтром по публичности (uuid.Nil)
-	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1`).
+	// FindAllPaginated выполняет COUNT без транзакции
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1.*`).
 		WithArgs(true).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
 
-	// Ожидаем SELECT с фильтром по публичности, LIMIT и OFFSET
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+	// Затем SELECT с фильтром по публичности, LIMIT и OFFSET
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 		WithArgs(true, 5, 10).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
 			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
-
-	// Ожидаем COMMIT
-	mock.ExpectCommit()
 
 	ctx := context.Background()
 	notes, total, err := repo.List(ctx, uuid.Nil, 5, 10)
@@ -409,15 +403,13 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		defer cleanup()
 		repo := NewNoteRepository(db, nil)
 
-		mock.ExpectBegin()
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1`).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1.*`).
 			WithArgs(true).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 			WithArgs(true, 5, 10).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "Public", "Content", "star", `{}`, now, now))
-		mock.ExpectCommit()
 
 		notes, total, err := repo.List(context.Background(), uuid.Nil, 5, 10)
 		if err != nil {
@@ -439,16 +431,14 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		defer cleanup()
 		repo := NewNoteRepository(db, nil)
 
-		mock.ExpectBegin()
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1`).
-			WithArgs(userID).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1.*`).
+			WithArgs(userID.String()).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1 ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
-			WithArgs(userID, 5, 10).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+			WithArgs(userID.String(), 5, 10).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "User Note 1", "Content", "star", `{}`, now, now).
 				AddRow(uuid.New(), "User Note 2", "Content", "planet", `{}`, now, now))
-		mock.ExpectCommit()
 
 		notes, total, err := repo.List(context.Background(), userID, 5, 10)
 		if err != nil {

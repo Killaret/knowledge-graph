@@ -13,6 +13,9 @@ import {
   isAuthenticated,
   saveTokens,
   setApiKey,
+  setSessionHint,
+  hasSessionHint,
+  getApiKey,
   skipAuthMode,
 } from "$shared/stores/auth-session.svelte";
 
@@ -134,8 +137,36 @@ export async function initAuth(): Promise<void> {
       // If we already have an access token, try to use it directly. This
       // handles the common case where the user just logged in and the
       // HttpOnly refresh cookie may not be available (cross-origin / test env).
-      // Only fall back to the refresh flow if the token is invalid.
       hadTokenAtStart = !!authState.accessToken;
+      const hadApiKey = !!getApiKey();
+      const hadSessionHint = hasSessionHint();
+
+      // If there is no trace of a previous session (no in-memory token, no API
+      // key, no session hint), the browser is anonymous. Avoid hitting
+      // /v1/auth/refresh so public pages do not log a 401 on every load.
+      if (!hadTokenAtStart && !hadApiKey && !hadSessionHint) {
+        authState.isInitialized = true;
+        return;
+      }
+
+      // If the user has an API key, try to validate it directly. API keys do
+      // not support cookie refresh, so do not fall through to the refresh flow.
+      if (hadApiKey) {
+        try {
+          const user = await usersApi.getMe();
+          await applyUserSettings();
+          authState.currentUser = user;
+          void preloadAuthenticatedGraph();
+        } catch {
+          // API key is invalid or the account no longer exists.
+          clearAuthState();
+        }
+        return;
+      }
+
+      // If we have an in-memory token, try it first. If the request fails, the
+      // API client's afterResponse hook will attempt a cookie refresh; we do not
+      // need to fall through to an explicit refresh here.
       if (hadTokenAtStart) {
         try {
           const user = await usersApi.getMe();
@@ -144,13 +175,15 @@ export async function initAuth(): Promise<void> {
           void preloadAuthenticatedGraph();
           return;
         } catch {
-          // existing token didn't work, fall through to refresh
+          // existing token didn't work and the client already tried to refresh
+          clearAuthState();
         }
+        return;
       }
 
-      // Try to refresh the session (refresh token is sent as HttpOnly cookie).
-      // If the user is not logged in, this will fail and we leave the state
-      // cleared.
+      // If we reach here, we have a session hint but no in-memory token or API
+      // key. The user may still have a valid HttpOnly refresh cookie, so try to
+      // use it to obtain a fresh access token.
       const tokens = await authApi.refreshTokens();
       saveTokens(tokens);
 
@@ -162,11 +195,7 @@ export async function initAuth(): Promise<void> {
       if (import.meta.env.DEV) {
         console.error("Failed to initialize auth:", e);
       }
-      // Clear state if we started with a token (it is invalid) or if no login
-      // completed in the meantime.
-      if (hadTokenAtStart || !authState.accessToken) {
-        clearAuthState();
-      }
+      clearAuthState();
     } finally {
       authState.isInitialized = true;
       initAuthPromise = null;

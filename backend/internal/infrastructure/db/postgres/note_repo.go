@@ -9,6 +9,7 @@ import (
 
 	"knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
@@ -33,10 +34,19 @@ func NewNoteRepository(db *gorm.DB, cacheClient cache.CacheClient) *NoteReposito
 // applyNoteScope фильтрует заметки по пользователю: авторизованный — только свои,
 // анонимный — только публичные.
 func applyNoteScope(db *gorm.DB, userID uuid.UUID) *gorm.DB {
+	// In SKIP_AUTH mode the test user has uuid.Nil, which would normally be treated as
+	// an anonymous (public-only) request. Use the request context flag to keep the test
+	// user scope unmodified and return all notes.
+	if db.Statement != nil && db.Statement.Context != nil {
+		if isSkip, _ := db.Statement.Context.Value(contextkeys.SkipAuthKey).(bool); isSkip {
+			return db
+		}
+	}
+
 	if userID == uuid.Nil {
 		return db.Where("is_public = ?", true)
 	}
-	return db.Where("creator_id = ?", userID)
+	return db.Where("creator_id = ?", userID.String())
 }
 
 // invalidateCache удаляет кэш списка заметок
@@ -192,28 +202,8 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 
 // List возвращает заметки с пагинацией. userID = uuid.Nil — только публичные.
 func (r *NoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
-	var models []NoteModel
-	var total int64
-
-	// Use explicit transaction to ensure clean state
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Count total with visibility scope
-		if err := applyNoteScope(tx.Model(&NoteModel{}), userID).Count(&total).Error; err != nil {
-			return err
-		}
-
-		// Get paginated results with visibility scope
-		err := applyNoteScope(tx, userID).Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return toDomainNotes(models), total, nil
+	// NoteRepository has its own per-user scope; no need for a transaction here.
+	return r.FindAllPaginated(ctx, userID, limit, offset)
 }
 
 // Search performs multilingual full-text search on notes (Russian + English).
