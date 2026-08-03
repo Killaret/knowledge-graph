@@ -68,7 +68,7 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
     // Logout via UI: the auth store clears tokens and redirects
     const logoutBtn = page.locator('[data-testid="menu-logout"]').first();
     if (await logoutBtn.isVisible().catch(() => false)) {
-      await logoutBtn.click();
+      await logoutBtn.evaluate((el) => (el as HTMLButtonElement).click());
       await page.waitForURL(/\/(auth\/login|)/, { timeout: 10000 });
     }
 

@@ -59,8 +59,10 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("logs in through the floating panel and reloads the graph", async ({ page }) => {
-    // Capture the public note count before login.
-    const countBefore = await page.locator('[data-testid="filter-count-all"]').textContent();
+    // Capture the public note count before login from the visible graph stats.
+    const statsLocator = page.locator('[data-testid="graph-stats"]:visible');
+    await expect(statsLocator).toBeVisible({ timeout: 15000 });
+    const countBefore = await statsLocator.textContent();
 
     await page.locator('[data-testid="public-sign-in"]').click();
 
@@ -84,7 +86,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
 
     // The graph should eventually reload and the note count should change.
     await expect
-      .poll(async () => page.locator('[data-testid="filter-count-all"]').textContent(), {
+      .poll(async () => page.locator('[data-testid="graph-stats"]:visible').textContent(), {
         timeout: 20000,
       })
       .not.toBe(countBefore);

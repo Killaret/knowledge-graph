@@ -195,7 +195,10 @@ test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@aut
       page.waitForResponse(
         (res) => res.url().includes("/api/v1/notes/") && res.request().method() === "DELETE"
       ),
-      page.keyboard.press("Delete"),
+      (async () => {
+        await page.keyboard.press("Delete");
+        await page.locator('[data-testid="confirm-modal-confirm"]').click();
+      })(),
     ]);
     expect(response.ok()).toBe(true);
 
