@@ -434,6 +434,28 @@ Description: Кластеризация графа и визуализация �
 - **Зависимости:** нет (базовая механика над существующей моделью заметок); интеграция со стражами (Phase 14) — опционально.
 - **Validation:** ≥70% автоматически архивированных заметок не разархивируются вручную в течение месяца; пользователи отмечают, что граф стал «чище» (опрос/фидбек).
 
+### 💡 DB-backed Runtime Configuration 🟢 Low — Idea
+**Priority:** 🟢 Low  
+**Status:** 💡 Idea  
+**Description:** Store rarely-changed runtime tunables in a `system_config` table and expose a protected admin API for CRUD + manual reload.
+
+- **Scope:**
+  - Runtime tunables only: rate limits, graph/recommendation/pagination limits, password policy, UI thresholds.
+  - No secrets (JWT_SECRET, SMTP passwords, OAuth credentials remain env/JSON only).
+- **API:**
+  - `GET /api/v1/admin/system-config` — list all entries.
+  - `POST /api/v1/admin/system-config` — create a key/value pair.
+  - `PATCH /api/v1/admin/system-config/:key` — update value.
+  - Protected by `STATIC_API_KEY` (or `RequireAdmin()` later).
+- **Runtime effect:** load from DB at startup; manual reload endpoint to refresh in-memory `config.Config`.
+- **Validation:** deferred to implementation; consider a strict key/type registry.
+- **Risks:** drift between `knowledge-graph.config.json` and DB; caching/reload semantics across backend instances and worker.
+- **MVP:** migration + repository + service + handler + reload endpoint + integration tests.
+- **Dependencies:** existing `user_settings` pattern, `RequireAdmin` middleware, `CacheClient`.
+- **Validation criteria:** changing a rate limit via API and reload affects live requests without restart; no invalid keys accepted after validation is implemented.
+
+*Add future ideas above the next section break.*
+
 ---
 
 ## ✅ DONE: Completed Tasks
