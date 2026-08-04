@@ -1,6 +1,5 @@
 import type { TransformState, DragState, SimulationNode } from "$entities/graph-canvas/lib/types";
 import type { GhostNodeState } from "$entities/graph-canvas/lib";
-import { isPointOverGhostNode } from "$entities/graph-canvas/lib/ghost-node";
 
 export interface DragDropState {
   draggedNodeId: string | null;

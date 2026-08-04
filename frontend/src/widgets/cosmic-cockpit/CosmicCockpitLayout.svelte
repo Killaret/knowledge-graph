@@ -37,7 +37,6 @@
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
     onCreateChildNote?: (note: NoteItem) => void;
-    onOpenAuth?: (tab: "login" | "register") => void;
     onSearch?: (query: string) => void;
     onFilter?: (type: string) => void;
     onToggleView?: (view: "graph" | "list" | "3d") => void;
@@ -65,7 +64,6 @@
     onNoteDelete,
     onNoteEdit,
     onCreateChildNote,
-    onOpenAuth,
     onSearch,
     onFilter,
     onToggleView,
@@ -85,6 +83,28 @@
     showFullGraph = true,
   }: Props = $props();
 
+  // Content-based sizing for the top/bottom panels: their height genuinely
+  // reflects content (nav bar height, stats row height), so we let them
+  // measure themselves and report their natural size, clamped to a sane
+  // range, instead of always reserving a fixed height.
+  //
+  // Left/right panels are NOT measured this way: their width is what their
+  // content is laid out *into* (scrollWidth of a block-level container ends
+  // up reflecting the container's own width, not an independent "natural"
+  // width), so a self-referential measurement there would be misleading.
+  // They keep their fixed default width for now (see roadmap for a real
+  // fix, e.g. a temporary max-content measurement pass).
+  let panelSizes = $state<Record<CockpitPanelPosition, number>>({ ...COCKPIT_DEFAULT_SIZES });
+  const sizeBounds: Partial<Record<CockpitPanelPosition, { min: number; max: number }>> = {
+    top: { min: 56, max: 120 },
+    bottom: { min: 48, max: 260 },
+  };
+
+  function handlePanelSizeChange(position: CockpitPanelPosition, measured: number) {
+    if (panelSizes[position] === measured) return;
+    panelSizes = { ...panelSizes, [position]: measured };
+  }
+
   function handleNodeSelect(id: string | null) {
     if (id) {
       cockpitStore.openPanel("right");
@@ -94,11 +114,33 @@
     onNodeSelect?.(id);
   }
 
+  // The graph canvas selects a node by mutating the shared `selectedNodeId`
+  // store/prop directly (not through handleNodeSelect above), so the right
+  // panel needs to react to that prop changing on its own — otherwise
+  // clicking a node on the canvas updates CockpitRightPanel's content but
+  // never actually opens the panel. Also: clicking an object while in
+  // first-person mode should exit first-person and reveal the panel.
+  let previousSelectedNodeId: string | null = null;
+  $effect(() => {
+    const id = selectedNodeId;
+    if (id === previousSelectedNodeId) return;
+    previousSelectedNodeId = id;
+
+    if (id) {
+      if (cockpitStore.firstPerson) {
+        cockpitStore.exitFirstPerson();
+      }
+      cockpitStore.openPanel("right");
+    } else {
+      cockpitStore.closePanel("right");
+    }
+  });
+
   function visibleSize(position: CockpitPanelPosition): number {
     if (cockpitStore.firstPerson) return 0;
     const panel = cockpitStore.panels[position];
     return panel.open || panel.pinned || panel.hovering
-      ? COCKPIT_DEFAULT_SIZES[position]
+      ? panelSizes[position]
       : COCKPIT_EDGE_SIZE;
   }
 
@@ -109,6 +151,17 @@
 
   const cockpitStyle = $derived(
     `--inset-top:${topInset}px;--inset-bottom:${bottomInset}px;--inset-left:${leftInset}px;--inset-right:${rightInset}px;`
+  );
+
+  // Keep the frame's resize in lockstep with CockpitPanel's own slide
+  // animation (see getTransition() in CockpitPanel.svelte) so the canvas
+  // area doesn't snap to its new size while the panel is still sliding —
+  // that mismatch is what caused both the "abrupt" feel and the stray
+  // empty gap between the frame edge and an still-opening/closing panel.
+  const frameTransition = $derived(
+    cockpitStore.reducedMotion
+      ? "none"
+      : "top 0.3s ease, right 0.3s ease, bottom 0.3s ease, left 0.3s ease"
   );
 
   $effect(() => {
@@ -135,13 +188,20 @@
   style={cockpitStyle}
 >
   {#if isAuthenticated}
-    <div class="cockpit-frame-wrapper">
+    <div class="cockpit-frame-wrapper" style="transition: {frameTransition};">
       <CockpitFrame>
         {@render children?.()}
       </CockpitFrame>
     </div>
 
-    <CockpitPanel position="top" size={COCKPIT_DEFAULT_SIZES.top} title="Navigation">
+    <CockpitPanel
+      position="top"
+      size={panelSizes.top}
+      minSize={sizeBounds.top?.min}
+      maxSize={sizeBounds.top?.max}
+      onSizeChange={(s) => handlePanelSizeChange("top", s)}
+      title="Navigation"
+    >
       <CockpitTopPanel
         {onSearch}
         {onToggleView}
@@ -152,11 +212,18 @@
       />
     </CockpitPanel>
 
-    <CockpitPanel position="bottom" size={COCKPIT_DEFAULT_SIZES.bottom} title="System View">
+    <CockpitPanel
+      position="bottom"
+      size={panelSizes.bottom}
+      minSize={sizeBounds.bottom?.min}
+      maxSize={sizeBounds.bottom?.max}
+      onSizeChange={(s) => handlePanelSizeChange("bottom", s)}
+      title="System View"
+    >
       <CockpitBottomPanel {nodeCount} {linkCount} />
     </CockpitPanel>
 
-    <CockpitPanel position="left" size={COCKPIT_DEFAULT_SIZES.left} title="Operations">
+    <CockpitPanel position="left" size={panelSizes.left} title="Operations">
       <CockpitLeftPanel
         {typeFilters}
         {selectedType}
@@ -171,7 +238,7 @@
       />
     </CockpitPanel>
 
-    <CockpitPanel position="right" size={COCKPIT_DEFAULT_SIZES.right} title="Details">
+    <CockpitPanel position="right" size={panelSizes.right} title="Details">
       <CockpitRightPanel
         nodeId={selectedNodeId}
         onNodeSelect={handleNodeSelect}

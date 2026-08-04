@@ -1,7 +1,9 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { LinkType } from "$entities";
   import CockpitTypeFilter from "$components/molecules/CockpitTypeFilter.svelte";
 
   interface Props {
@@ -68,6 +70,28 @@
   function handleLogout() {
     logout();
     goto("/auth/login");
+  }
+
+  const linkTypes = LinkType.ALL_TYPES;
+  const isAllLinkTypesSelected = $derived(
+    graphStore.selectedLinkTypes.length === 0 ||
+      graphStore.selectedLinkTypes.length === linkTypes.length
+  );
+
+  function toggleLinkType(type: string) {
+    graphStore.toggleLinkType(type);
+  }
+
+  function showAllLinkTypes() {
+    graphStore.selectedLinkTypes = [];
+  }
+
+  function hideAllLinkTypes() {
+    graphStore.selectedLinkTypes = linkTypes.map((lt) => lt.type);
+  }
+
+  function handleMinWeightInput(event: Event) {
+    graphStore.minLinkWeight = Number((event.currentTarget as HTMLInputElement).value);
   }
 
   function getNoteEmoji(type: string | undefined): string {
@@ -177,6 +201,62 @@
     </section>
   {/if}
 
+  <section class="left-section" aria-labelledby="link-types-heading">
+    <h3 class="section-heading cockpit-gradient-text" id="link-types-heading">
+      {t("linkLegend.title")}
+    </h3>
+    <div class="link-types-actions">
+      <button
+        type="button"
+        class="control-btn control-btn--small"
+        disabled={isAllLinkTypesSelected}
+        onclick={showAllLinkTypes}
+        data-testid="link-types-show-all"
+      >
+        {t("linkLegend.showAll")}
+      </button>
+      <button
+        type="button"
+        class="control-btn control-btn--small"
+        disabled={graphStore.selectedLinkTypes.length === 0}
+        onclick={hideAllLinkTypes}
+        data-testid="link-types-hide-all"
+      >
+        {t("linkLegend.hideAll")}
+      </button>
+    </div>
+    <div class="link-types-list">
+      {#each linkTypes as linkType}
+        {@const active =
+          graphStore.selectedLinkTypes.length === 0 ||
+          graphStore.selectedLinkTypes.includes(linkType.type)}
+        <button
+          type="button"
+          class="link-type-chip"
+          class:active
+          onclick={() => toggleLinkType(linkType.type)}
+          data-testid="link-type-chip-{linkType.type}"
+        >
+          <span class="link-type-icon">{linkType.icon}</span>
+          <span>{linkType.label}</span>
+        </button>
+      {/each}
+    </div>
+    <label class="min-weight-label" for="cockpit-min-weight">
+      {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
+    </label>
+    <input
+      id="cockpit-min-weight"
+      type="range"
+      min="0"
+      max="1"
+      step="0.1"
+      value={graphStore.minLinkWeight}
+      oninput={handleMinWeightInput}
+      data-testid="cockpit-min-weight"
+    />
+  </section>
+
   <section class="left-section" aria-labelledby="tree-heading">
     <h3 class="section-heading cockpit-gradient-text" id="tree-heading">
       {t("cockpit.left.noteTree")}
@@ -281,6 +361,9 @@
   .left-section:nth-of-type(5) .cockpit-gradient-text {
     --cockpit-text-delay: -4.8s;
   }
+  .left-section:nth-of-type(6) .cockpit-gradient-text {
+    --cockpit-text-delay: -6s;
+  }
 
   .nav-list,
   .graph-controls,
@@ -351,6 +434,62 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .link-types-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .control-btn--small {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 11px;
+    justify-content: center;
+  }
+
+  .control-btn--small:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .link-types-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .link-type-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(45, 212, 191, 0.15);
+    background: transparent;
+    color: rgba(224, 224, 224, 0.5);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .link-type-chip.active {
+    border-color: rgba(45, 212, 191, 0.5);
+    background: rgba(45, 212, 191, 0.1);
+    color: var(--color-text, #e0e0e0);
+  }
+
+  .link-type-chip:hover {
+    border-color: rgba(45, 212, 191, 0.5);
+  }
+
+  .link-type-icon {
+    font-size: 12px;
+  }
+
+  .min-weight-label {
+    font-size: 11px;
+    color: rgba(224, 224, 224, 0.6);
   }
 
   .control-btn--danger:hover {

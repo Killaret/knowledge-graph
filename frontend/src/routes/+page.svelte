@@ -670,8 +670,8 @@
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
           onCreateChildNote={handleCreateChildNote}
-          showLinkTypeLegend={isAuthenticated()}
-          showTopBar={isAuthenticated()}
+          showLinkTypeLegend={false}
+          showTopBar={false}
           bind:controller={canvasController}
         />
       </div>

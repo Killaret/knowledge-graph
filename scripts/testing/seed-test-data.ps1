@@ -33,7 +33,7 @@ $noteTypes = @(
     'satellite', 'debris', 'nebula', 'dust', 'unknown', 'blackhole'
 )
 
-$linkTypes = @('reference', 'dependency', 'related', 'custom')
+$linkTypes = @('reference', 'dependency', 'related', 'custom', 'parent', 'child')
 
 $report = @{
     startedAt = (Get-Date -Format o)

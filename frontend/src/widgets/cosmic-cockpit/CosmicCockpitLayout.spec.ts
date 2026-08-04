@@ -39,3 +39,49 @@ describe("CosmicCockpitLayout — first-person Escape hotkey", () => {
     expect(cockpitStore.firstPerson).toBe(true);
   });
 });
+
+describe("CosmicCockpitLayout — selectedNodeId opens/closes the right panel", () => {
+  afterEach(() => {
+    cockpitStore.setFirstPerson(false);
+    cockpitStore.closePanel("right");
+    cleanup();
+  });
+
+  it("opens the right panel when selectedNodeId becomes non-null (e.g. from a canvas click)", () => {
+    const { rerender } = render(CosmicCockpitLayout, {
+      props: { isAuthenticated: false, selectedNodeId: null },
+    });
+
+    expect(cockpitStore.panels.right.open).toBe(false);
+
+    rerender({ isAuthenticated: false, selectedNodeId: "note-1" });
+
+    expect(cockpitStore.panels.right.open).toBe(true);
+  });
+
+  it("closes the right panel when selectedNodeId goes back to null", () => {
+    const { rerender } = render(CosmicCockpitLayout, {
+      props: { isAuthenticated: false, selectedNodeId: "note-1" },
+    });
+
+    expect(cockpitStore.panels.right.open).toBe(true);
+
+    rerender({ isAuthenticated: false, selectedNodeId: null });
+
+    expect(cockpitStore.panels.right.open).toBe(false);
+  });
+
+  it("exits first-person mode when a node gets selected while in first-person", () => {
+    const { rerender } = render(CosmicCockpitLayout, {
+      props: { isAuthenticated: false, selectedNodeId: null },
+    });
+
+    cockpitStore.setFirstPerson(true);
+    expect(cockpitStore.firstPerson).toBe(true);
+
+    rerender({ isAuthenticated: false, selectedNodeId: "note-1" });
+
+    expect(cockpitStore.firstPerson).toBe(false);
+    expect(cockpitStore.panels.right.open).toBe(true);
+  });
+});

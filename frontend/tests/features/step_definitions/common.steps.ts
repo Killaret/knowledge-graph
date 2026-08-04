@@ -263,7 +263,7 @@ When(
   async function (this: ITestWorld, buttonLabel: string) {
     const label = buttonLabel.toLowerCase();
     let testId: string;
-    let panel: "top" | "left" = "top";
+    const panel: "top" | "left" = "top";
     if (label.includes("list")) {
       testId = "view-toggle-list";
     } else if (label.includes("graph")) {

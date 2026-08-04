@@ -60,4 +60,27 @@ describe("CockpitPanel", () => {
 
     expect(topStyle).not.toEqual(leftStyle);
   });
+
+  it("reports a clamped, content-based size via onSizeChange when minSize/maxSize are provided", () => {
+    const onSizeChange = vi.fn();
+
+    render(CockpitPanel, {
+      props: { position: "top", size: 64, minSize: 56, maxSize: 120, onSizeChange, title: "Nav" },
+    });
+
+    // jsdom reports 0 for scrollHeight/scrollWidth by default, so the
+    // reported size should be clamped up to the configured minimum rather
+    // than collapsing the panel to nothing.
+    expect(onSizeChange).toHaveBeenCalledWith(56);
+  });
+
+  it("does not attempt content-based measurement when minSize/maxSize are not provided (left/right panels)", () => {
+    const onSizeChange = vi.fn();
+
+    render(CockpitPanel, {
+      props: { position: "left", size: 320, onSizeChange, title: "Operations" },
+    });
+
+    expect(onSizeChange).not.toHaveBeenCalled();
+  });
 });

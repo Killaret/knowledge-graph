@@ -34,7 +34,7 @@ NOTE_TYPES=(
     satellite debris nebula dust unknown blackhole
 )
 
-LINK_TYPES=(reference dependency related custom)
+LINK_TYPES=(reference dependency related custom parent child)
 
 REPORT=$(jq -n \
     --arg startedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \

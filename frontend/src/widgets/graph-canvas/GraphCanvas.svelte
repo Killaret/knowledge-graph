@@ -79,6 +79,7 @@
     type LinkFormState,
   } from "$features/graph-forms/link-form";
 
+  /* eslint-disable prefer-const -- Svelte 5 props are destructured from a reactive $props() proxy; they are conventionally declared with `let` even when not reassigned locally, especially for bindable props. */
   let {
     nodes,
     links,
@@ -158,6 +159,7 @@
       toggleFocus: () => void;
     };
   } = $props();
+  /* eslint-enable prefer-const */
 
   let stableRender = false;
   $effect(() => {

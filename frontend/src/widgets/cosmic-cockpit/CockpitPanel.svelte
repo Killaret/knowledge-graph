@@ -13,13 +13,29 @@
     handleSize?: number;
     title?: string;
     delay?: number;
+    /** Content-based sizing bounds; when set, the panel measures its own
+     * content and reports the clamped natural size via onSizeChange instead
+     * of always taking up the full `size`. */
+    minSize?: number;
+    maxSize?: number;
+    onSizeChange?: (size: number) => void;
     children?: import("svelte").Snippet;
   }
 
-  const { position, size, handleSize = COCKPIT_EDGE_SIZE, title, delay, children }: Props =
-    $props();
+  const {
+    position,
+    size,
+    handleSize = COCKPIT_EDGE_SIZE,
+    title,
+    delay,
+    minSize,
+    maxSize,
+    onSizeChange,
+    children,
+  }: Props = $props();
 
   let panelRef: HTMLDivElement | null = $state(null);
+  let contentRef: HTMLDivElement | null = $state(null);
   let dragStartX = $state(0);
   let dragStartY = $state(0);
   let dragging = $state(false);
@@ -30,6 +46,27 @@
   const isOpen = $derived(panel.open || panel.pinned || panel.hovering);
   const visibleSize = $derived(isOpen ? size : handleSize);
   const hoverDelay = $derived(delay ?? cockpitStore.hoverDelay);
+  const isVertical = $derived(position === "left" || position === "right");
+
+  // Content-based sizing: measure the panel's natural content size and
+  // report it up so the panel (and the frame insets it drives) only take up
+  // as much space as their content actually needs, clamped to [minSize,
+  // maxSize] so panels stay usable.
+  $effect(() => {
+    if (!browser || !contentRef || minSize == null || maxSize == null || !onSizeChange) return;
+
+    const measure = () => {
+      if (!contentRef) return;
+      const natural = isVertical ? contentRef.scrollWidth : contentRef.scrollHeight;
+      const clamped = Math.min(maxSize, Math.max(minSize, natural));
+      onSizeChange(clamped);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(contentRef);
+    return () => observer.disconnect();
+  });
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string>) => formatMessage(key, locale, params);
@@ -259,7 +296,7 @@
         </div>
       </header>
 
-      <div class="panel-content">
+      <div class="panel-content" bind:this={contentRef}>
         {@render children?.()}
       </div>
     </div>
@@ -298,6 +335,7 @@
 
 <style>
   .cockpit-panel {
+    --cockpit-bevel: 10px;
     background: rgba(10, 10, 15, 0.92);
     backdrop-filter: blur(18px);
     border: 1px solid rgba(45, 212, 191, 0.25);
@@ -305,6 +343,20 @@
       0 0 28px rgba(0, 0, 0, 0.55),
       0 0 12px rgba(45, 212, 191, 0.08);
     color: var(--color-text, #e0e0e0);
+    /* Cut all four corners at 45° so the panel reads as a beveled sci-fi
+       console surface instead of a flat rectangle — the same visual
+       language as the pseudo-3D corner bolts on CockpitFrame, applied to
+       the panels themselves. */
+    clip-path: polygon(
+      var(--cockpit-bevel) 0%,
+      calc(100% - var(--cockpit-bevel)) 0%,
+      100% var(--cockpit-bevel),
+      100% calc(100% - var(--cockpit-bevel)),
+      calc(100% - var(--cockpit-bevel)) 100%,
+      var(--cockpit-bevel) 100%,
+      0% calc(100% - var(--cockpit-bevel)),
+      0% var(--cockpit-bevel)
+    );
   }
 
   .cockpit-panel.first-person {
@@ -337,14 +389,42 @@
   }
 
   .panel-header {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
+    padding: 10px 18px;
     min-height: 44px;
     border-bottom: 1px solid rgba(45, 212, 191, 0.15);
     user-select: none;
     flex-shrink: 0;
+  }
+
+  /* Small diagonal accents at the header's top corners, echoing the cut
+     bevel of the panel itself and CockpitFrame's corner bolts, so the
+     header visually reads as part of the same beveled console surface. */
+  .panel-header::before,
+  .panel-header::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 14px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(45, 212, 191, 0.7), transparent);
+    transform-origin: 0 0;
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .panel-header::before {
+    left: 0;
+  }
+
+  .panel-header::after {
+    right: 0;
+    background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.7));
+    transform-origin: 100% 0;
+    transform: rotate(-45deg);
   }
 
   .panel-title {

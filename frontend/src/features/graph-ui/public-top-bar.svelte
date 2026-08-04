@@ -38,7 +38,7 @@
     };
   }
 
-  let {
+  const {
     currentView,
     layoutProvider = "d3",
     searchQuery,

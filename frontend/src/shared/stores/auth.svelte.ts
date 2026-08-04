@@ -13,7 +13,6 @@ import {
   isAuthenticated,
   saveTokens,
   setApiKey,
-  setSessionHint,
   hasSessionHint,
   getApiKey,
   skipAuthMode,
