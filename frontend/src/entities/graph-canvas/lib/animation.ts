@@ -19,6 +19,24 @@ export function getBaseSpeed(type: string): number {
 }
 
 /**
+ * Map a node's deterministic phase shift to a broad speed multiplier.
+ * Result includes both magnitude (0.3x–1.8x base) and direction,
+ * so nodes of the same type quickly desynchronize instead of rotating in lockstep.
+ */
+function getSpeedFromVariation(id: string, type: string): number {
+  const baseSpeed = getBaseSpeed(type);
+  const variation = getVariation(id, type);
+  const phase = variation.phaseShift;
+
+  // phaseShift is uniform in [0, 2π]. Split it into direction and magnitude.
+  const direction = phase > Math.PI ? -1 : 1;
+  const normalized = (phase % Math.PI) / Math.PI;
+  const multiplier = 0.3 + normalized * 1.5;
+
+  return baseSpeed * multiplier * direction;
+}
+
+/**
  * Update rotation angles for all nodes
  */
 export function updateNodeAngles(
@@ -30,7 +48,6 @@ export function updateNodeAngles(
   for (const node of nodes) {
     const id = node.id;
     const type = node.type ?? "star";
-    const baseSpeed = getBaseSpeed(type);
 
     let speed = speeds.get(id);
     if (speed === undefined) {
@@ -41,10 +58,14 @@ export function updateNodeAngles(
         angles.set(id, 0);
         speed = 0;
       } else {
-        // Get variation for this node to determine speed multiplier
+        // Initialize the angle from the node's phase shift so every node starts
+        // at a different rotation. The speed is derived from the same variation
+        // but with a much wider spread and possible reverse direction.
         const variation = getVariation(id, type);
-        const speedMultiplier = 0.8 + variation.phaseShift * 0.1;
-        speed = baseSpeed * speedMultiplier;
+        if (!angles.has(id)) {
+          angles.set(id, variation.phaseShift);
+        }
+        speed = getSpeedFromVariation(id, type);
       }
       speeds.set(id, speed);
     }

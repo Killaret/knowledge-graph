@@ -65,7 +65,7 @@ export function drawStar(
   y: number,
   r: number,
   angle: number,
-  variation?: { sizeMultiplier: number; hueShift: number },
+  variation?: { sizeMultiplier: number; hueShift: number; phaseShift?: number },
   nodeId?: string,
   nodeCount?: number,
   time?: number
@@ -74,7 +74,8 @@ export function drawStar(
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const outerRadius = r * sizeMultiplier;
   const innerRadius = r * 0.4 * sizeMultiplier;
-  let rot = angle;
+  const nodePhase = variation?.phaseShift ?? 0;
+  let rot = angle + nodePhase;
   const step = Math.PI / points;
 
   // Apply glow effect
@@ -88,8 +89,9 @@ export function drawStar(
   if (time && nodeCount !== undefined && nodeCount <= 50) {
     const rayCount = 8;
     const rayLength = outerRadius * 0.5;
+    const localTime = time + nodePhase * 1000;
     for (let i = 0; i < rayCount; i++) {
-      const rayAngle = (i / rayCount) * Math.PI * 2 + (time ? time / 1000 : 0);
+      const rayAngle = (i / rayCount) * Math.PI * 2 + localTime / 1000;
       const startX = x + Math.cos(rayAngle) * outerRadius;
       const startY = y + Math.sin(rayAngle) * outerRadius;
       const endX = x + Math.cos(rayAngle) * (outerRadius + rayLength);
@@ -98,7 +100,7 @@ export function drawStar(
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
-      ctx.strokeStyle = `rgba(255, 204, 0, ${0.3 + 0.2 * Math.sin(time / 500 + i)})`;
+      ctx.strokeStyle = `rgba(255, 204, 0, ${0.3 + 0.2 * Math.sin(localTime / 500 + i)})`;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -214,7 +216,7 @@ export function drawComet(
   y: number,
   r: number,
   angle: number,
-  variation?: { sizeMultiplier: number; hueShift: number },
+  variation?: { sizeMultiplier: number; hueShift: number; phaseShift?: number },
   nodeId?: string,
   nodeCount?: number,
   time?: number
@@ -223,6 +225,7 @@ export function drawComet(
   const adjustedR = r * sizeMultiplier;
   const hueShift = variation?.hueShift ?? 0;
   const cometColor = applyHueShift("#e879f9", hueShift);
+  const nodePhase = variation?.phaseShift ?? 0;
 
   // Apply glow effect
   if (time && nodeId && nodeCount !== undefined) {
@@ -242,12 +245,14 @@ export function drawComet(
   const tipX = x + Math.cos(tailAngle) * tailLength;
   const tipY = y + Math.sin(tailAngle) * tailLength;
 
-  // Curved tail using quadratic curve
+  // Curved tail using quadratic curve with a per-node phase offset so
+  // comet tails don't all wag in perfect unison.
   ctx.beginPath();
   ctx.moveTo(x, y);
   const midX = x + Math.cos(tailAngle) * (tailLength * 0.5);
   const midY = y + Math.sin(tailAngle) * (tailLength * 0.5);
-  const curveOffset = 15 * Math.sin(time ? time / 500 : 0);
+  const localTime = (time ?? 0) + nodePhase * 1000;
+  const curveOffset = 15 * Math.sin(localTime / 500);
   ctx.quadraticCurveTo(midX + curveOffset, midY + curveOffset, tipX, tipY);
   ctx.lineWidth = 4 * sizeMultiplier;
   ctx.strokeStyle = `rgba(${applyHueShiftToRGBA(232, 121, 249, hueShift)}, 0.6)`;
@@ -1263,7 +1268,9 @@ export function drawAllNodes(
     // New note indicator (pulsing turquoise outline for 24 hours)
     // Disabled in stable render mode to keep screenshots deterministic
     if (!disableVariation && !focusMode && isNewNode(node) && node.x != null && node.y != null) {
-      const pulse = 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 1000));
+      // Per-node phase so multiple new notes don't pulse in lockstep.
+      const nodePhase = getVariation(node.id, node.type ?? "star").phaseShift;
+      const pulse = 0.5 + 0.5 * Math.abs(Math.sin((animationTime + nodePhase * 1000) / 1000));
       ctx.save();
       ctx.beginPath();
       ctx.arc(node.x, node.y, r + 10, 0, 2 * Math.PI);

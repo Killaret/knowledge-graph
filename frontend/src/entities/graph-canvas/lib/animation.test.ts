@@ -18,7 +18,7 @@ describe("animation", () => {
     expect(getBaseSpeed("nebula")).toBe(0.008);
   });
 
-  it("should update node angles based on type", async () => {
+  it("should update node angles based on type with per-node variation", async () => {
     const { updateNodeAngles } = await loadAnimation();
     const angles = new Map<string, number>();
     const speeds = new Map<string, number>();
@@ -29,8 +29,20 @@ describe("animation", () => {
 
     updateNodeAngles(nodes, angles, speeds);
 
-    expect(angles.get("star1")).toBeGreaterThan(0);
-    expect(angles.get("planet1")).toBeGreaterThan(angles.get("star1")!);
+    // Each node should receive a non-deterministic initial angle and speed,
+    // so nodes of the same type do not rotate in lockstep.
+    expect(angles.get("star1")).toBeGreaterThanOrEqual(0);
+    expect(angles.get("planet1")).toBeGreaterThanOrEqual(0);
+    expect(angles.get("star1")).not.toBe(angles.get("planet1"));
+    expect(speeds.get("star1")).not.toBe(0);
+    expect(speeds.get("planet1")).not.toBe(0);
+
+    const prevStar = angles.get("star1")!;
+    const prevPlanet = angles.get("planet1")!;
+    updateNodeAngles(nodes, angles, speeds);
+
+    expect(angles.get("star1")).toBe(prevStar + speeds.get("star1")!);
+    expect(angles.get("planet1")).toBe(prevPlanet + speeds.get("planet1")!);
   });
 
   it("should keep angles fixed in disable variation mode", async () => {
