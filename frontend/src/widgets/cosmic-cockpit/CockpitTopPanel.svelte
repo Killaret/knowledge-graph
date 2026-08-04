@@ -214,7 +214,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 8px 16px;
-    height: 100%;
+    height: auto;
     box-sizing: border-box;
     background: rgba(10, 10, 15, 0.88);
     color: var(--color-text, #e0e0e0);

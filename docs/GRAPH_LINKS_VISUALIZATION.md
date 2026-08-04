@@ -130,7 +130,7 @@ When both `A→B` and `B→A` exist, each link is offset perpendicularly by `BID
 ### Legend and filtering
 
 - `LinkTypeLegend` (`frontend/src/features/graph-ui/LinkTypeLegend.svelte`) lists all types.
-- Toggling a type adds/removes it from `graphStore.selectedLinkTypes`.
+- Toggling a type adds/removes it from `graphStore.hiddenLinkTypes` (empty = all visible).
 - The minimum weight slider updates `graphStore.minLinkWeight`.
 - `GraphCanvas` derives `visibleLinks` from the store and restarts the simulation.
 

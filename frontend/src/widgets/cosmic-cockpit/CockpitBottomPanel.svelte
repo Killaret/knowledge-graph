@@ -21,19 +21,14 @@
 </script>
 
 <div class="cockpit-bottom-panel" data-testid="cockpit-bottom-panel">
-  <CockpitHUD
-    {nodeCount}
-    {linkCount}
-    health={health()}
-    cluster={t("cockpit.hud.defaultCluster")}
-  />
+  <CockpitHUD {nodeCount} {linkCount} health={health()} cluster={t("cockpit.hud.defaultCluster")} />
 </div>
 
 <style>
   .cockpit-bottom-panel {
     display: flex;
     align-items: center;
-    height: 100%;
+    height: auto;
     padding: 10px 16px;
     box-sizing: border-box;
   }

@@ -75,11 +75,9 @@
   ];
 
   const linkTypes = $derived(LinkType.ALL_TYPES);
-  const selectedLinkSet = $derived(new Set(graphStore.selectedLinkTypes));
-  const isAllLinkTypesSelected = $derived(
-    graphStore.selectedLinkTypes.length === 0 ||
-      graphStore.selectedLinkTypes.length === linkTypes.length
-  );
+  const hiddenLinkSet = $derived(new Set(graphStore.hiddenLinkTypes));
+  const areAllLinkTypesVisible = $derived(graphStore.hiddenLinkTypes.length === 0);
+  const areAllLinkTypesHidden = $derived(graphStore.hiddenLinkTypes.length === linkTypes.length);
   const graphMode = $derived(
     canvasController ? GraphMode.fromFocus(canvasController.focusMode) : GraphMode.normal()
   );
@@ -99,11 +97,11 @@
   }
 
   function showAllLinkTypes() {
-    graphStore.selectedLinkTypes = [];
+    graphStore.hiddenLinkTypes = [];
   }
 
   function hideAllLinkTypes() {
-    graphStore.selectedLinkTypes = linkTypes.map((lt) => lt.type);
+    graphStore.hiddenLinkTypes = linkTypes.map((lt) => lt.type);
   }
 
   function selectedTypeLabel(): string {
@@ -138,10 +136,7 @@
   }
 </script>
 
-<div
-  class="public-graph-top-bar"
-  data-testid="public-graph-top-bar"
->
+<div class="public-graph-top-bar" data-testid="public-graph-top-bar">
   {#if nodeCount !== undefined && linkCount !== undefined}
     <div class="public-graph-stats" data-testid="graph-stats">
       <span><strong>{nodeCount}</strong> {t("graphOverlay.nodes")}</span>
@@ -249,7 +244,7 @@
           <button
             type="button"
             class="dropdown-action"
-            disabled={isAllLinkTypesSelected}
+            disabled={areAllLinkTypesVisible}
             onclick={showAllLinkTypes}
           >
             {t("linkLegend.showAll")}
@@ -257,7 +252,7 @@
           <button
             type="button"
             class="dropdown-action"
-            disabled={!isAllLinkTypesSelected}
+            disabled={areAllLinkTypesHidden}
             onclick={hideAllLinkTypes}
           >
             {t("linkLegend.hideAll")}
@@ -285,7 +280,7 @@
             <button
               type="button"
               class="dropdown-item"
-              class:active={isAllLinkTypesSelected || selectedLinkSet.has(lt.type)}
+              class:active={!hiddenLinkSet.has(lt.type)}
               onclick={() => toggleLinkType(lt.type)}
               style="--type-color: {lt.color}"
             >
@@ -387,7 +382,9 @@
     z-index: 60;
     width: fit-content;
     max-width: calc(100% - 32px);
-    box-shadow: var(--carbon-shadow), 0 0 24px rgba(139, 92, 246, 0.08);
+    box-shadow:
+      var(--carbon-shadow),
+      0 0 24px rgba(139, 92, 246, 0.08);
     backdrop-filter: blur(10px);
   }
 
@@ -529,7 +526,9 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    box-shadow: var(--carbon-shadow), 0 0 30px rgba(139, 92, 246, 0.1);
+    box-shadow:
+      var(--carbon-shadow),
+      0 0 30px rgba(139, 92, 246, 0.1);
     z-index: 70;
   }
 

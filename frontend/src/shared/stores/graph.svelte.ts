@@ -13,7 +13,8 @@ export interface GraphUIState {
   currentView: "graph" | "list" | "3d";
   graphData: GraphData;
   hoveredNodeId: string | null;
-  selectedLinkTypes: string[];
+  /** Link types that are currently hidden from the graph. Empty = all visible. */
+  hiddenLinkTypes: string[];
   minLinkWeight: number;
 }
 
@@ -24,7 +25,7 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
   let currentView = $state<"graph" | "list" | "3d">(initial.currentView ?? "graph");
   let graphData = $state<GraphData>(initial.graphData ?? { nodes: [], links: [] });
   let hoveredNodeId = $state<string | null>(initial.hoveredNodeId ?? null);
-  let selectedLinkTypes = $state<string[]>(initial.selectedLinkTypes ?? []);
+  let hiddenLinkTypes = $state<string[]>(initial.hiddenLinkTypes ?? []);
   let minLinkWeight = $state(initial.minLinkWeight ?? 0);
 
   return {
@@ -70,11 +71,11 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       hoveredNodeId = value;
     },
 
-    get selectedLinkTypes() {
-      return selectedLinkTypes;
+    get hiddenLinkTypes() {
+      return hiddenLinkTypes;
     },
-    set selectedLinkTypes(value: string[]) {
-      selectedLinkTypes = value;
+    set hiddenLinkTypes(value: string[]) {
+      hiddenLinkTypes = value;
     },
 
     get minLinkWeight() {
@@ -84,11 +85,12 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       minLinkWeight = value;
     },
 
+    /** Toggle whether a link type is hidden from the graph. */
     toggleLinkType(type: string) {
-      if (selectedLinkTypes.includes(type)) {
-        selectedLinkTypes = selectedLinkTypes.filter((t) => t !== type);
+      if (hiddenLinkTypes.includes(type)) {
+        hiddenLinkTypes = hiddenLinkTypes.filter((t) => t !== type);
       } else {
-        selectedLinkTypes = [...selectedLinkTypes, type];
+        hiddenLinkTypes = [...hiddenLinkTypes, type];
       }
     },
 
@@ -107,7 +109,7 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       currentView = "graph";
       graphData = { nodes: [], links: [] };
       hoveredNodeId = null;
-      selectedLinkTypes = [];
+      hiddenLinkTypes = [];
       minLinkWeight = 0;
     },
   };

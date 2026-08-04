@@ -73,21 +73,19 @@
   }
 
   const linkTypes = LinkType.ALL_TYPES;
-  const isAllLinkTypesSelected = $derived(
-    graphStore.selectedLinkTypes.length === 0 ||
-      graphStore.selectedLinkTypes.length === linkTypes.length
-  );
+  const areAllLinkTypesVisible = $derived(graphStore.hiddenLinkTypes.length === 0);
+  const areAllLinkTypesHidden = $derived(graphStore.hiddenLinkTypes.length === linkTypes.length);
 
   function toggleLinkType(type: string) {
     graphStore.toggleLinkType(type);
   }
 
   function showAllLinkTypes() {
-    graphStore.selectedLinkTypes = [];
+    graphStore.hiddenLinkTypes = [];
   }
 
   function hideAllLinkTypes() {
-    graphStore.selectedLinkTypes = linkTypes.map((lt) => lt.type);
+    graphStore.hiddenLinkTypes = linkTypes.map((lt) => lt.type);
   }
 
   function handleMinWeightInput(event: Event) {
@@ -209,7 +207,7 @@
       <button
         type="button"
         class="control-btn control-btn--small"
-        disabled={isAllLinkTypesSelected}
+        disabled={areAllLinkTypesVisible}
         onclick={showAllLinkTypes}
         data-testid="link-types-show-all"
       >
@@ -218,7 +216,7 @@
       <button
         type="button"
         class="control-btn control-btn--small"
-        disabled={graphStore.selectedLinkTypes.length === 0}
+        disabled={areAllLinkTypesHidden}
         onclick={hideAllLinkTypes}
         data-testid="link-types-hide-all"
       >
@@ -227,9 +225,7 @@
     </div>
     <div class="link-types-list">
       {#each linkTypes as linkType}
-        {@const active =
-          graphStore.selectedLinkTypes.length === 0 ||
-          graphStore.selectedLinkTypes.includes(linkType.type)}
+        {@const active = !graphStore.hiddenLinkTypes.includes(linkType.type)}
         <button
           type="button"
           class="link-type-chip"
@@ -257,9 +253,9 @@
     />
   </section>
 
-  <section class="left-section" aria-labelledby="tree-heading">
-    <h3 class="section-heading cockpit-gradient-text" id="tree-heading">
-      {t("cockpit.left.noteTree")}
+  <section class="left-section" aria-labelledby="note-list-heading">
+    <h3 class="section-heading cockpit-gradient-text" id="note-list-heading">
+      {t("cockpit.left.noteList")}
     </h3>
     <div class="note-tree">
       {#each notes as note}

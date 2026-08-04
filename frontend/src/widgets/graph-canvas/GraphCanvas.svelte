@@ -4,11 +4,7 @@
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphMode } from "$entities";
-  import {
-    GraphCanvasOverlay,
-    GraphCanvasModals,
-    LinkTypeLegend,
-  } from "$features/graph-ui";
+  import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
@@ -98,12 +94,15 @@
     showLinkTypeLegend = true,
     showTopBar = true,
     className = "",
-    controller = $bindable<{
-      focusMode: boolean;
-      resetView: () => void;
-      openSearch: () => void;
-      toggleFocus: () => void;
-    } | undefined>(undefined),
+    controller = $bindable<
+      | {
+          focusMode: boolean;
+          resetView: () => void;
+          openSearch: () => void;
+          toggleFocus: () => void;
+        }
+      | undefined
+    >(undefined),
   }: {
     nodes: Array<{
       id: string;
@@ -213,12 +212,10 @@
     fadeAnimationId: null,
   };
 
-  // Filter links based on selected types and minimum weight
+  // Filter links based on hidden types and minimum weight
   const visibleLinks = $derived(
     links.filter((l) => {
-      const typeMatch =
-        graphStore.selectedLinkTypes.length === 0 ||
-        graphStore.selectedLinkTypes.includes(l.link_type ?? "related");
+      const typeMatch = !graphStore.hiddenLinkTypes.includes(l.link_type ?? "related");
       const weightMatch = (l.weight ?? 0.5) >= graphStore.minLinkWeight;
       return typeMatch && weightMatch;
     })
@@ -400,9 +397,9 @@
     const _ = mounted; // track mounted state
     const nodesCount = nodes.length;
     const linksCount = visibleLinks.length;
-    const selectedTypesCount = graphStore.selectedLinkTypes.length;
+    const hiddenTypesCount = graphStore.hiddenLinkTypes.length;
     const minWeight = graphStore.minLinkWeight;
-    const dataKey = `${nodesCount}-${linksCount}-${selectedTypesCount}-${minWeight}`;
+    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
 
     if (dataKey === lastDataKey && simState.isRunning) {
       return;
@@ -631,11 +628,9 @@
   }}
 />
 
-
-
 {#if showLinkTypeLegend}
   <LinkTypeLegend
-    selectedTypes={graphStore.selectedLinkTypes}
+    hiddenTypes={graphStore.hiddenLinkTypes}
     minWeight={graphStore.minLinkWeight}
     showMinWeight={true}
     onToggle={(type) => graphStore.toggleLinkType(type)}

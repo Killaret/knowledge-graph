@@ -7,14 +7,14 @@
     formatMessage(key, locale, params);
 
   const {
-    selectedTypes = [],
+    hiddenTypes = [],
     onToggle,
     onMinWeightChange,
     minWeight = 0,
     showMinWeight = false,
     collapsible = true,
   }: {
-    selectedTypes?: string[];
+    hiddenTypes?: string[];
     onToggle?: (type: string) => void;
     onMinWeightChange?: (value: number) => void;
     minWeight?: number;
@@ -25,14 +25,14 @@
   let collapsed = $state(false);
   const types = $derived(LinkType.ALL_TYPES);
   const isInteractive = $derived(!!onToggle);
-  const isAllSelected = $derived(
-    selectedTypes.length === 0 || selectedTypes.length === types.length
-  );
+  const areAllVisible = $derived(hiddenTypes.length === 0);
+  const areAllHidden = $derived(hiddenTypes.length === types.length);
 
+  // hiddenTypes is now interpreted as the set of HIDDEN link types.
   function showAll() {
     if (!onToggle) return;
     for (const type of types) {
-      if (!selectedTypes.includes(type.type)) {
+      if (hiddenTypes.includes(type.type)) {
         onToggle(type.type);
       }
     }
@@ -41,7 +41,7 @@
   function hideAll() {
     if (!onToggle) return;
     for (const type of types) {
-      if (selectedTypes.includes(type.type)) {
+      if (!hiddenTypes.includes(type.type)) {
         onToggle(type.type);
       }
     }
@@ -70,15 +70,10 @@
     <div class="legend-content">
       {#if isInteractive}
         <div class="legend-actions">
-          <button type="button" class="legend-action" disabled={isAllSelected} onclick={showAll}>
+          <button type="button" class="legend-action" disabled={areAllVisible} onclick={showAll}>
             {t("linkLegend.showAll")}
           </button>
-          <button
-            type="button"
-            class="legend-action"
-            disabled={selectedTypes.length === 0}
-            onclick={hideAll}
-          >
+          <button type="button" class="legend-action" disabled={areAllHidden} onclick={hideAll}>
             {t("linkLegend.hideAll")}
           </button>
         </div>
@@ -107,10 +102,10 @@
             <button
               type="button"
               class="legend-item"
-              class:disabled={isInteractive && !selectedTypes.includes(type.type)}
+              class:disabled={isInteractive && hiddenTypes.includes(type.type)}
               style="--type-color: {type.color}"
               onclick={() => onToggle?.(type.type)}
-              aria-pressed={isInteractive ? selectedTypes.includes(type.type) : undefined}
+              aria-pressed={isInteractive ? !hiddenTypes.includes(type.type) : undefined}
               disabled={!isInteractive}
             >
               <span class="legend-line" style="background: {type.color}"></span>

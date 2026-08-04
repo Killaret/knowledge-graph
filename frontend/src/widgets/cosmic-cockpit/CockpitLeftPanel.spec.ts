@@ -10,7 +10,7 @@ vi.mock("$app/navigation", () => ({
 
 describe("CockpitLeftPanel — link types filter", () => {
   afterEach(() => {
-    graphStore.selectedLinkTypes = [];
+    graphStore.hiddenLinkTypes = [];
     graphStore.minLinkWeight = 0;
     cleanup();
   });
@@ -23,40 +23,39 @@ describe("CockpitLeftPanel — link types filter", () => {
     }
   });
 
-  it("toggles a link type in graphStore when its chip is clicked", async () => {
+  it("toggles a link type as hidden in graphStore when its chip is clicked", async () => {
     render(CockpitLeftPanel);
 
     await fireEvent.click(screen.getByTestId("link-type-chip-parent"));
-    expect(graphStore.selectedLinkTypes).toContain("parent");
+    expect(graphStore.hiddenLinkTypes).toContain("parent");
 
     await fireEvent.click(screen.getByTestId("link-type-chip-parent"));
-    expect(graphStore.selectedLinkTypes).not.toContain("parent");
+    expect(graphStore.hiddenLinkTypes).not.toContain("parent");
   });
 
-  it("'Hide all' is disabled from the default (empty) state and becomes actionable once one type is toggled", async () => {
+  it("'Show all' is disabled from the default (all visible) state and becomes actionable once one type is hidden", async () => {
     render(CockpitLeftPanel);
 
-    // Mirrors LinkTypeLegend.svelte's semantics: an empty selection already
-    // means "show everything", so there is nothing left to hide until at
-    // least one type has been toggled individually.
-    expect(screen.getByTestId("link-types-hide-all")).toBeDisabled();
+    expect(screen.getByTestId("link-types-show-all")).toBeDisabled();
 
     await fireEvent.click(screen.getByTestId("link-type-chip-parent"));
-    expect(screen.getByTestId("link-types-hide-all")).not.toBeDisabled();
-
-    await fireEvent.click(screen.getByTestId("link-types-hide-all"));
-    expect(graphStore.selectedLinkTypes.length).toBe(LinkType.ALL_TYPES.length);
-  });
-
-  it("'Show all' resets the filter to empty from a partial selection", async () => {
-    render(CockpitLeftPanel);
-
-    await fireEvent.click(screen.getByTestId("link-type-chip-parent"));
-    expect(graphStore.selectedLinkTypes).toEqual(["parent"]);
     expect(screen.getByTestId("link-types-show-all")).not.toBeDisabled();
 
     await fireEvent.click(screen.getByTestId("link-types-show-all"));
-    expect(graphStore.selectedLinkTypes).toEqual([]);
+    expect(graphStore.hiddenLinkTypes).toEqual([]);
+  });
+
+  it("'Hide all' hides every type and is disabled once everything is hidden", async () => {
+    render(CockpitLeftPanel);
+
+    expect(screen.getByTestId("link-types-hide-all")).not.toBeDisabled();
+
+    await fireEvent.click(screen.getByTestId("link-types-hide-all"));
+    expect(graphStore.hiddenLinkTypes.length).toBe(LinkType.ALL_TYPES.length);
+    expect(screen.getByTestId("link-types-hide-all")).toBeDisabled();
+
+    await fireEvent.click(screen.getByTestId("link-types-show-all"));
+    expect(graphStore.hiddenLinkTypes).toEqual([]);
   });
 
   it("renders a min-weight slider bound to graphStore.minLinkWeight", async () => {

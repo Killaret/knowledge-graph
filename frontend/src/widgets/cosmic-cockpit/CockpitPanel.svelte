@@ -35,6 +35,7 @@
   }: Props = $props();
 
   let panelRef: HTMLDivElement | null = $state(null);
+  let panelBodyRef: HTMLDivElement | null = $state(null);
   let contentRef: HTMLDivElement | null = $state(null);
   let dragStartX = $state(0);
   let dragStartY = $state(0);
@@ -52,19 +53,49 @@
   // report it up so the panel (and the frame insets it drives) only take up
   // as much space as their content actually needs, clamped to [minSize,
   // maxSize] so panels stay usable.
+  //
+  // We cannot measure the live panel body directly because it is stretched
+  // by the layout (flex:1) and its scrollHeight reflects the rendered size,
+  // not the content's natural size. Instead we clone the body into an
+  // off-screen container, force it into a non-stretched block context with
+  // the same width, and read the clone's scrollHeight/scrollWidth.
   $effect(() => {
-    if (!browser || !contentRef || minSize == null || maxSize == null || !onSizeChange) return;
+    if (!browser || !panelBodyRef || minSize == null || maxSize == null || !onSizeChange) return;
 
-    const measure = () => {
-      if (!contentRef) return;
-      const natural = isVertical ? contentRef.scrollWidth : contentRef.scrollHeight;
+    function measure() {
+      if (!panelBodyRef || !minSize || !maxSize || !onSizeChange) return;
+
+      // jsdom cannot lay out elements, so clientWidth/scrollHeight are 0.
+      // In that environment we fall back to the minimum allowed size.
+      if (panelBodyRef.clientWidth === 0) {
+        onSizeChange(minSize);
+        return;
+      }
+
+      const clone = panelBodyRef.cloneNode(true) as HTMLElement;
+      const host = document.createElement("div");
+      host.style.cssText =
+        "position:absolute; top:0; left:0; width:0; height:0; overflow:hidden; visibility:hidden; pointer-events:none; z-index:-1;";
+      const style = document.createElement("style");
+      style.textContent =
+        ".cockpit-panel-measure-host, .cockpit-panel-measure-host * { height:auto !important; max-height:none !important; }";
+      host.className = "cockpit-panel-measure-host";
+      host.appendChild(style);
+      document.body.appendChild(host);
+      host.appendChild(clone);
+
+      clone.style.cssText = `display:block; width:${panelBodyRef.clientWidth}px; height:auto; overflow:visible; min-height:0;`;
+
+      const natural = isVertical ? clone.scrollWidth : clone.scrollHeight;
       const clamped = Math.min(maxSize, Math.max(minSize, natural));
-      onSizeChange(clamped);
-    };
+      if (clamped !== size) onSizeChange(clamped);
+
+      document.body.removeChild(host);
+    }
 
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(contentRef);
+    observer.observe(panelBodyRef);
     return () => observer.disconnect();
   });
 
@@ -163,8 +194,7 @@
   function getPanelStyle(): string {
     const base =
       "position:absolute; z-index:150; display:flex; overflow:hidden; pointer-events:auto;";
-    const flexDir =
-      position === "left" || position === "right" ? "row" : "column";
+    const flexDir = position === "left" || position === "right" ? "row" : "column";
     const isVertical = flexDir === "row";
 
     const transform = isVertical
@@ -191,13 +221,19 @@
     return cockpitStore.reducedMotion ? "none" : "transform 0.3s ease";
   }
 
+  // Arrows point toward the screen edge so the collapsed handle reads as a
+  // 3D shutter lip (the bevel visually "pushes" the panel away from the
+  // canvas). This matches the isometric frame example: each side's arrow
+  // follows the outer normal of the cockpit wall.
   const arrowRotation = $derived(
-    ({
-      left: 0,
-      right: 180,
-      top: 90,
-      bottom: -90,
-    } as const)[position]
+    (
+      {
+        left: 180,
+        right: 0,
+        top: -90,
+        bottom: 90,
+      } as const
+    )[position]
   );
 
   // Desynchronize the gradient-text animation phase per panel position so
@@ -226,7 +262,7 @@
     onmouseleave={handleLeave}
     data-testid="cockpit-panel-{position}"
     role="region"
-    aria-label="{title ? `${title} — ` : ""}{t('cockpit.panel.ariaLabel', { position })}"
+    aria-label="{title ? `${title} — ` : ''}{t('cockpit.panel.ariaLabel', { position })}"
   >
     <div class="panel-glow" aria-hidden="true"></div>
 
@@ -260,7 +296,7 @@
       </div>
     {/if}
 
-    <div class="panel-body">
+    <div class="panel-body" bind:this={panelBodyRef}>
       <header class="panel-header">
         {#if title}
           <h3
@@ -336,6 +372,12 @@
 <style>
   .cockpit-panel {
     --cockpit-bevel: 10px;
+    --cockpit-bevel-outer: 16px;
+    --cockpit-bevel-inner: 4px;
+    --cockpit-bevel-tl: var(--cockpit-bevel-outer);
+    --cockpit-bevel-tr: var(--cockpit-bevel-inner);
+    --cockpit-bevel-br: var(--cockpit-bevel-inner);
+    --cockpit-bevel-bl: var(--cockpit-bevel-outer);
     background: rgba(10, 10, 15, 0.92);
     backdrop-filter: blur(18px);
     border: 1px solid rgba(45, 212, 191, 0.25);
@@ -343,20 +385,41 @@
       0 0 28px rgba(0, 0, 0, 0.55),
       0 0 12px rgba(45, 212, 191, 0.08);
     color: var(--color-text, #e0e0e0);
-    /* Cut all four corners at 45° so the panel reads as a beveled sci-fi
-       console surface instead of a flat rectangle — the same visual
-       language as the pseudo-3D corner bolts on CockpitFrame, applied to
-       the panels themselves. */
+    /* Asymmetric 45° bevel: the outer edge (against the screen bezel) is
+       cut deeper than the inner edge (against the canvas). This gives the
+       panel the “extruded wall / shutter” look from the isometric sketch
+       while keeping the inner bevel subtle so it reads as a joining seam. */
     clip-path: polygon(
-      var(--cockpit-bevel) 0%,
-      calc(100% - var(--cockpit-bevel)) 0%,
-      100% var(--cockpit-bevel),
-      100% calc(100% - var(--cockpit-bevel)),
-      calc(100% - var(--cockpit-bevel)) 100%,
-      var(--cockpit-bevel) 100%,
-      0% calc(100% - var(--cockpit-bevel)),
-      0% var(--cockpit-bevel)
+      var(--cockpit-bevel-tl) 0%,
+      calc(100% - var(--cockpit-bevel-tr)) 0%,
+      100% var(--cockpit-bevel-tr),
+      100% calc(100% - var(--cockpit-bevel-br)),
+      calc(100% - var(--cockpit-bevel-br)) 100%,
+      var(--cockpit-bevel-bl) 100%,
+      0% calc(100% - var(--cockpit-bevel-bl)),
+      0% var(--cockpit-bevel-tl)
     );
+  }
+
+  .cockpit-panel--right {
+    --cockpit-bevel-tl: var(--cockpit-bevel-inner);
+    --cockpit-bevel-tr: var(--cockpit-bevel-outer);
+    --cockpit-bevel-br: var(--cockpit-bevel-outer);
+    --cockpit-bevel-bl: var(--cockpit-bevel-inner);
+  }
+
+  .cockpit-panel--top {
+    --cockpit-bevel-tl: var(--cockpit-bevel-outer);
+    --cockpit-bevel-tr: var(--cockpit-bevel-outer);
+    --cockpit-bevel-br: var(--cockpit-bevel-inner);
+    --cockpit-bevel-bl: var(--cockpit-bevel-inner);
+  }
+
+  .cockpit-panel--bottom {
+    --cockpit-bevel-tl: var(--cockpit-bevel-inner);
+    --cockpit-bevel-tr: var(--cockpit-bevel-inner);
+    --cockpit-bevel-br: var(--cockpit-bevel-outer);
+    --cockpit-bevel-bl: var(--cockpit-bevel-outer);
   }
 
   .cockpit-panel.first-person {
