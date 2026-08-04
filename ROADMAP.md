@@ -454,6 +454,32 @@ Description: Кластеризация графа и визуализация �
 - **Dependencies:** existing `user_settings` pattern, `RequireAdmin` middleware, `CacheClient`.
 - **Validation criteria:** changing a rate limit via API and reload affects live requests without restart; no invalid keys accepted after validation is implemented.
 
+### 💡 Graph Motion Driven by Graph Metrics & Clusters 🟢 Low — Idea
+**Priority:** 🟡 Medium (after Phase 11 Galactic Clusters)  
+**Status:** 💡 Idea  
+**Description:** Move beyond randomized per-node motion and tie visual animation parameters to graph structure so clusters and hubs are visually distinct.
+
+- **Scope:**
+  - Rotation speed, particle density, corona activity and glow frequency should depend on:
+    - node degree (hubs pulse/spin faster or slower),
+    - distance from graph center,
+    - cluster membership (`cluster_id` from graph-service),
+    - note type / anomaly flag.
+  - Keep the current fast-fix randomization as a fallback when structural data is unavailable.
+- **Runtime data needed:**
+  - `cluster_id` in `/graph/full` response (Phase 11).
+  - Per-node degree and/or `closeness` pre-computed by graph-service or derived from links.
+  - Optional: semantic "mass" from embeddings/NLP.
+- **Visual mappings (examples):**
+  - High-degree nodes: slower, heavier rotation; stronger glow.
+  - Peripheral nodes: faster, smaller particles.
+  - Nodes in the same cluster: share a subtle color sway or orbital direction bias.
+  - Comets with many outbound links: longer, more active tails.
+- **MVP:** add `degree`, `cluster_id`, `distance_from_center` fields to graph payload; read them in `GraphCanvas` and bias the existing `animation.ts`/`particle-system.ts` parameters.
+- **Dependencies:** Phase 11 (Galactic Clusters), graph-service API enrichment, possibly Phase 16 (DB-backed config) for tunable mapping coefficients.
+- **Risks:** over-engineering motion can hurt performance on 500+ nodes; needs graceful degradation.
+- **Validation criteria:** watching the graph, users can visually guess which nodes are hubs/central vs peripheral; motion no longer feels like a uniform screensaver.
+
 *Add future ideas above the next section break.*
 
 ---
