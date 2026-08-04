@@ -178,10 +178,9 @@
   >
     <div class="panel-glow" aria-hidden="true"></div>
 
-    {#if position === "right" || position === "bottom"}
+    {#if (position === "right" || position === "bottom") && !isOpen}
       <div
         class="panel-handle panel-handle--{position}"
-        class:open={isOpen}
         onpointerdown={handlePointerDown}
         onpointermove={handlePointerMove}
         onpointerup={handlePointerUp}

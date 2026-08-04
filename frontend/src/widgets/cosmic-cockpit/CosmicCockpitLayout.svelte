@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import {
     COCKPIT_DEFAULT_SIZES,
     COCKPIT_EDGE_SIZE,
@@ -113,6 +113,18 @@
 
   $effect(() => {
     cockpitStore.saveSettings();
+  });
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "Escape" && cockpitStore.firstPerson) {
+      cockpitStore.exitFirstPerson();
+      e.preventDefault();
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   });
 </script>
 

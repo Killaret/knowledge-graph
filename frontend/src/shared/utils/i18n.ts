@@ -151,6 +151,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Cockpit
     "cockpit.exitFirstPerson": "Exit first-person",
+    "cockpit.exitFirstPersonHint": "Exit first-person (Esc)",
     "cockpit.hud.cluster": "Cluster",
     "cockpit.hud.noCluster": "Unknown sector",
     "cockpit.hud.notes": "Notes",
@@ -903,6 +904,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
     // Cockpit
     "cockpit.exitFirstPerson": "Выйти из first-person",
+    "cockpit.exitFirstPersonHint": "Выйти из режима (Esc)",
     "cockpit.hud.cluster": "Кластер",
     "cockpit.hud.noCluster": "Неизвестный сектор",
     "cockpit.hud.notes": "Заметок",

@@ -14,7 +14,7 @@
   data-testid="first-person-exit"
 >
   <span class="glow-bar"></span>
-  {t("cockpit.exitFirstPerson")}
+  {t("cockpit.exitFirstPersonHint")}
 </button>
 
 <style>
@@ -38,29 +38,19 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     cursor: pointer;
-    opacity: 0;
+    opacity: 1;
     transition:
       opacity 0.3s ease,
       transform 0.3s ease;
-    pointer-events: none;
+    pointer-events: auto;
   }
 
   .first-person-exit:hover {
-    opacity: 1;
-    pointer-events: auto;
+    transform: translateX(-50%) scale(1.05);
   }
 
   .first-person-exit:focus-visible {
-    opacity: 1;
-    pointer-events: auto;
     outline: 2px solid #2dd4bf;
-  }
-
-  @media (hover: hover) {
-    .first-person-exit {
-      opacity: 0;
-      pointer-events: none;
-    }
   }
 
   .glow-bar {

@@ -7,7 +7,7 @@
 > - **ideas/backlog** (hypotheses / nice-to-have)
 >
 > **Environment:** `http://127.0.0.1:3002` (test stack, SKIP_AUTH=true)
-> **Last rebuild:** see git log for `fix(frontend): desynchronize 2D graph node motion and particles` and `fix(frontend): reduce 2D graph overlaps and improve readability`
+> **Last rebuild:** see git log for `fix(frontend): desynchronize 2D graph node motion and particles`, `fix(frontend): reduce 2D graph overlaps and improve readability`, and `fix(frontend): improve first-person exit and panel handles`
 
 ---
 
@@ -148,6 +148,25 @@ Run them in order. Mark each item `[x]` when it passes, or add a **Finding** bel
 - **Status:** container rebuilt, ready for re-test under Case 1.5.
 - **Screenshot / Logs:** —
 
+- **Case:** 2 / Cockpit — first-person mode
+- **What:** There is no obvious way to exit first-person mode: the floating exit button is invisible until you hover it, there is no Esc hotkey, and no hint about how to get out.
+- **Expected:** User always sees how to exit first-person mode, can use Esc, and gets a clear label on the exit control.
+- **Actual:** Once first-person is active, UI panels disappear and the exit button is hidden; users feel trapped.
+- **Hotfix applied:**
+  - `CockpitFirstPersonButton` is now always visible and shows "Exit first-person (Esc)".
+  - `CosmicCockpitLayout` listens to the `Escape` key and exits first-person mode.
+  - HUD button still toggles first-person; its own label already changes between enter/exit.
+- **Status:** container rebuilt, ready for re-test.
+- **Screenshot / Logs:** —
+
+- **Case:** 2 / Cockpit — panel handles
+- **What:** After auto-expanding the right/bottom panel, the arrow handle stays visible even though the panel is already open.
+- **Expected:** The pull-handle (arrow) is only visible when the panel is collapsed.
+- **Actual:** Arrows remain on screen when the panel is expanded, creating visual noise.
+- **Hotfix applied:** `CockpitPanel` now renders the handle only when `!isOpen`.
+- **Status:** container rebuilt, ready for re-test.
+- **Screenshot / Logs:** —
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
@@ -158,7 +177,17 @@ None yet.
 
 <!-- Hypotheses, nice-to-haves, or "explore later" items. -->
 
-None yet.
+- **Case:** 2 / Cockpit — visual depth
+- **What:** Cockpit panels look flat 2D. User wants a 2.5D / pseudo-3D effect where panel ends look voluminous, as if they really go into the screen depth, increasing immersion in the canvas.
+- **Expected:** Panels have subtle 3D extrusion / bevel / perspective so they feel like physical surfaces receding into space.
+- **Actual:** Panels are flat rectangles.
+- **Proposed idea:**
+  - Add CSS `perspective` to the cockpit container and small `rotateX`/`rotateY` transforms on panel bodies.
+  - Use layered borders with gradient shadows on panel edges to simulate thickness.
+  - Animate the depth subtly on hover/focus.
+  - Keep it optional and ensure it does not hurt click targets or accessibility.
+- **Triage:** backlog / roadmap candidate (Phase 11 or UI-polish phase). Not a bug.
+- **Screenshot / Logs:** —
 
 ---
 
