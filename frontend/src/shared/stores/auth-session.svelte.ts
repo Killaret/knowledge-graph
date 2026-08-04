@@ -67,11 +67,13 @@ export function setApiKey(key: string | null): void {
 /**
  * Check if SKIP_AUTH mode is enabled.
  * The window flag __SKIP_AUTH__ is respected in all builds to support isolated visual regression tests.
+ * VITE_SKIP_AUTH build flag enables the mode in production/test builds without localStorage.
  * LocalStorage and query params remain dev-only to avoid accidental production bypass.
  */
 export function skipAuthMode(): boolean {
   if (!browser) return false;
   if (window.__SKIP_AUTH__ === true) return true;
+  if (import.meta.env.VITE_SKIP_AUTH === "true") return true;
   if (!import.meta.env.DEV) return false;
   return localStorage.getItem("__SKIP_AUTH__") === "true";
 }
@@ -103,6 +105,9 @@ export function hasSessionHint(): boolean {
 export function isAuthenticated(): boolean {
   if (browser) {
     if (window.__SKIP_AUTH__ === true) {
+      return true;
+    }
+    if (import.meta.env.VITE_SKIP_AUTH === "true") {
       return true;
     }
     if (import.meta.env.DEV) {
