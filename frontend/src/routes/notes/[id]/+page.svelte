@@ -9,6 +9,8 @@
   import { quintOut } from "svelte/easing";
   import BackButton from "$components/atoms/BackButton.svelte";
   import Button from "$components/atoms/Button.svelte";
+  import Bevel from "$components/atoms/Bevel.svelte";
+  import Chip from "$components/atoms/Chip.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
@@ -170,18 +172,33 @@
       style="--type-color: {getNoteType(note).toCSSColor()}"
       in:fly={{ y: 16, duration: 350, easing: quintOut }}
     >
-      <header class="note-hero">
-        <div class="hero-top">
-          <div class="chips">
-            <span class="chip type-chip" title={getNoteType(note).description}>
-              <span class="type-emoji">{getNoteType(note).emoji}</span>
-              <span>{getNoteType(note).label}</span>
-            </span>
-            <span class="chip visibility-chip" class:public={note.is_public}>
-              {note.is_public ? "🌐" : "🔒"}
-              {note.is_public ? t("note.public") : t("note.private")}
-            </span>
-          </div>
+      <Bevel
+        class="note-article-surface"
+        variant="note"
+        shadeColor={getNoteType(note).toCSSColor()}
+        fullHeight
+      >
+        <header class="note-hero">
+          <div class="hero-top">
+            <div class="chips">
+              <Chip
+                color={getNoteType(note).toCSSColor()}
+                borderColor={getNoteType(note).toCSSColor()}
+                glow
+                title={getNoteType(note).description}
+              >
+                <span class="type-emoji">{getNoteType(note).emoji}</span>
+                <span>{getNoteType(note).label}</span>
+              </Chip>
+              <Chip
+                color={note.is_public ? "var(--carbon-glow-cyan, #22d3ee)" : undefined}
+                borderColor={note.is_public ? "rgba(34, 211, 238, 0.3)" : undefined}
+                glow={note.is_public}
+              >
+                {note.is_public ? "🌐" : "🔒"}
+                {note.is_public ? t("note.public") : t("note.private")}
+              </Chip>
+            </div>
           <div class="actions">
             <Button
               variant="primary"
@@ -310,6 +327,7 @@
           </ul>
         </section>
       {/if}
+      </Bevel>
     </article>
 
     <EditNoteModal
@@ -408,66 +426,10 @@
   }
 
   .note-article {
-    position: relative;
-    z-index: 0;
-    margin: 0;
     flex: 1;
-    background:
-      linear-gradient(135deg, rgba(22, 24, 36, 0.96) 0%, rgba(10, 10, 15, 0.96) 50%, rgba(12, 14, 22, 0.96) 100%),
-      var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
-    border: 1px solid rgba(45, 212, 191, 0.25);
-    box-shadow:
-      0 0 28px rgba(0, 0, 0, 0.55),
-      0 0 12px rgba(45, 212, 191, 0.08);
-    overflow: hidden;
-    /* Asymmetric cockpit bevel: deeper cut at the outer frame, subtle at the seam. */
-    clip-path: polygon(
-      24px 0%,
-      calc(100% - 6px) 0%,
-      100% 6px,
-      100% calc(100% - 24px),
-      calc(100% - 24px) 100%,
-      6px 100%,
-      0% calc(100% - 6px),
-      0% 24px
-    );
-    transition:
-      clip-path 0.35s ease,
-      box-shadow 0.35s ease;
-  }
-
-  .note-article::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--type-color) 12%, transparent) 0%,
-      transparent 32%
-    );
-    z-index: -1;
-  }
-
-  .note-article::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    z-index: -1;
-    background: linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.35) 0%,
-      transparent 18%,
-      transparent 78%,
-      rgba(45, 212, 191, 0.08) 100%
-    );
+    display: flex;
+    flex-direction: column;
+    margin: 0;
   }
 
   .note-hero {
@@ -495,35 +457,8 @@
     gap: 0.5rem;
   }
 
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid var(--carbon-border, #2d2d3d);
-    background: var(--carbon-graphene, #12121a);
-  }
-
-  .type-chip {
-    color: color-mix(in srgb, var(--type-color) 80%, white);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--type-color) 20%, transparent);
-  }
-
   .type-emoji {
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--type-color) 60%, transparent));
-  }
-
-  .visibility-chip {
-    color: var(--carbon-text-muted, #8b8b9e);
-  }
-
-  .visibility-chip.public {
-    color: var(--carbon-glow-cyan, #22d3ee);
-    border-color: rgba(34, 211, 238, 0.3);
-    box-shadow: 0 0 12px rgba(34, 211, 238, 0.12);
   }
 
   .actions {

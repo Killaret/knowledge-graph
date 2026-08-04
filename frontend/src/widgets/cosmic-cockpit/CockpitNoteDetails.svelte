@@ -11,6 +11,9 @@
   import { formatDate } from "$shared/utils/date";
   import { CelestialBody, LinkType } from "$entities";
   import LinkTypeSelector from "$components/molecules/LinkTypeSelector.svelte";
+  import IconButton from "$components/atoms/IconButton.svelte";
+  import Chip from "$components/atoms/Chip.svelte";
+  import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -156,52 +159,47 @@
 
 <div class="note-details" data-testid="cockpit-note-details">
   <div class="details-header">
-    <button
-      type="button"
-      class="close-btn"
-      onclick={() => onClose?.()}
-      aria-label={t("cockpit.noteDetails.close")}
-    >
+    <IconButton variant="ghost" size="md" onClick={() => onClose?.()} title={t("cockpit.noteDetails.close")}>
       ✕
-    </button>
+    </IconButton>
     {#if note}
       <div class="actions">
-        <button
-          type="button"
-          class="action-btn"
-          onclick={() => onEdit?.(nodeId)}
+        <IconButton
+          size="md"
+          onClick={() => onEdit?.(nodeId)}
+          title={t("cockpit.noteDetails.edit")}
           aria-label={t("cockpit.noteDetails.edit")}
         >
           ✎
-        </button>
-        <button
-          type="button"
-          class="action-btn create-child"
-          onclick={() => note && onCreateChildNote?.(note)}
-          aria-label={t("cockpit.noteDetails.createChildNote")}
+        </IconButton>
+        <IconButton
+          size="md"
+          onClick={() => note && onCreateChildNote?.(note)}
           title={t("cockpit.noteDetails.createChildNote")}
           data-testid="note-details-create-child"
         >
           ＋
-        </button>
-        <button
-          type="button"
-          class="action-btn share"
-          onclick={() => {
+        </IconButton>
+        <IconButton
+          size="md"
+          variant="ghost"
+          onClick={() => {
             /* share */
           }}
+          title={t("cockpit.noteDetails.share")}
           aria-label={t("cockpit.noteDetails.share")}
         >
           ⇄
-        </button>
-        <button
-          type="button"
-          class="action-btn delete"
-          onclick={() => onDelete?.(nodeId)}
+        </IconButton>
+        <IconButton
+          size="md"
+          variant="danger"
+          onClick={() => onDelete?.(nodeId)}
+          title={t("cockpit.noteDetails.deleteNote")}
           aria-label={t("cockpit.noteDetails.deleteNote")}
         >
           🗑
-        </button>
+        </IconButton>
       </div>
     {/if}
   </div>
@@ -218,7 +216,9 @@
       <div class="note-header">
         <span class="type-icon">{getNoteTypeIcon(note.type)}</span>
         <h2 class="title">{note.title}</h2>
-        <span class="type-badge">{getNoteTypeLabel(note.type)}</span>
+        <Chip size="sm" color={CelestialBody.fromString(note.type).toCSSColor()} borderColor={CelestialBody.fromString(note.type).toCSSColor()}>
+          {getNoteTypeLabel(note.type)}
+        </Chip>
       </div>
 
       <div class="meta">
@@ -235,7 +235,7 @@
       {#if tags.length > 0}
         <div class="tags">
           {#each tags as tag}
-            <span class="tag">#{tag}</span>
+            <Chip size="sm" color="var(--carbon-glow-cyan, #22d3ee)">#{tag}</Chip>
           {/each}
         </div>
       {/if}
@@ -318,13 +318,15 @@
                   </div>
                 {:else}
                   <div class="link-info">
-                    <span
-                      class="link-type-badge"
-                      style="--link-color: {linkType.color}; --link-bg: {linkType.color}33"
+                    <Chip
+                      size="sm"
+                      color={linkType.color}
+                      borderColor={linkType.color}
+                      background="{linkType.color}33"
                     >
                       <span class="link-type-icon">{linkType.icon}</span>
                       <span>{linkType.label}</span>
-                    </span>
+                    </Chip>
                     <span
                       class="link-weight-bar"
                       title={t("cockpit.noteDetails.weight", { weight: link.weight.toFixed(2) })}
@@ -336,7 +338,14 @@
                       <span class="link-weight-value">{link.weight.toFixed(1)}</span>
                     </span>
                     {#if link.source_type === "gamma"}
-                      <span class="link-source-badge">{t("linkTooltip.recommended")}</span>
+                      <Chip
+                        size="sm"
+                        color="#c4b5fd"
+                        borderColor="rgba(139, 92, 246, 0.3)"
+                        background="linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2))"
+                      >
+                        {t("linkTooltip.recommended")}
+                      </Chip>
                     {/if}
                     {#if link.last_weight_update}
                       <span class="link-last-update" title={formatDate(link.last_weight_update)}>
@@ -345,24 +354,25 @@
                     {/if}
                   </div>
                   <div class="link-actions">
-                    <button
-                      type="button"
-                      class="link-action-btn edit"
-                      onclick={() => startEditLink(link)}
+                    <IconButton
+                      size="sm"
+                      onClick={() => startEditLink(link)}
+                      title={t("cockpit.noteDetails.editLink")}
                       aria-label={t("cockpit.noteDetails.editLink")}
                       disabled={!!editingLinkId || !!deletingLinkId}
                     >
                       ✎
-                    </button>
-                    <button
-                      type="button"
-                      class="link-action-btn delete"
-                      onclick={() => handleDeleteLink(link)}
+                    </IconButton>
+                    <IconButton
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleDeleteLink(link)}
+                      title={t("cockpit.noteDetails.deleteLink")}
                       aria-label={t("cockpit.noteDetails.deleteLink")}
                       disabled={!!editingLinkId || !!deletingLinkId}
                     >
                       {deletingLinkId === link.id ? t("cockpit.noteDetails.deleting") + "..." : "🗑"}
-                    </button>
+                    </IconButton>
                   </div>
                 {/if}
               </div>
@@ -384,43 +394,16 @@
   </div>
 </div>
 
-{#if showDeleteLinksConfirm}
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    tabindex="-1"
-    onclick={() => (showDeleteLinksConfirm = false)}
-    onkeydown={(e) => e.key === "Escape" && (showDeleteLinksConfirm = false)}
-  >
-    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-    <div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <h3>{t("cockpit.noteDetails.deleteLinksTitle")}</h3>
-      <p>{t("cockpit.noteDetails.deleteLinksMessage", { count: links.length })}</p>
-      <div class="modal-actions">
-        <button
-          type="button"
-          class="modal-btn cancel"
-          onclick={() => (showDeleteLinksConfirm = false)}
-          disabled={deletingLinks}
-        >
-          {t("cockpit.noteDetails.cancel")}
-        </button>
-        <button
-          type="button"
-          class="modal-btn delete"
-          onclick={handleDeleteAllLinks}
-          disabled={deletingLinks}
-        >
-          {deletingLinks
-            ? t("cockpit.noteDetails.delete") + "..."
-            : t("cockpit.noteDetails.deleteAll")}
-          <!-- `cockpit.noteDetails.delete` = "Delete" used for in-progress ellipsis -->
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+<ConfirmModal
+  bind:open={showDeleteLinksConfirm}
+  title={t("cockpit.noteDetails.deleteLinksTitle")}
+  message={t("cockpit.noteDetails.deleteLinksMessage", { count: links.length })}
+  confirmText={t("cockpit.noteDetails.deleteAll")}
+  cancelText={t("cockpit.noteDetails.cancel")}
+  danger={true}
+  onConfirm={handleDeleteAllLinks}
+  onCancel={() => (showDeleteLinksConfirm = false)}
+/>
 
 <style>
   .note-details {
@@ -438,40 +421,9 @@
     border-bottom: 1px solid rgba(45, 212, 191, 0.15);
   }
 
-  .close-btn,
-  .action-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--color-text, #e0e0e0);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: background 0.2s ease;
-  }
-
-  .close-btn:hover,
-  .action-btn:hover {
-    background: rgba(45, 212, 191, 0.2);
-  }
-
   .actions {
     display: flex;
     gap: 6px;
-  }
-
-  .action-btn.delete:hover {
-    background: rgba(248, 113, 113, 0.25);
-    color: #f87171;
-  }
-
-  .action-btn.share:hover {
-    background: rgba(96, 165, 250, 0.25);
-    color: #60a5fa;
   }
 
   .details-content {
@@ -532,19 +484,6 @@
     line-height: 1.3;
   }
 
-  .type-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    background: rgba(45, 212, 191, 0.15);
-    color: #2dd4bf;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    border-radius: 20px;
-    width: fit-content;
-    border: 1px solid rgba(45, 212, 191, 0.25);
-  }
-
   .meta {
     display: flex;
     flex-direction: column;
@@ -572,14 +511,6 @@
     flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 20px;
-  }
-
-  .tag {
-    padding: 4px 10px;
-    background: rgba(45, 212, 191, 0.08);
-    color: #2dd4bf;
-    font-size: 12px;
-    border-radius: 16px;
   }
 
   .links-section {
@@ -662,76 +593,6 @@
     background: rgba(45, 212, 191, 0.2);
   }
 
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 500;
-  }
-
-  .modal {
-    background: rgba(10, 10, 15, 0.95);
-    border: 1px solid rgba(45, 212, 191, 0.25);
-    border-radius: 12px;
-    padding: 20px;
-    max-width: 360px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  }
-
-  .modal h3 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    color: white;
-  }
-
-  .modal p {
-    margin: 0 0 20px 0;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.5;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-  }
-
-  .modal-btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-
-  .modal-btn.cancel {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--color-text, #e0e0e0);
-  }
-
-  .modal-btn.cancel:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .modal-btn.delete {
-    background: rgba(248, 113, 113, 0.85);
-    color: white;
-  }
-
-  .modal-btn.delete:hover {
-    background: #f87171;
-  }
-
-  .modal-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .link-action-error {
     padding: 8px 10px;
     margin-bottom: 10px;
@@ -772,20 +633,6 @@
     flex: 1;
   }
 
-  .link-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    background: var(--link-bg, rgba(255, 255, 255, 0.08));
-    border: 1px solid var(--link-color, rgba(255, 255, 255, 0.3));
-    border-radius: 12px;
-    color: var(--link-color, white);
-    font-weight: 600;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
   .link-type-icon {
     font-size: 12px;
   }
@@ -821,16 +668,6 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 
-  .link-source-badge {
-    padding: 2px 6px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2));
-    color: #c4b5fd;
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 600;
-  }
-
   .link-last-update {
     color: rgba(255, 255, 255, 0.4);
     font-size: 10px;
@@ -841,36 +678,6 @@
     display: flex;
     gap: 4px;
     flex-shrink: 0;
-  }
-
-  .link-action-btn {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .link-action-btn:hover:not(:disabled) {
-    background: rgba(45, 212, 191, 0.2);
-    color: #2dd4bf;
-  }
-
-  .link-action-btn.delete:hover:not(:disabled) {
-    background: rgba(248, 113, 113, 0.2);
-    color: #f87171;
-  }
-
-  .link-action-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .link-edit-form {

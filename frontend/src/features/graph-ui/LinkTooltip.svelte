@@ -2,6 +2,7 @@
   import { fade } from "svelte/transition";
   import { LinkType } from "$entities";
   import { formatDate } from "$shared/utils/date";
+  import Chip from "$components/atoms/Chip.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -70,12 +71,24 @@
     transition:fade={{ duration: 200 }}
   >
     <div class="tooltip-header">
-      <span class="link-type-badge">
+      <Chip
+        size="sm"
+        color={linkTypeColor}
+        borderColor={linkTypeColor}
+        background="{linkTypeColor}33"
+      >
         <span class="link-type-icon">{resolvedLinkType.icon}</span>
         <span>{resolvedLinkType.label}</span>
-      </span>
+      </Chip>
       {#if sourceType === "gamma"}
-        <span class="gamma-badge">{t("linkTooltip.recommended")}</span>
+        <Chip
+          size="sm"
+          color="#c4b5fd"
+          borderColor="rgba(139, 92, 246, 0.5)"
+          background="linear-gradient(135deg, #8b5cf6, #a855f7)"
+        >
+          {t("linkTooltip.recommended")}
+        </Chip>
       {/if}
     </div>
     <div class="tooltip-body">
@@ -139,30 +152,8 @@
     margin-bottom: 10px;
   }
 
-  .link-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    background: var(--link-bg, rgba(59, 130, 246, 0.2));
-    border: 1px solid var(--link-color, rgba(59, 130, 246, 0.5));
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--link-color, white);
-  }
-
   .link-type-icon {
     font-size: 12px;
-  }
-
-  .gamma-badge {
-    background: linear-gradient(135deg, #8b5cf6, #a855f7);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
   }
 
   .tooltip-body {
