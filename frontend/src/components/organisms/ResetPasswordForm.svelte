@@ -159,7 +159,7 @@
   h2 {
     margin: 0 0 1rem;
     text-align: center;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -174,7 +174,7 @@
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-dark, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   input {
@@ -182,27 +182,25 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md, 8px);
     background: rgba(0, 0, 0, 0.2);
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1rem;
     transition: all 0.3s ease;
   }
 
   input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--carbon-text-dim, #5a5a6e);
   }
 
   input:focus {
     outline: none;
-    border-color: rgba(255, 204, 0, 0.5);
-    box-shadow:
-      0 0 0 3px rgba(255, 204, 0, 0.1),
-      0 0 15px rgba(255, 204, 0, 0.1);
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
     background: rgba(0, 0, 0, 0.3);
   }
 
   .password-requirements {
     font-size: 0.75rem;
-    color: var(--color-text-dark, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
     margin-top: 0.5rem;
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.2);
@@ -213,7 +211,7 @@
   .password-requirements p {
     margin: 0 0 0.25rem;
     font-weight: 500;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
   }
 
   .password-requirements ul {
@@ -227,27 +225,27 @@
   }
 
   .password-requirements li.valid {
-    color: #22c55e;
-    text-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+    color: var(--carbon-glow-green, #34d399);
+    text-shadow: 0 0 8px rgba(52, 211, 153, 0.3);
   }
 
   .error-text {
     font-size: 0.75rem;
-    color: #ef4444;
-    text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+    color: var(--carbon-glow-red, #ff3a2f);
+    text-shadow: 0 0 8px rgba(255, 58, 47, 0.3);
   }
 
   .success-message {
     text-align: center;
     padding: 1rem;
-    background: rgba(34, 197, 94, 0.1);
+    background: rgba(52, 211, 153, 0.1);
     border-radius: var(--radius-md, 8px);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.1);
   }
 
   .success-message p {
     margin: 0.5rem 0;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
   }
 </style>

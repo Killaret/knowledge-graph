@@ -68,22 +68,24 @@
 
   {#if apiKeyEnabled}
     <div class="auth-mode-toggle">
-      <button
+      <Button
         type="button"
+        size="md"
+        variant={useApiKey ? "ghost" : "primary"}
         class="mode-btn"
-        class:active={!useApiKey}
-        onclick={() => (useApiKey = false)}
+        onClick={() => (useApiKey = false)}
       >
         {t("auth.loginPasswordMode")}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        size="md"
+        variant={useApiKey ? "primary" : "ghost"}
         class="mode-btn"
-        class:active={useApiKey}
-        onclick={() => (useApiKey = true)}
+        onClick={() => (useApiKey = true)}
       >
         {t("auth.apiKeyMode")}
-      </button>
+      </Button>
     </div>
   {/if}
 
@@ -167,7 +169,7 @@
   h2 {
     margin: 0 0 1rem;
     text-align: center;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -179,28 +181,8 @@
     margin-bottom: 0.5rem;
   }
 
-  .mode-btn {
+  .auth-mode-toggle :global(.button.mode-btn) {
     flex: 1;
-    padding: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--color-text-dark, #94a3b8);
-    border-radius: var(--radius-md, 8px);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.875rem;
-  }
-
-  .mode-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 204, 0, 0.3);
-  }
-
-  .mode-btn.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
   }
 
   .form-group {
@@ -212,7 +194,7 @@
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-dark, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   input {
@@ -220,21 +202,19 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md, 8px);
     background: rgba(0, 0, 0, 0.2);
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1rem;
     transition: all 0.3s ease;
   }
 
   input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--carbon-text-dim, #5a5a6e);
   }
 
   input:focus {
     outline: none;
-    border-color: rgba(255, 204, 0, 0.5);
-    box-shadow:
-      0 0 0 3px rgba(255, 204, 0, 0.1),
-      0 0 15px rgba(255, 204, 0, 0.1);
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
     background: rgba(0, 0, 0, 0.3);
   }
 
@@ -246,15 +226,15 @@
   }
 
   a {
-    color: var(--color-glow-blue, #40a9ff);
+    color: var(--carbon-glow-cyan, #22d3ee);
     text-decoration: none;
     transition: all 0.2s ease;
     position: relative;
   }
 
   a:hover {
-    color: var(--color-glow, #ffcc00);
-    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    color: var(--carbon-glow-amber, #f59e0b);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
   }
 
   .divider {
@@ -273,7 +253,7 @@
 
   .divider span {
     padding: 0 0.75rem;
-    color: var(--color-text-dark, #64748b);
+    color: var(--carbon-text-dim, #5a5a6e);
     font-size: 0.875rem;
   }
 </style>

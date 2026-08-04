@@ -20,7 +20,7 @@
   import { type GraphData } from "$shared/api/graph";
   import type { Component } from "svelte";
   import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
-  import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+  import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
   import {
     hasPreloadedData,
     updateGraphWithDelta,

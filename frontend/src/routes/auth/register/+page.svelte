@@ -2,15 +2,15 @@
   import { goto } from "$app/navigation";
   import RegisterForm from "$components/organisms/RegisterForm.svelte";
   import AuthCard from "$widgets/auth/AuthCard.svelte";
-  import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, initAuth, skipAuthMode } from "$shared/stores/auth.svelte.js";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated() && !skipAuthMode()) {
       goto("/");
     }
   });

@@ -14,7 +14,7 @@
     disabled?: boolean;
   }
 
-  let {
+  const {
     children,
     variant = "default",
     size = "md",
@@ -77,10 +77,10 @@
   }
 
   .icon-button.danger:hover:not(.disabled) {
-    background: rgba(248, 113, 113, 0.12);
-    border-color: rgba(248, 113, 113, 0.4);
+    background: rgba(255, 58, 47, 0.12);
+    border-color: rgba(255, 58, 47, 0.4);
     color: var(--carbon-glow-red, #ff3a2f);
-    box-shadow: 0 0 10px rgba(248, 113, 113, 0.2);
+    box-shadow: 0 0 10px rgba(255, 58, 47, 0.2);
   }
 
   .icon-button.ghost {
@@ -106,5 +106,14 @@
   .icon-button:focus-visible {
     outline: none;
     box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .icon-button,
+    .icon-button:hover:not(.disabled),
+    .icon-button:active:not(.disabled) {
+      transition: none;
+      transform: none;
+    }
   }
 </style>

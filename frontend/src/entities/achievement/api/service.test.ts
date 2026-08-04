@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { http, HttpResponse } from "msw";
-import { server } from "../../../vitest-setup";
-import { fetchAllAchievements, fetchUserAchievements, markAchievementSeen } from "./achievements";
-import { Achievement } from "$entities";
+import { server } from "../../../../vitest-setup";
+import { fetchAllAchievements, fetchUserAchievements, markAchievementSeen } from "./service";
+import { Achievement } from "../model/achievement";
 
 const baseUrl = "http://localhost:8080/api";
 

@@ -1,7 +1,7 @@
-import { Achievement } from "$entities";
-import * as svc from "$shared/services/achievements";
+import { Achievement } from "./achievement";
+import * as svc from "../api/service";
 import { ACHIEVEMENT_POLL_INTERVAL_MS } from "$shared/config";
-import { isAuthenticated } from "./auth.svelte";
+import { isAuthenticated } from "$shared/stores/auth.svelte.js";
 
 interface AchievementsState {
   all: Achievement[];

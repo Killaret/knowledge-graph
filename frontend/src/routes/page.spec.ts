@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import Page from "./+page.svelte";
 import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote } from "$shared/api/notes";
-import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
 
 vi.mock("$shared/api/notes", () => ({
   getNotes: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("$shared/api/notes", () => ({
   restoreNote: vi.fn(),
 }));
 
-vi.mock("$shared/hooks/usePreloadedData", () => ({
+vi.mock("$features/preload/hooks/usePreloadedData", () => ({
   getGraphWithPreload: vi.fn(),
 }));
 

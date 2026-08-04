@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { Achievement } from "$entities";
-import { state, startPolling, stopPolling, refreshNow, dismiss } from "./achievements.svelte";
+import { Achievement } from "./achievement";
+import { state, startPolling, stopPolling, refreshNow, dismiss } from "./store.svelte";
 
 // Use a fixed, positive interval for these tests so behavior doesn't depend
 // on the real project config (which currently sets poll_interval_ms to 0 to
@@ -14,17 +14,17 @@ vi.mock("$shared/config", async (importOriginal) => {
   };
 });
 
-vi.mock("./auth.svelte", () => ({
+vi.mock("$shared/stores/auth.svelte.js", () => ({
   isAuthenticated: vi.fn(() => true),
 }));
 
-vi.mock("$shared/services/achievements", () => ({
+vi.mock("../api/service", () => ({
   fetchUserAchievements: vi.fn(),
   markAchievementSeen: vi.fn(),
 }));
 
-const auth = await import("./auth.svelte");
-const svc = await import("$shared/services/achievements");
+const auth = await import("$shared/stores/auth.svelte.js");
+const svc = await import("../api/service");
 
 describe("achievements store", () => {
   beforeEach(() => {
@@ -134,14 +134,14 @@ describe("achievements store with polling disabled (poll_interval_ms: 0)", () =>
 
   it("does not schedule a recurring timer when the configured interval is 0", async () => {
     vi.doMock("$shared/config", () => ({ ACHIEVEMENT_POLL_INTERVAL_MS: 0 }));
-    vi.doMock("./auth.svelte", () => ({ isAuthenticated: vi.fn(() => true) }));
-    vi.doMock("$shared/services/achievements", () => ({
+    vi.doMock("$shared/stores/auth.svelte.js", () => ({ isAuthenticated: vi.fn(() => true) }));
+    vi.doMock("../api/service", () => ({
       fetchUserAchievements: vi.fn().mockResolvedValue([]),
       markAchievementSeen: vi.fn(),
     }));
 
-    const store = await import("./achievements.svelte");
-    const svc = await import("$shared/services/achievements");
+    const store = await import("./store.svelte");
+    const svc = await import("../api/service");
 
     store.startPolling();
     // Flush the initial refresh() call triggered synchronously by startPolling.

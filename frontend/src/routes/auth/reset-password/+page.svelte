@@ -4,7 +4,7 @@
   import ResetPasswordForm from "$components/organisms/ResetPasswordForm.svelte";
   import AuthCard from "$widgets/auth/AuthCard.svelte";
   import ConstellationIcon from "$components/atoms/ConstellationIcon.svelte";
-  import { isAuthenticated } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, skipAuthMode } from "$shared/stores/auth.svelte.js";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -18,9 +18,9 @@
     token = $page.url.searchParams.get("token") || "";
   });
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated() && !skipAuthMode()) {
       goto("/");
     }
   });
@@ -59,14 +59,14 @@
 
   .error-text {
     margin: 0;
-    color: var(--color-text-secondary, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
     font-size: 0.875rem;
   }
 
   .back-link {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: var(--carbon-gradient-primary, linear-gradient(135deg, #22d3ee 0%, #8b5cf6 100%));
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -76,6 +76,6 @@
 
   .back-link:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    box-shadow: var(--carbon-glow-cyan, 0 0 16px rgba(34, 211, 238, 0.35));
   }
 </style>

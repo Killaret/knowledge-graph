@@ -85,7 +85,7 @@
   h2 {
     margin: 0 0 0.5rem;
     text-align: center;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -93,7 +93,7 @@
 
   .description {
     text-align: center;
-    color: var(--color-text-dark, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
     margin: 0 0 1rem;
     font-size: 0.875rem;
   }
@@ -107,7 +107,7 @@
   label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-dark, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
   }
 
   input {
@@ -115,48 +115,46 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md, 8px);
     background: rgba(0, 0, 0, 0.2);
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     font-size: 1rem;
     transition: all 0.3s ease;
   }
 
   input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--carbon-text-dim, #5a5a6e);
   }
 
   input:focus {
     outline: none;
-    border-color: rgba(255, 204, 0, 0.5);
-    box-shadow:
-      0 0 0 3px rgba(255, 204, 0, 0.1),
-      0 0 15px rgba(255, 204, 0, 0.1);
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
     background: rgba(0, 0, 0, 0.3);
   }
 
   .success-message {
     text-align: center;
     padding: 1rem;
-    background: rgba(34, 197, 94, 0.1);
+    background: rgba(52, 211, 153, 0.1);
     border-radius: var(--radius-md, 8px);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.1);
   }
 
   .success-message p {
     margin: 0.5rem 0;
-    color: var(--color-text-dark, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
   }
 
   .back-link {
     text-align: center;
-    color: var(--color-glow, #ffcc00);
+    color: var(--carbon-glow-amber, #f59e0b);
     text-decoration: none;
     font-weight: 500;
     transition: all 0.2s ease;
   }
 
   .back-link:hover {
-    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
   }
 
   .form-links {
@@ -166,13 +164,13 @@
   }
 
   a {
-    color: var(--color-glow-blue, #40a9ff);
+    color: var(--carbon-glow-cyan, #22d3ee);
     text-decoration: none;
     transition: all 0.2s ease;
   }
 
   a:hover {
-    color: var(--color-glow, #ffcc00);
-    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    color: var(--carbon-glow-amber, #f59e0b);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
   }
 </style>

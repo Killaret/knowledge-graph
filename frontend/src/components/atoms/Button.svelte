@@ -1,23 +1,30 @@
 <script lang="ts">
   type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
   type ButtonType = "button" | "submit" | "reset";
+  type ButtonSize = "sm" | "md" | "lg";
 
   interface Props {
     variant?: ButtonVariant;
     type?: ButtonType;
+    size?: ButtonSize;
     disabled?: boolean;
     onClick?: (e: MouseEvent) => void;
     children?: import("svelte").Snippet;
     "data-testid"?: string;
     "aria-label"?: string;
+    class?: string;
+    style?: string;
   }
 
   const {
     variant = "primary",
     type = "button",
+    size = "md",
     disabled = false,
     onClick,
     children,
+    class: className = "",
+    style = "",
     ...restProps
   }: Props = $props();
 
@@ -30,10 +37,11 @@
 
 <button
   {type}
-  class="button {variant}"
+  class="button {variant} {size} {className}"
   class:disabled
   onclick={handleClick}
   {disabled}
+  {style}
   {...restProps}
 >
   {@render children?.()}
@@ -136,6 +144,19 @@
     transform: translateY(0);
   }
 
+  /* Sizes */
+  .button.sm {
+    padding: 0.35rem 0.7rem;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .button.lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
   /* Disabled state */
   .button.disabled {
     opacity: 0.5;
@@ -143,5 +164,14 @@
     transform: none !important;
     box-shadow: none !important;
     filter: grayscale(0.5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button,
+    .button:hover:not(.disabled),
+    .button:active:not(.disabled) {
+      transition: none;
+      transform: none;
+    }
   }
 </style>

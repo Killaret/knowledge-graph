@@ -19,7 +19,7 @@
     startPolling as startAchievementsPolling,
     stopPolling as stopAchievementsPolling,
     dismiss as dismissAchievement,
-  } from "$shared/stores/achievements.svelte.js";
+  } from "$entities/achievement/model/store.svelte.js";
   import { mode, getMessage } from "$shared/stores/lexicon-settings";
   import { Theme } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";

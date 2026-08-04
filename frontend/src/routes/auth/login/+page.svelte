@@ -4,7 +4,7 @@
   import LoginForm from "$components/organisms/LoginForm.svelte";
   import AuthCard from "$widgets/auth/AuthCard.svelte";
   import PreloadIndicator from "$components/organisms/PreloadIndicator.svelte";
-  import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, initAuth, skipAuthMode } from "$shared/stores/auth.svelte.js";
   import { startPreload } from "$shared/services/PreloadService";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -12,9 +12,9 @@
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated() && !skipAuthMode()) {
       const redirectTo = $page.url.searchParams.get("redirect") || "/";
       goto(redirectTo);
     }

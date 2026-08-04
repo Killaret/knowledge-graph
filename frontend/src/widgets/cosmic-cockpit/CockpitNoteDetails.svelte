@@ -35,7 +35,6 @@
   let loading = $state(true);
   let error = $state("");
   let showDeleteLinksConfirm = $state(false);
-  let deletingLinks = $state(false);
   let editingLinkId = $state<string | null>(null);
   let editDraft = $state<{ link_type: string; weight: number } | null>(null);
   let linkActionError = $state("");
@@ -72,15 +71,12 @@
   }
 
   async function handleDeleteAllLinks() {
-    deletingLinks = true;
     try {
       await deleteAllNoteLinks(nodeId);
       links = [];
       showDeleteLinksConfirm = false;
     } catch {
       error = t("cockpit.noteDetails.deleteLinksError");
-    } finally {
-      deletingLinks = false;
     }
   }
 

@@ -5,7 +5,7 @@
   import GalaxyIcon from "$components/atoms/GalaxyIcon.svelte";
   import WeltallProtocol from "$components/atoms/WeltallProtocol.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
-  import { getGraphWithPreload } from "$shared/hooks/usePreloadedData";
+  import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { GraphData } from "$shared/api/graph";
 

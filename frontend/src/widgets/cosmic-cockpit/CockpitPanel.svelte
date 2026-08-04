@@ -388,11 +388,11 @@
       rgba(12, 14, 22, 0.96) 100%
     );
     backdrop-filter: blur(18px);
-    border: 1px solid rgba(45, 212, 191, 0.25);
+    border: 1px solid rgba(34, 211, 238, 0.25);
     box-shadow:
       0 0 28px rgba(0, 0, 0, 0.55),
-      0 0 12px rgba(45, 212, 191, 0.08);
-    color: var(--color-text, #e0e0e0);
+      0 0 12px rgba(34, 211, 238, 0.08);
+    color: var(--carbon-text, #f0f0f5);
     /* Asymmetric 45° bevel: the outer edge (against the screen bezel) is
        cut deeper than the inner edge (against the canvas). This gives the
        panel the “extruded wall / shutter” look from the isometric sketch
@@ -444,9 +444,9 @@
     inset: 0;
     background: linear-gradient(
       135deg,
-      rgba(45, 212, 191, 0.04) 0%,
+      rgba(34, 211, 238, 0.04) 0%,
       transparent 50%,
-      rgba(192, 38, 211, 0.04) 100%
+      rgba(139, 92, 246, 0.04) 100%
     );
     pointer-events: none;
     z-index: 0;
@@ -474,7 +474,7 @@
       rgba(0, 0, 0, 0.45) 0%,
       transparent 22%,
       transparent 78%,
-      rgba(45, 212, 191, 0.12) 100%
+      rgba(34, 211, 238, 0.12) 100%
     );
   }
 
@@ -484,7 +484,7 @@
       rgba(0, 0, 0, 0.45) 0%,
       transparent 22%,
       transparent 78%,
-      rgba(45, 212, 191, 0.12) 100%
+      rgba(34, 211, 238, 0.12) 100%
     );
   }
 
@@ -494,7 +494,7 @@
       rgba(0, 0, 0, 0.45) 0%,
       transparent 22%,
       transparent 78%,
-      rgba(45, 212, 191, 0.12) 100%
+      rgba(34, 211, 238, 0.12) 100%
     );
   }
 
@@ -504,7 +504,7 @@
       rgba(0, 0, 0, 0.45) 0%,
       transparent 22%,
       transparent 78%,
-      rgba(45, 212, 191, 0.12) 100%
+      rgba(34, 211, 238, 0.12) 100%
     );
   }
 
@@ -526,7 +526,7 @@
     justify-content: space-between;
     padding: 10px 18px;
     min-height: 44px;
-    border-bottom: 1px solid rgba(45, 212, 191, 0.15);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.15);
     user-select: none;
     flex-shrink: 0;
   }
@@ -541,7 +541,7 @@
     top: 0;
     width: 14px;
     height: 2px;
-    background: linear-gradient(90deg, rgba(45, 212, 191, 0.7), transparent);
+    background: linear-gradient(90deg, rgba(34, 211, 238, 0.7), transparent);
     transform-origin: 0 0;
     transform: rotate(45deg);
     pointer-events: none;
@@ -553,7 +553,7 @@
 
   .panel-header::after {
     right: 0;
-    background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.7));
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.7));
     transform-origin: 100% 0;
     transform: rotate(-45deg);
   }
@@ -587,7 +587,7 @@
     border: none;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text, #e0e0e0);
+    color: var(--carbon-text, #f0f0f5);
     cursor: pointer;
     font-size: 14px;
     transition: background 0.2s ease;
@@ -595,12 +595,12 @@
 
   .pin-btn:hover,
   .close-btn:hover {
-    background: rgba(45, 212, 191, 0.2);
+    background: rgba(34, 211, 238, 0.2);
   }
 
   .pin-btn.pinned {
-    background: rgba(45, 212, 191, 0.25);
-    color: var(--cockpit-accent, #2dd4bf);
+    background: rgba(34, 211, 238, 0.25);
+    color: var(--carbon-glow-cyan, #22d3ee);
   }
 
   .panel-content {
@@ -621,14 +621,14 @@
     cursor: pointer;
     background: linear-gradient(
       180deg,
-      rgba(45, 212, 191, 0.15) 0%,
+      rgba(34, 211, 238, 0.15) 0%,
       rgba(10, 10, 15, 0.9) 45%,
       rgba(10, 10, 15, 0.9) 55%,
-      rgba(192, 38, 211, 0.12) 100%
+      rgba(139, 92, 246, 0.12) 100%
     );
-    border: 1px solid rgba(45, 212, 191, 0.22);
+    border: 1px solid rgba(34, 211, 238, 0.22);
     box-shadow:
-      inset 0 0 10px rgba(45, 212, 191, 0.08),
+      inset 0 0 10px rgba(34, 211, 238, 0.08),
       0 0 12px rgba(0, 0, 0, 0.5);
     transition:
       background 0.25s ease,
@@ -652,14 +652,14 @@
   .panel-handle:hover {
     background: linear-gradient(
       180deg,
-      rgba(45, 212, 191, 0.28) 0%,
+      rgba(34, 211, 238, 0.28) 0%,
       rgba(20, 20, 35, 0.95) 45%,
       rgba(20, 20, 35, 0.95) 55%,
-      rgba(192, 38, 211, 0.2) 100%
+      rgba(139, 92, 246, 0.2) 100%
     );
     box-shadow:
-      inset 0 0 16px rgba(45, 212, 191, 0.15),
-      0 0 18px rgba(45, 212, 191, 0.15);
+      inset 0 0 16px rgba(34, 211, 238, 0.15),
+      0 0 18px rgba(34, 211, 238, 0.15);
   }
 
   .handle-arrow-wrapper {
@@ -671,8 +671,8 @@
   }
 
   .handle-arrow {
-    color: rgba(45, 212, 191, 0.75);
-    filter: drop-shadow(0 0 4px rgba(45, 212, 191, 0.4));
+    color: rgba(34, 211, 238, 0.75);
+    filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
     animation: pulse 1.6s ease-in-out infinite;
   }
 

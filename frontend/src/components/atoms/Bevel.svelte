@@ -25,7 +25,7 @@
     style?: string;
   }
 
-  let {
+  const {
     children,
     class: className = "",
     variant = "cockpit",
@@ -123,5 +123,11 @@
       transparent 78%,
       color-mix(in srgb, var(--bevel-shade, var(--carbon-glow-cyan, #22d3ee)) 8%, transparent) 100%
     );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bevel-surface {
+      transition: none;
+    }
   }
 </style>

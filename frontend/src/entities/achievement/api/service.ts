@@ -1,8 +1,8 @@
 import api from "$shared/api/client";
-import { Achievement, type AchievementApiData } from "$entities";
+import { Achievement, type AchievementApiData } from "../model/achievement";
 
-export type { AchievementApiData } from "$entities";
-export { Achievement } from "$entities";
+export type { AchievementApiData } from "../model/achievement";
+export { Achievement } from "../model/achievement";
 
 export async function fetchAllAchievements(): Promise<Achievement[]> {
   const data = await api.get("v1/achievements").json<{ achievements: AchievementApiData[] }>();

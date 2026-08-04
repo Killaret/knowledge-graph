@@ -13,7 +13,7 @@
     glow?: boolean;
   }
 
-  let {
+  const {
     children,
     color,
     borderColor,
@@ -62,5 +62,11 @@
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
     font-size: 0.8rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chip {
+      transition: none;
+    }
   }
 </style>

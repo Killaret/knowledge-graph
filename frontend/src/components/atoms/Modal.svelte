@@ -215,7 +215,14 @@
     }
   }
 
-  /* Disable animations for tests */
+  /* Disable animations for tests and for users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-container {
+      animation: none;
+    }
+  }
+
   :global(.no-transition) .modal-overlay {
     animation: none;
   }
