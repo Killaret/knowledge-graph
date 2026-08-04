@@ -6,126 +6,14 @@
 > - **roadmap** (planned feature work)
 > - **ideas/backlog** (hypotheses / nice-to-have)
 >
+> **Test steps live in [`MANUAL_TEST_CHECKLIST_COCKPIT.md`](MANUAL_TEST_CHECKLIST_COCKPIT.md)**
+> (layout/panels, filters, view switching, 2D motion/readability, first-person,
+> visual theme, note detail page). This file only tracks the **findings log**
+> below — add an entry here when a checklist item fails, referencing the
+> section number (e.g. "Cockpit §4").
+>
 > **Environment:** `http://127.0.0.1:3002` (test stack, SKIP_AUTH=true)
 > **Last rebuild:** see git log for `fix(frontend): desynchronize 2D graph node motion and particles`, `fix(frontend): reduce 2D graph overlaps and improve readability`, and `fix(frontend): improve first-person exit and panel handles`
-
----
-
-## Test Cases Queue
-
-Run them in order. Mark each item `[x]` when it passes, or add a **Finding** below if it fails / feels wrong.
-
-### Case 1: 2D Graph — no more synchronized motion
-
-**Goal:** verify the fast-fix for per-node rotation/particles actually removed the "lockstep" effect.
-
-**Steps:**
-1. Open `http://127.0.0.1:3002/` in incognito.
-2. Hard refresh (`Ctrl+F5`).
-3. Wait for graph to settle.
-4. Watch the 2D graph for 10–15 seconds without interacting.
-
-**What to check:**
-- [x] Stars do **not** all rotate with the same phase/corona rays do not blink in unison.
-- [x] Planets with rings rotate at visibly different speeds (some may reverse).
-- [x] Comet tails wag with different phases, not all at once.
-- [x] Small orbiting particles around nodes move in different directions / ellipses, not a uniform cloud.
-- [x] New/pulsing nodes (if any are present) do not pulse in perfect sync.
-- [x] Console has **no red JS errors** from the app (browser extension messages can be ignored).
-
-*Status: passed. User found the graph still felt like a tangled mess of overlapping nodes/links, so a readability hotfix was applied (see Case 1.5).*
-
-**If something still looks synchronized, note which element exactly:**
-- Star coronas
-- Planet rings
-- Comet tails
-- New-note pulse rings
-- Particles
-- Other: ___________
-
----
-
-### Case 1.5: 2D Graph — readability / reduced overlaps (hotfix verification)
-
-**Goal:** verify the hotfix that increases repulsion, link distance, collision radius, initial spread and warmup time makes the 2D graph readable instead of a tangled blob.
-
-**Steps:**
-1. Hard refresh `/`.
-2. Let the graph settle (~3–5 seconds).
-3. Zoom in and out if supported.
-4. Switch to `List` and back to `Graph`.
-
-**What to check:**
-- [ ] Nodes are generally not stacked on top of each other.
-- [ ] Link lines are distinguishable; the graph does not look like a solid "hairball".
-- [ ] Node labels are readable for most nodes (not fully obscured by others).
-- [ ] After switching List → Graph, the layout re-renders cleanly and remains readable.
-- [ ] Performance is acceptable: no long freeze, no dropped frames.
-- [ ] Console has no red JS errors.
-
-**If still unreadable, describe what exactly:**
-- Nodes still overlap too much.
-- Links overlap/cross too much.
-- Labels unreadable.
-- Graph explodes / too sparse.
-- Graph collapses / too dense.
-- Other: ___________
-
----
-
-### Case 2: Cosmic Cockpit Layout — panels and frame
-
-**Goal:** verify the cockpit frame and slide-out panels render correctly in SKIP_AUTH mode.
-
-**Steps:**
-1. Stay on `/`.
-2. Observe the layout.
-3. Click the left edge trigger / `☰` to expand the left panel.
-4. Click type filters (`Comet`, `Planet`, etc.) and then `All`.
-
-**What to check:**
-- [ ] `CockpitFrame` (decorative border/screws) is visible around the canvas.
-- [ ] Top panel is pinned and contains search, filters, view switcher, create button.
-- [ ] Left panel starts collapsed and expands with animation.
-- [ ] Filters update both the graph and the list view.
-- [ ] `graph-stats` counter updates when a filter is active.
-- [ ] No panel corners overlap in an ugly way.
-
----
-
-### Case 3: View switch and 3D graph
-
-**Goal:** verify List / 2D / 3D switching works.
-
-**Steps:**
-1. From `/`, switch to `List` view (top panel or hotkey).
-2. Switch back to `Graph`.
-3. Switch to `3D`.
-
-**What to check:**
-- [ ] List view shows note cards with type stripe and hover glow.
-- [ ] Returning to Graph restores the 2D canvas.
-- [ ] 3D view loads without console errors.
-- [ ] 3D scene shows nodes/links in space.
-
----
-
-### Case 4: Note detail page
-
-**Goal:** verify `/notes/{id}` shows metadata, links, similar notes.
-
-**Steps:**
-1. Click any note (or visit `/notes/{id}` directly).
-2. Inspect the page.
-
-**What to check:**
-- [ ] Emoji type label, public/private chip, dates visible.
-- [ ] Tags / keywords clickable and lead to `/search`.
-- [ ] Connected notes section shows direction, link type icon, weight bar.
-- [ ] Similar notes section shows title and score.
-- [ ] Buttons: Edit, Delete, Create child, Constellation, 3D Constellation.
-- [ ] Delete returns to `/` after success.
-- [ ] No JS errors in console.
 
 ---
 
@@ -135,7 +23,7 @@ Run them in order. Mark each item `[x]` when it passes, or add a **Finding** bel
 
 <!-- Things that block release or make the app unusable. We fix these immediately. -->
 
-- **Case:** 1 / follow-up
+- **Case:** Cockpit §4 (2D Graph readability)
 - **What:** 2D graph looks like a tangled mess of overlapping nodes and links; hard to read which node is which.
 - **Expected:** Nodes and links are spaced out enough to distinguish individual elements.
 - **Actual:** Everything overlaps, looks like a solid "hairball".
@@ -145,10 +33,10 @@ Run them in order. Mark each item `[x]` when it passes, or add a **Finding** bel
   - Many-body charge -100 → `-180 * densityFactor`.
   - Collision radius 25 → `35 * densityFactor`.
   - Slower alpha decay (0.1 → 0.05) and 200 → 300 warmup ticks so the layout has time to spread.
-- **Status:** container rebuilt, ready for re-test under Case 1.5.
+- **Status:** container rebuilt, ready for re-test under Cockpit §4.
 - **Screenshot / Logs:** —
 
-- **Case:** 2 / Cockpit — first-person mode
+- **Case:** Cockpit §5 (first-person mode)
 - **What:** There is no obvious way to exit first-person mode: the floating exit button is invisible until you hover it, there is no Esc hotkey, and no hint about how to get out.
 - **Expected:** User always sees how to exit first-person mode, can use Esc, and gets a clear label on the exit control.
 - **Actual:** Once first-person is active, UI panels disappear and the exit button is hidden; users feel trapped.
@@ -159,7 +47,7 @@ Run them in order. Mark each item `[x]` when it passes, or add a **Finding** bel
 - **Status:** container rebuilt, ready for re-test.
 - **Screenshot / Logs:** —
 
-- **Case:** 2 / Cockpit — panel handles
+- **Case:** Cockpit §1 (panel handles)
 - **What:** After auto-expanding the right/bottom panel, the arrow handle stays visible even though the panel is already open.
 - **Expected:** The pull-handle (arrow) is only visible when the panel is collapsed.
 - **Actual:** Arrows remain on screen when the panel is expanded, creating visual noise.
@@ -177,7 +65,7 @@ None yet.
 
 <!-- Hypotheses, nice-to-haves, or "explore later" items. -->
 
-- **Case:** 2 / Cockpit — visual depth
+- **Case:** Cockpit §1 (visual depth)
 - **What:** Cockpit panels look flat 2D. User wants a 2.5D / pseudo-3D effect where panel ends look voluminous, as if they really go into the screen depth, increasing immersion in the canvas.
 - **Expected:** Panels have subtle 3D extrusion / bevel / perspective so they feel like physical surfaces receding into space.
 - **Actual:** Panels are flat rectangles.
@@ -187,6 +75,16 @@ None yet.
   - Animate the depth subtly on hover/focus.
   - Keep it optional and ensure it does not hurt click targets or accessibility.
 - **Triage:** backlog / roadmap candidate (Phase 11 or UI-polish phase). Not a bug.
+- **Screenshot / Logs:** —
+
+- **Case:** Cockpit §6 (Altered Carbon theming)
+- **What:** Proposal to give cockpit components a distinct "Altered Carbon" neon look via new `--cockpit-*` CSS variables.
+- **Review notes:**
+  - The project already has an "Allotropic Carbon" theme (`--carbon-*`, `--color-info`, `--color-glow-purple` in `shared/styles/global.css`) applied site-wide — a parallel `--cockpit-*` set would duplicate it.
+  - `CockpitFrame.svelte` already implements grid + stars + corner bolts + cyan/magenta border gradient, just with hardcoded rgba instead of variables.
+  - Proposed target components `CosmicHUD`/`CosmicNotificationCenter`/`CosmicToast` do not exist under those names; actual files are `CockpitHUD.svelte` and the app-wide `widgets/notification/ToastNotification.svelte` (not cockpit-scoped).
+- **Proposed approach:** refactor cockpit components to consume existing shared variables (or aliases into them) instead of hardcoded rgba, rather than introducing a second color system. See Cockpit §6 checklist for what to verify once this is attempted.
+- **Triage:** roadmap candidate, needs a scoped-down follow-up prompt before implementation.
 - **Screenshot / Logs:** —
 
 ---
