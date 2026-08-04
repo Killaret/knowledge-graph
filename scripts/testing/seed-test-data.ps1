@@ -20,6 +20,7 @@ if ($Seed -gt 0) {
 
 $apiUrl = "http://127.0.0.1:18083/api/v1"
 $postgresContainer = "kg-test-postgres"
+$redisContainer = "kg-test-redis"
 
 $testUser = @{
     login = "testuser"
@@ -77,6 +78,27 @@ catch {
 }
 
 $report.durations.cleanSeconds = [math]::Round(((Get-Date) - $cleanStart).TotalSeconds, 2)
+
+# ---------------------------------------------------------------------------
+# 1.5. Flush Redis cache so the graph-service does not serve a stale layout
+#      from a previous test run.
+# ---------------------------------------------------------------------------
+$redisStart = Get-Date
+Write-Host "Flushing test Redis cache..." -ForegroundColor Cyan
+
+try {
+    $redisOutput = docker exec $redisContainer redis-cli FLUSHALL 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw $redisOutput
+    }
+    Write-Host "Test Redis cache flushed." -ForegroundColor Green
+}
+catch {
+    Add-ReportError -Context "redis-flush" -Message "Failed to flush test Redis: $_"
+    # Do not exit here; the graph service can still work without cache.
+}
+
+$report.durations.redisFlushSeconds = [math]::Round(((Get-Date) - $redisStart).TotalSeconds, 2)
 
 # ---------------------------------------------------------------------------
 # 2. Register / login test user
@@ -314,7 +336,7 @@ $graphStart = Get-Date
 Write-Host "Verifying graph service..." -ForegroundColor Yellow
 
 try {
-    $graphResponse = Invoke-RestMethod -Uri "http://127.0.0.1:19091/api/v1/graph/full" -Method Get -Headers $headers -TimeoutSec 30
+    $graphResponse = Invoke-RestMethod -Uri "http://127.0.0.1:19091/api/v1/graph/full?nocache=1" -Method Get -Headers $headers -TimeoutSec 30
     $report.graphNodes = $graphResponse.meta.total_nodes
     $report.graphLinks = $graphResponse.meta.total_links
     Write-Host "Graph service: $($graphResponse.meta.total_nodes) nodes, $($graphResponse.meta.total_links) links." -ForegroundColor Green

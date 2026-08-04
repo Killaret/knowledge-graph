@@ -7,6 +7,14 @@ Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 Write-Host "Stopping previous test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml down -v
 
+# Remove any orphaned kg-test-* containers that might have been left behind
+# by a previous incomplete shutdown or a different compose project.
+$orphans = docker ps -aq --filter "name=kg-test"
+if ($orphans) {
+    Write-Host "Removing orphaned test containers..." -ForegroundColor Yellow
+    docker rm -f $orphans | Out-Null
+}
+
 # Start test stack
 Write-Host "Starting test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml up -d --build --wait
