@@ -153,7 +153,7 @@ export function startSimulation(
       return { ...n };
     }
     const angle = (i / nodes.length) * 2 * Math.PI;
-    const radius = Math.min(width, height) * 0.3; // 30% of smaller dimension
+    const radius = Math.min(width, height) * 0.45; // 45% of smaller dimension for less overlap
     return {
       ...n,
       x: width / 2 + Math.cos(angle) * radius,
@@ -214,6 +214,9 @@ export function startSimulation(
 
   const totalNodes = nodes.length;
 
+  // Scale forces slightly with graph density so 50 and 150 nodes both look readable.
+  const densityFactor = Math.max(1, Math.sqrt(totalNodes / 50));
+
   state.simulation = d3Force
     .forceSimulation<SimulationNode, SimulationLink>(simulationNodes)
     .force(
@@ -221,13 +224,13 @@ export function startSimulation(
       d3Force
         .forceLink<SimulationNode, SimulationLink>(edges)
         .id((d) => d.id)
-        .distance(100)
-        .strength(0.2)
+        .distance(120 * densityFactor)
+        .strength(0.35)
     )
-    .force("charge", d3Force.forceManyBody().strength(-100)) // Further reduced repulsion
-    .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.3))
-    .force("collision", d3Force.forceCollide().radius(25))
-    .alphaDecay(0.1) // Even faster cooling
+    .force("charge", d3Force.forceManyBody().strength(-180 * densityFactor))
+    .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.25))
+    .force("collision", d3Force.forceCollide().radius(35 * densityFactor))
+    .alphaDecay(0.05) // Slower cooling so the layout has time to spread out
     .on("tick", () => {
       onTick();
     })
@@ -239,7 +242,7 @@ export function startSimulation(
 
   // Warmup: run simulation synchronously for initial positioning
   if (state.simulation) {
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 300; i++) {
       state.simulation.tick();
     }
 
