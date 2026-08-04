@@ -1,0 +1,16 @@
+Fix cockpit arrows, bottom panel default, 3D bevel, and note detail performance/visuals.
+
+- CockpitPanel: rotate the handle arrow via a wrapper so the pulse
+  animation does not override the rotation; increase bevel sizes and add
+  a per-position directional .panel-shade gradient to strengthen the
+  pseudo-3D effect.
+- cockpit.svelte.ts: bottom panel is now closed by default instead of
+  opening automatically on start.
+- /notes/[id]: load note first, then fetch suggestions and graph data in
+  the background; restyle the note article with an asymmetric cockpit
+  bevel, gradient shading, and full-height layout to remove empty
+  top/bottom space.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

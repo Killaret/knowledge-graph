@@ -101,13 +101,9 @@
   }
 
   onMount(async () => {
+    const id = getRouteId();
     try {
-      const id = getRouteId();
-      [note, suggestions, graphData] = await Promise.all([
-        getNote(id),
-        getSuggestions(id, 6),
-        getGraphData(id, 1).catch(() => ({ nodes: [], links: [] })),
-      ]);
+      note = await getNote(id);
     } catch (e: unknown) {
       if (getErrorStatus(e) === 404) {
         error = t("note.notFoundShort");
@@ -115,10 +111,25 @@
       } else {
         error = t("note.loadError");
       }
-    } finally {
       loading = false;
       graphLoading = false;
+      return;
+    } finally {
+      // Keep skeleton for related sections; they load in the background.
     }
+
+    loading = false;
+
+    // Load heavy secondary data in the background so the note renders first.
+    Promise.all([
+      getSuggestions(id, 6)
+        .then((s) => (suggestions = s))
+        .catch(() => (suggestions = [])),
+      getGraphData(id, 1)
+        .then((g) => (graphData = g))
+        .catch(() => (graphData = { nodes: [], links: [] }))
+        .finally(() => (graphLoading = false)),
+    ]);
   });
 
   async function handleDeleteConfirm() {
@@ -150,12 +161,14 @@
   </div>
 {:else if note}
   <div class="note-page">
-    <BackButton href="/" />
+    <div class="note-top-bar">
+      <BackButton href="/" />
+    </div>
 
     <article
       class="note-article"
       style="--type-color: {getNoteType(note).toCSSColor()}"
-      in:fly={{ y: 24, duration: 600, easing: quintOut }}
+      in:fly={{ y: 16, duration: 350, easing: quintOut }}
     >
       <header class="note-hero">
         <div class="hero-top">
@@ -332,19 +345,33 @@
 
 <style>
   .note-page {
-    max-width: 860px;
+    max-width: 960px;
     margin: 0 auto;
-    padding: 1.5rem 1rem 4rem;
+    padding: 0;
+    min-height: 100vh;
     color: var(--carbon-text, #f0f0f5);
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(45, 212, 191, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(192, 38, 211, 0.04) 0%, transparent 50%),
+      var(--carbon-bg, #0b0b11);
+    display: flex;
+    flex-direction: column;
   }
 
-  .page-loading {
+  .note-top-bar {
+    padding: 1rem 1rem 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .page-loading,
+  .note-error {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    padding: 4rem;
+    padding: 2rem;
     color: var(--carbon-text-muted, #8b8b9e);
   }
 
@@ -375,16 +402,6 @@
     }
   }
 
-  .note-error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    text-align: center;
-    gap: 1rem;
-  }
-
   .error-message {
     color: var(--carbon-glow-red, #ff3a2f);
     font-weight: 500;
@@ -392,15 +409,31 @@
 
   .note-article {
     position: relative;
-    margin-top: 1.5rem;
-    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
-    border: 1px solid var(--carbon-border, #2d2d3d);
-    border-radius: 20px;
-    overflow: hidden;
+    z-index: 0;
+    margin: 0;
+    flex: 1;
+    background:
+      linear-gradient(135deg, rgba(22, 24, 36, 0.96) 0%, rgba(10, 10, 15, 0.96) 50%, rgba(12, 14, 22, 0.96) 100%),
+      var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
+    border: 1px solid rgba(45, 212, 191, 0.25);
     box-shadow:
-      0 16px 48px rgba(0, 0, 0, 0.5),
-      0 0 40px color-mix(in srgb, var(--type-color) 12%, transparent),
-      inset 0 0 60px rgba(139, 92, 246, 0.04);
+      0 0 28px rgba(0, 0, 0, 0.55),
+      0 0 12px rgba(45, 212, 191, 0.08);
+    overflow: hidden;
+    /* Asymmetric cockpit bevel: deeper cut at the outer frame, subtle at the seam. */
+    clip-path: polygon(
+      24px 0%,
+      calc(100% - 6px) 0%,
+      100% 6px,
+      100% calc(100% - 24px),
+      calc(100% - 24px) 100%,
+      6px 100%,
+      0% calc(100% - 6px),
+      0% 24px
+    );
+    transition:
+      clip-path 0.35s ease,
+      box-shadow 0.35s ease;
   }
 
   .note-article::before {
@@ -409,9 +442,32 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--type-color);
-    box-shadow: 0 0 24px color-mix(in srgb, var(--type-color) 70%, transparent);
+    bottom: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--type-color) 12%, transparent) 0%,
+      transparent 32%
+    );
+    z-index: -1;
+  }
+
+  .note-article::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.35) 0%,
+      transparent 18%,
+      transparent 78%,
+      rgba(45, 212, 191, 0.08) 100%
+    );
   }
 
   .note-hero {

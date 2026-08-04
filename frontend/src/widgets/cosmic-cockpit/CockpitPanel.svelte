@@ -265,6 +265,7 @@
     aria-label="{title ? `${title} — ` : ''}{t('cockpit.panel.ariaLabel', { position })}"
   >
     <div class="panel-glow" aria-hidden="true"></div>
+    <div class="panel-shade" aria-hidden="true"></div>
 
     {#if (position === "right" || position === "bottom") && !isOpen}
       <div
@@ -278,21 +279,22 @@
         role="button"
         tabindex="-1"
       >
-        <svg
-          class="handle-arrow"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="transform: rotate({arrowRotation}deg);"
-          aria-hidden="true"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <span class="handle-arrow-wrapper" style="transform: rotate({arrowRotation}deg);">
+          <svg
+            class="handle-arrow"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
       </div>
     {/if}
 
@@ -349,21 +351,22 @@
         role="button"
         tabindex="-1"
       >
-        <svg
-          class="handle-arrow"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="transform: rotate({arrowRotation}deg);"
-          aria-hidden="true"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <span class="handle-arrow-wrapper" style="transform: rotate({arrowRotation}deg);">
+          <svg
+            class="handle-arrow"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
       </div>
     {/if}
   </div>
@@ -371,14 +374,19 @@
 
 <style>
   .cockpit-panel {
-    --cockpit-bevel: 10px;
-    --cockpit-bevel-outer: 16px;
-    --cockpit-bevel-inner: 4px;
+    --cockpit-bevel: 12px;
+    --cockpit-bevel-outer: 22px;
+    --cockpit-bevel-inner: 6px;
     --cockpit-bevel-tl: var(--cockpit-bevel-outer);
     --cockpit-bevel-tr: var(--cockpit-bevel-inner);
     --cockpit-bevel-br: var(--cockpit-bevel-inner);
     --cockpit-bevel-bl: var(--cockpit-bevel-outer);
-    background: rgba(10, 10, 15, 0.92);
+    background: linear-gradient(
+      135deg,
+      rgba(22, 24, 36, 0.96) 0%,
+      rgba(10, 10, 15, 0.96) 50%,
+      rgba(12, 14, 22, 0.96) 100%
+    );
     backdrop-filter: blur(18px);
     border: 1px solid rgba(45, 212, 191, 0.25);
     box-shadow:
@@ -399,6 +407,10 @@
       0% calc(100% - var(--cockpit-bevel-bl)),
       0% var(--cockpit-bevel-tl)
     );
+    transition:
+      clip-path 0.35s ease,
+      background 0.35s ease,
+      box-shadow 0.35s ease;
   }
 
   .cockpit-panel--right {
@@ -438,6 +450,62 @@
     );
     pointer-events: none;
     z-index: 0;
+  }
+
+  .panel-shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.7;
+    transition: background 0.35s ease;
+    /* Default to a soft inner shadow all around; position classes override. */
+    background: radial-gradient(
+      ellipse at center,
+      transparent 40%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+  }
+
+  /* Directional 3D depth: outer edge is darker, inner seam is highlighted. */
+  .cockpit-panel--left .panel-shade {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      transparent 22%,
+      transparent 78%,
+      rgba(45, 212, 191, 0.12) 100%
+    );
+  }
+
+  .cockpit-panel--right .panel-shade {
+    background: linear-gradient(
+      270deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      transparent 22%,
+      transparent 78%,
+      rgba(45, 212, 191, 0.12) 100%
+    );
+  }
+
+  .cockpit-panel--top .panel-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      transparent 22%,
+      transparent 78%,
+      rgba(45, 212, 191, 0.12) 100%
+    );
+  }
+
+  .cockpit-panel--bottom .panel-shade {
+    background: linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      transparent 22%,
+      transparent 78%,
+      rgba(45, 212, 191, 0.12) 100%
+    );
   }
 
   .panel-body {
@@ -592,6 +660,14 @@
     box-shadow:
       inset 0 0 16px rgba(45, 212, 191, 0.15),
       0 0 18px rgba(45, 212, 191, 0.15);
+  }
+
+  .handle-arrow-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s ease;
+    will-change: transform;
   }
 
   .handle-arrow {

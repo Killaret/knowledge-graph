@@ -64,7 +64,7 @@ function createCockpitStore() {
 
   const panels = $state<CockpitPanelsState>({
     top: { ...defaultPanel },
-    bottom: { ...defaultPanel, open: true },
+    bottom: { ...defaultPanel },
     left: { ...defaultPanel },
     right: { ...defaultPanel },
   });
