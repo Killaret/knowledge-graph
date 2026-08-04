@@ -50,7 +50,7 @@
 | Добавление публичных сидов для тестирования пустого графа в real-auth режиме | ⏳ Запланировано | 🟡 Средний | 📝 Нет |
 | Аудит и оптимизация потребления ресурсов (память, CPU, bundle size) | ⏳ Запланировано | 🟠 Высокий | 📝 Нет |
 
-> Подробности всех проблем и статус исправлений: [docs/MANUAL_TEST_ISSUES.md](docs/MANUAL_TEST_ISSUES.md)
+> `docs/MANUAL_TEST_ISSUES.md` удалён (устаревший снимок от 28 июля 2026, до перехода на Cosmic Cockpit); ещё не перепроверенные пункты архивированы в `ROADMAP.md` → раздел "🧪 Experimental & Ideas" → "Legacy manual-test backlog". Актуальные находки ручного тестирования — в [docs/MANUAL_TEST_FEEDBACK.md](docs/MANUAL_TEST_FEEDBACK.md).
 
 ### Детали Cosmic Cockpit UI ("космическая кабина")
 

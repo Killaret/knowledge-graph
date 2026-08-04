@@ -113,7 +113,8 @@
 - **AUTO_LINK_CREATION:** `docs/AUTO_LINK_CREATION_PLAN.md` — план автоматического создания связей
 - **NOTE_ERROR_CORRECTION:** `docs/NOTE_ERROR_CORRECTION_PLAN.md` — план исправления ошибок
 - **API_TEST_COVERAGE:** `docs/API_TEST_COVERAGE_PLAN.md` — план API тестирования
-- **MANUAL_TEST_ISSUES:** `docs/MANUAL_TEST_ISSUES.md` — проблемы ручного тестирования
+- **MANUAL_TEST_CHECKLIST_COCKPIT:** `docs/MANUAL_TEST_CHECKLIST_COCKPIT.md` — единый чек-лист ручного тестирования Cosmic Cockpit
+- **MANUAL_TEST_FEEDBACK:** `docs/MANUAL_TEST_FEEDBACK.md` — актуальный лог находок ручного тестирования (urgent fixes / roadmap / ideas)
 
 ## 🔄 Статус исправлений
 

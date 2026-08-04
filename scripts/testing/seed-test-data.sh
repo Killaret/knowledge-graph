@@ -149,7 +149,7 @@ echo "Created ${#NOTE_IDS[@]} notes."
 # ---------------------------------------------------------------------------
 # 3.5. Publish a subset of notes so the anonymous/public graph view has data
 #      (previously all seeded notes stayed private, leaving the public graph
-#      empty in real-auth mode — see docs/MANUAL_TEST_ISSUES.md).
+#      empty in real-auth mode).
 # ---------------------------------------------------------------------------
 PUBLISH_START=$(date +%s)
 PUBLIC_COUNT=$(( (${#NOTE_IDS[@]} * PUBLIC_PERCENT + 99) / 100 ))

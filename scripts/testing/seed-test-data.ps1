@@ -171,7 +171,7 @@ Write-Host "Created $($noteIds.Count) notes." -ForegroundColor Green
 # ---------------------------------------------------------------------------
 # 3.5. Publish a subset of notes so the anonymous/public graph view has data
 #      (previously all seeded notes stayed private, leaving the public graph
-#      empty in real-auth mode — see docs/MANUAL_TEST_ISSUES.md).
+#      empty in real-auth mode).
 # ---------------------------------------------------------------------------
 $publishStart = Get-Date
 $publicCount = [int][math]::Ceiling($noteIds.Count * ($PublicPercent / 100))

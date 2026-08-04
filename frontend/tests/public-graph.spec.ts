@@ -27,7 +27,7 @@ test.describe("Public Graph", () => {
     await expect(stats).toBeVisible({ timeout: 15000 });
     // Require a non-zero node count explicitly — a bare /\d+/ regex would
     // incorrectly pass on "0 nodes", hiding an empty-graph regression (see
-    // docs/MANUAL_TEST_ISSUES.md #6 and public-graph-real-auth.spec.ts).
+    // public-graph-real-auth.spec.ts for the historical "empty public graph" bug).
     const statsText = await stats.textContent({ timeout: 5000 });
     expect(statsText).toMatch(/[1-9]\d*\s+nodes?/i);
     expect(statsText).toMatch(/\d+\s+links?/i);

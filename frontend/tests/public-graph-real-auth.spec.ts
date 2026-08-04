@@ -5,9 +5,10 @@ import { getBackendUrl, loginOrCreateTestUser } from "./helpers/auth";
  * Regression tests for anonymous/public graph behavior in real-auth mode.
  *
  * Historically the public graph caused two related bugs:
- * 1. docs/MANUAL_TEST_ISSUES.md #6: "Пустой публичный граф" — seed data and
- *    user notes were private by default, so anonymous visitors saw an empty
- *    graph even though the pipeline was fine.
+ * 1. "Empty public graph" — seed data and user notes were private by
+ *    default, so anonymous visitors saw an empty graph even though the
+ *    pipeline was fine. Fixed by seed-test-data.ps1/.sh publishing a
+ *    percentage of notes (see below).
  * 2. The main page polled /v1/graph/delta every 30s and on window focus even
  *    for anonymous users. /v1/graph/delta requires auth, so it returned 401,
  *    the ky afterResponse hook tried /v1/auth/refresh (400), and the resulting
