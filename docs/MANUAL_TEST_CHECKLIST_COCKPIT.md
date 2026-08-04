@@ -25,7 +25,7 @@
 - [ ] `CockpitFrame` (decorative border, corner bolts, grid+stars background) is visible around the canvas.
 - [ ] Top panel (`CockpitTopPanel`) is pinned by default; contains search, filters, view switcher, create button.
 - [ ] Left panel (`CockpitLeftPanel`) starts collapsed; hover/click expands it with animation.
-- [ ] Right/bottom panel pull-handle (arrow) is visible **only while collapsed** — disappears once the panel is open.
+- [ ] Pull-handle (arrow) on **every** edge — left, right, top, bottom — is visible **only while collapsed** and disappears once that panel is open (covers all four positions, not just right/bottom).
 - [ ] Pinning a panel keeps it open after mouse leaves; unpinning restores auto-collapse behavior.
 - [ ] No panel corners overlap or clip each other at default window size.
 
@@ -104,24 +104,41 @@ whether nodes/links/labels are still unreadable (too dense / too sparse).
 
 ---
 
-## 6. Cockpit visual theme (Allotropic Carbon baseline)
+## 6. Cockpit visual theme — animated gradient text (Allotropic Carbon aliases)
 
-> Today the cockpit re-implements a cyan/magenta neon look with **hardcoded
-> rgba values** in several components instead of reusing the site-wide
-> Allotropic Carbon theme (`--carbon-*`, `--color-info`, `--color-glow-purple`
-> in `shared/styles/global.css`). Use this section to verify consistency
-> before/after any theming refactor.
+> Implemented in `feat(frontend): add Altered Carbon cockpit gradient text
+> theme` — reuses `--carbon-*`/`--color-info`/`--color-comet` through
+> cockpit-scoped aliases in `shared/styles/global.css`; no new palette was
+> introduced. Covered by unit tests in `CockpitPanel.spec.ts`,
+> `CockpitFirstPersonButton.spec.ts`, `CockpitHUD.spec.ts`. See
+> `docs/MANUAL_TEST_FEEDBACK.md` (Cockpit §6) for the implementation summary
+> and review notes on the original proposal.
 
-**Checks (current state):**
-- [ ] `CockpitFrame` border gradient and corner bolts render (cyan → dark → magenta).
-- [ ] `CockpitHUD` metrics text and sync indicator use the teal accent consistent with `NoteCard`/`Button` elsewhere in the app.
-- [ ] No visually conflicting accent colors between cockpit components and the rest of the app (e.g. a different cyan hue, different glow intensity).
+**Steps:**
+1. Open `/` in SKIP_AUTH mode, hard refresh.
+2. Watch panel titles (top/bottom/left/right) and the left panel's section
+   headings ("Navigation", "Graph Controls", "Filters", etc.) for ~6-10s.
+3. Enter first-person mode and look at the exit button label.
+4. Check the HUD's cluster name and numeric metrics (notes/links/FPS/health).
+5. Enable "Reduce motion" at the OS level (or `prefers-reduced-motion` via
+   DevTools rendering emulation) and reload.
 
-**Checks (after a theming refactor, if/when done):**
-- [ ] Cockpit components consume shared CSS variables (aliases into `--carbon-*`/`--color-info`) rather than new hardcoded hex/rgba.
-- [ ] Public/unauthenticated view is untouched — no `.cosmic-cockpit` class or cockpit variables leak outside the authenticated layout.
-- [ ] `npm run check` and `npm run test:unit` pass after the refactor.
-- [ ] Visual regression: toggling panels, first-person mode, and 2D/3D switching does not break the new styles.
+**Checks — decorative headings (should shimmer, desynchronized):**
+- [ ] Panel titles (`CockpitPanel`) show a moving cyan→violet gradient text, not a static two-color label.
+- [ ] Different panels' titles are visibly **out of phase** with each other (not all brightening/shifting at the same time).
+- [ ] Left panel's section headings shimmer with their own offsets, not in lockstep with each other or with the panel titles.
+- [ ] First-person exit button label ("Exit first-person (Esc)") also has the moving gradient.
+
+**Checks — data-critical HUD text (should stay legible, not distractingly animated):**
+- [ ] Cluster name in the HUD has a gradient look but does **not** move/shimmer (static gradient).
+- [ ] Numeric metrics (notes, links, FPS, health%, sync status) render as plain solid-color text — easy to read at a glance, no gradient/animation.
+
+**Checks — accessibility & consistency:**
+- [ ] With reduced-motion enabled, all `cockpit-gradient-text` elements stop animating (frozen at one gradient position) instead of disappearing or breaking layout.
+- [ ] Text remains readable (sufficient contrast against the panel background) at every point during the animation, not just at the gradient's end stops.
+- [ ] No new hue was introduced — accents visually match the teal/violet already used by `NoteCard`/`Button` elsewhere in the app (Allotropic Carbon theme).
+- [ ] Public/unauthenticated view is untouched — no gradient text or `.cosmic-cockpit` variables leak outside the authenticated cockpit layout.
+- [ ] `npm run check` and `npm run test:unit` pass.
 
 ---
 

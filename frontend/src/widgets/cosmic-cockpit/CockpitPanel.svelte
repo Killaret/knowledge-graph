@@ -162,6 +162,21 @@
       bottom: -90,
     } as const)[position]
   );
+
+  // Desynchronize the gradient-text animation phase per panel position so
+  // all four panel titles don't shimmer in lockstep.
+  const panelTitleDelay = $derived(
+    `${
+      (
+        {
+          top: 0,
+          right: -1.5,
+          bottom: -3,
+          left: -4.5,
+        } as const
+      )[position]
+    }s`
+  );
 </script>
 
 {#if browser}
@@ -211,7 +226,12 @@
     <div class="panel-body">
       <header class="panel-header">
         {#if title}
-          <h3 class="panel-title">{title}</h3>
+          <h3
+            class="panel-title cockpit-gradient-text"
+            style="--cockpit-text-delay: {panelTitleDelay};"
+          >
+            {title}
+          </h3>
         {/if}
         <div class="panel-actions" class:panel-actions--no-title={!title}>
           <button
@@ -244,10 +264,9 @@
       </div>
     </div>
 
-    {#if position === "left" || position === "top"}
+    {#if (position === "left" || position === "top") && !isOpen}
       <div
         class="panel-handle panel-handle--{position}"
-        class:open={isOpen}
         onpointerdown={handlePointerDown}
         onpointermove={handlePointerMove}
         onpointerup={handlePointerUp}
@@ -334,7 +353,6 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(45, 212, 191, 0.9);
   }
 
   .panel-actions {
@@ -371,7 +389,7 @@
 
   .pin-btn.pinned {
     background: rgba(45, 212, 191, 0.25);
-    color: #2dd4bf;
+    color: var(--cockpit-accent, #2dd4bf);
   }
 
   .panel-content {

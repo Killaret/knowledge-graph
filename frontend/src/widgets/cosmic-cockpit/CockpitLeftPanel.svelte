@@ -88,7 +88,9 @@
 
 <div class="cockpit-left-panel" data-testid="cockpit-left-panel">
   <section class="left-section" aria-labelledby="nav-heading">
-    <h3 class="section-heading" id="nav-heading">{t("cockpit.left.navigation")}</h3>
+    <h3 class="section-heading cockpit-gradient-text" id="nav-heading">
+      {t("cockpit.left.navigation")}
+    </h3>
     <nav class="nav-list">
       {#each navItems as item}
         <a
@@ -115,7 +117,9 @@
   </section>
 
   <section class="left-section" aria-labelledby="graph-heading">
-    <h3 class="section-heading" id="graph-heading">{t("cockpit.left.graphControls")}</h3>
+    <h3 class="section-heading cockpit-gradient-text" id="graph-heading">
+      {t("cockpit.left.graphControls")}
+    </h3>
     <div class="graph-controls">
       <button
         type="button"
@@ -144,7 +148,9 @@
     </div>
 
     {#if onToggleFullGraph}
-      <h3 class="section-heading sub-heading">{t("cockpit.left.graphScope")}</h3>
+      <h3 class="section-heading sub-heading cockpit-gradient-text">
+        {t("cockpit.left.graphScope")}
+      </h3>
       <label class="full-graph-toggle">
         <input
           type="checkbox"
@@ -159,7 +165,9 @@
 
   {#if typeFilters.length > 0}
     <section class="left-section" aria-labelledby="filter-heading">
-      <h3 class="section-heading" id="filter-heading">{t("cockpit.left.filters")}</h3>
+      <h3 class="section-heading cockpit-gradient-text" id="filter-heading">
+        {t("cockpit.left.filters")}
+      </h3>
       <CockpitTypeFilter
         filters={typeFilters}
         selected={selectedType}
@@ -170,7 +178,9 @@
   {/if}
 
   <section class="left-section" aria-labelledby="tree-heading">
-    <h3 class="section-heading" id="tree-heading">{t("cockpit.left.noteTree")}</h3>
+    <h3 class="section-heading cockpit-gradient-text" id="tree-heading">
+      {t("cockpit.left.noteTree")}
+    </h3>
     <div class="note-tree">
       {#each notes as note}
         <button
@@ -189,7 +199,9 @@
   </section>
 
   <section class="left-section" aria-labelledby="system-heading">
-    <h3 class="section-heading" id="system-heading">{t("cockpit.left.system")}</h3>
+    <h3 class="section-heading cockpit-gradient-text" id="system-heading">
+      {t("cockpit.left.system")}
+    </h3>
     <div class="system-controls">
       {#if onImport}
         <button
@@ -246,11 +258,28 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(45, 212, 191, 0.8);
   }
 
   .sub-heading {
     margin-top: 8px;
+  }
+
+  /* Desynchronize the gradient shimmer across sections so headings don't
+     all shimmer in lockstep. */
+  .left-section:nth-of-type(1) .cockpit-gradient-text {
+    --cockpit-text-delay: 0s;
+  }
+  .left-section:nth-of-type(2) .cockpit-gradient-text {
+    --cockpit-text-delay: -1.2s;
+  }
+  .left-section:nth-of-type(3) .cockpit-gradient-text {
+    --cockpit-text-delay: -2.4s;
+  }
+  .left-section:nth-of-type(4) .cockpit-gradient-text {
+    --cockpit-text-delay: -3.6s;
+  }
+  .left-section:nth-of-type(5) .cockpit-gradient-text {
+    --cockpit-text-delay: -4.8s;
   }
 
   .nav-list,

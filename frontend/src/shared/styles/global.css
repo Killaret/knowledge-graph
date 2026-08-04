@@ -158,6 +158,62 @@
   --carbon-surface-blur: blur(12px);
 }
 
+/* ================================
+   COSMIC COCKPIT THEME ALIASES
+   Cockpit-scoped aliases into the existing Allotropic Carbon palette.
+   Do NOT introduce new hues here — the cockpit reuses the same theme as
+   the rest of the app, just applied to different components.
+   ================================ */
+.cosmic-cockpit {
+  --cockpit-accent: var(--color-info);
+  --cockpit-accent-2: var(--color-comet);
+  --cockpit-panel-bg: var(--carbon-gradient-surface);
+  --cockpit-panel-border: 1px solid var(--carbon-border-glow);
+  --cockpit-glow: var(--carbon-glow-primary);
+  --cockpit-gradient-text: var(--carbon-gradient-primary);
+}
+
+/* ================================
+   COCKPIT GRADIENT TEXT
+   Animated (desynchronized via --cockpit-text-delay) gradient text for
+   decorative cockpit headings. NOT meant for HUD numeric readouts — those
+   should stay solid/legible (see --cockpit-gradient-text--static below).
+   ================================ */
+.cockpit-gradient-text {
+  background: var(--cockpit-gradient-text, var(--carbon-gradient-primary));
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: cockpit-gradient-shift 6s ease-in-out infinite;
+  animation-delay: var(--cockpit-text-delay, 0s);
+}
+
+/* Static variant: same gradient look, no motion — for data-critical text
+   where legibility matters more than atmosphere. */
+.cockpit-gradient-text--static {
+  animation: none;
+  background-position: 0% 50%;
+}
+
+@keyframes cockpit-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cockpit-gradient-text {
+    animation: none;
+    background-position: 0% 50%;
+  }
+}
+
 /* Base cosmic theme styles */
 html,
 body {

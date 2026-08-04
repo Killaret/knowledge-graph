@@ -14,7 +14,9 @@
   data-testid="first-person-exit"
 >
   <span class="glow-bar"></span>
-  {t("cockpit.exitFirstPersonHint")}
+  <span class="cockpit-gradient-text" style="--cockpit-text-delay: -2.2s;">
+    {t("cockpit.exitFirstPersonHint")}
+  </span>
 </button>
 
 <style>
@@ -32,7 +34,7 @@
     border: 1px solid rgba(45, 212, 191, 0.4);
     border-radius: 20px;
     background: rgba(10, 10, 15, 0.85);
-    color: #2dd4bf;
+    color: var(--cockpit-accent, #2dd4bf);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -50,14 +52,14 @@
   }
 
   .first-person-exit:focus-visible {
-    outline: 2px solid #2dd4bf;
+    outline: 2px solid var(--cockpit-accent, #2dd4bf);
   }
 
   .glow-bar {
     width: 40px;
     height: 3px;
     border-radius: 2px;
-    background: #2dd4bf;
-    box-shadow: 0 0 12px #2dd4bf;
+    background: var(--cockpit-accent, #2dd4bf);
+    box-shadow: 0 0 12px var(--cockpit-accent, #2dd4bf);
   }
 </style>

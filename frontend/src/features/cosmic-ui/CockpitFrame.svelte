@@ -124,7 +124,8 @@
   .bolt::after {
     content: "";
     position: absolute;
-    background: rgba(45, 212, 191, 0.5);
+    background: var(--cockpit-accent, rgba(45, 212, 191, 0.5));
+    opacity: 0.5;
     border-radius: 1px;
   }
 

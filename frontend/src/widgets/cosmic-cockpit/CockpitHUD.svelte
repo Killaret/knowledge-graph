@@ -39,7 +39,10 @@
   <div class="hud-row hud-row--primary">
     <div class="hud-item cluster" data-testid="hud-cluster">
       <span class="hud-label">{t("cockpit.hud.cluster")}</span>
-      <span class="hud-value" title={cluster ?? t("cockpit.hud.noCluster")}>
+      <span
+        class="hud-value cockpit-gradient-text cockpit-gradient-text--static"
+        title={cluster ?? t("cockpit.hud.noCluster")}
+      >
         {cluster ?? t("cockpit.hud.noCluster")}
       </span>
     </div>
@@ -126,7 +129,8 @@
   }
 
   .hud-label {
-    color: rgba(45, 212, 191, 0.7);
+    color: var(--cockpit-accent, rgba(45, 212, 191, 0.7));
+    opacity: 0.7;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-size: 10px;
@@ -167,7 +171,7 @@
   }
 
   .syncing {
-    color: #2dd4bf;
+    color: var(--cockpit-accent, #2dd4bf);
     animation: pulse 1.2s ease-in-out infinite;
   }
 
@@ -176,7 +180,7 @@
     border: 1px solid rgba(45, 212, 191, 0.4);
     border-radius: 16px;
     background: rgba(45, 212, 191, 0.1);
-    color: #2dd4bf;
+    color: var(--cockpit-accent, #2dd4bf);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;

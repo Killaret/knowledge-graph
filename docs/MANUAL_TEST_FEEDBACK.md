@@ -13,7 +13,7 @@
 > section number (e.g. "Cockpit §4").
 >
 > **Environment:** `http://127.0.0.1:3002` (test stack, SKIP_AUTH=true)
-> **Last rebuild:** see git log for `fix(frontend): desynchronize 2D graph node motion and particles`, `fix(frontend): reduce 2D graph overlaps and improve readability`, and `fix(frontend): improve first-person exit and panel handles`
+> **Last rebuild:** see git log for `fix(frontend): desynchronize 2D graph node motion and particles`, `fix(frontend): reduce 2D graph overlaps and improve readability`, `fix(frontend): improve first-person exit and panel handles`, and `feat(frontend): add Altered Carbon cockpit gradient text theme`
 
 ---
 
@@ -55,6 +55,15 @@
 - **Status:** container rebuilt, ready for re-test.
 - **Screenshot / Logs:** —
 
+- **Case:** Cockpit §1 (panel handles, left/top — found while implementing gradient text)
+- **What:** The right/bottom handle fix above only covered the right/bottom handle block. `CockpitPanel.svelte` renders a **second**, separate handle block for left/top panels that still lacked the `!isOpen` guard — same bug, different code path.
+- **Expected:** Left/top pull-handles also disappear once their panel is open.
+- **Actual:** Left/top arrows stayed visible even when expanded.
+- **Fix applied:** `{#if position === "left" || position === "top"}` → `{#if (position === "left" || position === "top") && !isOpen}`, and dropped the now-dead `class:open={isOpen}` binding to match the right/bottom block.
+- **Regression test:** `CockpitPanel.spec.ts` — `shows the pull-handle for %s when collapsed` / `hides the pull-handle for %s once the panel is open`, parametrized over all four positions (`right`, `bottom`, `left`, `top`).
+- **Status:** fixed, covered by unit tests, container rebuilt.
+- **Screenshot / Logs:** —
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
@@ -77,14 +86,20 @@ None yet.
 - **Triage:** backlog / roadmap candidate (Phase 11 or UI-polish phase). Not a bug.
 - **Screenshot / Logs:** —
 
-- **Case:** Cockpit §6 (Altered Carbon theming)
-- **What:** Proposal to give cockpit components a distinct "Altered Carbon" neon look via new `--cockpit-*` CSS variables.
-- **Review notes:**
-  - The project already has an "Allotropic Carbon" theme (`--carbon-*`, `--color-info`, `--color-glow-purple` in `shared/styles/global.css`) applied site-wide — a parallel `--cockpit-*` set would duplicate it.
+- **Case:** Cockpit §6 (Altered Carbon theming — implemented)
+- **What:** Original proposal wanted a distinct "Altered Carbon" neon look via new `--cockpit-*` CSS variables, plus static two-color gradient text.
+- **Review notes (before implementing):**
+  - The project already has an "Allotropic Carbon" theme (`--carbon-*`, `--color-info`, `--color-glow-purple` in `shared/styles/global.css`) applied site-wide — a parallel `--cockpit-*` set would have duplicated it.
   - `CockpitFrame.svelte` already implements grid + stars + corner bolts + cyan/magenta border gradient, just with hardcoded rgba instead of variables.
-  - Proposed target components `CosmicHUD`/`CosmicNotificationCenter`/`CosmicToast` do not exist under those names; actual files are `CockpitHUD.svelte` and the app-wide `widgets/notification/ToastNotification.svelte` (not cockpit-scoped).
-- **Proposed approach:** refactor cockpit components to consume existing shared variables (or aliases into them) instead of hardcoded rgba, rather than introducing a second color system. See Cockpit §6 checklist for what to verify once this is attempted.
-- **Triage:** roadmap candidate, needs a scoped-down follow-up prompt before implementation.
+  - Proposed target components `CosmicHUD`/`CosmicNotificationCenter`/`CosmicToast` do not exist under those names; actual files are `CockpitHUD.svelte` and the app-wide `widgets/notification/ToastNotification.svelte` (not cockpit-scoped, left untouched).
+- **What was implemented** (revised prompt, `docs/PROMPT_COCKPIT_ALTERED_CARBON_THEME.md`, now removed after landing):
+  - `shared/styles/global.css`: cockpit-scoped aliases (`--cockpit-accent` → `--color-info`, `--cockpit-accent-2` → `--color-comet`, `--cockpit-gradient-text` → `--carbon-gradient-primary`, etc.) — no new hues.
+  - `.cockpit-gradient-text` utility class: animated moving gradient text via `background-position` + `@keyframes cockpit-gradient-shift`, phase offset via `--cockpit-text-delay` (desynchronized per instance, not lockstep). `.cockpit-gradient-text--static` modifier for data-critical text. `prefers-reduced-motion` disables the animation.
+  - Applied animated gradient text to decorative headings: `CockpitPanel` panel titles (delay per position), `CockpitFirstPersonButton` exit label, `CockpitLeftPanel` section headings (delay per section).
+  - Applied **static** gradient text only to `CockpitHUD`'s cluster name; numeric metrics (notes/links/FPS/health/sync) stay plain solid-color text for readability.
+  - Replaced hardcoded `#2dd4bf`/`rgba(45, 212, 191, ...)` with `var(--cockpit-accent, ...)` in `CockpitPanel`, `CockpitFirstPersonButton`, `CockpitHUD`, and `CockpitFrame`'s corner bolts.
+- **Regression tests:** `CockpitPanel.spec.ts`, `CockpitFirstPersonButton.spec.ts`, `CockpitHUD.spec.ts` (20 new tests, all passing). `npm run check` — 0 errors. Full `npm run test:unit` — 858/858 passing.
+- **Status:** implemented, tested, checklist updated (Cockpit §6). Ready for manual re-test.
 - **Screenshot / Logs:** —
 
 ---
