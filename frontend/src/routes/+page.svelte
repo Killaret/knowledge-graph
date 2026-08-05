@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
@@ -570,6 +571,7 @@
     handleSearch();
   }}
   onToggleView={handleToggleView}
+  onImport={() => goto("/import")}
   onToggleLayoutProvider={handleToggleLayoutProvider}
   {layoutProvider}
   onFilter={(type: string) => {

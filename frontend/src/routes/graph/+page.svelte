@@ -380,6 +380,7 @@
     if (view === "list") goto("/");
     else if (view === "3d") goto("/graph/3d");
   }}
+  onImport={() => goto("/import")}
   onNoteCreate={() => (showCreateModal = true)}
   onNoteDelete={handleDeleteRequest}
   onNoteEdit={handleNoteEdit}

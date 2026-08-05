@@ -303,6 +303,17 @@ Description: Представление графа в виде сот (гекс�
 | JSON import/export | ⏳ Planned | 🟢 Low | 📝 Yes |
 | Markdown import/export | ⏳ Planned | 🟢 Low | 📝 Yes |
 | CSV import/export | ⏳ Planned | 🟢 Low | 📝 Yes |
+| Bookmarklet | ✅ Done | 🟠 High | 📝 Yes |
+| Mass URL import | ⏳ Planned | 🟠 High | 📝 Yes |
+| Browser extension | ⏳ Planned | 🟠 High | 📝 Yes |
+
+#### Browser capture options
+
+| Option | Pros | Cons | Status |
+|--------|------|------|--------|
+| **Bookmarklet** | No installation, instant MVP | URL length limit (~2000 chars), opens a new tab | ✅ Implemented |
+| **Mass URL import** | Bulk processing, async deduplication, content extraction | Longer task, requires queue/progress | ⏳ Planned |
+| **Browser Extension** | Full text access, background capture, notifications | Requires installation, needs token setup | ⏳ Planned |
 
 **Scope:**
 - Bulk import/export functionality
@@ -310,6 +321,7 @@ Description: Представление графа в виде сот (гекс�
 - Data mapping
 - Conflict resolution
 - Import history
+- Browser capture (bookmarklet, mass URL import, extension)
 
 ### 🎮 Gamification (Customization & Points)
 
