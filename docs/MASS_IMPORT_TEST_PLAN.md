@@ -12,6 +12,9 @@ Test cases for the `/api/v1/import/bookmarks` batch-import feature (open tabs, `
 | 4 | Normalize URLs | Strips fragments, lower-cases scheme, rejects `file://` and private IP ranges. |
 | 5 | Dedup by URL | Only the first occurrence of a URL is kept; second is skipped with a reason. |
 | 6 | Truncate content before `NewContent` | Title + URL + extracted text never exceeds the domain `Content` limit. |
+| 7 | `web.ImportFetcher` extracts title and visible text | HTML `<title>` and visible text are parsed; `script`/`style`/`title` are skipped. |
+| 8 | `web.ImportFetcher` HTTP errors | 4xx/5xx responses and context cancellation return an error. |
+| 9 | `importer.Service.maybeExtract` URL policy | `file://`, `localhost`, and private IP addresses are rejected before fetching. |
 
 ## Integration Tests (backend)
 
@@ -34,6 +37,7 @@ Test cases for the `/api/v1/import/bookmarks` batch-import feature (open tabs, `
 | 16 | Poll and see success | Wait for status, then go to `/notes`. | New notes appear in the list with correct titles. |
 | 17 | Import `bookmarks.html` | Drag a Netscape bookmark file into the drop zone. | File parsed, preview table shows bookmarks. |
 | 18 | Duplicate handling | Import the same list twice. | Second import reports `skipped: 2`. |
+| 19 | Fetch page title and text | Paste bare URLs, enable «Fetch page title and text for each URL», click preview. | Table shows titles extracted from HTML and `text` column contains body snippets. |
 
 ## Manual / Regression Tests
 

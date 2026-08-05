@@ -37,6 +37,7 @@ import (
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 	"knowledge-graph/internal/infrastructure/queue"
+	"knowledge-graph/internal/infrastructure/web"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
@@ -255,7 +256,7 @@ func run(
 	}
 
 	// Import service and handlers
-	importService := importer.NewService(noteRepo, cacheClient, taskQueue, importer.NewDefaultExtractor())
+	importService := importer.NewService(noteRepo, cacheClient, taskQueue, web.NewImportFetcher())
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)

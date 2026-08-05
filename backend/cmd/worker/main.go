@@ -20,6 +20,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
+	"knowledge-graph/internal/infrastructure/web"
 )
 
 func main() {
@@ -106,7 +107,7 @@ func main() {
 		}()
 	}
 
-	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, importer.NewDefaultExtractor())
+	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, web.NewImportFetcher())
 
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc)

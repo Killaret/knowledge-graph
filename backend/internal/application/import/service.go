@@ -270,8 +270,9 @@ func extractText(n *html.Node) string {
 }
 
 // maybeExtract fetches the page when the caller explicitly asked for content
-// extraction, or when the title is missing. Extraction errors are returned in
-// preview and logged in the background worker.
+// extraction, or when the title is missing. URL policy (scheme, host, IP) is
+// enforced here, before passing the normalized URL to the infrastructure
+// ContentExtractor.
 func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, error) {
 	if s.extractor == nil {
 		return it, nil
@@ -281,6 +282,15 @@ func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, error) {
 	if !needsExtraction {
 		return it, nil
 	}
+
+	if !IsAllowedURL(it.URL) {
+		return it, fmt.Errorf("URL is not allowed: %s", it.URL)
+	}
+	normalized, err := NormalizeURL(it.URL)
+	if err != nil {
+		return it, err
+	}
+	it.URL = normalized
 
 	title, text, err := s.extractor.Extract(ctx, it.URL)
 	if err != nil {
