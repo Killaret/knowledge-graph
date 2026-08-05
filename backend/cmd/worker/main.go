@@ -106,7 +106,7 @@ func main() {
 		}()
 	}
 
-	importSvc := importer.NewService(noteRepo, cacheClient, queueClient)
+	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, importer.NewDefaultExtractor())
 
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc)

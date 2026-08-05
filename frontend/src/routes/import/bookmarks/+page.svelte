@@ -37,6 +37,7 @@
 
   let status = $state<"idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized">("idle");
   let input = $state("");
+  let extractContent = $state(false);
   let dragOver = $state(false);
   let previewItems = $state<ImportPreviewItem[]>([]);
   let taskId = $state<string | null>(null);
@@ -110,7 +111,7 @@
 
     status = "loading";
     try {
-      const res = await previewBookmarks(items);
+      const res = await previewBookmarks(items, { extract_content: extractContent });
       previewItems = res.items;
       status = "preview";
     } catch (e) {
@@ -250,6 +251,11 @@
       rows="10"
       placeholder="Example page | https://example.com\nhttps://another.example.com"
     ></textarea>
+
+    <label class="extract-toggle">
+      <input type="checkbox" bind:checked={extractContent} />
+      {t("import.extractContent")}
+    </label>
 
     <div
       class="drop-zone"
@@ -413,6 +419,16 @@
     border-radius: 0.25rem;
     font-family: inherit;
     box-sizing: border-box;
+  }
+  .extract-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+    cursor: pointer;
+  }
+  .extract-toggle input {
+    margin: 0;
   }
   .drop-zone {
     margin-top: 1rem;

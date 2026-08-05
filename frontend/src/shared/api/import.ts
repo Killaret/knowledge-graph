@@ -50,6 +50,11 @@ export interface ImportTaskStatus {
   progress: ImportTaskProgress;
 }
 
+export interface ImportOptions {
+  default_type?: string;
+  extract_content?: boolean;
+}
+
 /**
  * Create a note from a captured web page (bookmarklet flow).
  */
@@ -60,20 +65,33 @@ export async function createBookmarkletNote(data: BookmarkletPayload): Promise<B
 /**
  * Build a preview for a batch of captured web pages.
  */
-export async function previewBookmarks(items: ImportItem[]): Promise<ImportPreviewResponse> {
-  return api.post("v1/import/bookmarks/preview", { json: { items } }).json<ImportPreviewResponse>();
+export async function previewBookmarks(
+  items: ImportItem[],
+  options?: ImportOptions,
+): Promise<ImportPreviewResponse> {
+  const res = await api
+    .post("v1/import/bookmarks/preview", { json: { items, options } })
+    .json<{ data: ImportPreviewResponse }>();
+  return res.data;
 }
 
 /**
  * Start an async batch import of captured web pages.
  */
-export async function createBookmarksImport(items: ImportItem[]): Promise<ImportTask> {
-  return api.post("v1/import/bookmarks", { json: { items } }).json<ImportTask>();
+export async function createBookmarksImport(
+  items: ImportItem[],
+  options?: ImportOptions,
+): Promise<ImportTask> {
+  const res = await api
+    .post("v1/import/bookmarks", { json: { items, options } })
+    .json<{ data: ImportTask }>();
+  return res.data;
 }
 
 /**
  * Get the current status of a batch import task.
  */
 export async function getImportStatus(taskId: string): Promise<ImportTaskStatus> {
-  return api.get(`v1/import/${taskId}/status`).json<ImportTaskStatus>();
+  const res = await api.get(`v1/import/${taskId}/status`).json<{ data: ImportTaskStatus }>();
+  return res.data;
 }

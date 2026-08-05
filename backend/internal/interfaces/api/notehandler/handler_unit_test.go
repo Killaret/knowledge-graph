@@ -167,7 +167,7 @@ func setupUnitHandler(t *testing.T) (*Handler, *noteRepoMock, *taskQueueMock, *r
 	embRepo := new(embeddingRepoMock)
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
-	importSvc := importer.NewService(repo, cache, nil)
+	importSvc := importer.NewService(repo, cache, nil, nil)
 	h := New(repo, tq, nil, nil, time.Millisecond, recRepo, embRepo, cache, cfg, appcache.NewGraphCache(cache), nil, importSvc)
 	return h, repo, tq, recRepo, embRepo, cache
 }
@@ -301,7 +301,7 @@ func TestCreateNote_AffectedNotesSvc(t *testing.T) {
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
 	affectedSvc := recommendation.NewAffectedNotesService(recRepo)
-	importSvc := importer.NewService(repo, cache, nil)
+	importSvc := importer.NewService(repo, cache, nil, nil)
 	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil, importSvc)
 
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
@@ -329,7 +329,7 @@ func TestCreateNote_AffectedNotesSvcError(t *testing.T) {
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
 	affectedSvc := recommendation.NewAffectedNotesService(recRepo)
-	importSvc := importer.NewService(repo, cache, nil)
+	importSvc := importer.NewService(repo, cache, nil, nil)
 	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil, importSvc)
 
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
@@ -867,7 +867,7 @@ func TestGetSuggestions_TaskQueueNil(t *testing.T) {
 	embRepo := new(embeddingRepoMock)
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
-	importSvc := importer.NewService(repo, cache, nil)
+	importSvc := importer.NewService(repo, cache, nil, nil)
 	h := New(repo, nil, nil, nil, 0, recRepo, embRepo, cache, cfg, nil, nil, importSvc)
 
 	n := newTestNote(t, "Sug", "Content", "star")

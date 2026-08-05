@@ -42,7 +42,7 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 		PaginationMaxLimit:                    100,
 	}
 	cacheClient := cachetest.NewFakeCacheClient()
-	importSvc := importer.NewService(repo, cacheClient, nil)
+	importSvc := importer.NewService(repo, cacheClient, nil, nil)
 	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, cfg, nil, nil, importSvc)
 
 	r := gin.Default()

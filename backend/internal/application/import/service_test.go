@@ -276,7 +276,7 @@ func TestPreview_DedupAndValidation(t *testing.T) {
 	userID := uuid.New()
 	repo := newFakeNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
-	svc := NewService(repo, cache, nil)
+	svc := NewService(repo, cache, nil, nil)
 
 	// Seed an existing note with source_url.
 	title, _ := note.NewTitle("Existing")
@@ -319,7 +319,7 @@ func TestStartImport(t *testing.T) {
 	repo := newFakeNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
 	queue := &fakeTaskQueue{}
-	svc := NewService(repo, cache, queue)
+	svc := NewService(repo, cache, queue, nil)
 
 	items := []Item{
 		{Title: "One", URL: "https://example.com/one", Type: "asteroid"},
@@ -347,7 +347,7 @@ func TestStartImport(t *testing.T) {
 }
 
 func TestStartImport_ExceedsBatchSize(t *testing.T) {
-	svc := NewService(nil, cachetest.NewFakeCacheClient(), nil)
+	svc := NewService(nil, cachetest.NewFakeCacheClient(), nil, nil)
 	items := make([]Item, MaxBatchSize+1)
 	_, err := svc.StartImport(context.Background(), uuid.New(), items)
 	require.Error(t, err)
@@ -359,7 +359,7 @@ func TestProcessImportTask(t *testing.T) {
 	repo := newFakeNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
 	queue := &fakeTaskQueue{}
-	svc := NewService(repo, cache, queue)
+	svc := NewService(repo, cache, queue, nil)
 
 	items := []Item{
 		{Title: "First", URL: "https://example.com/first", Type: "asteroid"},
@@ -392,7 +392,7 @@ func TestProcessImportTask_AllFail(t *testing.T) {
 	userID := uuid.New()
 	repo := newFakeNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
-	svc := NewService(repo, cache, nil)
+	svc := NewService(repo, cache, nil, nil)
 
 	items := []Item{
 		{Title: "Bad", URL: "http://localhost", Type: "asteroid"},
@@ -408,13 +408,13 @@ func TestProcessImportTask_AllFail(t *testing.T) {
 }
 
 func TestGetTaskStatus_Missing(t *testing.T) {
-	svc := NewService(nil, cachetest.NewFakeCacheClient(), nil)
+	svc := NewService(nil, cachetest.NewFakeCacheClient(), nil, nil)
 	_, err := svc.GetTaskStatus(context.Background(), uuid.New().String())
 	require.ErrorIs(t, err, cache.ErrCacheMiss)
 }
 
 func TestPreview_ExceedsBatchSize(t *testing.T) {
-	svc := NewService(newFakeNoteRepo(), cachetest.NewFakeCacheClient(), nil)
+	svc := NewService(newFakeNoteRepo(), cachetest.NewFakeCacheClient(), nil, nil)
 	items := make([]Item, MaxBatchSize+1)
 	_, err := svc.Preview(context.Background(), uuid.New(), items)
 	require.Error(t, err)

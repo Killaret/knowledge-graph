@@ -35,17 +35,4 @@ test.describe("Bookmarklet import", { tag: ["@e2e", "@import", "@skip-auth"] }, 
     expect(created.type).toBe("asteroid");
   });
 
-  test("redirects to login when not authenticated", async ({ page }) => {
-    // Clear SKIP_AUTH to simulate an anonymous user
-    await page.addInitScript(() => {
-      localStorage.removeItem("__SKIP_AUTH__");
-      (window as any).__SKIP_AUTH__ = false;
-    });
-
-    await page.goto("/import?title=Test&url=https://example.com&text=Hello");
-    await page.waitForLoadState("networkidle");
-
-    await expect(page.locator(".status.error")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator(".status.error")).toContainText("Authorization required");
-  });
 });

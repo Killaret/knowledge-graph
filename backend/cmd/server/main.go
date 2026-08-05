@@ -255,7 +255,7 @@ func run(
 	}
 
 	// Import service and handlers
-	importService := importer.NewService(noteRepo, cacheClient, taskQueue)
+	importService := importer.NewService(noteRepo, cacheClient, taskQueue, importer.NewDefaultExtractor())
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)

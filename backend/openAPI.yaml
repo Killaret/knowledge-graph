@@ -2112,7 +2112,6 @@ components:
     ImportBookmarksItem:
       type: object
       required:
-        - title
         - url
       properties:
         title:
@@ -2153,9 +2152,7 @@ components:
     ImportPreviewItem:
       type: object
       required:
-        - title
         - url
-        - type
         - is_new
       properties:
         title:
@@ -2200,6 +2197,9 @@ components:
             default_type:
               type: string
               default: asteroid
+            extract_content:
+              type: boolean
+              default: false
 
     ImportBookmarksCreateResponse:
       type: object

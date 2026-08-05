@@ -78,7 +78,7 @@ func TestWorker_HandleImportBookmarks_Success(t *testing.T) {
 	userID := uuid.New()
 	repo := newImportNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
-	importSvc := importer.NewService(repo, cache, nil)
+	importSvc := importer.NewService(repo, cache, nil, nil)
 	w := NewWorker(nil, nil, nil, nil, cache, importSvc)
 
 	items := []importer.Item{

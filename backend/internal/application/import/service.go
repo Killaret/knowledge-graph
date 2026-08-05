@@ -40,10 +40,11 @@ const (
 
 // Item represents a single captured web page to import.
 type Item struct {
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Text  string `json:"text"`
-	Type  string `json:"type"`
+	Title          string `json:"title"`
+	URL            string `json:"url"`
+	Text           string `json:"text"`
+	Type           string `json:"type"`
+	ExtractContent bool   `json:"extract_content,omitempty"`
 }
 
 // PreviewItem extends Item with deduplication and per-item validation info.
@@ -79,14 +80,16 @@ type Service struct {
 	repo      note.Repository
 	cache     dcache.CacheClient
 	taskQueue common.TaskQueue
+	extractor ContentExtractor
 }
 
 // NewService creates a new ImportService.
-func NewService(repo note.Repository, cache dcache.CacheClient, taskQueue common.TaskQueue) *Service {
+func NewService(repo note.Repository, cache dcache.CacheClient, taskQueue common.TaskQueue, extractor ContentExtractor) *Service {
 	return &Service{
 		repo:      repo,
 		cache:     cache,
 		taskQueue: taskQueue,
+		extractor: extractor,
 	}
 }
 
@@ -266,6 +269,36 @@ func extractText(n *html.Node) string {
 	return b.String()
 }
 
+// maybeExtract fetches the page when the caller explicitly asked for content
+// extraction, or when the title is missing. Extraction errors are returned in
+// preview and logged in the background worker.
+func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, error) {
+	if s.extractor == nil {
+		return it, nil
+	}
+
+	needsExtraction := it.ExtractContent || it.Title == ""
+	if !needsExtraction {
+		return it, nil
+	}
+
+	title, text, err := s.extractor.Extract(ctx, it.URL)
+	if err != nil {
+		return it, err
+	}
+
+	if it.ExtractContent {
+		it.Title = title
+		it.Text = text
+	} else if it.Title == "" {
+		it.Title = title
+		if it.Text == "" {
+			it.Text = text
+		}
+	}
+	return it, nil
+}
+
 // Preview validates, normalizes and deduplicates a list of bookmarks against
 // the user's existing notes. It does not persist anything.
 func (s *Service) Preview(ctx context.Context, userID uuid.UUID, items []Item) ([]PreviewItem, error) {
@@ -280,6 +313,18 @@ func (s *Service) Preview(ctx context.Context, userID uuid.UUID, items []Item) (
 
 	out := make([]PreviewItem, 0, len(items))
 	for _, it := range items {
+		it, err := s.maybeExtract(ctx, it)
+		if err != nil {
+			out = append(out, PreviewItem{
+				Title: it.Title,
+				URL:   it.URL,
+				Text:  it.Text,
+				Type:  it.Type,
+				Error: err.Error(),
+			})
+			continue
+		}
+
 		pi := PreviewItem{
 			Title: it.Title,
 			Text:  it.Text,
@@ -390,6 +435,13 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 	for _, it := range items {
 		status.Progress.Processed++
 
+		extracted, err := s.maybeExtract(ctx, it)
+		if err != nil {
+			log.Printf("[ImportService] content extraction failed for %s: %v", it.URL, err)
+		} else {
+			it = extracted
+		}
+
 		noteType := it.Type
 		if noteType == "" {
 			noteType = "asteroid"
@@ -400,6 +452,13 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			status.Progress.Failed++
 			_ = s.storeStatus(ctx, status)
 			continue
+		}
+
+		if it.Title == "" {
+			it.Title = normalized
+			if len(it.Title) > 200 {
+				it.Title = it.Title[:200]
+			}
 		}
 
 		if seen[normalized] {

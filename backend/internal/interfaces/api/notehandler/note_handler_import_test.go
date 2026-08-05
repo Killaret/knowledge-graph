@@ -62,7 +62,7 @@ func setupImportRouter() (*gin.Engine, *mockNoteRepo, uuid.UUID) {
 	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	repo := newMockNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
-	importSvc := importer.NewService(repo, cache, &stubTaskQueue{})
+	importSvc := importer.NewService(repo, cache, &stubTaskQueue{}, nil)
 
 	cfg := &config.Config{
 		RecommendationTopN:                    10,

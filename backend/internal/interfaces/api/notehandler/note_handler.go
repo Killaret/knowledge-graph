@@ -397,7 +397,7 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 // --- Mass bookmark import handlers ---
 
 type importItem struct {
-	Title string `json:"title" binding:"required,max=200"`
+	Title string `json:"title" binding:"max=200"`
 	URL   string `json:"url"   binding:"required,url,max=2048"`
 	Text  string `json:"text"  binding:"max=50000"`
 	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
@@ -469,10 +469,11 @@ func (h *Handler) ImportBookmarksPreview(c *gin.Context) {
 	items := make([]importer.Item, len(req.Items))
 	for i, it := range req.Items {
 		items[i] = importer.Item{
-			Title: it.Title,
-			URL:   it.URL,
-			Text:  it.Text,
-			Type:  resolveImportType(it.Type, req.Options.DefaultType),
+			Title:          it.Title,
+			URL:            it.URL,
+			Text:           it.Text,
+			Type:           resolveImportType(it.Type, req.Options.DefaultType),
+			ExtractContent: req.Options.ExtractContent,
 		}
 	}
 
@@ -525,10 +526,11 @@ func (h *Handler) ImportBookmarks(c *gin.Context) {
 	items := make([]importer.Item, len(req.Items))
 	for i, it := range req.Items {
 		items[i] = importer.Item{
-			Title: it.Title,
-			URL:   it.URL,
-			Text:  it.Text,
-			Type:  resolveImportType(it.Type, req.Options.DefaultType),
+			Title:          it.Title,
+			URL:            it.URL,
+			Text:           it.Text,
+			Type:           resolveImportType(it.Type, req.Options.DefaultType),
+			ExtractContent: req.Options.ExtractContent,
 		}
 	}
 
