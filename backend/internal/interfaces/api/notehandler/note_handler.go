@@ -14,6 +14,7 @@ import (
 	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
 	appevents "knowledge-graph/internal/application/events"
+	importer "knowledge-graph/internal/application/import"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
@@ -40,6 +41,7 @@ type Handler struct {
 	cfg                *config.Config
 	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
+	importSvc          *importer.Service
 	eventPublisher     appevents.Publisher
 }
 
@@ -63,7 +65,7 @@ func getUserIDString(c *gin.Context) string {
 	return ""
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service) *Handler {
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service, importSvc *importer.Service) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
@@ -76,6 +78,7 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		cfg:                cfg,
 		graphCache:         graphCache,
 		achievementService: achievementService,
+		importSvc:          importSvc,
 	}
 }
 
@@ -389,6 +392,190 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		Title:  newNote.Title().String(),
 		Type:   newNote.Type(),
 	})
+}
+
+// --- Mass bookmark import handlers ---
+
+type importItem struct {
+	Title string `json:"title" binding:"required,max=200"`
+	URL   string `json:"url"   binding:"required,url,max=2048"`
+	Text  string `json:"text"  binding:"max=50000"`
+	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+}
+
+type importOptions struct {
+	DefaultType    string `json:"default_type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	ExtractContent bool   `json:"extract_content"`
+}
+
+type importBookmarksPreviewRequest struct {
+	Items   []importItem  `json:"items" binding:"required,max=50,dive"`
+	Options importOptions `json:"options"`
+}
+
+type importBookmarksCreateRequest struct {
+	Items   []importItem  `json:"items" binding:"required,max=50,dive"`
+	Options importOptions `json:"options"`
+}
+
+func resolveImportType(itemType, defaultType string) string {
+	if itemType != "" {
+		return itemType
+	}
+	if defaultType != "" {
+		return defaultType
+	}
+	return "asteroid"
+}
+
+// ImportBookmarksPreview returns a preview with titles, normalized URLs,
+// duplicates and per-item validation errors.
+func (h *Handler) ImportBookmarksPreview(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_preview")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	var req importBookmarksPreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, err.Error()),
+		})
+		return
+	}
+
+	if len(req.Items) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "at least one item is required"),
+		})
+		return
+	}
+	if len(req.Items) > 50 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "max 50 items per batch"),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	items := make([]importer.Item, len(req.Items))
+	for i, it := range req.Items {
+		items[i] = importer.Item{
+			Title: it.Title,
+			URL:   it.URL,
+			Text:  it.Text,
+			Type:  resolveImportType(it.Type, req.Options.DefaultType),
+		}
+	}
+
+	preview, err := h.importSvc.Preview(c.Request.Context(), userID, items)
+	if err != nil {
+		apicommon.BadRequestSimple(c, err.Error())
+		return
+	}
+
+	apicommon.JSON(c, 200, gin.H{"items": preview})
+}
+
+// ImportBookmarks starts an async import task and returns its task_id.
+func (h *Handler) ImportBookmarks(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_create")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	var req importBookmarksCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, err.Error()),
+		})
+		return
+	}
+
+	if len(req.Items) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "at least one item is required"),
+		})
+		return
+	}
+	if len(req.Items) > 50 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "max 50 items per batch"),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	items := make([]importer.Item, len(req.Items))
+	for i, it := range req.Items {
+		items[i] = importer.Item{
+			Title: it.Title,
+			URL:   it.URL,
+			Text:  it.Text,
+			Type:  resolveImportType(it.Type, req.Options.DefaultType),
+		}
+	}
+
+	taskID, err := h.importSvc.StartImport(c.Request.Context(), userID, items)
+	if err != nil {
+		apicommon.BadRequestSimple(c, err.Error())
+		return
+	}
+
+	apicommon.JSON(c, 202, gin.H{"task_id": taskID})
+}
+
+// ImportBookmarksStatus returns the current status of an async import task.
+func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_status")
+
+	_, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	taskID := c.Param("task_id")
+	if _, err := uuid.Parse(taskID); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("task_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, taskID),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	status, err := h.importSvc.GetTaskStatus(c.Request.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, dcache.ErrCacheMiss) {
+			apicommon.NotFound(c, "Import task")
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, "Failed to fetch import status")
+		return
+	}
+
+	apicommon.JSON(c, 200, status)
 }
 
 type updateNoteRequest struct {

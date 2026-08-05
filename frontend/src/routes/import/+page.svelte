@@ -61,6 +61,11 @@
 </script>
 
 <div class="import-page">
+  <div class="tabs">
+    <a class="active" href="/import">{t("import.singleImport")}</a>
+    <a href="/import/bookmarks">{t("import.massImport")}</a>
+  </div>
+
   <h1>{t("controls.import")}</h1>
 
   {#if status === "loading"}
@@ -87,6 +92,22 @@
     max-width: 600px;
     margin: 2rem auto;
     padding: 1rem;
+  }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+  }
+  .tabs a {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #333;
+    border-bottom: 2px solid transparent;
+  }
+  .tabs a.active {
+    border-bottom-color: #007acc;
+    font-weight: bold;
   }
   h1 {
     margin-bottom: 1rem;

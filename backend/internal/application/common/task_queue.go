@@ -27,4 +27,7 @@ type TaskQueue interface {
 
 	// EnqueueNotification schedules a notification task with the given payload.
 	EnqueueNotification(ctx context.Context, payload []byte) error
+
+	// EnqueueImportBookmarks schedules an async batch import of captured web pages.
+	EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error
 }

@@ -14,7 +14,9 @@ import (
 
 	"testing"
 
+	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/config"
+	"knowledge-graph/internal/domain/cache/cachetest"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/gin-gonic/gin"
@@ -39,7 +41,9 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 		PaginationDefaultLimit:                20,
 		PaginationMaxLimit:                    100,
 	}
-	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, cfg, nil, nil)
+	cacheClient := cachetest.NewFakeCacheClient()
+	importSvc := importer.NewService(repo, cacheClient, nil)
+	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, cfg, nil, nil, importSvc)
 
 	r := gin.Default()
 

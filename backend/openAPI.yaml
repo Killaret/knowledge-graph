@@ -720,6 +720,104 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/import/bookmarks/preview:
+    post:
+      summary: Build a preview for a batch of captured web pages
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBookmarksPreviewRequest'
+      responses:
+        '200':
+          description: Preview list with titles, extracted text, duplicates and errors
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksPreviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/bookmarks:
+    post:
+      summary: Start an async import of a batch of captured web pages
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBookmarksCreateRequest'
+      responses:
+        '202':
+          description: Import task accepted, returns task_id
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/{task_id}/status:
+    get:
+      summary: Get the status of an async import task
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current import task status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportTaskStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/notes/{id}:
     get:
       summary: Get note by ID
@@ -2010,6 +2108,139 @@ components:
           type: string
         type:
           type: string
+
+    ImportBookmarksItem:
+      type: object
+      required:
+        - title
+        - url
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        text:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+
+    ImportBookmarksPreviewRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportBookmarksItem'
+        options:
+          type: object
+          properties:
+            default_type:
+              type: string
+              enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+              default: asteroid
+            extract_content:
+              type: boolean
+              default: false
+
+    ImportPreviewItem:
+      type: object
+      required:
+        - title
+        - url
+        - type
+        - is_new
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        text:
+          type: string
+        type:
+          type: string
+        is_new:
+          type: boolean
+        existing_note_id:
+          type: string
+          format: uuid
+        error:
+          type: string
+
+    ImportBookmarksPreviewResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportPreviewItem'
+
+    ImportBookmarksCreateRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportBookmarksItem'
+        options:
+          type: object
+          properties:
+            default_type:
+              type: string
+              default: asteroid
+
+    ImportBookmarksCreateResponse:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+        message:
+          type: string
+
+    ImportTaskStatus:
+      type: object
+      required:
+        - task_id
+        - status
+        - progress
+      properties:
+        task_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, done, failed]
+        progress:
+          type: object
+          required:
+            - total
+            - created
+            - skipped
+            - failed
+          properties:
+            total:
+              type: integer
+            processed:
+              type: integer
+            created:
+              type: integer
+            skipped:
+              type: integer
+            failed:
+              type: integer
 
     UpdateNoteRequest:
       type: object

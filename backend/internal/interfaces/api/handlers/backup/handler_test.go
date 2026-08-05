@@ -40,6 +40,9 @@ func (m *mockTaskQueue) EnqueueRecalculateLinkWeights(ctx context.Context, noteI
 	return nil
 }
 func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error { return nil }
+func (m *mockTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
+	return nil
+}
 
 func TestTriggerCloudBackup(t *testing.T) {
 	gin.SetMode(gin.TestMode)

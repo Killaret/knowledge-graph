@@ -304,7 +304,7 @@ Description: Представление графа в виде сот (гекс�
 | Markdown import/export | ⏳ Planned | 🟢 Low | 📝 Yes |
 | CSV import/export | ⏳ Planned | 🟢 Low | 📝 Yes |
 | Bookmarklet | ✅ Done | 🟠 High | 📝 Yes |
-| Mass URL import | ⏳ Planned | 🟠 High | 📝 Yes |
+| Mass URL import | ✅ Done | 🟠 High | 📝 Yes |
 | Browser extension | ⏳ Planned | 🟠 High | 📝 Yes |
 
 #### Browser capture options
@@ -312,7 +312,7 @@ Description: Представление графа в виде сот (гекс�
 | Option | Pros | Cons | Status |
 |--------|------|------|--------|
 | **Bookmarklet** | No installation, instant MVP | URL length limit (~2000 chars), opens a new tab | ✅ Implemented |
-| **Mass URL import** | Bulk processing, async deduplication, content extraction | Longer task, requires queue/progress | ⏳ Planned |
+| **Mass URL import** | Bulk processing, async deduplication, preview editing, progress | Content extraction from URL not yet implemented | ✅ Implemented |
 | **Browser Extension** | Full text access, background capture, notifications | Requires installation, needs token setup | ⏳ Planned |
 
 **Scope:**

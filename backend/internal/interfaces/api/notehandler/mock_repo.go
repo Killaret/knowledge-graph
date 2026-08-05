@@ -150,7 +150,7 @@ func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset
 	}
 
 	end := offset + limit
-	if end > len(allNotes) {
+	if limit <= 0 || end > len(allNotes) || end < offset {
 		end = len(allNotes)
 	}
 

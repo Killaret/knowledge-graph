@@ -93,6 +93,21 @@ func (c *AsynqClient) EnqueueNotification(ctx context.Context, payload []byte) e
 	return err
 }
 
+// EnqueueImportBookmarks schedules an async batch import of captured web pages.
+func (c *AsynqClient) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
+	payload, err := json.Marshal(ImportBookmarksPayload{
+		TaskID: taskID,
+		UserID: userID.String(),
+		Items:  items,
+	})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeImportBookmarks, payload, asynq.TaskID(taskID), asynq.MaxRetry(3), asynq.Timeout(10*time.Minute))
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
 // Close closes the client.
 func (c *AsynqClient) Close() error {
 	return c.client.Close()

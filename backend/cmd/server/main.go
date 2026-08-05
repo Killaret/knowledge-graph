@@ -20,6 +20,7 @@ import (
 	"knowledge-graph/internal/application/common"
 	draftApp "knowledge-graph/internal/application/draft"
 	appGraph "knowledge-graph/internal/application/graph"
+	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	userApp "knowledge-graph/internal/application/user"
@@ -253,8 +254,11 @@ func run(
 		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
 	}
 
+	// Import service and handlers
+	importService := importer.NewService(noteRepo, cacheClient, taskQueue)
+
 	// Handlers with new parameters
-	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService)
+	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
 	if eventPublisher != nil {
 		noteHandler.SetEventPublisher(eventPublisher)

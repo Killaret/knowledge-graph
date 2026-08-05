@@ -153,6 +153,9 @@ func setupRouter(
 		// Write operations with stricter rate limiting
 		v1.POST("/notes", writeLimiter, noteHandler.Create)
 		v1.POST("/import/bookmarklet", writeLimiter, noteHandler.Bookmarklet)
+		v1.POST("/import/bookmarks/preview", writeLimiter, noteHandler.ImportBookmarksPreview)
+		v1.POST("/import/bookmarks", writeLimiter, noteHandler.ImportBookmarks)
+		v1.GET("/import/:task_id/status", noteHandler.ImportBookmarksStatus)
 		v1.GET("/notes/:id", cacheControlMiddleware(60), noteHandler.Get)
 		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
 		v1.POST("/notes/:id/publish", writeLimiter, noteHandler.Publish)

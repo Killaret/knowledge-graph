@@ -13,6 +13,7 @@ import (
 	"time"
 
 	appcache "knowledge-graph/internal/application/cache"
+	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/cache/cachetest"
@@ -143,6 +144,10 @@ func (m *taskQueueMock) EnqueueNotification(ctx context.Context, payload []byte)
 	return nil
 }
 
+func (m *taskQueueMock) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
+	return m.Called(ctx, userID, taskID, items).Error(0)
+}
+
 func newTestConfig() *config.Config {
 	return &config.Config{
 		PaginationDefaultLimit:                20,
@@ -162,7 +167,8 @@ func setupUnitHandler(t *testing.T) (*Handler, *noteRepoMock, *taskQueueMock, *r
 	embRepo := new(embeddingRepoMock)
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
-	h := New(repo, tq, nil, nil, time.Millisecond, recRepo, embRepo, cache, cfg, appcache.NewGraphCache(cache), nil)
+	importSvc := importer.NewService(repo, cache, nil)
+	h := New(repo, tq, nil, nil, time.Millisecond, recRepo, embRepo, cache, cfg, appcache.NewGraphCache(cache), nil, importSvc)
 	return h, repo, tq, recRepo, embRepo, cache
 }
 
@@ -295,7 +301,8 @@ func TestCreateNote_AffectedNotesSvc(t *testing.T) {
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
 	affectedSvc := recommendation.NewAffectedNotesService(recRepo)
-	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil)
+	importSvc := importer.NewService(repo, cache, nil)
+	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil, importSvc)
 
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
@@ -322,7 +329,8 @@ func TestCreateNote_AffectedNotesSvcError(t *testing.T) {
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
 	affectedSvc := recommendation.NewAffectedNotesService(recRepo)
-	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil)
+	importSvc := importer.NewService(repo, cache, nil)
+	h := New(repo, tq, nil, affectedSvc, time.Millisecond, recRepo, nil, cache, cfg, nil, nil, importSvc)
 
 	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
@@ -859,7 +867,8 @@ func TestGetSuggestions_TaskQueueNil(t *testing.T) {
 	embRepo := new(embeddingRepoMock)
 	cache := cachetest.NewFakeCacheClient()
 	cfg := newTestConfig()
-	h := New(repo, nil, nil, nil, 0, recRepo, embRepo, cache, cfg, nil, nil)
+	importSvc := importer.NewService(repo, cache, nil)
+	h := New(repo, nil, nil, nil, 0, recRepo, embRepo, cache, cfg, nil, nil, importSvc)
 
 	n := newTestNote(t, "Sug", "Content", "star")
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)

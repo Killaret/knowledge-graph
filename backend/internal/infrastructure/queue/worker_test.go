@@ -40,14 +40,14 @@ func (m *mockNoteRepoForWorker) FindAllPaginated(ctx context.Context, userID uui
 }
 
 func TestWorker_HandleExtractKeywords_InvalidPayload(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil)
+	w := NewWorker(nil, nil, nil, nil, nil, nil)
 	task := asynq.NewTask(TypeExtractKeywords, []byte("not json"))
 	err := w.HandleExtractKeywords(context.Background(), task)
 	assert.Error(t, err)
 }
 
 func TestWorker_HandleExtractKeywords_InvalidNoteID(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil)
+	w := NewWorker(nil, nil, nil, nil, nil, nil)
 	payload := `{"note_id":"invalid-uuid"}`
 	task := asynq.NewTask(TypeExtractKeywords, []byte(payload))
 	err := w.HandleExtractKeywords(context.Background(), task)
@@ -59,7 +59,7 @@ func TestWorker_HandleExtractKeywords_NoteNotFound(t *testing.T) {
 	noteID := uuid.New()
 	repo.On("FindByID", mock.Anything, noteID).Return(nil, nil)
 
-	w := NewWorker(repo, nil, nil, nil)
+	w := NewWorker(repo, nil, nil, nil, nil, nil)
 	payload := `{"note_id":"` + noteID.String() + `"}`
 	task := asynq.NewTask(TypeExtractKeywords, []byte(payload))
 	err := w.HandleExtractKeywords(context.Background(), task)
@@ -82,7 +82,7 @@ func TestWorker_HandleExtractKeywords_NLPError(t *testing.T) {
 	defer server.Close()
 
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient)
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil)
 	payload := `{"note_id":"` + noteID.String() + `"}`
 	task := asynq.NewTask(TypeExtractKeywords, []byte(payload))
 	err := w.HandleExtractKeywords(context.Background(), task)
@@ -90,14 +90,14 @@ func TestWorker_HandleExtractKeywords_NLPError(t *testing.T) {
 }
 
 func TestWorker_HandleComputeEmbedding_InvalidPayload(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil)
+	w := NewWorker(nil, nil, nil, nil, nil, nil)
 	task := asynq.NewTask(TypeComputeEmbedding, []byte("not json"))
 	err := w.HandleComputeEmbedding(context.Background(), task)
 	assert.Error(t, err)
 }
 
 func TestWorker_HandleComputeEmbedding_InvalidNoteID(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil)
+	w := NewWorker(nil, nil, nil, nil, nil, nil)
 	payload := `{"note_id":"invalid-uuid"}`
 	task := asynq.NewTask(TypeComputeEmbedding, []byte(payload))
 	err := w.HandleComputeEmbedding(context.Background(), task)
@@ -109,7 +109,7 @@ func TestWorker_HandleComputeEmbedding_NoteNotFound(t *testing.T) {
 	noteID := uuid.New()
 	repo.On("FindByID", mock.Anything, noteID).Return(nil, nil)
 
-	w := NewWorker(repo, nil, nil, nil)
+	w := NewWorker(repo, nil, nil, nil, nil, nil)
 	payload := `{"note_id":"` + noteID.String() + `"}`
 	task := asynq.NewTask(TypeComputeEmbedding, []byte(payload))
 	err := w.HandleComputeEmbedding(context.Background(), task)
@@ -132,7 +132,7 @@ func TestWorker_HandleComputeEmbedding_NLPError(t *testing.T) {
 	defer server.Close()
 
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient)
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil)
 	payload := `{"note_id":"` + noteID.String() + `"}`
 	task := asynq.NewTask(TypeComputeEmbedding, []byte(payload))
 	err := w.HandleComputeEmbedding(context.Background(), task)

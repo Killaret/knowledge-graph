@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
+	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/linkweight"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
@@ -91,8 +92,24 @@ func main() {
 	}
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
+	// Task queue client for the import worker to enqueue note processing tasks.
+	queueClient, err := queue.NewAsynqClient(redisAddr)
+	if err != nil {
+		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
+		queueClient = nil
+	}
+	if queueClient != nil {
+		defer func() {
+			if err := queueClient.Close(); err != nil {
+				log.Printf("[Worker] error closing asynq client: %v", err)
+			}
+		}()
+	}
+
+	importSvc := importer.NewService(noteRepo, cacheClient, queueClient)
+
 	// Воркер (обработчик задач)
-	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient)
+	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc)
 
 	// Graph traversal service for recommendations
 	linkRepo := postgres.NewLinkRepository(database)
@@ -147,6 +164,7 @@ func main() {
 	mux.HandleFunc(queue.TypeComputeEmbedding, worker.HandleComputeEmbedding)
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
+	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
 

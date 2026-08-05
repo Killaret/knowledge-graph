@@ -412,6 +412,10 @@ func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte)
 	return m.Called(ctx, payload).Error(0)
 }
 
+func (m *mockTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
+	return nil
+}
+
 func TestSendNotification_WithTaskQueue(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
