@@ -183,13 +183,17 @@ test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@aut
 
   test("clicking a node opens the side panel", async ({ page }) => {
     await clickNodeByIndex(page, 0);
-    await expect(page.locator('[data-testid="cockpit-right-panel"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-testid="cockpit-right-panel"]')).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("Delete key removes a selected node", async ({ page }) => {
     const beforeStats = await getStatsCount(page);
     await clickNodeByIndex(page, 0);
-    await expect(page.locator('[data-testid="cockpit-right-panel"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-testid="cockpit-right-panel"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     const [response] = await Promise.all([
       page.waitForResponse(

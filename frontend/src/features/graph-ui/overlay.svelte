@@ -279,7 +279,7 @@
     {#if controlsMode}
       <GraphCanvasControls
         mode={controlsMode}
-        focusMode={focusMode}
+        {focusMode}
         onReset={onReset ?? (() => {})}
         onSearch={onSearch ?? (() => {})}
         onToggleMode={onToggleMode ?? (() => {})}

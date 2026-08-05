@@ -1,6 +1,9 @@
 # Check Stacks Identity - Windows PowerShell
 # This script verifies that dev, personal, and test stacks are consistent
 
+$repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Set-Location $repoDir
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Stacks Identity Check" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -77,9 +80,10 @@ if ($nlpHealthcheck) {
 # Step 2: Compare docker-compose files
 Write-Host "`n[Step 2/6] Comparing docker-compose files..." -ForegroundColor Yellow
 
-$devCompose = Get-Content "docker-compose.yml" -Raw
-$personalCompose = Get-Content "docker-compose.personal.yml" -Raw
-$testCompose = Get-Content "docker-compose.test.yml" -Raw
+# Future: compare docker-compose.yml contents for differences
+# $devCompose = Get-Content "docker-compose.yml" -Raw
+# $personalCompose = Get-Content "docker-compose.personal.yml" -Raw
+# $testCompose = Get-Content "docker-compose.test.yml" -Raw
 
 # Check for critical differences
 $devServices = Select-String -Path "docker-compose.yml" -Pattern "image:|build:" | Select-Object -First 10
@@ -103,7 +107,7 @@ Write-Host "  Test SKIP_AUTH: $($testSkipAuth.Line)" -ForegroundColor Green
 Write-Host "`n[Step 3/6] Checking configuration files..." -ForegroundColor Yellow
 
 if (Test-Path "knowledge-graph.config.json") {
-    $config = Get-Content "knowledge-graph.config.json" -Raw | ConvertFrom-Json
+    Get-Content "knowledge-graph.config.json" -Raw | ConvertFrom-Json | Out-Null
     Write-Host "  knowledge-graph.config.json: OK" -ForegroundColor Green
 } else {
     Write-Host "  knowledge-graph.config.json: NOT FOUND" -ForegroundColor Red
@@ -132,7 +136,7 @@ Write-Host "`n[Step 5/6] Checking stack health..." -ForegroundColor Yellow
 
 # Check dev stack
 try {
-    $devHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5
+    Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | Out-Null
     Write-Host "  Dev stack: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Dev stack: FAILED" -ForegroundColor Red
@@ -141,7 +145,7 @@ try {
 
 # Check personal stack
 try {
-    $personalHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18082/health" -Method Get -TimeoutSec 5
+    Invoke-RestMethod -Uri "http://127.0.0.1:18082/health" -Method Get -TimeoutSec 5 | Out-Null
     Write-Host "  Personal stack: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Personal stack: FAILED" -ForegroundColor Red
@@ -153,7 +157,7 @@ Write-Host "`n[Step 6/6] Verifying healthcheck endpoints..." -ForegroundColor Ye
 
 # Check backend health endpoint
 try {
-    $backendHealth = Invoke-RestMethod -Uri "http://127.0.0.1:9000/health" -Method Get -TimeoutSec 5
+    Invoke-RestMethod -Uri "http://127.0.0.1:9000/health" -Method Get -TimeoutSec 5 | Out-Null
     Write-Host "  Backend health endpoint: OK" -ForegroundColor Green
 } catch {
     Write-Host "  Backend health endpoint: FAILED (backend may not be running)" -ForegroundColor Yellow
@@ -162,7 +166,7 @@ try {
 
 # Check NLP service health endpoint (if running)
 try {
-    $nlpHealth = Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get -TimeoutSec 5
+    Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get -TimeoutSec 5 | Out-Null
     Write-Host "  NLP service health endpoint: OK" -ForegroundColor Green
 } catch {
     Write-Host "  NLP service health endpoint: FAILED (NLP may not be running)" -ForegroundColor Yellow

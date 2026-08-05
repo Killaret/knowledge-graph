@@ -139,9 +139,7 @@
   function visibleSize(position: CockpitPanelPosition): number {
     if (cockpitStore.firstPerson) return 0;
     const panel = cockpitStore.panels[position];
-    return panel.open || panel.pinned || panel.hovering
-      ? panelSizes[position]
-      : COCKPIT_EDGE_SIZE;
+    return panel.open || panel.pinned || panel.hovering ? panelSizes[position] : COCKPIT_EDGE_SIZE;
   }
 
   const topInset = $derived(visibleSize("top") + COCKPIT_PANEL_GAP);

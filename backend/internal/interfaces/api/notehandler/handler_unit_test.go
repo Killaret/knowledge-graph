@@ -994,3 +994,75 @@ func TestListNotes_RepoError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, c.Writer.Status())
 }
+
+func TestBookmarklet_Success(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	repo.On("Save", mock.Anything, mock.MatchedBy(func(n *note.Note) bool {
+		return n.Title().String() == "Example Page" &&
+			n.Type() == "asteroid" &&
+			strings.Contains(n.Content().String(), "## [Example Page](https://example.com)") &&
+			strings.Contains(n.Content().String(), "selected text")
+	})).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	body := `{"title":"Example Page","url":"https://example.com","text":"selected text"}`
+	w, c := newContext(t, http.MethodPost, "/import/bookmarklet", body, userID)
+	h.Bookmarklet(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	assert.Contains(t, w.Body.String(), "Example Page")
+	assert.Contains(t, w.Body.String(), "asteroid")
+	repo.AssertExpectations(t)
+	tq.AssertExpectations(t)
+}
+
+func TestBookmarklet_DefaultTypeAndTruncation(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	hugeText := strings.Repeat("x", 20000)
+
+	repo.On("Save", mock.Anything, mock.MatchedBy(func(n *note.Note) bool {
+		return n.Type() == "asteroid" && len(n.Content().String()) <= 10000
+	})).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	body := fmt.Sprintf(`{"title":"Long Page","url":"https://example.com","text":"%s"}`, hugeText)
+	w, c := newContext(t, http.MethodPost, "/import/bookmarklet", body, userID)
+	h.Bookmarklet(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	repo.AssertExpectations(t)
+	tq.AssertExpectations(t)
+	_ = w
+}
+
+func TestBookmarklet_Unauthorized(t *testing.T) {
+	h, _, _, _, _, _ := setupUnitHandler(t)
+
+	body := `{"title":"Example Page","url":"https://example.com","text":"text"}`
+	w, c := newContext(t, http.MethodPost, "/import/bookmarklet", body)
+	h.Bookmarklet(c)
+
+	assert.Equal(t, http.StatusUnauthorized, c.Writer.Status())
+	_ = w
+}
+
+func TestBookmarklet_ValidationError(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	body := `{"title":"","url":"not-a-url","text":""}`
+	w, c := newContext(t, http.MethodPost, "/import/bookmarklet", body, userID)
+	h.Bookmarklet(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+	repo.AssertNotCalled(t, "Save")
+	_ = w
+}

@@ -138,7 +138,11 @@
   --carbon-gradient-danger: linear-gradient(135deg, #ff3a2f 0%, #c2410c 100%);
   --carbon-gradient-success: linear-gradient(135deg, #34d399 0%, #10b981 100%);
   --carbon-gradient-surface: linear-gradient(135deg, #14141e 0%, #0b0b10 100%);
-  --carbon-gradient-card: linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%);
+  --carbon-gradient-card: linear-gradient(
+    145deg,
+    rgba(30, 30, 42, 0.7) 0%,
+    rgba(18, 18, 26, 0.9) 100%
+  );
 
   /* Alotropic glows (distinct, never overlapping hue roles) */
   --carbon-glow-primary: 0 0 18px rgba(34, 211, 238, 0.35), 0 0 36px rgba(139, 92, 246, 0.2);

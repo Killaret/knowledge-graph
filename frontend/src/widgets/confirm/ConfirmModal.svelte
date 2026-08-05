@@ -78,7 +78,11 @@
     <Button variant="secondary" onClick={handleCancel} data-testid="confirm-modal-cancel">
       {displayCancelText}
     </Button>
-    <Button variant={danger ? "danger" : "primary"} onClick={handleConfirm} data-testid="confirm-modal-confirm">
+    <Button
+      variant={danger ? "danger" : "primary"}
+      onClick={handleConfirm}
+      data-testid="confirm-modal-confirm"
+    >
       {displayConfirmText}
     </Button>
   </div>

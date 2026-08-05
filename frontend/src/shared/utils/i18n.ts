@@ -47,6 +47,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.hint": "Enter search query to search the universe.",
     "first.note.hint": "Create your first star in the universe of knowledge!",
 
+    // Bookmarklet import
+    "import.creating": "Creating note from page...",
+    "import.success": 'Note "{{title}}" created successfully.',
+    "import.openInGraph": "Open in graph",
+    "import.error": "Failed to create note from page.",
+    "import.noParams": "No page data provided.",
+
     // Warning messages
     "unsaved.changes": "There are unsaved changes.",
     "delete.confirm": 'Are you sure you want to delete "{{item}}"?',
@@ -267,6 +274,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.entireGraph": "the entire graph",
 
     "note.newTitle": "New Note",
+    "note.openNote": "Open note",
     "note.notFoundShort": "Note not found",
     "note.deleteConfirm": "Delete this note?",
     "note.createdLabel": "Created: ",
@@ -799,6 +807,13 @@ const messages: Record<Locale, Record<string, string>> = {
     "search.hint": "Введите поисковый запрос для поиска по вселенной.",
     "first.note.hint": "Создайте свою первую звезду во вселенной знаний!",
 
+    // Bookmarklet import
+    "import.creating": "Создаём заметку из страницы...",
+    "import.success": 'Заметка "{{title}}" успешно создана.',
+    "import.openInGraph": "Открыть в графе",
+    "import.error": "Не удалось создать заметку из страницы.",
+    "import.noParams": "Не переданы данные страницы.",
+
     // Warning messages
     "unsaved.changes": "Есть несохраненные изменения.",
     "delete.confirm": 'Вы уверены, что хотите удалить "{{item}}"?',
@@ -1021,6 +1036,7 @@ const messages: Record<Locale, Record<string, string>> = {
     "graph.entireGraph": "весь граф",
 
     "note.newTitle": "Новая заметка",
+    "note.openNote": "Открыть заметку",
     "note.notFoundShort": "Заметка не найдена",
     "note.deleteConfirm": "Удалить эту заметку?",
     "note.createdLabel": "Создано: ",

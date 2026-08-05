@@ -146,8 +146,12 @@
     height: 64px;
     padding: 0;
     border: none;
-    background:
-      radial-gradient(circle at 30% 30%, var(--carbon-elevated), var(--carbon-graphite) 60%, var(--carbon-black));
+    background: radial-gradient(
+      circle at 30% 30%,
+      var(--carbon-elevated),
+      var(--carbon-graphite) 60%,
+      var(--carbon-black)
+    );
     color: var(--carbon-glow-cyan);
     font-size: 26px;
     line-height: 1;
@@ -192,11 +196,12 @@
   .quick-capture-modal {
     width: min(420px, calc(100vw - 40px));
     max-height: calc(100vh - 100px);
-    background:
-      linear-gradient(135deg, var(--carbon-graphene) 0%, var(--carbon-c70) 100%);
+    background: linear-gradient(135deg, var(--carbon-graphene) 0%, var(--carbon-c70) 100%);
     border: 1px solid var(--carbon-border);
     border-radius: 16px;
-    box-shadow: var(--carbon-shadow), 0 0 40px rgba(139, 92, 246, 0.15);
+    box-shadow:
+      var(--carbon-shadow),
+      0 0 40px rgba(139, 92, 246, 0.15);
     overflow: hidden;
     display: flex;
     flex-direction: column;

@@ -113,12 +113,14 @@
   let showBulkActionsMenu = $state(false);
   let showAuthPanel = $state(false);
   let authPanelTab = $state<"login" | "register">("login");
-  let canvasController: {
-    focusMode: boolean;
-    resetView: () => void;
-    openSearch: () => void;
-    toggleFocus: () => void;
-  } | undefined = $state(undefined);
+  let canvasController:
+    | {
+        focusMode: boolean;
+        resetView: () => void;
+        openSearch: () => void;
+        toggleFocus: () => void;
+      }
+    | undefined = $state(undefined);
 
   function openAuthPanel(tab: "login" | "register") {
     authPanelTab = tab;
@@ -671,7 +673,7 @@
           onNoteDelete={handleDeleteRequest}
           onCreateChildNote={handleCreateChildNote}
           showLinkTypeLegend={false}
-          showTopBar={false}
+          showTopBar={isAuthenticated()}
           bind:controller={canvasController}
         />
       </div>
@@ -1252,5 +1254,4 @@
       height: 100%;
     }
   }
-
 </style>

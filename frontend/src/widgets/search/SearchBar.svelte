@@ -92,7 +92,9 @@
     font-size: 1rem;
     background: var(--carbon-black, #050508);
     color: var(--carbon-text, #f0f0f5);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
   .search-input::placeholder {

@@ -239,7 +239,7 @@ export async function login(login: string, password: string): Promise<boolean> {
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
-    void preloadAuthenticatedGraph();
+    await preloadAuthenticatedGraph();
     void applyUserSettings();
 
     return true;
@@ -268,7 +268,7 @@ export async function register(login: string, password: string, email?: string):
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
-    void preloadAuthenticatedGraph();
+    await preloadAuthenticatedGraph();
     void applyUserSettings();
 
     return true;
@@ -323,7 +323,7 @@ export async function handleYandexCallback(code: string, state: string): Promise
     // Get user info
     const user = await usersApi.getMe();
     authState.currentUser = user;
-    void preloadAuthenticatedGraph();
+    await preloadAuthenticatedGraph();
     void applyUserSettings();
 
     return true;

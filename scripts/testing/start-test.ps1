@@ -1,6 +1,9 @@
 # Start Test Stack - Windows PowerShell
 # This script stops any existing test stack, then starts a fresh test stack
 
+$repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Set-Location $repoDir
+
 Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 
 # Stop and remove previous test stack

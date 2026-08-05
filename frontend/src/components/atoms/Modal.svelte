@@ -110,7 +110,10 @@
 
   .modal-container {
     position: relative;
-    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.75) 0%, rgba(18, 18, 26, 0.92) 100%));
+    background: var(
+      --carbon-gradient-card,
+      linear-gradient(145deg, rgba(30, 30, 42, 0.75) 0%, rgba(18, 18, 26, 0.92) 100%)
+    );
     border-radius: 16px;
     width: 100%;
     max-width: 520px;
@@ -131,7 +134,12 @@
     inset: 0;
     border-radius: 16px;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(139, 92, 246, 0.25), transparent 60%);
+    background: linear-gradient(
+      135deg,
+      rgba(34, 211, 238, 0.25),
+      rgba(139, 92, 246, 0.25),
+      transparent 60%
+    );
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);

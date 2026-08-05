@@ -68,21 +68,33 @@
   let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
-  let canvasController: {
-    focusMode: boolean;
-    resetView: () => void;
-    openSearch: () => void;
-    toggleFocus: () => void;
-  } | undefined = $state(undefined);
+  let canvasController:
+    | {
+        focusMode: boolean;
+        resetView: () => void;
+        openSearch: () => void;
+        toggleFocus: () => void;
+      }
+    | undefined = $state(undefined);
 
   const graphTypeFilters = [
     { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
-    ...["star", "planet", "moon", "comet", "galaxy", "nebula", "asteroid", "satellite", "blackhole", "dust", "unknown"].map(
-      (id) => {
-        const body = CelestialBody.fromString(id);
-        return { id, label: body.label, emoji: body.emoji, description: body.description };
-      }
-    ),
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    }),
   ];
 
   async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
@@ -377,7 +389,7 @@
   nodeCount={graphData.nodes.length}
   linkCount={graphData.links.length}
   notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
-  showFullGraph={showFullGraph}
+  {showFullGraph}
   onToggleFullGraph={(value) => (showFullGraph = value)}
 >
   <div class="graph-cockpit-content">
@@ -428,7 +440,7 @@
             onLinkDelete={handleLinkDelete}
             helpContent={knowledgeCore?.content}
             showLinkTypeLegend={false}
-            showTopBar={false}
+            showTopBar={isAuthenticated()}
             bind:controller={canvasController}
           />
         </div>

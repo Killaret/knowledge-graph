@@ -22,6 +22,7 @@ Write-Host ""
 
 $scriptDir = $PSScriptRoot
 $repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
+Set-Location $repoDir
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotBase = Join-Path $scriptDir "temp" "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp
@@ -246,7 +247,8 @@ try {
     & $scriptDir\stop-test.ps1
     $env:SKIP_AUTH = "false"
     $env:VITE_SKIP_AUTH = "false"
-    docker compose -f docker-compose.test.yml up -d --wait
+    # Rebuild the frontend so VITE_SKIP_AUTH is baked into the bundle as "false".
+    docker compose -f docker-compose.test.yml up -d --build --wait
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR: Real auth test stack failed to start" -ForegroundColor Red
         exit 1
@@ -447,7 +449,8 @@ try {
     $prePs = "$snapshotDir\pre-test-ps.txt"
     $postPs = "$snapshotDir\post-test-ps.txt"
     if ((Test-Path $prePs) -and (Test-Path $postPs)) {
-        if (Compare-Object (Get-Content $prePs) (Get-Content $postPs)) {
+        # Wrap in @(...) so empty files produce empty arrays, not $null.
+        if (Compare-Object (@(Get-Content $prePs)) (@(Get-Content $postPs))) {
             Write-Host "  ⚠ Dev container state changed during testing" -ForegroundColor Yellow
             $devStateChanged = $true
         } else {

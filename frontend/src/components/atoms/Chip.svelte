@@ -55,7 +55,8 @@
   }
 
   .chip--glow {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--chip-color, var(--carbon-glow-cyan, #22d3ee)) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--chip-color, var(--carbon-glow-cyan, #22d3ee)) 20%, transparent);
   }
 
   .chip.sm {

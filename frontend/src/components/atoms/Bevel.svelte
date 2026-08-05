@@ -67,7 +67,10 @@
         rgba(10, 10, 15, 0.96) 50%,
         rgba(12, 14, 22, 0.96) 100%
       ),
-      var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
+      var(
+        --carbon-gradient-card,
+        linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%)
+      );
     border: 1px solid var(--bevel-border, rgba(45, 212, 191, 0.25));
     box-shadow:
       0 0 28px rgba(0, 0, 0, 0.55),

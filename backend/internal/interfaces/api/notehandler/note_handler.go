@@ -257,6 +257,140 @@ func (h *Handler) Create(c *gin.Context) {
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
+type bookmarkletRequest struct {
+	Title string `json:"title" binding:"required,max=200"`
+	URL   string `json:"url"   binding:"required,url,max=2048"`
+	Text  string `json:"text"  binding:"max=50000"`
+	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+}
+
+type bookmarkletResponse struct {
+	NoteID string `json:"note_id"`
+	Title  string `json:"title"`
+	Type   string `json:"type"`
+}
+
+const maxBookmarkletContent = 10000
+
+// buildBookmarkletContent creates Markdown body with title, URL and selected text.
+// It truncates text so the total length does not exceed the domain Content limit.
+func buildBookmarkletContent(title, url, text string) string {
+	prefix := fmt.Sprintf("## [%s](%s)\n\n", title, url)
+	remaining := maxBookmarkletContent - len(prefix)
+	if remaining < 0 {
+		remaining = 0
+	}
+	if len(text) > remaining {
+		text = text[:remaining]
+	}
+	return prefix + text
+}
+
+// Bookmarklet creates a note from a captured web page.
+func (h *Handler) Bookmarklet(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create")
+
+	var req bookmarkletRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	noteType := req.Type
+	if noteType == "" {
+		noteType = "asteroid"
+	}
+
+	content := buildBookmarkletContent(req.Title, req.URL, req.Text)
+
+	title, err := note.NewTitle(req.Title)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), req.Title),
+		})
+		return
+	}
+
+	contentVO, err := note.NewContent(content)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), content),
+		})
+		return
+	}
+
+	metadata, err := note.NewMetadata(map[string]interface{}{
+		"source_url": req.URL,
+		"type":       noteType,
+	})
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), nil),
+		})
+		return
+	}
+
+	newNote := note.NewNoteWithCreator(title, contentVO, noteType, metadata, userID)
+
+	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
+	if h.taskQueue != nil {
+		noteID := newNote.ID().String()
+		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
+			log.Printf("Failed to enqueue extract keywords: %v", err)
+		}
+		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
+			log.Printf("Failed to enqueue link weight recalculation: %v", err)
+		}
+	}
+
+	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
+
+	if h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	c.JSON(201, bookmarkletResponse{
+		NoteID: newNote.ID().String(),
+		Title:  newNote.Title().String(),
+		Type:   newNote.Type(),
+	})
+}
+
 type updateNoteRequest struct {
 	Title    string                 `json:"title" binding:"omitempty,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`

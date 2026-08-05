@@ -154,7 +154,10 @@
   .card {
     width: 100%;
     padding: 2rem;
-    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
+    background: var(
+      --carbon-gradient-card,
+      linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%)
+    );
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;

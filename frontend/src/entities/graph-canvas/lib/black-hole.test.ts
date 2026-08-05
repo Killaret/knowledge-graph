@@ -68,11 +68,7 @@ describe("black-hole", () => {
   it("should detect point within catch radius", () => {
     const blackHole = createBlackHole(800, 600);
     expect(
-      isPointOverBlackHole(
-        blackHole.x + BLACK_HOLE_CATCH_RADIUS - 1,
-        blackHole.y,
-        blackHole
-      )
+      isPointOverBlackHole(blackHole.x + BLACK_HOLE_CATCH_RADIUS - 1, blackHole.y, blackHole)
     ).toBe(true);
   });
 

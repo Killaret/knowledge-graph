@@ -1,6 +1,9 @@
 # Stop Test Stack - Windows PowerShell
 # This script stops and destroys the test stack including volumes
 
+$repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Set-Location $repoDir
+
 Write-Host "Stopping test stack..." -ForegroundColor Yellow
 
 # Stop and remove test stack with volumes

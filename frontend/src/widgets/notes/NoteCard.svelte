@@ -284,7 +284,10 @@
   .note-card {
     position: relative;
     display: flex;
-    background: var(--carbon-gradient-card, linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%));
+    background: var(
+      --carbon-gradient-card,
+      linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%)
+    );
     border: 1px solid var(--carbon-border, #2d2d3d);
     border-radius: 14px;
     overflow: hidden;
@@ -489,7 +492,9 @@
     padding: 12px;
     color: var(--carbon-text, #f0f0f5);
     min-width: 180px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(139, 92, 246, 0.12);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.5),
+      0 0 24px rgba(139, 92, 246, 0.12);
   }
 
   :global(.nc-tooltip-header) {
@@ -640,7 +645,9 @@
   :global(.tippy-box[data-theme~="translucent"]) {
     background: var(--carbon-c70, #1a1a24);
     border: 1px solid var(--carbon-border, #2d2d3d);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(139, 92, 246, 0.12);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.5),
+      0 0 24px rgba(139, 92, 246, 0.12);
   }
 
   :global(.tippy-box[data-theme~="translucent"] .tippy-arrow) {

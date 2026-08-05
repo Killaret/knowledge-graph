@@ -460,11 +460,7 @@
     opacity: 0.7;
     transition: background 0.35s ease;
     /* Default to a soft inner shadow all around; position classes override. */
-    background: radial-gradient(
-      ellipse at center,
-      transparent 40%,
-      rgba(0, 0, 0, 0.35) 100%
-    );
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
   }
 
   /* Directional 3D depth: outer edge is darker, inner seam is highlighted. */

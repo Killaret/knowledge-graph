@@ -155,7 +155,12 @@
 
 <div class="note-details" data-testid="cockpit-note-details">
   <div class="details-header">
-    <IconButton variant="ghost" size="md" onClick={() => onClose?.()} title={t("cockpit.noteDetails.close")}>
+    <IconButton
+      variant="ghost"
+      size="md"
+      onClick={() => onClose?.()}
+      title={t("cockpit.noteDetails.close")}
+    >
       ✕
     </IconButton>
     {#if note}
@@ -212,7 +217,11 @@
       <div class="note-header">
         <span class="type-icon">{getNoteTypeIcon(note.type)}</span>
         <h2 class="title">{note.title}</h2>
-        <Chip size="sm" color={CelestialBody.fromString(note.type).toCSSColor()} borderColor={CelestialBody.fromString(note.type).toCSSColor()}>
+        <Chip
+          size="sm"
+          color={CelestialBody.fromString(note.type).toCSSColor()}
+          borderColor={CelestialBody.fromString(note.type).toCSSColor()}
+        >
           {getNoteTypeLabel(note.type)}
         </Chip>
       </div>

@@ -40,28 +40,22 @@
     border: 14px solid transparent;
     border-radius: 14px;
     background:
+      linear-gradient(180deg, rgba(10, 10, 15, 0.72) 0%, rgba(10, 10, 15, 0.88) 100%) padding-box,
       linear-gradient(
-        180deg,
-        rgba(10, 10, 15, 0.72) 0%,
-        rgba(10, 10, 15, 0.88) 100%
-      )
-      padding-box,
-      linear-gradient(
-        135deg,
-        rgba(45, 212, 191, 0.55) 0%,
-        rgba(10, 10, 20, 0.8) 25%,
-        rgba(45, 212, 191, 0.35) 50%,
-        rgba(10, 10, 20, 0.8) 75%,
-        rgba(192, 38, 211, 0.5) 100%
-      )
-      border-box;
+          135deg,
+          rgba(45, 212, 191, 0.55) 0%,
+          rgba(10, 10, 20, 0.8) 25%,
+          rgba(45, 212, 191, 0.35) 50%,
+          rgba(10, 10, 20, 0.8) 75%,
+          rgba(192, 38, 211, 0.5) 100%
+        )
+        border-box;
     box-shadow:
       /* outer casing depth */
       0 0 0 1px rgba(45, 212, 191, 0.15),
       0 12px 40px rgba(0, 0, 0, 0.7),
       0 0 60px rgba(0, 0, 0, 0.5),
-      /* inner screen shadow */
-      inset 0 0 50px rgba(0, 0, 0, 0.85),
+      /* inner screen shadow */ inset 0 0 50px rgba(0, 0, 0, 0.85),
       inset 0 0 16px rgba(45, 212, 191, 0.08);
     pointer-events: none;
   }

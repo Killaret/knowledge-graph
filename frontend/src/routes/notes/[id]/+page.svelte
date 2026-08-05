@@ -2,7 +2,13 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/stores";
-  import { getNote, getSuggestions, deleteNote, type Note, type Suggestion } from "$shared/api/notes";
+  import {
+    getNote,
+    getSuggestions,
+    deleteNote,
+    type Note,
+    type Suggestion,
+  } from "$shared/api/notes";
   import { getGraphData, type GraphData, type GraphNode, type GraphLink } from "$shared/api/graph";
   import { goto } from "$app/navigation";
   import { fade, fly } from "svelte/transition";
@@ -199,134 +205,130 @@
                 {note.is_public ? t("note.public") : t("note.private")}
               </Chip>
             </div>
-          <div class="actions">
-            <Button
-              variant="primary"
-              onClick={() => (editModalOpen = true)}
-              data-testid="edit-note-btn"
-            >
-              {t("note.editButton")}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => (deleteConfirmOpen = true)}
-              data-testid="delete-note-btn"
-            >
-              {t("note.deleteButton")}
-            </Button>
-            <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
-              {t("note.createChildButton")}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => note && goto("/graph/" + note.id)}
-              data-testid="view-graph-btn"
-            >
-              {t("note.showGraph")}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => note && goto("/graph/3d/" + note.id)}
-              data-testid="view-3d-btn"
-            >
-              {t("note.showConstellation")}
-            </Button>
-          </div>
-        </div>
-
-        <h1 class="note-title" data-testid="note-detail-title">{note.title}</h1>
-
-        <div class="meta-dates">
-          <span title={formatDateTime(note.created_at)}>
-            {t("note.createdLabel")}{formatDateTime(note.created_at)}
-          </span>
-          <span class="dot" aria-hidden="true">·</span>
-          <span title={formatDateTime(note.updated_at)}>
-            {t("note.updatedLabel")}{formatDateTime(note.updated_at)}
-          </span>
-        </div>
-      </header>
-
-      <section class="note-content" data-testid="note-detail-content">
-        {note.content || t("note.noContent")}
-      </section>
-
-      {#if getTags(note).length > 0 || getKeywords(note).length > 0}
-        <section class="meta-section" in:fly={{ y: 12, duration: 400, delay: 100 }}>
-          {#if getTags(note).length > 0}
-            <div class="tag-list">
-              <span class="meta-label">{t("note.tags")}</span>
-              {#each getTags(note) as tag}
-                <a class="tag" href={"/search?q=" + encodeURIComponent(tag)}>#{tag}</a>
-              {/each}
-            </div>
-          {/if}
-          {#if getKeywords(note).length > 0}
-            <div class="keyword-list">
-              <span class="meta-label">{t("note.keywords")}</span>
-              {#each getKeywords(note) as kw}
-                <a class="keyword" href={"/search?q=" + encodeURIComponent(kw)}>{kw}</a>
-              {/each}
-            </div>
-          {/if}
-        </section>
-      {/if}
-
-      {#if graphLoading}
-        <div class="links-loading" role="status">
-          <div class="spinner--sm" aria-hidden="true"></div>
-          <span>{t("note.linksLoading")}</span>
-        </div>
-      {:else if relatedNotes.length > 0}
-        <section class="links-section" in:fly={{ y: 12, duration: 400, delay: 150 }}>
-          <h2 class="section-title">{t("note.relatedNotes")}</h2>
-          <div class="links-list">
-            {#each relatedNotes as related}
-              <a
-                class="link-card"
-                href={"/notes/" + related.id}
-                style={getLinkStyle(related)}
+            <div class="actions">
+              <Button
+                variant="primary"
+                onClick={() => (editModalOpen = true)}
+                data-testid="edit-note-btn"
               >
-                <span class="link-icon">{related.linkType.icon}</span>
-                <span class="link-direction" title={t("note.direction." + related.direction)}>
-                  {related.direction === "outgoing" ? "→" : "←"}
-                </span>
-                <span class="link-emoji">{CelestialBody.fromString(related.type).emoji}</span>
-                <span class="link-title">{related.title}</span>
-                <span
-                  class="link-weight"
-                  title={t("note.linkWeight", { weight: related.weight.toFixed(2) })}
-                >
-                  <span class="weight-fill" style="width: {related.weight * 100}%"></span>
-                </span>
-              </a>
-            {/each}
+                {t("note.editButton")}
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => (deleteConfirmOpen = true)}
+                data-testid="delete-note-btn"
+              >
+                {t("note.deleteButton")}
+              </Button>
+              <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
+                {t("note.createChildButton")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => note && goto("/graph/" + note.id)}
+                data-testid="view-graph-btn"
+              >
+                {t("note.showGraph")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => note && goto("/graph/3d/" + note.id)}
+                data-testid="view-3d-btn"
+              >
+                {t("note.showConstellation")}
+              </Button>
+            </div>
           </div>
-        </section>
-      {:else}
-        <section class="links-section links-empty">
-          <p>{t("note.noLinks")}</p>
-          <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
-            {t("note.createFirstLink")}
-          </Button>
-        </section>
-      {/if}
 
-      {#if suggestions.length > 0}
-        <section class="suggestions-section" in:fly={{ y: 12, duration: 400, delay: 200 }}>
-          <h2 class="section-title">{t("note.similarNotes")}</h2>
-          <ul class="suggestions-list">
-            {#each suggestions as s}
-              <li class="suggestion">
-                <a href={"/notes/" + s.note_id} class="suggestion-link">
-                  <span class="suggestion-title">{s.title}</span>
-                  <span class="score">{t("note.score", { score: s.score.toFixed(3) })}</span>
-                </a>
-              </li>
-            {/each}
-          </ul>
+          <h1 class="note-title" data-testid="note-detail-title">{note.title}</h1>
+
+          <div class="meta-dates">
+            <span title={formatDateTime(note.created_at)}>
+              {t("note.createdLabel")}{formatDateTime(note.created_at)}
+            </span>
+            <span class="dot" aria-hidden="true">·</span>
+            <span title={formatDateTime(note.updated_at)}>
+              {t("note.updatedLabel")}{formatDateTime(note.updated_at)}
+            </span>
+          </div>
+        </header>
+
+        <section class="note-content" data-testid="note-detail-content">
+          {note.content || t("note.noContent")}
         </section>
-      {/if}
+
+        {#if getTags(note).length > 0 || getKeywords(note).length > 0}
+          <section class="meta-section" in:fly={{ y: 12, duration: 400, delay: 100 }}>
+            {#if getTags(note).length > 0}
+              <div class="tag-list">
+                <span class="meta-label">{t("note.tags")}</span>
+                {#each getTags(note) as tag}
+                  <a class="tag" href={"/search?q=" + encodeURIComponent(tag)}>#{tag}</a>
+                {/each}
+              </div>
+            {/if}
+            {#if getKeywords(note).length > 0}
+              <div class="keyword-list">
+                <span class="meta-label">{t("note.keywords")}</span>
+                {#each getKeywords(note) as kw}
+                  <a class="keyword" href={"/search?q=" + encodeURIComponent(kw)}>{kw}</a>
+                {/each}
+              </div>
+            {/if}
+          </section>
+        {/if}
+
+        {#if graphLoading}
+          <div class="links-loading" role="status">
+            <div class="spinner--sm" aria-hidden="true"></div>
+            <span>{t("note.linksLoading")}</span>
+          </div>
+        {:else if relatedNotes.length > 0}
+          <section class="links-section" in:fly={{ y: 12, duration: 400, delay: 150 }}>
+            <h2 class="section-title">{t("note.relatedNotes")}</h2>
+            <div class="links-list">
+              {#each relatedNotes as related}
+                <a class="link-card" href={"/notes/" + related.id} style={getLinkStyle(related)}>
+                  <span class="link-icon">{related.linkType.icon}</span>
+                  <span class="link-direction" title={t("note.direction." + related.direction)}>
+                    {related.direction === "outgoing" ? "→" : "←"}
+                  </span>
+                  <span class="link-emoji">{CelestialBody.fromString(related.type).emoji}</span>
+                  <span class="link-title">{related.title}</span>
+                  <span
+                    class="link-weight"
+                    title={t("note.linkWeight", { weight: related.weight.toFixed(2) })}
+                  >
+                    <span class="weight-fill" style="width: {related.weight * 100}%"></span>
+                  </span>
+                </a>
+              {/each}
+            </div>
+          </section>
+        {:else}
+          <section class="links-section links-empty">
+            <p>{t("note.noLinks")}</p>
+            <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
+              {t("note.createFirstLink")}
+            </Button>
+          </section>
+        {/if}
+
+        {#if suggestions.length > 0}
+          <section class="suggestions-section" in:fly={{ y: 12, duration: 400, delay: 200 }}>
+            <h2 class="section-title">{t("note.similarNotes")}</h2>
+            <ul class="suggestions-list">
+              {#each suggestions as s}
+                <li class="suggestion">
+                  <a href={"/notes/" + s.note_id} class="suggestion-link">
+                    <span class="suggestion-title">{s.title}</span>
+                    <span class="score">{t("note.score", { score: s.score.toFixed(3) })}</span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
       </Bevel>
     </article>
 
@@ -338,11 +340,7 @@
 
     <CreateNoteModal
       bind:open={createChildModalOpen}
-      parentNote={
-        note
-          ? { id: note.id, title: note.title, type: note.type }
-          : undefined
-      }
+      parentNote={note ? { id: note.id, title: note.title, type: note.type } : undefined}
       defaultType={note ? CelestialBody.getChildSuggestion(note.type) : "planet"}
       onSuccess={handleChildCreated}
       onClose={() => (createChildModalOpen = false)}
