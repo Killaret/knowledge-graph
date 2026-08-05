@@ -317,28 +317,37 @@ test.describe(
     });
 
     test("should search for notes", async ({ page, request }) => {
-      // Use an existing public seed note for searching so we don't depend on
-      // asynchronous NLP indexing of a brand-new note.
-      const seedList = await request.get(`${getBackendUrl()}/api/v1/notes?is_public=true&limit=1`);
-      const seedData = await seedList.json();
-      const seedNote = seedData.notes?.[0];
-      expect(seedNote).toBeDefined();
-      const searchTerm = (seedNote.title as string).split(" ").slice(0, 2).join(" ");
+      // Create a dedicated note with a unique, non-stop-word title.
+      // Postgres full-text + ILIKE fallback are synchronous, so we can search
+      // immediately without waiting for NLP indexing.
+      const uniqueId = Date.now();
+      const title = `Search Target Note ${uniqueId}`;
+      const note = await createNote(request, {
+        title,
+        content: `Content for search target ${uniqueId}`,
+        is_public: true,
+      });
+      const noteId = note.data.id;
+      testNoteIds.push(noteId);
 
-      // Navigate to home
-      await page.goto("/");
-      await page.waitForTimeout(1000);
-
-      // Use search in floating controls
-      await fillSearchInput(page, searchTerm);
-      await clickSearchButton(page);
+      // Use the first two words of the title as the search term to avoid
+      // stop-word-only queries (e.g. "Home Page" can be ignored by tsvector).
+      const searchTerm = title.split(" ").slice(0, 2).join(" ");
 
       // Verify search works via API
       const searchResponse = await request.get(
         `${getBackendUrl()}/api/v1/notes/search?q=${encodeURIComponent(searchTerm)}`
       );
+      expect(searchResponse.status()).toBe(200);
       const searchData = await searchResponse.json();
       expect(searchData.total).toBeGreaterThan(0);
+      expect(searchData.data.some((n: { id: string }) => n.id === noteId)).toBe(true);
+
+      // Also exercise the UI search input
+      await page.goto("/");
+      await page.waitForTimeout(500);
+      await fillSearchInput(page, searchTerm);
+      await clickSearchButton(page);
     });
 
     test("should use browser back when history exists", async ({ page, request }) => {

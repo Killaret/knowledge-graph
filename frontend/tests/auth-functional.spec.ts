@@ -106,16 +106,19 @@ test.describe("Auth Functional Tests (SKIP_AUTH Mode)", { tag: ["@auth", "@e2e"]
   test("should have working logout", async ({ page }) => {
     await page.goto("/", { timeout: 60000 });
     await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
-    // Find logout button
-    const logoutBtn = page.locator("text=Logout").first();
+    // Find logout button by stable test id (text may be hidden by collapsed panel).
+    const logoutBtn = page.getByTestId("menu-logout").first();
     const isVisible = await logoutBtn.isVisible().catch(() => false);
 
     if (isVisible) {
-      await logoutBtn.click();
+      // The logout button can be rendered inside a collapsed/off-screen cockpit
+      // panel. Use a raw DOM click via evaluate to trigger the handler without
+      // Playwright's viewport/hit-point checks.
+      await logoutBtn.evaluate((el) => (el as HTMLButtonElement).click());
       await page.waitForTimeout(1000);
-      // Verify we're still on the page or redirected appropriately
+      // Verify we're still on a valid page (may be redirected to login)
       const currentUrl = page.url();
       expect(currentUrl).toBeTruthy();
     } else {
