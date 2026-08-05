@@ -32,6 +32,33 @@
 
 Страница `/import` сама вызывает `POST /api/v1/import/bookmarklet` и создаёт заметку. Благодаря этому не нужно решать проблемы CORS, доступа к кукам и ограничений расширений браузера.
 
+## API endpoint
+
+- `POST /api/v1/import/bookmarklet`
+- Авторизация: JWT (`Authorization: Bearer <token>`) или HttpOnly cookie `access_token`.
+- Тело запроса:
+
+  ```json
+  {
+    "title": "Page title",
+    "url": "https://example.com/page",
+    "text": "Selected text (optional)",
+    "type": "asteroid"
+  }
+  ```
+
+- Ответ `201`:
+
+  ```json
+  {
+    "note_id": "...",
+    "title": "Page title",
+    "type": "asteroid"
+  }
+  ```
+
+Полная спецификация endpoint — в `backend/openAPI.yaml` (`/api/v1/import/bookmarklet`).
+
 ## Ограничения
 
 - **Длина URL:** общий размер URL с параметрами ограничен браузером (примерно 2000 символов). Если выделенный текст слишком длинный, часть может потеряться.
