@@ -694,7 +694,7 @@
 ## 🔗 Связанная документация
 
 - [README.md](README.md) — Обзор проекта и быстрый старт
-- [ARCHITECTURE.md](ARCHITECTURE.md) — Архитектура и дизайн системы
+- [docs/ARCHITECTURE_SUMMARY.md](docs/ARCHITECTURE_SUMMARY.md) — Архитектура и дизайн системы
 - [AGENTS.md](docs/AGENTS.md) — AI-агенты и рабочие процессы
 - [REGRESSION_TEST_PLAN.md](docs/REGRESSION_TEST_PLAN.md) — Процедуры тестирования
 - [REGRESSION_TEST_REPORT.md](docs/archive/REGRESSION_TEST_REPORT.md) — Последние результаты тестов

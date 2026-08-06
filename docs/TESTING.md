@@ -622,7 +622,7 @@ The test stack can be integrated into CI/CD pipelines:
 - [Regression Test Plan](REGRESSION_TEST_PLAN.md)
 - [Final Test Report](archive/FINAL_TEST_REPORT.md)
 - [Backend Testing](../backend/README.md#testing)
-- [Frontend Testing](../frontend/tests/README.md)
+- [Frontend Testing](../frontend/README.md)
 
 ## Recent Improvements
 

@@ -2,8 +2,8 @@
 
 The detailed changelog is maintained in English:
 
-- [docs/CHANGELOG_EN.md](docs/CHANGELOG_EN.md) — full changelog
+- [CHANGELOG.md](CHANGELOG.md) — full changelog
 
 ---
 
-*See `docs/CHANGELOG_EN.md` for the complete project history.*
+*See [CHANGELOG.md](CHANGELOG.md) for the complete project history.*

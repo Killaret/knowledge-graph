@@ -596,16 +596,16 @@ Recommended to monitor:
 
 ## 📚 Additional Documentation
 
-- [Yandex.Disk Backup Setup (detailed)](docs/YANDEX_DISK_BACKUP.md) — detailed Yandex.Disk configuration guide
-- [Cloud Backup Setup](docs/CLOUD_BACKUP_SETUP.md) — general cloud backup information
-- [System Configuration](docs/CONFIGURATION_EN.md) — complete configuration guide
-- [Architecture](docs/ARCHITECTURE.md) — backup system architecture
+- [Yandex.Disk Backup Setup (detailed)](YANDEX_DISK_BACKUP.md) — detailed Yandex.Disk configuration guide
+- [Cloud Backup Setup](CLOUD_BACKUP_SETUP.md) — general cloud backup information
+- [System Configuration](CONFIGURATION_EN.md) — complete configuration guide
+- [Architecture](ARCHITECTURE_SUMMARY.md) — backup system architecture
 
 ## 🆘 Support
 
 If you encounter issues with backup system setup or usage:
 
 1. Check this document for solutions
-2. Review [docs/YANDEX_DISK_BACKUP.md](docs/YANDEX_DISK_BACKUP.md)
+2. Review [docs/YANDEX_DISK_BACKUP.md](YANDEX_DISK_BACKUP.md)
 3. Check system logs
 4. Create issue in project repository with problem description

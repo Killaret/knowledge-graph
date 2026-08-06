@@ -4,7 +4,7 @@
 > **Date:** April 2026  
 > **Status:** Production Ready
 
-🌐 **Languages**: [English](DEPLOYMENT_EN.md) | [Русский](DEPLOYMENT.md)
+🌐 **Languages**: [English](DEPLOYMENT_EN.md)
 
 ---
 

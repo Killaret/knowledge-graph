@@ -105,12 +105,12 @@ When an AI agent or developer discovers a defect or questionable behavior during
 After completing any task that changes behavior, configuration, architecture, Docker stack, or environment variables:
 
 - Update the relevant documentation:
-  - `.windsurfrules` — project conventions and rules.
-  - `docs/PROJECT_REVIEW_AI_AGENTS.md` — AI knowledge transfer and current state.
-  - `docs/BACKUP.md`, `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md` — subsystem docs.
-  - `ROADMAP.md` / `ROADMAP.ru.md` — scope and roadmap.
-  - `knowledge-graph.config.json` — new configuration options (default values, schema).
-  - `docs/CONFIGURATION_EN.md` — environment variables and config reference.
+  - [`.windsurfrules`](../.windsurfrules) — project conventions and rules.
+  - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer and current state.
+  - [`docs/BACKUP.md`](BACKUP.md), [`docs/TESTING.md`](TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](REGRESSION_TEST_PLAN.md) — subsystem docs.
+  - [`ROADMAP.md`](../ROADMAP.md) / [`ROADMAP.ru.md`](../ROADMAP.ru.md) — scope and roadmap.
+  - [`knowledge-graph.config.json`](../knowledge-graph.config.json) — new configuration options (default values, schema).
+  - [`docs/CONFIGURATION_EN.md`](CONFIGURATION_EN.md) — environment variables and config reference.
 - Authoritative docs are in English; Russian translations may be added alongside.
 - Do not create standalone docs to describe changes; update existing project docs instead.
 

@@ -252,7 +252,7 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 - Retry logic (3 attempts) for failed uploads
 - Automatic cleanup of old cloud backups (max_backups, default: 10)
 
-**For detailed backup setup guide, see:** [`docs/BACKUP.md`](docs/BACKUP.md)
+**For detailed backup setup guide, see:** [`docs/BACKUP.md`](BACKUP.md)
 
 ---
 

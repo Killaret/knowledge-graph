@@ -214,7 +214,7 @@ knowledge-graph/
 ### Developer Guides
 - [🤖 AI Agents](docs/AGENTS.md) — использование AI агентов
 - [📝 Commands](COMMANDS.md) — справочник команд
-- [🧪 Testing](TEST_STATUS.md) — статус и покрытие тестов
+- [🧪 Testing](docs/TESTING.md) — статус и покрытие тестов
 - [🎨 Frontend Patterns](frontend/FRONTEND_PATTERNS.md) — паттерны фронтенда
 
 ### Service Documentation
@@ -472,7 +472,7 @@ See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ---
 

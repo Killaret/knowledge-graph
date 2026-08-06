@@ -13,7 +13,7 @@
 
 ## Integrations
 - [ ] **Calendar and messaging synchronization** — Google Calendar, Telegram, meeting reminders.
-- [ ] **Note import/export** (Markdown, JSON, Obsidian) — planned for [Phase 4](./ROADMAP.md#phase-4-explorer-update-featureexplorer-update).
+- [ ] **Note import/export** (Markdown, JSON, Obsidian) — planned for [Phase 4](../ROADMAP.md#phase-4-cosmic-navigator-spaceship).
 - [ ] **Parser for loading text** — automatic creation of notes and links from large text (e.g., books).
 
 ## Functionality

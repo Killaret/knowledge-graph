@@ -655,7 +655,7 @@ Description: Кластеризация графа и визуализация �
 ## 🔗 Related Documentation
 
 - [README.md](README.md) - Project overview and quick start
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
+- [docs/ARCHITECTURE_SUMMARY.md](docs/ARCHITECTURE_SUMMARY.md) - System architecture and design
 - [AGENTS.md](docs/AGENTS.md) - AI agents and development workflows
 - [REGRESSION_TEST_PLAN.md](docs/REGRESSION_TEST_PLAN.md) - Testing procedures
 - [REGRESSION_TEST_REPORT.md](docs/archive/REGRESSION_TEST_REPORT.md) - Latest test results

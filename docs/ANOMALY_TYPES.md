@@ -237,7 +237,7 @@ describe("Anomaly Rendering (Unknown Node Types)", () => {
 
 ### Integration Tests
 
-Anomaly functions are also tested in `frontend/src/components/organisms/GraphCanvas/renderer.test.ts`:
+Anomaly functions are also tested in `frontend/src/entities/graph-canvas/lib/renderer.test.ts`:
 
 ```typescript
 describe("renderer anomaly functions", () => {
@@ -370,10 +370,9 @@ const hash = stringHash(nodeId);
 
 ## Related Documentation
 
-- [GraphCanvas Renderer](../frontend/src/components/organisms/GraphCanvas/renderer.ts)
-- [CelestialBody Value Object](../frontend/src/entities/celestial-body.ts)
+- [GraphCanvas Renderer](../frontend/src/entities/graph-canvas/lib/renderer.ts)
+- [CelestialBody Value Object](../frontend/src/entities/shared/model/celestial-body.ts)
 - [Configuration](../frontend/src/shared/config/config.ts)
-- [Node Types](./NODE_TYPES.md)
 - [Visual Testing](./ARGOS.md)
 
 ---

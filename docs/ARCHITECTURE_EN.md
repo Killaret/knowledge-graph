@@ -638,7 +638,7 @@ users          — Users
 - `BACKUP_DIR` — Local backup folder
 - `CLEANUP_OLD_BACKUPS` — Cleanup old backups
 
-**More details:** [`docs/BACKUP.md`](docs/BACKUP.md)
+**More details:** [`docs/BACKUP.md`](BACKUP.md)
 
 ---
 

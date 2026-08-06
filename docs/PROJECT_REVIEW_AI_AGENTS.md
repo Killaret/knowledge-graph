@@ -342,17 +342,17 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ## 12. Ключевые файлы для быстрого старта
 
-- Главные правила: `.windsurfrules`.
-- Архитектура: `docs/ARCHITECTURE_SUMMARY.md`.
-- Команды: `COMMANDS.md`.
-- Backend wiring: `backend/cmd/server/main.go`.
-- Frontend i18n: `frontend/src/shared/utils/i18n.ts`.
-- Frontend entry: `frontend/src/routes/+page.svelte`.
-- NLP: `nlp-service/Dockerfile`, `nlp-service/app/main.py`.
-- Backup: `docs/BACKUP.md`, `knowledge-graph.config.json`.
-- Regression: `scripts/testing/run-full-test-cycle.ps1`.
-- Regression plan: `docs/REGRESSION_TEST_PLAN.md`.
-- Roadmap: `ROADMAP.ru.md`.
+- Главные правила: [`.windsurfrules`](../.windsurfrules).
+- Архитектура: [`docs/ARCHITECTURE_SUMMARY.md`](ARCHITECTURE_SUMMARY.md).
+- Команды: [`COMMANDS.md`](../COMMANDS.md).
+- Backend wiring: [`backend/cmd/server/main.go`](../backend/cmd/server/main.go).
+- Frontend i18n: [`frontend/src/shared/utils/i18n.ts`](../frontend/src/shared/utils/i18n.ts).
+- Frontend entry: [`frontend/src/routes/+page.svelte`](../frontend/src/routes/+page.svelte).
+- NLP: [`nlp-service/Dockerfile`](../nlp-service/Dockerfile), [`nlp-service/app/main.py`](../nlp-service/app/main.py).
+- Backup: [`docs/BACKUP.md`](BACKUP.md), [`knowledge-graph.config.json`](../knowledge-graph.config.json).
+- Regression: [`scripts/testing/run-full-test-cycle.ps1`](../scripts/testing/run-full-test-cycle.ps1).
+- Regression plan: [`docs/REGRESSION_TEST_PLAN.md`](REGRESSION_TEST_PLAN.md).
+- Roadmap: [`ROADMAP.ru.md`](../ROADMAP.ru.md).
 
 ---
 
