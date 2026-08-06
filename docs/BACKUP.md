@@ -98,7 +98,7 @@ The backup system includes:
 - `cloud.provider` — cloud storage provider (only `yandex`)
 - `cloud.yandex.oauth_token` — Yandex.Disk OAuth token
 - `cloud.yandex.backup_folder` — folder on Yandex.Disk for backups
-- `cloud.yandex.max_backups` — maximum number of backups to keep in cloud
+- `cloud.yandex.max_backups` — maximum number of backups to keep in cloud (currently not enforced; all backups are kept on Yandex.Disk by design)
 - `schedule` — cron schedule (default `0 2 * * *` — daily at 2:00 AM)
 - `retention_days` — number of days to keep local backups
 - `draft_ttl_hours` — draft TTL in MongoDB in hours
@@ -141,6 +141,44 @@ curl -X POST "https://oauth.yandex.ru/token" \
   -d "client_secret=YOUR_CLIENT_SECRET"
 ```
 
+#### Regenerating / Refreshing the Token
+
+**OAuth token cannot be "regenerated" directly — you can only get a new one or use a refresh token.**
+
+1. **Via browser (same as first time):**
+   - Open:
+     ```
+     https://oauth.yandex.ru/authorize?response_type=token&client_id=YOUR_CLIENT_ID
+     ```
+   - Log in, grant access, copy the new `access_token` from the redirect URL.
+   - Update `.env`:
+     ```bash
+     BACKUP_YANDEX_OAUTH_TOKEN=new_token
+     ```
+   - Restart the worker / scheduler:
+     ```bash
+     docker compose -f docker-compose.personal.yml restart worker_personal
+     docker compose -f docker-compose.personal.yml up -d --force-recreate backup_scheduler
+     ```
+
+2. **Via refresh token (if your application received one):**
+   - Yandex issues a refresh token only if the client requested `offline` access and the application has that permission.
+   - Store `refresh_token` securely.
+   - Use it to get a new access token without opening the browser:
+     ```bash
+     curl -X POST "https://oauth.yandex.ru/token" \
+       -d "grant_type=refresh_token" \
+       -d "refresh_token=YOUR_REFRESH_TOKEN" \
+       -d "client_id=YOUR_CLIENT_ID" \
+       -d "client_secret=YOUR_CLIENT_SECRET"
+     ```
+   - Update `.env` with the new `access_token` from the response.
+
+3. **If the token is compromised or lost:**
+   - Go to [Yandex Passport → Applications](https://passport.yandex.ru/profile/access) and **revoke access** for the old app token, then repeat step 1.
+
+> **Important:** The worker, scheduler, and scripts use `BACKUP_YANDEX_OAUTH_TOKEN` (or the older `BACKUP_YANDEX_TOKEN` alias). After changing `.env`, recreate the relevant container for the new value to take effect.
+
 ### Step 3: Set Environment Variables (Optional)
 
 Add to `.env` file:
@@ -159,13 +197,17 @@ BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups
 # Local backup directory
 BACKUP_DIR=./backups
 
+# Local retention for daily/weekly backups (cloud backups are kept forever)
+BACKUP_DAILY_RETENTION_DAYS=7
+BACKUP_WEEKLY_RETENTION_DAYS=90
+
 # Clean old backups (true/false)
 CLEANUP_OLD_BACKUPS=true
 ```
 
 The legacy scripts (`scripts/devops/backup-personal.sh` and `backup-personal.ps1`) also accept `BACKUP_YANDEX_TOKEN` as a fallback alias.
 
-## � Event-driven Backup
+## 🔔 Event-driven Backup
 
 The worker automatically schedules a full database backup after any note change:
 
@@ -185,18 +227,21 @@ backups/backup-personal-YYYY-MM-DD-HHMMSS.sql.gz
 
 and uploads it to Yandex.Disk if `BACKUP_CLOUD_ENABLED=true`.
 
-## �🚀 Manual Backup Execution
+## 🚀 Manual Backup Execution
 
 ### Windows (PowerShell)
 
 ```powershell
 # Set environment variables
 $env:BACKUP_CLOUD_ENABLED = "true"
-$env:BACKUP_YANDEX_TOKEN = "your_oauth_token_here"
+$env:BACKUP_YANDEX_OAUTH_TOKEN = "your_oauth_token_here"
 $env:BACKUP_YANDEX_FOLDER = "/KnowledgeGraphBackups"
 
-# Run backup script
+# Daily backup (default)
 .\scripts\devops\backup-personal.ps1
+
+# Weekly backup
+.\scripts\devops\backup-personal.ps1 -Mode weekly
 ```
 
 ### Linux/Mac
@@ -204,11 +249,14 @@ $env:BACKUP_YANDEX_FOLDER = "/KnowledgeGraphBackups"
 ```bash
 # Set environment variables
 export BACKUP_CLOUD_ENABLED=true
-export BACKUP_YANDEX_TOKEN="your_oauth_token_here"
+export BACKUP_YANDEX_OAUTH_TOKEN="your_oauth_token_here"
 export BACKUP_YANDEX_FOLDER="/KnowledgeGraphBackups"
 
-# Run backup script
+# Daily backup (default)
 ./scripts/devops/backup-personal.sh
+
+# Weekly backup
+./scripts/devops/backup-personal.sh weekly
 ```
 
 ### Via Docker Compose (personal instance)
@@ -225,7 +273,12 @@ docker-compose -f docker-compose.personal.yml run --rm backup_scheduler
 
 ### Via Docker Compose (Recommended)
 
-The `backup_scheduler` service in `docker-compose.personal.yml` automatically runs backups every 24 hours:
+The `backup_scheduler` service in `docker-compose.personal.yml` runs `crond` inside the container and creates two backups:
+
+- **Daily** at `02:00` → `backup-personal-daily-YYYY-MM-DD-HHMMSS.sql.gz`, local retention 7 days
+- **Weekly** at `23:00` every Sunday → `backup-personal-weekly-YYYY-MM-DD-HHMMSS.sql.gz`, local retention 90 days
+
+Cloud backups on Yandex.Disk are **never deleted** by these scripts.
 
 ```yaml
 backup_scheduler:
@@ -237,9 +290,11 @@ backup_scheduler:
     - ./knowledge-graph.config.json:/config/config.json:ro
   environment:
     BACKUP_DIR: /backups
-    BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-false}
-    BACKUP_YANDEX_TOKEN: ${BACKUP_YANDEX_TOKEN:-}
+    BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
+    BACKUP_YANDEX_OAUTH_TOKEN: ${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}
     BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
+    BACKUP_DAILY_RETENTION_DAYS: ${BACKUP_DAILY_RETENTION_DAYS:-7}
+    BACKUP_WEEKLY_RETENTION_DAYS: ${BACKUP_WEEKLY_RETENTION_DAYS:-90}
     PERSONAL_POSTGRES_HOST: postgres_personal
     PERSONAL_POSTGRES_PORT: 5432
     PERSONAL_POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
@@ -248,12 +303,12 @@ backup_scheduler:
   command: >
     sh -c "
       apk add --no-cache curl gzip &&
-      while true; do
-        echo Running scheduled backup at $$(date) &&
-        /scripts/devops/backup-personal.sh &&
-        echo Next backup in 24 hours &&
-        sleep 86400
-      done
+      mkdir -p /var/spool/cron/crontabs /backups &&
+      {
+        echo '0 2 * * * /scripts/devops/backup-personal.sh daily';
+        echo '0 23 * * 0 /scripts/devops/backup-personal.sh weekly';
+      } > /var/spool/cron/crontabs/root &&
+      crond -f -l 2
     "
   depends_on:
     postgres_personal:
@@ -266,21 +321,29 @@ backup_scheduler:
 Add to crontab (`crontab -e`):
 
 ```bash
-# Daily backup at 2:00 AM
-0 2 * * * cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_TOKEN=your_token ./scripts/devops/backup-personal.sh >> /var/log/kg-backup.log 2>&1
+# Daily backup at 2:00 AM, weekly at 23:00 every Sunday
+0 2 * * *  cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_OAUTH_TOKEN=your_token ./scripts/devops/backup-personal.sh daily  >> /var/log/kg-backup.log 2>&1
+0 23 * * 0 cd /path/to/knowledge-graph && BACKUP_CLOUD_ENABLED=true BACKUP_YANDEX_OAUTH_TOKEN=your_token ./scripts/devops/backup-personal.sh weekly >> /var/log/kg-backup.log 2>&1
 ```
 
 ### Via Task Scheduler (Windows)
 
 1. Open Task Scheduler
-2. Create Task → Triggers → Daily at 2:00 AM
-3. Action: Start a program
-   - Program: `powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
-   - Add environment variables:
+2. Create **Daily** task:
+   - Triggers → Daily at 2:00 AM
+   - Action: Start a program
+     - Program: `powershell.exe`
+     - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1"`
+   - Environment variables:
      - `BACKUP_CLOUD_ENABLED=true`
-     - `BACKUP_YANDEX_TOKEN=your_token`
+     - `BACKUP_YANDEX_OAUTH_TOKEN=your_token`
      - `BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups`
+3. Create **Weekly** task:
+   - Triggers → Weekly, every Sunday at 23:00
+   - Action: Start a program
+     - Program: `powershell.exe`
+     - Arguments: `-ExecutionPolicy Bypass -File "D:\knowledge-graph\scripts\devops\backup-personal.ps1" -Mode weekly`
+   - Use the same environment variables
 
 ## 🔄 Backup Restoration
 
@@ -290,17 +353,20 @@ Add to crontab (`crontab -e`):
 
 1. Open [Yandex.Disk](https://disk.yandex.ru)
 2. Navigate to `KnowledgeGraphBackups` folder
-3. Download the desired backup: `backup-personal-YYYY-MM-DD.sql.gz`
+3. Download the desired backup: `backup-personal-{daily,weekly}-YYYY-MM-DD-HHMMSS.sql.gz`
 
-**From Yandex.Disk (via WebDAV):**
+**From Yandex.Disk (via REST API):**
 
 ```bash
-# Download via curl
+# Get a public/public-ish download link
 TOKEN="your_oauth_token"
-BACKUP_DATE="2024-05-17"
-curl -X GET "https://webdav.yandex.ru/KnowledgeGraphBackups/backup-personal-${BACKUP_DATE}.sql.gz" \
+BACKUP_NAME="backup-personal-daily-2026-08-06-082943.sql.gz"
+DOWNLOAD_URL=$(curl -s -X GET \
   -H "Authorization: OAuth ${TOKEN}" \
-  --output backup-personal-${BACKUP_DATE}.sql.gz
+  "https://cloud-api.yandex.net/v1/disk/resources/download?path=/KnowledgeGraphBackups/${BACKUP_NAME}" \
+  | sed -n 's/.*"href":"\([^"]*\)".*/\1/p')
+
+curl -X GET "$DOWNLOAD_URL" --output "$BACKUP_NAME"
 ```
 
 **From local storage:**
@@ -313,17 +379,20 @@ ls ./backups/
 ### Step 2: Extract Backup
 
 ```bash
-gunzip backup-personal-2024-05-17.sql.gz
+gunzip backup-personal-daily-2026-08-06-082943.sql.gz
 ```
 
 ### Step 3: Restore to PostgreSQL
 
 ```bash
+# Drop the existing schema before restoring a plain SQL dump
+docker exec -e PGPASSWORD=personal_password kg-postgres-personal psql -U personal -d knowledge_personal -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"
+
 # Restore to personal database
-psql -h localhost -p 5433 -U personal -d knowledge_personal < backup-personal-2024-05-17.sql
+psql -h localhost -p 5433 -U personal -d knowledge_personal < backup-personal-daily-2026-08-06-082943.sql
 
 # Or via Docker
-docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal < backup-personal-2024-05-17.sql
+docker exec -e PGPASSWORD=personal_password -i kg-postgres-personal psql -U personal -d knowledge_personal < backup-personal-daily-2026-08-06-082943.sql
 ```
 
 ### Step 4: Verify Restoration

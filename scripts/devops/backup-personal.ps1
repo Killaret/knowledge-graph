@@ -1,12 +1,24 @@
 # Backup script for personal Knowledge Graph instance (Windows)
-# Usage: .\scripts\devops\backup-personal.ps1
+# Supports two modes:
+#   daily  - default, 7 days local retention
+#   weekly - Sunday snapshot, 90 days local retention
+#
+# Usage:
+#   .\scripts\devops\backup-personal.ps1 [-Mode daily]
+#   $env:BACKUP_MODE = "weekly"; .\scripts\devops\backup-personal.ps1
+
+[CmdletBinding()]
+param(
+    [ValidateSet("daily", "weekly")]
+    [string]$Mode = $(if ($env:BACKUP_MODE) { $env:BACKUP_MODE } else { "daily" })
+)
 
 $ErrorActionPreference = "Stop"
 
 # Configuration
 $BackupDir = if ($env:BACKUP_DIR) { $env:BACKUP_DIR } else { ".\backups" }
-$Timestamp = Get-Date -Format "yyyy-MM-dd"
-$BackupFile = Join-Path $BackupDir "backup-personal-${Timestamp}.sql"
+$Timestamp = Get-Date -Format "yyyy-MM-dd-HHmmss"
+$BackupFile = Join-Path $BackupDir "backup-personal-${Mode}-${Timestamp}.sql"
 
 # Database connection (can be overridden by environment variables)
 $DbHost = if ($env:PERSONAL_POSTGRES_HOST) { $env:PERSONAL_POSTGRES_HOST } else { "localhost" }
@@ -15,12 +27,19 @@ $DbUser = if ($env:PERSONAL_POSTGRES_USER) { $env:PERSONAL_POSTGRES_USER } else 
 $DbPassword = if ($env:PERSONAL_POSTGRES_PASSWORD) { $env:PERSONAL_POSTGRES_PASSWORD } else { "personal_password" }
 $DbName = if ($env:PERSONAL_POSTGRES_DB) { $env:PERSONAL_POSTGRES_DB } else { "knowledge_personal" }
 
+# Local retention: cloud backups are never deleted
+$RetentionDays = if ($Mode -eq "weekly") {
+    if ($env:BACKUP_WEEKLY_RETENTION_DAYS) { [int]$env:BACKUP_WEEKLY_RETENTION_DAYS } else { 90 }
+} else {
+    if ($env:BACKUP_DAILY_RETENTION_DAYS) { [int]$env:BACKUP_DAILY_RETENTION_DAYS } else { 7 }
+}
+
 # Create backup directory if it doesn't exist
 if (-not (Test-Path $BackupDir)) {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 }
 
-Write-Host "Starting backup of personal Knowledge Graph database..."
+Write-Host "Starting ${Mode} backup of personal Knowledge Graph database..."
 Write-Host "Backup file: $BackupFile"
 
 # Set PGPASSWORD environment variable for pg_dump
@@ -44,36 +63,43 @@ $BackupFile = $CompressedFile
 
 Write-Host "Backup completed successfully: $BackupFile"
 
-# Optional: Upload to Yandex.Disk via WebDAV
+# Optional: Upload to Yandex.Disk via REST API
 if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
     Write-Host "Uploading to Yandex.Disk..."
     try {
-        $Token = $env:BACKUP_YANDEX_TOKEN
+        $Token = if ($env:BACKUP_YANDEX_OAUTH_TOKEN) { $env:BACKUP_YANDEX_OAUTH_TOKEN } else { $env:BACKUP_YANDEX_TOKEN }
         $BackupFolder = if ($env:BACKUP_YANDEX_FOLDER) { $env:BACKUP_YANDEX_FOLDER } else { "/KnowledgeGraphBackups" }
+
         if (-not $Token) {
-            Write-Host "Warning: BACKUP_YANDEX_TOKEN not set"
+            Write-Host "Warning: BACKUP_YANDEX_OAUTH_TOKEN or BACKUP_YANDEX_TOKEN not set"
         } else {
-            # Create backup folder if it doesn't exist
-            $FolderUrl = "https://webdav.yandex.ru$BackupFolder"
-            $Headers = @{
-                Authorization = "OAuth $Token"
-            }
-
-            try {
-                Invoke-RestMethod -Uri $FolderUrl -Method MKCOL -Headers $Headers -ErrorAction SilentlyContinue
-            } catch {
-                # Folder might already exist, ignore error
-            }
-
-            # Upload file
+            $BaseUrl = "https://cloud-api.yandex.net/v1/disk"
             $RemotePath = "${BackupFolder}/$(Split-Path $BackupFile -Leaf)"
-            $Url = "https://webdav.yandex.ru$RemotePath"
+            $Headers = @{ Authorization = "OAuth $Token" }
 
-            Invoke-RestMethod -Uri $Url `
+            # Ensure the backup folder exists (ignore 409 - already exists)
+            try {
+                Invoke-RestMethod -Uri "${BaseUrl}/resources?path=${BackupFolder}" `
+                    -Method PUT `
+                    -Headers $Headers `
+                    -ErrorAction SilentlyContinue | Out-Null
+            } catch {
+                $status = $_.Exception.Response.StatusCode.value__
+                if ($status -ne 409) {
+                    Write-Host "Warning: failed to ensure backup folder on Yandex.Disk (HTTP $status)"
+                }
+            }
+
+            # Get pre-signed upload URL
+            $UploadLink = Invoke-RestMethod -Uri "${BaseUrl}/resources/upload?path=${RemotePath}&overwrite=true" `
+                -Method GET `
+                -Headers $Headers
+
+            # Upload file to the pre-signed URL
+            Invoke-RestMethod -Uri $UploadLink.href `
                 -Method PUT `
-                -Headers $Headers `
                 -InFile $BackupFile `
-                -ContentType "application/octet-stream"
+                -ContentType "application/octet-stream" | Out-Null
 
             Write-Host "Successfully uploaded to Yandex.Disk: $RemotePath"
         }
@@ -82,11 +108,11 @@ if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
     }
 }
 
-# Optional: Clean up old backups (keep last 7 days)
-if ($env:CLEANUP_OLD_BACKUPS -ne "false") {
-    Write-Host "Cleaning up old backups (keeping last 7 days)..."
-    Get-ChildItem -Path $BackupDir -Filter "backup-personal-*.sql.gz" | 
-        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | 
+# Clean up old local backups (cloud backups are never deleted)
+if ($env:CLEANUP_OLD_BACKUPS -ne "false" -and $RetentionDays -gt 0) {
+    Write-Host "Cleaning up old ${Mode} local backups (keeping last ${RetentionDays} days)..."
+    Get-ChildItem -Path $BackupDir -Filter "backup-personal-${Mode}-*.sql.gz" |
+        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
         Remove-Item -Force
 }
 

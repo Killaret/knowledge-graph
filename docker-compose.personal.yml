@@ -250,8 +250,10 @@ services:
     environment:
       BACKUP_DIR: /backups
       BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
-      BACKUP_YANDEX_TOKEN: ${BACKUP_YANDEX_TOKEN}
+      BACKUP_YANDEX_OAUTH_TOKEN: ${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}
       BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
+      BACKUP_DAILY_RETENTION_DAYS: ${BACKUP_DAILY_RETENTION_DAYS:-7}
+      BACKUP_WEEKLY_RETENTION_DAYS: ${BACKUP_WEEKLY_RETENTION_DAYS:-90}
       PERSONAL_POSTGRES_HOST: postgres_personal
       PERSONAL_POSTGRES_PORT: 5432
       PERSONAL_POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
@@ -260,12 +262,25 @@ services:
     command: >
       sh -c "
         apk add --no-cache curl gzip &&
-        while true; do
-          echo Running scheduled backup at $$(date) &&
-          /scripts/devops/backup-personal.sh &&
-          echo Next backup in 24 hours &&
-          sleep 86400
-        done
+        mkdir -p /var/spool/cron/crontabs /backups &&
+        {
+          echo 'SHELL=/bin/sh';
+          echo 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+          echo 'BACKUP_DIR=/backups';
+          echo 'BACKUP_CLOUD_ENABLED=${BACKUP_CLOUD_ENABLED:-true}';
+          echo 'BACKUP_YANDEX_OAUTH_TOKEN=${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}';
+          echo 'BACKUP_YANDEX_FOLDER=${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}';
+          echo 'BACKUP_DAILY_RETENTION_DAYS=${BACKUP_DAILY_RETENTION_DAYS:-7}';
+          echo 'BACKUP_WEEKLY_RETENTION_DAYS=${BACKUP_WEEKLY_RETENTION_DAYS:-90}';
+          echo 'PERSONAL_POSTGRES_HOST=postgres_personal';
+          echo 'PERSONAL_POSTGRES_PORT=5432';
+          echo 'PERSONAL_POSTGRES_USER=${PERSONAL_POSTGRES_USER:-personal}';
+          echo 'PERSONAL_POSTGRES_PASSWORD=${PERSONAL_POSTGRES_PASSWORD:-personal_password}';
+          echo 'PERSONAL_POSTGRES_DB=${PERSONAL_POSTGRES_DB:-knowledge_personal}';
+          echo '0 2 * * * /scripts/devops/backup-personal.sh daily';
+          echo '0 23 * * 0 /scripts/devops/backup-personal.sh weekly';
+        } > /var/spool/cron/crontabs/root &&
+        crond -f -l 2
       "
     depends_on:
       postgres_personal:
