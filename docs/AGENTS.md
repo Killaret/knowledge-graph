@@ -100,6 +100,20 @@ When an AI agent or developer discovers a defect or questionable behavior during
 3. **The test must fail before the fix and pass after the fix** (where it is safe to leave the bug uncommitted).
 4. **If the defect depends on manual data or config setup, fix the seed/config script** rather than only adding instructions.
 
+## Documentation
+
+After completing any task that changes behavior, configuration, architecture, Docker stack, or environment variables:
+
+- Update the relevant documentation:
+  - `.windsurfrules` — project conventions and rules.
+  - `docs/PROJECT_REVIEW_AI_AGENTS.md` — AI knowledge transfer and current state.
+  - `docs/BACKUP.md`, `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md` — subsystem docs.
+  - `ROADMAP.md` / `ROADMAP.ru.md` — scope and roadmap.
+  - `knowledge-graph.config.json` — new configuration options (default values, schema).
+  - `docs/CONFIGURATION_EN.md` — environment variables and config reference.
+- Authoritative docs are in English; Russian translations may be added alongside.
+- Do not create standalone docs to describe changes; update existing project docs instead.
+
 ---
 
 ## Service Health Checks
