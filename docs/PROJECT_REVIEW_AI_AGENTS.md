@@ -295,6 +295,13 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### 9.11. Интеграционные тесты notehandler
 - Исправлены вызовы `New(...)` во всех `*_integration_test.go`, добавлен последний аргумент `importSvc` (`nil` для тестов).
 
+### 9.12. Event-driven backup
+- Добавлен `BackupEnabled` (`BACKUP_ENABLED`) в `knowledge-graph.config.json`, `internal/config/config.go` и Docker Compose.
+- `docker-compose.yml`/`docker-compose.test.yml` устанавливают `BACKUP_ENABLED=false`; `docker-compose.personal.yml` — `BACKUP_ENABLED=true`.
+- `AsynqClient` не ставит `backup:database` в очередь, если `BackupEnabled=false`.
+- `worker/main.go` регистрирует `BackupDatabaseHandler`/`BackupToCloudHandler` только при `BackupEnabled=true`.
+- Исправлена дедупликация `NewDatabaseBackupTask`: убран timestamp из payload, `asynq.Unique(5m)` теперь работает корректно.
+
 ---
 
 ## 10. Результаты верификации
@@ -342,6 +349,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Frontend i18n: `frontend/src/shared/utils/i18n.ts`.
 - Frontend entry: `frontend/src/routes/+page.svelte`.
 - NLP: `nlp-service/Dockerfile`, `nlp-service/app/main.py`.
+- Backup: `docs/BACKUP.md`, `knowledge-graph.config.json`.
 - Regression: `scripts/testing/run-full-test-cycle.ps1`.
 - Regression plan: `docs/REGRESSION_TEST_PLAN.md`.
 - Roadmap: `ROADMAP.ru.md`.

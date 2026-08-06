@@ -15,15 +15,17 @@ import (
 
 // AsynqClient implements the common.TaskQueue port using asynq.
 type AsynqClient struct {
-	client *asynq.Client
+	client        *asynq.Client
+	backupEnabled bool
 }
 
 // NewAsynqClient creates a new asynq client.
 // redisAddr is the Redis address, e.g. "localhost:6379".
-func NewAsynqClient(redisAddr string) (*AsynqClient, error) {
+// backupEnabled controls whether backup tasks are enqueued.
+func NewAsynqClient(redisAddr string, backupEnabled bool) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
-	return &AsynqClient{client: client}, nil
+	return &AsynqClient{client: client, backupEnabled: backupEnabled}, nil
 }
 
 func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -36,6 +38,9 @@ func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remot
 }
 
 func (c *AsynqClient) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	if !c.backupEnabled {
+		return nil
+	}
 	task, err := tasks.NewDatabaseBackupTask()
 	if err != nil {
 		return err

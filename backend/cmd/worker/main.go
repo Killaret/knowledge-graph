@@ -97,7 +97,7 @@ func main() {
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
 	// Task queue client for the import worker to enqueue note processing tasks.
-	queueClient, err := queue.NewAsynqClient(redisAddr)
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled)
 	if err != nil {
 		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
 		queueClient = nil
@@ -160,8 +160,16 @@ func main() {
 	refreshSvc := recommendation.NewRefreshService(noteRepo, recRepo, traversalSvc, cfg.RecommendationTopN)
 
 	// Backup service and runner for event-driven database backups.
-	backupSvc := buildBackupService(cfg)
-	backupRunner := buildBackupRunner(cfg, backupSvc)
+	// Only register the backup handlers when backup is explicitly enabled,
+	// so dev/test/personal stacks without the flag do not run backups.
+	var backupSvc tasks.BackupServiceInterface
+	var backupRunner tasks.DatabaseBackupRunner
+	if cfg.BackupEnabled {
+		backupSvc = buildBackupService(cfg)
+		backupRunner = buildBackupRunner(cfg, backupSvc)
+	} else {
+		log.Println("[Worker] Database backup is disabled")
+	}
 
 	// Asynq сервер с конфигурацией
 	queues := map[string]int{"default": cfg.AsynqQueueDefault}
@@ -173,9 +181,11 @@ func main() {
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
-	mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
-	if backupSvc != nil {
-		mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
+	if cfg.BackupEnabled {
+		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
+		if backupSvc != nil {
+			mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
+		}
 	}
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)

@@ -103,6 +103,7 @@
     }
   },
   "backup": {
+    "enabled": false,
     "local_path": "./backups",
     "cloud": {
       "enabled": true,

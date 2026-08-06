@@ -76,16 +76,14 @@ func HandleBackupToCloud(ctx context.Context, t *asynq.Task, backupSvc BackupSer
 const TypeDatabaseBackup = "backup:database"
 
 // DatabaseBackupPayload contains data for the database backup task.
-type DatabaseBackupPayload struct {
-	TriggeredAt string `json:"triggered_at"`
-}
+type DatabaseBackupPayload struct{}
 
 // NewDatabaseBackupTask creates a new Asynq task for full database backup.
 // It is unique for 5 minutes to avoid backing up on every note change.
 func NewDatabaseBackupTask() (*asynq.Task, error) {
-	payload, err := json.Marshal(DatabaseBackupPayload{
-		TriggeredAt: time.Now().UTC().Format(time.RFC3339),
-	})
+	// The payload is intentionally constant (no timestamps) so asynq.Unique
+	// can deduplicate multiple note-mutation triggers within the same window.
+	payload, err := json.Marshal(DatabaseBackupPayload{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal database backup payload: %w", err)
 	}
@@ -113,7 +111,7 @@ func HandleDatabaseBackup(ctx context.Context, t *asynq.Task, runner DatabaseBac
 		return fmt.Errorf("failed to unmarshal database backup payload: %w", err)
 	}
 
-	log.Printf("[Asynq] Starting database backup (triggered at %s)", p.TriggeredAt)
+	log.Printf("[Asynq] Starting database backup (triggered at %s)", time.Now().UTC().Format(time.RFC3339))
 
 	backupPath, err := runner.Run(ctx)
 	if err != nil {

@@ -71,7 +71,7 @@ func main() {
 	}
 
 	// Create task queue client through the common port
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
 	if err != nil {
 		log.Fatalf("Failed to create task queue client: %v", err)
 	}

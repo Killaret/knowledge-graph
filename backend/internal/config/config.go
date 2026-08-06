@@ -106,6 +106,7 @@ type JSONConfig struct {
 		} `json:"auth"`
 	} `json:"backend"`
 	Backup struct {
+		Enabled   bool   `json:"enabled"`
 		LocalPath string `json:"local_path"`
 		Cloud     struct {
 			Enabled  bool   `json:"enabled"`
@@ -230,6 +231,7 @@ type Config struct {
 	PasswordPolicyRequireSpecial bool
 
 	// Backup configuration
+	BackupEnabled          bool
 	BackupCloudEnabled     bool
 	BackupCloudProvider    string
 	BackupLocalPath        string
@@ -468,6 +470,7 @@ func Load() (*Config, error) {
 		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
 
 		// Backup configuration
+		BackupEnabled:          getBoolEnv("BACKUP_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Enabled }, false)),
 		BackupCloudEnabled:     getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
 		BackupCloudProvider:    getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
 		BackupLocalPath:        getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),

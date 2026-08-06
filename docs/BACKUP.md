@@ -74,6 +74,7 @@ The backup system includes:
 ```json
 {
   "backup": {
+    "enabled": false,
     "local_path": "./backups",
     "cloud": {
       "enabled": true,
@@ -93,6 +94,7 @@ The backup system includes:
 
 **Configuration Parameters:**
 
+- `enabled` — master switch for event-driven database backups (default `false`)
 - `local_path` — local directory for backup storage
 - `cloud.enabled` — enable cloud backup
 - `cloud.provider` — cloud storage provider (only `yandex`)
@@ -184,6 +186,9 @@ curl -X POST "https://oauth.yandex.ru/token" \
 Add to `.env` file:
 
 ```bash
+# Enable event-driven database backups
+BACKUP_ENABLED=true
+
 # Enable cloud backup
 BACKUP_CLOUD_ENABLED=true
 BACKUP_CLOUD_PROVIDER=yandex
@@ -209,7 +214,7 @@ The legacy scripts (`scripts/devops/backup-personal.sh` and `backup-personal.ps1
 
 ## 🔔 Event-driven Backup
 
-The worker automatically schedules a full database backup after any note change:
+The worker automatically schedules a full database backup after any note change when `BACKUP_ENABLED=true`:
 
 - `POST /api/v1/notes` (create)
 - `PUT /api/v1/notes/:id` (update)
@@ -219,13 +224,15 @@ The worker automatically schedules a full database backup after any note change:
 - `POST /api/v1/import/bookmarklet` (bookmarklet)
 - `POST /api/v1/import/bookmarks` async batch import
 
-Multiple changes within 5 minutes are deduplicated by Asynq's `Unique` option. The actual dump is delayed by 30 seconds to avoid backing up in the middle of a burst of edits. The worker produces a timestamped file like:
+Multiple changes within 5 minutes are deduplicated by Asynq's `Unique` option (the task payload is constant so the window works correctly). The actual dump is delayed by 30 seconds to avoid backing up in the middle of a burst of edits. The worker produces a timestamped file like:
 
 ```
 backups/backup-personal-YYYY-MM-DD-HHMMSS.sql.gz
 ```
 
 and uploads it to Yandex.Disk if `BACKUP_CLOUD_ENABLED=true`.
+
+> **Stack scoping:** `docker-compose.yml` and `docker-compose.test.yml` set `BACKUP_ENABLED=false` for the backend and worker, so event-driven backups only run in the personal stack (`docker-compose.personal.yml` sets `BACKUP_ENABLED=true` by default).
 
 ## 🚀 Manual Backup Execution
 
