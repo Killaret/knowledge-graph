@@ -416,6 +416,10 @@ func (m *mockTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.
 	return nil
 }
 
+func (m *mockTaskQueue) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	return nil
+}
+
 func TestSendNotification_WithTaskQueue(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()

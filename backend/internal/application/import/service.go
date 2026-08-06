@@ -535,6 +535,12 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 		}
 	}
 
+	if s.taskQueue != nil {
+		if err := s.taskQueue.EnqueueBackupOnNoteChange(ctx); err != nil {
+			log.Printf("[ImportService] failed to enqueue backup on note change: %v", err)
+		}
+	}
+
 	if status.Progress.Failed == status.Progress.Total && status.Progress.Total > 0 {
 		status.Status = statusFailed
 	} else {

@@ -144,6 +144,10 @@ func (m *taskQueueMock) EnqueueNotification(ctx context.Context, payload []byte)
 	return nil
 }
 
+func (m *taskQueueMock) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	return nil
+}
+
 func (m *taskQueueMock) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
 	return m.Called(ctx, userID, taskID, items).Error(0)
 }

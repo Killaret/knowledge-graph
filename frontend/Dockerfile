@@ -38,7 +38,7 @@ WORKDIR /app
 
 # Copy built application
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/package*.json .
+COPY --from=builder /app/package*.json ./
 
 # Install curl for health check and production dependencies
 RUN apk add --no-cache curl wget && \

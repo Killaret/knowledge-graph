@@ -107,6 +107,17 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 	}
 }
 
+// enqueueBackupOnNoteChange schedules a database backup after note mutations.
+// Multiple changes within the unique window are deduplicated by the task queue.
+func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
+	if h.taskQueue == nil {
+		return
+	}
+	if err := h.taskQueue.EnqueueBackupOnNoteChange(ctx); err != nil {
+		log.Printf("[NoteHandler] Failed to enqueue backup on note change: %v", err)
+	}
+}
+
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
@@ -239,6 +250,9 @@ func (h *Handler) Create(c *gin.Context) {
 
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
+
+	// Schedule backup after note change
+	h.enqueueBackupOnNoteChange(c.Request.Context())
 
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
@@ -380,6 +394,7 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
+	h.enqueueBackupOnNoteChange(c.Request.Context())
 
 	if h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -703,6 +718,7 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
+	h.enqueueBackupOnNoteChange(c.Request.Context())
 
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
@@ -881,6 +897,8 @@ func (h *Handler) Delete(c *gin.Context) {
 		}
 	}
 
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
 	apicommon.NoContent(c)
 }
 
@@ -936,6 +954,8 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 		}
 	}
 
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
 	apicommon.NoContent(c)
 }
 
@@ -973,6 +993,8 @@ func (h *Handler) Restore(c *gin.Context) {
 			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
 		}
 	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
 
 	apicommon.NoContent(c)
 }

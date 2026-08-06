@@ -11,7 +11,7 @@ RUN go build -ldflags="-s -w" -o /app/seed ./scripts/seed.go
 RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 
 FROM alpine:latest AS base
-RUN apk --no-cache add ca-certificates curl wget
+RUN apk --no-cache add ca-certificates curl wget postgresql16-client gzip
 WORKDIR /root/
 
 FROM base AS server

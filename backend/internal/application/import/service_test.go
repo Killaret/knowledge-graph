@@ -126,6 +126,10 @@ func (q *fakeTaskQueue) EnqueueNotification(ctx context.Context, payload []byte)
 	return nil
 }
 
+func (q *fakeTaskQueue) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	return nil
+}
+
 func (q *fakeTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
 	q.called = true
 	q.userID = userID

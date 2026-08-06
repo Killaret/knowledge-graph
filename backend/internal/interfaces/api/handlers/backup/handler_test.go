@@ -40,6 +40,7 @@ func (m *mockTaskQueue) EnqueueRecalculateLinkWeights(ctx context.Context, noteI
 	return nil
 }
 func (m *mockTaskQueue) EnqueueNotification(ctx context.Context, payload []byte) error { return nil }
+func (m *mockTaskQueue) EnqueueBackupOnNoteChange(ctx context.Context) error           { return nil }
 func (m *mockTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
 	return nil
 }

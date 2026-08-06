@@ -35,6 +35,15 @@ func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remot
 	return err
 }
 
+func (c *AsynqClient) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	task, err := tasks.NewDatabaseBackupTask()
+	if err != nil {
+		return err
+	}
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
 func (c *AsynqClient) EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error {
 	task, err := tasks.NewRefreshRecommendationsTask(noteID, delay)
 	if err != nil {

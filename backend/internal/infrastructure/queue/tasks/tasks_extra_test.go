@@ -144,3 +144,31 @@ func TestHandleRefreshRecommendations_ServiceError(t *testing.T) {
 	err := HandleRefreshRecommendations(context.Background(), task, &failingRefreshService{})
 	assert.Error(t, err)
 }
+
+type mockDatabaseBackupRunner struct{ returnErr error }
+
+func (m *mockDatabaseBackupRunner) Run(ctx context.Context) (string, error) {
+	if m.returnErr != nil {
+		return "", m.returnErr
+	}
+	return "/tmp/backup.sql.gz", nil
+}
+
+func TestNewDatabaseBackupTask(t *testing.T) {
+	task, err := NewDatabaseBackupTask()
+	assert.NoError(t, err)
+	assert.Equal(t, TypeDatabaseBackup, task.Type())
+}
+
+func TestHandleDatabaseBackup(t *testing.T) {
+	task, _ := NewDatabaseBackupTask()
+	err := HandleDatabaseBackup(context.Background(), task, &mockDatabaseBackupRunner{})
+	assert.NoError(t, err)
+
+	errTask := asynq.NewTask(TypeDatabaseBackup, []byte("bad"))
+	err = HandleDatabaseBackup(context.Background(), errTask, &mockDatabaseBackupRunner{})
+	assert.Error(t, err)
+
+	err = HandleDatabaseBackup(context.Background(), task, &mockDatabaseBackupRunner{returnErr: errors.New("backup failed")})
+	assert.Error(t, err)
+}

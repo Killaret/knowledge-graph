@@ -7,9 +7,10 @@ Backup system for personal Knowledge Graph instance with support for local stora
 The backup system includes:
 
 - **Local scripts**: `scripts/devops/backup-personal.sh` (Linux/Mac) and `scripts/devops/backup-personal.ps1` (Windows)
-- **Go service**: `backend/internal/infrastructure/cloud/yandex_backup.go` for Yandex.Disk WebDAV integration
-- **Asynq task**: `TypeBackupToCloud` for asynchronous backup uploads
-- **Docker service**: `backup_scheduler` in `docker-compose.personal.yml` for automated backups
+- **Go service**: `backend/internal/infrastructure/cloud/yandex_disk.go` for Yandex.Disk REST API integration
+- **Asynq tasks**: `TypeBackupToCloud` for asynchronous backup uploads, `TypeDatabaseBackup` for full database dumps
+- **Docker service**: `backup_scheduler` in `docker-compose.personal.yml` for scheduled daily backups
+- **Worker-driven backup**: `backend/cmd/worker` performs local `pg_dump`, compresses the result and uploads it to Yandex.Disk after note changes
 - **Configuration**: `knowledge-graph.config.json` backup section
 
 ### Backup Architecture
@@ -37,8 +38,32 @@ The backup system includes:
                          │
                          ▼ (if cloud backup enabled)
 ┌─────────────────────────────────────────────────────────────┐
-│               Yandex.Disk (WebDAV)                           │
+│               Yandex.Disk (REST API)                         │
 │               /KnowledgeGraphBackups/                        │
+└─────────────────────────────────────────────────────────────┘
+
+### Event-driven backup flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Note changes (Create/Update/Delete)        │
+│                    Import, Bookmarklet, Batch restore          │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Asynq queue (TypeDatabaseBackup)              │
+│                 - 5-minute unique window                      │
+│                 - 30-second delay                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Worker backup runner                          │
+│                 - pg_dump                                     │
+│                 - gzip                                        │
+│                 - local retention                             │
+│                 - Yandex.Disk upload (REST API)               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -88,7 +113,7 @@ The backup system includes:
    - **Description**: Database backup system
    - **Website URL**: `http://localhost`
    - **Redirect URI**: `https://oauth.yandex.ru/verification_code`
-   - **Permissions (DLS)**: Select "Yandex.Disk WebDAV API"
+   - **Permissions (DLS)**: Select "Yandex.Disk REST API"
 3. Get your **Client ID**
 
 #### Getting Token via Browser
@@ -123,9 +148,10 @@ Add to `.env` file:
 ```bash
 # Enable cloud backup
 BACKUP_CLOUD_ENABLED=true
+BACKUP_CLOUD_PROVIDER=yandex
 
-# Yandex.Disk OAuth token
-BACKUP_YANDEX_TOKEN=your_oauth_token_here
+# Yandex.Disk OAuth token (used by the worker and Go scheduler)
+BACKUP_YANDEX_OAUTH_TOKEN=your_oauth_token_here
 
 # Folder on Yandex.Disk
 BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups
@@ -137,7 +163,29 @@ BACKUP_DIR=./backups
 CLEANUP_OLD_BACKUPS=true
 ```
 
-## 🚀 Manual Backup Execution
+The legacy scripts (`scripts/devops/backup-personal.sh` and `backup-personal.ps1`) also accept `BACKUP_YANDEX_TOKEN` as a fallback alias.
+
+## � Event-driven Backup
+
+The worker automatically schedules a full database backup after any note change:
+
+- `POST /api/v1/notes` (create)
+- `PUT /api/v1/notes/:id` (update)
+- `DELETE /api/v1/notes/:id` (delete)
+- `POST /api/v1/notes/batch` (batch delete)
+- `POST /api/v1/notes/:id/restore` (restore)
+- `POST /api/v1/import/bookmarklet` (bookmarklet)
+- `POST /api/v1/import/bookmarks` async batch import
+
+Multiple changes within 5 minutes are deduplicated by Asynq's `Unique` option. The actual dump is delayed by 30 seconds to avoid backing up in the middle of a burst of edits. The worker produces a timestamped file like:
+
+```
+backups/backup-personal-YYYY-MM-DD-HHMMSS.sql.gz
+```
+
+and uploads it to Yandex.Disk if `BACKUP_CLOUD_ENABLED=true`.
+
+## �🚀 Manual Backup Execution
 
 ### Windows (PowerShell)
 

@@ -50,6 +50,10 @@ func (q *stubTaskQueue) EnqueueNotification(ctx context.Context, payload []byte)
 	return nil
 }
 
+func (q *stubTaskQueue) EnqueueBackupOnNoteChange(ctx context.Context) error {
+	return nil
+}
+
 func (q *stubTaskQueue) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
 	return nil
 }

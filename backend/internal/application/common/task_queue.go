@@ -13,6 +13,9 @@ type TaskQueue interface {
 	// EnqueueBackupToCloud schedules a cloud backup task.
 	EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error
 
+	// EnqueueBackupOnNoteChange schedules a database backup after a note is created or modified.
+	EnqueueBackupOnNoteChange(ctx context.Context) error
+
 	// EnqueueRefreshRecommendations schedules a recommendation refresh for the given note.
 	EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
 

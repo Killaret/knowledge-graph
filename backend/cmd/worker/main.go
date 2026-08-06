@@ -15,11 +15,14 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/infrastructure/backup"
 	infracache "knowledge-graph/internal/infrastructure/cache"
+	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
+	"knowledge-graph/internal/infrastructure/queue/tasks"
 	"knowledge-graph/internal/infrastructure/web"
 )
 
@@ -156,6 +159,10 @@ func main() {
 	// Refresh service for background recommendation calculation
 	refreshSvc := recommendation.NewRefreshService(noteRepo, recRepo, traversalSvc, cfg.RecommendationTopN)
 
+	// Backup service and runner for event-driven database backups.
+	backupSvc := buildBackupService(cfg)
+	backupRunner := buildBackupRunner(cfg, backupSvc)
+
 	// Asynq сервер с конфигурацией
 	queues := map[string]int{"default": cfg.AsynqQueueDefault}
 	srv := queue.NewServer(redisAddr, cfg.AsynqConcurrency, queues)
@@ -166,6 +173,10 @@ func main() {
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
+	mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
+	if backupSvc != nil {
+		mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
+	}
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
 
@@ -196,6 +207,41 @@ func main() {
 	case err := <-errChan:
 		log.Fatalf("Worker error: %v", err)
 	}
+}
+
+// buildBackupService creates the cloud backup service when configured.
+func buildBackupService(cfg *config.Config) tasks.BackupServiceInterface {
+	if !cfg.BackupCloudEnabled {
+		return nil
+	}
+	if cfg.BackupCloudProvider != "yandex" {
+		log.Printf("[Worker] WARNING: unsupported cloud backup provider: %s", cfg.BackupCloudProvider)
+		return nil
+	}
+	if cfg.BackupYandexOAuthToken == "" {
+		log.Printf("[Worker] WARNING: Yandex backup enabled but token is empty")
+		return nil
+	}
+
+	svc, err := cloud.NewYandexDiskService(cloud.YandexDiskConfig{
+		OAuthToken: cfg.BackupYandexOAuthToken,
+	})
+	if err != nil {
+		log.Printf("[Worker] WARNING: failed to create Yandex backup service: %v", err)
+		return nil
+	}
+	return svc
+}
+
+// buildBackupRunner creates the database backup runner used by the worker.
+func buildBackupRunner(cfg *config.Config, uploader backup.Uploader) *backup.Runner {
+	return backup.NewRunner(
+		cfg.DatabaseURL,
+		cfg.BackupLocalPath,
+		cfg.BackupRetentionDays,
+		backup.WithUploader(uploader),
+		backup.WithRemoteFolder(cfg.BackupYandexFolder),
+	)
 }
 
 // maskURL hides sensitive info in URLs for logging

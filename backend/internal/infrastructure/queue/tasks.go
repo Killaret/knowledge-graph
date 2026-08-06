@@ -6,6 +6,7 @@ const (
 	// TypeComputeEmbedding — task type for computing embedding
 	TypeComputeEmbedding = "compute:embedding"
 	TypeBackupToCloud    = "backup:cloud"
+	TypeDatabaseBackup   = "backup:database"
 	// TypeNotificationAchievement — task type for achievement notifications
 	TypeNotificationAchievement = "notification:achievement"
 	// TypeImportBookmarks — task type for async batch bookmark import

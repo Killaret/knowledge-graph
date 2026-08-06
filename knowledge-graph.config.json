@@ -108,7 +108,9 @@
       "enabled": true,
       "provider": "yandex",
       "yandex": {
-        "oauth_token": ""
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
       }
     },
     "schedule": "0 23 * * 0",

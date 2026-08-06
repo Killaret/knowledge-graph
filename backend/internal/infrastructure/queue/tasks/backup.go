@@ -71,3 +71,56 @@ func HandleBackupToCloud(ctx context.Context, t *asynq.Task, backupSvc BackupSer
 	log.Printf("[Asynq] Cloud backup completed successfully: %s", p.RemoteKey)
 	return nil
 }
+
+// TypeDatabaseBackup is the task type for taking a full database backup.
+const TypeDatabaseBackup = "backup:database"
+
+// DatabaseBackupPayload contains data for the database backup task.
+type DatabaseBackupPayload struct {
+	TriggeredAt string `json:"triggered_at"`
+}
+
+// NewDatabaseBackupTask creates a new Asynq task for full database backup.
+// It is unique for 5 minutes to avoid backing up on every note change.
+func NewDatabaseBackupTask() (*asynq.Task, error) {
+	payload, err := json.Marshal(DatabaseBackupPayload{
+		TriggeredAt: time.Now().UTC().Format(time.RFC3339),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal database backup payload: %w", err)
+	}
+
+	opts := []asynq.Option{
+		asynq.MaxRetry(2),
+		asynq.Timeout(30 * time.Minute),
+		asynq.Queue("default"),
+		asynq.Unique(5 * time.Minute),
+		asynq.ProcessIn(30 * time.Second),
+	}
+
+	return asynq.NewTask(TypeDatabaseBackup, payload, opts...), nil
+}
+
+// DatabaseBackupRunner defines the interface for running a full database backup.
+type DatabaseBackupRunner interface {
+	Run(ctx context.Context) (string, error)
+}
+
+// HandleDatabaseBackup is the handler for TypeDatabaseBackup tasks.
+func HandleDatabaseBackup(ctx context.Context, t *asynq.Task, runner DatabaseBackupRunner) error {
+	var p DatabaseBackupPayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal database backup payload: %w", err)
+	}
+
+	log.Printf("[Asynq] Starting database backup (triggered at %s)", p.TriggeredAt)
+
+	backupPath, err := runner.Run(ctx)
+	if err != nil {
+		log.Printf("[Asynq] Database backup failed: %v", err)
+		return err
+	}
+
+	log.Printf("[Asynq] Database backup completed: %s", backupPath)
+	return nil
+}

@@ -69,3 +69,17 @@ func RecalculateLinkWeightsHandler(svc tasks.LinkWeightRecalculator) func(contex
 		return tasks.HandleRecalculateLinkWeights(ctx, t, svc)
 	}
 }
+
+// BackupDatabaseHandler returns a handler that dispatches to tasks.HandleDatabaseBackup.
+func BackupDatabaseHandler(runner tasks.DatabaseBackupRunner) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleDatabaseBackup(ctx, t, runner)
+	}
+}
+
+// BackupToCloudHandler returns a handler that dispatches to tasks.HandleBackupToCloud.
+func BackupToCloudHandler(svc tasks.BackupServiceInterface) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleBackupToCloud(ctx, t, svc)
+	}
+}
