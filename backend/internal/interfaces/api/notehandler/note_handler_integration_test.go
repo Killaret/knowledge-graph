@@ -71,6 +71,7 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 		},
 		nil, // graphCache
 		nil, // achievementService
+		nil, // importSvc
 	)
 
 	// Настраиваем Gin

@@ -21,6 +21,7 @@ build/
 *.out
 *.exe
 *.exe~
+backend/bin/
 *.dll
 *.so
 *.a

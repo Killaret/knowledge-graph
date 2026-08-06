@@ -85,6 +85,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) SetupSuite() {
 		},
 		s.graphCache,
 		nil, // achievementService
+		nil, // importSvc
 	)
 
 	// Настраиваем Gin
@@ -179,6 +180,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteCreateInvalidatesGraphCac
 		},
 		s.graphCache,
 		nil, // achievementService
+		nil, // importSvc
 	)
 	testRouter.POST("/notes", handler.Create)
 	testRouter.ServeHTTP(w, req)
@@ -239,6 +241,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 		&config.Config{},
 		s.graphCache,
 		nil, // achievementService
+		nil, // importSvc
 	)
 
 	testRouter := gin.New()
@@ -304,6 +307,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 		&config.Config{},
 		s.graphCache,
 		nil, // achievementService
+		nil, // importSvc
 	)
 
 	testRouter := gin.New()

@@ -19,6 +19,10 @@ public class HealthCheckService {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
 
 
+        httpServer.createContext("/health", exchange -> {
+            sendResponse(exchange, 200, "{\"status\":\"UP\"}");
+        });
+
         httpServer.createContext("/health/liveliness", exchange -> {
             sendResponse(exchange, 200, "{\"status\":\"UP\"}");
         });
