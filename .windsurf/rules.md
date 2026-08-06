@@ -27,9 +27,10 @@ Do not delete.
 - If testing — apply testing
 
 ## Tools
-- `AI_RULES.md` — unified AI rules (single source of truth)
+- `.windsurfrules` — unified AI rules and project context (single source of truth)
+- `docs/PROJECT_REVIEW_AI_AGENTS.md` — full knowledge-transfer artifact
 - `docs/AGENTS_EN.md` — full agent descriptions
-- `docs/ROADMAP.md` — project roadmap
+- `ROADMAP.md` / `ROADMAP.ru.md` — project roadmap
 
 ## Instructions
 - Read this file first

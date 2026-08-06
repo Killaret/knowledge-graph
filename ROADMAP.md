@@ -1,8 +1,8 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 26, 2026  
-**Status:** Graph API unification and automation-robustness completed; awaiting final verification  
-**Version:** v2.6
+**Updated:** July 29, 2026  
+**Status:** Note type validation and PUT requests fixed; testing API expanded  
+**Version:** v2.7
 
 ---
 

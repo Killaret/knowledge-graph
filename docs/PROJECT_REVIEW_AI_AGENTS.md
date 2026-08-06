@@ -337,6 +337,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - Главные правила: `.windsurfrules`.
 - Архитектура: `docs/ARCHITECTURE_SUMMARY.md`.
+- Команды: `COMMANDS.md`.
 - Backend wiring: `backend/cmd/server/main.go`.
 - Frontend i18n: `frontend/src/shared/utils/i18n.ts`.
 - Frontend entry: `frontend/src/routes/+page.svelte`.

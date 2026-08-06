@@ -2,7 +2,7 @@
 
 Полный справочник команд для быстрого доступа ко всем операциям проекта.
 
-## � Структура скриптов
+## Структура скриптов
 
 Скрипты проекта организованы по семантическим категориям в директории `scripts/`:
 
@@ -33,7 +33,7 @@ scripts/
 - `force_stop_docker.ps1` - Принудительная остановка Docker
 - `fix_vhdx_attributes.ps1` - Исправление атрибутов VHDX
 
-## �🚀 Команды запуска и разработки
+## 🚀 Команды запуска и разработки
 
 ### Основные команды (корень проекта)
 ```bash
@@ -101,7 +101,6 @@ npm run test                       # Запуск E2E тестов
 npm run test:headed                # E2E тесты с видимым браузером
 npm run test:debug                 # E2E тесты в debug режиме
 npm run test:smoke                 # Smoke тесты только
-npm run test:performance           # Performance тесты
 npm run test:visual                # Visual регрессионные тесты
 npm run test:lighthouse            # Lighthouse CI тесты
 ```
@@ -186,26 +185,26 @@ pip freeze > requirements.txt      # Обновление requirements
 
 ### Полный стек
 ```bash
-docker-compose up                   # Запуск всех сервисов
-docker-compose up --build           # Пересборка и запуск
-docker-compose down                 # Остановка всех сервисов
-docker-compose down -v              # Остановка с удалением volumes
+docker compose up                   # Запуск всех сервисов
+docker compose up --build           # Пересборка и запуск
+docker compose down                 # Остановка всех сервисов
+docker compose down -v              # Остановка с удалением volumes
 ```
 
 ### Отдельные сервисы
 ```bash
-docker-compose up postgres redis   # Только БД и кэш
-docker-compose up backend           # Только backend
-docker-compose up frontend          # Только frontend
-docker-compose up nlp-service      # Только NLP сервис
+docker compose up postgres redis   # Только БД и кэш
+docker compose up backend           # Только backend
+docker compose up frontend          # Только frontend
+docker compose up nlp-service      # Только NLP сервис
 ```
 
 ### Управление
 ```bash
-docker-compose ps                   # Статус сервисов
-docker-compose logs -f backend      # Логи backend
-docker-compose restart backend     # Перезапуск backend
-docker-compose exec backend bash   # Shell в backend контейнере
+docker compose ps                   # Статус сервисов
+docker compose logs -f backend      # Логи backend
+docker compose restart backend     # Перезапуск backend
+docker compose exec backend bash   # Shell в backend контейнере
 ```
 
 ## 🧪 Тестирование по уровням
@@ -246,290 +245,19 @@ cd frontend && npm run test:all
 npm run test && cd backend && go test ./... && cd ../nlp-service && pytest tests/
 ```
 
-## 🤖 AI Помощники - Поддержка всех инструментов
+## AI agents and project context
 
----
+For AI agent rules, architecture overview and project context, see:
+- `.windsurfrules` — single source of truth for Windsurf/Cascade.
+- `docs/PROJECT_REVIEW_AI_AGENTS.md` — full knowledge-transfer artifact.
+- `docs/AGENTS.md` / `docs/AGENTS_EN.md` — agent capability map.
 
-### 🎯 Поддерживаемые инструменты
-
-| Инструмент | Поддержка | Автоактивация | Делегирование |
-|------------|-----------|---------------|---------------|
-| **Cursor** | ✅ Полная | ✅ Да | ✅ Полное |
-| **GitHub Copilot** | ✅ Частичная | ⚠️ Контекст | ⚠️ Через контекст |
-| **Windsurf** | ✅ Частичная | ⚠️ Контекст | ⚠️ Через контекст |
-| **Koda/Agents** | ✅ Полная | ✅ Да | ✅ Полное |
-
----
-
-### 🚀 Orchestrator Agent - Всегда активен!
-
-**Оркестратор автоматически активируется в ЛЮБОЙ сессии без исключений!**
-
-**Для Cursor:**
-```
-1. Открой проект в Cursor
-2. Начни чат с AI
-3. Оркестратор активируется автоматически (alwaysApply: true)
-4. Просто опиши задачу
-```
-
-**Для Copilot/Windsurf:**
-```
-1. Открой проект в VS Code
-2. Начни чат с AI
-3. AI использует контекст из .github/copilot-instructions.md или .windsurf/rules.md
-4. Просто опиши задачу
-```
-
-**Оркестратор анализирует любой запрос и делегирует задачи соответствующим агентам:**
-
-```bash
-# Проверка статуса оркестратора (в чате с ИИ)
-status
-# Ожидаем: Default agent: knowledge-graph-orchestrator
-
-# Список загруженных агентов (в чате с ИИ)
-list-agents
-# Ожидаем: orchestrator + 8 специализированных агентов
-```
-
-**Примеры использования:**
-
-**Простой запрос (1 агент):**
-```
-"Добавь компонент тёмной темы в header"
-→ Автоматически: knowledge-graph-frontend-svelte
-```
-
-**Сложный запрос (несколько агентов):**
-```
-"Реализуй шаринг заметок с email приглашениями"
-→ Orchestrator делит на:
-  - Backend: API endpoint, email service, БД схема
-  - Frontend: Share modal, email input
-  - Integration: API mapping, типы
-  - Tests: Unit + E2E
-  - Docs: API документация
-  - Performance: оптимизация email отправки
-→ Запускает 6 агентов параллельно
-→ Собирает результаты
-→ Возвращает готовую фичу
-```
-
-**Оптимизация (новый performance агент):**
-```
-"Оптимизируй загрузку графа для 1000+ узлов"
-→ Автоматически: knowledge-graph-performance
-   - Анализирует bottleneck
-   - Оптимизирует запросы БД
-   - Добавляет кэширование
-   - Оптимизирует 3D рендеринг
-   - Устанавливает мониторинг
-→ Результат: FPS 30→60, загрузка 5s→1s
-```
-
-**Безопасность (новый security агент):**
-```
-"Проведи аудит безопасности auth"
-→ Автоматически: knowledge-graph-security
-   - Проверяет JWT implementation
-   - Анализирует CORS config
-   - Ищет уязвимости
-   - Предлагает hardening
-→ Результат: Отчёт с рекомендациями
-```
-
-**DevOps (новый devops агент):**
-```
-"Настрой мониторинг с Prometheus"
-→ Автоматически: knowledge-graph-devops
-   - Создаёт Prometheus config
-   - Настраивает Grafana dashboards
-   - Добавляет alerting rules
-   - Пишет инструкцию
-→ Результат: Готовый мониторинг
-```
-
----
-
-### 📁 Файлы конфигурации
-
-| Инструмент | Путь | Назначение |
-|------------|------|------------|
-| **Cursor** | `.cursor/rules/knowledge-graph-orchestrator.md` | Оркестратор + делегирование |
-| **Copilot** | `.github/copilot-instructions.md` | Контекст всех агентов |
-| **Windsurf** | `.windsurf/rules.md` | Контекст всех агентов |
-| **Koda** | `.koda/config.json` | Конфигурация Koda |
-
-**Проверка:**
-```bash
-# Проверить наличие файлов
-ls -la .cursor/rules/
-ls -la .github/copilot-instructions.md
-ls -la .windsurf/rules.md
-ls -la .koda/config.json
-```
-
----
-
-### 🎯 Примеры для разных инструментов
-
-**Cursor (полная поддержка):**
-```
-User: "Оптимизируй загрузку графа"
-Cursor AI:
-  → Оркестратор анализирует → performance task
-  → Делегирует: knowledge-graph-performance
-  → Результат: Полная оптимизация с кодом
-```
-
-**Copilot/Windsurf (через контекст):**
-```
-User: "Оптимизируй загрузку графа"
-Copilot/Windsurf AI:
-  → Использует контекст performance agent
-  → Результат: Аналогичный совет
-```
-
-**Koda/Agents (полная поддержка):**
-```
-User: "Оптимизируй загрузку графа"
-Koda AI:
-  → Оркестратор анализирует → performance task
-  → Делегирует: knowledge-graph-performance
-  → Результат: Полная оптимизация с кодом
-```
-
-**Koda/Agents (полная поддержка):**
-```
-User: "Оптимизируй загрузку графа"
-Koda AI:
-  → Оркестратор анализирует → performance task
-  → Делегирует: knowledge-graph-performance
-  → Результат: Полная оптимизация с кодом
-```
-
----
-
-### 📋 Все доступные агенты (8 агентов)
-
-**Примеры использования:**
-
-**Простой запрос (1 агент):**
-```
-"Добавь компонент тёмной темы в header"
-→ Автоматически: knowledge-graph-frontend-svelte
-```
-
-**Сложный запрос (несколько агентов):**
-```
-"Реализуй шаринг заметок с email приглашениями"
-→ Orchestrator делит на:
-  - Backend: API endpoint, email service, БД схема
-  - Frontend: Share modal, email input
-  - Integration: API mapping, типы
-  - Tests: Unit + E2E
-  - Docs: API документация
-→ Запускает 5 агентов параллельно
-→ Собирает результаты
-```
-
-### Использование агентов в AI
-
-**Автоматически (рекомендуется):**
-```
-Просто опишите задачу - оркестратор сам решит!
-
-"Добавь новую функцию" → Orchestrator анализирует и делегирует
-"Оптимизируй загрузку" → Автоматически: performance агент
-"Проведи аудит безопасности" → Автоматически: security агент
-```
-
-**Явно (опционально):**
-```
-"Используя knowledge-graph-performance, оптимизируй bundle"
-"Используя knowledge-graph-security, проверь auth"
-```
-
-**Контекст файлов:**
-```
-"Обнови frontend/src/lib/api/notes.ts после изменений в backend"
-```
-
-### 📋 Все доступные агенты (8 агентов)
-
-| # | Агент | Назначение | Статус |
-|---|-------|------------|--------|
-| 0 | **knowledge-graph-orchestrator** | **Координация всех агентов** | ✅ **Всегда активен** |
-| 1 | knowledge-graph-frontend-svelte | Frontend (Svelte 5, UI/UX, Three.js) | ✅ Active |
-| 2 | knowledge-graph-backend-go | Backend (Go, API, БД, Redis) | ✅ Active |
-| 3 | knowledge-graph-docs-maintenance | Документация (README, ADR, docs) | ✅ Active |
-| 4 | knowledge-graph-testing | Тестирование (Unit/E2E/BDD) | ✅ Active |
-| 5 | knowledge-graph-integration | API интеграция (контракты, DTO) | ✅ Active |
-| 6 | **knowledge-graph-performance** | **Производительность (оптимизация)** | ✅ **NEW** |
-| 7 | **knowledge-graph-security** | **Безопасность (аудит, hardening)** | ✅ **NEW** |
-| 8 | **knowledge-graph-devops** | **DevOps (деплой, мониторинг)** | ✅ **NEW** |
-
-### Примеры промптов по агентам
-
-**knowledge-graph-performance:**
-- "Оптимизируй загрузку графа для 1000+ узлов"
-- "Уменьши bundle size на 50%"
-- "Повысь FPS GraphCanvas с 30 до 60"
-- "Добавь кэширование для API endpoints"
-- "Проанализируй медленные SQL запросы"
-
-**knowledge-graph-security:**
-- "Проведи аудит безопасности auth"
-- "Проверь JWT implementation на уязвимости"
-- "Добавь rate limiting к sensitive endpoints"
-- "Настрой CORS для production"
-- "Сканируй зависимости на CVE"
-
-**knowledge-graph-devops:**
-- "Создай Kubernetes deployment manifests"
-- "Настрой мониторинг с Prometheus + Grafana"
-- "Оптимизируй Docker image size"
-- "Добавь CI/CD pipeline с GitHub Actions"
-- "Настрой автоматический backup БД"
-
-**knowledge-graph-testing:**
-- "Напиши unit тесты для новой функции в Note entity"
-- "Исправь падающие Playwright тесты"
-- "Проанализируй покрытие тестов и предложи улучшения"
-- "Настрой интеграционные тесты для нового handler"
-
-**knowledge-graph-integration:**
-- "Добавь новый endpoint и обнови frontend API client"
-- "Исправь несоответствие типов между backend и frontend"
-- "Настрой CORS для нового домена"
-- "Обнови документацию API после изменений"
-
-**knowledge-graph-frontend-svelte:**
-- "Проанализируй GraphCanvas компонент"
-- "Настрой playwright для сохранения скриншотов"
-- "Добавь описание UI/UX паттернов"
-- "Создай компонент тёмной темы"
-
-**knowledge-graph-backend-go:**
-- "Проанализируй backend Go и исправь ошибки"
-- "Оцени состояние docker-окружения"
-- "Найди ошибки в note_repo.go"
-- "Создай новую миграцию БД"
-
-**knowledge-graph-docs-maintenance:**
-- "Оформи README разделом 'Как пользоваться агентами'"
-- "Создай инструкцию по новым командам"
-- "Сгенерируй changelog для изменений"
-- "Обнови ADR после архитектурных изменений"
-
-## 📊 Мониторинг и отладка
 
 ### Логи
 ```bash
 # Backend
-docker-compose logs -f backend
-docker-compose logs backend | grep ERROR
+docker compose logs -f backend
+docker compose logs backend | grep ERROR
 
 # Frontend
 # Логи доступны в браузере консоли
@@ -547,7 +275,7 @@ curl http://localhost:8000/health
 ### Database
 ```bash
 # Подключение к PostgreSQL
-docker-compose exec postgres psql -U kb_user -d knowledge_base
+docker compose exec postgres psql -U kb_user -d knowledge_base
 
 # Резервное копирование
 ./scripts/devops/backup-personal.sh      # Linux/Mac
@@ -666,7 +394,7 @@ wsl
 # 2. Очистка Docker (без volumes)
 docker system prune -a --force
 # 3. Остановить контейнеры
-docker-compose down
+docker compose down
 # 4. Полностью остановить Docker Desktop
 # 5. Запустить сжатие
 .\scripts\cleanup\diskpart_compress_admin.ps1
@@ -714,7 +442,7 @@ cd ../frontend && npm install
 cd ../nlp-service && pip install -r requirements.txt
 
 # 2. Запуск стек
-docker-compose up
+docker compose up
 
 # 3. Отдельные сервисы при необходимости
 cd backend && go run ./cmd/server
@@ -764,8 +492,8 @@ cd backend && go run ./cmd/checkconfig
 
 ### Database статус
 ```bash
-docker-compose ps postgres
-docker-compose exec postgres pg_isready
+docker compose ps postgres
+docker compose exec postgres pg_isready
 ```
 
 ---

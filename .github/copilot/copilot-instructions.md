@@ -1,6 +1,6 @@
 # Copilot Instructions for Knowledge Graph
 
-**Read:** AI_RULES.md (single source of truth)
+**Read:** `.windsurfrules` and `docs/PROJECT_REVIEW_AI_AGENTS.md` (single source of truth)
 
 This file contains all project rules in 116 lines instead of 11000+ lines of outdated documentation.
 
