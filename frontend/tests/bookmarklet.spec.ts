@@ -15,7 +15,9 @@ test.describe("Bookmarklet import", { tag: ["@e2e", "@import", "@skip-auth"] }, 
     const url = "https://example.com/test";
     const text = "Important captured text";
 
-    await page.goto(`/import?skip_auth=true&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+    await page.goto(
+      `/import?skip_auth=true&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
+    );
     await page.waitForLoadState("networkidle");
 
     // The page should show the success message
@@ -34,5 +36,4 @@ test.describe("Bookmarklet import", { tag: ["@e2e", "@import", "@skip-auth"] }, 
     expect(created.content).toContain(text);
     expect(created.type).toBe("asteroid");
   });
-
 });

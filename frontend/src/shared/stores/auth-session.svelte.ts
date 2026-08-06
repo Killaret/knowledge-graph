@@ -24,7 +24,7 @@ export function currentUser(): User | null {
 export function accessToken(): string | null {
   // Support injected test tokens before initAuth completes (Playwright/Cucumber real-auth flows).
   if (!authState.accessToken && browser) {
-    const injected = (window as any).__ACCESS_TOKEN__ as string | undefined;
+    const injected = window.__ACCESS_TOKEN__;
     if (injected) return injected;
   }
   return authState.accessToken;

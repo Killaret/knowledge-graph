@@ -35,7 +35,9 @@
     "cosmic_abomination",
   ];
 
-  let status = $state<"idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized">("idle");
+  let status = $state<
+    "idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized"
+  >("idle");
   let input = $state("");
   let extractContent = $state(false);
   let dragOver = $state(false);
@@ -262,7 +264,10 @@
       class:drag-over={dragOver}
       role="button"
       tabindex="0"
-      ondragover={(e) => { e.preventDefault(); dragOver = true; }}
+      ondragover={(e) => {
+        e.preventDefault();
+        dragOver = true;
+      }}
       ondragleave={() => (dragOver = false)}
       ondrop={handleFileDrop}
       onkeydown={(e) => e.key === "Enter" && document.getElementById("file-input")?.click()}
@@ -340,7 +345,9 @@
 
       <div class="actions">
         <button type="button" onclick={startImport}>
-          {t("import.importAll", { count: previewItems.filter((i) => i.is_new && !i.error).length })}
+          {t("import.importAll", {
+            count: previewItems.filter((i) => i.is_new && !i.error).length,
+          })}
         </button>
         <button type="button" class="secondary" onclick={reset}>
           {t("import.noParams")}

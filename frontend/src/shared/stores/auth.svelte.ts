@@ -121,8 +121,8 @@ export async function initAuth(): Promise<void> {
       // Allow test harnesses to inject an access token via window.__ACCESS_TOKEN__
       // (e.g. Playwright/Cucumber real-auth scenarios). This avoids the need to
       // share HttpOnly refresh cookies across origins.
-      if (browser && !(window as any).__SKIP_AUTH__) {
-        const injectedToken = (window as any).__ACCESS_TOKEN__ as string | undefined;
+      if (browser && !window.__SKIP_AUTH__) {
+        const injectedToken = window.__ACCESS_TOKEN__;
         if (injectedToken && !authState.accessToken) {
           saveTokens({
             access_token: injectedToken,

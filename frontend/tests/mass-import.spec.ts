@@ -18,7 +18,9 @@ test.describe("Mass bookmark import", { tag: ["@e2e", "@import", "@skip-auth"] }
     const title1 = `Mass import note ${ts}`;
     const title2 = `Mass import note ${ts} second`;
     const input = page.locator("textarea#import-list");
-    await input.fill(`${title1} | https://example.com/mass/${ts}\n${title2} | https://example.com/mass/${ts}/2`);
+    await input.fill(
+      `${title1} | https://example.com/mass/${ts}\n${title2} | https://example.com/mass/${ts}/2`
+    );
 
     await page.getByRole("button", { name: /Preview/i }).click();
 

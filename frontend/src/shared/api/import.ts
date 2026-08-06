@@ -67,7 +67,7 @@ export async function createBookmarkletNote(data: BookmarkletPayload): Promise<B
  */
 export async function previewBookmarks(
   items: ImportItem[],
-  options?: ImportOptions,
+  options?: ImportOptions
 ): Promise<ImportPreviewResponse> {
   const res = await api
     .post("v1/import/bookmarks/preview", { json: { items, options } })
@@ -80,7 +80,7 @@ export async function previewBookmarks(
  */
 export async function createBookmarksImport(
   items: ImportItem[],
-  options?: ImportOptions,
+  options?: ImportOptions
 ): Promise<ImportTask> {
   const res = await api
     .post("v1/import/bookmarks", { json: { items, options } })

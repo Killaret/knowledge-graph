@@ -2,12 +2,16 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte.js";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   let collapsed = $state(true);
 
   const user = $derived(currentUser());
   const authenticated = $derived(isAuthenticated());
   const currentPath = $derived($page.url.pathname);
+
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, getCurrentLocale(), params);
 
   type NavItem = {
     href: string;
@@ -16,11 +20,11 @@
   };
 
   const navItems: NavItem[] = [
-    { href: "/", label: "Главная", short: "Г" },
-    { href: "/graph", label: "Граф", short: "Гр" },
-    { href: "/notes", label: "Заметки", short: "З" },
-    { href: "/search", label: "Поиск", short: "П" },
-    { href: "/settings", label: "Настройки", short: "Н" },
+    { href: "/", label: t("nav.home"), short: t("nav.homeShort") },
+    { href: "/graph", label: t("nav.graph"), short: t("nav.graphShort") },
+    { href: "/notes", label: t("nav.notes"), short: t("nav.notesShort") },
+    { href: "/search", label: t("nav.search"), short: t("nav.searchShort") },
+    { href: "/settings", label: t("nav.settings"), short: t("nav.settingsShort") },
   ];
 
   // The graph pages have their own top floating controls, so the collapsed
@@ -49,24 +53,24 @@
     class:collapsed
     class:expanded={!collapsed}
     data-testid="sidebar-widget"
-    aria-label="Боковая панель навигации"
+    aria-label={t("nav.ariaPanel")}
   >
     <div class="sidebar-header">
       <button
         class="toggle-button"
         type="button"
-        title={collapsed ? "Развернуть меню" : "Свернуть меню"}
-        aria-label={collapsed ? "Развернуть панель" : "Свернуть панель"}
+        title={collapsed ? t("nav.expand") : t("nav.collapse")}
+        aria-label={collapsed ? t("nav.expandPanel") : t("nav.collapsePanel")}
         onclick={toggle}
       >
         {collapsed ? "☰" : "✕"}
       </button>
       {#if !collapsed}
-        <span class="sidebar-title">Knowledge Graph</span>
+        <span class="sidebar-title">{t("nav.title")}</span>
       {/if}
     </div>
 
-    <nav class="sidebar-nav" aria-label="Основная навигация">
+    <nav class="sidebar-nav" aria-label={t("nav.aria")}>
       <ul>
         {#each navItems as item}
           <li>
@@ -95,7 +99,7 @@
         <div class="user-info">
           <span class="user-avatar">{user?.email?.[0]?.toUpperCase() ?? "?"}</span>
           {#if !collapsed}
-            <span class="user-email">{user?.email ?? "Пользователь"}</span>
+            <span class="user-email">{user?.email ?? t("nav.guestUser")}</span>
           {/if}
         </div>
         <a
@@ -109,7 +113,7 @@
         >
           <span class="nav-short">↩</span>
           {#if !collapsed}
-            <span class="nav-label">Выйти</span>
+            <span class="nav-label">{t("nav.logout")}</span>
           {/if}
         </a>
       {:else}
@@ -121,9 +125,9 @@
             navigate("/auth/login");
           }}
         >
-          <span class="nav-short">В</span>
+          <span class="nav-short">{t("nav.loginShort")}</span>
           {#if !collapsed}
-            <span class="nav-label">Войти</span>
+            <span class="nav-label">{t("nav.login")}</span>
           {/if}
         </a>
         <a
@@ -134,9 +138,9 @@
             navigate("/auth/register");
           }}
         >
-          <span class="nav-short">Р</span>
+          <span class="nav-short">{t("nav.registerShort")}</span>
           {#if !collapsed}
-            <span class="nav-label">Регистрация</span>
+            <span class="nav-label">{t("nav.register")}</span>
           {/if}
         </a>
       {/if}
