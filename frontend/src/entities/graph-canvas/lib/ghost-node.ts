@@ -60,11 +60,7 @@ export function updateGhostNodePulse(state: GhostNodeState, animationTime: numbe
   state.pulsePhase = Math.sin(animationTime * pulseSpeed) * 0.5 + 0.5;
 }
 
-export function isPointOverGhostNode(
-  x: number,
-  y: number,
-  ghostNode: GhostNodeState
-): boolean {
+export function isPointOverGhostNode(x: number, y: number, ghostNode: GhostNodeState): boolean {
   // The ghost node is drawn in screen coordinates, so hit testing
   // can be done directly in screen space.
   const dx = x - ghostNode.x;
