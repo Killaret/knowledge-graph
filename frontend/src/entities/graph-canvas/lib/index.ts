@@ -32,3 +32,6 @@ export * from "./particle-system";
 
 // Gravity and lens distortion
 export * from "./gravity-system";
+
+// 2D fog-of-war and atmospheric edge fog
+export * from "./fog";

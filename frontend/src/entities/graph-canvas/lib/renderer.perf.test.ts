@@ -56,7 +56,21 @@ function runBench(nodeCount: number, frames = 60): number {
 
   const start = performance.now();
   for (let i = 0; i < frames; i++) {
-    draw(ctx, 800, 600, links, nodes, angles, transform, undefined, undefined, undefined, undefined, false, i * 16);
+    draw(
+      ctx,
+      800,
+      600,
+      links,
+      nodes,
+      angles,
+      transform,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      i * 16
+    );
   }
   const total = performance.now() - start;
   return total / frames;
@@ -67,7 +81,9 @@ describe("2D graph renderer responsiveness", () => {
   for (const count of counts) {
     it(`renders ${count} nodes efficiently`, () => {
       const msPerFrame = runBench(count);
-      console.log(`[PERF] ${count} nodes, ${(count * 1.5).toFixed(0)} links: ${msPerFrame.toFixed(3)} ms/frame`);
+      console.log(
+        `[PERF] ${count} nodes, ${(count * 1.5).toFixed(0)} links: ${msPerFrame.toFixed(3)} ms/frame`
+      );
     });
   }
 });

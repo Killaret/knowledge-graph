@@ -80,21 +80,21 @@ export function updateNodeAngles(
  */
 export function startAnimationLoop(
   getNodes: () => Array<{ id: string; type?: string }>,
-  onUpdate: () => void,
+  onUpdate: (timestamp: number) => void,
   disableVariation: boolean = false
 ): { stop: () => void } {
   let animationId: number;
   const angles = new Map<string, number>();
   const speeds = new Map<string, number>();
 
-  function animate() {
+  function animate(timestamp: number) {
     const nodes = getNodes();
     updateNodeAngles(nodes, angles, speeds, disableVariation);
-    onUpdate();
+    onUpdate(timestamp);
     animationId = requestAnimationFrame(animate);
   }
 
-  animate();
+  animate(performance.now());
 
   return {
     stop: () => {

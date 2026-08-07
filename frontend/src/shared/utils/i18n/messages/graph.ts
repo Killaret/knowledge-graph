@@ -426,6 +426,8 @@ export const ru: Record<string, string> = {
   "graphOverlay.tip": "Подсказка",
   "graphOverlay.nodes": "узлов",
   "graphOverlay.links": "связей",
+  "graphOverlay.fogWarning": "Опасная нагрузка. Риск перезагрузки страницы.",
+  "graphOverlay.fogToggle": "Туман",
   // TypeSelector
   "toast.closeAria": "Закрыть уведомление",
   // Toast

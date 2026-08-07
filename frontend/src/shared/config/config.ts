@@ -55,6 +55,20 @@ export interface Config {
         hover_delay_ms: number;
         /** Node count above which animated visual effects (glow, particles, star corona, rings, nebula) are simplified */
         visual_fx_threshold: number;
+        /** 2D adaptive fog-of-war settings */
+        fog: {
+          enabled: boolean;
+          atmospheric: boolean;
+          adaptive: boolean;
+          radius_min: number;
+          radius_max: number;
+          fps_low: number;
+          fps_high: number;
+          warning_threshold: number;
+          transition_ms: number;
+          color: string;
+          edge_feather: number;
+        };
       };
       "3d": {
         max_nodes: number;

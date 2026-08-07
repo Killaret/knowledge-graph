@@ -61,6 +61,7 @@
     isTechnicalNode,
     pinTechnicalNodes,
   } from "$features/graph-canvas/canvas-state.svelte";
+  import { createFogState } from "$features/graph-canvas/fog-state.svelte";
   import {
     createNoteFormState,
     createNote,
@@ -229,6 +230,7 @@
   const zoomPanState: ZoomPanState = $state(createZoomPanState());
 
   const canvasState = createGraphCanvasState();
+  const fogState = createFogState();
 
   // Expose simulation stability for visual regression tests
   $effect(() => {
@@ -342,7 +344,7 @@
     console.log("[onMount] starting animation loop");
     animationLoop = startAnimationLoop(
       () => getSimulationNodes(simState),
-      () => {
+      (timestamp) => {
         console.log("[onMount] animation onUpdate called");
         const simNodes = getSimulationNodes(simState);
         if (ctx) {
@@ -363,6 +365,13 @@
           if (!stableRender && gravitySystem.isEnabled(simNodes.length)) {
             gravitySystem.applyAttraction(simNodes);
           }
+
+          // Track FPS and update fog radius for adaptive rendering.
+          fogState.tick(timestamp);
+          const hoveredNode = canvasState.hoveredNodeId
+            ? (simNodes.find((n) => n.id === canvasState.hoveredNodeId) ?? null)
+            : null;
+          fogState.update(width, height, transform, hoveredNode, canvasState.focusMode);
 
           // Draw the full graph with all effects (once per rAF)
           needsRedraw = true;
@@ -518,7 +527,8 @@
       hotkeysState.searchMatchIds,
       canvasState.highlightedLinkId,
       dragDropState.linkPreviewTarget,
-      linkMousePos
+      linkMousePos,
+      fogState.snapshot
     );
   }
 
@@ -687,6 +697,9 @@
   tooltipPosition={canvasState.tooltipPosition}
   duplicateWarning={canvasState.duplicateWarning}
   focusMode={canvasState.focusMode}
+  fogWarning={fogState.showWarning}
+  fogEnabled={fogState.enabled}
+  onToggleFog={() => fogState.toggle()}
   showUndoToast={canvasState.showUndoToast}
   undoToastStage={canvasState.undoToastStage}
   {hotkeysState}

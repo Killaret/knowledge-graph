@@ -13,6 +13,12 @@ import {
   type SimulationNode,
   type SimulationLink,
 } from "./types";
+import {
+  drawFog,
+  createFogVisibilitySet,
+  defaultFogRenderParams,
+  type FogRenderParams,
+} from "./fog";
 import { drawBlackHole, drawBlackHoleTooltip } from "./black-hole";
 import type { BlackHoleState } from "./black-hole";
 import { drawGhostNodeScreen, drawGhostNodeTooltipScreen } from "./ghost-node";
@@ -42,7 +48,8 @@ export function drawAllLinks(
   highlightedLinkId?: string | null,
   dyingLinks: SimulationLink[] = [],
   dyingLinkOpacity: Map<string, number> = new Map(),
-  nodeMap?: Map<string, SimulationNode>
+  nodeMap?: Map<string, SimulationNode>,
+  visibleNodeIds?: Set<string>
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
@@ -58,6 +65,14 @@ export function drawAllLinks(
   }
 
   simLinks.forEach((link, index) => {
+    // Skip links entirely outside the fog radius to avoid expensive resolution.
+    const sourceId = getLinkEndpointId(link.source);
+    const targetId = getLinkEndpointId(link.target);
+    if (visibleNodeIds && !visibleNodeIds.has(sourceId) && !visibleNodeIds.has(targetId)) {
+      skippedCount++;
+      return;
+    }
+
     const sourceNode = resolveLinkEndpoint(link.source, nodes, resolvedNodeMap);
     const targetNode = resolveLinkEndpoint(link.target, nodes, resolvedNodeMap);
 
@@ -82,8 +97,6 @@ export function drawAllLinks(
     const isHighlighted = highlightedLinkId === stableLinkId;
 
     // Apply bidirectional curve offset when a reverse link exists
-    const sourceId = getLinkEndpointId(link.source);
-    const targetId = getLinkEndpointId(link.target);
     const [a, b] = sourceId < targetId ? [sourceId, targetId] : [targetId, sourceId];
     const isBidirectional = bidirectionalPairs.has(`${a}|${b}`);
     const curveOffset = isBidirectional
@@ -107,6 +120,11 @@ export function drawAllLinks(
 
   // Draw dying (removed) links fading out
   dyingLinks.forEach((link) => {
+    const sourceId = getLinkEndpointId(link.source);
+    const targetId = getLinkEndpointId(link.target);
+    if (visibleNodeIds && !visibleNodeIds.has(sourceId) && !visibleNodeIds.has(targetId)) {
+      return;
+    }
     const sourceNode = resolveLinkEndpoint(link.source, nodes, resolvedNodeMap);
     const targetNode = resolveLinkEndpoint(link.target, nodes, resolvedNodeMap);
     if (
@@ -254,13 +272,15 @@ export function drawAllNodes(
     isEnabled: () => boolean;
   } | null,
   focusMode: boolean = false,
-  searchMatchIds?: string[]
+  searchMatchIds?: string[],
+  visibleNodeIds?: Set<string>
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
 
   if (disableVariation) {
     for (const node of nodes) {
+      if (visibleNodeIds && !visibleNodeIds.has(node.id)) continue;
       if (!angles.has(node.id)) {
         angles.set(node.id, 0);
       }
@@ -269,6 +289,7 @@ export function drawAllNodes(
 
   if (particleSystem?.isEnabled()) {
     for (const node of nodes) {
+      if (visibleNodeIds && !visibleNodeIds.has(node.id)) continue;
       // Use glowColor for orbit particles so they remain visible even for
       // dark body types (e.g. blackhole notes) and read as a subtle halo.
       particleSystem.initParticles(
@@ -281,6 +302,7 @@ export function drawAllNodes(
   }
 
   nodes.forEach((node) => {
+    if (visibleNodeIds && !visibleNodeIds.has(node.id)) return;
     const angle = angles.get(node.id) || 0;
     const opacity = nodeOpacity?.get(node.id) ?? 1;
     const isHovered = hoveredNodeId === node.id;
@@ -385,7 +407,8 @@ export function draw(
   searchMatchIds?: string[],
   highlightedLinkId?: string | null,
   linkPreviewTarget?: { sourceId: string; targetId: string } | null,
-  linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null
+  linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
+  fog: FogRenderParams = defaultFogRenderParams()
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -419,6 +442,12 @@ export function draw(
     }
   }
 
+  // Determine which nodes are visible through the fog.
+  const fogActive = fog.enabled && fog.mode !== "off" && fog.mode !== "first-person";
+  const visibleNodeIds = fogActive
+    ? createFogVisibilitySet(nodes, simLinks, transform, fog, hoveredNodeId)
+    : undefined;
+
   // Draw links with animation
   drawAllLinks(
     ctx,
@@ -430,7 +459,8 @@ export function draw(
     highlightedLinkId,
     dyingLinks,
     dyingLinkOpacity,
-    nodeMap
+    nodeMap,
+    visibleNodeIds
   );
 
   // Draw link preview if dragging for link creation
@@ -477,10 +507,14 @@ export function draw(
     hoveredNodeId,
     particleSystem,
     focusMode,
-    searchMatchIds
+    searchMatchIds,
+    visibleNodeIds
   );
 
   ctx.restore();
+
+  // Draw fog overlay in screen coordinates.
+  drawFog(ctx, width, height, fog);
 
   // Draw black hole in SCREEN coordinates so it stays fixed regardless of pan/zoom
   if (!focusMode && blackHole) {
