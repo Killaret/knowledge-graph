@@ -13,12 +13,7 @@ import {
   type SimulationNode,
   type SimulationLink,
 } from "./types";
-import {
-  drawFog,
-  createFogVisibilitySet,
-  defaultFogRenderParams,
-  type FogRenderParams,
-} from "./fog";
+import { createFogVisibilitySet, defaultFogRenderParams, type FogRenderParams } from "./fog";
 import { drawBlackHole, drawBlackHoleTooltip } from "./black-hole";
 import type { BlackHoleState } from "./black-hole";
 import { drawGhostNodeScreen, drawGhostNodeTooltipScreen } from "./ghost-node";
@@ -170,9 +165,24 @@ export function drawNode(
   nodeId?: string,
   nodeCount?: number,
   animationTime?: number,
-  focusMode: boolean = false
+  focusMode: boolean = false,
+  simplified: boolean = false
 ): void {
+  if (node.x == null || node.y == null) {
+    return;
+  }
+
   const body = CelestialBody.fromString(node.type);
+
+  // Fast path: when zoomed out, draw a simple filled circle using the body's glow color.
+  // This skips expensive per-type renderers, shadows, and animated effects.
+  if (simplified && !focusMode && node.x != null && node.y != null) {
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r * body.baseRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = body.glowColor;
+    ctx.fill();
+    return;
+  }
 
   // The renderer layer wires Canvas primitives to the domain object lazily.
   // This guard also makes unit tests that call vi.resetModules() more robust.
@@ -272,8 +282,9 @@ export function drawAllNodes(
     isEnabled: () => boolean;
   } | null,
   focusMode: boolean = false,
-  searchMatchIds?: string[],
-  visibleNodeIds?: Set<string>
+  searchMatchIds?: Set<string>,
+  visibleNodeIds?: Set<string>,
+  simplified: boolean = false
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
@@ -287,7 +298,7 @@ export function drawAllNodes(
     }
   }
 
-  if (particleSystem?.isEnabled()) {
+  if (particleSystem?.isEnabled() && !simplified) {
     for (const node of nodes) {
       if (visibleNodeIds && !visibleNodeIds.has(node.id)) continue;
       // Use glowColor for orbit particles so they remain visible even for
@@ -303,11 +314,13 @@ export function drawAllNodes(
 
   nodes.forEach((node) => {
     if (visibleNodeIds && !visibleNodeIds.has(node.id)) return;
+    if (node.x == null || node.y == null) return;
     const angle = angles.get(node.id) || 0;
     const opacity = nodeOpacity?.get(node.id) ?? 1;
     const isHovered = hoveredNodeId === node.id;
-    const isSearchMatch = searchMatchIds?.includes(node.id) ?? false;
+    const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
     const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
+    const nodeSimplified = simplified && !isHovered;
 
     const previousAlpha = ctx.globalAlpha;
     ctx.globalAlpha = finalOpacity;
@@ -322,44 +335,48 @@ export function drawAllNodes(
       node.id,
       nodeCount,
       animationTime,
-      focusMode
+      focusMode,
+      nodeSimplified
     );
-    drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
-    // Search match outline
-    if (isSearchMatch && node.x != null && node.y != null) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r + 6, 0, 2 * Math.PI);
-      ctx.strokeStyle = "rgba(255, 204, 0, 0.9)";
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(255, 204, 0, 0.6)";
-      ctx.stroke();
-      ctx.restore();
-    }
+    if (!nodeSimplified) {
+      drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
-    // New note indicator (pulsing turquoise outline for 24 hours)
-    // Disabled in stable render mode to keep screenshots deterministic
-    if (!disableVariation && !focusMode && isNewNode(node) && node.x != null && node.y != null) {
-      // Per-node phase so multiple new notes don’t pulse in lockstep.
-      const nodePhase = getVariation(node.id, node.type ?? "star").phaseShift;
-      const pulse = 0.5 + 0.5 * Math.abs(Math.sin((animationTime + nodePhase * 1000) / 1000));
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r + 10, 0, 2 * Math.PI);
-      ctx.strokeStyle = `rgba(45, 212, 191, ${pulse})`;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    if (!focusMode && particleSystem?.isEnabled() && node.x && node.y) {
-      // Keep particles fixed in stable render mode for deterministic screenshots
-      if (!disableVariation) {
-        particleSystem.update(node.id, node.x, node.y);
+      // Search match outline
+      if (isSearchMatch && node.x != null && node.y != null) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + 6, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(255, 204, 0, 0.9)";
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgba(255, 204, 0, 0.6)";
+        ctx.stroke();
+        ctx.restore();
       }
-      particleSystem.draw(ctx, node.id);
+
+      // New note indicator (pulsing turquoise outline for 24 hours)
+      // Disabled in stable render mode to keep screenshots deterministic
+      if (!disableVariation && !focusMode && isNewNode(node) && node.x != null && node.y != null) {
+        // Per-node phase so multiple new notes don’t pulse in lockstep.
+        const nodePhase = getVariation(node.id, node.type ?? "star").phaseShift;
+        const pulse = 0.5 + 0.5 * Math.abs(Math.sin((animationTime + nodePhase * 1000) / 1000));
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + 10, 0, 2 * Math.PI);
+        ctx.strokeStyle = `rgba(45, 212, 191, ${pulse})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (!focusMode && particleSystem?.isEnabled() && node.x && node.y) {
+        // Keep particles fixed in stable render mode for deterministic screenshots
+        if (!disableVariation) {
+          particleSystem.update(node.id, node.x, node.y);
+        }
+        particleSystem.draw(ctx, node.id);
+      }
     }
 
     ctx.globalAlpha = previousAlpha;
@@ -442,11 +459,20 @@ export function draw(
     }
   }
 
-  // Determine which nodes are visible through the fog.
-  const fogActive = fog.enabled && fog.mode !== "off" && fog.mode !== "first-person";
-  const visibleNodeIds = fogActive
-    ? createFogVisibilitySet(nodes, simLinks, transform, fog, hoveredNodeId)
-    : undefined;
+  // Determine which nodes are visible through viewport and fog culling.
+  // Focus mode shows the selected node and its neighborhood, so culling is skipped.
+  const visibleNodeIds = focusMode
+    ? undefined
+    : createFogVisibilitySet(
+        nodes,
+        simLinks,
+        width,
+        height,
+        transform,
+        fog,
+        hoveredNodeId,
+        nodeMap
+      );
 
   // Draw links with animation
   drawAllLinks(
@@ -496,6 +522,8 @@ export function draw(
   // Draw nodes with CSS shadows only when node count is below the threshold (performance).
   // Threshold: frontend.graph.2d.shadows_threshold in knowledge-graph.config.json
   const enableShadows = !focusMode && nodes.length < graphConfig2D.shadows_threshold;
+  const simplified = !focusMode && transform.k < graphConfig2D.lod_simplify_zoom;
+  const searchMatchIdSet = searchMatchIds ? new Set(searchMatchIds) : undefined;
   drawAllNodes(
     ctx,
     nodes,
@@ -507,14 +535,12 @@ export function draw(
     hoveredNodeId,
     particleSystem,
     focusMode,
-    searchMatchIds,
-    visibleNodeIds
+    searchMatchIdSet,
+    visibleNodeIds,
+    simplified
   );
 
   ctx.restore();
-
-  // Draw fog overlay in screen coordinates.
-  drawFog(ctx, width, height, fog);
 
   // Draw black hole in SCREEN coordinates so it stays fixed regardless of pan/zoom
   if (!focusMode && blackHole) {

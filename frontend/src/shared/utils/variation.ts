@@ -21,6 +21,8 @@ function stringHash(str: string): number {
   return Math.abs(hash);
 }
 
+const variationCache = new Map<string, NodeVariation>();
+
 /**
  * Generate deterministic variation parameters for a node
  *
@@ -34,6 +36,14 @@ export function getVariation(
   minSize?: number,
   maxSize?: number
 ): NodeVariation {
+  const key = `${nodeId}:${type}:${minSize ?? "_"}:${maxSize ?? "_"}`;
+  const cached = variationCache.get(key);
+  if (cached) return cached;
+
+  if (variationCache.size >= 10000) {
+    variationCache.clear();
+  }
+
   const hash = stringHash(nodeId);
 
   // Use different parts of hash for different parameters
@@ -62,11 +72,13 @@ export function getVariation(
   // Phase shift: 0 to 2π for initial rotation phase
   const phaseShift = (hash3 / 1000) * 2 * Math.PI;
 
-  return {
+  const result: NodeVariation = {
     sizeMultiplier,
     hueShift,
     phaseShift,
   };
+  variationCache.set(key, result);
+  return result;
 }
 
 /**

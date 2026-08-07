@@ -11,10 +11,25 @@
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 50,
+        "gravity_nodes_threshold": 100,
         "gravity_max_distance": 300,
         "hover_delay_ms": 150,
-        "visual_fx_threshold": 100
+        "visual_fx_threshold": 500,
+        "idle_fps": 10,
+        "lod_simplify_zoom": 0.4,
+        "fog": {
+          "enabled": true,
+          "atmospheric": true,
+          "adaptive": true,
+          "radius_min": 220,
+          "radius_max": 3000,
+          "fps_low": 25,
+          "fps_high": 45,
+          "warning_threshold": 18,
+          "transition_ms": 500,
+          "color": "rgba(10, 10, 20, 0.82)",
+          "edge_feather": 160
+        }
       },
       "3d": {
         "max_nodes": 500,

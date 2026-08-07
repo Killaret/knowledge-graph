@@ -315,7 +315,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cd backend && go build ./cmd/server && go build ./cmd/worker && go build ./cmd/cli` — успешно.
 - `cd frontend && npm run check` — 0 errors, 0 warnings.
 - `cd frontend && npm run build` — успешно.
-- `cd frontend && npm run test:coverage` — проходит при thresholds 70%.
+- `cd frontend && npm run test:coverage` — проходит при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%).
 - `cd frontend && npm run format:check` — чисто.
 - `cd frontend && npx eslint .` — чисто.
 - `.\scripts\testing\run-full-test-cycle.ps1 -SkipManual` — exit code 0, оба режима (`skip-auth` и `real-auth`) Playwright-E2E прошли, dev/personal стеки восстановлены.
@@ -363,7 +363,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 866 frontend unit-тестов, backend unit-тесты — все проходят.
+- **Покрытие тестами:** 923 frontend unit-тестов (+57 по 2D-рендереру: fog, LOD, search outline, offscreen-cache/throttling, renderer-orchestrator, renderer-utils, variation, animation), backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
@@ -375,6 +375,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### Реализованный UI: Cosmic Cockpit
 - Космическая «кабина» с четырьмя выдвижными панелями, HUD, режим «от первого лица».
 - Drag-to-open, якоря, 2D/3D-переключатель, фильтры типов, детали заметки, мини-граф связей, Singularity-зона архивирования.
+- **2D Renderer Performance Pack (2026-08):** адаптивный туман войны, viewport culling, throttling до `idle_fps`, LOD по зуму, offscreen-кэш для стабильного состояния, кэширование `getVariation`/`isNewNode`, O(1) lookup эндпоинтов связей.
 
 ### В процессе / запланировано (UI/UX)
 - Исправление моргания графа при дельта-обновлениях.

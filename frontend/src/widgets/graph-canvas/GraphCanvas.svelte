@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { graphConfig2D } from "$shared/config";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
@@ -31,6 +32,7 @@
     updateGhostNodePosition,
     updateGhostNodePulse,
     type GravitySystem,
+    drawFog,
     applyDelta as applyDeltaToSimulation,
   } from "$entities/graph-canvas/lib";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
@@ -181,6 +183,9 @@
 
   let canvas: HTMLCanvasElement | null = $state(null);
   let ctx: CanvasRenderingContext2D | null = null;
+  let offscreenCanvas: HTMLCanvasElement | null = null;
+  let offscreenCtx: CanvasRenderingContext2D | null = null;
+  let lastCacheKey = "";
   let width = 800;
   let height = 600;
   let animationLoop: { stop: () => void } | null = null;
@@ -249,6 +254,8 @@
   // Throttle rendering: only the animation loop does actual drawing;
   // D3 ticks and input events just request a frame.
   let needsRedraw = false;
+  let lastDrawTimestamp = 0;
+  const IDLE_FPS = graphConfig2D.idle_fps;
 
   // Interactive canvas elements
   let blackHole: BlackHoleState = $state(createBlackHole(width, height));
@@ -373,9 +380,23 @@
             : null;
           fogState.update(width, height, transform, hoveredNode, canvasState.focusMode);
 
-          // Draw the full graph with all effects (once per rAF)
-          needsRedraw = true;
-          doRedraw();
+          // Throttle drawing: render at full 60 fps while the graph is moving or
+          // the user is interacting; otherwise fall back to idle_fps to save CPU.
+          const isInteracting =
+            !!canvasState.hoveredNodeId ||
+            !!dragDropState.draggedNodeId ||
+            dragDropState.isDraggingForLink ||
+            !!dragDropState.linkPreviewTarget ||
+            !!canvasState.focusMode;
+          const busy = !graphStable || isInteracting;
+          const elapsed = timestamp - lastDrawTimestamp;
+          const idleFrameInterval = 1000 / IDLE_FPS;
+          const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
+          if (shouldDraw && elapsed >= (busy ? 1000 / 60 : idleFrameInterval)) {
+            lastDrawTimestamp = timestamp;
+            needsRedraw = true;
+            doRedraw();
+          }
         }
       },
       stableRender
@@ -491,6 +512,70 @@
     });
   });
 
+  function hasFadingOpacity(): boolean {
+    for (const value of simState.nodeOpacity.values()) {
+      if (value < 0.999) return true;
+    }
+    for (const value of simState.linkOpacity.values()) {
+      if (value < 0.999) return true;
+    }
+    return false;
+  }
+
+  function buildCacheKey(): string {
+    const fog = fogState.snapshot;
+    return JSON.stringify({
+      w: width,
+      h: height,
+      data: lastDataKey,
+      tx: Math.round(transform.x),
+      ty: Math.round(transform.y),
+      tk: transform.k.toFixed(3),
+      hover: canvasState.hoveredNodeId ?? "",
+      focus: canvasState.focusMode,
+      highlight: canvasState.highlightedLinkId ?? "",
+      search: [...(hotkeysState.searchMatchIds ?? [])].sort().join(","),
+      fog: fog.enabled
+        ? `${fog.mode}:${Math.round(fog.radius / 5)}:${Math.round(fog.centerX / 5)}:${Math.round(fog.centerY / 5)}`
+        : "off",
+      bh: `${blackHole?.hovered ? 1 : 0}:${Math.round((blackHole?.pulsePhase ?? 0) * 10)}`,
+      gh: `${ghostNode?.hovered ? 1 : 0}:${Math.round((ghostNode?.pulsePhase ?? 0) * 10)}`,
+      stable: stableRender,
+      anim: Math.round(animationTime / 500),
+    });
+  }
+
+  function canUseCache(): boolean {
+    return (
+      graphStable &&
+      !canvasState.focusMode &&
+      !canvasState.hoveredNodeId &&
+      !dragDropState.draggedNodeId &&
+      !dragDropState.isDraggingForLink &&
+      !dragDropState.linkPreviewTarget &&
+      simState.dyingLinks.length === 0 &&
+      simState.dyingLinkOpacity.size === 0 &&
+      !hasFadingOpacity() &&
+      !particleSystem?.isEnabled()
+    );
+  }
+
+  function getOffscreenContext(): CanvasRenderingContext2D {
+    if (!offscreenCanvas) {
+      offscreenCanvas = document.createElement("canvas");
+    }
+    if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) {
+      offscreenCanvas.width = width;
+      offscreenCanvas.height = height;
+      // Reset context after resize
+      offscreenCtx = null;
+    }
+    if (!offscreenCtx) {
+      offscreenCtx = offscreenCanvas.getContext("2d");
+    }
+    return offscreenCtx!;
+  }
+
   function doRedraw() {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
@@ -504,8 +589,16 @@
             y: dragDropState.mouseWorldPosition.y,
           }
         : null;
+
+    const cacheKey = canUseCache() ? buildCacheKey() : "";
+    if (cacheKey && offscreenCanvas && offscreenCtx && cacheKey === lastCacheKey) {
+      ctx.drawImage(offscreenCanvas, 0, 0);
+      return;
+    }
+
+    const targetCtx = cacheKey ? getOffscreenContext() : ctx;
     draw(
-      ctx,
+      targetCtx,
       width,
       height,
       simState.simLinks,
@@ -530,6 +623,12 @@
       linkMousePos,
       fogState.snapshot
     );
+    drawFog(targetCtx, width, height, fogState.snapshot);
+
+    if (cacheKey) {
+      lastCacheKey = cacheKey;
+      ctx.drawImage(offscreenCanvas!, 0, 0);
+    }
   }
 
   function scheduleRedraw() {

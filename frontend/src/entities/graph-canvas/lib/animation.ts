@@ -87,18 +87,28 @@ export function startAnimationLoop(
   const angles = new Map<string, number>();
   const speeds = new Map<string, number>();
 
+  let running = true;
+
   function animate(timestamp: number) {
+    if (!running) return;
     const nodes = getNodes();
     updateNodeAngles(nodes, angles, speeds, disableVariation);
     onUpdate(timestamp);
-    animationId = requestAnimationFrame(animate);
+    if (typeof requestAnimationFrame === "function") {
+      animationId = requestAnimationFrame(animate);
+    }
   }
 
-  animate(performance.now());
+  if (typeof requestAnimationFrame === "function") {
+    animate(performance.now());
+  }
 
   return {
     stop: () => {
-      cancelAnimationFrame(animationId);
+      running = false;
+      if (typeof cancelAnimationFrame === "function") {
+        cancelAnimationFrame(animationId);
+      }
     },
   };
 }

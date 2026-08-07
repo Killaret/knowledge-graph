@@ -71,6 +71,36 @@ describe("getVariation", () => {
     expect(result.sizeMultiplier).toBeGreaterThanOrEqual(0.8);
     expect(result.sizeMultiplier).toBeLessThanOrEqual(1.2);
   });
+
+  it("should use explicit min and max size when provided", () => {
+    const result = getVariation("node-1", "star", 0.5, 0.6);
+
+    expect(result.sizeMultiplier).toBeGreaterThanOrEqual(0.5);
+    expect(result.sizeMultiplier).toBeLessThanOrEqual(0.6);
+  });
+
+  it("should cache results and return the same variation for the same parameters", () => {
+    const key = "node-cache-test";
+    const r1 = getVariation(key, "star", 0.9, 1.1);
+    const r2 = getVariation(key, "star", 0.9, 1.1);
+
+    expect(r1).toBe(r2);
+    expect(r1.sizeMultiplier).toBe(r2.sizeMultiplier);
+    expect(r1.hueShift).toBe(r2.hueShift);
+    expect(r1.phaseShift).toBe(r2.phaseShift);
+  });
+
+  it("should clear the cache when it exceeds 10000 entries", () => {
+    // Populate the cache enough to trigger eviction
+    for (let i = 0; i < 10005; i++) {
+      getVariation(`eviction-node-${i}`, "star");
+    }
+    // After eviction, re-requesting the first node should create a new object,
+    // not crash, and stay in range.
+    const result = getVariation("eviction-node-0", "star");
+    expect(result.sizeMultiplier).toBeGreaterThanOrEqual(0.8);
+    expect(result.sizeMultiplier).toBeLessThanOrEqual(1.2);
+  });
 });
 
 describe("applyHueShift", () => {

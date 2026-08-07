@@ -75,7 +75,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 
 ## Frontend Graph 2D Parameters (`frontend.graph.2d`)
 
-All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not be hardcoded in source files.
+All parameters are consumed by `$shared/config → graphConfig2D` and must not be hardcoded in source files.
 
 ```json
 {
@@ -85,10 +85,25 @@ All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not b
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 50,
+        "gravity_nodes_threshold": 100,
         "gravity_max_distance": 300,
         "hover_delay_ms": 150,
-        "visual_fx_threshold": 100
+        "visual_fx_threshold": 500,
+        "idle_fps": 10,
+        "lod_simplify_zoom": 0.4,
+        "fog": {
+          "enabled": true,
+          "atmospheric": true,
+          "adaptive": true,
+          "radius_min": 220,
+          "radius_max": 3000,
+          "fps_low": 25,
+          "fps_high": 45,
+          "warning_threshold": 18,
+          "transition_ms": 500,
+          "color": "rgba(10, 10, 20, 0.82)",
+          "edge_feather": 160
+        }
       }
     }
   }
@@ -100,18 +115,33 @@ All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not b
 | `max_nodes` | integer | `500` | `renderer.ts` | Maximum nodes loaded into the 2D graph canvas |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Node count **below** which CSS drop-shadows are rendered. Above this threshold shadows are disabled for performance |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Link count **above** which animated link drawing falls back to static straight lines. Prevents jank on dense graphs |
-| `gravity_nodes_threshold` | integer | `50` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
+| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
 | `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Max world-unit radius within which nodes exert gravitational attraction on each other |
 | `hover_delay_ms` | integer | `150` | `event-bridge.ts` | Delay in milliseconds before node/link hover dimming and tooltips activate |
-| `visual_fx_threshold` | integer | `100` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Node count **above** which complex visual effects (glow, particles, star corona, rings, nebula) are disabled |
+| `visual_fx_threshold` | integer | `500` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Node count **above** which complex visual effects (glow, particles, star corona, rings, nebula) are disabled |
+| `idle_fps` | number | `10` | `GraphCanvas.svelte` | Target frame rate when the graph is stable and no user interaction occurs. 0 disables throttling (always 60 fps) |
+| `lod_simplify_zoom` | number | `0.4` | `renderer-orchestrator.ts` | Zoom level below which nodes are drawn with a simplified, cheaper renderer (no titles, outlines, particles) |
+| `fog.enabled` | boolean | `true` | `fog.ts`, `fog-state.svelte.ts` | Master toggle for the 2D fog-of-war / atmospheric edge system |
+| `fog.atmospheric` | boolean | `true` | `fog-state.svelte.ts` | Enable the atmospheric edge vignette in stable, high-FPS conditions |
+| `fog.adaptive` | boolean | `true` | `fog-state.svelte.ts` | Shrink the clear radius when FPS drops, reducing the number of rendered nodes/links |
+| `fog.radius_min` | number | `220` | `fog-state.svelte.ts` | Minimum clear radius in screen pixels for adaptive mode |
+| `fog.radius_max` | number | `3000` | `fog-state.svelte.ts` | Maximum clear radius in screen pixels (full viewport coverage) |
+| `fog.fps_low` | number | `25` | `fog-state.svelte.ts` | FPS level at which adaptive fog reaches its minimum radius |
+| `fog.fps_high` | number | `45` | `fog-state.svelte.ts` | FPS level at which adaptive fog returns to its maximum radius |
+| `fog.warning_threshold` | number | `18` | `fog-state.svelte.ts` | FPS level below which a performance warning is shown to the user |
+| `fog.transition_ms` | number | `500` | `fog-state.svelte.ts` | Smoothing time for fog radius changes in milliseconds |
+| `fog.color` | string | `rgba(10, 10, 20, 0.82)` | `fog.ts` | Color of the fog overlay |
+| `fog.edge_feather` | number | `160` | `fog.ts` | Distance over which the fog fades from transparent to opaque at the edges |
 
 ### Performance decision tree
 
 ```
 nodes.length < shadows_threshold (100)       → enable CSS shadows
-nodes.length < gravity_nodes_threshold (50)  → enable gravity simulation
+nodes.length < gravity_nodes_threshold (100) → enable gravity simulation
 links.length > animated_links_threshold (50) → use static links instead of animated
-nodes.length > visual_fx_threshold (100)     → disable glow, particles, corona, rings, nebula
+nodes.length > visual_fx_threshold (500)     → disable glow, particles, corona, rings, nebula
+zoom < lod_simplify_zoom (0.4)               → draw simplified node circles (no titles, outlines, particles)
+graph stable and no interaction              → throttle to idle_fps (10) and reuse an offscreen canvas cache
 ```
 
 ### Backend Usage (Go)

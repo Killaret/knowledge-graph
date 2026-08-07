@@ -38,6 +38,10 @@ const mockCtx = {
   strokeStyle: "",
   setLineDash: vi.fn(),
   globalAlpha: 1,
+  fillText: vi.fn(),
+  measureText: vi.fn(() => ({ width: 50 })),
+  imageSmoothingEnabled: true,
+  imageSmoothingQuality: "low",
 } as unknown as CanvasRenderingContext2D;
 
 describe("renderer anomaly functions", () => {
@@ -274,6 +278,82 @@ describe("renderer anomaly functions", () => {
       // Both should have called translate (anomaly renderer)
       expect(callsAfterFirst).toBeGreaterThan(0);
       expect(callsAfterSecond).toBeGreaterThan(callsAfterFirst);
+    });
+
+    it("should draw a simplified circle when simplified is true", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "simple-node",
+        title: "Simple",
+        type: "star",
+        x: 100,
+        y: 100,
+      };
+      drawNode(
+        mockCtx,
+        node as any,
+        24,
+        0,
+        false,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        true
+      );
+
+      // Simplified path only calls beginPath/arc/fill without titles or shadows
+      expect(mockCtx.beginPath).toHaveBeenCalled();
+      expect(mockCtx.arc).toHaveBeenCalled();
+      expect(mockCtx.fill).toHaveBeenCalled();
+      expect(mockCtx.fillText).not.toHaveBeenCalled();
+    });
+
+    it("should bypass simplified mode in focus mode", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "focus-node",
+        title: "Focus",
+        type: "star",
+        x: 100,
+        y: 100,
+      };
+      drawNode(
+        mockCtx,
+        node as any,
+        24,
+        0,
+        false,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        true
+      );
+
+      // Focus mode always uses the full star renderer (which uses lineTo), not the arc shortcut.
+      expect(mockCtx.lineTo).toHaveBeenCalled();
+      expect(mockCtx.arc).not.toHaveBeenCalled();
+    });
+
+    it("should not draw a node missing coordinates", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "no-coords",
+        title: "No Coords",
+        type: "star",
+      };
+      drawNode(mockCtx, node as any, 24, 0, false);
+
+      // Without coordinates neither arc nor fillText should be called
+      expect(mockCtx.arc).not.toHaveBeenCalled();
+      expect(mockCtx.fillText).not.toHaveBeenCalled();
+      expect(mockCtx.beginPath).not.toHaveBeenCalled();
     });
   });
 

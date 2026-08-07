@@ -559,6 +559,47 @@ FRONTEND_URL=http://localhost:3002 BACKEND_URL=http://localhost:18083 npm run te
 
 ---
 
+## PART 9.5: 2D Graph Renderer Performance Verification
+
+### 9.5.1 Load Graph with 500 Nodes
+**Steps:**
+1. Seed or load a graph with at least 500 nodes and 750 links.
+2. Open `/graph` and measure frame time with DevTools Performance.
+
+**Expected:**
+- Isolated `draw()` call remains below 100 ms per frame.
+- CPU usage drops after the graph stabilizes (offscreen cache reused).
+
+### 9.5.2 Verify LOD by Zoom
+**Steps:**
+1. Zoom out until `transform.k < frontend.graph.2d.lod_simplify_zoom` (default 0.4).
+
+**Expected:**
+- Node titles, search outlines, and new-node pulse outlines are not rendered for non-hovered nodes.
+- Hovered node and its neighbors still render normally.
+
+### 9.5.3 Verify Throttling and Offscreen Cache
+**Steps:**
+1. Stop all interaction and wait for the simulation to settle.
+2. Monitor `requestAnimationFrame` callbacks in DevTools.
+
+**Expected:**
+- Frame rate falls to `frontend.graph.2d.idle_fps` (default 10).
+- The same canvas content is reused from an offscreen cache between frames.
+
+### 9.5.4 Verify Adaptive Fog Behavior
+**Steps:**
+1. Enable adaptive fog in `knowledge-graph.config.json` (default `frontend.graph.2d.fog.adaptive: true`).
+2. Hover a node far from the fog center.
+3. Move the mouse away and stop interacting.
+
+**Expected:**
+- The hovered node and its direct neighbors are revealed.
+- Distant nodes are hidden by the fog overlay.
+- Fog radius smooths over `transition_ms` and does not flicker.
+
+---
+
 ## PART 10: Public Graph Verification
 
 ### 10.1 Create Public Notes and Links

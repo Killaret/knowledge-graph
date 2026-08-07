@@ -79,6 +79,25 @@ describe("animation", () => {
     loop.stop();
   });
 
+  it("should not crash when requestAnimationFrame is not available", async () => {
+    const { startAnimationLoop } = await loadAnimation();
+    const originalRaf = globalThis.requestAnimationFrame;
+    const originalCaf = globalThis.cancelAnimationFrame;
+    // @ts-expect-error test environment without RAF
+    delete globalThis.requestAnimationFrame;
+    // @ts-expect-error test environment without RAF
+    delete globalThis.cancelAnimationFrame;
+
+    const onUpdate = vi.fn();
+    const loop = startAnimationLoop(() => [{ id: "star1", type: "star" }], onUpdate, true);
+
+    expect(loop).toHaveProperty("stop");
+    expect(() => loop.stop()).not.toThrow();
+
+    globalThis.requestAnimationFrame = originalRaf;
+    globalThis.cancelAnimationFrame = originalCaf;
+  });
+
   it("should clear animation state", async () => {
     const { clearAnimationState } = await loadAnimation();
     const angles = new Map<string, number>([["a", 1]]);

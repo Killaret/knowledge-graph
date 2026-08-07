@@ -75,7 +75,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 
-Все параметры читаются через `$shared/config/config.ts.ts → graphConfig2D`. Жёсткое задание этих значений в исходном коде **запрещено**.
+Все параметры читаются через `$shared/config → graphConfig2D`. Жёсткое задание этих значений в исходном коде **запрещено**.
 
 ```json
 {
@@ -85,10 +85,25 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 50,
+        "gravity_nodes_threshold": 100,
         "gravity_max_distance": 300,
         "hover_delay_ms": 150,
-        "visual_fx_threshold": 100
+        "visual_fx_threshold": 500,
+        "idle_fps": 10,
+        "lod_simplify_zoom": 0.4,
+        "fog": {
+          "enabled": true,
+          "atmospheric": true,
+          "adaptive": true,
+          "radius_min": 220,
+          "radius_max": 3000,
+          "fps_low": 25,
+          "fps_high": 45,
+          "warning_threshold": 18,
+          "transition_ms": 500,
+          "color": "rgba(10, 10, 20, 0.82)",
+          "edge_feather": 160
+        }
       }
     }
   }
@@ -100,18 +115,33 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | `max_nodes` | integer | `500` | `renderer.ts` | Максимальное количество узлов в 2D-графе |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Количество узлов, **ниже** которого рисуются CSS-тени. Выше порога тени отключаются для производительности |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Количество связей, **выше** которого анимированные линии заменяются статическими. Предотвращает лаги на плотных графах |
-| `gravity_nodes_threshold` | integer | `50` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
+| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
 | `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Максимальный радиус притяжения между узлами в мировых координатах |
 | `hover_delay_ms` | integer | `150` | `event-bridge.ts` | Задержка в миллисекундах перед затемнением узлов/связей при наведении и появлением подсказок |
-| `visual_fx_threshold` | integer | `100` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Количество узлов, **выше** которого сложные анимации (corona звёзд, кольца планет, частицы, nebula) отключаются. ParticleSystem отключается |
+| `visual_fx_threshold` | integer | `500` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Количество узлов, **выше** которого сложные анимации (corona звёзд, кольца планет, частицы, nebula) отключаются. ParticleSystem отключается |
+| `idle_fps` | number | `10` | `GraphCanvas.svelte` | Целевая частота кадров, когда граф стабилен и нет взаимодействия с пользователем. `0` отключает троттлинг (всегда 60 fps) |
+| `lod_simplify_zoom` | number | `0.4` | `renderer-orchestrator.ts` | Уровень зума, **ниже** которого узлы рисуются упрощённым дешёвым рендерером (без заголовков, обводок, частиц) |
+| `fog.enabled` | boolean | `true` | `fog.ts`, `fog-state.svelte.ts` | Главный переключатель 2D-тумана войны / атмосферной виньетки |
+| `fog.atmospheric` | boolean | `true` | `fog-state.svelte.ts` | Включить атмосферную виньетку по краям в стабильном высоко-FPS режиме |
+| `fog.adaptive` | boolean | `true` | `fog-state.svelte.ts` | Уменьшать радиус обзора при падении FPS, сокращая количество отрисовываемых узлов/связей |
+| `fog.radius_min` | number | `220` | `fog-state.svelte.ts` | Минимальный радиус обзора в экранных пикселях для адаптивного режима |
+| `fog.radius_max` | number | `3000` | `fog-state.svelte.ts` | Максимальный радиус обзора в экранных пикселях (полное покрытие вьюпорта) |
+| `fog.fps_low` | number | `25` | `fog-state.svelte.ts` | Уровень FPS, при котором адаптивный туман достигает минимального радиуса |
+| `fog.fps_high` | number | `45` | `fog-state.svelte.ts` | Уровень FPS, при котором адаптивный туман возвращается к максимальному радиусу |
+| `fog.warning_threshold` | number | `18` | `fog-state.svelte.ts` | Порог FPS, ниже которого пользователю показывается предупреждение о производительности |
+| `fog.transition_ms` | number | `500` | `fog-state.svelte.ts` | Время сглаживания изменения радиуса тумана в миллисекундах |
+| `fog.color` | string | `rgba(10, 10, 20, 0.82)` | `fog.ts` | Цвет оверлея тумана |
+| `fog.edge_feather` | number | `160` | `fog.ts` | Расстояние, на котором туман плавно переходит от прозрачного к непрозрачному по краям |
 
 ### Дерево решений по производительности
 
 ```
 nodes.length < shadows_threshold (100)       → включить CSS-тени
-nodes.length < gravity_nodes_threshold (50)  → включить гравитационную симуляцию
+nodes.length < gravity_nodes_threshold (100) → включить гравитационную симуляцию
 links.length > animated_links_threshold (50) → использовать статические линии вместо анимированных
-nodes.length > visual_fx_threshold (100)     → отключить glow, частицы, corona, кольца, nebula
+nodes.length > visual_fx_threshold (500)     → отключить glow, частицы, corona, кольца, nebula
+zoom < lod_simplify_zoom (0.4)               → рисовать упрощённые круги узлов (без заголовков, обводок, частиц)
+graph stable and no interaction              → троттлинг до idle_fps (10) и повторное использование offscreen-кэша
 ```
 
 ### Использование в бэкенде (Go)

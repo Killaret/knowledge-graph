@@ -43,12 +43,20 @@ export function applyHueShiftToRGBA(r: number, g: number, b: number, hueShift: n
   return `${r2}, ${g2}, ${b2}`;
 }
 
+const createdAtCache = new Map<string, number>();
+const NEW_NODE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Check if a node was created within the last 24 hours.
  */
 export function isNewNode(node: SimulationNode): boolean {
   if (!node.createdAt) return false;
-  const created = new Date(node.createdAt).getTime();
+  let created = createdAtCache.get(node.createdAt);
+  if (created === undefined) {
+    created = new Date(node.createdAt).getTime();
+    if (createdAtCache.size >= 10000) createdAtCache.clear();
+    createdAtCache.set(node.createdAt, created);
+  }
   if (Number.isNaN(created)) return false;
-  return Date.now() - created < 24 * 60 * 60 * 1000;
+  return Date.now() - created < NEW_NODE_WINDOW_MS;
 }

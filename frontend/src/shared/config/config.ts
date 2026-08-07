@@ -55,6 +55,10 @@ export interface Config {
         hover_delay_ms: number;
         /** Node count above which animated visual effects (glow, particles, star corona, rings, nebula) are simplified */
         visual_fx_threshold: number;
+        /** Target frame rate when the graph is stable and no user interaction occurs */
+        idle_fps: number;
+        /** Zoom level below which nodes are drawn with a simplified, cheaper renderer */
+        lod_simplify_zoom: number;
         /** 2D adaptive fog-of-war settings */
         fog: {
           enabled: boolean;

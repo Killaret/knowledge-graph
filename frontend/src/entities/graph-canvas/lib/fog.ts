@@ -4,6 +4,7 @@
  * Used for an atmospheric edge-vignette and an adaptive fog-of-war.
  */
 import { graphConfig2D } from "$shared/config";
+import { BASE_NODE_RADIUS } from "./graph-constants";
 import type { SimulationNode, SimulationLink } from "./types";
 import { getLinkEndpointId } from "./types";
 
@@ -87,46 +88,102 @@ export function drawFog(
 }
 
 /**
- * Build the set of node ids that should be rendered despite the fog.
- * Includes:
- * - the hovered node,
- * - all nodes directly linked to the hovered node,
- * - every node within `fog.radius` of the fog center.
+ * Build the set of node ids that should be rendered.
+ *
+ * Applies two layers:
+ * 1. **Viewport culling** — nodes outside the visible canvas (with a margin)
+ *    are never drawn.
+ * 2. **Fog culling** — in `atmospheric` or `adaptive` mode, nodes outside the
+ *    fog clear radius are hidden, unless they are the hovered node or a
+ *    direct neighbor of it.
+ *
+ * `first-person` mode returns all nodes without culling.
  */
 export function createFogVisibilitySet(
   nodes: SimulationNode[],
   links: SimulationLink[],
+  width: number,
+  height: number,
   transform: { x: number; y: number; k: number },
   fog: FogRenderParams,
-  hoveredNodeId: string | null = null
+  hoveredNodeId: string | null = null,
+  nodeMap?: Map<string, SimulationNode>
 ): Set<string> {
-  if (!fog.enabled || fog.mode === "off" || fog.mode === "first-person") {
+  if (fog.mode === "first-person") {
     return new Set(nodes.map((n) => n.id));
   }
 
-  const visible = new Set<string>();
-
-  // Hovered node and its direct neighbors are always revealed.
-  if (hoveredNodeId) {
-    visible.add(hoveredNodeId);
-    for (const link of links) {
-      const sourceId = getLinkEndpointId(link.source);
-      const targetId = getLinkEndpointId(link.target);
-      if (sourceId === hoveredNodeId) {
-        visible.add(targetId);
-      } else if (targetId === hoveredNodeId) {
-        visible.add(sourceId);
+  const resolvedNodeMap = nodeMap ?? new Map<string, SimulationNode>();
+  if (!nodeMap) {
+    for (const node of nodes) {
+      if (node.id) {
+        resolvedNodeMap.set(node.id, node);
       }
     }
   }
 
-  // Nodes within the clear radius are visible.
+  // Pre-compute screen positions for all nodes with coordinates.
+  const screenById = new Map<string, { x: number; y: number }>();
   for (const node of nodes) {
-    if (node.x == null || node.y == null) continue;
-    const s = toScreen(node, transform);
+    if (node.x != null && node.y != null) {
+      screenById.set(node.id, toScreen(node, transform));
+    }
+  }
+
+  // Viewport bounds with a small margin so nodes at the edge are not clipped.
+  const margin = BASE_NODE_RADIUS * 2 * transform.k;
+  const viewportLeft = -margin;
+  const viewportRight = width + margin;
+  const viewportTop = -margin;
+  const viewportBottom = height + margin;
+
+  function isInViewport(nodeId: string): boolean {
+    const s = screenById.get(nodeId);
+    if (!s) return false;
+    return (
+      s.x >= viewportLeft && s.x <= viewportRight && s.y >= viewportTop && s.y <= viewportBottom
+    );
+  }
+
+  function isInFog(nodeId: string): boolean {
+    const s = screenById.get(nodeId);
+    if (!s) return false;
     const dx = s.x - fog.centerX;
     const dy = s.y - fog.centerY;
-    if (dx * dx + dy * dy <= fog.radius * fog.radius) {
+    return dx * dx + dy * dy <= fog.radius * fog.radius;
+  }
+
+  const visible = new Set<string>();
+
+  if (fog.mode === "off") {
+    // Viewport culling only.
+    for (const node of nodes) {
+      if (isInViewport(node.id)) {
+        visible.add(node.id);
+      }
+    }
+    return visible;
+  }
+
+  // Hovered node and its direct neighbors are always revealed if in viewport.
+  if (hoveredNodeId) {
+    const hoveredNode = resolvedNodeMap.get(hoveredNodeId);
+    if (hoveredNode && isInViewport(hoveredNodeId)) {
+      visible.add(hoveredNodeId);
+      for (const link of links) {
+        const sourceId = getLinkEndpointId(link.source);
+        const targetId = getLinkEndpointId(link.target);
+        const neighborId = sourceId === hoveredNodeId ? targetId : sourceId;
+        if (neighborId && isInViewport(neighborId)) {
+          visible.add(neighborId);
+        }
+      }
+    }
+  }
+
+  // Nodes within the fog clear radius are visible.
+  for (const node of nodes) {
+    if (isInViewport(node.id) && isInFog(node.id)) {
       visible.add(node.id);
     }
   }
@@ -136,12 +193,11 @@ export function createFogVisibilitySet(
 
 /** Whether a node is currently hidden by the fog. */
 export function isNodeHiddenByFog(
-  node: SimulationNode,
-  transform: { x: number; y: number; k: number },
   fog: FogRenderParams,
-  visibleSet: Set<string>
+  visibleSet: Set<string>,
+  node: SimulationNode
 ): boolean {
-  if (!fog.enabled || fog.mode === "off" || fog.mode === "first-person") {
+  if (fog.mode === "off" || fog.mode === "first-person") {
     return false;
   }
   return !visibleSet.has(node.id);

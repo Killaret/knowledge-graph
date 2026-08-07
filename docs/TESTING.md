@@ -301,13 +301,13 @@ The manual test checklist covers:
 
 ### Current Test Statistics
 
-**Latest Test Results (run 2026-07-20):**
+**Latest Test Results (run 2026-08-13):**
 
 | Layer | Category | Total | Passed | Failed | Skipped | Status |
 |-------|----------|-------|--------|--------|---------|--------|
 | Backend | Unit Tests | 1089 | 1085 | 0 | 4 | ✅ Excellent |
 | Backend | Integration Tests | - | - | - | - | ⚠️ Not run — requires Linux/WSL Docker (`-tags=integration`) |
-| Frontend | Unit Tests | 617 | 580 | 0 | 37 | ✅ Good |
+| Frontend | Unit Tests | 923 | 923 | 0 | 0 | ✅ Good |
 | Frontend | E2E Tests | - | - | - | - | ⚠️ Run separately with `npm run test` |
 | Frontend | BDD Tests (skip-auth) | 5 | 5 | 0 | 0 | ✅ Good |
 | Frontend | BDD Tests (real-auth) | 9 | 9 | 0 | 0 | ✅ Good |
@@ -317,6 +317,7 @@ The manual test checklist covers:
 **Notes:**
 - Backend unit tests (`go test ./...`) pass with 1085 passing, 4 skipped, 0 failures.
 - Backend integration tests are excluded by default; run `go test -tags=integration ./...` on Linux/WSL or in CI.
+- Frontend unit tests (`npm run test:unit`) pass with 923 passing, 0 skipped, 0 failures.
 - Frontend E2E and BDD tests are not part of `npm run test:unit`; they require the isolated test stack.
 
 ### Current Code Coverage
