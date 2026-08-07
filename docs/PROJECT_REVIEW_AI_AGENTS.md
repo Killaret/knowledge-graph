@@ -135,7 +135,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `src/shared/` — утилиты, API, типы, stores, сервисы, конфиг.
 - `src/components/{atoms,molecules,organisms}/` — UI-компоненты.
 - `src/entities/` — domain entities (note, user, tag, achievement).
-- `src/features/` — пользовательские сценарии (graph-interaction, graph-forms, preload).
+- `src/features/` — пользовательские сценарии (graph-interaction, graph-forms, preload, home-page).
 - `src/widgets/` — сложные секции (`SidebarWidget`, `GraphCanvas`, `CockpitLayout`).
 - `src/routes/` — SvelteKit-страницы.
 
@@ -151,10 +151,11 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Типизация strict, никаких `any` в production-коде (после фикса убраны 3 `as any` в auth-сторах).
 
 ### i18n
-- `src/shared/utils/i18n.ts` — ключи для `en` и `ru`.
+- `src/shared/utils/i18n.ts` — barrel, реэкспортирует `formatMessage` и типы `Locale`/`MessageParams`.
+- `src/shared/utils/i18n/messages/*.ts` — ключи по доменам (`auth`, `common`, `graph`, `import`, `notes`, `profile`, `ui`) для `en` и `ru`.
 - `formatMessage(key, locale, params)`.
 - UI по умолчанию на русском, но все строки через i18n-ключи.
-- После ревью `SidebarWidget.svelte` полностью переведена на i18n-ключи.
+- `SidebarWidget.svelte` переведена на i18n-ключи.
 
 ---
 
@@ -346,8 +347,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Архитектура: [`docs/ARCHITECTURE_SUMMARY.md`](ARCHITECTURE_SUMMARY.md).
 - Команды: [`COMMANDS.md`](../COMMANDS.md).
 - Backend wiring: [`backend/cmd/server/main.go`](../backend/cmd/server/main.go).
-- Frontend i18n: [`frontend/src/shared/utils/i18n.ts`](../frontend/src/shared/utils/i18n.ts).
-- Frontend entry: [`frontend/src/routes/+page.svelte`](../frontend/src/routes/+page.svelte).
+- Frontend i18n: [`frontend/src/shared/utils/i18n.ts`](../frontend/src/shared/utils/i18n.ts), [`frontend/src/shared/utils/i18n/messages/`](../frontend/src/shared/utils/i18n/messages/).
+- Frontend entry: [`frontend/src/routes/+page.svelte`](../frontend/src/routes/+page.svelte), [`frontend/src/features/home-page/home-page.svelte.ts`](../frontend/src/features/home-page/home-page.svelte.ts).
 - NLP: [`nlp-service/Dockerfile`](../nlp-service/Dockerfile), [`nlp-service/app/main.py`](../nlp-service/app/main.py).
 - Backup: [`docs/BACKUP.md`](BACKUP.md), [`knowledge-graph.config.json`](../knowledge-graph.config.json).
 - Regression: [`scripts/testing/run-full-test-cycle.ps1`](../scripts/testing/run-full-test-cycle.ps1).
