@@ -3,7 +3,6 @@
   import { browser } from "$app/environment";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import type { GraphDeltaData } from "$shared/api/graph";
-  import { GraphMode } from "$entities";
   import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
@@ -92,7 +91,6 @@
     disableVariation = false,
     readonly = false,
     showLinkTypeLegend = true,
-    showTopBar = true,
     className = "",
     controller = $bindable<
       | {
@@ -149,7 +147,6 @@
     disableVariation?: boolean;
     readonly?: boolean;
     showLinkTypeLegend?: boolean;
-    showTopBar?: boolean;
     className?: string;
     controller?: {
       focusMode: boolean;
@@ -247,6 +244,10 @@
   let animationTime = $state(0);
   let graphStable = $state(false);
 
+  // Throttle rendering: only the animation loop does actual drawing;
+  // D3 ticks and input events just request a frame.
+  let needsRedraw = false;
+
   // Interactive canvas elements
   let blackHole: BlackHoleState = $state(createBlackHole(width, height));
   let ghostNode: GhostNodeState = $state(createGhostNode(width, height, []));
@@ -338,9 +339,11 @@
     }, 100);
 
     // Запускаем анимацию
+    console.log("[onMount] starting animation loop");
     animationLoop = startAnimationLoop(
       () => getSimulationNodes(simState),
       () => {
+        console.log("[onMount] animation onUpdate called");
         const simNodes = getSimulationNodes(simState);
         if (ctx) {
           // In stable render mode keep animation time fixed for deterministic screenshots
@@ -361,8 +364,9 @@
             gravitySystem.applyAttraction(simNodes);
           }
 
-          // Draw the full graph with all effects
-          redraw();
+          // Draw the full graph with all effects (once per rAF)
+          needsRedraw = true;
+          doRedraw();
         }
       },
       stableRender
@@ -407,6 +411,10 @@
     lastDataKey = dataKey;
 
     if (!browser || !mounted) return;
+
+    // The particle system is created once in onMount, but the node count
+    // (and therefore the performance threshold) changes as data loads/filters.
+    particleSystem?.updateNodeCount(nodes.length);
 
     graphStable = false;
 
@@ -474,43 +482,54 @@
     });
   });
 
-  function redraw() {
+  function doRedraw() {
+    if (!needsRedraw || !ctx) return;
+    needsRedraw = false;
+
     const simNodes = getSimulationNodes(simState);
-    if (ctx) {
-      const linkMousePos =
-        dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget
-          ? {
-              sourceId: dragDropState.draggedNodeId,
-              x: dragDropState.mouseWorldPosition.x,
-              y: dragDropState.mouseWorldPosition.y,
-            }
-          : null;
-      draw(
-        ctx,
-        width,
-        height,
-        simState.simLinks,
-        simNodes,
-        angles,
-        transform,
-        simState.nodeOpacity,
-        simState.linkOpacity,
-        simState.dyingLinks,
-        simState.dyingLinkOpacity,
-        stableRender,
-        animationTime,
-        canvasState.hoveredNodeId,
-        particleSystem,
-        blackHole,
-        ghostNode,
-        gravitySystem,
-        canvasState.focusMode,
-        hotkeysState.searchMatchIds,
-        canvasState.highlightedLinkId,
-        dragDropState.linkPreviewTarget,
-        linkMousePos
-      );
-    }
+    const linkMousePos =
+      dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget
+        ? {
+            sourceId: dragDropState.draggedNodeId,
+            x: dragDropState.mouseWorldPosition.x,
+            y: dragDropState.mouseWorldPosition.y,
+          }
+        : null;
+    draw(
+      ctx,
+      width,
+      height,
+      simState.simLinks,
+      simNodes,
+      angles,
+      transform,
+      simState.nodeOpacity,
+      simState.linkOpacity,
+      simState.dyingLinks,
+      simState.dyingLinkOpacity,
+      stableRender,
+      animationTime,
+      canvasState.hoveredNodeId,
+      particleSystem,
+      blackHole,
+      ghostNode,
+      gravitySystem,
+      canvasState.focusMode,
+      hotkeysState.searchMatchIds,
+      canvasState.highlightedLinkId,
+      dragDropState.linkPreviewTarget,
+      linkMousePos
+    );
+  }
+
+  function scheduleRedraw() {
+    needsRedraw = true;
+  }
+
+  // Backwards-compatible alias: outside callers schedule a frame,
+  // actual rendering happens once per animation-frame loop.
+  function redraw() {
+    scheduleRedraw();
   }
 
   const eventContext: GraphCanvasEventContext = {
@@ -664,8 +683,6 @@
   {canvas}
   {nodes}
   {links}
-  {showTopBar}
-  loading={!graphStable && nodes.length > 0}
   hoveredNodeId={canvasState.hoveredNodeId}
   hoveredLink={canvasState.hoveredLink}
   tooltipPosition={canvasState.tooltipPosition}
@@ -683,16 +700,6 @@
   }}
   onLinkEdit={onLinkEdit ? () => canvasState.handleLinkEdit(onLinkEdit) : undefined}
   onLinkDelete={onLinkDelete ? () => canvasState.handleLinkDelete(onLinkDelete) : undefined}
-  controlsMode={GraphMode.fromFocus(canvasState.focusMode)}
-  onReset={() => {
-    const simNodes = getSimulationNodes(simState);
-    if (ctx && simNodes.length > 0) {
-      resetView(ctx, width, height, simNodes, transform);
-    }
-  }}
-  onSearch={() => canvasState.handleOpenSearch(hotkeysState)}
-  onToggleMode={() => canvasState.handleToggleFocus(redraw)}
-  onToggleFocus={() => canvasState.handleToggleFocus(redraw)}
 />
 {#if hotkeysState.showHelpModal}
   <HelpHotkeysModal

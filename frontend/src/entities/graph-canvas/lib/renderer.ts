@@ -9,6 +9,7 @@ import {
   type SimulationLink,
 } from "./types";
 import { getVariation, applyHueShift } from "$shared/utils/variation";
+import { BASE_NODE_RADIUS } from "./graph-constants";
 import { drawBlackHole, drawBlackHoleTooltip } from "./black-hole";
 import { drawGhostNodeScreen, drawGhostNodeTooltipScreen } from "./ghost-node";
 import { drawDistortedBackgroundGrid } from "./gravity-system";
@@ -79,14 +80,14 @@ export function drawStar(
   const step = Math.PI / points;
 
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 20 * glowIntensity;
     ctx.shadowColor = "#ffcc00";
   }
 
   // Draw corona (rays)
-  if (time && nodeCount !== undefined && nodeCount <= 50) {
+  if (time && nodeCount !== undefined && nodeCount <= (graphConfig2D.visual_fx_threshold ?? 500)) {
     const rayCount = 8;
     const rayLength = outerRadius * 0.5;
     const localTime = time + nodePhase * 1000;
@@ -154,7 +155,7 @@ export function drawPlanet(
   const planetColor = color ? applyHueShift(color, hueShift) : applyHueShift("#d6aa5d", hueShift);
 
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 15 * glowIntensity;
     ctx.shadowColor = planetColor;
@@ -177,7 +178,7 @@ export function drawPlanet(
   }
 
   // Draw rings (Saturn-like)
-  if (nodeCount !== undefined && nodeCount <= 50) {
+  if (nodeCount !== undefined && nodeCount <= (graphConfig2D.visual_fx_threshold ?? 500)) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle + Math.PI / 6);
@@ -228,7 +229,7 @@ export function drawComet(
   const nodePhase = variation?.phaseShift ?? 0;
 
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 12 * glowIntensity;
     ctx.shadowColor = cometColor;
@@ -298,7 +299,7 @@ export function drawGalaxy(
   const adjustedR = r * sizeMultiplier;
 
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 25 * glowIntensity;
     ctx.shadowColor = "#8b5cf6";
@@ -389,7 +390,7 @@ export function drawAsteroid(
   const seed = nodeId ?? "asteroid";
 
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 10 * glowIntensity;
     ctx.shadowColor = asteroidColor;
@@ -500,7 +501,7 @@ export function drawBlackhole(
   time?: number
 ): void {
   // Apply glow effect
-  if (time && nodeId && nodeCount !== undefined) {
+  if (time && nodeId && nodeCount !== undefined && nodeCount < (graphConfig2D.shadows_threshold ?? 100)) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
     ctx.shadowBlur = 30 * glowIntensity;
     ctx.shadowColor = "#ff6600";
@@ -561,7 +562,7 @@ export function drawBackground(
   }
 
   // Draw nebula (large blurred ellipses)
-  if (nodes.length <= 50) {
+  if (nodes.length <= (graphConfig2D.visual_fx_threshold ?? 500)) {
     const nebulaCount = 3;
     for (let i = 0; i < nebulaCount; i++) {
       const nebulaX = (width / nebulaCount) * (i + 0.5);
@@ -657,7 +658,9 @@ export function drawAnimatedLink(
   time: number,
   linkCount: number,
   hoveredNodeId?: string | null,
-  curveOffset: number = 0
+  curveOffset: number = 0,
+  baseOpacity: number = 1,
+  isDuplicateHighlighted: boolean = false
 ): void {
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
@@ -677,35 +680,58 @@ export function drawAnimatedLink(
 
   if (linkCount > PERFORMANCE_THRESHOLD_LINKS) {
     // Fallback to static link for performance
-    drawLink(ctx, link, source, target, 1, hoveredNodeId, false, 0);
+    drawLink(
+      ctx,
+      link,
+      source,
+      target,
+      baseOpacity,
+      hoveredNodeId,
+      isDuplicateHighlighted,
+      curveOffset
+    );
     return;
   }
 
   // Check if this link should be highlighted
-  const isHighlighted = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
-  const opacity = hoveredNodeId ? (isHighlighted ? 1 : 0.3) : 1;
-
+  const isHovered = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
+  let opacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : baseOpacity;
+  const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
-  const color = linkType.getColor(link.weight ?? 0.5, opacity);
-  const dashArray = linkType.getLineDash(link.weight);
+  const dashArray = linkType.getLineDash(weight);
 
-  // Draw base curve
   ctx.beginPath();
   drawCurvedLinkPath(ctx, source, target, curveOffset);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+
+  const lineWidth = Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
+  ctx.lineWidth = lineWidth;
+
+  if (isDuplicateHighlighted) {
+    const pulseOpacity = 0.5 + 0.5 * Math.abs(Math.sin(time / 150));
+    opacity = opacity * pulseOpacity;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "rgba(255, 204, 0, 0.8)";
+    ctx.strokeStyle = `rgba(255, 204, 0, ${opacity})`;
+  } else {
+    ctx.strokeStyle = linkType.getColor(weight, opacity);
+  }
+
   ctx.setLineDash(dashArray);
   ctx.stroke();
 
   // Animate dash offset for moving dots effect
-  const speed = 0.5 + (link.weight ?? 0.5) * 0.5;
-  const offset = (time * speed) % 20;
-  ctx.lineDashOffset = -offset;
-  ctx.stroke();
+  if (dashArray.length > 0) {
+    const speed = 0.5 + weight * 0.5;
+    const offset = (time * speed) % 20;
+    ctx.lineDashOffset = -offset;
+    ctx.stroke();
+  }
 
   // Reset line dash
   ctx.setLineDash([]);
   ctx.lineDashOffset = 0;
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
 }
 
 /**
@@ -890,10 +916,6 @@ export function drawUnknown(
  */
 function registerCelestialBodyDrawers(): void {
   CelestialBody.STAR.drawFunction = (ctx, c) => {
-    if (c.enableShadows) {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = "rgba(255, 200, 100, 0.8)";
-    }
     drawStar(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
@@ -1006,6 +1028,12 @@ export function drawAllLinks(
   }
 
   const bidirectionalPairs = buildBidirectionalPairSet(simLinks);
+  const nodeMap = new Map<string, SimulationNode>();
+  for (const node of nodes) {
+    if (node.id) {
+      nodeMap.set(node.id, node);
+    }
+  }
 
   simLinks.forEach((link, index) => {
     const sourceNode = resolveLinkEndpoint(link.source, nodes);
@@ -1030,7 +1058,6 @@ export function drawAllLinks(
     // Highlight duplicate links with a yellow pulse
     const stableLinkId = `${link.source}-${link.target}-${link.link_type || "related"}`;
     const isHighlighted = highlightedLinkId === stableLinkId;
-    const pulseOpacity = isHighlighted ? 0.5 + 0.5 * Math.abs(Math.sin(animationTime / 150)) : 1;
 
     // Apply bidirectional curve offset when a reverse link exists
     const sourceId = getLinkEndpointId(link.source);
@@ -1042,15 +1069,16 @@ export function drawAllLinks(
       : 0;
 
     // Use animated link drawing
-    drawLink(
+    drawAnimatedLink(
       ctx,
       link,
-      sourceNode,
-      targetNode,
-      opacity * pulseOpacity,
+      nodeMap,
+      animationTime,
+      simLinks.length,
       hoveredNodeId,
-      isHighlighted,
-      curveOffset
+      curveOffset,
+      opacity,
+      isHighlighted
     );
     drawnCount++;
   });
@@ -1206,7 +1234,7 @@ export function drawAllNodes(
   focusMode: boolean = false,
   searchMatchIds?: string[]
 ): void {
-  const r = 16;
+  const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
 
   if (disableVariation) {
@@ -1219,11 +1247,13 @@ export function drawAllNodes(
 
   if (particleSystem?.isEnabled()) {
     for (const node of nodes) {
+      // Use glowColor for orbit particles so they remain visible even for
+      // dark body types (e.g. blackhole notes) and read as a subtle halo.
       particleSystem.initParticles(
         node.id,
         node.x || 0,
         node.y || 0,
-        CelestialBody.fromString(node.type).color
+        CelestialBody.fromString(node.type).glowColor
       );
     }
   }

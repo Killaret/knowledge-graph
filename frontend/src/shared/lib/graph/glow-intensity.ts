@@ -1,16 +1,18 @@
 /**
  * Glow intensity utility for node pulsating effect
  */
+import { graphConfig2D } from "$shared/config";
 import { stringHash } from "./helpers";
 
-const PERFORMANCE_THRESHOLD_NODES = 100;
-
 /**
- * Get glow intensity based on time and node ID (pulsating effect)
+ * Get glow intensity based on time and node ID (pulsating effect).
+ * Above the configured visual-fx threshold the glow is reduced to a
+ * steady minimal value to keep the frame rate healthy on large graphs.
  */
 export function getGlowIntensity(nodeId: string, time: number, nodeCount: number): number {
-  if (nodeCount > PERFORMANCE_THRESHOLD_NODES) {
-    return 0.3; // Minimal glow for stars only
+  const threshold = graphConfig2D.visual_fx_threshold ?? 500;
+  if (nodeCount > threshold) {
+    return 0.3; // Minimal steady glow
   }
 
   const hash = stringHash(nodeId);

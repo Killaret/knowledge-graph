@@ -17,7 +17,22 @@
 </script>
 
 <button class="back-button" onclick={handleBack} aria-label={t("backButton.goBack")}>
-  {text}
+  <svg
+    class="back-icon"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M19 12H5" />
+    <path d="M12 19l-7-7 7-7" />
+  </svg>
+  <span>{text}</span>
 </button>
 
 <style>
@@ -51,8 +66,7 @@
     transform: translateY(0);
   }
 
-  .back-button::before {
-    content: "«";
-    font-weight: bold;
+  .back-icon {
+    flex-shrink: 0;
   }
 </style>

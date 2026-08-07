@@ -6,6 +6,7 @@
   interface Props {
     children?: Snippet;
     class?: string;
+    "data-testid"?: string;
     variant?: BevelVariant;
     /** Outer bevel cut (in px) — the deeper corner facing the screen edge. */
     outer?: number;
@@ -37,6 +38,7 @@
     shaded = true,
     fullHeight = false,
     style = "",
+    ...restProps
   }: Props = $props();
 
   const outerCss = $derived(`${outer}px`);
@@ -52,6 +54,7 @@
     : ''}{glowColor ? ` --bevel-glow: ${glowColor};` : ''}{shadeColor
     ? ` --bevel-shade: ${shadeColor};`
     : ''} {style}"
+  {...restProps}
 >
   {@render children?.()}
 </div>

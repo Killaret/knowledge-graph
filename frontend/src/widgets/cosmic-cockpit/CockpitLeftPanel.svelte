@@ -51,6 +51,14 @@
   const authenticated = $derived(isAuthenticated());
   const user = $derived(currentUser());
 
+  // Note list is collapsed by default: it is long and can push the canvas
+  // to the right, making the graph feel cramped.
+  let noteListOpen = $state(false);
+
+  function toggleNoteList() {
+    noteListOpen = !noteListOpen;
+  }
+
   const navItems = [
     { href: "/", label: t("cockpit.nav.home"), emoji: "🏠" },
     { href: "/graph", label: t("cockpit.nav.graph"), emoji: "🌌" },
@@ -253,11 +261,19 @@
     />
   </section>
 
-  <section class="left-section" aria-labelledby="note-list-heading">
-    <h3 class="section-heading cockpit-gradient-text" id="note-list-heading">
-      {t("cockpit.left.noteList")}
-    </h3>
-    <div class="note-tree">
+  <section class="left-section" class:collapsed={!noteListOpen} aria-labelledby="note-list-heading">
+    <button
+      type="button"
+      class="section-heading section-heading--toggle cockpit-gradient-text"
+      id="note-list-heading"
+      onclick={toggleNoteList}
+      aria-expanded={noteListOpen}
+      aria-controls="note-list-content"
+    >
+      <span>{t("cockpit.left.noteList")}</span>
+      <span class="toggle-icon" aria-hidden="true">{noteListOpen ? "▼" : "▶"}</span>
+    </button>
+    <div class="note-tree" id="note-list-content" class:collapsed={!noteListOpen}>
       {#each notes as note}
         <button
           type="button"
@@ -336,6 +352,29 @@
     letter-spacing: 0.08em;
   }
 
+  .section-heading--toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .section-heading--toggle .toggle-icon {
+    font-size: 10px;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+  }
+
+  .section-heading--toggle:hover .toggle-icon {
+    opacity: 1;
+  }
+
   .sub-heading {
     margin-top: 8px;
   }
@@ -367,6 +406,10 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .note-tree.collapsed {
+    display: none;
   }
 
   .nav-link,

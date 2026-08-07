@@ -11,6 +11,8 @@
     type ImportPreviewItem,
     type ImportTaskStatus,
   } from "$shared/api/import";
+  import Button from "$components/atoms/Button.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -229,311 +231,623 @@
     errorMessage = "";
     if (pollInterval) clearInterval(pollInterval);
   }
+
+  const progressPercent = $derived(
+    taskStatus?.progress && taskStatus.progress.total > 0
+      ? Math.min(100, Math.round((taskStatus.progress.processed / taskStatus.progress.total) * 100))
+      : 0
+  );
+
+  const importableCount = $derived(previewItems.filter((i) => i.is_new && !i.error).length);
 </script>
 
 <div class="import-page">
-  <div class="tabs">
-    <a href="/import">{t("import.singleImport")}</a>
-    <a class="active" href="/import/bookmarks">{t("import.massImport")}</a>
-  </div>
+  <nav class="tabs" aria-label={t("import.massTitle")}>
+    <a class="tab" href="/import">{t("import.singleImport")}</a>
+    <a class="tab active" href="/import/bookmarks">{t("import.massImport")}</a>
+  </nav>
 
-  <h1>{t("import.massTitle")}</h1>
+  <h1 class="import-title">{t("import.massTitle")}</h1>
 
   {#if status === "unauthorized"}
-    <p class="status error">{t("unauthorized")}</p>
-  {:else if status === "idle" || status === "error"}
-    {#if status === "error"}
-      <p class="status error">{errorMessage || t("import.error")}</p>
-    {/if}
-
-    <label for="import-list">{t("import.pasteList")}</label>
-    <textarea
-      id="import-list"
-      bind:value={input}
-      rows="10"
-      placeholder="Example page | https://example.com\nhttps://another.example.com"
-    ></textarea>
-
-    <label class="extract-toggle">
-      <input type="checkbox" bind:checked={extractContent} />
-      {t("import.extractContent")}
-    </label>
-
-    <div
-      class="drop-zone"
-      class:drag-over={dragOver}
-      role="button"
-      tabindex="0"
-      ondragover={(e) => {
-        e.preventDefault();
-        dragOver = true;
-      }}
-      ondragleave={() => (dragOver = false)}
-      ondrop={handleFileDrop}
-      onkeydown={(e) => e.key === "Enter" && document.getElementById("file-input")?.click()}
-      onclick={() => document.getElementById("file-input")?.click()}
-    >
-      {t("import.dropFile")}
+    <div class="state-card">
+      <StateIllustration type="empty" />
+      <p class="status error">{t("unauthorized")}</p>
     </div>
-    <input
-      id="file-input"
-      type="file"
-      accept=".html,.htm,text/html"
-      style="display: none"
-      onchange={handleFileSelect}
-    />
+  {:else if status === "idle" || status === "error"}
+    <div class="import-card">
+      {#if status === "error"}
+        <div class="state-header">
+          <StateIllustration type="error" />
+          <p class="status error">{errorMessage || t("import.error")}</p>
+        </div>
+      {/if}
 
-    <div class="actions">
-      <button type="button" onclick={buildPreview}>{t("import.preview")}</button>
+      <label for="import-list" class="field-label">{t("import.pasteList")}</label>
+      <textarea
+        id="import-list"
+        bind:value={input}
+        rows="10"
+        placeholder="Example page | https://example.com\nhttps://another.example.com"
+      ></textarea>
+
+      <label class="extract-toggle">
+        <input type="checkbox" bind:checked={extractContent} />
+        <span>{t("import.extractContent")}</span>
+      </label>
+
+      <div
+        class="drop-zone"
+        class:drag-over={dragOver}
+        role="button"
+        tabindex="0"
+        ondragover={(e) => {
+          e.preventDefault();
+          dragOver = true;
+        }}
+        ondragleave={() => (dragOver = false)}
+        ondrop={handleFileDrop}
+        onkeydown={(e) => e.code === "Enter" && document.getElementById("file-input")?.click()}
+        onclick={() => document.getElementById("file-input")?.click()}
+      >
+        {t("import.dropFile")}
+      </div>
+      <input
+        id="file-input"
+        type="file"
+        accept=".html,.htm,text/html"
+        style="display: none"
+        onchange={handleFileSelect}
+      />
+
+      <div class="actions">
+        <Button onClick={buildPreview} data-testid="preview-import">
+          {t("import.preview")}
+        </Button>
+      </div>
     </div>
   {:else if status === "loading"}
-    <p class="status loading">{t("import.processing")}</p>
+    <div class="state-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="status loading">{t("import.processing")}</p>
+    </div>
   {:else if status === "preview"}
-    <h2>{t("import.preview")}</h2>
-    {#if previewItems.length === 0}
-      <p>{t("import.emptyList")}</p>
-    {:else}
-      <table class="preview-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>URL</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each previewItems as item, index (item.url + index)}
-            <tr class:duplicate={!item.is_new} class:has-error={!!item.error}>
-              <td>
-                <input
-                  type="text"
-                  value={item.title}
-                  oninput={(e) => updateItemTitle(index, e.currentTarget.value)}
-                  disabled={!item.is_new || !!item.error}
-                />
-              </td>
-              <td class="url-cell">{item.url}</td>
-              <td>
-                <select
-                  value={item.type || "asteroid"}
-                  onchange={(e) => updateItemType(index, e.currentTarget.value)}
-                  disabled={!item.is_new || !!item.error}
-                >
-                  {#each noteTypes as nt}
-                    <option value={nt}>{t(`filter.type.${nt}`)}</option>
-                  {/each}
-                </select>
-              </td>
-              <td>
-                {#if item.error}
-                  <span class="error-badge">{item.error}</span>
-                {:else if item.is_new}
-                  <span class="new-badge">New</span>
-                {:else}
-                  <span class="duplicate-badge">Duplicate</span>
-                {/if}
-              </td>
-              <td>
-                <button type="button" class="icon" onclick={() => removeItem(index)}>×</button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+    <div class="import-card">
+      <h2 class="section-title">{t("import.preview")}</h2>
+      {#if previewItems.length === 0}
+        <p class="empty-hint">{t("import.emptyList")}</p>
+      {:else}
+        <div class="table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>{t("note.titleLabel")}</th>
+                <th>URL</th>
+                <th>{t("note.typeLabel")}</th>
+                <th>{t("import.status")}</th>
+                <th aria-label={t("cockpit.panel.close")}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each previewItems as item, index (item.url + index)}
+                <tr class:duplicate={!item.is_new} class:has-error={!!item.error}>
+                  <td>
+                    <input
+                      type="text"
+                      class="table-input"
+                      value={item.title}
+                      oninput={(e) => updateItemTitle(index, e.currentTarget.value)}
+                      disabled={!item.is_new || !!item.error}
+                    />
+                  </td>
+                  <td class="url-cell">{item.url}</td>
+                  <td>
+                    <select
+                      class="table-select"
+                      value={item.type || "asteroid"}
+                      onchange={(e) => updateItemType(index, e.currentTarget.value)}
+                      disabled={!item.is_new || !!item.error}
+                    >
+                      {#each noteTypes as nt}
+                        <option value={nt}>{t(`filter.type.${nt}`)}</option>
+                      {/each}
+                    </select>
+                  </td>
+                  <td>
+                    {#if item.error}
+                      <span class="badge error">{item.error}</span>
+                    {:else if item.is_new}
+                      <span class="badge new">{t("import.newBadge")}</span>
+                    {:else}
+                      <span class="badge duplicate">{t("import.duplicateBadge")}</span>
+                    {/if}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="remove-btn"
+                      onclick={() => removeItem(index)}
+                      aria-label={t("close")}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
 
-      <div class="actions">
-        <button type="button" onclick={startImport}>
-          {t("import.importAll", {
-            count: previewItems.filter((i) => i.is_new && !i.error).length,
-          })}
-        </button>
-        <button type="button" class="secondary" onclick={reset}>
-          {t("import.noParams")}
-        </button>
-      </div>
-    {/if}
+        <div class="actions">
+          <Button onClick={startImport} disabled={importableCount === 0} data-testid="start-import">
+            {t("import.importAll", { count: importableCount })}
+          </Button>
+          <Button variant="secondary" onClick={reset} data-testid="reset-import">
+            {t("cancel")}
+          </Button>
+        </div>
+      {/if}
+    </div>
   {:else if status === "importing" || status === "done"}
-    <h2>{t("import.processing")}</h2>
-    {#if taskId}
-      <p>{t("import.taskAccepted", { task_id: taskId })}</p>
-    {/if}
-    {#if taskStatus}
-      <div class="progress">
-        <div class="progress-row">
-          <span>{t("import.total")}:</span>
-          <strong>{taskStatus.progress.total}</strong>
+    <div class="state-card">
+      {#if status === "done"}
+        <StateIllustration type={taskStatus?.status === "failed" ? "error" : "success"} />
+      {:else}
+        <div class="spinner" aria-hidden="true"></div>
+      {/if}
+
+      <h2 class="section-title" class:done-title={status === "done"}>
+        {status === "done"
+          ? taskStatus?.status === "failed"
+            ? t("import.failed")
+            : t("import.doneTitle")
+          : t("import.processing")}
+      </h2>
+
+      {#if taskId}
+        <p class="task-id">{t("import.taskAccepted", { task_id: taskId })}</p>
+      {/if}
+
+      {#if taskStatus}
+        <div class="progress-section">
+          <div class="progress-bar-bg">
+            <div
+              class="progress-bar-fill"
+              style="width: {progressPercent}%"
+              class:fill-error={taskStatus.status === "failed"}
+            ></div>
+          </div>
+          <div class="progress-value" class:error={taskStatus.status === "failed"}>
+            {progressPercent}%
+          </div>
+          <div class="progress-counters">
+            <span>{t("import.total")}: <strong>{taskStatus.progress.total}</strong></span>
+            <span>{t("import.created")}: <strong>{taskStatus.progress.created}</strong></span>
+            <span>{t("import.skipped")}: <strong>{taskStatus.progress.skipped}</strong></span>
+            <span>{t("import.failed")}: <strong>{taskStatus.progress.failed}</strong></span>
+          </div>
         </div>
-        <div class="progress-row">
-          <span>{t("import.created")}:</span>
-          <strong>{taskStatus.progress.created}</strong>
+      {/if}
+
+      {#if status === "done"}
+        <div class="actions">
+          <Button onClick={openGraph} data-testid="import-open-graph">
+            {t("import.openInGraph")}
+          </Button>
+          <Button variant="secondary" onClick={reset} data-testid="reset-import">
+            {t("import.massTitle")}
+          </Button>
         </div>
-        <div class="progress-row">
-          <span>{t("import.skipped")}:</span>
-          <strong>{taskStatus.progress.skipped}</strong>
-        </div>
-        <div class="progress-row">
-          <span>{t("import.failed")}:</span>
-          <strong>{taskStatus.progress.failed}</strong>
-        </div>
-      </div>
-    {/if}
-    {#if status === "done"}
-      <div class="actions">
-        <button type="button" onclick={openGraph}>{t("import.openInGraph")}</button>
-        <button type="button" class="secondary" onclick={reset}>
-          {t("import.massTitle")}
-        </button>
-      </div>
-    {/if}
+      {/if}
+    </div>
   {/if}
 </div>
 
 <style>
   .import-page {
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 1rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+    min-height: 100vh;
+    color: var(--carbon-text, #f0f0f5);
   }
+
   .tabs {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #ddd;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--carbon-border, #2d2d3d);
   }
-  .tabs a {
-    padding: 0.5rem 1rem;
+
+  .tab {
+    padding: 0.6rem 1rem;
     text-decoration: none;
-    color: #333;
+    color: var(--carbon-text-muted, #8b8b9e);
     border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
   }
-  .tabs a.active {
-    border-bottom-color: #007acc;
-    font-weight: bold;
+
+  .tab:hover {
+    color: var(--carbon-text, #f0f0f5);
   }
-  h1 {
-    margin-bottom: 1rem;
+
+  .tab.active {
+    color: var(--carbon-glow-cyan, #22d3ee);
+    border-bottom-color: var(--carbon-glow-cyan, #22d3ee);
+    font-weight: 600;
   }
-  label {
+
+  .import-title {
+    margin: 0 0 1.25rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .import-card,
+  .state-card {
+    background: var(
+      --carbon-gradient-card,
+      linear-gradient(145deg, rgba(30, 30, 42, 0.7) 0%, rgba(18, 18, 26, 0.9) 100%)
+    );
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      0 0 12px rgba(139, 92, 246, 0.06);
+  }
+
+  .state-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .state-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .field-label {
     display: block;
     margin-bottom: 0.5rem;
+    color: var(--carbon-text-muted, #8b8b9e);
+    font-weight: 500;
+    font-size: 0.95rem;
   }
+
   textarea {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 10px;
+    background: var(--carbon-black, #050508);
+    color: var(--carbon-text, #f0f0f5);
     font-family: inherit;
     box-sizing: border-box;
+    font-size: 0.95rem;
+    resize: vertical;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
+
+  textarea::placeholder {
+    color: var(--carbon-text-dim, #5a5a6e);
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+    box-shadow: var(--carbon-focus-ring, 0 0 0 3px rgba(34, 211, 238, 0.15));
+  }
+
   .extract-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin: 0.75rem 0 0;
+    margin: 1rem 0 0;
+    cursor: pointer;
+    color: var(--carbon-text-muted, #8b8b9e);
+  }
+
+  .extract-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--carbon-glow-cyan, #22d3ee);
     cursor: pointer;
   }
-  .extract-toggle input {
-    margin: 0;
-  }
+
   .drop-zone {
-    margin-top: 1rem;
-    padding: 2rem;
-    border: 2px dashed #ccc;
-    border-radius: 0.5rem;
+    margin-top: 1.25rem;
+    padding: 2.5rem 1.5rem;
+    border: 2px dashed var(--carbon-border, #2d2d3d);
+    border-radius: 12px;
     text-align: center;
-    color: #666;
+    color: var(--carbon-text-muted, #8b8b9e);
     cursor: pointer;
+    background: var(--carbon-graphene, #12121a);
+    transition: all 0.2s ease;
   }
+
+  .drop-zone:hover,
   .drop-zone.drag-over {
-    border-color: #007acc;
-    background: #f0f4f8;
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+    background: rgba(34, 211, 238, 0.05);
+    color: var(--carbon-glow-cyan, #22d3ee);
   }
+
   .actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
   }
-  button {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    background: #007acc;
-    color: #fff;
-  }
-  button.secondary {
-    background: #f0f0f0;
-    color: #333;
-  }
-  button.icon {
-    background: transparent;
-    color: #c00;
-    border: none;
-    font-size: 1.25rem;
-    line-height: 1;
-  }
+
   .status {
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    border-radius: 10px;
+    font-weight: 500;
   }
-  .loading {
-    background: #f0f4f8;
-    color: #333;
+
+  .status.loading {
+    color: var(--carbon-glow-cyan, #22d3ee);
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.2);
   }
-  .error {
-    background: #fff0f0;
-    color: #c00;
+
+  .status.error {
+    color: var(--carbon-glow-red, #ff3a2f);
+    background: rgba(255, 58, 47, 0.08);
+    border: 1px solid rgba(255, 58, 47, 0.2);
   }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--carbon-border, #2d2d3d);
+    border-top-color: var(--carbon-glow-cyan, #22d3ee);
+    box-shadow: 0 0 14px var(--carbon-glow-cyan, rgba(34, 211, 238, 0.25));
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .section-title {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .done-title {
+    margin-top: 0.5rem;
+  }
+
+  .empty-hint {
+    color: var(--carbon-text-muted, #8b8b9e);
+    margin: 0;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 12px;
+    background: var(--carbon-black, #050508);
+  }
+
   .preview-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1rem;
+    min-width: 640px;
   }
+
   .preview-table th,
   .preview-table td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
+    border-bottom: 1px solid var(--carbon-border, #2d2d3d);
+    padding: 0.75rem;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
   }
-  .preview-table input,
-  .preview-table select {
+
+  .preview-table th {
+    color: var(--carbon-text-muted, #8b8b9e);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--carbon-graphene, #12121a);
+  }
+
+  .preview-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .preview-table tbody tr.duplicate {
+    opacity: 0.65;
+  }
+
+  .preview-table tbody tr.has-error {
+    background: rgba(255, 58, 47, 0.05);
+  }
+
+  .table-input,
+  .table-select {
     width: 100%;
     box-sizing: border-box;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 8px;
+    background: var(--carbon-black, #050508);
+    color: var(--carbon-text, #f0f0f5);
+    font-size: 0.9rem;
   }
+
+  .table-input:disabled,
+  .table-select:disabled {
+    opacity: 0.5;
+    background: var(--carbon-graphene, #12121a);
+  }
+
+  .table-input:focus,
+  .table-select:focus {
+    outline: none;
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+  }
+
   .url-cell {
-    max-width: 250px;
+    max-width: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--carbon-text-dim, #5a5a6e);
+    font-size: 0.85rem;
   }
-  .new-badge {
-    color: #1a6;
+
+  .badge {
+    display: inline-flex;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
   }
-  .duplicate-badge {
-    color: #888;
+
+  .badge.new {
+    color: var(--carbon-glow-emerald, #34d399);
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.25);
   }
-  .error-badge {
-    color: #c00;
+
+  .badge.duplicate {
+    color: var(--carbon-text-muted, #8b8b9e);
+    background: var(--carbon-graphene, #12121a);
+    border: 1px solid var(--carbon-border, #2d2d3d);
   }
-  .duplicate {
-    background: #f9f9f9;
+
+  .badge.error {
+    color: var(--carbon-glow-red, #ff3a2f);
+    background: rgba(255, 58, 47, 0.1);
+    border: 1px solid rgba(255, 58, 47, 0.25);
   }
-  .has-error {
-    background: #fff0f0;
+
+  .remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    color: var(--carbon-text-muted, #8b8b9e);
+    border-radius: 6px;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
-  .progress {
+
+  .remove-btn:hover {
+    background: rgba(255, 58, 47, 0.1);
+    border-color: var(--carbon-glow-red, #ff3a2f);
+    color: var(--carbon-glow-red, #ff3a2f);
+  }
+
+  .progress-section {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .progress-bar-bg {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--carbon-c70, #1a1a24);
+    overflow: hidden;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      var(--carbon-glow-cyan, #22d3ee),
+      var(--carbon-glow-purple, #8b5cf6)
+    );
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+    transition: width 0.4s ease;
+  }
+
+  .progress-bar-fill.fill-error {
+    background: linear-gradient(90deg, var(--carbon-glow-red, #ff3a2f), #c2410c);
+    box-shadow: 0 0 12px rgba(255, 58, 47, 0.3);
+  }
+
+  .progress-value {
+    margin-top: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--carbon-glow-cyan, #22d3ee);
+  }
+
+  .progress-value.error {
+    color: var(--carbon-glow-red, #ff3a2f);
+  }
+
+  .progress-counters {
     display: grid;
-    grid-template-columns: repeat(4, auto);
-    gap: 1rem;
-    margin: 1rem 0;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--carbon-border, #2d2d3d);
+    font-size: 0.9rem;
+    color: var(--carbon-text-muted, #8b8b9e);
   }
-  .progress-row {
-    display: flex;
-    gap: 0.25rem;
+
+  .progress-counters strong {
+    color: var(--carbon-text, #f0f0f5);
+    display: block;
+    font-size: 1.1rem;
+  }
+
+  .task-id {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--carbon-text-dim, #5a5a6e);
+    word-break: break-all;
+  }
+
+  @media (max-width: 720px) {
+    .progress-counters {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .import-card,
+    .state-card {
+      padding: 1.25rem;
+    }
+
+    .drop-zone {
+      padding: 1.5rem 1rem;
+    }
   }
 </style>

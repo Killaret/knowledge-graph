@@ -40,8 +40,8 @@ describe("ghost-node", () => {
   it("creates a ghost node in top-left when notes exist", () => {
     const nodes: SimulationNode[] = [{ id: "n1", title: "n1" }];
     const ghost = createGhostNode(800, 600, nodes);
-    expect(ghost.x).toBe(60);
-    expect(ghost.y).toBe(60);
+    expect(ghost.x).toBe(80);
+    expect(ghost.y).toBe(80);
     expect(ghost.active).toBe(true);
     expect(ghost.radius).toBeGreaterThan(0);
   });
@@ -55,8 +55,8 @@ describe("ghost-node", () => {
   it("updates position based on current nodes", () => {
     const ghost = createGhostNode(800, 600, []);
     updateGhostNodePosition(ghost, 800, 600, [{ id: "n1", title: "n1" }]);
-    expect(ghost.x).toBe(60);
-    expect(ghost.y).toBe(60);
+    expect(ghost.x).toBe(80);
+    expect(ghost.y).toBe(80);
   });
 
   it("updates pulse phase based on time", () => {
@@ -75,23 +75,23 @@ describe("ghost-node", () => {
       pulsePhase: 0,
       active: true,
     };
-    const transform = { x: 0, y: 0, k: 1 };
-    expect(isPointOverGhostNode(105, 105, ghost, transform)).toBe(true);
-    expect(isPointOverGhostNode(500, 500, ghost, transform)).toBe(false);
+    expect(isPointOverGhostNode(105, 105, ghost)).toBe(true);
+    expect(isPointOverGhostNode(500, 500, ghost)).toBe(false);
   });
 
-  it("accounts for pan/zoom when hit-testing", () => {
+  it("hit-tests in screen space", () => {
     const ghost = {
-      x: 50,
-      y: 50,
+      x: 100,
+      y: 100,
       radius: 20,
       hovered: false,
       pulsePhase: 0,
       active: true,
     };
-    const transform = { x: 10, y: 10, k: 2 };
-    // world point (50,50) => screen point = 50*2 + 10 = 110
-    expect(isPointOverGhostNode(110, 110, ghost, transform)).toBe(true);
+    // The ghost is drawn in screen coordinates, so the supplied point
+    // is already in screen space and no pan/zoom transform is needed.
+    expect(isPointOverGhostNode(115, 100, ghost)).toBe(true);
+    expect(isPointOverGhostNode(200, 200, ghost)).toBe(false);
   });
 
   it("draws the world-space ghost node", () => {

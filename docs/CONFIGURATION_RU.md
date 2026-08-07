@@ -41,8 +41,11 @@ npm run build-config
     "pagination": { ... },
     "graph": { ... },
     "embedding": { ... },
-    "asynq": { ... }
+    "asynq": { ... },
+    "redis": { ... },
+    "auth": { ... }
   },
+  "graph_service": { ... },
   "frontend": {
     "test": { ... },
     "graph": { "2d": { ... }, "3d": { ... } },
@@ -82,9 +85,10 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 100,
+        "gravity_nodes_threshold": 50,
         "gravity_max_distance": 300,
-        "ghost_node_radius": 30
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 100
       }
     }
   }
@@ -96,16 +100,18 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | `max_nodes` | integer | `500` | `renderer.ts` | Максимальное количество узлов в 2D-графе |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Количество узлов, **ниже** которого рисуются CSS-тени. Выше порога тени отключаются для производительности |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Количество связей, **выше** которого анимированные линии заменяются статическими. Предотвращает лаги на плотных графах |
-| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
+| `gravity_nodes_threshold` | integer | `50` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
 | `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Максимальный радиус притяжения между узлами в мировых координатах |
-| `ghost_node_radius` | integer | `30` | `ghost-node.ts` | Радиус кнопки создания заметки («+») в экранных пикселях (рисуется в экранных координатах, всегда видна) |
+| `hover_delay_ms` | integer | `150` | `event-bridge.ts` | Задержка в миллисекундах перед затемнением узлов/связей при наведении и появлением подсказок |
+| `visual_fx_threshold` | integer | `100` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Количество узлов, **выше** которого сложные анимации (corona звёзд, кольца планет, частицы, nebula) отключаются. ParticleSystem отключается |
 
 ### Дерево решений по производительности
 
 ```
 nodes.length < shadows_threshold (100)       → включить CSS-тени
-nodes.length < gravity_nodes_threshold (100) → включить гравитационную симуляцию
+nodes.length < gravity_nodes_threshold (50)  → включить гравитационную симуляцию
 links.length > animated_links_threshold (50) → использовать статические линии вместо анимированных
+nodes.length > visual_fx_threshold (100)     → отключить glow, частицы, corona, кольца, nebula
 ```
 
 ### Использование в бэкенде (Go)
@@ -141,7 +147,7 @@ cfg := config.Load()
 {
   "frontend": {
     "achievements": {
-      "poll_interval_ms": 7000
+      "poll_interval_ms": 0
     }
   }
 }
@@ -149,13 +155,13 @@ cfg := config.Load()
 
 | Параметр | Тип | Умолчание | Описание |
 |----------|-----|-----------|----------|
-| `poll_interval_ms` | integer | `7000` | Интервал опроса новых достижений (миллисекунды) |
+| `poll_interval_ms` | integer | `0` | Интервал опроса новых достижений (миллисекунды). `0` отключает опрос |
 
 ### Переопределение через переменные окружения
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Интервал опроса достижений | `7000` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Интервал опроса достижений | `0` |
 
 ### Типы условий достижений
 
@@ -197,16 +203,19 @@ cfg := config.Load()
 ```json
 {
   "backup": {
+    "enabled": false,
     "local_path": "./backups",
     "cloud": {
       "enabled": false,
       "provider": "yandex",
       "yandex": {
-        "oauth_token": ""
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
       }
     },
-    "schedule": "0 23 * * 0",
-    "retention_days": 14,
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
     "draft_ttl_hours": 168
   }
 }
@@ -222,8 +231,8 @@ cfg := config.Load()
 | `BACKUP_YANDEX_OAUTH_TOKEN` | OAuth-токен Яндекс.Диска | — |
 | `BACKUP_YANDEX_FOLDER` | Папка на Яндекс.Диске | `/KnowledgeGraphBackups` |
 | `BACKUP_YANDEX_MAX_BACKUPS` | Максимальное количество хранимых бэкапов | `10` |
-| `BACKUP_SCHEDULE` | Расписание cron | `0 23 * * 0` |
-| `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `14` |
+| `BACKUP_SCHEDULE` | Расписание cron | `0 2 * * *` |
+| `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `7` |
 | `BACKUP_DRAFT_TTL_HOURS` | TTL черновиков в MongoDB | `168` |
 
 ### Скрипты резервного копирования
@@ -458,9 +467,10 @@ score = α × explicit_score + β × semantic_score
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 100,
+        "gravity_nodes_threshold": 50,
         "gravity_max_distance": 300,
-        "ghost_node_radius": 30
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 100
       },
       "3d": { "max_nodes": 500 }
     }

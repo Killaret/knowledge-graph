@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { SearchQuery } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { GraphStats } from "$features/graph-ui";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
   const locale = getCurrentLocale();
@@ -14,6 +15,8 @@
     onNoteCreate?: () => void;
     currentView?: "graph" | "list" | "3d";
     layoutProvider?: "d3" | "graph-service";
+    nodeCount?: number;
+    linkCount?: number;
   }
 
   const {
@@ -23,6 +26,8 @@
     onNoteCreate,
     currentView = "graph",
     layoutProvider = "graph-service",
+    nodeCount = 0,
+    linkCount = 0,
   }: Props = $props();
 
   let searchQuery = $state("");
@@ -182,6 +187,8 @@
   </div>
 
   <div class="right-cluster">
+    <GraphStats {nodeCount} {linkCount} />
+
     <button
       type="button"
       class="create-btn"

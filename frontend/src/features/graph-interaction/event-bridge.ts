@@ -249,8 +249,8 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     const screenY = e.clientY - canvasRect.top;
     blackHole.hovered = isPointOverBlackHole(screenX, screenY, blackHole);
 
-    const gdx = screenX - 60;
-    const gdy = screenY - 60;
+    const gdx = screenX - ghostNode.x;
+    const gdy = screenY - ghostNode.y;
     ghostNode.hovered = Math.sqrt(gdx * gdx + gdy * gdy) < ghostNode.radius;
 
     context.setSingularityHovered(isPointOverBlackHole(screenX, screenY, blackHole));

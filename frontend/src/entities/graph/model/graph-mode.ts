@@ -2,8 +2,8 @@
  * GraphMode — Value Object for the graph interaction/visualization mode.
  *
  * Currently the only modes are `normal` and `focus`. The object centralizes
- * the styling, iconography and toggle logic that was duplicated between
- * GraphCanvasControls and the canvas renderer.
+ * the styling, iconography and toggle logic used by the public graph top bar
+ * and the canvas renderer.
  */
 
 import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";

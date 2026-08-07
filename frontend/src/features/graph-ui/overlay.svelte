@@ -1,9 +1,8 @@
 <script lang="ts">
   import GraphTooltip from "./GraphTooltip.svelte";
   import LinkTooltip from "./LinkTooltip.svelte";
-  import GraphCanvasControls from "./controls.svelte";
   import type { HotkeysState } from "$features/graph-interaction/hotkeys";
-  import { CelestialBody, GraphMode } from "$entities";
+  import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -14,7 +13,6 @@
     canvas,
     nodes,
     links,
-    loading = false,
     hoveredNodeId = null,
     hoveredLink = null,
     tooltipPosition = { x: 0, y: 0 },
@@ -29,12 +27,6 @@
     onUpdateSearch,
     onLinkEdit,
     onLinkDelete,
-    controlsMode,
-    onReset,
-    onSearch,
-    onToggleMode,
-    onToggleFocus,
-    showTopBar = true,
   }: {
     canvas: HTMLCanvasElement | null;
     nodes: Array<{ id: string; title: string; type?: string }>;
@@ -47,7 +39,6 @@
       source_type?: string;
       last_weight_update?: string;
     }>;
-    loading?: boolean;
     hoveredNodeId?: string | null;
     hoveredLink?: {
       id?: string;
@@ -75,12 +66,6 @@
     onUpdateSearch?: () => void;
     onLinkEdit?: () => void;
     onLinkDelete?: () => void;
-    controlsMode?: GraphMode;
-    onReset?: () => void;
-    onSearch?: () => void;
-    onToggleMode?: () => void;
-    onToggleFocus?: () => void;
-    showTopBar?: boolean;
   } = $props();
 
   let graphTooltip: GraphTooltip | null = $state(null);
@@ -255,40 +240,6 @@
   </div>
 {/if}
 
-{#if showTopBar}
-  <div
-    class="graph-top-bar"
-    data-testid="graph-top-bar"
-    style="position: absolute; top: 16px; left: 16px; z-index: 50; display: flex; align-items: center; gap: 8px;"
-  >
-    <div
-      class="graph-stats"
-      data-testid="graph-stats"
-      style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px 10px; color: white; font-size: 12px; display: flex; align-items: center; gap: 8px;"
-    >
-      {#if loading}
-        <span
-          style="display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"
-        ></span>
-      {/if}
-      <span>{nodes.length} {t("graphOverlay.nodes")}</span>
-      <span style="color: rgba(255,255,255,0.4);">·</span>
-      <span>{links.length} {t("graphOverlay.links")}</span>
-    </div>
-
-    {#if controlsMode}
-      <GraphCanvasControls
-        mode={controlsMode}
-        {focusMode}
-        onReset={onReset ?? (() => {})}
-        onSearch={onSearch ?? (() => {})}
-        onToggleMode={onToggleMode ?? (() => {})}
-        onToggleFocus={onToggleFocus ?? (() => {})}
-      />
-    {/if}
-  </div>
-{/if}
-
 <style>
   @keyframes slide-up {
     from {
@@ -298,12 +249,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
     }
   }
 </style>

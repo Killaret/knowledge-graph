@@ -4,6 +4,7 @@
  */
 
 import type { SimulationNode } from "./types";
+import { BASE_NODE_RADIUS, SERVICE_TOOL_MARGIN } from "./graph-constants";
 
 export interface BlackHoleState {
   x: number;
@@ -14,13 +15,18 @@ export interface BlackHoleState {
   label?: string;
 }
 
-export const BLACK_HOLE_RADIUS = 40;
-export const BLACK_HOLE_CATCH_RADIUS = 60;
+/** Black hole radius: 3x the base note radius, making it larger
+ *  than notes and larger than the ghost, but still proportionate. */
+export const BLACK_HOLE_RADIUS = BASE_NODE_RADIUS * 3;
+
+/** Catch area is 1.5x the visible radius for easier drag-and-drop deletion. */
+export const BLACK_HOLE_CATCH_RADIUS = BLACK_HOLE_RADIUS * 1.5;
 
 export function createBlackHole(width: number, height: number): BlackHoleState {
+  const inset = SERVICE_TOOL_MARGIN + BLACK_HOLE_RADIUS;
   return {
-    x: width - 84,
-    y: height - 84,
+    x: width - inset,
+    y: height - inset,
     radius: BLACK_HOLE_RADIUS,
     pulsePhase: 0,
     hovered: false,
@@ -33,8 +39,9 @@ export function updateBlackHolePosition(
   width: number,
   height: number
 ): void {
-  state.x = width - 84;
-  state.y = height - 84;
+  const inset = SERVICE_TOOL_MARGIN + BLACK_HOLE_RADIUS;
+  state.x = width - inset;
+  state.y = height - inset;
 }
 
 export function updateBlackHolePulse(state: BlackHoleState, animationTime: number): void {

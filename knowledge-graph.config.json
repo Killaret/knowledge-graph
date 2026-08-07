@@ -106,7 +106,7 @@
     "enabled": false,
     "local_path": "./backups",
     "cloud": {
-      "enabled": true,
+      "enabled": false,
       "provider": "yandex",
       "yandex": {
         "oauth_token": "",
@@ -114,8 +114,8 @@
         "max_backups": 10
       }
     },
-    "schedule": "0 23 * * 0",
-    "retention_days": 14,
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
     "draft_ttl_hours": 168
   },
   "ci_cd": {
@@ -141,19 +141,28 @@
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 100,
+        "gravity_nodes_threshold": 50,
         "gravity_max_distance": 300,
-        "ghost_node_radius": 30,
-        "hover_delay_ms": 150
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 100
       },
       "3d": {
         "max_nodes": 500,
         "layout_provider": "graph-service",
         "fog": {
           "presets": {
-            "birth": { "density_initial": 0.08, "density_final": 0.005 },
-            "nebula": { "density_initial": 0.04, "density_final": 0.015 },
-            "deep-space": { "density_initial": 0.0, "density_final": 0.0 }
+            "birth": {
+              "density_initial": 0.08,
+              "density_final": 0.005
+            },
+            "nebula": {
+              "density_initial": 0.04,
+              "density_final": 0.015
+            },
+            "deep-space": {
+              "density_initial": 0,
+              "density_final": 0
+            }
           },
           "default_preset": "birth"
         },
@@ -161,7 +170,11 @@
           "fps_threshold_low": 20,
           "fps_threshold_high": 45,
           "low_fps_sample_count": 30,
-          "starfield_counts": { "high": 1500, "medium": 800, "low": 300 }
+          "starfield_counts": {
+            "high": 1500,
+            "medium": 800,
+            "low": 300
+          }
         }
       },
       "anomaly": {
@@ -204,10 +217,6 @@
       "poll_interval_ms": 0
     }
   },
-  "mongodb": {
-    "url": "mongodb://localhost:27017",
-    "database": "knowledge_graph"
-  },
   "graph_service": {
     "grpc_port": "9090",
     "http_port": "9091",
@@ -220,14 +229,18 @@
       "delta_ttl_seconds": 60
     },
     "layout": {
-      "2d_radius": 100.0,
-      "3d_radius": 120.0,
-      "3d_z_step": 5.0,
-      "default_node_size": 1.0
+      "2d_radius": 100,
+      "3d_radius": 120,
+      "3d_z_step": 5,
+      "default_node_size": 1
     },
     "stream_chunk_size": 100,
     "event_tracking_ttl_hours": 24,
     "unprocessed_event_check_interval_minutes": 5
+  },
+  "mongodb": {
+    "url": "mongodb://localhost:27017",
+    "database": "knowledge_graph"
   },
   "nlp": {
     "model_name": "all-MiniLM-L6-V2",

@@ -81,34 +81,44 @@ export function handleKeyDownEvent(
     return;
   }
 
-  if (e.key === "f" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  const code = e.code;
+  const key = e.key;
+  const isPrintable = (k: string) => k.length === 1;
+
+  // F — open search. Support both physical KeyF and the typed "f" character
+  // so tests and non-code event sources still work.
+  if ((code === "KeyF" || key === "f") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     e.preventDefault();
     callbacks.onSearchOpen?.();
     requestAnimationFrame(() => searchInput?.focus());
     return;
   }
 
-  if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  // Help: "?" (US) or Shift+Slash in any layout; ignore Ctrl/Alt so we don't steal system keys.
+  if ((key === "?" || (code === "Slash" && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
     callbacks.onHelpToggle?.();
     return;
   }
 
-  if (e.key === "Enter" && state.showSearchBox) {
+  if (key === "Enter" && state.showSearchBox) {
     e.preventDefault();
     focusNextSearchMatch(state, transform, simNodes, canvas);
     return;
   }
 
   // N - Create ghost node
-  if (e.key === "n" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+  if ((code === "KeyN" || key === "n") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
     e.preventDefault();
     callbacks.onGhostNodeCreate?.();
     return;
   }
 
   // Delete/Backspace - Delete selected node (if not typing)
-  if ((e.key === "Delete" || e.key === "Backspace") && !isTyping) {
+  if (
+    (code === "Delete" || code === "Backspace" || key === "Delete" || key === "Backspace") &&
+    !isTyping
+  ) {
     e.preventDefault();
     if (selectedNodeId) {
       callbacks.onNodeDelete?.(selectedNodeId);
@@ -116,8 +126,12 @@ export function handleKeyDownEvent(
     return;
   }
 
-  // Ctrl+Z - Undo (placeholder for now)
-  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+  // Ctrl+Z - Undo
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    (code === "KeyZ" || (isPrintable(key) && key.toLowerCase() === "z")) &&
+    !e.shiftKey
+  ) {
     e.preventDefault();
     callbacks.onUndo?.();
     return;

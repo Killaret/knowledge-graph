@@ -72,6 +72,9 @@
       "queue_default": 1,
       "queue_max_len": 10000
     },
+    "redis": {
+      "flush_on_startup": false
+    },
     "auth": {
       "jwt_secret": "",
       "jwt_access_ttl_seconds": 900,
@@ -81,7 +84,7 @@
       "argon2_threads": 4,
       "api_key_enabled": true,
       "static_api_key": "",
-      "skip_auth": true,
+      "skip_auth": false,
       "yandex_client_id": "",
       "yandex_client_secret": "",
       "pkce_enabled": true,

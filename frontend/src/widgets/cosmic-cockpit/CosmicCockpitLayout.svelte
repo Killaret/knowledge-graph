@@ -14,6 +14,7 @@
   import CockpitLeftPanel from "./CockpitLeftPanel.svelte";
   import CockpitRightPanel from "./CockpitRightPanel.svelte";
   import CockpitFirstPersonButton from "./CockpitFirstPersonButton.svelte";
+  import QuickCaptureWidget from "$widgets/quick-capture/QuickCaptureWidget.svelte";
 
   interface NoteItem {
     id: string;
@@ -207,6 +208,8 @@
         {currentView}
         {layoutProvider}
         {onNoteCreate}
+        {nodeCount}
+        {linkCount}
       />
     </CockpitPanel>
 
@@ -248,6 +251,10 @@
 
     {#if cockpitStore.firstPerson}
       <CockpitFirstPersonButton />
+    {/if}
+
+    {#if isAuthenticated}
+      <QuickCaptureWidget docked />
     {/if}
   {:else}
     <div class="public-cockpit">

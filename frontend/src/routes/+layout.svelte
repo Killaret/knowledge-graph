@@ -1,7 +1,5 @@
 <script lang="ts">
   import "$shared/styles/global.css";
-  import SidebarWidget from "$widgets/sidebar/SidebarWidget.svelte";
-  import QuickCaptureWidget from "$widgets/quick-capture/QuickCaptureWidget.svelte";
   import ToastNotification from "$widgets/notification/ToastNotification.svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
@@ -127,23 +125,15 @@
   }
 </script>
 
-<!--
-  APP SHELL STRUCTURE
-  Sidebar зарезервирован для будущего Context Control Center (v2.0)
-  Пока скрыт (width: 0), но готов к активации
--->
 <div class="app-shell">
   {#if isSkipAuth}
-    <div class="skip-auth-badge" title={t("layout.skipAuthTitle")}>🔑 SKIP_AUTH</div>
+    <div class="skip-auth-badge" title={t("layout.skipAuthTitle")}>SKIP_AUTH</div>
   {/if}
 
-  <SidebarWidget />
   <main class="app-main">
     {@render children()}
   </main>
 </div>
-
-<QuickCaptureWidget />
 
 {#if showToast}
   <ToastNotification

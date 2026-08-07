@@ -279,10 +279,10 @@ describe("GraphCanvas events", () => {
     expect(window.__graphCanvas!.getSimulationNodes().length).toBe(4);
   });
 
-  it("renders the canvas and overlays", () => {
+  it("renders the canvas and overlay, without legacy top bar", () => {
     const { container } = renderResult;
     expect(container.querySelector("canvas")).toBeTruthy();
-    expect(container.querySelector('[data-testid="graph-controls"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="graph-top-bar"]')).toBeFalsy();
   });
 
   it("fires onNodeClick and selects a node", async () => {
@@ -528,32 +528,8 @@ describe("GraphCanvas events", () => {
     });
   });
 
-  it("controls: reset, search, focus mode, help toggle", async () => {
-    const { container } = renderResult;
-
-    const resetBtn = container.querySelector('[data-testid="graph-controls-reset"]');
-    expect(resetBtn).toBeTruthy();
-    (resetBtn as HTMLElement).click();
-
-    const searchBtn = container.querySelector('[data-testid="graph-controls-search"]');
-    expect(searchBtn).toBeTruthy();
-    (searchBtn as HTMLElement).click();
-    await flushMicrotasks();
-    expect(container.querySelector('[data-testid="search-box"]')).toBeTruthy();
-
-    const modeBtn = container.querySelector('[data-testid="graph-controls-mode"]');
-    expect(modeBtn).toBeTruthy();
-    (modeBtn as HTMLElement).click();
-    await flushMicrotasks();
-
-    const focusBtn = container.querySelector('[data-testid="graph-controls-focus"]');
-    expect(focusBtn).toBeTruthy();
-    (focusBtn as HTMLElement).click();
-    await flushMicrotasks();
-
-    fireEvent.keyDown(window, { key: "?" });
-    await flushMicrotasks();
-    expect(container.querySelector('[data-testid="help-modal"]')).toBeTruthy();
+  it("exposes a controller for external control panels", () => {
+    expect(window.__graphCanvas).toBeDefined();
   });
 
   it("searches, focuses matches, and closes search", async () => {

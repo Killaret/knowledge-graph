@@ -33,7 +33,7 @@ function createMockContext(canvas: HTMLCanvasElement) {
   let tooltipPosition = { x: 0, y: 0 };
   let focusMode = false;
   let selectedNodeId: string | null = null;
-  let ghostNode = createGhostNode(800, 600, []);
+  let ghostNode = createGhostNode(800, 600, [{ id: "g1", title: "G" }]);
 
   const blackHole = createBlackHole(800, 600);
   const simNodes: SimulationNode[] = [
@@ -146,7 +146,8 @@ describe("event-bridge", () => {
   });
 
   it("handles ghost node click to open note form", () => {
-    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 60, clientY: 60 }));
+    // With one note the ghost is positioned at (80, 80)
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 80, clientY: 80 }));
     expect(context.noteFormState.showNoteForm).toBe(true);
   });
 

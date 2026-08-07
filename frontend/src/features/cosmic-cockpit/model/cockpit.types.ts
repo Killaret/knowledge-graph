@@ -56,5 +56,5 @@ export const COCKPIT_DEFAULT_SIZES: Record<CockpitPanelPosition, number> = {
   right: 320,
 };
 
-export const COCKPIT_EDGE_SIZE = 24;
-export const COCKPIT_PANEL_GAP = 8;
+export const COCKPIT_EDGE_SIZE = 14;
+export const COCKPIT_PANEL_GAP = 0;

@@ -37,8 +37,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border: 14px solid transparent;
-    border-radius: 14px;
+    border: 6px solid transparent;
+    border-radius: 8px;
     background:
       linear-gradient(180deg, rgba(10, 10, 15, 0.72) 0%, rgba(10, 10, 15, 0.88) 100%) padding-box,
       linear-gradient(

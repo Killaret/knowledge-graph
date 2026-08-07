@@ -5,7 +5,7 @@ import {
   findNodeAtPosition,
   handleMouseDown,
 } from "./drag-and-drop";
-import { graphConfig2D } from "$shared/config";
+import { GHOST_NODE_RADIUS } from "$entities/graph-canvas/lib/ghost-node";
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -64,7 +64,7 @@ describe("drag-and-drop", () => {
     const ghostNode = {
       x: 60,
       y: 60,
-      radius: graphConfig2D.ghost_node_radius,
+      radius: GHOST_NODE_RADIUS,
       hovered: false,
       pulsePhase: 0,
       active: true,
@@ -97,7 +97,7 @@ describe("drag-and-drop", () => {
     const ghostNode = {
       x: 60,
       y: 60,
-      radius: graphConfig2D.ghost_node_radius,
+      radius: GHOST_NODE_RADIUS,
       hovered: false,
       pulsePhase: 0,
       active: true,
@@ -127,7 +127,7 @@ describe("drag-and-drop", () => {
     const ghostNode = {
       x: 60,
       y: 60,
-      radius: graphConfig2D.ghost_node_radius,
+      radius: GHOST_NODE_RADIUS,
       hovered: false,
       pulsePhase: 0,
       active: true,
@@ -157,7 +157,7 @@ describe("drag-and-drop", () => {
     const ghostNode = {
       x: 60,
       y: 60,
-      radius: graphConfig2D.ghost_node_radius,
+      radius: GHOST_NODE_RADIUS,
       hovered: false,
       pulsePhase: 0,
       active: true,

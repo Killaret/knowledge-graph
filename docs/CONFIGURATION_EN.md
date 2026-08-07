@@ -41,8 +41,11 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
     "pagination": { ... },
     "graph": { ... },
     "embedding": { ... },
-    "asynq": { ... }
+    "asynq": { ... },
+    "redis": { ... },
+    "auth": { ... }
   },
+  "graph_service": { ... },
   "frontend": {
     "test": { ... },
     "graph": { "2d": { ... }, "3d": { ... } },
@@ -60,7 +63,7 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
 ### Frontend Usage (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$lib/config';
+import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config';
 
 // Use centralized config
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
@@ -82,9 +85,10 @@ All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not b
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 100,
+        "gravity_nodes_threshold": 50,
         "gravity_max_distance": 300,
-        "ghost_node_radius": 30
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 100
       }
     }
   }
@@ -96,16 +100,18 @@ All parameters are consumed by `$lib/config.ts → graphConfig2D` and must not b
 | `max_nodes` | integer | `500` | `renderer.ts` | Maximum nodes loaded into the 2D graph canvas |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Node count **below** which CSS drop-shadows are rendered. Above this threshold shadows are disabled for performance |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Link count **above** which animated link drawing falls back to static straight lines. Prevents jank on dense graphs |
-| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
+| `gravity_nodes_threshold` | integer | `50` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
 | `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Max world-unit radius within which nodes exert gravitational attraction on each other |
-| `ghost_node_radius` | integer | `30` | `ghost-node.ts` | Screen-space pixel radius of the translucent "+" ghost node button (rendered in screen coordinates, always visible) |
+| `hover_delay_ms` | integer | `150` | `event-bridge.ts` | Delay in milliseconds before node/link hover dimming and tooltips activate |
+| `visual_fx_threshold` | integer | `100` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Node count **above** which complex visual effects (glow, particles, star corona, rings, nebula) are disabled |
 
 ### Performance decision tree
 
 ```
 nodes.length < shadows_threshold (100)       → enable CSS shadows
-nodes.length < gravity_nodes_threshold (100) → enable gravity simulation
+nodes.length < gravity_nodes_threshold (50)  → enable gravity simulation
 links.length > animated_links_threshold (50) → use static links instead of animated
+nodes.length > visual_fx_threshold (100)     → disable glow, particles, corona, rings, nebula
 ```
 
 ### Backend Usage (Go)
@@ -141,7 +147,7 @@ These settings can be updated via the user settings API and are respected by the
 {
   "frontend": {
     "achievements": {
-      "poll_interval_ms": 7000
+      "poll_interval_ms": 0
     }
   }
 }
@@ -149,13 +155,13 @@ These settings can be updated via the user settings API and are respected by the
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `poll_interval_ms` | integer | `7000` | Polling interval for checking new achievements (milliseconds) |
+| `poll_interval_ms` | integer | `0` | Polling interval for checking new achievements (milliseconds). `0` disables polling |
 
 ### Environment Variable Overrides
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Achievement polling interval | `7000` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Achievement polling interval | `0` |
 
 ### Achievement Condition Types
 
@@ -197,16 +203,15 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 ```json
 {
   "backup": {
+    "enabled": false,
     "local_path": "./backups",
     "cloud": {
       "enabled": false,
-      "provider": "r2",
-      "r2": {
-        "account_id": "",
-        "access_key_id": "",
-        "secret_access_key": "",
-        "bucket": "",
-        "region": "auto"
+      "provider": "yandex",
+      "yandex": {
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
       }
     },
     "schedule": "0 2 * * *",

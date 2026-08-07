@@ -1,15 +1,15 @@
 /**
  * Ghost node — the translucent "+" button on the canvas for creating new notes.
  *
- * GHOST_NODE_RADIUS is sourced from knowledge-graph.config.json:
- *   frontend.graph.2d.ghost_node_radius
+ * GHOST_NODE_RADIUS is sized relative to BASE_NODE_RADIUS (2x) so it is
+ * bigger than a normal note, yet still belongs to the same visual scale.
  *
- * The node is rendered in screen coordinates (top-left corner),
- * so it stays visible regardless of canvas pan/zoom state.
+ * The node is rendered in screen coordinates, so it stays visible
+ * regardless of canvas pan/zoom state.
  */
 
 import type { SimulationNode } from "./types";
-import { graphConfig2D } from "$shared/config";
+import { BASE_NODE_RADIUS, SERVICE_TOOL_MARGIN } from "./graph-constants";
 
 export interface GhostNodeState {
   x: number;
@@ -20,8 +20,10 @@ export interface GhostNodeState {
   active: boolean;
 }
 
-/** Screen-space pixel radius of the ghost node button (from config) */
-export const GHOST_NODE_RADIUS = graphConfig2D.ghost_node_radius;
+/** Screen-space pixel radius of the ghost node button.
+ *  Size is 2x the base note radius so it is clearly a service tool,
+ *  but still visually related to the notes on the canvas. */
+export const GHOST_NODE_RADIUS = BASE_NODE_RADIUS * 2;
 
 export function createGhostNode(
   width: number,
@@ -30,9 +32,10 @@ export function createGhostNode(
 ): GhostNodeState {
   // Show in top-left if there are notes, otherwise center
   const hasNotes = nodes.length > 0;
+  const inset = SERVICE_TOOL_MARGIN + GHOST_NODE_RADIUS;
   return {
-    x: hasNotes ? 60 : width / 2,
-    y: hasNotes ? 60 : height / 2,
+    x: hasNotes ? inset : width / 2,
+    y: hasNotes ? inset : height / 2,
     radius: GHOST_NODE_RADIUS,
     hovered: false,
     pulsePhase: 0,
@@ -47,8 +50,9 @@ export function updateGhostNodePosition(
   nodes: SimulationNode[]
 ): void {
   const hasNotes = nodes.length > 0;
-  state.x = hasNotes ? 60 : width / 2;
-  state.y = hasNotes ? 60 : height / 2;
+  const inset = SERVICE_TOOL_MARGIN + GHOST_NODE_RADIUS;
+  state.x = hasNotes ? inset : width / 2;
+  state.y = hasNotes ? inset : height / 2;
 }
 
 export function updateGhostNodePulse(state: GhostNodeState, animationTime: number): void {
@@ -59,13 +63,12 @@ export function updateGhostNodePulse(state: GhostNodeState, animationTime: numbe
 export function isPointOverGhostNode(
   x: number,
   y: number,
-  ghostNode: GhostNodeState,
-  transform: { x: number; y: number; k: number }
+  ghostNode: GhostNodeState
 ): boolean {
-  const worldX = (x - transform.x) / transform.k;
-  const worldY = (y - transform.y) / transform.k;
-  const dx = worldX - ghostNode.x;
-  const dy = worldY - ghostNode.y;
+  // The ghost node is drawn in screen coordinates, so hit testing
+  // can be done directly in screen space.
+  const dx = x - ghostNode.x;
+  const dy = y - ghostNode.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
   return distance < ghostNode.radius;
 }
@@ -121,15 +124,16 @@ export function drawGhostNode(
 
 /**
  * Draw ghost node in screen (pixel) coordinates — stays fixed on screen regardless of pan/zoom.
- * Screen position is always top-left corner (60, 60).
+ * Screen position follows ghostNode.x/y so it stays inside the
+ * cockpit frame and respects the service-tool margin.
  */
 export function drawGhostNodeScreen(
   ctx: CanvasRenderingContext2D,
   ghostNode: GhostNodeState,
   _animationTime: number
 ): void {
-  const x = 60;
-  const y = 60;
+  const x = ghostNode.x;
+  const y = ghostNode.y;
   const radius = ghostNode.radius;
   const { hovered, pulsePhase } = ghostNode;
 
@@ -176,8 +180,8 @@ export function drawGhostNodeTooltipScreen(
   ghostNode: GhostNodeState,
   text: string = "Create new note"
 ): void {
-  const x = 60;
-  const y = 60;
+  const x = ghostNode.x;
+  const y = ghostNode.y;
   const radius = ghostNode.radius;
 
   ctx.save();

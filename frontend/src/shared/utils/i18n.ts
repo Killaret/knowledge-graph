@@ -71,6 +71,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "import.emptyList": "No URLs to import.",
     "import.noNewItems": "No new items to import.",
     "import.taskAccepted": "Import started. Task ID: {{task_id}}",
+    "import.status": "Status",
+    "import.newBadge": "New",
+    "import.duplicateBadge": "Duplicate",
+    "import.doneTitle": "Import complete",
 
     // Warning messages
     "unsaved.changes": "There are unsaved changes.",
@@ -626,9 +630,6 @@ const messages: Record<Locale, Record<string, string>> = {
     "hotkey.doubleClick": "Double-click empty space — create new note",
     "hotkey.zoom": "Mouse wheel — zoom in/out",
 
-    // Sidebar
-    "sidebar.placeholder": "Navigation Panel (v2.0)",
-
     // TypeSelector
     "typeSelector.ariaLabel": "Select celestial body type",
     "typeSelector.example": "Example",
@@ -802,7 +803,6 @@ const messages: Record<Locale, Record<string, string>> = {
     "nav.collapsePanel": "Collapse panel",
     "nav.title": "Knowledge Graph",
     "nav.aria": "Main navigation",
-    "nav.ariaPanel": "Sidebar navigation",
     "nav.login": "Log in",
     "nav.loginShort": "L",
     "nav.register": "Register",
@@ -875,6 +875,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "import.emptyList": "Нет URL для импорта.",
     "import.noNewItems": "Нет новых элементов для импорта.",
     "import.taskAccepted": "Импорт запущен. ID задачи: {{task_id}}",
+    "import.status": "Статус",
+    "import.newBadge": "Новая",
+    "import.duplicateBadge": "Дубликат",
+    "import.doneTitle": "Импорт завершён",
 
     // Warning messages
     "unsaved.changes": "Есть несохраненные изменения.",
@@ -1436,9 +1440,6 @@ const messages: Record<Locale, Record<string, string>> = {
     "hotkey.doubleClick": "Двойной клик по пустому месту — создать заметку",
     "hotkey.zoom": "Колёсико мыши — масштабирование",
 
-    // Sidebar
-    "sidebar.placeholder": "Панель навигации (v2.0)",
-
     // TypeSelector
     "typeSelector.ariaLabel": "Выберите тип небесного тела",
     "typeSelector.example": "Пример",
@@ -1611,7 +1612,6 @@ const messages: Record<Locale, Record<string, string>> = {
     "nav.collapsePanel": "Свернуть панель",
     "nav.title": "Knowledge Graph",
     "nav.aria": "Основная навигация",
-    "nav.ariaPanel": "Боковая панель навигации",
     "nav.login": "Войти",
     "nav.loginShort": "В",
     "nav.register": "Регистрация",

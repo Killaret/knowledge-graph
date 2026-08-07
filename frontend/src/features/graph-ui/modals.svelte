@@ -3,6 +3,8 @@
   import type { LinkFormState } from "$features/graph-forms/link-form";
   import NoteForm from "$components/molecules/NoteForm.svelte";
   import LinkTypeSelector from "$components/molecules/LinkTypeSelector.svelte";
+  import Button from "$components/atoms/Button.svelte";
+  import Bevel from "$components/atoms/Bevel.svelte";
   import { CelestialBody, LinkType } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
@@ -31,137 +33,126 @@
 </script>
 
 {#if activeForm === "note"}
-  <div
-    class="ghost-note-form"
+  <Bevel
+    variant="note"
+    outer={10}
+    inner={4}
+    borderColor="rgba(139, 92, 246, 0.45)"
+    shadeColor="rgba(139, 92, 246, 0.25)"
     data-testid="ghost-note-form"
     style="position: absolute; left: {noteFormState.noteFormPosition.x}px; top: {noteFormState
-      .noteFormPosition.y}px;"
+      .noteFormPosition.y}px; z-index: 100;"
   >
-    <div class="ghost-note-header">
-      <h3 class="ghost-note-title">{t("graphModals.createNoteTitle")}</h3>
-      <button
-        class="ghost-note-close"
-        data-testid="ghost-note-close"
-        onclick={() => onCancel("note")}
-        aria-label={t("close")}
-        type="button"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+    <div class="ghost-note-form">
+      <div class="ghost-note-header">
+        <h3 class="ghost-note-title">{t("graphModals.createNoteTitle")}</h3>
+        <button
+          class="ghost-note-close"
+          data-testid="ghost-note-close"
+          onclick={() => onCancel("note")}
+          aria-label={t("close")}
+          type="button"
         >
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <NoteForm
+        ghost
+        types={CelestialBody.UI_TYPES}
+        bind:title={noteFormState.newNoteTitle}
+        bind:content={noteFormState.newNoteContent}
+        bind:type={noteFormState.newNoteType}
+        onSubmit={() => onSave("note")}
+        onCancel={() => onCancel("note")}
+        titlePlaceholder={t("graphModals.noteTitlePlaceholder")}
+        contentPlaceholder={t("graphModals.noteContentPlaceholder")}
+        submitLabel={t("graphModals.create")}
+        cancelLabel={t("cancel")}
+        titleTestId="ghost-note-title"
+        contentTestId="ghost-note-content"
+        submitTestId="ghost-note-create"
+        cancelTestId="ghost-note-cancel"
+      />
     </div>
-    <NoteForm
-      ghost
-      types={CelestialBody.UI_TYPES}
-      bind:title={noteFormState.newNoteTitle}
-      bind:content={noteFormState.newNoteContent}
-      bind:type={noteFormState.newNoteType}
-      onSubmit={() => onSave("note")}
-      onCancel={() => onCancel("note")}
-      titlePlaceholder={t("graphModals.noteTitlePlaceholder")}
-      contentPlaceholder={t("graphModals.noteContentPlaceholder")}
-      submitLabel={t("graphModals.create")}
-      cancelLabel={t("cancel")}
-      titleTestId="ghost-note-title"
-      contentTestId="ghost-note-content"
-      submitTestId="ghost-note-create"
-      cancelTestId="ghost-note-cancel"
-    />
-  </div>
+  </Bevel>
 {/if}
 
 {#if activeForm === "link"}
-  <div
-    class="link-form"
+  <Bevel
+    variant="note"
+    outer={10}
+    inner={4}
+    borderColor="rgba(245, 158, 11, 0.45)"
+    shadeColor="rgba(245, 158, 11, 0.25)"
     data-testid="link-form"
     style="position: absolute; left: {linkFormState.linkFormPosition.x}px; top: {linkFormState
-      .linkFormPosition
-      .y}px; background: rgba(10, 26, 58, 0.98); border: 1px solid rgba(255, 204, 0, 0.6); border-radius: 12px; padding: 20px; min-width: 300px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); z-index: 100; backdrop-filter: blur(12px);"
+      .linkFormPosition.y}px; z-index: 100;"
   >
-    <div
-      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"
-    >
-      <h3 style="margin: 0; color: #fbbf24; font-size: 16px; font-weight: 600;">
-        {t("graphModals.createLinkTitle")}
-      </h3>
-      <button
-        onclick={() => onCancel("link")}
-        style="background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;"
-        aria-label={t("close")}
-      >
-        ×
-      </button>
+    <div class="link-form">
+      <div class="link-form-header">
+        <h3 class="link-form-title">{t("graphModals.createLinkTitle")}</h3>
+        <button
+          class="link-form-close"
+          onclick={() => onCancel("link")}
+          aria-label={t("close")}
+          type="button"
+        >
+          ×
+        </button>
+      </div>
+      <label for="link-type" class="link-form-label">{t("graphModals.linkTypeLabel")}</label>
+      <LinkTypeSelector
+        id="link-type"
+        types={LinkType.CREATABLE_TYPES}
+        selected={linkFormState.newLinkType}
+        size="sm"
+        showDescription={false}
+        onSelect={handleLinkTypeSelect}
+      />
+      <label for="link-strength" class="link-form-label">
+        {t("graphModals.linkStrength", {
+          value: linkFormState.newLinkWeight.toFixed(1),
+        })}
+      </label>
+      <input
+        id="link-strength"
+        type="range"
+        min="0.1"
+        max="1.0"
+        step="0.1"
+        bind:value={linkFormState.newLinkWeight}
+        class="link-form-slider"
+      />
+      <div class="link-form-actions">
+        <Button variant="ghost" onClick={() => onCancel("link")} data-testid="link-form-cancel">
+          {t("cancel")}
+        </Button>
+        <Button variant="primary" onClick={() => onSave("link")} data-testid="link-form-create">
+          {t("graphModals.createLink")}
+        </Button>
+      </div>
     </div>
-    <label
-      for="link-type"
-      style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
-      >{t("graphModals.linkTypeLabel")}</label
-    >
-    <LinkTypeSelector
-      id="link-type"
-      types={LinkType.CREATABLE_TYPES}
-      selected={linkFormState.newLinkType}
-      size="sm"
-      showDescription={false}
-      onSelect={handleLinkTypeSelect}
-    />
-    <label
-      for="link-strength"
-      style="display: block; color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 8px; font-weight: 500;"
-      >{t("graphModals.linkStrength", {
-        value: linkFormState.newLinkWeight.toFixed(1),
-      })}</label
-    >
-    <input
-      id="link-strength"
-      type="range"
-      min="0.1"
-      max="1.0"
-      step="0.1"
-      bind:value={linkFormState.newLinkWeight}
-      style="width: 100%; margin-bottom: 16px; accent-color: #fbbf24;"
-    />
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button
-        data-testid="link-form-cancel"
-        onclick={() => onCancel("link")}
-        style="padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;"
-      >
-        {t("cancel")}
-      </button>
-      <button
-        data-testid="link-form-create"
-        onclick={() => onSave("link")}
-        style="padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);"
-      >
-        {t("graphModals.createLink")}
-      </button>
-    </div>
-  </div>
+  </Bevel>
 {/if}
 
 <style>
   .ghost-note-form {
-    background: rgba(10, 26, 58, 0.98);
-    border: 1px solid rgba(138, 43, 226, 0.6);
-    border-radius: 12px;
     padding: 20px;
     min-width: 360px;
     max-width: min(420px, calc(100vw - 140px));
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     z-index: 100;
-    backdrop-filter: blur(12px);
-    color: white;
+    color: var(--carbon-text, #f0f0f5);
   }
 
   .ghost-note-header {
@@ -173,7 +164,7 @@
 
   .ghost-note-title {
     margin: 0;
-    color: #a78bfa;
+    color: var(--carbon-glow-cyan, #22d3ee);
     font-size: 16px;
     font-weight: 600;
   }
@@ -183,16 +174,77 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    color: var(--carbon-text-muted, #8b8b9e);
     cursor: pointer;
     padding: 6px;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: all 0.2s ease;
   }
 
   .ghost-note-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(139, 92, 246, 0.12);
+    border-color: var(--carbon-border-active, #4b4b5e);
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .link-form {
+    padding: 20px;
+    min-width: 300px;
+    max-width: min(380px, calc(100vw - 140px));
+    z-index: 100;
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .link-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .link-form-title {
+    margin: 0;
+    color: var(--carbon-glow-amber, #f59e0b);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .link-form-close {
+    background: transparent;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    color: var(--carbon-text-muted, #8b8b9e);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1;
+  }
+
+  .link-form-close:hover {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: var(--carbon-border-active, #4b4b5e);
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .link-form-label {
+    display: block;
+    color: var(--carbon-text-muted, #8b8b9e);
+    font-size: 13px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .link-form-slider {
+    width: 100%;
+    margin-bottom: 16px;
+    accent-color: var(--carbon-glow-amber, #f59e0b);
+  }
+
+  .link-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
   }
 </style>

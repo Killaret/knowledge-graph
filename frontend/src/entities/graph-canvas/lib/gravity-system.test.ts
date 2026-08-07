@@ -3,6 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { createGravitySystem, drawDistortedBackgroundGrid } from "./gravity-system";
+import { graphConfig2D } from "$shared/config";
 import type { SimulationNode } from "./types";
 
 describe("gravity-system", () => {
@@ -21,7 +22,8 @@ describe("gravity-system", () => {
 
   it("should not apply attraction when too many nodes", () => {
     const gravity = createGravitySystem();
-    const nodes: SimulationNode[] = Array.from({ length: 101 }, (_, i) => ({
+    const overThreshold = graphConfig2D.gravity_nodes_threshold + 1;
+    const nodes: SimulationNode[] = Array.from({ length: overThreshold }, (_, i) => ({
       id: `n${i}`,
       title: `Node ${i}`,
       x: i * 10,
@@ -38,8 +40,9 @@ describe("gravity-system", () => {
 
   it("should disable when node count exceeds threshold", () => {
     const gravity = createGravitySystem();
-    expect(gravity.isEnabled(100)).toBe(true);
-    expect(gravity.isEnabled(101)).toBe(false);
+    const threshold = graphConfig2D.gravity_nodes_threshold;
+    expect(gravity.isEnabled(threshold)).toBe(true);
+    expect(gravity.isEnabled(threshold + 1)).toBe(false);
   });
 
   it("should produce distortion near nodes", () => {
@@ -53,7 +56,8 @@ describe("gravity-system", () => {
 
   it("should return zero distortion when too many nodes", () => {
     const gravity = createGravitySystem();
-    const nodes: SimulationNode[] = Array.from({ length: 101 }, (_, i) => ({
+    const overThreshold = graphConfig2D.gravity_nodes_threshold + 1;
+    const nodes: SimulationNode[] = Array.from({ length: overThreshold }, (_, i) => ({
       id: `n${i}`,
       title: `Node ${i}`,
       x: i * 10,

@@ -207,13 +207,13 @@
 
     switch (position) {
       case "left":
-        return `${base} flex-direction:${flexDir}; top:var(--inset-top,0); bottom:var(--inset-bottom,0); left:0; width:var(--panel-full); ${transform}`;
+        return `${base} flex-direction:${flexDir}; top:0; bottom:0; left:0; width:var(--panel-full); ${transform}`;
       case "right":
-        return `${base} flex-direction:${flexDir}; top:var(--inset-top,0); bottom:var(--inset-bottom,0); right:0; width:var(--panel-full); ${transform}`;
+        return `${base} flex-direction:${flexDir}; top:0; bottom:0; right:0; width:var(--panel-full); ${transform}`;
       case "top":
-        return `${base} flex-direction:${flexDir}; left:var(--inset-left,0); right:var(--inset-right,0); top:0; height:var(--panel-full); ${transform}`;
+        return `${base} flex-direction:${flexDir}; left:0; right:0; top:0; height:var(--panel-full); ${transform}`;
       case "bottom":
-        return `${base} flex-direction:${flexDir}; left:var(--inset-left,0); right:var(--inset-right,0); bottom:0; height:var(--panel-full); ${transform}`;
+        return `${base} flex-direction:${flexDir}; left:0; right:0; bottom:0; height:var(--panel-full); ${transform}`;
     }
   }
 
@@ -221,17 +221,15 @@
     return cockpitStore.reducedMotion ? "none" : "transform 0.3s ease";
   }
 
-  // Arrows point toward the screen edge so the collapsed handle reads as a
-  // 3D shutter lip (the bevel visually "pushes" the panel away from the
-  // canvas). This matches the isometric frame example: each side's arrow
-  // follows the outer normal of the cockpit wall.
+  // Arrows point in the direction the panel opens (toward the canvas) so the
+  // collapsed handle reads as a pull tab, not a screen-edge normal.
   const arrowRotation = $derived(
     (
       {
-        left: 180,
-        right: 0,
-        top: -90,
-        bottom: 90,
+        left: 0,
+        right: 180,
+        top: 90,
+        bottom: -90,
       } as const
     )[position]
   );

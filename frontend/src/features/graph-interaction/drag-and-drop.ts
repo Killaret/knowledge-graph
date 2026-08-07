@@ -72,9 +72,9 @@ export function handleMouseDown(
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;
 
-  // Ghost node is drawn in screen coords at (60, 60) — check in screen space
-  const ghostScreenX = canvas.getBoundingClientRect().left + 60;
-  const ghostScreenY = canvas.getBoundingClientRect().top + 60;
+  // Ghost node is drawn in screen coords — check in screen space
+  const ghostScreenX = canvas.getBoundingClientRect().left + ghostNode.x;
+  const ghostScreenY = canvas.getBoundingClientRect().top + ghostNode.y;
   const gdx = e.clientX - ghostScreenX;
   const gdy = e.clientY - ghostScreenY;
   if (Math.sqrt(gdx * gdx + gdy * gdy) < ghostNode.radius) {

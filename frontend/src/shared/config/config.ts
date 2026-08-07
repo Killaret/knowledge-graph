@@ -51,10 +51,10 @@ export interface Config {
         gravity_nodes_threshold: number;
         /** Max world-unit radius for gravity pull between nodes */
         gravity_max_distance: number;
-        /** Screen-space pixel radius of the ghost-node create button */
-        ghost_node_radius: number;
         /** Delay in milliseconds before node/link hover dimming and tooltips activate */
         hover_delay_ms: number;
+        /** Node count above which animated visual effects (glow, particles, star corona, rings, nebula) are simplified */
+        visual_fx_threshold: number;
       };
       "3d": {
         max_nodes: number;

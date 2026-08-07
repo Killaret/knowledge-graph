@@ -3,6 +3,13 @@
   import { CelestialBody } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
+  interface Props {
+    /** When true, the button is docked to the cockpit frame insets instead of fixed to the viewport. */
+    docked?: boolean;
+  }
+
+  const { docked = false }: Props = $props();
+
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
@@ -89,7 +96,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Floating button -->
-<div class="quick-capture-container">
+<div class="quick-capture-container" class:quick-capture-container--docked={docked}>
   {#if isOpen}
     <div
       class="quick-capture-backdrop"
@@ -139,6 +146,15 @@
     bottom: 30px;
     left: 30px;
     z-index: 1000;
+  }
+
+  /* Docked inside the cockpit frame so the button never overlaps the panels.
+     It lives in the canvas safe area, below the cockpit panels (z-index 50). */
+  .quick-capture-container--docked {
+    position: absolute;
+    left: calc(var(--inset-left, 0px) + 24px);
+    bottom: calc(var(--inset-bottom, 0px) + 24px);
+    z-index: 50;
   }
 
   .quick-capture-btn {

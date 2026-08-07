@@ -16,8 +16,8 @@ import type { SimulationNode } from "./types";
 describe("black-hole", () => {
   it("should create black hole in bottom-right corner", () => {
     const blackHole = createBlackHole(800, 600);
-    expect(blackHole.x).toBe(800 - 84);
-    expect(blackHole.y).toBe(600 - 84);
+    expect(blackHole.x).toBe(800 - 96);
+    expect(blackHole.y).toBe(600 - 96);
     expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS);
     expect(blackHole.hovered).toBe(false);
   });
@@ -25,8 +25,8 @@ describe("black-hole", () => {
   it("should update position on resize", () => {
     const blackHole = createBlackHole(800, 600);
     updateBlackHolePosition(blackHole, 1024, 768);
-    expect(blackHole.x).toBe(1024 - 84);
-    expect(blackHole.y).toBe(768 - 84);
+    expect(blackHole.x).toBe(1024 - 96);
+    expect(blackHole.y).toBe(768 - 96);
   });
 
   it("should update pulse phase between 0 and 1", () => {

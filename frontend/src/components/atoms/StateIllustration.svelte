@@ -1,11 +1,12 @@
 <script lang="ts">
   export type StateIllustrationType =
-    "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
+    "empty" | "success" | "error" | "404" | "offline" | "no-links" | "no-results";
   const { type = "empty" }: { type?: StateIllustrationType } = $props();
   const currentType = $derived(type);
 
   const labels: Record<StateIllustrationType, string> = {
     empty: "Empty state illustration",
+    success: "Success state illustration",
     error: "Error state illustration",
     "404": "404 illustration",
     offline: "Offline illustration",
@@ -49,6 +50,20 @@
       />
       <circle cx="62" cy="126" r="6" fill="var(--color-primary, #7c3aed)" opacity="0.3" />
       <circle cx="176" cy="50" r="6" fill="var(--color-info, #14b8a6)" opacity="0.35" />
+    {:else if currentType === "success"}
+      <circle cx="120" cy="84" r="44" fill="var(--color-primary, #7c3aed)" opacity="0.18" />
+      <circle cx="120" cy="84" r="30" fill="var(--color-primary, #7c3aed)" opacity="0.35" />
+      <path
+        d="M92 84L110 104L150 64"
+        stroke="var(--color-info, #14b8a6)"
+        stroke-width="9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+      />
+      <circle cx="54" cy="46" r="2" fill="#fff" opacity="0.9" />
+      <circle cx="196" cy="54" r="2" fill="#fff" opacity="0.9" />
+      <circle cx="184" cy="132" r="2" fill="#fff" opacity="0.8" />
     {:else if currentType === "error"}
       <polygon
         points="56,148 120,32 184,148"

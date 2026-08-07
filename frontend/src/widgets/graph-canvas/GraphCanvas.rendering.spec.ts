@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/svelte";
 
+// Allow the real animation loop to run so onUpdate/doRedraw are called.
+vi.unmock("$entities/graph-canvas/lib/animation.ts");
+
 // Shared state для мока d3-force
 const mockState = {
   simulationNodes: [] as any[],

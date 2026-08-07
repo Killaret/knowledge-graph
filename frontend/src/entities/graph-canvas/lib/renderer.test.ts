@@ -7,6 +7,7 @@ import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-ri
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
 import { getGlowIntensity } from "$shared/lib/graph/glow-intensity";
 import { getNodeGradient } from "$shared/lib/graph/node-gradient";
+import { graphConfig2D } from "$shared/config";
 
 // Mock CanvasRenderingContext2D
 const mockCtx = {
@@ -277,8 +278,8 @@ describe("renderer anomaly functions", () => {
   });
 
   describe("getGlowIntensity", () => {
-    it("should return minimal glow when nodeCount > 100", () => {
-      const intensity = getGlowIntensity("node-1", 1000, 150);
+    it("should return minimal glow when nodeCount exceeds the visual-fx threshold", () => {
+      const intensity = getGlowIntensity("node-1", 1000, graphConfig2D.visual_fx_threshold + 1);
       expect(intensity).toBe(0.3);
     });
 

@@ -441,7 +441,6 @@
             onLinkDelete={handleLinkDelete}
             helpContent={knowledgeCore?.content}
             showLinkTypeLegend={false}
-            showTopBar={isAuthenticated()}
             bind:controller={canvasController}
           />
         </div>

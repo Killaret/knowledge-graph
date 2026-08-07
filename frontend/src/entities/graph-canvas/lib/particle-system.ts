@@ -2,6 +2,7 @@
  * Lightweight particle system for orbiting particles around nodes
  * Uses native Canvas API for maximum performance
  */
+import { graphConfig2D } from "$shared/config";
 
 export interface Particle {
   x: number;
@@ -21,7 +22,28 @@ export class ParticleSystem {
   private enabled: boolean = true;
 
   constructor(private nodeCount: number) {
-    this.enabled = nodeCount <= 100;
+    const threshold = graphConfig2D.visual_fx_threshold ?? 500;
+    this.enabled = nodeCount <= threshold;
+  }
+
+  /**
+   * Re-evaluate the enabled state when the number of visible nodes changes.
+   * This is necessary because the system is created once in GraphCanvas.onMount
+   * but the graph data (and therefore the node count) may change afterwards.
+   */
+  updateNodeCount(count: number): void {
+    this.nodeCount = count;
+    const threshold = graphConfig2D.visual_fx_threshold ?? 500;
+    const wasEnabled = this.enabled;
+    this.enabled = count <= threshold;
+
+    // When crossing the threshold up, keep stale maps from drawing but do not
+    // aggressively clear: they will be overwritten by initParticles on the next
+    // frame when the system is enabled again. When crossing the threshold down
+    // (too many nodes) stop drawing but keep the map in case the count returns.
+    if (!this.enabled && wasEnabled) {
+      this.particles.clear();
+    }
   }
 
   /**
@@ -78,20 +100,27 @@ export class ParticleSystem {
   }
 
   /**
-   * Draw particles for a node
+   * Draw particles for a node.
+   * Honors the per-particle alpha by using ctx.globalAlpha so hex, rgb and
+   * rgba color values are all handled correctly.
    */
   draw(ctx: CanvasRenderingContext2D, nodeId: string): void {
     if (!this.enabled) return;
 
     const particles = this.particles.get(nodeId);
-    if (!particles) return;
+    if (!particles || particles.length === 0) return;
+
+    const baseAlpha = ctx.globalAlpha;
+    ctx.fillStyle = particles[0].color;
 
     for (const particle of particles) {
+      ctx.globalAlpha = baseAlpha * particle.alpha;
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fillStyle = particle.color.replace(")", `, ${particle.alpha})`).replace("rgb", "rgba");
       ctx.fill();
     }
+
+    ctx.globalAlpha = baseAlpha;
   }
 
   /**
