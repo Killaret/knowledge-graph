@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
+  import { createHomePageState } from "$features/home-page";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
@@ -9,111 +9,44 @@
   import NoteCard from "$widgets/notes/NoteCard.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
-  import {
-    getNotes,
-    createNote,
-    deleteNote,
-    deleteNotesBatch,
-    restoreNote,
-    type Note,
-  } from "$shared/api/notes";
-  import { createLink } from "$shared/api/links";
-  import { type GraphData } from "$shared/api/graph";
-  import type { Component } from "svelte";
-  import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
-  import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
-  import {
-    hasPreloadedData,
-    updateGraphWithDelta,
-    getPreloadedGraph,
-  } from "$shared/services/PreloadService";
-  import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
-  import { graphStore } from "$shared/stores/graph.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
   import { PublicGraphTopBar } from "$features/graph-ui";
-  import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
-  import type { ErrorResponse } from "$shared/types/errors";
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
-  import { CelestialBody, FilterState } from "$entities";
-  import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
 
-  const locale = getCurrentLocale();
-  const t = (key: string, params?: MessageParams) => formatMessage(key, locale, params);
+  const homePage = createHomePageState();
+  const {
+    t,
+    openAuthPanel,
+    closeAuthPanel,
+    handleAuthSuccess,
+    handleSearchQuery,
+    handleFilter,
+    handleSortChange,
+    handleDeleteRequest,
+    handleDeleteConfirm,
+    toggleSelectionMode,
+    toggleSelectAll,
+    handleNoteSelect,
+    handleBatchDelete,
+    handleNoteEdit,
+    handleNoteDelete,
+    handleUndoRestore,
+    handleNoteCreate,
+    handleNoteCreated,
+    handleCreateChildNote,
+    resetCreateChildParent,
+    handleToggleView,
+    handleToggleLayoutProvider,
+    handleImport,
+    clearApiError,
+    cancelDelete,
+    handleEditSuccess,
+    loadData,
+  } = homePage;
 
-  function toErrorResponse(e: unknown): ErrorResponse {
-    if (e && typeof e === "object") {
-      const err = e as { response?: { data?: ErrorResponse } };
-      if (err.response?.data) {
-        return err.response.data;
-      }
-    }
-    return { code: "LOAD_ERROR", message: t("notes.loadError") };
-  }
+  const Graph3DViewer = $derived(homePage.Graph3DViewer);
 
-  // State
-  let allNotes: Note[] = $state([]);
-  let filteredNotes: Note[] = $state([]);
-  let loading = $state(true);
-  let apiError = $state<ErrorResponse | null>(null);
-  let showCreateModal = $state(false);
-  let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
-  let showEditModal = $state(false);
-  let noteToEdit: string | null = $state(null);
-  let showConfirmDelete = $state(false);
-  let noteToDelete: string | null = $state(null);
-  let Graph3DViewer: Component<Graph3DViewerProps> | null = $state(null);
-
-  $effect(() => {
-    if (graphStore.currentView === "3d" && !Graph3DViewer) {
-      import("$widgets/graph-3d-viewer/Graph3DViewer.svelte")
-        .then((mod) => {
-          Graph3DViewer = mod.default;
-        })
-        .catch((e) => {
-          if (import.meta.env.DEV) {
-            console.error("[HomePage] Failed to load Graph3DViewer:", e);
-          }
-        });
-    }
-  });
-
-  // Graph state - always show full graph on main page
-  let graphData: GraphData = $state({ nodes: [], links: [] });
-  let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
-  let searchQuery = $state("");
-
-  // Filter and sort state
-  let selectedType = $state<string>("all");
-  let sortBy = $state<"created" | "updated" | "type">("created");
-  let filterState = $state(
-    new FilterState({
-      selectedType: "all",
-      sortBy: "created",
-      searchQuery: "",
-      currentView: "graph",
-    })
-  );
-  $effect(() => {
-    filterState = new FilterState({
-      selectedType,
-      sortBy,
-      searchQuery,
-      currentView: graphStore.currentView,
-    });
-  });
-
-  $effect(() => {
-    filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
-  });
-  const selectedNoteIds = $state<Set<string>>(new Set());
-  let selectionMode = $state(false);
-  let lastDeletedNote: Note | null = $state(null);
-  let showUndoToast = $state(false);
-  let undoToastStage = $state<"done" | "restore">("done");
-  let showBulkActionsMenu = $state(false);
-  let showAuthPanel = $state(false);
-  let authPanelTab = $state<"login" | "register">("login");
   let canvasController:
     | {
         focusMode: boolean;
@@ -122,440 +55,6 @@
         toggleFocus: () => void;
       }
     | undefined = $state(undefined);
-
-  function openAuthPanel(tab: "login" | "register") {
-    authPanelTab = tab;
-    showAuthPanel = true;
-  }
-
-  function handleAuthSuccess() {
-    showAuthPanel = false;
-    void loadData({ silent: true });
-  }
-
-  function filterLabel(body: CelestialBody): string {
-    const key = `filter.type.${body.type}`;
-    const localized = t(key);
-    return localized === key ? body.label : localized;
-  }
-
-  const typeFilters = [
-    {
-      id: "inbox",
-      label: t("filter.inbox"),
-      emoji: "📥",
-      description: t("filter.inbox.description"),
-    },
-    {
-      id: "all",
-      label: t("filter.all"),
-      emoji: "🌌",
-      description: t("filter.all.description"),
-    },
-    ...[
-      "star",
-      "planet",
-      "moon",
-      "comet",
-      "galaxy",
-      "nebula",
-      "asteroid",
-      "satellite",
-      "blackhole",
-      "dust",
-      "unknown",
-    ].map((id) => {
-      const body = CelestialBody.fromString(id);
-      return {
-        id,
-        label: filterLabel(body),
-        emoji: body.emoji,
-        description: body.description,
-        example: body.example,
-      };
-    }),
-  ];
-
-  const sortOptions = [
-    { id: "created", label: t("sort.created") },
-    { id: "updated", label: t("sort.updated") },
-    { id: "type", label: t("sort.type") },
-  ];
-
-  // NOTE: The sortOptions constant was previously defined here but is not currently used.
-  // These are the available sorting options for the notes list view:
-  // - newest: Sort by creation date, newest first
-  // - oldest: Sort by creation date, oldest first
-  // - az: Alphabetical sorting A-Z
-  // - za: Alphabetical sorting Z-A
-  onMount(() => {
-    if (!browser) return;
-
-    let deltaInterval: ReturnType<typeof setInterval> | undefined;
-    let handleFocus: (() => void) | undefined;
-
-    (async () => {
-      await initAuth();
-      void loadData();
-
-      // Periodically sync the graph via delta updates from graph-service.
-      // Public/anonymous users have no writeable graph to sync and the
-      // /v1/graph/delta endpoint requires authentication, so polling it would
-      // fire 401 -> auth/refresh 400 cycles and trigger unnecessary re-renders.
-      if (isAuthenticated()) {
-        deltaInterval = setInterval(() => {
-          void refreshAfterMutation();
-        }, 30000);
-
-        handleFocus = () => {
-          void refreshAfterMutation();
-        };
-        window.addEventListener("focus", handleFocus);
-      }
-
-      // Expose flag for E2E tests to assert background sync is gated by auth.
-      if (browser) {
-        (window as unknown as Record<string, unknown>).__kgGraphPollingActive = !!isAuthenticated();
-      }
-    })();
-
-    return () => {
-      if (deltaInterval) clearInterval(deltaInterval);
-      if (handleFocus) window.removeEventListener("focus", handleFocus);
-    };
-  });
-
-  /**
-   * Single source of truth load: graph-service full graph + notes.
-   * For unauthenticated users the note list is derived from the public graph.
-   */
-  async function loadData({ silent = false }: { silent?: boolean } = {}) {
-    try {
-      apiError = null;
-      if (!silent) {
-        loading = true;
-      }
-
-      const isAuth = isAuthenticated();
-      let graphResult: GraphData | null = null;
-
-      if (isAuth) {
-        const [notesResult, loadedGraph] = await Promise.all([getNotes(), getGraphWithPreload()]);
-        allNotes = notesResult;
-        graphResult = loadedGraph;
-
-        // The graph-service layout cache can lag behind note mutations (especially in test stacks).
-        // Make sure every note returned by the backend is represented in the graph so filters and
-        // counts stay consistent.
-        if (graphResult) {
-          const nodeIds = new Set(graphResult.nodes.map((n) => n.id));
-          for (const note of allNotes) {
-            if (!nodeIds.has(note.id)) {
-              graphResult.nodes.push({
-                id: note.id,
-                title: note.title,
-                type: note.type || "unknown",
-                x: 0,
-                y: 0,
-                z: 0,
-                size: 1,
-              });
-              nodeIds.add(note.id);
-            }
-          }
-        }
-      } else {
-        graphResult = await getGraphWithPreload();
-        // Public graph is the single source of notes for anonymous users.
-        if (graphResult && graphResult.nodes.length > 0) {
-          allNotes = graphResult.nodes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            content: "",
-            metadata: {},
-            type: n.type || "unknown",
-            created_at: "",
-            updated_at: "",
-          }));
-        } else {
-          allNotes = [];
-        }
-      }
-
-      applyFiltersAndSort();
-
-      if (graphResult && graphResult.nodes.length > 0) {
-        if (import.meta.env.DEV) {
-          const apiTypes = [...new Set(graphResult.nodes.map((n) => n.type))];
-          console.log(
-            "[+page] Full graph loaded:",
-            graphResult.nodes.length,
-            "nodes,",
-            graphResult.links.length,
-            "links"
-          );
-          console.log("[+page] API node types:", apiTypes);
-        }
-
-        graphData = graphResult;
-      } else if (allNotes.length > 0) {
-        // Fallback when graph-service returns empty but notes exist. This keeps
-        // the UI usable and makes E2E tests stable regardless of graph-service state.
-        graphData = {
-          nodes: allNotes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            type: n.type || "unknown",
-          })),
-          links: [],
-        };
-      } else if (!silent || graphData.nodes.length === 0) {
-        // Minimal fallback for empty/invalid graph-service result. When
-        // refreshing silently in the background, keep showing the last known
-        // graph instead of blanking it out on a transient empty response.
-        graphData = { nodes: [], links: [] };
-      }
-    } catch (e: unknown) {
-      // Background refreshes shouldn't surface a full-page error and wipe
-      // out an already-rendered graph; just log and keep the current state.
-      if (!silent) {
-        apiError = toErrorResponse(e);
-      }
-      if (import.meta.env.DEV) {
-        console.error(e);
-      }
-    } finally {
-      if (!silent) {
-        loading = false;
-      }
-    }
-  }
-
-  /**
-   * After mutations try to apply a graph delta first; if no hash/preloaded data
-   * or delta fails, fall back to a full reload. This always runs silently so
-   * the graph doesn't flash a loading overlay on periodic background syncs.
-   *
-   * Anonymous users have no private graph to sync; /v1/graph/delta requires
-   * auth and would return 401, so we skip background sync entirely for them.
-   */
-  async function refreshAfterMutation() {
-    if (!isAuthenticated()) {
-      return;
-    }
-
-    if (graphData.hash && hasPreloadedData()) {
-      const previousHash = graphData.hash;
-      const delta = await updateGraphWithDelta();
-      if (delta) {
-        const updated = getPreloadedGraph();
-        const hasChanges =
-          (delta.added_nodes?.length ?? 0) > 0 ||
-          (delta.updated_nodes?.length ?? 0) > 0 ||
-          (delta.removed_nodes?.length ?? 0) > 0 ||
-          (delta.added_links?.length ?? 0) > 0 ||
-          (delta.removed_links?.length ?? 0) > 0;
-        if (updated && (hasChanges || updated.hash !== previousHash)) {
-          graphData = updated;
-          // The list view derives from allNotes, not graphData, so we must
-          // refresh the notes list after a delta update.
-          allNotes = await getNotes();
-          applyFiltersAndSort();
-        }
-        return;
-      }
-    }
-    await loadData({ silent: true });
-  }
-
-  // Helper to get note type - unified with renderer.ts logic via CelestialBody
-  function getNoteType(note: Note): string {
-    return CelestialBody.fromString(note.type).type;
-  }
-
-  // Reactive filtered graph data based on filter state
-  const filteredGraphData = $derived(filterState.filterGraphData(graphData, allNotes, getNoteType));
-
-  function applyFiltersAndSort() {
-    filteredNotes = filterState.applyFiltersAndSort(allNotes, getNoteType);
-  }
-
-  async function handleSearch() {
-    // Keep list and graph search consistent with client-side substring filtering.
-    applyFiltersAndSort();
-  }
-
-  function handleDeleteRequest(id: string) {
-    noteToDelete = id;
-    showConfirmDelete = true;
-  }
-
-  async function handleDeleteConfirm() {
-    if (!noteToDelete) return;
-
-    try {
-      await deleteNote(noteToDelete);
-      graphStore.selectedNodeId = null;
-      // Remove deleted note from local arrays immediately
-      allNotes = allNotes.filter((n) => n.id !== noteToDelete);
-      filteredNotes = filteredNotes.filter((n) => n.id !== noteToDelete);
-      // Then reload from server to ensure sync
-      await refreshAfterMutation();
-    } catch {
-      if (browser) {
-        alert(t("page.deleteError"));
-      }
-    } finally {
-      noteToDelete = null;
-      showConfirmDelete = false;
-    }
-  }
-
-  function toggleSelectionMode() {
-    selectionMode = !selectionMode;
-    if (!selectionMode) {
-      selectedNoteIds.clear();
-    }
-  }
-
-  function toggleSelectAll() {
-    if (selectedNoteIds.size === filteredNotes.length) {
-      selectedNoteIds.clear();
-    } else {
-      filteredNotes.forEach((n) => selectedNoteIds.add(n.id));
-    }
-  }
-
-  function handleNoteSelect(note: Note, selected: boolean) {
-    if (selected) {
-      selectedNoteIds.add(note.id);
-    } else {
-      selectedNoteIds.delete(note.id);
-    }
-  }
-
-  async function handleBatchDelete() {
-    if (selectedNoteIds.size === 0) return;
-
-    // Confirmation dialog
-    if (browser) {
-      const confirmed = confirm(
-        `Delete ${selectedNoteIds.size} selected note${selectedNoteIds.size > 1 ? "s" : ""}? This action cannot be undone.`
-      );
-      if (!confirmed) return;
-    }
-
-    try {
-      await deleteNotesBatch(Array.from(selectedNoteIds));
-      // Remove deleted notes from local arrays
-      allNotes = allNotes.filter((n) => !selectedNoteIds.has(n.id));
-      filteredNotes = filteredNotes.filter((n) => !selectedNoteIds.has(n.id));
-      selectedNoteIds.clear();
-      selectionMode = false;
-      showBulkActionsMenu = false;
-      // Reload to ensure sync
-      await refreshAfterMutation();
-    } catch {
-      if (browser) {
-        alert(t("page.batchDeleteError"));
-      }
-    }
-  }
-
-  async function handleNoteEdit(note: Note) {
-    noteToEdit = note.id;
-    showEditModal = true;
-  }
-
-  async function handleNoteDelete(note: Note) {
-    lastDeletedNote = note;
-    await deleteNote(note.id);
-    allNotes = allNotes.filter((n) => n.id !== note.id);
-    filteredNotes = filteredNotes.filter((n) => n.id !== note.id);
-    await refreshAfterMutation();
-    showUndoToast = true;
-    undoToastStage = "done";
-    setTimeout(() => {
-      undoToastStage = "restore";
-    }, 1500);
-    setTimeout(() => {
-      showUndoToast = false;
-      lastDeletedNote = null;
-    }, 6500);
-  }
-
-  async function handleUndoRestore() {
-    if (!lastDeletedNote) return;
-    try {
-      await restoreNote(lastDeletedNote.id);
-      showUndoToast = false;
-      lastDeletedNote = null;
-      await refreshAfterMutation();
-    } catch {
-      if (browser) {
-        alert(t("page.restoreError"));
-      }
-    }
-  }
-
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
-    try {
-      await createNote({
-        title: data.title,
-        content: data.content,
-        type: data.type,
-      });
-      await refreshAfterMutation();
-    } catch {
-      if (browser) {
-        alert(t("note.createError"));
-      }
-    }
-  }
-
-  async function handleNoteCreated(note: Note) {
-    showCreateModal = false;
-    if (createChildParent) {
-      try {
-        await createLink({
-          source_note_id: createChildParent.id,
-          target_note_id: note.id,
-          link_type: "parent",
-          weight: 0.9,
-        });
-      } catch {
-        if (browser) {
-          alert(t("note.createChildLinkError"));
-        }
-      }
-      createChildParent = null;
-    }
-    graphStore.selectedNodeId = note.id;
-    await refreshAfterMutation();
-  }
-
-  function handleCreateChildNote(parent: { id: string; title: string; type?: string }) {
-    createChildParent = parent;
-    showCreateModal = true;
-  }
-
-  function handleToggleView(view: "graph" | "list" | "3d") {
-    graphStore.currentView = view;
-  }
-
-  async function handleToggleLayoutProvider(provider: "d3" | "graph-service") {
-    if (provider === layoutProvider) return;
-    layoutProvider = provider;
-    try {
-      const runtime = { ...toRuntimeConfig(), layoutProvider: provider };
-      graphData = await createLayoutProvider(runtime).load({ limit: 100 });
-    } catch (e) {
-      apiError = toErrorResponse(e);
-      if (import.meta.env.DEV) {
-        console.error("Failed to load 3D graph with layout provider:", provider, e);
-      }
-    }
-  }
 </script>
 
 <!-- Splash Screen on initial load -->
@@ -565,86 +64,74 @@
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
 <CosmicCockpitLayout
   isAuthenticated={isAuthenticated()}
-  onSearch={(query: string) => {
-    filterState = filterState.with({ searchQuery: query });
-    searchQuery = query;
-    handleSearch();
-  }}
+  onSearch={handleSearchQuery}
   onToggleView={handleToggleView}
-  onImport={() => goto("/import")}
+  onImport={handleImport}
   onToggleLayoutProvider={handleToggleLayoutProvider}
-  {layoutProvider}
-  onFilter={(type: string) => {
-    filterState = filterState.with({ selectedType: type });
-    selectedType = type;
-    applyFiltersAndSort();
-  }}
-  {typeFilters}
-  {selectedType}
+  layoutProvider={homePage.layoutProvider}
+  onFilter={handleFilter}
+  typeFilters={homePage.typeFilters}
+  selectedType={homePage.selectedType}
   currentView={graphStore.currentView}
   typeCounts={Object.fromEntries(
-    typeFilters.map((f) => [
+    homePage.typeFilters.map((f) => [
       f.id,
-      f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+      f.id === "all"
+        ? homePage.allNotes.length
+        : homePage.allNotes.filter((n) => n.type === f.id).length,
     ])
   )}
   onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
-  onNoteCreate={() => (showCreateModal = true)}
+  onNoteCreate={() => (homePage.showCreateModal = true)}
   onNoteEdit={(id: string) => {
-    noteToEdit = id;
-    showEditModal = true;
+    homePage.noteToEdit = id;
+    homePage.showEditModal = true;
   }}
   onNoteDelete={handleDeleteRequest}
   onCreateChildNote={handleCreateChildNote}
   selectedNodeId={graphStore.selectedNodeId}
-  nodeCount={filteredGraphData.nodes.length}
-  linkCount={filteredGraphData.links.length}
-  notes={allNotes}
+  nodeCount={homePage.filteredGraphData.nodes.length}
+  linkCount={homePage.filteredGraphData.links.length}
+  notes={homePage.allNotes}
 >
   <!-- Graph/List Container -->
   <div class="graph-content" data-testid="graph-2d-container">
-    {#if !isAuthenticated() && !loading && !apiError}
+    {#if !isAuthenticated() && !homePage.loading && !homePage.apiError}
       <PublicGraphTopBar
         currentView={graphStore.currentView}
-        {layoutProvider}
-        {searchQuery}
-        {selectedType}
-        {typeFilters}
+        layoutProvider={homePage.layoutProvider}
+        searchQuery={homePage.searchQuery}
+        selectedType={homePage.selectedType}
+        typeFilters={homePage.typeFilters}
         typeCounts={Object.fromEntries(
-          typeFilters.map((f) => [
+          homePage.typeFilters.map((f) => [
             f.id,
-            f.id === "all" ? allNotes.length : allNotes.filter((n) => n.type === f.id).length,
+            f.id === "all"
+              ? homePage.allNotes.length
+              : homePage.allNotes.filter((n) => n.type === f.id).length,
           ])
         )}
-        nodeCount={filteredGraphData.nodes.length}
-        linkCount={filteredGraphData.links.length}
-        onSearch={(query: string) => {
-          filterState = filterState.with({ searchQuery: query });
-          searchQuery = query;
-          handleSearch();
-        }}
+        nodeCount={homePage.filteredGraphData.nodes.length}
+        linkCount={homePage.filteredGraphData.links.length}
+        onSearch={handleSearchQuery}
         onToggleView={handleToggleView}
         onToggleLayoutProvider={handleToggleLayoutProvider}
-        onFilter={(type: string) => {
-          filterState = filterState.with({ selectedType: type });
-          selectedType = type;
-          applyFiltersAndSort();
-        }}
+        onFilter={handleFilter}
         onSignIn={() => openAuthPanel("login")}
         onRegister={() => openAuthPanel("register")}
         {canvasController}
       />
     {/if}
-    {#if loading}
+    {#if homePage.loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
         <p>{t("page.loadingNotes")}</p>
       </div>
-    {:else if apiError}
-      <ApiErrorDisplay error={apiError} onClose={() => (apiError = null)} />
+    {:else if homePage.apiError}
+      <ApiErrorDisplay error={homePage.apiError} onClose={clearApiError} />
       <button
         onclick={() => {
-          apiError = null;
+          clearApiError();
           loadData();
         }}>{t("page.retry")}</button
       >
@@ -654,22 +141,19 @@
         <div
           style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;"
         >
-          <div>allNotes: {allNotes.length}</div>
-          <div>graphData.nodes: {graphData.nodes.length}</div>
-          <div>graphData.links: {graphData.links.length}</div>
-          <div>filtered: {filteredGraphData.nodes.length}</div>
-          <div>selectedType: {selectedType}</div>
-          <div>loading: {loading}</div>
-          <div>
-            apiError: {(apiError as ErrorResponse | null)?.message ?? "none"}
-          </div>
+          <div>allNotes: {homePage.allNotes.length}</div>
+          <div>graphData.nodes: {homePage.graphData.nodes.length}</div>
+          <div>graphData.links: {homePage.graphData.links.length}</div>
+          <div>filtered: {homePage.filteredGraphData.nodes.length}</div>
+          <div>selectedType: {homePage.selectedType}</div>
+          <div>loading: {homePage.loading}</div>
         </div>
       {/if}
       <!-- Fullscreen 2D Graph View -->
       <div class="graph-view-wrapper">
         <GraphCanvas
-          nodes={filteredGraphData.nodes}
-          links={filteredGraphData.links}
+          nodes={homePage.filteredGraphData.nodes}
+          links={homePage.filteredGraphData.links}
           onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
@@ -682,8 +166,8 @@
       <!-- Fullscreen 3D Graph View -->
       <div class="graph-view-wrapper">
         <Graph3DViewer
-          nodes={filteredGraphData.nodes}
-          links={filteredGraphData.links}
+          nodes={homePage.filteredGraphData.nodes}
+          links={homePage.filteredGraphData.links}
           centerNodeId={graphStore.selectedNodeId}
           selectedNodeId={graphStore.selectedNodeId}
           onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
@@ -700,15 +184,15 @@
               onclick={toggleSelectionMode}
               aria-label={t("page.selectionToggle")}
             >
-              {selectionMode ? t("page.cancelSelection") : t("page.select")}
+              {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
             </button>
-            {#if selectionMode}
+            {#if homePage.selectionMode}
               <button
                 class="list-control-btn"
                 onclick={toggleSelectAll}
                 aria-label={t("page.selectAllAria")}
               >
-                {selectedNoteIds.size === filteredNotes.length
+                {homePage.selectedNoteIds.size === homePage.filteredNotes.length
                   ? t("page.clearSelection")
                   : t("page.selectAll")}
               </button>
@@ -719,60 +203,62 @@
             <select
               id="sort-select"
               class="sort-select"
-              value={sortBy}
+              value={homePage.sortBy}
               onchange={(e) => {
-                sortBy = e.currentTarget.value as typeof sortBy;
-                applyFiltersAndSort();
+                handleSortChange(e.currentTarget.value as typeof homePage.sortBy);
               }}
               aria-label={t("page.sortAriaLabel")}
             >
-              {#each sortOptions as opt}
+              {#each homePage.sortOptions as opt}
                 <option value={opt.id}>{opt.label}</option>
               {/each}
             </select>
           </div>
         </div>
 
-        {#if filteredNotes.length === 0}
+        {#if homePage.filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
             <StateIllustration
-              type={!filterState.isTypeActive && !filterState.isSearchActive
+              type={!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
                 ? "empty"
                 : "no-results"}
             />
             <h2>
-              {!filterState.isTypeActive && !filterState.isSearchActive
+              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
                 ? t("page.emptyListNoNotes")
                 : t("page.emptyListNoSearch")}
             </h2>
             <p>
-              {!filterState.isTypeActive && !filterState.isSearchActive
+              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
                 ? t("page.emptyListPrompt")
-                : filterState.isSearchActive
+                : homePage.filterState.isSearchActive
                   ? t("page.noSearchResults", {
-                      query: filterState.searchQuery.value,
+                      query: homePage.filterState.searchQuery.value,
                     })
                   : t("page.noTypeResults", {
-                      type: filterState.getSelectedTypeLabel(typeFilters)?.toLowerCase() ?? "",
+                      type:
+                        homePage.filterState
+                          .getSelectedTypeLabel(homePage.typeFilters)
+                          ?.toLowerCase() ?? "",
                     })}
             </p>
-            <button class="new-note-button" onclick={() => (showCreateModal = true)}>
+            <button class="new-note-button" onclick={() => (homePage.showCreateModal = true)}>
               {t("page.createFirstNote")}
             </button>
           </div>
         {:else}
           <div class="notes-grid" data-testid="notes-grid">
-            {#each filteredNotes as note, index (note.id)}
+            {#each homePage.filteredNotes as note, index (note.id)}
               <NoteCard
                 {note}
                 animationIndex={index}
-                selected={selectedNoteIds.has(note.id)}
-                selectMode={selectionMode}
+                selected={homePage.selectedNoteIds.has(note.id)}
+                selectMode={homePage.selectionMode}
                 onSelect={handleNoteSelect}
                 onEdit={handleNoteEdit}
                 onDelete={handleNoteDelete}
                 onClick={() => (graphStore.selectedNodeId = note.id)}
-                highlightQuery={filterState.searchQuery.value}
+                highlightQuery={homePage.filterState.searchQuery.value}
               />
             {/each}
           </div>
@@ -780,16 +266,16 @@
       </div>
 
       <!-- Floating batch delete panel -->
-      {#if selectionMode && selectedNoteIds.size > 0}
+      {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0}
         <div class="batch-panel">
           <span class="batch-count"
             >{t("page.selectedCount", {
-              count: selectedNoteIds.size.toString(),
+              count: homePage.selectedNoteIds.size.toString(),
             })}</span
           >
           <button
             class="batch-btn batch-btn--actions"
-            onclick={() => (showBulkActionsMenu = !showBulkActionsMenu)}
+            onclick={() => (homePage.showBulkActionsMenu = !homePage.showBulkActionsMenu)}
             aria-label={t("page.bulkActionsToggle")}
           >
             {t("page.bulkActionsActions")}
@@ -804,8 +290,8 @@
           <button
             class="batch-btn batch-btn--cancel"
             onclick={() => {
-              selectedNoteIds.clear();
-              selectionMode = false;
+              homePage.selectedNoteIds.clear();
+              homePage.selectionMode = false;
             }}
             aria-label={t("page.cancelSelection")}
           >
@@ -814,12 +300,12 @@
         </div>
 
         <!-- Bulk actions menu -->
-        {#if showBulkActionsMenu}
+        {#if homePage.showBulkActionsMenu}
           <div class="bulk-actions-menu">
             <button
               class="bulk-action-item"
               onclick={() => {
-                showBulkActionsMenu = false;
+                homePage.showBulkActionsMenu = false;
               }}
               aria-label={t("page.bulkActionsMoveType")}
             >
@@ -829,7 +315,7 @@
             <button
               class="bulk-action-item"
               onclick={() => {
-                showBulkActionsMenu = false;
+                homePage.showBulkActionsMenu = false;
               }}
               aria-label={t("page.bulkActionsAddTags")}
             >
@@ -839,7 +325,7 @@
             <button
               class="bulk-action-item"
               onclick={() => {
-                showBulkActionsMenu = false;
+                homePage.showBulkActionsMenu = false;
               }}
               aria-label={t("page.bulkActionsExport")}
             >
@@ -856,55 +342,47 @@
 <!-- Public auth entry point -->
 {#if !isAuthenticated()}
   <FloatingAuthPanel
-    open={showAuthPanel}
-    initialTab={authPanelTab}
-    onClose={() => (showAuthPanel = false)}
+    open={homePage.showAuthPanel}
+    initialTab={homePage.authPanelTab}
+    onClose={closeAuthPanel}
     onSuccess={handleAuthSuccess}
   />
 {/if}
 
 <!-- Create Note Modal -->
 <CreateNoteModal
-  bind:open={showCreateModal}
+  bind:open={homePage.showCreateModal}
   onSuccess={handleNoteCreated}
-  onClose={() => (createChildParent = null)}
-  parentNote={createChildParent ?? undefined}
-  defaultType={createChildParent
-    ? CelestialBody.getChildSuggestion(createChildParent.type)
-    : undefined}
+  onClose={resetCreateChildParent}
+  parentNote={homePage.createChildParent ?? undefined}
+  defaultType={homePage.createChildDefaultType}
 />
 
 <!-- Edit Note Modal -->
-{#if noteToEdit}
+{#if homePage.noteToEdit}
   <EditNoteModal
-    bind:open={showEditModal}
-    noteId={noteToEdit}
-    onSuccess={() => {
-      showEditModal = false;
-      noteToEdit = null;
-    }}
+    bind:open={homePage.showEditModal}
+    noteId={homePage.noteToEdit}
+    onSuccess={handleEditSuccess}
   />
 {/if}
 
 <!-- Confirm Modal for delete -->
 <ConfirmModal
-  bind:open={showConfirmDelete}
+  bind:open={homePage.showConfirmDelete}
   title={t("modal.deleteTitle")}
   message={t("modal.deleteMessage")}
   confirmText={t("modal.delete")}
   cancelText={t("modal.cancel")}
   danger={true}
   onConfirm={handleDeleteConfirm}
-  onCancel={() => {
-    showConfirmDelete = false;
-    noteToDelete = null;
-  }}
+  onCancel={cancelDelete}
 />
 
 <!-- Undo toast -->
-{#if showUndoToast}
-  <div class="undo-toast" class:undo-toast--restore={undoToastStage === "restore"}>
-    {#if undoToastStage === "done"}
+{#if homePage.showUndoToast}
+  <div class="undo-toast" class:undo-toast--restore={homePage.undoToastStage === "restore"}>
+    {#if homePage.undoToastStage === "done"}
       <span class="undo-toast-message">{t("toast.done")}</span>
     {:else}
       <span class="undo-toast-message">{t("toast.noteDeleted")}</span>

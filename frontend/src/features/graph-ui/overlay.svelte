@@ -12,7 +12,6 @@
   const {
     canvas,
     nodes,
-    links,
     hoveredNodeId = null,
     hoveredLink = null,
     tooltipPosition = { x: 0, y: 0 },
@@ -30,15 +29,6 @@
   }: {
     canvas: HTMLCanvasElement | null;
     nodes: Array<{ id: string; title: string; type?: string }>;
-    links: Array<{
-      id?: string;
-      source: string;
-      target: string;
-      link_type?: string;
-      weight?: number;
-      source_type?: string;
-      last_weight_update?: string;
-    }>;
     hoveredNodeId?: string | null;
     hoveredLink?: {
       id?: string;

@@ -682,7 +682,6 @@
 <GraphCanvasOverlay
   {canvas}
   {nodes}
-  {links}
   hoveredNodeId={canvasState.hoveredNodeId}
   hoveredLink={canvasState.hoveredLink}
   tooltipPosition={canvasState.tooltipPosition}
