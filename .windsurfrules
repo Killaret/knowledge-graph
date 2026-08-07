@@ -358,6 +358,16 @@ CMD ["/server"]
 - Personal: `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`
 - Test: `test_postgres_data`, `test_mongodb_data` (destroyed after use)
 
+**Data preservation (NON-NEGOTIABLE):**
+- **NEVER delete named volumes of the Personal stack** (`pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`) unless the user explicitly requests it.
+- Personal stack volumes contain live user data. Pruning Docker must stop the personal stack but preserve its volumes (`docker compose -f docker-compose.personal.yml down` without `-v`).
+- **MANDATORY backup before any Docker cleanup/WSL compact that may affect volumes:**
+  1. Run `\.\scripts\devops\backup-personal.ps1` (Windows) or `./scripts/devops/backup-personal.sh` (Linux/Mac).
+  2. Verify the backup file exists and is non-empty.
+  3. Only then proceed with cleanup.
+- **Back up the Personal stack regularly** — before any destructive operation and on a daily/weekly schedule.
+- Test stack data may still be destroyed as part of `down -v`.
+
 **Test Stack (MANDATORY for testing):**
 - Use `docker-compose.test.yml` for all E2E/BDD testing
 - Completely isolated from dev/personal environments
