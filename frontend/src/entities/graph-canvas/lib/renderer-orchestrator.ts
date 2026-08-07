@@ -41,26 +41,25 @@ export function drawAllLinks(
   hoveredNodeId: string | null = null,
   highlightedLinkId?: string | null,
   dyingLinks: SimulationLink[] = [],
-  dyingLinkOpacity: Map<string, number> = new Map()
+  dyingLinkOpacity: Map<string, number> = new Map(),
+  nodeMap?: Map<string, SimulationNode>
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
 
-  if (import.meta.env.DEV) {
-    console.log(`[drawAllLinks] Called with ${simLinks.length} links and ${nodes.length} nodes`);
-  }
-
   const bidirectionalPairs = buildBidirectionalPairSet(simLinks);
-  const nodeMap = new Map<string, SimulationNode>();
-  for (const node of nodes) {
-    if (node.id) {
-      nodeMap.set(node.id, node);
+  const resolvedNodeMap = nodeMap ?? new Map<string, SimulationNode>();
+  if (!nodeMap) {
+    for (const node of nodes) {
+      if (node.id) {
+        resolvedNodeMap.set(node.id, node);
+      }
     }
   }
 
   simLinks.forEach((link, index) => {
-    const sourceNode = resolveLinkEndpoint(link.source, nodes);
-    const targetNode = resolveLinkEndpoint(link.target, nodes);
+    const sourceNode = resolveLinkEndpoint(link.source, nodes, resolvedNodeMap);
+    const targetNode = resolveLinkEndpoint(link.target, nodes, resolvedNodeMap);
 
     if (
       !sourceNode ||
@@ -95,7 +94,7 @@ export function drawAllLinks(
     drawAnimatedLink(
       ctx,
       link,
-      nodeMap,
+      resolvedNodeMap,
       animationTime,
       simLinks.length,
       hoveredNodeId,
@@ -108,8 +107,8 @@ export function drawAllLinks(
 
   // Draw dying (removed) links fading out
   dyingLinks.forEach((link) => {
-    const sourceNode = resolveLinkEndpoint(link.source, nodes);
-    const targetNode = resolveLinkEndpoint(link.target, nodes);
+    const sourceNode = resolveLinkEndpoint(link.source, nodes, resolvedNodeMap);
+    const targetNode = resolveLinkEndpoint(link.target, nodes, resolvedNodeMap);
     if (
       !sourceNode ||
       !targetNode ||
@@ -412,6 +411,14 @@ export function draw(
   ctx.translate(transform.x, transform.y);
   ctx.scale(transform.k, transform.k);
 
+  // Build a node id map once per frame to avoid O(N*L) lookups
+  const nodeMap = new Map<string, SimulationNode>();
+  for (const node of nodes) {
+    if (node.id) {
+      nodeMap.set(node.id, node);
+    }
+  }
+
   // Draw links with animation
   drawAllLinks(
     ctx,
@@ -422,14 +429,15 @@ export function draw(
     hoveredNodeId,
     highlightedLinkId,
     dyingLinks,
-    dyingLinkOpacity
+    dyingLinkOpacity,
+    nodeMap
   );
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {
     // Preview to a specific target node
-    const sourceNode = nodes.find((n) => n.id === linkPreviewTarget.sourceId);
-    const targetNode = nodes.find((n) => n.id === linkPreviewTarget.targetId);
+    const sourceNode = nodeMap.get(linkPreviewTarget.sourceId);
+    const targetNode = nodeMap.get(linkPreviewTarget.targetId);
     if (
       sourceNode &&
       targetNode &&
@@ -442,7 +450,7 @@ export function draw(
     }
   } else if (linkPreviewMousePos) {
     // No target node yet — draw line from dragged node to current mouse world position
-    const sourceNode = nodes.find((n) => n.id === linkPreviewMousePos.sourceId);
+    const sourceNode = nodeMap.get(linkPreviewMousePos.sourceId);
     if (sourceNode && sourceNode.x != null && sourceNode.y != null) {
       drawPreviewLink(
         ctx,

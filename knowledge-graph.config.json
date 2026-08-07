@@ -141,10 +141,10 @@
         "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
-        "gravity_nodes_threshold": 50,
+        "gravity_nodes_threshold": 100,
         "gravity_max_distance": 300,
         "hover_delay_ms": 150,
-        "visual_fx_threshold": 100
+        "visual_fx_threshold": 500
       },
       "3d": {
         "max_nodes": 500,

@@ -67,9 +67,16 @@ export function findLinkAtPosition(
   transform: TransformState,
   tolerance: number = 8
 ): SimulationLink | null {
+  const nodeMap = new Map<string, SimulationNode>();
+  for (const node of nodes) {
+    if (node.id) {
+      nodeMap.set(node.id, node);
+    }
+  }
+
   for (const link of links) {
-    const sourceNode = resolveLinkEndpoint(link.source, nodes);
-    const targetNode = resolveLinkEndpoint(link.target, nodes);
+    const sourceNode = resolveLinkEndpoint(link.source, nodes, nodeMap);
+    const targetNode = resolveLinkEndpoint(link.target, nodes, nodeMap);
 
     if (!sourceNode || !targetNode) continue;
     if (

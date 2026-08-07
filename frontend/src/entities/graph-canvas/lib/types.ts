@@ -60,13 +60,17 @@ export interface ResizeState {
  */
 export function resolveLinkEndpoint(
   ref: string | number | SimulationNode,
-  nodes: SimulationNode[]
+  nodes: SimulationNode[],
+  nodeMap?: Map<string, SimulationNode>
 ): SimulationNode | undefined {
   if (typeof ref === "object" && ref !== null) {
     return ref;
   }
   if (typeof ref === "number") {
     return nodes[ref];
+  }
+  if (nodeMap) {
+    return nodeMap.get(ref);
   }
   return nodes.find((n) => n.id === ref);
 }
