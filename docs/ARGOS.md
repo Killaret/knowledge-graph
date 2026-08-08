@@ -11,7 +11,7 @@ This project uses the official [`@argos-ci/playwright`](https://www.argos-ci.com
 - **Repository**: `Killaret/knowledge-graph`
 - **Visibility**: Public
 - **Argos Plan**: Free tier (available for public repos)
-- **Project Token**: Set via the `ARGOS_TOKEN` environment variable (repository / GitHub secret)
+- **Project Token**: Set via the `ARGOS_TOKEN` environment variable (repository / GitHub secret). For local runs you can also place the token in `frontend/argos.json` (gitignored): `{"token": "..."}`; `playwright.config.ts` and the regression script both read this file when `ARGOS_TOKEN` is not set.
 
 ### Required Environment Variables
 

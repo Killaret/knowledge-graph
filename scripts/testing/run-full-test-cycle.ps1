@@ -276,6 +276,24 @@ try {
 
     # Step 17: Visual Regression (Argos)
     Write-Host "`n[Step 17/25] Visual Regression (Argos)..." -ForegroundColor Yellow
+
+    # Load token from gitignored argos.json if the env variable is not set.
+    # Playwright config also loads this file, but the check above needs it here.
+    if (-not $env:ARGOS_TOKEN) {
+        $argosJsonPath = Join-Path $repoDir "frontend" "argos.json"
+        if (Test-Path $argosJsonPath) {
+            try {
+                $argosJson = Get-Content $argosJsonPath -Raw | ConvertFrom-Json
+                if ($argosJson.token) {
+                    $env:ARGOS_TOKEN = $argosJson.token
+                    Write-Host "  Argos token loaded from frontend/argos.json" -ForegroundColor Cyan
+                }
+            } catch {
+                Write-Host "  Could not parse frontend/argos.json" -ForegroundColor Yellow
+            }
+        }
+    }
+
     if ($env:ARGOS_TOKEN -or $env:ARGOS_UPLOAD_LOCAL) {
         $env:FRONTEND_URL = $frontendUrl
         $env:BACKEND_URL = "http://127.0.0.1:18083"

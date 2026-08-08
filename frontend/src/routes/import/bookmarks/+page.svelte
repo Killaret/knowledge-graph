@@ -409,7 +409,7 @@
       {/if}
 
       {#if taskStatus}
-        <div class="progress-section">
+        <div class="progress-section progress">
           <div class="progress-bar-bg">
             <div
               class="progress-bar-fill"

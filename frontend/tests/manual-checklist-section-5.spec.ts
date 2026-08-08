@@ -3,6 +3,17 @@ import { loginAsTestUser } from "./helpers/auth";
 
 const ROUTES = ["/", "/graph?full=1", "/profile"];
 
+async function getGraphStatsCount(page: Page): Promise<{ nodes: number; links: number }> {
+  const stats = page.locator('[data-testid="graph-stats"]');
+  const text = (await stats.textContent()) || "";
+  const nodesMatch = text.match(/(\d+)\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i);
+  const linksMatch = text.match(/(\d+)\s*(?:links?|связ(?:ей|и|ь)?)/i);
+  return {
+    nodes: nodesMatch ? parseInt(nodesMatch[1], 10) : 0,
+    links: linksMatch ? parseInt(linksMatch[1], 10) : 0,
+  };
+}
+
 async function waitForRouteContent(page: Page, route: string) {
   if (route.startsWith("/graph")) {
     await expect(page.locator('[data-testid="graph-stats"]')).toBeVisible({
@@ -58,12 +69,14 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
+    await page.waitForLoadState("networkidle");
     const stats = page.locator('[data-testid="graph-stats"]');
+    await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible({ timeout: 20000 });
     await expect(stats).toBeVisible({ timeout: 20000 });
     await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
       timeout: 20000,
     });
-    const beforeStats = await stats.textContent();
+    const beforeStats = await getGraphStatsCount(page);
 
     // Logout via UI: the auth store clears tokens and redirects
     const logoutBtn = page.locator('[data-testid="menu-logout"]').first();
@@ -78,12 +91,17 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible({ timeout: 20000 });
     await expect(stats).toBeVisible({
       timeout: 20000,
     });
+    await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
+      timeout: 20000,
+    });
 
-    const afterStats = await stats.textContent();
-    expect(afterStats).toBe(beforeStats);
+    const afterStats = await getGraphStatsCount(page);
+    expect(afterStats).toEqual(beforeStats);
   });
 
   test("basic actions do not trigger console errors or browser dialogs", async ({ page }) => {
@@ -101,17 +119,25 @@ test.describe("Section 5 - General UX", { tag: ["@manual", "@ux", "@auth-real"] 
       timeout: 60000,
       waitUntil: "domcontentloaded",
     });
-    await expect(page.locator('[data-testid="graph-stats"]')).toBeVisible({
+    await page.waitForLoadState("networkidle");
+    const stats = page.locator('[data-testid="graph-stats"]');
+    await expect(page.locator('[data-testid="graph-canvas"]')).toBeVisible({ timeout: 20000 });
+    await expect(stats).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(stats).toContainText(/[1-9]\d*\s*(?:nodes?|уз(?:лов|ел|ла|ьев)?)/i, {
       timeout: 20000,
     });
 
-    await page.keyboard.press("?");
+    // Focus the canvas so window-level hotkeys are captured reliably
+    await page.locator('[data-testid="graph-canvas"]').evaluate((el) => el.focus());
+    await page.keyboard.press("Shift+Slash");
     await expect(page.locator('[data-testid="help-modal"]')).toBeVisible({
-      timeout: 5000,
+      timeout: 10000,
     });
     await page.keyboard.press("Escape");
     await expect(page.locator('[data-testid="help-modal"]')).toBeHidden({
-      timeout: 5000,
+      timeout: 10000,
     });
 
     await page.goto("/", { timeout: 60000, waitUntil: "domcontentloaded" });
