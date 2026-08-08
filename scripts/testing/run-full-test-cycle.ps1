@@ -298,6 +298,10 @@ try {
         $env:FRONTEND_URL = $frontendUrl
         $env:BACKEND_URL = "http://127.0.0.1:18083"
         $env:SKIP_AUTH = "true"
+        # Local runs do not set CI, so enable explicit upload when a token is available.
+        if (-not $env:CI -and $env:ARGOS_TOKEN) {
+            $env:ARGOS_UPLOAD_LOCAL = "true"
+        }
         Set-Location $repoDir\frontend
         npx playwright test --project=visual
         $argosExit = $LASTEXITCODE
