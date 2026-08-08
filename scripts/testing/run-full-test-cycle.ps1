@@ -295,6 +295,30 @@ try {
     }
 
     if ($env:ARGOS_TOKEN -or $env:ARGOS_UPLOAD_LOCAL) {
+        # Visual regression expects a SKIP_AUTH test stack so the UI can render
+        # graph/search state without logging in. Rebuild the frontend with
+        # VITE_SKIP_AUTH=true and re-seed with a small, deterministic data set.
+        Write-Host "  Preparing SKIP_AUTH test stack for visual regression..." -ForegroundColor Cyan
+        Set-Location $repoDir
+        & $scriptDir\stop-test.ps1
+
+        $env:SKIP_AUTH = "true"
+        $env:VITE_SKIP_AUTH = "true"
+        docker compose -f docker-compose.test.yml up -d --build --wait
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Visual test stack failed to start" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "  Visual test stack started with SKIP_AUTH=true" -ForegroundColor Green
+
+        Write-Host "  Seeding deterministic visual test data..." -ForegroundColor Yellow
+        & $scriptDir\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  WARNING: Failed to seed visual test data" -ForegroundColor Yellow
+        } else {
+            Write-Host "  Visual test data seeded" -ForegroundColor Green
+        }
+
         $env:FRONTEND_URL = $frontendUrl
         $env:BACKEND_URL = "http://127.0.0.1:18083"
         $env:SKIP_AUTH = "true"

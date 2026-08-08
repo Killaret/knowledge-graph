@@ -126,15 +126,12 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
   });
 
   test("Search with query", async ({ page }) => {
-    await page.goto("/search" + STABLE_RENDER);
+    await page.goto("/search?q=star" + STABLE_RENDER);
     await waitForApp(page);
 
-    await openCockpitPanel(page, "top");
     const searchInput = page.locator('[data-testid="search-input"]').first();
     await expect(searchInput).toBeVisible({ timeout: 5000 });
-    await searchInput.fill("star");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
 
     await argosScreenshot(page, "search-with-query", { fullPage: true });
   });

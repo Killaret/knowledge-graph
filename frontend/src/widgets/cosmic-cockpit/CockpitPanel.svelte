@@ -272,6 +272,7 @@
         onpointermove={handlePointerMove}
         onpointerup={handlePointerUp}
         onpointercancel={handlePointerUp}
+        onclick={() => cockpitStore.openPanel(position)}
         data-testid="cockpit-handle-{position}"
         aria-label={t("cockpit.handle.open", { position })}
         role="button"
@@ -344,6 +345,7 @@
         onpointermove={handlePointerMove}
         onpointerup={handlePointerUp}
         onpointercancel={handlePointerUp}
+        onclick={() => cockpitStore.openPanel(position)}
         data-testid="cockpit-handle-{position}"
         aria-label={t("cockpit.handle.open", { position })}
         role="button"

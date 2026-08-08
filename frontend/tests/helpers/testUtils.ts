@@ -67,8 +67,10 @@ export { isBackendAvailable } from "./testData";
 /**
  * Click an element using JavaScript to bypass viewport checks.
  * Useful for position:fixed elements that Playwright considers outside viewport.
+ * Waits for the element to be attached first to avoid hydration race conditions.
  */
 export async function clickBySelector(page: Page, selector: string): Promise<void> {
+  await page.waitForSelector(selector, { state: "attached", timeout: 5000 });
   await page.evaluate((sel) => {
     const element = document.querySelector(sel);
     if (element) {
@@ -89,18 +91,21 @@ export async function clickFloatingControl(page: Page, dataTestId: string): Prom
 
 /**
  * Open a cockpit panel by clicking its visible handle and waiting for the slide-out animation.
+ * Waits for the handle to mount to avoid hydration race conditions; if it never appears,
+ * the panel may already be open (or the page doesn't have this cockpit).
  */
 export async function openCockpitPanel(
   page: Page,
   position: "top" | "left" | "right" | "bottom" = "top"
 ): Promise<void> {
   const handle = page.locator(`[data-testid="cockpit-handle-${position}"]`).first();
-  const count = await handle.count();
-  if (count === 0) {
-    // Fallback: if the handle is missing, the panel may already be open
+  try {
+    await handle.waitFor({ state: "attached", timeout: 2000 });
+  } catch {
+    // Handle not present: panel is already open or this page has no cockpit.
     return;
   }
-  await handle.click({ force: true });
+  await clickBySelector(page, `[data-testid="cockpit-handle-${position}"]`);
   await page.waitForTimeout(500);
 }
 
@@ -131,15 +136,17 @@ export async function clickFilterChip(page: Page, filter: string): Promise<void>
 }
 
 /**
- * Fill search input in the top cockpit panel
+ * Fill search input in the top cockpit panel or search page
  */
 export async function fillSearchInput(page: Page, query: string): Promise<void> {
   await openCockpitPanel(page, "top");
+  await page.waitForSelector('[data-testid="search-input"]', { state: "attached", timeout: 5000 });
   await page.evaluate((q) => {
     const input = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
     if (input) {
       input.value = q;
       input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
     } else {
       throw new Error("Search input not found");
     }
@@ -151,15 +158,7 @@ export async function fillSearchInput(page: Page, query: string): Promise<void> 
  */
 export async function clickSearchButton(page: Page): Promise<void> {
   await openCockpitPanel(page, "top");
-  // Search button doesn't have data-testid, use class selector via JS
-  await page.evaluate(() => {
-    const button = document.querySelector(".search-btn");
-    if (button) {
-      (button as HTMLElement).click();
-    } else {
-      throw new Error("Search button not found");
-    }
-  });
+  await clickBySelector(page, ".search-btn");
 }
 
 /**

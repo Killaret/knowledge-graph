@@ -68,6 +68,7 @@
     onkeydown={handleKeyDown}
     {placeholder}
     aria-label={t("search.label")}
+    data-testid="search-input"
     class="search-input"
   />
   <button type="button" onclick={doSearch} class="search-button" aria-label={t("search.label")}>
