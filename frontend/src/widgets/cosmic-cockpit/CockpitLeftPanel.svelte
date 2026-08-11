@@ -1,27 +1,20 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
-  import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import { LinkType } from "$entities";
-  import CockpitTypeFilter from "$components/molecules/CockpitTypeFilter.svelte";
+
+  interface NoteItem {
+    id: string;
+    title: string;
+    type?: string;
+  }
 
   interface Props {
-    typeFilters?: Array<{
-      id: string;
-      label: string;
-      emoji: string;
-      description?: string;
-      example?: string;
-    }>;
-    selectedType?: string;
-    typeCounts?: Record<string, number>;
-    onFilter?: (type: string) => void;
-    onFocus?: () => void;
-    onReset?: () => void;
-    onSearch?: () => void;
-    notes?: Array<{ id: string; title: string; type?: string }>;
+    notes?: NoteItem[];
     onNoteSelect?: (id: string) => void;
+    onNoteDelete?: (id: string) => void;
+    onNoteEdit?: (id: string) => void;
+    onCreateChildNote?: (note: NoteItem) => void;
     onImport?: () => void;
     onExport?: () => void;
     showFullGraph?: boolean;
@@ -29,13 +22,6 @@
   }
 
   const {
-    typeFilters = [],
-    selectedType = "all",
-    typeCounts = {},
-    onFilter,
-    onFocus,
-    onReset,
-    onSearch,
     notes = [],
     onNoteSelect,
     onImport,
@@ -71,33 +57,9 @@
     goto(href);
   }
 
-  function handleFilter(id: string) {
-    onFilter?.(id);
-  }
-
   function handleLogout() {
     logout();
     goto("/auth/login");
-  }
-
-  const linkTypes = LinkType.ALL_TYPES;
-  const areAllLinkTypesVisible = $derived(graphStore.hiddenLinkTypes.length === 0);
-  const areAllLinkTypesHidden = $derived(graphStore.hiddenLinkTypes.length === linkTypes.length);
-
-  function toggleLinkType(type: string) {
-    graphStore.toggleLinkType(type);
-  }
-
-  function showAllLinkTypes() {
-    graphStore.hiddenLinkTypes = [];
-  }
-
-  function hideAllLinkTypes() {
-    graphStore.hiddenLinkTypes = linkTypes.map((lt) => lt.type);
-  }
-
-  function handleMinWeightInput(event: Event) {
-    graphStore.minLinkWeight = Number((event.currentTarget as HTMLInputElement).value);
   }
 
   function getNoteEmoji(type: string | undefined): string {
@@ -137,7 +99,7 @@
       {/each}
     </nav>
     {#if authenticated}
-      <div class="user-badge">
+      <div class="user-badge" data-testid="user-badge">
         <span class="user-avatar">{user?.email?.[0]?.toUpperCase() ?? "?"}</span>
         <span class="user-email" title={user?.email ?? ""}
           >{user?.email ?? t("cockpit.left.user")}</span
@@ -146,39 +108,9 @@
     {/if}
   </section>
 
-  <section class="left-section" aria-labelledby="graph-heading">
-    <h3 class="section-heading cockpit-gradient-text" id="graph-heading">
-      {t("cockpit.left.graphControls")}
-    </h3>
-    <div class="graph-controls">
-      <button
-        type="button"
-        class="control-btn"
-        onclick={() => onReset?.()}
-        title={t("cockpit.left.reset")}
-      >
-        🔄 {t("cockpit.left.reset")}
-      </button>
-      <button
-        type="button"
-        class="control-btn"
-        onclick={() => onSearch?.()}
-        title={t("cockpit.left.search")}
-      >
-        🎯 {t("cockpit.left.search")}
-      </button>
-      <button
-        type="button"
-        class="control-btn"
-        onclick={() => onFocus?.()}
-        title={t("cockpit.left.focus")}
-      >
-        👁 {t("cockpit.left.focus")}
-      </button>
-    </div>
-
-    {#if onToggleFullGraph}
-      <h3 class="section-heading sub-heading cockpit-gradient-text">
+  {#if onToggleFullGraph}
+    <section class="left-section" aria-labelledby="graph-heading">
+      <h3 class="section-heading cockpit-gradient-text" id="graph-heading">
         {t("cockpit.left.graphScope")}
       </h3>
       <label class="full-graph-toggle">
@@ -190,76 +122,8 @@
         />
         <span>{t("graph.showAllNotes")}</span>
       </label>
-    {/if}
-  </section>
-
-  {#if typeFilters.length > 0}
-    <section class="left-section" aria-labelledby="filter-heading">
-      <h3 class="section-heading cockpit-gradient-text" id="filter-heading">
-        {t("cockpit.left.filters")}
-      </h3>
-      <CockpitTypeFilter
-        filters={typeFilters}
-        selected={selectedType}
-        onSelect={handleFilter}
-        {typeCounts}
-      />
     </section>
   {/if}
-
-  <section class="left-section" aria-labelledby="link-types-heading">
-    <h3 class="section-heading cockpit-gradient-text" id="link-types-heading">
-      {t("linkLegend.title")}
-    </h3>
-    <div class="link-types-actions">
-      <button
-        type="button"
-        class="control-btn control-btn--small"
-        disabled={areAllLinkTypesVisible}
-        onclick={showAllLinkTypes}
-        data-testid="link-types-show-all"
-      >
-        {t("linkLegend.showAll")}
-      </button>
-      <button
-        type="button"
-        class="control-btn control-btn--small"
-        disabled={areAllLinkTypesHidden}
-        onclick={hideAllLinkTypes}
-        data-testid="link-types-hide-all"
-      >
-        {t("linkLegend.hideAll")}
-      </button>
-    </div>
-    <div class="link-types-list">
-      {#each linkTypes as linkType}
-        {@const active = !graphStore.hiddenLinkTypes.includes(linkType.type)}
-        <button
-          type="button"
-          class="link-type-chip"
-          class:active
-          onclick={() => toggleLinkType(linkType.type)}
-          data-testid="link-type-chip-{linkType.type}"
-        >
-          <span class="link-type-icon">{linkType.icon}</span>
-          <span>{linkType.label}</span>
-        </button>
-      {/each}
-    </div>
-    <label class="min-weight-label" for="cockpit-min-weight">
-      {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
-    </label>
-    <input
-      id="cockpit-min-weight"
-      type="range"
-      min="0"
-      max="1"
-      step="0.1"
-      value={graphStore.minLinkWeight}
-      oninput={handleMinWeightInput}
-      data-testid="cockpit-min-weight"
-    />
-  </section>
 
   <section class="left-section" class:collapsed={!noteListOpen} aria-labelledby="note-list-heading">
     <button
@@ -344,6 +208,10 @@
     gap: 8px;
   }
 
+  .left-section.collapsed .note-tree {
+    display: none;
+  }
+
   .section-heading {
     margin: 0;
     font-size: 11px;
@@ -375,11 +243,7 @@
     opacity: 1;
   }
 
-  .sub-heading {
-    margin-top: 8px;
-  }
-
-  /* Desynchronize the gradient shimmer across sections so headings don't
+  /* Desynchronize the gradient shimmer across sections so headings don’t
      all shimmer in lockstep. */
   .left-section:nth-of-type(1) .cockpit-gradient-text {
     --cockpit-text-delay: 0s;
@@ -393,23 +257,12 @@
   .left-section:nth-of-type(4) .cockpit-gradient-text {
     --cockpit-text-delay: -3.6s;
   }
-  .left-section:nth-of-type(5) .cockpit-gradient-text {
-    --cockpit-text-delay: -4.8s;
-  }
-  .left-section:nth-of-type(6) .cockpit-gradient-text {
-    --cockpit-text-delay: -6s;
-  }
 
   .nav-list,
-  .graph-controls,
   .note-tree {
     display: flex;
     flex-direction: column;
     gap: 4px;
-  }
-
-  .note-tree.collapsed {
-    display: none;
   }
 
   .nav-link,
@@ -473,62 +326,6 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-  }
-
-  .link-types-actions {
-    display: flex;
-    gap: 6px;
-  }
-
-  .control-btn--small {
-    flex: 1;
-    padding: 6px 8px;
-    font-size: 11px;
-    justify-content: center;
-  }
-
-  .control-btn--small:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .link-types-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .link-type-chip {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(45, 212, 191, 0.15);
-    background: transparent;
-    color: rgba(224, 224, 224, 0.5);
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .link-type-chip.active {
-    border-color: rgba(45, 212, 191, 0.5);
-    background: rgba(45, 212, 191, 0.1);
-    color: var(--color-text, #e0e0e0);
-  }
-
-  .link-type-chip:hover {
-    border-color: rgba(45, 212, 191, 0.5);
-  }
-
-  .link-type-icon {
-    font-size: 12px;
-  }
-
-  .min-weight-label {
-    font-size: 11px;
-    color: rgba(224, 224, 224, 0.6);
   }
 
   .control-btn--danger:hover {

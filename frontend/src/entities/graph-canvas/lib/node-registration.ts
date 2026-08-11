@@ -29,22 +29,11 @@ export function registerCelestialBodyDrawers(): void {
   };
 
   CelestialBody.PLANET.drawFunction = (ctx, c) => {
-    drawPlanet(ctx, c.x, c.y, c.r, c.angle, undefined, c.variation, c.nodeId, c.nodeCount, c.time);
+    drawPlanet(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.SATELLITE.drawFunction = (ctx, c) => {
-    drawPlanet(
-      ctx,
-      c.x,
-      c.y,
-      c.r,
-      c.angle,
-      CelestialBody.SATELLITE.color,
-      c.variation,
-      c.nodeId,
-      c.nodeCount,
-      c.time
-    );
+    drawPlanet(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
   };
 
   CelestialBody.COMET.drawFunction = (ctx, c) => {
@@ -56,7 +45,7 @@ export function registerCelestialBodyDrawers(): void {
   };
 
   CelestialBody.NEBULA.drawFunction = (ctx, c) => {
-    drawNebula(ctx, c.x, c.y, c.r, c.angle);
+    drawNebula(ctx, c.x, c.y, c.r, c.angle, c.variation);
   };
 
   CelestialBody.ASTEROID.drawFunction = (ctx, c) => {
@@ -75,23 +64,32 @@ export function registerCelestialBodyDrawers(): void {
   };
 
   CelestialBody.DEBRIS.drawFunction = (ctx, c) => {
-    drawDebris(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId);
+    drawDebris(
+      ctx,
+      c.x,
+      c.y,
+      c.r,
+      c.angle,
+      c.disableVariation || c.focusMode,
+      c.nodeId,
+      c.variation
+    );
   };
 
   CelestialBody.DUST.drawFunction = (ctx, c) => {
-    drawDust(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId);
+    drawDust(ctx, c.x, c.y, c.r, c.angle, c.disableVariation || c.focusMode, c.nodeId, c.variation);
   };
 
   CelestialBody.BLACKHOLE.drawFunction = (ctx, c) => {
-    drawBlackhole(ctx, c.x, c.y, c.r, c.angle, c.nodeId, c.nodeCount, c.time);
+    drawBlackhole(ctx, c.x, c.y, c.r, c.angle, c.nodeId, c.nodeCount, c.time, c.variation);
   };
 
   CelestialBody.TECHNICAL.drawFunction = (ctx, c) => {
-    drawTechnicalNode(ctx, c.x, c.y, c.r, c.time);
+    drawTechnicalNode(ctx, c.x, c.y, c.r, c.time, c.variation);
   };
 
   CelestialBody.MOON.drawFunction = (ctx, c) => {
-    drawMoon(ctx, c.x, c.y, c.r, c.angle);
+    drawMoon(ctx, c.x, c.y, c.r, c.angle, c.variation);
   };
 
   CelestialBody.UNKNOWN.drawFunction = (ctx, c) => {

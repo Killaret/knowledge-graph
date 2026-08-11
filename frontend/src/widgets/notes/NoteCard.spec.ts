@@ -1,7 +1,20 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import NoteCard from "./NoteCard.svelte";
 import type { Note } from "$shared/api/notes";
+import tippy from "tippy.js";
+
+vi.mock("$app/navigation", () => ({
+  goto: vi.fn(),
+}));
+
+vi.mock("tippy.js", () => ({
+  default: vi.fn(() => ({
+    show: vi.fn(),
+    hide: vi.fn(),
+    destroy: vi.fn(),
+  })),
+}));
 
 function createNote(overrides: Partial<Note> = {}): Note {
   return {
@@ -15,6 +28,10 @@ function createNote(overrides: Partial<Note> = {}): Note {
     ...overrides,
   };
 }
+
+beforeEach(() => {
+  vi.mocked(tippy).mockClear();
+});
 
 describe("NoteCard", () => {
   it("renders note title and content", () => {
@@ -132,5 +149,27 @@ describe("NoteCard", () => {
 
     const card = container.querySelector(".note-card.selected");
     expect(card).toBeInTheDocument();
+  });
+
+  it("renders view, edit and delete actions in the tooltip by default", async () => {
+    render(NoteCard, { props: { note: createNote() } });
+
+    await waitFor(() => expect(tippy).toHaveBeenCalled());
+
+    const [, options] = vi.mocked(tippy).mock.calls[0] as [unknown, { content: string }];
+    expect(options.content).toContain('data-action="view"');
+    expect(options.content).toContain('data-action="edit"');
+    expect(options.content).toContain('data-action="delete"');
+  });
+
+  it("hides edit and delete actions in the tooltip when readonly", async () => {
+    render(NoteCard, { props: { note: createNote(), readonly: true } });
+
+    await waitFor(() => expect(tippy).toHaveBeenCalled());
+
+    const [, options] = vi.mocked(tippy).mock.calls[0] as [unknown, { content: string }];
+    expect(options.content).toContain('data-action="view"');
+    expect(options.content).not.toContain('data-action="edit"');
+    expect(options.content).not.toContain('data-action="delete"');
   });
 });

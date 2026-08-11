@@ -4,6 +4,7 @@
   import { page } from "$app/stores";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
+  import { useRequireAuth } from "$shared/composables/auth";
   import { createBookmarkletNote, type BookmarkletResult } from "$shared/api/import";
   import Button from "$components/atoms/Button.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
@@ -21,7 +22,7 @@
 
     if (!isAuthenticated()) {
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-      void goto(`/auth/login?redirect=${redirect}`);
+      useRequireAuth(`/auth/login?redirect=${redirect}`);
       status = "unauthorized";
       return;
     }

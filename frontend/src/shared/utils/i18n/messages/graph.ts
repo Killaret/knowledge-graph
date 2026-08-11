@@ -209,6 +209,7 @@ export const en: Record<string, string> = {
   "graphOverlay.tip": "Tip",
   "graphOverlay.nodes": "nodes",
   "graphOverlay.links": "links",
+  "graphOverlay.fogToggle": "Fog",
   // TypeSelector
   "toast.closeAria": "Close notification",
   // Toast

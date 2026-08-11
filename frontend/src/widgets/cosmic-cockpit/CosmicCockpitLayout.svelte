@@ -9,8 +9,8 @@
   } from "$features/cosmic-cockpit";
   import { CockpitFrame } from "$features/cosmic-ui";
   import CockpitPanel from "./CockpitPanel.svelte";
-  import CockpitTopPanel from "./CockpitTopPanel.svelte";
   import CockpitBottomPanel from "./CockpitBottomPanel.svelte";
+  import { GraphTopBar } from "$features/graph-ui";
   import CockpitLeftPanel from "./CockpitLeftPanel.svelte";
   import CockpitRightPanel from "./CockpitRightPanel.svelte";
   import CockpitFirstPersonButton from "./CockpitFirstPersonButton.svelte";
@@ -40,6 +40,16 @@
     onCreateChildNote?: (note: NoteItem) => void;
     onSearch?: (query: string) => void;
     onFilter?: (type: string) => void;
+    onSignIn?: () => void;
+    onRegister?: () => void;
+    canvasController?: {
+      focusMode: boolean;
+      fogEnabled: boolean;
+      resetView: () => void;
+      openSearch: () => void;
+      toggleFocus: () => void;
+      toggleFog: () => void;
+    };
     onToggleView?: (view: "graph" | "list" | "3d") => void;
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     onToggleFullGraph?: (value: boolean) => void;
@@ -53,6 +63,7 @@
     typeFilters?: TypeFilter[];
     selectedType?: string;
     typeCounts?: Record<string, number>;
+    searchQuery?: string;
     notes?: NoteItem[];
     showFullGraph?: boolean;
   }
@@ -67,6 +78,8 @@
     onCreateChildNote,
     onSearch,
     onFilter,
+    onSignIn,
+    onRegister,
     onToggleView,
     onToggleLayoutProvider,
     onToggleFullGraph,
@@ -80,8 +93,10 @@
     typeFilters = [],
     selectedType = "all",
     typeCounts = {},
+    searchQuery = "",
     notes = [],
     showFullGraph = true,
+    canvasController,
   }: Props = $props();
 
   // Content-based sizing for the top/bottom panels: their height genuinely
@@ -201,15 +216,23 @@
       onSizeChange={(s) => handlePanelSizeChange("top", s)}
       title="Navigation"
     >
-      <CockpitTopPanel
+      <GraphTopBar
+        {isAuthenticated}
+        {currentView}
+        {layoutProvider}
+        {searchQuery}
+        {selectedType}
+        {typeFilters}
+        {typeCounts}
+        {nodeCount}
+        {linkCount}
         {onSearch}
         {onToggleView}
         {onToggleLayoutProvider}
-        {currentView}
-        {layoutProvider}
+        {onFilter}
         {onNoteCreate}
-        {nodeCount}
-        {linkCount}
+        {canvasController}
+        variant="docked"
       />
     </CockpitPanel>
 
@@ -226,10 +249,6 @@
 
     <CockpitPanel position="left" size={panelSizes.left} title="Operations">
       <CockpitLeftPanel
-        {typeFilters}
-        {selectedType}
-        {typeCounts}
-        {onFilter}
         onNoteSelect={handleNodeSelect}
         {notes}
         {onImport}
@@ -258,6 +277,27 @@
     {/if}
   {:else}
     <div class="public-cockpit">
+      <div class="graph-top-bar-wrapper">
+        <GraphTopBar
+          isAuthenticated={false}
+          {currentView}
+          {layoutProvider}
+          {searchQuery}
+          {selectedType}
+          {typeFilters}
+          {typeCounts}
+          {nodeCount}
+          {linkCount}
+          {onSearch}
+          {onToggleView}
+          {onToggleLayoutProvider}
+          {onFilter}
+          {onSignIn}
+          {onRegister}
+          {canvasController}
+          variant="floating"
+        />
+      </div>
       {@render children?.()}
     </div>
   {/if}
@@ -288,6 +328,17 @@
 
   .cockpit-frame-wrapper > :global(*) {
     pointer-events: auto;
+  }
+
+  .graph-top-bar-wrapper {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    pointer-events: auto;
+    width: fit-content;
+    max-width: calc(100% - 32px);
   }
 
   .public-cockpit {

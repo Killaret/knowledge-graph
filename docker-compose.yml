@@ -192,9 +192,9 @@
         # Browser-accessible graph service URL (baked into client bundle)
         VITE_GRAPH_SERVICE_URL: http://localhost:18080/graph-service
     container_name: kg-frontend
-    
-    ports:
-      - "5173:3000"
+
+    # Exposed only through nginx:18081 on the host; no direct host port
+    # to avoid Windows reserved-port issues and CORS confusion.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:

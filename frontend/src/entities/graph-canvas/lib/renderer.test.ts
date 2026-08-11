@@ -2,7 +2,7 @@
  * Visual tests for GraphCanvas renderer - anomaly types
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { drawNode, drawUnknown } from "./renderer";
+import { drawNode, drawStar, drawUnknown } from "./renderer";
 import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
 import { getGlowIntensity } from "$shared/lib/graph/glow-intensity";
@@ -354,6 +354,23 @@ describe("renderer anomaly functions", () => {
       expect(mockCtx.arc).not.toHaveBeenCalled();
       expect(mockCtx.fillText).not.toHaveBeenCalled();
       expect(mockCtx.beginPath).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("drawStar", () => {
+    it("should start the star shape with moveTo to avoid a stray line from the origin", () => {
+      vi.clearAllMocks();
+
+      drawStar(mockCtx, 100, 100, 20, 0);
+
+      // The star is one closed shape, so after its beginPath the first subpath
+      // operation must be a moveTo, not a lineTo. This prevents some Canvas
+      // implementations from drawing a line from (0,0) to the first outer point.
+      expect(mockCtx.beginPath).toHaveBeenCalled();
+      expect(mockCtx.moveTo).toHaveBeenCalled();
+      // Without time/nodeCount the corona is skipped, so we expect 9 lineTo calls
+      // (one inner point for every outer point except the first, plus 4 outer points).
+      expect(mockCtx.lineTo).toHaveBeenCalledTimes(9);
     });
   });
 

@@ -71,6 +71,65 @@
 
 ---
 
+## 0.6. Рефакторинг: GraphPageShell, GraphLoader, readonly NoteCard, auth-гварды
+
+> Этот раздел добавлен после уборки дублирования в UI, зависящем от состояния авторизации.
+
+### Подготовка
+
+- [ ] `SKIP_AUTH=false` в тестовом стеке (`docker inspect kg-test-frontend -f "{{range .Config.Env}}{{.}}\n{{end}}" | findstr VITE_SKIP_AUTH` → `VITE_SKIP_AUTH=false`).
+- [ ] Тестовый пользователь создан: `testuser` / `TestPassword123!`.
+- [ ] DevTools → Network и Console открыты.
+
+### GraphPageShell — единый шелл для всех граф-страниц
+
+- [ ] Открыть `/`, `/graph`, `/graph/3d`, `/graph/{id}`, `/graph/3d/{id}`.
+- [ ] На всех страницах присутствует единый `GraphTopBar` с левой панелью/навигацией.
+- [ ] Без авторизации в `GraphTopBar` видны кнопки **Login / Register** и не видны create/edit/delete.
+- [ ] После логина в `GraphTopBar` появляется аватар/имя и контролы создания/поиска.
+- [ ] Кнопки `onNoteCreate`, `onNoteDelete`, `onNoteEdit`, `onCreateChildNote` не падают с ошибками `undefined is not a function`.
+- [ ] В Console нет `TypeError: Cannot read properties of undefined` после вызова `GraphPageShell`.
+
+### CockpitLeftPanel — дублирующие фильтры убраны
+
+- [ ] Открыть `/` или `/graph`.
+- [ ] В левой панели остались: навигация, user badge, переключатель graph/list, список заметок, импорт/экспорт.
+- [ ] Убраны из левой панели (перенесены в `GraphTopBar`): reset view, search, focus, фильтры по типу, фильтр по весу связей.
+- [ ] Фильтр по типу и поиск работают в `GraphTopBar`; применение фильтра меняет граф/список.
+
+### NoteCard — readonly режим
+
+- [ ] Открыть `/` без авторизации (инкогнито).
+- [ ] Навести курсор на карточку в списке — в tooltip НЕТ кнопок **Редактировать** и **Удалить**.
+- [ ] Открыть `/notes/{id}` без авторизации — нет кнопок **Редактировать** / **Удалить** / **Создать дочернюю**.
+- [ ] Залогиниться и открыть ту же карточку/страницу — кнопки **Редактировать** / **Удалить** / **Создать дочернюю** видны и работают.
+- [ ] Страница поиска `/search` передаёт `readonly={!isAuthenticated()}` в `NoteCard`.
+
+### Auth-гварды (useAnonymousGuard / useRequireAuth)
+
+- [ ] Открыть `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` будучи залогиненным.
+- [ ] Происходит редирект на `/` без мигания формы.
+- [ ] Открыть `/profile`, `/import`, `/import/bookmarks` в инкогнито.
+- [ ] Происходит редирект на `/auth/login?redirect=...`.
+- [ ] После успешного логина возвращает на запрашиваемый `/import` (redirect параметр).
+
+### GraphLoader — единый загрузчик графа
+
+- [ ] Открыть `/` без авторизации — граф и список заметок загружаются из `/api/v1/graph/all` (public graph).
+- [ ] Открыть `/` с авторизацией — параллельно грузятся `GET /api/v1/notes` и `getGraphWithPreload()`.
+- [ ] Перейти на `/graph?full=false` (local) — используется первая заметка как центр, `GET /api/v1/graph/{id}?depth=3`.
+- [ ] Перейти на `/graph?full=true` (или просто `/graph`) — `GET /api/v1/graph/all`.
+- [ ] Создать заметку, сразу перезагрузить `/` — новая заметка появляется на графе/в списке (fallback `buildNotesGraph` + `ensureNotesInGraph`).
+- [ ] Удалить все заметки, перезагрузить `/graph` — граф не падает, показывается пустое состояние.
+
+### Консоль
+
+- [ ] Во всех сценариях выше в Console нет красных ошибок.
+- [ ] Нет бесконечных циклов `api/auth/refresh` 401.
+- [ ] Нет дублирующихся `GET /api/v1/graph/all` при переключении страниц.
+
+---
+
 ## 1. Smoke-тесты
 
 ### Публичный доступ

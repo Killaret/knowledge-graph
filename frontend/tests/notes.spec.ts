@@ -48,12 +48,12 @@ test.describe(
     });
 
     test("should create a new note", async ({ page, request }) => {
-      // Wait for floating controls to be visible
-      await expect(page.locator(".floating-controls")).toBeVisible({
+      // Wait for the top bar to be visible
+      await expect(page.locator('[data-testid="graph-top-bar"]')).toBeVisible({
         timeout: 10000,
       });
 
-      // Click create button in floating controls
+      // Click create button in the top bar
       await clickCreateNoteButton(page);
 
       // Wait for modal to open

@@ -15,6 +15,10 @@ export interface GraphNode {
   y?: number;
   z?: number;
   size?: number;
+  /** Optional custom fill color; overrides the palette if set. */
+  color?: string;
+  /** Optional custom glow color; computed from color if omitted. */
+  glowColor?: string;
 }
 
 // Ребро графа – связь между заметками

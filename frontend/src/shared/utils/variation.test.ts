@@ -101,6 +101,36 @@ describe("getVariation", () => {
     expect(result.sizeMultiplier).toBeGreaterThanOrEqual(0.8);
     expect(result.sizeMultiplier).toBeLessThanOrEqual(1.2);
   });
+
+  it("should generate valid hex color fields from the palette", () => {
+    const result = getVariation("node-1", "star");
+
+    expect(result.color).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(result.glowColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(result.strokeColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+  });
+
+  it("should use a manual color override when provided", () => {
+    const result = getVariation("node-1", "star", undefined, undefined, "#ff0000");
+
+    expect(result.color).toBe("#ff0000");
+    expect(result.glowColor).not.toBe("#000000");
+    expect(result.strokeColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+  });
+
+  it("should produce different colors for different node IDs", () => {
+    const result1 = getVariation("node-abc123xyz", "star");
+    const result2 = getVariation("node-def456uvw", "star");
+
+    expect(result1.color).not.toBe(result2.color);
+  });
+
+  it("should pick different palettes for different types", () => {
+    const star = getVariation("node-1", "star");
+    const planet = getVariation("node-1", "planet");
+
+    expect(star.color).not.toBe(planet.color);
+  });
 });
 
 describe("applyHueShift", () => {

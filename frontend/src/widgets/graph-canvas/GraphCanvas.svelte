@@ -27,10 +27,12 @@
     createBlackHole,
     updateBlackHolePosition,
     updateBlackHolePulse,
+    updateBlackHoleZoom,
     isPointOverBlackHole,
     type GhostNodeState,
     updateGhostNodePosition,
     updateGhostNodePulse,
+    updateGhostNodeZoom,
     type GravitySystem,
     drawFog,
     applyDelta as applyDeltaToSimulation,
@@ -101,6 +103,8 @@
           resetView: () => void;
           openSearch: () => void;
           toggleFocus: () => void;
+          fogEnabled: boolean;
+          toggleFog: () => void;
         }
       | undefined
     >(undefined),
@@ -156,6 +160,8 @@
       resetView: () => void;
       openSearch: () => void;
       toggleFocus: () => void;
+      fogEnabled: boolean;
+      toggleFog: () => void;
     };
   } = $props();
   /* eslint-enable prefer-const */
@@ -298,6 +304,9 @@
       get focusMode() {
         return canvasState.focusMode;
       },
+      get fogEnabled() {
+        return fogState.enabled;
+      },
       resetView: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
@@ -306,6 +315,7 @@
       },
       openSearch: () => canvasState.handleOpenSearch(hotkeysState),
       toggleFocus: () => canvasState.handleToggleFocus(redraw),
+      toggleFog: () => fogState.toggle(),
     };
   });
 
@@ -362,9 +372,11 @@
             animationTime = performance.now();
           }
 
-          // Update interactive element positions and pulses
+          // Update interactive element positions, zoom scale, and pulses
+          updateBlackHoleZoom(blackHole, transform.k);
           updateBlackHolePosition(blackHole, width, height);
           updateBlackHolePulse(blackHole, animationTime);
+          updateGhostNodeZoom(ghostNode, transform.k);
           updateGhostNodePosition(ghostNode, width, height, nodes);
           updateGhostNodePulse(ghostNode, animationTime);
 
@@ -797,8 +809,6 @@
   duplicateWarning={canvasState.duplicateWarning}
   focusMode={canvasState.focusMode}
   fogWarning={fogState.showWarning}
-  fogEnabled={fogState.enabled}
-  onToggleFog={() => fogState.toggle()}
   showUndoToast={canvasState.showUndoToast}
   undoToastStage={canvasState.undoToastStage}
   {hotkeysState}

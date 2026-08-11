@@ -1,7 +1,7 @@
 /**
  * Node gradient utility
  */
-import { lightenColor, darkenColor } from "./helpers";
+import { lightenColor, darkenColor, hexToRgba } from "./helpers";
 
 /**
  * Get radial gradient for a node
@@ -18,9 +18,10 @@ export function getNodeGradient(
 
   switch (type) {
     case "star":
-      gradient.addColorStop(0, "#ffffcc");
-      gradient.addColorStop(0.5, "#ffcc00");
-      gradient.addColorStop(1, "#ff9900");
+      // Bright core -> body color -> darker edge, like a luminous star.
+      gradient.addColorStop(0, lightenColor(color, 50));
+      gradient.addColorStop(0.5, color);
+      gradient.addColorStop(1, darkenColor(color, 20));
       break;
     case "planet":
       gradient.addColorStop(0, lightenColor(color, 30));
@@ -28,9 +29,10 @@ export function getNodeGradient(
       gradient.addColorStop(1, darkenColor(color, 20));
       break;
     case "galaxy":
-      gradient.addColorStop(0, "#8b5cf6");
-      gradient.addColorStop(0.5, "#6d28d9");
-      gradient.addColorStop(1, "rgba(109, 40, 217, 0)");
+      // Bright center -> body color -> transparent edge for a nebulous feel.
+      gradient.addColorStop(0, lightenColor(color, 30));
+      gradient.addColorStop(0.5, color);
+      gradient.addColorStop(1, hexToRgba(darkenColor(color, 20), 0));
       break;
     default:
       gradient.addColorStop(0, lightenColor(color, 20));

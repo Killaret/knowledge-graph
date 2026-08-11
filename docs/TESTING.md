@@ -142,6 +142,16 @@ Starts the isolated test stack.
 - Waits for all containers to be healthy
 - Displays test stack URLs
 
+#### Rebuilding after frontend changes
+
+If a test stack is already running and only frontend source changed, rebuild and restart without destroying data:
+
+```powershell
+docker compose -f docker-compose.test.yml up -d --build --wait
+```
+
+This rebuilds the `kg-test-frontend` image with the current `frontend/` source and re-runs health checks.
+
 ### stop-test
 Stops and destroys the test stack.
 
@@ -286,6 +296,26 @@ After starting the test stack, access the test environment at:
 
 Follow the manual test checklist at `docs/MANUAL_TEST_CHECKLISTS_RU.md` for detailed testing procedures.
 
+### Manual Regression Scenarios — Auth-state UI and GraphLoader
+
+When verifying the `GraphPageShell`, `GraphLoader`, `readonly NoteCard`, and shared auth-conditional flows, run the test stack and walk through these focused scenarios:
+
+| Scenario | Steps | Expected result |
+|----------|-------|-----------------|
+| Public graph page | Open `http://127.0.0.1:3002/graph` in incognito. | Graph loads; top bar shows **Login / Register** buttons; no edit/delete controls. |
+| Graph page login | Click **Login** in the floating panel, enter credentials, submit. | Panel closes; top bar switches to user actions; edit/delete available. |
+| Home page — anonymous | Open `http://127.0.0.1:3002/` in incognito. | Notes list and graph are derived from public graph; `NoteCard` hover shows no edit/delete. |
+| Home page — authenticated | Log in on `/`. | List/graph loads from `getNotes()` + `getGraphWithPreload()`; full CRUD available. |
+| Note detail — anonymous | Open a public note's detail URL directly while logged out. | Page shows note body, connected notes, but no **Edit / Delete / Create child** buttons. |
+| Note detail — authenticated | Open the same note after logging in. | Edit, delete, and create-child actions visible and functional. |
+| Import page guard | Visit `/import` or `/import/bookmarks` in incognito. | Browser redirects to `/auth/login?redirect=...`. |
+| Auth pages guard | Visit `/auth/login` while authenticated. | Redirect to `/`. |
+| Graph switch full/local | On `/graph` toggle `?full=false` (local/centered) and `?full=true` (full). | Both modes load without console errors; local mode uses first note as center. |
+| Graph loader fallback | Delete or seed to a state with notes but no graph-service layout, then reload `/`. | UI still shows nodes built from notes; no blank graph. |
+| Smoke real-auth | Register a new user, log in, open profile, graph, create note, log out. | Full cycle works without 401 loops. |
+
+> **Console checks:** during every scenario open DevTools → Console and ensure there are no red TypeScript/runtime errors, no `api/auth/refresh` 401 loops, and no duplicate API calls.
+
 ### Test Coverage
 
 The manual test checklist covers:
@@ -319,6 +349,7 @@ The manual test checklist covers:
 - Backend integration tests are excluded by default; run `go test -tags=integration ./...` on Linux/WSL or in CI.
 - Frontend unit tests (`npm run test:unit`) pass with 923 passing, 0 skipped, 0 failures.
 - Frontend E2E and BDD tests are not part of `npm run test:unit`; they require the isolated test stack.
+- **Latest run (2026-08-10):** real-auth E2E `27/27` passed, skip-auth E2E `75 passed / 11 skipped`, BDD `5 scenarios / 43 steps` passed, visual `13/13` passed.
 
 ### Current Code Coverage
 
@@ -554,6 +585,20 @@ docker compose -f docker-compose.test.yml down -v
 **Strict mode violation for `data-testid="graph-stats"`:**
 - During the `/auth/login` → `/` transition, the old `AuthCard` background graph can briefly remain in the DOM alongside the main graph, causing two `graph-stats` elements.
 - `tests/smoke-real-auth.spec.ts` uses `.first()` to handle this, matching the pattern in `tests/type-filters.spec.ts` and `tests/home-page.spec.ts`.
+
+### Manual checklist E2E flakiness
+
+**Issue:** `manual-checklist-section-3.spec.ts` (especially the drag-and-drop link test) and `manual-checklist-section-5.spec.ts` were flaky in the real-auth suite.
+
+**Root cause:**
+- `CosmicCockpit` panels can be left open/pinned by earlier tests in the same Playwright worker. Even though the panel `pinned` state is not persisted across page reloads, the `cockpit-settings` key in `localStorage` can carry configuration, and the edge handles still trigger hover/toggle. Open panels cover the canvas and intercept `page.mouse` events.
+- The drag-and-drop test moved the virtual cursor from `(0,0)`, crossing the top cockpit edge and often landing inside a panel.
+- `logout and re-login preserves graph data` compared exact node/link counts before and after logout. The graph-service cache is eventually consistent and other `@auth-real` tests create/delete notes in the shared test DB, so the counts can drift by a small amount.
+
+**Fix:**
+- In both manual checklist `beforeEach` hooks, clear the `cockpit-settings` `localStorage` key via `page.addInitScript()` so the Svelte cockpit store starts with a clean state on the next navigation.
+- In the drag-and-drop test, filter simulation nodes to a `120px` margin inside the canvas, move the cursor to the canvas center with `steps: 1` before positioning on the source node, and drag from the center outward.
+- In the `logout and re-login` test, wait for the graph service to settle before capturing each stats snapshot, then assert that the absolute difference between before and after counts is `<= 2` instead of exact equality.
 
 ### Multiple stacks cause Docker/Playwright failures
 

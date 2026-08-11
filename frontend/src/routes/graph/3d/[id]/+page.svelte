@@ -3,8 +3,8 @@
   import { browser } from "$app/environment";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { isAuthenticated } from "$shared/stores/auth.svelte";
-  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
+  import { GraphPageShell } from "$widgets/graph-page";
+  import { CelestialBody } from "$entities";
   import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
   import { type GraphData } from "$shared/api/graph";
   import type { Component } from "svelte";
@@ -18,6 +18,26 @@
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  const graphTypeFilters = [
+    { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    }),
+  ];
 
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let loading = $state(true);
@@ -52,17 +72,25 @@
   });
 </script>
 
-<CosmicCockpitLayout
-  isAuthenticated={isAuthenticated()}
-  currentView="3d"
-  selectedNodeId={graphStore.selectedNodeId}
+<GraphPageShell
+  view="3d"
+  layoutProvider="d3"
+  searchQuery=""
+  selectedType="all"
+  typeFilters={graphTypeFilters}
+  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
   nodeCount={graphData.nodes.length}
   linkCount={graphData.links.length}
-  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  selectedNodeId={graphStore.selectedNodeId}
+  onSearch={() => {}}
+  onFilter={() => {}}
   onToggleView={(view) => {
     if (view === "graph") goto(`/graph/${$page.params.id}`);
     else if (view === "list") goto("/");
   }}
+  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  onSignIn={() => goto("/auth/login")}
+  onRegister={() => goto("/auth/register")}
 >
   <div class="page">
     {#if loading}
@@ -90,7 +118,7 @@
       />
     {/if}
   </div>
-</CosmicCockpitLayout>
+</GraphPageShell>
 
 <style>
   .page {

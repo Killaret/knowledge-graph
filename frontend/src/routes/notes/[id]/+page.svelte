@@ -24,6 +24,7 @@
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { formatDateTime } from "$shared/utils/date";
   import { CelestialBody, LinkType } from "$entities";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -206,20 +207,22 @@
               </Chip>
             </div>
             <div class="actions">
-              <Button
-                variant="primary"
-                onClick={() => (editModalOpen = true)}
-                data-testid="edit-note-btn"
-              >
-                {t("note.editButton")}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => (deleteConfirmOpen = true)}
-                data-testid="delete-note-btn"
-              >
-                {t("note.deleteButton")}
-              </Button>
+              {#if isAuthenticated()}
+                <Button
+                  variant="primary"
+                  onClick={() => (editModalOpen = true)}
+                  data-testid="edit-note-btn"
+                >
+                  {t("note.editButton")}
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => (deleteConfirmOpen = true)}
+                  data-testid="delete-note-btn"
+                >
+                  {t("note.deleteButton")}
+                </Button>
+              {/if}
               <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
                 {t("note.createChildButton")}
               </Button>

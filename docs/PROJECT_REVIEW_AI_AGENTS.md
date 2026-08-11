@@ -12,6 +12,7 @@
 **Knowledge Graph** — мультитенантное SaaS-приложение для управления заметками с графовой структурой, NLP-рекомендациями и 3D-визуализацией (`docs/ARCHITECTURE_SUMMARY.md`, `README.md`).
 
 Основные возможности:
+
 - 3D-визуализация заметок как небесных тел.
 - Графовые связи между заметками.
 - Семантический поиск на pgvector.
@@ -23,6 +24,7 @@
 - Резервное копирование на Яндекс.Диск.
 
 Среды:
+
 - **Dev** — `docker-compose.yml`.
 - **Personal** — `docker-compose.personal.yml`.
 - **Test** — `docker-compose.test.yml` (изолированный, с `kg-test-*` контейнерами, описан в `.windsurfrules`).
@@ -32,6 +34,7 @@
 ## 2. Технологический стек
 
 ### Backend (Go)
+
 - **Go 1.25** — основной язык (`backend/go.mod`).
 - **Gin v1.12** — HTTP-роутер/фреймворк.
 - **GORM v1.25** — ORM для PostgreSQL.
@@ -46,6 +49,7 @@
 - **swaggo/swag** — OpenAPI/Swagger документация.
 
 ### Frontend (SvelteKit)
+
 - **Svelte 5 + runes** (`$state`, `$derived`, `$effect`, `$props`, `.windsurfrules`).
 - **TypeScript strict**.
 - **SvelteKit** — meta-фреймворк.
@@ -57,12 +61,14 @@
 - **FSD + Atomic Design** — структура `frontend/src/{shared,components,entities,features,widgets,routes}` (`.windsurfrules`).
 
 ### NLP
+
 - **Python 3.11**, **FastAPI**.
 - **sentence-transformers**, **transformers**, **torch**, **yake**, **nltk**.
 - Модель `all-MiniLM-L6-v2`.
 - `HF_HUB_OFFLINE=1` — offline-first режим (dev/personal); в тестовом стеке `HF_HUB_OFFLINE=0`, чтобы можно было докачать модель при пустом host-cache (`nlp-service/Dockerfile`, `docker-compose.test.yml`).
 
 ### Инфраструктура
+
 - **Docker multi-stage** для всех сервисов.
 - **nginx** — gateway.
 - **PostgreSQL 16 + pgvector**, **Redis 7**, **MongoDB 7**.
@@ -82,6 +88,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ```
 
 ### Domain layer
+
 - `internal/domain/note` — `Note`, `Title`, `Content`, `Metadata`.
 - `internal/domain/link` — `Link`, `LinkType`, value objects.
 - `internal/domain/tag` — `Tag`.
@@ -92,12 +99,14 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `internal/domain/permission` — интерфейсы репозитория.
 
 ### Application layer
+
 - `internal/application/{achievement, cache, draft, graph, import, recommendation, user}`.
 - `internal/application/queries/graph` — CQRS-lite query handlers (`GetSuggestionsHandler`).
 - `internal/application/events` — публикация событий.
 - `internal/application/common` — `TaskQueue` абстракция.
 
 ### Infrastructure layer
+
 - `internal/infrastructure/db/postgres` — GORM-репозитории.
 - `internal/infrastructure/db` — пулы подключений.
 - `internal/infrastructure/cache` — Redis cache client.
@@ -109,6 +118,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `internal/infrastructure/web` — `ImportFetcher` для content extraction.
 
 ### Interfaces layer
+
 - `internal/interfaces/api/handlers/*` — HTTP-хендлеры.
 - `internal/interfaces/api/notehandler`, `taghandler`, `linkhandler` и др.
 - `internal/interfaces/api/middleware` — auth, recovery, CORS, rate limiting.
@@ -116,12 +126,14 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cmd/server/main.go` — wiring зависимостей.
 
 ### Мультитенантность и безопасность
+
 - PostgreSQL **Row-Level Security (RLS)** для tenant isolation.
 - JWT + RBAC.
 - Rate limiting на write-эндпоинтах.
 - Аудит-логи и черновики в MongoDB (TTL, high-volume writes).
 
 ### Graph Service
+
 - Отдельный Go-микросервис: `services/graph-service/`.
 - gRPC-порт 9090, HTTP-порт 9091.
 - Своя БД (PostgreSQL).
@@ -132,6 +144,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 4. Frontend-архитектура
 
 ### FSD + Atomic Design
+
 - `src/shared/` — утилиты, API, типы, stores, сервисы, конфиг.
 - `src/components/{atoms,molecules,organisms}/` — UI-компоненты.
 - `src/entities/` — domain entities (note, user, tag, achievement).
@@ -140,17 +153,20 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `src/routes/` — SvelteKit-страницы.
 
 ### Правила импортов (MANDATORY)
+
 - `shared/` не импортирует `entities/features/widgets/routes`.
 - `components/atoms` не импортирует `molecules/organisms`.
 - `entities/` импортируют только `shared/`.
 - `widgets/` могут импортовать все нижележащие слои.
 
 ### Svelte 5 runes
+
 - Запрещены Svelte 4 `writable`/дёривативы.
 - `$state`, `$derived`, `$effect`, `$props` — единственный допустимый способ.
 - Типизация strict, никаких `any` в production-коде (после фикса убраны 3 `as any` в auth-сторах).
 
 ### i18n
+
 - `src/shared/utils/i18n.ts` — barrel, реэкспортирует `formatMessage` и типы `Locale`/`MessageParams`.
 - `src/shared/utils/i18n/messages/*.ts` — ключи по доменам (`auth`, `common`, `graph`, `import`, `notes`, `profile`, `ui`) для `en` и `ru`.
 - `formatMessage(key, locale, params)`.
@@ -162,11 +178,13 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 5. Инфраструктура и Docker
 
 ### Многоступенчатые Dockerfile
+
 - Все сервисы обязаны быть multi-stage.
 - `backend/Dockerfile`, `frontend/Dockerfile`, `nlp-service/Dockerfile`, `services/graph-service/Dockerfile`, `source-text-handler/Dockerfile`.
 - Все production-образы содержат `HEALTHCHECK`.
 
 ### HEALTHCHECK endpoints
+
 - backend `/health`.
 - frontend `/health` (SvelteKit endpoint).
 - nlp `/health`.
@@ -174,34 +192,38 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - source-text-handler `/health`.
 
 ### Стеки
+
 - **Dev**: backend 9000, nginx API 18080, nginx frontend 18081, graph-service 9091.
 - **Personal**: backend direct 18085, nginx API 18082, nginx frontend 18084, graph-service 9092.
 - **Test**: frontend 3002, backend 18083, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
 
 ### Volumes
+
 - Dev: `postgres_data`, `redis_data`, `huggingface_cache`.
 - Personal: `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`.
 - Test: `test_postgres_data`, `test_mongodb_data`.
 
 ### Nginx
+
 - `nginx.conf` и `nginx.personal.conf` — gateway с проксированием `/api` и `/graph-service/api`.
 
 ---
 
 ## 6. Тестовая пирамида
 
-| Уровень | Команда | Инструмент | Покрытие |
-|---|---|---|---|
-| Go unit | `cd backend && go test ./...` | testify | min 60%, target 70% |
-| Go integration | `cd backend && go test -tags=integration ./...` | testcontainers-go, miniredis | — |
-| Frontend unit | `cd frontend && npm run test:unit` | Vitest | target 70% |
-| E2E | `cd frontend && npm run test` | Playwright | — |
-| BDD | `cd frontend && npm run test:bdd` | Cucumber | — |
-| NLP | `cd nlp-service && pytest` | pytest | — |
-| Full regression | `.\scripts\testing\run-full-test-cycle.ps1` | PowerShell + Docker + Playwright | — |
-| Stacks identity | `.\scripts\ci\check-stacks-identity.ps1` | PowerShell | — |
+| Уровень         | Команда                                         | Инструмент                       | Покрытие            |
+| --------------- | ----------------------------------------------- | -------------------------------- | ------------------- |
+| Go unit         | `cd backend && go test ./...`                   | testify                          | min 60%, target 70% |
+| Go integration  | `cd backend && go test -tags=integration ./...` | testcontainers-go, miniredis     | —                   |
+| Frontend unit   | `cd frontend && npm run test:unit`              | Vitest                           | target 70%          |
+| E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
+| BDD             | `cd frontend && npm run test:bdd`               | Cucumber                         | —                   |
+| NLP             | `cd nlp-service && pytest`                      | pytest                           | —                   |
+| Full regression | `.\scripts\testing\run-full-test-cycle.ps1`     | PowerShell + Docker + Playwright | —                   |
+| Stacks identity | `.\scripts\ci\check-stacks-identity.ps1`        | PowerShell                       | —                   |
 
 ### Regression
+
 - `run-full-test-cycle.ps1` включает:
   1. Snapshot состояния dev/personal.
   2. Остановку dev/personal.
@@ -252,51 +274,63 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 9. Что было исправлено
 
 ### 9.1. Бинарники
+
 - Удалены `backend/bin/server`, `backend/bin/cli.exe`.
 - Добавлен `backend/bin/` в `.gitignore`.
 
 ### 9.2. HEALTHCHECK
+
 - `services/graph-service/Dockerfile` — `HEALTHCHECK` на HTTP 9091.
 - `source-text-handler/Dockerfile` + `HealthCheckService.java` — добавлен эндпоинт `/health`.
 
 ### 9.3. Go version graph-service
+
 - `services/graph-service/go.mod` — `go 1.25.0`.
 - `services/graph-service/Dockerfile` — `FROM golang:1.25-alpine AS builder`.
 
 ### 9.4. NLP Dockerfile и compose
+
 - Переделан в двухстадийный: builder + runtime, копируется venv, HuggingFace cache, NLTK data.
 - `entrypoint.sh` использует `${HF_HOME:-/root/.cache/huggingface}`.
 - `docker-compose.test.yml` — `HF_HUB_OFFLINE=0`, чтобы тестовый стек мог докачать модель при пустом host-cache.
 
 ### 9.5. Compose/документация
+
 - `.windsurfrules` и `docker-compose.test.yml` — порт graph-service приведён к gRPC 19090 / HTTP 19091.
 - `docker-compose.yml` — добавлен volume `redis_data` для dev Redis.
 - Устаревшие ссылки на `src/shared/three/` актуализированы (Three.js-логика перенесена в `docs/3d-archive/frontend/src/lib/three/`).
 
 ### 9.6. Frontend i18n и строгая типизация
+
 - Добавлены i18n-ключи `nav.*` в `en` и `ru` секции `frontend/src/shared/utils/i18n.ts`.
 - `SidebarWidget.svelte` полностью переведена на `t("...")`.
 - Добавлен `frontend/src/shared/types/window.d.ts` с `__SKIP_AUTH__` и `__ACCESS_TOKEN__`.
 - Убраны `as any` в `auth.svelte.ts` и `auth-session.svelte.ts`.
 
 ### 9.7. Format / lint
+
 - Выполнены `npm run format` и `npm run lint`.
 - `npm run format:check` и `npx eslint .` — чисто.
 
 ### 9.8. Coverage
+
 - `vitest.config.ts` — thresholds подняты до 70% по lines/functions/branches/statements.
 
 ### 9.9. go-redis v8
+
 - `backend/go.mod` — `asynq v0.23.0 → v0.26.0`, `go-redis/v9 v9.5.5 → v9.14.1`.
 - Проверено: `go-redis/redis/v8` больше не фигурирует в `go.mod`.
 
 ### 9.10. Миграции
+
 - Добавлены `015_noop_schema_anchor.{up,down}.sql` и `021_noop_schema_anchor.{up,down}.sql` (no-op `SELECT 1;`).
 
 ### 9.11. Интеграционные тесты notehandler
+
 - Исправлены вызовы `New(...)` во всех `*_integration_test.go`, добавлен последний аргумент `importSvc` (`nil` для тестов).
 
 ### 9.12. Event-driven backup
+
 - Добавлен `BackupEnabled` (`BACKUP_ENABLED`) в `knowledge-graph.config.json`, `internal/config/config.go` и Docker Compose.
 - `docker-compose.yml`/`docker-compose.test.yml` устанавливают `BACKUP_ENABLED=false`; `docker-compose.personal.yml` — `BACKUP_ENABLED=true`.
 - `AsynqClient` не ставит `backup:database` в очередь, если `BackupEnabled=false`.
@@ -331,7 +365,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    Импорт `github.com/lib/pq` остаётся в:
    - `backend/cmd/seed/main.go`
    - `backend/internal/infrastructure/db/db_connection_test.go`
-   Проект использует `pgx/v5`; `lib/pq` — лишняя устаревшая зависимость, может быть удалена.
+     Проект использует `pgx/v5`; `lib/pq` — лишняя устаревшая зависимость, может быть удалена.
 
 3. **CORS middleware**
    `CORS_ALLOWED_ORIGINS` вынесен в env, но `methods`, `headers`, `max-age` захардкожены. Для полной конфигурируемости стоит вынести их в переменные окружения.
@@ -360,6 +394,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 13. Дополнение: статус фич и roadmap
 
 ### Общий статус проекта
+
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
@@ -367,17 +402,21 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
+
 - Ручное тестирование всех функций.
 - Исправление багов из ручного тестирования.
 - Критические проверки перед production.
 - E2E smoke, backend integration, CI/CD workflows, NLP API, auth API, публичный граф — всё пройдено.
 
 ### Реализованный UI: Cosmic Cockpit
+
 - Космическая «кабина» с четырьмя выдвижными панелями, HUD, режим «от первого лица».
 - Drag-to-open, якоря, 2D/3D-переключатель, фильтры типов, детали заметки, мини-граф связей, Singularity-зона архивирования.
 - **2D Renderer Performance Pack (2026-08):** адаптивный туман войны, viewport culling, throttling до `idle_fps`, LOD по зуму, offscreen-кэш для стабильного состояния, кэширование `getVariation`/`isNewNode`, O(1) lookup эндпоинтов связей.
+- **2D Node Color Variation (2026-08):** опциональная кастомизация цвета нод через `GraphNode.color`/`glowColor`; при отсутствии ручного значения `getVariation` выбирает детерминированный цвет из палитры `frontend/src/shared/lib/graph/color-schemes.ts`, вдохновлённой реальными космическими объектами.
 
 ### В процессе / запланировано (UI/UX)
+
 - Исправление моргания графа при дельта-обновлениях.
 - Селектор типов заметок — выпадающий список.
 - Документация и UI для типов связей.
@@ -388,33 +427,70 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Аудит ресурсов (память, CPU, bundle size).
 
 ### Инструменты импорта/экспорта
-| Фича | Статус |
-|---|---|
-| Букмарклет | Реализован |
-| Массовый импорт URL | Реализован + извлечение контента по URL (`internal/infrastructure/web.ImportFetcher`) |
-| Браузерное расширение | Запланирован |
-| JSON/Markdown/CSV импорт-экспорт | Запланирован |
+
+| Фича                             | Статус                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| Букмарклет                       | Реализован                                                                            |
+| Массовый импорт URL              | Реализован + извлечение контента по URL (`internal/infrastructure/web.ImportFetcher`) |
+| Браузерное расширение            | Запланирован                                                                          |
+| JSON/Markdown/CSV импорт-экспорт | Запланирован                                                                          |
 
 > В `ROADMAP.md`/`ROADMAP.ru.md` недавно отмечено, что content extraction для массового импорта URL реализован через `internal/infrastructure/web.ImportFetcher`.
 
 ### Геймификация и Obsidian
+
 - Система кастомизации, очки, достижения, бейджи, лидерборды — в планах.
 - Импорт и синхронизация с Obsidian — в планах.
 
 ### PWA и внешние интеграции
+
 - PWA Capture (быстрые заметки, оффлайн, push) — запланировано.
 - Интеграции Pocket / Readwise / Twitter — запланированы.
 
 ### 3D и кластеризация
+
 - Базовый 3D-рендеринг (Three.js) — разморожен и перенесён в `features/graph-3d`.
 - Orbital / Solar System 3D, Honeycomb Stellaris 3D, серверная кластеризация Louvain, кэширование кластеров — в планах.
 - Галактические кластеры и LOD — в бэклоге.
 
 ### Связи, быстрое редактирование, onboarding
+
 - Тултипы связей, анимация, gamma-кодирование, автосоздание связей — запланировано.
 - Dust Inbox, inline-редактирование, автодополнение, исправление NLP-ключевых слов — запланировано.
 - Сценарный onboarding с T1-T6, хлебные крошки, spotlight — запланировано.
 
 ### Экспериментальные идеи
+
 - **Factory Line** — визуализация графа как производственная цепочка.
 - **Semantic Guardians** — семантические стражи.
+
+---
+
+## 14. Рефакторинг августа 2026: единый State-driven UI для графа
+
+### Цель
+
+Убрать дублирование логики, зависящей от состояния авторизации, и выделить единую точку принятия решений по auth-conditional рендерингу/поведению.
+
+### Внесённые изменения
+
+- **GraphPageShell** (`frontend/src/widgets/graph-page/GraphPageShell.svelte`) — единый обёртковый компонент для всех граф-страниц (`/`, `/graph`, `/graph/3d`, `/graph/:id`, `/graph/3d/:id`).
+  - Считает `typeCounts` и пробрасывает в `GraphTopBar`.
+  - Условно передаёт `onNoteCreate`/`onNoteDelete`/`onNoteEdit`/`onCreateChildNote` при авторизации и `onSignIn`/`onRegister` при публичном режиме.
+- **GraphTopBar + CockpitLeftPanel** — фильтры по типу, поиск, reset/focus и link-type controls остались только в `GraphTopBar`; `CockpitLeftPanel` сокращена до навигации, списка заметок и импорта/экспорта.
+- **NoteCard readonly** — `readonly` prop скрывает edit/delete в tooltip; страница `/notes/[id]` скрывает соответствующие кнопки для неаутентифицированных пользователей.
+- **Shared auth guards** (`frontend/src/shared/composables/auth.ts`):
+  - `useAnonymousGuard()` — защида auth-страниц от залогиненных пользователей.
+  - `useRequireAuth()` — редирект незалогиненных со страниц, требующих авторизацию (`profile`, `import`, `import/bookmarks`).
+- **GraphLoader** (`frontend/src/shared/services/graphLoader.ts`) — единый, auth-aware загрузчик графа:
+  - Используется `home-page.svelte.ts` (full graph через `getGraphWithPreload`, fallback из notes) и `routes/graph/+page.svelte` (full/centered graph, Knowledge Core).
+  - Только `shared/` импорты; FSD-граница соблюдена.
+  - `fullGraphLoader` передаётся как callback из `features/preload`, чтобы `shared` не зависел от `features`.
+
+### Покрытие и статус
+
+- `npx svelte-check` — 0 errors, 0 warnings.
+- `npm run test:unit` — 103 test files, 946 tests passed.
+- Test stack пересобран и поднят.
+- Playwright (test stack): `smoke-real-auth`, `cockpit-canvas-controls`, `floating-auth-panel`, `public-graph` — 10/10 passed.
+- Ручные сценарии: см. `docs/MANUAL_TEST_CHECKLISTS_RU.md` раздел `0.6` и `docs/TESTING.md` раздел `Manual Regression Scenarios`.

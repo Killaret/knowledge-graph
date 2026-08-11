@@ -2,28 +2,13 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
-  import { initAuth, isAuthenticated } from "$shared/stores/auth.svelte";
-  import {
-    getNotes,
-    getNote,
-    createNote,
-    deleteNote,
-    restoreNote,
-    type Note,
-  } from "$shared/api/notes";
-  import {
-    getGraphData,
-    getFullGraphData,
-    type GraphData,
-    type GraphNode,
-    type GraphLink,
-  } from "$shared/api/graph";
-
-  const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
+  import { initAuth } from "$shared/stores/auth.svelte";
+  import { createNote, deleteNote, restoreNote, type Note } from "$shared/api/notes";
+  import { type GraphData } from "$shared/api/graph";
+  import { loadGraph } from "$shared/services/graphLoader";
   import { createLink, updateLink, deleteLink } from "$shared/api/links";
+  import { GraphPageShell } from "$widgets/graph-page";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
-  import { PublicGraphTopBar } from "$features/graph-ui";
-  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
@@ -35,23 +20,6 @@
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  interface RawNode extends GraphNode {
-    Id?: string;
-    ID?: string;
-    Title?: string;
-    Type?: string;
-    created_at?: string;
-    createdAt?: string;
-    CreatedAt?: string;
-  }
-
-  interface RawLink extends GraphLink {
-    source_note_id?: string;
-    target_note_id?: string;
-    source_type?: string;
-  }
-
-  let notes: Note[] = $state([]);
   let graphData: GraphData = $state({ nodes: [], links: [] });
   let knowledgeCore: Note | null = $state(null);
   let loading = $state(true);
@@ -71,9 +39,11 @@
   let canvasController:
     | {
         focusMode: boolean;
+        fogEnabled: boolean;
         resetView: () => void;
         openSearch: () => void;
         toggleFocus: () => void;
+        toggleFog: () => void;
       }
     | undefined = $state(undefined);
 
@@ -101,78 +71,16 @@
     loading = true;
     error = "";
     try {
-      let rawData: GraphData;
-      if (showFullGraph) {
-        // Load the full graph of all notes; bypass cache after mutations
-        // limit=0 means no cap — a positive default_limit would hide new nodes
-        // when the total exceeds the configured page size.
-        rawData = await getFullGraphData(0, undefined, nocache);
-      } else {
-        // Load the local graph
-        if (isAuthenticated()) {
-          try {
-            notes = await getNotes();
-          } catch {
-            notes = [];
-          }
-        } else {
-          notes = [];
-        }
+      const result = await loadGraph({
+        full: showFullGraph,
+        includeKnowledgeCore: true,
+        fallbackToNotes: false,
+        ensureNotesInGraph: false,
+        nocache,
+      });
 
-        if (notes.length > 0) {
-          const centerNote = notes[0];
-          rawData = await getGraphData(centerNote.id, 3);
-        } else {
-          // If there are no notes, load the full graph (public notes)
-          rawData = await getFullGraphData(0, undefined, nocache);
-        }
-      }
-
-      // Fetch the Knowledge Core system note for in-app help.
-      // Anonymous users cannot access individual notes, so skip this call
-      // to avoid a 401 -> auth/refresh -> redirect-to-login cascade on the
-      // public graph page.
-      if (isAuthenticated()) {
-        try {
-          knowledgeCore = await getNote(KNOWLEDGE_CORE_ID);
-        } catch {
-          knowledgeCore = null;
-        }
-      } else {
-        knowledgeCore = null;
-      }
-
-      // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = (rawData.nodes as RawNode[]).map((n) => ({
-        id: n.id || n.Id || n.ID || "",
-        title: n.title || n.Title || "",
-        type: n.type || n.Type || "star",
-        createdAt: n.created_at || n.createdAt || n.CreatedAt,
-      }));
-
-      // Ensure the Knowledge Core is always present on the canvas
-      if (knowledgeCore && !transformedNodes.some((n) => n.id === knowledgeCore?.id)) {
-        transformedNodes.push({
-          id: knowledgeCore.id,
-          title: knowledgeCore.title,
-          type: "technical",
-          createdAt: knowledgeCore.created_at,
-        });
-      }
-
-      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = (rawData.links as RawLink[]).map((l) => ({
-        source: l.source_note_id || l.source,
-        target: l.target_note_id || l.target,
-        weight: l.weight,
-        link_type: l.link_type,
-        source_type: l.source_type || "user",
-      }));
-
-      graphData = {
-        nodes: transformedNodes,
-        links: transformedLinks,
-      };
+      knowledgeCore = result.knowledgeCore;
+      graphData = result.graph;
 
       if (import.meta.env.DEV) {
         console.log(
@@ -182,8 +90,8 @@
           graphData.links.length,
           "links"
         );
-        console.log("[graph/+page] Sample node:", transformedNodes[0]);
-        console.log("[graph/+page] Sample link:", transformedLinks[0]);
+        console.log("[graph/+page] Sample node:", graphData.nodes[0]);
+        console.log("[graph/+page] Sample link:", graphData.links[0]);
       }
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -356,8 +264,8 @@
     }
   }
 
-  // Отслеживаем изменение showFullGraph и загружаем данные
-  // (skip the initial run, onMount already loads once).
+  // Watch for changes to showFullGraph and reload the graph data.
+  // Skip the initial run because onMount already loads once.
   let showFullGraphInitialized = false;
   $effect(() => {
     if (browser) {
@@ -372,49 +280,35 @@
   });
 </script>
 
-<CosmicCockpitLayout
-  isAuthenticated={isAuthenticated()}
-  currentView="graph"
+<GraphPageShell
+  view="graph"
   layoutProvider="d3"
+  searchQuery=""
+  selectedType="all"
+  typeFilters={graphTypeFilters}
+  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
+  nodeCount={graphData.nodes.length}
+  linkCount={graphData.links.length}
+  selectedNodeId={selectedNodeId ?? null}
+  {canvasController}
+  onSearch={() => {}}
+  onFilter={() => {}}
   onToggleView={(view) => {
     if (view === "list") goto("/");
     else if (view === "3d") goto("/graph/3d");
   }}
-  onImport={() => goto("/import")}
   onNoteCreate={() => (showCreateModal = true)}
   onNoteDelete={handleDeleteRequest}
   onNoteEdit={handleNoteEdit}
   onNodeSelect={handleNodeSelect}
   onCreateChildNote={handleCreateChildNote}
-  selectedNodeId={selectedNodeId ?? null}
-  nodeCount={graphData.nodes.length}
-  linkCount={graphData.links.length}
-  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
   {showFullGraph}
   onToggleFullGraph={(value) => (showFullGraph = value)}
+  onImport={() => goto("/import")}
+  onSignIn={() => goto("/auth/login")}
+  onRegister={() => goto("/auth/register")}
 >
   <div class="graph-cockpit-content">
-    {#if !isAuthenticated() && !loading && !error}
-      <PublicGraphTopBar
-        currentView="graph"
-        layoutProvider="d3"
-        searchQuery=""
-        selectedType="all"
-        typeFilters={graphTypeFilters}
-        nodeCount={graphData.nodes.length}
-        linkCount={graphData.links.length}
-        onSearch={() => {}}
-        onToggleView={(view) => {
-          if (view === "list") goto("/");
-          else if (view === "3d") goto("/graph/3d");
-        }}
-        onFilter={() => {}}
-        onSignIn={() => goto("/auth/login")}
-        onRegister={() => goto("/auth/register")}
-        {canvasController}
-      />
-    {/if}
-
     {#if loading}
       <div class="loading-overlay" data-testid="loading-overlay">
         <div class="spinner"></div>
@@ -452,7 +346,7 @@
       </div>
     {/if}
   </div>
-</CosmicCockpitLayout>
+</GraphPageShell>
 
 {#if noteToEdit}
   <EditNoteModal

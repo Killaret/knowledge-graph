@@ -23,6 +23,12 @@ Write-Host ""
 $scriptDir = $PSScriptRoot
 $repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
 Set-Location $repoDir
+
+# Default the test stack to SKIP_AUTH=true so the first E2E/BDD phase
+# (and the frontend image built in step 4) bypasses authentication.
+$env:SKIP_AUTH = "true"
+$env:VITE_SKIP_AUTH = "true"
+
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotBase = Join-Path $scriptDir "temp" "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp

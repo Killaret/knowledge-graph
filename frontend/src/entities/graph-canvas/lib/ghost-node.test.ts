@@ -3,11 +3,13 @@ import {
   createGhostNode,
   updateGhostNodePosition,
   updateGhostNodePulse,
+  updateGhostNodeZoom,
   isPointOverGhostNode,
   drawGhostNode,
   drawGhostNodeScreen,
   drawGhostNodeTooltip,
   drawGhostNodeTooltipScreen,
+  GHOST_NODE_RADIUS,
 } from "./ghost-node";
 import type { SimulationNode } from "./types";
 
@@ -57,6 +59,24 @@ describe("ghost-node", () => {
     updateGhostNodePosition(ghost, 800, 600, [{ id: "n1", title: "n1" }]);
     expect(ghost.x).toBe(80);
     expect(ghost.y).toBe(80);
+  });
+
+  it("scales the ghost node radius with zoom", () => {
+    const ghost = createGhostNode(800, 600, []);
+    expect(ghost.radius).toBe(GHOST_NODE_RADIUS);
+    updateGhostNodeZoom(ghost, 2);
+    expect(ghost.radius).toBe(GHOST_NODE_RADIUS * 2);
+    updateGhostNodeZoom(ghost, 0.2);
+    expect(ghost.radius).toBe(GHOST_NODE_RADIUS * 0.4);
+    updateGhostNodeZoom(ghost, 5);
+    expect(ghost.radius).toBe(GHOST_NODE_RADIUS * 3);
+  });
+
+  it("hit-tests using the zoomed ghost radius", () => {
+    const ghost = createGhostNode(800, 600, []);
+    updateGhostNodeZoom(ghost, 2);
+    expect(isPointOverGhostNode(ghost.x + ghost.radius - 1, ghost.y, ghost)).toBe(true);
+    expect(isPointOverGhostNode(ghost.x + ghost.radius + 1, ghost.y, ghost)).toBe(false);
   });
 
   it("updates pulse phase based on time", () => {

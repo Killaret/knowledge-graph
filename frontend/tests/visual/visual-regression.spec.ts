@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { argosScreenshot } from "@argos-ci/playwright";
-import { clickViewToggle, openCockpitPanel } from "../helpers/testUtils";
+import { clickViewToggle, clickFilterChip } from "../helpers/testUtils";
 
 /**
  * Visual Regression Tests with Argos Playwright SDK
@@ -63,11 +63,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
 
-    await openCockpitPanel(page, "left");
-    const filterButton = page.locator('[data-testid="filter-chip-star"]');
-    await expect(filterButton).toBeVisible({ timeout: 5000 });
-    await filterButton.click();
-    await page.waitForTimeout(500);
+    await clickFilterChip(page, "star");
 
     await argosScreenshot(page, "home-filtered-stars", { fullPage: true });
   });

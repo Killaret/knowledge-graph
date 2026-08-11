@@ -1,4 +1,4 @@
-import type { Page, APIRequestContext } from "@playwright/test";
+import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import {
   createNote as createNoteAdvanced,
   createLink as createLinkAdvanced,
@@ -110,55 +110,50 @@ export async function openCockpitPanel(
 }
 
 /**
- * Click create note button in the top cockpit panel
+ * Click create note button in the top bar
  */
 export async function clickCreateNoteButton(page: Page): Promise<void> {
-  await openCockpitPanel(page, "top");
-  await clickFloatingControl(page, "create-note-button");
+  await clickBySelector(page, '[data-testid="create-note-button"]');
 }
 
 /**
- * Click view toggle button in the top cockpit panel
+ * Click view toggle button in the top bar
  */
 export async function clickViewToggle(page: Page, view: "list" | "graph" | "3d"): Promise<void> {
-  await openCockpitPanel(page, "top");
   const testId = `view-toggle-${view}`;
-  await clickFloatingControl(page, testId);
+  await clickBySelector(page, `[data-testid="${testId}"]`);
 }
 
 /**
- * Click filter chip in the left cockpit panel
+ * Click filter chip in the top bar type dropdown
  */
 export async function clickFilterChip(page: Page, filter: string): Promise<void> {
-  await openCockpitPanel(page, "left");
   const filterId = filter.toLowerCase().replace(/s$/, ""); // stars -> star
-  await clickFloatingControl(page, `filter-chip-${filterId}`);
+  // Open the type dropdown
+  await clickBySelector(page, '[data-testid="type-dropdown-toggle"]');
+  await page.waitForTimeout(300);
+  await clickBySelector(page, `[data-testid="filter-chip-${filterId}"]`);
+  await page.waitForTimeout(300);
 }
 
 /**
- * Fill search input in the top cockpit panel or search page
+ * Fill search input in the top bar (home/graph pages) or search page
  */
 export async function fillSearchInput(page: Page, query: string): Promise<void> {
-  await openCockpitPanel(page, "top");
-  await page.waitForSelector('[data-testid="search-input"]', { state: "attached", timeout: 5000 });
-  await page.evaluate((q) => {
-    const input = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
-    if (input) {
-      input.value = q;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    } else {
-      throw new Error("Search input not found");
-    }
-  }, query);
+  // Try the top bar search input first, then fall back to the dedicated search page input.
+  const searchInput = page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  await expect(searchInput).toBeVisible({ timeout: 5000 });
+  await searchInput.fill(query);
+  await searchInput.dispatchEvent("input");
 }
 
 /**
- * Click search button in the top cockpit panel
+ * Submit the active search input (the top bar no longer has a separate search button)
  */
 export async function clickSearchButton(page: Page): Promise<void> {
-  await openCockpitPanel(page, "top");
-  await clickBySelector(page, ".search-btn");
+  const searchInput = page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  await searchInput.press("Enter");
+  await page.waitForTimeout(300);
 }
 
 /**

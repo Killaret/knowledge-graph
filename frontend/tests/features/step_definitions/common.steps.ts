@@ -229,22 +229,26 @@ When(
 When(
   "I click the {string} filter chip in floating controls",
   async function (this: ITestWorld, filterName: string) {
-    await openCockpitPanel(this.page, "left");
     const filterId = filterName.toLowerCase().replace("s", ""); // stars -> star
+    // Filter chips now live in the top bar type dropdown
+    const dropdownToggle = this.page.locator('[data-testid="type-dropdown-toggle"]').first();
+    await expect(dropdownToggle).toBeVisible({ timeout: 5000 });
+    const panel = this.page.locator('.dropdown-panel').first();
+    const isOpen = await panel.isVisible().catch(() => false);
+    if (!isOpen) {
+      await dropdownToggle.click();
+      await this.page.waitForTimeout(300);
+    }
     const chip = this.page.locator(`[data-testid="filter-chip-${filterId}"]`).first();
     await expect(chip).toBeVisible({ timeout: 5000 });
-    await this.page.evaluate((id) => {
-      const el = document.querySelector(`[data-testid="${id}"]`);
-      if (el) (el as HTMLElement).click();
-      else throw new Error(`Filter chip with data-testid="${id}" not found`);
-    }, `filter-chip-${filterId}`);
+    await chip.click();
     await this.page.waitForTimeout(1000); // Wait for list to filter
   }
 );
 
 When("I type {string} in the search input", async function (this: ITestWorld, searchText: string) {
-  await openCockpitPanel(this.page, "top");
-  const searchInput = this.page.locator('[data-testid="search-input"]').first();
+  // Top bar search on home/graph, dedicated input on /search
+  const searchInput = this.page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(searchText);
   await searchInput.press("Enter"); // Trigger search
@@ -252,8 +256,7 @@ When("I type {string} in the search input", async function (this: ITestWorld, se
 });
 
 When("I clear the search input", async function (this: ITestWorld) {
-  await openCockpitPanel(this.page, "top");
-  const searchInput = this.page.locator('[data-testid="search-input"]').first();
+  const searchInput = this.page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
   await searchInput.clear();
   await this.page.waitForTimeout(300);
 });
@@ -483,14 +486,18 @@ Then(
 );
 
 Then("the count badge should show the correct number", async function (this: ITestWorld) {
-  // Count badge is inside the active filter chip
-  const activeChip = this.page.locator(".filter-chip.active").first();
+  // Filter counts live inside the type dropdown; reopen it to read the active chip
+  const dropdownToggle = this.page.locator('[data-testid="type-dropdown-toggle"]').first();
+  await dropdownToggle.click();
+  await this.page.waitForTimeout(300);
+
+  const activeChip = this.page.locator('.dropdown-item.active, .filter-chip.active').first();
   await expect(activeChip).toBeVisible({ timeout: 5000 });
 
-  const badge = activeChip.locator(".filter-count");
-  const count = await badge.textContent();
+  const countText = await activeChip.textContent();
+  const digits = (countText || "").replace(/\D/g, "");
 
-  expect(parseInt(count || "0")).toBeGreaterThan(0);
+  expect(parseInt(digits || "0")).toBeGreaterThan(0);
 });
 
 Then("all notes should be displayed", async function (this: ITestWorld) {
@@ -640,6 +647,16 @@ Then("the graph canvas should be visible", async function (this: ITestWorld) {
 
 // Filter chip variations
 When("I click the {string} filter chip", async function (this: ITestWorld, filterName: string) {
+  // Filter chips now live in the top bar type dropdown
+  const dropdownToggle = this.page.locator('[data-testid="type-dropdown-toggle"]').first();
+  await expect(dropdownToggle).toBeVisible({ timeout: 5000 });
+  const panel = this.page.locator('.dropdown-panel').first();
+  const isOpen = await panel.isVisible().catch(() => false);
+  if (!isOpen) {
+    await dropdownToggle.click();
+    await this.page.waitForTimeout(300);
+  }
+
   // Map filter names to data-testid
   const filterMap: Record<string, string> = {
     star: "filter-chip-star",
@@ -655,11 +672,7 @@ When("I click the {string} filter chip", async function (this: ITestWorld, filte
   const filterId = filterMap[filterName.toLowerCase()] || `filter-chip-${filterName.toLowerCase()}`;
   const chip = this.page.locator(`[data-testid="${filterId}"]`).first();
   await expect(chip).toBeVisible({ timeout: 5000 });
-  await this.page.evaluate((id) => {
-    const el = document.querySelector(`[data-testid="${id}"]`);
-    if (el) (el as HTMLElement).click();
-    else throw new Error(`Filter chip with data-testid="${id}" not found`);
-  }, filterId);
+  await chip.click();
   await this.page.waitForTimeout(1000); // Wait for list to filter
 });
 

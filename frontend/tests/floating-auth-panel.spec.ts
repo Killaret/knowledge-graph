@@ -11,7 +11,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("opens and closes the floating login panel", async ({ page }) => {
-    const loginBtn = page.locator('[data-testid="public-sign-in"]');
+    const loginBtn = page.locator('[data-testid="top-bar-sign-in"]');
     await expect(loginBtn).toBeVisible();
 
     await loginBtn.click();
@@ -28,7 +28,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("switches between login and register tabs", async ({ page }) => {
-    await page.locator('[data-testid="public-sign-in"]').click();
+    await page.locator('[data-testid="top-bar-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();
@@ -46,7 +46,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("opens the panel on the register tab from the register button", async ({ page }) => {
-    const registerBtn = page.locator('[data-testid="public-register"]');
+    const registerBtn = page.locator('[data-testid="top-bar-register"]');
     await expect(registerBtn).toBeVisible();
 
     await registerBtn.click();
@@ -64,7 +64,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
     await expect(statsLocator).toBeVisible({ timeout: 15000 });
     const countBefore = await statsLocator.textContent();
 
-    await page.locator('[data-testid="public-sign-in"]').click();
+    await page.locator('[data-testid="top-bar-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();
@@ -93,7 +93,7 @@ test.describe("Floating auth panel on public graph @auth-real", () => {
   });
 
   test("drags the floating panel across the viewport", async ({ page }) => {
-    await page.locator('[data-testid="public-sign-in"]').click();
+    await page.locator('[data-testid="top-bar-sign-in"]').click();
 
     const panel = page.locator('[data-testid="floating-auth-panel"]');
     await expect(panel).toBeVisible();

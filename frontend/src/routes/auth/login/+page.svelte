@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import LoginForm from "$components/organisms/LoginForm.svelte";
   import AuthCard from "$widgets/auth/AuthCard.svelte";
   import PreloadIndicator from "$components/organisms/PreloadIndicator.svelte";
-  import { isAuthenticated, initAuth, skipAuthMode } from "$shared/stores/auth.svelte.js";
+  import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
+  import { useAnonymousGuard } from "$shared/composables/auth";
   import { startPreload } from "$shared/services/PreloadService";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -14,10 +14,8 @@
 
   // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated() && !skipAuthMode()) {
-      const redirectTo = $page.url.searchParams.get("redirect") || "/";
-      goto(redirectTo);
-    }
+    const redirectTo = $page.url.searchParams.get("redirect") || "/";
+    useAnonymousGuard(redirectTo);
   });
 
   // Initialize auth once on mount

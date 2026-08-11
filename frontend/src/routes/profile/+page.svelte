@@ -1,12 +1,7 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import ProfileEditor from "$components/organisms/ProfileEditor.svelte";
-  import {
-    isAuthenticated,
-    currentUser,
-    initAuth,
-    isInitialized,
-  } from "$shared/stores/auth.svelte.js";
+  import { currentUser, initAuth, isInitialized } from "$shared/stores/auth.svelte.js";
+  import { useRequireAuth } from "$shared/composables/auth";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
@@ -18,11 +13,10 @@
     await initAuth();
   });
 
-  // Redirect if auth initialized and user is not authenticated
+  // Redirect unauthenticated users to login, then back to this page
   $effect(() => {
-    if (isInitialized() && !isAuthenticated()) {
-      goto("/auth/login?redirect=/profile");
-    }
+    if (!isInitialized()) return;
+    useRequireAuth("/auth/login?redirect=/profile");
   });
 </script>
 

@@ -10,6 +10,10 @@ export interface SimulationNode extends SimulationNodeDatum {
   scale?: number;
   opacity?: number;
   createdAt?: string;
+  /** Optional custom fill color; overrides the palette if set. */
+  color?: string;
+  /** Optional custom glow color; computed from fill if omitted. */
+  glowColor?: string;
 }
 
 export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {

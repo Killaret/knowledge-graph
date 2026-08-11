@@ -8,6 +8,7 @@
  */
 
 import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+import type { NodeVariation } from "$shared/utils/variation";
 
 export interface CelestialBodyDrawContext {
   x: number;
@@ -18,11 +19,7 @@ export interface CelestialBodyDrawContext {
   nodeId: string;
   nodeCount?: number;
   time?: number;
-  variation?: {
-    sizeMultiplier: number;
-    hueShift: number;
-    phaseShift?: number;
-  };
+  variation?: NodeVariation;
   disableVariation?: boolean;
   /** Whether the global shadow setting is active for this frame. */
   enableShadows?: boolean;

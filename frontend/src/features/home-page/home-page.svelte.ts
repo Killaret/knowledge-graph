@@ -17,6 +17,7 @@ import {
   updateGraphWithDelta,
   getPreloadedGraph,
 } from "$shared/services/PreloadService";
+import { loadGraph } from "$shared/services/graphLoader";
 import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
 import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
@@ -226,83 +227,54 @@ export function createHomePageState() {
       }
 
       const isAuth = isAuthenticated();
-      let graphResult: GraphData | null = null;
+      const { graph, notes } = await loadGraph({
+        full: true,
+        includeKnowledgeCore: false,
+        fallbackToNotes: true,
+        ensureNotesInGraph: true,
+        fullGraphLoader: () => getGraphWithPreload(),
+      });
 
-      if (isAuth) {
-        const [notesResult, loadedGraph] = await Promise.all([getNotes(), getGraphWithPreload()]);
-        allNotes = notesResult;
-        graphResult = loadedGraph;
+      allNotes = notes;
 
-        // The graph-service layout cache can lag behind note mutations (especially in test stacks).
-        // Make sure every note returned by the backend is represented in the graph so filters and
-        // counts stay consistent.
-        if (graphResult) {
-          const nodeIds = new Set(graphResult.nodes.map((n) => n.id));
-          for (const note of allNotes) {
-            if (!nodeIds.has(note.id)) {
-              graphResult.nodes.push({
-                id: note.id,
-                title: note.title,
-                type: note.type || "unknown",
-                x: 0,
-                y: 0,
-                z: 0,
-                size: 1,
-              });
-              nodeIds.add(note.id);
-            }
-          }
-        }
-      } else {
-        graphResult = await getGraphWithPreload();
-        // Public graph is the single source of notes for anonymous users.
-        if (graphResult && graphResult.nodes.length > 0) {
-          allNotes = graphResult.nodes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            content: "",
-            metadata: {},
-            type: n.type || "unknown",
-            created_at: "",
-            updated_at: "",
-          }));
-        } else {
-          allNotes = [];
-        }
+      // Public graph is the single source of notes for anonymous users.
+      if (!isAuth && allNotes.length === 0 && graph.nodes.length > 0) {
+        allNotes = graph.nodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          content: "",
+          metadata: {},
+          type: n.type || "unknown",
+          created_at: (n as GraphNode & { createdAt?: string }).createdAt ?? "",
+          updated_at: "",
+        }));
       }
 
       applyFiltersAndSort();
 
-      if (graphResult && graphResult.nodes.length > 0) {
+      if (graph.nodes.length > 0) {
         if (import.meta.env.DEV) {
-          const apiTypes = [...new Set(graphResult.nodes.map((n) => n.type))];
+          const apiTypes = [...new Set(graph.nodes.map((n) => n.type))];
           console.log(
             "[+page] Full graph loaded:",
-            graphResult.nodes.length,
+            graph.nodes.length,
             "nodes,",
-            graphResult.links.length,
+            graph.links.length,
             "links"
           );
           console.log("[+page] API node types:", apiTypes);
         }
 
-        graphData = graphResult;
-      } else if (allNotes.length > 0) {
-        // Fallback when graph-service returns empty but notes exist. This keeps
-        // the UI usable and makes E2E tests stable regardless of graph-service state.
-        graphData = {
-          nodes: allNotes.map((n) => ({
-            id: n.id,
-            title: n.title,
-            type: n.type || "unknown",
-          })),
-          links: [],
-        };
-      } else if (!silent || graphData.nodes.length === 0) {
+        graphData = graph;
+      } else if (!silent && allNotes.length === 0) {
         // Minimal fallback for empty/invalid graph-service result. When
         // refreshing silently in the background, keep showing the last known
         // graph instead of blanking it out on a transient empty response.
         graphData = { nodes: [], links: [] };
+      } else if (silent && graphData.nodes.length > 0) {
+        // Keep the existing graph on silent refreshes rather than blanking it.
+      } else {
+        graphData = graph;
       }
     } catch (e: unknown) {
       // Background refreshes shouldn't surface a full-page error and wipe

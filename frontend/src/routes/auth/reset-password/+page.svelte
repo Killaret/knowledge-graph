@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import ResetPasswordForm from "$components/organisms/ResetPasswordForm.svelte";
   import AuthCard from "$widgets/auth/AuthCard.svelte";
   import ConstellationIcon from "$components/atoms/ConstellationIcon.svelte";
-  import { isAuthenticated, skipAuthMode } from "$shared/stores/auth.svelte.js";
+  import { useAnonymousGuard } from "$shared/composables/auth";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -20,9 +19,8 @@
 
   // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated() && !skipAuthMode()) {
-      goto("/");
-    }
+    const redirectTo = $page.url.searchParams.get("redirect") || "/";
+    useAnonymousGuard(redirectTo);
   });
 </script>
 

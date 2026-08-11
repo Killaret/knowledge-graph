@@ -174,30 +174,29 @@ export function drawNode(
 
   const body = CelestialBody.fromString(node.type);
 
-  // Fast path: when zoomed out, draw a simple filled circle using the body's glow color.
-  // This skips expensive per-type renderers, shadows, and animated effects.
-  if (simplified && !focusMode && node.x != null && node.y != null) {
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, r * body.baseRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = body.glowColor;
-    ctx.fill();
-    return;
-  }
-
   // The renderer layer wires Canvas primitives to the domain object lazily.
   // This guard also makes unit tests that call vi.resetModules() more robust.
   if (!CelestialBody.STAR.drawFunction) {
     registerCelestialBodyDrawers();
   }
 
-  // Get deterministic variation for this node (used for hue/size/phase).
+  // Get deterministic variation for this node (used for color/hue/size/phase).
   // We still apply variation in stable render mode so color/size remain deterministic,
   // but other random jitter/animation is suppressed via `disableVariation` flags.
-  // Anomalies, black holes and debris have no per-node size/hue variation.
-  const variation =
-    body.isAnomaly || ["blackhole", "debris"].includes(body.type)
-      ? undefined
-      : getVariation(node.id, body.type, body.minRadius, body.maxRadius);
+  // Anomalies use the unknown dispatcher and keep their own palette.
+  const variation = body.isAnomaly
+    ? undefined
+    : getVariation(node.id, body.type, body.minRadius, body.maxRadius, node.color, node.glowColor);
+
+  // Fast path: when zoomed out, draw a simple filled circle using the node glow color.
+  // This skips expensive per-type renderers, shadows, and animated effects.
+  if (simplified && !focusMode && node.x != null && node.y != null) {
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r * body.baseRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = variation?.glowColor ?? body.glowColor;
+    ctx.fill();
+    return;
+  }
 
   // Use exact node position — random jitter caused visible flickering every frame
   let x = node.x!;

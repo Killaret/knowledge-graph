@@ -23,6 +23,7 @@
     animationIndex = 0,
     keywords = [],
     linkCount = 0,
+    readonly = false,
     onClick,
     onSelect,
     onEdit,
@@ -35,6 +36,7 @@
     animationIndex?: number;
     keywords?: string[];
     linkCount?: number;
+    readonly?: boolean;
     onClick?: (note: Note) => void;
     onSelect?: (note: Note, selected: boolean) => void;
     onEdit?: (note: Note) => void;
@@ -146,8 +148,12 @@
         </div>
         <div class="nc-tooltip-actions">
           <button class="nc-tooltip-btn nc-tooltip-btn--view" data-action="view" aria-label="${t("noteCard.viewAria")}">${t("noteCard.view")}</button>
-          <button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="${t("noteCard.editAria")}">${t("noteCard.edit")}</button>
-          <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="${t("noteCard.deleteAria")}">${t("noteCard.delete")}</button>
+          ${
+            readonly
+              ? ""
+              : `<button class="nc-tooltip-btn nc-tooltip-btn--edit" data-action="edit" aria-label="${t("noteCard.editAria")}">${t("noteCard.edit")}</button>
+               <button class="nc-tooltip-btn nc-tooltip-btn--delete" data-action="delete" aria-label="${t("noteCard.deleteAria")}">${t("noteCard.delete")}</button>`
+          }
         </div>
       </div>
     `;

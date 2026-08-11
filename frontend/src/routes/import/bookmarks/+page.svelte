@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
+  import { useRequireAuth } from "$shared/composables/auth";
   import {
     previewBookmarks,
     createBookmarksImport,
@@ -54,7 +55,7 @@
 
     if (!isAuthenticated()) {
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-      void goto(`/auth/login?redirect=${redirect}`);
+      useRequireAuth(`/auth/login?redirect=${redirect}`);
       status = "unauthorized";
       return;
     }

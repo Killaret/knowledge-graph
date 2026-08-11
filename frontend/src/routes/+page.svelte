@@ -2,8 +2,8 @@
   import { isAuthenticated } from "$shared/stores/auth.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { createHomePageState } from "$features/home-page";
+  import { GraphPageShell } from "$widgets/graph-page";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
-  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import NoteCard from "$widgets/notes/NoteCard.svelte";
@@ -11,7 +11,7 @@
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
-  import { PublicGraphTopBar } from "$features/graph-ui";
+
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
 
   const homePage = createHomePageState();
@@ -50,9 +50,11 @@
   let canvasController:
     | {
         focusMode: boolean;
+        fogEnabled: boolean;
         resetView: () => void;
         openSearch: () => void;
         toggleFocus: () => void;
+        toggleFog: () => void;
       }
     | undefined = $state(undefined);
 </script>
@@ -62,66 +64,35 @@
 
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
-<CosmicCockpitLayout
-  isAuthenticated={isAuthenticated()}
-  onSearch={handleSearchQuery}
-  onToggleView={handleToggleView}
-  onImport={handleImport}
-  onToggleLayoutProvider={handleToggleLayoutProvider}
+<GraphPageShell
+  view={graphStore.currentView}
   layoutProvider={homePage.layoutProvider}
-  onFilter={handleFilter}
-  typeFilters={homePage.typeFilters}
+  searchQuery={homePage.searchQuery}
   selectedType={homePage.selectedType}
-  currentView={graphStore.currentView}
-  typeCounts={Object.fromEntries(
-    homePage.typeFilters.map((f) => [
-      f.id,
-      f.id === "all"
-        ? homePage.allNotes.length
-        : homePage.allNotes.filter((n) => n.type === f.id).length,
-    ])
-  )}
+  typeFilters={homePage.typeFilters}
+  notes={homePage.allNotes}
+  nodeCount={homePage.filteredGraphData.nodes.length}
+  linkCount={homePage.filteredGraphData.links.length}
+  selectedNodeId={graphStore.selectedNodeId}
+  {canvasController}
+  onSearch={handleSearchQuery}
+  onFilter={handleFilter}
+  onToggleView={handleToggleView}
+  onToggleLayoutProvider={handleToggleLayoutProvider}
   onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
   onNoteCreate={() => (homePage.showCreateModal = true)}
+  onNoteDelete={handleDeleteRequest}
   onNoteEdit={(id: string) => {
     homePage.noteToEdit = id;
     homePage.showEditModal = true;
   }}
-  onNoteDelete={handleDeleteRequest}
   onCreateChildNote={handleCreateChildNote}
-  selectedNodeId={graphStore.selectedNodeId}
-  nodeCount={homePage.filteredGraphData.nodes.length}
-  linkCount={homePage.filteredGraphData.links.length}
-  notes={homePage.allNotes}
+  onImport={handleImport}
+  onSignIn={() => openAuthPanel("login")}
+  onRegister={() => openAuthPanel("register")}
 >
   <!-- Graph/List Container -->
   <div class="graph-content" data-testid="graph-2d-container">
-    {#if !isAuthenticated() && !homePage.loading && !homePage.apiError}
-      <PublicGraphTopBar
-        currentView={graphStore.currentView}
-        layoutProvider={homePage.layoutProvider}
-        searchQuery={homePage.searchQuery}
-        selectedType={homePage.selectedType}
-        typeFilters={homePage.typeFilters}
-        typeCounts={Object.fromEntries(
-          homePage.typeFilters.map((f) => [
-            f.id,
-            f.id === "all"
-              ? homePage.allNotes.length
-              : homePage.allNotes.filter((n) => n.type === f.id).length,
-          ])
-        )}
-        nodeCount={homePage.filteredGraphData.nodes.length}
-        linkCount={homePage.filteredGraphData.links.length}
-        onSearch={handleSearchQuery}
-        onToggleView={handleToggleView}
-        onToggleLayoutProvider={handleToggleLayoutProvider}
-        onFilter={handleFilter}
-        onSignIn={() => openAuthPanel("login")}
-        onRegister={() => openAuthPanel("register")}
-        {canvasController}
-      />
-    {/if}
     {#if homePage.loading}
       <div class="loading-overlay">
         <div class="spinner"></div>
@@ -259,6 +230,7 @@
                 onDelete={handleNoteDelete}
                 onClick={() => (graphStore.selectedNodeId = note.id)}
                 highlightQuery={homePage.filterState.searchQuery.value}
+                readonly={!isAuthenticated()}
               />
             {/each}
           </div>
@@ -337,7 +309,7 @@
       {/if}
     {/if}
   </div>
-</CosmicCockpitLayout>
+</GraphPageShell>
 
 <!-- Public auth entry point -->
 {#if !isAuthenticated()}

@@ -1,13 +1,16 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { LinkType, GraphMode } from "$entities";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import GraphStats from "$features/graph-ui/GraphStats.svelte";
+  import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  export interface Filter {
+  interface Filter {
     id: string;
     label: string;
     emoji: string;
@@ -16,56 +19,64 @@
   }
 
   interface Props {
+    isAuthenticated: boolean;
     currentView: "graph" | "list" | "3d";
     layoutProvider?: "d3" | "graph-service";
-    searchQuery: string;
-    selectedType: string;
-    typeFilters: Filter[];
+    searchQuery?: string;
+    selectedType?: string;
+    typeFilters?: Filter[];
     typeCounts?: Record<string, number>;
     nodeCount?: number;
     linkCount?: number;
-    onSearch: (query: string) => void;
-    onToggleView: (view: "graph" | "list" | "3d") => void;
+    onSearch?: (query: string) => void;
+    onToggleView?: (view: "graph" | "list" | "3d") => void;
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
-    onFilter: (type: string) => void;
+    onFilter?: (type: string) => void;
+    onNoteCreate?: () => void;
     onSignIn?: () => void;
     onRegister?: () => void;
     canvasController?: {
       focusMode: boolean;
+      fogEnabled: boolean;
       resetView: () => void;
       openSearch: () => void;
       toggleFocus: () => void;
+      toggleFog: () => void;
     };
+    variant?: "docked" | "floating";
   }
 
   const {
+    isAuthenticated,
     currentView,
     layoutProvider = "d3",
-    searchQuery,
-    selectedType,
-    typeFilters,
+    searchQuery = "",
+    selectedType = "all",
+    typeFilters = [],
     typeCounts = {},
     nodeCount,
     linkCount,
-    onSearch,
-    onToggleView,
+    onSearch = () => {},
+    onToggleView = () => {},
     onToggleLayoutProvider,
-    onFilter,
+    onFilter = () => {},
+    onNoteCreate,
     onSignIn,
     onRegister,
     canvasController,
+    variant = "docked",
   }: Props = $props();
 
   let typeDropdownOpen = $state(false);
   let linkDropdownOpen = $state(false);
 
-  const viewOptions = [
+  const viewOptions: { id: "graph" | "list" | "3d"; label: string; icon: string }[] = [
     { id: "graph", label: t("controls.view2D"), icon: "◯" },
     { id: "3d", label: t("controls.view3D"), icon: "△" },
     { id: "list", label: t("controls.viewList"), icon: "☰" },
   ];
 
-  const layoutOptions = [
+  const layoutOptions: { id: "d3" | "graph-service"; label: string; title: string }[] = [
     { id: "d3", label: t("controls.layoutD3"), title: t("controls.layoutD3Title") },
     {
       id: "graph-service",
@@ -136,30 +147,40 @@
   }
 </script>
 
-<div class="public-graph-top-bar" data-testid="public-graph-top-bar">
-  {#if nodeCount !== undefined && linkCount !== undefined}
-    <div class="public-graph-stats" data-testid="graph-stats">
-      <span><strong>{nodeCount}</strong> {t("graphOverlay.nodes")}</span>
-      <span class="dot-separator">·</span>
-      <span><strong>{linkCount}</strong> {t("graphOverlay.links")}</span>
-    </div>
-  {/if}
-
-  <div class="view-toggle" role="group" aria-label={t("cockpit.left.view")}>
-    {#each viewOptions as option}
-      <button
-        type="button"
-        class="top-bar-btn top-bar-btn--segment"
-        class:active={currentView === option.id}
-        aria-pressed={currentView === option.id}
-        onclick={() => onToggleView(option.id as "graph" | "list" | "3d")}
-        data-testid="view-toggle-{option.id}"
-        title={option.label}
+<div class="graph-top-bar graph-top-bar--{variant}" data-testid="graph-top-bar">
+  <div class="left-cluster">
+    {#if isAuthenticated}
+      <a
+        href="/"
+        class="logo"
+        onclick={(e: MouseEvent) => {
+          e.preventDefault();
+          goto("/");
+        }}
       >
-        <span>{option.icon}</span>
-        <span>{option.label}</span>
-      </button>
-    {/each}
+        <span class="logo-icon">🌌</span>
+        <span class="logo-text">KG</span>
+      </a>
+    {/if}
+
+    <GraphStats {nodeCount} {linkCount} />
+
+    <div class="view-toggle" role="group" aria-label={t("cockpit.left.view")}>
+      {#each viewOptions as option}
+        <button
+          type="button"
+          class="top-bar-btn top-bar-btn--segment"
+          class:active={currentView === option.id}
+          aria-pressed={currentView === option.id}
+          onclick={() => onToggleView(option.id)}
+          data-testid="view-toggle-{option.id}"
+          title={option.label}
+        >
+          <span>{option.icon}</span>
+          <span>{option.label}</span>
+        </button>
+      {/each}
+    </div>
 
     {#if currentView === "3d"}
       <div class="layout-toggle" role="group" aria-label={t("controls.layoutProviderTitle")}>
@@ -169,8 +190,8 @@
             class="top-bar-btn top-bar-btn--segment"
             class:active={layoutProvider === option.id}
             aria-pressed={layoutProvider === option.id}
-            onclick={() => handleLayoutToggle(option.id as "d3" | "graph-service")}
-            data-testid="layout-toggle-{option.id}"
+            onclick={() => handleLayoutToggle(option.id)}
+            data-testid="layout-provider-{option.id}"
             title={option.title}
           >
             {option.label}
@@ -178,175 +199,213 @@
         {/each}
       </div>
     {/if}
-  </div>
 
-  <div class="search-box">
-    <input
-      type="text"
-      class="top-bar-input"
-      value={searchQuery}
-      oninput={handleSearchInput}
-      placeholder={t("search.placeholder")}
-      aria-label={t("search.inputAriaLabel")}
-      data-testid="public-search-input"
-    />
-  </div>
+    <div class="search-box">
+      <input
+        type="text"
+        class="top-bar-input"
+        value={searchQuery}
+        oninput={handleSearchInput}
+        placeholder={t("search.placeholder")}
+        aria-label={t("search.inputAriaLabel")}
+        data-testid="top-bar-search-input"
+      />
+    </div>
 
-  <div class="dropdown">
-    <button
-      type="button"
-      class="top-bar-btn"
-      onclick={toggleTypeDropdown}
-      aria-haspopup="listbox"
-      aria-expanded={typeDropdownOpen}
-      data-testid="type-dropdown-toggle"
-    >
-      {selectedTypeLabel()}
-      <span class="chevron">▼</span>
-    </button>
-    {#if typeDropdownOpen}
-      <div class="dropdown-panel">
-        {#each typeFilters as filter}
-          <button
-            type="button"
-            class="dropdown-item"
-            class:active={selectedType === filter.id}
-            onclick={() => handleTypeSelect(filter.id)}
-          >
-            <span class="dropdown-item-icon">{filter.emoji}</span>
-            <span class="dropdown-item-label">{filter.label}</span>
-            {#if typeCounts[filter.id] !== undefined}
-              <span class="dropdown-count">
-                {typeCounts[filter.id]}
-              </span>
-            {/if}
-          </button>
-        {/each}
-      </div>
-    {/if}
-  </div>
-
-  <div class="dropdown">
-    <button
-      type="button"
-      class="top-bar-btn"
-      onclick={toggleLinkDropdown}
-      aria-haspopup="true"
-      aria-expanded={linkDropdownOpen}
-      data-testid="link-dropdown-toggle"
-    >
-      {t("linkLegend.title")}
-      <span class="chevron">▼</span>
-    </button>
-    {#if linkDropdownOpen}
-      <div class="dropdown-panel dropdown-panel--right">
-        <div class="dropdown-actions">
-          <button
-            type="button"
-            class="dropdown-action"
-            disabled={areAllLinkTypesVisible}
-            onclick={showAllLinkTypes}
-          >
-            {t("linkLegend.showAll")}
-          </button>
-          <button
-            type="button"
-            class="dropdown-action"
-            disabled={areAllLinkTypesHidden}
-            onclick={hideAllLinkTypes}
-          >
-            {t("linkLegend.hideAll")}
-          </button>
-        </div>
-
-        <div class="dropdown-section">
-          <label for="public-min-weight" class="dropdown-label">
-            {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
-          </label>
-          <input
-            id="public-min-weight"
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={graphStore.minLinkWeight}
-            oninput={handleMinWeightInput}
-            class="top-bar-range"
-          />
-        </div>
-
-        <div class="dropdown-list">
-          {#each linkTypes as lt}
+    <div class="dropdown">
+      <button
+        type="button"
+        class="top-bar-btn"
+        onclick={toggleTypeDropdown}
+        aria-haspopup="listbox"
+        aria-expanded={typeDropdownOpen}
+        data-testid="type-dropdown-toggle"
+      >
+        {selectedTypeLabel()}
+        <span class="chevron">▼</span>
+      </button>
+      {#if typeDropdownOpen}
+        <div class="dropdown-panel">
+          {#each typeFilters as filter}
             <button
               type="button"
               class="dropdown-item"
-              class:active={!hiddenLinkSet.has(lt.type)}
-              onclick={() => toggleLinkType(lt.type)}
-              style="--type-color: {lt.color}"
+              class:active={selectedType === filter.id}
+              onclick={() => handleTypeSelect(filter.id)}
+              data-testid="filter-chip-{filter.id}"
             >
-              <span class="dropdown-line" style="background: {lt.color};"></span>
-              <span class="dropdown-item-icon">{lt.icon}</span>
-              <span class="dropdown-item-label">{lt.label}</span>
+              <span class="dropdown-item-icon">{filter.emoji}</span>
+              <span class="dropdown-item-label">{filter.label}</span>
+              {#if typeCounts[filter.id] !== undefined}
+                <span class="dropdown-count">
+                  {typeCounts[filter.id]}
+                </span>
+              {/if}
             </button>
           {/each}
         </div>
+      {/if}
+    </div>
+
+    <div class="dropdown">
+      <button
+        type="button"
+        class="top-bar-btn"
+        onclick={toggleLinkDropdown}
+        aria-haspopup="true"
+        aria-expanded={linkDropdownOpen}
+        data-testid="link-dropdown-toggle"
+      >
+        {t("linkLegend.title")}
+        <span class="chevron">▼</span>
+      </button>
+      {#if linkDropdownOpen}
+        <div class="dropdown-panel dropdown-panel--right">
+          <div class="dropdown-actions">
+            <button
+              type="button"
+              class="dropdown-action"
+              disabled={areAllLinkTypesVisible}
+              onclick={showAllLinkTypes}
+              data-testid="link-types-show-all"
+            >
+              {t("linkLegend.showAll")}
+            </button>
+            <button
+              type="button"
+              class="dropdown-action"
+              disabled={areAllLinkTypesHidden}
+              onclick={hideAllLinkTypes}
+              data-testid="link-types-hide-all"
+            >
+              {t("linkLegend.hideAll")}
+            </button>
+          </div>
+
+          <div class="dropdown-section">
+            <label for="top-bar-min-weight" class="dropdown-label">
+              {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
+            </label>
+            <input
+              id="top-bar-min-weight"
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={graphStore.minLinkWeight}
+              oninput={handleMinWeightInput}
+              class="top-bar-range"
+              data-testid="top-bar-min-weight"
+            />
+          </div>
+
+          <div class="dropdown-list">
+            {#each linkTypes as lt}
+              <button
+                type="button"
+                class="dropdown-item"
+                class:active={!hiddenLinkSet.has(lt.type)}
+                onclick={() => toggleLinkType(lt.type)}
+                style="--type-color: {lt.color}"
+                data-testid="link-type-chip-{lt.type}"
+              >
+                <span class="dropdown-line" style="background: {lt.color};"></span>
+                <span class="dropdown-item-icon">{lt.icon}</span>
+                <span class="dropdown-item-label">{lt.label}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    {#if canvasController}
+      <div class="canvas-controls" role="group" aria-label={t("cockpit.left.graphControls")}>
+        <button
+          type="button"
+          class="top-bar-btn top-bar-btn--icon"
+          onclick={canvasController.resetView}
+          title={t("graphControls.resetView")}
+          data-testid="top-bar-reset"
+        >
+          🔄
+        </button>
+        <button
+          type="button"
+          class="top-bar-btn top-bar-btn--icon"
+          onclick={canvasController.openSearch}
+          title={t("graphControls.search")}
+          data-testid="top-bar-open-search"
+        >
+          🎯
+        </button>
+        <button
+          type="button"
+          class="top-bar-btn top-bar-btn--icon"
+          class:active={graphMode.isFocus}
+          style="border-color: {graphMode.borderColor}; color: {graphMode.textColor};"
+          onclick={canvasController.toggleFocus}
+          title={graphMode.label}
+          data-testid="top-bar-focus"
+          aria-pressed={graphMode.isFocus}
+        >
+          {graphMode.icon}
+        </button>
+        <button
+          type="button"
+          class="top-bar-btn top-bar-btn--icon"
+          class:active={canvasController.fogEnabled}
+          onclick={canvasController.toggleFog}
+          title={t("graphOverlay.fogToggle")}
+          data-testid="top-bar-fog"
+          aria-pressed={canvasController.fogEnabled}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M3 15h18M3 10h18M4 5h16M5 20h14" />
+          </svg>
+        </button>
       </div>
     {/if}
   </div>
 
-  {#if canvasController}
-    <div class="canvas-controls" role="group" aria-label={t("cockpit.left.graphControls")}>
-      <button
-        type="button"
-        class="top-bar-btn top-bar-btn--icon"
-        onclick={canvasController.resetView}
-        title={t("graphControls.resetView")}
-        data-testid="public-controls-reset"
-      >
-        🔄
-      </button>
-      <button
-        type="button"
-        class="top-bar-btn top-bar-btn--icon"
-        onclick={canvasController.openSearch}
-        title={t("graphControls.search")}
-        data-testid="public-controls-search"
-      >
-        🎯
-      </button>
-      <button
-        type="button"
-        class="top-bar-btn top-bar-btn--icon"
-        class:active={graphMode.isFocus}
-        style="border-color: {graphMode.borderColor}; color: {graphMode.textColor};"
-        onclick={canvasController.toggleFocus}
-        title={graphMode.label}
-        data-testid="public-controls-mode"
-      >
-        {graphMode.icon}
-      </button>
-      <button
-        type="button"
-        class="top-bar-btn top-bar-btn--icon"
-        class:active={graphMode.isFocus}
-        style="border-color: {graphMode.borderColor}; color: {graphMode.textColor};"
-        onclick={canvasController.toggleFocus}
-        title={graphMode.focusLabel}
-        data-testid="public-controls-focus"
-      >
-        {graphMode.focusIcon}
-      </button>
-    </div>
-  {/if}
+  <div class="right-cluster">
+    <LangSwitcher />
 
-  {#if onSignIn || onRegister}
-    <div class="auth-buttons">
+    {#if isAuthenticated && onNoteCreate}
+      <button
+        type="button"
+        class="create-btn"
+        onclick={() => onNoteCreate()}
+        title={t("controls.createTitle")}
+        data-testid="create-note-button"
+        aria-label={t("controls.createAria")}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+    {:else if !isAuthenticated}
       {#if onSignIn}
         <button
           type="button"
           class="top-bar-btn top-bar-btn--ghost"
           onclick={onSignIn}
-          data-testid="public-sign-in"
+          data-testid="top-bar-sign-in"
         >
           {t("auth.signInButton")}
         </button>
@@ -356,17 +415,17 @@
           type="button"
           class="top-bar-btn top-bar-btn--primary"
           onclick={onRegister}
-          data-testid="public-register"
+          data-testid="top-bar-register"
         >
           {t("auth.registerButton")}
         </button>
       {/if}
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
-  .public-graph-top-bar {
+  .graph-top-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -388,21 +447,58 @@
     backdrop-filter: blur(10px);
   }
 
-  .public-graph-stats {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    background: var(--carbon-hex-fill);
+  .graph-top-bar--floating {
+    position: relative;
+    background:
+      linear-gradient(135deg, var(--carbon-graphene) 0%, rgba(18, 18, 26, 0.92) 100%),
+      radial-gradient(circle at 80% 20%, var(--carbon-hex-fill) 0%, transparent 60%);
     border: 1px solid var(--carbon-border);
-    border-radius: 10px;
-    font-size: 12px;
-    white-space: nowrap;
-    color: var(--carbon-text);
+    border-radius: 14px;
+    box-shadow:
+      var(--carbon-shadow),
+      0 0 24px rgba(139, 92, 246, 0.08);
+    backdrop-filter: blur(10px);
   }
 
-  .public-graph-stats .dot-separator {
-    color: var(--carbon-text-dim);
+  .graph-top-bar--docked {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 8px 16px;
+    width: 100%;
+    max-width: none;
+    z-index: auto;
+  }
+
+  .left-cluster,
+  .right-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .right-cluster {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: #2dd4bf;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    font-size: 20px;
   }
 
   .view-toggle,
@@ -469,6 +565,24 @@
     background: var(--carbon-hex-fill);
     border-color: var(--carbon-border);
     color: var(--carbon-text);
+  }
+
+  .create-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(45, 212, 191, 0.15);
+    color: #2dd4bf;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .create-btn:hover {
+    background: rgba(45, 212, 191, 0.25);
   }
 
   .top-bar-input {
@@ -638,16 +752,9 @@
     gap: 4px;
   }
 
-  .auth-buttons {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-left: auto;
-  }
-
   /* Mobile */
   @media (max-width: 640px) {
-    .public-graph-top-bar {
+    .graph-top-bar {
       padding: 6px 8px;
       gap: 6px;
       max-width: calc(100% - 16px);

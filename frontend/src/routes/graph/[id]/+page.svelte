@@ -4,14 +4,34 @@
   import { goto } from "$app/navigation";
   import SmartGraph from "$widgets/graph-canvas/SmartGraph.svelte";
   import { getGraphData } from "$shared/api/graph";
-  import { isAuthenticated } from "$shared/stores/auth.svelte";
-  import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
+  import { GraphPageShell } from "$widgets/graph-page";
+  import { CelestialBody } from "$entities";
   import type { GraphNode, GraphLink } from "$shared/api/graph";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  const graphTypeFilters = [
+    { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    }),
+  ];
 
   let nodes: GraphNode[] = $state([]);
   let links: GraphLink[] = $state([]);
@@ -49,15 +69,22 @@
   });
 </script>
 
-<CosmicCockpitLayout
-  isAuthenticated={isAuthenticated()}
-  currentView="graph"
-  nodeCount={nodes.length}
-  linkCount={links.length}
+<GraphPageShell
+  view="graph"
+  layoutProvider="d3"
+  searchQuery=""
+  selectedType="all"
+  typeFilters={graphTypeFilters}
+  {nodes}
+  {links}
+  onSearch={() => {}}
+  onFilter={() => {}}
   onToggleView={(view) => {
     if (view === "3d") goto(`/graph/3d/${$page.params.id}`);
     else if (view === "list") goto("/");
   }}
+  onSignIn={() => goto("/auth/login")}
+  onRegister={() => goto("/auth/register")}
 >
   <div class="graph-page">
     {#if loading}
@@ -73,15 +100,9 @@
       <div class="graph-container graph-3d-container" data-testid="graph-container">
         <SmartGraph {nodes} {links} />
       </div>
-      {#if !isAuthenticated()}
-        <div class="graph-stats-bar" data-testid="graph-stats">
-          <span><strong>{nodes.length}</strong> {t("graph.nodes")}</span>
-          <span><strong>{links.length}</strong> {t("graph.links")}</span>
-        </div>
-      {/if}
     {/if}
   </div>
-</CosmicCockpitLayout>
+</GraphPageShell>
 
 <style>
   .graph-page {
@@ -96,23 +117,6 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
-  }
-
-  .graph-stats-bar {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 12px;
-    padding: 6px 12px;
-    background: rgba(10, 10, 15, 0.75);
-    border: 1px solid rgba(45, 212, 191, 0.25);
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    backdrop-filter: blur(8px);
-    z-index: 50;
-    pointer-events: none;
   }
 
   .loading-state,

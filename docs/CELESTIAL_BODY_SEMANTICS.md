@@ -103,6 +103,16 @@ Use the existing link types to express relationships between celestial bodies:
 | Planet → Black Hole       | `dependency`             |
 | Star ↔ Star (same domain) | `related`                |
 
+## Color variation and customization
+
+Each celestial body type has a deterministic palette inspired by real-world cosmic objects (stellar spectral classes, planet atmospheres, comet ices, etc.):
+
+- Colors are generated per node by `getVariation` in `frontend/src/shared/utils/variation.ts`.
+- `frontend/src/shared/lib/graph/color-schemes.ts` defines the palettes.
+- If a `GraphNode`/`SimulationNode` provides a `color` (and optional `glowColor`), it is used as-is and the palette is ignored.
+- Generated colors are slightly hue- and lightness-shifted for visual diversity while staying inside the type's palette.
+- Renderers use `variation.color`, `variation.glowColor`, and `variation.strokeColor` instead of hardcoded values.
+
 ## Design notes
 
 - A user should be able to read the type description in the type selector and pick the right one without guessing.

@@ -6,6 +6,7 @@ import {
   createBlackHole,
   updateBlackHolePosition,
   updateBlackHolePulse,
+  updateBlackHoleZoom,
   isNodeOverBlackHole,
   isPointOverBlackHole,
   BLACK_HOLE_RADIUS,
@@ -82,6 +83,36 @@ describe("black-hole", () => {
     };
     const transform = { x: 20, y: 0, k: 2 };
     // screen position: ((x-20)/2)*2 + 20 = x
+    updateBlackHoleZoom(blackHole, 2);
     expect(isNodeOverBlackHole(node, blackHole, transform)).toBe(true);
+  });
+
+  it("should scale the black hole radius with zoom", () => {
+    const blackHole = createBlackHole(800, 600);
+    expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS);
+    updateBlackHoleZoom(blackHole, 2);
+    expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS * 2);
+    updateBlackHoleZoom(blackHole, 0.2);
+    expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS * 0.4);
+    updateBlackHoleZoom(blackHole, 5);
+    expect(blackHole.radius).toBe(BLACK_HOLE_RADIUS * 3);
+  });
+
+  it("should keep the black hole catch area proportional to the zoomed radius", () => {
+    const blackHole = createBlackHole(800, 600);
+    updateBlackHoleZoom(blackHole, 2);
+    const node: SimulationNode = {
+      id: "test",
+      title: "Test",
+      x: blackHole.x,
+      y: blackHole.y,
+    };
+    expect(isNodeOverBlackHole(node, blackHole, { x: 0, y: 0, k: 1 })).toBe(true);
+    expect(
+      isPointOverBlackHole(blackHole.x + blackHole.radius * 1.5 - 1, blackHole.y, blackHole)
+    ).toBe(true);
+    expect(
+      isPointOverBlackHole(blackHole.x + blackHole.radius * 1.5 + 1, blackHole.y, blackHole)
+    ).toBe(false);
   });
 });

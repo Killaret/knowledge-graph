@@ -19,15 +19,20 @@ export interface BlackHoleState {
  *  than notes and larger than the ghost, but still proportionate. */
 export const BLACK_HOLE_RADIUS = BASE_NODE_RADIUS * 3;
 
+/** Minimum and maximum zoom scale for service tools to keep them usable. */
+const MIN_ZOOM_SCALE = 0.4;
+const MAX_ZOOM_SCALE = 3;
+
 /** Catch area is 1.5x the visible radius for easier drag-and-drop deletion. */
 export const BLACK_HOLE_CATCH_RADIUS = BLACK_HOLE_RADIUS * 1.5;
 
 export function createBlackHole(width: number, height: number): BlackHoleState {
-  const inset = SERVICE_TOOL_MARGIN + BLACK_HOLE_RADIUS;
+  const radius = BLACK_HOLE_RADIUS;
+  const inset = SERVICE_TOOL_MARGIN + radius;
   return {
     x: width - inset,
     y: height - inset,
-    radius: BLACK_HOLE_RADIUS,
+    radius,
     pulsePhase: 0,
     hovered: false,
     label: "",
@@ -39,9 +44,14 @@ export function updateBlackHolePosition(
   width: number,
   height: number
 ): void {
-  const inset = SERVICE_TOOL_MARGIN + BLACK_HOLE_RADIUS;
+  const inset = SERVICE_TOOL_MARGIN + state.radius;
   state.x = width - inset;
   state.y = height - inset;
+}
+
+export function updateBlackHoleZoom(state: BlackHoleState, zoom: number): void {
+  const scale = Math.min(MAX_ZOOM_SCALE, Math.max(MIN_ZOOM_SCALE, zoom));
+  state.radius = BLACK_HOLE_RADIUS * scale;
 }
 
 export function updateBlackHolePulse(state: BlackHoleState, animationTime: number): void {
@@ -60,14 +70,14 @@ export function isNodeOverBlackHole(
   const dx = screenX - blackHole.x;
   const dy = screenY - blackHole.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < BLACK_HOLE_CATCH_RADIUS;
+  return distance < blackHole.radius * 1.5;
 }
 
 export function isPointOverBlackHole(x: number, y: number, blackHole: BlackHoleState): boolean {
   const dx = x - blackHole.x;
   const dy = y - blackHole.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < BLACK_HOLE_CATCH_RADIUS;
+  return distance < blackHole.radius * 1.5;
 }
 
 export function drawBlackHole(

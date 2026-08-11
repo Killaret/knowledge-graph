@@ -11,6 +11,10 @@
 import type { SimulationNode } from "./types";
 import { BASE_NODE_RADIUS, SERVICE_TOOL_MARGIN } from "./graph-constants";
 
+/** Minimum and maximum zoom scale for service tools to keep them usable. */
+const MIN_ZOOM_SCALE = 0.4;
+const MAX_ZOOM_SCALE = 3;
+
 export interface GhostNodeState {
   x: number;
   y: number;
@@ -32,11 +36,12 @@ export function createGhostNode(
 ): GhostNodeState {
   // Show in top-left if there are notes, otherwise center
   const hasNotes = nodes.length > 0;
-  const inset = SERVICE_TOOL_MARGIN + GHOST_NODE_RADIUS;
+  const radius = GHOST_NODE_RADIUS;
+  const inset = SERVICE_TOOL_MARGIN + radius;
   return {
     x: hasNotes ? inset : width / 2,
     y: hasNotes ? inset : height / 2,
-    radius: GHOST_NODE_RADIUS,
+    radius,
     hovered: false,
     pulsePhase: 0,
     active: true,
@@ -50,9 +55,14 @@ export function updateGhostNodePosition(
   nodes: SimulationNode[]
 ): void {
   const hasNotes = nodes.length > 0;
-  const inset = SERVICE_TOOL_MARGIN + GHOST_NODE_RADIUS;
+  const inset = SERVICE_TOOL_MARGIN + state.radius;
   state.x = hasNotes ? inset : width / 2;
   state.y = hasNotes ? inset : height / 2;
+}
+
+export function updateGhostNodeZoom(state: GhostNodeState, zoom: number): void {
+  const scale = Math.min(MAX_ZOOM_SCALE, Math.max(MIN_ZOOM_SCALE, zoom));
+  state.radius = GHOST_NODE_RADIUS * scale;
 }
 
 export function updateGhostNodePulse(state: GhostNodeState, animationTime: number): void {

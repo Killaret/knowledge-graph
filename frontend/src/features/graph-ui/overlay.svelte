@@ -18,8 +18,6 @@
     duplicateWarning = null,
     focusMode = false,
     fogWarning = false,
-    fogEnabled = false,
-    onToggleFog = undefined,
     showUndoToast = false,
     undoToastStage = "done",
     hotkeysState,
@@ -51,8 +49,6 @@
     } | null;
     focusMode?: boolean;
     fogWarning?: boolean;
-    fogEnabled?: boolean;
-    onToggleFog?: () => void;
     showUndoToast?: boolean;
     undoToastStage?: "done" | "restore";
     hotkeysState: HotkeysState;
@@ -151,34 +147,6 @@
   >
     {t("graphOverlay.fogWarning")}
   </div>
-{/if}
-
-{#if onToggleFog}
-  <button
-    class="fog-toggle"
-    type="button"
-    onclick={onToggleFog}
-    style="position: absolute; top: 16px; left: 16px; background: {fogEnabled
-      ? 'rgba(10, 26, 58, 0.9)'
-      : 'rgba(60, 60, 60, 0.6)'}; border: 1px solid {fogEnabled
-      ? 'rgba(138, 43, 226, 0.5)'
-      : 'rgba(255,255,255,0.2)'}; border-radius: 6px; padding: 6px; color: {fogEnabled
-      ? 'white'
-      : 'rgba(255,255,255,0.7)'}; z-index: 100; display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;"
-    title={t("graphOverlay.fogToggle")}
-  >
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M3 15h18M3 10h18M4 5h16M5 20h14" />
-    </svg>
-    {t("graphOverlay.fogToggle")}
-  </button>
 {/if}
 
 {#if showUndoToast}

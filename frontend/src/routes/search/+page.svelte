@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import { searchNotes, type Note } from "$shared/api/notes";
   import { SearchQuery } from "$entities";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
   import SearchBar from "$widgets/search/SearchBar.svelte";
   import NoteCard from "$widgets/notes/NoteCard.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
@@ -116,6 +117,7 @@
           {note}
           animationIndex={index}
           highlightQuery={$page.url.searchParams.get("q") || ""}
+          readonly={!isAuthenticated()}
         />
       {/each}
     </div>

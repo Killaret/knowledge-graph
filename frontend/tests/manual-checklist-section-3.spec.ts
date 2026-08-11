@@ -115,6 +115,15 @@ async function getStatsCount(page: Page): Promise<{ nodes: number; links: number
 test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@auth-real"] }, () => {
   test.beforeEach(async ({ page, request }) => {
     await loginAsTestUser(page, request);
+    // Reset cockpit panel state (pinned panels from other tests can cover the canvas).
+    // Runs before page scripts, so the Svelte cockpit store sees the cleared state.
+    await page.addInitScript(() => {
+      try {
+        localStorage.removeItem("cockpit-settings");
+      } catch {
+        // ignore restricted contexts
+      }
+    });
     await gotoGraph(page);
     await waitForGraphCanvas(page);
   });
@@ -217,12 +226,28 @@ test.describe("Section 3 - Canvas Features", { tag: ["@manual", "@canvas", "@aut
     const { nodes, transform, box } = await getNodePositions(page);
     expect(nodes.length).toBeGreaterThan(1);
 
-    const source = nodes[1];
-    const target = nodes[0];
-    const sourcePos = toScreen(source, transform, box);
-    const targetPos = toScreen(target, transform, box);
+    // Avoid cockpit panel handles at the screen edges.
+    const margin = 120;
+    const safeNodes = nodes
+      .map((n) => ({ node: n, pos: toScreen(n, transform, box) }))
+      .filter(
+        (p) =>
+          p.pos.x > box.x + margin &&
+          p.pos.x < box.x + box.width - margin &&
+          p.pos.y > box.y + margin &&
+          p.pos.y < box.y + box.height - margin
+      );
+    expect(safeNodes.length).toBeGreaterThan(1);
 
-    await page.mouse.move(sourcePos.x, sourcePos.y);
+    const source = safeNodes[0].node;
+    const target = safeNodes[1].node;
+    const sourcePos = safeNodes[0].pos;
+    const targetPos = safeNodes[1].pos;
+
+    // Move from a neutral position quickly to avoid hovering the edge handles.
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(center.x, center.y, { steps: 1 });
+    await page.mouse.move(sourcePos.x, sourcePos.y, { steps: 1 });
     await page.mouse.down();
     await page.mouse.move(targetPos.x, targetPos.y, { steps: 10 });
     await page.mouse.up();
