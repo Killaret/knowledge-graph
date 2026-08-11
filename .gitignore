@@ -147,8 +147,6 @@ scripts/tmp_*
 scripts/testing/temp/
 scripts/testing/*.log
 scripts/diagnostics/*.log
-scripts/diagnostics/voice-diag/output*/
-scripts/diagnostics/voice-diag/*.dmp
 scripts/seed-report.json
 # Database seed files (keep structure, ignore generated data)
 scripts/database/*.db
