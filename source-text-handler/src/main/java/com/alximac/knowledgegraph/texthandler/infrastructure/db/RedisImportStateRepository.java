@@ -10,30 +10,29 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 
 public class RedisImportStateRepository implements ImportStateRepository {
-
     private final RedisClient redisClient;
     private final String keyPrefix;
-    private final long ttlSecond;
-
+    private final long ttlSecond;         // для markProcessed
+    private final long claimTtlSeconds;   // для tryClaim
     private final ObjectMapper mapper;
 
-    public RedisImportStateRepository(RedisClient redisClient, String keyPrefix, long ttlSecond, ObjectMapper mapper) {
+
+    public RedisImportStateRepository(RedisClient redisClient, String keyPrefix,
+                                      long ttlSecond, long claimTtlSeconds, ObjectMapper mapper) {
         this.redisClient = redisClient;
         this.keyPrefix = keyPrefix;
         this.ttlSecond = ttlSecond;
+        this.claimTtlSeconds = claimTtlSeconds;
         this.mapper = mapper;
     }
-
-    private final long claimTTLSeconds = 60;
 
     @Override
     public boolean tryClaim(String eventId) {
         try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
             RedisCommands<String, String> sync = connection.sync();
-            String response = sync.set(keyPrefix + eventId, "processing", SetArgs.Builder.nx().ex(claimTTLSeconds));
-            if ("OK".equals(response)) {
-                return true;
-            } else return false;
+            String response = sync.set(keyPrefix + eventId, "processing",
+                    SetArgs.Builder.nx().ex(claimTtlSeconds));
+            return "OK".equals(response);
         }
     }
 

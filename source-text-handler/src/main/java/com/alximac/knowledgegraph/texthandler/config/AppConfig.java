@@ -84,10 +84,11 @@ public class AppConfig {
 
 
         long ttlSeconds = 604800;
+        long claimTtlSeconds = 60;
         RedisImportStateRepository repository = new RedisImportStateRepository(
                 redisClient,
                 "import:event:",
-                ttlSeconds, objectMapper);
+                ttlSeconds, claimTtlSeconds, objectMapper);
 
         AsynqInboundAdapter asynqInboundAdapter = new AsynqInboundAdapter(
                 redisClient,
