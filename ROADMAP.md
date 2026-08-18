@@ -1,8 +1,8 @@
 # Knowledge Graph Roadmap
 
-**Updated:** July 29, 2026  
-**Status:** Note type validation and PUT requests fixed; testing API expanded  
-**Version:** v2.7
+**Updated:** August 18, 2026  
+**Status:** Note type validation and PUT requests fixed; testing API expanded; new Cosmic Navigator, Galactic Clusters and social phases added  
+**Version:** v2.8
 
 ---
 
@@ -216,6 +216,8 @@ Description: 3D-визуализация графа знаний в виде к�
 □ Динамическое переключение между режимами (2D/3D).
 □ Серверная кластеризация (Louvain) для автоматического выделения смысловых слоёв и центров.
 □ Кэширование кластеров в Redis, инвалидация по событиям.
+□ Knowledge Voyager (Полёт по знаниям) — автопилотный полёт по кластерам по сплайн-траектории (`features/graph-3d/lib/autopilot.ts`), с подсветкой узлов, не открывавшихся N дней. Вау-эффект, требует 3D-режимов и кластеризации.
+□ Ghost Notes (Призрачные заметки) — публичные заметки с похожими эмбеддингами появляются как полупрозрачные узлы в пространстве между кластерами (`GET /api/v1/graph/ghost-notes?context=clusterId`); пользователь может «захватить» узел в свой граф. Зависит от Knowledge Voyager и публичных заметок.
 
 ### 🔗 Link Improvements
 
@@ -418,6 +420,7 @@ Description: Кластеризация графа и визуализация �
 □ 3D Orbital-режим с кластерами — каждый кластер образует свою «солнечную систему», центральная заметка кластера — звезда, остальные — планеты на орбитах.
 □ LOD для дальних кластеров (отображение как единое тело).
 □ Цветовое кодирование и размер кластеров в зависимости от числа заметок и суммарного веса.
+□ Zoomable User Interface (ZUI) — двойной тап/клик по кластеру погружает внутрь (3D: `engine.diveIntoCluster()` / `surfaceToGalacticView()`; 2D: D3 zoom + фильтрация узлов по `cluster_id`), отображая только заметки этого кластера. Зависит от серверной кластеризации.
 
 ---
 
@@ -487,6 +490,61 @@ Description: Кластеризация графа и визуализация �
 - **MVP:** ASYNQ scheduled task для пометки «забытых» заметок, UI-переключатель в архив, endpoint для ручной архивации.
 - **Зависимости:** нет (базовая механика над существующей моделью заметок); интеграция со стражами (Phase 14) — опционально.
 - **Validation:** ≥70% автоматически архивированных заметок не разархивируются вручную в течение месяца; пользователи отмечают, что граф стал «чище» (опрос/фидбек).
+
+### Phase 16: Leaderboards & Public Universes 🟢 Low — Hypothesis
+
+**Priority:** 🟢 Low (после социальных фич)
+**Status:** 💡 Idea
+**Description:** Публичный рейтинг пользователей по активности в графе плюс публичная страница «вселенной» пользователя.
+
+- Backend: агрегация метрик (число заметок, связей, streak) с кэшем в Redis.
+- Топ по количеству заметок/связей/streak, обновление раз в N часов (не realtime).
+- Публичная страница вселенной `routes/u/[username]` — переиспользует существующий публичный граф (`/api/v1/graph/public`).
+- Приватность: пользователь может выключить показ в лидерборде, оставив публичный граф видимым (или наоборот).
+- **Гипотеза:** видимость прогресса и чужих «вселенных» повышает вовлечённость и мотивирует держать граф в порядке.
+- **MVP:** топ-N лидерборд по количеству заметок (`routes/leaderboard`) + публичная страница вселенной, переиспользующая публичный граф.
+- **Зависимости:** публичные заметки ✅ (готово), 🎮 Gamification (очки/ачивки, сейчас в бэклоге).
+- **Validation:** ≥15% пользователей с публичными заметками просматривают лидерборд минимум раз в неделю.
+
+### Phase 17: Social Sharing (Пересылка заметок) 🟡 Medium — Planned
+
+**Priority:** 🟡 Medium
+**Status:** ⏳ Planned
+**Description:** Отправка заметки другому пользователю по username, с входящим Inbox у получателя.
+
+- Backend: таблица `note_shares` (`note_id`, `sender_id`, `recipient_id`, `status`, `created_at`).
+- Endpoints: `POST /api/v1/shares` (создать шар), `GET /api/v1/shares/inbox` (список входящих).
+- Frontend: кнопка «Поделиться» на заметке (поиск получателя по username), Inbox-панель (вписывается в правую панель Cosmic Cockpit), анимация «входящей кометы» для новых заметок.
+- Разрешения: отправить можно любую свою заметку; получатель либо копирует заметку себе, либо просто просматривает (решить на MVP-этапе).
+- **MVP:** шаринг по username + список входящих с принять/отклонить.
+- **Зависимости:** поиск пользователя по username, модель прав на заметки.
+- **Related:** входит в кандидаты TD-3 (Full SSE) для мгновенного уведомления получателя вместо появления при следующей загрузке списка.
+
+### Phase 18: Social Layer (Чат и гильдии) 🟢 Low — Hypothesis
+
+**Priority:** 🟢 Low (последняя фаза — нужна набранная аудитория)
+**Status:** 💡 Idea
+**Description:** Личные сообщения между пользователями, в перспективе — гильдии/группы вокруг общих графов.
+
+- Backend: таблицы `messages`, `conversations`.
+- Транспорт: реализуется поверх SSE-хаба из TD-3 (`GET /api/v1/events/stream`), с fallback на polling при недоступности SSE.
+- Frontend: `features/chat/` + виджет чата, интеграция с Cosmic Cockpit панелями.
+- Гильдии (группы, общий доступ к части графа) — отложить до валидации личных сообщений на реальных пользователях.
+- **Гипотеза:** прямое общение вокруг общих тем/заметок удерживает пользователей и создаёт сетевой эффект.
+- **MVP:** 1:1 личные сообщения без гильдий.
+- **Зависимости:** Phase 17 (Social Sharing), желательно TD-3 (Full SSE) для доставки в реальном времени.
+
+### Phase 19: Periodic Notes (Периодические заметки) 🟡 Medium — Idea
+
+**Priority:** 🟡 Medium
+**Status:** 💡 Idea
+**Description:** Тип заметки Pulsar с периодом повторения и чеклистом — для повторяющихся тем/рутин (обзоры, привычки, регулярные ревью).
+
+- Backend: поля `period_days`, `checklist` (JSONB) в `notes`.
+- Уведомление о просрочке чеклиста — кандидат на TD-3 (Full SSE) для realtime, с fallback на обычный toast/почту.
+- Frontend: `ChecklistEditor.svelte`, визуальный индикатор просрочки на узлах типа Pulsar.
+- **MVP:** ручное поле `period_days` + чеклист с подсветкой просрочки; без авто-планирования повторов.
+- **Зависимости:** нет (расширяет существующую модель заметок).
 
 ### 💡 DB-backed Runtime Configuration 🟢 Low — Idea
 
@@ -812,6 +870,8 @@ _Add future ideas above the next section break._
 - Can a note be a "Star" in one cluster and a "Planet" in another?
 - Is batch edit tool needed for type reassignment?
 - Defer until real usage data available.
+- **MVP for a semantic model (once research above is validated):** descriptions and usage examples for each celestial body type, surfaced as UI hints when choosing a type.
+- **Implementation sketch:** update `celestial-body.ts` (per-type description/example fields), extend i18n keys, add hints to `TypeSelector.svelte`; document the final mapping in `docs/CELESTIAL_BODY_SEMANTICS.md`.
 
 ### TD-3: Full SSE Implementation to Replace HTTP Polling
 
