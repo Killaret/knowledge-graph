@@ -460,16 +460,18 @@ Description: Кластеризация графа и визуализация �
 
 **Priority:** 🟢 Low (после кластеризации и архива)
 **Status:** 💡 Idea
+**Target:** Mobile (PWA first, native later) — desktop показывает состояние стражей, но не является основным интерфейсом взаимодействия.
 **Description:** Пассивная геймификация гигиены знаний через персонифицированного стража кластера.
 
 - Каждый кластер получает стража — семантическую фигурку, отражающую суть кластера (герой, бог, автор, предмет). Пользователь называет стража сам.
-- Страж привязан к кластеру и может быть перемещён между кластерами (drag-and-drop).
+- Страж привязан к кластеру и может быть перемещён между кластерами (drag-and-drop, touch-оптимизировано для мобильного).
 - Сила стража зависит от свежести заметок в кластере, общего количества связей, завершённости кластера и наличия архивных заметок.
-- **Волны забвения** атакуют кластер, если он не обновлялся M дней. Страж автоматически отбивает атаку (авто-анимация), если кластер активен.
+- **Волны забвения** пассивно атакуют кластер, если он не обновлялся M дней (ежедневно/еженедельно). Страж автоматически отбивает атаку (авто-анимация), если кластер активен.
+- Push-уведомления: «Волна забвения приближается к кластеру "Философия". Достоевский готов защищаться».
 - Перемещение стража = переприоритизация: кластер-донор тускнеет, кластер-акцептор усиливается.
 - **Семантическая обратная связь:** страж, названный пользователем («Достоевский», «Проект Альфа»), служит напоминанием о заброшенной теме.
-- **Гипотеза:** персонифицированные стражи создают эмоциональную связь с заметками и мотивируют возвращаться к заброшенным темам.
-- **MVP:** ручное именование стража кластера, drag-and-drop между кластерами, одна фигурка-силуэт, анимация волны забвения.
+- **Гипотеза:** персонифицированные стражи (особенно в мобильном приложении с push-уведомлениями) создают эмоциональную связь с заметками и мотивируют возвращаться к заброшенным темам.
+- **MVP:** ручное именование стража кластера, drag-and-drop между кластерами, одна фигурка-силуэт, анимация волны забвения; мобильный PWA-интерфейс (`features/guardians/` + `widgets/guardians-viewer/`) с push-уведомлениями.
 - **Зависимости:** Phase 11 (Galactic Clusters), Phase 15 (Archive & Note Hygiene), NLP-сервис для будущей авто-генерации имён.
 - **Validation:** рост возвратов к «забытым» кластерам на ≥20% в течение месяца; ≥30% активных пользователей дают имя хотя бы одному стражу.
 
@@ -781,60 +783,6 @@ _Add future ideas above the next section break._
 
 **Last Updated:** July 23, 2026  
 **Next Review:** After manual testing completion
-
----
-
-## 🧪 Experimental & Ideas
-
-### Phase 13: Factory Line 🟢 Low — Hypothesis
-
-**Priority:** 🟡 Medium (after clustering and honeycomb)
-**Status:** 💡 Idea
-**Description:** Graph visualization as a production chain (Factorio / Shapez).
-
-- Notes displayed as "machines" with inputs and outputs.
-- Links are conveyors with movement animations.
-- Note types: raw material (draft), processor (analysis), product (conclusion).
-- Broken chain highlighted as "defect".
-- Productivity metric: number of completed chains.
-- **Hypothesis:** factory metaphor motivates closing chains and maintaining note hygiene.
-- **MVP:** display mode with rectangular nodes and animated arrows.
-- **Dependencies:** none (separate visualization mode).
-
-### Phase 14: Semantic Guardians 🟢 Low — Hypothesis
-
-**Priority:** 🟢 Low (after archive and hygiene)
-**Status:** 💡 Idea
-**Target:** Mobile (PWA first, native later)
-**Description:** Passive gamification of knowledge hygiene through personified cluster guardians. Main interface — mobile app (PWA or native).
-
-- Each cluster gets one guardian — a semantic figure reflecting the cluster's essence (hero, god, author, subject). User names the guardian.
-- Guardian is bound to the cluster and can be moved between clusters (drag-and-drop, touch-optimized).
-- Guardian strength depends on note freshness, connection count, completeness.
-- **Waves of oblivion** passively attack clusters (daily/weekly). Guardians automatically defend (auto-animation).
-- Push notifications: "Wave of oblivion approaching cluster 'Philosophy'. Dostoevsky ready to defend."
-- Moving guardian = reprioritization: donor cluster dims, acceptor cluster strengthens.
-- **Semantic feedback:** guardian serves as reminder of abandoned topic.
-- **Mobile-first:** main guardian interface — mobile companion app. Desktop — view state only.
-- **Hypothesis:** mobile app with guardians increases retention and motivates returning to notes.
-- **MVP:** PWA with cluster display, drag-and-drop guardians, wave animations, push notifications.
-- **Dependencies:** none (independent feature).
-
-### Phase 15: Archive & Note Hygiene 🟡 Medium — Planned
-
-**Priority:** 🟡 Medium (before Semantic Guardians)
-**Status:** ⏳ Planned
-**Description:** Automatic archiving of unused notes.
-
-- Note not updated for N days automatically marked as "forgotten".
-- Forgotten notes dim in graph, connections break.
-- At critical threshold, note moves to **Archive** (hidden from main graph).
-- Archive — separate graph layer, not affecting main navigation. Archive view mode.
-- User can manually archive/unarchive notes.
-- "Graph health" metric: percentage of active notes to total.
-- **Hypothesis:** automatic archiving reduces cognitive load and keeps graph current.
-- **MVP:** scheduled task on backend to mark "forgotten" notes, UI toggle for archive, endpoint for manual archiving.
-- **Dependencies:** none (basic mechanic over existing note model).
 
 ---
 
