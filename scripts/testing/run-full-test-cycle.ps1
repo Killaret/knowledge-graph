@@ -213,10 +213,26 @@ try {
     Write-Host "`n[Step 14/25] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
     Write-Host "  Running frontend unit tests with coverage (npm run test:coverage)..." -ForegroundColor Yellow
     Write-Host "  Tip: coverage report can be regenerated anytime with: cd frontend && npm run test:coverage" -ForegroundColor Cyan
-    Set-Location $repoDir\frontend
-    npm run test:coverage
-    $frontendTestExit = $LASTEXITCODE
-    Set-Location $repoDir
+
+    # SKIP_AUTH and VITE_SKIP_AUTH are used to configure the test stack / E2E builds.
+    # They must not leak into Vitest because auth and preload unit tests assert
+    # non-bypass auth behavior.
+    $savedSkipAuth = $env:SKIP_AUTH
+    $savedViteSkipAuth = $env:VITE_SKIP_AUTH
+    $env:SKIP_AUTH = $null
+    $env:VITE_SKIP_AUTH = $null
+
+    $frontendTestExit = 0
+    try {
+        Set-Location $repoDir\frontend
+        npm run test:coverage
+        $frontendTestExit = $LASTEXITCODE
+        Set-Location $repoDir
+    } finally {
+        $env:SKIP_AUTH = $savedSkipAuth
+        $env:VITE_SKIP_AUTH = $savedViteSkipAuth
+    }
+
     if ($frontendTestExit -ne 0) {
         Write-Host "  ERROR: Frontend unit tests or coverage check failed" -ForegroundColor Red
         exit 1
