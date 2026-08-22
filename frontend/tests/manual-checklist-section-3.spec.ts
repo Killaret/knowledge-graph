@@ -54,7 +54,7 @@ async function getNodePositions(
 ): Promise<{
   nodes: SimNode[];
   transform: { x: number; y: number; k: number };
-  box: { x: number; y: number };
+  box: { x: number; y: number; width: number; height: number };
 }> {
   const box = await page.locator('[data-testid="graph-canvas"]').boundingBox();
   if (!box) throw new Error("Canvas bounding box not found");
@@ -72,7 +72,7 @@ async function getNodePositions(
 function toScreen(
   node: SimNode,
   transform: { x: number; y: number; k: number },
-  box: { x: number; y: number }
+  box: { x: number; y: number; width: number; height: number }
 ) {
   return {
     x: box.x + (node.x ?? 0) * transform.k + transform.x,
