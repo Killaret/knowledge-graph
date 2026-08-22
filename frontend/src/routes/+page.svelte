@@ -1,509 +1,633 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import FloatingControls from '$lib/components/FloatingControls.svelte';
-  import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
-  import CreateNoteModal from '$lib/components/CreateNoteModal.svelte';
-  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
-  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-  import NoteCard from '$lib/components/NoteCard.svelte';
-  import { getNotes, deleteNote, searchNotes, type Note } from '$lib/api/notes';
-  import { getFullGraphData, type GraphData } from '$lib/api/graph';
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
+  import { createHomePageState } from "$features/home-page";
+  import { GraphPageShell } from "$widgets/graph-page";
+  import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
+  import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
+  import NoteCard from "$widgets/notes/NoteCard.svelte";
+  import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+  import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
 
-  // State
-  let allNotes: Note[] = $state([]);
-  let filteredNotes: Note[] = $state([]);
-  let loading = $state(true);
-  let error = $state('');
-  let selectedNodeId: string | null = $state(null);
-  let showCreateModal = $state(false);
-  let showEditModal = $state(false);
-  let noteToEdit: string | null = $state(null);
-  let showConfirmDelete = $state(false);
-  let noteToDelete: string | null = $state(null);
-  let currentView: 'graph' | 'list' = $state('graph');  // Graph-first interface
-  
-  // Graph state - always show full graph on main page
-  let graphData: GraphData = $state({ nodes: [], links: [] });
-  let graphLoading = $state(false);
-  let searchQuery = $state('');
-  
-  // Filter and sort state
-  let selectedType = $state<string>('all');
-  const sortOption = $state<string>('newest');
+  import SplashScreen from "$components/atoms/SplashScreen.svelte";
 
-  const typeFilters = [
-    { id: 'all', label: 'All', emoji: '🌌' },
-    { id: 'star', label: 'Stars', emoji: '⭐' },
-    { id: 'planet', label: 'Planets', emoji: '🪐' },
-    { id: 'moon', label: 'Moons', emoji: '🌙' },
-    { id: 'comet', label: 'Comets', emoji: '☄️' },
-    { id: 'galaxy', label: 'Galaxies', emoji: '🌀' },
-    { id: 'nebula', label: 'Nebulas', emoji: '💫' },
-    { id: 'asteroid', label: 'Asteroids', emoji: '🌑' },
-    { id: 'satellite', label: 'Satellites', emoji: '🛰️' },
-    { id: 'blackhole', label: 'Black Holes', emoji: '⚫' }
-  ];
+  const homePage = createHomePageState();
+  const {
+    t,
+    openAuthPanel,
+    closeAuthPanel,
+    handleAuthSuccess,
+    handleSearchQuery,
+    handleFilter,
+    handleSortChange,
+    handleDeleteRequest,
+    handleDeleteConfirm,
+    toggleSelectionMode,
+    toggleSelectAll,
+    handleNoteSelect,
+    handleBatchDelete,
+    handleNoteEdit,
+    handleNoteDelete,
+    handleUndoRestore,
+    handleNoteCreate,
+    handleNoteCreated,
+    handleCreateChildNote,
+    resetCreateChildParent,
+    handleToggleView,
+    handleToggleLayoutProvider,
+    handleImport,
+    clearApiError,
+    cancelDelete,
+    handleEditSuccess,
+    loadData,
+  } = homePage;
 
-  // NOTE: The sortOptions constant was previously defined here but is not currently used.
-  // These are the available sorting options for the notes list view:
-  // - newest: Sort by creation date, newest first
-  // - oldest: Sort by creation date, oldest first  
-  // - az: Alphabetical sorting A-Z
-  // - za: Alphabetical sorting Z-A
-  // Functionality: Provides sorting options for the notes list view UI
-  /*
-  const sortOptions = [
-    { id: 'newest', label: 'Newest first' },
-    { id: 'oldest', label: 'Oldest first' },
-    { id: 'az', label: 'Alphabetical (A-Z)' },
-    { id: 'za', label: 'Alphabetical (Z-A)' }
-  ];
-  */
-  onMount(async () => {
-    if (!browser) return;
-    await loadDataParallel();
-  });
+  const Graph3DViewer = $derived(homePage.Graph3DViewer);
 
-  async function loadDataParallel() {
-    try {
-      // Load notes and graph data in parallel
-      const [notesResult, graphResult] = await Promise.all([
-        getNotes(),
-        getFullGraphData().catch((e: unknown) => {
-          console.error('[+page] Failed to load graph:', e);
-          return null;
-        })
-      ]);
-      
-      allNotes = notesResult;
-      applyFiltersAndSort();
-      
-      // Set graph data if successful
-      if (graphResult) {
-        // Debug: check what types come from API
-        const apiTypes = graphResult.nodes.map((n: any) => n.type || n.Type || 'MISSING');
-        console.log('[+page] loadDataParallel API types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-        console.log('[+page] loadDataParallel First 3 nodes:', graphResult.nodes.slice(0, 3).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
-
-        // Transform nodes to ensure correct type field
-        graphData = {
-          nodes: graphResult.nodes.map((n: any) => ({
-            id: n.id || n.Id || n.ID,
-            title: n.title || n.Title,
-            type: n.type ?? n.Type ?? 'star'
-          })),
-          links: graphResult.links.map((l: any) => ({
-            source: l.source_note_id || l.source,
-            target: l.target_note_id || l.target,
-            weight: l.weight,
-            link_type: l.link_type
-          }))
-        };
-        console.log('[+page] Full graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-        console.log('[+page] Transformed types:', [...new Set(graphData.nodes.map((n: { id: string; title: string; type?: string }) => n.type))]);
-      } else {
-        // Fallback: build simple graph from notes
-        graphData = {
-          nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
-          links: []
-        };
+  let canvasController:
+    | {
+        focusMode: boolean;
+        fogEnabled: boolean;
+        resetView: () => void;
+        openSearch: () => void;
+        toggleFocus: () => void;
+        toggleFog: () => void;
       }
-    } catch (e) {
-      error = 'Failed to load notes';
-      console.error(e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function loadNotes() {
-    try {
-      allNotes = await getNotes();
-      applyFiltersAndSort();
-      // Also load graph data when notes are loaded
-      await loadGraphData();
-    } catch (e) {
-      error = 'Failed to load notes';
-      console.error(e);
-    } finally {
-      loading = false;
-    }
-  }
-  
-  async function loadGraphData() {
-    if (allNotes.length === 0) {
-      graphData = { nodes: [], links: [] };
-      return;
-    }
-
-    graphLoading = true;
-    try {
-      // Always load full graph on main page
-      const rawData = await getFullGraphData();
-
-      // Debug: check what types come from API
-      const apiTypes = rawData.nodes.map((n: any) => n.type || n.Type || 'MISSING');
-      console.log('[+page] API node types:', [...new Set(apiTypes)], 'Total:', apiTypes.length);
-      console.log('[+page] First 5 raw nodes:', rawData.nodes.slice(0, 5).map((n: any) => ({ id: n.id, type: n.type, Type: n.Type })));
-
-      // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n: any) => ({
-        id: n.id || n.Id || n.ID,
-        title: n.title || n.Title,
-        type: n.type ?? n.Type ?? 'star'
-      }));
-
-      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = rawData.links.map((l: any) => ({
-        source: l.source_note_id || l.source,
-        target: l.target_note_id || l.target,
-        weight: l.weight,
-        link_type: l.link_type
-      }));
-
-      graphData = {
-        nodes: transformedNodes,
-        links: transformedLinks
-      };
-
-    } catch (e) {
-      console.error('[+page] Failed to load graph:', e);
-      // Fallback: build simple graph from notes
-      graphData = {
-        nodes: allNotes.map(n => ({ id: n.id, title: n.title, type: n.type || 'star' })),
-        links: []
-      };
-    } finally {
-      graphLoading = false;
-    }
-  }
-  
-  // Reload graph when allNotes changes (notes added/deleted)
-  $effect(() => {
-    if (browser && allNotes.length > 0) {
-      loadGraphData();
-    }
-  });
-
-  // Helper to get note type from type field or metadata
-  function getNoteType(note: Note): string {
-    return note.type ?? (note.metadata?.type as string) ?? 'star';
-  }
-
-  // Reactive filtered graph data based on selected type
-  const filteredGraphData = $derived(() => {
-    if (selectedType === 'all' || !graphData.nodes.length) {
-      return graphData;
-    }
-    
-    const allowedNodeIds = new Set(
-      allNotes.filter(n => getNoteType(n) === selectedType).map(n => n.id)
-    );
-    
-    const filteredNodes = graphData.nodes.filter((n: { id: string; title: string; type?: string }) => allowedNodeIds.has(n.id));
-    const filteredNodeIds = new Set(filteredNodes.map((n: { id: string; title: string; type?: string }) => n.id));
-    const filteredLinks = graphData.links.filter((l: { source: string; target: string }) => 
-      filteredNodeIds.has(l.source) && filteredNodeIds.has(l.target)
-    );
-    
-    console.log(`[FilteredGraph] Type: ${selectedType}, nodes: ${filteredNodes.length}, links: ${filteredLinks.length}`);
-    
-    return {
-      nodes: filteredNodes,
-      links: filteredLinks
-    };
-  });
-
-  function applyFiltersAndSort() {
-    let result = [...allNotes];
-
-    // Apply type filter
-    if (selectedType !== 'all') {
-      result = result.filter(n => getNoteType(n) === selectedType);
-    }
-
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(n => 
-        n.title.toLowerCase().includes(query) || 
-        n.content.toLowerCase().includes(query)
-      );
-    }
-    
-    // Expose to window for tests
-    if (browser) {
-      (window as any).filteredNotes = result;
-    }
-
-    // Apply sorting
-    switch (sortOption) {
-      case 'newest':
-        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case 'az':
-        result.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'za':
-        result.sort((a, b) => b.title.localeCompare(a.title));
-        break;
-    }
-
-    filteredNotes = result;
-  }
-
-  async function handleSearch() {
-    if (!searchQuery.trim()) {
-      await loadNotes();
-      return;
-    }
-    
-    try {
-      const response = await searchNotes(searchQuery, 1, 20);
-      allNotes = response.data;
-      applyFiltersAndSort();
-    } catch (e) {
-      console.error('Search error:', e);
-    }
-  }
-
-  function handleDeleteRequest(id: string) {
-    noteToDelete = id;
-    showConfirmDelete = true;
-  }
-
-  async function handleDeleteConfirm() {
-    if (!noteToDelete) return;
-
-    try {
-      await deleteNote(noteToDelete);
-      selectedNodeId = null;
-      // Remove deleted note from local arrays immediately
-      allNotes = allNotes.filter(n => n.id !== noteToDelete);
-      filteredNotes = filteredNotes.filter(n => n.id !== noteToDelete);
-      // Then reload from server to ensure sync
-      await loadNotes();
-    } catch {
-      if (browser) {
-        alert('Failed to delete note');
-      }
-    } finally {
-      noteToDelete = null;
-      showConfirmDelete = false;
-    }
-  }
-
-  function handleNoteCreated(note: Note) {
-    showCreateModal = false;
-    selectedNodeId = note.id;
-    loadNotes();
-  }
-
-  function handleToggleView() {
-    currentView = currentView === 'graph' ? 'list' : 'graph';
-  }
+    | undefined = $state(undefined);
 </script>
+
+<!-- Splash Screen on initial load -->
+<SplashScreen />
 
 <!-- Main page container - root element for the page layout -->
 <!-- Functionality: Provides full viewport height/width container with hidden overflow -->
-<div class="page-container">
-
-<!-- Floating Controls with Filters -->
-  <FloatingControls
-    onCreate={() => { showCreateModal = true; }}
-    onSearch={(query: string) => { searchQuery = query; handleSearch(); }}
-    onToggleView={handleToggleView}
-    onFilter={(type: string) => { selectedType = type; applyFiltersAndSort(); }}
-    noteId={selectedNodeId ?? undefined}
-    typeFilters={typeFilters}
-    selectedType={selectedType}
-    currentView={currentView}
-    typeCounts={Object.fromEntries(typeFilters.map(f => [f.id, f.id === 'all' ? allNotes.length : allNotes.filter(n => getNoteType(n) === f.id).length]))}
-  />
-
-  <!-- Fullscreen Graph Container -->
-  <div class="fullscreen-graph" data-testid="graph-2d-container">
-    {#if loading}
-      <div class="center">
+<GraphPageShell
+  view={graphStore.currentView}
+  layoutProvider={homePage.layoutProvider}
+  searchQuery={homePage.searchQuery}
+  selectedType={homePage.selectedType}
+  typeFilters={homePage.typeFilters}
+  notes={homePage.allNotes}
+  nodeCount={homePage.filteredGraphData.nodes.length}
+  linkCount={homePage.filteredGraphData.links.length}
+  selectedNodeId={graphStore.selectedNodeId}
+  {canvasController}
+  onSearch={handleSearchQuery}
+  onFilter={handleFilter}
+  onToggleView={handleToggleView}
+  onToggleLayoutProvider={handleToggleLayoutProvider}
+  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  onNoteCreate={() => (homePage.showCreateModal = true)}
+  onNoteDelete={handleDeleteRequest}
+  onNoteEdit={(id: string) => {
+    homePage.noteToEdit = id;
+    homePage.showEditModal = true;
+  }}
+  onCreateChildNote={handleCreateChildNote}
+  onImport={handleImport}
+  onSignIn={() => openAuthPanel("login")}
+  onRegister={() => openAuthPanel("register")}
+>
+  <!-- Graph/List Container -->
+  <div class="graph-content" data-testid="graph-2d-container">
+    {#if homePage.loading}
+      <div class="loading-overlay">
         <div class="spinner"></div>
-        <p>Loading notes...</p>
+        <p>{t("page.loadingNotes")}</p>
       </div>
-    {:else if error}
-      <p class="error">{error}</p>
-    {:else if currentView === 'graph'}
-      <!-- Fullscreen 2D Graph View -->
-      {#if graphLoading}
-        <div class="center">
-          <div class="spinner"></div>
-          <p>Loading graph...</p>
-        </div>
-      {:else if filteredGraphData().nodes.length > 0}
-        <GraphCanvas 
-          nodes={filteredGraphData().nodes}
-          links={filteredGraphData().links}
-          onNodeClick={(node: { id: string }) => selectedNodeId = node.id}
-        />
-        <!-- Stats Overlay -->
-        <div class="graph-stats-overlay" data-testid="graph-stats">
-          <span class="stat-item"><strong>{filteredGraphData().nodes.length}</strong> nodes</span>
-          <span class="stat-item"><strong>{filteredGraphData().links.length}</strong> links</span>
-          {#if selectedType !== 'all'}
-            <span class="stat-filter">{typeFilters.find(f => f.id === selectedType)?.label}</span>
-          {/if}
-        </div>
-      {:else}
-        <div class="empty-state">
-          <div class="empty-icon">🌌</div>
-          <h2>No graph data</h2>
-          <p>{selectedType === 'all' 
-            ? "Create some notes to see the knowledge graph" 
-            : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} in the graph. Try selecting a different type.`}
-          </p>
+    {:else if homePage.apiError}
+      <ApiErrorDisplay error={homePage.apiError} onClose={clearApiError} />
+      <button
+        onclick={() => {
+          clearApiError();
+          loadData();
+        }}>{t("page.retry")}</button
+      >
+    {:else if graphStore.currentView === "graph"}
+      <!-- Debug info - remove in production -->
+      {#if import.meta.env.DEV}
+        <div
+          style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;"
+        >
+          <div>allNotes: {homePage.allNotes.length}</div>
+          <div>graphData.nodes: {homePage.graphData.nodes.length}</div>
+          <div>graphData.links: {homePage.graphData.links.length}</div>
+          <div>filtered: {homePage.filteredGraphData.nodes.length}</div>
+          <div>selectedType: {homePage.selectedType}</div>
+          <div>loading: {homePage.loading}</div>
         </div>
       {/if}
-
-    {:else if currentView === 'list'}
+      <!-- Fullscreen 2D Graph View -->
+      <div class="graph-view-wrapper">
+        <GraphCanvas
+          nodes={homePage.filteredGraphData.nodes}
+          links={homePage.filteredGraphData.links}
+          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+          onNoteCreate={handleNoteCreate}
+          onNoteDelete={handleDeleteRequest}
+          onCreateChildNote={handleCreateChildNote}
+          showLinkTypeLegend={false}
+          bind:controller={canvasController}
+        />
+      </div>
+    {:else if graphStore.currentView === "3d" && Graph3DViewer}
+      <!-- Fullscreen 3D Graph View -->
+      <div class="graph-view-wrapper">
+        <Graph3DViewer
+          nodes={homePage.filteredGraphData.nodes}
+          links={homePage.filteredGraphData.links}
+          centerNodeId={graphStore.selectedNodeId}
+          selectedNodeId={graphStore.selectedNodeId}
+          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+        />
+      </div>
+    {:else if graphStore.currentView === "list"}
       <!-- List View -->
       <div class="list-container" data-testid="list-container">
-        {#if filteredNotes.length === 0}
+        <div class="list-header">
+          <div class="list-controls">
+            <button
+              class="list-control-btn"
+              data-testid="select-mode-toggle"
+              onclick={toggleSelectionMode}
+              aria-label={t("page.selectionToggle")}
+            >
+              {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
+            </button>
+            {#if homePage.selectionMode}
+              <button
+                class="list-control-btn"
+                onclick={toggleSelectAll}
+                aria-label={t("page.selectAllAria")}
+              >
+                {homePage.selectedNoteIds.size === homePage.filteredNotes.length
+                  ? t("page.clearSelection")
+                  : t("page.selectAll")}
+              </button>
+            {/if}
+          </div>
+          <div class="list-sort">
+            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
+            <select
+              id="sort-select"
+              class="sort-select"
+              value={homePage.sortBy}
+              onchange={(e) => {
+                handleSortChange(e.currentTarget.value as typeof homePage.sortBy);
+              }}
+              aria-label={t("page.sortAriaLabel")}
+            >
+              {#each homePage.sortOptions as opt}
+                <option value={opt.id}>{opt.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+
+        {#if homePage.filteredNotes.length === 0}
           <div class="empty-state" data-testid="empty-state">
-            <div class="empty-icon">🌌</div>
-            <h2>No notes found</h2>
+            <StateIllustration
+              type={!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                ? "empty"
+                : "no-results"}
+            />
+            <h2>
+              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                ? t("page.emptyListNoNotes")
+                : t("page.emptyListNoSearch")}
+            </h2>
             <p>
-              {selectedType === 'all' && !searchQuery
-                ? "You haven't created any notes yet."
-                : searchQuery
-                  ? `No notes match "${searchQuery}".`
-                  : `No ${typeFilters.find(f => f.id === selectedType)?.label.toLowerCase()} found.`}
+              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                ? t("page.emptyListPrompt")
+                : homePage.filterState.isSearchActive
+                  ? t("page.noSearchResults", {
+                      query: homePage.filterState.searchQuery.value,
+                    })
+                  : t("page.noTypeResults", {
+                      type:
+                        homePage.filterState
+                          .getSelectedTypeLabel(homePage.typeFilters)
+                          ?.toLowerCase() ?? "",
+                    })}
             </p>
-            <button class="new-note-button" onclick={() => showCreateModal = true}>
-              Create your first note
+            <button class="new-note-button" onclick={() => (homePage.showCreateModal = true)}>
+              {t("page.createFirstNote")}
             </button>
           </div>
         {:else}
           <div class="notes-grid" data-testid="notes-grid">
-            {#each filteredNotes as note (note.id)}
+            {#each homePage.filteredNotes as note, index (note.id)}
               <NoteCard
                 {note}
-                onClick={() => selectedNodeId = note.id}
-                highlightQuery={searchQuery}
+                animationIndex={index}
+                selected={homePage.selectedNoteIds.has(note.id)}
+                selectMode={homePage.selectionMode}
+                onSelect={handleNoteSelect}
+                onEdit={handleNoteEdit}
+                onDelete={handleNoteDelete}
+                onClick={() => (graphStore.selectedNodeId = note.id)}
+                highlightQuery={homePage.filterState.searchQuery.value}
+                readonly={!isAuthenticated()}
               />
             {/each}
           </div>
         {/if}
       </div>
+
+      <!-- Floating batch delete panel -->
+      {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0}
+        <div class="batch-panel">
+          <span class="batch-count"
+            >{t("page.selectedCount", {
+              count: homePage.selectedNoteIds.size.toString(),
+            })}</span
+          >
+          <button
+            class="batch-btn batch-btn--actions"
+            onclick={() => (homePage.showBulkActionsMenu = !homePage.showBulkActionsMenu)}
+            aria-label={t("page.bulkActionsToggle")}
+          >
+            {t("page.bulkActionsActions")}
+          </button>
+          <button
+            class="batch-btn batch-btn--delete"
+            onclick={handleBatchDelete}
+            aria-label={t("page.bulkActionsDelete")}
+          >
+            {t("page.bulkActionsDeleteSelected")}
+          </button>
+          <button
+            class="batch-btn batch-btn--cancel"
+            onclick={() => {
+              homePage.selectedNoteIds.clear();
+              homePage.selectionMode = false;
+            }}
+            aria-label={t("page.cancelSelection")}
+          >
+            {t("modal.cancel")}
+          </button>
+        </div>
+
+        <!-- Bulk actions menu -->
+        {#if homePage.showBulkActionsMenu}
+          <div class="bulk-actions-menu">
+            <button
+              class="bulk-action-item"
+              onclick={() => {
+                homePage.showBulkActionsMenu = false;
+              }}
+              aria-label={t("page.bulkActionsMoveType")}
+            >
+              <span class="bulk-action-icon">📂</span>
+              {t("page.bulkActionsMoveType")}
+            </button>
+            <button
+              class="bulk-action-item"
+              onclick={() => {
+                homePage.showBulkActionsMenu = false;
+              }}
+              aria-label={t("page.bulkActionsAddTags")}
+            >
+              <span class="bulk-action-icon">🏷️</span>
+              {t("page.bulkActionsAddTags")}
+            </button>
+            <button
+              class="bulk-action-item"
+              onclick={() => {
+                homePage.showBulkActionsMenu = false;
+              }}
+              aria-label={t("page.bulkActionsExport")}
+            >
+              <span class="bulk-action-icon">📤</span>
+              {t("page.bulkActionsExport")}
+            </button>
+          </div>
+        {/if}
+      {/if}
     {/if}
   </div>
-</div>
+</GraphPageShell>
 
-<!-- Side Panel for selected note -->
-{#if selectedNodeId}
-  <NoteSidePanel 
-    nodeId={selectedNodeId} 
-    onClose={() => selectedNodeId = null}
-    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
-    onDelete={handleDeleteRequest}
+<!-- Public auth entry point -->
+{#if !isAuthenticated()}
+  <FloatingAuthPanel
+    open={homePage.showAuthPanel}
+    initialTab={homePage.authPanelTab}
+    onClose={closeAuthPanel}
+    onSuccess={handleAuthSuccess}
   />
 {/if}
 
 <!-- Create Note Modal -->
-<CreateNoteModal 
-  bind:open={showCreateModal}
+<CreateNoteModal
+  bind:open={homePage.showCreateModal}
   onSuccess={handleNoteCreated}
+  onClose={resetCreateChildParent}
+  parentNote={homePage.createChildParent ?? undefined}
+  defaultType={homePage.createChildDefaultType}
 />
 
 <!-- Edit Note Modal -->
-{#if noteToEdit}
-  <EditNoteModal 
-    bind:open={showEditModal}
-    noteId={noteToEdit}
-    onSuccess={() => { showEditModal = false; noteToEdit = null; }}
+{#if homePage.noteToEdit}
+  <EditNoteModal
+    bind:open={homePage.showEditModal}
+    noteId={homePage.noteToEdit}
+    onSuccess={handleEditSuccess}
   />
 {/if}
 
 <!-- Confirm Modal for delete -->
 <ConfirmModal
-  bind:open={showConfirmDelete}
-  title="Delete Note?"
-  message="Are you sure you want to delete this note? This action cannot be undone."
-  confirmText="Delete"
-  cancelText="Cancel"
+  bind:open={homePage.showConfirmDelete}
+  title={t("modal.deleteTitle")}
+  message={t("modal.deleteMessage")}
+  confirmText={t("modal.delete")}
+  cancelText={t("modal.cancel")}
   danger={true}
   onConfirm={handleDeleteConfirm}
-  onCancel={() => { showConfirmDelete = false; noteToDelete = null; }}
+  onCancel={cancelDelete}
 />
 
+<!-- Undo toast -->
+{#if homePage.showUndoToast}
+  <div class="undo-toast" class:undo-toast--restore={homePage.undoToastStage === "restore"}>
+    {#if homePage.undoToastStage === "done"}
+      <span class="undo-toast-message">{t("toast.done")}</span>
+    {:else}
+      <span class="undo-toast-message">{t("toast.noteDeleted")}</span>
+      <button
+        class="undo-toast-btn"
+        onclick={handleUndoRestore}
+        aria-label={t("toast.restoreAriaLabel")}
+      >
+        {t("toast.restore")}
+      </button>
+    {/if}
+  </div>
+{/if}
+
 <style>
-  .page-container {
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* Fullscreen Graph Container */
-  .fullscreen-graph {
-    position: fixed;
-    top: 80px; /* Space for floating controls */
-    left: 0;
-    right: 0;
-    bottom: 0;
+  .graph-content {
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    height: calc(100vh - 80px);
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    color: var(--color-text-dark);
   }
 
-  .fullscreen-graph :global(canvas) {
+  .graph-view-wrapper {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .graph-view-wrapper :global(canvas) {
     width: 100% !important;
     height: 100% !important;
   }
 
-  /* Stats Overlay on Graph */
-  .graph-stats-overlay {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    display: flex;
-    gap: 16px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    color: #94a3b8;
-    font-size: 14px;
-    z-index: 10;
-  }
-
-  .stat-item strong {
-    color: #88aaff;
-    font-weight: 600;
-  }
-
-  .stat-filter {
-    color: #64748b;
-    font-style: italic;
-  }
-
   /* List Container */
   .list-container {
+    flex: 1 1 auto;
+    min-height: 0;
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
-    height: calc(100vh - 80px);
+    width: 100%;
     overflow-y: auto;
+    box-sizing: border-box;
   }
 
-  .center {
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+
+  .list-controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .list-control-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .list-control-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .list-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sort-label {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .sort-select {
+    padding: 0.4rem 0.75rem;
+    background: rgba(10, 14, 35, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .sort-select option {
+    background: rgba(10, 14, 35, 0.95);
+    color: white;
+  }
+
+  .batch-panel {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    animation: slide-up 0.3s ease;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .batch-count {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+  }
+
+  .batch-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .batch-btn:hover {
+    opacity: 0.85;
+  }
+
+  .batch-btn--delete {
+    background: rgba(239, 68, 68, 0.85);
+    color: white;
+  }
+
+  .batch-btn--cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .batch-btn--actions {
+    background: var(--color-primary, #8b5cf6);
+    color: white;
+  }
+
+  .bulk-actions-menu {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+    animation: slide-up 0.3s ease;
+    min-width: 200px;
+  }
+
+  .bulk-action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+  }
+
+  .bulk-action-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .bulk-action-icon {
+    font-size: 1.1rem;
+  }
+
+  .undo-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 14, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    animation: slide-in 0.3s ease;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .undo-toast-message {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .undo-toast-btn {
+    padding: 0.4rem 0.8rem;
+    background: var(--color-primary, #8b5cf6);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .undo-toast-btn:hover {
+    opacity: 0.85;
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    color: #64748b;
+    gap: 16px;
+    z-index: 1000;
+    color: white;
   }
 
   .spinner {
@@ -517,17 +641,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .error {
-    padding: 20px;
-    background: #fee2e2;
-    color: #dc2626;
-    border-radius: 8px;
-    text-align: center;
-    margin: 20px auto;
-    max-width: 600px;
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Empty State */
@@ -540,11 +656,6 @@
     text-align: center;
     background: linear-gradient(135deg, #0a1a3a 0%, #020617 100%);
     height: 100%;
-  }
-
-  .empty-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
   }
 
   .empty-state h2 {
@@ -578,26 +689,20 @@
 
   .notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-    padding: 16px 0;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
   }
 
   @media (max-width: 768px) {
-    .fullscreen-graph {
-      top: 70px;
-      height: calc(100vh - 70px);
+    .notes-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 16px 0;
     }
 
     .list-container {
       padding: 16px;
-    }
-
-    .graph-stats-overlay {
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      flex-wrap: wrap;
+      height: 100%;
     }
   }
 </style>

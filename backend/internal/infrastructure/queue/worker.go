@@ -11,6 +11,8 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/pgvector/pgvector-go"
 
+	importer "knowledge-graph/internal/application/import"
+	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/nlp"
@@ -21,6 +23,8 @@ type Worker struct {
 	keywordRepo   *postgres.KeywordRepository
 	embeddingRepo *postgres.EmbeddingRepository
 	nlpClient     *nlp.NLPClient
+	cacheClient   dcache.CacheClient
+	importSvc     *importer.Service
 }
 
 func NewWorker(
@@ -28,12 +32,16 @@ func NewWorker(
 	keywordRepo *postgres.KeywordRepository,
 	embeddingRepo *postgres.EmbeddingRepository,
 	nlpClient *nlp.NLPClient,
+	cacheClient dcache.CacheClient,
+	importSvc *importer.Service,
 ) *Worker {
 	return &Worker{
 		noteRepo:      noteRepo,
 		keywordRepo:   keywordRepo,
 		embeddingRepo: embeddingRepo,
 		nlpClient:     nlpClient,
+		cacheClient:   cacheClient,
+		importSvc:     importSvc,
 	}
 }
 
@@ -148,4 +156,33 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 	}
 	log.Printf("HandleComputeEmbedding: successfully processed note %s", noteID)
 	return nil
+}
+
+// HandleImportBookmarks processes an async batch bookmark import task.
+func (w *Worker) HandleImportBookmarks(ctx context.Context, t *asynq.Task) error {
+	log.Println("HandleImportBookmarks: received task", t.Payload())
+
+	var p ImportBookmarksPayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		log.Printf("HandleImportBookmarks: unmarshal error: %v", err)
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	userID, err := uuid.Parse(p.UserID)
+	if err != nil {
+		log.Printf("HandleImportBookmarks: invalid user id %s: %v", p.UserID, err)
+		return fmt.Errorf("invalid user id: %w", err)
+	}
+
+	var items []importer.Item
+	if err := json.Unmarshal(p.Items, &items); err != nil {
+		log.Printf("HandleImportBookmarks: failed to unmarshal items: %v", err)
+		return fmt.Errorf("failed to unmarshal items: %w", err)
+	}
+
+	if w.importSvc == nil {
+		return fmt.Errorf("import service is not configured")
+	}
+
+	return w.importSvc.ProcessImportTask(ctx, userID, p.TaskID, items)
 }

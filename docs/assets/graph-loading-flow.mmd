@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    participant P as +page.svelte
+    participant Notes as Notes API
+    participant Graph as GraphService / Backend
+    participant FS as FilterState
+    participant Store as graphStore
+    participant GC as GraphCanvas
+    participant G3D as Graph3DViewer
+    participant GSP as GraphServiceLayoutProvider
+    participant LV as Note list
+
+    P->>Notes: getNotes()
+    P->>Graph: getFullGraphData()
+    alt graph-service 5xx / timeout / network error
+        Graph->>Graph: fallback to backend /api/v1/graph/all
+    end
+    Notes-->>P: allNotes
+    Graph-->>P: graphResult
+
+    P->>P: normalize nodes & links
+
+    P->>FS: filterState.filterGraphData(graphData, allNotes)
+    FS-->>P: filteredGraphData
+    P->>FS: filterState.applyFiltersAndSort(allNotes)
+    FS-->>P: filteredNotes
+
+    P->>Store: graphData / currentView
+
+    Store->>GC: shared state (2D)
+    Store->>G3D: shared state (3D)
+    Store->>LV: shared state (List)
+
+    Note over P: /graph/3d routes
+    GSP->>Graph: getFullGraphData() / getGraphData(noteId, layout=3d)
+    alt graph-service 5xx / timeout / network error
+        Graph->>Graph: fallback to backend graph endpoints
+    end
+    Graph-->>GSP: 3D graph data
+    GSP-->>G3D: nodes + links
+
+    Note over GC: FloatingControls triggers filterState update
+    Note over G3D: currentView = 3d uses graphStore
+    Note over LV: currentView = list uses graphStore
+    GC->>P: request update
+    G3D->>P: request update
+    LV->>P: request update
+    P->>FS: re-derive filtered data

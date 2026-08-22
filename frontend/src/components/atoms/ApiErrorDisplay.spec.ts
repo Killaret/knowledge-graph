@@ -1,0 +1,134 @@
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/svelte";
+import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+import type { ErrorResponse } from "$shared/types/errors";
+
+describe("ApiErrorDisplay", () => {
+  const mockError: ErrorResponse = {
+    code: "VALIDATION_ERROR",
+    message: "Invalid input data",
+  };
+
+  const mockErrorWithDetails: ErrorResponse = {
+    code: "VALIDATION_ERROR",
+    message: "Invalid input data",
+    details: [
+      {
+        field: "title",
+        reason: "required",
+        message: "Field is required",
+        received: "",
+        expected: "non-empty string",
+      },
+      {
+        field: "content",
+        reason: "too_short",
+        message: "Content is too short",
+      },
+    ],
+  };
+
+  it("renders with error data (code and message visible)", () => {
+    render(ApiErrorDisplay, { props: { error: mockError } });
+
+    expect(screen.getByText("Error: VALIDATION_ERROR")).toBeInTheDocument();
+    expect(screen.getByText("Invalid input data")).toBeInTheDocument();
+    expect(screen.getByText("⚠️")).toBeInTheDocument();
+  });
+
+  it("does not render when error is null", () => {
+    const { container } = render(ApiErrorDisplay, { props: { error: null } });
+
+    // Component should render nothing when error is null
+    // Svelte leaves a comment node for empty renders, so check content instead
+    expect(container.textContent).toBe("");
+    expect(container.querySelector(".error-container")).not.toBeInTheDocument();
+  });
+
+  it("displays details list when details are provided", () => {
+    render(ApiErrorDisplay, { props: { error: mockErrorWithDetails } });
+
+    expect(screen.getByText("Details:")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.getByText("Field is required")).toBeInTheDocument();
+    expect(screen.getByText("content")).toBeInTheDocument();
+    expect(screen.getByText("Content is too short")).toBeInTheDocument();
+  });
+
+  it("displays received value in details when available", () => {
+    render(ApiErrorDisplay, { props: { error: mockErrorWithDetails } });
+
+    expect(screen.getByText('(received: "")')).toBeInTheDocument();
+  });
+
+  it("calls onClose when close button is clicked", async () => {
+    const onClose = vi.fn();
+    render(ApiErrorDisplay, { props: { error: mockError, onClose } });
+
+    const closeButton = screen.getByLabelText("Close error");
+    await fireEvent.click(closeButton);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("has correct ARIA attributes", () => {
+    render(ApiErrorDisplay, { props: { error: mockError } });
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveAttribute("aria-live", "assertive");
+  });
+
+  it("close button has correct aria-label", () => {
+    render(ApiErrorDisplay, { props: { error: mockError } });
+
+    const closeButton = screen.getByLabelText("Close error");
+    expect(closeButton).toBeInTheDocument();
+    expect(closeButton).toHaveAttribute("type", "button");
+  });
+
+  it("does not show details section when details are empty", () => {
+    const errorWithoutDetails: ErrorResponse = {
+      code: "NOT_FOUND",
+      message: "Note not found",
+      details: [],
+    };
+
+    render(ApiErrorDisplay, { props: { error: errorWithoutDetails } });
+
+    expect(screen.queryByText("Details:")).not.toBeInTheDocument();
+  });
+
+  it("does not show details section when details are undefined", () => {
+    render(ApiErrorDisplay, { props: { error: mockError } });
+
+    expect(screen.queryByText("Details:")).not.toBeInTheDocument();
+  });
+
+  it("works without onClose callback", async () => {
+    render(ApiErrorDisplay, { props: { error: mockError } });
+
+    const closeButton = screen.getByLabelText("Close error");
+    // Should not throw when clicking without onClose
+    await fireEvent.click(closeButton);
+
+    // Component should still be rendered
+    expect(screen.getByText("Error: VALIDATION_ERROR")).toBeInTheDocument();
+  });
+
+  it("automatically renders a 404 illustration for NOT_FOUND errors", () => {
+    const notFoundError: ErrorResponse = {
+      code: "NOT_FOUND",
+      message: "Note not found",
+    };
+
+    render(ApiErrorDisplay, { props: { error: notFoundError } });
+    expect(screen.getByRole("img", { name: "404 illustration" })).toBeInTheDocument();
+  });
+
+  it("renders custom illustrationType when provided", () => {
+    render(ApiErrorDisplay, {
+      props: { error: mockError, illustrationType: "offline" },
+    });
+    expect(screen.getByRole("img", { name: "Offline illustration" })).toBeInTheDocument();
+  });
+});

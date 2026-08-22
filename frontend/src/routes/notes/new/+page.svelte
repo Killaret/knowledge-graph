@@ -1,44 +1,73 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { createNote } from '$lib/api/notes';
+  import { goto } from "$app/navigation";
+  import { createNote } from "$shared/api/notes";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
-  let title = $state('');
-  let content = $state('');
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
+  let title = $state("");
+  let content = $state("");
   let saving = $state(false);
-  let error = $state('');
+  let error = $state("");
 
   async function handleSubmit() {
     if (!title.trim()) {
-      error = 'Title is required';
+      error = t("noteEditor.titleRequired");
       return;
     }
     saving = true;
-    error = '';
+    error = "";
     try {
       const note = await createNote({ title, content, metadata: {} });
       await goto(`/notes/${note.id}`);
     } catch (e) {
-      error = 'Failed to create note';
-      console.error('Create note error:', e);
+      error = t("note.createError");
+      if (import.meta.env.DEV) {
+        console.error("Create note error:", e);
+      }
     } finally {
       saving = false;
     }
   }
 </script>
 
-<h1>New Note</h1>
+<h1>{t("note.newTitle")}</h1>
 
 {#if error}
   <p class="error">{error}</p>
 {/if}
 
 <form onsubmit={handleSubmit}>
-  <input type="text" name="title" placeholder="Title" bind:value={title} required />
-  <textarea name="content" placeholder="Content (supports [[wiki links]])" bind:value={content} rows="15"></textarea>
-  <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create'}</button>
+  <input
+    type="text"
+    name="title"
+    placeholder={t("noteEditor.titlePlaceholder")}
+    bind:value={title}
+    required
+  />
+  <textarea
+    name="content"
+    placeholder={t("note.contentPlaceholderWiki")}
+    bind:value={content}
+    rows="15"
+  ></textarea>
+  <button type="submit" disabled={saving}
+    >{saving ? t("noteEditor.saving") : t("noteEditor.create")}</button
+  >
 </form>
 
 <style>
-  input, textarea { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
-  .error { color: red; }
+  input,
+  textarea {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .error {
+    color: red;
+  }
 </style>

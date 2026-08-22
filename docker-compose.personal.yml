@@ -1,0 +1,296 @@
+services:
+  postgres_personal:
+    image: pgvector/pgvector:pg16
+    container_name: kg-postgres-personal
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
+      POSTGRES_PASSWORD: ${PERSONAL_POSTGRES_PASSWORD:-personal_password}
+      POSTGRES_DB: ${PERSONAL_POSTGRES_DB:-knowledge_personal}
+    volumes:
+      - pgdata_personal:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PERSONAL_POSTGRES_USER:-personal} -d ${PERSONAL_POSTGRES_DB:-knowledge_personal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis_personal:
+    image: redis:7-alpine
+    container_name: kg-redis-personal
+    ports:
+      - "127.0.0.1:16380:6379"
+    volumes:
+      - redisdata_personal:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mongo_personal:
+    image: mongo:7
+    container_name: kg-mongo-personal
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodbdata_personal:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  nlp-personal:
+    build: ./nlp-service
+    container_name: kg-nlp-personal
+    ports:
+      - "5001:5000"
+    environment:
+      - MODEL_NAME=all-MiniLM-L6-V2
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_DISABLE_TELEMETRY=1
+      - HF_HUB_OFFLINE=1
+    volumes:
+      - ./huggingface_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 600s
+    restart: unless-stopped
+
+  graph-service-personal:
+    build:
+      context: .
+      dockerfile: ./services/graph-service/Dockerfile
+    container_name: kg-graph-service-personal
+    ports:
+      - "9092:9091"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      HTTP_PORT: 9091
+      GRPC_PORT: 9090
+      EVENT_CHANNEL: ${PERSONAL_EVENT_CHANNEL:-graph:events:personal}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  backend_personal:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+      target: server
+    container_name: kg-backend-personal
+    ports:
+      - "127.0.0.1:18085:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      REDIS_FLUSH_ON_STARTUP: "false"
+      NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: ${SKIP_AUTH:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:18080,http://localhost:18081,http://localhost:18082,http://localhost:18084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:18080,http://127.0.0.1:18081,http://127.0.0.1:18082,http://127.0.0.1:18084}
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+      nlp-personal:
+        condition: service_started
+      graph-service-personal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  worker_personal:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+      target: worker
+    container_name: kg-worker-personal
+    command: ["./worker"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      REDIS_FLUSH_ON_STARTUP: "false"
+      NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: ${SKIP_AUTH:-false}
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+      nlp-personal:
+        condition: service_started
+      graph-service-personal:
+        condition: service_healthy
+    restart: unless-stopped
+
+  cli_personal:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+      target: cli
+    container_name: kg-cli-personal
+    profiles:
+      - cli
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${PERSONAL_DATABASE_URL:-postgresql://${PERSONAL_POSTGRES_USER:-personal}:${PERSONAL_POSTGRES_PASSWORD:-personal_password}@postgres_personal:5432/${PERSONAL_POSTGRES_DB:-knowledge_personal}?sslmode=disable}
+      REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
+      REDIS_FLUSH_ON_STARTUP: "false"
+      NLP_SERVICE_URL: http://nlp-personal:5000
+      SKIP_AUTH: ${SKIP_AUTH:-false}
+      RECOMMENDATION_TOP_N: ${RECOMMENDATION_TOP_N:-50}
+      RECOMMENDATION_TASK_DELAY_SECONDS: ${RECOMMENDATION_TASK_DELAY_SECONDS:-5}
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+      redis_personal:
+        condition: service_healthy
+    restart: "no"
+
+  nginx_personal:
+    image: nginx:alpine
+    container_name: kg-nginx-personal
+    ports:
+      - "127.0.0.1:18082:8080"
+      - "127.0.0.1:18084:8081"
+    volumes:
+      - ./nginx.personal.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend_personal:
+        condition: service_healthy
+      graph-service-personal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend_personal:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        # Use relative paths for client-side - browser will use same origin
+        VITE_API_URL: /api
+        VITE_GRAPH_SERVICE_URL: /graph-service
+    container_name: kg-frontend-personal
+    ports:
+      - "3001:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    environment:
+          # For local Docker: use nginx proxy for API requests
+          VITE_API_URL: /api
+          VITE_GRAPH_SERVICE_URL: /graph-service
+          # For SSR hooks.server.ts: direct access to backend (no /api suffix)
+          VITE_API_TARGET: ${VITE_API_TARGET:-http://backend_personal:8080}
+          # For SSR hooks.server.ts: direct access to graph service
+          GRAPH_SERVICE_URL: http://graph-service-personal:9091
+          # Internal authentication token for graph service (optional)
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${GRAPH_SERVICE_INTERNAL_TOKEN:-}
+    healthcheck:
+      # Проверяем, что фронтенд отрабатывает (доступен на внутр. порту 3000)
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend_personal:
+        condition: service_healthy
+      graph-service-personal:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backup_scheduler:
+    image: postgres:16-alpine
+    container_name: kg-backup-scheduler
+    volumes:
+      - ./backups:/backups
+      - ./scripts/devops:/scripts:ro
+      - ./knowledge-graph.config.json:/config/config.json:ro
+    environment:
+      BACKUP_DIR: /backups
+      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
+      BACKUP_YANDEX_OAUTH_TOKEN: ${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}
+      BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
+      BACKUP_DAILY_RETENTION_DAYS: ${BACKUP_DAILY_RETENTION_DAYS:-7}
+      BACKUP_WEEKLY_RETENTION_DAYS: ${BACKUP_WEEKLY_RETENTION_DAYS:-90}
+      PERSONAL_POSTGRES_HOST: postgres_personal
+      PERSONAL_POSTGRES_PORT: 5432
+      PERSONAL_POSTGRES_USER: ${PERSONAL_POSTGRES_USER:-personal}
+      PERSONAL_POSTGRES_PASSWORD: ${PERSONAL_POSTGRES_PASSWORD:-personal_password}
+      PERSONAL_POSTGRES_DB: ${PERSONAL_POSTGRES_DB:-knowledge_personal}
+    command: >
+      sh -c "
+        apk add --no-cache curl gzip &&
+        mkdir -p /var/spool/cron/crontabs /backups &&
+        {
+          echo 'SHELL=/bin/sh';
+          echo 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+          echo 'BACKUP_DIR=/backups';
+          echo 'BACKUP_CLOUD_ENABLED=${BACKUP_CLOUD_ENABLED:-true}';
+          echo 'BACKUP_YANDEX_OAUTH_TOKEN=${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}';
+          echo 'BACKUP_YANDEX_FOLDER=${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}';
+          echo 'BACKUP_DAILY_RETENTION_DAYS=${BACKUP_DAILY_RETENTION_DAYS:-7}';
+          echo 'BACKUP_WEEKLY_RETENTION_DAYS=${BACKUP_WEEKLY_RETENTION_DAYS:-90}';
+          echo 'PERSONAL_POSTGRES_HOST=postgres_personal';
+          echo 'PERSONAL_POSTGRES_PORT=5432';
+          echo 'PERSONAL_POSTGRES_USER=${PERSONAL_POSTGRES_USER:-personal}';
+          echo 'PERSONAL_POSTGRES_PASSWORD=${PERSONAL_POSTGRES_PASSWORD:-personal_password}';
+          echo 'PERSONAL_POSTGRES_DB=${PERSONAL_POSTGRES_DB:-knowledge_personal}';
+          echo '0 2 * * * /scripts/devops/backup-personal.sh daily';
+          echo '0 23 * * 0 /scripts/devops/backup-personal.sh weekly';
+        } > /var/spool/cron/crontabs/root &&
+        crond -f -l 2
+      "
+    depends_on:
+      postgres_personal:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata_personal:
+  redisdata_personal:
+  mongodbdata_personal:
+

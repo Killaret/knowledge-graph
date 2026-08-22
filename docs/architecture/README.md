@@ -139,6 +139,10 @@ Cache Check → BFS Links (α=0.5) + Semantic Search (β=0.5) → Combine → Ra
 
 ---
 
+**ADR:**
+
+- Key patterns and decisions: [`decisions/012-key-patterns.md`](decisions/012-key-patterns.md)
+
 ## 6. ATAM анализ
 
 Анализ ключевых сценариев (создание заметки, рекомендации, удаление заметки) — в файле [`atam.md`](atam.md).

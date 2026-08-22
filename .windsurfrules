@@ -1,0 +1,496 @@
+# Knowledge Graph — Windsurf/Cascade Rules
+
+This file is automatically loaded by Windsurf/Cascade in every chat session.
+Single source of truth for all AI-assisted development in this project.
+
+---
+
+## Project Overview
+
+**Knowledge Graph** — note management system with graph relationships and NLP-powered analysis.
+
+**Module:** `knowledge-graph` (Go), `frontend` (SvelteKit)
+**Environments:** Dev stack (docker-compose.yml) + Personal stack (docker-compose.personal.yml)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go 1.25, Gin v1.12, GORM v1.25 |
+| Database | PostgreSQL (pgx/v5), Redis (go-redis/v9), MongoDB |
+| Auth | golang-jwt/jwt/v5 |
+| Async | asynq v0.23 |
+| Vector | pgvector-go v0.2 |
+| Frontend | Svelte 5, TypeScript strict, SvelteKit |
+| HTTP client | ky v1.14 |
+| Visualization | D3-force v3, Three.js v0.184 |
+| NLP | Python FastAPI, sentence-transformers, HuggingFace |
+| Testing (BE) | testify v1.11, testcontainers-go v0.40, miniredis v2.38 |
+| Testing (FE) | Vitest v3, Playwright v1.59, @testing-library/svelte v5 |
+| BDD | @cucumber/cucumber v12 |
+| Infra | Docker multi-stage, nginx gateway |
+
+---
+
+## Architecture Rules
+
+### Backend — Clean Architecture (MANDATORY)
+
+Layers (inner → outer, no reverse imports):
+```
+domain/          → Entities, Value Objects, Aggregates (pure Go, no frameworks)
+application/     → Use cases, orchestration
+infrastructure/  → DB (GORM), Redis, MongoDB, external APIs
+interfaces/api/  → Gin handlers, middleware, DTOs
+```
+
+**✅ Good:**
+```go
+// domain/note.go — pure domain entity
+type Note struct {
+    id      uuid.UUID
+    title   string
+    content string
+}
+
+func NewNote(title, content string) (*Note, error) {
+    if title == "" {
+        return nil, errors.New("title is required")
+    }
+    return &Note{id: uuid.New(), title: title, content: content}, nil
+}
+```
+
+**❌ Bad — global variable:**
+```go
+var db *gorm.DB  // NEVER do this
+
+// ✅ Good — dependency injection
+type NoteRepository struct {
+    db *gorm.DB
+}
+func NewNoteRepository(db *gorm.DB) *NoteRepository {
+    return &NoteRepository{db: db}
+}
+```
+
+**❌ Bad — panic in business logic:**
+```go
+func (r *NoteRepo) FindByID(id uuid.UUID) *Note {
+    // NEVER panic — return error
+    panic("not found")
+}
+// ✅ Good
+func (r *NoteRepo) FindByID(id uuid.UUID) (*Note, error) {
+    return note, fmt.Errorf("finding note %s: %w", id, err)
+}
+```
+
+### Frontend — Svelte 5 Runes (MANDATORY)
+
+**✅ Svelte 5 runes ONLY:**
+```svelte
+<script lang="ts">
+    let count = $state(0);
+    let doubled = $derived(count * 2);
+    $effect(() => { console.log(count); });
+
+    interface Props { title: string; }
+    let { title }: Props = $props();
+</script>
+```
+
+**❌ Svelte 4 — NEVER use:**
+```svelte
+<script>
+    import { writable } from 'svelte/store'; // ❌ outdated
+    const count = writable(0);               // ❌ use $state instead
+</script>
+```
+
+**Frontend folders (FSD + Atomic Design):**
+```
+frontend/src/app/            # SvelteKit entry points, hooks, layouts
+frontend/src/routes/         # SvelteKit pages (FSD pages layer)
+frontend/src/widgets/        # Complex, self-contained sections (GraphCanvas, NotePanel)
+frontend/src/features/       # User scenarios and flows (graph-interaction, graph-forms)
+frontend/src/entities/       # Domain entities (note, user, tag, link)
+frontend/src/components/
+├── atoms/                   # Button, Input, Badge, Icon — single responsibility
+├── molecules/               # NoteCard, SearchBar, TagList — composed atoms
+└── organisms/               # Sidebar, AuthCard — composed molecules
+frontend/src/shared/
+├── api/                     # ky-based API clients
+├── stores/                  # runes-based state modules
+├── services/                # business logic, preload, side effects
+├── utils/                   # helpers
+├── types/                   # TypeScript types
+├── mocks/                   # SvelteKit mocks for Vitest
+├── test-utils/              # test helpers
+├── styles/                  # shared styles / CSS variables
+└── config/                  # runtime config
+```
+
+**FSD dependency boundaries (MANDATORY):**
+
+- `shared/` MUST NOT import any higher layer (`entities`, `features`, `widgets`, `components`, `routes`).
+- `components/atoms/` MUST NOT import `components/molecules/`, `components/organisms/`, or any higher layer.
+- `components/molecules/` MAY import `components/atoms/` and `shared/`.
+- `components/organisms/` MAY import `components/atoms/`, `components/molecules/`, and `shared/`.
+- `entities/` MAY import `shared/` only (no `components/features/widgets/routes`).
+- `features/` MAY import `entities/`, `components/`, and `shared/`.
+- `widgets/` MAY import `entities/`, `features/`, `components/`, and `shared/`.
+- `routes/` MAY import any layer.
+
+**Aliases:** `$shared/*`, `$components/*`, `$features/*`, `$entities/*`, `$widgets/*` (legacy `$lib` removed).
+
+---
+
+## Redis — go-redis/v9 API (CRITICAL)
+
+**❌ v8 API (WRONG — will break):**
+```go
+redis.Options{ MaxConnAge: 30 * time.Minute, IdleTimeout: 5 * time.Minute }
+```
+
+**✅ v9 API (CORRECT):**
+```go
+redis.Options{
+    ConnMaxLifetime: 30 * time.Minute,
+    ConnMaxIdleTime: 5 * time.Minute,
+}
+```
+
+---
+
+## NLP Service — Lazy Loading Pattern (MANDATORY)
+
+**✅ Correct — lazy load:**
+```python
+# nlp_utils.py
+_model = None
+
+def get_embedding_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer("model-name")
+    return _model
+
+def ensure_model_loaded() -> bool:
+    try:
+        get_embedding_model()
+        return True
+    except Exception:
+        return False
+```
+
+**❌ Wrong — load at import:**
+```python
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
+```
+
+**Environment:**
+- `HF_HUB_OFFLINE=1` — offline-first mode (no internet required)
+- `HF_HOME=/path/to/cache` — local model cache path
+- Uvicorn starts in ~1s, model loads in ~15s from cache
+
+---
+
+## Testing Requirements
+
+| Layer | Command | Tool | Coverage |
+|-------|---------|------|----------|
+| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 60%) |
+| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 60% lines/branches, 55% functions) |
+| E2E | `cd frontend && npm run test` | Playwright | - |
+| BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
+| NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |
+
+**Test Stack (MANDATORY for E2E/BDD testing):**
+- **ALWAYS** use isolated test stack for E2E and BDD tests
+- Never run E2E/BDD tests against dev or personal stacks
+- Start test stack: `.\scripts\testing\start-test.ps1`
+- Seed test data: `.\scripts\testing\seed-test-data.ps1`
+- Stop and destroy: `.\scripts\testing\stop-test.ps1` (removes all data with `-v`)
+- Test stack ports: Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 19090 (gRPC) / 19091 (HTTP)
+- Test database: `knowledge_test` (separate from dev/personal)
+- Test stack completely isolated with unique container names (`kg-test-*`)
+- **Stop dev/personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` resolution issues in Node/Playwright
+- On Windows, prefer `http://127.0.0.1:3002` for Playwright/BDD (frontend uses same-origin `/api` and `/graph-service/api` proxies; backend direct `http://127.0.0.1:18083` is used only for setup/health checks)
+- Ensure `.env` contains `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes
+- See `docs/TESTING.md` for complete test stack documentation
+
+**Manual Found → Automated Covered (MANDATORY):**
+- If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
+- Choose the test level by severity and scope:
+  - **unit** — pure logic, validators, utilities (e.g. `errorMessage.ts`, email validation).
+  - **integration** — handlers, repositories, routes (e.g. `PUT /users/me`, `DELETE /users/me` in `router_test.go`).
+  - **E2E / Playwright** — full user scenario spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
+- The test should fail before the fix (where safe) and pass after the fix.
+- If the defect depends on manual data or config setup, fix the seed/config script — not just the instructions.
+
+**Regression Testing (MANDATORY before production deployment):**
+- **ALWAYS** run full regression cycle before production deployment
+- Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)
+- Regression plan: 20-part comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
+- Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
+- Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
+- Stacks identity check: `.\scripts\ci\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
+- Exit criteria: All stacks identical, all builds succeed, all tests pass, no vulnerabilities
+- See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
+
+**Go table-driven tests (mandatory pattern):**
+```go
+func TestCreateNote(t *testing.T) {
+    tests := []struct {
+        name    string
+        title   string
+        wantErr bool
+    }{
+        {"valid note", "My Note", false},
+        {"empty title", "", true},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            note, err := NewNote(tt.title, "content")
+            if tt.wantErr {
+                require.Error(t, err)
+            } else {
+                require.NoError(t, err)
+                require.Equal(t, tt.title, note.Title())
+            }
+        })
+    }
+}
+```
+
+---
+
+## Documentation (MANDATORY)
+
+After completing any task that changes behavior, configuration, architecture, Docker stack, or environment variables:
+
+- Update the relevant documentation:
+  - [`.windsurfrules`](.windsurfrules) — project conventions and rules.
+  - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer and current state.
+  - [`docs/BACKUP.md`](docs/BACKUP.md), [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md) — subsystem docs.
+  - [`ROADMAP.md`](ROADMAP.md) / [`ROADMAP.ru.md`](ROADMAP.ru.md) — scope and roadmap.
+  - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
+  - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
+- Authoritative docs are in English; Russian translations may be added alongside.
+- User-facing runtime content stays Russian by default through i18n keys.
+- Do not create standalone docs to describe changes; update existing project docs instead.
+
+---
+
+## Security Rules (NON-NEGOTIABLE)
+
+- **NEVER** commit secrets: `.env`, tokens, OAuth keys, passwords
+- **NEVER** put JWT validation in handlers — use middleware
+- Rate limiting **required** on all write endpoints (POST/PUT/DELETE)
+- All secrets via environment variables only
+- Input validation with go-playground/validator
+
+```go
+// ✅ JWT in middleware, not handler
+func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        // validate...
+        c.Next()
+    }
+}
+```
+
+---
+
+## Language Policy
+
+**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
+
+```typescript
+// ✅ Good — Russian UI string from galactic-lexicon / i18n
+toast.success(formatMessage("note.created", "ru", { title: note.title }));
+placeholder="Поиск по графу знаний..."
+errorMessage = "Не удалось загрузить заметки. Попробуйте ещё раз."
+
+// ✅ Good — English variant is available through the same i18n key
+const en = formatMessage("note.created", "en", { title: note.title });
+```
+
+**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content.
+**MUST be in English:** Code identifiers, variable names, commit messages, API error codes, internal comments may be any language.
+**User content (note titles/bodies) may be in any language.**
+**Documentation:** Authoritative docs are in English; Russian translations may be added alongside.
+
+---
+
+## Docker & Infrastructure
+
+**Multi-stage build pattern (mandatory):**
+```dockerfile
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -o server ./cmd/server
+
+FROM alpine:3.19 AS runtime
+COPY --from=builder /app/server /server
+EXPOSE 9000
+HEALTHCHECK CMD wget -q -O- http://localhost:9000/health || exit 1
+CMD ["/server"]
+```
+
+**All services must have `/health` endpoint.**
+
+**Port mapping:**
+- Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service:9091
+- Personal: backend direct:18085, nginx API/gateway:18082, nginx frontend:18084, graph-service:9092
+- Test: frontend:3002, backend:18083, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
+
+**Volume names:**
+- Dev: `postgres_data`, `redis_data`, `huggingface_cache`
+- Personal: `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`
+- Test: `test_postgres_data`, `test_mongodb_data` (destroyed after use)
+
+**Data preservation (NON-NEGOTIABLE):**
+- **NEVER delete named volumes of the Personal stack** (`pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`) unless the user explicitly requests it.
+- Personal stack volumes contain live user data. Pruning Docker must stop the personal stack but preserve its volumes (`docker compose -f docker-compose.personal.yml down` without `-v`).
+- **MANDATORY backup before any Docker cleanup/WSL compact that may affect volumes:**
+  1. Run `\.\scripts\devops\backup-personal.ps1` (Windows) or `./scripts/devops/backup-personal.sh` (Linux/Mac).
+  2. Verify the backup file exists and is non-empty.
+  3. Only then proceed with cleanup.
+- **Back up the Personal stack regularly** — before any destructive operation and on a daily/weekly schedule.
+- Test stack data may still be destroyed as part of `down -v`.
+
+**Test Stack (MANDATORY for testing):**
+- Use `docker-compose.test.yml` for all E2E/BDD testing
+- Completely isolated from dev/personal environments
+- Unique container names: `kg-test-*`
+- Test database: `knowledge_test` with test credentials
+- Scripts: `.\scripts\testing\start-test.ps1`, `.\scripts\testing\stop-test.ps1`, `.\scripts\testing\seed-test-data.ps1`
+- **Stop dev/personal stacks before starting test stack** — running all stacks at once causes Docker instability and Windows `localhost` → `::1` issues
+- On Windows, use `http://127.0.0.1:3002` for the frontend and `http://127.0.0.1:18083` for backend health/setup; the test frontend proxies API calls via `/api` and `/graph-service/api`
+- Always destroy with `down -v` to remove test data
+
+---
+
+## Common Commands
+
+```bash
+# Unified test entry point
+.\scripts\testing\test.ps1 unit                               # Unit tests (backend + frontend)
+.\scripts\testing\test.ps1 integration                       # Backend integration tests
+.\scripts\testing\test.ps1 all                                # All test layers
+
+# Backend
+cd backend && go test ./...                          # Unit tests
+cd backend && go test -tags=integration ./...        # Integration tests
+cd backend && go build ./cmd/server                  # Build
+
+# Frontend
+cd frontend && npm run test:unit                     # Vitest
+cd frontend && npm run test                          # Playwright
+cd frontend && npm run build                         # Build
+
+# Cleanup temporary test artifacts
+python .\scripts\cleanup\cleanup-test-artifacts.py
+
+# Docker
+docker compose up -d                                 # Dev stack
+docker compose -f docker-compose.personal.yml up -d  # Personal stack
+docker compose logs -f backend                       # Logs
+
+# Test Stack (for E2E/BDD testing)
+.\scripts\testing\start-test.ps1                            # Start test stack
+.\scripts\testing\stop-test.ps1                             # Destroy test stack
+.\scripts\testing\seed-test-data.ps1                        # Seed test data
+docker compose -f docker-compose.test.yml up -d --build  # Manual start
+docker compose -f docker-compose.test.yml down -v            # Manual cleanup
+
+# Health checks
+curl http://127.0.0.1:18080/health                    # Dev nginx gateway
+curl http://127.0.0.1:18082/health                    # Personal nginx gateway
+curl http://127.0.0.1:18085/health                    # Personal backend direct
+curl http://127.0.0.1:9000/health                     # Dev backend direct
+curl http://127.0.0.1:18083/health                    # Test stack backend
+```
+
+---
+
+## AI Agents (11 total)
+
+Use the right agent for each task:
+
+| Task Type | Agent |
+|-----------|-------|
+| Go API, endpoints | `knowledge-graph-backend-go` |
+| PostgreSQL, Redis, MongoDB | `knowledge-graph-backend-go` |
+| Svelte 5 components, UI | `knowledge-graph-frontend-svelte` |
+| D3-force, Three.js graph | `knowledge-graph-frontend-svelte` |
+| OpenAPI spec, DTOs | `knowledge-graph-integration` |
+| Docker, nginx | `knowledge-graph-infrastructure` |
+| CI/CD, deployment | `knowledge-graph-devops` |
+| Redis caching, P95, asynq | `knowledge-graph-performance` |
+| JWT, auth audit, CORS | `knowledge-graph-security` |
+| Unit/E2E/BDD tests | `knowledge-graph-testing` |
+| Python FastAPI, NLP, embeddings | `knowledge-graph-nlp` |
+| DB migrations, pgvector, schemas | `knowledge-graph-data` |
+| Task routing | `knowledge-graph-orchestrator` |
+
+**Agent rules locations:**
+- Cursor AI: `.cursor/rules/*.md`
+- Koda VSCode: `.continue/rules/*.md`
+- Devin: `.devin/skills/knowledge-graph/SKILL.md`
+
+**Full docs:** `docs/AGENTS_EN.md`
+
+---
+
+## Clean Architecture Check
+
+When modifying backend handlers or repositories:
+
+- **Domain layer** (`internal/domain/*`) must be pure Go: no `*gorm.DB`, no `gin.Context`, no Redis, no framework types.
+- **Application layer** (`internal/application/*`) orchestrates domain objects and interfaces.
+- **Infrastructure layer** (`internal/infrastructure/db/*`, `internal/infrastructure/*`) implements interfaces defined by inner layers.
+- **Interface layer** (`internal/interfaces/api/*`) contains Gin handlers, DTOs, and middleware.
+
+### Current handler decoupling status
+
+- ✅ `user/handler.go` — uses `domainuser.Repository`, `domainuser.APIKeyRepository`
+- ✅ `auth/handler.go` — uses `domainuser.Repository`, `auth.RefreshTokenRepository`, `auth.TokenStore`
+- ✅ `share/handler.go` — uses `domainnote.Repository`, `domainuser.Repository`, `domainshare.Repository`
+- ✅ `backup/handler.go` — no DB dependency
+- ✅ `notehandler/note_handler.go` — uses `recommendation.Repository`, `recommendation.EmbeddingRepository`, and `cache.CacheClient`
+- ✅ `middleware/permissions.go` — uses `permission.Repository`
+
+### Current application service decoupling status
+
+- ✅ `achievement/engine.go` — uses `domain/achievement.Counter` port
+- ✅ `recommendation/refresh_service.go` and `affected_notes.go` — use `note.Repository` and `recommendation.Repository` ports
+- ✅ `cache/graph_cache.go` — uses `cache.CacheClient`
+- ✅ `queries/graph/get_suggestions.go` — uses `cache.CacheClient`
+- ✅ `user/settings_service.go` — uses `cache.CacheClient`
+- ✅ `achievement/service.go` — uses `cache.CacheClient` for login streaks
+
+### Current infrastructure port implementations
+
+- `postgres.RecommendationRepository` implements `recommendation.Repository`
+- `postgres.EmbeddingRepository` implements `recommendation.EmbeddingRepository`
+- `postgres.AchievementCounter` implements `domain/achievement.Counter`
+- `postgres.PermissionRepository` implements `permission.Repository`
+- `postgres.RoleRepository` implements `domain/user.RoleRepository`
+- `infrastructure/cache.RedisCacheClient` implements `domain/cache.CacheClient`
+
+### Before committing backend changes
+
+1. `cd backend && go test ./...`
+2. `cd backend && go vet ./...`
+3. Run `python .\scripts\cleanup\cleanup-test-artifacts.py` (or `rm` `coverage.out`, `*.cov`, `*.tmp`, `*.log`)
+4. Update `docs/AGENTS.md` if boundaries change

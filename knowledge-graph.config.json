@@ -2,7 +2,7 @@
   "backend": {
     "server": {
       "rate_limit": {
-        "enabled": true,
+        "enabled": false,
         "requests": 1000,
         "window_seconds": 60,
         "endpoints": {
@@ -11,7 +11,10 @@
           "notes_update": 100,
           "notes_delete": 500
         },
-        "fallback_ports": ["8081", "8082"]
+        "fallback_ports": [
+          "8081",
+          "8082"
+        ]
       }
     },
     "database": {
@@ -20,10 +23,13 @@
       "migrations_fail_on_error": false
     },
     "search": {
-      "fulltext_languages": ["russian", "simple"],
+      "fulltext_languages": [
+        "russian",
+        "simple"
+      ],
       "ranking_weights": {
-        "russian": 1.0,
-        "simple": 1.0
+        "russian": 1,
+        "simple": 1
       },
       "fallback_to_ilike": true
     },
@@ -41,7 +47,10 @@
       "fallback_ttl_seconds": 3600,
       "fallback_semantic_enabled": true,
       "bfs_aggregation": "max",
-      "bfs_normalize": true
+      "bfs_normalize": true,
+      "keyword_similarity_method": "jaccard",
+      "keyword_tversky_alpha": 0.5,
+      "keyword_tversky_beta": 0.5
     },
     "pagination": {
       "default_limit": 100,
@@ -62,9 +71,66 @@
       "concurrency": 10,
       "queue_default": 1,
       "queue_max_len": 10000
+    },
+    "redis": {
+      "flush_on_startup": false
+    },
+    "auth": {
+      "jwt_secret": "",
+      "jwt_access_ttl_seconds": 900,
+      "jwt_refresh_ttl_seconds": 604800,
+      "argon2_time": 3,
+      "argon2_memory": 65536,
+      "argon2_threads": 4,
+      "api_key_enabled": true,
+      "static_api_key": "",
+      "skip_auth": false,
+      "yandex_client_id": "",
+      "yandex_client_secret": "",
+      "pkce_enabled": true,
+      "pkce_code_challenge_length": 128,
+      "smtp_host": "",
+      "smtp_port": 587,
+      "smtp_user": "",
+      "smtp_password": "",
+      "smtp_from": "noreply@example.com",
+      "password_reset_ttl_seconds": 900,
+      "password_policy_min_length": 10,
+      "password_policy_require_upper": true,
+      "password_policy_require_lower": true,
+      "password_policy_require_digit": true,
+      "password_policy_require_special": true
+    }
+  },
+  "backup": {
+    "enabled": false,
+    "local_path": "./backups",
+    "cloud": {
+      "enabled": false,
+      "provider": "yandex",
+      "yandex": {
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
+      }
+    },
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "draft_ttl_hours": 168
+  },
+  "ci_cd": {
+    "integration_test": {
+      "migrate_all": true,
+      "truncate_list": [
+        "notes",
+        "links",
+        "embeddings",
+        "recommendations"
+      ]
     }
   },
   "frontend": {
+    "language": "en",
     "test": {
       "debounce_timeout_ms": 300,
       "max_retry_count": 3,
@@ -73,25 +139,129 @@
     "graph": {
       "2d": {
         "max_nodes": 500,
-        "shadows_threshold": 100
+        "shadows_threshold": 100,
+        "animated_links_threshold": 50,
+        "gravity_nodes_threshold": 100,
+        "gravity_max_distance": 300,
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 500,
+        "idle_fps": 10,
+        "lod_simplify_zoom": 0.4,
+        "fog": {
+          "enabled": true,
+          "atmospheric": true,
+          "adaptive": true,
+          "radius_min": 220,
+          "radius_max": 3000,
+          "fps_low": 25,
+          "fps_high": 45,
+          "warning_threshold": 18,
+          "transition_ms": 500,
+          "color": "rgba(10, 10, 20, 0.82)",
+          "edge_feather": 160
+        }
       },
       "3d": {
-        "max_nodes": 500
+        "max_nodes": 500,
+        "layout_provider": "graph-service",
+        "fog": {
+          "presets": {
+            "birth": {
+              "density_initial": 0.08,
+              "density_final": 0.005
+            },
+            "nebula": {
+              "density_initial": 0.04,
+              "density_final": 0.015
+            },
+            "deep-space": {
+              "density_initial": 0,
+              "density_final": 0
+            }
+          },
+          "default_preset": "birth"
+        },
+        "performance": {
+          "fps_threshold_low": 20,
+          "fps_threshold_high": 45,
+          "low_fps_sample_count": 30,
+          "starfield_counts": {
+            "high": 1500,
+            "medium": 800,
+            "low": 300
+          }
+        }
+      },
+      "anomaly": {
+        "reality_rift": {
+          "core_color": "#0a0a0f",
+          "glow_color": "#8b5cf6",
+          "crack_count_min": 5,
+          "crack_count_max": 8,
+          "deform_amount_min": 0.2,
+          "deform_amount_max": 0.5
+        },
+        "chromatic_maw": {
+          "tentacle_count_min": 6,
+          "tentacle_count_max": 10,
+          "hue_shift_base": 280,
+          "hue_shift_range": 60
+        },
+        "void_whisper": {
+          "particle_count_min": 20,
+          "particle_count_max": 30,
+          "hue_shift_base": 220,
+          "hue_shift_range": 40,
+          "connection_distance_threshold": 0.4
+        },
+        "cosmic_abomination": {
+          "particle_count_min": 12,
+          "particle_count_max": 15,
+          "tentacle_count_min": 3,
+          "tentacle_count_max": 4,
+          "crack_count_min": 2,
+          "crack_count_max": 3
+        }
       }
     },
     "api": {
       "default_limit": 100,
       "link_limit": 0
+    },
+    "achievements": {
+      "poll_interval_ms": 0
     }
   },
-  "ci_cd": {
-    "integration_test": {
-      "migrate_all": true,
-      "truncate_list": ["notes", "links", "embeddings", "recommendations"]
-    }
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 500,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100,
+      "3d_radius": 120,
+      "3d_z_step": 5,
+      "default_node_size": 1
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
+  },
+  "mongodb": {
+    "url": "mongodb://localhost:27017",
+    "database": "knowledge_graph"
   },
   "nlp": {
     "model_name": "all-MiniLM-L6-V2",
-    "max_text_length": 10000
+    "max_text_length": 10000,
+    "hf_home": "/root/.cache/huggingface",
+    "hf_hub_disable_telemetry": true,
+    "hf_hub_offline": true
   }
 }

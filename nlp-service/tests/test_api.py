@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+import asyncio
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
@@ -15,7 +16,9 @@ client = TestClient(app)
 
 
 class TestHealthEndpoint:
-    def test_health_endpoint(self):
+    @patch("app.main.is_model_loaded", return_value=True)
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_health_endpoint(self, _mock_loaded, _mock_is_loaded):
         """Test the health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
@@ -117,56 +120,53 @@ class TestKeywordsEndpoint:
 
 
 class TestEmbedEndpoint:
-    @patch('app.main.embedding_model')
-    def test_embed_success(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_success(self, mock_get_model):
         """Test successful embedding generation"""
-        # Mock the embedding model
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_embedding = [0.1, 0.2, 0.3, 0.4]
         mock_model.encode.return_value = MagicMock()
         mock_model.encode.return_value.tolist.return_value = mock_embedding
-        
-        request_data = {
-            "text": "Test sentence"
-        }
-        
+
+        request_data = {"text": "Test sentence"}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "embedding" in data
         assert data["embedding"] == mock_embedding
-        
-        # Verify the mock was called
         mock_model.encode.assert_called_once_with("Test sentence")
 
-    @patch('app.main.embedding_model')
-    def test_embed_empty_text(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_empty_text(self, mock_get_model):
         """Test embedding generation with empty text"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_embedding = [0.0, 0.0, 0.0]
         mock_model.encode.return_value = MagicMock()
         mock_model.encode.return_value.tolist.return_value = mock_embedding
-        
-        request_data = {
-            "text": ""
-        }
-        
+
+        request_data = {"text": ""}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["embedding"] == mock_embedding
 
-    @patch('app.main.embedding_model')
-    def test_embed_error_handling(self, mock_model):
+    @patch("app.main.get_embedding_model")
+    def test_embed_error_handling(self, mock_get_model):
         """Test error handling in embedding generation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
         mock_model.encode.side_effect = Exception("Model error")
-        
-        request_data = {
-            "text": "Test text"
-        }
-        
+
+        request_data = {"text": "Test text"}
+
         response = client.post("/embed", json=request_data)
-        
+
         assert response.status_code == 500
         assert "Model error" in response.json()["detail"]
 
@@ -179,10 +179,76 @@ class TestEmbedEndpoint:
         assert response.status_code == 422  # Validation error
 
 
+class TestSimilarityEndpoint:
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_success(self, mock_get_model):
+        """Test successful similarity computation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+        # Orthogonal unit vectors -> cosine similarity 0 -> mapped to 0.5
+        mock_model.encode.return_value = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ]
+
+        request_data = {
+            "text_a": "First sentence",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "similarity" in data
+        assert data["similarity"] == pytest.approx(0.5, abs=0.001)
+
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_empty_text(self, mock_get_model):
+        """Test similarity with empty text"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+
+        request_data = {
+            "text_a": "",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["similarity"] == 0.0
+
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_similarity_error_handling(self, mock_get_model):
+        """Test error handling in similarity computation"""
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+        mock_model.encode.side_effect = Exception("Model error")
+
+        request_data = {
+            "text_a": "First sentence",
+            "text_b": "Second sentence",
+        }
+
+        response = client.post("/similarity", json=request_data)
+
+        assert response.status_code == 500
+        assert "Model error" in response.json()["detail"]
+
+    def test_similarity_invalid_request(self):
+        """Test similarity with invalid request data"""
+        response = client.post("/similarity", json={})
+        assert response.status_code == 422
+
+
 class TestAPIIntegration:
     """Integration tests for the API endpoints"""
     
-    def test_api_structure(self):
+    @patch("app.main.is_model_loaded", return_value=True)
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_api_structure(self, _mock_loaded, _mock_is_loaded):
         """Test that API has correct structure"""
         # Test that endpoints exist and return correct status codes
         health_response = client.get("/health")
@@ -194,6 +260,9 @@ class TestAPIIntegration:
         
         embed_response = client.post("/embed", json={})
         assert embed_response.status_code == 422
+
+        similarity_response = client.post("/similarity", json={})
+        assert similarity_response.status_code == 422
 
     def test_cors_headers(self):
         """Test CORS headers if configured"""
@@ -224,6 +293,39 @@ class TestErrorHandling:
             headers={"content-type": "text/plain"}
         )
         assert response.status_code == 422
+
+
+class TestLifespanAndHealth:
+    @patch("app.main.ensure_model_loaded", return_value=True)
+    def test_lifespan_success(self, _mock_ensure):
+        """Test that lifespan context manager completes successfully"""
+        from app.main import lifespan
+        loop = asyncio.new_event_loop()
+        try:
+            ctx = lifespan(app)
+            loop.run_until_complete(ctx.__aenter__())
+            loop.run_until_complete(ctx.__aexit__(None, None, None))
+        finally:
+            loop.close()
+
+    @patch("app.main.ensure_model_loaded", return_value=False)
+    def test_lifespan_failure_raises(self, _mock_ensure):
+        """Test that lifespan raises RuntimeError when model fails to load"""
+        from app.main import lifespan
+        loop = asyncio.new_event_loop()
+        try:
+            ctx = lifespan(app)
+            with pytest.raises(RuntimeError):
+                loop.run_until_complete(ctx.__aenter__())
+        finally:
+            loop.close()
+
+    @patch("app.main.is_model_loaded", return_value=False)
+    def test_health_not_loaded(self, _mock_loaded):
+        """Test health endpoint returns 503 when model is not loaded"""
+        response = client.get("/health")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
 
 
 if __name__ == "__main__":

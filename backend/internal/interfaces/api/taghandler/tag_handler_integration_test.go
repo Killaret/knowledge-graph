@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/domain/note"
+	tagDomain "knowledge-graph/internal/domain/tag"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/testutil"
 
@@ -91,11 +92,10 @@ func (s *TagHandlerIntegrationTestSuite) createTestNote(title, content, noteType
 }
 
 // createTestTag создает тестовый тег
-func (s *TagHandlerIntegrationTestSuite) createTestTag(name string) *postgres.TagModel {
-	tag := &postgres.TagModel{
-		Name: name,
-	}
-	err := s.tagRepo.Create(s.db.Statement.Context, tag)
+func (s *TagHandlerIntegrationTestSuite) createTestTag(name string) *tagDomain.Tag {
+	tag, err := tagDomain.New(name)
+	s.Require().NoError(err, "failed to create test tag")
+	err = s.tagRepo.Create(s.db.Statement.Context, tag)
 	s.Require().NoError(err, "failed to create test tag")
 	return tag
 }
@@ -114,11 +114,13 @@ func (s *TagHandlerIntegrationTestSuite) TestCreateTag_Success() {
 
 	s.Equal(http.StatusCreated, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response.ID)
-	s.Equal("important", response.Name)
+	s.NotEmpty(wrappedResponse.Data.ID)
+	s.Equal("important", wrappedResponse.Data.Name)
 }
 
 // TestCreateTag_Duplicate - дубликат имени тега
@@ -142,7 +144,7 @@ func (s *TagHandlerIntegrationTestSuite) TestCreateTag_Duplicate() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already exists")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestCreateTag_InvalidJSON - невалидный JSON
@@ -183,10 +185,12 @@ func (s *TagHandlerIntegrationTestSuite) TestListTags() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 3)
+	s.Len(wrappedResponse.Data, 3)
 }
 
 // TestListTags_Empty - пустой список тегов
@@ -197,10 +201,12 @@ func (s *TagHandlerIntegrationTestSuite) TestListTags_Empty() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 0)
+	s.Len(wrappedResponse.Data, 0)
 }
 
 // TestGetTag_Success - получение тега по ID
@@ -208,16 +214,18 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_Success() {
 	tag := s.createTestTag("test-tag")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("GET", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), response.ID)
-	s.Equal("test-tag", response.Name)
+	s.Equal(tag.ID().String(), wrappedResponse.Data.ID)
+	s.Equal("test-tag", wrappedResponse.Data.Name)
 }
 
 // TestGetTag_NotFound - несуществующий тег
@@ -231,7 +239,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_NotFound() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "tag not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestGetTag_InvalidID - невалидный UUID
@@ -245,7 +253,7 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTag_InvalidID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid tag id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestUpdateTag_Success - успешное обновление тега
@@ -258,17 +266,19 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Success() {
 	jsonBody, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/tags/"+tag.ID.String(), bytes.NewBuffer(jsonBody))
+	req, _ := http.NewRequest("PUT", "/tags/"+tag.ID().String(), bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(tag.ID.String(), response.ID)
-	s.Equal("new-name", response.Name)
+	s.Equal(tag.ID().String(), wrappedResponse.Data.ID)
+	s.Equal("new-name", wrappedResponse.Data.Name)
 }
 
 // TestUpdateTag_Duplicate - обновление на существующее имя
@@ -283,7 +293,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Duplicate() {
 	jsonBody, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/tags/"+tag1.ID.String(), bytes.NewBuffer(jsonBody))
+	req, _ := http.NewRequest("PUT", "/tags/"+tag1.ID().String(), bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
@@ -292,7 +302,7 @@ func (s *TagHandlerIntegrationTestSuite) TestUpdateTag_Duplicate() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already exists")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestUpdateTag_NotFound - обновление несуществующего тега
@@ -315,14 +325,14 @@ func (s *TagHandlerIntegrationTestSuite) TestDeleteTag_Success() {
 	tag := s.createTestTag("delete-me")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("DELETE", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusNoContent, w.Code)
 
 	// Проверяем что тег удален
 	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("GET", "/tags/"+tag.ID.String(), nil)
+	req2, _ := http.NewRequest("GET", "/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w2, req2)
 	s.Equal(http.StatusNotFound, w2.Code)
 }
@@ -342,7 +352,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_Success() {
 	tag := s.createTestTag("important")
 
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -351,7 +361,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_Success() {
 	req.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w, req)
 
-	s.Equal(http.StatusCreated, w.Code)
+	s.Equal(http.StatusNoContent, w.Code)
 }
 
 // TestAddTagToNote_NoteNotFound - несуществующая заметка
@@ -359,7 +369,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_NoteNotFound() {
 	tag := s.createTestTag("important")
 
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -395,7 +405,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 
 	// Первая привязка
 	reqBody := map[string]interface{}{
-		"tag_id": tag.ID.String(),
+		"tag_id": tag.ID().String(),
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -403,7 +413,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 	req1, _ := http.NewRequest("POST", "/notes/"+note.ID().String()+"/tags", bytes.NewBuffer(jsonBody))
 	req1.Header.Set("Content-Type", "application/json")
 	s.router.ServeHTTP(w1, req1)
-	s.Equal(http.StatusCreated, w1.Code)
+	s.Equal(http.StatusNoContent, w1.Code)
 
 	// Вторая попытка привязки - конфликт
 	w2 := httptest.NewRecorder()
@@ -416,7 +426,7 @@ func (s *TagHandlerIntegrationTestSuite) TestAddTagToNote_AlreadyAssigned() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w2.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "already assigned")
+	s.Equal("CONFLICT", response["code"])
 }
 
 // TestRemoveTagFromNote_Success - успешное удаление привязки
@@ -425,12 +435,12 @@ func (s *TagHandlerIntegrationTestSuite) TestRemoveTagFromNote_Success() {
 	tag := s.createTestTag("important")
 
 	// Привязываем тег
-	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag.ID)
+	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag.ID())
 	s.Require().NoError(err)
 
 	// Отвязываем тег
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/notes/"+note.ID().String()+"/tags/"+tag.ID.String(), nil)
+	req, _ := http.NewRequest("DELETE", "/notes/"+note.ID().String()+"/tags/"+tag.ID().String(), nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(http.StatusNoContent, w.Code)
@@ -443,9 +453,9 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote() {
 	tag2 := s.createTestTag("urgent")
 
 	// Привязываем оба тега
-	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag1.ID)
+	err := s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag1.ID())
 	s.Require().NoError(err)
-	err = s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag2.ID)
+	err = s.tagRepo.AddTagToNote(s.db.Statement.Context, note.ID(), tag2.ID())
 	s.Require().NoError(err)
 
 	w := httptest.NewRecorder()
@@ -454,14 +464,16 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err = json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 2)
+	s.Len(wrappedResponse.Data, 2)
 
 	// Проверяем имена тегов
 	names := make(map[string]bool)
-	for _, t := range response {
+	for _, t := range wrappedResponse.Data {
 		names[t.Name] = true
 	}
 	s.True(names["important"])
@@ -487,10 +499,12 @@ func (s *TagHandlerIntegrationTestSuite) TestGetTagsByNote_Empty() {
 
 	s.Equal(http.StatusOK, w.Code)
 
-	var response []TagResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data []TagResponse `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response, 0)
+	s.Len(wrappedResponse.Data, 0)
 }
 
 // Запускаем тесты

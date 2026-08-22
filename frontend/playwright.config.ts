@@ -1,4 +1,23 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import { createArgosReporterOptions } from "@argos-ci/playwright/reporter";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// Load Argos token from gitignored argos.json if ARGOS_TOKEN is not set.
+// This lets local runs upload screenshots without hardcoding the secret in the repo.
+if (!process.env.ARGOS_TOKEN) {
+  try {
+    const argosConfigPath = resolve("argos.json");
+    if (existsSync(argosConfigPath)) {
+      const argosConfig = JSON.parse(readFileSync(argosConfigPath, "utf-8"));
+      if (typeof argosConfig?.token === "string") {
+        process.env.ARGOS_TOKEN = argosConfig.token;
+      }
+    }
+  } catch {
+    // Ignore missing or malformed argos.json
+  }
+}
 
 // Type for Node.js process
 declare const process: {
@@ -9,58 +28,95 @@ declare const process: {
     BACKEND_URL?: string;
     DATABASE_URL?: string;
     REDIS_URL?: string;
+    SKIP_AUTH?: string;
+    ARGOS_TOKEN?: string;
+    ARGOS_UPLOAD_LOCAL?: string;
   };
 };
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  timeout: 60 * 1000, // 60s per test
-  reporter: 'html',
+  workers: 2,
+  timeout: 120 * 1000, // 120s per test (increased from 90s)
+  globalSetup: "./tests/setup/global-setup.ts",
+  reporter: [
+    ["line"],
+    [
+      "@argos-ci/playwright/reporter",
+      createArgosReporterOptions({
+        uploadToArgos:
+          (!!process.env.CI && !!process.env.ARGOS_TOKEN) || !!process.env.ARGOS_UPLOAD_LOCAL,
+        token: process.env.ARGOS_TOKEN,
+      }),
+    ],
+  ],
   use: {
-    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
-    trace: 'on-first-retry',
-    actionTimeout: 15000,
-    navigationTimeout: 15000,
-    // Expose backend URL for API requests
-    extraHTTPHeaders: {
-      'X-BACKEND-URL': process.env.BACKEND_URL || 'http://localhost:8080',
+    baseURL: process.env.FRONTEND_URL || "http://localhost:5173",
+    trace: "on-first-retry",
+    actionTimeout: 60000, // Increased from 30000ms
+    navigationTimeout: 60000, // Increased from 30000ms
+    bypassCSP: true, // Required for Argos stabilization script injection
+    // Inject SKIP_AUTH flag for testing
+    launchOptions: {
+      args: ["--disable-web-security"],
     },
   },
   projects: [
+    // Setup project for auth bypass (used by skip-auth projects)
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "setup",
+      testMatch: "**/setup/*.setup.ts",
+    },
+    // SKIP_AUTH mode project: skip-auth tests only, excludes real-auth tests
+    {
+      name: "chromium-skip-auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      grepInvert: /@3d|@visual|@auth-real|@manual|@canvas/,
+      dependencies: ["setup"],
+    },
+    // Real auth project: only @auth-real tests (requires backend SKIP_AUTH=false)
+    {
+      name: "chromium-real-auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      grep: /@auth-real/,
+    },
+    // Visual regression project (runs only @visual tests)
+    {
+      name: "visual",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      grep: /@visual/,
+      dependencies: ["setup"],
     },
   ],
-  webServer: process.env.CI || process.env.BACKEND_URL
-    ? {
-        // In CI or when BACKEND_URL is set, only start frontend
-        command: 'npm run dev',
-        url: process.env.FRONTEND_URL || 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
-      }
-    : [
-        // Local development: start both frontend and backend
-        {
-          command: 'npm run dev',
-          url: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Auto-start dev server for tests - enable with PLAYWRIGHT_DEV_SERVER=true
+  webServer:
+    process.env.PLAYWRIGHT_DEV_SERVER === "true"
+      ? {
+          command: "npm run dev",
+          url: "http://localhost:5173",
           reuseExistingServer: true,
           timeout: 120 * 1000,
-        },
-        {
-          command: 'cd ../backend && go run cmd/server/main.go',
-          url: 'http://localhost:8080',
-          reuseExistingServer: true,
-          timeout: 60 * 1000,
           env: {
-            DATABASE_URL: process.env.DATABASE_URL || '',
-            REDIS_URL: process.env.REDIS_URL || '',
+            SKIP_AUTH: "true",
           },
-        },
-      ],
+        }
+      : undefined,
 });

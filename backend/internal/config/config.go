@@ -2,11 +2,13 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -45,8 +47,12 @@ type JSONConfig struct {
 			FallbackEnabled         bool    `json:"fallback_enabled"`
 			FallbackTTLSeconds      int     `json:"fallback_ttl_seconds"`
 			FallbackSemanticEnabled bool    `json:"fallback_semantic_enabled"`
+			KeywordEnabled          bool    `json:"keyword_enabled"`
 			BFSAggregation          string  `json:"bfs_aggregation"`
 			BFSNormalize            bool    `json:"bfs_normalize"`
+			KeywordSimilarityMethod string  `json:"keyword_similarity_method"`
+			KeywordTverskyAlpha     float64 `json:"keyword_tversky_alpha"`
+			KeywordTverskyBeta      float64 `json:"keyword_tversky_beta"`
 		} `json:"recommendation"`
 		Pagination struct {
 			DefaultLimit int `json:"default_limit"`
@@ -68,11 +74,61 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Redis struct {
+			FlushOnStartup bool `json:"flush_on_startup"`
+		} `json:"redis"`
+		Auth struct {
+			FrontendURL                  string `json:"frontend_url"`
+			JWTSecret                    string `json:"jwt_secret"`
+			JWTAccessTTLSeconds          int    `json:"jwt_access_ttl_seconds"`
+			JWTRefreshTTLSeconds         int    `json:"jwt_refresh_ttl_seconds"`
+			Argon2Time                   uint32 `json:"argon2_time"`
+			Argon2Memory                 uint32 `json:"argon2_memory"`
+			Argon2Threads                uint8  `json:"argon2_threads"`
+			APIKeyEnabled                bool   `json:"api_key_enabled"`
+			StaticAPIKey                 string `json:"static_api_key"`
+			SkipAuth                     bool   `json:"skip_auth"` // Disable auth for testing
+			YandexClientID               string `json:"yandex_client_id"`
+			YandexClientSecret           string `json:"yandex_client_secret"`
+			PKCEEnabled                  bool   `json:"pkce_enabled"`
+			PKCECodeChallengeLength      int    `json:"pkce_code_challenge_length"`
+			SMTPHost                     string `json:"smtp_host"`
+			SMTPPort                     int    `json:"smtp_port"`
+			SMTPUser                     string `json:"smtp_user"`
+			SMTPPassword                 string `json:"smtp_password"`
+			SMTPFrom                     string `json:"smtp_from"`
+			PasswordResetTTLSeconds      int    `json:"password_reset_ttl_seconds"`
+			PasswordPolicyMinLength      int    `json:"password_policy_min_length"`
+			PasswordPolicyRequireUpper   bool   `json:"password_policy_require_upper"`
+			PasswordPolicyRequireLower   bool   `json:"password_policy_require_lower"`
+			PasswordPolicyRequireDigit   bool   `json:"password_policy_require_digit"`
+			PasswordPolicyRequireSpecial bool   `json:"password_policy_require_special"`
+		} `json:"auth"`
 	} `json:"backend"`
+	Backup struct {
+		Enabled   bool   `json:"enabled"`
+		LocalPath string `json:"local_path"`
+		Cloud     struct {
+			Enabled  bool   `json:"enabled"`
+			Provider string `json:"provider"`
+			Yandex   struct {
+				OAuthToken   string `json:"oauth_token"`
+				BackupFolder string `json:"backup_folder"`
+				MaxBackups   int    `json:"max_backups"`
+			} `json:"yandex"`
+		} `json:"cloud"`
+		Schedule      string `json:"schedule"`
+		RetentionDays int    `json:"retention_days"`
+		DraftTTLHours int    `json:"draft_ttl_hours"`
+	} `json:"backup"`
+	MongoDB struct {
+		URL      string `json:"url"`
+		Database string `json:"database"`
+	} `json:"mongodb"`
 }
 
 type Config struct {
-	// Сервер
+	// Server
 	ServerPort                   string
 	ServerRateLimitEnabled       bool
 	ServerRateLimitRequests      int
@@ -80,14 +136,16 @@ type Config struct {
 	ServerRateLimitEndpoints     map[string]int
 	ServerFallbackPorts          []string
 
-	// База данных
+	// Database
 	DatabaseURL               string
 	DatabaseRetryMaxAttempts  int
 	DatabaseRetryDelaySeconds int
 	MigrationsFailOnError     bool
 
 	// Redis
-	RedisURL string
+	RedisURL            string
+	RedisFlushOnStartup bool
+	EventChannel        string
 
 	// NLP
 	NLPServiceURL string
@@ -97,7 +155,7 @@ type Config struct {
 	SearchRankingWeights    map[string]float64
 	SearchFallbackToILike   bool
 
-	// Рекомендации (граф)
+	// Recommendations (graph)
 	RecommendationAlpha      float64
 	RecommendationBeta       float64
 	RecommendationDepth      int
@@ -105,8 +163,8 @@ type Config struct {
 	RecommendationCacheTTL   time.Duration
 	EmbeddingSimilarityLimit int
 
-	// Загрузка графа (визуализация)
-	GraphLoadDepth int // Глубина загрузки графа для визуализации
+	// Graph loading (visualization)
+	GraphLoadDepth int // Depth of graph loading for visualization
 
 	// Pagination
 	PaginationDefaultLimit int
@@ -118,34 +176,85 @@ type Config struct {
 	GraphLinkDefaultLimit int
 	GraphLinkMaxLimit     int
 
-	// Новые параметры для улучшения алгоритма рекомендаций
-	RecommendationGamma                   float64       // Коэффициент для дополнительного компонента
-	BFSAggregation                        string        // Метод агрегации BFS: "max", "sum", "avg"
-	BFSNormalize                          bool          // Нормализация весов в BFS
-	RecommendationTopN                    int           // Количество рекомендаций для сохранения
-	RecommendationTaskDelaySeconds        int           // Задержка перед выполнением задачи (dedup)
-	RecommendationBatchRateLimit          int           // Rate limit для batch обработки
-	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
-	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
-	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
-	AsynqConcurrency                      int           // Уровень параллелизма Asynq
-	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
-	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+	// Graph service integration
+	GraphServiceURL           string        // HTTP URL of the graph analytics service
+	GraphServiceInternalToken string        // Shared secret for internal service calls
+	GraphServiceTimeout       time.Duration // HTTP client timeout for graph service calls
+
+	// New parameters for improved recommendation algorithm
+	RecommendationGamma                   float64       // Coefficient for additional component
+	BFSAggregation                        string        // BFS aggregation method: "max", "sum", "avg"
+	BFSNormalize                          bool          // Normalize weights in BFS
+	RecommendationTopN                    int           // Number of recommendations to save
+	RecommendationTaskDelaySeconds        int           // Delay before task execution (dedup)
+	RecommendationBatchRateLimit          int           // Rate limit for batch processing
+	RecommendationFallbackEnabled         bool          // Enable fallback to Redis
+	RecommendationFallbackTTL             time.Duration // TTL for fallback cache
+	RecommendationFallbackSemanticEnabled bool          // Enable fallback for semantic neighbors
+	RecommendationKeywordEnabled          bool          // Enable keyword component (gamma)
+	RecommendationKeywordSimilarityMethod string        // Keyword similarity method: jaccard, overlap, tversky, weighted_jaccard, cosine
+	RecommendationKeywordTverskyAlpha     float64       // Alpha parameter for Tversky index
+	RecommendationKeywordTverskyBeta      float64       // Beta parameter for Tversky index
+	AsynqConcurrency                      int           // Asynq concurrency level
+	AsynqQueueDefault                     int           // Asynq default queue priority
+	AsynqQueueMaxLen                      int           // Maximum queue length
+
+	// MongoDB
+	MongoDBURL      string
+	MongoDBDatabase string
+
+	// Auth / App
+	FrontendURL                  string
+	JWTSecret                    string
+	JWTAccessTTL                 time.Duration
+	JWTRefreshTTL                time.Duration
+	Argon2Time                   uint32
+	Argon2Memory                 uint32
+	Argon2Threads                uint8
+	APIKeyEnabled                bool
+	StaticAPIKey                 string
+	SkipAuth                     bool // Disable auth for testing
+	YandexClientID               string
+	YandexClientSecret           string
+	PKCEEnabled                  bool
+	PKCECodeChallengeLength      int
+	SMTPHost                     string
+	SMTPPort                     int
+	SMTPUser                     string
+	SMTPPassword                 string
+	SMTPFrom                     string
+	PasswordResetTTL             time.Duration
+	PasswordPolicyMinLength      int
+	PasswordPolicyRequireUpper   bool
+	PasswordPolicyRequireLower   bool
+	PasswordPolicyRequireDigit   bool
+	PasswordPolicyRequireSpecial bool
+
+	// Backup configuration
+	BackupEnabled          bool
+	BackupCloudEnabled     bool
+	BackupCloudProvider    string
+	BackupLocalPath        string
+	BackupSchedule         string
+	BackupRetentionDays    int
+	BackupYandexOAuthToken string
+	BackupYandexFolder     string
+	BackupYandexMaxBackups int
 }
 
-// loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
-// Возвращает nil если файл не существует или не может быть прочитан
+// loadJSONConfig loads configuration from knowledge-graph.config.json
+// Returns nil if file doesn't exist or cannot be read
 func loadJSONConfig() *JSONConfig {
-	// Определяем путь к корню проекта (где находится knowledge-graph.config.json)
-	// Пробуем несколько вариантов поиска файла
+	// Determine path to project root (where knowledge-graph.config.json is located)
+	// Try several possible file locations
 	possiblePaths := []string{
-		"knowledge-graph.config.json", // текущая директория
+		"knowledge-graph.config.json", // current directory
 	}
 
-	// Добавляем путь относительно расположения этого файла (backend/internal/config)
+	// Add path relative to this file location (backend/internal/config)
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
-		// От корня проекта: backend/internal/config -> ../../../knowledge-graph.config.json
+		// From project root: backend/internal/config -> ../../../knowledge-graph.config.json
 		configDir := filepath.Dir(filename)
 		projectRoot := filepath.Join(configDir, "..", "..", "..")
 		possiblePaths = append(possiblePaths, filepath.Join(projectRoot, "knowledge-graph.config.json"))
@@ -163,7 +272,13 @@ func loadJSONConfig() *JSONConfig {
 	}
 
 	if err != nil {
-		// Файл не найден - это нормально, используем только env vars
+		// Try to load configuration from separate config/*.json files
+		configDir := filepath.Join(filepath.Dir(filename), "..", "..", "..", "config")
+		if mergedConfig := loadJSONConfigParts(configDir); mergedConfig != nil {
+			log.Printf("[Config] Loaded JSON config from folder: %s", configDir)
+			return mergedConfig
+		}
+
 		log.Printf("[Config] knowledge-graph.config.json not found, using env vars only")
 		return nil
 	}
@@ -178,12 +293,79 @@ func loadJSONConfig() *JSONConfig {
 	return &jsonCfg
 }
 
-// Load загружает конфигурацию из переменных окружения.
-// Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
-// иначе используется встроенное значение по умолчанию.
-// Для обязательных переменных (DatabaseURL) используется mustGetEnv.
-func Load() *Config {
-	// Загружаем JSON конфиг как источник дефолтных значений
+// Load loads configuration from environment variables.
+// If a variable is not set, the default value from JSON config is used (if available),
+// otherwise the built-in default value is used.
+// For required variables (DatabaseURL), mustGetEnv is used.
+func loadJSONConfigParts(configDir string) *JSONConfig {
+	stat, err := os.Stat(configDir)
+	if err != nil || !stat.IsDir() {
+		return nil
+	}
+
+	entries, err := os.ReadDir(configDir)
+	if err != nil {
+		log.Printf("[Config] Failed to read config dir %s: %v", configDir, err)
+		return nil
+	}
+
+	merged := map[string]any{}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+
+		filePath := filepath.Join(configDir, entry.Name())
+		raw, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Printf("[Config] Failed to read config part %s: %v", filePath, err)
+			return nil
+		}
+
+		var part map[string]any
+		if err := json.Unmarshal(raw, &part); err != nil {
+			log.Printf("[Config] Failed to parse config part %s: %v", filePath, err)
+			return nil
+		}
+
+		merged = mergeJSONObjects(merged, part)
+	}
+
+	var jsonCfg JSONConfig
+	if err := json.Unmarshal([]byte(mustJSON(merged)), &jsonCfg); err != nil {
+		log.Printf("[Config] Failed to unmarshal merged config parts: %v", err)
+		return nil
+	}
+
+	return &jsonCfg
+}
+
+func mergeJSONObjects(dst, src map[string]any) map[string]any {
+	for key, srcValue := range src {
+		if dstValue, ok := dst[key]; ok && isMap(dstValue) && isMap(srcValue) {
+			dst[key] = mergeJSONObjects(dstValue.(map[string]any), srcValue.(map[string]any))
+			continue
+		}
+		dst[key] = srcValue
+	}
+	return dst
+}
+
+func isMap(value any) bool {
+	_, ok := value.(map[string]any)
+	return ok
+}
+
+func mustJSON(value any) string {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return string(raw)
+}
+
+func Load() (*Config, error) {
+	// Load JSON config as source of default values
 	jsonCfg := loadJSONConfig()
 
 	cfg := &Config{
@@ -196,14 +378,16 @@ func Load() *Config {
 		ServerFallbackPorts:          nil, // Loaded separately below
 
 		// Database
-		DatabaseURL:               mustGetEnv("DATABASE_URL"),
+		DatabaseURL:               "", // Will be set below after error check
 		DatabaseRetryMaxAttempts:  getIntEnv("DATABASE_RETRY_MAX_ATTEMPTS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryMaxAttempts }, 3)),
 		DatabaseRetryDelaySeconds: getIntEnv("DATABASE_RETRY_DELAY_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryDelaySeconds }, 5)),
 		MigrationsFailOnError:     getBoolEnv("MIGRATIONS_FAIL_ON_ERROR", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Database.MigrationsFailOnError }, false)),
 
 		// Redis & NLP
-		RedisURL:      getEnv("REDIS_URL", "localhost:6379"),
-		NLPServiceURL: getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
+		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
+		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, []string{"russian", "simple"}),
@@ -218,7 +402,7 @@ func Load() *Config {
 		RecommendationCacheTTL:   time.Duration(getIntEnv("RECOMMENDATION_CACHE_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.CacheTTLSeconds }, 300))) * time.Second,
 		EmbeddingSimilarityLimit: getIntEnv("EMBEDDING_SIMILARITY_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Embedding.SimilarityLimit }, 30)),
 
-		// Загрузка графа
+		// Graph loading
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LoadDepth }, 2)),
 
 		// Pagination
@@ -231,7 +415,12 @@ func Load() *Config {
 		GraphLinkDefaultLimit: getIntEnv("GRAPH_LINK_DEFAULT_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkDefaultLimit }, 500)),
 		GraphLinkMaxLimit:     getIntEnv("GRAPH_LINK_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkMaxLimit }, 5000)),
 
-		// Новые параметры
+		// Graph service integration
+		GraphServiceURL:           getEnv("GRAPH_SERVICE_URL", "http://graph-service:9091"),
+		GraphServiceInternalToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
+		GraphServiceTimeout:       time.Duration(getIntEnv("GRAPH_SERVICE_TIMEOUT_SECONDS", 5)) * time.Second,
+
+		// New parameters
 		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Gamma }, 0.2)),
 		BFSAggregation:                        getEnv("BFS_AGGREGATION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.BFSAggregation }, "max")),
 		BFSNormalize:                          getBoolEnv("BFS_NORMALIZE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.BFSNormalize }, true)),
@@ -241,9 +430,55 @@ func Load() *Config {
 		RecommendationFallbackEnabled:         getBoolEnv("RECOMMENDATION_FALLBACK_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackEnabled }, true)),
 		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.FallbackTTLSeconds }, 3600))) * time.Second,
 		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackSemanticEnabled }, true)),
+		RecommendationKeywordEnabled:          getBoolEnv("RECOMMENDATION_KEYWORD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.KeywordEnabled }, true)),
+		RecommendationKeywordSimilarityMethod: getEnv("RECOMMENDATION_KEYWORD_SIMILARITY_METHOD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.KeywordSimilarityMethod }, "jaccard")),
+		RecommendationKeywordTverskyAlpha:     getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_ALPHA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyAlpha }, 0.5)),
+		RecommendationKeywordTverskyBeta:      getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_BETA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyBeta }, 0.5)),
 		AsynqConcurrency:                      getIntEnv("ASYNQ_CONCURRENCY", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.Concurrency }, 10)),
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),
+
+		// MongoDB configuration
+		MongoDBURL:      getEnv("MONGO_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017")),
+		MongoDBDatabase: getEnv("MONGO_DATABASE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph")),
+
+		// Auth / App configuration
+		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
+		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "")),
+		JWTAccessTTL:                 time.Duration(getIntEnv("JWT_ACCESS_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTAccessTTLSeconds }, 900))) * time.Second,
+		JWTRefreshTTL:                time.Duration(getIntEnv("JWT_REFRESH_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTRefreshTTLSeconds }, 604800))) * time.Second,
+		Argon2Time:                   getUint32Env("ARGON2_TIME", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Time }, 3)),
+		Argon2Memory:                 getUint32Env("ARGON2_MEMORY", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Memory }, 65536)),
+		Argon2Threads:                getUint8Env("ARGON2_THREADS", getJSONUint8OrDefault(jsonCfg, func(j *JSONConfig) uint8 { return j.Backend.Auth.Argon2Threads }, 4)),
+		APIKeyEnabled:                getBoolEnv("API_KEY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.APIKeyEnabled }, true)),
+		StaticAPIKey:                 getEnv("STATIC_API_KEY", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.StaticAPIKey }, "")),
+		SkipAuth:                     getBoolEnv("SKIP_AUTH", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.SkipAuth }, false)),
+		YandexClientID:               getEnv("YANDEX_CLIENT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientID }, "")),
+		YandexClientSecret:           getEnv("YANDEX_CLIENT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientSecret }, "")),
+		PKCEEnabled:                  getBoolEnv("PKCE_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PKCEEnabled }, true)),
+		PKCECodeChallengeLength:      getIntEnv("PKCE_CODE_CHALLENGE_LENGTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PKCECodeChallengeLength }, 128)),
+		SMTPHost:                     getEnv("SMTP_HOST", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPHost }, "")),
+		SMTPPort:                     getIntEnv("SMTP_PORT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.SMTPPort }, 587)),
+		SMTPUser:                     getEnv("SMTP_USER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPUser }, "")),
+		SMTPPassword:                 getEnv("SMTP_PASSWORD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPPassword }, "")),
+		SMTPFrom:                     getEnv("SMTP_FROM", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.SMTPFrom }, "noreply@example.com")),
+		PasswordResetTTL:             time.Duration(getIntEnv("PASSWORD_RESET_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PasswordResetTTLSeconds }, 900))) * time.Second,
+		PasswordPolicyMinLength:      getIntEnv("PASSWORD_POLICY_MIN_LENGTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.PasswordPolicyMinLength }, 10)),
+		PasswordPolicyRequireUpper:   getBoolEnv("PASSWORD_POLICY_REQUIRE_UPPER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireUpper }, true)),
+		PasswordPolicyRequireLower:   getBoolEnv("PASSWORD_POLICY_REQUIRE_LOWER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireLower }, true)),
+		PasswordPolicyRequireDigit:   getBoolEnv("PASSWORD_POLICY_REQUIRE_DIGIT", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireDigit }, true)),
+		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
+
+		// Backup configuration
+		BackupEnabled:          getBoolEnv("BACKUP_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Enabled }, false)),
+		BackupCloudEnabled:     getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
+		BackupCloudProvider:    getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
+		BackupLocalPath:        getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
+		BackupSchedule:         getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
+		BackupRetentionDays:    getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
+		BackupYandexOAuthToken: getEnv("BACKUP_YANDEX_OAUTH_TOKEN", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.OAuthToken }, "")),
+		BackupYandexFolder:     getEnv("BACKUP_YANDEX_FOLDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.BackupFolder }, "/KnowledgeGraphBackups")),
+		BackupYandexMaxBackups: getIntEnv("BACKUP_YANDEX_MAX_BACKUPS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.Cloud.Yandex.MaxBackups }, 10)),
 	}
 
 	// Load complex types from JSON (no env var override for these)
@@ -272,7 +507,18 @@ func Load() *Config {
 		}
 	}
 
-	return cfg
+	// Load required environment variable
+	dbURL, err := mustGetEnv("DATABASE_URL")
+	if err != nil {
+		return nil, err
+	}
+	cfg.DatabaseURL = dbURL
+
+	if cfg.JWTSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET must be set via environment variable or configuration")
+	}
+
+	return cfg, nil
 }
 
 // Helper functions for JSON config with fallbacks
@@ -344,12 +590,12 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func mustGetEnv(key string) string {
+func mustGetEnv(key string) (string, error) {
 	value := os.Getenv(key)
 	if value == "" {
-		log.Fatalf("required environment variable %s is not set", key)
+		return "", fmt.Errorf("required environment variable %s is not set", key)
 	}
-	return value
+	return value, nil
 }
 
 func getIntEnv(key string, defaultValue int) int {
@@ -377,4 +623,36 @@ func getBoolEnv(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+func getUint32Env(key string, defaultValue uint32) uint32 {
+	if str := os.Getenv(key); str != "" {
+		if val, err := strconv.ParseUint(str, 10, 32); err == nil {
+			return uint32(val)
+		}
+	}
+	return defaultValue
+}
+
+func getUint8Env(key string, defaultValue uint8) uint8 {
+	if str := os.Getenv(key); str != "" {
+		if val, err := strconv.ParseUint(str, 10, 8); err == nil {
+			return uint8(val)
+		}
+	}
+	return defaultValue
+}
+
+func getJSONUint32OrDefault(jsonCfg *JSONConfig, getter func(*JSONConfig) uint32, defaultValue uint32) uint32 {
+	if jsonCfg == nil {
+		return defaultValue
+	}
+	return getter(jsonCfg)
+}
+
+func getJSONUint8OrDefault(jsonCfg *JSONConfig, getter func(*JSONConfig) uint8, defaultValue uint8) uint8 {
+	if jsonCfg == nil {
+		return defaultValue
+	}
+	return getter(jsonCfg)
 }

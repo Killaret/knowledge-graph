@@ -1,0 +1,23 @@
+{
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 500,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100.0,
+      "3d_radius": 120.0,
+      "3d_z_step": 5.0,
+      "default_node_size": 1.0
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
+  }
+}

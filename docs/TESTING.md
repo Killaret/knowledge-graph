@@ -1,635 +1,712 @@
-# Руководство по тестированию Knowledge Graph
+# Testing Guide
 
-> **Версия:** 1.0  
-> **Дата:** Апрель 2026 (актуально на момент написания)  
-> **Статус:** Актуально для текущего codebase
+This document describes the testing infrastructure and procedures for Knowledge Graph.
 
----
+## Overview
 
-## 📋 Содержание
+Knowledge Graph uses three Docker stacks:
+- **Dev stack** (docker-compose.yml) - Development environment (frontend dev server 5173, backend 9000, nginx API 18080/frontend 18081)
+- **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend direct 18085, nginx API 18082/frontend 18084)
+- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 9095)
 
-1. [Обзор тестовой стратегии](#обзор-тестовой-стратегии)
-2. [Backend тестирование](#backend-тестирование)
-3. [Frontend тестирование](#frontend-тестирование)
-4. [Интеграционное тестирование](#интеграционное-тестирование)
-5. [E2E тестирование](#e2e-тестирование)
-6. [Запуск тестов](#запуск-тестов)
-7. [Отчёты и покрытие](#отчёты-и-покрытие)
+## Test Stack
 
----
+The test stack is fully isolated from dev and personal stacks:
+- Separate PostgreSQL database (knowledge_test)
+- Separate Redis instance
+- Separate MongoDB instance
+- Separate NLP service
+- Separate backend and frontend containers
+- Separate volumes (test_postgres_data, test_mongodb_data)
 
-## Обзор тестовой стратегии
+### Services
 
-### Уровни тестирования
+| Service | Container Name | Port | Purpose |
+|---------|---------------|------|---------|
+| postgres-test | kg-test-postgres | 15434 | Test database |
+| redis-test | kg-test-redis | 16381 | Test cache/queue |
+| mongo-test | kg-test-mongo | 27019 | Test drafts |
+| nlp-test | kg-test-nlp | 15002 | Test NLP service |
+| backend-test | kg-test-backend | 18083 | Test backend API |
+| graph-service-test | kg-test-graph-service | 19090/19091 | Test graph analytics service |
+| frontend-test | kg-test-frontend | 3002 (override with `FRONTEND_PORT`) | Test frontend |
 
+### Configuration
+
+- **SKIP_AUTH: true** - Authentication bypassed for skip-auth testing (default)
+- **SKIP_AUTH: false** - Required for `@auth-real` Playwright/BDD tests
+- **REDIS_FLUSH_ON_STARTUP: true** - Redis cleared on startup
+- **Database: knowledge_test** - Separate test database
+
+### Test Stack URLs
+
+- **Frontend:** `http://127.0.0.1:<FRONTEND_PORT>` (default 3002; browser API calls are proxied through `/api` and `/graph-service/api`)
+- **Backend API:** http://127.0.0.1:18083 (direct access for health/setup)
+- **Graph Service (HTTP):** http://127.0.0.1:19091
+
+### Health Checks
+
+- **Backend:** `curl http://127.0.0.1:18083/health`
+- **Graph Service:** `curl http://127.0.0.1:19091/health`
+
+## Isolated Testing Model
+
+**⚠️ IMPORTANT:** Knowledge Graph uses an isolated testing model to ensure accurate test results and prevent resource conflicts.
+
+### Overview
+
+The isolated testing model ensures that:
+- **Only the test stack runs during testing** - dev and personal stacks are stopped
+- **No resource conflicts** - Eliminates Docker API instability from running multiple stacks
+- **Accurate test results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **Resource efficiency** - Optimizes resource usage during testing
+
+### Testing Process
+
+1. **Pre-test snapshot** - Capture dev stack state (containers, health, API)
+2. **Stop dev/personal stacks** - Free up resources for testing
+3. **Run tests on isolated test stack** - Clean environment, no conflicts
+4. **Stop test stack** - Complete cleanup with volume removal
+5. **Restore dev/personal stacks** - Bring back development environments
+6. **Post-test comparison** - Verify dev stack state unchanged
+7. **Dev/Personal identity check** - Verify stacks are identical
+8. **Auto-commit** - Commit with test success marker if all checks pass
+
+### Benefits
+
+- **Docker stability** - Prevents Docker API instability from running multiple stacks
+- **Resource efficiency** - Only test stack uses resources during testing
+- **Accurate results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **No conflicts** - Eliminates port and resource conflicts between stacks
+- **Auto-commit** - Automatic commit with test success marker when all checks pass
+- **Identity verification** - Automatic comparison of dev and personal stacks
+
+### When to Use Isolated Testing
+
+- **Full regression testing** - Before production deployment
+- **E2E and BDD testing** - Always use isolated test stack
+- **Integration testing** - When testing with real databases
+- **Performance testing** - When measuring system performance
+
+### When to Use Concurrent Stacks
+
+- **Manual testing** - When testing features across dev/personal stacks
+- **Feature development** - When working on features in dev stack
+- **Personal use** - When using personal stack for daily work
+
+## Automated Testing Scripts
+
+### check-stacks-health
+Checks the health of specified stack(s).
+
+**Windows:**
+```powershell
+.\scripts\ci\check-stacks-health.ps1 -Stack <dev|personal|test|all>
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    E2E Tests                                 │
-│         (Playwright + Cucumber - 48 тестов)                 │
-├─────────────────────────────────────────────────────────────┤
-│              Integration Tests                              │
-│     (Repository + API + Docker Compose)                    │
-├─────────────────────────────────────────────────────────────┤
-│                 Unit Tests                                  │
-│    Backend (Go): 1100+ строк, ~25 тестовых файлов          │
-│    Frontend (TS): Three.js modules, API клиенты            │
-└─────────────────────────────────────────────────────────────┘
+
+**Linux/Mac:**
+```bash
+./scripts/ci/check-stacks-health.sh --stack <dev|personal|test|all>
 ```
 
-### Тестовая пирамида
+**Parameters:**
+- `-Stack` / `--stack`: Specify which stack to check (default: all)
+  - `dev` - Check only dev stack
+  - `personal` - Check only personal stack
+  - `test` - Check only test stack
+  - `all` - Check all stacks (default)
 
-| Уровень | Технологии | Покрытие | Время |
-|---------|------------|----------|-------|
-| **Unit** | Go testify, Vitest | 70% backend | < 10 сек |
-| **Integration** | Go + Postgres, Playwright | Repositories, API | ~ 2 мин |
-| **E2E** | Playwright + Cucumber | Полный сценарий | ~ 5 мин |
+**Checks (for each stack):**
+- Containers running
+- Health endpoint
+- API endpoint
 
----
+### start-test
+Starts the isolated test stack.
 
-## Backend тестирование
-
-### Структура тестов
-
-```
-backend/
-├── internal/
-│   ├── domain/
-│   │   ├── note/
-│   │   │   ├── entity_test.go          # Note entity tests
-│   │   │   └── value_objects_test.go   # Title, Content validation
-│   │   ├── link/
-│   │   │   └── entity_test.go          # Link entity tests
-│   │   └── graph/
-│   │       └── traversal_test.go        # BFS, MAX strategy tests (447 строк)
-│   ├── application/
-│   │   └── graph/
-│   │       └── composite_loader_test.go # Weighted aggregation tests
-│   ├── infrastructure/
-│   │   └── db/postgres/
-│   │       ├── note_repo_test.go       # Note repository integration
-│   │       └── link_repo_test.go       # Link repository integration
-│   └── interfaces/
-│       └── api/
-│           ├── notehandler/
-│           │   └── note_handler_test.go # HTTP handler tests (213 строк)
-│           └── linkhandler/
-│               └── link_handler_test.go # Link handler tests
+**Windows:**
+```powershell
+.\scripts\testing\start-test.ps1
 ```
 
-### Domain Layer Tests
+**Linux/Mac:**
+```bash
+./scripts/testing/start-test.sh
+```
 
-#### Запуск
+**Actions:**
+- Stops and removes previous test stack (with volumes)
+- Builds and starts test stack
+- Waits for all containers to be healthy
+- Displays test stack URLs
 
+#### Rebuilding after frontend changes
+
+If a test stack is already running and only frontend source changed, rebuild and restart without destroying data:
+
+```powershell
+docker compose -f docker-compose.test.yml up -d --build --wait
+```
+
+This rebuilds the `kg-test-frontend` image with the current `frontend/` source and re-runs health checks.
+
+### stop-test
+Stops and destroys the test stack.
+
+**Windows:**
+```powershell
+.\scripts\testing\stop-test.ps1
+```
+
+**Linux/Mac:**
+```bash
+./scripts/testing/stop-test.sh
+```
+
+**Actions:**
+- Stops test stack
+- Removes volumes (complete cleanup)
+
+### seed-test-data
+Seeds the test database with test data.
+
+**Windows:**
+```powershell
+.\scripts\testing\seed-test-data.ps1
+```
+
+**Linux/Mac:**
+```bash
+./scripts/testing/seed-test-data.sh
+```
+
+**Creates:**
+- Test user (login: testuser, password: TestPassword123!)
+- 5 test notes (star, planet, comet, galaxy, asteroid)
+- 2 test links between notes
+
+### run-full-test-cycle
+Orchestrates the complete testing cycle with **full stack isolation**.
+
+**⚠️ IMPORTANT:** This script uses an isolated testing model where dev and personal stacks are stopped during testing to prevent resource conflicts and ensure accurate test results.
+
+**Windows:**
+```powershell
+.\scripts\testing\run-full-test-cycle.ps1
+```
+
+**Linux/Mac:**
+```bash
+./scripts/testing/run-full-test-cycle.sh
+```
+
+**Isolated Testing Model Steps (25 total):**
+1. **Capture dev stack state snapshot** - Save container state, health endpoint, and API response
+2. **Stop dev stack** - `docker compose down`
+3. **Stop personal stack** - `docker compose -f docker-compose.personal.yml down`
+4. **Check stacks identity** - Verify dev/personal/test consistency
+5. **Start test stack** - `start-test.ps1`
+6. **Seed test data** - `seed-test-data.ps1`
+7. **Docker build verification** - Check Docker images
+8. **NLP service tests** - Verify NLP health and functionality
+9. **Backend unit tests** - `go test ./...`
+10. **Backend integration tests** - `go test -tags=integration ./...` (requires Linux/WSL Docker)
+11. **Backend API verification** - Test critical endpoints
+12. **Asynchronous tasks verification** - Check worker and Redis
+13. **PGVECTOR verification** - Verify pgvector extension
+14. **Redis & MongoDB verification** - Check data layer
+15. **Frontend unit tests** - `npm run test:unit`
+16. **Manual testing instructions** - Display URLs and credentials
+17. **Public graph verification** - Manual verification
+18. **CI/CD verification** - Manual verification
+19. **Documentation verification** - Verify `docs/AGENTS.md`, `.windsurfrules` and architecture docs are updated if boundaries changed
+20. **Stop test stack** - `stop-test.ps1`
+21. **Cleanup temporary files** - `cleanup-test-artifacts.ps1` (removes `coverage.out`, `*.cov`, `frontend/coverage`, `backend/.coverage_tmp`, `*.log`)
+22. **Start dev stack** - `docker compose up -d --wait`
+23. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
+24. **Compare dev stack state / identity / health** - Compare with pre-test snapshot, verify dev/personal identity, check health
+25. **Auto-commit** - If all checks passed, commit with test success marker
+
+**Automatic State Verification:**
+- **Pre-test snapshot:** Captures dev stack state before testing
+- **Post-test comparison:** Compares dev stack state after testing
+- **Dev/Personal identity:** Verifies dev and personal stacks are identical
+- **Auto-commit:** Only if dev state unchanged and dev/personal identical
+- **Failure handling:** Stops with exit code 1 if differences found
+
+**Benefits of Isolated Testing:**
+- **Resource efficiency** - Only test stack uses resources during testing
+- **No conflicts** - Eliminates port and resource conflicts between stacks
+- **Accurate results** - Tests run on clean, isolated environment
+- **State verification** - Automatic comparison of dev stack state before/after testing
+- **Docker stability** - Prevents Docker API instability from running multiple stacks
+
+**Temporary Files and Snapshots:**
+- All temporary snapshots are saved to `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`.
+- Includes: container state, health endpoint, API response.
+- Post-test snapshots are saved to the same directory for comparison.
+- Argos visual screenshots are saved to `frontend/argos-screenshots/` (see docs/ARGOS.md).
+- These directories are ignored by Git — only source changes are committed.
+
+## Auto-Commit on Successful Testing
+
+**When all checks pass:**
+- Dev stack state unchanged (pre-test vs post-test)
+- Dev and personal stacks identical
+- Dev and personal stacks healthy
+
+**Auto-commit action:**
+```bash
+git add -A
+git commit -m "test: successful regression cycle — dev and personal identical"
+git push
+```
+
+**Commit message includes:**
+- Test success marker
+- Dev/Personal identity confirmation
+- Co-authored-by tag for Devin
+
+**When checks fail:**
+- Dev stack state changed → Skip auto-commit, show warning
+- Dev/Personal not identical → Exit with code 1, skip auto-commit
+- Stacks not healthy → Exit with code 1, skip auto-commit
+
+**Manual investigation required:**
+- Check snapshot differences in `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
+- Review diff output for dev/personal differences
+- Fix issues before re-running test cycle
+
+## Manual Testing
+
+### Test Environment
+
+After starting the test stack, access the test environment at:
+- **Frontend:** http://127.0.0.1:3002
+- **Backend API:** http://127.0.0.1:18083
+
+### Test User Credentials
+
+- **Login:** testuser
+- **Password:** TestPassword123!
+
+### Manual Test Checklist
+
+Follow the manual test checklist at `docs/MANUAL_TEST_CHECKLISTS_RU.md` for detailed testing procedures.
+
+### Manual Regression Scenarios — Auth-state UI and GraphLoader
+
+When verifying the `GraphPageShell`, `GraphLoader`, `readonly NoteCard`, and shared auth-conditional flows, run the test stack and walk through these focused scenarios:
+
+| Scenario | Steps | Expected result |
+|----------|-------|-----------------|
+| Public graph page | Open `http://127.0.0.1:3002/graph` in incognito. | Graph loads; top bar shows **Login / Register** buttons; no edit/delete controls. |
+| Graph page login | Click **Login** in the floating panel, enter credentials, submit. | Panel closes; top bar switches to user actions; edit/delete available. |
+| Home page — anonymous | Open `http://127.0.0.1:3002/` in incognito. | Notes list and graph are derived from public graph; `NoteCard` hover shows no edit/delete. |
+| Home page — authenticated | Log in on `/`. | List/graph loads from `getNotes()` + `getGraphWithPreload()`; full CRUD available. |
+| Note detail — anonymous | Open a public note's detail URL directly while logged out. | Page shows note body, connected notes, but no **Edit / Delete / Create child** buttons. |
+| Note detail — authenticated | Open the same note after logging in. | Edit, delete, and create-child actions visible and functional. |
+| Import page guard | Visit `/import` or `/import/bookmarks` in incognito. | Browser redirects to `/auth/login?redirect=...`. |
+| Auth pages guard | Visit `/auth/login` while authenticated. | Redirect to `/`. |
+| Graph switch full/local | On `/graph` toggle `?full=false` (local/centered) and `?full=true` (full). | Both modes load without console errors; local mode uses first note as center. |
+| Graph loader fallback | Delete or seed to a state with notes but no graph-service layout, then reload `/`. | UI still shows nodes built from notes; no blank graph. |
+| Smoke real-auth | Register a new user, log in, open profile, graph, create note, log out. | Full cycle works without 401 loops. |
+
+> **Console checks:** during every scenario open DevTools → Console and ensure there are no red TypeScript/runtime errors, no `api/auth/refresh` 401 loops, and no duplicate API calls.
+
+### Test Coverage
+
+The manual test checklist covers:
+- **Pre-testing setup** - Stack health checks, test stack startup, data seeding
+- **Smoke tests** - Public access, authentication, profile, graph, note creation, logout
+- **Public graph verification** - Public note/link creation, API access without auth, frontend public access
+- **Canvas features** - Ghost node, black hole, drag-and-drop links, hotkeys, tooltips, new indicators
+- **Note cards** - Visual style, batch operations, undo, sorting, dust style, card tooltips
+- **General UX** - Galactic lexicon, browser console, language switch
+- **Post-testing cleanup** - Test stack destruction, stacks health verification, defect reporting
+
+## Automated Tests
+
+### Current Test Statistics
+
+**Latest Test Results (run 2026-08-13):**
+
+| Layer | Category | Total | Passed | Failed | Skipped | Status |
+|-------|----------|-------|--------|--------|---------|--------|
+| Backend | Unit Tests | 1089 | 1085 | 0 | 4 | ✅ Excellent |
+| Backend | Integration Tests | - | - | - | - | ⚠️ Not run — requires Linux/WSL Docker (`-tags=integration`) |
+| Frontend | Unit Tests | 923 | 923 | 0 | 0 | ✅ Good |
+| Frontend | E2E Tests | - | - | - | - | ⚠️ Run separately with `npm run test` |
+| Frontend | BDD Tests (skip-auth) | 5 | 5 | 0 | 0 | ✅ Good |
+| Frontend | BDD Tests (real-auth) | 9 | 9 | 0 | 0 | ✅ Good |
+| NLP | API + Utils Tests | 46 | 46 | 0 | 0 | ✅ Excellent |
+| **NLP Total** | - | **46** | **46** | **0** | **0** | ✅ **Excellent** |
+
+**Notes:**
+- Backend unit tests (`go test ./...`) pass with 1085 passing, 4 skipped, 0 failures.
+- Backend integration tests are excluded by default; run `go test -tags=integration ./...` on Linux/WSL or in CI.
+- Frontend unit tests (`npm run test:unit`) pass with 923 passing, 0 skipped, 0 failures.
+- Frontend E2E and BDD tests are not part of `npm run test:unit`; they require the isolated test stack.
+- **Latest run (2026-08-10):** real-auth E2E `27/27` passed, skip-auth E2E `75 passed / 11 skipped`, BDD `5 scenarios / 43 steps` passed, visual `13/13` passed.
+
+### Current Code Coverage
+
+**Latest Coverage Results (run 2026-07-20):**
+
+| Layer | Metric | Value | Target | Status |
+|-------|--------|-------|--------|--------|
+| Backend | Statements | **60.5%** | 70% (min 60%) | ⚠️ At minimum threshold |
+| Frontend | Statements | **63.63%** | 70% (min 60%) | ⚠️ Below target |
+| Frontend | Branches | **78.74%** | - | ✅ Good |
+| Frontend | Functions | **56.91%** | 55% (min) | ✅ Above minimum |
+| Frontend | Lines | **63.63%** | 60% (min) | ✅ Above minimum |
+
+**Backend coverage gaps (packages below 60%):**
+- `cmd/worker` (14.6%), `internal/infrastructure/mongo` (15.3%), `internal/infrastructure/db` (20.0%)
+- `internal/infrastructure/cloud` (34.3%), `internal/infrastructure/db/postgres` (37.2%)
+- `internal/interfaces/api/handlers/auth` (43.5%), `internal/infrastructure/queue` (46.0%)
+- `cmd/checkconfig` (47.2%), `internal/domain/user` (50.7%)
+- `internal/interfaces/api/handlers/share` (56.7%), `internal/application/cache` (57.1%)
+- `internal/interfaces/api/handlers/draft` (58.7%), `internal/interfaces/api/notehandler` (59.8%)
+
+**Frontend coverage gaps (files/directories below 60%):**
+- `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%)
+- `shared/stores` (~43%), `shared/api` (~54%), `shared/services` (~59%)
+- Several form components (`ForgotPasswordForm`, `RegisterForm`, `ResetPasswordForm`) at 0%
+- `GraphCanvas.svelte` interaction/zoom-pan/pan handlers and `delta.ts` largely uncovered
+
+### Backend Tests
+
+**Unit tests:**
 ```bash
 cd backend
-
-# Все unit тесты
-go test ./internal/domain/... -v
-
-# Конкретный пакет
-go test ./internal/domain/note -v
-
-# С покрытием
-go test ./internal/domain/... -cover -coverprofile=coverage.out
-go tool cover -html=coverage.out -o coverage.html
+go test ./...
 ```
 
-#### Примеры тестов
-
-**Note Entity** (`entity_test.go`):
-```go
-func TestNote_Create(t *testing.T) {
-    note, err := note.Create("Test Title", "Test Content")
-    require.NoError(t, err)
-    assert.NotEmpty(t, note.ID)
-    assert.Equal(t, "Test Title", note.Title.Value())
-    assert.WithinDuration(t, time.Now(), note.CreatedAt, time.Second)
-}
-
-func TestNote_UpdateTitle(t *testing.T) {
-    note, _ := note.Create("Old", "Content")
-    err := note.UpdateTitle("New Title")
-    require.NoError(t, err)
-    assert.Equal(t, "New Title", note.Title.Value())
-    assert.True(t, note.UpdatedAt.After(note.CreatedAt))
-}
-```
-
-**Graph Traversal** (`traversal_test.go`):
-```go
-func TestTraversal_BFS(t *testing.T) {
-    loader := newMockNeighborLoader()
-    traversal := graph.NewTraversal(loader, graph.MAXStrategy)
-    
-    suggestions, err := traversal.GetSuggestions(context.Background(), "note-1", 3)
-    
-    require.NoError(t, err)
-    assert.Len(t, suggestions, 3)
-    assert.Equal(t, "note-2", suggestions[0].NoteID) // Highest weight
-}
-```
-
-### Application Layer Tests
-
-**Composite Loader** (`composite_loader_test.go`):
-```go
-func TestCompositeLoader_Combine(t *testing.T) {
-    loader := graph.NewCompositeLoader(explicitLoader, embeddingLoader, 0.7, 0.3)
-    
-    suggestions, err := loader.LoadSuggestions(ctx, "note-1", 5)
-    
-    require.NoError(t, err)
-    // Verify weighted combination: 0.7 * explicit + 0.3 * semantic
-}
-```
-
-### Infrastructure Layer Tests
-
-**Repository Integration** (требует PostgreSQL):
+**Integration tests:**
 ```bash
-# Запуск с Docker Compose
-docker-compose up -d postgres
-
-# Интеграционные тесты
-go test ./internal/infrastructure/db/postgres/... -v -tags=integration
+cd backend
+go test -tags=integration ./...
 ```
 
-### Interface Layer Tests
+### Graph Service Tests
 
-**HTTP Handlers**:
+**Unit tests:**
 ```bash
-# Handler tests
-go test ./internal/interfaces/api/... -v
-
-# С моками репозиториев
-go test ./internal/interfaces/api/notehandler -v -run TestCreateNote
+cd services/graph-service
+go test ./...
 ```
 
----
+### Frontend Tests
 
-## Frontend тестирование
-
-### Структура тестов
-
-```
-frontend/
-├── tests/
-│   ├── e2e/
-│   │   ├── notes.spec.ts              # Note CRUD tests (196 строк)
-│   │   ├── graph-3d.spec.ts          # 3D graph tests (118 строк)
-│   │   └── progressive-rendering.spec.ts # Fog animation (483 строк)
-│   └── unit/
-│       └── graph-3d-modules.spec.ts   # Three.js module tests
-└── src/
-    └── lib/
-        └── api/
-            ├── notes.test.ts          # API client tests (опционально)
-            └── graph.test.ts
-```
-
-### E2E тесты (Playwright)
-
-#### Запуск
-
+**Unit tests:**
 ```bash
 cd frontend
+npm run test:unit
+```
 
-# Установка браузеров
-npx playwright install chromium
-
-# Все тесты
+**E2E tests:**
+```bash
+cd frontend
 npm run test
-
-# Только UI режим
-npx playwright test --ui
-
-# Определённый файл
-npx playwright test notes.spec.ts
-
-# Отладка
-npx playwright test --debug
 ```
 
-#### Тестовые файлы
+**BDD tests:**
+```bash
+cd frontend
+npm run test:bdd
 
-**Note CRUD** (`notes.spec.ts`):
-```typescript
-test('create note', async ({ page }) => {
-  await page.goto('/');
-  await page.click('[data-testid="create-note-btn"]');
-  await page.fill('[data-testid="title-input"]', 'Test Note');
-  await page.fill('[data-testid="content-input"]', 'Test content');
-  await page.click('[data-testid="save-btn"]');
-  
-  await expect(page.locator('[data-testid="note-card"]')).toContainText('Test Note');
-});
+# Skip-auth stack (default)
+npm run test:bdd:skipauth
+
+# Real-auth stack (SKIP_AUTH=false)
+npm run test:bdd:realauth
 ```
 
-**3D Graph** (`graph-3d.spec.ts`):
-```typescript
-test('3D graph renders with WebGL', async ({ page }) => {
-  await page.goto('/graph/3d/note-123');
-  
-  // Wait for canvas
-  const canvas = page.locator('canvas');
-  await expect(canvas).toBeVisible();
-  
-  // Verify WebGL context
-  const webglSupported = await page.evaluate(() => {
-    const canvas = document.querySelector('canvas');
-    return canvas && !!canvas.getContext('webgl2');
-  });
-  expect(webglSupported).toBe(true);
-});
-```
-
-**Progressive Rendering** (`progressive-rendering.spec.ts`):
-```typescript
-test('fog animation completes', async ({ page }) => {
-  await page.goto('/graph/3d/note-123');
-  
-  // Check initial fog state
-  const initialOpacity = await page.evaluate(() => 
-    window.getComputedStyle(document.body).getPropertyValue('--fog-opacity')
-  );
-  expect(initialOpacity).toBe('0.9');
-  
-  // Wait for animation
-  await page.waitForTimeout(2000);
-  
-  // Verify fog cleared
-  const finalOpacity = await page.evaluate(() => 
-    document.querySelector('[data-testid="stats-bar"]')?.textContent
-  );
-  expect(finalOpacity).toContain('Nodes: 10');
-});
-```
-
-### Unit тесты (Vitest + jsdom)
+### NLP Tests
 
 ```bash
-# Установка
-npm install -D vitest @testing-library/svelte jsdom
-
-# Запуск
-npx vitest
-
-# С покрытием
-npx vitest run --coverage
+cd nlp-service
+pytest tests/ -v
 ```
 
-**Three.js Modules** (`graph-3d-modules.spec.ts`):
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { setupScene } from '$lib/three/core/sceneSetup';
+### Visual Regression / Argos
 
-describe('sceneSetup', () => {
-  it('initializes scene with fog', () => {
-    const { scene } = setupScene();
-    expect(scene.fog).toBeDefined();
-    expect(scene.fog.density).toBe(0.02);
-  });
-});
+Visual regression tests are located in `frontend/tests/visual/visual-regression.spec.ts` and use `@argos-ci/playwright`. The reporter uploads screenshots to Argos automatically when `CI` or `ARGOS_UPLOAD_LOCAL` is set.
+
+**Run locally (test stack):**
+```powershell
+# Windows
+./scripts/testing/start-test.ps1
+./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+
+cd frontend
+$env:FRONTEND_URL = "http://127.0.0.1:3002"
+npm run test:visual:upload   # requires ARGOS_TOKEN env variable
 ```
-
-### Тесты сохранения связей (Link Preservation)
-
-Тесты проверяют, что связи между заметками корректно отображаются и не теряются при различных операциях с 3D графом.
-
-#### Сценарии тестирования
-
-**1. Сохранение связей при переключении режимов просмотра**
-```gherkin
-Scenario: Links remain visible when switching from local to full graph
-  Given a note "Hub Note" has 3 related notes
-  When I navigate to local 3D view for "Hub Note"
-  And I click the "Show all notes" toggle
-  Then all existing links remain visible without flickering
-  And the stats bar shows link count greater than 0
-```
-
-**2. Сохранение связей при зуме камеры**
-```gherkin
-Scenario: Links persist during camera zoom operations
-  Given a note "Zoom Test" has 2 related notes
-  When I navigate to "/graph/3d/{zoomTestId}"
-  And I zoom in on the graph
-  Then the links remain connected to their nodes
-  And no links appear disconnected or floating
-```
-
-**3. Сохранение связей при вращении камеры**
-```gherkin
-Scenario: Links persist during camera rotation
-  Given a note "Rotate Test" has 2 related notes
-  When I navigate to "/graph/3d/{rotateTestId}"
-  And I rotate the camera 90 degrees around the graph
-  Then the links remain connected to their nodes
-  And the links rotate with the nodes
-```
-
-**4. Проверка на дублирование связей**
-```gherkin
-Scenario: Links are not duplicated when switching views multiple times
-  Given a note "Switch Test" has 2 related notes
-  When I navigate to "/graph/3d/{switchTestId}"
-  And I record the initial link count
-  And I toggle "Show all notes" twice
-  Then the link count matches the initial recorded count
-  And no duplicate links are present in the graph
-```
-
-#### Реализация тестов
-
-Файл: `tests/features/step_definitions/progressive-graph-steps.ts`
-
-```typescript
-// Camera zoom steps
-When('I zoom in on the graph', async function(this: ITestWorld) {
-  const canvas = this.page.locator('canvas').first();
-  const box = await canvas.boundingBox();
-  if (box) {
-    await canvas.click({ position: { x: box.width / 2, y: box.height / 2 } });
-    await this.page.mouse.wheel(0, -500);
-    await this.page.waitForTimeout(500);
-  }
-});
-
-// Link preservation verification
-Then('the links remain connected to their nodes', async function(this: ITestWorld) {
-  const canvas = this.page.locator('canvas').first();
-  await expect(canvas).toBeVisible();
-  const box = await canvas.boundingBox();
-  expect(box).not.toBeNull();
-});
-
-Then('no links appear disconnected or floating', async function(this: ITestWorld) {
-  const statsBar = this.page.locator('.stats-bar').first();
-  await expect(statsBar).toBeVisible();
-  const statsText = await statsBar.textContent();
-  const linkMatch = statsText!.match(/(\d+)\s*links?/i);
-  if (linkMatch) {
-    expect(parseInt(linkMatch[1], 10)).toBeGreaterThan(0);
-  }
-});
-```
-
-#### Запуск тестов
 
 ```bash
-# Запуск тестов связей
-cd tests
-npx cucumber-js --tags "@link-preservation"
+# Linux/Mac
+SKIP_AUTH=true ./scripts/testing/start-test.sh
+NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
 
-# Запуск всех 3D тестов
-npx cucumber-js features/local_3d_graph.feature features/full_3d_graph.feature
+cd frontend
+FRONTEND_URL=http://127.0.0.1:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
 ```
 
----
+**Configuration:**
+- `ARGOS_TOKEN` — required for upload.
+- `FRONTEND_URL` — defaults to `http://127.0.0.1:3002` (test stack).
+- `ARGOS_REFERENCE_BRANCH` — baseline branch (`ai-agents` for this work).
+- `ARGOS_UPLOAD_LOCAL` — set to `true` to upload from a local run.
 
-## Интеграционное тестирование
+**Determinism helpers:**
+- Tests append `?stableRender=true` to disable animated variations.
+- `page.addInitScript` injects a seeded `Math.random` LCG and `__SKIP_AUTH__`.
+- `data-visual-test="transparent"` masks dynamic timestamps and indicators.
+- `data-testid="graph-canvas"` exposes `data-test-stable="true"` after the force simulation settles.
 
-### Docker Compose Integration
+**CLI upload manually (legacy — not required with the Playwright reporter):**
+```bash
+cd frontend
+npx argos upload ./argos-screenshots --token $ARGOS_TOKEN
+```
+
+See `docs/ARGOS.md` for the full visual regression workflow.
+
+## Test Data Isolation
+
+The test stack ensures complete isolation:
+- Separate database (knowledge_test vs knowledge_base/knowledge_personal)
+- Separate volumes (test_postgres_data vs postgres_data)
+- Separate container names (kg-test-* vs kg-*)
+- Separate ports (3002/18083 vs 5173/9000/18080/18081 and 3001/18085/18082/18084)
+
+## Cleanup
+
+After testing, always run the cleanup scripts to ensure complete isolation:
+
+```powershell
+.\scripts\testing\stop-test.ps1
+python .\scripts\cleanup\cleanup-test-artifacts.py
+```
+
+or
 
 ```bash
-# Полный стек для тестирования
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
-
-# Запуск интеграционных тестов
-cd backend && go test ./... -tags=integration -v
+./scripts/testing/stop-test.sh
+python ./scripts/cleanup/cleanup-test-artifacts.py
 ```
 
-### API Contract Testing
+This ensures:
+- Test containers are stopped
+- Test volumes are removed
+- Temporary artifacts (`coverage.out`, `*.cov`, `frontend/coverage`, `backend/.coverage_tmp`, `*.log`) are removed
+- No data leakage to dev/personal stacks
 
+## Troubleshooting
+
+### Dev stack 502 error (FIXED)
+
+**Issue:** Dev nginx returns 502 Bad Gateway for API requests
+
+**Root Cause:** Incorrect container names in nginx.conf
+
+**Fix:** Updated nginx.conf to use correct container names (kg-backend, kg-frontend, kg-graph-service)
+
+**Verification:**
 ```bash
-# Проверка OpenAPI спецификации
-npm install -D @redocly/cli
-
-npx @redocly/cli lint backend/openAPI.yaml
-npx @redocly/cli stats backend/openAPI.yaml
+curl http://127.0.0.1:9000/health
+curl http://127.0.0.1:9000/api/v1/notes?limit=1
 ```
 
----
+**Status:** ✅ Resolved - Dev stack API is now accessible
 
-## E2E тестирование (Cucumber BDD)
+### Test stack won't start
 
-### Структура
-
-```
-tests/
-├── features/
-│   ├── graph_navigation.feature      # Навигация по графу
-│   ├── graph_view.feature            # 2D/3D режимы
-│   ├── full_3d_graph.feature         # Полный 3D граф (все заметки)
-│   ├── local_3d_graph.feature        # Локальный 3D граф (одна заметка + связи)
-│   ├── note_management.feature       # CRUD операции
-│   ├── search_and_discovery.feature   # Поиск
-│   └── import_export.feature          # Импорт/экспорт
-│
-└── features/step_definitions/
-    ├── graph_steps.ts                # Шаги для графа
-    ├── progressive-graph-steps.ts    # Шаги для 3D графа (fog, camera, links)
-    ├── note_steps.ts                 # Шаги для заметок
-    └── common_steps.ts               # Общие шаги
-```
-
-### Feature-файлы 3D графа
-
-**`full_3d_graph.feature`** (9 сценариев):
-- Переход на полный 3D граф с главной страницы
-- Отображение всех заметок
-- Загрузка без спиннера (progressive loading)
-- Туманность при загрузке
-- Центрирование камеры
-- **Сохранение связей при зуме**
-- **Сохранение связей при вращении**
-- Корректное отображение связей с множеством узлов
-
-**`local_3d_graph.feature`** (13 сценариев):
-- Переход из деталей заметки в 3D
-- Переход с главной при выделении
-- Одиночная заметка с туманом
-- Прогрессивная загрузка
-- Переключатель "Показать все заметки"
-- **Сохранение связей при переключении режимов**
-- **Сохранение связей при зуме камеры**
-- **Сохранение связей при вращении камеры**
-- **Проверка на дублирование связей**
-- **Корректность связей после прогрессивной загрузки**
-
-### Запуск Cucumber
-
+**Check Docker:**
 ```bash
-# Все BDD тесты
-npm run test:cucumber
-
-# С определённым тегом
-CUCUMBER_TAGS="@smoke" npm run test:cucumber
-
-# HTML отчёт
-npm run test:cucumber:report
+docker ps
+docker compose -f docker-compose.test.yml ps
 ```
 
-### Пример Feature
-
-```gherkin
-Feature: Note Management
-  As a user
-  I want to create, read, update and delete notes
-  So that I can manage my knowledge
-
-  @smoke
-  Scenario: Create a new note
-    Given I am on the main page
-    When I click the create note button
-    And I enter "Test Note" as the title
-    And I enter "Test content" as the content
-    And I click the save button
-    Then I should see "Test Note" in the note list
-
-  Scenario: Delete a note
-    Given I have created a note with title "To Delete"
-    When I open the note "To Delete"
-    And I click the delete button
-    And I confirm the deletion
-    Then I should not see "To Delete" in the note list
-```
-
----
-
-## Запуск тестов
-
-### Полная проверка (все уровни)
-
+**Check logs:**
 ```bash
-# 1. Backend unit tests
-cd backend && go test ./... -v
-
-# 2. Frontend E2E
-cd frontend && npm run test
-
-# 3. BDD Cucumber
-cd tests && npm run test:cucumber
-
-# 4. Health checks
-./scripts/health-check.sh
+docker compose -f docker-compose.test.yml logs
 ```
 
-### CI/CD Pipeline
+**Common issues:**
+- Port conflicts (3002, 18083, 15434, 16381, 27019, 15002)
+- Docker Desktop not running
+- Insufficient resources
+
+### Test data seeding fails
+
+**Check backend health:**
+```bash
+curl http://127.0.0.1:18083/health
+```
+
+**Check API:**
+```bash
+curl http://127.0.0.1:18083/api/v1/notes
+```
+
+**Common issues:**
+- Backend not ready
+- Network issues
+- Invalid test data
+
+### Dev/personal stacks affected
+
+**Verify isolation:**
+```bash
+docker ps --filter "name=kg-"
+```
+
+**Check for test containers:**
+```bash
+docker ps --filter "name=kg-test"
+```
+
+**If test containers exist:**
+```bash
+docker compose -f docker-compose.test.yml down -v
+```
+
+### Real-auth smoke test notes
+
+**Expected non-blocking errors in `smoke-real-auth.spec.ts`:**
+- `400` on `POST /api/v1/auth/refresh` before login — the browser has no refresh cookie yet.
+- `404` on `GET /api/v1/notes/00000000-0000-0000-0000-000000000001` — graph-service may include a default `Knowledge Core` node whose ID does not exist in the `notes` table.
+
+**Strict mode violation for `data-testid="graph-stats"`:**
+- During the `/auth/login` → `/` transition, the old `AuthCard` background graph can briefly remain in the DOM alongside the main graph, causing two `graph-stats` elements.
+- `tests/smoke-real-auth.spec.ts` uses `.first()` to handle this, matching the pattern in `tests/type-filters.spec.ts` and `tests/home-page.spec.ts`.
+
+### Manual checklist E2E flakiness
+
+**Issue:** `manual-checklist-section-3.spec.ts` (especially the drag-and-drop link test) and `manual-checklist-section-5.spec.ts` were flaky in the real-auth suite.
+
+**Root cause:**
+- `CosmicCockpit` panels can be left open/pinned by earlier tests in the same Playwright worker. Even though the panel `pinned` state is not persisted across page reloads, the `cockpit-settings` key in `localStorage` can carry configuration, and the edge handles still trigger hover/toggle. Open panels cover the canvas and intercept `page.mouse` events.
+- The drag-and-drop test moved the virtual cursor from `(0,0)`, crossing the top cockpit edge and often landing inside a panel.
+- `logout and re-login preserves graph data` compared exact node/link counts before and after logout. The graph-service cache is eventually consistent and other `@auth-real` tests create/delete notes in the shared test DB, so the counts can drift by a small amount.
+
+**Fix:**
+- In both manual checklist `beforeEach` hooks, clear the `cockpit-settings` `localStorage` key via `page.addInitScript()` so the Svelte cockpit store starts with a clean state on the next navigation.
+- In the drag-and-drop test, filter simulation nodes to a `120px` margin inside the canvas, move the cursor to the canvas center with `steps: 1` before positioning on the source node, and drag from the center outward.
+- In the `logout and re-login` test, wait for the graph service to settle before capturing each stats snapshot, then assert that the absolute difference between before and after counts is `<= 2` instead of exact equality.
+
+### Multiple stacks cause Docker/Playwright failures
+
+**Issue:** Docker becomes unstable, test stack containers fail health checks, or Playwright reports `ECONNREFUSED ::1:18083` / `net::ERR_CONNECTION_REFUSED`.
+
+**Root Cause:** Running dev, personal, and test stacks simultaneously exhausts Docker resources and creates port/network conflicts. On Windows, Node/Playwright resolves `localhost` to `::1` first, but Docker Desktop binds published ports to `127.0.0.1` by default.
+
+**Fix:**
+1. Stop dev and personal stacks before E2E/BDD/regression:
+   ```bash
+   docker compose down
+   docker compose -f docker-compose.personal.yml down
+   ```
+2. Start only the isolated test stack.
+3. Use `127.0.0.1` URLs for Playwright/BDD:
+   ```powershell
+   $env:FRONTEND_URL = "http://127.0.0.1:3002"
+   $env:BACKEND_URL = "http://127.0.0.1:18083"
+   ```
+4. The test frontend image is built with `VITE_API_URL=/api` by default, so browser API calls go through the SvelteKit proxy. Only rebuild with a different `VITE_API_URL` if you need to bypass the proxy:
+   ```bash
+   docker compose -f docker-compose.test.yml build --build-arg VITE_API_URL=http://127.0.0.1:18083 frontend-test
+   ```
+
+### Dev/personal PostgreSQL password mismatch
+
+**Issue:** Backend fails with `password authentication failed for user "kb_user"` or `"personal"` after restoring dev/personal stacks.
+
+**Root Cause:** Dev/personal `postgres` services load `env_file: .env`. If `.env` is missing or its `POSTGRES_PASSWORD` / `PERSONAL_POSTGRES_PASSWORD` does not match the password used when the `postgres_data` / `pgdata_personal` volume was initialized, authentication fails.
+
+**Fix:** Ensure `.env` contains:
+```env
+JWT_SECRET=your-dev-jwt-secret
+POSTGRES_PASSWORD=<password matching postgres_data volume>
+PERSONAL_POSTGRES_PASSWORD=<password matching pgdata_personal volume>
+```
+
+## Best Practices
+
+1. **Always check stacks health before testing** - Ensures dev/personal stacks are stable
+2. **Use the full test cycle script** - Automates the entire process
+3. **Clean up after testing** - Prevents data leakage
+4. **Verify isolation** - Check that test stack doesn't affect dev/personal
+5. **Document issues** - Use the reporting section in the manual checklist
+
+## CI/CD Integration
+
+The test stack can be integrated into CI/CD pipelines:
 
 ```yaml
-# .github/workflows/test.yml
-name: Tests
+- name: Start test stack
+  run: ./scripts/testing/start-test.sh
 
-on: [push, pull_request]
+- name: Seed test data
+  run: ./scripts/testing/seed-test-data.sh
 
-jobs:
-  backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-      - run: go test ./... -race -coverprofile=coverage.out
-      - uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.out
+- name: Run tests
+  run: npm run test
 
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npx playwright install
-      - run: npm run test
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    steps:
-      - uses: actions/checkout@v3
-      - run: docker-compose up -d
-      - run: sleep 30  # Wait for services
-      - run: npm run test:cucumber
+- name: Stop test stack
+  run: ./scripts/testing/stop-test.sh
 ```
 
----
+## References
 
-## Отчёты и покрытие
+- [Manual Test Checklist](MANUAL_TEST_CHECKLISTS_RU.md)
+- [Regression Test Plan](REGRESSION_TEST_PLAN.md)
+- [Final Test Report](archive/FINAL_TEST_REPORT.md)
+- [Backend Testing](../backend/README.md#testing)
+- [Frontend Testing](../frontend/README.md)
 
-### Backend покрытие
+## Recent Improvements
 
-```bash
-cd backend
+### Dev Stack Fix (July 2026)
+- **Issue:** Nginx 502 Bad Gateway error on dev stack
+- **Resolution:** Updated nginx.conf with correct container names
+- **Status:** ✅ Resolved - Dev stack fully operational
 
-# Генерация отчёта
-go test ./... -coverprofile=coverage.out
-go tool cover -html=coverage.out -o coverage.html
+### Test Stack Automation (July 2026)
+- **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
+- **Isolation:** Complete separation from dev/personal stacks
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
+- **Status:** ✅ Fully automated and verified
 
-# Просмотр
-open coverage.html
+### Smoke Tests (July 2026)
+- **Coverage:** Public access, authentication, profile, graph, note creation, logout
+- **Status:** ✅ All smoke tests passing
+- **Documentation:** Added to MANUAL_TEST_CHECKLISTS_RU.md
 
-# Проверка порога (минимум 70%)
-go-test-coverage -coverprofile=coverage.out -threshold=70
-```
+### Public Graph Verification (July 2026)
+- **Feature:** Public notes and links accessible without authentication
+- **Testing:** API and frontend verification for public graph access
+- **Status:** ✅ Documented in MANUAL_TEST_CHECKLISTS_RU.md
 
-### Frontend покрытие
+### Regression Test Plan (July 2026)
+- **New Document:** REGRESSION_TEST_PLAN.md
+- **Coverage:** 20-part comprehensive regression testing plan
+- **Includes:** Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
+- **Status:** ✅ Documented and ready for execution
 
-```bash
-cd frontend
+## Current Test Counts
 
-# E2E покрытие (через Playwright trace)
-npx playwright test --trace on
+| Category | Files | Tests/Scenarios | Notes |
+|----------|-------|-----------------|-------|
+| **Go Unit** | 99 | 596 test functions | `backend/**/*_test.go` |
+| **Frontend Unit** | 84 | 976+ | `frontend/src/**/*.spec.ts` / `*.test.ts` |
+| **Playwright E2E** | 16 | 122 | `frontend/tests/**/*.spec.ts` |
+| **BDD (Cucumber)** | 14 | 127 scenarios | `tests/features/*.feature` |
+| **NLP Python** | 2 | 46 | `nlp-service/tests/*.py` |
 
-# Открытие отчёта
-npx playwright show-report
-```
-
-### Текущее покрытие (апрель 2026)
-
-| Компонент | Покрытие | Тесты | Статус |
-|-----------|----------|-------|--------|
-| **Backend Domain** | ~85% | 25+ | ✅ Отлично |
-| **Backend Application** | ~75% | 5+ | ✅ Хорошо |
-| **Backend Infrastructure** | ~60% | 4+ | ⚠️ Нужны интеграционные |
-| **Backend Interface** | ~70% | 3+ | ✅ Хорошо |
-| **Frontend E2E** | N/A | 48 | ✅ Отлично |
-| **Frontend Unit** | ~40% | 1+ | ❌ Нужно больше |
-
-### Необходимые дополнительные тесты
-
-- [ ] **Svelte Component Unit Tests** - Vitest + @testing-library/svelte
-- [ ] **Worker Integration Tests** - Redis queue + task processing
-- [ ] **NLP Service Tests** - Keyword extraction, embedding generation
-- [ ] **Load Tests** - k6 или Artillery для API нагрузки
-- [ ] **Security Tests** - OWASP ZAP сканирование
-- [ ] **Contract Tests** - Pact для API контрактов
-
----
-
-## Полезные команды
-
-```bash
-# Быстрый чек
-make test              # Все тесты
-make test-backend      # Только backend
-make test-frontend     # Только frontend E2E
-make test-cucumber     # Только BDD
-
-# Отладка
-make test-debug        # С отладочной информацией
-make test-watch        # Watch mode
-
-# Отчёты
-make coverage          # Покрытие
-make report            # HTML отчёт
-```
+> Run `cd backend && go test ./...`, `cd frontend && npm run test:unit`, `cd frontend && npx playwright test`, `npm run test:bdd`, `cd nlp-service && pytest` to verify.

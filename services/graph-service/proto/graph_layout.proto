@@ -1,0 +1,116 @@
+syntax = "proto3";
+package graphservice;
+
+option go_package = "services/graph-service/proto;graphservice";
+
+message NoteLayoutRequest {
+  string note_id = 1;
+  int32 depth = 2;
+  string user_id = 3;
+}
+
+message LayoutNode {
+  string id = 1;
+  string title = 2;
+  string type = 3;
+  double x = 4;
+  double y = 5;
+  double z = 6;
+  double size = 7;
+}
+
+message LayoutLink {
+  string source = 1;
+  string target = 2;
+  double weight = 3;
+  string link_type = 4;
+  string source_type = 5;
+}
+
+message LayoutResponse {
+  repeated LayoutNode nodes = 1;
+  repeated LayoutLink links = 2;
+  string hash = 3;
+}
+
+message FullLayoutRequest {
+  string user_id = 1;
+  int32 limit = 2;
+}
+
+message LayoutChunk {
+  repeated LayoutNode nodes = 1;
+  repeated LayoutLink links = 2;
+  string chunk_id = 3;
+}
+
+message DeltaRequest {
+  string user_id = 1;
+  string last_hash = 2;
+}
+
+message DeltaResponse {
+  repeated LayoutNode added_nodes = 1;
+  repeated string removed_nodes = 2;
+  repeated LayoutNode updated_nodes = 3;
+  repeated LayoutLink added_links = 4;
+  repeated LayoutLink removed_links = 5;
+  string current_hash = 6;
+}
+
+message NeighborRequest {
+  string note_id = 1;
+  int32 depth = 2;
+  string user_id = 3;
+}
+
+message NeighborNode {
+  string id = 1;
+  string title = 2;
+  string type = 3;
+  double weight = 4;
+  int32 distance = 5;
+}
+
+message NeighborResponse {
+  repeated NeighborNode nodes = 1;
+}
+
+message PathRequest {
+  string from_id = 1;
+  string to_id = 2;
+  string user_id = 3;
+}
+
+message PathResponse {
+  repeated string note_ids = 1;
+  int32 distance = 2;
+  double weight = 3;
+}
+
+message RecommendationsRequest {
+  string note_id = 1;
+  string user_id = 2;
+  int32 limit = 3;
+}
+
+message Recommendation {
+  string note_id = 1;
+  string title = 2;
+  double score = 3;
+  double graph_score = 4;
+  double semantic_score = 5;
+}
+
+message RecommendationsResponse {
+  repeated Recommendation recommendations = 1;
+}
+
+service GraphService {
+  rpc GetNoteLayout(NoteLayoutRequest) returns (LayoutResponse);
+  rpc GetFullLayout(FullLayoutRequest) returns (stream LayoutChunk);
+  rpc GetDelta(DeltaRequest) returns (DeltaResponse);
+  rpc GetNeighbors(NeighborRequest) returns (NeighborResponse);
+  rpc GetPath(PathRequest) returns (PathResponse);
+  rpc GetRecommendations(RecommendationsRequest) returns (RecommendationsResponse);
+}

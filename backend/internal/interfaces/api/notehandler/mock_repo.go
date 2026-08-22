@@ -44,6 +44,24 @@ func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+func (m *mockNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, id := range ids {
+		delete(m.notes, id)
+	}
+	return nil
+}
+
+func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.notes[id]; !ok {
+		return note.ErrNoteNotFound
+	}
+	return nil
+}
+
 func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -55,7 +73,7 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return notes, nil
 }
 
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -116,7 +134,7 @@ func contains(s, substr string) bool {
 				findSubstring(s, substr))))
 }
 
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -132,15 +150,15 @@ func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Not
 	}
 
 	end := offset + limit
-	if end > len(allNotes) {
+	if limit <= 0 || end > len(allNotes) || end < offset {
 		end = len(allNotes)
 	}
 
 	return allNotes[offset:end], total, nil
 }
 
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	return m.List(ctx, limit, offset)
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return m.List(ctx, userID, limit, offset)
 }
 
 func findSubstring(s, substr string) bool {

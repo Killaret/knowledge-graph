@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +25,11 @@ import (
 // NoteHandlerIntegrationTestSuite - интеграционные тесты для NoteHandler
 type NoteHandlerIntegrationTestSuite struct {
 	suite.Suite
-	db      *gorm.DB
-	repo    *postgres.NoteRepository
-	router  *gin.Engine
-	cleanup func()
+	db         *gorm.DB
+	repo       *postgres.NoteRepository
+	router     *gin.Engine
+	cleanup    func()
+	testUserID uuid.UUID
 }
 
 func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
@@ -39,6 +42,7 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 		&postgres.LinkModel{},
 		&postgres.NoteKeywordModel{},
 		&postgres.UserModel{},
+		&postgres.UserRoleModel{},
 		&postgres.TagModel{},
 		&postgres.NoteTagModel{},
 	}
@@ -57,17 +61,30 @@ func (s *NoteHandlerIntegrationTestSuite) SetupSuite() {
 		0,   // taskDelay
 		nil, // recRepo
 		nil, // embeddingRepo
-		nil, // redis
+		nil, // cacheClient
 		&config.Config{
 			RecommendationTopN:                    10,
 			RecommendationFallbackEnabled:         false,
 			RecommendationFallbackSemanticEnabled: false,
+			PaginationDefaultLimit:                20,
+			PaginationMaxLimit:                    100,
 		},
+		nil, // graphCache
+		nil, // achievementService
+		nil, // importSvc
 	)
 
 	// Настраиваем Gin
 	gin.SetMode(gin.TestMode)
 	s.router = gin.New()
+
+	// Middleware: подставляет тестового пользователя, чтобы List/Search
+	// возвращали заметки текущего пользователя, а не только публичные.
+	s.router.Use(func(c *gin.Context) {
+		c.Set(middleware.ContextUserIDKey, s.testUserID)
+		c.Set(middleware.ContextRoleKey, "user")
+		c.Next()
+	})
 
 	// Регистрируем маршруты
 	s.router.POST("/notes", handler.Create)
@@ -87,6 +104,17 @@ func (s *NoteHandlerIntegrationTestSuite) SetupTest() {
 	// Очищаем таблицы перед каждым тестом
 	err := testutil.TruncateTables(s.db)
 	s.Require().NoError(err, "failed to truncate tables")
+
+	// Создаем тестового пользователя и фиксируем его ID для middleware.
+	s.testUserID = uuid.New()
+	err = s.db.Create(&postgres.UserModel{
+		ID:           s.testUserID,
+		Login:        "testuser",
+		Email:        "test@example.com",
+		PasswordHash: "test-hash",
+		CreatedAt:    time.Now(),
+	}).Error
+	s.Require().NoError(err, "failed to create test user")
 }
 
 // createTestNote создает тестовую заметку через API
@@ -106,11 +134,12 @@ func (s *NoteHandlerIntegrationTestSuite) createTestNote(title, content, noteTyp
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
-	return response["id"].(string)
+	data := wrappedResponse["data"].(map[string]interface{})
+	return data["id"].(string)
 }
 
 // TestCreateNote - создание заметки
@@ -133,13 +162,14 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateNote() {
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response["id"])
-	s.Equal("Test Note", response["title"])
-	s.Equal("Test content", response["content"])
-	s.Equal("star", response["type"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotEmpty(data["id"])
+	s.Equal("Test Note", data["title"])
+	s.Equal("Test content", data["content"])
+	s.Equal("star", data["type"])
 }
 
 // TestCreateNote_InvalidJSON - невалидный JSON
@@ -180,11 +210,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestGetNote() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal(id, response["id"])
-	s.Equal("Get Me", response["title"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.Equal(id, data["id"])
+	s.Equal("Get Me", data["title"])
 }
 
 // TestGetNote_NotFound - получение несуществующей заметки
@@ -222,11 +253,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestUpdateNote() {
 
 	s.Equal(200, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Equal("Updated Title", response["title"])
-	s.Equal("Updated content", response["content"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.Equal("Updated Title", data["title"])
+	s.Equal("Updated content", data["content"])
 }
 
 // TestUpdateNote_NotFound - обновление несуществующей
@@ -366,11 +398,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateAndGet_FullFlow() {
 
 	s.Equal(201, w.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
 
-	id := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	id := createData["id"].(string)
 
 	// Получаем
 	w2 := httptest.NewRecorder()
@@ -379,11 +412,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestCreateAndGet_FullFlow() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal("Full Flow Test", getResponse["title"])
-	s.Equal("galaxy", getResponse["type"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal("Full Flow Test", getData["title"])
+	s.Equal("galaxy", getData["type"])
 }
 
 // Запускаем тесты

@@ -1,65 +1,147 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { getFullGraphData } from '$lib/api/graph';
-  import LazyGraph3D from '$lib/components/LazyGraph3D.svelte';
-  import type { GraphData } from '$lib/api/graph';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import { GraphPageShell } from "$widgets/graph-page";
+  import { CelestialBody } from "$entities";
+  import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
+  import { type GraphData } from "$shared/api/graph";
+  import type { Component } from "svelte";
+  import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
+  import { graphStore } from "$shared/stores/graph.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
-  let graphData: GraphData | null = $state(null);
+  const runtimeConfig = toRuntimeConfig();
+  const layoutProvider = createLayoutProvider(runtimeConfig);
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
+
+  const graphTypeFilters = [
+    { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    }),
+  ];
+
+  let graphData: GraphData = $state({ nodes: [], links: [] });
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
+  let Graph3DViewer: Component<Graph3DViewerProps> | null = $state(null);
 
   onMount(async () => {
     if (!browser) return;
     try {
-      graphData = await getFullGraphData();
+      [graphData] = await Promise.all([
+        layoutProvider.load({}),
+        import("$widgets/graph-3d-viewer/Graph3DViewer.svelte").then((mod) => {
+          Graph3DViewer = mod.default;
+        }),
+      ]);
     } catch (e) {
-      error = 'Failed to load full graph';
-      console.error(e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to load 3D graph:", e);
+      }
+      error = t("graph.loadDataError");
     } finally {
       loading = false;
     }
   });
 </script>
 
-<div class="page">
-  {#if loading}
-    <div class="center">
-      <div class="spinner"></div>
-      <p>Loading full knowledge graph...</p>
-    </div>
-  {:else if error}
-    <div class="center error">{error}</div>
-  {:else if graphData}
-    <div class="stats-bar">
-      <span><strong>{graphData.nodes.length}</strong> nodes</span>
-      <span><strong>{graphData.links.length}</strong> links</span>
-    </div>
-    <LazyGraph3D data={graphData} />
-  {/if}
-</div>
+<GraphPageShell
+  view="3d"
+  layoutProvider="d3"
+  searchQuery=""
+  selectedType="all"
+  typeFilters={graphTypeFilters}
+  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
+  nodeCount={graphData.nodes.length}
+  linkCount={graphData.links.length}
+  selectedNodeId={graphStore.selectedNodeId}
+  onSearch={() => {}}
+  onFilter={() => {}}
+  onToggleView={(view) => {
+    if (view === "graph") goto("/graph");
+    else if (view === "list") goto("/");
+  }}
+  onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
+  onSignIn={() => goto("/auth/login")}
+  onRegister={() => goto("/auth/register")}
+>
+  <div class="page">
+    {#if loading}
+      <div class="center">
+        <div class="spinner"></div>
+        <p>{t("page.loadingGraph")}</p>
+      </div>
+    {:else if error}
+      <div class="center error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
+    {:else if graphData.nodes.length === 0}
+      <div class="center">
+        <h2>{t("graph3d.noDataTitle")}</h2>
+        <p>{t("graph3d.noDataMessage")}</p>
+      </div>
+    {:else if Graph3DViewer}
+      <Graph3DViewer
+        nodes={graphData.nodes}
+        links={graphData.links}
+        selectedNodeId={graphStore.selectedNodeId}
+        onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+      />
+    {/if}
+  </div>
+</GraphPageShell>
 
 <style>
   .page {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
-    background: #050510;
+    background: transparent;
+    color: white;
   }
 
   .center {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    color: white;
     gap: 16px;
+    text-align: center;
   }
 
   .error {
-    color: #ff6666;
+    color: #ff6b6b;
+  }
+
+  .error button {
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
   }
 
   .spinner {
@@ -72,28 +154,8 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .stats-bar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 8px;
-    font-size: 14px;
-    color: #94a3b8;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-  }
-
-  .stats-bar strong {
-    color: #88aaff;
-    font-weight: 600;
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

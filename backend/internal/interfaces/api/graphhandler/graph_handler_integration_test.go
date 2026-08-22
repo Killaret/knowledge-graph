@@ -7,13 +7,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -21,12 +25,13 @@ import (
 // GraphHandlerIntegrationTestSuite - интеграционные тесты для GraphHandler
 type GraphHandlerIntegrationTestSuite struct {
 	suite.Suite
-	db       *gorm.DB
-	noteRepo *postgres.NoteRepository
-	linkRepo *postgres.LinkRepository
-	router   *gin.Engine
-	handler  *Handler
-	cleanup  func()
+	db         *gorm.DB
+	noteRepo   *postgres.NoteRepository
+	linkRepo   *postgres.LinkRepository
+	router     *gin.Engine
+	handler    *Handler
+	cleanup    func()
+	testUserID uuid.UUID
 }
 
 func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
@@ -50,11 +55,26 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 	s.linkRepo = postgres.NewLinkRepository(s.db)
 
 	// Создаем хендлер с maxDepth = 3
-	s.handler = New(s.noteRepo, s.linkRepo, 3)
+	cfg := &config.Config{
+		GraphLoadDepth:        3,
+		GraphDefaultLimit:     100,
+		GraphMaxLimit:         1000,
+		GraphLinkDefaultLimit: 100,
+		GraphLinkMaxLimit:     1000,
+	}
+	s.handler = New(s.noteRepo, s.linkRepo, cfg, nil)
 
 	// Настраиваем Gin
 	gin.SetMode(gin.TestMode)
 	s.router = gin.New()
+
+	// Middleware: подставляет тестового пользователя, чтобы полный граф
+	// возвращал заметки текущего пользователя, а не только публичные.
+	s.router.Use(func(c *gin.Context) {
+		c.Set(middleware.ContextUserIDKey, s.testUserID)
+		c.Set(middleware.ContextRoleKey, "user")
+		c.Next()
+	})
 
 	// Регистрируем маршруты
 	s.router.GET("/notes/:id/graph", s.handler.GetGraph)
@@ -69,15 +89,26 @@ func (s *GraphHandlerIntegrationTestSuite) SetupTest() {
 	// Очищаем таблицы перед каждым тестом
 	err := testutil.TruncateTables(s.db)
 	s.Require().NoError(err, "failed to truncate tables")
+
+	// Создаем тестового пользователя и фиксируем его ID для middleware.
+	s.testUserID = uuid.New()
+	err = s.db.Create(&postgres.UserModel{
+		ID:           s.testUserID,
+		Login:        "testuser",
+		Email:        "test@example.com",
+		PasswordHash: "test-hash",
+		CreatedAt:    time.Now(),
+	}).Error
+	s.Require().NoError(err, "failed to create test user")
 }
 
-// createTestNote создает тестовую заметку
+// createTestNote создает тестовую заметку от имени тестового пользователя
 func (s *GraphHandlerIntegrationTestSuite) createTestNote(title, content, noteType string) *note.Note {
 	ctx := s.db.Statement.Context
 	noteTitle, _ := note.NewTitle(title)
 	noteContent, _ := note.NewContent(content)
 	metadata, _ := note.NewMetadata(map[string]interface{}{"type": noteType})
-	n := note.NewNote(noteTitle, noteContent, noteType, metadata)
+	n := note.NewNoteWithCreator(noteTitle, noteContent, noteType, metadata, s.testUserID)
 	err := s.noteRepo.Save(ctx, n)
 	s.Require().NoError(err, "failed to create test note")
 	return n
@@ -113,18 +144,20 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_Success() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Проверяем структуру ответа
-	s.NotEmpty(response.Nodes)
-	s.Len(response.Nodes, 3) // center + 2 children
-	s.Len(response.Links, 2) // 2 связи
+	s.NotEmpty(wrappedResponse.Data.Nodes)
+	s.Len(wrappedResponse.Data.Nodes, 3) // center + 2 children
+	s.Len(wrappedResponse.Data.Links, 2) // 2 связи
 
 	// Проверяем что center присутствует
 	foundCenter := false
-	for _, n := range response.Nodes {
+	for _, n := range wrappedResponse.Data.Nodes {
 		if n.ID == center.ID().String() {
 			foundCenter = true
 			s.Equal("Center Note", n.Title)
@@ -154,13 +187,15 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_WithDepthParam() {
 
 	s.Equal(200, w1.Code)
 
-	var resp1 GraphData
-	err := json.Unmarshal(w1.Body.Bytes(), &resp1)
+	var wrappedResp1 struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w1.Body.Bytes(), &wrappedResp1)
 	s.NoError(err)
 
 	// С depth=1 должны получить только A и B
-	s.Len(resp1.Nodes, 2)
-	s.Len(resp1.Links, 1)
+	s.Len(wrappedResp1.Data.Nodes, 2)
+	s.Len(wrappedResp1.Data.Links, 1)
 
 	// Запрос с depth=2 (A -> B -> C)
 	w2 := httptest.NewRecorder()
@@ -169,13 +204,15 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_WithDepthParam() {
 
 	s.Equal(200, w2.Code)
 
-	var resp2 GraphData
-	err = json.Unmarshal(w2.Body.Bytes(), &resp2)
+	var wrappedResp2 struct {
+		Data GraphData `json:"data"`
+	}
+	err = json.Unmarshal(w2.Body.Bytes(), &wrappedResp2)
 	s.NoError(err)
 
 	// С depth=2 должны получить A, B, C
-	s.Len(resp2.Nodes, 3)
-	s.Len(resp2.Links, 2)
+	s.Len(wrappedResp2.Data.Nodes, 3)
+	s.Len(wrappedResp2.Data.Links, 2)
 }
 
 // TestGetGraph_WithDepthExceedMax - depth не может превысить maxDepth хендлера
@@ -199,13 +236,15 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_WithDepthExceedMax() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Глубина должна быть ограничена maxDepth=3, поэтому получаем A, B, C, D
-	s.Len(response.Nodes, 4)
-	s.Len(response.Links, 3)
+	s.Len(wrappedResponse.Data.Nodes, 4)
+	s.Len(wrappedResponse.Data.Links, 3)
 }
 
 // TestGetGraph_EmptyGraph - заметка без связей
@@ -218,14 +257,16 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_EmptyGraph() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Должна вернуться только сама заметка
-	s.Len(response.Nodes, 1)
-	s.Len(response.Links, 0)
-	s.Equal(note.ID().String(), response.Nodes[0].ID)
+	s.Len(wrappedResponse.Data.Nodes, 1)
+	s.Len(wrappedResponse.Data.Links, 0)
+	s.Equal(note.ID().String(), wrappedResponse.Data.Nodes[0].ID)
 }
 
 // TestGetGraph_InvalidID - невалидный UUID
@@ -239,7 +280,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_InvalidID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestGetGraph_InvalidDepth - невалидный depth
@@ -253,10 +294,12 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_InvalidDepth() {
 
 	s.Equal(200, w.Code) // Должен вернуть 200 с fallback на maxDepth
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.Len(response.Nodes, 1)
+	s.Len(wrappedResponse.Data.Nodes, 1)
 
 	// Отрицательный depth
 	w2 := httptest.NewRecorder()
@@ -283,16 +326,18 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Success() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Должны получить все заметки и связи
-	s.Len(response.Nodes, 3)
-	s.Len(response.Links, 2)
+	s.Len(wrappedResponse.Data.Nodes, 3)
+	s.Len(wrappedResponse.Data.Links, 2)
 
 	// Проверяем типы узлов
-	for _, n := range response.Nodes {
+	for _, n := range wrappedResponse.Data.Nodes {
 		s.NotEmpty(n.Type)
 		s.Contains([]string{"star", "planet", "comet"}, n.Type)
 	}
@@ -306,12 +351,14 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Empty() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
-	s.Len(response.Nodes, 0)
-	s.Len(response.Links, 0)
+	s.Len(wrappedResponse.Data.Nodes, 0)
+	s.Len(wrappedResponse.Data.Links, 0)
 }
 
 // TestGetFullGraph_WithLimit - проверка query-параметра limit
@@ -328,12 +375,14 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_WithLimit() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Должны получить только 3 заметки
-	s.Len(response.Nodes, 3)
+	s.Len(wrappedResponse.Data.Nodes, 3)
 }
 
 // TestGetFullGraph_InvalidLimit - невалидный limit
@@ -348,12 +397,14 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_InvalidLimit() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Должны получить все заметки (limit игнорируется)
-	s.Len(response.Nodes, 2)
+	s.Len(wrappedResponse.Data.Nodes, 2)
 }
 
 // TestGraphBidirectionalLinks - проверка загрузки связей в обоих направлениях
@@ -375,17 +426,19 @@ func (s *GraphHandlerIntegrationTestSuite) TestGraphBidirectionalLinks() {
 
 	s.Equal(200, w.Code)
 
-	var response GraphData
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse struct {
+		Data GraphData `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
 
 	// Должны получить все 3 узла и 3 связи
-	s.Len(response.Nodes, 3)
-	s.Len(response.Links, 3)
+	s.Len(wrappedResponse.Data.Nodes, 3)
+	s.Len(wrappedResponse.Data.Links, 3)
 
 	// Проверяем что все узлы присутствуют
 	ids := make(map[string]bool)
-	for _, n := range response.Nodes {
+	for _, n := range wrappedResponse.Data.Nodes {
 		ids[n.ID] = true
 	}
 	s.True(ids[noteA.ID().String()])

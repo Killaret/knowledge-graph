@@ -8,30 +8,24 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/domain/link"
+	"knowledge-graph/internal/testutil"
 
 	"github.com/google/uuid"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func setupTestDBForLink(t *testing.T) *gorm.DB {
-	dsn := "host=localhost user=kb_user password=kb_password dbname=knowledge_base_test port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect test db: %v", err)
-	}
-	// Создаём таблицы notes и links (связь зависит от notes)
-	if err := db.AutoMigrate(&NoteModel{}, &LinkModel{}); err != nil {
+func setupTestDBForLink(t *testing.T) (*gorm.DB, func()) {
+	db, cleanup := testutil.SetupTestDB(t)
+	// Создаём таблицы users, notes и links
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &LinkModel{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
-	// Очищаем таблицы перед каждым тестом
-	db.Exec("DELETE FROM links")
-	db.Exec("DELETE FROM notes")
-	return db
+	return db, cleanup
 }
 
 func TestLinkRepository_SaveAndFind(t *testing.T) {
-	db := setupTestDBForLink(t)
+	db, cleanup := setupTestDBForLink(t)
+	defer cleanup()
 	repo := NewLinkRepository(db)
 
 	// Сначала создадим заметки, чтобы ссылаться на них
@@ -74,7 +68,8 @@ func TestLinkRepository_SaveAndFind(t *testing.T) {
 }
 
 func TestLinkRepository_FindBySource(t *testing.T) {
-	db := setupTestDBForLink(t)
+	db, cleanup := setupTestDBForLink(t)
+	defer cleanup()
 	repo := NewLinkRepository(db)
 
 	// Создаём две заметки
@@ -105,7 +100,8 @@ func TestLinkRepository_FindBySource(t *testing.T) {
 }
 
 func TestLinkRepository_DeleteBySource(t *testing.T) {
-	db := setupTestDBForLink(t)
+	db, cleanup := setupTestDBForLink(t)
+	defer cleanup()
 	repo := NewLinkRepository(db)
 
 	note1 := NoteModel{ID: uuid.New(), Title: "SourceDel", Content: ""}

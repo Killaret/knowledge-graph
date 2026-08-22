@@ -1,12 +1,39 @@
 import pytest
 import sys
 import os
+from unittest.mock import patch, MagicMock
 
 # Add the parent directory to the path to import app modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.nlp_utils import extract_keywords, embedding_model
+import app.nlp_utils as nlp_utils
+from app.nlp_utils import extract_keywords, get_embedding_model, is_model_loaded, ensure_model_loaded
 from app.models import ExtractKeywordsRequest, ExtractKeywordsResponse, Keyword, EmbedRequest, EmbedResponse
+
+
+def reset_model_state():
+    """Reset global model state for isolated tests."""
+    nlp_utils._embedding_model = None
+    nlp_utils._model_load_error = None
+
+
+@pytest.fixture(scope="module")
+def embedding_model():
+    """Load model once for integration tests; skip if unavailable."""
+    nlp_utils._embedding_model = None
+    nlp_utils._model_load_error = None
+    prev_offline = os.environ.get("HF_HUB_OFFLINE")
+    os.environ["HF_HUB_OFFLINE"] = "0"
+    try:
+        model = get_embedding_model()
+    except Exception as exc:
+        pytest.skip(f"Embedding model unavailable: {exc}")
+    finally:
+        if prev_offline is None:
+            os.environ.pop("HF_HUB_OFFLINE", None)
+        else:
+            os.environ["HF_HUB_OFFLINE"] = prev_offline
+    return model
 
 
 class TestKeywordExtraction:
@@ -72,16 +99,16 @@ class TestKeywordExtraction:
 
 
 class TestEmbeddingModel:
-    def test_embedding_model_loaded(self):
+    def test_embedding_model_loaded(self, embedding_model):
         """Test that embedding model is properly loaded"""
         assert embedding_model is not None
-        assert hasattr(embedding_model, 'encode')
+        assert hasattr(embedding_model, "encode")
 
-    def test_embedding_generation(self):
+    def test_embedding_generation(self, embedding_model):
         """Test embedding generation for text"""
         text = "This is a test sentence for embedding generation."
         embedding = embedding_model.encode(text)
-        
+
         assert isinstance(embedding, type(embedding_model.encode("test")))
         assert len(embedding) > 0
         # Handle numpy array conversion
@@ -92,16 +119,16 @@ class TestEmbeddingModel:
             embedding_list = list(embedding)
         assert all(isinstance(x, (int, float, np.floating)) for x in embedding_list)
 
-    def test_embedding_empty_text(self):
+    def test_embedding_empty_text(self, embedding_model):
         """Test embedding generation with empty text"""
         embedding = embedding_model.encode("")
         assert len(embedding) > 0
 
-    def test_embedding_different_texts(self):
+    def test_embedding_different_texts(self, embedding_model):
         """Test that different texts produce different embeddings"""
         text1 = "Machine learning is great"
         text2 = "Natural language processing is different"
-        
+
         emb1 = embedding_model.encode(text1)
         emb2 = embedding_model.encode(text2)
         
@@ -165,7 +192,7 @@ class TestIntegration:
         assert isinstance(response, ExtractKeywordsResponse)
         assert len(response.keywords) <= 3
 
-    def test_embedding_integration(self):
+    def test_embedding_integration(self, embedding_model):
         """Integration test for embedding workflow"""
         text = "Test sentence for embedding."
         embedding_vector = embedding_model.encode(text).tolist()
@@ -175,6 +202,100 @@ class TestIntegration:
         assert isinstance(response, EmbedResponse)
         assert len(response.embedding) > 0
         assert all(isinstance(x, float) for x in response.embedding)
+
+
+class TestEmbeddingModelHelpers:
+    def test_hf_offline_enabled(self):
+        prev = os.environ.get("HF_HUB_OFFLINE")
+        try:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            assert nlp_utils._hf_offline_enabled() is True
+            os.environ["HF_HUB_OFFLINE"] = "true"
+            assert nlp_utils._hf_offline_enabled() is True
+            os.environ["HF_HUB_OFFLINE"] = "0"
+            assert nlp_utils._hf_offline_enabled() is False
+        finally:
+            if prev is None:
+                os.environ.pop("HF_HUB_OFFLINE", None)
+            else:
+                os.environ["HF_HUB_OFFLINE"] = prev
+
+    def test_configure_hf_env(self):
+        nlp_utils._configure_hf_env()
+        assert os.environ.get("HF_HUB_DISABLE_TELEMETRY") == "1"
+        assert os.environ.get("HF_HUB_DISABLE_SYMLINKS") == "1"
+
+    def test_resolve_model_path(self):
+        with patch("app.nlp_utils.snapshot_download") as mock_download:
+            mock_download.return_value = "/fake/model/path"
+            path = nlp_utils._resolve_model_path(local_only=True)
+            assert path == "/fake/model/path"
+            mock_download.assert_called_once()
+
+    def test_get_embedding_model_loads_from_cache(self):
+        reset_model_state()
+        fake_model = MagicMock()
+        with patch("app.nlp_utils.snapshot_download", return_value="/fake/path"):
+            with patch("app.nlp_utils.SentenceTransformer", return_value=fake_model) as mock_st:
+                model = get_embedding_model()
+                assert model is fake_model
+                mock_st.assert_called_once_with("/fake/path")
+        assert is_model_loaded() is True
+
+    def test_get_embedding_model_returns_cached_instance(self):
+        reset_model_state()
+        fake_model = MagicMock()
+        with patch("app.nlp_utils.snapshot_download", return_value="/fake/path"):
+            with patch("app.nlp_utils.SentenceTransformer", return_value=fake_model):
+                first = get_embedding_model()
+                second = get_embedding_model()
+                assert first is second
+
+    def test_get_embedding_model_network_fallback(self):
+        reset_model_state()
+        prev = os.environ.get("HF_HUB_OFFLINE")
+        os.environ["HF_HUB_OFFLINE"] = "0"
+        try:
+            with patch("app.nlp_utils.snapshot_download") as mock_download:
+                mock_download.side_effect = [Exception("offline fail"), "/online/path"]
+                fake_model = MagicMock()
+                with patch("app.nlp_utils.SentenceTransformer", return_value=fake_model) as mock_st:
+                    model = get_embedding_model()
+                    assert model is fake_model
+                    assert mock_download.call_count == 2
+                    mock_st.assert_called_once_with("/online/path")
+        finally:
+            if prev is None:
+                os.environ.pop("HF_HUB_OFFLINE", None)
+            else:
+                os.environ["HF_HUB_OFFLINE"] = prev
+
+    def test_get_embedding_model_all_attempts_fail(self):
+        reset_model_state()
+        with patch("app.nlp_utils.snapshot_download", side_effect=Exception("no model")):
+            with patch("app.nlp_utils.SentenceTransformer") as mock_st:
+                with pytest.raises(Exception, match="no model"):
+                    get_embedding_model()
+                mock_st.assert_not_called()
+        assert ensure_model_loaded() is False
+
+    def test_is_model_loaded(self):
+        reset_model_state()
+        assert is_model_loaded() is False
+        nlp_utils._embedding_model = MagicMock()
+        assert is_model_loaded() is True
+
+    def test_ensure_model_loaded(self):
+        reset_model_state()
+        with patch("app.nlp_utils.snapshot_download", return_value="/fake/path"):
+            with patch("app.nlp_utils.SentenceTransformer", return_value=MagicMock()):
+                assert ensure_model_loaded() is True
+
+    def test_ensure_model_loaded_failure(self):
+        reset_model_state()
+        with patch("app.nlp_utils.snapshot_download", side_effect=Exception("fail")):
+            with patch("app.nlp_utils.SentenceTransformer"):
+                assert ensure_model_loaded() is False
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Save(ctx context.Context, link *Link) error
+	Update(ctx context.Context, link *Link) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Link, error)
 	FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*Link, error)
 	FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*Link, error)

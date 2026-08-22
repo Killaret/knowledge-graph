@@ -1,0 +1,17 @@
+# Build / cache artifacts
+.svelte-kit/
+node_modules/
+test-results/
+coverage/
+dist/
+build/
+
+# Lock files — managed by package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs / local env
+*.log
+.env
+.env.*

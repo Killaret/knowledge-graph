@@ -8,28 +8,22 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/testutil"
 
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func setupTestDB(t *testing.T) *gorm.DB {
-	dsn := "host=localhost user=kb_user password=kb_password dbname=knowledge_base_test port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect test db: %v", err)
-	}
-	// Автомиграция (создаст таблицу notes)
-	if err := db.AutoMigrate(&NoteModel{}); err != nil {
+func setupTestDB(t *testing.T) (*gorm.DB, func()) {
+	db, cleanup := testutil.SetupTestDB(t)
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
-	// Очистка таблицы перед каждым тестом (опционально)
-	db.Exec("DELETE FROM notes")
-	return db
+	return db, cleanup
 }
 
 func TestNoteRepository_SaveAndFind(t *testing.T) {
-	db := setupTestDB(t)
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("Test")
@@ -59,7 +53,8 @@ func TestNoteRepository_SaveAndFind(t *testing.T) {
 }
 
 func TestNoteRepository_Update(t *testing.T) {
-	db := setupTestDB(t)
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("Original")
@@ -85,7 +80,8 @@ func TestNoteRepository_Update(t *testing.T) {
 }
 
 func TestNoteRepository_Delete(t *testing.T) {
-	db := setupTestDB(t)
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 	repo := NewNoteRepository(db, nil)
 
 	title, _ := note.NewTitle("ToDelete")

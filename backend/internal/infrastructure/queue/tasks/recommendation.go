@@ -27,16 +27,16 @@ func NewRefreshRecommendationsTask(noteID uuid.UUID, delay time.Duration) (*asyn
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
+	// Create unique task ID based on noteID to prevent duplicate tasks
+	uniqueKey := fmt.Sprintf("rec:%s", noteID)
+
 	// Use unique key for deduplication - multiple tasks for same note will be merged
 	opts := []asynq.Option{
 		asynq.MaxRetry(3),
 		asynq.Timeout(30 * time.Second),
 		asynq.Queue("default"),
+		asynq.TaskID(uniqueKey),
 	}
-
-	// Create unique key based on noteID to prevent duplicate tasks
-	uniqueKey := fmt.Sprintf("rec:%s", noteID)
-	_ = uniqueKey // Store for uniqueness tracking
 
 	if delay > 0 {
 		opts = append(opts, asynq.ProcessIn(delay))

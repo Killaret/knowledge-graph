@@ -1,25 +1,33 @@
 # Knowledge Graph Configuration
 
 System parameters can be configured via:
-1. **`knowledge-graph.config.json`** — Unified configuration file (recommended)
-2. **Environment variables** — Override specific values
-3. **`.env` file** — For local development
+1. **`config/*.json` source files** — Editable sections that are merged into `knowledge-graph.config.json`
+2. **`knowledge-graph.config.json`** — Generated runtime configuration file (recommended)
+3. **Environment variables** — Override specific values
+4. **`.env` file** — For local development
 
 For production, pass variables through `environment` in `docker-compose.yml` or `ConfigMap`/`Secrets` in Kubernetes.
 
-🌐 **Languages**: [English](CONFIGURATION_EN.md) | [Русский](CONFIGURATION.md)
+🌐 **Language:** English | [Русская версия](CONFIGURATION_RU.md)
 
 ---
 
 ## Unified Configuration File
 
-The `knowledge-graph.config.json` file in the project root is the **single source of truth** for all structural parameters. It contains settings for backend, frontend, NLP service, and CI/CD.
+The `knowledge-graph.config.json` file in the project root is the **generated runtime artifact** and the single source of truth for all structural parameters. It is created from editable source files in `config/*.json`, and contains settings for backend, frontend, NLP service, backup, and CI/CD.
+
+To regenerate the runtime config after editing source files, run:
+```bash
+npm run build-config
+```
 
 ### Priority (highest to lowest)
 
 1. **Environment variables** — Override any value from JSON
-2. **`knowledge-graph.config.json`** — Shared defaults across all components
+2. **`knowledge-graph.config.json`** — Generated runtime config shared across all components
 3. **Hardcoded defaults** — Fallback in Go/TypeScript code
+
+Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.config.json` with `npm run build-config`.
 
 ### File Structure
 
@@ -33,28 +41,107 @@ The `knowledge-graph.config.json` file in the project root is the **single sourc
     "pagination": { ... },
     "graph": { ... },
     "embedding": { ... },
-    "asynq": { ... }
+    "asynq": { ... },
+    "redis": { ... },
+    "auth": { ... }
   },
+  "graph_service": { ... },
   "frontend": {
     "test": { ... },
     "graph": { "2d": { ... }, "3d": { ... } },
-    "api": { ... }
+    "api": { ... },
+    "achievements": { ... }
   },
   "ci_cd": {
     "integration_test": { ... }
   },
-  "nlp": { ... }
+  "nlp": { ... },
+  "backup": { ... }
 }
 ```
 
 ### Frontend Usage (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig } from '$lib/config';
+import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config';
 
 // Use centralized config
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
 const limit = apiConfig.default_limit;
+const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
+```
+
+---
+
+## Frontend Graph 2D Parameters (`frontend.graph.2d`)
+
+All parameters are consumed by `$shared/config → graphConfig2D` and must not be hardcoded in source files.
+
+```json
+{
+  "frontend": {
+    "graph": {
+      "2d": {
+        "max_nodes": 500,
+        "shadows_threshold": 100,
+        "animated_links_threshold": 50,
+        "gravity_nodes_threshold": 100,
+        "gravity_max_distance": 300,
+        "hover_delay_ms": 150,
+        "visual_fx_threshold": 500,
+        "idle_fps": 10,
+        "lod_simplify_zoom": 0.4,
+        "fog": {
+          "enabled": true,
+          "atmospheric": true,
+          "adaptive": true,
+          "radius_min": 220,
+          "radius_max": 3000,
+          "fps_low": 25,
+          "fps_high": 45,
+          "warning_threshold": 18,
+          "transition_ms": 500,
+          "color": "rgba(10, 10, 20, 0.82)",
+          "edge_feather": 160
+        }
+      }
+    }
+  }
+}
+```
+
+| Parameter | Type | Default | Used in | Description |
+|-----------|------|---------|---------|-------------|
+| `max_nodes` | integer | `500` | `renderer.ts` | Maximum nodes loaded into the 2D graph canvas |
+| `shadows_threshold` | integer | `100` | `renderer.ts` | Node count **below** which CSS drop-shadows are rendered. Above this threshold shadows are disabled for performance |
+| `animated_links_threshold` | integer | `50` | `renderer.ts` | Link count **above** which animated link drawing falls back to static straight lines. Prevents jank on dense graphs |
+| `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
+| `gravity_max_distance` | integer | `300` | `gravity-system.ts` | Max world-unit radius within which nodes exert gravitational attraction on each other |
+| `hover_delay_ms` | integer | `150` | `event-bridge.ts` | Delay in milliseconds before node/link hover dimming and tooltips activate |
+| `visual_fx_threshold` | integer | `500` | `renderer.ts`, `glow-intensity.ts`, `particle-system.ts` | Node count **above** which complex visual effects (glow, particles, star corona, rings, nebula) are disabled |
+| `idle_fps` | number | `10` | `GraphCanvas.svelte` | Target frame rate when the graph is stable and no user interaction occurs. 0 disables throttling (always 60 fps) |
+| `lod_simplify_zoom` | number | `0.4` | `renderer-orchestrator.ts` | Zoom level below which nodes are drawn with a simplified, cheaper renderer (no titles, outlines, particles) |
+| `fog.enabled` | boolean | `true` | `fog.ts`, `fog-state.svelte.ts` | Master toggle for the 2D fog-of-war / atmospheric edge system |
+| `fog.atmospheric` | boolean | `true` | `fog-state.svelte.ts` | Enable the atmospheric edge vignette in stable, high-FPS conditions |
+| `fog.adaptive` | boolean | `true` | `fog-state.svelte.ts` | Shrink the clear radius when FPS drops, reducing the number of rendered nodes/links |
+| `fog.radius_min` | number | `220` | `fog-state.svelte.ts` | Minimum clear radius in screen pixels for adaptive mode |
+| `fog.radius_max` | number | `3000` | `fog-state.svelte.ts` | Maximum clear radius in screen pixels (full viewport coverage) |
+| `fog.fps_low` | number | `25` | `fog-state.svelte.ts` | FPS level at which adaptive fog reaches its minimum radius |
+| `fog.fps_high` | number | `45` | `fog-state.svelte.ts` | FPS level at which adaptive fog returns to its maximum radius |
+| `fog.warning_threshold` | number | `18` | `fog-state.svelte.ts` | FPS level below which a performance warning is shown to the user |
+| `fog.transition_ms` | number | `500` | `fog-state.svelte.ts` | Smoothing time for fog radius changes in milliseconds |
+| `fog.color` | string | `rgba(10, 10, 20, 0.82)` | `fog.ts` | Color of the fog overlay |
+| `fog.edge_feather` | number | `160` | `fog.ts` | Distance over which the fog fades from transparent to opaque at the edges |
+
+### Performance decision tree
+
+```
+nodes.length < shadows_threshold (100)       → enable CSS shadows
+nodes.length < gravity_nodes_threshold (100) → enable gravity simulation
+links.length > animated_links_threshold (50) → use static links instead of animated
+nodes.length > visual_fx_threshold (500)     → disable glow, particles, corona, rings, nebula
+zoom < lod_simplify_zoom (0.4)               → draw simplified node circles (no titles, outlines, particles)
+graph stable and no interaction              → throttle to idle_fps (10) and reuse an offscreen canvas cache
 ```
 
 ### Backend Usage (Go)
@@ -67,6 +154,158 @@ cfg := config.Load()
 // cfg.RecommendationDepth
 // cfg.GraphDefaultLimit
 ```
+
+---
+
+## Galactic Lexicon & Achievements Configuration
+
+### User Settings (Database)
+
+The Galactic Lexicon and Achievements system uses user-specific settings stored in the `user_settings` table:
+
+| Setting Key | Type | Default | Description |
+|--------------|------|---------|-------------|
+| `galactic_mode` | boolean | `false` | Enable galactic (space-themed) messaging mode |
+| `show_achievement_notifications` | boolean | `true` | Show toast notifications for unlocked achievements |
+| `preferred_language` | string | `ru` | User's preferred language (ru/en) |
+
+These settings can be updated via the user settings API and are respected by the frontend components.
+
+### Frontend Configuration (`frontend.achievements`)
+
+```json
+{
+  "frontend": {
+    "achievements": {
+      "poll_interval_ms": 0
+    }
+  }
+}
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `poll_interval_ms` | integer | `0` | Polling interval for checking new achievements (milliseconds). `0` disables polling |
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Achievement polling interval | `0` |
+
+### Achievement Condition Types
+
+Achievements use JSON-based conditions stored in the `condition_json` field:
+
+**Count-based conditions:**
+```json
+{
+  "type": "count",
+  "entity": "note",
+  "action": "create",
+  "filter": { "type": "star" },
+  "threshold": 10
+}
+```
+
+**Streak-based conditions:**
+```json
+{
+  "type": "streak",
+  "days": 7
+}
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/achievements` | GET | List all available achievements |
+| `/api/v1/users/me/achievements` | GET | Get current user's achievements |
+| `/api/v1/users/me/achievements/:id/mark-seen` | POST | Mark achievement notification as seen |
+
+---
+
+## Backup Configuration
+
+### JSON Configuration (`backup`)
+
+```json
+{
+  "backup": {
+    "enabled": false,
+    "local_path": "./backups",
+    "cloud": {
+      "enabled": false,
+      "provider": "yandex",
+      "yandex": {
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
+      }
+    },
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "draft_ttl_hours": 168
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BACKUP_LOCAL_PATH` | Local backup directory | `./backups` |
+| `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
+| `BACKUP_CLOUD_PROVIDER` | Cloud provider (yandex) | `yandex` |
+| `BACKUP_YANDEX_OAUTH_TOKEN` | Yandex.Disk OAuth token | - |
+| `BACKUP_YANDEX_FOLDER` | Yandex.Disk backup folder | `/KnowledgeGraphBackups` |
+| `BACKUP_YANDEX_MAX_BACKUPS` | Maximum number of backups to keep | `10` |
+| `BACKUP_SCHEDULE` | Cron schedule for backups | `0 2 * * *` |
+| `BACKUP_RETENTION_DAYS` | Backup retention period | `7` |
+| `BACKUP_DRAFT_TTL_HOURS` | Draft TTL in MongoDB | `168` |
+
+### Backup Scripts
+
+**Linux/Mac:** `scripts/devops/backup-personal.sh`
+- Performs `pg_dump` to `backups/backup-personal-YYYY-MM-DD.sql.gz`
+- Uploads to Yandex.Disk via WebDAV if cloud backup enabled
+- Cleans up old backups older than retention days
+
+**Windows:** `scripts/devops/backup-personal.ps1`
+- Same functionality for Windows
+
+---
+
+**Backup Service (Docker):** `backup_scheduler` in `docker-compose.personal.yml`
+- Runs backup scripts automatically every 24 hours
+- Supports both local and cloud (Yandex.Disk) backup
+
+**Go Service:** `backend/internal/infrastructure/cloud/yandex_backup.go`
+- YandexBackupService for Yandex.Disk WebDAV integration
+- Methods: UploadBackup, DownloadBackup, ListBackups, DeleteBackup
+- Retry logic (3 attempts) for failed uploads
+- Automatic cleanup of old cloud backups (max_backups, default: 10)
+
+**For detailed backup setup guide, see:** [`docs/BACKUP.md`](BACKUP.md)
+
+---
+
+## MongoDB Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MONGO_URL` | MongoDB connection string | `mongodb://localhost:27017` |
+| `MONGO_DATABASE` | MongoDB database name | `knowledge_graph` |
+
+### MongoDB Usage
+
+MongoDB is used for storing note drafts with the following features:
+- **State Pattern**: Active, Publishing, Published, Conflict states
+- **TTL Index**: Automatic cleanup of expired drafts
+- **Draft Sync**: Asynchronous synchronization with PostgreSQL notes
 
 ---
 
@@ -170,6 +409,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
       "fallback_enabled": true,
       "fallback_ttl_seconds": 3600,
       "fallback_semantic_enabled": true,
+      "keyword_enabled": true,
       "bfs_aggregation": "max",
       "bfs_normalize": true
     }
@@ -187,6 +427,8 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `RECOMMENDATION_DECAY` | Weight decay for indirect links | `0.5` | 0.0 - 1.0 |
 | `RECOMMENDATION_CACHE_TTL_SECONDS` | Cache TTL | `300` | 60 - 3600 |
 | `EMBEDDING_SIMILARITY_LIMIT` | pgvector candidates limit | `30` | 10 - 100 |
+| `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` | Enable semantic fallback | `true` | - |
+| `RECOMMENDATION_KEYWORD_ENABLED` | Enable keyword component (gamma) | `true` | - |
 
 ### Detailed Description
 
@@ -218,10 +460,8 @@ score = α × explicit_score + β × semantic_score
 - Higher = more accurate, but slower
 
 **RECOMMENDATION_FALLBACK_ENABLED** — Synchronous fallback toggle:
-- `true` (current default): Enable synchronous pgvector and Redis cache fallbacks. Slower, but always returns results.
-- `false`: Use only precomputed recommendations from `note_recommendations` table. Fastest, but new notes may temporarily have no recommendations.
-
-> The code default is `true` (`backend/internal/config/config.go`). Switching the default to `false` is planned in the roadmap (P0-02, "Pure Precomputed") but not yet shipped.
+- `false` (default): Use only precomputed recommendations from `note_recommendations` table. Fastest, but new notes may temporarily have no recommendations.
+- `true`: Enable synchronous pgvector and Redis cache fallbacks. Slower, but always returns results.
 
 When `false`:
 - API reads only from `note_recommendations` (single indexed SELECT)
@@ -333,12 +573,19 @@ These parameters are now fully integrated and loaded from `knowledge-graph.confi
 | `backend.asynq.concurrency` | Asynq concurrency level | `10` |
 | `backend.asynq.queue_default` | Default queue priority | `1` |
 | `backend.asynq.queue_max_len` | Max queue length | `10000` |
+| `backend.recommendation.keyword_enabled` | Enable keyword component (gamma) | `true` |
 
 ### Reserved Parameters Description
 
 **RECOMMENDATION_GAMMA** — Coefficient for third component:
 - Allows adding third factor to calculation (e.g., time factor or popularity)
 - `0.2` — small contribution from additional factor
+- Requires `keyword_enabled: true` to be active
+
+**RECOMMENDATION_KEYWORD_ENABLED** — Enable keyword component (gamma):
+- `true` — keyword component is included in scoring
+- `false` — keyword component disabled (fallback to alpha/beta only)
+- Allows gradual rollout or emergency disabling of keyword features
 
 **BFS_AGGREGATION** — How to aggregate weights during graph traversal:
 - `max` — use maximum path weight (recommended, noise-resistant)
@@ -406,6 +653,7 @@ RECOMMENDATION_BATCH_RATE_LIMIT=10
 RECOMMENDATION_FALLBACK_ENABLED=true
 RECOMMENDATION_FALLBACK_TTL_SECONDS=3600
 RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED=true
+RECOMMENDATION_KEYWORD_ENABLED=true
 BFS_AGGREGATION=max
 BFS_NORMALIZE=true
 
@@ -517,6 +765,188 @@ RECOMMENDATION_FALLBACK_ENABLED=false
 RECOMMENDATION_FALLBACK_ENABLED=true
 ```
 
+### 16. Disable Keyword Component (gamma)
+```env
+RECOMMENDATION_KEYWORD_ENABLED=false
+```
+
+### How to Apply Changes
+
+#### After editing `.env` or variables in `docker-compose.yml`, restart backend:
+
+```bash
+docker-compose restart backend
+```
+
+#### Check logs — you should see configuration loaded message:
+
+```bash
+docker logs kg-backend --tail 30 | grep "Config loaded"
+```
+
+#### Example output:
+
+```
+Config loaded: alpha=0.50, beta=0.50, depth=3, decay=0.50, cacheTTL=5m0s, embeddingLimit=30, graphLoadDepth=2
+```
+
+### Final Recommendation Score Formula
+
+#### For source note A and candidate C:
+
+```
+score = α * explicit_weight(A, C) + β * content_sim(A, C)
+explicit_weight(A, C) — sum of weights of all explicit links from A to C (with decay for indirect paths starting from level 2).
+
+content_sim(A, C) — cosine similarity of embeddings, normalized to [0,1] range.
+
+α + β doesn't have to equal 1, but sum = 1 is recommended for consistent scale.
+```
+
+### Notes
+
+#### Embeddings are computed asynchronously by worker. Ensure worker (kg-worker) is running and has processed tasks for notes, otherwise content_sim will be 0.
+
+#### If beta > 0, note_embeddings table must have vectors for all notes. If not, recommendations will rely only on explicit links.
+
+#### Changing RECOMMENDATION_DEPTH above 3 may significantly increase database load and response time.
+
+#### Recommendation cache invalidates by TTL. For immediate clearing, restart backend or manually delete keys:
+
+```bash
+docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis redis-cli DEL
+```
+
+---
+
+## Related Documentation
+
+## Graph Service (gRPC Microservice)
+
+The `graph-service` is a separate gRPC microservice for layout computation and graph streaming. It has its own configuration section in `knowledge-graph.config.json`.
+
+### JSON Configuration (`graph_service`)
+
+```json
+{
+  "graph_service": {
+    "grpc_port": "9090",
+    "http_port": "9091",
+    "full_limit": 1000,
+    "default_depth": 2,
+    "event_channel": "graph:events",
+    "cache": {
+      "note_layout_ttl_seconds": 300,
+      "full_layout_ttl_seconds": 300,
+      "delta_ttl_seconds": 60
+    },
+    "layout": {
+      "2d_radius": 100.0,
+      "3d_radius": 120.0,
+      "3d_z_step": 5.0,
+      "default_node_size": 1.0
+    },
+    "stream_chunk_size": 100,
+    "event_tracking_ttl_hours": 24,
+    "unprocessed_event_check_interval_minutes": 5
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GRPC_PORT` | gRPC server port | `9090` |
+| `HTTP_PORT` | HTTP fallback server port | `9091` |
+| `POSTGRES_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@postgres:5432/knowledge_base?sslmode=disable` |
+| `REDIS_URL` | Redis address | `redis:6379` |
+| `EVENT_CHANNEL` | Redis Pub/Sub channel | `graph:events` |
+| `GRAPH_FULL_LIMIT` | Default full graph limit | `1000` |
+| `GRAPH_DEFAULT_DEPTH` | Default depth for note layout | `2` |
+| `GRAPH_STREAM_CHUNK_SIZE` | Nodes per chunk in streaming | `100` |
+| `CACHE_NOTE_TTL_SECONDS` | Note layout cache TTL | `300` (5 min) |
+| `CACHE_FULL_TTL_SECONDS` | Full layout cache TTL | `300` (5 min) |
+| `CACHE_DELTA_TTL_SECONDS` | Delta cache TTL | `60` (1 min) |
+
+### Layout Engine Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `2d_radius` | Circle radius for 2D layout | `100.0` |
+| `3d_radius` | Helix radius for 3D layout | `120.0` |
+| `3d_z_step` | Vertical step between nodes in 3D | `5.0` |
+| `default_node_size` | Base node size | `1.0` |
+
+### Cache TTL Behavior
+
+- **Note Layout Cache** (`CACHE_NOTE_TTL_SECONDS`): Per-note cached layouts (default: 5 min)
+- **Full Layout Cache** (`CACHE_FULL_TTL_SECONDS`): Full graph cached layouts (default: 5 min)
+- **Delta Cache** (`CACHE_DELTA_TTL_SECONDS`): Delta responses (default: 1 min)
+
+Cache invalidation happens automatically via Redis Pub/Sub when notes or links are updated.
+
+### Event Tracking Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `event_tracking_ttl_hours` | How long to keep event acknowledgment records | `24` |
+| `unprocessed_event_check_interval_minutes` | Retry worker interval | `5` |
+
+### gRPC Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GetNoteLayout` | Unary | Get layout for a specific note |
+| `GetFullLayout` | Server Stream | Stream full graph in chunks |
+| `GetDelta` | Unary | Get changes since last hash |
+
+### HTTP Fallback Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/api/v1/graph/note/:id` | GET | Note layout (JSON) |
+| `/api/v1/graph/full` | GET | Full graph (JSON) |
+| `/api/v1/graph/delta` | GET | Delta (JSON) |
+
+### Usage in docker-compose.yml
+
+```yaml
+graph-service:
+  build:
+    context: .
+    dockerfile: ./services/graph-service/Dockerfile
+  environment:
+    GRPC_PORT: 9090
+    HTTP_PORT: 9091
+    POSTGRES_URL: postgresql://user:pass@postgres:5432/knowledge_base
+    REDIS_URL: redis:6379
+    GRAPH_FULL_LIMIT: 1000
+    CACHE_NOTE_TTL_SECONDS: 300
+```
+
+### How to Apply Changes
+
+#### After editing variables in `docker-compose.yml`, restart graph-service:
+
+```bash
+docker-compose restart graph-service
+```
+
+#### Check logs — you should see configuration loaded message:
+
+```bash
+docker logs kg-graph-service --tail 30
+```
+
+### Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`architecture/decisions/013-graph-service-isolation.md`](architecture/decisions/013-graph-service-isolation.md) | Graph Service architecture decision |
+| [`architecture/decisions/014-event-driven-cache-invalidation.md`](architecture/decisions/014-event-driven-cache-invalidation.md) | Event-driven cache invalidation |
+
 ### How to Apply Changes
 
 #### After editing `.env` or variables in `docker-compose.yml`, restart backend:
@@ -575,3 +1005,48 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 | [`DEPLOYMENT_EN.md`](DEPLOYMENT_EN.md) | Deployment, configuration verification |
 | [`TESTING.md`](TESTING.md) | Testing, parameter verification |
 | [`backend/openAPI.yaml`](../backend/openAPI.yaml) | API specification |
+
+
+---
+
+## Personal Environment Authentication
+
+### Overview
+
+The personal environment (\docker-compose.personal.yml\) is designed for local development without authentication.
+
+### Configuration
+
+**Environment Variable (.env):**
+\\\ash
+SKIP_AUTH=true  # Disables authentication for personal environment
+\\\
+
+**Behavior:**
+- All requests are allowed without authentication
+- Notes are created with \creator_id = 00000000-0000-0000-0000-000000000000\ (test user)
+- Test user is created by migration \ 19_add_test_user.up.sql\
+
+### Authentication Fix (2026-06-15)
+
+**Issues Fixed:**
+1. Corrected \main.go\ to use \DefaultSkipAuthConfig\ instead of manual configuration
+2. Changed default user ID from \ 0000000-0000-0000-0000-000000000001\ to \ 0000000-0000-0000-0000-000000000000\ (matches migration)
+3. Fixed \pikey.go\ admin UUID to match migration
+
+**Current Status:**
+- ✅ \id_creator\ is properly assigned: \ 0000000-0000-0000-0000-000000000000\
+- ✅ All notes have proper owner (test user)
+- ✅ Consistent with migration 019
+
+### Differences Between Environments
+
+| Environment | Authentication | creator_id | Purpose |
+|-------------|----------------|------------|---------|
+| **Dev** | Enabled | Real user ID | Development with auth |
+| **Personal** | Disabled (SKIP_AUTH=true) | Test user ID (all zeros) | Local testing without auth |
+
+### Security Note
+
+This is intentional for local development. For production or shared environments, authentication should always be enabled.
+

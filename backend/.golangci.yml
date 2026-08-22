@@ -1,40 +1,41 @@
+version: "2"
 run:
-  timeout: 5m
-  tests: false  # Не линтить тестовые файлы (решает проблему с testify mocks)
-  skip-dirs:
-    - "mocks"
-    - "mock"
-
+  tests: false
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # Ignore "is unused" in test files
+      - path: _test\.go
+        text: "is unused"
+        linters:
+          - unused
+    paths:
+      - mocks
+      - mock
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
     - gofmt
     - goimports
-  disable:
-    - typecheck  # Отключаем проблемный линтер (false positives with CGO/imports)
-
-issues:
-  exclude-rules:
-    # Исключаем ложные ошибки для testify mock-методов
-    - path: _test\.go
-      linters:
-        - typecheck
-    # Исключаем ошибки typecheck для всех файлов (проблемы с CGO/imports)
-    - linters:
-        - typecheck
-      text: "undefined:"
-    # Исключаем ошибки на неиспользуемые параметры в тестах
-    - path: _test\.go
-      text: "is unused"
-      linters:
-        - unused
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+  exclusions:
+    generated: lax
+    paths:
+      - mocks
+      - mock
+      - third_party$
+      - builtin$
+      - examples$

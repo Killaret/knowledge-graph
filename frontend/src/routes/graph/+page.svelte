@@ -1,70 +1,103 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
-  import { getNotes, type Note } from '$lib/api/notes';
-  import { getGraphData, getFullGraphData, type GraphData } from '$lib/api/graph';
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
-  import NoteSidePanel from '$lib/components/NoteSidePanel.svelte';
-  import EditNoteModal from '$lib/components/EditNoteModal.svelte';
-  import BackButton from '$lib/components/BackButton.svelte';
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import { initAuth } from "$shared/stores/auth.svelte";
+  import { createNote, deleteNote, restoreNote, type Note } from "$shared/api/notes";
+  import { type GraphData } from "$shared/api/graph";
+  import { loadGraph } from "$shared/services/graphLoader";
+  import { createLink, updateLink, deleteLink } from "$shared/api/links";
+  import { GraphPageShell } from "$widgets/graph-page";
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+  import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
+  import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { CelestialBody } from "$entities";
 
-  let notes: Note[] = $state([]);
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
+
   let graphData: GraphData = $state({ nodes: [], links: [] });
+  let knowledgeCore: Note | null = $state(null);
   let loading = $state(true);
-  let error = $state('');
+  let error = $state("");
   let selectedNodeId: string | null = $state(null);
-  let showFullGraph = $state(false); // По умолчанию локальный вид
+  // Default to the full graph (same behavior as the main "/" page) unless the
+  // caller explicitly asks for the local/centered view via ?full=false.
+  let showFullGraph = $state(
+    !browser || new URL(window.location.href).searchParams.get("full") !== "false"
+  );
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
-
-  async function loadGraphData() {
-    loading = true;
-    error = '';
-    try {
-      let rawData: GraphData;
-      if (showFullGraph) {
-        // Загружаем полный граф всех заметок
-        rawData = await getFullGraphData();
-      } else {
-        // Загружаем локальный граф
-        notes = await getNotes();
-        if (notes.length > 0) {
-          const centerNote = notes[0];
-          rawData = await getGraphData(centerNote.id, 3);
-        } else {
-          error = 'No notes found. Create some notes first.';
-          loading = false;
-          return;
-        }
+  let showCreateModal = $state(false);
+  let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
+  let showConfirmDelete = $state(false);
+  let noteToDelete: string | null = $state(null);
+  let canvasController:
+    | {
+        focusMode: boolean;
+        fogEnabled: boolean;
+        resetView: () => void;
+        openSearch: () => void;
+        toggleFocus: () => void;
+        toggleFog: () => void;
       }
+    | undefined = $state(undefined);
 
-      // Transform nodes: backend might return Id/id/ID in different cases
-      const transformedNodes = rawData.nodes.map((n: any) => ({
-        id: n.id || n.Id || n.ID,
-        title: n.title || n.Title,
-        type: n.type || n.Type || 'star'
-      }));
+  const graphTypeFilters = [
+    { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
+    ...[
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "galaxy",
+      "nebula",
+      "asteroid",
+      "satellite",
+      "blackhole",
+      "dust",
+      "unknown",
+    ].map((id) => {
+      const body = CelestialBody.fromString(id);
+      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    }),
+  ];
 
-      // Transform links: backend returns source_note_id/target_note_id, frontend expects source/target
-      const transformedLinks = rawData.links.map((l: any) => ({
-        source: l.source_note_id || l.source,
-        target: l.target_note_id || l.target,
-        weight: l.weight,
-        link_type: l.link_type
-      }));
+  async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
+    loading = true;
+    error = "";
+    try {
+      const result = await loadGraph({
+        full: showFullGraph,
+        includeKnowledgeCore: true,
+        fallbackToNotes: false,
+        ensureNotesInGraph: false,
+        nocache,
+      });
 
-      graphData = {
-        nodes: transformedNodes,
-        links: transformedLinks
-      };
+      knowledgeCore = result.knowledgeCore;
+      graphData = result.graph;
 
-      console.log('[graph/+page] Graph loaded:', graphData.nodes.length, 'nodes,', graphData.links.length, 'links');
-      console.log('[graph/+page] Sample node:', transformedNodes[0]);
-      console.log('[graph/+page] Sample link:', transformedLinks[0]);
+      if (import.meta.env.DEV) {
+        console.log(
+          "[graph/+page] Graph loaded:",
+          graphData.nodes.length,
+          "nodes,",
+          graphData.links.length,
+          "links"
+        );
+        console.log("[graph/+page] Sample node:", graphData.nodes[0]);
+        console.log("[graph/+page] Sample link:", graphData.links[0]);
+      }
     } catch (e) {
-      console.error('Failed to load graph:', e);
-      error = 'Failed to load graph data';
+      if (import.meta.env.DEV) {
+        console.error("Failed to load graph:", e);
+      }
+      error = t("graph.loadDataError");
     } finally {
       loading = false;
     }
@@ -72,209 +105,340 @@
 
   onMount(async () => {
     if (!browser) return;
-    await loadGraphData();
+    // Make sure auth is initialized before loading graph data so the token is
+    // available for graph-service requests.
+    await initAuth();
+    // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
+    const url = new URL(window.location.href);
+    await loadGraphData({ nocache: url.searchParams.has("nocache") });
+
+    // Expose flag for E2E tests to assert background sync is gated by auth.
+    // This page never polls for delta updates, so the flag is always false.
+    (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
   });
 
-  function handleNodeSelect(nodeId: string) {
+  function handleNodeSelect(nodeId: string | null) {
     selectedNodeId = nodeId;
   }
 
-  // Отслеживаем изменение showFullGraph и загружаем данные
+  function handleDeleteRequest(nodeId: string) {
+    noteToDelete = nodeId;
+    showConfirmDelete = true;
+  }
+
+  async function handleConfirmDelete() {
+    if (!noteToDelete) return;
+    try {
+      await deleteNote(noteToDelete);
+      selectedNodeId = null;
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to delete note:", e);
+      }
+    } finally {
+      noteToDelete = null;
+      showConfirmDelete = false;
+    }
+  }
+
+  async function handleNoteRestore(nodeId: string) {
+    try {
+      await restoreNote(nodeId);
+      await loadGraphData();
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to restore note:", e);
+      }
+    }
+  }
+
+  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+    try {
+      await createNote(data);
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to create note:", e);
+      }
+    }
+  }
+
+  async function handleNoteCreatedSuccess(note: Note) {
+    showCreateModal = false;
+    if (createChildParent) {
+      try {
+        await createLink({
+          source_note_id: createChildParent.id,
+          target_note_id: note.id,
+          link_type: "parent",
+          weight: 0.9,
+        });
+      } catch {
+        if (browser) {
+          alert(t("note.createChildLinkError"));
+        }
+      }
+      createChildParent = null;
+    }
+    selectedNodeId = note.id;
+    await loadGraphData({ nocache: true });
+  }
+
+  function handleCreateChildNote(parent: { id: string; title: string; type?: string }) {
+    createChildParent = parent;
+    showCreateModal = true;
+  }
+
+  function handleNoteEdit(id: string) {
+    noteToEdit = id;
+    showEditModal = true;
+  }
+
+  async function handleLinkCreate(link: {
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
+    try {
+      await createLink({
+        source_note_id: link.source,
+        target_note_id: link.target,
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to create link:", e);
+      }
+    }
+  }
+
+  async function handleLinkEdit(link: {
+    id?: string;
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
+    if (!link.id) {
+      if (import.meta.env.DEV) {
+        console.error("Cannot edit link without id");
+      }
+      return;
+    }
+    try {
+      await updateLink(link.id, {
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to update link:", e);
+      }
+    }
+  }
+
+  async function handleLinkDelete(link: {
+    id?: string;
+    source: string;
+    target: string;
+    link_type: string;
+  }) {
+    if (!link.id) {
+      if (import.meta.env.DEV) {
+        console.error("Cannot delete link without id");
+      }
+      return;
+    }
+    try {
+      await deleteLink(link.id);
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to delete link:", e);
+      }
+    }
+  }
+
+  // Watch for changes to showFullGraph and reload the graph data.
+  // Skip the initial run because onMount already loads once.
+  let showFullGraphInitialized = false;
   $effect(() => {
     if (browser) {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       showFullGraph;
+      if (!showFullGraphInitialized) {
+        showFullGraphInitialized = true;
+        return;
+      }
       loadGraphData();
     }
   });
 </script>
 
-<div class="graph-page">
-  <BackButton href="/" />
-  
-  <h1>Knowledge Graph</h1>
-  
-  <div class="controls">
-    <label class="toggle">
-      <input type="checkbox" bind:checked={showFullGraph} />
-      <span>Показать все заметки ({showFullGraph ? 'включено' : 'выключено'})</span>
-    </label>
-  </div>
-  
-  <!-- Stats -->
-  {#if !loading && !error}
-    <div class="stats-bar">
-      <span class="stats-item">
-        <strong>{graphData.nodes.length}</strong> nodes
-      </span>
-      <span class="stats-item">
-        <strong>{graphData.links.length}</strong> links
-      </span>
-      {#if showFullGraph}
-        <span class="stats-mode">(Full graph)</span>
-      {:else}
-        <span class="stats-mode">(Local view)</span>
-      {/if}
-    </div>
-  {/if}
-  
-  {#if loading}
-    <div class="center">
-      <div class="spinner"></div>
-      <p>Loading graph...</p>
-    </div>
-  {:else if error}
-    <div class="error">
-      <p>{error}</p>
-      <button onclick={() => goto('/')}>Go Home</button>
-    </div>
-  {:else}
-    <div class="graph-container">
-      {#if graphData.nodes.length > 0}
-        {#key graphData.nodes.length + '-' + graphData.links.length}
-          <GraphCanvas 
+<GraphPageShell
+  view="graph"
+  layoutProvider="d3"
+  searchQuery=""
+  selectedType="all"
+  typeFilters={graphTypeFilters}
+  notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
+  nodeCount={graphData.nodes.length}
+  linkCount={graphData.links.length}
+  selectedNodeId={selectedNodeId ?? null}
+  {canvasController}
+  onSearch={() => {}}
+  onFilter={() => {}}
+  onToggleView={(view) => {
+    if (view === "list") goto("/");
+    else if (view === "3d") goto("/graph/3d");
+  }}
+  onNoteCreate={() => (showCreateModal = true)}
+  onNoteDelete={handleDeleteRequest}
+  onNoteEdit={handleNoteEdit}
+  onNodeSelect={handleNodeSelect}
+  onCreateChildNote={handleCreateChildNote}
+  {showFullGraph}
+  onToggleFullGraph={(value) => (showFullGraph = value)}
+  onImport={() => goto("/import")}
+  onSignIn={() => goto("/auth/login")}
+  onRegister={() => goto("/auth/register")}
+>
+  <div class="graph-cockpit-content">
+    {#if loading}
+      <div class="loading-overlay" data-testid="loading-overlay">
+        <div class="spinner"></div>
+        <p>{t("graph.loading")}</p>
+      </div>
+    {:else if error}
+      <div class="error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
+    {:else if graphData.nodes.length > 0}
+      {#key graphData.nodes.length + "-" + graphData.links.length}
+        <div class="graph-view-wrapper">
+          <GraphCanvas
             nodes={graphData.nodes}
             links={graphData.links}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+            onNoteDelete={handleDeleteRequest}
+            onNoteRestore={handleNoteRestore}
+            onNoteCreate={handleNoteCreate}
+            onCreateChildNote={handleCreateChildNote}
+            onLinkCreate={handleLinkCreate}
+            onLinkEdit={handleLinkEdit}
+            onLinkDelete={handleLinkDelete}
+            helpContent={knowledgeCore?.content}
+            showLinkTypeLegend={false}
+            bind:controller={canvasController}
           />
-        {/key}
-      {:else}
-        <div class="empty">
-          <p>No graph data available</p>
         </div>
-      {/if}
-    </div>
-  {/if}
-</div>
+      {/key}
+    {:else}
+      <div class="empty">
+        <StateIllustration type="no-links" />
+        <p>{t("graph.noData")}</p>
+      </div>
+    {/if}
+  </div>
+</GraphPageShell>
 
-{#if selectedNodeId}
-  <NoteSidePanel 
-    nodeId={selectedNodeId}
-    onClose={() => selectedNodeId = null}
-    onEdit={(id: string) => { noteToEdit = id; showEditModal = true; }}
-    onDelete={() => {
-      selectedNodeId = null;
-      // Reload graph
-      window.location.reload();
+{#if noteToEdit}
+  <EditNoteModal
+    bind:open={showEditModal}
+    noteId={noteToEdit}
+    onSuccess={() => {
+      showEditModal = false;
+      noteToEdit = null;
+      loadGraphData({ nocache: true });
     }}
   />
 {/if}
 
-{#if noteToEdit}
-  <EditNoteModal 
-    bind:open={showEditModal}
-    noteId={noteToEdit}
-    onSuccess={() => { showEditModal = false; noteToEdit = null; window.location.reload(); }}
+{#if showCreateModal}
+  <CreateNoteModal
+    bind:open={showCreateModal}
+    onSuccess={handleNoteCreatedSuccess}
+    onClose={() => (createChildParent = null)}
+    parentNote={createChildParent ?? undefined}
+    defaultType={createChildParent
+      ? CelestialBody.getChildSuggestion(createChildParent.type)
+      : undefined}
+  />
+{/if}
+
+{#if showConfirmDelete}
+  <ConfirmModal
+    bind:open={showConfirmDelete}
+    title={t("confirmModal.title")}
+    message={t("note.deleteConfirm")}
+    danger={true}
+    onConfirm={handleConfirmDelete}
+    onCancel={() => {
+      noteToDelete = null;
+      showConfirmDelete = false;
+    }}
   />
 {/if}
 
 <style>
-  .graph-page {
-    height: 100vh;
+  .graph-cockpit-content {
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
-    color: white;
-  }
-
-  h1 {
-    margin: 0 0 20px 0;
-    font-size: 1.5rem;
-  }
-
-  .controls {
-    position: absolute;
-    top: 80px;
-    right: 20px;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .toggle input {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-  }
-
-  .stats-bar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin: 10px 0 20px 0;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 8px;
-    font-size: 14px;
-    color: #94a3b8;
-  }
-
-  .stats-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .stats-item strong {
-    color: #3b82f6;
-    font-weight: 600;
-  }
-
-  .stats-mode {
-    margin-left: auto;
-    font-style: italic;
-    color: #64748b;
-  }
-
-  .graph-container {
-    flex: 1;
-    position: relative;
-    min-height: 0;
-    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    color: var(--color-text-dark);
     overflow: hidden;
   }
 
-  .center {
+  .graph-view-wrapper {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     gap: 16px;
+    z-index: 1000;
+    color: white;
   }
 
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255,255,255,0.2);
+    border: 3px solid rgba(255, 255, 255, 0.2);
     border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .error {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     gap: 16px;
     color: #ef4444;
   }
@@ -289,10 +453,12 @@
   }
 
   .empty {
+    position: absolute;
+    inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     color: #94a3b8;
   }
 </style>

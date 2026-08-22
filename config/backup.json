@@ -1,0 +1,18 @@
+{
+  "backup": {
+    "enabled": false,
+    "local_path": "./backups",
+    "cloud": {
+      "enabled": false,
+      "provider": "yandex",
+      "yandex": {
+        "oauth_token": "",
+        "backup_folder": "/KnowledgeGraphBackups",
+        "max_backups": 10
+      }
+    },
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "draft_ttl_hours": 168
+  }
+}

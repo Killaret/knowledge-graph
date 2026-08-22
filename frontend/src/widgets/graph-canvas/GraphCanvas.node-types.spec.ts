@@ -1,0 +1,655 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, cleanup } from "@testing-library/svelte";
+import * as renderer from "$entities/graph-canvas/lib/renderer";
+import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
+import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
+import {
+  drawChromaticMaw,
+  drawVoidWhisper,
+  drawCosmicAbomination,
+  drawUnknown,
+} from "$entities/graph-canvas/lib/renderer";
+import type { SimulationNode } from "$entities/graph-canvas/lib/types";
+import { createMockCanvasContext } from "$entities/graph-canvas/lib/test-canvas-mock";
+
+const mockState = {
+  simulationNodes: [] as any[],
+  simulationLinks: [] as any[],
+  tickCallback: null as (() => void) | null,
+  stopCallback: null as (() => void) | null,
+};
+
+vi.mock("d3-force", () => {
+  const createMockSimulation = () => {
+    const sim: any = {
+      nodes: vi.fn((n?: any[]) => {
+        if (n) {
+          mockState.simulationNodes = n.map((node, i) => ({
+            ...node,
+            x: 400 + i * 50,
+            y: 300 + i * 30,
+          }));
+        }
+        return mockState.simulationNodes;
+      }),
+      tick: vi.fn(() => sim),
+      force: vi.fn(() => sim),
+      alphaDecay: vi.fn(() => sim),
+      on: vi.fn((event: string, cb: () => void) => {
+        if (event === "tick") mockState.tickCallback = cb;
+        return sim;
+      }),
+      alpha: vi.fn(() => sim),
+      restart: vi.fn(() => {
+        if (mockState.tickCallback) mockState.tickCallback();
+        return sim;
+      }),
+      stop: vi.fn(() => {
+        mockState.tickCallback = null;
+        return sim;
+      }),
+    };
+    return sim;
+  };
+
+  const forceSimulation = vi.fn((nodes?: any[]) => {
+    const sim = createMockSimulation();
+    if (nodes) {
+      sim.nodes(nodes);
+      setTimeout(() => {
+        if (mockState.tickCallback) mockState.tickCallback();
+      }, 50);
+    }
+    return sim;
+  });
+
+  const forceLink = vi.fn((links?: any[]) => {
+    if (links) mockState.simulationLinks = links;
+    const linkForce: any = {
+      id: (fn?: (d: any) => string) => {
+        if (fn) return linkForce;
+        return linkForce;
+      },
+      distance: () => linkForce,
+      strength: () => linkForce,
+      links: () => mockState.simulationLinks,
+    };
+    return linkForce;
+  });
+
+  const forceManyBody = vi.fn(() => ({ strength: vi.fn(() => ({})) }));
+  const forceCenter = vi.fn(() => ({ strength: vi.fn(() => ({})) }));
+  const forceCollide = vi.fn(() => ({ radius: vi.fn(() => ({})) }));
+
+  return {
+    forceSimulation,
+    forceLink,
+    forceManyBody,
+    forceCenter,
+    forceCollide,
+    __esModule: true,
+    default: {
+      forceSimulation,
+      forceLink,
+      forceManyBody,
+      forceCenter,
+      forceCollide,
+    },
+  };
+});
+
+import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+
+describe("GraphCanvas - Node Type Rendering", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    mockState.simulationNodes = [];
+    mockState.simulationLinks = [];
+    mockState.tickCallback = null;
+    mockState.stopCallback = null;
+
+    HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      stroke: vi.fn(),
+      fill: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      rotate: vi.fn(),
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 50 })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      roundRect: vi.fn(),
+      fillStyle: "",
+      strokeStyle: "",
+      font: "",
+      textAlign: "center",
+      textBaseline: "middle",
+      lineWidth: 1,
+      shadowBlur: 0,
+      shadowColor: "",
+    });
+
+    global.ResizeObserver = vi.fn().mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+      unobserve: vi.fn(),
+    }));
+
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn().mockImplementation((cb: FrameRequestCallback) => {
+        setTimeout(cb, 16);
+        return 1;
+      })
+    );
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    cleanup();
+  });
+
+  describe("Node Type Colors and Styles", () => {
+    it("drawStar uses correct colors (#ffcc00 fill, #cc9900 stroke)", () => {
+      const ctx = createMockCanvasContext();
+
+      renderer.drawStar(ctx, 100, 100, 20, 0);
+
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+      expect(ctx.strokeStyle).toBe("#cc9900");
+      expect(ctx.lineWidth).toBe(2);
+    });
+
+    it("drawPlanet uses correct default color (#d6aa5d) for main body", () => {
+      const ctx = createMockCanvasContext();
+
+      renderer.drawPlanet(ctx, 100, 100, 20, 0);
+
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+      const gradient = (ctx.createRadialGradient as any).mock.results[0].value;
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
+      expect(colors).toContain("#d6aa5d");
+    });
+
+    it("drawComet uses correct color (#e879f9)", () => {
+      const ctx = createMockCanvasContext();
+
+      renderer.drawComet(ctx, 100, 100, 20, 0);
+
+      expect(ctx.fillStyle).toBe("#e879f9");
+      expect(ctx.strokeStyle).toBe("rgba(232, 121, 249, 0.6)");
+      expect(ctx.lineWidth).toBe(4);
+    });
+
+    it("drawGalaxy uses purple spiral colors", () => {
+      const ctx = createMockCanvasContext();
+
+      renderer.drawGalaxy(ctx, 100, 100, 20, 0);
+
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+      const gradient = (ctx.createRadialGradient as any).mock.results[0].value;
+      const colors = gradient.getColorStops().map((stop: { color: string }) => stop.color);
+      expect(
+        colors.some((color: string) => color.includes("192, 132, 252") || color === "#8b5cf6")
+      ).toBe(true);
+    });
+
+    it("drawAsteroid uses correct rocky color (#94a3b8)", () => {
+      const ctx = createMockCanvasContext();
+
+      renderer.drawAsteroid(ctx, 100, 100, 20, 0);
+
+      expect(ctx.getFillStyles()[0]).toBe("#94a3b8");
+      expect(ctx.strokeStyle).toBe("#64748b");
+    });
+
+    it("drawNode sets correct fillStyle for each node type", () => {
+      // Test star creates a radial gradient
+      const starCtx = createMockCanvasContext();
+      renderer.drawNode(
+        starCtx,
+        { id: "1", x: 100, y: 100, title: "Star", type: "star" },
+        20,
+        0,
+        false
+      );
+      expect(starCtx.createRadialGradient).toHaveBeenCalled();
+
+      // Test planet creates a radial gradient
+      const planetCtx = createMockCanvasContext();
+      renderer.drawNode(
+        planetCtx,
+        { id: "2", x: 100, y: 100, title: "Planet", type: "planet" },
+        20,
+        0,
+        false
+      );
+      expect(planetCtx.createRadialGradient).toHaveBeenCalled();
+
+      // Test comet sets correct color
+      const cometCtx = createMockCanvasContext();
+      renderer.drawNode(
+        cometCtx,
+        { id: "3", x: 100, y: 100, title: "Comet", type: "comet" },
+        20,
+        0,
+        false
+      );
+      expect(cometCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
+
+      // Test galaxy creates a radial gradient
+      const galaxyCtx = createMockCanvasContext();
+      renderer.drawNode(
+        galaxyCtx,
+        { id: "4", x: 100, y: 100, title: "Galaxy", type: "galaxy" },
+        20,
+        0,
+        false
+      );
+      expect(galaxyCtx.createRadialGradient).toHaveBeenCalled();
+
+      // Test asteroid sets correct color
+      const asteroidCtx = createMockCanvasContext();
+      renderer.drawNode(
+        asteroidCtx,
+        { id: "5", x: 100, y: 100, title: "Asteroid", type: "asteroid" },
+        20,
+        0,
+        false
+      );
+      expect(asteroidCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
+    });
+  });
+
+  describe("Node Rendering Integration", () => {
+    it("renders star nodes with coordinates", async () => {
+      render(GraphCanvas, {
+        props: { nodes: [{ id: "1", title: "Star", type: "star" }], links: [] },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBe("star");
+      expect(mockState.simulationNodes[0].x).toBeDefined();
+      expect(mockState.simulationNodes[0].y).toBeDefined();
+    });
+
+    it("renders planet nodes with coordinates", async () => {
+      render(GraphCanvas, {
+        props: {
+          nodes: [{ id: "1", title: "Planet", type: "planet" }],
+          links: [],
+        },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBe("planet");
+      expect(mockState.simulationNodes[0].x).toBeDefined();
+      expect(mockState.simulationNodes[0].y).toBeDefined();
+    });
+
+    it("renders comet nodes with coordinates", async () => {
+      render(GraphCanvas, {
+        props: {
+          nodes: [{ id: "1", title: "Comet", type: "comet" }],
+          links: [],
+        },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBe("comet");
+      expect(mockState.simulationNodes[0].x).toBeDefined();
+      expect(mockState.simulationNodes[0].y).toBeDefined();
+    });
+
+    it("renders galaxy nodes with coordinates", async () => {
+      render(GraphCanvas, {
+        props: {
+          nodes: [{ id: "1", title: "Galaxy", type: "galaxy" }],
+          links: [],
+        },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBe("galaxy");
+      expect(mockState.simulationNodes[0].x).toBeDefined();
+      expect(mockState.simulationNodes[0].y).toBeDefined();
+    });
+
+    it("renders asteroid nodes with coordinates", async () => {
+      render(GraphCanvas, {
+        props: {
+          nodes: [{ id: "1", title: "Asteroid", type: "asteroid" }],
+          links: [],
+        },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBe("asteroid");
+      expect(mockState.simulationNodes[0].x).toBeDefined();
+      expect(mockState.simulationNodes[0].y).toBeDefined();
+    });
+
+    it("renders unknown type nodes without type property", async () => {
+      render(GraphCanvas, {
+        props: { nodes: [{ id: "1", title: "Unknown" }], links: [] },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBeUndefined();
+    });
+
+    it("falls back to unknown for undefined type", async () => {
+      render(GraphCanvas, {
+        props: {
+          nodes: [{ id: "1", title: "No Type", type: undefined }],
+          links: [],
+        },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(mockState.simulationNodes.length).toBe(1);
+      expect(mockState.simulationNodes[0].type).toBeUndefined();
+    });
+  });
+});
+
+describe("Anomaly Rendering (Unknown Node Types)", () => {
+  it("drawRealityRift renders without errors", () => {
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+      shadowBlur: 0,
+      shadowColor: "",
+    } as unknown as CanvasRenderingContext2D;
+
+    const params = {
+      seedBase: 123,
+
+      crackCount: 6,
+      tentacleCount: 8,
+      particleCount: 25,
+      colorShift1: 45,
+      colorShift2: 90,
+      deformAmount: 0.35,
+      rotationOffset: 1.5,
+    };
+
+    drawRealityRift(ctx, 100, 100, 20, params);
+
+    expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.translate).toHaveBeenCalledWith(100, 100);
+    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
+  });
+
+  it("drawChromaticMaw renders tentacles with gradient core", () => {
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      moveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      createRadialGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
+      createLinearGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+      lineCap: "",
+      shadowBlur: 0,
+      shadowColor: "",
+    } as unknown as CanvasRenderingContext2D;
+
+    const params = {
+      seedBase: 789,
+      crackCount: 5,
+      tentacleCount: 7,
+      particleCount: 22,
+      colorShift1: 60,
+      colorShift2: 120,
+      deformAmount: 0.3,
+      rotationOffset: 0.8,
+    };
+
+    drawChromaticMaw(ctx, 100, 100, 20, params);
+
+    expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.createRadialGradient).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
+  });
+
+  it("drawVoidWhisper renders particles with connections", () => {
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      createRadialGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+    } as unknown as CanvasRenderingContext2D;
+
+    const params = {
+      seedBase: 789,
+      crackCount: 5,
+      tentacleCount: 6,
+      particleCount: 25,
+      colorShift1: 30,
+      colorShift2: 45,
+      deformAmount: 0.25,
+      rotationOffset: 2.0,
+    };
+
+    drawVoidWhisper(ctx, 100, 100, 20, params);
+
+    expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalled();
+  });
+
+  it("drawCosmicAbomination combines all anomaly types", () => {
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      createRadialGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
+      createLinearGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+      lineCap: "",
+      shadowBlur: 0,
+      shadowColor: "",
+    } as unknown as CanvasRenderingContext2D;
+
+    const params = {
+      seedBase: 789,
+      crackCount: 5,
+      tentacleCount: 8,
+      particleCount: 28,
+      colorShift1: 90,
+      colorShift2: 135,
+      deformAmount: 0.4,
+      rotationOffset: 1.2,
+    };
+
+    drawCosmicAbomination(ctx, 100, 100, 20, params);
+
+    expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.createRadialGradient).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
+  });
+
+  it("drawUnknown dispatches to one anomaly renderer based on nodeId", () => {
+    const drawRealityRiftSpy = vi.fn();
+    const drawChromaticMawSpy = vi.fn();
+    const drawVoidWhisperSpy = vi.fn();
+    const drawCosmicAbominationSpy = vi.fn();
+
+    drawUnknown({} as CanvasRenderingContext2D, 100, 100, 20, 0, "node1", {
+      0: drawRealityRiftSpy,
+      1: drawChromaticMawSpy,
+      2: drawVoidWhisperSpy,
+      3: drawCosmicAbominationSpy,
+    });
+
+    const calledSpies = [
+      drawRealityRiftSpy,
+      drawChromaticMawSpy,
+      drawVoidWhisperSpy,
+      drawCosmicAbominationSpy,
+    ].filter((spy) => spy.mock.calls.length > 0);
+
+    expect(calledSpies).toHaveLength(1);
+  });
+
+  it("drawNode dispatches to drawUnknown for unknown type", () => {
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+      shadowBlur: 0,
+      shadowColor: "",
+    } as unknown as CanvasRenderingContext2D;
+
+    const unknownNode = {
+      id: "test-unknown-node",
+      title: "Unknown Node",
+      type: "unknown",
+      x: 100,
+      y: 100,
+    } as SimulationNode;
+
+    // Call drawNode with unknown type
+    renderer.drawNode(mockCtx, unknownNode, 20, 0, false, true);
+
+    // Verify that drawUnknown was called by checking the save/restore calls
+    // drawUnknown always calls save() and restore()
+    expect(mockCtx.save).toHaveBeenCalled();
+    expect(mockCtx.restore).toHaveBeenCalled();
+  });
+
+  it("drawUnknown is deterministic for the same nodeId", () => {
+    const drawRealityRiftSpy = vi.fn();
+    const drawChromaticMawSpy = vi.fn();
+    const drawVoidWhisperSpy = vi.fn();
+    const drawCosmicAbominationSpy = vi.fn();
+
+    const customRenderers = {
+      0: drawRealityRiftSpy,
+      1: drawChromaticMawSpy,
+      2: drawVoidWhisperSpy,
+      3: drawCosmicAbominationSpy,
+    };
+
+    drawUnknown(
+      {} as CanvasRenderingContext2D,
+      100,
+      100,
+      20,
+      0,
+      "deterministic-node",
+      customRenderers
+    );
+    drawUnknown(
+      {} as CanvasRenderingContext2D,
+      120,
+      120,
+      20,
+      0,
+      "deterministic-node",
+      customRenderers
+    );
+
+    const counts = [
+      drawRealityRiftSpy.mock.calls.length,
+      drawChromaticMawSpy.mock.calls.length,
+      drawVoidWhisperSpy.mock.calls.length,
+      drawCosmicAbominationSpy.mock.calls.length,
+    ].filter((count) => count > 0);
+
+    expect(counts).toEqual([2]);
+  });
+
+  it("getAnomalyParams returns stable and different values for different nodeIds", () => {
+    const paramsA = getAnomalyParams("alpha-node");
+    const paramsB = getAnomalyParams("alpha-node");
+    const paramsC = getAnomalyParams("beta-node");
+
+    expect(paramsA).toEqual(paramsB);
+    expect(paramsA).not.toEqual(paramsC);
+  });
+});

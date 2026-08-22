@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -26,6 +27,8 @@ type NLPClient struct {
 	baseURL    string
 	redis      *redis.Client
 	cacheTTL   time.Duration
+	maxRetries uint64
+	retryDelay time.Duration
 }
 
 // NewNLPClient создаёт новый клиент
@@ -36,7 +39,74 @@ func NewNLPClient(baseURL string, redisClient *redis.Client, cacheTTL time.Durat
 		baseURL:    baseURL,
 		redis:      redisClient,
 		cacheTTL:   cacheTTL,
+		maxRetries: 3,
+		retryDelay: 1 * time.Second,
 	}
+}
+
+// NewMockNLPClient создаёт mock клиент для тестирования
+// Возвращает предопределенные keywords и embedding без HTTP запросов
+func NewMockNLPClient() *NLPClient {
+	return &NLPClient{
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+		baseURL:    "mock://nlp",
+		redis:      nil,
+		cacheTTL:   0,
+		maxRetries: 0,
+		retryDelay: 0,
+	}
+}
+
+// requestBuilder создаёт новый HTTP запрос с заданным телом
+type requestBuilder func() (*http.Request, error)
+
+// doWithRetry выполняет HTTP запрос с retry логикой и exponential backoff
+func (c *NLPClient) doWithRetry(ctx context.Context, buildReq requestBuilder) (*http.Response, error) {
+	var resp *http.Response
+	var lastErr error
+
+	// Настраиваем exponential backoff
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = c.retryDelay
+	b.MaxInterval = 5 * time.Second
+	b.MaxElapsedTime = 15 * time.Second
+
+	op := func() error {
+		// Создаём новый запрос для каждой попытки
+		req, err := buildReq()
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+
+		resp, err = c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			return fmt.Errorf("http request failed: %w", err)
+		}
+
+		// Retry on 5xx errors and 429 (rate limit)
+		if resp.StatusCode >= 500 || resp.StatusCode == 429 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("nlp service returned %d", resp.StatusCode)
+			return lastErr
+		}
+
+		return nil
+	}
+
+	notify := func(err error, duration time.Duration) {
+		fmt.Printf("[NLP] Retry after %v: %v\n", duration, err)
+	}
+
+	// Выполняем с retry
+	if err := backoff.RetryNotify(op, backoff.WithMaxRetries(b, c.maxRetries), notify); err != nil {
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 // ExtractKeywords вызывает /extract_keywords и возвращает список ключевых слов
@@ -50,19 +120,21 @@ func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) 
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/extract_keywords", bytes.NewReader(jsonBody))
-	if err != nil {
-		return nil, err
+	buildReq := func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/extract_keywords", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doWithRetry(ctx, buildReq)
 	if err != nil {
-		return nil, fmt.Errorf("http request failed: %w", err)
+		return nil, fmt.Errorf("http request failed after retries: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the request
 			fmt.Printf("Warning: failed to close response body: %v\n", err)
 		}
 	}()
@@ -105,19 +177,21 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/embed", bytes.NewReader(jsonBody))
-	if err != nil {
-		return nil, err
+	buildReq := func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/embed", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doWithRetry(ctx, buildReq)
 	if err != nil {
-		return nil, fmt.Errorf("http request failed: %w", err)
+		return nil, fmt.Errorf("http request failed after retries: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the request
 			fmt.Printf("Warning: failed to close response body: %v\n", err)
 		}
 	}()
@@ -143,6 +217,81 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 	}
 
 	return result.Embedding, nil
+}
+
+// Similarity вызывает /similarity и возвращает косинусную близость [0, 1]
+// Результат кэшируется в Redis (если redisClient передан)
+func (c *NLPClient) Similarity(ctx context.Context, textA, textB string) (float64, error) {
+	if textA == "" || textB == "" {
+		return 0.0, nil
+	}
+
+	// Кэш по детерминированному ключу: лексикографически меньший текст — первый
+	a, b := textA, textB
+	if textA > textB {
+		a, b = textB, textA
+	}
+	cacheKey := "similarity:" + sha256Hash(a+"\x00"+b)
+
+	if c.redis != nil {
+		cached, err := c.redis.Get(ctx, cacheKey).Float64()
+		if err == nil {
+			return cached, nil
+		}
+	}
+
+	reqBody := map[string]interface{}{
+		"text_a": textA,
+		"text_b": textB,
+	}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return 0.0, fmt.Errorf("failed to marshal similarity request: %w", err)
+	}
+
+	buildReq := func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/similarity", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
+	}
+
+	resp, err := c.doWithRetry(ctx, buildReq)
+	if err != nil {
+		return 0.0, fmt.Errorf("similarity request failed after retries: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return 0.0, fmt.Errorf("nlp service returned %d: %s", resp.StatusCode, body)
+	}
+
+	var result struct {
+		Similarity float64 `json:"similarity"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0.0, fmt.Errorf("failed to decode similarity response: %w", err)
+	}
+
+	// Сохраняем в кэш
+	if c.redis != nil {
+		_ = c.redis.Set(ctx, cacheKey, result.Similarity, c.cacheTTL).Err()
+	}
+
+	return result.Similarity, nil
+}
+
+// sha256Hash возвращает SHA-256 хеш строки в hex
+func sha256Hash(s string) string {
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
 }
 
 // HealthCheck проверяет доступность NLP сервиса
