@@ -6,6 +6,7 @@ import java.util.List;
 // списки созданных noteIds и связей, список ошибок, время завершения. Именно этот объект летит в ответную очередь.
 public record ImportResult(
         String correlationId,
+        String eventId,
         Status status,
         List<String> noteIds,
         List<Link> links,
@@ -15,6 +16,9 @@ public record ImportResult(
     public ImportResult {
         if (correlationId == null || correlationId.isBlank()) throw new IllegalArgumentException(
                 "Correlation id must not be null or blank");
+
+        if (eventId == null || eventId.isBlank()) throw new IllegalArgumentException(
+                "EventId must not be null or blank");
 
         if (status == null) throw new IllegalArgumentException("Status must not be null");
 

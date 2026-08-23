@@ -43,8 +43,8 @@ public class AppConfig {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
                 .addModule(new ParameterNamesModule())
-                .addModule(new JavaTimeModule())   // <-- добавляем поддержку java.time
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // <-- ISO-8601 вместо чисел
+                .addModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //  ISO-8601 вместо чисел
                 .build();
     }
 

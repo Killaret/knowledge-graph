@@ -5,6 +5,12 @@ import java.util.Map;
 public record CreateNoteRequest(
         String title,
         String content,
+        String type,
         Map<String,Object> metadata
 ) {
+    public CreateNoteRequest{
+        if (type == null || type.isBlank()){
+            type = "unknown";
+        }
+    }
 }

@@ -4,13 +4,15 @@ import java.util.Collections;
 import java.util.Map;
 
 public record ImportTask( //входящая задача из очереди. Переносит событие от Go-бэкенда.
-        String eventId,
-        String correlationId,
-        TaskType type,
-        String content,
-        String contentType,
-        ImportOptions importOptions,
-        Map<String, Object> metadata) {
+                          String eventId,
+                          String correlationId,
+                          String userId,
+                          String jwt,
+                          TaskType type,
+                          String content,
+                          String contentType,
+                          ImportOptions importOptions,
+                          Map<String, Object> metadata) {
 
     private static final int MAX_CONTENT_LENGTH = 30_000_000;
 
@@ -34,9 +36,20 @@ public record ImportTask( //входящая задача из очереди. �
         if (content.length() > MAX_CONTENT_LENGTH) {
             throw new IllegalArgumentException(
                     "Content too large: " + content.length() + " chars, maximum is " + MAX_CONTENT_LENGTH);
+
+        }
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException(
+                    "userId  can't be null or blank "
+            );
+        }
+        if (jwt == null || jwt.isBlank()){
+            throw new IllegalArgumentException(
+                    "jwt can't be null or blank"
+            );
         }
 
-        metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();//unmodifiable view
+            metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();//unmodifiable view
 
     }
 }

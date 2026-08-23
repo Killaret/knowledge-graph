@@ -28,6 +28,7 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
         this.notesUrl = baseUrl + "/notes";
         this.linksUrl = baseUrl + "/links";
     }
+
     private static final long WAIT_DURATION = 5;
 
     @Override
@@ -35,12 +36,13 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
         CreateNoteRequest request = new CreateNoteRequest(
                 generateTitle(chunk),
                 chunk.text(),
+                "unknown",
                 chunk.metadata());
 
         String json = toJson(request);   // сериализация с обработкой ошибки
         HttpResponse<String> response = executePost(notesUrl, json);
         CreateNoteResponse noteResponse = fromJson(response.body(), CreateNoteResponse.class);
-        return noteResponse.id();
+        return noteResponse.data().id();
 
     }
 
@@ -66,7 +68,7 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
 
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != 200) {
+            if (response.statusCode() != 200 && response.statusCode() != 201) {
                 throw new RemoteServiceException(
                         "Request failed: HTTP " + response.statusCode() + " " + response.body());
             }
