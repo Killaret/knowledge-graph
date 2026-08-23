@@ -44,6 +44,25 @@ The project uses **11 specialized AI agents** defined across multiple AI tools:
 
 ---
 
+## AI Tool Usage Policy
+
+To keep conventions consistent and avoid conflicting changes, this project uses one **primary implementation agent**.
+
+| Role | Primary Tool | Permitted Use |
+|------|--------------|---------------|
+| **Implementation / coding / refactoring / tests / commits** | **Windsurf SWE 1.7 Max** | Default for all code work |
+| **Strategic architecture / Roadmap / prompts** | **DeepSeek** | High-level design, planning, review |
+| **Inline autocomplete** | **GitHub Copilot** | Small snippets only; must follow `.windsurfrules` |
+| **Specialized fallback** | **Cursor** | Extreme, specific cases only; never in parallel with Windsurf on the same files |
+
+**Guidelines:**
+
+- Do not run Windsurf and Cursor on the same working tree simultaneously.
+- Do not let Copilot or Cursor override project conventions from `.windsurfrules`.
+- Authoritative decisions live in `.windsurfrules`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, and this file.
+
+---
+
 ## Backend Architecture Audit Notes
 
 Date: 2026-07-20
