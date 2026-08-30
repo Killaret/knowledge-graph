@@ -38,7 +38,7 @@
 ### Prerequisites
 
 - Docker & Docker Compose
-- (Optional) Go 1.25+, Node.js 20+, Python 3.11+
+- (Optional) Go 1.23+, Node.js 20+, Python 3.11+, Java 17+
 
 ### One-Command Start
 

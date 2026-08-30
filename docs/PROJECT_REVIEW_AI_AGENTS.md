@@ -72,6 +72,7 @@
 - **Docker multi-stage** для всех сервисов.
 - **nginx** — gateway.
 - **PostgreSQL 16 + pgvector**, **Redis 7**, **MongoDB 7**.
+- **Java 17 source-text-handler** (Spring Boot).
 
 ---
 
@@ -179,7 +180,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### Многоступенчатые Dockerfile
 
 - Все сервисы обязаны быть multi-stage.
-- `backend/Dockerfile`, `frontend/Dockerfile`, `nlp-service/Dockerfile`, `services/graph-service/Dockerfile`.
+- `backend/Dockerfile`, `frontend/Dockerfile`, `nlp-service/Dockerfile`, `services/graph-service/Dockerfile`, `source-text-handler/Dockerfile`.
 - Все production-образы содержат `HEALTHCHECK`.
 
 ### HEALTHCHECK endpoints
@@ -188,6 +189,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - frontend `/health` (SvelteKit endpoint).
 - nlp `/health`.
 - graph-service `/health` (gRPC 9090, HTTP 9091).
+- source-text-handler `/health`.
 
 ### Стеки
 
@@ -253,7 +255,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 8. Найденные риски и несоответствия (изначально)
 
 1. **Отслеживаемые бинарники**: `backend/bin/server` и `backend/bin/cli.exe` были закоммичены.
-2. **Отсутствовал HEALTHCHECK** в `graph-service/Dockerfile`.
+2. **Отсутствовали HEALTHCHECK** в `graph-service/Dockerfile` и `source-text-handler/Dockerfile`.
 3. **Go version mismatch**: `graph-service` использовал Go 1.24 вместо 1.25.
 4. **NLP Dockerfile**: одностадийный, без multi-stage.
 5. **Несоответствия в compose/документации**: неправильные порты graph-service, отсутствовал `redis_data` volume, устаревшие ссылки на `src/shared/three/`.
@@ -279,6 +281,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### 9.2. HEALTHCHECK
 
 - `services/graph-service/Dockerfile` — `HEALTHCHECK` на HTTP 9091.
+- `source-text-handler/Dockerfile` + `HealthCheckService.java` — добавлен эндпоинт `/health`.
 
 ### 9.3. Go version graph-service
 
