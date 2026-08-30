@@ -316,6 +316,32 @@ Description: Представление графа в виде сот (гекс�
 
 ## 📋 LATER: Backlog
 
+### 🎓 Coach Marks System
+
+| Task | Status | Priority | Prompt Ready |
+|------|--------|----------|-------------|
+| Coach Mark Manager (statuses, queue, localStorage) | ⏳ Planned | 🟢 Low | 📝 Yes |
+| CoachMarkOverlay component (spotlight + tooltip) | ⏳ Planned | 🟢 Low | 📝 Yes |
+| Feature definitions: welcome, createNote, createLink, clusters, cosmicCockpit, periodicNotes | ⏳ Planned | 🟢 Low | 📝 Yes |
+| Integration with CosmicCockpitLayout and `?` restart button | ⏳ Planned | 🟢 Low | 📝 Yes |
+| i18n keys and test coverage | ⏳ Planned | 🟢 Low | 📝 Yes |
+
+**Scope:**
+- Contextual hints shown on first use of a feature, not only at app start.
+- Per-feature status: `seen`, `dismissed`, `postponed` (with timestamp and `postponeDays`).
+- Manager API: `start`, `next`, `skip`, `postpone`, `dismiss`, `finish`, `isSeen`, `isDismissed`, `isPostponed`, `resetFeature`, `resetAll`.
+- Queue: only one coach mark active at a time.
+- Overlay: dark semi-transparent background, cyan neon border, gradient title, glow highlight.
+- Buttons: Next, Done (last step), Skip, Postpone, Dismiss all.
+- `localStorage` key: `kg_coach_marks_<variant>`.
+- i18n keys: `coach.<featureId>.<stepIndex>.title` and `.text`.
+- FSD placement: `entities/coach-mark/` for state/manager, `features/coach-mark/` for overlay and feature definitions.
+- Tests: unit for `CoachMarkManager`, component for `CoachMarkOverlay`, E2E for first login and postpone/dismiss/restart.
+
+**Related docs:**
+- `docs/COACH_MARKS.md` (to be created)
+- [SOON: Interactive Onboarding & Breadcrumbs](#interactive-onboarding--breadcrumbs)
+
 ### 📥 Import/Export Tools
 
 | Task                   | Status     | Priority | Prompt Ready |

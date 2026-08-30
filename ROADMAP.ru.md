@@ -370,6 +370,32 @@
 
 ## 📋 ПОТОМ: Бэклог
 
+### 🎓 Система Coach Marks
+
+| Задача | Статус | Приоритет | Промт готов |
+|--------|--------|-----------|-------------|
+| CoachMarkManager (статусы, очередь, localStorage) | ⏳ Запланировано | 🟢 Низкий | 📝 Да |
+| Компонент CoachMarkOverlay (spotlight + tooltip) | ⏳ Запланировано | 🟢 Низкий | 📝 Да |
+| Определение фич: welcome, createNote, createLink, clusters, cosmicCockpit, periodicNotes | ⏳ Запланировано | 🟢 Низкий | 📝 Да |
+| Интеграция с CosmicCockpitLayout и кнопкой `?` | ⏳ Запланировано | 🟢 Низкий | 📝 Да |
+| i18n-ключи и тестовое покрытие | ⏳ Запланировано | 🟢 Низкий | 📝 Да |
+
+**Объём:**
+- Контекстные подсказки, показываемые при первом использовании фичи, а не только при старте приложения.
+- Статусы по фиче: `seen` (пройдено), `dismissed` (больше не показывать), `postponed` (отложено, с `timestamp` и `postponeDays`).
+- API менеджера: `start`, `next`, `skip`, `postpone`, `dismiss`, `finish`, `isSeen`, `isDismissed`, `isPostponed`, `resetFeature`, `resetAll`.
+- Очередь: одна подсказка активна за раз.
+- Overlay: тёмный полупрозрачный фон, бирюзовая неоновая рамка, градиентный заголовок, свечение.
+- Кнопки: Далее, Готово (последний шаг), Пропустить, Отложить, Больше не показывать.
+- Ключ `localStorage`: `kg_coach_marks_<variant>`.
+- i18n-ключи: `coach.<featureId>.<stepIndex>.title` и `.text`.
+- FSD-размещение: `entities/coach-mark/` — состояние и менеджер, `features/coach-mark/` — overlay и определение фич.
+- Тесты: unit для `CoachMarkManager`, компонентный для `CoachMarkOverlay`, E2E для первого входа и postpone/dismiss/restart.
+
+**Связанные документы:**
+- `docs/COACH_MARKS.md` (создать)
+- [SOON: Интерактивный onboarding и хлебные крошки](#интерактивный-onboarding-и-хлебные-крошки)
+
 ### 📥 Инструменты импорта/экспорта
 
 | Задача                 | Статус           | Приоритет  | Промт готов |
