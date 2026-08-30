@@ -1,10 +1,11 @@
-# Full Test Cycle - Windows PowerShell (Isolated Testing Model)
+﻿# Full Test Cycle - Windows PowerShell (Isolated Testing Model)
 # This script orchestrates the complete testing cycle with full stack isolation.
 # Dev and personal stacks are stopped during testing to prevent resource conflicts.
 # All temporary snapshots are saved to scripts/testing/temp/snapshots/.
 
 param(
-    [switch]$SkipManual
+    [switch]$SkipManual,
+    [switch]$AutoCommit
 )
 
 $frontendPort = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { "3002" }
@@ -23,36 +24,57 @@ Write-Host ""
 $scriptDir = $PSScriptRoot
 $repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
 Set-Location $repoDir
+$devWasRunning = @((docker compose ps -q 2>$null) | Where-Object { $_ }).Count -gt 0
+$personalWasRunning = @((docker compose -f docker-compose.personal.yml ps -q 2>$null) | Where-Object { $_ }).Count -gt 0
 
 # Default the test stack to SKIP_AUTH=true so the first E2E/BDD phase
 # (and the frontend image built in step 4) bypasses authentication.
+# Only SKIP_AUTH is passed to docker-compose.test.yml; do not set VITE_SKIP_AUTH
+# here because it leaks into Vitest and breaks auth-store unit tests.
 $env:SKIP_AUTH = "true"
-$env:VITE_SKIP_AUTH = "true"
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$snapshotBase = Join-Path $scriptDir "temp" "snapshots"
+$snapshotBase = Join-Path (Join-Path $scriptDir "temp") "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp
 New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
 
+function Stop-TestStack {
+    Write-Host "`nStopping test stack (if still running)..." -ForegroundColor Yellow
+    $restoreDir = if ($PWD.Path) { $PWD.Path } else { $scriptDir }
+    try {
+        Set-Location $repoDir
+        & $scriptDir\stop-test.ps1 | Out-Null
+        Write-Host "  ✓ Test stack stopped" -ForegroundColor Green
+    } catch {
+        Write-Host "  ⚠ Could not stop test stack automatically" -ForegroundColor Yellow
+    } finally {
+        Set-Location $restoreDir
+    }
+}
+
 function Restore-Stacks {
-    Write-Host "`nRestoring dev and personal stacks..." -ForegroundColor Yellow
+    Write-Host "`nRestoring previously running dev and personal stacks..." -ForegroundColor Yellow
     $restoreDir = if ($PWD.Path) { $PWD.Path } else { $scriptDir }
     try {
         Set-Location $repoDir
         # Build dev/personal images only if they are missing (e.g., after full cleanup)
-        $devBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend:latest$' -Quiet
-        if ($devBackendImage) {
-            docker compose up -d --wait | Out-Null
-        } else {
-            docker compose up -d --build --wait | Out-Null
+        if ($devWasRunning) {
+            $devBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend:latest$' -Quiet
+            if ($devBackendImage) {
+                docker compose up -d --wait | Out-Null
+            } else {
+                docker compose up -d --build --wait | Out-Null
+            }
         }
-        $personalBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend_personal:latest$' -Quiet
-        if ($personalBackendImage) {
-            docker compose -f docker-compose.personal.yml up -d --wait | Out-Null
-        } else {
-            docker compose -f docker-compose.personal.yml up -d --build --wait | Out-Null
+        if ($personalWasRunning) {
+            $personalBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend_personal:latest$' -Quiet
+            if ($personalBackendImage) {
+                docker compose -f docker-compose.personal.yml up -d --wait | Out-Null
+            } else {
+                docker compose -f docker-compose.personal.yml up -d --build --wait | Out-Null
+            }
         }
-        Write-Host "  ✓ Dev and personal stacks restored" -ForegroundColor Green
+        Write-Host "  ✓ Previously running stacks restored" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Could not restore all stacks automatically" -ForegroundColor Yellow
     } finally {
@@ -62,7 +84,7 @@ function Restore-Stacks {
 
 try {
     # Step 0: Capture dev stack state snapshot
-    Write-Host "[Step 0/25] Capturing dev stack state snapshot..." -ForegroundColor Yellow
+    Write-Host "[Step 0/28] Capturing dev stack state snapshot..." -ForegroundColor Yellow
     docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\pre-test-ps.txt"
     Write-Host "  ✓ Container names snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
@@ -81,19 +103,19 @@ try {
     }
 
     # Step 1: Stop dev stack
-    Write-Host "`n[Step 1/25] Stopping dev stack..." -ForegroundColor Yellow
+    Write-Host "`n[Step 1/28] Stopping dev stack..." -ForegroundColor Yellow
     docker compose down
     if ($LASTEXITCODE -ne 0) { Write-Host "  ⚠ docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
     Write-Host "  ✓ Dev stack stopped" -ForegroundColor Green
 
     # Step 2: Stop personal stack
-    Write-Host "`n[Step 2/25] Stopping personal stack..." -ForegroundColor Yellow
+    Write-Host "`n[Step 2/28] Stopping personal stack..." -ForegroundColor Yellow
     docker compose -f docker-compose.personal.yml down
     if ($LASTEXITCODE -ne 0) { Write-Host "  ⚠ docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
     Write-Host "  ✓ Personal stack stopped" -ForegroundColor Green
 
     # Step 3: Check stacks identity
-    Write-Host "`n[Step 3/25] Checking stacks identity..." -ForegroundColor Yellow
+    Write-Host "`n[Step 3/28] Checking stacks identity..." -ForegroundColor Yellow
     & $scriptDir\..\ci\check-stacks-identity.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Stacks have differences" -ForegroundColor Red
@@ -104,7 +126,7 @@ try {
     }
 
     # Step 4: Start test stack
-    Write-Host "`n[Step 4/25] Starting test stack..." -ForegroundColor Yellow
+    Write-Host "`n[Step 4/28] Starting test stack..." -ForegroundColor Yellow
     & $scriptDir\start-test.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Failed to start test stack" -ForegroundColor Red
@@ -113,7 +135,7 @@ try {
     Write-Host "✓ Test stack started" -ForegroundColor Green
 
     # Step 5: Seed test data
-    Write-Host "`n[Step 5/25] Seeding test data..." -ForegroundColor Yellow
+    Write-Host "`n[Step 5/28] Seeding test data..." -ForegroundColor Yellow
     & $scriptDir\seed-test-data.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "WARNING: Failed to seed test data" -ForegroundColor Yellow
@@ -123,13 +145,13 @@ try {
     }
 
     # Step 6: Docker Build Verification
-    Write-Host "`n[Step 6/25] Docker Build Verification..." -ForegroundColor Yellow
+    Write-Host "`n[Step 6/28] Docker Build Verification..." -ForegroundColor Yellow
     Write-Host "  Checking Docker images..." -ForegroundColor Yellow
     docker images --format "{{.Repository}}:{{.Tag}}" | Select-String -Pattern "^knowledge-graph" | Out-Host
     Write-Host "  ✓ Docker images checked" -ForegroundColor Green
 
     # Step 7: NLP Service Tests
-    Write-Host "`n[Step 7/25] NLP Service Tests..." -ForegroundColor Yellow
+    Write-Host "`n[Step 7/28] NLP Service Tests..." -ForegroundColor Yellow
     try {
         $nlpHealth = Invoke-RestMethod -Uri "http://127.0.0.1:15002/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ NLP health endpoint: OK" -ForegroundColor Green
@@ -138,7 +160,7 @@ try {
     }
 
     # Step 8: Backend Unit Tests
-    Write-Host "`n[Step 8/25] Backend Unit Tests..." -ForegroundColor Yellow
+    Write-Host "`n[Step 8/28] Backend Unit Tests..." -ForegroundColor Yellow
     Write-Host "  Running backend unit tests..." -ForegroundColor Yellow
     Set-Location $repoDir\backend
     # Run packages sequentially to reduce concurrent testcontainers load on Docker Desktop
@@ -152,7 +174,7 @@ try {
     Write-Host "  ✓ Backend unit tests completed" -ForegroundColor Green
 
     # Step 9: Backend Integration Tests
-    Write-Host "`n[Step 9/25] Backend Integration Tests..." -ForegroundColor Yellow
+    Write-Host "`n[Step 9/28] Backend Integration Tests..." -ForegroundColor Yellow
     Write-Host "  Running backend integration tests (requires Linux/WSL Docker)..." -ForegroundColor Yellow
     Set-Location $repoDir\backend
     go test -tags=integration -p=1 -count=1 ./...
@@ -168,7 +190,7 @@ try {
 
 
     # Step 10: Backend API Verification
-    Write-Host "`n[Step 10/25] Backend API Verification..." -ForegroundColor Yellow
+    Write-Host "`n[Step 10/28] Backend API Verification..." -ForegroundColor Yellow
     try {
         $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend health: OK" -ForegroundColor Green
@@ -184,7 +206,7 @@ try {
     }
 
     # Step 11: Asynchronous Tasks Verification
-    Write-Host "`n[Step 11/25] Asynchronous Tasks Verification..." -ForegroundColor Yellow
+    Write-Host "`n[Step 11/28] Asynchronous Tasks Verification..." -ForegroundColor Yellow
     docker logs kg-test-worker --tail 10 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ⚠ Worker logs not available" -ForegroundColor Yellow
@@ -193,7 +215,7 @@ try {
     }
 
     # Step 12: PGVECTOR Verification
-    Write-Host "`n[Step 12/25] PGVECTOR Verification..." -ForegroundColor Yellow
+    Write-Host "`n[Step 12/28] PGVECTOR Verification..." -ForegroundColor Yellow
     docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT extname FROM pg_extension WHERE extname = 'vector';" | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR: PGVECTOR verification failed" -ForegroundColor Red
@@ -202,7 +224,7 @@ try {
     Write-Host "  ✓ PGVECTOR extension checked" -ForegroundColor Green
 
     # Step 13: Redis & MongoDB Verification
-    Write-Host "`n[Step 13/25] Redis & MongoDB Verification..." -ForegroundColor Yellow
+    Write-Host "`n[Step 13/28] Redis & MongoDB Verification..." -ForegroundColor Yellow
     docker exec kg-test-redis redis-cli PING | Out-Null
     if ($LASTEXITCODE -ne 0) { exit 1 }
     docker exec kg-test-mongo mongosh --eval "db.adminCommand('ping')" | Out-Null
@@ -210,9 +232,9 @@ try {
     Write-Host "  ✓ Redis and MongoDB checked" -ForegroundColor Green
 
     # Step 14: Frontend Unit Tests + Coverage
-    Write-Host "`n[Step 14/25] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
+    Write-Host "`n[Step 14/28] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
     Write-Host "  Running frontend unit tests with coverage (npm run test:coverage)..." -ForegroundColor Yellow
-    Write-Host "  Tip: coverage report can be regenerated anytime with: cd frontend && npm run test:coverage" -ForegroundColor Cyan
+    Write-Host "  Tip: coverage report can be regenerated anytime with: cd frontend; npm run test:coverage" -ForegroundColor Cyan
     Set-Location $repoDir\frontend
     npm run test:coverage
     $frontendTestExit = $LASTEXITCODE
@@ -224,7 +246,7 @@ try {
     Write-Host "  ✓ Frontend unit tests + coverage completed" -ForegroundColor Green
 
     # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
-    Write-Host "`n[Step 15/25] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
+    Write-Host "`n[Step 15/28] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
     $env:FRONTEND_URL = $frontendUrl
     $env:BACKEND_URL = "http://127.0.0.1:18083"
     $env:SKIP_AUTH = "true"
@@ -247,7 +269,7 @@ try {
     Set-Location $repoDir
 
     # Step 16: E2E Phase 2 — real auth (SKIP_AUTH=false) test stack
-    Write-Host "`n[Step 16/25] E2E Phase 2 — real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
+    Write-Host "`n[Step 16/28] E2E Phase 2 — real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
     Write-Host "  Stopping SKIP_AUTH test stack and restarting with SKIP_AUTH=false..." -ForegroundColor Yellow
     Set-Location $repoDir
     & $scriptDir\stop-test.ps1
@@ -281,12 +303,12 @@ try {
     Set-Location $repoDir
 
     # Step 17: Visual Regression (Argos)
-    Write-Host "`n[Step 17/25] Visual Regression (Argos)..." -ForegroundColor Yellow
+    Write-Host "`n[Step 17/28] Visual Regression (Argos)..." -ForegroundColor Yellow
 
     # Load token from gitignored argos.json if the env variable is not set.
     # Playwright config also loads this file, but the check above needs it here.
     if (-not $env:ARGOS_TOKEN) {
-        $argosJsonPath = Join-Path $repoDir "frontend" "argos.json"
+        $argosJsonPath = Join-Path (Join-Path $repoDir "frontend") "argos.json"
         if (Test-Path $argosJsonPath) {
             try {
                 $argosJson = Get-Content $argosJsonPath -Raw | ConvertFrom-Json
@@ -346,7 +368,7 @@ try {
     }
 
     # Step 18: Manual testing instructions
-    Write-Host "`n[Step 17/25] Test environment ready for manual testing" -ForegroundColor Green
+    Write-Host "`n[Step 18/28] Test environment ready for manual testing" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "  MANUAL TESTING INSTRUCTIONS" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
@@ -386,18 +408,18 @@ try {
         Remove-Item $manualTestFlag
     }
 
-    # Step 16: Public Graph Verification
-    Write-Host "`n[Step 16/25] Public Graph Verification..." -ForegroundColor Yellow
+    # Step 19: Public Graph Verification
+    Write-Host "`n[Step 19/28] Public Graph Verification..." -ForegroundColor Yellow
     Write-Host "  ⏳ Manual verification required" -ForegroundColor Yellow
     Write-Host "  Please verify public graph functionality manually" -ForegroundColor Yellow
 
-    # Step 17: CI/CD Verification
-    Write-Host "`n[Step 17/25] CI/CD Verification..." -ForegroundColor Yellow
+    # Step 20: CI/CD Verification
+    Write-Host "`n[Step 20/28] CI/CD Verification..." -ForegroundColor Yellow
     Write-Host "  ⏳ Manual verification required" -ForegroundColor Yellow
     Write-Host "  Please verify CI/CD workflows manually" -ForegroundColor Yellow
 
-    # Step 18: Documentation Verification
-    Write-Host "`n[Step 18/25] Documentation Verification..." -ForegroundColor Yellow
+    # Step 21: Documentation Verification
+    Write-Host "`n[Step 21/28] Documentation Verification..." -ForegroundColor Yellow
     $docFiles = @("docs/AGENTS.md", ".windsurfrules")
     $docFiles | ForEach-Object {
         $p = Join-Path $repoDir $_
@@ -420,8 +442,8 @@ try {
     }
 
 
-    # Step 19: Stop test stack
-    Write-Host "`n[Step 19/25] Stopping test stack..." -ForegroundColor Yellow
+    # Step 22: Stop test stack
+    Write-Host "`n[Step 22/28] Stopping test stack..." -ForegroundColor Yellow
     & $scriptDir\stop-test.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "WARNING: Failed to stop test stack" -ForegroundColor Yellow
@@ -429,71 +451,78 @@ try {
         Write-Host "✓ Test stack destroyed" -ForegroundColor Green
     }
 
-    # Step 20: Prepare for dev stack restoration
-    Write-Host "`n[Step 20/25] Preparing for dev stack restoration..." -ForegroundColor Yellow
+    # Step 23: Prepare for dev stack restoration
+    Write-Host "`n[Step 23/28] Preparing for dev stack restoration..." -ForegroundColor Yellow
     # Cleanup moved to after state checks / auto-commit
     # (temporary files will be cleaned after final verification)
 
 
-    # Step 21: Start dev stack
-    Write-Host "`n[Step 21/25] Starting dev stack..." -ForegroundColor Yellow
-    $devBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend:latest$' -Quiet
-    if ($devBackendImage) {
-        docker compose up -d --wait
+    # Step 24: Start dev stack
+    Write-Host "`n[Step 24/28] Restoring dev stack state..." -ForegroundColor Yellow
+    if ($devWasRunning) {
+        $devBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend:latest$' -Quiet
+        if ($devBackendImage) {
+            docker compose up -d --wait
+        } else {
+            docker compose up -d --build --wait
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Failed to restore dev stack" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "  ✓ Dev stack restored" -ForegroundColor Green
     } else {
-        docker compose up -d --build --wait
+        Write-Host "  ✓ Dev stack remains stopped" -ForegroundColor Green
     }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: Failed to start dev stack" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "  ✓ Dev stack started" -ForegroundColor Green
 
-    # Step 22: Start personal stack
-    Write-Host "`n[Step 22/25] Starting personal stack..." -ForegroundColor Yellow
-    $personalBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend_personal:latest$' -Quiet
-    if ($personalBackendImage) {
-        docker compose -f docker-compose.personal.yml up -d --wait
+    # Step 25: Start personal stack
+    Write-Host "`n[Step 25/28] Restoring personal stack state..." -ForegroundColor Yellow
+    if ($personalWasRunning) {
+        $personalBackendImage = docker images --format '{{.Repository}}:{{.Tag}}' | Select-String -Pattern '^knowledge-graph-backend_personal:latest$' -Quiet
+        if ($personalBackendImage) {
+            docker compose -f docker-compose.personal.yml up -d --wait
+        } else {
+            docker compose -f docker-compose.personal.yml up -d --build --wait
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Failed to restore personal stack" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "  ✓ Personal stack restored" -ForegroundColor Green
     } else {
-        docker compose -f docker-compose.personal.yml up -d --build --wait
+        Write-Host "  ✓ Personal stack remains stopped" -ForegroundColor Green
     }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: Failed to start personal stack" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "  ✓ Personal stack started" -ForegroundColor Green
 
-    # Step 23: State, identity and health checks
-    Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
+    # Step 26: State, identity and health checks
+    Write-Host "`n[Step 26/28] State, identity and health checks" -ForegroundColor Yellow
     $devStateChanged = $false
     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
     docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\post-test-ps.txt"
     Write-Host "  ✓ Post-test container names snapshot saved" -ForegroundColor Green
 
-    try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
-        Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
-    } catch {
-        Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
-        Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
-        exit 1
-    }
-
-    try {
-        Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
-        Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
-    } catch {
+    if ($devWasRunning) {
         try {
-            Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
-            Write-Host "  ✓ Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+            Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
+            Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
         } catch {
-            Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Yellow
-            $devStateChanged = $true
+            Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
+            Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
+            exit 1
+        }
+
+        try {
+            Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+            Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
+        } catch {
+            try {
+                Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+                Write-Host "  ✓ Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+            } catch {
+                Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Yellow
+                $devStateChanged = $true
+            }
         }
     }
-
-    # Step 23: (continued)
-    Write-Host "`n[Step 23/25] State, identity and health checks" -ForegroundColor Yellow
 
     # Only compare the set of running containers pre- and post-test.
     # Health and API responses intentionally differ (timestamps, real data),
@@ -510,7 +539,10 @@ try {
         }
     }
 
-    foreach ($stack in @(@{ Url = "http://127.0.0.1:18080"; Name = "dev" }, @{ Url = "http://127.0.0.1:18082"; Name = "personal" })) {
+    $restoredStacks = @()
+    if ($devWasRunning) { $restoredStacks += @{ Url = "http://127.0.0.1:18080"; Name = "dev" } }
+    if ($personalWasRunning) { $restoredStacks += @{ Url = "http://127.0.0.1:18082"; Name = "personal" } }
+    foreach ($stack in $restoredStacks) {
         $notesUrl = "$($stack.Url)/api/v1/notes?limit=1"
         $graphUrl = "$($stack.Url)/api/v1/graph/all?limit=1"
         $output = "$snapshotDir\$($stack.Name)-notes.json"
@@ -554,32 +586,33 @@ try {
 
     # Step 23: (continued)
 
-    & $scriptDir\..\ci\check-stacks-health.ps1 -Stack dev
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: Dev stack is not healthy" -ForegroundColor Red
-        exit 1
+    if ($devWasRunning) {
+        & $scriptDir\..\ci\check-stacks-health.ps1 -Stack dev
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Dev stack is not healthy" -ForegroundColor Red
+            exit 1
+        }
     }
 
-    & $scriptDir\..\ci\check-stacks-health.ps1 -Stack personal
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: Personal stack is not healthy" -ForegroundColor Red
-        exit 1
+    if ($personalWasRunning) {
+        & $scriptDir\..\ci\check-stacks-health.ps1 -Stack personal
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Personal stack is not healthy" -ForegroundColor Red
+            exit 1
+        }
     }
-    Write-Host "  ✓ Dev and personal stacks health verified" -ForegroundColor Green
+    Write-Host "  ✓ Restored stacks health verified" -ForegroundColor Green
 
-    # Step 24: Auto-commit if all checks passed
-    Write-Host "`n[Step 24/25] All checks passed - creating auto-commit..." -ForegroundColor Yellow
-    if (-not $devStateChanged) {
-        Write-Host "  Dev stack state: Unchanged ✓" -ForegroundColor Green
-        Write-Host "  Dev/Personal identity: Identical ✓" -ForegroundColor Green
-        Write-Host "  Stacks health: Healthy ✓" -ForegroundColor Green
-        Write-Host ""
+    # Step 27: Auto-commit if all checks passed
+    Write-Host "`n[Step 27/28] Commit policy..." -ForegroundColor Yellow
+    if (-not $AutoCommit) {
+        Write-Host "  ℹ Auto-commit disabled; review changes manually" -ForegroundColor Cyan
+    } elseif (-not $devStateChanged) {
         Write-Host "  Performing auto-commit with test success marker..." -ForegroundColor Yellow
-
         git add -A
         $staged = git diff --cached --name-only
         if ($staged) {
-            $commitMessage = "test: successful regression cycle — dev and personal identical`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
+            $commitMessage = "test: successful regression cycle`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
             git commit -m $commitMessage
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "  ERROR: Failed to commit" -ForegroundColor Red
@@ -595,8 +628,8 @@ try {
         Write-Host "  Please investigate the changes manually before committing" -ForegroundColor Yellow
     }
 
-    # Step 25: Cleanup Temporary Files
-    Write-Host "`n[Step 25/25] Cleanup Temporary Files..." -ForegroundColor Yellow
+    # Step 28: Cleanup Temporary Files
+    Write-Host "`n[Step 28/28] Cleanup Temporary Files..." -ForegroundColor Yellow
     python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
     Write-Host "  ✓ Temporary files cleaned" -ForegroundColor Green
 
@@ -625,17 +658,20 @@ try {
     Write-Host "✓ CI/CD verification completed" -ForegroundColor Green
     Write-Host "✓ Documentation verification completed" -ForegroundColor Green
     Write-Host "✓ Temporary files cleaned" -ForegroundColor Green
-    Write-Host "✓ Dev and personal stacks restored" -ForegroundColor Green
-    Write-Host "✓ Dev stack state, identity and health verified" -ForegroundColor Green
-    if (-not $devStateChanged) {
-        Write-Host "✓ Auto-commit with test success marker pushed" -ForegroundColor Green
-    } else {
+    Write-Host "✓ Previously running stacks restored" -ForegroundColor Green
+    Write-Host "✓ Initial stack state and restored stack health verified" -ForegroundColor Green
+    if ($AutoCommit -and -not $devStateChanged) {
+        Write-Host "✓ Auto-commit with test success marker created" -ForegroundColor Green
+    } elseif ($AutoCommit) {
         Write-Host "⚠ Auto-commit skipped (dev state changed)" -ForegroundColor Yellow
+    } else {
+        Write-Host "✓ Auto-commit disabled" -ForegroundColor Green
     }
     Write-Host ""
     Write-Host "Snapshots saved to: $snapshotDir" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "All stacks are stable and isolated testing completed successfully." -ForegroundColor Green
 } finally {
+    Stop-TestStack
     Restore-Stacks
 }

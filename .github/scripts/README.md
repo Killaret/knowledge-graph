@@ -60,11 +60,6 @@ Or use Git Bash to run the shell script.
 - ❌ Force pushes disabled
 - ❌ Deletions disabled
 
-### sourceTextHandler branch
-- ✅ Only `alximac` can push
-- ✅ Status checks must pass (Backend/Frontend/NLP/Integration/Security tests)
-- ❌ Force pushes disabled
-- ❌ Deletions disabled
 
 ## Manual Setup (Alternative)
 
@@ -86,8 +81,6 @@ gh api repos/Killaret/knowledge-graph/branches/main/protection
 # Check windsurf branch protection  
 gh api repos/Killaret/knowledge-graph/branches/windsurf/protection
 
-# Check sourceTextHandler branch protection
-gh api repos/Killaret/knowledge-graph/branches/sourceTextHandler/protection
 ```
 
 ## Troubleshooting

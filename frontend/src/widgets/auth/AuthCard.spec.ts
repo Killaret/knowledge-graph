@@ -16,7 +16,7 @@ vi.mock("$widgets/graph-canvas/GraphCanvas.svelte", () => ({
   }),
 }));
 
-vi.mock("$shared/hooks/usePreloadedData", () => ({
+vi.mock("$features/preload/hooks/usePreloadedData", () => ({
   getGraphWithPreload: vi.fn(() => Promise.resolve({ nodes: [], links: [] })),
 }));
 
