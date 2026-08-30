@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import type { GraphLink } from "$shared/api/graph";
 
   interface NoteItem {
     id: string;
@@ -25,7 +26,7 @@
     typeFilters: TypeFilter[];
     notes?: NoteItem[];
     nodes?: NoteItem[];
-    links?: Array<unknown>;
+    links?: GraphLink[];
     nodeCount?: number;
     linkCount?: number;
     selectedNodeId?: string | null;
@@ -115,6 +116,7 @@
   linkCount={effectiveLinkCount}
   {selectedNodeId}
   notes={effectiveNotes}
+  {links}
   {showFullGraph}
   {canvasController}
   {onSearch}

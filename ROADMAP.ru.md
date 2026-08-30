@@ -1,6 +1,6 @@
 # Дорожная карта Knowledge Graph
 
-**Обновлено:** 18 августа 2026 г.  
+**Обновлено:** 30 августа 2026 г.
 **Статус:** Исправлена валидация типов заметок и PUT запросов; расширено API тестирование; добавлены новые фазы Cosmic Navigator, Galactic Clusters и социальные фичи  
 **Версия:** v2.8
 
@@ -101,7 +101,7 @@
 **Найденные проблемы (быстрый аудит):**
 
 - **Frontend bundle:** `three` импортируется как `import * as THREE from "three"` в 7+ файлах — в bundle может попасть вся библиотека. Bundle analyzer не настроен.
-- **Frontend runtime:** `+page.svelte` использует `setInterval` для delta-polling; `CockpitViewport` использует `requestAnimationFrame`-цикл — нужно проверить корректную очистку при уничтожении компонентов.
+- **Frontend runtime:** `frontend/src/features/home-page/home-page.svelte.ts` использует `setInterval` для delta-polling; графический animation loop реализован в `frontend/src/entities/graph-canvas/lib/animation.ts` и используется `GraphCanvas.svelte` — нужно проверить корректную очистку жизненного цикла.
 - **Лимиты графа:** на фронте `max_nodes: 500`, а в `graph_service.full_limit: 1000` — разрыв лимитов может приводить к OOM или таймаутам.
 - **Backend поиск:** `note_repo.go` использует `plainto_tsquery` + `ts_rank` — требуется проверка индексов и стоимости запросов.
 - **Backend кэш:** `graph_service` кэширует full layout с TTL 300 секунд; большие графы давят на память Redis.
@@ -710,7 +710,7 @@ _Новые идеи добавлять выше следующего разде
 | Компонент HelpHotkeysModal                            | ✅ Done | 🟠 High     | Июль 2026       |
 | Enhanced ghost node creation modal                    | ✅ Done | 🟠 High     | Июль 2026       |
 | Drag-and-drop создание связей                         | ✅ Done | 🟠 High     | Июль 2026       |
-| Frontend unit tests (526 тестов)                      | ✅ Done | 🔴 Critical | Июль 2026       |
+| Набор frontend unit-тестов                            | ✅ Done | 🔴 Critical | Июль 2026       |
 
 ### 🔧 Улучшения backend
 
@@ -719,8 +719,8 @@ _Новые идеи добавлять выше следующего разде
 | Backend unit tests (все пакеты)     | ✅ Done | 🔴 Critical | Июль 2026       |
 | Clean Architecture                  | ✅ Done | 🔴 Critical | Ранее           |
 | JWT middleware                      | ✅ Done | 🔴 Critical | Ранее           |
-| Rate limiting на write endpoints    | ✅ Done | 🔴 Critical | Ранее           |
-| NLP service lazy loading            | ✅ Done | 🔴 Critical | Ранее           |
+| Включить rate limiting в runtime-конфигурации | ⚠️ Требует согласования | 🔴 Critical | — |
+| Deferred singleton NLP-модели + startup preload | ✅ Done | 🔴 Critical | Ранее |
 | PGVECTOR extension                  | ✅ Done | 🔴 Critical | Июль 2026       |
 | Асинхронная обработка задач (ASYNQ) | ✅ Done | 🔴 Critical | Июль 2026       |
 | Redis caching                       | ✅ Done | 🔴 Critical | Ранее           |
@@ -745,8 +745,8 @@ _Новые идеи добавлять выше следующего разде
 
 | Задача                                      | Статус  | Приоритет   | Дата завершения |
 | ------------------------------------------- | ------- | ----------- | --------------- |
-| AGENTS.md с 11 специализированными агентами | ✅ Done | 🔴 Critical | Июль 2026       |
-| REGRESSION_TEST_PLAN.md (20-частевый план)  | ✅ Done | 🔴 Critical | Июль 2026       |
+| Единый AI workflow для Windsurf и Devin     | ✅ Done | 🔴 Critical | Август 2026     |
+| Канонический REGRESSION_TEST_PLAN.md         | ✅ Done | 🔴 Critical | Июль 2026       |
 | TESTING.md (инфраструктура тестирования)    | ✅ Done | 🔴 Critical | Июль 2026       |
 | TESTING.md (русский перевод)                | ✅ Done | 🔴 Critical | Июль 2026       |
 | MANUAL_TEST_CHECKLISTS_RU.md                | ✅ Done | 🔴 Critical | Июль 2026       |
@@ -781,11 +781,11 @@ _Новые идеи добавлять выше следующего разде
 
 ### Покрытие тестами
 
-- **Frontend Unit Tests:** 866 тестов ✅
-- **Backend Unit Tests:** Все пакеты ✅
-- **Frontend E2E Tests:** ⏳ Ожидается
-- **Backend Integration Tests:** ✅ Готово (2026-07-23)
-- **Регрессионное тестирование:** 11/14 частей ✅
+- **Frontend Unit Tests:** автоматизированный набор поддерживается ✅
+- **Backend Unit Tests:** все пакеты ✅
+- **Frontend E2E Tests:** ✅ Реализованы
+- **Backend Integration Tests:** ✅ Реализованы
+- **Регрессионное тестирование:** канонический изолированный цикл реализован ✅
 
 ### Стабильность системы
 
@@ -847,8 +847,8 @@ _Новые идеи добавлять выше следующего разде
 
 ---
 
-**Последнее обновление:** 23 июля 2026 г.  
-**Следующий обзор:** После завершения ручного тестирования
+**Последнее обновление:** 30 августа 2026 г.
+**Следующий обзор:** После следующего этапа roadmap
 
 ---
 
@@ -894,12 +894,11 @@ _Новые идеи добавлять выше следующего разде
 **Контекст:** В приложении сейчас **нет** ни одного push-канала до браузера. То, что выглядит
 как «events» — на самом деле обычный HTTP polling:
 
-- `GET /graph-service/api/v1/graph/delta?last_hash=...` — фронтенд дергает раз в 30с + по
-  window focus (`refreshAfterMutation` в `frontend/src/routes/+page.svelte`).
-- `GET /api/v1/users/me/achievements` — ранее опрашивался с интервалом `poll_interval_ms`
-  (баг: значение `0` в конфиге трактовалось JS как «опрашивать как можно чаще», а не
-  «выключено» — `setInterval(fn, 0)` вместо отключения таймера вызывал ~125 запросов/сек;
-  исправлено переходом на event-driven refresh после действий пользователя вместо интервала).
+- `GET /graph-service/api/v1/graph/delta?last_hash=...` — фронтенд опрашивает раз в 30 секунд
+  и при window focus (`frontend/src/features/home-page/home-page.svelte.ts`).
+- `GET /api/v1/users/me/achievements` — по-прежнему использует защищённый interval polling в
+  `frontend/src/entities/achievement/model/store.svelte.ts`; значение интервала `0` отключает
+  таймер и предотвращает прежний tight loop.
 - Единственный реальный pub/sub в проекте — Redis Pub/Sub между backend и graph-service
   (`backend/internal/infrastructure/events/publisher.go` → `services/graph-service/internal/subscriber/pubsub.go`),
   используется только для инвалидации кэша графа на graph-service, наружу к браузеру не транслируется.

@@ -1,6 +1,6 @@
 # Knowledge Graph Roadmap
 
-**Updated:** August 18, 2026  
+**Updated:** August 30, 2026
 **Status:** Note type validation and PUT requests fixed; testing API expanded; new Cosmic Navigator, Galactic Clusters and social phases added  
 **Version:** v2.8
 
@@ -80,7 +80,7 @@
 **Audit findings:**
 
 - **Frontend bundle:** `three` is imported as `import * as THREE from "three"` in 7+ files — full library may end up in the bundle. Bundle analyzer is not configured.
-- **Frontend runtime:** `+page.svelte` uses `setInterval` for delta polling; `CockpitViewport` uses `requestAnimationFrame` loop — both need lifecycle cleanup checks.
+- **Frontend runtime:** `frontend/src/features/home-page/home-page.svelte.ts` uses `setInterval` for delta polling; the graph animation loop is implemented in `frontend/src/entities/graph-canvas/lib/animation.ts` and consumed by `GraphCanvas.svelte` — both need lifecycle cleanup checks.
 - **Frontend limits:** `max_nodes: 500` on the client, but `graph_service.full_limit: 1000` on the backend — mismatch may cause out-of-memory or timeouts.
 - **Backend search:** `note_repo.go` uses `plainto_tsquery` + `ts_rank` full-text search — indexes and query cost need verification.
 - **Backend cache:** `graph_service` caches full layout with 300s TTL; large graphs may pressure Redis memory.
@@ -670,7 +670,7 @@ _Add future ideas above the next section break._
 | HelpHotkeysModal component                          | ✅ Done | 🟠 High     | July 2026       |
 | Enhanced ghost node creation modal                  | ✅ Done | 🟠 High     | July 2026       |
 | Drag-and-drop link creation UX                      | ✅ Done | 🟠 High     | July 2026       |
-| Frontend unit tests (526 tests passing)             | ✅ Done | 🔴 Critical | July 2026       |
+| Frontend unit test suite                            | ✅ Done | 🔴 Critical | July 2026       |
 
 ### 🔧 Backend Improvements
 
@@ -679,8 +679,8 @@ _Add future ideas above the next section break._
 | Backend unit tests (all packages passing) | ✅ Done | 🔴 Critical | July 2026       |
 | Clean Architecture implementation         | ✅ Done | 🔴 Critical | Earlier         |
 | JWT authentication middleware             | ✅ Done | 🔴 Critical | Earlier         |
-| Rate limiting on write endpoints          | ✅ Done | 🔴 Critical | Earlier         |
-| NLP service lazy loading                  | ✅ Done | 🔴 Critical | Earlier         |
+| Enable rate limiting in committed runtime configuration | ⚠️ Needs alignment | 🔴 Critical | — |
+| NLP model deferred singleton + startup preload            | ✅ Done           | 🔴 Critical | Earlier |
 | PGVECTOR extension setup                  | ✅ Done | 🔴 Critical | July 2026       |
 | Asynchronous task processing (ASYNQ)      | ✅ Done | 🔴 Critical | July 2026       |
 | Redis caching integration                 | ✅ Done | 🔴 Critical | Earlier         |
@@ -705,8 +705,8 @@ _Add future ideas above the next section break._
 
 | Task                                   | Status  | Priority    | Completion Date |
 | -------------------------------------- | ------- | ----------- | --------------- |
-| AGENTS.md with 11 specialized agents   | ✅ Done | 🔴 Critical | July 2026       |
-| REGRESSION_TEST_PLAN.md (20-part plan) | ✅ Done | 🔴 Critical | July 2026       |
+| Unified Windsurf and Devin AI workflow | ✅ Done | 🔴 Critical | August 2026     |
+| Canonical REGRESSION_TEST_PLAN.md       | ✅ Done | 🔴 Critical | July 2026       |
 | TESTING.md (testing infrastructure)    | ✅ Done | 🔴 Critical | July 2026       |
 | TESTING.md (Russian translation)       | ✅ Done | 🔴 Critical | July 2026       |
 | MANUAL_TEST_CHECKLISTS_RU.md           | ✅ Done | 🔴 Critical | July 2026       |
@@ -741,11 +741,11 @@ _Add future ideas above the next section break._
 
 ### Testing Coverage
 
-- **Frontend Unit Tests:** 866 tests ✅
-- **Backend Unit Tests:** All packages ✅
-- **Frontend E2E Tests:** ⏳ Pending
-- **Backend Integration Tests:** ✅ Done (2026-07-23)
-- **Regression Testing:** 11/14 parts ✅
+- **Frontend Unit Tests:** automated suite maintained ✅
+- **Backend Unit Tests:** all packages ✅
+- **Frontend E2E Tests:** ✅ Implemented
+- **Backend Integration Tests:** ✅ Implemented
+- **Regression Testing:** canonical isolated cycle implemented ✅
 
 ### System Stability
 
@@ -807,8 +807,8 @@ _Add future ideas above the next section break._
 
 ---
 
-**Last Updated:** July 23, 2026  
-**Next Review:** After manual testing completion
+**Last Updated:** August 30, 2026
+**Next Review:** After the next roadmap milestone
 
 ---
 
@@ -855,11 +855,10 @@ _Add future ideas above the next section break._
 looks like "events" is actually plain HTTP polling:
 
 - `GET /graph-service/api/v1/graph/delta?last_hash=...` — polled by the frontend every 30s
-  plus on window focus (`refreshAfterMutation` in `frontend/src/routes/+page.svelte`).
-- `GET /api/v1/users/me/achievements` — previously polled at `poll_interval_ms`
-  (bug: a config value of `0` was treated by JS as "poll as fast as possible" rather than
-  "disabled" — `setInterval(fn, 0)` fired ~125 times/sec instead of never firing; fixed by
-  switching to event-driven refresh after user actions instead of an interval).
+  plus on window focus (`frontend/src/features/home-page/home-page.svelte.ts`).
+- `GET /api/v1/users/me/achievements` — still uses guarded interval polling in
+  `frontend/src/entities/achievement/model/store.svelte.ts`; a configured interval of `0`
+  disables the timer, preventing the former tight-loop behavior.
 - The only real pub/sub in the project is the Redis Pub/Sub between backend and graph-service
   (`backend/internal/infrastructure/events/publisher.go` → `services/graph-service/internal/subscriber/pubsub.go`),
   used solely for graph-service cache invalidation — it never reaches the browser.

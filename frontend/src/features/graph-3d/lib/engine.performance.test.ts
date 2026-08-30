@@ -162,4 +162,20 @@ describe("Graph3DEngine performance adaptation", () => {
 
     engine.dispose();
   });
+
+  it("does not mutate the original links array", () => {
+    const container = createContainer();
+    const engine = new Graph3DEngine(container, {}, { autoRotate: false });
+    stubRenderer(engine);
+    const originalLinks = [{ ...links[0] }];
+
+    engine.setData(nodes, originalLinks);
+
+    // After D3 warm start, source/target should still be string IDs in the
+    // original array, not node objects.
+    expect(originalLinks[0].source).toBe("1");
+    expect(originalLinks[0].target).toBe("2");
+
+    engine.dispose();
+  });
 });

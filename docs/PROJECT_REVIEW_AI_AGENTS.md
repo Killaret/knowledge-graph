@@ -413,6 +413,10 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Космическая «кабина» с четырьмя выдвижными панелями, HUD, режим «от первого лица».
 - Drag-to-open, якоря, 2D/3D-переключатель, фильтры типов, детали заметки, мини-граф связей, Singularity-зона архивирования.
 - **2D Renderer Performance Pack (2026-08):** адаптивный туман войны, viewport culling, throttling до `idle_fps`, LOD по зуму, offscreen-кэш для стабильного состояния, кэширование `getVariation`/`isNewNode`, O(1) lookup эндпоинтов связей.
+- **2D Renderer idle-throttling fix (2026-08):** removed per-frame debug logging in `GraphCanvas.svelte`; `startAnimationLoop` no longer fetches nodes on every rAF tick; heavy work (black hole/ghost updates, gravity, fog update, node-angle animation, redraw) is now skipped when the graph is stable and idle. Regression test added in `GraphCanvas.rendering.spec.ts`.
+- **2D Renderer fog-warning toast (2026-08):** the low-FPS warning is now a debounced two-state toast (2 s hold, 1 s rearm debounce) controlled by `frontend/src/features/graph-canvas/fog-warning.ts`; it shows a red 'danger' banner when the load is high and a blue 'recovery' banner when the load drops, only while the user is actively interacting with the graph and without flickering. `GraphCanvas.svelte` now treats panning and node dragging as interactions (`dragState.dragging`) so the warning triggers on pan and drag, not only on hover and focus mode. `GraphCanvas.svelte` passes `fogWarningState.kind` to `GraphCanvasOverlay`. New i18n key `graphOverlay.fogRecovery`. Regression tests in `fog-warning.test.ts`.
+- **2D Graph hover / neighbor highlight (2026-08):** `GraphCanvas.svelte` computes direct neighbor ids from `simLinks` and passes them to `fogState.update` and the renderer. `fog-state.svelte.ts` expands the clear radius to cover the hovered node and its direct neighbors. `drawAllNodes` now renders the hovered node at opacity 1, direct neighbors at 0.85, and unrelated nodes at 0.3; neighbors and the hovered node are not simplified when zoomed out. `link-renderers.ts` keeps links from the hovered node at full opacity and slightly boosts neighbor-neighbor links. New tests in `fog.test.ts`, `fog-state.svelte.test.ts`, and `renderer-orchestrator.test.ts`.
+- **Graph top bar fog toggle (2026-08):** the fog button icon changed from a generic four-line icon to a cloud-with-lines icon. Added `graphOverlay.fogToggleTitle` i18n key and used it for `title`/`aria-label`/SVG `<title>` so the button has a clear tooltip. `GraphTopBar.spec.ts` still passes.
 - **2D Node Color Variation (2026-08):** опциональная кастомизация цвета нод через `GraphNode.color`/`glowColor`; при отсутствии ручного значения `getVariation` выбирает детерминированный цвет из палитры `frontend/src/shared/lib/graph/color-schemes.ts`, вдохновлённой реальными космическими объектами.
 
 ### В процессе / запланировано (UI/UX)
@@ -425,6 +429,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Система рекомендаций Pure Precomputed (убрать fallback).
 - Публичные сиды для тестирования real-auth.
 - Аудит ресурсов (память, CPU, bundle size).
+- **Пассивный режим при переключении вкладки:** при `document.hidden` останавливать `requestAnimationFrame` и d3-симуляцию, при `visibilitychange` возобновлять, чтобы фоновая вкладка не ела CPU/GPU.
 
 ### Инструменты импорта/экспорта
 
@@ -494,3 +499,49 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Test stack пересобран и поднят.
 - Playwright (test stack): `smoke-real-auth`, `cockpit-canvas-controls`, `floating-auth-panel`, `public-graph` — 10/10 passed.
 - Ручные сценарии: см. `docs/MANUAL_TEST_CHECKLISTS_RU.md` раздел `0.6` и `docs/TESTING.md` раздел `Manual Regression Scenarios`.
+
+---
+
+## 15. Дополнения и правки по итогам тестирования (август 2026)
+
+### 15.1. Пассивный режим при переключении вкладки
+
+**Требование:** при уходе пользователя на другую вкладку граф должен переходить в пассивный режим и не потреблять ресурсы системы.
+
+**Почему это важно:** сейчас анимационный цикл `GraphCanvas.svelte` продолжает вызывать `requestAnimationFrame` и d3-симуляцию даже когда вкладка неактивна. Браузер обычно троттлит rAF до ~1 fps на фоновой вкладке, но вычисления в `onUpdate` и силам симуляции всё равно выполняются, что расходует CPU и батарею.
+
+**Рекомендуемый подход:**
+- В `GraphCanvas.svelte` добавить `document.addEventListener('visibilitychange', ...)`.  
+  При `document.hidden === true`:
+  - `cancelAnimationFrame(animationFrameId)`;
+  - `simulation?.stop()` (или `simulation?.alphaTarget(0)` с `simulation?.tick(0)`);
+  - прекратить обновление FPS/тумана.
+  При `document.hidden === false`:
+  - `simulation?.restart()`;
+  - запустить `startAnimationLoop` заново;
+  - пометить `needsRedraw = true`, чтобы восстановить картинку.
+- Учесть, что `graph-service` и WebSocket/SSE-подключения (если есть) тоже можно заморозить, но это опционально.
+- Добавить unit-тест / Playwright-тест, проверяющий, что на скрытой вкладке rAF не вызывается.
+
+**Файлы:**
+- `frontend/src/widgets/graph-canvas/GraphCanvas.svelte`
+- `frontend/src/widgets/graph-canvas/GraphCanvas.rendering.spec.ts` (регресс-тест)
+
+### 15.2. Fog-warning / recovery — итоги ручного теста
+
+**Сделано:**
+- Контроллер предупреждения переписан на two-state (`danger` красный / `recovery` синий), 2 s hold, 1 s rearm debounce.
+- В `isInteracting` добавлен `dragState.dragging`, поэтому пан и drag-нод теперь считаются взаимодействием.
+
+**Проблема, обнаруженная на тестовом стеке:**
+- Предупреждение не удаётся поймать на публичном графе с 50 нодами, потому что FPS не падает ниже `warning_threshold` (18).
+
+**Следующие шаги / договорённости:**
+- Проверить поведение на **личном стеке** с реальными/большими данными.
+- Если и там сложно поймать — пересидировать тестовый стек с большим public-графом (300–500 нод, 500–1000 связей) и/или временно поднять `warning_threshold` только для ручного теста.
+- Не рекомендуется оставлять `warning_threshold` высоким в продакшене — это приведёт к ложным предупреждениям.
+
+### 15.3. Оставшиеся ручные кейсы
+
+- **Case 1.4** — hover, подсветка соседей и туман: в процессе ручной проверки.
+  - 2026-08-23: реализована подсветка прямых соседей (opacity 1 / 0.85 / 0.3), расширение радиуса тумана на соседей и усиление связей от hovered-узла. Требуется повторная ручная проверка.

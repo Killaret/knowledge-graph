@@ -1,16 +1,38 @@
 <script lang="ts">
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import type { GraphLink } from "$shared/api/graph";
   import CockpitNoteDetails from "./CockpitNoteDetails.svelte";
+  import PublicNoteDetails from "./PublicNoteDetails.svelte";
+
+  interface NoteItem {
+    id: string;
+    title: string;
+    type?: string;
+  }
 
   interface Props {
     nodeId: string | null;
+    isAuthenticated?: boolean;
+    notes?: NoteItem[];
+    links?: GraphLink[];
     onNodeSelect?: (id: string | null) => void;
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
     onCreateChildNote?: (note: { id: string; title: string; type?: string }) => void;
+    onSignIn?: () => void;
   }
 
-  const { nodeId, onNodeSelect, onNoteDelete, onNoteEdit, onCreateChildNote }: Props = $props();
+  const {
+    nodeId,
+    isAuthenticated = false,
+    notes = [],
+    links = [],
+    onNodeSelect,
+    onNoteDelete,
+    onNoteEdit,
+    onCreateChildNote,
+    onSignIn,
+  }: Props = $props();
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
@@ -36,13 +58,23 @@
 
 <div class="cockpit-right-panel" data-testid="cockpit-right-panel">
   {#if nodeId}
-    <CockpitNoteDetails
-      {nodeId}
-      onClose={handleClose}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onCreateChildNote={handleCreateChild}
-    />
+    {#if isAuthenticated}
+      <CockpitNoteDetails
+        {nodeId}
+        onClose={handleClose}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onCreateChildNote={handleCreateChild}
+      />
+    {:else}
+      <PublicNoteDetails
+        {nodeId}
+        {notes}
+        {links}
+        onClose={handleClose}
+        {onSignIn}
+      />
+    {/if}
   {:else}
     <div class="empty-state">
       <span class="empty-icon">🌌</span>

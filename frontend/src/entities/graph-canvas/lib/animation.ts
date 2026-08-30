@@ -76,23 +76,21 @@ export function updateNodeAngles(
 }
 
 /**
- * Start the animation loop
+ * Start the animation loop.
+ *
+ * The loop calls `onUpdate` once per `requestAnimationFrame` tick. It is the
+ * caller's responsibility to throttle expensive work (e.g. skipping frames
+ * while the graph is idle and stable).
  */
 export function startAnimationLoop(
-  getNodes: () => Array<{ id: string; type?: string }>,
-  onUpdate: (timestamp: number) => void,
-  disableVariation: boolean = false
+  onUpdate: (timestamp: number) => void
 ): { stop: () => void } {
   let animationId: number;
-  const angles = new Map<string, number>();
-  const speeds = new Map<string, number>();
 
   let running = true;
 
   function animate(timestamp: number) {
     if (!running) return;
-    const nodes = getNodes();
-    updateNodeAngles(nodes, angles, speeds, disableVariation);
     onUpdate(timestamp);
     if (typeof requestAnimationFrame === "function") {
       animationId = requestAnimationFrame(animate);

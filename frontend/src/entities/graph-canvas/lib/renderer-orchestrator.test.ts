@@ -168,6 +168,40 @@ describe("renderer-orchestrator performance regressions", () => {
     expect(ctx.fillText).not.toHaveBeenCalled();
   });
 
+  it("drawAllNodes highlights hovered node and direct neighbors at full/bright opacity", () => {
+    const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
+    const links: SimulationLink[] = [
+      { source: nodes[0].id, target: nodes[1].id, weight: 0.5, link_type: "related" },
+    ];
+    const ctx = createMockCanvasContext();
+    const angles = new Map<string, number>();
+    const hoveredNeighborIds = new Set([nodes[1].id]);
+
+    drawAllNodes(
+      ctx,
+      nodes,
+      angles,
+      false,
+      undefined,
+      false,
+      0,
+      nodes[0].id,
+      null,
+      false,
+      undefined,
+      undefined,
+      false,
+      hoveredNeighborIds
+    );
+
+    const alphas = (ctx as any).getGlobalAlphas();
+    // One globalAlpha per drawn node (set before drawNode, restored after).
+    expect(alphas.length).toBeGreaterThanOrEqual(3);
+    expect(alphas).toContain(1); // hovered
+    expect(alphas).toContain(0.85); // neighbor
+    expect(alphas).toContain(0.3); // unrelated
+  });
+
   it("drawAllNodes draws search match outline", () => {
     const nodes = makeNodes(2).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
     const ctx = createMockCanvasContext();

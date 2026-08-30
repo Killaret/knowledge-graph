@@ -3,6 +3,15 @@ import { LinkType } from "$entities";
 import type { GraphLink } from "$shared/api/graph";
 import type { Graph3DConfig } from "../model/types";
 
+function getLinkEndpointId(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (value && typeof value === "object" && "id" in value && typeof value.id === "string") {
+    return value.id;
+  }
+  return undefined;
+}
+
 export class LinkManager {
   private scene: THREE.Scene;
   private config: Graph3DConfig;
@@ -17,8 +26,9 @@ export class LinkManager {
     this.clear();
 
     for (const link of links) {
-      const sourceId = String(link.source);
-      const targetId = String(link.target);
+      const sourceId = getLinkEndpointId(link.source);
+      const targetId = getLinkEndpointId(link.target);
+      if (!sourceId || !targetId) continue;
       const linkId = `${sourceId}-${targetId}`;
 
       const sourcePos = nodePositions.get(sourceId);
@@ -55,8 +65,9 @@ export class LinkManager {
 
   updatePositions(links: GraphLink[], nodePositions: Map<string, THREE.Vector3>) {
     for (const link of links) {
-      const sourceId = String(link.source);
-      const targetId = String(link.target);
+      const sourceId = getLinkEndpointId(link.source);
+      const targetId = getLinkEndpointId(link.target);
+      if (!sourceId || !targetId) continue;
       const linkId = `${sourceId}-${targetId}`;
 
       const line = this.linkObjects.get(linkId);

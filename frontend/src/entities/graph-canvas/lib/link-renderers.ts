@@ -82,7 +82,8 @@ export function drawAnimatedLink(
   hoveredNodeId?: string | null,
   curveOffset: number = 0,
   baseOpacity: number = 1,
-  isDuplicateHighlighted: boolean = false
+  isDuplicateHighlighted: boolean = false,
+  hoveredNeighborIds?: Set<string>
 ): void {
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
@@ -110,14 +111,27 @@ export function drawAnimatedLink(
       baseOpacity,
       hoveredNodeId,
       isDuplicateHighlighted,
-      curveOffset
+      curveOffset,
+      hoveredNeighborIds
     );
     return;
   }
 
   // Check if this link should be highlighted
   const isHovered = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
-  let opacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : baseOpacity;
+  const isNeighborLink =
+    hoveredNodeId && hoveredNeighborIds
+      ? (hoveredNeighborIds.has(sourceId) && hoveredNeighborIds.has(targetId)) ||
+        (hoveredNeighborIds.has(sourceId) && sourceId === hoveredNodeId) ||
+        (hoveredNeighborIds.has(targetId) && targetId === hoveredNodeId)
+      : false;
+  let opacity = hoveredNodeId
+    ? isHovered
+      ? 1
+      : isNeighborLink
+        ? 0.7
+        : 0.3
+    : baseOpacity;
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
   const dashArray = linkType.getLineDash(weight);
@@ -167,12 +181,24 @@ export function drawLink(
   opacity: number = 1,
   hoveredNodeId?: string | null,
   isDuplicateHighlighted?: boolean,
-  curveOffset: number = 0
+  curveOffset: number = 0,
+  hoveredNeighborIds?: Set<string>
 ): void {
   // Check if this link should be highlighted
-  const isHovered =
-    hoveredNodeId && (link.source === hoveredNodeId || link.target === hoveredNodeId);
-  const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
+  const sourceId = getLinkEndpointId(link.source);
+  const targetId = getLinkEndpointId(link.target);
+  const isHovered = hoveredNodeId && (sourceId === hoveredNodeId || targetId === hoveredNodeId);
+  const isNeighborLink =
+    hoveredNodeId && hoveredNeighborIds
+      ? hoveredNeighborIds.has(sourceId) && hoveredNeighborIds.has(targetId)
+      : false;
+  const finalOpacity = hoveredNodeId
+    ? isHovered
+      ? 1
+      : isNeighborLink
+        ? 0.7
+        : 0.3
+    : opacity;
 
   ctx.beginPath();
   drawCurvedLinkPath(ctx, sourceNode, targetNode, curveOffset);

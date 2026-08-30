@@ -203,6 +203,27 @@ export function isNodeHiddenByFog(
   return !visibleSet.has(node.id);
 }
 
+/** Build the set of direct neighbor node ids for a hovered node. */
+export function getHoveredNeighborIds(
+  hoveredNodeId: string | null,
+  links: SimulationLink[]
+): Set<string> {
+  const neighborIds = new Set<string>();
+  if (!hoveredNodeId) return neighborIds;
+
+  for (const link of links) {
+    const sourceId = getLinkEndpointId(link.source);
+    const targetId = getLinkEndpointId(link.target);
+    if (sourceId === hoveredNodeId && targetId) {
+      neighborIds.add(targetId);
+    } else if (targetId === hoveredNodeId && sourceId) {
+      neighborIds.add(sourceId);
+    }
+  }
+
+  return neighborIds;
+}
+
 /** Default fog parameters: fully clear / off. */
 export function defaultFogRenderParams(): FogRenderParams {
   return {

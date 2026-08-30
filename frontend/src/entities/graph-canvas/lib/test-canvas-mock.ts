@@ -6,6 +6,7 @@ import { vi } from "vitest";
 export function createMockCanvasContext() {
   const fillStyles: string[] = [];
   const strokeStyles: string[] = [];
+  const globalAlphas: number[] = [];
 
   const ctx = {
     clearRect: vi.fn(),
@@ -63,13 +64,24 @@ export function createMockCanvasContext() {
     lineWidth: 1,
     shadowBlur: 0,
     shadowColor: "",
-    globalAlpha: 1,
     getFillStyles: () => fillStyles,
     getStrokeStyles: () => strokeStyles,
+    getGlobalAlphas: () => globalAlphas,
   } as unknown as CanvasRenderingContext2D & {
     getFillStyles: () => string[];
     getStrokeStyles: () => string[];
+    getGlobalAlphas: () => number[];
   };
+
+  Object.defineProperty(ctx, "globalAlpha", {
+    get: () => ((ctx as any)._globalAlpha ?? 1),
+    set: (value: number) => {
+      (ctx as any)._globalAlpha = value;
+      globalAlphas.push(value);
+    },
+    enumerable: true,
+    configurable: true,
+  });
 
   return ctx;
 }

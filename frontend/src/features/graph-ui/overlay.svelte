@@ -17,7 +17,7 @@
     tooltipPosition = { x: 0, y: 0 },
     duplicateWarning = null,
     focusMode = false,
-    fogWarning = false,
+    fogWarning = null,
     showUndoToast = false,
     undoToastStage = "done",
     hotkeysState,
@@ -48,7 +48,7 @@
       linkId: string;
     } | null;
     focusMode?: boolean;
-    fogWarning?: boolean;
+    fogWarning?: "danger" | "recovery" | null;
     showUndoToast?: boolean;
     undoToastStage?: "done" | "restore";
     hotkeysState: HotkeysState;
@@ -141,11 +141,12 @@
 {/if}
 
 {#if fogWarning}
+  {@const isDanger = fogWarning === "danger"}
   <div
     class="fog-warning"
-    style="position: absolute; top: 56px; left: 50%; transform: translateX(-50%); background: rgba(185, 28, 28, 0.92); border: 1px solid rgba(255, 120, 120, 0.5); border-radius: 8px; padding: 8px 14px; color: white; z-index: 200; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.5); pointer-events: none;"
+    style="position: absolute; top: 56px; left: 50%; transform: translateX(-50%); background: {isDanger ? 'rgba(185, 28, 28, 0.92)' : 'rgba(29, 78, 216, 0.92)'}; border: 1px solid {isDanger ? 'rgba(255, 120, 120, 0.5)' : 'rgba(96, 165, 250, 0.5)'}; border-radius: 8px; padding: 8px 14px; color: white; z-index: 200; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.5); pointer-events: none;"
   >
-    {t("graphOverlay.fogWarning")}
+    {isDanger ? t("graphOverlay.fogWarning") : t("graphOverlay.fogRecovery")}
   </div>
 {/if}
 

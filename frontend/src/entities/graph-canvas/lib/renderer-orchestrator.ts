@@ -44,7 +44,8 @@ export function drawAllLinks(
   dyingLinks: SimulationLink[] = [],
   dyingLinkOpacity: Map<string, number> = new Map(),
   nodeMap?: Map<string, SimulationNode>,
-  visibleNodeIds?: Set<string>
+  visibleNodeIds?: Set<string>,
+  hoveredNeighborIds?: Set<string>
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
@@ -108,7 +109,8 @@ export function drawAllLinks(
       hoveredNodeId,
       curveOffset,
       opacity,
-      isHighlighted
+      isHighlighted,
+      hoveredNeighborIds
     );
     drawnCount++;
   });
@@ -283,7 +285,8 @@ export function drawAllNodes(
   focusMode: boolean = false,
   searchMatchIds?: Set<string>,
   visibleNodeIds?: Set<string>,
-  simplified: boolean = false
+  simplified: boolean = false,
+  hoveredNeighborIds?: Set<string>
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
@@ -317,9 +320,17 @@ export function drawAllNodes(
     const angle = angles.get(node.id) || 0;
     const opacity = nodeOpacity?.get(node.id) ?? 1;
     const isHovered = hoveredNodeId === node.id;
+    const isNeighbor =
+      hoveredNodeId != null && hoveredNeighborIds ? hoveredNeighborIds.has(node.id) : false;
     const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
-    const finalOpacity = hoveredNodeId ? (isHovered ? 1 : 0.3) : opacity;
-    const nodeSimplified = simplified && !isHovered;
+    const finalOpacity = hoveredNodeId
+      ? isHovered
+        ? 1
+        : isNeighbor
+          ? 0.85
+          : 0.3
+      : opacity;
+    const nodeSimplified = simplified && !isHovered && !isNeighbor;
 
     const previousAlpha = ctx.globalAlpha;
     ctx.globalAlpha = finalOpacity;
@@ -424,7 +435,8 @@ export function draw(
   highlightedLinkId?: string | null,
   linkPreviewTarget?: { sourceId: string; targetId: string } | null,
   linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
-  fog: FogRenderParams = defaultFogRenderParams()
+  fog: FogRenderParams = defaultFogRenderParams(),
+  hoveredNeighborIds?: Set<string>
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -485,7 +497,8 @@ export function draw(
     dyingLinks,
     dyingLinkOpacity,
     nodeMap,
-    visibleNodeIds
+    visibleNodeIds,
+    hoveredNeighborIds
   );
 
   // Draw link preview if dragging for link creation
@@ -536,7 +549,8 @@ export function draw(
     focusMode,
     searchMatchIdSet,
     visibleNodeIds,
-    simplified
+    simplified,
+    hoveredNeighborIds
   );
 
   ctx.restore();

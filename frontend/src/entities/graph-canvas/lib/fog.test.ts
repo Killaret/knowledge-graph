@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { drawFog, createFogVisibilitySet, defaultFogRenderParams, isNodeHiddenByFog } from "./fog";
+import {
+  drawFog,
+  createFogVisibilitySet,
+  defaultFogRenderParams,
+  isNodeHiddenByFog,
+  getHoveredNeighborIds,
+} from "./fog";
 import { createMockCanvasContext } from "./test-canvas-mock";
 import type { SimulationNode, SimulationLink } from "./types";
 import { getLinkEndpointId } from "./types";
@@ -218,5 +224,27 @@ describe("2D fog rendering and culling", () => {
     const fog = { ...defaultFogRenderParams(), mode: "adaptive" as const };
     expect(isNodeHiddenByFog(fog, new Set(), node)).toBe(true);
     expect(isNodeHiddenByFog(fog, new Set(["n1"]), node)).toBe(false);
+  });
+
+  it("getHoveredNeighborIds returns all direct neighbors of the hovered node", () => {
+    const nodes = makeNodes(5);
+    const links: SimulationLink[] = [
+      { source: nodes[0].id, target: nodes[1].id, weight: 0.5, link_type: "related" },
+      { source: nodes[0].id, target: nodes[2].id, weight: 0.5, link_type: "related" },
+      { source: nodes[3].id, target: nodes[4].id, weight: 0.5, link_type: "related" },
+    ];
+    const neighborIds = getHoveredNeighborIds(nodes[0].id, links);
+    expect(neighborIds.has(nodes[1].id)).toBe(true);
+    expect(neighborIds.has(nodes[2].id)).toBe(true);
+    expect(neighborIds.has(nodes[3].id)).toBe(false);
+    expect(neighborIds.has(nodes[4].id)).toBe(false);
+    expect(neighborIds.has(nodes[0].id)).toBe(false);
+  });
+
+  it("getHoveredNeighborIds returns an empty set when no node is hovered", () => {
+    const nodes = makeNodes(3);
+    const links = makeLinks(nodes);
+    const neighborIds = getHoveredNeighborIds(null, links);
+    expect(neighborIds.size).toBe(0);
   });
 });

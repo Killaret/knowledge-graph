@@ -17,10 +17,12 @@
     clearSimulation,
     getSimulationNodes,
     type SimulationState,
+    type SimulationNode,
     draw,
     resetView,
     startAnimationLoop,
     clearAnimationState,
+    updateNodeAngles,
     type TransformState,
     type DragState,
     type BlackHoleState,
@@ -35,6 +37,7 @@
     updateGhostNodeZoom,
     type GravitySystem,
     drawFog,
+    getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
   } from "$entities/graph-canvas/lib";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
@@ -66,6 +69,10 @@
     pinTechnicalNodes,
   } from "$features/graph-canvas/canvas-state.svelte";
   import { createFogState } from "$features/graph-canvas/fog-state.svelte";
+  import {
+    createFogWarningState,
+    updateFogWarning,
+  } from "$features/graph-canvas/fog-warning";
   import {
     createNoteFormState,
     createNote,
@@ -257,6 +264,9 @@
   let animationTime = $state(0);
   let graphStable = $state(false);
 
+  // Fog warning controller: debounced one-shot toast for low-FPS adaptive mode.
+  let fogWarningState = $state(createFogWarningState(0));
+
   // Throttle rendering: only the animation loop does actual drawing;
   // D3 ticks and input events just request a frame.
   let needsRedraw = false;
@@ -298,15 +308,15 @@
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
 
-  // Expose controller for external control panels (e.g. public graph top bar)
+  // Expose controller for external control panels (e.g. public graph top bar).
+  // We read the reactive values here so the controller object is recreated and
+  // the top-bar active states update when focus/fog change.
   $effect(() => {
+    const focusMode = canvasState.focusMode;
+    const fogEnabled = fogState.enabled;
     controller = {
-      get focusMode() {
-        return canvasState.focusMode;
-      },
-      get fogEnabled() {
-        return fogState.enabled;
-      },
+      focusMode,
+      fogEnabled,
       resetView: () => {
         const simNodes = getSimulationNodes(simState);
         if (ctx && simNodes.length > 0) {
@@ -357,62 +367,96 @@
       height = resizeState.height;
     }, 100);
 
-    // Запускаем анимацию
-    console.log("[onMount] starting animation loop");
-    animationLoop = startAnimationLoop(
-      () => getSimulationNodes(simState),
-      (timestamp) => {
-        console.log("[onMount] animation onUpdate called");
-        const simNodes = getSimulationNodes(simState);
-        if (ctx) {
-          // In stable render mode keep animation time fixed for deterministic screenshots
-          if (stableRender) {
-            animationTime = 0;
-          } else {
-            animationTime = performance.now();
-          }
+    // Start the animation loop. The loop ticks every rAF frame, but the
+    // onUpdate callback below skips heavy work and drawing when the graph is
+    // stable and the user is not interacting.
+    animationLoop = startAnimationLoop((timestamp) => {
+      if (!ctx) return;
 
-          // Update interactive element positions, zoom scale, and pulses
-          updateBlackHoleZoom(blackHole, transform.k);
-          updateBlackHolePosition(blackHole, width, height);
-          updateBlackHolePulse(blackHole, animationTime);
-          updateGhostNodeZoom(ghostNode, transform.k);
-          updateGhostNodePosition(ghostNode, width, height, nodes);
-          updateGhostNodePulse(ghostNode, animationTime);
+      // Track FPS every frame; this is cheap and keeps performance metrics
+      // accurate for the adaptive fog system.
+      fogState.tick(timestamp);
 
-          // Apply subtle gravity attraction only when not taking stable screenshots
-          if (!stableRender && gravitySystem.isEnabled(simNodes.length)) {
-            gravitySystem.applyAttraction(simNodes);
-          }
+      // Throttle drawing: render at full 60 fps while the graph is moving or
+      // the user is interacting; otherwise fall back to idle_fps to save CPU.
+      const isInteracting =
+        !!canvasState.hoveredNodeId ||
+        !!dragDropState.draggedNodeId ||
+        dragDropState.isDraggingForLink ||
+        !!dragDropState.linkPreviewTarget ||
+        !!canvasState.focusMode ||
+        dragState.dragging;
+      const busy = !graphStable || isInteracting;
+      const elapsed = timestamp - lastDrawTimestamp;
+      const idleFrameInterval = 1000 / IDLE_FPS;
+      const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
+      if (!(shouldDraw && elapsed >= (busy ? 1000 / 60 : idleFrameInterval))) {
+        return;
+      }
 
-          // Track FPS and update fog radius for adaptive rendering.
-          fogState.tick(timestamp);
-          const hoveredNode = canvasState.hoveredNodeId
-            ? (simNodes.find((n) => n.id === canvasState.hoveredNodeId) ?? null)
-            : null;
-          fogState.update(width, height, transform, hoveredNode, canvasState.focusMode);
+      lastDrawTimestamp = timestamp;
 
-          // Throttle drawing: render at full 60 fps while the graph is moving or
-          // the user is interacting; otherwise fall back to idle_fps to save CPU.
-          const isInteracting =
-            !!canvasState.hoveredNodeId ||
-            !!dragDropState.draggedNodeId ||
-            dragDropState.isDraggingForLink ||
-            !!dragDropState.linkPreviewTarget ||
-            !!canvasState.focusMode;
-          const busy = !graphStable || isInteracting;
-          const elapsed = timestamp - lastDrawTimestamp;
-          const idleFrameInterval = 1000 / IDLE_FPS;
-          const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
-          if (shouldDraw && elapsed >= (busy ? 1000 / 60 : idleFrameInterval)) {
-            lastDrawTimestamp = timestamp;
-            needsRedraw = true;
-            doRedraw();
-          }
-        }
-      },
-      stableRender
-    );
+      // In stable render mode keep animation time fixed for deterministic screenshots
+      if (stableRender) {
+        animationTime = 0;
+      } else {
+        animationTime = performance.now();
+      }
+
+      // Update interactive element positions, zoom scale, and pulses
+      updateBlackHoleZoom(blackHole, transform.k);
+      updateBlackHolePosition(blackHole, width, height);
+      updateBlackHolePulse(blackHole, animationTime);
+      updateGhostNodeZoom(ghostNode, transform.k);
+      updateGhostNodePosition(ghostNode, width, height, nodes);
+      updateGhostNodePulse(ghostNode, animationTime);
+
+      // Apply subtle gravity attraction only when not taking stable screenshots
+      const simNodes = getSimulationNodes(simState);
+      if (!stableRender && gravitySystem.isEnabled(simNodes.length)) {
+        gravitySystem.applyAttraction(simNodes);
+      }
+
+      // Update node rotation angles; these are read by draw() during redraw.
+      updateNodeAngles(simNodes, angles, speeds, stableRender);
+
+      // Build a node map once per frame for fast neighbor/radius lookups.
+      const nodeMap = new Map<string, SimulationNode>();
+      for (const node of simNodes) {
+        nodeMap.set(node.id, node);
+      }
+
+      // Update fog center/radius for adaptive rendering.
+      const hoveredNode = canvasState.hoveredNodeId
+        ? (nodeMap.get(canvasState.hoveredNodeId) ?? null)
+        : null;
+      const hoveredNeighborIds = getHoveredNeighborIds(
+        canvasState.hoveredNodeId,
+        simState.simLinks
+      );
+      fogState.update(
+        width,
+        height,
+        transform,
+        hoveredNode,
+        canvasState.focusMode,
+        simState.simLinks,
+        nodeMap
+      );
+
+      // Manage the debounced low-FPS warning toast. It should only fire once per
+      // high-load episode, stay visible for 2 seconds, and only trigger while the
+      // user is actively interacting with the canvas.
+      fogWarningState = updateFogWarning(
+        fogWarningState,
+        timestamp,
+        fogState.showWarning,
+        isInteracting
+      );
+
+      needsRedraw = true;
+      doRedraw(simNodes, hoveredNeighborIds);
+    });
 
     mounted = true; // triggers $effect re-run since it's $state
 
@@ -588,11 +632,10 @@
     return offscreenCtx!;
   }
 
-  function doRedraw() {
+  function doRedraw(simNodes: SimulationNode[], hoveredNeighborIds: Set<string>) {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
 
-    const simNodes = getSimulationNodes(simState);
     const linkMousePos =
       dragDropState.draggedNodeId && !dragDropState.linkPreviewTarget
         ? {
@@ -633,7 +676,8 @@
       canvasState.highlightedLinkId,
       dragDropState.linkPreviewTarget,
       linkMousePos,
-      fogState.snapshot
+      fogState.snapshot,
+      hoveredNeighborIds
     );
     drawFog(targetCtx, width, height, fogState.snapshot);
 
@@ -808,7 +852,7 @@
   tooltipPosition={canvasState.tooltipPosition}
   duplicateWarning={canvasState.duplicateWarning}
   focusMode={canvasState.focusMode}
-  fogWarning={fogState.showWarning}
+  fogWarning={fogWarningState.kind}
   showUndoToast={canvasState.showUndoToast}
   undoToastStage={canvasState.undoToastStage}
   {hotkeysState}

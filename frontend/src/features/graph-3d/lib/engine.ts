@@ -90,7 +90,9 @@ export class Graph3DEngine {
     }
 
     this.simNodes = toSimulationNodes(nodes, validLinks);
-    this.simLinks = validLinks;
+    // Copy links so the 3D D3 simulation can mutate source/target without
+    // corrupting the original graph data (which is shared with the 2D canvas).
+    this.simLinks = validLinks.map((l) => ({ ...l }));
 
     try {
       this.sim = createGraphSimulation(this.simNodes, this.simLinks);

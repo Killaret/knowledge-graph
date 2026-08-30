@@ -289,6 +289,7 @@
   notes={graphData.nodes.map((n) => ({ id: n.id, title: n.title, type: n.type }))}
   nodeCount={graphData.nodes.length}
   linkCount={graphData.links.length}
+  links={graphData.links}
   selectedNodeId={selectedNodeId ?? null}
   {canvasController}
   onSearch={() => {}}

@@ -72,8 +72,7 @@ describe("animation", () => {
   it("should start and stop animation loop", async () => {
     const { startAnimationLoop } = await loadAnimation();
     const onUpdate = vi.fn();
-    const nodes = [{ id: "star1", type: "star" }];
-    const loop = startAnimationLoop(() => nodes, onUpdate, true);
+    const loop = startAnimationLoop(onUpdate);
 
     expect(loop).toHaveProperty("stop");
     loop.stop();
@@ -89,7 +88,7 @@ describe("animation", () => {
     delete globalThis.cancelAnimationFrame;
 
     const onUpdate = vi.fn();
-    const loop = startAnimationLoop(() => [{ id: "star1", type: "star" }], onUpdate, true);
+    const loop = startAnimationLoop(onUpdate);
 
     expect(loop).toHaveProperty("stop");
     expect(() => loop.stop()).not.toThrow();

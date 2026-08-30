@@ -210,6 +210,7 @@ export const en: Record<string, string> = {
   "graphOverlay.nodes": "nodes",
   "graphOverlay.links": "links",
   "graphOverlay.fogToggle": "Fog",
+  "graphOverlay.fogToggleTitle": "Toggle fog of war",
   // TypeSelector
   "toast.closeAria": "Close notification",
   // Toast
@@ -428,7 +429,9 @@ export const ru: Record<string, string> = {
   "graphOverlay.nodes": "узлов",
   "graphOverlay.links": "связей",
   "graphOverlay.fogWarning": "Опасная нагрузка. Риск перезагрузки страницы.",
+  "graphOverlay.fogRecovery": "Нагрузка снизилась. Режим восстановлен.",
   "graphOverlay.fogToggle": "Туман",
+  "graphOverlay.fogToggleTitle": "Включить или выключить туман войны",
   // TypeSelector
   "toast.closeAria": "Закрыть уведомление",
   // Toast

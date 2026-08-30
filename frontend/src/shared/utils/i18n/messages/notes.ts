@@ -162,6 +162,13 @@ export const en: Record<string, string> = {
   "noteSidePanel.loadError": "Failed to load note",
   "noteSidePanel.deleteLinksError": "Failed to delete links",
   "noteSidePanel.fallbackType": "Note",
+  // Public note detail panel
+  "publicNoteDetail.title": "Public Note",
+  "publicNoteDetail.relatedNotes": "Connected notes ({{count}})",
+  "publicNoteDetail.signInPrompt": "Sign in to view full content and manage notes.",
+  "publicNoteDetail.signIn": "Sign in",
+  "publicNoteDetail.notFound": "Note not found",
+
   // UI labels
   "create.note": "Create Note",
   "delete.note": "Delete Note",
@@ -328,6 +335,13 @@ export const ru: Record<string, string> = {
   "noteSidePanel.loadError": "Не удалось загрузить заметку",
   "noteSidePanel.deleteLinksError": "Не удалось удалить связи",
   "noteSidePanel.fallbackType": "Заметка",
+  // Public note detail panel
+  "publicNoteDetail.title": "Публичная заметка",
+  "publicNoteDetail.relatedNotes": "Связанные заметки ({{count}})",
+  "publicNoteDetail.signInPrompt": "Войдите, чтобы просмотреть полное содержание и управлять заметками.",
+  "publicNoteDetail.signIn": "Войти",
+  "publicNoteDetail.notFound": "Заметка не найдена",
+
   // UI labels
   "create.note": "Создать заметку",
   "delete.note": "Удалить заметку",

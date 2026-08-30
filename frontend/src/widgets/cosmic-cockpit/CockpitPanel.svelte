@@ -19,6 +19,7 @@
     minSize?: number;
     maxSize?: number;
     onSizeChange?: (size: number) => void;
+    onClose?: () => void;
     children?: import("svelte").Snippet;
   }
 
@@ -31,6 +32,7 @@
     minSize,
     maxSize,
     onSizeChange,
+    onClose,
     children,
   }: Props = $props();
 
@@ -189,6 +191,7 @@
 
   function close() {
     cockpitStore.setPanel(position, { open: false, pinned: false });
+    onClose?.();
   }
 
   function getPanelStyle(): string {

@@ -65,6 +65,7 @@
     typeCounts?: Record<string, number>;
     searchQuery?: string;
     notes?: NoteItem[];
+    links?: Array<{ source: string; target: string; link_type?: string; weight?: number }>;
     showFullGraph?: boolean;
   }
 
@@ -95,6 +96,7 @@
     typeCounts = {},
     searchQuery = "",
     notes = [],
+    links = [],
     showFullGraph = true,
     canvasController,
   }: Props = $props();
@@ -258,9 +260,12 @@
       />
     </CockpitPanel>
 
-    <CockpitPanel position="right" size={panelSizes.right} title="Details">
+    <CockpitPanel position="right" size={panelSizes.right} title="Details" onClose={() => handleNodeSelect(null)}>
       <CockpitRightPanel
         nodeId={selectedNodeId}
+        isAuthenticated={true}
+        {notes}
+        {links}
         onNodeSelect={handleNodeSelect}
         {onNoteDelete}
         {onNoteEdit}
@@ -299,6 +304,21 @@
         />
       </div>
       {@render children?.()}
+      <CockpitPanel
+        position="right"
+        size={panelSizes.right}
+        title="Details"
+        onClose={() => handleNodeSelect(null)}
+      >
+        <CockpitRightPanel
+          nodeId={selectedNodeId}
+          isAuthenticated={false}
+          {notes}
+          {links}
+          onNodeSelect={handleNodeSelect}
+          {onSignIn}
+        />
+      </CockpitPanel>
     </div>
   {/if}
 </div>

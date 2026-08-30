@@ -1,8 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest";
 import { render } from "@testing-library/svelte";
 
 // Allow the real animation loop to run so onUpdate/doRedraw are called.
 vi.unmock("$entities/graph-canvas/lib/animation.ts");
+
+// Spy on getSimulationNodes so we can assert the animation loop is not doing
+// expensive work every frame while the graph is idle.
+vi.mock("$entities/graph-canvas/lib/simulation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("$entities/graph-canvas/lib/simulation")>();
+  return {
+    ...actual,
+    getSimulationNodes: vi.fn(actual.getSimulationNodes),
+  };
+});
+
+import { getSimulationNodes } from "$entities/graph-canvas/lib/simulation";
 
 // Shared state для мока d3-force
 const mockState = {
@@ -379,5 +392,29 @@ describe("GraphCanvas - Rendering", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     expect(mockState.simulationLinks.length).toBe(3);
+  });
+
+  it("throttles idle work and does not spam the console", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* swallow logs during the test to keep output clean */
+    });
+
+    const { unmount } = render(GraphCanvas, {
+      props: { nodes: mockNodes, links: mockLinks },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    unmount();
+
+    const onUpdateLogs = logSpy.mock.calls.filter(
+      (call) =>
+        typeof call[0] === "string" &&
+        call[0].includes("animation onUpdate called")
+    );
+    expect(onUpdateLogs).toHaveLength(0);
+
+    const getSimCalls = (getSimulationNodes as Mock).mock.calls.length;
+    expect(getSimCalls).toBeLessThan(25);
+
+    logSpy.mockRestore();
   });
 });

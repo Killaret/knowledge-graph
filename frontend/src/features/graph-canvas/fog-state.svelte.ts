@@ -8,7 +8,13 @@
  */
 import { graphConfig2D } from "$shared/config";
 import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
-import type { SimulationNode, TransformState } from "$entities/graph-canvas/lib/types";
+import { getHoveredNeighborIds } from "$entities/graph-canvas/lib/fog";
+import { BASE_NODE_RADIUS } from "$entities/graph-canvas/lib/graph-constants";
+import type {
+  SimulationLink,
+  SimulationNode,
+  TransformState,
+} from "$entities/graph-canvas/lib/types";
 
 const FOG = graphConfig2D.fog;
 
@@ -41,7 +47,9 @@ export interface FogState {
     height: number,
     transform: TransformState,
     hoveredNode: SimulationNode | null,
-    focusMode: boolean
+    focusMode: boolean,
+    links?: SimulationLink[],
+    nodeMap?: Map<string, SimulationNode>
   ): void;
   /** Toggle fog on/off. */
   toggle(): void;
@@ -83,7 +91,39 @@ export function createFogState(): FogState {
     centerY += (targetY - centerY) * 0.15;
   }
 
-  function adaptRadius(focusMode: boolean) {
+  function computeHoverRadius(
+    hoveredNode: SimulationNode,
+    hoveredNeighborIds: Set<string>,
+    nodeMap: Map<string, SimulationNode>,
+    transform: TransformState
+  ): number {
+    const hoveredScreenX = (hoveredNode.x ?? 0) * transform.k + transform.x;
+    const hoveredScreenY = (hoveredNode.y ?? 0) * transform.k + transform.y;
+
+    let maxSq = 0;
+    for (const neighborId of hoveredNeighborIds) {
+      const neighbor = nodeMap.get(neighborId);
+      if (!neighbor || neighbor.x == null || neighbor.y == null) continue;
+
+      const sx = neighbor.x * transform.k + transform.x - hoveredScreenX;
+      const sy = neighbor.y * transform.k + transform.y - hoveredScreenY;
+      const d2 = sx * sx + sy * sy;
+      if (d2 > maxSq) maxSq = d2;
+    }
+
+    // Make sure the hovered node and all of its direct neighbors fit inside the
+    // clear area plus a small margin so the fog does not darken them.
+    const neighborMargin = BASE_NODE_RADIUS * 2 * transform.k + FOG.edge_feather;
+    return Math.sqrt(maxSq) + neighborMargin;
+  }
+
+  function adaptRadius(
+    focusMode: boolean,
+    hoveredNode: SimulationNode | null,
+    hoveredNeighborIds: Set<string>,
+    nodeMap: Map<string, SimulationNode>,
+    transform: TransformState
+  ) {
     if (!enabled || focusMode) {
       targetRadius = FOG.radius_max;
       if (focusMode) {
@@ -103,6 +143,13 @@ export function createFogState(): FogState {
     }
     // In the fps_low..fps_high band we keep the current target to avoid oscillation.
 
+    // When a node is hovered, expand the clear radius so the hovered node and its
+    // direct neighbors are not darkened by the fog overlay.
+    if (enabled && !focusMode && hoveredNode && hoveredNeighborIds.size > 0) {
+      const hoverRadius = computeHoverRadius(hoveredNode, hoveredNeighborIds, nodeMap, transform);
+      targetRadius = Math.max(targetRadius, Math.min(hoverRadius, FOG.radius_max));
+    }
+
     // Smooth radius transition based on transition_ms.
     // Approximate 1 - exp(-4 * dt / transition); dt ~ 16.67ms.
     const alpha = 1 - Math.exp(-4 * (16.67 / FOG.transition_ms));
@@ -115,10 +162,13 @@ export function createFogState(): FogState {
     height: number,
     transform: TransformState,
     hoveredNode: SimulationNode | null,
-    focusMode: boolean
+    focusMode: boolean,
+    links: SimulationLink[] = [],
+    nodeMap: Map<string, SimulationNode> = new Map()
   ) {
     computeCenter(width, height, transform, hoveredNode);
-    adaptRadius(focusMode);
+    const hoveredNeighborIds = getHoveredNeighborIds(hoveredNode?.id ?? null, links);
+    adaptRadius(focusMode, hoveredNode, hoveredNeighborIds, nodeMap, transform);
 
     // Warning shows only in adaptive mode with critically low FPS.
     showWarning = mode === "adaptive" && fps < FOG.warning_threshold;

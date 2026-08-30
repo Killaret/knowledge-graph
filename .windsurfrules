@@ -21,7 +21,7 @@ Single source of truth for all AI-assisted development in this project.
 | Backend | Go 1.25, Gin v1.12, GORM v1.25 |
 | Database | PostgreSQL (pgx/v5), Redis (go-redis/v9), MongoDB |
 | Auth | golang-jwt/jwt/v5 |
-| Async | asynq v0.23 |
+| Async | asynq v0.26.0 |
 | Vector | pgvector-go v0.2 |
 | Frontend | Svelte 5, TypeScript strict, SvelteKit |
 | HTTP client | ky v1.14 |
@@ -165,37 +165,17 @@ redis.Options{
 
 ---
 
-## NLP Service — Lazy Loading Pattern (MANDATORY)
+## NLP Service — Deferred Singleton with Startup Preload (MANDATORY)
 
-**✅ Correct — lazy load:**
-```python
-# nlp_utils.py
-_model = None
-
-def get_embedding_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer("model-name")
-    return _model
-
-def ensure_model_loaded() -> bool:
-    try:
-        get_embedding_model()
-        return True
-    except Exception:
-        return False
-```
-
-**❌ Wrong — load at import:**
-```python
-from sentence_transformers import SentenceTransformer
-model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
-```
+- `nlp_utils.py` owns a thread-safe, deferred singleton returned by `get_embedding_model()`.
+- Never instantiate `SentenceTransformer` at module import time.
+- FastAPI `lifespan` calls `ensure_model_loaded()` and fails startup when the model cannot be loaded.
+- `/health` verifies that the preloaded model remains ready; it does not trigger the initial load.
 
 **Environment:**
-- `HF_HUB_OFFLINE=1` — offline-first mode (no internet required)
+- `HF_HUB_OFFLINE=1` — offline-first mode for dev/personal when the model is cached
 - `HF_HOME=/path/to/cache` — local model cache path
-- Uvicorn starts in ~1s, model loads in ~15s from cache
+- Test configuration may allow network download when its model cache is empty
 
 ---
 
@@ -235,7 +215,7 @@ model = SentenceTransformer("model-name")  # ❌ breaks lazy loading
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
 - Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)
-- Regression plan: 20-part comprehensive testing in `docs/REGRESSION_TEST_PLAN.md`
+- Regression sequence: see the canonical `docs/REGRESSION_TEST_PLAN.md`
 - Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
 - Stacks identity check: `.\scripts\ci\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
@@ -281,7 +261,7 @@ After completing any task that changes behavior, configuration, architecture, Do
   - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
   - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
 - Authoritative docs are in English; Russian translations may be added alongside.
-- User-facing runtime content stays Russian by default through i18n keys.
+- User-facing runtime content uses the configured locale through i18n keys; the committed default is English (`en`) with Russian (`ru`) support.
 - Do not create standalone docs to describe changes; update existing project docs instead.
 
 ---
@@ -309,22 +289,12 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 
 ## Language Policy
 
-**User-facing runtime content uses Russian by default (`ru` locale), with English (`en`) support through i18n keys:**
+The committed default locale is English (`en`); Russian (`ru`) is supported through the same i18n keys.
 
-```typescript
-// ✅ Good — Russian UI string from galactic-lexicon / i18n
-toast.success(formatMessage("note.created", "ru", { title: note.title }));
-placeholder="Поиск по графу знаний..."
-errorMessage = "Не удалось загрузить заметки. Попробуйте ещё раз."
-
-// ✅ Good — English variant is available through the same i18n key
-const en = formatMessage("note.created", "en", { title: note.title });
-```
-
-**Applies to:** UI strings, toast messages, tooltips (GalacticLexicon), note content.
-**MUST be in English:** Code identifiers, variable names, commit messages, API error codes, internal comments may be any language.
-**User content (note titles/bodies) may be in any language.**
-**Documentation:** Authoritative docs are in English; Russian translations may be added alongside.
+- All UI strings, toasts, labels, placeholders, errors, and tooltips must use i18n keys.
+- Code identifiers, variable names, commit messages, and API error codes must be in English.
+- User-created note titles and bodies may use any language.
+- Authoritative documentation is in English; Russian translations may be maintained alongside it.
 
 ---
 
@@ -349,12 +319,12 @@ CMD ["/server"]
 **All services must have `/health` endpoint.**
 
 **Port mapping:**
-- Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service:9091
+- Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service gRPC:9090 / HTTP:9091
 - Personal: backend direct:18085, nginx API/gateway:18082, nginx frontend:18084, graph-service:9092
 - Test: frontend:3002, backend:18083, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
 
 **Volume names:**
-- Dev: `postgres_data`, `redis_data`, `huggingface_cache`
+- Dev named volumes: `postgres_data`, `redis_data`, `mongodb_data`; HuggingFace cache uses the `./huggingface_cache` bind mount
 - Personal: `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`
 - Test: `test_postgres_data`, `test_mongodb_data` (destroyed after use)
 
@@ -423,51 +393,20 @@ curl http://127.0.0.1:18083/health                    # Test stack backend
 
 ---
 
-## AI Agents (11 total)
-
-Use the right agent for each task:
-
-| Task Type | Agent |
-|-----------|-------|
-| Go API, endpoints | `knowledge-graph-backend-go` |
-| PostgreSQL, Redis, MongoDB | `knowledge-graph-backend-go` |
-| Svelte 5 components, UI | `knowledge-graph-frontend-svelte` |
-| D3-force, Three.js graph | `knowledge-graph-frontend-svelte` |
-| OpenAPI spec, DTOs | `knowledge-graph-integration` |
-| Docker, nginx | `knowledge-graph-infrastructure` |
-| CI/CD, deployment | `knowledge-graph-devops` |
-| Redis caching, P95, asynq | `knowledge-graph-performance` |
-| JWT, auth audit, CORS | `knowledge-graph-security` |
-| Unit/E2E/BDD tests | `knowledge-graph-testing` |
-| Python FastAPI, NLP, embeddings | `knowledge-graph-nlp` |
-| DB migrations, pgvector, schemas | `knowledge-graph-data` |
-| Task routing | `knowledge-graph-orchestrator` |
-
-**Agent rules locations:**
-- Cursor AI: `.cursor/rules/*.md`
-- Koda VSCode: `.continue/rules/*.md`
-- Devin: `.devin/skills/knowledge-graph/SKILL.md`
-
-**Full docs:** `docs/AGENTS_EN.md`
-
----
-
 ## AI Tool Usage Policy
 
-This project uses a **single primary implementation agent** to avoid conflicting conventions and keep `.windsurfrules` the single source of truth.
+`.windsurfrules` is the **single normative source** for AI-assisted development in this repository.
 
-| Role | Primary Tool | Permitted Use |
-|------|--------------|---------------|
-| **Implementation / coding / refactoring / tests / commits** | **Windsurf SWE 1.7 Max** | Default for all code work |
-| **Strategic architecture / Roadmap / prompt design** | **DeepSeek** | High-level design, review, planning |
-| **Inline autocomplete** | **GitHub Copilot** | Small snippets and boilerplate only; no architectural decisions |
-| **Specialized fallback** | **Cursor** | Only in extreme, specific cases when Windsurf is unavailable; never used in parallel on the same files |
+| Role | Tool | Use |
+|------|------|-----|
+| **Implementation, refactoring, tests, commits** | **Windsurf SWE 1.7 Max** | Primary IDE agent |
+| **Strategic architecture, Roadmap, prompt design** | **DeepSeek** | High-level planning and review |
+| **CLI audits and autonomous repository tasks** | **Devin** | Uses `.devin/skills/knowledge-graph/SKILL.md` |
+| **Runtime embeddings and semantic analysis** | **Python NLP service** | Application runtime component |
 
-**Rules:**
+Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations are not used in this repository and must not be reintroduced without an explicit project decision.
 
-- Do **not** run Windsurf and Cursor on the same working tree at the same time.
-- Do **not** let Copilot override project conventions; always verify against `.windsurfrules`.
-- Authoritative project decisions live in `.windsurfrules`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, and `docs/AGENTS.md`.
+Supporting documents may summarize these rules but must defer to `.windsurfrules` when they differ.
 
 ---
 

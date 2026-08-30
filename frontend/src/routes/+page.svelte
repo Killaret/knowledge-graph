@@ -73,6 +73,7 @@
   notes={homePage.allNotes}
   nodeCount={homePage.filteredGraphData.nodes.length}
   linkCount={homePage.filteredGraphData.links.length}
+  links={homePage.filteredGraphData.links}
   selectedNodeId={graphStore.selectedNodeId}
   {canvasController}
   onSearch={handleSearchQuery}

@@ -384,33 +384,6 @@ The project has extensive documentation but several critical discrepancies exist
 
 ---
 
-## 10. Agent Documentation
-
-### AGENTS.md vs Actual Implementation
-
-**Documented:** 11 specialized AI agents
-
-**Actual:** 11 agents defined in .cursor/rules/ and .github/agents/
-
-**Status:** ✅ **Accurate**
-
-**Agent Files:**
-- knowledge-graph-backend-go.md ✅
-- knowledge-graph-frontend-svelte.md ✅
-- knowledge-graph-nlp.md ✅
-- knowledge-graph-infrastructure.md ✅
-- knowledge-graph-devops.md ✅
-- knowledge-graph-security.md ✅
-- knowledge-graph-testing.md ✅
-- knowledge-graph-integration.md ✅
-- knowledge-graph-orchestrator.md ✅
-- knowledge-graph-performance.md ✅
-- knowledge-graph-data.md ✅
-
-**Recommendation:** None - agent documentation is accurate
-
----
-
 ## 11. Testing Documentation
 
 ### TESTING.md vs Actual Implementation

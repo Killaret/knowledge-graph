@@ -177,7 +177,7 @@
           title={option.label}
         >
           <span>{option.icon}</span>
-          <span>{option.label}</span>
+          <span class="view-label">{option.label}</span>
         </button>
       {/each}
     </div>
@@ -194,7 +194,7 @@
             data-testid="layout-provider-{option.id}"
             title={option.title}
           >
-            {option.label}
+            <span class="layout-label">{option.label}</span>
           </button>
         {/each}
       </div>
@@ -221,7 +221,7 @@
         aria-expanded={typeDropdownOpen}
         data-testid="type-dropdown-toggle"
       >
-        {selectedTypeLabel()}
+        <span class="type-label">{selectedTypeLabel()}</span>
         <span class="chevron">▼</span>
       </button>
       {#if typeDropdownOpen}
@@ -256,7 +256,7 @@
         aria-expanded={linkDropdownOpen}
         data-testid="link-dropdown-toggle"
       >
-        {t("linkLegend.title")}
+        <span class="link-label">{t("linkLegend.title")}</span>
         <span class="chevron">▼</span>
       </button>
       {#if linkDropdownOpen}
@@ -356,7 +356,8 @@
           class="top-bar-btn top-bar-btn--icon"
           class:active={canvasController.fogEnabled}
           onclick={canvasController.toggleFog}
-          title={t("graphOverlay.fogToggle")}
+          title={t("graphOverlay.fogToggleTitle")}
+          aria-label={t("graphOverlay.fogToggleTitle")}
           data-testid="top-bar-fog"
           aria-pressed={canvasController.fogEnabled}
         >
@@ -367,8 +368,12 @@
             fill="none"
             stroke="currentColor"
             stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <path d="M3 15h18M3 10h18M4 5h16M5 20h14" />
+            <title>{t("graphOverlay.fogToggle")}</title>
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+            <path d="M6 14h12M7 18h10" />
           </svg>
         </button>
       </div>
@@ -376,7 +381,7 @@
   </div>
 
   <div class="right-cluster">
-    <LangSwitcher />
+    <LangSwitcher variant="dark" />
 
     {#if isAuthenticated && onNoteCreate}
       <button
@@ -427,17 +432,17 @@
 <style>
   .graph-top-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: clamp(6px, 0.7vw, 10px);
     align-items: center;
-    padding: 8px 12px;
+    padding: clamp(6px, 0.8vw, 8px) clamp(10px, 1.2vw, 14px);
     background:
       linear-gradient(135deg, var(--carbon-graphene) 0%, rgba(18, 18, 26, 0.92) 100%),
       radial-gradient(circle at 80% 20%, var(--carbon-hex-fill) 0%, transparent 60%);
     border: 1px solid var(--carbon-border);
     border-radius: 14px;
     color: var(--carbon-text);
-    font-size: 13px;
+    font-size: clamp(12px, 0.9vw, 14px);
     z-index: 60;
     width: fit-content;
     max-width: calc(100% - 32px);
@@ -445,6 +450,7 @@
       var(--carbon-shadow),
       0 0 24px rgba(139, 92, 246, 0.08);
     backdrop-filter: blur(10px);
+    box-sizing: border-box;
   }
 
   .graph-top-bar--floating {
@@ -475,14 +481,21 @@
   .left-cluster,
   .right-cluster {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: clamp(6px, 0.7vw, 10px);
     align-items: center;
+  }
+
+  .left-cluster {
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   .right-cluster {
     margin-left: auto;
     flex-shrink: 0;
+    flex: 0 0 auto;
+    padding-left: clamp(6px, 0.8vw, 12px);
   }
 
   .logo {
@@ -505,7 +518,7 @@
   .layout-toggle,
   .canvas-controls {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 4px;
   }
@@ -514,16 +527,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 7px 12px;
+    gap: clamp(4px, 0.4vw, 6px);
+    padding: clamp(5px, 0.6vw, 7px) clamp(8px, 1vw, 12px);
     background: var(--carbon-hex-fill);
     border: 1px solid var(--carbon-border);
     border-radius: 10px;
     color: var(--carbon-text);
-    font-size: 13px;
+    font-size: clamp(11px, 0.85vw, 13px);
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.2s ease;
+    flex-shrink: 0;
   }
 
   .top-bar-btn:hover {
@@ -586,7 +600,8 @@
   }
 
   .top-bar-input {
-    width: 160px;
+    width: clamp(110px, 12vw, 180px);
+    min-width: 0;
     padding: 7px 10px;
     background: var(--carbon-black);
     border: 1px solid var(--carbon-border);
@@ -752,17 +767,24 @@
     gap: 4px;
   }
 
-  /* Mobile */
-  @media (max-width: 640px) {
+  /* Responsive label hiding */
+  .view-label,
+  .layout-label,
+  .type-label,
+  .link-label {
+    display: inline;
+  }
+
+  /* Large tablets / small laptops */
+  @media (max-width: 1100px) {
     .graph-top-bar {
-      padding: 6px 8px;
       gap: 6px;
-      max-width: calc(100% - 16px);
-      border-radius: 12px;
+      padding: 6px 10px;
     }
 
-    .top-bar-input {
-      width: 120px;
+    .view-label,
+    .layout-label {
+      display: none;
     }
 
     .top-bar-btn {
@@ -770,9 +792,70 @@
       font-size: 12px;
     }
 
+    .top-bar-input {
+      width: 130px;
+    }
+  }
+
+  /* Tablets */
+  @media (max-width: 860px) {
+    .graph-top-bar {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 8px;
+    }
+
+    .left-cluster,
+    .right-cluster {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .right-cluster {
+      margin-left: 0;
+      flex-basis: auto;
+    }
+
+    .top-bar-input {
+      width: 120px;
+    }
+
+    .link-label {
+      display: none;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .graph-top-bar {
+      padding: 6px 8px;
+      gap: 5px;
+      max-width: calc(100% - 16px);
+      border-radius: 12px;
+    }
+
+    .left-cluster,
+    .right-cluster {
+      gap: 5px;
+    }
+
+    .top-bar-input {
+      width: 100px;
+    }
+
+    .top-bar-btn {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
     .top-bar-btn--icon {
-      padding: 6px 7px;
-      min-width: 30px;
+      padding: 5px 6px;
+      min-width: 28px;
+    }
+
+    .type-label {
+      display: none;
     }
 
     .dropdown-panel {
@@ -784,6 +867,23 @@
     .dropdown-panel--right {
       left: auto;
       right: 0;
+    }
+  }
+
+  /* Small mobile */
+  @media (max-width: 420px) {
+    .graph-top-bar {
+      border-radius: 10px;
+    }
+
+    .top-bar-btn {
+      padding: 5px 6px;
+      font-size: 10px;
+    }
+
+    .top-bar-input {
+      width: 85px;
+      padding: 5px 6px;
     }
   }
 </style>

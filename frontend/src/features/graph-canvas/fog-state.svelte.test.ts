@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { createFogState, type FogState, type FogMode } from "./fog-state.svelte";
+import type { SimulationNode } from "$entities/graph-canvas/lib/types";
 import { graphConfig2D } from "$shared/config";
 
 const FOG = graphConfig2D.fog;
@@ -16,7 +17,7 @@ function updateUntil(
   state: FogState,
   predicate: () => boolean,
   maxFrames = 200,
-  hoveredNode = null,
+  hoveredNode: SimulationNode | null = null,
   focusMode = false
 ) {
   for (let i = 0; i < maxFrames; i++) {
@@ -162,5 +163,31 @@ describe("createFogState", () => {
     simulateFps(state, 10);
     state.update(800, 600, { x: 0, y: 0, k: 1 }, null, false);
     expect(state.showWarning).toBe(false);
+  });
+
+  it("expands the clear radius to include a hovered node and its direct neighbors", () => {
+    const state = createFogState();
+    simulateFps(state, 60);
+
+    const nodes: SimulationNode[] = [
+      { id: "n0", title: "H", type: "star", x: 0, y: 0 },
+      { id: "n1", title: "A", type: "planet", x: 200, y: 0 },
+      { id: "n2", title: "B", type: "comet", x: 0, y: 100 },
+    ];
+    const links = [
+      { source: "n0", target: "n1", weight: 0.5, link_type: "related" as const },
+      { source: "n0", target: "n2", weight: 0.5, link_type: "related" as const },
+    ];
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+    const hovered = nodes[0];
+    for (let i = 0; i < 100; i++) {
+      state.update(800, 600, { x: 0, y: 0, k: 1 }, hovered, false, links, nodeMap);
+    }
+
+    // The farthest neighbor is 200 px away, so the radius should at least cover
+    // that distance plus the node/border margin, but not exceed radius_max.
+    expect(state.snapshot.radius).toBeGreaterThan(200);
+    expect(state.snapshot.radius).toBeLessThanOrEqual(FOG.radius_max);
   });
 });
