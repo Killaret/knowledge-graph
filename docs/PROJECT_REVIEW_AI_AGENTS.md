@@ -418,6 +418,9 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **2D Graph hover / neighbor highlight (2026-08):** `GraphCanvas.svelte` computes direct neighbor ids from `simLinks` and passes them to `fogState.update` and the renderer. `fog-state.svelte.ts` expands the clear radius to cover the hovered node and its direct neighbors. `drawAllNodes` now renders the hovered node at opacity 1, direct neighbors at 0.85, and unrelated nodes at 0.3; neighbors and the hovered node are not simplified when zoomed out. `link-renderers.ts` keeps links from the hovered node at full opacity and slightly boosts neighbor-neighbor links. New tests in `fog.test.ts`, `fog-state.svelte.test.ts`, and `renderer-orchestrator.test.ts`.
 - **Graph top bar fog toggle (2026-08):** the fog button icon changed from a generic four-line icon to a cloud-with-lines icon. Added `graphOverlay.fogToggleTitle` i18n key and used it for `title`/`aria-label`/SVG `<title>` so the button has a clear tooltip. `GraphTopBar.spec.ts` still passes.
 - **2D Node Color Variation (2026-08):** опциональная кастомизация цвета нод через `GraphNode.color`/`glowColor`; при отсутствии ручного значения `getVariation` выбирает детерминированный цвет из палитры `frontend/src/shared/lib/graph/color-schemes.ts`, вдохновлённой реальными космическими объектами.
+- **3D Geometry Visibility Fix (2026-09):** nodes are now rendered as bright `MeshBasicMaterial` spheres using the celestial body glow color; node size scales with the graph bounding radius so spheres remain visible at the auto-zoom camera distance; fog density was tuned so it adds atmosphere without hiding geometry. 3D view now shows nodes, not only labels.
+- **2D Layout Outlier Fix (2026-09):** tightened the bounding force radius and strength in `entities/graph-canvas/lib/simulation.ts` so isolated or weakly connected nodes no longer drift far from the cluster; the dense center remains a known limitation solvable only by semantic clustering.
+- **Fog Toggle & Top Bar Spacing Fix (2026-09):** fog button toggle now schedules an immediate canvas redraw in 2D; top-bar controls were spaced so the fog button and language switcher no longer overlap.
 
 ### В процессе / запланировано (UI/UX)
 
@@ -425,7 +428,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Селектор типов заметок — выпадающий список.
 - Документация и UI для типов связей.
 - Кнопка «Отмена/Назад» на странице входа.
-- Исправление загрузки 3D-графа.
+- Мобильная адаптивность графа / touch-events (проверка вручную, в процессе).
 - Система рекомендаций Pure Precomputed (убрать fallback).
 - Публичные сиды для тестирования real-auth.
 - Аудит ресурсов (память, CPU, bundle size).
@@ -455,6 +458,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### 3D и кластеризация
 
 - Базовый 3D-рендеринг (Three.js) — разморожен и перенесён в `features/graph-3d`.
+- Видимость 3D-нод/связей исправлена: сферы видны, туман не скрывает граф, 2D ↔ 3D не ломает связи.
 - Orbital / Solar System 3D, Honeycomb Stellaris 3D, серверная кластеризация Louvain, кэширование кластеров — в планах.
 - Галактические кластеры и LOD — в бэклоге.
 

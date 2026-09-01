@@ -44,7 +44,7 @@ describe("Graph3DEngine performance adaptation", () => {
     engine.setData(nodes, links);
 
     const bundle = (engine as any).sceneBundle;
-    expect((bundle.scene.fog as { density: number }).density).toBeCloseTo(0.08, 5);
+    expect((bundle.scene.fog as { density: number }).density).toBeCloseTo(0.01, 5);
     expect(bundle.controls.autoRotate).toBe(true);
     engine.dispose();
   });
@@ -66,7 +66,7 @@ describe("Graph3DEngine performance adaptation", () => {
     }
 
     const fog = bundle.scene.fog as { density: number };
-    expect(fog.density).toBeCloseTo(0.04, 1); // nebula initial (drifts toward final while sim runs)
+    expect(fog.density).toBeCloseTo(0.005, 2); // nebula initial (drifts toward final while sim runs)
     expect((engine as any).currentFogPreset).toBe("nebula");
     expect((engine as any).currentPerformanceLevel).toBe("medium");
     expect(bundle.controls.autoRotate).toBe(false);
@@ -140,7 +140,7 @@ describe("Graph3DEngine performance adaptation", () => {
     }
 
     const fog = bundle.scene.fog as { density: number };
-    expect(fog.density).toBeCloseTo(0.04, 1); // nebula initial (drifts toward final while sim runs)
+    expect(fog.density).toBeCloseTo(0.005, 2); // nebula initial (drifts toward final while sim runs)
     expect((engine as any).currentFogPreset).toBe("nebula");
     expect((engine as any).currentPerformanceLevel).toBe("medium");
 
@@ -155,7 +155,7 @@ describe("Graph3DEngine performance adaptation", () => {
       (engine as any).stopLoop();
     }
 
-    expect(fog.density).toBeCloseTo(0.08, 1);
+    expect(fog.density).toBeCloseTo(0.01, 2);
     expect((engine as any).currentFogPreset).toBe("birth");
     expect((engine as any).currentPerformanceLevel).toBe("high");
     expect(bundle.controls.autoRotate).toBe(true);

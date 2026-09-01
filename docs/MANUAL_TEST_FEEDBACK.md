@@ -36,6 +36,29 @@
 - **Status:** container rebuilt, ready for re-test under Cockpit §4.
 - **Screenshot / Logs:** —
 
+- **Case:** Cockpit §3 / §8 (3D view only shows labels)
+- **What:** 3D graph loads but only HTML labels are visible; node spheres and links are not seen, so the scene looks like floating text on a black background.
+- **Expected:** Nodes appear as colored geometry and links are visible; fog is light enough that the graph is not hidden.
+- **Actual:** WebGL spheres were too dim (MeshStandardMaterial under distance lighting) and fog density was heavy enough to blend nodes into the background.
+- **Hotfix applied:**
+  - Switched node material to `MeshBasicMaterial` with the celestial body glow color so nodes are bright regardless of scene lighting.
+  - Added a `fitScale` in `NodeManager` that scales node size with the graph bounding radius so nodes stay visible at the camera distance used by auto-zoom.
+  - Reduced label background opacity and blur so spheres are not completely covered by label boxes.
+  - Tuned fog presets in `knowledge-graph.config.json` and the default config (birth: 0.01 → 0.0006, nebula: 0.005 → 0.0003) so fog adds atmosphere without hiding geometry.
+  - The engine now sets fog to the final light density immediately after the synchronous simulation warm-up.
+- **Status:** container rebuilt, ready for re-test. See Cockpit §8 checklist.
+- **Screenshot / Logs:** —
+
+- **Case:** Cockpit §4 (isolated 2D nodes fly far away)
+- **What:** Some disconnected or weakly connected nodes drift far from the main cluster, making the graph zoom out to a tiny center and forcing the user to zoom back in.
+- **Expected:** All nodes remain within a comfortable viewport without extreme outliers.
+- **Actual:** The 2D force simulation had no strong inward pull; the existing bounding force only kicked in at a large radius.
+- **Hotfix applied:**
+  - Tightened the 2D bounding radius from `0.55` to `0.4` of the smaller viewport dimension.
+  - Increased the bounding-force strength to 1.0 so outliers are pulled back more quickly.
+- **Status:** container rebuilt, ready for re-test. Dense center clusters are still a readability issue until semantic clustering is implemented.
+- **Screenshot / Logs:** —
+
 - **Case:** Cockpit §5 (first-person mode)
 - **What:** There is no obvious way to exit first-person mode: the floating exit button is invisible until you hover it, there is no Esc hotkey, and no hint about how to get out.
 - **Expected:** User always sees how to exit first-person mode, can use Esc, and gets a clear label on the exit control.

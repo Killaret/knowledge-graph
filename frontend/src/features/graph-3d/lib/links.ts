@@ -48,7 +48,7 @@ export class LinkManager {
 
       const linkType = LinkType.fromString(link.link_type);
       const weight = Math.max(0, Math.min(1, link.weight ?? linkType.defaultWeight));
-      const opacity = 0.3 + weight * 0.7;
+      const opacity = 0.6 + weight * 0.4;
 
       const material = new THREE.LineBasicMaterial({
         color: new THREE.Color(linkType.color),

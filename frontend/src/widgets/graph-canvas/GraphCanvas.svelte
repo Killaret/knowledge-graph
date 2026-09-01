@@ -325,7 +325,10 @@
       },
       openSearch: () => canvasState.handleOpenSearch(hotkeysState),
       toggleFocus: () => canvasState.handleToggleFocus(redraw),
-      toggleFog: () => fogState.toggle(),
+      toggleFog: () => {
+        fogState.toggle();
+        scheduleRedraw();
+      },
     };
   });
 

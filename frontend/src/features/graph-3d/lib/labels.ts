@@ -29,9 +29,9 @@ export class LabelManager {
       div.style.fontFamily = "Arial, sans-serif";
       div.style.textShadow = "1px 1px 3px rgba(0,0,0,0.9)";
       div.style.padding = "2px 6px";
-      div.style.background = "rgba(5, 5, 16, 0.6)";
+      div.style.background = "rgba(5, 5, 16, 0.25)";
       div.style.borderRadius = "12px";
-      div.style.backdropFilter = "blur(2px)";
+      div.style.backdropFilter = "blur(1px)";
       div.style.pointerEvents = "none";
       div.style.whiteSpace = "nowrap";
       div.style.userSelect = "none";
@@ -57,7 +57,7 @@ export class LabelManager {
 
   private setLabelPosition(label: CSS2DObject, node: SimulationNode, body: CelestialBody) {
     const size = body.baseRadius * this.config.baseNodeScale;
-    label.position.set(node.x, node.y + size + 1.2, node.z);
+    label.position.set(node.x, node.y + size * 1.4 + 1.2, node.z);
   }
 
   clear() {

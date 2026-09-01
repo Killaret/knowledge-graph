@@ -45,11 +45,11 @@ export interface Graph3DConfig {
 
 export const DEFAULT_GRAPH3D_CONFIG: Graph3DConfig = {
   maxNodes: 500,
-  baseNodeScale: 2.5,
+  baseNodeScale: 1.5,
   labelScale: 0.8,
   linkOpacity: 0.8,
-  fogDensityInitial: 0.08,
-  fogDensityFinal: 0.005,
+  fogDensityInitial: 0.01,
+  fogDensityFinal: 0.0006,
   warmStartTicks: 80,
   enableLabels: true,
   autoRotate: false,

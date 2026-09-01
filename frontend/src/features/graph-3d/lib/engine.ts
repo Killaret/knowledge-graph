@@ -79,9 +79,6 @@ export class Graph3DEngine {
     this.stopLoop();
 
     const validLinks = filterValidLinks(nodes, links);
-    const hasPositions = nodes.every(
-      (n) => typeof n.x === "number" && typeof n.y === "number" && typeof n.z === "number"
-    );
 
     if (nodes.length > this.config.maxNodes) {
       console.warn(
@@ -96,8 +93,12 @@ export class Graph3DEngine {
 
     try {
       this.sim = createGraphSimulation(this.simNodes, this.simLinks);
-      const warmStartTicks = hasPositions ? 10 : this.config.warmStartTicks;
-      this.sim.tick(warmStartTicks);
+      // Converge the force layout synchronously before the first frame so the
+      // 3D scene becomes interactive immediately instead of waiting for the
+      // throttled animation loop to cool the simulation (~15-20s for small graphs).
+      // The graph is capped at `maxNodes` (default 500), so this stays well under
+      // one second even for the allowed maximum.
+      this.simulateToStable();
 
       this.nodeManager.setNodes(this.simNodes);
       this.linkManager.setLinks(this.simLinks, this.nodeManager.getPositionMap(this.simNodes));
@@ -105,6 +106,14 @@ export class Graph3DEngine {
 
       this.updateScene();
       this.centerCamera();
+
+      // The synchronous simulation has already converged, so there is no need to
+      // hide the graph behind heavy initial fog. Start with the final, lighter fog
+      // density so nodes and links are visible from the first frame instead of
+      // being blended into the background while only labels show.
+      this.currentFogDensity = this.fogFinal;
+      this.targetFogDensity = this.fogFinal;
+      setFogDensity(this.sceneBundle.scene, this.fogFinal);
 
       this.currentFogPreset = this.config.defaultFogPreset;
       this.currentPerformanceLevel = "high";

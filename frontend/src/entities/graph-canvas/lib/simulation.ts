@@ -20,6 +20,47 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
+/**
+ * Custom D3 force that gently pulls nodes back into the viewport if they are
+ * pushed too far away by charge repulsion. This prevents a single disconnected
+ * node from flying off-screen and keeps the whole graph reachable without a
+ * full clustering implementation.
+ */
+function createBoundingForce(
+  nodes: SimulationNode[],
+  width: number,
+  height: number,
+  padding: number = 60
+): d3Force.Force<SimulationNode, SimulationLink> {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  // Pull nodes that drift beyond the viewport back toward the center. This keeps
+  // the graph reachable without zooming out to a single point, but it is not a
+  // substitute for semantic clustering (which is required for a truly readable
+  // layout of 50+ random notes).
+  const maxRadius = Math.min(width, height) * 0.4 - padding;
+
+  function force(alpha: number) {
+    for (const node of nodes) {
+      if (node.x == null || node.y == null) continue;
+      const dx = node.x - centerX;
+      const dy = node.y - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > maxRadius && dist > 0) {
+        const strength = (dist - maxRadius) * alpha * 1.0;
+        node.vx = (node.vx ?? 0) - (dx / dist) * strength;
+        node.vy = (node.vy ?? 0) - (dy / dist) * strength;
+      }
+    }
+  }
+
+  force.initialize = (newNodes: SimulationNode[]) => {
+    nodes = newNodes;
+  };
+
+  return force;
+}
+
 function anyOpacityBelowOne(state: SimulationState): boolean {
   for (const value of state.nodeOpacity.values()) {
     if (value < 0.999) return true;
@@ -227,9 +268,10 @@ export function startSimulation(
         .distance(120 * densityFactor)
         .strength(0.35)
     )
-    .force("charge", d3Force.forceManyBody().strength(-180 * densityFactor))
+    .force("charge", d3Force.forceManyBody().strength(-100 * densityFactor))
     .force("center", d3Force.forceCenter(width / 2, height / 2).strength(0.25))
-    .force("collision", d3Force.forceCollide().radius(35 * densityFactor))
+    .force("collision", d3Force.forceCollide().radius(30 * densityFactor))
+    .force("bounding", createBoundingForce(simulationNodes, width, height))
     .alphaDecay(0.05) // Slower cooling so the layout has time to spread out
     .on("tick", () => {
       onTick();

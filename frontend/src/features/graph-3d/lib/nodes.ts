@@ -35,15 +35,31 @@ export class NodeManager {
       nodesByType.set(type, list);
     }
 
+    // Scale node size with the graph bounding radius so spheres remain visible
+    // from the camera distance chosen by autoZoomToFit (otherwise a 50-node
+    // graph looks like text labels floating in empty space).
+    let boundingRadius = 0;
+    if (nodes.length > 0) {
+      const center = new THREE.Vector3();
+      for (const node of nodes) center.add(new THREE.Vector3(node.x, node.y, node.z));
+      center.divideScalar(nodes.length);
+      for (const node of nodes) {
+        const d = new THREE.Vector3(node.x, node.y, node.z).distanceTo(center);
+        if (d > boundingRadius) boundingRadius = d;
+      }
+    }
+    const fitScale = Math.max(1, Math.min(8, boundingRadius * 0.075));
+
     for (const [type, typeNodes] of nodesByType) {
       const body = CelestialBody.fromString(type);
       const geometry = new THREE.IcosahedronGeometry(1, 0);
-      const material = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: body.glowColor,
-        emissiveIntensity: body.isAnomaly ? 0.35 : 0.2,
-        roughness: 0.5,
-        metalness: 0.2,
+      // Use a flat, bright emissive material so nodes are visible even from the
+      // camera distance used by autoZoomToFit. MeshStandardMaterial relies on
+      // scene lighting and was too dim to be seen at the zoomed-out 3D view.
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(body.glowColor),
+        transparent: true,
+        opacity: 0.95,
       });
 
       const mesh = new THREE.InstancedMesh(geometry, material, typeNodes.length);
@@ -51,7 +67,7 @@ export class NodeManager {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
       const instanceIds: string[] = [];
-      const size = Math.max(body.baseRadius * this.config.baseNodeScale, 0.5);
+      const size = Math.max(body.baseRadius * this.config.baseNodeScale * fitScale, 0.8);
 
       typeNodes.forEach((node, i) => {
         instanceIds.push(node.id);

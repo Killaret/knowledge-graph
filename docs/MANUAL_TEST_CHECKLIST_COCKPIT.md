@@ -51,11 +51,14 @@
 1. From `/`, switch to `List`.
 2. Switch back to `Graph`.
 3. Switch to `3D`.
+4. Switch back to `Graph`.
+5. Switch to `3D` again.
 
 **Checks:**
 - [ ] List view shows note cards with type stripe and hover glow.
 - [ ] Returning to Graph restores the 2D canvas cleanly (no leftover DOM/canvas artifacts).
-- [ ] 3D view loads without console errors.
+- [ ] 3D view loads without console errors and shows visible nodes/colored spheres, not only labels.
+- [ ] Links are still present after each 2D ↔ 3D round-trip.
 - [ ] Selected node stays in sync across view switches.
 
 ---
@@ -78,7 +81,9 @@
 - [ ] Nodes are not stacked on top of each other.
 - [ ] Links are distinguishable; graph does not look like a solid "hairball".
 - [ ] Node labels are readable for most nodes.
+- [ ] Isolated or sparsely connected nodes do not fly far away from the rest of the graph.
 - [ ] List → Graph switch re-renders cleanly and stays readable.
+- [ ] The fog button (cloud icon) toggles the vignette visibly and the canvas redraws immediately.
 - [ ] No long freeze / dropped frames during warmup.
 - [ ] No red console errors.
 
@@ -158,11 +163,76 @@ whether nodes/links/labels are still unreadable (too dense / too sparse).
 
 ---
 
+## 8. 3D view — node visibility, links, and fog
+
+> This section covers the recent fix where 3D showed only labels and no geometry.
+
+**Steps:**
+1. From the 2D graph view, click **3D** in the top bar.
+2. Wait for the spinner to disappear (should be <2s).
+3. Rotate the scene by dragging; zoom with the wheel.
+4. Hover a node and observe its label.
+5. Click the fog button (cloud icon) in the top bar twice — off, then on.
+6. Click **2D** to return to the graph.
+7. Click **3D** again.
+
+**Checks:**
+- [ ] 3D loads without a long blank/black screen and without console errors.
+- [ ] Colored spheres (nodes) are visible, not just text labels floating in space.
+- [ ] Lines (links) are visible between related nodes, at least when zoomed in.
+- [ ] The graph can be rotated, panned, and zoomed with mouse/touch.
+- [ ] Hovering a node brightens the node and its neighbors; distant nodes are subdued.
+- [ ] Toggling fog off/on changes the canvas/background visibly.
+- [ ] Switching 2D → 3D → 2D → 3D does not lose links or crash the view.
+- [ ] The top-bar controls (reset, search, focus, fog, language) do not overlap each other.
+
+**If still unreadable:**
+- Note whether the problem is (a) nodes too small to see, (b) spheres too big and overlapping, (c) labels overlapping, or (d) the center cluster is too dense. Layout readability for 50+ random notes is only solvable by semantic clustering; the force layout alone cannot guarantee a clean cluster.
+
+---
+
+## 9. Graph top bar control spacing and fog toggle
+
+> This section covers the recent fix where the fog button overlapped neighboring controls.
+
+**Steps:**
+1. Open the graph at the default window size (≈1280–1920 px wide).
+2. Look at the top bar to the right of the view switcher (2D/3D/List).
+3. Click the fog button and the language switcher.
+4. Resize the window to 768 px wide and repeat.
+
+**Checks:**
+- [ ] Reset, search, focus, and fog buttons are separate, non-overlapping 34×34 targets.
+- [ ] The fog button does not touch or overlap the language switcher or the right edge.
+- [ ] Fog toggle is reachable and its pressed/unpressed state is visible.
+- [ ] At 768 px, the top bar still fits without wrapping or clipping.
+
+---
+
+## 10. Responsive / mobile (pending)
+
+> Mobile touch handling is on the todo list; use this section to record early observations.
+
+**Steps:**
+1. Use browser DevTools to emulate a phone (e.g. iPhone SE, 375×667 px).
+2. Open the graph and rotate the device to landscape.
+3. Try to drag the canvas and pinch to zoom.
+
+**Checks:**
+- [ ] The graph canvas fills the viewport and does not scroll the page.
+- [ ] Top-bar controls remain usable and do not overlap.
+- [ ] Touch drag pans the graph; pinch zooms.
+- [ ] Cockpit panels do not cover the entire screen when collapsed.
+- [ ] No console errors on touch events.
+
+---
+
 ## Known limitations (carry over from main checklist)
 
 - Free node dragging on canvas is not supported (drag creates links, not moves nodes).
 - `Ctrl+Z` is a placeholder — no real undo yet.
 - Black hole glows on hover/drag but does not delete nodes on drop (not implemented).
+- Semantic clustering of 50+ random notes is a planned feature; the current 2D/3D force layout can only keep the graph within bounds, not guarantee a clean readable cluster.
 
 ---
 

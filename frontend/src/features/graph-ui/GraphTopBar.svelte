@@ -523,6 +523,10 @@
     gap: 4px;
   }
 
+  .canvas-controls {
+    margin-right: clamp(4px, 0.5vw, 8px);
+  }
+
   .top-bar-btn {
     display: inline-flex;
     align-items: center;
@@ -554,8 +558,18 @@
   }
 
   .top-bar-btn--icon {
-    padding: 7px 8px;
-    min-width: 34px;
+    padding: 7px;
+    width: 34px;
+    height: 34px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .top-bar-btn--icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
   }
 
   .top-bar-btn--primary {
@@ -850,8 +864,9 @@
     }
 
     .top-bar-btn--icon {
-      padding: 5px 6px;
-      min-width: 28px;
+      padding: 5px;
+      width: 28px;
+      height: 28px;
     }
 
     .type-label {
