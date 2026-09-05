@@ -124,8 +124,11 @@ export class Graph3DEngine {
       );
       this.fogInitial = initial;
       this.fogFinal = final;
-      this.currentFogDensity = initial;
-      this.targetFogDensity = initial;
+      // The graph is already converged, so start with the final, lighter fog
+      // density instead of the preset's initial heavy fog.
+      this.currentFogDensity = final;
+      this.targetFogDensity = final;
+      setFogDensity(this.sceneBundle.scene, final);
 
       if (this.config.disableAnimation) {
         this.simulateToStable();

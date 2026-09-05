@@ -28,13 +28,14 @@ export function createScene(container: HTMLElement, config: Graph3DConfig): Scen
   applyFogPreset(scene, graphConfig3D.fog.default_preset ?? "birth", fogConfig);
 
   const aspect = container.clientWidth / container.clientHeight || 1;
-  const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 2000);
+  const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100000);
   camera.position.set(0, 0, 80);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: false,
     powerPreference: "high-performance",
     alpha: false,
+    logarithmicDepthBuffer: true,
   });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

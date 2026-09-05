@@ -44,7 +44,7 @@ describe("Graph3DEngine performance adaptation", () => {
     engine.setData(nodes, links);
 
     const bundle = (engine as any).sceneBundle;
-    expect((bundle.scene.fog as { density: number }).density).toBeCloseTo(0.01, 5);
+    expect((bundle.scene.fog as { density: number }).density).toBeCloseTo(0.0006, 6);
     expect(bundle.controls.autoRotate).toBe(true);
     engine.dispose();
   });

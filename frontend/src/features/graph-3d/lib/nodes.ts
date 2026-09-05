@@ -48,7 +48,7 @@ export class NodeManager {
         if (d > boundingRadius) boundingRadius = d;
       }
     }
-    const fitScale = Math.max(1, Math.min(8, boundingRadius * 0.075));
+    const fitScale = Math.max(1, boundingRadius * 0.2);
 
     for (const [type, typeNodes] of nodesByType) {
       const body = CelestialBody.fromString(type);
