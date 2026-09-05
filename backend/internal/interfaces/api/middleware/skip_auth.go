@@ -49,8 +49,8 @@ func SkipAuth(config *SkipAuthConfig) gin.HandlerFunc {
 			return
 		}
 
-		// Set test user ID for all requests in test mode
-		// Test user must exist in DB (migration 019)
+		// Set test user ID for all requests in test mode.
+		// Test user is created by the test seeder (backend/cmd/seed) when APP_ENV=test.
 		c.Set(ContextUserIDKey, config.DefaultUserID)
 		c.Set(ContextRoleKey, config.DefaultRole)
 		c.Set(ContextLoginKey, config.DefaultLogin)

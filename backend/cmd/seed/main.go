@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/config"
@@ -43,6 +44,14 @@ func main() {
 	}
 	defer sqlDB.Close()
 
+	if err := runSeed(ctx, cfg, database, password); err != nil {
+		log.Fatalf("failed to seed test user: %v", err)
+	}
+
+	fmt.Println("Test user seeded successfully")
+}
+
+func runSeed(ctx context.Context, cfg *config.Config, database *gorm.DB, password string) error {
 	hash, err := auth.HashPassword(password, &auth.PasswordConfig{
 		Time:    cfg.Argon2Time,
 		Memory:  cfg.Argon2Memory,
@@ -50,20 +59,25 @@ func main() {
 		KeyLen:  32,
 	})
 	if err != nil {
-		log.Fatalf("failed to hash test user password: %v", err)
+		return fmt.Errorf("hash test user password: %w", err)
 	}
 
-	var roleID uuid.UUID
-	if err := database.WithContext(ctx).Raw("SELECT id FROM user_roles WHERE name = 'user' LIMIT 1").Scan(&roleID).Error; err != nil {
-		log.Fatalf("failed to look up 'user' role: %v", err)
+	var roleIDStr string
+	if err := database.WithContext(ctx).Raw("SELECT id FROM user_roles WHERE name = 'user' LIMIT 1").Scan(&roleIDStr).Error; err != nil {
+		return fmt.Errorf("look up 'user' role: %w", err)
+	}
+
+	roleID, err := uuid.Parse(roleIDStr)
+	if err != nil {
+		return fmt.Errorf("parse 'user' role id: %w", err)
 	}
 	if roleID == uuid.Nil {
-		log.Fatalf("'user' role not found in database; migrations must be applied before seeding")
+		return fmt.Errorf("'user' role not found in database; migrations must be applied before seeding")
 	}
 
 	testID, err := uuid.Parse(testUserID)
 	if err != nil {
-		log.Fatalf("invalid test user id: %v", err)
+		return fmt.Errorf("invalid test user id: %w", err)
 	}
 
 	if err := database.WithContext(ctx).Exec(`
@@ -76,8 +90,8 @@ func main() {
 			role_id = EXCLUDED.role_id,
 			deleted_at = NULL
 	`, testID, "testuser", "testuser@example.com", hash, roleID).Error; err != nil {
-		log.Fatalf("failed to seed test user: %v", err)
+		return fmt.Errorf("upsert test user: %w", err)
 	}
 
-	fmt.Println("Test user seeded successfully")
+	return nil
 }
