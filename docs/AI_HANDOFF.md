@@ -24,7 +24,6 @@
 | Ревью контура: `.claude/commands/kg-work.md`, формат доски, журнал | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято | 2026-09-05 |
 | **AUD-2: блокер — сидер не работает.** `Scan` роли в `uuid.UUID` падает, тестовую учётку создать нечем; миграция 029 старую уже удалила | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **отклонено** | 2026-09-05 |
 | После починки сидера: прогнать `seed-test-data.ps1` — тестовая база сейчас с нулём пользователей | — | ждёт | 2026-09-05 |
-| Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id`. Обход мог бы не опираться на персистентного пользователя | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | ждёт решения владельца | 2026-09-05 |
 | AUD-3: транспорт токена — убрать `?token=`, PKCE на `S256`, отвязать `state` от флага PKCE | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | ждёт | 2026-09-05 |
 | AUD-6: разведка по 125 неисполняемым BDD-сценариям. Только цифры, чинить не нужно | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | ждёт | 2026-09-05 |
 
@@ -48,6 +47,8 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | Завести `/kg-work` в Devin по переданному тексту | сделал Devin по просьбе владельца | принято | 2026-09-05 |
+| Завести тикет по багу сидера: `gh auth login`, затем `gh issue create --body-file docs/tasks/AUD-2-seeder-issue.md` | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | ждёт | 2026-09-05 |
+| Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id`. Обход мог бы не опираться на персистентного пользователя вовсе | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | ждёт решения | 2026-09-05 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | отложено | 2026-09-05 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | отложено | 2026-09-05 |
 | Удалить каталог `.kilo/` | — | решено удалить, не сделано | 2026-09-05 |
