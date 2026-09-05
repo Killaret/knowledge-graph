@@ -2,6 +2,14 @@ import * as THREE from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SimulationNode } from "../model/types";
 
+function getP95Distance(nodes: SimulationNode[], center: THREE.Vector3): number {
+  const distances = nodes
+    .map((n) => new THREE.Vector3(n.x, n.y, n.z).distanceTo(center))
+    .sort((a, b) => a - b);
+  const index = Math.min(nodes.length - 1, Math.floor(nodes.length * 0.95));
+  return distances[index] || 0;
+}
+
 export function centerCameraOnNode(
   nodeId: string,
   nodes: SimulationNode[],
@@ -15,11 +23,7 @@ export function centerCameraOnNode(
   }
 
   const center = new THREE.Vector3(centerNode.x, centerNode.y, centerNode.z);
-  let maxDist = 0;
-  nodes.forEach((n) => {
-    const dist = new THREE.Vector3(n.x, n.y, n.z).distanceTo(center);
-    if (dist > maxDist) maxDist = dist;
-  });
+  const maxDist = getP95Distance(nodes, center);
 
   const marginMultiplier = nodes.length > 50 ? 1.8 : nodes.length > 20 ? 1.5 : 1.3;
   const radius = Math.max(maxDist * marginMultiplier, 20);
@@ -44,11 +48,7 @@ export function autoZoomToFit(
   nodes.forEach((n) => center.add(new THREE.Vector3(n.x, n.y, n.z)));
   center.divideScalar(nodes.length);
 
-  let maxDist = 0;
-  nodes.forEach((n) => {
-    const dist = new THREE.Vector3(n.x, n.y, n.z).distanceTo(center);
-    if (dist > maxDist) maxDist = dist;
-  });
+  const maxDist = getP95Distance(nodes, center);
 
   const marginMultiplier = nodes.length > 50 ? 1.8 : nodes.length > 20 ? 1.5 : 1.3;
   const radius = Math.max(maxDist * marginMultiplier, 10);

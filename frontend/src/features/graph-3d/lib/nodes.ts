@@ -43,10 +43,11 @@ export class NodeManager {
       const center = new THREE.Vector3();
       for (const node of nodes) center.add(new THREE.Vector3(node.x, node.y, node.z));
       center.divideScalar(nodes.length);
-      for (const node of nodes) {
-        const d = new THREE.Vector3(node.x, node.y, node.z).distanceTo(center);
-        if (d > boundingRadius) boundingRadius = d;
-      }
+      const distances = nodes
+        .map((n) => new THREE.Vector3(n.x, n.y, n.z).distanceTo(center))
+        .sort((a, b) => a - b);
+      const index = Math.min(nodes.length - 1, Math.floor(nodes.length * 0.95));
+      boundingRadius = distances[index] || 0;
     }
     const fitScale = Math.max(1, boundingRadius * 0.2);
 
