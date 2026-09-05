@@ -183,3 +183,18 @@ Exit code: 0
 ## Что дальше
 
 Задача A-3 закрыта. Шесть находок выше — материал для отдельного небольшого захода, приоритет ниже, чем у A-1.
+
+---
+
+## Ответ исполнителя (хвост раунда 3)
+
+Все шесть находок закрыты в незакоммиченных правках:
+
+1. **`cd` без защиты.** Все три `cd` (`backend` ×2, `frontend`) обёрнуты в `if cd ...; then … else register_phase "<фаза>" 1; echo "ERROR: Failed to enter <dir> directory"`. При отказе `cd` тест не запускается в чужом каталоге, а фаза фиксирует провал.
+2. **Порядок фаз.** В `lib/phase-tracking.sh` добавлен индексный массив `PHASE_ORDER`; `register_phase` дописывает имя при первой регистрации, `write_final_summary` обходит его, а не ассоциативный массив. Порядок в отчёте совпадает с порядком регистрации.
+3. **Литерал `1` вместо кода.** Все `register_phase "…" 1` после реальных команд заменены на захваченный `$?` (`stop_dev_exit`, `seed_exit`, `backend_unit_exit`, `pgvector_exit`, `redis_mongo_exit`, `dev_health_exit`, `dev_api_exit`, `dev_notes_exit`, `personal_notes_exit`, `stacks_identity_exit`, `dev_health_check_exit`, `personal_health_check_exit` и т.д.). Синтетический `1` остался только для `Dev stack state verification` (сводный булев признак, а не код команды) и для отказа `cd`, где реальный код всегда 1.
+4. **Безусловный `✓`.** Все сообщения об успехе переведены в ветку `[[ $exit -eq 0 ]]`; при провале фазы печатается `[FAIL]`, а не галочка.
+5. **`default` в сводке.** `Write-FinalSummary` (`.ps1`) получил ветку `default` → `[????] <фаза> (status: …)`; `write_final_summary` (`.sh`) печатает `[????]` для любого нечислового значения.
+6. **`-Skipped` + ненулевой код.** В обеих библиотеках `skip` выставляется только при `Skipped && ExitCode -eq 0` (`.ps1`) / `skipped -eq 1 && code -eq 0` (`.sh`); `-Skipped` с ненулевым кодом теперь регистрирует провал, а не пропуск.
+
+Проверки: `pwsh -NoProfile -File scripts/testing/test-a3-exit-codes.ps1` → `A-3 exit-code regression test passed`, код 0; `bash -n` для `run-full-test-cycle.sh` и `lib/phase-tracking.sh` — чисто; парсер `run-full-test-cycle.ps1` и `lib/phase-tracking.ps1` — чисто.

@@ -4,8 +4,7 @@
 # All temporary snapshots are saved to scripts/testing/temp/snapshots/.
 
 param(
-    [switch]$SkipManual,
-    [switch]$AutoCommit
+    [switch]$SkipManual
 )
 
 $frontendPort = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { "3002" }
@@ -37,6 +36,12 @@ $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotBase = Join-Path (Join-Path $scriptDir "temp") "snapshots"
 $snapshotDir = Join-Path $snapshotBase $timestamp
 New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
+
+# Phase tracking: every step registers its name and exit code.
+# Shared implementation lives in lib/phase-tracking.ps1 so the regression
+# test exercises the same code path as this script.
+. "$scriptDir\lib\phase-tracking.ps1"
+$script:SnapshotDir = $snapshotDir
 
 function Stop-TestStack {
     Write-Host "`nStopping test stack (if still running)..." -ForegroundColor Yellow
@@ -128,20 +133,20 @@ try {
     # Step 4: Start test stack
     Write-Host "`n[Step 4/28] Starting test stack..." -ForegroundColor Yellow
     & $scriptDir\start-test.ps1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Failed to start test stack" -ForegroundColor Red
-        exit 1
+    $startTestStackExit = $LASTEXITCODE
+    Register-Phase -Name "Start test stack" -ExitCode $startTestStackExit
+    if ($startTestStackExit -ne 0) {
+        throw "Failed to start test stack"
     }
     Write-Host "✓ Test stack started" -ForegroundColor Green
 
     # Step 5: Seed test data
     Write-Host "`n[Step 5/28] Seeding test data..." -ForegroundColor Yellow
     & $scriptDir\seed-test-data.ps1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "WARNING: Failed to seed test data" -ForegroundColor Yellow
-        Write-Host "Continuing anyway (data might already exist)" -ForegroundColor Yellow
-    } else {
-        Write-Host "✓ Test data seeded" -ForegroundColor Green
+    $seedTestDataExit = $LASTEXITCODE
+    Register-Phase -Name "Seed test data" -ExitCode $seedTestDataExit
+    if ($seedTestDataExit -ne 0) {
+        Write-Host "  WARNING: Continuing anyway (data might already exist)" -ForegroundColor Yellow
     }
 
     # Step 6: Docker Build Verification
@@ -153,7 +158,7 @@ try {
     # Step 7: NLP Service Tests
     Write-Host "`n[Step 7/28] NLP Service Tests..." -ForegroundColor Yellow
     try {
-        $nlpHealth = Invoke-RestMethod -Uri "http://127.0.0.1:15002/health" -Method Get -TimeoutSec 5
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:15002/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ NLP health endpoint: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ NLP health endpoint: FAILED" -ForegroundColor Yellow
@@ -167,9 +172,9 @@ try {
     go test -p=1 -count=1 ./...
     $backendTestExit = $LASTEXITCODE
     Set-Location $repoDir
+    Register-Phase -Name "Backend unit tests" -ExitCode $backendTestExit
     if ($backendTestExit -ne 0) {
-        Write-Host "  ERROR: Backend unit tests failed" -ForegroundColor Red
-        exit 1
+        throw "Backend unit tests failed"
     }
     Write-Host "  ✓ Backend unit tests completed" -ForegroundColor Green
 
@@ -180,26 +185,23 @@ try {
     go test -tags=integration -p=1 -count=1 ./...
     $backendIntegrationExit = $LASTEXITCODE
     Set-Location $repoDir
+    Register-Phase -Name "Backend integration tests" -ExitCode $backendIntegrationExit
     if ($backendIntegrationExit -ne 0) {
-        Write-Host "  WARNING: Backend integration tests failed (exit code $backendIntegrationExit)" -ForegroundColor Yellow
-        Write-Host "  This is often testcontainers on Windows rootless Docker; use WSL2 or CI." -ForegroundColor Yellow
-        Write-Host "  ⚠ Continuing with the test cycle" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ✓ Backend integration tests completed" -ForegroundColor Green
+        Write-Host "  WARNING: Backend integration tests failed (exit code $backendIntegrationExit); continuing" -ForegroundColor Yellow
     }
 
 
     # Step 10: Backend API Verification
     Write-Host "`n[Step 10/28] Backend API Verification..." -ForegroundColor Yellow
     try {
-        $testHealth = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend health: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend health: FAILED" -ForegroundColor Red
     }
 
     try {
-        $testNotes = Invoke-RestMethod -Uri "http://127.0.0.1:18083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
+        $null = Invoke-RestMethod -Uri "http://127.0.0.1:18083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
         Write-Host "  ✓ Test backend API: OK" -ForegroundColor Green
     } catch {
         Write-Host "  ⚠ Test backend API: FAILED" -ForegroundColor Red
@@ -217,18 +219,24 @@ try {
     # Step 12: PGVECTOR Verification
     Write-Host "`n[Step 12/28] PGVECTOR Verification..." -ForegroundColor Yellow
     docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT extname FROM pg_extension WHERE extname = 'vector';" | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: PGVECTOR verification failed" -ForegroundColor Red
-        exit 1
+    $pgvectorExit = $LASTEXITCODE
+    Register-Phase -Name "PGVECTOR verification" -ExitCode $pgvectorExit
+    if ($pgvectorExit -ne 0) {
+        throw "PGVECTOR verification failed"
     }
     Write-Host "  ✓ PGVECTOR extension checked" -ForegroundColor Green
 
     # Step 13: Redis & MongoDB Verification
     Write-Host "`n[Step 13/28] Redis & MongoDB Verification..." -ForegroundColor Yellow
     docker exec kg-test-redis redis-cli PING | Out-Null
-    if ($LASTEXITCODE -ne 0) { exit 1 }
+    $redisExit = $LASTEXITCODE
     docker exec kg-test-mongo mongosh --eval "db.adminCommand('ping')" | Out-Null
-    if ($LASTEXITCODE -ne 0) { exit 1 }
+    $mongoExit = $LASTEXITCODE
+    $redisMongoExit = if ($redisExit -ne 0 -or $mongoExit -ne 0) { 1 } else { 0 }
+    Register-Phase -Name "Redis and MongoDB verification" -ExitCode $redisMongoExit
+    if ($redisMongoExit -ne 0) {
+        throw "Redis and/or MongoDB verification failed"
+    }
     Write-Host "  ✓ Redis and MongoDB checked" -ForegroundColor Green
 
     # Step 14: Frontend Unit Tests + Coverage
@@ -239,9 +247,9 @@ try {
     npm run test:coverage
     $frontendTestExit = $LASTEXITCODE
     Set-Location $repoDir
+    Register-Phase -Name "Frontend unit tests + coverage" -ExitCode $frontendTestExit
     if ($frontendTestExit -ne 0) {
-        Write-Host "  ERROR: Frontend unit tests or coverage check failed" -ForegroundColor Red
-        exit 1
+        throw "Frontend unit tests or coverage check failed"
     }
     Write-Host "  ✓ Frontend unit tests + coverage completed" -ForegroundColor Green
 
@@ -253,18 +261,16 @@ try {
     Set-Location $repoDir\frontend
     npx playwright test --project=chromium-skip-auth
     $e2eSkipAuthExit = $LASTEXITCODE
+    Register-Phase -Name "E2E SKIP_AUTH" -ExitCode $e2eSkipAuthExit
     if ($e2eSkipAuthExit -ne 0) {
-        Write-Host "  WARNING: SKIP_AUTH E2E tests failed (exit $e2eSkipAuthExit)" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ✓ SKIP_AUTH E2E tests completed" -ForegroundColor Green
+        Write-Host "  WARNING: SKIP_AUTH E2E tests failed (exit $e2eSkipAuthExit); continuing" -ForegroundColor Yellow
     }
 
     node scripts/run-bdd.cjs
     $bddSkipAuthExit = $LASTEXITCODE
+    Register-Phase -Name "BDD SKIP_AUTH" -ExitCode $bddSkipAuthExit
     if ($bddSkipAuthExit -ne 0) {
-        Write-Host "  WARNING: SKIP_AUTH BDD tests failed (exit $bddSkipAuthExit)" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ✓ SKIP_AUTH BDD tests completed" -ForegroundColor Green
+        Write-Host "  WARNING: SKIP_AUTH BDD tests failed (exit $bddSkipAuthExit); continuing" -ForegroundColor Yellow
     }
     Set-Location $repoDir
 
@@ -277,28 +283,28 @@ try {
     $env:VITE_SKIP_AUTH = "false"
     # Rebuild the frontend so VITE_SKIP_AUTH is baked into the bundle as "false".
     docker compose -f docker-compose.test.yml up -d --build --wait
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ERROR: Real auth test stack failed to start" -ForegroundColor Red
-        exit 1
+    $realAuthStackExit = $LASTEXITCODE
+    Register-Phase -Name "Real-auth test stack start" -ExitCode $realAuthStackExit
+    if ($realAuthStackExit -ne 0) {
+        throw "Real auth test stack failed to start"
     }
     Write-Host "  Test stack started with SKIP_AUTH=false" -ForegroundColor Green
 
     # Seed test data for the real-auth test user so @manual/@canvas tests have graph nodes
     Write-Host "  Seeding real-auth test data..." -ForegroundColor Yellow
     & $scriptDir\seed-test-data.ps1 -NoteCount 50 -LinkCount 20
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  WARNING: Failed to seed real-auth test data" -ForegroundColor Yellow
-    } else {
-        Write-Host "  Real-auth test data seeded" -ForegroundColor Green
+    $seedRealAuthExit = $LASTEXITCODE
+    Register-Phase -Name "Seed real-auth test data" -ExitCode $seedRealAuthExit
+    if ($seedRealAuthExit -ne 0) {
+        Write-Host "  WARNING: Failed to seed real-auth test data; continuing" -ForegroundColor Yellow
     }
 
     Set-Location $repoDir\frontend
     npx playwright test --project=chromium-real-auth
     $e2eRealAuthExit = $LASTEXITCODE
+    Register-Phase -Name "E2E real auth" -ExitCode $e2eRealAuthExit
     if ($e2eRealAuthExit -ne 0) {
-        Write-Host "  WARNING: Real auth E2E tests failed (exit $e2eRealAuthExit)" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ✓ Real auth E2E tests completed" -ForegroundColor Green
+        Write-Host "  WARNING: Real auth E2E tests failed (exit $e2eRealAuthExit); continuing" -ForegroundColor Yellow
     }
     Set-Location $repoDir
 
@@ -333,18 +339,19 @@ try {
         $env:SKIP_AUTH = "true"
         $env:VITE_SKIP_AUTH = "true"
         docker compose -f docker-compose.test.yml up -d --build --wait
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Visual test stack failed to start" -ForegroundColor Red
-            exit 1
+        $visualStackExit = $LASTEXITCODE
+        Register-Phase -Name "Visual test stack start" -ExitCode $visualStackExit
+        if ($visualStackExit -ne 0) {
+            throw "Visual test stack failed to start"
         }
         Write-Host "  Visual test stack started with SKIP_AUTH=true" -ForegroundColor Green
 
         Write-Host "  Seeding deterministic visual test data..." -ForegroundColor Yellow
         & $scriptDir\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  WARNING: Failed to seed visual test data" -ForegroundColor Yellow
-        } else {
-            Write-Host "  Visual test data seeded" -ForegroundColor Green
+        $seedVisualExit = $LASTEXITCODE
+        Register-Phase -Name "Seed visual test data" -ExitCode $seedVisualExit
+        if ($seedVisualExit -ne 0) {
+            Write-Host "  WARNING: Failed to seed visual test data; continuing" -ForegroundColor Yellow
         }
 
         $env:FRONTEND_URL = $frontendUrl
@@ -357,14 +364,14 @@ try {
         Set-Location $repoDir\frontend
         npx playwright test --project=visual
         $argosExit = $LASTEXITCODE
+        Register-Phase -Name "Argos visual tests" -ExitCode $argosExit
         if ($argosExit -ne 0) {
-            Write-Host "  WARNING: Argos visual tests failed (exit $argosExit)" -ForegroundColor Yellow
-        } else {
-            Write-Host "  ✓ Argos visual tests completed" -ForegroundColor Green
+            Write-Host "  WARNING: Argos visual tests failed (exit $argosExit); continuing" -ForegroundColor Yellow
         }
         Set-Location $repoDir
     } else {
         Write-Host "  ℹ Skipping Argos visual tests (ARGOS_TOKEN or ARGOS_UPLOAD_LOCAL not set)" -ForegroundColor Cyan
+        Register-Phase -Name "Argos visual tests (skipped, no token)" -ExitCode 0
     }
 
     # Step 18: Manual testing instructions
@@ -466,13 +473,15 @@ try {
         } else {
             docker compose up -d --build --wait
         }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Failed to restore dev stack" -ForegroundColor Red
-            exit 1
+        $devRestoreExit = $LASTEXITCODE
+        Register-Phase -Name "Restore dev stack" -ExitCode $devRestoreExit
+        if ($devRestoreExit -ne 0) {
+            throw "Failed to restore dev stack"
         }
         Write-Host "  ✓ Dev stack restored" -ForegroundColor Green
     } else {
         Write-Host "  ✓ Dev stack remains stopped" -ForegroundColor Green
+        Register-Phase -Name "Restore dev stack" -Skipped
     }
 
     # Step 25: Start personal stack
@@ -484,13 +493,15 @@ try {
         } else {
             docker compose -f docker-compose.personal.yml up -d --build --wait
         }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Failed to restore personal stack" -ForegroundColor Red
-            exit 1
+        $personalRestoreExit = $LASTEXITCODE
+        Register-Phase -Name "Restore personal stack" -ExitCode $personalRestoreExit
+        if ($personalRestoreExit -ne 0) {
+            throw "Failed to restore personal stack"
         }
         Write-Host "  ✓ Personal stack restored" -ForegroundColor Green
     } else {
         Write-Host "  ✓ Personal stack remains stopped" -ForegroundColor Green
+        Register-Phase -Name "Restore personal stack" -Skipped
     }
 
     # Step 26: State, identity and health checks
@@ -506,8 +517,8 @@ try {
             Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
         } catch {
             Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
-            Write-Host "  ERROR: Dev stack restoration failed" -ForegroundColor Red
-            exit 1
+            Register-Phase -Name "Dev stack restoration (health endpoint)" -ExitCode 1
+            throw "Dev stack restoration failed (health endpoint)"
         }
 
         try {
@@ -578,9 +589,11 @@ try {
     }
 
     if ($devStateChanged) {
+        Register-Phase -Name "Dev stack state verification" -ExitCode 1
         Write-Host "  WARNING: Dev stack state changed during testing" -ForegroundColor Yellow
         Write-Host "  This may indicate data leakage or side effects" -ForegroundColor Yellow
     } else {
+        Register-Phase -Name "Dev stack state verification" -ExitCode 0
         Write-Host "  ✓ Dev stack state verified - no unexpected changes detected" -ForegroundColor Green
     }
 
@@ -588,89 +601,45 @@ try {
 
     if ($devWasRunning) {
         & $scriptDir\..\ci\check-stacks-health.ps1 -Stack dev
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Dev stack is not healthy" -ForegroundColor Red
-            exit 1
+        $devHealthExit = $LASTEXITCODE
+        Register-Phase -Name "Dev stack health check" -ExitCode $devHealthExit
+        if ($devHealthExit -ne 0) {
+            throw "Dev stack is not healthy"
         }
+    } else {
+        Register-Phase -Name "Dev stack health check" -Skipped
     }
 
     if ($personalWasRunning) {
         & $scriptDir\..\ci\check-stacks-health.ps1 -Stack personal
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  ERROR: Personal stack is not healthy" -ForegroundColor Red
-            exit 1
+        $personalHealthExit = $LASTEXITCODE
+        Register-Phase -Name "Personal stack health check" -ExitCode $personalHealthExit
+        if ($personalHealthExit -ne 0) {
+            throw "Personal stack is not healthy"
         }
+    } else {
+        Register-Phase -Name "Personal stack health check" -Skipped
     }
     Write-Host "  ✓ Restored stacks health verified" -ForegroundColor Green
 
-    # Step 27: Auto-commit if all checks passed
-    Write-Host "`n[Step 27/28] Commit policy..." -ForegroundColor Yellow
-    if (-not $AutoCommit) {
-        Write-Host "  ℹ Auto-commit disabled; review changes manually" -ForegroundColor Cyan
-    } elseif (-not $devStateChanged) {
-        Write-Host "  Performing auto-commit with test success marker..." -ForegroundColor Yellow
-        git add -A
-        $staged = git diff --cached --name-only
-        if ($staged) {
-            $commitMessage = "test: successful regression cycle`n`nGenerated with [Devin](https://devin.ai)`n`nCo-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-            git commit -m $commitMessage
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "  ERROR: Failed to commit" -ForegroundColor Red
-                exit 1
-            }
-            Write-Host "  ✓ Auto-commit created successfully" -ForegroundColor Green
-            Write-Host "  ℹ Push skipped - review and push manually if desired" -ForegroundColor Cyan
-        } else {
-            Write-Host "  ℹ No changes to commit" -ForegroundColor Cyan
-        }
-    } else {
-        Write-Host "  WARNING: Dev stack state changed - skipping auto-commit" -ForegroundColor Yellow
-        Write-Host "  Please investigate the changes manually before committing" -ForegroundColor Yellow
-    }
-
-    # Step 28: Cleanup Temporary Files
-    Write-Host "`n[Step 28/28] Cleanup Temporary Files..." -ForegroundColor Yellow
+    # Step 27: Cleanup Temporary Files
+    Write-Host "`n[Step 27/28] Cleanup Temporary Files..." -ForegroundColor Yellow
     python "$scriptDir\..\cleanup\cleanup-test-artifacts.py"
-    Write-Host "  ✓ Temporary files cleaned" -ForegroundColor Green
-
-    # Final Summary:
-    Write-Host "`n[Final Summary] Test cycle summary" -ForegroundColor Cyan
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  TEST CYCLE COMPLETE" -ForegroundColor Cyan
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "✓ Dev stack state captured before testing" -ForegroundColor Green
-    Write-Host "✓ Dev and personal stacks stopped for isolation" -ForegroundColor Green
-    Write-Host "✓ Stacks identity verified" -ForegroundColor Green
-    Write-Host "✓ Test stack started and destroyed" -ForegroundColor Green
-    Write-Host "✓ Test data seeded" -ForegroundColor Green
-    Write-Host "✓ Docker build verification completed" -ForegroundColor Green
-    Write-Host "✓ NLP service tests completed" -ForegroundColor Green
-    Write-Host "✓ Backend unit tests completed" -ForegroundColor Green
-    Write-Host "✓ Backend integration tests completed or skipped (testcontainers limitation)" -ForegroundColor Green
-    Write-Host "✓ Backend API verification completed" -ForegroundColor Green
-    Write-Host "✓ Asynchronous tasks verified" -ForegroundColor Green
-    Write-Host "✓ PGVECTOR verification completed" -ForegroundColor Green
-    Write-Host "✓ Redis and MongoDB verified" -ForegroundColor Green
-    Write-Host "✓ Frontend unit tests completed" -ForegroundColor Green
-    Write-Host "✓ Manual testing completed" -ForegroundColor Green
-    Write-Host "✓ Public graph verification completed" -ForegroundColor Green
-    Write-Host "✓ CI/CD verification completed" -ForegroundColor Green
-    Write-Host "✓ Documentation verification completed" -ForegroundColor Green
-    Write-Host "✓ Temporary files cleaned" -ForegroundColor Green
-    Write-Host "✓ Previously running stacks restored" -ForegroundColor Green
-    Write-Host "✓ Initial stack state and restored stack health verified" -ForegroundColor Green
-    if ($AutoCommit -and -not $devStateChanged) {
-        Write-Host "✓ Auto-commit with test success marker created" -ForegroundColor Green
-    } elseif ($AutoCommit) {
-        Write-Host "⚠ Auto-commit skipped (dev state changed)" -ForegroundColor Yellow
-    } else {
-        Write-Host "✓ Auto-commit disabled" -ForegroundColor Green
+    $cleanupExit = $LASTEXITCODE
+    Register-Phase -Name "Cleanup temporary files" -ExitCode $cleanupExit
+    if ($cleanupExit -ne 0) {
+        throw "Failed to clean temporary files"
     }
-    Write-Host ""
-    Write-Host "Snapshots saved to: $snapshotDir" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "All stacks are stable and isolated testing completed successfully." -ForegroundColor Green
+
+    $anyFailed = Test-AnyFailed
+    Write-FinalSummary -Success:(-not $anyFailed)
+    if ($anyFailed) {
+        exit 1
+    }
+} catch {
+    Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
+    Write-FinalSummary -Success:$false
+    exit 1
 } finally {
     Stop-TestStack
     Restore-Stacks
