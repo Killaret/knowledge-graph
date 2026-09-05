@@ -50,6 +50,7 @@ go.work
 !.devin/skills/**
 !.devin/prompts/
 !.devin/prompts/**
+!.devin/config.json
 *.swp
 *.swo
 *~

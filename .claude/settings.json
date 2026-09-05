@@ -23,6 +23,12 @@
       "Bash(rm -rf ./backups*)",
       "Bash(rm -rf huggingface_cache*)",
       "Bash(rm -rf ./huggingface_cache*)"
+    ],
+    "ask": [
+      "Bash(docker volume rm*)",
+      "Bash(docker volume prune*)",
+      "Bash(docker system prune*)",
+      "Bash(docker compose -f docker-compose.personal.yml down*)"
     ]
   },
   "hooks": {

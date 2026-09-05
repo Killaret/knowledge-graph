@@ -59,6 +59,12 @@ ENV_ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 OPERATORS = {"&&", "||", ";", "|", "&", "(", ")", "\n"}
 RISKY_EXECUTABLES = {"docker", "docker-compose", "rm", "rmdir", "del"}
 
+# Shells that carry a nested command in an argument; the payload is inspected
+# instead of the wrapper, so `bash -c "docker volume prune"` is not a bypass.
+SHELL_WRAPPERS = {"bash", "sh", "zsh", "pwsh", "powershell", "cmd"}
+SHELL_COMMAND_FLAGS = {"-c", "-Command", "-command", "/c", "/C"}
+MAX_WRAPPER_DEPTH = 3
+
 
 def split_segments(command: str) -> list[list[str]]:
     """Tokenize the shell command into segments, honouring quotes.
@@ -86,12 +92,27 @@ def executable_of(segment: list[str]) -> str:
     return ""
 
 
-def targets_personal_data(command: str) -> bool:
+def nested_command(segment: list[str]) -> str | None:
+    """Payload of a shell wrapper such as `bash -c "..."`, if this is one."""
+    words = [w for w in segment if not ENV_ASSIGNMENT.match(w)]
+    if not words:
+        return None
+    name = words[0].rsplit("/", 1)[-1].rsplit("\\", 1)[-1].lower()
+    if name.removesuffix(".exe") not in SHELL_WRAPPERS:
+        return None
+    for index, word in enumerate(words[1:], start=1):
+        if word in SHELL_COMMAND_FLAGS and index + 1 < len(words):
+            return " ".join(words[index + 1 :])
+    return None
+
+
+def targets_personal_data(command: str, depth: int = 0) -> bool:
     """True when the command can destroy Personal stack volumes.
 
     Only segments that actually invoke a risky program are inspected, so a
     commit message or a doc edit that merely quotes such a command is ignored.
-    A command that cannot be parsed is treated as risky.
+    A shell wrapper is unwrapped and its payload inspected instead. A command
+    that cannot be parsed is treated as risky.
     """
     try:
         segments = split_segments(command)
@@ -99,6 +120,11 @@ def targets_personal_data(command: str) -> bool:
         segments = [command.split()]
 
     for segment in segments:
+        if depth < MAX_WRAPPER_DEPTH:
+            payload = nested_command(segment)
+            if payload and targets_personal_data(payload, depth + 1):
+                return True
+
         if executable_of(segment) not in RISKY_EXECUTABLES:
             continue
         text = " ".join(segment)
