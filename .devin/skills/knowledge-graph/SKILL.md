@@ -27,17 +27,21 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 - Runtime configuration: `knowledge-graph.config.json`, `config/`
 - Architecture: `docs/ARCHITECTURE_SUMMARY.md`
 - Testing: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`
+- Agent handoff: `docs/AI_HANDOFF.md`
+- Agent protocol: `docs/AI_AGENT_PROTOCOL.md`
+- Current audit: `docs/AI_PROCESS_AUDIT.md`
 - Roadmap: `ROADMAP.md`, `ROADMAP.ru.md`
 
 ## Devin Workflow
 
-1. Read `.windsurfrules` and relevant subsystem documentation.
-2. Search the codebase before deciding on an implementation.
-3. Follow existing constructors, dependency injection, error handling, and test patterns.
-4. Add a regression test for every discovered defect.
-5. Run the narrowest relevant verification first, then the required subsystem checks.
-6. Review the diff for unrelated files and secrets before committing.
-7. Never start the personal stack unless the user explicitly requests it.
+1. Read `.windsurfrules`, `docs/AI_HANDOFF.md`, and `docs/AI_AGENT_PROTOCOL.md` first; then read relevant subsystem documentation.
+2. Update `docs/AI_HANDOFF.md` when handing off or taking over a task.
+3. Search the codebase before deciding on an implementation.
+4. Follow existing constructors, dependency injection, error handling, and test patterns.
+5. Add a regression test for every discovered defect.
+6. Run the narrowest relevant verification first, then the required subsystem checks.
+7. Review the diff for unrelated files and secrets before committing.
+8. Never start the personal stack unless the user explicitly requests it.
 
 ## Task Routing
 
@@ -83,6 +87,13 @@ cd nlp-service; pytest tests/ -v
 # Canonical full regression
 .\scripts\testing\run-full-test-cycle.ps1
 ```
+
+## Commands
+
+| Trigger | Action |
+|---|---|
+| `/kg-handoff` | Отдельный skill `.devin/skills/kg-handoff`. Прочитать `docs/AI_HANDOFF.md`, выполнить пункты, закреплённые за Devin, пропуская те, чьё условие не наступило. По окончании обновить `docs/AI_HANDOFF.md` и связанный `docs/tasks/<id>.md`. |
+| `/kg-review` | Отдельный skill `.devin/skills/kg-review`. Проверить работу другого агента по `docs/AI_HANDOFF.md` и `docs/tasks/<id>-review-findings.md`. Смотреть дифф, а не описание автора; проверять исполнением; отдельно оценить, способен ли предложенный автором способ проверки поймать дефект. Записать замечания в `docs/tasks/<id>-review-findings.md` и обновить инбокс. |
 
 ## Priority
 

@@ -76,7 +76,8 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 ## Language and documentation policy
 
 - Code identifiers, variable names, commit messages, and API error codes are in English.
-- Authoritative documentation is in English; Russian translations may be maintained alongside.
+- Authoritative product, API, and architecture documentation is in English; Russian translations may be maintained alongside.
+- AI working documents (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) are maintained and authoritative in Russian; no English counterpart is required for them. For Russian-language chats, use `MASTER_PROMPT_RU.md`.
 - UI strings, labels, toasts, placeholders, errors, and tooltips use i18n keys.
 - The committed default locale is English (`en`); Russian (`ru`) is supported through the same i18n keys.
 - User-created note titles and bodies may use any language.

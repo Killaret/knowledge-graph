@@ -15,10 +15,12 @@ Paste the relevant prompt at the start of a new chat with any AI assistant:
 
 | File | Purpose | Language |
 |------|---------|----------|
-| [`MASTER_PROMPT.md`](./MASTER_PROMPT.md) | Primary system prompt for implementation, review, and day-to-day work | English |
-| [`MASTER_PROMPT_RU.md`](./MASTER_PROMPT_RU.md) | Russian translation of the master prompt | Russian |
+| [`MASTER_PROMPT_RU.md`](./MASTER_PROMPT_RU.md) | Primary system prompt for Russian-language implementation and review | Russian |
+| [`MASTER_PROMPT.md`](./MASTER_PROMPT.md) | Primary system prompt for English-language implementation and review | English |
 | [`ANALYSIS_PROMPT.md`](./ANALYSIS_PROMPT.md) | Strategic analysis prompt for architecture, roadmap, and trade-off discussions | English |
 | [`README.md`](./README.md) | This file | English |
+
+AI working documents are maintained and authoritative in Russian. No English counterpart is required for `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, or `CLAUDE.md`. Product, API, and architecture documentation remains in English.
 
 ## How to use
 
