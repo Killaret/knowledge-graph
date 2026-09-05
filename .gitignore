@@ -183,3 +183,6 @@ coverage
 *.backup.old
 *.old
 .kilo/kilo.jsonc
+
+# Claude Code: personal overrides stay local
+.claude/settings.local.json
