@@ -25,6 +25,13 @@
 - **Personal-стек** — не запускается без явной просьбы. Команды, способные уничтожить его тома, блокируются хуком [`scripts/devops/guard-personal-data.py`](scripts/devops/guard-personal-data.py), пока нет свежего бэкапа.
 - **Изменил норму — обнови производные.** `.windsurfrules` → `.devin/skills/knowledge-graph/SKILL.md` и оба мастер-промпта в `.devin/prompts/`.
 
+## Слэш-команды проекта
+
+- `/kg-handoff` — прочитать [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md) и выполнить то, что числится за Claude Code.
+- `/kg-review` — проверить работу другого агента и записать замечания в [`docs/tasks/`](docs/tasks/), а не в чат.
+
+Префикс `kg-` обязателен для новых команд: без него имя сталкивается со встроенными.
+
 ## Команды
 
 Канонический список — [`COMMANDS.md`](COMMANDS.md) и раздел Common Commands в [`.windsurfrules`](.windsurfrules). Разрешения на прогон тестов уже выданы в [`.claude/settings.json`](.claude/settings.json).
