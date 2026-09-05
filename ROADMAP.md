@@ -11,7 +11,7 @@
 - **Development Phase:** Alpha → Beta transition
 - **Regression Testing:** ✅ Partially complete (11/14 parts passed)
 - **System Stability:** ✅ Stable (no critical issues)
-- **Test Coverage:** ✅ Frontend unit tests (866 tests), Backend unit tests (all passed)
+- **Test Coverage:** ✅ Frontend unit tests (986 tests, 107 files), Backend unit tests (51 packages), backend statement coverage 67.4%
 - **Production Readiness:** ⏳ Pending critical verifications (E2E, integration, CI/CD)
 
 ---
@@ -752,8 +752,8 @@ _Add future ideas above the next section break._
 - **Dev Stack:** ✅ Stable
 - **Personal Stack:** ✅ Stable
 - **Test Stack:** ✅ Stable
-- **Critical Issues:** 0
-- **Known Bugs:** 0 (pending manual testing)
+- **Critical Issues:** 6 — см. [`docs/EXTERNAL_AUDIT_2026-09.md`](docs/EXTERNAL_AUDIT_2026-09.md) (S-1..S-4, F-1, T-1) и открытый блокер в [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md)
+- **Known Bugs:** 22 находки внешнего аудита, сентябрь 2026. Трекера задач нет — это и есть причина, по которой строка выше долго показывала ноль (находка D-6)
 
 ---
 

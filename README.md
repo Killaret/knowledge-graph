@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Knowledge Graph](https://img.shields.io/badge/Knowledge-Graph-blue?style=for-the-badge)
-![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=for-the-badge&logo=go)
+![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go)
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?style=for-the-badge&logo=svelte)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python)
@@ -26,7 +26,7 @@
 - 🎨 **Celestial Types** — звёзды, планеты, кометы, галактики для разных типов контента
 - 🔍 **Semantic Search** — полнотекстовый поиск с pgvector
 - 📝 **Draft System** — автосохранение черновиков в MongoDB
-- 🔒 **Authentication** — JWT, OAuth2, API keys
+- 🔒 **Authentication** — JWT, API keys (OAuth2 через Яндекс сейчас не работает, см. `docs/EXTERNAL_AUDIT_2026-09.md`, находка F-1)
 - 🎯 **Achievements** — геймификация с системой достижений
 - 🌐 **Multi-language** — поддержка русского и английского
 - 💾 **Cloud Backup** — резервное копирование на Яндекс.Диск
@@ -38,7 +38,7 @@
 ### Prerequisites
 
 - Docker & Docker Compose
-- (Optional) Go 1.23+, Node.js 20+, Python 3.11+, Java 17+
+- (Optional) Go 1.25+, Node.js 20+, Python 3.11+, Java 17+
 
 ### One-Command Start
 
@@ -107,7 +107,7 @@ cd nlp-service && uvicorn app.main:app --reload
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   Frontend  │    │   Backend   │    │ Graph Service│
-│  (Svelte 5) │◄──►│  (Go 1.23)  │◄──►│  (Go 1.24)  │
+│  (Svelte 5) │◄──►│  (Go 1.25)  │◄──►│  (Go 1.25)  │
 └─────────────┘    └─────────────┘    └─────────────┘
        │                   │                   │
        ▼                   ▼                   ▼
@@ -128,11 +128,11 @@ cd nlp-service && uvicorn app.main:app --reload
 ## 💻 Technology Stack
 
 ### Backend
-- **Language:** Go 1.23+
+- **Language:** Go 1.25+
 - **Framework:** Gin + GORM
 - **Database:** PostgreSQL 16 + pgvector
 - **Cache/Queue:** Redis 7 + asynq
-- **Auth:** JWT, OAuth2 (Yandex), API Keys
+- **Auth:** JWT, API Keys. OAuth2 (Yandex) реализован, но не работает — расхождение маршрута между фронтендом, роутером и middleware (находка F-1)
 - **Graph Service:** gRPC (microservice)
 - **Nginx:** Reverse proxy & API gateway
 
@@ -358,7 +358,7 @@ For automated testing, use the dedicated test stack that is completely isolated 
 ```
 
 **Test Stack Details:**
-- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 19091
 - **Database:** Separate `knowledge_test` database
 - **Volumes:** Isolated `pgdata_test`, `mongodbdata_test` (destroyed after use)
 - **Auth:** SKIP_AUTH enabled for testing
@@ -375,8 +375,10 @@ For automated testing, use the dedicated test stack that is completely isolated 
 See [docs/TESTING.md](docs/TESTING.md) for complete testing documentation.
 
 ### Test Coverage
-- **Backend:** >85% coverage required
-- **Frontend:** >60% coverage required
+Единственный источник целевых значений — [`.windsurfrules`](.windsurfrules), раздел Testing Requirements.
+
+- **Backend:** цель 70%, объявленный минимум 60%. Фактически 67.4%. В CI порог не применяется — см. находку T-2.
+- **Frontend:** 70% по строкам, ветвям, функциям и операторам; порог применяется vitest в CI. Считается по `shared`, `features`, `components` — `widgets`, `entities` и `routes` в знаменатель не входят (находка T-3).
 - **Overall:** All tests must pass before merge
 
 ---
@@ -443,7 +445,7 @@ Follow conventional commits:
 - **Backend:** Clean Architecture, DDD, no globals, dependency injection
 - **Frontend:** Atomic design, Svelte 5, TypeScript strict mode
 - **Infrastructure:** Docker multi-stage builds, health checks
-- **Testing:** >60% coverage required
+- **Testing:** пороги покрытия — см. раздел Test Coverage и `.windsurfrules`
 - **Security:** Never commit secrets, use environment variables
 - **🌐 Language:** All notes, annotations, comments, UI strings, and user-facing content MUST be in English
 

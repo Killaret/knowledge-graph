@@ -74,16 +74,16 @@ pytest tests/ -v
 
 | Category | Files | Tests/Scenarios | Latest Result |
 |----------|-------|-------------------|---------------|
-| **Go Unit** | 99 | 596 test functions | ✅ pass |
+| **Go Unit** | 120 | 51 packages | ✅ pass (прогон 2026-09-05) |
 | **Go Race** | - | - | ⚠️ skipped (CGO_ENABLED=0 on Windows) |
 | **Go Integration** | 5+ | repository/handler suites | ⚠️ requires Linux/WSL Docker + resources |
-| **Frontend Unit** | 84 | 976+ tests | ✅ pass (37 skipped) |
+| **Frontend Unit** | 107 | 986 tests | ✅ pass (прогон 2026-09-05, 65 с) |
 | **Frontend svelte-check** | - | - | ✅ 0 errors, warnings acceptable |
 | **Frontend Build** | - | - | ✅ success |
-| **Playwright E2E** | 16 | 122 tests | ✅ most pass, some skipped |
-| **BDD Features** | 14 | 127 scenarios | ✅ most pass |
+| **Playwright E2E** | 24 | — | не прогонялось при последней сверке |
+| **BDD Features** | 2 исполняемых / 13 осиротевших | 9 исполняемых / 125 неисполняемых | ⚠️ см. находку T-1 |
 | **Smoke Tests** | 1 | 9 tests | ✅ 9 passed |
-| **NLP Python** | 2 | 46 collected | ✅ most pass |
+| **NLP Python** | 2 | 50 tests | ✅ pass (прогон 2026-09-05) |
 
 > **Note:** Go integration tests are resource-intensive and failed on this run because PostgreSQL testcontainers could not reach the ready state within the startup timeout. They should be run on a clean Docker environment with adequate CPU/memory for accurate results.
 
@@ -91,5 +91,5 @@ pytest tests/ -v
 
 1. **Docker Desktop not available** - Cannot run dev and personal stacks for full integration testing
 2. **Go integration tests:** require a stable Docker Desktop setup with sufficient resources and no stale testcontainers reaper containers
-3. **Swagger UI:** `http://localhost:8080/swagger/` returns 404 because the `gin-swagger` handler requires a `swag init` generated `docs` package, which is not produced during the Docker build
+3. ~~**Swagger UI:** returns 404~~ — исправлено: `/swagger/index.html` на тест-стеке отвечает 200 (проверено 2026-09-05)
 4. **OpenAPI spec:** Missing 403 Forbidden response codes for all endpoints (403 should be documented for authorization errors)

@@ -7,7 +7,7 @@ This document describes the testing infrastructure and procedures for Knowledge 
 Knowledge Graph uses three Docker stacks:
 - **Dev stack** (docker-compose.yml) - Development environment (frontend dev server 5173, backend 9000, nginx API 18080/frontend 18081)
 - **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend direct 18085, nginx API 18082/frontend 18084)
-- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 9095)
+- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 19091)
 
 ## Test Stack
 
@@ -71,7 +71,6 @@ The isolated testing model ensures that:
 5. **Restore dev/personal stacks** - Bring back development environments
 6. **Post-test comparison** - Verify dev stack state unchanged
 7. **Dev/Personal identity check** - Verify stacks are identical
-8. **Auto-commit** - Commit with test success marker if all checks pass
 
 ### Benefits
 
@@ -80,7 +79,6 @@ The isolated testing model ensures that:
 - **Accurate results** - Tests run on clean, isolated environment
 - **State verification** - Automatic comparison of dev stack state before/after testing
 - **No conflicts** - Eliminates port and resource conflicts between stacks
-- **Auto-commit** - Automatic commit with test success marker when all checks pass
 - **Identity verification** - Automatic comparison of dev and personal stacks
 
 ### When to Use Isolated Testing
@@ -227,13 +225,11 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 22. **Start dev stack** - `docker compose up -d --wait`
 23. **Start personal stack** - `docker compose -f docker-compose.personal.yml up -d --wait`
 24. **Compare dev stack state / identity / health** - Compare with pre-test snapshot, verify dev/personal identity, check health
-25. **Auto-commit** - If all checks passed, commit with test success marker
 
 **Automatic State Verification:**
 - **Pre-test snapshot:** Captures dev stack state before testing
 - **Post-test comparison:** Compares dev stack state after testing
 - **Dev/Personal identity:** Verifies dev and personal stacks are identical
-- **Auto-commit:** Only if dev state unchanged and dev/personal identical
 - **Failure handling:** Stops with exit code 1 if differences found
 
 **Benefits of Isolated Testing:**
@@ -250,29 +246,19 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 - Argos visual screenshots are saved to `frontend/argos-screenshots/` (see docs/ARGOS.md).
 - These directories are ignored by Git — only source changes are committed.
 
-## Auto-Commit on Successful Testing
+## Checks at the End of the Cycle
+
+Автоматического коммита в регрессионном цикле **нет**. Он был удалён по решению владельца (см. [`AI_HANDOFF.md`](AI_HANDOFF.md), раздел «Решения владельца»); коммит делает агент или человек осознанно.
 
 **When all checks pass:**
 - Dev stack state unchanged (pre-test vs post-test)
 - Dev and personal stacks identical
 - Dev and personal stacks healthy
 
-**Auto-commit action:**
-```bash
-git add -A
-git commit -m "test: successful regression cycle — dev and personal identical"
-git push
-```
-
-**Commit message includes:**
-- Test success marker
-- Dev/Personal identity confirmation
-- Co-authored-by tag for Devin
-
 **When checks fail:**
-- Dev stack state changed → Skip auto-commit, show warning
-- Dev/Personal not identical → Exit with code 1, skip auto-commit
-- Stacks not healthy → Exit with code 1, skip auto-commit
+- Dev stack state changed → warning
+- Dev/Personal not identical → exit code 1
+- Stacks not healthy → exit code 1
 
 **Manual investigation required:**
 - Check snapshot differences in `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
@@ -680,7 +666,7 @@ The test stack can be integrated into CI/CD pipelines:
 ### Test Stack Automation (July 2026)
 - **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
 - **Isolation:** Complete separation from dev/personal stacks
-- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 9095
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 19091
 - **Status:** ✅ Fully automated and verified
 
 ### Smoke Tests (July 2026)
