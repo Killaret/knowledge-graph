@@ -182,7 +182,7 @@
       {/each}
     </div>
 
-    {#if currentView === "3d"}
+    {#if currentView === "3d" && onToggleLayoutProvider}
       <div class="layout-toggle" role="group" aria-label={t("controls.layoutProviderTitle")}>
         {#each layoutOptions as option}
           <button

@@ -74,7 +74,7 @@
 
 <GraphPageShell
   view="3d"
-  layoutProvider="d3"
+  layoutProvider={runtimeConfig.layoutProvider}
   searchQuery=""
   selectedType="all"
   typeFilters={graphTypeFilters}

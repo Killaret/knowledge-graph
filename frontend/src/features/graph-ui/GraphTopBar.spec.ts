@@ -132,4 +132,44 @@ describe("GraphTopBar — unified top bar", () => {
     await fireEvent.input(searchInput, { target: { value: "black hole" } });
     expect(onSearch).toHaveBeenCalledWith("black hole");
   });
+
+  it("does not render layout provider buttons on 3D view when no toggle handler is provided", () => {
+    render(GraphTopBar, {
+      props: {
+        isAuthenticated: false,
+        currentView: "3d",
+        layoutProvider: "d3",
+        searchQuery: "",
+        selectedType: "all",
+        typeFilters,
+      },
+    });
+
+    expect(screen.queryByTestId("layout-provider-d3")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("layout-provider-graph-service")).not.toBeInTheDocument();
+  });
+
+  it("renders and toggles layout provider buttons on 3D view when a handler is provided", async () => {
+    const onToggleLayoutProvider = vi.fn();
+
+    render(GraphTopBar, {
+      props: {
+        isAuthenticated: false,
+        currentView: "3d",
+        layoutProvider: "d3",
+        searchQuery: "",
+        selectedType: "all",
+        typeFilters,
+        onToggleLayoutProvider,
+      },
+    });
+
+    const d3Btn = screen.getByTestId("layout-provider-d3");
+    const graphServiceBtn = screen.getByTestId("layout-provider-graph-service");
+    expect(d3Btn).toBeInTheDocument();
+    expect(graphServiceBtn).toBeInTheDocument();
+
+    await fireEvent.click(graphServiceBtn);
+    expect(onToggleLayoutProvider).toHaveBeenCalledWith("graph-service");
+  });
 });
