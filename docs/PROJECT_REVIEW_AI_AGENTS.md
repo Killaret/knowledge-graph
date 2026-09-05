@@ -428,7 +428,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Селектор типов заметок — выпадающий список.
 - Документация и UI для типов связей.
 - Кнопка «Отмена/Назад» на странице входа.
-- Мобильная адаптивность графа / touch-events (проверка вручную, в процессе).
+- Мобильная адаптивность графа / touch-events (ручная проверка, запланировано, не реализовано).
 - Система рекомендаций Pure Precomputed (убрать fallback).
 - Публичные сиды для тестирования real-auth.
 - Аудит ресурсов (память, CPU, bundle size).
@@ -549,3 +549,42 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - **Case 1.4** — hover, подсветка соседей и туман: в процессе ручной проверки.
   - 2026-08-23: реализована подсветка прямых соседей (opacity 1 / 0.85 / 0.3), расширение радиуса тумана на соседей и усиление связей от hovered-узла. Требуется повторная ручная проверка.
+
+---
+
+## 16. AI-агент prompt-экосистема
+
+Для единообразной работы всех AI-моделей в проекте создана общая prompt-экосистема в `.devin/prompts/`.
+
+### Роли и инструменты
+
+- **Windsurf SWE 1.7 Max** — основной implementation-агент.
+- **Devin** — CLI-аудит, автоматизация, верификация (`SKILL.md`).
+- **DeepSeek** — стратегическая архитектура, roadmap, prompt design.
+- **Claude / Claude Code** — общий мастер-промпт и аналитический промпт для обсуждений.
+- **Python NLP service** — runtime embeddings, keywords, similarity (не development-агент).
+
+### Файлы промптов
+
+- `.devin/prompts/MASTER_PROMPT.md` — единый мастер-промпт для имплементации, ревью и работы с кодом (английский).
+- `.devin/prompts/MASTER_PROMPT_RU.md` — русская версия мастер-промпта.
+- `.devin/prompts/ANALYSIS_PROMPT.md` — промпт для стратегического анализа, архитектуры и trade-off.
+- `.devin/prompts/README.md` — инструкция по использованию промптов.
+
+### Правила использования
+
+- В начале каждого чата с AI-моделью вставляйте соответствующий промпт.
+- Мастер-промпт обязывает модель читать `.windsurfrules`, `PROJECT_REVIEW_AI_AGENTS.md`, `SKILL.md` и `ARCHITECTURE_SUMMARY.md`.
+- Аналитический промпт используется для roadmap, архитектурных альтернатив и обзора рисков.
+- Все промпты являются living documents: обновляются при изменении `.windsurfrules`, стека, архитектуры или ролей AI-инструментов.
+
+### Ссылки
+
+- [`.devin/prompts/MASTER_PROMPT.md`](../.devin/prompts/MASTER_PROMPT.md)
+- [`.devin/prompts/MASTER_PROMPT_RU.md`](../.devin/prompts/MASTER_PROMPT_RU.md)
+- [`.devin/prompts/ANALYSIS_PROMPT.md`](../.devin/prompts/ANALYSIS_PROMPT.md)
+- [`.devin/prompts/README.md`](../.devin/prompts/README.md)
+- [`.devin/skills/knowledge-graph/SKILL.md`](../.devin/skills/knowledge-graph/SKILL.md)
+- [`.windsurfrules`](../.windsurfrules)
+- [`docs/AGENTS.md`](AGENTS.md)
+- [`docs/AGENTS_EN.md`](AGENTS_EN.md)

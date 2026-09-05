@@ -404,6 +404,12 @@ curl http://127.0.0.1:18083/health                    # Test stack backend
 | **CLI audits and autonomous repository tasks** | **Devin** | Uses `.devin/skills/knowledge-graph/SKILL.md` |
 | **Runtime embeddings and semantic analysis** | **Python NLP service** | Application runtime component |
 
+### Shared AI prompts
+
+- Use `.devin/prompts/MASTER_PROMPT.md` as the first message for implementation, review, and coding chats with Claude, DeepSeek, or Windsurf.
+- Use `.devin/prompts/ANALYSIS_PROMPT.md` for strategic architecture, roadmap, and trade-off discussions.
+- Russian-language master prompt: `.devin/prompts/MASTER_PROMPT_RU.md`.
+
 Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations are not used in this repository and must not be reintroduced without an explicit project decision.
 
 Supporting documents may summarize these rules but must defer to `.windsurfrules` when they differ.

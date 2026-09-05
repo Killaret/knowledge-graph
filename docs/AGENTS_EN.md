@@ -50,6 +50,14 @@ The repository does not maintain project-specific configuration for:
 
 Do not reintroduce those configurations without an explicit project decision.
 
+## Shared Prompts
+
+The `.devin/prompts/` directory contains reusable prompts for all AI agents:
+
+- [`.devin/prompts/MASTER_PROMPT.md`](../.devin/prompts/MASTER_PROMPT.md) — paste at the start of implementation or review chats.
+- [`.devin/prompts/ANALYSIS_PROMPT.md`](../.devin/prompts/ANALYSIS_PROMPT.md) — use for strategic architecture and roadmap discussions.
+- [`.devin/prompts/MASTER_PROMPT_RU.md`](../.devin/prompts/MASTER_PROMPT_RU.md) — Russian-language master prompt.
+
 ## Task Routing
 
 | Task | Primary context |

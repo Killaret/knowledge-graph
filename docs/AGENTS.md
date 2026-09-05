@@ -21,11 +21,22 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 |------|---------|
 | [`.windsurfrules`](../.windsurfrules) | Normative project rules |
 | [`.devin/skills/knowledge-graph/SKILL.md`](../.devin/skills/knowledge-graph/SKILL.md) | Devin-specific navigation and workflow |
+| [`.devin/prompts/MASTER_PROMPT.md`](../.devin/prompts/MASTER_PROMPT.md) | Shared master prompt for Claude, DeepSeek, and Windsurf |
+| [`.devin/prompts/ANALYSIS_PROMPT.md`](../.devin/prompts/ANALYSIS_PROMPT.md) | Strategic analysis prompt for architecture and roadmap |
 | [`.windsurf/rules.md`](../.windsurf/rules.md) | Pointer to the normative rules |
 | [`ARCHITECTURE_SUMMARY.md`](ARCHITECTURE_SUMMARY.md) | Architecture reference |
 | [`TESTING.md`](TESTING.md) | Test environments and commands |
 | [`REGRESSION_TEST_PLAN.md`](REGRESSION_TEST_PLAN.md) | Canonical regression sequence |
 | [`../ROADMAP.md`](../ROADMAP.md) | Current roadmap |
+
+## Shared Prompts
+
+The `.devin/prompts/` directory contains reusable prompts for all AI agents:
+
+- [`.devin/prompts/MASTER_PROMPT.md`](../.devin/prompts/MASTER_PROMPT.md) — paste at the start of implementation or review chats (English).
+- [`.devin/prompts/MASTER_PROMPT_RU.md`](../.devin/prompts/MASTER_PROMPT_RU.md) — Russian master prompt for Russian-language chats.
+- [`.devin/prompts/ANALYSIS_PROMPT.md`](../.devin/prompts/ANALYSIS_PROMPT.md) — strategic analysis and roadmap discussions.
+- [`.devin/prompts/README.md`](../.devin/prompts/README.md) — how to use and maintain the prompts.
 
 ## Required Workflow
 

@@ -43,8 +43,13 @@ go.work
 # Editor/IDE files
 .vscode/
 .idea/
-.devin/
 .koda/
+# Devin: keep local root files ignored; skills and prompts are shared project config
+.devin/*
+!.devin/skills/
+!.devin/skills/**
+!.devin/prompts/
+!.devin/prompts/**
 *.swp
 *.swo
 *~
