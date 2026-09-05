@@ -92,8 +92,7 @@ cd nlp-service; pytest tests/ -v
 
 | Trigger | Action |
 |---|---|
-| `/kg-handoff` | Отдельный skill `.devin/skills/kg-handoff`. Прочитать `docs/AI_HANDOFF.md`, выполнить пункты, закреплённые за Devin, пропуская те, чьё условие не наступило. По окончании обновить `docs/AI_HANDOFF.md` и связанный `docs/tasks/<id>.md`. |
-| `/kg-review` | Отдельный skill `.devin/skills/kg-review`. Проверить работу другого агента по `docs/AI_HANDOFF.md` и `docs/tasks/<id>-review-findings.md`. Смотреть дифф, а не описание автора; проверять исполнением; отдельно оценить, способен ли предложенный автором способ проверки поймать дефект. Записать замечания в `docs/tasks/<id>-review-findings.md` и обновить инбокс. |
+| `/kg-work` | Отдельный skill `.devin/skills/kg-work`. Единственная проектная команда: прочитать `docs/AI_HANDOFF.md`, выбрать режим по доске (есть непроверенная работа Claude Code → ревью и только оно; иначе — своя очередь «На Devin» сверху вниз). Самопроверка запрещена. По окончании обновить доску и `docs/AI_LOG.md`. |
 
 ## Priority
 
