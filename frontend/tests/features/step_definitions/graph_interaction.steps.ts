@@ -285,7 +285,7 @@ Then("I should navigate to {string}", async function (this: ITestWorld, path: st
 
 Then("the new graph should center on that node", async function (this: ITestWorld) {
   // Verify the graph loaded
-  const canvas = this.page.locator('[data-testid="graph-3d-container"] canvas, canvas').first();
+  const canvas = this.page.locator('[data-testid="graph-3d-scene"] canvas, canvas').first();
   await expect(canvas).toBeVisible({ timeout: 10000 });
 
   // Wait for navigation and page to settle

@@ -12,7 +12,7 @@ const links = [{ source: "1", target: "2", weight: 0.8, link_type: "related" }];
 describe("Graph3DScene", () => {
   it("renders the 3D graph container", async () => {
     render(Graph3DScene, { props: { nodes, links } });
-    expect(screen.getByTestId("graph-3d-container")).toBeInTheDocument();
+    expect(screen.getByTestId("graph-3d-scene")).toBeInTheDocument();
   });
 
   it("is accessible by role", async () => {

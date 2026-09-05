@@ -163,6 +163,27 @@ describe("Graph3DEngine performance adaptation", () => {
     engine.dispose();
   });
 
+  it("renders exactly once when animation is disabled, before onReady fires", () => {
+    const container = createContainer();
+    const onReady = vi.fn();
+    const engine = new Graph3DEngine(container, { onReady }, { disableAnimation: true });
+    const bundle = stubRenderer(engine);
+
+    engine.setData(nodes, links);
+
+    // Without the animation loop the single explicit render is the only one.
+    expect(bundle.renderer.render).toHaveBeenCalledTimes(1);
+    expect(bundle.labelRenderer.render).toHaveBeenCalledTimes(1);
+    expect(onReady).toHaveBeenCalledTimes(1);
+    // onReady is the "scene painted" signal for visual tests, so it must fire
+    // after the render call, not before it.
+    expect(bundle.renderer.render.mock.invocationCallOrder[0]).toBeLessThan(
+      onReady.mock.invocationCallOrder[0]
+    );
+
+    engine.dispose();
+  });
+
   it("does not mutate the original links array", () => {
     const container = createContainer();
     const engine = new Graph3DEngine(container, {}, { autoRotate: false });

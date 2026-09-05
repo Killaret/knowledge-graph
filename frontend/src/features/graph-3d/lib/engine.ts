@@ -133,6 +133,9 @@ export class Graph3DEngine {
       if (this.config.disableAnimation) {
         this.simulateToStable();
         this.updateScene();
+        // Without the animation loop nothing would ever be drawn, so the
+        // frame must be rendered explicitly before signalling readiness.
+        this.renderOnce();
         this.finishLoading();
       } else {
         this.startLoop();
@@ -174,6 +177,7 @@ export class Graph3DEngine {
     }
     this.lastFrameTime = now;
 
+    let readyAfterRender = false;
     if (this.sim && this.sim.alpha() > this.sim.alphaMin()) {
       this.sim.tick(1);
       this.updateScene();
@@ -183,7 +187,7 @@ export class Graph3DEngine {
     } else if (!this.isReady) {
       this.simulateToStable();
       this.updateScene();
-      this.finishLoading();
+      readyAfterRender = true;
     }
 
     if (Math.abs(this.targetFogDensity - this.currentFogDensity) > 0.0001) {
@@ -191,11 +195,21 @@ export class Graph3DEngine {
       setFogDensity(this.sceneBundle.scene, this.currentFogDensity);
     }
 
+    this.renderOnce();
+
+    // onReady must mean "a frame was painted", not merely "the simulation
+    // converged" — visual tests key off it, so it fires after the render.
+    if (readyAfterRender) {
+      this.finishLoading();
+    }
+
+    this.rafId = requestAnimationFrame(() => this.frame());
+  }
+
+  private renderOnce() {
     this.sceneBundle.controls.update();
     this.sceneBundle.renderer.render(this.sceneBundle.scene, this.sceneBundle.camera);
     this.sceneBundle.labelRenderer.render(this.sceneBundle.scene, this.sceneBundle.camera);
-
-    this.rafId = requestAnimationFrame(() => this.frame());
   }
 
   private adaptPerformance() {

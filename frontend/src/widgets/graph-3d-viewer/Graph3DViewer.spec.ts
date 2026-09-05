@@ -38,6 +38,6 @@ describe("Graph3DViewer", () => {
     });
 
     expect(screen.getByTestId("graph-3d-viewer")).toBeInTheDocument();
-    expect(screen.getByTestId("graph-3d-container")).toBeInTheDocument();
+    expect(screen.getByTestId("graph-3d-scene")).toBeInTheDocument();
   });
 });

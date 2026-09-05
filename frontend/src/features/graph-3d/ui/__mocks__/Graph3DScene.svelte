@@ -16,9 +16,16 @@
 
   const { onReady }: Props = $props();
 
+  let sceneStable = $state(false);
+
   onMount(() => {
+    sceneStable = true;
     onReady?.();
   });
 </script>
 
-<div data-testid="graph-3d-container" class="graph-3d-container"></div>
+<div
+  data-testid="graph-3d-scene"
+  class="graph-3d-container"
+  data-test-stable={sceneStable ? "true" : "false"}
+></div>

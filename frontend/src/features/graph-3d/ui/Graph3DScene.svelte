@@ -31,7 +31,13 @@
   let container: HTMLDivElement;
   let engine: Graph3DEngine | null = null;
 
-  const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
+  // Vitest still relies on the env flag; Playwright runs in a real browser
+  // where `process` does not exist, so the URL parameter is used instead.
+  const stableRender =
+    (typeof process !== "undefined" && process.env?.VITEST === "true") ||
+    (browser && new URL(window.location.href).searchParams.get("stableRender") === "true");
+
+  let sceneStable = $state(false);
 
   onMount(() => {
     if (!browser || !container) return;
@@ -39,14 +45,17 @@
     const callbacks: Graph3DCallbacks = {
       onNodeClick,
       onNodeDoubleClick,
-      onReady,
+      onReady: () => {
+        sceneStable = true;
+        onReady?.();
+      },
       onLoadingChange,
       onError,
     };
 
     try {
       engine = new Graph3DEngine(container, callbacks, {
-        disableAnimation: isTest,
+        disableAnimation: stableRender,
       });
       engine.setData(nodes, links);
       if (centerNodeId) engine.centerOnNode(centerNodeId);
@@ -112,7 +121,8 @@
 <div
   bind:this={container}
   class="graph-3d-container"
-  data-testid="graph-3d-container"
+  data-testid="graph-3d-scene"
+  data-test-stable={sceneStable ? "true" : "false"}
   role="img"
   aria-label="3D graph"
 ></div>

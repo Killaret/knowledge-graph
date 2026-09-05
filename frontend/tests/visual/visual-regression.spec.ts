@@ -140,9 +140,32 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
 
   test("3D Graph - renders 3D view", async ({ page }) => {
     await page.goto("/graph/3d" + STABLE_RENDER);
-    const viewer = page.locator('[data-testid="graph-3d-viewer"]');
-    await expect(viewer).toBeVisible({ timeout: 15000 });
-    await argosScreenshot(page, "3d-graph-view", { fullPage: true });
+
+    // The outer wrapper mounts before the scene is ready, so the test waits
+    // for the scene container's own readiness flag instead of its visibility.
+    const scene = page.locator('[data-testid="graph-3d-scene"]');
+    const errorOverlay = page.locator('[data-testid="graph-3d-error"]');
+
+    await expect(scene, "3D scene container should mount").toBeVisible({ timeout: 15000 });
+    try {
+      await expect(
+        scene,
+        "3D scene should reach data-test-stable after the first render"
+      ).toHaveAttribute("data-test-stable", "true", { timeout: 20000 });
+    } catch (e) {
+      if ((await errorOverlay.count()) > 0) {
+        throw new Error(
+          "3D scene failed to initialize: graph-3d-error overlay is shown (WebGL unavailable or init failed)"
+        );
+      }
+      throw e;
+    }
+    // A WebGL error overlay must never produce a passing screenshot.
+    await expect(errorOverlay, "graph-3d-error overlay must not be present").toHaveCount(0);
+
+    // Screenshot the scene element only: fullPage would include overlays and
+    // page chrome that do not belong to the WebGL canvas being verified.
+    await argosScreenshot(page, "3d-graph-view", { element: scene });
   });
 
   test("Home responsive viewports", async ({ page }) => {
