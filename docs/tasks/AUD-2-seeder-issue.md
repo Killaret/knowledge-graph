@@ -1,17 +1,3 @@
-# Seeder cannot create the test user: role lookup scans a UUID into `uuid.UUID`
-
-Черновик тикета для GitHub Issues. Заводится вручную:
-
-```bash
-gh issue create --repo Killaret/knowledge-graph \
-  --title "Seeder cannot create the test user: role lookup scans a UUID into uuid.UUID" \
-  --body-file docs/tasks/AUD-2-seeder-issue.md --label bug
-```
-
-Текст ниже написан так, чтобы быть безопасным и в публичном репозитории: незакрытые находки безопасности из [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md) (S-3, S-5, S-6, S-7) в него намеренно не вошли.
-
----
-
 ## Summary
 
 `backend/cmd/seed` fails on every run. It cannot look up the `user` role, so the test user is never created.

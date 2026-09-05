@@ -96,6 +96,17 @@ APP_ENV=test        -> Config loaded: alpha=0.50, ... (старт продолж
 - **Критерий 6** — прогон `029` на чистой базе и на базе с уже применённой `019`. На базе с `019` проверено (тест-стек), на чистой — нет.
 - Негативные ветки сидера при этом работают верно: `APP_ENV=development` даёт `seeder can only run with APP_ENV=test`, отсутствие `SEED_TEST_USER_PASSWORD` — отказ с ненулевым кодом.
 
+## Тикет
+
+Текст для GitHub Issues — [`AUD-2-seeder-issue.md`](AUD-2-seeder-issue.md). Файл содержит **только тело тикета**, без служебных пояснений: он передаётся в `--body-file` дословно.
+
+```bash
+gh auth login
+gh issue create --repo Killaret/knowledge-graph   --title "Seeder cannot create the test user: role lookup scans a UUID into uuid.UUID"   --body-file docs/tasks/AUD-2-seeder-issue.md --label bug
+```
+
+Незакрытые находки безопасности из [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md) в тело тикета намеренно не вошли — на случай, если репозиторий публичный. Определить его видимость не удалось: GitHub API ответил 403.
+
 ## Вопрос по конструкции, отдельно от блокера
 
 `SKIP_AUTH` — тестовый обход, но он зависит от конкретной строки в базе. Именно эта связанность превратила баг сидера в неработающий тест-стек.
