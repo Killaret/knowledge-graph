@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python scripts/devops/guard-personal-data.py",
+            "command": "python \"$(git rev-parse --show-toplevel)/scripts/devops/guard-personal-data.py\"",
             "timeout": 15,
             "statusMessage": "Проверка бэкапа Personal-стека"
           }
