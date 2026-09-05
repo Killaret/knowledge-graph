@@ -294,7 +294,8 @@ The committed default locale is English (`en`); Russian (`ru`) is supported thro
 - All UI strings, toasts, labels, placeholders, errors, and tooltips must use i18n keys.
 - Code identifiers, variable names, commit messages, and API error codes must be in English.
 - User-created note titles and bodies may use any language.
-- Authoritative documentation is in English; Russian translations may be maintained alongside it.
+- Authoritative product, API, and architecture documentation is in English; Russian translations may be maintained alongside it.
+- **AI working documents are maintained in Russian** and are authoritative in that language: `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`. No English counterpart is required for them. `.devin/prompts/MASTER_PROMPT.md` stays English for English-language chats.
 
 ---
 
