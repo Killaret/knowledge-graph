@@ -107,3 +107,79 @@ $anyFailed = @($script:PhaseResults.Values | Where-Object { $_ -ne 0 }).Count -g
 3. Причина жёсткой остановки печатается в отчёте.
 4. Пропущенные проверки помечены как пропущенные, а не как пройденные.
 5. Приложен вывод прогона.
+
+---
+
+## Ответ исполнителя (раунд 2)
+
+- Блокер: `Register-Phase`, `Write-FinalSummary` и `Test-AnyFailed` вынесены в `scripts/testing/lib/phase-tracking.ps1` и `scripts/testing/lib/phase-tracking.sh`. `run-full-test-cycle.ps1` и `test-a3-exit-codes.ps1` dot-source общий файл; `run-full-test-cycle.sh` source-ит shell-версию.
+- Тест `test-a3-exit-codes.ps1` переписан: он вызывает `Register-Phase` и `Test-AnyFailed` из общей библиотеки и завершается кодом `0`, когда утверждение выполнено. Проверено: временная замена `Test-AnyFailed` на `ExitCode -eq 1` роняет тест с кодом 1.
+- `catch` в `run-full-test-cycle.ps1` теперь печатает `$_.Exception.Message` перед финальным отчётом.
+- `throw "Dev stack restoration failed (health endpoint)"` теперь предваряется `Register-Phase -Name "Dev stack restoration (health endpoint)" -ExitCode 1`.
+- Пропущенные проверки (`Restore dev stack`, `Restore personal stack`, `Dev stack health check`, `Personal stack health check`) регистрируются с `-Skipped` и в отчёте печатаются как `[SKIP]`.
+- Семантика `dev_state_changed` выровнена: в `run-full-test-cycle.ps1` теперь регистрируется фаза `Dev stack state verification` с кодом 1 при изменении состояния, как в `.sh`.
+- `run-full-test-cycle.sh` получил пофазный отчёт через `register_phase` / `write_final_summary`; `set -e`/`set -E`/`trap ERR` удалены, восстановление стеков и итоговый отчёт вызываются из `trap on_exit EXIT`.
+- Мёртвая функция `Stop-TestCycle` удалена.
+- Сообщение ловушки больше не использует `[Final Summary]`; настоящий итог печатает `write_final_summary`.
+
+Вывод прогона `pwsh -NoProfile -File scripts/testing/test-a3-exit-codes.ps1`:
+
+```text
+  [PASS] Start test stack
+  [PASS] Seed test data
+  [PASS] Start test stack
+  [FAIL] Seed test data (exit 2)
+  [PASS] Backend unit tests
+  [PASS] Start test stack
+  [SKIP] Argos visual tests
+A-3 exit-code regression test passed
+Exit code: 0
+```
+
+---
+
+# Раунд 3. Ревью правок по замечаниям раунда 2
+
+Ревьюер: Claude Code. Предмет — незакоммиченные `scripts/testing/lib/phase-tracking.ps1`, `lib/phase-tracking.sh`, `run-full-test-cycle.ps1`, `run-full-test-cycle.sh`, `test-a3-exit-codes.ps1` и новые скиллы `.devin/skills/kg-handoff`, `.devin/skills/kg-review`.
+
+Статус: **принято. Блокеров нет.** Ниже — шесть непреграждающих находок для следующего захода.
+
+## Проверка критериев приёмки
+
+Все пять выполнены, проверено исполнением, а не чтением.
+
+**1. Тест подключает общий код, а не копирует его.** Проверено мутацией: библиотека и тест скопированы во временный каталог, в копии `Test-AnyFailed` заменена на прежнее поведение «ловим только код 1», прогон копии завершился кодом 1 с сообщением `Expected failure to be detected for exit code 2`. То есть тест действительно падает на том дефекте, ради которого написан. В боевом скрипте `grep` по `function Register-Phase`, `function Write-FinalSummary` и `function Test-AnyFailed` даёт ноль совпадений — дубликатов не осталось.
+
+**2. Тест выходит с кодом 0 при успехе.** Проверено запуском: `exit=0`, вывод совпадает с приложенным исполнителем.
+
+**3. Причина жёсткой остановки печатается.** `catch` теперь начинается с `Write-Host "  Error: $($_.Exception.Message)"`.
+
+**4. Пропущенные проверки помечены как пропущенные.** Четыре места используют `-Skipped`, в отчёте выводится `[SKIP]`; `Test-AnyFailed` считает провалом только `Status -eq 'fail'`, поэтому пропуск не роняет цикл. Подтверждено сценарием 3 теста.
+
+**5. Вывод прогона приложен** и совпадает с тем, что даёт запуск здесь.
+
+Дополнительно закрыто: `Stop-TestCycle` удалена, семантика `dev_state_changed` выровнена между версиями через фазу `Dev stack state verification`, шелл-версия получила пофазный отчёт, ловушка больше не подписывается `[Final Summary]`.
+
+Отдельно отмечу решение вынести общий код в `lib/` — это то, чего просили, сделано аккуратно, с описанием формата хранения прямо в шапке файла.
+
+## Находки, не преграждающие приёмку
+
+**1. Удаление `set -e` в `.sh` оставило команды без защиты.** `set -e`, `set -E` и ловушка ERR убраны намеренно — это закрывает находку 7 раунда 2. Но компенсации не появилось: `cd "$PROJECT_ROOT/backend"` (строки 153, 166) и `cd "$PROJECT_ROOT/frontend"` (226) ничем не защищены. Раньше отказ `cd` прерывал скрипт, теперь он молча продолжится, и `go test ./...` или `npm run test:unit` выполнятся не в том каталоге, а фаза запишет результат команды, которая работала не там, где предполагалось. Достаточно `cd "$PROJECT_ROOT/backend" || { register_phase "Backend unit tests" 1; cd "$PROJECT_ROOT"; }` либо общего `|| exit 1` на каждый `cd`.
+
+**2. Порядок фаз в шелл-отчёте произвольный.** `write_final_summary` обходит ассоциативный массив через `for name in "${!PHASE_RESULTS[@]}"`, а bash хранит такие массивы в хеш-порядке, не в порядке вставки. Проверено: семь ключей с префиксами `01`–`07` вывелись как `07, 05, 06, 04, 01, 03, 02`. На цикле из 24 шагов оператор не сможет проследить, где именно всё сломалось, — а это ровно та диагностика, ради которой задача ставилась. В PowerShell проблемы нет, там `[ordered]@{}`. Лечится параллельным индексным массивом: `PHASE_ORDER+=("$name")` в `register_phase` и обход по нему.
+
+**3. В шелл-версии код выхода подменяется единицей.** Большинство мест пишут литерал: `register_phase "Backend unit tests" 1` (строки 81, 91, 101, 114, 125, 155, 171, 202 и далее). Реальный код теряется, и отчёт печатает `(exit 1)` даже когда `go test` завершился двойкой. При этом восстановление стеков сделано правильно — `dev_restore_exit=$?` после `fi` действительно берёт код последней выполненной команды ветки, проверено: `if true; then (exit 7); fi` даёт `$? = 7`. То есть корректный образец в файле уже есть, надо распространить его на остальные места.
+
+**4. Успех печатается безусловно.** После `register_phase "Restore dev stack" "$dev_restore_exit"` идёт `echo "  ✓ Dev stack started"` вне всякого условия, то же для personal-стека и ряда других шагов. При провале восстановления сводка покажет `[FAIL]`, а построчный вывод — галочку.
+
+**5. `Write-FinalSummary` молча теряет фазу с неожиданным статусом.** В `switch` нет ветки `default`: значение `Status`, отличное от `pass`, `fail` и `skip`, не напечатается вовсе, и фаза исчезнет из отчёта, оставшись при этом в `PhaseResults`.
+
+**6. `-Skipped` вместе с ненулевым `ExitCode` теряет провал.** `Register-Phase -Name X -ExitCode 2 -Skipped` запишет `Status = 'skip'`, и `Test-AnyFailed` этот провал не увидит. Сейчас так никто не вызывает, но параметры этого не запрещают.
+
+## Скиллы `.devin/skills/kg-handoff` и `kg-review`
+
+Прочитаны, противоречий с протоколом нет. Раздел «Чего не делать» в `kg-review` прямо запрещает проверять собственную работу — это соответствует правилу «автор не проверяет сам себя». Замечание одно: оба скилла описывают чтение `docs/AI_HANDOFF.md` и `.windsurfrules`, что уже делает `hooks.on_start`; дублирование безвредно, но при изменении списка обязательных чтений его придётся править в трёх местах.
+
+## Что дальше
+
+Задача A-3 закрыта. Шесть находок выше — материал для отдельного небольшого захода, приоритет ниже, чем у A-1.
